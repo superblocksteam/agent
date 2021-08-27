@@ -16,8 +16,8 @@ The agent application can be configured via the use of several environment varia
 | SUPERBLOCKS_AGENT_LOG_DISABLE_PRETTY            | Flag to toggle pretty printing of logs                                           | No       | true                          |
 | SUPERBLOCKS_AGENT_LOG_DISABLE_EXPRESS           | Flag to toggle printing of Express request/response logs                         | No       | true                          |
 | SUPERBLOCKS_AGENT_DATADOG_DISABLE_TRACER        | Flag to disable/enable Datadog tracing                                           | No       | true                          |
-| SUPERBLOCKS_AGENT_DATADOG_CONNECT_TAGS          | Array (comma-separated) of tags to be added to Datadog histograms                | No       | app:superblocks               |
 | SUPERBLOCKS_AGENT_DATADOG_DISABLE_LOG_INJECTION | Flag to disable/enable the injection of Datadog trace ID in log records          | No       | true                          |
+| SUPERBLOCKS_AGENT_DATADOG_CONNECT_TAGS          | Array (comma-separated) of tags to be added to Datadog histograms                | No       | app:superblocks               |
 | SUPERBLOCKS_SERVER_URL                          | Superblocks Cloud host that the agent will make fetch calls to                   | No       | https://app.superblockshq.com |
 | SUPERBLOCKS_AGENT_JSON_PARSE_LIMIT              | Express request body limit (in mb)                                               | No       | 50mb                          |
 
@@ -28,7 +28,7 @@ The agent application can be configured via the use of several environment varia
 To deploy the Superblocks agent using docker, run the following command:
 
 ```sh
-docker run --name superblocks-agent --env SUPERBLOCKS_AGENT_ID=<agent-id> --publish <agent-port>:<agent-port> --cpus="0.5" --memory="128m" --rm ghcr.io/superblocksteam/agent:v0.1.0
+docker run --name superblocks-agent --env SUPERBLOCKS_AGENT_ID=<agent-id> --publish <agent-port>:<agent-port> --rm ghcr.io/superblocksteam/agent:v0.1.0
 ```
 
 ### docker-compose
@@ -48,17 +48,12 @@ services:
       - SUPERBLOCKS_AGENT_ID=<agent-id>
     ports:
       - '<agent-port>:<agent-port>'
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: '128m'
 ```
 
 Then, run the following command:
 
 ```sh
-docker-compose --compatibility -f ./docker-compose.yml -p superblocks up -d
+docker-compose -f ./docker-compose.yml -p superblocks up -d
 ```
 
 **Note**: The agent ID (`<agent-id>`) is a placeholder and should be different for each organization for which the agent is being deployed. The agent port is configurable; `<agent-port>` should be replaced with either the custom port or 8020 (if the default is being used).
