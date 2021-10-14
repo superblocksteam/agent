@@ -64,6 +64,10 @@ Then, run the following command:
 docker-compose -f ./docker-compose.yml -p superblocks up -d
 ```
 
+### kubernetes
+
+The Superblocks agent can also be deployed on any Kubernetes cluster. A reference helm chart can be found [here](./helm).
+
 ## Requests
 
 ### Incoming
