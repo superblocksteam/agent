@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "superblocks-agent.fullname" . }}
+  labels:
+    {{- include "superblocks-agent.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "superblocks-agent.selectorLabels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+{{ toYaml .Values.podLabels | indent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: SUPERBLOCKS_AGENT_PORT
+              value: {{ required "containerPort is required!" .Values.containerPort | quote }}
+            - name: SUPERBLOCKS_AGENT_ID
+              value: {{ required "agentId is required!" .Values.superblocks.agentId | quote }}
+            {{- range $key, $val := .Values.extraEnv }}
+            - name: {{ $key }}
+              value: {{ default "" $val | quote }}
+            {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
