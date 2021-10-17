@@ -10,6 +10,7 @@ The agent application can be configured via the use of several environment varia
 | ----------------------------------------------- | -------------------------------------------------------------------------------- | -------- | ----------------------------- |
 | SUPERBLOCKS_AGENT_ID                            | UUID used by Superblocks Cloud to identify the agent                             | Yes      | n/a                           |
 | SUPERBLOCKS_AGENT_PORT                          | HTTP port that the agent listens on                                              | No       | 8020                          |
+| SUPERBLOCKS_AGENT_ENV_VARS_JSON                 | Environment variables (JSON format) to be passed into code execution. For example: `{ 'MY_ENV_VAR': "some value", 'MY_OTHER_ENV_VAR': "another value" }`. Access the vars using `Env.MY_ENV_VAR` in code | No       |       |
 | SUPERBLOCKS_AGENT_EXECUTION_JS_TIMEOUT_MS       | Timeout (in ms) for a given Javascript API Step execution                        | No       | 30000                         |
 | SUPERBLOCKS_AGENT_EXECUTION_PYTHON_TIMEOUT_MS   | Timeout (in ms) for a given Python API Step execution                            | No       | 30000                         |
 | SUPERBLOCKS_AGENT_LOG_LEVEL                     | Log level; one of 'fatal', 'error', 'warn', 'info', 'debug', 'trace' or 'silent' | No       | info                          |
@@ -36,7 +37,7 @@ docker pull ghcr.io/superblocksteam/agent:<tag>
 To deploy the Superblocks agent using docker, run the following command:
 
 ```sh
-docker run --name superblocks-agent --env SUPERBLOCKS_AGENT_ID=<agent-id> --publish <agent-port>:<agent-port> --rm ghcr.io/superblocksteam/agent:<tag>
+docker run --name superblocks-agent --env SUPERBLOCKS_AGENT_ID=<agent-id> --publish <agent-port>:<8020> --rm ghcr.io/superblocksteam/agent:<tag>
 ```
 
 ### docker-compose
