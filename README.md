@@ -37,7 +37,7 @@ docker pull ghcr.io/superblocksteam/agent:<tag>
 To deploy the Superblocks agent using docker, run the following command:
 
 ```sh
-docker run --name superblocks-agent --env SUPERBLOCKS_AGENT_ID=<agent-id> --publish <agent-port>:<8020> --rm ghcr.io/superblocksteam/agent:<tag>
+docker run --name superblocks-agent --env SUPERBLOCKS_AGENT_ID=<agent-id> --publish <agent-port>:8020 --rm ghcr.io/superblocksteam/agent:<tag>
 ```
 
 ### docker-compose
