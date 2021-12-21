@@ -9,6 +9,8 @@ The agent application can be configured via the use of several environment varia
 | Name                                            | Description                                                                      | Required | Default                       |
 | ----------------------------------------------- | -------------------------------------------------------------------------------- | -------- | ----------------------------- |
 | SUPERBLOCKS_AGENT_ID                            | UUID used by Superblocks Cloud to identify the agent                             | Yes      | n/a                           |
+| SUPERBLOCKS_AGENT_KEY                           | Secret key used by Superblocks Cloud to authorize the agent                      | Yes      | n/a                           |
+| SUPERBLOCKS_AGENT_HOST_URL                      | URL used by end-users to access the agent. This variable should be overridden for non-localhost deployments                 | No      | http://localhost:8020/agent   |
 | SUPERBLOCKS_AGENT_PORT                          | HTTP port that the agent listens on                                              | No       | 8020                          |
 | SUPERBLOCKS_AGENT_ENV_VARS_JSON                 | Environment variables (JSON format) to be passed into code execution. For example: `{ 'MY_ENV_VAR': "some value", 'MY_OTHER_ENV_VAR': "another value" }`. Access the vars using `Env.MY_ENV_VAR` in code | No       |       |
 | SUPERBLOCKS_AGENT_EXECUTION_JS_TIMEOUT_MS       | Timeout (in ms) for a given Javascript API Step execution                        | No       | 30000                         |
@@ -30,14 +32,19 @@ To pull the docker image, run the following command:
 docker pull ghcr.io/superblocksteam/agent:<tag>
 ```
 
-**Note**: The docker image tag (`<tag>`) should be replaced with the desired version; a list of the versions can be found [here](https://github.com/superblocksteam/agent/pkgs/container/agent/versions). The agent ID (`<agent-id>`) will be replaced with a unique ID for each organization for which the agent is being deployed. The agent port is configurable; `<agent-port>` should be replaced with either the custom port or 8020 (if the default is being used).
+**Note**: The docker image tag (`<tag>`) should be replaced with the desired version; a list of the versions can be found [here](https://github.com/superblocksteam/agent/pkgs/container/agent/versions). You can also use the tag `latest` to always pull the latest agent image. The agent ID (`<agent-id>`) will be replaced with a unique ID for each organization for which the agent is being deployed. The agent port is configurable; `<agent-port>` should be replaced with either the custom port or 8020 (if the default is being used).
 
 ### docker
 
 To deploy the Superblocks agent using docker, run the following command:
 
 ```sh
-docker run --name superblocks-agent --env SUPERBLOCKS_AGENT_ID=<agent-id> --publish <agent-port>:8020 --rm ghcr.io/superblocksteam/agent:<tag>
+docker run --name superblocks-agent \
+  --env SUPERBLOCKS_AGENT_ID=<agent-id> \
+  --env SUPERBLOCKS_AGENT_KEY=<agent-key> \
+  --env SUPERBLOCKS_AGENT_HOST_URL=<agent-host>/agent \
+  --publish <agent-port>:8020 \
+  --rm ghcr.io/superblocksteam/agent:<tag>
 ```
 
 ### docker-compose
@@ -55,6 +62,8 @@ services:
     image: ghcr.io/superblocksteam/agent:<tag>
     environment:
       - SUPERBLOCKS_AGENT_ID=<agent-id>
+      - SUPERBLOCKS_AGENT_KEY=<agent-key>
+      - SUPERBLOCKS_AGENT_HOST_URL=<agent-host>/agent
     ports:
       - '<agent-port>:<agent-port>'
 ```
