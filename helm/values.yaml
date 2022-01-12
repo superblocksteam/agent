@@ -2,9 +2,13 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# REQUIRED: the agent id given by Superblocks
+# REQUIRED: The Agent ID and Agent Key can be found in the
+# the https://app.superblockshq.com/opas Superblocks UI page
+# Ref: https://docs.superblockshq.com/superblocks/security-and-permissions/on-premise-agent-overview/deployment
 # superblocks:
 #   agentId: ""
+#   agentKey: ""
+#   agentHostUrl: "http[s]://<agent-host[:port]>/agent"
 
 containerPort: 8020
 
