@@ -92,7 +92,6 @@ The following table lists all the incoming calls to the Superblocks on-premise a
 | [`/agent/v1/workflows/:workflowId`](#agentv1workflowsworkflowid)                          | `POST` | Browser/HTTP client | Agent  | Route called to trigger a Superblocks workflow                                          |
 | [`/agent/v1/auth/check-auth`](#agentv1authcheck-auth)                                     | `POST` | Browser             | Agent  | Route called to check if REST API integration authentication cookies are valid          |
 | [`/agent/v1/auth/login`](#agentv1authcheck-auth)                                          | `POST` | Browser             | Agent  | Route called to set authentication cookies for authenticated REST API integration       |
-| [`/agent/v1/workflows/:workflowId`](#agentv1workflowsworkflowid)                          | `POST` | Browser/HTTP client | Agent  | Route called to trigger a Superblocks workflow                                          |
 | [`/health`](#health)                                                                      | `GET`  | Browser/HTTP client | Agent  | Route for platform use (for eg, Kubernetes liveness/readiness probes)                   |
 
 #### `/agent/v1/apis/execute`
