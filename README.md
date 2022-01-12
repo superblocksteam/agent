@@ -6,23 +6,23 @@ This document contains configuration and deployment details for running the Supe
 
 The agent application can be configured via the use of several environment variables.
 
-| Name                                            | Description                                                                      | Required | Default                       |
-| ----------------------------------------------- | -------------------------------------------------------------------------------- | -------- | ----------------------------- |
-| SUPERBLOCKS_AGENT_ID                            | UUID used by Superblocks Cloud to identify the agent                             | Yes      | n/a                           |
-| SUPERBLOCKS_AGENT_KEY                           | Secret key used by Superblocks Cloud to authorize the agent                      | Yes      | n/a                           |
-| SUPERBLOCKS_AGENT_HOST_URL                      | URL used by end-users to access the agent. This variable should be overridden for non-localhost deployments                 | No      | http://localhost:8020/agent   |
-| SUPERBLOCKS_AGENT_PORT                          | HTTP port that the agent listens on                                              | No       | 8020                          |
-| SUPERBLOCKS_AGENT_ENV_VARS_JSON                 | Environment variables (JSON format) to be passed into code execution. For example: `{ 'MY_ENV_VAR': "some value", 'MY_OTHER_ENV_VAR': "another value" }`. Access the vars using `Env.MY_ENV_VAR` in code | No       |       |
-| SUPERBLOCKS_AGENT_EXECUTION_JS_TIMEOUT_MS       | Timeout (in ms) for a given Javascript API Step execution                        | No       | 30000                         |
-| SUPERBLOCKS_AGENT_EXECUTION_PYTHON_TIMEOUT_MS   | Timeout (in ms) for a given Python API Step execution                            | No       | 30000                         |
-| SUPERBLOCKS_AGENT_LOG_LEVEL                     | Log level; one of 'fatal', 'error', 'warn', 'info', 'debug', 'trace' or 'silent' | No       | info                          |
-| SUPERBLOCKS_AGENT_LOG_DISABLE_PRETTY            | Flag to toggle pretty printing of logs                                           | No       | true                          |
-| SUPERBLOCKS_AGENT_LOG_DISABLE_EXPRESS           | Flag to toggle printing of Express request/response logs                         | No       | true                          |
-| SUPERBLOCKS_AGENT_DATADOG_DISABLE_TRACER        | Flag to disable/enable Datadog tracing                                           | No       | true                          |
-| SUPERBLOCKS_AGENT_DATADOG_DISABLE_LOG_INJECTION | Flag to disable/enable the injection of Datadog trace ID in log records          | No       | true                          |
-| SUPERBLOCKS_AGENT_DATADOG_CONNECT_TAGS          | Array (comma-separated) of tags to be added to Datadog histograms                | No       | app:superblocks               |
-| SUPERBLOCKS_AGENT_SERVER_URL                    | Superblocks Cloud host that the agent will make fetch calls to                   | No       | https://app.superblockshq.com |
-| SUPERBLOCKS_AGENT_JSON_PARSE_LIMIT              | Express request body limit (in mb)                                               | No       | 50mb                          |
+| Name                                            | Description                                                                                                                                                                                              | Required | Default                       |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------- |
+| SUPERBLOCKS_AGENT_ID                            | UUID used by Superblocks Cloud to identify the agent                                                                                                                                                     | Yes      | n/a                           |
+| SUPERBLOCKS_AGENT_KEY                           | Secret key used by Superblocks Cloud to authorize the agent                                                                                                                                              | Yes      | n/a                           |
+| SUPERBLOCKS_AGENT_HOST_URL                      | URL used by end-users to access the agent. This variable should be overridden for non-localhost deployments                                                                                              | No       | http://localhost:8020/agent   |
+| SUPERBLOCKS_AGENT_PORT                          | HTTP port that the agent listens on                                                                                                                                                                      | No       | 8020                          |
+| SUPERBLOCKS_AGENT_ENV_VARS_JSON                 | Environment variables (JSON format) to be passed into code execution. For example: `{ 'MY_ENV_VAR': "some value", 'MY_OTHER_ENV_VAR': "another value" }`. Access the vars using `Env.MY_ENV_VAR` in code | No       |                               |
+| SUPERBLOCKS_AGENT_EXECUTION_JS_TIMEOUT_MS       | Timeout (in ms) for a given Javascript API Step execution                                                                                                                                                | No       | 30000                         |
+| SUPERBLOCKS_AGENT_EXECUTION_PYTHON_TIMEOUT_MS   | Timeout (in ms) for a given Python API Step execution                                                                                                                                                    | No       | 30000                         |
+| SUPERBLOCKS_AGENT_LOG_LEVEL                     | Log level; one of 'fatal', 'error', 'warn', 'info', 'debug', 'trace' or 'silent'                                                                                                                         | No       | info                          |
+| SUPERBLOCKS_AGENT_LOG_DISABLE_PRETTY            | Flag to toggle pretty printing of logs                                                                                                                                                                   | No       | true                          |
+| SUPERBLOCKS_AGENT_LOG_DISABLE_EXPRESS           | Flag to toggle printing of Express request/response logs                                                                                                                                                 | No       | true                          |
+| SUPERBLOCKS_AGENT_DATADOG_DISABLE_TRACER        | Flag to disable/enable Datadog tracing                                                                                                                                                                   | No       | true                          |
+| SUPERBLOCKS_AGENT_DATADOG_DISABLE_LOG_INJECTION | Flag to disable/enable the injection of Datadog trace ID in log records                                                                                                                                  | No       | true                          |
+| SUPERBLOCKS_AGENT_DATADOG_CONNECT_TAGS          | Array (comma-separated) of tags to be added to Datadog histograms                                                                                                                                        | No       | app:superblocks               |
+| SUPERBLOCKS_AGENT_SERVER_URL                    | Superblocks Cloud host that the agent will make fetch calls to                                                                                                                                           | No       | https://app.superblockshq.com |
+| SUPERBLOCKS_AGENT_JSON_PARSE_LIMIT              | Express request body limit (in mb)                                                                                                                                                                       | No       | 50mb                          |
 
 ## Deployment
 
@@ -90,6 +90,8 @@ The following table lists all the incoming calls to the Superblocks on-premise a
 | [`/agent/v1/datasources/:datasourceId/metadata`](#agentv1datasourcesdatasourceidmetadata) | `GET`  | Browser             | Agent  | Route called to fetch the metadata for a datasource (for eg., postgres or snowflake db) |
 | [`/agent/v1/datasources/test`](#agentv1datasourcestest)                                   | `POST` | Browser             | Agent  | Route called to test connectivity to a datasource (for eg., postgres or snowflake db)   |
 | [`/agent/v1/workflows/:workflowId`](#agentv1workflowsworkflowid)                          | `POST` | Browser/HTTP client | Agent  | Route called to trigger a Superblocks workflow                                          |
+| [`/agent/v1/auth/check-auth`](#agentv1authcheck-auth)                                     | `POST` | Browser             | Agent  | Route called to check if REST API integration authentication cookies are valid          |
+| [`/agent/v1/auth/login`](#agentv1authcheck-auth)                                          | `POST` | Browser             | Agent  | Route called to set authentication cookies for authenticated REST API integration       |
 | [`/health`](#health)                                                                      | `GET`  | Browser/HTTP client | Agent  | Route for platform use (for eg, Kubernetes liveness/readiness probes)                   |
 
 #### `/agent/v1/apis/execute`
@@ -1102,6 +1104,14 @@ _User defined_
 
 </details>
 
+#### `/agent/v1/auth/check-auth`
+
+TO BE ADDED SOON
+
+#### `/agent/v1/auth/login`
+
+TO BE ADDED SOON
+
 #### `/health`
 
 <details>
@@ -1146,975 +1156,19 @@ _None_
 
 The following table lists all the known outgoing calls from the Superblocks on-premise agent to Superblocks Cloud. The Superblocks Cloud host is `https://app.superblockshq.com`.
 
-| Path                                                                                            | Type   | Source | Target            | Description                                                                             |
-| ----------------------------------------------------------------------------------------------- | ------ | ------ | ----------------- | --------------------------------------------------------------------------------------- |
-| [`/api/v1/agents/:agentId/apis/:apiId`](#apiv1agentsagentidapisapiid)                           | `POST` | Agent  | Superblocks Cloud | Route called to fetch a Superblocks API definition                                      |
-| [`/api/v1/agents/:agentId/workflows/:workflowId`](#apiv1agentsagentidworkflowsworkflowid)       | `POST` | Agent  | Superblocks Cloud | Route called to fetch a Superblocks Workflow definition                                 |
-| [`/api/v1/agents/:agentId/datasource/:datasourceId`](#apiv1agentsagentiddatasourcedatasourceid) | `POST` | Agent  | Superblocks Cloud | Route called to fetch datasource configuration (for eg., postgres or snowflake db)      |
-| [`/api/v1/agents/:agentId/healthcheck`](#apiv1agentsagentidhealthcheck)                         | `POST` | Agent  | Superblocks Cloud | Route called to send observability metrics related to agent health to Superblocks Cloud |
+| Path                                                                            | Type   | Source | Target            | Description                                                                             |
+| ------------------------------------------------------------------------------- | ------ | ------ | ----------------- | --------------------------------------------------------------------------------------- |
+| [`/api/v1/agents/apis/:apiId`](#apiv1agentsapisapiid)                           | `POST` | Agent  | Superblocks Cloud | Route called to fetch a Superblocks API definition                                      |
+| [`/api/v1/agents/workflows/:workflowId`](#apiv1agentsworkflowsworkflowid)       | `POST` | Agent  | Superblocks Cloud | Route called to fetch a Superblocks Workflow definition                                 |
+| [`/api/v1/agents/datasource/:datasourceId`](#apiv1agentsdatasourcedatasourceid) | `POST` | Agent  | Superblocks Cloud | Route called to fetch datasource configuration (for eg., postgres or snowflake db)      |
+| [`/api/v1/agents/audit/`](#apiv1agentsaudit)                                    | `POST` | Agent  | Superblocks Cloud | Route called to create an audit log record in Superblocks Cloud for a new API execution |
+| [`/api/v1/agents/audit/:entryId`](#apiv1agentsauditentryid)                     | `PUT`  | Agent  | Superblocks Cloud | Route called to update an audit log record in Superblocks Cloud for an API execution    |
+| [`/api/v1/agents/pending-jobs`](#apiv1agentspending-jobs)                       | `POST` | Agent  | Superblocks Cloud | Route called to fetch pending runs of deployed Superblocks Scheduled Jobs               |
+| [`/api/v1/agents/register`](#apiv1agentsregister)                               | `POST` | Agent  | Superblocks Cloud | Route called to register an agent with Superblocks Cloud for authorized API execution   |
+| [`/api/v1/agents/healthcheck`](#apiv1agentshealthcheck)                         | `POST` | Agent  | Superblocks Cloud | Route called to send observability metrics related to agent health to Superblocks Cloud |
+| [`/api/v1/agents/diagnostics`](#apiv1agentsdiagnostics)                         | `POST` | Agent  | Superblocks Cloud | Route called to send agent execution error logs to Superblocks Cloud                    |
 
-#### `/api/v1/agents/:agentId/apis/:apiId`
-
-<details>
-<summary>Request body</summary>
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$ref": "#/definitions/ApiExecutionRequestDto",
-  "definitions": {
-    "ApiExecutionRequestDto": {
-      "type": "object",
-      "properties": {
-        "apiId": {
-          "type": "string"
-        },
-        "params": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExecutionParam"
-          }
-        },
-        "viewMode": {
-          "type": "boolean"
-        }
-      },
-      "required": ["apiId", "params", "viewMode"],
-      "additionalProperties": false
-    },
-    "ExecutionParam": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {}
-      },
-      "required": ["key", "value"],
-      "additionalProperties": false
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary>Response body</summary>
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$ref": "#/definitions/ApiDefinition",
-  "definitions": {
-    "ApiDefinition": {
-      "type": "object",
-      "properties": {
-        "api": {
-          "$ref": "#/definitions/Api"
-        },
-        "datasources": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Datasource"
-          }
-        },
-        "plugins": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Plugin"
-          }
-        }
-      },
-      "required": ["api", "datasources", "plugins"],
-      "additionalProperties": false
-    },
-    "Api": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "applicationId": {
-          "type": "string"
-        },
-        "actions": {
-          "$ref": "#/definitions/ApiDetails"
-        },
-        "triggerType": {
-          "$ref": "#/definitions/ApiTriggerType"
-        }
-      },
-      "required": ["id", "applicationId", "actions", "triggerType"],
-      "additionalProperties": false
-    },
-    "ApiDetails": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "triggerActionId": {
-          "$ref": "#/definitions/ActionId"
-        },
-        "actions": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Action"
-          }
-        },
-        "executeOnPageLoad": {
-          "type": "boolean"
-        },
-        "bindings": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "dynamicBindingPathList": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Param"
-          }
-        },
-        "version": {
-          "type": "string"
-        },
-        "deactivated": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "created": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updated": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "supportedMethod": {
-          "type": "string",
-          "enum": ["GET", "POST"]
-        },
-        "workflowParams": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExecutionParam"
-          }
-        }
-      },
-      "required": ["name", "triggerActionId", "actions"],
-      "additionalProperties": false
-    },
-    "ActionId": {
-      "type": "string"
-    },
-    "Action": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/definitions/ActionId"
-        },
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/ActionType"
-        },
-        "configuration": {
-          "$ref": "#/definitions/ActionConfiguration"
-        },
-        "applicationId": {
-          "type": "string"
-        },
-        "pluginId": {
-          "type": "string"
-        },
-        "datasourceId": {
-          "type": "string"
-        },
-        "settings": {
-          "$ref": "#/definitions/ActionSettings"
-        },
-        "children": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ActionId"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "type",
-        "configuration",
-        "applicationId",
-        "pluginId"
-      ],
-      "additionalProperties": false
-    },
-    "ActionType": {
-      "type": "number",
-      "enum": [0, 1, 2, 3]
-    },
-    "ActionConfiguration": {
-      "type": "object",
-      "properties": {
-        "httpMethod": {
-          "$ref": "#/definitions/HttpMethod"
-        },
-        "resource": {
-          "type": "string"
-        },
-        "action": {
-          "type": "string"
-        },
-        "path": {
-          "type": "string"
-        },
-        "headers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Property"
-          }
-        },
-        "params": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Property"
-          }
-        },
-        "body": {
-          "type": "string"
-        },
-        "timeoutInMillisecond": {
-          "type": "number"
-        },
-        "encodeParams": {
-          "type": "boolean"
-        },
-        "paginationType": {
-          "$ref": "#/definitions/PaginationType"
-        },
-        "next": {
-          "type": "string"
-        },
-        "prev": {
-          "type": "string"
-        },
-        "custom": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Property"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "HttpMethod": {
-      "type": "string",
-      "enum": [
-        "GET",
-        "HEAD",
-        "POST",
-        "PUT",
-        "PATCH",
-        "DELETE",
-        "OPTIONS",
-        "TRACE"
-      ]
-    },
-    "Property": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        },
-        "editable": {
-          "type": "boolean"
-        },
-        "internal": {
-          "type": "boolean"
-        },
-        "description": {
-          "type": "string"
-        },
-        "mandatory": {
-          "type": "boolean"
-        },
-        "type": {
-          "type": "string"
-        },
-        "defaultValue": {
-          "type": "string"
-        },
-        "minRange": {
-          "type": "string"
-        },
-        "maxRange": {
-          "type": "string"
-        },
-        "valueOptions": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "PaginationType": {
-      "type": "number",
-      "enum": [0, 1, 2]
-    },
-    "ActionSettings": {
-      "type": "object",
-      "properties": {
-        "executeOnLoad": {
-          "type": "boolean"
-        },
-        "cacheResponse": {
-          "type": "string"
-        },
-        "userSetOnLoad": {
-          "type": "boolean"
-        },
-        "confirmBeforeExecute": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "Param": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {}
-      },
-      "required": ["key", "value"],
-      "additionalProperties": false
-    },
-    "ExecutionParam": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {}
-      },
-      "required": ["key", "value"],
-      "additionalProperties": false
-    },
-    "ApiTriggerType": {
-      "type": "number",
-      "enum": [0, 1]
-    },
-    "Datasource": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "pluginId": {
-          "type": "string"
-        },
-        "organizationId": {
-          "type": "string"
-        },
-        "configuration": {
-          "$ref": "#/definitions/DatasourceConfiguration"
-        },
-        "isDefault": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "DatasourceConfiguration": {
-      "type": "object",
-      "properties": {
-        "connection": {
-          "$ref": "#/definitions/Connection"
-        },
-        "endpoint": {
-          "$ref": "#/definitions/Endpoint"
-        },
-        "authentication": {
-          "$ref": "#/definitions/Authentication"
-        },
-        "sshProxy": {
-          "$ref": "#/definitions/SSHConnection"
-        },
-        "sshProxyEnabled": {
-          "type": "boolean"
-        },
-        "params": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Property"
-          }
-        },
-        "headers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Property"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "Connection": {
-      "type": "object",
-      "properties": {
-        "mode": {
-          "$ref": "#/definitions/ConnectionMode"
-        },
-        "type": {
-          "$ref": "#/definitions/ConnectionType"
-        },
-        "ssl": {
-          "$ref": "#/definitions/SSLConfig"
-        },
-        "useSsl": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "ConnectionMode": {
-      "type": "number",
-      "enum": [0, 1]
-    },
-    "ConnectionType": {
-      "type": "number",
-      "enum": [0, 1]
-    },
-    "SSLConfig": {
-      "type": "object",
-      "properties": {
-        "authType": {
-          "$ref": "#/definitions/SSLAuthType"
-        },
-        "keyFile": {
-          "type": "object",
-          "properties": {
-            "size": {
-              "type": "number"
-            },
-            "type": {
-              "type": "string"
-            },
-            "lastModified": {
-              "type": "number"
-            },
-            "name": {
-              "type": "string"
-            }
-          },
-          "required": ["lastModified", "name", "size", "type"],
-          "additionalProperties": false
-        },
-        "certificateFile": {
-          "type": "object",
-          "properties": {
-            "size": {
-              "type": "number"
-            },
-            "type": {
-              "type": "string"
-            },
-            "lastModified": {
-              "type": "number"
-            },
-            "name": {
-              "type": "string"
-            }
-          },
-          "required": ["lastModified", "name", "size", "type"],
-          "additionalProperties": false
-        },
-        "caCertificateFile": {
-          "type": "object",
-          "properties": {
-            "size": {
-              "type": "number"
-            },
-            "type": {
-              "type": "string"
-            },
-            "lastModified": {
-              "type": "number"
-            },
-            "name": {
-              "type": "string"
-            }
-          },
-          "required": ["lastModified", "name", "size", "type"],
-          "additionalProperties": false
-        },
-        "usePemCertificate": {
-          "type": "boolean"
-        },
-        "pemCertificate": {
-          "$ref": "#/definitions/PEMCertificate"
-        }
-      },
-      "additionalProperties": false
-    },
-    "SSLAuthType": {
-      "type": "string",
-      "enum": [
-        "ALLOW",
-        "PREFER",
-        "REQUIRE",
-        "DISABLED",
-        "CA_CERTIFICATE",
-        "SELF_SIGNED_CERTIFICATE"
-      ]
-    },
-    "PEMCertificate": {
-      "type": "object",
-      "properties": {
-        "file": {
-          "type": "object",
-          "properties": {
-            "size": {
-              "type": "number"
-            },
-            "type": {
-              "type": "string"
-            },
-            "lastModified": {
-              "type": "number"
-            },
-            "name": {
-              "type": "string"
-            }
-          },
-          "required": ["lastModified", "name", "size", "type"],
-          "additionalProperties": false
-        },
-        "password": {
-          "type": "string"
-        }
-      },
-      "required": ["file", "password"],
-      "additionalProperties": false
-    },
-    "Endpoint": {
-      "type": "object",
-      "properties": {
-        "host": {
-          "type": "string"
-        },
-        "port": {
-          "type": "number"
-        }
-      },
-      "required": ["host", "port"],
-      "additionalProperties": false
-    },
-    "Authentication": {
-      "type": "object",
-      "properties": {
-        "customParams": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Property"
-          }
-        },
-        "authenticationType": {
-          "type": "string"
-        },
-        "databaseName": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        },
-        "schema": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
-    "SSHConnection": {
-      "type": "object",
-      "properties": {
-        "endpoint": {
-          "$ref": "#/definitions/Endpoint"
-        },
-        "username": {
-          "type": "string"
-        },
-        "authType": {
-          "$ref": "#/definitions/SSHConnectionAuthType"
-        },
-        "privateKey": {
-          "$ref": "#/definitions/SSHPrivateKey"
-        }
-      },
-      "required": ["endpoint", "username", "authType", "privateKey"],
-      "additionalProperties": false
-    },
-    "SSHConnectionAuthType": {
-      "type": "number",
-      "enum": [0, 1]
-    },
-    "SSHPrivateKey": {
-      "type": "object",
-      "properties": {
-        "keyFile": {
-          "type": "object",
-          "properties": {
-            "size": {
-              "type": "number"
-            },
-            "type": {
-              "type": "string"
-            },
-            "lastModified": {
-              "type": "number"
-            },
-            "name": {
-              "type": "string"
-            }
-          },
-          "required": ["lastModified", "name", "size", "type"],
-          "additionalProperties": false
-        },
-        "password": {
-          "type": "string"
-        }
-      },
-      "required": ["keyFile", "password"],
-      "additionalProperties": false
-    },
-    "Plugin": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/PluginType"
-        },
-        "moduleName": {
-          "type": "string"
-        },
-        "modulePath": {
-          "type": "string"
-        },
-        "template": {
-          "$ref": "#/definitions/PluginTemplate"
-        },
-        "iconLocation": {
-          "type": "string"
-        },
-        "responseType": {
-          "$ref": "#/definitions/PluginResponseType"
-        },
-        "allowCreate": {
-          "type": "boolean"
-        },
-        "version": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "type",
-        "moduleName",
-        "modulePath",
-        "template",
-        "iconLocation",
-        "responseType",
-        "allowCreate",
-        "version"
-      ],
-      "additionalProperties": false
-    },
-    "PluginType": {
-      "type": "string",
-      "enum": ["DB", "API", "JS"]
-    },
-    "PluginTemplate": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "datasourceForm": {
-          "$ref": "#/definitions/FormTemplate"
-        },
-        "actionForm": {
-          "$ref": "#/definitions/FormTemplate"
-        },
-        "demoData": {},
-        "version": {
-          "type": "string"
-        }
-      },
-      "required": ["id", "datasourceForm", "actionForm"],
-      "additionalProperties": false
-    },
-    "FormTemplate": {
-      "type": "object",
-      "properties": {
-        "sections": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FormSection"
-          }
-        }
-      },
-      "required": ["sections"],
-      "additionalProperties": false
-    },
-    "FormSection": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FormItem"
-          }
-        },
-        "display": {
-          "$ref": "#/definitions/FormItemDisplay"
-        },
-        "layout": {
-          "$ref": "#/definitions/FormSectionLayout"
-        }
-      },
-      "required": ["name", "items"],
-      "additionalProperties": false
-    },
-    "FormItem": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/DefaultFormItem"
-        },
-        {
-          "$ref": "#/definitions/InputFormItem"
-        },
-        {
-          "$ref": "#/definitions/CodeEditorFormItem"
-        },
-        {
-          "$ref": "#/definitions/DropdownFormItem"
-        }
-      ]
-    },
-    "DefaultFormItem": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "label": {
-          "type": "string"
-        },
-        "display": {
-          "$ref": "#/definitions/FormItemDisplay"
-        },
-        "initialValue": {
-          "type": "string"
-        },
-        "rules": {
-          "type": "array",
-          "items": {}
-        },
-        "componentType": {
-          "type": "string",
-          "enum": [
-            "INPUT_AREA",
-            "DYNAMIC_INPUT_TEXT",
-            "FIELD_LIST",
-            "DYNAMIC_FIELD_LIST",
-            "CHECKBOX",
-            "SWITCH"
-          ]
-        },
-        "placeholder": {
-          "type": "string"
-        }
-      },
-      "required": ["componentType", "label", "name"],
-      "additionalProperties": false
-    },
-    "FormItemDisplay": {
-      "type": "object",
-      "properties": {
-        "show": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "InputFormItem": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "label": {
-          "type": "string"
-        },
-        "display": {
-          "$ref": "#/definitions/FormItemDisplay"
-        },
-        "initialValue": {
-          "type": "string"
-        },
-        "rules": {
-          "type": "array",
-          "items": {}
-        },
-        "componentType": {
-          "type": "string",
-          "const": "INPUT_TEXT"
-        },
-        "placeholder": {
-          "type": "string"
-        },
-        "dataType": {
-          "$ref": "#/definitions/InputDataType"
-        }
-      },
-      "required": ["componentType", "label", "name"],
-      "additionalProperties": false
-    },
-    "InputDataType": {
-      "type": "string",
-      "enum": ["NUMBER", "PASSWORD"]
-    },
-    "CodeEditorFormItem": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "label": {
-          "type": "string"
-        },
-        "display": {
-          "$ref": "#/definitions/FormItemDisplay"
-        },
-        "initialValue": {
-          "type": "string"
-        },
-        "rules": {
-          "type": "array",
-          "items": {}
-        },
-        "componentType": {
-          "type": "string",
-          "const": "CODE_EDITOR"
-        },
-        "placeholder": {
-          "type": "string"
-        },
-        "language": {
-          "$ref": "#/definitions/EditorLanguage"
-        }
-      },
-      "required": ["componentType", "label", "language", "name"],
-      "additionalProperties": false
-    },
-    "EditorLanguage": {
-      "type": "string",
-      "enum": ["TEXT", "SQL", "JSON", "JAVASCRIPT", "PYTHON"]
-    },
-    "DropdownFormItem": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "label": {
-          "type": "string"
-        },
-        "display": {
-          "$ref": "#/definitions/FormItemDisplay"
-        },
-        "initialValue": {
-          "type": "string"
-        },
-        "rules": {
-          "type": "array",
-          "items": {}
-        },
-        "componentType": {
-          "type": "string",
-          "const": "DROPDOWN"
-        },
-        "options": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/DropdownOption"
-          }
-        }
-      },
-      "required": ["componentType", "label", "name", "options"],
-      "additionalProperties": false
-    },
-    "DropdownOption": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        },
-        "displayName": {
-          "type": "string"
-        }
-      },
-      "required": ["key", "value"],
-      "additionalProperties": false
-    },
-    "FormSectionLayout": {
-      "type": "string",
-      "const": "TABS"
-    },
-    "PluginResponseType": {
-      "type": "string",
-      "enum": ["TABLE", "JSON"]
-    }
-  }
-}
-```
-
-</details>
-
-#### `/api/v1/agents/:agentId/workflows/:workflowId`
+#### `/api/v1/agents/apis/:apiId`
 
 <details>
 <summary>Request body</summary>
@@ -3075,7 +2129,968 @@ The following table lists all the known outgoing calls from the Superblocks on-p
 
 </details>
 
-#### `/api/v1/agents/:agentId/datasource/:datasourceId`
+#### `/api/v1/agents/workflows/:workflowId`
+
+<details>
+<summary>Request body</summary>
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/ApiExecutionRequestDto",
+  "definitions": {
+    "ApiExecutionRequestDto": {
+      "type": "object",
+      "properties": {
+        "apiId": {
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecutionParam"
+          }
+        },
+        "viewMode": {
+          "type": "boolean"
+        }
+      },
+      "required": ["apiId", "params", "viewMode"],
+      "additionalProperties": false
+    },
+    "ExecutionParam": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {}
+      },
+      "required": ["key", "value"],
+      "additionalProperties": false
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Response body</summary>
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/ApiDefinition",
+  "definitions": {
+    "ApiDefinition": {
+      "type": "object",
+      "properties": {
+        "api": {
+          "$ref": "#/definitions/Api"
+        },
+        "datasources": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Datasource"
+          }
+        },
+        "plugins": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Plugin"
+          }
+        }
+      },
+      "required": ["api", "datasources", "plugins"],
+      "additionalProperties": false
+    },
+    "Api": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "applicationId": {
+          "type": "string"
+        },
+        "actions": {
+          "$ref": "#/definitions/ApiDetails"
+        },
+        "triggerType": {
+          "$ref": "#/definitions/ApiTriggerType"
+        }
+      },
+      "required": ["id", "applicationId", "actions", "triggerType"],
+      "additionalProperties": false
+    },
+    "ApiDetails": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "triggerActionId": {
+          "$ref": "#/definitions/ActionId"
+        },
+        "actions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Action"
+          }
+        },
+        "executeOnPageLoad": {
+          "type": "boolean"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dynamicBindingPathList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Param"
+          }
+        },
+        "version": {
+          "type": "string"
+        },
+        "deactivated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "supportedMethod": {
+          "type": "string",
+          "enum": ["GET", "POST"]
+        },
+        "workflowParams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecutionParam"
+          }
+        }
+      },
+      "required": ["name", "triggerActionId", "actions"],
+      "additionalProperties": false
+    },
+    "ActionId": {
+      "type": "string"
+    },
+    "Action": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/ActionId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ActionType"
+        },
+        "configuration": {
+          "$ref": "#/definitions/ActionConfiguration"
+        },
+        "applicationId": {
+          "type": "string"
+        },
+        "pluginId": {
+          "type": "string"
+        },
+        "datasourceId": {
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/definitions/ActionSettings"
+        },
+        "children": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ActionId"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "configuration",
+        "applicationId",
+        "pluginId"
+      ],
+      "additionalProperties": false
+    },
+    "ActionType": {
+      "type": "number",
+      "enum": [0, 1, 2, 3]
+    },
+    "ActionConfiguration": {
+      "type": "object",
+      "properties": {
+        "httpMethod": {
+          "$ref": "#/definitions/HttpMethod"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Property"
+          }
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Property"
+          }
+        },
+        "body": {
+          "type": "string"
+        },
+        "timeoutInMillisecond": {
+          "type": "number"
+        },
+        "encodeParams": {
+          "type": "boolean"
+        },
+        "paginationType": {
+          "$ref": "#/definitions/PaginationType"
+        },
+        "next": {
+          "type": "string"
+        },
+        "prev": {
+          "type": "string"
+        },
+        "custom": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Property"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "HttpMethod": {
+      "type": "string",
+      "enum": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+        "TRACE"
+      ]
+    },
+    "Property": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "editable": {
+          "type": "boolean"
+        },
+        "internal": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "mandatory": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        },
+        "defaultValue": {
+          "type": "string"
+        },
+        "minRange": {
+          "type": "string"
+        },
+        "maxRange": {
+          "type": "string"
+        },
+        "valueOptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PaginationType": {
+      "type": "number",
+      "enum": [0, 1, 2]
+    },
+    "ActionSettings": {
+      "type": "object",
+      "properties": {
+        "executeOnLoad": {
+          "type": "boolean"
+        },
+        "cacheResponse": {
+          "type": "string"
+        },
+        "userSetOnLoad": {
+          "type": "boolean"
+        },
+        "confirmBeforeExecute": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Param": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {}
+      },
+      "required": ["key", "value"],
+      "additionalProperties": false
+    },
+    "ExecutionParam": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {}
+      },
+      "required": ["key", "value"],
+      "additionalProperties": false
+    },
+    "ApiTriggerType": {
+      "type": "number",
+      "enum": [0, 1]
+    },
+    "Datasource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "pluginId": {
+          "type": "string"
+        },
+        "organizationId": {
+          "type": "string"
+        },
+        "configuration": {
+          "$ref": "#/definitions/DatasourceConfiguration"
+        },
+        "isDefault": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DatasourceConfiguration": {
+      "type": "object",
+      "properties": {
+        "connection": {
+          "$ref": "#/definitions/Connection"
+        },
+        "endpoint": {
+          "$ref": "#/definitions/Endpoint"
+        },
+        "authentication": {
+          "$ref": "#/definitions/Authentication"
+        },
+        "sshProxy": {
+          "$ref": "#/definitions/SSHConnection"
+        },
+        "sshProxyEnabled": {
+          "type": "boolean"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Property"
+          }
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Property"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Connection": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/ConnectionMode"
+        },
+        "type": {
+          "$ref": "#/definitions/ConnectionType"
+        },
+        "ssl": {
+          "$ref": "#/definitions/SSLConfig"
+        },
+        "useSsl": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectionMode": {
+      "type": "number",
+      "enum": [0, 1]
+    },
+    "ConnectionType": {
+      "type": "number",
+      "enum": [0, 1]
+    },
+    "SSLConfig": {
+      "type": "object",
+      "properties": {
+        "authType": {
+          "$ref": "#/definitions/SSLAuthType"
+        },
+        "keyFile": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "number"
+            },
+            "type": {
+              "type": "string"
+            },
+            "lastModified": {
+              "type": "number"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": ["lastModified", "name", "size", "type"],
+          "additionalProperties": false
+        },
+        "certificateFile": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "number"
+            },
+            "type": {
+              "type": "string"
+            },
+            "lastModified": {
+              "type": "number"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": ["lastModified", "name", "size", "type"],
+          "additionalProperties": false
+        },
+        "caCertificateFile": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "number"
+            },
+            "type": {
+              "type": "string"
+            },
+            "lastModified": {
+              "type": "number"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": ["lastModified", "name", "size", "type"],
+          "additionalProperties": false
+        },
+        "usePemCertificate": {
+          "type": "boolean"
+        },
+        "pemCertificate": {
+          "$ref": "#/definitions/PEMCertificate"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SSLAuthType": {
+      "type": "string",
+      "enum": [
+        "ALLOW",
+        "PREFER",
+        "REQUIRE",
+        "DISABLED",
+        "CA_CERTIFICATE",
+        "SELF_SIGNED_CERTIFICATE"
+      ]
+    },
+    "PEMCertificate": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "number"
+            },
+            "type": {
+              "type": "string"
+            },
+            "lastModified": {
+              "type": "number"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": ["lastModified", "name", "size", "type"],
+          "additionalProperties": false
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": ["file", "password"],
+      "additionalProperties": false
+    },
+    "Endpoint": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "number"
+        }
+      },
+      "required": ["host", "port"],
+      "additionalProperties": false
+    },
+    "Authentication": {
+      "type": "object",
+      "properties": {
+        "customParams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Property"
+          }
+        },
+        "authenticationType": {
+          "type": "string"
+        },
+        "databaseName": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SSHConnection": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "$ref": "#/definitions/Endpoint"
+        },
+        "username": {
+          "type": "string"
+        },
+        "authType": {
+          "$ref": "#/definitions/SSHConnectionAuthType"
+        },
+        "privateKey": {
+          "$ref": "#/definitions/SSHPrivateKey"
+        }
+      },
+      "required": ["endpoint", "username", "authType", "privateKey"],
+      "additionalProperties": false
+    },
+    "SSHConnectionAuthType": {
+      "type": "number",
+      "enum": [0, 1]
+    },
+    "SSHPrivateKey": {
+      "type": "object",
+      "properties": {
+        "keyFile": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "number"
+            },
+            "type": {
+              "type": "string"
+            },
+            "lastModified": {
+              "type": "number"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": ["lastModified", "name", "size", "type"],
+          "additionalProperties": false
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": ["keyFile", "password"],
+      "additionalProperties": false
+    },
+    "Plugin": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/PluginType"
+        },
+        "moduleName": {
+          "type": "string"
+        },
+        "modulePath": {
+          "type": "string"
+        },
+        "template": {
+          "$ref": "#/definitions/PluginTemplate"
+        },
+        "iconLocation": {
+          "type": "string"
+        },
+        "responseType": {
+          "$ref": "#/definitions/PluginResponseType"
+        },
+        "allowCreate": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "moduleName",
+        "modulePath",
+        "template",
+        "iconLocation",
+        "responseType",
+        "allowCreate",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "PluginType": {
+      "type": "string",
+      "enum": ["DB", "API", "JS"]
+    },
+    "PluginTemplate": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "datasourceForm": {
+          "$ref": "#/definitions/FormTemplate"
+        },
+        "actionForm": {
+          "$ref": "#/definitions/FormTemplate"
+        },
+        "demoData": {},
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "datasourceForm", "actionForm"],
+      "additionalProperties": false
+    },
+    "FormTemplate": {
+      "type": "object",
+      "properties": {
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FormSection"
+          }
+        }
+      },
+      "required": ["sections"],
+      "additionalProperties": false
+    },
+    "FormSection": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FormItem"
+          }
+        },
+        "display": {
+          "$ref": "#/definitions/FormItemDisplay"
+        },
+        "layout": {
+          "$ref": "#/definitions/FormSectionLayout"
+        }
+      },
+      "required": ["name", "items"],
+      "additionalProperties": false
+    },
+    "FormItem": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DefaultFormItem"
+        },
+        {
+          "$ref": "#/definitions/InputFormItem"
+        },
+        {
+          "$ref": "#/definitions/CodeEditorFormItem"
+        },
+        {
+          "$ref": "#/definitions/DropdownFormItem"
+        }
+      ]
+    },
+    "DefaultFormItem": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "display": {
+          "$ref": "#/definitions/FormItemDisplay"
+        },
+        "initialValue": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "items": {}
+        },
+        "componentType": {
+          "type": "string",
+          "enum": [
+            "INPUT_AREA",
+            "DYNAMIC_INPUT_TEXT",
+            "FIELD_LIST",
+            "DYNAMIC_FIELD_LIST",
+            "CHECKBOX",
+            "SWITCH"
+          ]
+        },
+        "placeholder": {
+          "type": "string"
+        }
+      },
+      "required": ["componentType", "label", "name"],
+      "additionalProperties": false
+    },
+    "FormItemDisplay": {
+      "type": "object",
+      "properties": {
+        "show": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "InputFormItem": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "display": {
+          "$ref": "#/definitions/FormItemDisplay"
+        },
+        "initialValue": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "items": {}
+        },
+        "componentType": {
+          "type": "string",
+          "const": "INPUT_TEXT"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "dataType": {
+          "$ref": "#/definitions/InputDataType"
+        }
+      },
+      "required": ["componentType", "label", "name"],
+      "additionalProperties": false
+    },
+    "InputDataType": {
+      "type": "string",
+      "enum": ["NUMBER", "PASSWORD"]
+    },
+    "CodeEditorFormItem": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "display": {
+          "$ref": "#/definitions/FormItemDisplay"
+        },
+        "initialValue": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "items": {}
+        },
+        "componentType": {
+          "type": "string",
+          "const": "CODE_EDITOR"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "language": {
+          "$ref": "#/definitions/EditorLanguage"
+        }
+      },
+      "required": ["componentType", "label", "language", "name"],
+      "additionalProperties": false
+    },
+    "EditorLanguage": {
+      "type": "string",
+      "enum": ["TEXT", "SQL", "JSON", "JAVASCRIPT", "PYTHON"]
+    },
+    "DropdownFormItem": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "display": {
+          "$ref": "#/definitions/FormItemDisplay"
+        },
+        "initialValue": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "items": {}
+        },
+        "componentType": {
+          "type": "string",
+          "const": "DROPDOWN"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DropdownOption"
+          }
+        }
+      },
+      "required": ["componentType", "label", "name", "options"],
+      "additionalProperties": false
+    },
+    "DropdownOption": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        }
+      },
+      "required": ["key", "value"],
+      "additionalProperties": false
+    },
+    "FormSectionLayout": {
+      "type": "string",
+      "const": "TABS"
+    },
+    "PluginResponseType": {
+      "type": "string",
+      "enum": ["TABLE", "JSON"]
+    }
+  }
+}
+```
+
+</details>
+
+#### `/api/v1/agents/datasource/:datasourceId`
 
 <details>
 <summary>Request body</summary>
@@ -3746,7 +3761,19 @@ _None_
 
 </details>
 
-#### `/api/v1/agents/:agentId/healthcheck`
+#### `/api/v1/agents/audit`
+
+TO BE ADDED SOON
+
+#### `/api/v1/agents/audit/:entryId`
+
+TO BE ADDED SOON
+
+#### `/api/v1/agents/pending-jobs`
+
+TO BE ADDED SOON
+
+#### `/api/v1/agents/healthcheck`
 
 <details>
 <summary>Request body</summary>
@@ -4075,3 +4102,11 @@ _None_
 _None_
 
 </details>
+
+#### `/api/v1/agents/register`
+
+TO BE ADDED SOON
+
+#### `/api/v1/agents/diagnostics`
+
+TO BE ADDED SOON
