@@ -1,0 +1,27 @@
+name: Release Chart
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release-chart:
+    name: Chart release
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-west-2
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+      - name: Helm release
+        uses: shellbear/helm-release-action@v0.1
+        with:
+          repo: s3://superblocks-public-helm-repo/superblocks
+          chart: ./helm
