@@ -8,7 +8,6 @@ The agent application can be configured via the use of several environment varia
 
 | Name                                            | Description                                                                                                                                                                                              | Required | Default                       |
 | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------- |
-| SUPERBLOCKS_AGENT_ID                            | UUID used by Superblocks Cloud to identify the agent                                                                                                                                                     | Yes      | n/a                           |
 | SUPERBLOCKS_AGENT_KEY                           | Secret key used by Superblocks Cloud to authorize the agent                                                                                                                                              | Yes      | n/a                           |
 | SUPERBLOCKS_AGENT_HOST_URL                      | URL used by end-users to access the agent. This variable should be overridden for non-localhost deployments                                                                                              | No       | http://localhost:8020/agent   |
 | SUPERBLOCKS_AGENT_PORT                          | HTTP port that the agent listens on                                                                                                                                                                      | No       | 8020                          |
@@ -40,7 +39,6 @@ To deploy the Superblocks agent using docker, run the following command:
 
 ```sh
 docker run --name superblocks-agent \
-  --env SUPERBLOCKS_AGENT_ID=<agent-id> \
   --env SUPERBLOCKS_AGENT_KEY=<agent-key> \
   --env SUPERBLOCKS_AGENT_HOST_URL=<agent-host>/agent \
   --publish <agent-port>:8020 \
@@ -61,7 +59,6 @@ services:
     container_name: superblocks-agent
     image: ghcr.io/superblocksteam/agent:<tag>
     environment:
-      - SUPERBLOCKS_AGENT_ID=<agent-id>
       - SUPERBLOCKS_AGENT_KEY=<agent-key>
       - SUPERBLOCKS_AGENT_HOST_URL=<agent-host>/agent
     ports:
@@ -90,7 +87,6 @@ The `values.yaml` should be a locally kept yaml with the user's environment spec
 
 ```yaml
 superblocks:
-  agentId: <agent-id> # obtained during agent onboarding
   agentKey: <agent-key> # obtained during agent onboarding
   agentHostUrl: "http[s]://<agent-host[:port]>/agent"
 ```
