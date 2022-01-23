@@ -52,8 +52,6 @@ spec:
           env:
             - name: SUPERBLOCKS_AGENT_PORT
               value: {{ required "containerPort is required!" .Values.containerPort | quote }}
-            - name: SUPERBLOCKS_AGENT_ID
-              value: {{ required "agentId is required!" .Values.superblocks.agentId | quote }}
             - name: SUPERBLOCKS_AGENT_KEY
               value: {{ required "agentKey is required!" .Values.superblocks.agentKey | quote }}
             - name: SUPERBLOCKS_AGENT_HOST_URL
