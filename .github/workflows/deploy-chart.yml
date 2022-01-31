@@ -2,26 +2,36 @@ name: Release Chart
 on:
   push:
     branches:
-      - main
+      - by/github-charts
 
 jobs:
   release-chart:
     name: Chart release
     runs-on: ubuntu-latest
-    environment: prod
+    # environment: prod
     permissions:
       id-token: write
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-region: us-west-2
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-      - name: Helm release
-        uses: shellbear/helm-release-action@v0.1
+          fetch-depth: "0"
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v1
         with:
-          repo: s3://superblocks-public-helm-repo/superblocks
-          chart: ./helm
+          version: v3.8.0
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.2.1
+        with:
+          charts_repo_url: https://superblocksteam.github.io/charts
+          config: ./cr_config.yaml
+        env:
+          CR_TOKEN: "${{ secrets.AGENT_RELEASE_PAT }}"
+          CR_SKIP_EXISTING: "true"
