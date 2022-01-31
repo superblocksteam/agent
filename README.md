@@ -75,10 +75,10 @@ docker-compose -f ./docker-compose.yml -p superblocks up -d
 
 The Superblocks agent can also be deployed on any Kubernetes cluster. A reference helm chart can be found [here](./helm).
 
-Our charts are currently hosted under `https://charts.superblockshq.com/superblocks`.
+Our charts are currently hosted under `https://charts.superblockshq.com`.
 
 ```shell
-helm repo add superblocks https://charts.superblockshq.com/superblocks
+helm repo add superblocks https://charts.superblockshq.com
 
 helm upgrade my-superblocks-opa superblocks/superblocks-agent --install -f values.yaml
 ```
