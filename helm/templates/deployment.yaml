@@ -72,3 +72,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.podDisruptionBudget.enabled }}
+      podDisruptionBudget: 
+        minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+      {{- end }}
