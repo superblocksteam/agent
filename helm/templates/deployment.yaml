@@ -56,6 +56,8 @@ spec:
               value: {{ required "agentKey is required!" .Values.superblocks.agentKey | quote }}
             - name: SUPERBLOCKS_AGENT_HOST_URL
               value: {{ required "agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
+            - name: SUPERBLOCKS_AGENT_ENVIRONMENT
+              value: {{ default "*" .Values.superblocks.agentEnvironment }}
             {{- range $key, $val := .Values.extraEnv }}
             - name: {{ $key }}
               value: {{ default "" $val | quote }}
