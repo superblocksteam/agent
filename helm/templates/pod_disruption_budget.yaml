@@ -1,3 +1,4 @@
+{{- if .Values.podDisruptionBudget.enabled -}}
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
@@ -8,3 +9,4 @@ spec:
 {{ .Values.podDisruptionBudget | toYaml | nindent 2 }}
   selector:
     {{- include "superblocks-agent.selectorLabels" . | nindent 4 }}
+{{- end }}
