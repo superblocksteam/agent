@@ -9,6 +9,7 @@
 #   agentId: ""
 #   agentKey: ""
 #   agentHostUrl: "http[s]://<agent-host[:port]>/agent"
+#   agentEnvironment: [staging|production|*]
 
 containerPort: 8020
 
