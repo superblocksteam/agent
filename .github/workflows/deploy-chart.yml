@@ -21,7 +21,7 @@ jobs:
           aws-region: us-west-2
           role-to-assume: ${{ secrets.AWS_ROLE }}
       - name: Helm release
-        uses: superblocksteam/helm-release-action@v0.1
+        uses: superblocksteam/helm-release-action@v0.2
         with:
           repo: s3://superblocks-public-helm-repo/superblocks
           chart: ./helm
