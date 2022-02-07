@@ -80,7 +80,7 @@ autoscaling:
   targetCPUUtilizationPercentage: 40
   # targetMemoryUtilizationPercentage: 80
 
-# Pod disruption budget flag since PodDisruptionBudget doesn't take enabled
+# Flag for podDisruptionBudget
 createPodDisruptionBudget: false
 
 podDisruptionBudget:
