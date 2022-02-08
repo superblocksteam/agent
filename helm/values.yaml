@@ -10,9 +10,9 @@ superblocks: {}
 #   agentKey: ""
 #   agentHostUrl: "http[s]://<agent-host[:port]>/agent"
 #   agentEnvironment: [staging|production|*]
-#   exitingSecret: "<my-superblocks-agent-secret>", optional. Secret is created for you if not specified.
+#   agentKeyExistingSecret: "<my-superblocks-agent-key-secret>", optional. Secret is created for you if not specified.
 #
-# Existing secret must contain the value:
+# Existing agentKey secret must contain the value:
 # SUPERBLOCKS_AGENT_KEY: <my-superblocks-agent-key>
 
 containerPort: 8020
