@@ -5,11 +5,15 @@
 # REQUIRED: The Agent ID and Agent Key can be found in the
 # the https://app.superblockshq.com/opas Superblocks UI page
 # Ref: https://docs.superblockshq.com/superblocks/security-and-permissions/on-premise-agent-overview/deployment
-# superblocks:
+superblocks: {}
 #   agentId: ""
 #   agentKey: ""
 #   agentHostUrl: "http[s]://<agent-host[:port]>/agent"
 #   agentEnvironment: [staging|production|*]
+#   exitingSecret: "<my-superblocks-agent-secret>", optional. Secret is created for you if not specified.
+#
+# Existing secret must contain the value:
+# SUPERBLOCKS_AGENT_KEY: <my-superblocks-agent-key>
 
 containerPort: 8020
 
@@ -72,6 +76,12 @@ resources:
 extraEnv: {}
 # Specify extra env vars for the superblocks agent here in dict format
 #   TEST_KEY: test_val
+
+envFrom: []
+#   - secretRef:
+#       name: my-agent-env-secret
+#   - configMapRef:
+#       name: my-agent-env-configmap
 
 autoscaling:
   enabled: false
