@@ -80,11 +80,7 @@ autoscaling:
   targetCPUUtilizationPercentage: 40
   # targetMemoryUtilizationPercentage: 80
 
-# Set createPodDisruptionBudget to true and uncomment
-# podDisruptionBudget block below to enable pod disruption budget
-createPodDisruptionBudget: false
-
-# podDisruptionBudget:
+podDisruptionBudget:
 #   minAvailable: 1
 
 nodeSelector: {}
