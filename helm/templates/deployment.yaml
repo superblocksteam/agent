@@ -50,12 +50,12 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           envFrom:
-          {{- if not .Values.superblocks.existingSecret }}
+          {{- if not .Values.superblocks.agentKeyExistingSecret }}
             - secretRef:
                 name: {{ include "superblocks-agent.fullname" . }}
           {{- else }}
             - secretRef:
-                name: {{ .Values.superblocks.existingSecret }}
+                name: {{ .Values.superblocks.agentKeyExistingSecret }}
           {{- end }}
           {{- with .Values.envFrom }}
             {{- toYaml . | nindent 12 }}
