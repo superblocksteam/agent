@@ -49,15 +49,24 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          envFrom:
+          {{- if not .Values.superblocks.existingSecret }}
+            - secretRef:
+                name: {{ include "superblocks-agent.fullname" . }}
+          {{- else }}
+            - secretRef:
+                name: {{ .Values.superblocks.existingSecret }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             - name: SUPERBLOCKS_AGENT_PORT
               value: {{ required "containerPort is required!" .Values.containerPort | quote }}
-            - name: SUPERBLOCKS_AGENT_KEY
-              value: {{ required "agentKey is required!" .Values.superblocks.agentKey | quote }}
             - name: SUPERBLOCKS_AGENT_HOST_URL
-              value: {{ required "agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
+              value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
             - name: SUPERBLOCKS_AGENT_ENVIRONMENT
-              value: {{ default "*" .Values.superblocks.agentEnvironment }}
+              value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
             {{- range $key, $val := .Values.extraEnv }}
             - name: {{ $key }}
               value: {{ default "" $val | quote }}
