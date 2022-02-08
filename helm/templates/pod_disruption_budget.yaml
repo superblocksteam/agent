@@ -8,5 +8,6 @@ metadata:
 spec:
 {{ .Values.podDisruptionBudget | toYaml | nindent 2 }}
   selector:
-    {{- include "superblocks-agent.selectorLabels" . | nindent 4 }}
+    matchLabels:
+      {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
 {{- end }}
