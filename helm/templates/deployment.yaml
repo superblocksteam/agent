@@ -68,8 +68,13 @@ spec:
             - name: SUPERBLOCKS_AGENT_ENVIRONMENT
               value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
             {{- range $key, $val := .Values.extraEnv }}
+            {{- if kindIs "map" $val }}
+            - name: {{ $key }}
+              {{- toYaml $val | nindent 14 }}
+            {{- else }}
             - name: {{ $key }}
               value: {{ default "" $val | quote }}
+            {{- end}}
             {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

@@ -75,7 +75,11 @@ resources:
 
 extraEnv: {}
 # Specify extra env vars for the superblocks agent here in dict format
-#   TEST_KEY: test_val
+#   TEST_KEY: foobar
+#   DD_AGENT_HOST:
+#     valueFrom:
+#       fieldRef:
+#         fieldPath: status.hostIP
 
 envFrom: []
 #   - secretRef:
