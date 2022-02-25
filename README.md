@@ -9,9 +9,10 @@ The agent application can be configured via the use of several environment varia
 | Name                                            | Description                                                                                                                                                                                              | Required | Default                       |
 | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------- |
 | SUPERBLOCKS_AGENT_KEY                           | Secret key used by Superblocks Cloud to authorize the agent                                                                                                                                              | Yes      | n/a                           |
-| SUPERBLOCKS_AGENT_HOST_URL                      | URL used by end-users to access the agent. This variable should be overridden for non-localhost deployments                                                                                              | No       | http://localhost:8020/agent   |
+| SUPERBLOCKS_AGENT_HOST_URL                      | URL used by end-users to access the agent. This variable should be overridden for non-localhost deployments                                                                                              | Yes      | http://localhost:8020/agent   |
+| SUPERBLOCKS_AGENT_ENVIRONMENT                   | Config specifying which [environment-specific workloads][env_support] can be run against this agent; one of '\*' (supports all environments), 'staging', and 'production'                                | No       | \*                            |
 | SUPERBLOCKS_AGENT_PORT                          | HTTP port that the agent listens on                                                                                                                                                                      | No       | 8020                          |
-| SUPERBLOCKS_AGENT_ENV_VARS_JSON                 | Environment variables (JSON format) to be passed into code execution. For example: `{ 'MY_ENV_VAR': "some value", 'MY_OTHER_ENV_VAR': "another value" }`. Access the vars using `Env.MY_ENV_VAR` in code | No       |                               |
+| SUPERBLOCKS_AGENT_ENV_VARS_JSON                 | Environment variables (JSON format) to be passed into code execution. For example: `{ 'MY_ENV_VAR': "some value", 'MY_OTHER_ENV_VAR': "another value" }`. Access the vars using `Env.MY_ENV_VAR` in code | No       | {}                            |
 | SUPERBLOCKS_AGENT_EXECUTION_JS_TIMEOUT_MS       | Timeout (in ms) for a given Javascript API Step execution                                                                                                                                                | No       | 30000                         |
 | SUPERBLOCKS_AGENT_EXECUTION_PYTHON_TIMEOUT_MS   | Timeout (in ms) for a given Python API Step execution                                                                                                                                                    | No       | 30000                         |
 | SUPERBLOCKS_AGENT_LOG_LEVEL                     | Log level; one of 'fatal', 'error', 'warn', 'info', 'debug', 'trace' or 'silent'                                                                                                                         | No       | info                          |
@@ -22,6 +23,8 @@ The agent application can be configured via the use of several environment varia
 | SUPERBLOCKS_AGENT_DATADOG_CONNECT_TAGS          | Array (comma-separated) of tags to be added to Datadog histograms                                                                                                                                        | No       | app:superblocks               |
 | SUPERBLOCKS_AGENT_SERVER_URL                    | Superblocks Cloud host that the agent will make fetch calls to                                                                                                                                           | No       | https://app.superblockshq.com |
 | SUPERBLOCKS_AGENT_JSON_PARSE_LIMIT              | Express request body limit (in mb)                                                                                                                                                                       | No       | 50mb                          |
+
+[env_support]: https://docs.superblocks.com/superblocks/software-development-lifecycle/staging-and-prod-environments
 
 ## Deployment
 
@@ -41,6 +44,7 @@ To deploy the Superblocks agent using docker, run the following command:
 docker run --name superblocks-agent \
   --env SUPERBLOCKS_AGENT_KEY=<agent-key> \
   --env SUPERBLOCKS_AGENT_HOST_URL=<agent-host>/agent \
+  --env SUPERBLOCKS_AGENT_ENVIRONMENT=<"*"|"staging"|"production"> \
   --publish <agent-port>:8020 \
   --rm ghcr.io/superblocksteam/agent:<tag>
 ```
@@ -61,6 +65,7 @@ services:
     environment:
       - SUPERBLOCKS_AGENT_KEY=<agent-key>
       - SUPERBLOCKS_AGENT_HOST_URL=<agent-host>/agent
+      - SUPERBLOCKS_AGENT_ENVIRONMENT=<"*"|"staging"|"production">
     ports:
       - '<agent-port>:<agent-port>'
 ```
@@ -88,7 +93,8 @@ The `values.yaml` should be a locally kept yaml with the user's environment spec
 ```yaml
 superblocks:
   agentKey: <agent-key> # obtained during agent onboarding
-  agentHostUrl: "http[s]://<agent-host[:port]>/agent"
+  agentHostUrl: 'http[s]://<agent-host[:port]>/agent'
+  agentEnvironment: <"*"|"staging"|"production">
 ```
 
 ## Requests
