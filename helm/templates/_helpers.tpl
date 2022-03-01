@@ -49,3 +49,17 @@ Selector labels
 app.kubernetes.io/name: {{ include "superblocks-agent.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Calculate heap size
+*/}}
+{{- define "superblocks-agent.heapSize" -}}
+{{- if hasSuffix "Mi" . -}}
+{{- $memoryLimit := trimSuffix "Mi" . -}}
+{{ min 512 (div $memoryLimit 2) }}
+{{- end }}
+{{- if hasSuffix "Gi" . -}}
+{{- $memoryLimit := mul (trimSuffix "Gi" .) 1024 -}}
+{{ min 512 (div $memoryLimit 2) }}
+{{- end }}
+{{- end }}
