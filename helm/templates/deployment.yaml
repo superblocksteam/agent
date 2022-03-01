@@ -67,6 +67,9 @@ spec:
               value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
             - name: SUPERBLOCKS_AGENT_ENVIRONMENT
               value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
+            - name: NODE_OPTIONS
+              # 1048576 is 1MB in bytes
+              value: "--max-old-space-size={{ sub 512 (div .Values.resources.limits "1048576") }}"
             {{- range $key, $val := .Values.extraEnv }}
             {{- if kindIs "map" $val }}
             - name: {{ $key }}
