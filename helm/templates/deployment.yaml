@@ -67,6 +67,10 @@ spec:
               value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
             - name: SUPERBLOCKS_AGENT_ENVIRONMENT
               value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
+            {{- if ((.Values.resources | default dict ).limits | default dict).memory }}
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size={{ include "superblocks-agent.heapSize" .Values.resources.limits.memory }}"
+            {{- end }}
             {{- range $key, $val := .Values.extraEnv }}
             {{- if kindIs "map" $val }}
             - name: {{ $key }}
