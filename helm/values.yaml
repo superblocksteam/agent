@@ -8,7 +8,7 @@
 superblocks: {}
 #   agentKey: ""
 #   agentHostUrl: "http[s]://<agent-host[:port]>/agent"
-#   agentEnvironment: [staging|production|*]
+#   agentEnvironment: <"*"|"staging"|"production">
 #   agentKeyExistingSecret: "<my-superblocks-agent-key-secret>", optional. Secret is created for you if not specified.
 #
 # Existing agentKey secret must contain the value:
@@ -61,10 +61,10 @@ ingress:
   #       - chart-example.local
 
 resources:
-# Please adjust these values as needed depending on
-# your workloads. Allotting less than this could
-# potentially cause your agents to crash from
-# Out Of Memory errors.
+  # Please adjust these values as needed depending on
+  # your workloads. Allotting less than this could
+  # potentially cause your agents to crash from
+  # Out Of Memory errors.
   limits:
     cpu: 500m
     memory: 1Gi
