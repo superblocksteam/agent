@@ -6,7 +6,6 @@
 # the https://app.superblockshq.com/opas Superblocks UI page
 # Ref: https://docs.superblockshq.com/superblocks/security-and-permissions/on-premise-agent-overview/deployment
 superblocks: {}
-#   agentId: ""
 #   agentKey: ""
 #   agentHostUrl: "http[s]://<agent-host[:port]>/agent"
 #   agentEnvironment: [staging|production|*]
