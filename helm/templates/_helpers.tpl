@@ -56,10 +56,10 @@ Calculate heap size
 {{- define "superblocks-agent.heapSize" -}}
 {{- if hasSuffix "Mi" . -}}
 {{- $memoryLimit := trimSuffix "Mi" . -}}
-{{ min 512 (div $memoryLimit 2) }}
+{{ div $memoryLimit 2 }}
 {{- end }}
 {{- if hasSuffix "Gi" . -}}
 {{- $memoryLimit := mul (trimSuffix "Gi" .) 1024 -}}
-{{ min 512 (div $memoryLimit 2) }}
+{{ div $memoryLimit 2 }}
 {{- end }}
 {{- end }}
