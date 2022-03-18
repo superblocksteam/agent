@@ -13,7 +13,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: main
-          fetch-depth: 0
           token: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
 
       - name: Bump app version
@@ -28,8 +27,8 @@ jobs:
         with:
           token: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
           commit-message: "[CI] Bump Chart and App Version"
-          committer: Superblocks Admin <superblocksadmin@superblockshq.com>
-          author: Superblocks Admin <superblocksadmin@superblockshq.com>
+          committer: Superblocks Admin <admin@superblockshq.com>
+          author: Superblocks Admin <admin@superblockshq.com>
           signoff: false
           branch: bump-app-version-${{github.event.release.tag_name}}
           delete-branch: true
