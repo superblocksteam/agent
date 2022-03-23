@@ -101,3 +101,13 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# If true, Kubernetes will not wait until the new pods are running
+# before terminating the old ones. Rather, It will create the new
+# pods at the same time it destroys the olds ones. Defults to false.
+# disableGracefulRollingUpdate: false
+
+# Upon termination, there may be inflight requests and scheduled jobs.
+# If you want to force kill the agent after a certain point, this value
+# is what you're looking for. Defaults to 1 day (86400 seconds). 
+# terminationGracePeriodSeconds: 86400
