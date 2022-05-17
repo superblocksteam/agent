@@ -1,0 +1,13 @@
+version: '3.7'
+
+services:
+  agent:
+    container_name: superblocks-agent
+    image: ghcr.io/superblocksteam/agent:latest
+    pull_policy: always
+    environment:
+    - SUPERBLOCKS_AGENT_KEY=${SUPERBLOCKS_AGENT_KEY}
+    - SUPERBLOCKS_AGENT_HOST_URL=${SUPERBLOCKS_AGENT_HOST_URL}
+    - SUPERBLOCKS_AGENT_ENVIRONMENT=*
+    ports:
+    - '8020:8020'
