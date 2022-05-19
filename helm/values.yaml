@@ -1,113 +1,166 @@
-# Default values for superblocks-agent.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# The default values for the Superblocks Agent Platform.
 
-# REQUIRED: The Agent ID and Agent Key can be found in the
-# the https://app.superblockshq.com/opas Superblocks UI page
-# Ref: https://docs.superblockshq.com/superblocks/security-and-permissions/on-premise-agent-overview/deployment
+# REQUIRED: agentKey, agentHostUrl
+# DOCS:     https://docs.superblockshq.com/superblocks/security-and-permissions/on-premise-agent-overview/deployment
 superblocks: {}
-#   agentKey: ""
-#   agentHostUrl: "http[s]://<agent-host[:port]>/agent"
-#   agentEnvironment: <"*"|"staging"|"production">
-#   agentKeyExistingSecret: "<my-superblocks-agent-key-secret>", optional. Secret is created for you if not specified.
-#
-# Existing agentKey secret must contain the value:
-# SUPERBLOCKS_AGENT_KEY: <my-superblocks-agent-key>
+  # agentKey: ""
+  # agentHostUrl: "http[s]://<agent-host[:port]>/agent"
+  # agentEnvironment: <"*"|"staging"|"production">
 
-containerPort: 8020
-
-replicaCount: 1
-
-image:
-  repository: ghcr.io/superblocksteam/agent
-  pullPolicy: IfNotPresent
-# Overrides the image tag whose default is the chart appVersion.
-#   tag: ""
+  # Existing agentKey secret must contain the value:
+  # SUPERBLOCKS_AGENT_KEY: <my-superblocks-agent-key>
+  # agentKeyExistingSecret: "<my-superblocks-agent-key-secret>", optional. Secret is created for you if not specified.
 
 imagePullSecrets: []
+
+# Change the prefix used in resource names.
+# Defaults to 'superblocks-agent'.
 nameOverride: ''
+
 fullnameOverride: ''
 
 podAnnotations: {}
-
 podLabels: {}
 
-podSecurityContext: {}
-#   fsGroup: 2000
-
-securityContext: {}
-#   capabilities:
-#     drop:
-#     - ALL
-#   readOnlyRootFilesystem: true
-#   runAsNonRoot: true
-#   runAsUser: 1000
-
-service:
-  type: ClusterIP
-  port: 80
-
-ingress:
-  enabled: false
-  class: "" # nginx
-  annotations: {}
-  #   kubernetes.io/tls-acme: "true"
-  hosts: []
-  #   - host: chart-example.local
-  #     paths: []
-  tls: []
-  #   - secretName: chart-example-tls
-  #     hosts:
-  #       - chart-example.local
-
-resources:
-  # Please adjust these values as needed depending on
-  # your workloads. Allotting less than this could
-  # potentially cause your agents to crash from
-  # Out Of Memory errors.
-  limits:
-    cpu: 500m
-    memory: 1Gi
-  requests:
-    cpu: 500m
-    memory: 1Gi
-
+# Specify extra environment variables that will be applied
+# to both the Controllers and Workers.
 extraEnv: {}
-# Specify extra env vars for the superblocks agent here in dict format
 #   TEST_KEY: foobar
 #   DD_AGENT_HOST:
 #     valueFrom:
 #       fieldRef:
 #         fieldPath: status.hostIP
 
+# Specify extra environment variables that will be applied
+# to both the Controllers and Workers.
 envFrom: []
 #   - secretRef:
 #       name: my-agent-env-secret
 #   - configMapRef:
 #       name: my-agent-env-configmap
 
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 40
-  # targetMemoryUtilizationPercentage: 80
+# Controller specific values.
+controller:
 
-podDisruptionBudget: {}
-#   minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 8020
 
-nodeSelector: {}
+  ingress:
+    enabled: false
+    class: "" # nginx
+    annotations: {}
+      # kubernetes.io/tls-acme: "true"
+    hosts: []
+    # - host: chart-example.local
+    #   paths: []
+    tls: []
+    # - secretName: chart-example-tls
+    #   hosts:
+    #     - chart-example.local
 
-tolerations: []
+  # Upon termination, there may be inflight requests and scheduled jobs.
+  # If you want to force kill the agent after a certain point, this value
+  # is what you're looking for. Defaults to 1 day (86400 seconds).
+  terminationGracePeriodSeconds: 86400
 
-affinity: {}
+  podDisruptionBudget: {}
+    # minAvailable: 1
 
-# If true, Kubernetes will not wait until the new pods are running
-# before terminating the old ones. Rather, It will create the new
-# pods at the same time it destroys the olds ones. Defults to false.
-# disableGracefulRollingUpdate: false
+  image:
+    repository: ghcr.io/superblocksteam/agent/controller
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    # tag: ""
 
-# Upon termination, there may be inflight requests and scheduled jobs.
-# If you want to force kill the agent after a certain point, this value
-# is what you're looking for. Defaults to 1 day (86400 seconds). 
-# terminationGracePeriodSeconds: 86400
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  ports:
+    http: 8020
+    worker: 5001
+
+  replicaCount: 1
+
+  # Specify extra environment variables that will
+  # only be applied to the Controllers.
+  extraEnv: {}
+  envFrom: []
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 40
+    targetMemoryUtilizationPercentage: 80
+
+  # Please adjust these values as needed depending on your workloads. Allotting less
+  # than this could potentially cause your agents to crash from Out Of Memory errors.
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Controller specific values.
+worker:
+
+  # Specify extra environment variables that will
+  # only be applied to the Workers.
+  extraEnv: {}
+  envFrom: []
+
+  image:
+    repository: ghcr.io/superblocksteam/agent/worker
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    # tag: ""
+
+  podSecurityContext: {}
+  securityContext: {}
+
+  # We recommend running two fleets for the most secure setup.
+  # If you would like to run a single fleet, then you can use:
+  #
+  # fleets:
+  #   all:
+  #     ...
+  #     plugins: "" # Either don't set or omit.
+  #     ...
+  #
+  fleets:
+    language:
+      plugins: "javascript,python"
+      concurrency: 1
+      resources: {}
+      nodeSelector: {}
+      tolerations: []
+      affinity: {}
+
+      # These environment variables will only
+      # be applied to this Worker fleet.
+      extraEnv: {}
+      envFrom: []
+
+    not-language:
+      plugins: "!javascript,python"
+      resources: {}
+      nodeSelector: {}
+      tolerations: []
+      affinity: {}
+      extraEnv: {}
+      envFrom: []

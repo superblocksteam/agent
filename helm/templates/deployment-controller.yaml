@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "superblocks-agent.controller.name" . }}
+  labels:
+    {{- include "superblocks-agent.labels" . | nindent 4 }}
+    component: controller
+spec:
+  {{- if not .Values.controller.autoscaling.enabled }}
+  replicas: {{ .Values.controller.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
+      component: controller
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "superblocks-agent.selectorLabels" . | nindent 8 }}
+        component: controller
+        {{- if .Values.podLabels }}
+          {{ toYaml .Values.podLabels | indent 8 }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.controller.terminationGracePeriodSeconds | default 86400 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}-controller
+        securityContext:
+          {{- toYaml .Values.controller.securityContext | nindent 12 }}
+        image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.controller.ports.http }}
+          protocol: TCP
+        - name: worker
+          containerPort: {{ .Values.controller.ports.worker }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        envFrom:
+        {{- include "superblocks-agent.key" . | indent 8 }}
+        {{- with (concat .Values.controller.envFrom .Values.envFrom) }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        env:
+        - name: __SUPERBLOCKS_WORKER_ENABLE
+          value: "true"
+        - name: SUPERBLOCKS_AGENT_PORT
+          value: {{ required "controller.ports.http is required!" .Values.controller.ports.http | quote }}
+        - name: SUPERBLOCKS_AGENT_HOST_URL
+          value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
+        - name: SUPERBLOCKS_AGENT_ENVIRONMENT
+          value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
+        - name: SUPERBLOCKS_WORKER_TLS_CA_FILE
+          value: /etc/config/tls/tls.ca
+        - name: SUPERBLOCKS_WORKER_TLS_CERT_FILE
+          value: /etc/config/tls/tls.crt
+        - name: SUPERBLOCKS_WORKER_TLS_KEY_FILE
+          value: /etc/config/tls/tls.key
+        - name: SUPERBLOCKS_WORKER_PORT
+          value: {{ .Values.controller.ports.worker | quote }}
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: SUPERBLOCKS_AGENT_INTERNAL_HOST_URL
+          value: "https://$(POD_IP):{{ .Values.controller.ports.worker }}"
+        - name: SUPERBLOCKS_FILE_SERVER_URL
+          value: "http://$(POD_IP):{{ .Values.controller.ports.http }}/agent/v1/files"
+        {{- if ((.Values.resources | default dict ).limits | default dict).memory }}
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size={{ include "superblocks-agent.heapSize" .Values.resources.limits.memory }}"
+        {{- end }}
+        {{- include "extra-env" (merge .Values.controller.extraEnv .Values.extraEnv) | indent 8 }}
+        volumeMounts:
+        - name: tls
+          mountPath: /etc/config/tls
+      volumes:
+      - name: tls
+        secret:
+          secretName: {{ include "superblocks-agent.worker.name" $ }}-tls
+      {{- with .Values.controller.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,4 +1,4 @@
-{{- if .Values.podDisruptionBudget -}}
+{{- if .Values.controller.podDisruptionBudget -}}
 {{- if semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion }}
 apiVersion: policy/v1
 {{ else }}
@@ -10,7 +10,7 @@ metadata:
   labels:
     {{- include "superblocks-agent.labels" . | nindent 4 }}
 spec:
-{{ .Values.podDisruptionBudget | toYaml | nindent 2 }}
+{{ .Values.controller.podDisruptionBudget | toYaml | nindent 2 }}
   selector:
     matchLabels:
       {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}

@@ -1,0 +1,28 @@
+{{- if .Values.controller.autoscaling.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "superblocks-agent.fullname" . }}
+  labels:
+    {{- include "superblocks-agent.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "superblocks-agent.fullname" . }}
+  minReplicas: {{ .Values.controller.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.controller.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.controller.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.controller.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.controller.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.controller.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
