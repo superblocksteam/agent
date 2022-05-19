@@ -83,14 +83,10 @@ spec:
           value: /etc/config/tls/tls.key
         - name: SUPERBLOCKS_WORKER_PORT
           value: {{ .Values.controller.ports.worker | quote }}
-        - name: POD_IP
+        - name: SUPERBLOCKS_AGENT_INTERNAL_HOST
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        - name: SUPERBLOCKS_AGENT_INTERNAL_HOST_URL
-          value: "https://$(POD_IP):{{ .Values.controller.ports.worker }}"
-        - name: SUPERBLOCKS_FILE_SERVER_URL
-          value: "http://$(POD_IP):{{ .Values.controller.ports.http }}/agent/v1/files"
         {{- if ((.Values.resources | default dict ).limits | default dict).memory }}
         - name: NODE_OPTIONS
           value: "--max-old-space-size={{ include "superblocks-agent.heapSize" .Values.resources.limits.memory }}"
