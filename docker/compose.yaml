@@ -1,13 +1,27 @@
 version: '3.7'
 
+x-environment: &commonEnvironment
+- SUPERBLOCKS_AGENT_KEY=${SUPERBLOCKS_AGENT_KEY}
+- SUPERBLOCKS_AGENT_ENVIRONMENT=${SUPERBLOCKS_AGENT_ENVIRONMENT}
+- SUPERBLOCKS_WORKER_TLS_INSECURE="true"
+
 services:
-  agent:
-    container_name: superblocks-agent
-    image: ghcr.io/superblocksteam/agent:latest
+  controller:
+    container_name: superblocks-controller
+    image: ghcr.io/superblocksteam/agent/controller:latest
     pull_policy: always
     environment:
-    - SUPERBLOCKS_AGENT_KEY=${SUPERBLOCKS_AGENT_KEY}
+    - *commonEnvironment
+    - __SUPERBLOCKS_WORKER_ENABLE="true"
     - SUPERBLOCKS_AGENT_HOST_URL=${SUPERBLOCKS_AGENT_HOST_URL}
-    - SUPERBLOCKS_AGENT_ENVIRONMENT=${SUPERBLOCKS_AGENT_ENVIRONMENT}
     ports:
     - '8020:8020'
+    - '5001:5001'
+  worker:
+    container_name: superblocks-worker
+    image: ghcr.io/superblocksteam/agent/worker:latest
+    pull_policy: always
+    environment:
+    - *commonEnvironment
+    ports:
+    - '9090:9090'
