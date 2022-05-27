@@ -8,7 +8,9 @@ metadata:
     {{- include "superblocks-agent.labels" $ | nindent 4 }}
     {{- include "superblocks-agent.worker.labels" $k | nindent 4 }}
 spec:
-  replicas: 1
+  {{- if not $.Values.worker.autoscaling.enabled }}
+  replicas: {{ $v.replicaCount | default $.Values.worker.replicaCount | default 1 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "superblocks-agent.selectorLabels" $ | nindent 6 }}
@@ -64,10 +66,8 @@ spec:
         - name: SUPERBLOCKS_WORKER_CONCURRENCY
           value: {{ $v.concurrency | quote }}
         {{- end }}
-        {{- if $.Values.superblocks.agentEnvironment  }}
-        - name: SUPERBLOCKS_WORKER_LABELS
-          value: {{ "environment={{ $.Values.superblocks.agentEnvironment }}" | quote }}
-        {{- end }}
+        - name: SUPERBLOCKS_AGENT_ENVIRONMENT
+          value: {{ default "*" $.Values.superblocks.agentEnvironment | quote }}
         {{- include "extra-env" (merge $v.extraEnv $.Values.worker.extraEnv $.Values.extraEnv) | indent 8 }}
         volumeMounts:
         - name: tls

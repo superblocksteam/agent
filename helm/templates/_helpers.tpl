@@ -72,6 +72,13 @@ fleet: {{ . }}
 {{- end -}}
 
 {{/*
+Controller labels
+*/}}
+{{- define "superblocks-agent.controller.labels" -}}
+component: controller
+{{- end -}}
+
+{{/*
 Selector labels
 */}}
 {{- define "superblocks-agent.selectorLabels" -}}

@@ -119,10 +119,29 @@ controller:
 # Controller specific values.
 worker:
 
+  # The default replica count if:
+  # 1) autoscaling is not enabled
+  # 2) fleet specific replicaCount is not defined
+  replicaCount: 1
+
   # Specify extra environment variables that will
   # only be applied to the Workers.
   extraEnv: {}
   envFrom: []
+
+  # If there is demand, we can add a fleet specific PDB 
+  # and if not set, default to this fleet agnostic one.
+  podDisruptionBudget: {}
+    # minAvailable: 1
+
+  # If there is demand, we can add a fleet specific HPA 
+  # and if not set, default to this fleet agnostic one.
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 40
+    targetMemoryUtilizationPercentage: 80
 
   image:
     repository: ghcr.io/superblocksteam/agent/worker
@@ -146,6 +165,7 @@ worker:
     language:
       plugins: "javascript,python"
       concurrency: 1
+      replicaCount: 1
       resources: {}
       nodeSelector: {}
       tolerations: []
@@ -158,6 +178,7 @@ worker:
 
     not-language:
       plugins: "!javascript,python"
+      replicaCount: 1
       resources: {}
       nodeSelector: {}
       tolerations: []
