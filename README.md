@@ -22,6 +22,7 @@ The agent application can be configured via the use of several environment varia
 | SUPERBLOCKS_AGENT_DATADOG_DISABLE_LOG_INJECTION | Flag to disable/enable the injection of Datadog trace ID in log records                                                                                                                                  | No       | true                          |
 | SUPERBLOCKS_AGENT_DATADOG_CONNECT_TAGS          | Array (comma-separated) of tags to be added to Datadog histograms                                                                                                                                        | No       | app:superblocks               |
 | SUPERBLOCKS_AGENT_JSON_PARSE_LIMIT              | Express request body limit (in mb)                                                                                                                                                                       | No       | 50mb                          |
+| SUPERBLOCKS_AGENT_LOG_HTTP_DISABLE              | Flag to disable/enable Superblocks log collection                                                                                                                                                        | No       | false                         |
 
 [env_support]: https://docs.superblocks.com/superblocks/software-development-lifecycle/staging-and-prod-environments
 
