@@ -24,12 +24,12 @@ services:
     pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
     environment: *environment
     ports:
-    - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}:9090'
+    - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}:${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}'
   controller:
     container_name: controller
     image: ${SUPERBLOCKS_DOCKER_CONTROLLER_REPOSITORY:-ghcr.io/superblocksteam/agent/controller}:${SUPERBLOCKS_DOCKER_CONTROLLER_TAG:-latest}
     pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
     environment: *environment
     ports:
-    - '${SUPERBLOCKS_AGENT_PORT:-8020}:8020'
-    - '${SUPERBLOCKS_WORKER_PORT:-5001}:5001'
+    - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
+    - '${SUPERBLOCKS_WORKER_PORT:-5001}:${SUPERBLOCKS_WORKER_PORT:-5001}'
