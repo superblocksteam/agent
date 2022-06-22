@@ -68,6 +68,10 @@ spec:
         {{- end }}
         - name: SUPERBLOCKS_AGENT_ENVIRONMENT
           value: {{ default "*" $.Values.superblocks.agentEnvironment | quote }}
+        {{- if (($v.resources | default dict ).limits | default dict).memory }}
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size={{ include "superblocks-agent.heapSize" $v.resources.limits.memory }}"
+        {{- end }}
         {{- include "extra-env" (merge $v.extraEnv $.Values.worker.extraEnv $.Values.extraEnv) | indent 8 }}
         volumeMounts:
         - name: tls
@@ -76,15 +80,15 @@ spec:
       - name: tls
         secret:
           secretName: {{ include "superblocks-agent.worker.name" $ }}-tls
-      {{- with $v.nodeSelector }}
+      {{- with $.Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $v.affinity }}
+      {{- with $.Values.worker.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $v.tolerations }}
+      {{- with $.Values.worker.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

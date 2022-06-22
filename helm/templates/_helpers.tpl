@@ -132,9 +132,9 @@ Agent key
 {{- define "superblocks-agent.key" -}}
 {{- if not .Values.superblocks.agentKeyExistingSecret }}
 - secretRef:
-  name: {{ include "superblocks-agent.fullname" . }}
+    name: {{ include "superblocks-agent.fullname" . }}
 {{- else }}
 - secretRef:
-  name: {{ .Values.superblocks.agentKeyExistingSecret }}
+    name: {{ .Values.superblocks.agentKeyExistingSecret }}
 {{- end }}
 {{- end -}}
