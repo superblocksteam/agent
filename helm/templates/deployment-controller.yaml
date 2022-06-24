@@ -67,8 +67,6 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
         env:
-        - name: __SUPERBLOCKS_WORKER_ENABLE
-          value: "true"
         - name: SUPERBLOCKS_AGENT_PORT
           value: {{ required "controller.ports.http is required!" .Values.controller.ports.http | quote }}
         - name: SUPERBLOCKS_AGENT_HOST_URL
