@@ -151,6 +151,9 @@ worker:
 
   podSecurityContext: {}
   securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
 
   # We recommend running two fleets for the most secure setup.
   # If you would like to run a single fleet, then you can use:
@@ -167,10 +170,6 @@ worker:
       concurrency: 1
       replicaCount: 1
       resources: {}
-      nodeSelector: {}
-      tolerations: []
-      affinity: {}
-
       # These environment variables will only
       # be applied to this Worker fleet.
       extraEnv: {}
@@ -180,8 +179,5 @@ worker:
       plugins: "!javascript,python"
       replicaCount: 1
       resources: {}
-      nodeSelector: {}
-      tolerations: []
-      affinity: {}
       extraEnv: {}
       envFrom: []
