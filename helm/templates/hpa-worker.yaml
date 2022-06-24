@@ -1,6 +1,7 @@
 
 {{- if .Values.worker.autoscaling.enabled }}
 {{- range $k, $v := $.Values.worker.fleets }}
+---
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
