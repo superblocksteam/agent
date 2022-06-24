@@ -16,5 +16,5 @@ spec:
   selector:
     matchLabels:
       {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
-      {{- include "superblocks-agent.controller.labels" . | nindent 4 }}
+      {{- include "superblocks-agent.controller.labels" . | nindent 6 }}
 {{- end }}

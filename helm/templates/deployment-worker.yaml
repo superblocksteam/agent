@@ -39,11 +39,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml $v.podSecurityContext | nindent 8 }}
+        {{- toYaml $.Values.worker.podSecurityContext | nindent 8 }}
       containers:
       - name: {{ $.Chart.Name }}-worker
         securityContext:
-          {{- toYaml $v.securityContext | nindent 10 }}
+          {{- toYaml $.Values.worker.securityContext | nindent 10 }}
         image: "{{ $.Values.worker.image.repository }}:{{ $.Values.worker.image.tag | default $.Chart.AppVersion }}"
         imagePullPolicy: {{ $.Values.worker.image.pullPolicy }}
         resources:

@@ -41,7 +41,7 @@ spec:
       containers:
       - name: {{ .Chart.Name }}-controller
         securityContext:
-          {{- toYaml .Values.controller.securityContext | nindent 12 }}
+          {{- toYaml .Values.controller.securityContext | nindent 10 }}
         image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
         ports:
@@ -60,7 +60,7 @@ spec:
             path: /health
             port: http
         resources:
-          {{- toYaml .Values.resources | nindent 12 }}
+          {{- toYaml .Values.controller.resources | nindent 10 }}
         envFrom:
         {{- include "superblocks-agent.key" . | indent 8 }}
         {{- with (concat .Values.controller.envFrom .Values.envFrom) }}
