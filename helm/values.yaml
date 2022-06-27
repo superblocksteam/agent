@@ -68,7 +68,7 @@ controller:
     # minAvailable: 1
 
   image:
-    repository: ghcr.io/superblocksteam/agent/controller
+    repository: ghcr.io/superblocksteam/agent-controller
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: ""
@@ -144,7 +144,7 @@ worker:
     targetMemoryUtilizationPercentage: 80
 
   image:
-    repository: ghcr.io/superblocksteam/agent/worker
+    repository: ghcr.io/superblocksteam/agent-controller
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: ""
