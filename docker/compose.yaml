@@ -17,14 +17,14 @@ x-environment: &environment
 services:
   worker:
     container_name: worker
-    image: ${SUPERBLOCKS_DOCKER_WORKER_REPOSITORY:-ghcr.io/superblocksteam/agent/worker}:${SUPERBLOCKS_DOCKER_WORKER_TAG:-latest}
+    image: ${SUPERBLOCKS_DOCKER_WORKER_REPOSITORY:-ghcr.io/superblocksteam/agent-worker}:${SUPERBLOCKS_DOCKER_WORKER_TAG:-latest}
     pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
     environment: *environment
     ports:
     - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}:${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}'
   controller:
     container_name: controller
-    image: ${SUPERBLOCKS_DOCKER_CONTROLLER_REPOSITORY:-ghcr.io/superblocksteam/agent/controller}:${SUPERBLOCKS_DOCKER_CONTROLLER_TAG:-latest}
+    image: ${SUPERBLOCKS_DOCKER_CONTROLLER_REPOSITORY:-ghcr.io/superblocksteam/agent-controller}:${SUPERBLOCKS_DOCKER_CONTROLLER_TAG:-latest}
     pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
     environment: *environment
     ports:
