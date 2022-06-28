@@ -129,12 +129,12 @@ worker:
   extraEnv: {}
   envFrom: []
 
-  # If there is demand, we can add a fleet specific PDB 
+  # If there is demand, we can add a fleet specific PDB
   # and if not set, default to this fleet agnostic one.
   podDisruptionBudget: {}
     # minAvailable: 1
 
-  # If there is demand, we can add a fleet specific HPA 
+  # If there is demand, we can add a fleet specific HPA
   # and if not set, default to this fleet agnostic one.
   autoscaling:
     enabled: false
@@ -144,7 +144,7 @@ worker:
     targetMemoryUtilizationPercentage: 80
 
   image:
-    repository: ghcr.io/superblocksteam/agent-controller
+    repository: ghcr.io/superblocksteam/agent-worker
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: ""
