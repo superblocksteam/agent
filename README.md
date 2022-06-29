@@ -13,9 +13,7 @@ The following is a comprehensive list of repositories required to build the agen
 - [superblocksteam/agent-controller](https://github.com/superblocksteam/agent-controller) - [Docs](https://docs.superblocks.com/on-premise-agent/overview)
 - [superblocksteam/agent-worker](https://github.com/superblocksteam/agent-worker) - [Docs](https://docs.superblocks.com/on-premise-agent/overview)
 
-### Plugins and Dependencies
-- [superblocksteam/shared](https://github.com/superblocksteam/shared)
-- [superblocksteam/shared-backend](https://github.com/superblocksteam/shared)
+### Integrations
 - [superblocksteam/bigquery](https://github.com/superblocksteam/bigquery) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/bigquery)
 - [superblocksteam/dynamodb](https://github.com/superblocksteam/dynamodb) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/dynamodb)
 - [superblocksteam/email](https://github.com/superblocksteam/email)
@@ -35,6 +33,10 @@ The following is a comprehensive list of repositories required to build the agen
 - [superblocksteam/s3](https://github.com/superblocksteam/s3) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/s3)
 - [superblocksteam/snowflake](https://github.com/superblocksteam/snowflake) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/snowflake)
 - [superblocksteam/workflow](https://github.com/superblocksteam/workflow) - [Docs](https://docs.superblocks.com/build-workflows/what-is-a-workflow#1c-workflow-steps)
+
+### Libraries
+- [superblocksteam/shared](https://github.com/superblocksteam/shared)
+- [superblocksteam/shared-backend](https://github.com/superblocksteam/shared-backend)
 
 ## Configuration
 
