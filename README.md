@@ -6,8 +6,15 @@
 <p align="center">Keep customer data in your VPC for internal tools, while keeping Superblocks up-to-date from our cloud.</p>
 
 <p align="center">
+	<img src="https://img.shields.io/badge/Helm-v1.0-blue" height="20"/>
+</p>
+
+<br/>
+
+<p align="center">
   <img src="./assets/architecture.png" width="50%"/>
 </p>
+
 <br/>
 
 
