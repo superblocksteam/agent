@@ -1,4 +1,24 @@
-# On-Premise Agent (OPA)
+<p align="center">
+  <img src="./assets/logo.png" height="60"/>
+</p>
+
+<h1 align="center">On Premise Agent (OPA)</h1>
+<p align="center">Keep customer data in your VPC for internal tools, while keeping Superblocks up-to-date from our cloud.</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-v0.41.0-blue" height="20"/>
+  <img src="https://img.shields.io/badge/helm-v0.28.0-blue" height="20"/>
+  <img src="https://img.shields.io/badge/build-passing-green" height="20"/>
+</p>
+
+<br/>
+
+<p align="center">
+  <img src="./assets/architecture.png" width="50%"/>
+</p>
+
+<br/>
+
 
 This document contains configuration and deployment details for running the Superblocks agent independently.
 
