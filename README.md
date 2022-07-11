@@ -1,4 +1,15 @@
-# On-Premise Agent (OPA)
+<p align="center">
+  <img src="./assets/logo.png" height="60"/>
+</p>
+
+<h1 align="center">On Premise Agent (OPA)</h1>
+<p align="center">Keep customer data in your VPC for internal tools, while keeping Superblocks up-to-date from our cloud.</p>
+
+<p align="center">
+  <img src="./assets/architecture.png" width="50%"/>
+</p>
+<br/>
+
 
 This document contains configuration and deployment details for running the Superblocks agent independently.
 
