@@ -13,6 +13,9 @@ superblocks: {}
 
 imagePullSecrets: []
 
+commonPodAnnotations: {}
+commonPodLabels: {}
+
 # Change the prefix used in resource names.
 # Defaults to 'superblocks-agent'.
 nameOverride: ''
