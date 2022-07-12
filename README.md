@@ -93,7 +93,7 @@ The following is a comprehensive list of repositories required to build the agen
 
 Superblocks supports the following plugins. Click on each to visit its repository.
 
-<table>
+<table style="border: none!important;">
   <tr>
     <td valign="center" width="25%"><a href="https://github.com/superblocksteam/bigquery"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/bigquery.png" width="75%"/></p></a></td>
     <td valign="center" width="25%"><a href="https://github.com/superblocksteam/dynamodb"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/dynamodb.png" width="75%"/></p></a></td>
