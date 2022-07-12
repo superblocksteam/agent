@@ -95,30 +95,30 @@ Superblocks supports the following plugins. Click on each to visit its repositor
 
 <table>
   <tr>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/bigquery"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/bigquery.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/dynamodb"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/dynamodb.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/email"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/email.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/restapi"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/restapi.png" width="75%"/></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/bigquery"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/bigquery.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/dynamodb"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/dynamodb.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/email"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/email.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/restapi"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/restapi.png" width="75%"/></p></a></td>
   </tr>
   <tr>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/graphql"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/graphql.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/gsheets"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/gsheets.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/javascript"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/javascript.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/mariadb"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mariadb.png" width="75%"/></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/graphql"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/graphql.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/gsheets"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/gsheets.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/javascript"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/javascript.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/mariadb"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mariadb.png" width="75%"/></p></a></td>
   </tr>
   <tr>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/mongodb"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mongodb.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/mssql"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mssql.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/mysql"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mysql.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/postgres"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/postgres.png" width="75%"/></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/mongodb"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mongodb.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/mssql"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mssql.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/mysql"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mysql.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/postgres"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/postgres.png" width="75%"/></p></a></td>
   </tr>
   <tr>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/python"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/python.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/redshift"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/redshift.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/rockset"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/rockset.png" width="75%"/></a></td>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/s3"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/s3.png" width="75%"/></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/python"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/python.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/redshift"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/redshift.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/rockset"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/rockset.png" width="75%"/></p></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/s3"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/s3.png" width="75%"/></p></a></td>
   </tr>
   <tr>
-    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/snowflake"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/snowflake.png" width="75%"/></a></td>
+    <td valign="top" width="25%"><a href="https://github.com/superblocksteam/snowflake"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/snowflake.png" width="75%"/></p></a></td>
   </tr>
 </table>
