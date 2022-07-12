@@ -93,12 +93,6 @@ The following is a comprehensive list of repositories required to build the agen
 
 Superblocks supports the following plugins. Click on each to visit its repository.
 
-<style>
-td, th {
-   border: none!important;
-}
-</style>
-
 <table>
   <tr>
     <td valign="center" width="25%"><a href="https://github.com/superblocksteam/bigquery"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/bigquery.png" width="75%"/></p></a></td>
