@@ -22,15 +22,21 @@ spec:
       maxSurge: 100%
   template:
     metadata:
-      {{- with $.Values.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+      {{- if $.Values.worker.podAnnotations }}
+        {{- toYaml $.Values.controller.podAnnotations | nindent 8 }}
+      {{- end }}
+      {{- if $.Values.commonPodAnnotations }}
+        {{- toYaml $.Values.commonPodAnnotations | nindent 8 }}
       {{- end }}
       labels:
         {{- include "superblocks-agent.selectorLabels" $ | nindent 8 }}
         {{- include "superblocks-agent.worker.labels" $k | nindent 8 }}
-        {{- if $.Values.podLabels }}
-          {{ toYaml $.Values.podLabels | indent 8 }}
+        {{- if $.Values.worker.podLabels }}
+          {{- toYaml $.Values.worker.podLabels | nindent 8 }}
+        {{- end }}
+        {{- if $.Values.commonPodLabels }}
+          {{- toYaml $.Values.commonPodLabels | nindent 8 }}
         {{- end }}
     spec:
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
@@ -40,6 +46,7 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml $.Values.worker.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ default (include "superblocks-agent.worker.name" $) $.Values.worker.serviceAccount.name }}
       containers:
       - name: {{ $.Chart.Name }}-worker
         securityContext:

@@ -13,14 +13,14 @@ superblocks: {}
 
 imagePullSecrets: []
 
+commonPodAnnotations: {}
+commonPodLabels: {}
+
 # Change the prefix used in resource names.
 # Defaults to 'superblocks-agent'.
 nameOverride: ''
 
 fullnameOverride: ''
-
-podAnnotations: {}
-podLabels: {}
 
 # Specify extra environment variables that will be applied
 # to both the Controllers and Workers.
@@ -95,6 +95,23 @@ controller:
   extraEnv: {}
   envFrom: []
 
+  serviceAccount:
+    create: true
+    # name: superblocks-agent-controller
+
+    # If using Service Account Volume Token Projection to authenticate
+    # OPA workloads, you must assign the IAM role to both the controller and worker service
+    # accounts.
+    annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/my-iam-role
+    # iam.gke.io/gcp-service-account=service-account@my-gcp-project.iam.gserviceaccount.com
+    labels: {}
+
+  # If using something like kube2iam, pod annotations for roles would go here
+  podAnnotations: {}
+  # iam.amazonaws.com/role: arn:aws:iam::111111111111:role/my-iam-role
+  podLabels: {}
+
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -148,6 +165,23 @@ worker:
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: ""
+
+  serviceAccount:
+    create: true
+    # name: superblocks-agent-worker
+
+    # If using Service Account Volume Token Projection to authenticate
+    # OPA workloads, you must assign the IAM role to both the controller and worker service
+    # accounts.
+    annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/my-iam-role
+    # iam.gke.io/gcp-service-account=service-account@my-gcp-project.iam.gserviceaccount.com
+    labels: {}
+
+  # If using something like kube2iam, pod annotations for roles would go here
+  podAnnotations: {}
+  # iam.amazonaws.com/role: arn:aws:iam::111111111111:role/my-iam-role
+  podLabels: {}
 
   podSecurityContext: {}
   securityContext: {}
