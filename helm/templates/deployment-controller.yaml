@@ -44,7 +44,7 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}
-      serviceAccountName: {{ .Values.controller.serviceAccount.name }}
+      serviceAccountName: {{ default (include "superblocks-agent.controller.name" $) .Values.controller.serviceAccount.name }}
       containers:
       - name: {{ .Chart.Name }}-controller
         securityContext:

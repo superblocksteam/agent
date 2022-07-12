@@ -97,7 +97,8 @@ controller:
 
   serviceAccount:
     create: true
-    name: superblocks-controller
+    # name: superblocks-agent-controller
+
     # If using Service Account Volume Token Projection to authenticate
     # OPA workloads, you must assign the IAM role to both the controller and worker service
     # accounts.
@@ -167,7 +168,8 @@ worker:
 
   serviceAccount:
     create: true
-    name: superblocks-worker
+    # name: superblocks-agent-worker
+
     # If using Service Account Volume Token Projection to authenticate
     # OPA workloads, you must assign the IAM role to both the controller and worker service
     # accounts.
