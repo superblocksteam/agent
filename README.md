@@ -110,3 +110,35 @@ The following is a comprehensive list of repositories required to build the agen
 
 - [superblocksteam/shared](https://github.com/superblocksteam/shared)
 - [superblocksteam/shared-backend](https://github.com/superblocksteam/shared-backend)
+
+## Integrations
+
+<table>
+  <tr>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/bigquery"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/bigquery.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/dynamodb"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/dynamodb.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/email"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/email.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/restapi"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/restapi.png" width="75%"/></a></td>
+  </tr>
+  <tr>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/graphql"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/graphql.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/gsheets"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/gsheets.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/javascript"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/javascript.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/mariadb"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mariadb.png" width="75%"/></a></td>
+  </tr>
+  <tr>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/mongodb"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mongodb.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/mssql"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mssql.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/mysql"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/mysql.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/postgres"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/postgres.png" width="75%"/></a></td>
+  </tr>
+  <tr>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/python"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/python.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/redshift"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/redshift.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/rockset"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/rockset.png" width="75%"/></a></td>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/s3"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/s3.png" width="75%"/></a></td>
+  </tr>
+  <tr>
+    <td valign="top" width="25%" style="text-align: center; vertical-align: middle;"><a href="https://github.com/superblocksteam/snowflake"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/snowflake.png" width="75%"/></a></td>
+  </tr>
+</table>
