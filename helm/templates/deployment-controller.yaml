@@ -20,15 +20,15 @@ spec:
       maxSurge: 100%
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with .Values.controller.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "superblocks-agent.selectorLabels" . | nindent 8 }}
         {{- include "superblocks-agent.controller.labels" . | nindent 8 }}
-        {{- if .Values.podLabels }}
-          {{ toYaml .Values.podLabels | indent 8 }}
+        {{- if .Values.controller.podLabels }}
+          {{ toYaml .Values.controller.podLabels | indent 8 }}
         {{- end }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.controller.terminationGracePeriodSeconds | default 86400 }}
@@ -38,6 +38,7 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ .Values.controller.serviceAccount.name }}
       containers:
       - name: {{ .Chart.Name }}-controller
         securityContext:

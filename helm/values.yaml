@@ -19,9 +19,6 @@ nameOverride: ''
 
 fullnameOverride: ''
 
-podAnnotations: {}
-podLabels: {}
-
 # Specify extra environment variables that will be applied
 # to both the Controllers and Workers.
 extraEnv: {}
@@ -95,6 +92,15 @@ controller:
   extraEnv: {}
   envFrom: []
 
+  serviceAccount:
+    create: true
+    name: superblocks-controller
+    annotations: {}
+    labels: {}
+
+  podAnnotations: {}
+  podLabels: {}
+
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -148,6 +154,22 @@ worker:
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: ""
+
+  serviceAccount:
+    create: true
+    name: superblocks-worker
+    # If using Service Account Volume Token Projection to authenticate
+    # OPA workloads, you must assign the IAM role to the worker service
+    # account. The worker is the component performing all the API steps.
+    annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/my-iam-role
+    # iam.gke.io/gcp-service-account=service-account@my-gcp-project.iam.gserviceaccount.com
+    labels: {}
+
+  # If using something like kube2iam, pod annotations for roles would go here
+  podAnnotations: {}
+  # iam.amazonaws.com/role: arn:aws:iam::111111111111:role/my-iam-role
+  podLabels: {}
 
   podSecurityContext: {}
   securityContext: {}
