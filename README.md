@@ -95,7 +95,7 @@ Superblocks supports the following plugins. Click on each to visit its repositor
 
 <table>
   <tr>
-    <td valign="center" width="20%"><a href="https://github.com/superblocksteam/bigquery"><div style="text-align: center;"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/bigquery.png" width="75%"/></div></a></td>
+    <td valign="center" width="20%"><a href="https://github.com/superblocksteam/bigquery"><div style="display: flex; justify-content: center;"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/bigquery.png" width="75%"/></div></a></td>
     <td valign="center" width="20%"><a href="https://github.com/superblocksteam/dynamodb"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/dynamodb.png" width="75%"/></p></a></td>
     <td valign="center" width="20%"><a href="https://github.com/superblocksteam/email"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/email.png" width="75%"/></p></a></td>
     <td valign="center" width="20%"><a href="https://github.com/superblocksteam/restapi"><p align="center"><img src="https://superblocks.s3-us-west-2.amazonaws.com/img/integrations/restapi.png" width="75%"/></p></a></td>
