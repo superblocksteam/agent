@@ -84,34 +84,14 @@ The following is a comprehensive list of repositories required to build the agen
 - [superblocksteam/agent-controller](https://github.com/superblocksteam/agent-controller) - [Docs](https://docs.superblocks.com/on-premise-agent/overview)
 - [superblocksteam/agent-worker](https://github.com/superblocksteam/agent-worker) - [Docs](https://docs.superblocks.com/on-premise-agent/overview)
 
-### Integrations
-
-- [superblocksteam/bigquery](https://github.com/superblocksteam/bigquery) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/bigquery)
-- [superblocksteam/dynamodb](https://github.com/superblocksteam/dynamodb) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/dynamodb)
-- [superblocksteam/email](https://github.com/superblocksteam/email)
-- [superblocksteam/graphql](https://github.com/superblocksteam/graphql) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/graphql-apis)
-- [superblocksteam/gsheets](https://github.com/superblocksteam/gsheets) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/google-sheets)
-- [superblocksteam/javascript](https://github.com/superblocksteam/javascript) - [Docs](https://docs.superblocks.com/build-applications/build-apis-with-data/write-javascript-business-logic)
-- [superblocksteam/mariadb](https://github.com/superblocksteam/mariadb) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/mariadb)
-- [superblocksteam/mongodb](https://github.com/superblocksteam/mongodb) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/mongodb)
-- [superblocksteam/mssql](https://github.com/superblocksteam/mssql) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/mssql)
-- [superblocksteam/mysql](https://github.com/superblocksteam/mysql) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/mysql)
-- [superblocksteam/postgres](https://github.com/superblocksteam/postgres) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/postgres)
-- [superblocksteam/python](https://github.com/superblocksteam/python) - [Docs](https://docs.superblocks.com/build-applications/build-apis-with-data/write-python-business-logic)
-- [superblocksteam/redshift](https://github.com/superblocksteam/redshift) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/redshift)
-- [superblocksteam/restapi](https://github.com/superblocksteam/restapi) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/rest-apis)
-- [superblocksteam/restapiintegration](https://github.com/superblocksteam/restapiintegration) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/rest-apis)
-- [superblocksteam/rockset](https://github.com/superblocksteam/rockset) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/rockset)
-- [superblocksteam/s3](https://github.com/superblocksteam/s3) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/s3)
-- [superblocksteam/snowflake](https://github.com/superblocksteam/snowflake) - [Docs](https://docs.superblocks.com/integrations/connect-integrations/snowflake)
-- [superblocksteam/workflow](https://github.com/superblocksteam/workflow) - [Docs](https://docs.superblocks.com/build-workflows/what-is-a-workflow#1c-workflow-steps)
-
 ### Libraries
 
 - [superblocksteam/shared](https://github.com/superblocksteam/shared)
 - [superblocksteam/shared-backend](https://github.com/superblocksteam/shared-backend)
 
-## Integrations
+### Integrations
+
+Superblocks supports the following plugins. Click on each to visit its repository.
 
 <table>
   <tr>
