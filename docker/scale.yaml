@@ -1,0 +1,57 @@
+version: '3.7'
+
+# NOTE: Docker does not allow you the ability to overwrite or remove any preivously defined port configurations.
+#       Hence, because we can't overwrite the controller port from 'compose.yaml' (so that is doesn't expose 8080),
+#       we must instead define another service, 'controllers', that replaces it and scale the service, `controller` to 0. 
+
+x-environment: &environment
+  environment:
+    # REQUIRED
+    SUPERBLOCKS_AGENT_KEY: ${SUPERBLOCKS_AGENT_KEY}
+    # OPTIONAL
+    SUPERBLOCKS_AGENT_ENVIRONMENT: ${SUPERBLOCKS_AGENT_ENVIRONMENT:-*}
+    SUPERBLOCKS_WORKER_TLS_INSECURE: ${SUPERBLOCKS_WORKER_TLS_INSECURE:-true}
+    SUPERBLOCKS_AGENT_HOST_URL: ${SUPERBLOCKS_AGENT_HOST_URL:-http://localhost:8020}
+    SUPERBLOCKS_AGENT_INTERNAL_HOST_AUTO: ${SUPERBLOCKS_AGENT_INTERNAL_HOST_AUTO:-true}
+    SUPERBLOCKS_AGENT_PORT: ${SUPERBLOCKS_AGENT_PORT:-8020}
+    SUPERBLOCKS_WORKER_PORT: ${SUPERBLOCKS_WORKER_PORT:-5001}
+    SUPERBLOCKS_WORKER_METRICS_PORT: ${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}
+    # INTERNAL OVERRIDES
+    __SUPERBLOCKS_AGENT_SERVER_URL: ${__SUPERBLOCKS_AGENT_SERVER_URL:-https://app.superblocks.com}
+
+services:
+  controller:
+    deploy:
+      replicas: 0
+  controllers:
+    image: ${SUPERBLOCKS_DOCKER_CONTROLLER_REPOSITORY:-ghcr.io/superblocksteam/agent-controller}:${SUPERBLOCKS_DOCKER_CONTROLLER_TAG:-latest}
+    pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
+    <<: *environment
+    ports:
+    - '${SUPERBLOCKS_AGENT_PORT:-8020}'
+    - '${SUPERBLOCKS_WORKER_PORT:-5001}'
+  proxy:
+    # This is the NGINX config file that this image is using.
+    #
+    # worker_processes 1;
+    # error_log /dev/stdout;
+    # pid /tmp/nginx.pid;
+    # events {
+    #     worker_connections 1024;
+    # }
+    # http {
+    #     server {
+    #         listen 8020;
+    #         listen [::]:8020;
+    #         server_name _;
+    #         location / {
+    #             proxy_pass http://controllers:8020;
+    #         }
+    #     }
+    # }
+    image: ${SUPERBLOCKS_DOCKER_PROXY_REPOSITORY:-ghcr.io/superblocksteam/agent-proxy}:${SUPERBLOCKS_DOCKER_PROXY_TAG:-latest}
+    pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
+    depends_on:
+    - controllers
+    ports:
+    - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
