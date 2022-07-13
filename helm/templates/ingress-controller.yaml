@@ -1,7 +1,9 @@
 {{- if .Values.controller.ingress.enabled -}}
 {{- $fullName := include "superblocks-agent.fullname" . -}}
 {{- $svcPort := .Values.controller.service.port -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
+apiVersion: networking.k8s.io/v1
+{{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
 apiVersion: networking.k8s.io/v1beta1
 {{- else -}}
 apiVersion: extensions/v1beta1
@@ -12,14 +14,14 @@ metadata:
   labels:
     {{- include "superblocks-agent.labels" . | nindent 4 }}
   annotations:
-    {{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+    {{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.Version -}}
     kubernetes.io/ingress.class: {{ .Values.controller.ingress.class }}
     {{- end }}
   {{- with .Values.controller.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion }}
+  {{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.Version }}
   ingressClassName: {{ .Values.controller.ingress.class }}
   {{- end }}
   {{- if .Values.controller.ingress.tls }}
