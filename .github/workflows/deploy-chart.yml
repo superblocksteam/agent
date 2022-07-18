@@ -25,3 +25,4 @@ jobs:
         with:
           repo: s3://superblocks-public-helm-repo/superblocks
           chart: ./helm
+          forceRelease: false
