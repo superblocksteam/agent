@@ -40,10 +40,20 @@ spec:
       http:
         paths:
           {{- range .paths }}
-          - path: {{ . }}
+          {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.Version }}
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+          {{- else }}
+          - path: /
             backend:
               serviceName: {{ $fullName }}
               servicePort: {{ $svcPort }}
+          {{- end }}
           {{- end }}
     {{- end }}
   {{- end }}
