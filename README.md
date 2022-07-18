@@ -7,7 +7,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v0.44.0-blue" height="20"/>
-  <img src="https://img.shields.io/badge/helm-v0.35.0-blue" height="20"/>
+  <img src="https://img.shields.io/badge/helm-v0.37.0-blue" height="20"/>
   <img src="https://img.shields.io/badge/build-passing-green" height="20"/>
 </p>
 
