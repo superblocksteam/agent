@@ -1,6 +1,7 @@
 
 {{- if .Values.worker.autoscaling.enabled }}
 {{- range $k, $v := $.Values.worker.fleets }}
+{{- $autoscaling := merge $v.autoscaling $.Values.worker.autoscaling }}
 ---
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
@@ -14,20 +15,20 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ include "superblocks-agent.worker.fleet.name" (dict "Global" $ "fleet" $k) }}
-  minReplicas: {{ $.Values.worker.autoscaling.minReplicas }}
-  maxReplicas: {{ $.Values.worker.autoscaling.maxReplicas }}
+  minReplicas: {{ $autoscaling.minReplicas }}
+  maxReplicas: {{ $autoscaling.maxReplicas }}
   metrics:
-    {{- if $.Values.worker.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if $autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
-        targetAverageUtilization: {{ $.Values.worker.autoscaling.targetCPUUtilizationPercentage }}
+        targetAverageUtilization: {{ $autoscaling.targetCPUUtilizationPercentage }}
     {{- end }}
-    {{- if $.Values.worker.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- if $autoscaling.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
-        targetAverageUtilization: {{ $.Values.worker.autoscaling.targetMemoryUtilizationPercentage }}
+        targetAverageUtilization: {{ $autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
 {{- end }}
 {{- end }}
