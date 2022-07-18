@@ -208,6 +208,9 @@ worker:
       # be applied to this Worker fleet.
       extraEnv: {}
       envFrom: []
+      # This will be merged with the worker's autoscaling
+      # settings. This is the higher priority.
+      autoscaling: {}
 
     not-language:
       plugins: "!javascript,python"
@@ -215,3 +218,4 @@ worker:
       resources: {}
       extraEnv: {}
       envFrom: []
+      autoscaling: {}
