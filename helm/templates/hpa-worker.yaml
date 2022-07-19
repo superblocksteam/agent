@@ -1,4 +1,5 @@
 {{- range $k, $v := $.Values.worker.fleets }}
+{{- if $v.enabled }}
 {{- $autoscaling := merge $v.autoscaling $.Values.worker.autoscaling }}
 {{- if $autoscaling.enabled }}
 ---
@@ -29,5 +30,6 @@ spec:
         name: memory
         targetAverageUtilization: {{ $autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}

@@ -1,5 +1,6 @@
 {{- if .Values.worker.podDisruptionBudget -}}
 {{- range $k, $v := $.Values.worker.fleets }}
+{{- if $v.enabled }}
 ---
 {{- if $.Capabilities.APIVersions.Has "policy/v1" -}}
 apiVersion: policy/v1
@@ -18,5 +19,6 @@ spec:
     matchLabels:
       {{- include "superblocks-agent.selectorLabels" $ | nindent 6 }}
       {{- include "superblocks-agent.worker.labels" $k | nindent 6 }}
+{{- end }}
 {{- end }}
 {{- end }}

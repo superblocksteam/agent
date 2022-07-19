@@ -196,11 +196,15 @@ worker:
   # fleets:
   #   all:
   #     ...
+  #     enabled: true
   #     plugins: "" # Either don't set or omit.
   #     ...
   #
   fleets:
     language:
+      # You can disable the default fleet options
+      # and set your own.
+      enabled: true
       plugins: "javascript,python"
       concurrency: 1
       # replicaCount: 1
@@ -214,6 +218,9 @@ worker:
       autoscaling: {}
 
     not-language:
+      # You can disable the default fleet options
+      # and set your own.
+      enabled: true
       plugins: "!javascript,python"
       # replicaCount: 1
       resources: {}
