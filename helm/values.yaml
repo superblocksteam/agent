@@ -134,7 +134,7 @@ controller:
   tolerations: []
   affinity: {}
 
-# Controller specific values.
+# Worker specific values.
 worker:
 
   # The default replica count if:
