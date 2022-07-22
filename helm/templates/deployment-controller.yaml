@@ -60,7 +60,7 @@ spec:
           protocol: TCP
         livenessProbe:
           httpGet:
-            path: /health
+            path: /liveness
             port: http
         readinessProbe:
           httpGet:

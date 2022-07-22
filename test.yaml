@@ -1,0 +1,334 @@
+---
+# Source: superblocks-agent/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: superblocks-agent-controller
+---
+# Source: superblocks-agent/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: superblocks-agent-worker
+---
+# Source: superblocks-agent/templates/secret-key.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: release-name-superblocks-agent
+  namespace: default
+  labels:
+    helm.sh/chart: superblocks-agent-0.33.0
+    app.kubernetes.io/name: superblocks-agent
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.44.0"
+    app.kubernetes.io/managed-by: Helm
+type: Opaque
+data:
+  SUPERBLOCKS_AGENT_KEY: "aGk="
+---
+# Source: superblocks-agent/templates/secret-tls.yaml
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: superblocks-agent-worker-tls
+  labels:
+    helm.sh/chart: superblocks-agent-0.33.0
+    app.kubernetes.io/name: superblocks-agent
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.44.0"
+    app.kubernetes.io/managed-by: Helm
+  # We could use Helm hooks here but there's some weird behvaior.
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURDekNDQWZPZ0F3SUJBZ0lSQUo1MnFNTEZ4cVlsUk5za3phZXdyYjh3RFFZSktvWklodmNOQVFFTEJRQXcKRHpFTk1Bc0dBMVVFQXhNRWNtOXZkREFlRncweU1qQTNNVGd4TnpBd016VmFGdzB5TXpBM01UZ3hOekF3TXpWYQpNQkV4RHpBTkJnTlZCQU1UQm1Oc2FXVnVkRENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTjVycVdTOVNKWlVHSngrTTVKcTZ2alZYVEJ5RXcwSXFpRkZwcy85T0tVUWtXU254WkM0Mk40bmVPc0cKR0pzYUFXaUdIYUV4WjJwMlphcVBFUG5FYm1uaFVXb0VIbWdFMFMrak1WaTNFUGc4YTl3aUtkMG5BcDBBcHlYbwp6QWZFKzB1aW9xaHhlWjZKeDVod1BCa3F6RUtxYnB0MVhIQXJlVy9vR2FGcmdweVBZMlI3bFc3ckhrTHpnbXZrCmJ2TmR6dmI4V1RrNmNjVTc2ZWo4MjlXVFg5K05JSmZBZWRLT2k4ZFpKL3ZLK1dtWG8yY1N0R2hKY1JGdVRKL1AKMTE0Q09xYUp2dnlDVFA1Qjk4clA4dERVRThBS28zZ2hiSFFSYnNaOEEyYVBnZkJzeU9UMlRyQWZUNW1pcGc1dQpMTTNRNGMvSjA0Q2xNdkZUYjh3SWFTRUYvS1VDQXdFQUFhTmdNRjR3RGdZRFZSMFBBUUgvQkFRREFnV2dNQjBHCkExVWRKUVFXTUJRR0NDc0dBUVVGQndNQkJnZ3JCZ0VGQlFjREFqQU1CZ05WSFJNQkFmOEVBakFBTUI4R0ExVWQKSXdRWU1CYUFGRy9sYUpuSllPQTBmaXZndXJoRlZBL3VZVnVyTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFDMQp4M09SVnF0K1VNc0tYbTd0NFBLWVBSdFRUaHVNM1NJMU1sbzRoYVJ6NVRZOXpvSDZZTFV2b0g0b2pQMDhoOVVYClRTZW9iZzZIWDFyRDloNXNIVjlicDl0UzR4MzVRL0FvTUNRZGZ3MjdieVZST0lwQnVzOUZyVit3RDdtN01zeXIKMW5xbE9mU1FtWXlqM1hWZmJhN09UNFlkWEpUbE9tOTM1VWFXdkYraTJiMHViVmJTaVh6WE9ZeVg3V3A5S0ZWWgp1azF4OGthNURreGh5WTJDSHNqdVRsQXRpd1NzMFRXYUppOHEzZW8vTVBKUEExTGVvVnpkWlZvTlg3K2U3N0huCi83SyswOWpNeGcvS21VdENDOGR5SnUyS2JiTEF3K2d6T3NqZDVaWXlsSlBZTk0yNWU5SDZ3N2ZPN0VNZ0s1b04KSGhpKy9BOC9ab1JmdWJzZjVTYXoKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBM211cFpMMUlsbFFZbkg0emttcnErTlZkTUhJVERRaXFJVVdtei8wNHBSQ1JaS2ZGCmtMalkzaWQ0NndZWW14b0JhSVlkb1RGbmFuWmxxbzhRK2NSdWFlRlJhZ1FlYUFUUkw2TXhXTGNRK0R4cjNDSXAKM1NjQ25RQ25KZWpNQjhUN1M2S2lxSEY1bm9uSG1IQThHU3JNUXFwdW0zVmNjQ3Q1YitnWm9XdUNuSTlqWkh1VgpidXNlUXZPQ2ErUnU4MTNPOXZ4Wk9UcHh4VHZwNlB6YjFaTmYzNDBnbDhCNTBvNkx4MWtuKzhyNWFaZWpaeEswCmFFbHhFVzVNbjgvWFhnSTZwb20rL0lKTS9rSDN5cy95ME5RVHdBcWplQ0ZzZEJGdXhud0RabytCOEd6STVQWk8Kc0I5UG1hS21EbTRzemREaHo4blRnS1V5OFZOdnpBaHBJUVg4cFFJREFRQUJBb0lCQUJMTysrWWU4NUp5emhuOQp1aEs1bytFaStkeHM2UnVERGcvK09kc0F5TmQ4alM3NzJRTWgvb1RheGFqcVBRNXdwb25XUFk4eUJGTEdiRlo5Ci9xdUFadTNoTmVkSExlTVI5VGFZRUVZMlJPTVpDTzMyblorcit0YVlCWXA1SXpmTStvc3MxNkJ5NkJ2MS9zRHYKVE1XOERzWGNiN29KdEtWdnA3ZEU0MVg1SjNSaHExcnViZjhwQ1dmWlNIZG9IcFAxL1pjNnVCTXJEVFR5eGJuTgpVV0p6bGgvSmI5WE9UVmx2Z2J1c3l1OTEvRnBDRVdJV055TTN0b3hITDZJcThOKzc5Y3ZHT3dKakpyMU4vOER0ClRldloxVzVaZTVlenZpOTRQcWFaSUhza1k4M1psUnRzazdzVVZvQS9pZW5iV0RKQTJyQ2VoZTFsTEZ6N2ZMMUYKYisxbGhza0NnWUVBK1I1UWJhTUxHNnZDaFpRaVd0WUJwY3F3V1RPWkFXWGZlcG5NcUtidWhERVdudFhWUDlCYgprU21aYkpza0lRU0lBRmswM2xDRFVjMjlGMXNxMDQ5U005RDFaVUlZRkxKZmwwZFFqRjNWNTNldHU0TUFXZHZkCndZaVByYjEvMkVBSjg1NkpNd2JTMnV0cXFFbnhFbjVJVnkyN0lGeXI4L2JkWlphVE9wYS9VQXNDZ1lFQTVKQ00KZktBSlgyV2tGZGp1bStya0xFSCtQbU1xUHBPbTlXMHFVeWlBYm9MSTdwOWNRTVBNcDRIVEF5WTR1d0ZEOFpNYQoyTFN5akJoSWlodVpVNEU2NTFmWGVuOFlsMjZ0OGhILzNuOHk5VTRNY09rT3NYRUN0UGFjcGdYMTc1MGJHUW9jCjlPQVVmVlp6WXp3UjEwSG5lRjF6anpUVVRaRnMvN3YyZDAwa1pBOENnWUVBbVRqWTlTWWtMZWZONUFVQndHY0MKYW11cFhhUUx4cjFXMy94NjBYeWpGWEZ2M1UvZU1ycS9weUF6K29YTmlmVlVoUXBaSnlmVUxWdGlvMXZ5a2w4RAppMVZKcWZjbUFvelhtSjlIWHA1VWMySzcyNm91YkJaOFpZM04rV21sbVdlQjkzS2FKbVZiQ1VWa3U0K0hFLzNTCkZyVE05SkdyUFltb0VOUzFSNEx5dHBNQ2dZQkVFOG5FVk9aMXc1QmI4WUVnYjVZR21LRmhjNmZoZTVqL0FNVGEKZi9YQTlMTmtYNUxhdDNiOWJXMnNRbllqUFAwL3R0RUlPc256Y0VncTJvMlFrYTA1dXJBempDZUc4ekJjS1lCTQpoUlpvZWhhNmlyQVZxZE5ra3crVlk3RWM3VzVreHQ1WkVXVUk3L2J1VjdYNHAyaUtNVXQ2SEFJZ0dIQ2V1eDF0CjYwd3JnUUtCZ0VONFJwMlYreC9GbWtCcGtXZnhoTXM4YmpqL284eXExVVFBUjhNWWNLRzBkNTNTUlorMklqUEMKSm4vbXZ4aE9IRllqVVJaYmhPWGFnOVBLcWs0YWl1TkRWVFUzNStqMi9WaFloZy9ya0V0S2tZUkdUODhXNFdqNApxSzZNNmVveFQvRkh2bWVzRlFXbXMxTU9yUmNVdmE0bWxuKzRoK1VKOFBxOFY5amRydUUrCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+  tls.ca: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURDVENDQWZHZ0F3SUJBZ0lRQTMyR2VIdEt1ZjFDUGxSeGxaU2Z6ekFOQmdrcWhraUc5dzBCQVFzRkFEQVAKTVEwd0N3WURWUVFERXdSeWIyOTBNQjRYRFRJeU1EY3hPREUzTURBek5Wb1hEVEl6TURjeE9ERTNNREF6TlZvdwpEekVOTUFzR0ExVUVBeE1FY205dmREQ0NBU0l3RFFZSktvWklodmNOQVFFQkJRQURnZ0VQQURDQ0FRb0NnZ0VCCkFPbHB1TGRGMDZoT2ltSWlzNkFiQnpOTTA1VFMwRTcxbjNUY3czc0hZd2ROZkNkNlNUMHJQeUtQY09kRC9KZk0KZSs4R2EvUVlxQ0x2ZGx3Mnl4a3h4QXV1aWsxUGdWenRpU3Q2eHdjcHc0eGhmc25yTE45UWl3RGphNVUyeEJ3UAo3NTN2VzZob1I0VEMrdWpmc241NVJZU0w3ZnBFL05ZSzZJVmMybHJpZS9HSzFDd0FEREhBZUpFK0JhVnJ3MS9hCkkzL0lBaThGV0F4a2dFTFUrTlhQUkpaWkdnYkU3bnk2WXpvOHdldkNGYm53c2ZpeEtSQUt1MnZ4bzFGOFQwREwKamZDdXA1TGtaWGxraFUraVdHV21SekFyUjE2VXhaVStkQ2ZOZmQvd2U4TzBpN0NZK1RwaDUyaUwrb1E5Tm5jSApRSFE3VXoxWWxINDZZc1gvU1o1K0Nwa0NBd0VBQWFOaE1GOHdEZ1lEVlIwUEFRSC9CQVFEQWdLa01CMEdBMVVkCkpRUVdNQlFHQ0NzR0FRVUZCd01CQmdnckJnRUZCUWNEQWpBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWQKRGdRV0JCUnY1V2laeVdEZ05INHI0THE0UlZRUDdtRmJxekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBM2syeQpGKzRxMmhuWEpyQ1hweXdORDFXc0pyTUl2YVBvZG1SeEVUK2ZOdk5RUVpXZVJsaWUyWjhBcitZREZHbGtVK3F6CmlUVUlqUFR6eU1HOHJ1Rmxtci9tYmZwNW1MYmRaeGlOUmVST0NQV3orVFREbVBhaXo0dXdvVnRYVjJrTmpxelMKdXZGd3lqZWYyWUpHOTZsR2pIUUVZdnBXMWpuTHRoMURCWDZqY3d6YWdidUUrUmVkRStTRHVLK1U5Y0J4TzhDdApFM2NLNWRjMnJMYUVLOWpuWnZ5c2thTFljbjNiL0Eyc0tsOFFEc3BWSlB1YmVsQ3JQNnRjbUpmeU02a2NlbFdQCk9DempWWE9teHVFb0Z0K1FDVTg1Y3JrVlRwbVUwVVFaMkdDVDF5cG04ODRJWW52Y3RqQzA2dFlkTHpEb3Z1bEsKWWdOdU4rMDJJcXdNSUpvb2pBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+---
+# Source: superblocks-agent/templates/service-controller.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-superblocks-agent
+  labels:
+    helm.sh/chart: superblocks-agent-0.33.0
+    app.kubernetes.io/name: superblocks-agent
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.44.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8020
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: superblocks-agent
+    app.kubernetes.io/instance: release-name
+---
+# Source: superblocks-agent/templates/deployment-controller.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superblocks-agent-controller
+  labels:
+    helm.sh/chart: superblocks-agent-0.33.0
+    app.kubernetes.io/name: superblocks-agent
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.44.0"
+    app.kubernetes.io/managed-by: Helm
+    component: controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: superblocks-agent
+      app.kubernetes.io/instance: release-name
+      component: controller
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  template:
+    metadata:
+      annotations:
+      labels:
+        app.kubernetes.io/name: superblocks-agent
+        app.kubernetes.io/instance: release-name
+        component: controller
+    spec:
+      terminationGracePeriodSeconds: 86400
+      securityContext:
+        {}
+      serviceAccountName: superblocks-agent-controller
+      containers:
+      - name: superblocks-agent-controller
+        securityContext:
+          {}
+        image: "ghcr.io/superblocksteam/agent-controller:v0.44.0"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8020
+          protocol: TCP
+        - name: worker
+          containerPort: 5001
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        envFrom:        
+        - secretRef:
+            name: release-name-superblocks-agent
+        env:
+        - name: SUPERBLOCKS_AGENT_PORT
+          value: "8020"
+        - name: SUPERBLOCKS_AGENT_HOST_URL
+          value: "http[s]://<agent-host[:port]>/agent"
+        - name: SUPERBLOCKS_AGENT_ENVIRONMENT
+          value: "*"
+        - name: SUPERBLOCKS_WORKER_TLS_CA_FILE
+          value: /etc/config/tls/tls.ca
+        - name: SUPERBLOCKS_WORKER_TLS_CERT_FILE
+          value: /etc/config/tls/tls.crt
+        - name: SUPERBLOCKS_WORKER_TLS_KEY_FILE
+          value: /etc/config/tls/tls.key
+        - name: SUPERBLOCKS_WORKER_PORT
+          value: "5001"
+        - name: SUPERBLOCKS_AGENT_INTERNAL_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=512"        
+        volumeMounts:
+        - name: tls
+          mountPath: /etc/config/tls
+      volumes:
+      - name: tls
+        secret:
+          secretName: superblocks-agent-worker-tls
+---
+# Source: superblocks-agent/templates/deployment-worker.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superblocks-agent-worker-language
+  labels:
+    helm.sh/chart: superblocks-agent-0.33.0
+    app.kubernetes.io/name: superblocks-agent
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.44.0"
+    app.kubernetes.io/managed-by: Helm
+    component: worker
+    fleet: language
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: superblocks-agent
+      app.kubernetes.io/instance: release-name
+      component: worker
+      fleet: language
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  template:
+    metadata:
+      annotations:
+      labels:
+        app.kubernetes.io/name: superblocks-agent
+        app.kubernetes.io/instance: release-name
+        component: worker
+        fleet: language
+    spec:
+      terminationGracePeriodSeconds: 86400
+      securityContext:
+        {}
+      serviceAccountName: superblocks-agent-worker
+      containers:
+      - name: superblocks-agent-worker
+        securityContext:
+          {}
+        image: "ghcr.io/superblocksteam/agent-worker:v0.44.0"
+        imagePullPolicy: IfNotPresent
+        resources:
+          {}
+        envFrom:        
+        - secretRef:
+            name: release-name-superblocks-agent
+        env:
+        - name: SUPERBLOCKS_WORKER_TLS_CA_FILE
+          value: /etc/config/tls/tls.ca
+        - name: SUPERBLOCKS_WORKER_TLS_CERT_FILE
+          value: /etc/config/tls/tls.crt
+        - name: SUPERBLOCKS_WORKER_TLS_KEY_FILE
+          value: /etc/config/tls/tls.key
+        - name: SUPERBLOCKS_WORKER_PLUGINS
+          value: "javascript,python"
+        - name: SUPERBLOCKS_WORKER_CONCURRENCY
+          value: "1"
+        - name: SUPERBLOCKS_AGENT_ENVIRONMENT
+          value: "*"        
+        volumeMounts:
+        - name: tls
+          mountPath: /etc/config/tls
+      volumes:
+      - name: tls
+        secret:
+          secretName: superblocks-agent-worker-tls
+---
+# Source: superblocks-agent/templates/deployment-worker.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superblocks-agent-worker-not-language
+  labels:
+    helm.sh/chart: superblocks-agent-0.33.0
+    app.kubernetes.io/name: superblocks-agent
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.44.0"
+    app.kubernetes.io/managed-by: Helm
+    component: worker
+    fleet: not-language
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: superblocks-agent
+      app.kubernetes.io/instance: release-name
+      component: worker
+      fleet: not-language
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  template:
+    metadata:
+      annotations:
+      labels:
+        app.kubernetes.io/name: superblocks-agent
+        app.kubernetes.io/instance: release-name
+        component: worker
+        fleet: not-language
+    spec:
+      terminationGracePeriodSeconds: 86400
+      securityContext:
+        {}
+      serviceAccountName: superblocks-agent-worker
+      containers:
+      - name: superblocks-agent-worker
+        securityContext:
+          {}
+        image: "ghcr.io/superblocksteam/agent-worker:v0.44.0"
+        imagePullPolicy: IfNotPresent
+        resources:
+          {}
+        envFrom:        
+        - secretRef:
+            name: release-name-superblocks-agent
+        env:
+        - name: SUPERBLOCKS_WORKER_TLS_CA_FILE
+          value: /etc/config/tls/tls.ca
+        - name: SUPERBLOCKS_WORKER_TLS_CERT_FILE
+          value: /etc/config/tls/tls.crt
+        - name: SUPERBLOCKS_WORKER_TLS_KEY_FILE
+          value: /etc/config/tls/tls.key
+        - name: SUPERBLOCKS_WORKER_PLUGINS
+          value: "!javascript,python"
+        - name: SUPERBLOCKS_AGENT_ENVIRONMENT
+          value: "*"        
+        volumeMounts:
+        - name: tls
+          mountPath: /etc/config/tls
+      volumes:
+      - name: tls
+        secret:
+          secretName: superblocks-agent-worker-tls
+---
+# Source: superblocks-agent/templates/hpa-worker.yaml
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: superblocks-agent-worker-language
+  labels:
+    helm.sh/chart: superblocks-agent-0.33.0
+    app.kubernetes.io/name: superblocks-agent
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.44.0"
+    app.kubernetes.io/managed-by: Helm
+    component: worker
+    fleet: language
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: superblocks-agent-worker-language
+  minReplicas: 2
+  maxReplicas: 100
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 40
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: 80
