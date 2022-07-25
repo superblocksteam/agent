@@ -92,10 +92,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        {{- if ((.Values.controller.resources | default dict ).limits | default dict).memory }}
-        - name: NODE_OPTIONS
-          value: "--max-old-space-size={{ include "superblocks-agent.heapSize" .Values.controller.resources.limits.memory }}"
-        {{- end }}
         {{- include "extra-env" (merge .Values.controller.extraEnv .Values.extraEnv) | indent 8 }}
         volumeMounts:
         - name: tls
