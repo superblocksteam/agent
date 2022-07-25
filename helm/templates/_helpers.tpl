@@ -87,20 +87,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Calculate heap size
-*/}}
-{{- define "superblocks-agent.heapSize" -}}
-{{- if hasSuffix "Mi" . -}}
-{{- $memoryLimit := trimSuffix "Mi" . -}}
-{{ div $memoryLimit 2 }}
-{{- end }}
-{{- if hasSuffix "Gi" . -}}
-{{- $memoryLimit := mul (trimSuffix "Gi" .) 1024 -}}
-{{ div $memoryLimit 2 }}
-{{- end }}
-{{- end }}
-
-{{/*
 Generate certificates for controller <-> worker communication
 */}}
 {{- define "superblocks-agent.worker.tls" -}}
