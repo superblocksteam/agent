@@ -75,10 +75,6 @@ spec:
         {{- end }}
         - name: SUPERBLOCKS_AGENT_ENVIRONMENT
           value: {{ default "*" $.Values.superblocks.agentEnvironment | quote }}
-        {{- if (($v.resources | default dict ).limits | default dict).memory }}
-        - name: NODE_OPTIONS
-          value: "--max-old-space-size={{ include "superblocks-agent.heapSize" $v.resources.limits.memory }}"
-        {{- end }}
         {{- include "extra-env" (merge $v.extraEnv $.Values.worker.extraEnv $.Values.extraEnv) | indent 8 }}
         volumeMounts:
         - name: tls
