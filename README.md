@@ -14,7 +14,7 @@
 <br/>
 
 <p align="center">
-  <img src="./assets/architecture.png" width="50%"/>
+  <img src="./assets/architecture-outline.png" width="50%"/>
 </p>
 
 <br/>
