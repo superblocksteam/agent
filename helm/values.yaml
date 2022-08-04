@@ -203,7 +203,7 @@ worker:
     language:
       plugins: "javascript,python"
       concurrency: 1
-      replicaCount: 1
+      # replicaCount: 1
       resources: {}
       # These environment variables will only
       # be applied to this Worker fleet.
@@ -215,7 +215,7 @@ worker:
 
     not-language:
       plugins: "!javascript,python"
-      replicaCount: 1
+      # replicaCount: 1
       resources: {}
       extraEnv: {}
       envFrom: []
