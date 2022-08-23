@@ -1,4 +1,4 @@
-name: Release Chart
+name: Bump Versions in Chart.yaml
 on:
   release:
     types:
