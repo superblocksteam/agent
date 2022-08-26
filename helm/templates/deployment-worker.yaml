@@ -24,7 +24,7 @@ spec:
     metadata:
       annotations:
       {{- if $.Values.worker.podAnnotations }}
-        {{- toYaml $.Values.controller.podAnnotations | nindent 8 }}
+        {{- toYaml $.Values.worker.podAnnotations | nindent 8 }}
       {{- end }}
       {{- if $.Values.commonPodAnnotations }}
         {{- toYaml $.Values.commonPodAnnotations | nindent 8 }}
