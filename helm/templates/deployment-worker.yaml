@@ -61,12 +61,17 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
         env:
+        {{- if $.Values.worker.tls.enabled }}
         - name: SUPERBLOCKS_WORKER_TLS_CA_FILE
           value: /etc/config/tls/tls.ca
         - name: SUPERBLOCKS_WORKER_TLS_CERT_FILE
           value: /etc/config/tls/tls.crt
         - name: SUPERBLOCKS_WORKER_TLS_KEY_FILE
           value: /etc/config/tls/tls.key
+        {{- else }}
+        - name: SUPERBLOCKS_WORKER_TLS_INSECURE
+          value: "true"
+        {{- end }}
         - name: SUPERBLOCKS_WORKER_PLUGINS
           value: {{ $v.plugins | quote }}
         {{- if $v.concurrency }}
@@ -77,12 +82,16 @@ spec:
           value: {{ default "*" $.Values.superblocks.agentEnvironment | quote }}
         {{- include "extra-env" (merge $v.extraEnv $.Values.worker.extraEnv $.Values.extraEnv) | indent 8 }}
         volumeMounts:
+        {{- if $.Values.worker.tls.enabled }}
         - name: tls
           mountPath: /etc/config/tls
+        {{- end }}
       volumes:
+      {{- if $.Values.worker.tls.enabled }}
       - name: tls
         secret:
-          secretName: {{ include "superblocks-agent.worker.name" $ }}-tls
+          secretName: {{ $.Values.worker.tls.existingSecretName | default (printf "%s%s" (include "superblocks-agent.worker.name" $) "-tls") }}
+      {{- end }}
       {{- with $.Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
