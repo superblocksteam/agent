@@ -119,6 +119,15 @@ controller:
     maxReplicas: 100
     targetCPUUtilizationPercentage: 40
     targetMemoryUtilizationPercentage: 80
+    customMetrics: []
+      # - type: External
+      #   external:
+      #     metricName: nginx.net.request_per_s
+      #     metricSelector:
+      #       matchLabels:
+      #           kube_container_name: nginx
+      #     targetAverageValue: 123
+
 
   # Please adjust these values as needed depending on your workloads. Allotting less
   # than this could potentially cause your agents to crash from Out Of Memory errors.
@@ -160,6 +169,14 @@ worker:
     maxReplicas: 100
     targetCPUUtilizationPercentage: 40
     targetMemoryUtilizationPercentage: 80
+    customMetrics: []
+      # - type: External
+      #   external:
+      #     metricName: nginx.net.request_per_s
+      #     metricSelector:
+      #       matchLabels:
+      #           kube_container_name: nginx
+      #     targetAverageValue: 123
 
   image:
     repository: ghcr.io/superblocksteam/agent-worker

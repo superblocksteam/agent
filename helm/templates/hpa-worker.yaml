@@ -29,5 +29,8 @@ spec:
         name: memory
         targetAverageUtilization: {{ $autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
+    {{- with $autoscaling.customMetrics }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
 {{- end }}
 {{- end }}
