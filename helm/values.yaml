@@ -41,7 +41,6 @@ envFrom: []
 
 # Controller specific values.
 controller:
-
   service:
     type: ClusterIP
     port: 8020
@@ -55,6 +54,9 @@ controller:
     # - host: chart-example.local
     #   paths:
     #   - /
+    #   - path: /agent
+    #     pathType: Prefix
+    #   - path: /health
     tls: []
     # - secretName: chart-example-tls
     #   hosts:
@@ -128,7 +130,6 @@ controller:
       #           kube_container_name: nginx
       #     targetAverageValue: 123
 
-
   # Please adjust these values as needed depending on your workloads. Allotting less
   # than this could potentially cause your agents to crash from Out Of Memory errors.
   resources:
@@ -145,7 +146,6 @@ controller:
 
 # Worker specific values.
 worker:
-
   # The default replica count if:
   # 1) autoscaling is not enabled
   # 2) fleet specific replicaCount is not defined
