@@ -40,16 +40,20 @@ spec:
       http:
         paths:
           {{- range .paths }}
-          {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.Version }}
-          - path: {{ . }}
+          {{- if and . (kindIs "map" .) }}
+          - path: {{ required "controller.ingress.hosts.paths[].path is required" .path | quote }}
+            pathType: {{ default "ImplementationSpecific" .pathType | quote }}
+          {{- else }}
+          - path: {{ quote . }}
             pathType: ImplementationSpecific
+          {{- end }}
+          {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.Version }}
             backend:
               service:
                 name: {{ $fullName }}
                 port:
                   number: {{ $svcPort }}
           {{- else }}
-          - path: {{ . }}
             backend:
               serviceName: {{ $fullName }}
               servicePort: {{ $svcPort }}
