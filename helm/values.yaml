@@ -232,7 +232,7 @@ worker:
   fleets:
     language:
       plugins: "javascript,python"
-      concurrency: 1
+      concurrency: 10
       # replicaCount: 1
       resources: {}
       # These environment variables will only
