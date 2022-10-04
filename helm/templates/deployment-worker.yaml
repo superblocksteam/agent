@@ -51,7 +51,11 @@ spec:
       - name: {{ $.Chart.Name }}-worker
         securityContext:
           {{- toYaml $.Values.worker.securityContext | nindent 10 }}
+        {{- if $v.image }}
+        image: "{{ $v.image.repository | default $.Values.worker.image.repository }}:{{ $v.image.tag | default $.Values.worker.image.tag | default $.Chart.AppVersion }}"
+        {{- else }}
         image: "{{ $.Values.worker.image.repository }}:{{ $.Values.worker.image.tag | default $.Chart.AppVersion }}"
+        {{- end }}
         imagePullPolicy: {{ $.Values.worker.image.pullPolicy }}
         resources:
           {{- toYaml $v.resources | nindent 10 }}
