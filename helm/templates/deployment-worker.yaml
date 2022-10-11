@@ -45,7 +45,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml $.Values.worker.podSecurityContext | nindent 8 }}
+        {{- toYaml (merge (default (dict) $v.podSecurityContext) $.Values.worker.podSecurityContext)  | nindent 8 }}
       serviceAccountName: {{ default (include "superblocks-agent.worker.name" $) $.Values.worker.serviceAccount.name }}
       containers:
       - name: {{ $.Chart.Name }}-worker
