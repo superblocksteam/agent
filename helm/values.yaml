@@ -215,6 +215,7 @@ worker:
   podLabels: {}
 
   podSecurityContext: {}
+  containerSecurityContext: {}
   securityContext: {}
   nodeSelector: {}
   tolerations: []
