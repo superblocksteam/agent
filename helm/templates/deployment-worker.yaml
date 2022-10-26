@@ -40,19 +40,23 @@ spec:
           {{- toYaml $.Values.commonPodLabels | nindent 8 }}
         {{- end }}
     spec:
-      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 86400 }}
+      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds | default 1800 }}
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml $.Values.worker.podSecurityContext | nindent 8 }}
+        {{- toYaml (merge (default (dict) $v.podSecurityContext) $.Values.worker.podSecurityContext)  | nindent 8 }}
       serviceAccountName: {{ default (include "superblocks-agent.worker.name" $) $.Values.worker.serviceAccount.name }}
       containers:
       - name: {{ $.Chart.Name }}-worker
         securityContext:
-          {{- toYaml $.Values.worker.securityContext | nindent 10 }}
+          {{- toYaml (merge (default (dict) $v.containerSecurityContext) $.Values.worker.containerSecurityContext) | nindent 10 }}
+        {{- if $v.image }}
+        image: "{{ $v.image.repository | default $.Values.worker.image.repository }}:{{ $v.image.tag | default $.Values.worker.image.tag | default $.Chart.AppVersion }}"
+        {{- else }}
         image: "{{ $.Values.worker.image.repository }}:{{ $.Values.worker.image.tag | default $.Chart.AppVersion }}"
+        {{- end }}
         imagePullPolicy: {{ $.Values.worker.image.pullPolicy }}
         resources:
           {{- toYaml $v.resources | nindent 10 }}
@@ -62,12 +66,17 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
         env:
+        {{- if $.Values.worker.tls.enabled }}
         - name: SUPERBLOCKS_WORKER_TLS_CA_FILE
           value: /etc/config/tls/tls.ca
         - name: SUPERBLOCKS_WORKER_TLS_CERT_FILE
           value: /etc/config/tls/tls.crt
         - name: SUPERBLOCKS_WORKER_TLS_KEY_FILE
           value: /etc/config/tls/tls.key
+        {{- else }}
+        - name: SUPERBLOCKS_WORKER_TLS_INSECURE
+          value: "true"
+        {{- end }}
         - name: SUPERBLOCKS_WORKER_PLUGINS
           value: {{ $v.plugins | quote }}
         {{- if $v.concurrency }}
@@ -78,12 +87,16 @@ spec:
           value: {{ default "*" $.Values.superblocks.agentEnvironment | quote }}
         {{- include "extra-env" (merge $v.extraEnv $.Values.worker.extraEnv $.Values.extraEnv) | indent 8 }}
         volumeMounts:
+        {{- if $.Values.worker.tls.enabled }}
         - name: tls
           mountPath: /etc/config/tls
+        {{- end }}
       volumes:
+      {{- if $.Values.worker.tls.enabled }}
       - name: tls
         secret:
-          secretName: {{ include "superblocks-agent.worker.name" $ }}-tls
+          secretName: {{ $.Values.worker.tls.existingSecretName | default (printf "%s%s" (include "superblocks-agent.worker.name" $) "-tls") }}
+      {{- end }}
       {{- with $.Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

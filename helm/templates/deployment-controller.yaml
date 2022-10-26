@@ -37,7 +37,7 @@ spec:
           {{- toYaml .Values.commonPodLabels | nindent 8 }}
         {{- end }}
     spec:
-      terminationGracePeriodSeconds: {{ .Values.controller.terminationGracePeriodSeconds | default 86400 }}
+      terminationGracePeriodSeconds: {{ .Values.controller.terminationGracePeriodSeconds | default 1800 }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -80,12 +80,17 @@ spec:
           value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
         - name: SUPERBLOCKS_AGENT_ENVIRONMENT
           value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
+        {{- if $.Values.worker.tls.enabled }}
         - name: SUPERBLOCKS_WORKER_TLS_CA_FILE
           value: /etc/config/tls/tls.ca
         - name: SUPERBLOCKS_WORKER_TLS_CERT_FILE
           value: /etc/config/tls/tls.crt
         - name: SUPERBLOCKS_WORKER_TLS_KEY_FILE
           value: /etc/config/tls/tls.key
+        {{- else}}
+        - name: SUPERBLOCKS_WORKER_TLS_INSECURE
+          value: "true"
+        {{- end }}
         - name: SUPERBLOCKS_WORKER_PORT
           value: {{ .Values.controller.ports.worker | quote }}
         - name: SUPERBLOCKS_AGENT_INTERNAL_HOST
@@ -94,12 +99,16 @@ spec:
               fieldPath: status.podIP
         {{- include "extra-env" (merge .Values.controller.extraEnv .Values.extraEnv) | indent 8 }}
         volumeMounts:
+        {{- if $.Values.worker.tls.enabled }}
         - name: tls
           mountPath: /etc/config/tls
+        {{- end }}
       volumes:
+      {{- if $.Values.worker.tls.enabled }}
       - name: tls
         secret:
-          secretName: {{ include "superblocks-agent.worker.name" $ }}-tls
+          secretName: {{ $.Values.worker.tls.existingSecretName | default (printf "%s%s" (include "superblocks-agent.worker.name" $) "-tls") }}
+      {{- end }}
       {{- with .Values.controller.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
