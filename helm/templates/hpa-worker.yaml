@@ -1,5 +1,4 @@
 {{- range $k, $v := $.Values.worker.fleets }}
-{{- if $v.enabled }}
 {{- $autoscaling := merge $v.autoscaling $.Values.worker.autoscaling }}
 {{- if $autoscaling.enabled }}
 ---
@@ -33,6 +32,5 @@ spec:
     {{- with $autoscaling.customMetrics }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}
