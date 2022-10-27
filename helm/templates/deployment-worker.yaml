@@ -1,5 +1,5 @@
 {{- range $k, $v := $.Values.worker.fleets }}
-{{- if $v.enabled }}
+{{- if (default true $v.enabled) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
