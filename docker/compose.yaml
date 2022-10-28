@@ -18,12 +18,12 @@ x-environment: &environment
 services:
   proxy:
     # Configurable variables for traefik to set up https
-    # SUPERBLOCKS_PROXY_ADMIN_EMAIL
+    # SUPERBLOCKS_LETSENCRYPT_EMAIL
     # SUPERBLOCKS_PROXY_REPLICA_COUNT, default 0
     # SUPERBLOCKS_LETSENCRYPT_DIR, default letsencrypt
+    # SUPERBLOCKS_AGENT_DOMAIN, default .+
     image: traefik:v2.8
     deploy:
-      mode: replicated
       replicas: ${SUPERBLOCKS_PROXY_REPLICA_COUNT:-0}
     ports:
       - '80:80'
@@ -35,7 +35,7 @@ services:
       - '--providers.docker=true'
       - '--entrypoints.web.address=:80'
       - '--entrypoints.websecure.address=:443'
-      - '--certificatesresolvers.letsencrypt.acme.email=${SUPERBLOCKS_ADMIN_EMAIL}'
+      - '--certificatesresolvers.letsencrypt.acme.email=${SUPERBLOCKS_LETSENCRYPT_EMAIL}'
       - '--certificatesresolvers.letsencrypt.acme.storage=/${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}/acme.json'
       - '--certificatesresolvers.letsencrypt.acme.httpchallenge=true'
       - '--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web'
@@ -45,7 +45,10 @@ services:
 
       ### http to https redirect
       - 'traefik.http.routers.http-catchall.entrypoints=web'
-      - 'traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)'
+      ###### In case multiple domain names are pointed to the host
+      ###### the rule below redirects http requests for all domains
+      ###### set SUPERBLOCKS_AGENT_DOMAIN to specify the domain for OPA
+      - 'traefik.http.routers.http-catchall.rule=hostregexp(`{host:${SUPERBLOCKS_AGENT_DOMAIN:-.+}}`)'
       - 'traefik.http.routers.http-catchall.middlewares=redirect-to-https'
       - 'traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https'
 
@@ -65,7 +68,10 @@ services:
       - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
       - '${SUPERBLOCKS_WORKER_PORT:-5001}'
     labels:
-      - 'traefik.http.routers.controller.rule=hostregexp(`{host:.+}`)'
+      ###### In case multiple domain names are pointed to the host
+      ###### the rule below catches https requests for all domains
+      ###### set SUPERBLOCKS_AGENT_DOMAIN to specify the domain for OPA
+      - 'traefik.http.routers.controller.rule=hostregexp(`{host:${SUPERBLOCKS_AGENT_DOMAIN:-.+}}`)'
       - 'traefik.http.routers.controller.entrypoints=websecure'
       - 'traefik.http.routers.controller.tls=true'
       - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
