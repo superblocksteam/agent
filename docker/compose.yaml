@@ -16,16 +16,63 @@ x-environment: &environment
     __SUPERBLOCKS_AGENT_SERVER_URL: ${__SUPERBLOCKS_AGENT_SERVER_URL:-https://app.superblocks.com}
 
 services:
+  proxy:
+    # Configurable variables for traefik to set up https
+    # SUPERBLOCKS_LETSENCRYPT_EMAIL
+    # SUPERBLOCKS_PROXY_REPLICA_COUNT, default 0
+    # SUPERBLOCKS_LETSENCRYPT_DIR, default letsencrypt
+    # SUPERBLOCKS_AGENT_DOMAIN, default .+
+    image: traefik:v2.8
+    deploy:
+      replicas: ${SUPERBLOCKS_PROXY_REPLICA_COUNT:-0}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+      - './${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}:/${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}'
+    command:
+      - '--providers.docker=true'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--certificatesresolvers.letsencrypt.acme.email=${SUPERBLOCKS_LETSENCRYPT_EMAIL}'
+      - '--certificatesresolvers.letsencrypt.acme.storage=/${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}/acme.json'
+      - '--certificatesresolvers.letsencrypt.acme.httpchallenge=true'
+      - '--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web'
+    labels:
+      ### core config
+      - 'traefik.enable=true'
+
+      ### http to https redirect
+      - 'traefik.http.routers.http-catchall.entrypoints=web'
+      ###### In case multiple domain names are pointed to the host
+      ###### the rule below redirects http requests for all domains
+      ###### set SUPERBLOCKS_AGENT_DOMAIN to specify the domain for OPA
+      - 'traefik.http.routers.http-catchall.rule=hostregexp(`{host:${SUPERBLOCKS_AGENT_DOMAIN:-.+}}`)'
+      - 'traefik.http.routers.http-catchall.middlewares=redirect-to-https'
+      - 'traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https'
+
+
   worker:
     image: ${SUPERBLOCKS_DOCKER_WORKER_REPOSITORY:-ghcr.io/superblocksteam/agent-worker}:${SUPERBLOCKS_DOCKER_WORKER_TAG:-latest}
     pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
     <<: *environment
     ports:
-    - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}'
+      - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}'
+
   controller:
     image: ${SUPERBLOCKS_DOCKER_CONTROLLER_REPOSITORY:-ghcr.io/superblocksteam/agent-controller}:${SUPERBLOCKS_DOCKER_CONTROLLER_TAG:-latest}
     pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
     <<: *environment
     ports:
-    - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
-    - '${SUPERBLOCKS_WORKER_PORT:-5001}'
+      - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
+      - '${SUPERBLOCKS_WORKER_PORT:-5001}'
+    labels:
+      ###### In case multiple domain names are pointed to the host
+      ###### the rule below catches https requests for all domains
+      ###### set SUPERBLOCKS_AGENT_DOMAIN to specify the domain for OPA
+      - 'traefik.http.routers.controller.rule=hostregexp(`{host:${SUPERBLOCKS_AGENT_DOMAIN:-.+}}`)'
+      - 'traefik.http.routers.controller.entrypoints=websecure'
+      - 'traefik.http.routers.controller.tls=true'
+      - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_AGENT_PORT:-8020}'
