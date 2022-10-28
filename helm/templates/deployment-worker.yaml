@@ -91,6 +91,11 @@ spec:
         - name: tls
           mountPath: /etc/config/tls
         {{- end }}
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/worker_healthy
       volumes:
       {{- if $.Values.worker.tls.enabled }}
       - name: tls
