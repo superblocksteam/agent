@@ -273,8 +273,7 @@ worker:
       #   runAsGroup: 0
       #   runAsUser: 0
       image:
-          repository: ghcr.io/superblocksteam/worker-python
-          tag: v0.46.0
+          repository: ghcr.io/superblocksteam/agent-worker-python
 
     not-language:
       # You can disable the default fleet options
