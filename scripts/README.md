@@ -3,6 +3,8 @@
 ##### Supported OS
 - AmazonLinux
 - Ubuntu
+- CentOS
+- Debian
 
 ##### Install The Script
 ```
@@ -32,7 +34,7 @@ sudo superblocks start
 ```
 
 ##### Manual test for localhost
-- Configure an EC2 instance with AmazonLinux or Ubuntu
+- Configure a VM instance with AmazonLinux/Ubuntu/CentOS/Debian
 - Install the script
 ```
 sudo curl -SL https://raw.githubusercontent.com/superblocksteam/agent/main/scripts/quickstart.sh -o /usr/bin/superblocks
@@ -52,7 +54,7 @@ curl localhost:8020
 ```
 
 ##### Manual test for https
-- Configure an EC2 instance with AmazonLinux or Ubuntu
+- Configure a VM instance with AmazonLinux/Ubuntu/CentOS/Debian
 - Install the script(same commands as above)
 - Configure agent key and other variables
 ```
@@ -61,7 +63,7 @@ sudo superblocks conf SUPERBLOCKS_LETSENCRYPT_EMAIL [YOUR_EMAIL_ADDRESS]
 sudo superblocks conf SUPERBLOCKS_AGENT_HOST_URL https://YOUR.VALID.DOMAIN.COM
 sudo superblocks conf SUPERBLOCKS_PROXY_REPLICA_COUNT 1
 ```
-- Make sure a CNAME record of the custom domain is created and pointed to the EC2 instance
+- Make sure a CNAME or A record of the custom domain is created and pointed to the VM instance
 - Start the agent(as above)
 - Check localhost
 - Visit https://YOUR.VALID.DOMAIN.COM to validate is service is up for https
