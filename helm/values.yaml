@@ -279,6 +279,11 @@ worker:
       # image:
       #     repository: ghcr.io/superblocksteam/worker-python
       #     tag: v0.48.0
+      # This image is being affixed to an older version of the worker image that
+      # contains the python runtime
+      image:
+        repository: ghcr.io/superblocksteam/agent-worker
+        tag: v0.62.0
 
     not-language:
       # You can disable the default fleet options
