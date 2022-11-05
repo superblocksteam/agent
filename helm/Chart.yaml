@@ -3,4 +3,4 @@ appVersion: v0.63.0
 description: A Helm chart for the Superblocks On-Prem Agent
 name: superblocks-agent
 type: application
-version: 0.65.0
+version: 0.66.0
