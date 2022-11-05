@@ -97,12 +97,31 @@ conf() {
     else
         echo "$1=$2" >> $env_file
     fi
+
+    # Extract SUPERBLOCKS_AGENT_DOMAIN from SUPERBLOCKS_AGENT_HOST_URL
+    if [ "$1" = "SUPERBLOCKS_AGENT_HOST_URL" ]; then
+        if [ "$2" = "http*" ]; then
+            domain = $(awk -F/ '{print $3}' <<<"$2")
+            conf "SUPERBLOCKS_AGENT_DOMAIN" $domain
+        else
+            conf "SUPERBLOCKS_AGENT_DOMAIN" $2
+        fi
+    fi
 }
 
 show_instructions() {
+    echo ""
     echo "Superblocks On-Premise-Agent"
+    echo ""
     echo "Usage: sudo superblocks COMMAND"
-    echo "Commands: [start/status/stop/conf/log]"
+    echo ""
+    echo "Commands:"
+    echo "  start      Start Superblocks OPA, install docker if necessary"
+    echo "  status     Check the status of running containers"
+    echo "  stop       Stop running containers"
+    echo "  conf       Set configuration variables"
+    echo "  log        View logs, press Ctrl+C to stop"
+    echo ""
 }
 
 start() {
@@ -122,7 +141,7 @@ start() {
 }
 
 case "$1" in
-    ""|start)
+    start)
         start $compose_yaml $env_file $log_file
         ;;
     stop)

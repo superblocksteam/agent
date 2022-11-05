@@ -45,10 +45,7 @@ services:
 
       ### http to https redirect
       - 'traefik.http.routers.http-catchall.entrypoints=web'
-      ###### In case multiple domain names are pointed to the host
-      ###### the rule below redirects http requests for all domains
-      ###### set SUPERBLOCKS_AGENT_DOMAIN to specify the domain for OPA
-      - 'traefik.http.routers.http-catchall.rule=hostregexp(`{host:${SUPERBLOCKS_AGENT_DOMAIN:-.+}}`)'
+      - 'traefik.http.routers.http-catchall.rule=Host(`${SUPERBLOCKS_AGENT_DOMAIN:-}`)'
       - 'traefik.http.routers.http-catchall.middlewares=redirect-to-https'
       - 'traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https'
 
@@ -68,10 +65,7 @@ services:
       - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
       - '${SUPERBLOCKS_WORKER_PORT:-5001}'
     labels:
-      ###### In case multiple domain names are pointed to the host
-      ###### the rule below catches https requests for all domains
-      ###### set SUPERBLOCKS_AGENT_DOMAIN to specify the domain for OPA
-      - 'traefik.http.routers.controller.rule=hostregexp(`{host:${SUPERBLOCKS_AGENT_DOMAIN:-.+}}`)'
+      - 'traefik.http.routers.controller.rule=Host(`${SUPERBLOCKS_AGENT_DOMAIN:-}`)'
       - 'traefik.http.routers.controller.entrypoints=websecure'
       - 'traefik.http.routers.controller.tls=true'
       - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
