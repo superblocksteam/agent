@@ -93,15 +93,15 @@ conf() {
     fi
 
     if grep -q "$1" $env_file; then
-        sed -i "s/$1=.*/$1=$2/" $env_file
+        sed -i "s|$1=.*|$1=$2|" $env_file
     else
         echo "$1=$2" >> $env_file
     fi
 
     # Extract SUPERBLOCKS_AGENT_DOMAIN from SUPERBLOCKS_AGENT_HOST_URL
     if [ "$1" = "SUPERBLOCKS_AGENT_HOST_URL" ]; then
-        if [ "$2" = "http*" ]; then
-            domain = $(awk -F/ '{print $3}' <<<"$2")
+        if [[ $2 == http* ]]; then
+            domain=$(awk -F/ '{print $3}' <<<"$2")
             conf "SUPERBLOCKS_AGENT_DOMAIN" $domain
         else
             conf "SUPERBLOCKS_AGENT_DOMAIN" $2
