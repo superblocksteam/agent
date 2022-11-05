@@ -272,9 +272,13 @@ worker:
       #   runAsNonRoot: false
       #   runAsGroup: 0
       #   runAsUser: 0
-      image:
-          repository: ghcr.io/superblocksteam/worker-python
-          tag: v0.48.0
+      # NOTE(taha) There are connectivity issues between the python-specific worker
+      # and the controllers currently. I'm going to temporarily cut out the
+      # use of the python-based worker in favor of the node-based worker that
+      # supports the python plugin, albeit less performantly.
+      # image:
+      #     repository: ghcr.io/superblocksteam/worker-python
+      #     tag: v0.48.0
 
     not-language:
       # You can disable the default fleet options
