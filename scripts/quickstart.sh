@@ -160,4 +160,3 @@ case "$1" in
         show_instructions
         ;;
 esac
-exit 1;
