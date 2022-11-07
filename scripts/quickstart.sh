@@ -98,13 +98,13 @@ conf() {
         echo "$1=$2" >> $env_file
     fi
 
-    # Extract SUPERBLOCKS_AGENT_DOMAIN from SUPERBLOCKS_AGENT_HOST_URL
+    # Extract SUPERBLOCKS_AGENT_CUSTOM_DOMAIN from SUPERBLOCKS_AGENT_HOST_URL
     if [ "$1" = "SUPERBLOCKS_AGENT_HOST_URL" ]; then
         if [[ $2 == http* ]]; then
             domain=$(awk -F/ '{print $3}' <<<"$2")
-            conf "SUPERBLOCKS_AGENT_DOMAIN" $domain
+            conf "SUPERBLOCKS_AGENT_CUSTOM_DOMAIN" $domain
         else
-            conf "SUPERBLOCKS_AGENT_DOMAIN" $2
+            conf "SUPERBLOCKS_AGENT_CUSTOM_DOMAIN" $2
         fi
     fi
 }
