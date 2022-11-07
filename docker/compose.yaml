@@ -51,6 +51,7 @@ services:
       - 'traefik.http.routers.http-catchall.rule=hostregexp(`{host:${SUPERBLOCKS_AGENT_DOMAIN:-.+}}`)'
       - 'traefik.http.routers.http-catchall.middlewares=redirect-to-https'
       - 'traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https'
+    restart: unless-stopped
 
 
   worker:
@@ -59,6 +60,7 @@ services:
     <<: *environment
     ports:
       - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}'
+    restart: unless-stopped
 
   controller:
     image: ${SUPERBLOCKS_DOCKER_CONTROLLER_REPOSITORY:-ghcr.io/superblocksteam/agent-controller}:${SUPERBLOCKS_DOCKER_CONTROLLER_TAG:-latest}
@@ -76,3 +78,4 @@ services:
       - 'traefik.http.routers.controller.tls=true'
       - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
       - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_AGENT_PORT:-8020}'
+    restart: unless-stopped
