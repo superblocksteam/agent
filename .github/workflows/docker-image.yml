@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the AmazonLinux Docker image
-      run: docker build scripts/distro-test/amzn/Dockerfile
+      run: docker build scripts/distro-test/amzn
   
   test-centos:
 
@@ -24,7 +24,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the CentOS Docker image
-      run: docker build scripts/distro-test/centos/Dockerfile
+      run: docker build scripts/distro-test/centos
       
   test-debian:
 
@@ -33,7 +33,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Debian Docker image
-      run: docker build scripts/distro-test/debian/Dockerfile
+      run: docker build scripts/distro-test/debian
       
   test-ubuntu:
 
@@ -42,4 +42,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Ubuntu Docker image
-      run: docker build scripts/distro-test/ubuntu/Dockerfile
+      run: docker build scripts/distro-test/ubuntu
