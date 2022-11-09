@@ -10,7 +10,7 @@ jobs:
 
   test-amazon-linux:
 
-    runs-on: centos-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -19,7 +19,7 @@ jobs:
   
   test-centos:
 
-    runs-on: centos-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -28,7 +28,7 @@ jobs:
       
   test-debian:
 
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
