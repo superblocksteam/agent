@@ -221,6 +221,15 @@ worker:
   tolerations: []
   affinity: {}
 
+  # TODO [ro] enable the default after testing in staging
+  readinessProbe: {}
+  # readinessProbe:
+  #   exec:
+  #     command:
+  #     - cat
+  #     - /tmp/worker_healthy
+
+
   # We recommend running two fleets for the most secure setup.
   # If you would like to run a single fleet, then you can use:
   #
@@ -247,12 +256,6 @@ worker:
       # This will be merged with the worker's autoscaling
       # settings. This is the higher priority.
       autoscaling: {}
-      # TODO [ro] Enable the following once tested in staging
-      # readinessProbe:
-      #   exec:
-      #     command:
-      #     - cat
-      #     - /tmp/worker_healthy
 
     python:
       enabled: true
@@ -279,11 +282,6 @@ worker:
       #   runAsGroup: 0
       #   runAsUser: 0
       # TODO [ro] Enable the following once tested in staging
-      # readinessProbe:
-      #   exec:
-      #     command:
-      #     - cat
-      #     - /tmp/worker_healthy
       image:
         repository: ghcr.io/superblocksteam/agent-worker-python
 
@@ -297,9 +295,3 @@ worker:
       extraEnv: {}
       envFrom: []
       autoscaling: {}
-      # TODO [ro] Enable the following once tested in staging
-      # readinessProbe:
-      #   exec:
-      #     command:
-      #     - cat
-      #     - /tmp/worker_healthy
