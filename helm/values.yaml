@@ -229,7 +229,6 @@ worker:
   #     - cat
   #     - /tmp/worker_healthy
 
-
   # We recommend running two fleets for the most secure setup.
   # If you would like to run a single fleet, then you can use:
   #
@@ -281,7 +280,6 @@ worker:
       #   runAsNonRoot: false
       #   runAsGroup: 0
       #   runAsUser: 0
-      # TODO [ro] Enable the following once tested in staging
       image:
         repository: ghcr.io/superblocksteam/agent-worker-python
 
