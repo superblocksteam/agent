@@ -13,6 +13,7 @@ log_file="/var/log/superblocks.log"
 get_distro() {
     distro=""
     if [ -r /etc/os-release ]; then
+        # shellcheck disable=SC1091
         distro="$(. /etc/os-release && echo "$ID")"
     fi
     echo "$distro"
@@ -31,14 +32,14 @@ command_exists() {
 }
 
 install_docker_on_linux() {
-    if !(command_exists docker); then
+    if ! (command_exists docker); then
         echo "Installing docker on $(get_distro)..."
         /bin/sh -c "$(curl -fsSL https://get.docker.com/)"
     fi
 }
 
 install_docker_on_amzn() {
-    if !(command_exists docker); then
+    if ! (command_exists docker); then
         echo "Installing docker on Amazon..."
         #Install docker
         yum update -y
@@ -59,10 +60,12 @@ install_docker() {
 }
 
 stop() {
+    # disabling shellcheck as pgrep is not POSIX
+    # shellcheck disable=SC2009
     pid=$(ps aux | grep 'superblocks' | grep -v 'grep' | awk '{print $2}')
     if [ -n "$pid" ]; then
         echo "Stopping Superblocks On-Premise-Agent..."
-        kill $pid
+        kill "$pid"
         echo ">>>On-Premise-Agent is stopped"
     fi
 }
@@ -82,7 +85,7 @@ conf() {
         exit 1
     fi
 
-    if [ -z "$1" ] | [ -z "$2" ]; then
+    if [ -z "$1" ] || [ -z "$2" ]; then
         echo "Key and value are required."
         echo "Usage: ./quickstart.sh conf KEY VALUE"
         exit 1
@@ -100,11 +103,11 @@ conf() {
 
     # Extract SUPERBLOCKS_AGENT_CUSTOM_DOMAIN from SUPERBLOCKS_AGENT_HOST_URL
     if [ "$1" = "SUPERBLOCKS_AGENT_HOST_URL" ]; then
-        if [[ $2 == http* ]]; then
-            domain=$(awk -F/ '{print $3}' <<<"$2")
-            conf "SUPERBLOCKS_AGENT_CUSTOM_DOMAIN" $domain
+        if [ "$2" != "${2#http}" ]; then
+            domain=$(echo "$2" | awk -F/ '{print $3}' -)
+            conf "SUPERBLOCKS_AGENT_CUSTOM_DOMAIN" "$domain"
         else
-            conf "SUPERBLOCKS_AGENT_CUSTOM_DOMAIN" $2
+            conf "SUPERBLOCKS_AGENT_CUSTOM_DOMAIN" "$2"
         fi
     fi
 }
@@ -137,7 +140,7 @@ start() {
 
     # Launch OPA
     echo "Starting Superblocks On-Premise-Agent..."
-    curl -s $1 | ${compose_cmd} -p superblocks --env-file $2 -f - up > $3 &
+    curl -s "$1" | ${compose_cmd} -p superblocks --env-file "$2" -f - up > "$3" &
 }
 
 case "$1" in
@@ -151,7 +154,7 @@ case "$1" in
         status
         ;;
     conf)
-        conf $2 $3
+        conf "$2" "$3"
         ;;
     log)
         log
