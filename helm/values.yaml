@@ -236,7 +236,7 @@ worker:
       # You can disable the default fleet options
       # and set your own.
       enabled: true
-      plugins: "javascript,python"
+      plugins: "javascript"
       concurrency: 10
       # replicaCount: 1
       resources: {}
@@ -247,6 +247,33 @@ worker:
       # This will be merged with the worker's autoscaling
       # settings. This is the higher priority.
       autoscaling: {}
+
+    python:
+      enabled: true
+      plugins: "python"
+      concurrency: 10
+      # replicaCount: 1
+      resources: {}
+      # These environment variables will only
+      # be applied to this Worker fleet.
+      extraEnv: {}
+      envFrom: []
+      # This will be merged with the worker's autoscaling
+      # settings. This is the higher priority.
+      autoscaling: {}
+      # Enable the following if you wish to enable native process
+      # isolation in the python workers.
+      # podSecurityContext:
+      #   runAsNonRoot: false
+      #   runAsGroup: 0
+      #   runAsUser: 0
+      # containerSecurityContext:
+      #   readOnlyRootFilesystem: true
+      #   runAsNonRoot: false
+      #   runAsGroup: 0
+      #   runAsUser: 0
+      image:
+        repository: ghcr.io/superblocksteam/agent-worker-python
 
     not-language:
       # You can disable the default fleet options

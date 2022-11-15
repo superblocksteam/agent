@@ -1,0 +1,45 @@
+name: Test quickstart.sh On Different Distros
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  test-amazon-linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the AmazonLinux Docker image
+      run: docker build scripts/distro-test/amzn
+  
+  test-centos:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the CentOS Docker image
+      run: docker build scripts/distro-test/centos
+      
+  test-debian:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Debian Docker image
+      run: docker build scripts/distro-test/debian
+      
+  test-ubuntu:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Ubuntu Docker image
+      run: docker build scripts/distro-test/ubuntu
