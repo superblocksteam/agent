@@ -247,6 +247,12 @@ worker:
       # This will be merged with the worker's autoscaling
       # settings. This is the higher priority.
       autoscaling: {}
+      # Enable the following once tested in staging
+      # readinessProbe:
+      #   exec:
+      #     command:
+      #     - cat
+      #     - /tmp/worker_healthy
 
     python:
       enabled: true
@@ -272,6 +278,12 @@ worker:
       #   runAsNonRoot: false
       #   runAsGroup: 0
       #   runAsUser: 0
+      # Enable the following once tested in staging
+      # readinessProbe:
+      #   exec:
+      #     command:
+      #     - cat
+      #     - /tmp/worker_healthy
       image:
         repository: ghcr.io/superblocksteam/agent-worker-python
 

@@ -91,11 +91,9 @@ spec:
         - name: tls
           mountPath: /etc/config/tls
         {{- end }}
-        readinessProbe:
-          exec:
-            command:
-            - cat
-            - /tmp/worker_healthy
+        {{- if $v.readinessProbe }}
+        readinessProbe: {{ toYaml $v.readinessProbe | nindent 10 }}
+        {{- end }}
       volumes:
       {{- if $.Values.worker.tls.enabled }}
       - name: tls
