@@ -62,7 +62,7 @@ install_docker() {
 stop() {
     echo "Stopping Superblocks On-Premise-Agent..."
     ids=$(docker ps -q --filter name=superblocks*)
-    for id in $ids; do docker kill $id; done
+    for id in $ids; do docker kill "$id"; done
     echo ">>>On-Premise-Agent is stopped"
 }
 
