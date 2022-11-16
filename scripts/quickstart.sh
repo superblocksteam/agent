@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Superblock On-Premise-Agent installation script for Linux
 # Supported OS:
 #   - AmazonLinux
