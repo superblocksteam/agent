@@ -146,7 +146,7 @@ start() {
 
         echo ""
         echo "Configured Variables----------"
-        cat -- $2
+        cat -- "$2"
 
         echo ""
         echo "Container Status--------------"
