@@ -165,7 +165,7 @@ start() {
 }
 
 DEBUG_ENABLED=0
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         start)
             start "$compose_yaml" "$env_file" "$log_file" "$DEBUG_ENABLED"
