@@ -60,14 +60,10 @@ install_docker() {
 }
 
 stop() {
-    # disabling shellcheck as pgrep is not POSIX
-    # shellcheck disable=SC2009
-    pid=$(ps aux | grep 'superblocks' | grep -v 'grep' | awk '{print $2}')
-    if [ -n "$pid" ]; then
-        echo "Stopping Superblocks On-Premise-Agent..."
-        kill "$pid"
-        echo ">>>On-Premise-Agent is stopped"
-    fi
+    echo "Stopping Superblocks On-Premise-Agent..."
+    ids=$(docker ps -q --filter name=superblocks*)
+    for id in $ids; do docker kill "$id"; done
+    echo ">>>On-Premise-Agent is stopped"
 }
 
 status() {
@@ -116,7 +112,7 @@ show_instructions() {
     echo ""
     echo "Superblocks On-Premise-Agent"
     echo ""
-    echo "Usage: sudo superblocks COMMAND"
+    echo "Usage: sudo superblocks [OPTIONS] COMMAND"
     echo ""
     echo "Commands:"
     echo "  start      Start Superblocks OPA, install docker if necessary"
@@ -124,6 +120,9 @@ show_instructions() {
     echo "  stop       Stop running containers"
     echo "  conf       Set configuration variables"
     echo "  log        View logs, press Ctrl+C to stop"
+    echo ""
+    echo "Options:"
+    echo "  -d|--debug   Run Superblocks OPA in debug mode"
     echo ""
 }
 
@@ -139,27 +138,65 @@ start() {
     compose_cmd=$(get_compose_cmd)
 
     # Launch OPA
-    echo "Starting Superblocks On-Premise-Agent..."
-    curl -s "$1" | ${compose_cmd} -p superblocks --env-file "$2" -f - up > "$3" &
+    if [ "$4" = 1 ]; then
+        echo "Starting Superblocks On-Premise-Agent in debug mode..."
+
+        conf "SUPERBLOCKS_AGENT_DEBUG_MODE" 1
+        conf "SUPERBLOCKS_PROXY_LOG_LEVEL" "DEBUG"
+
+        echo ""
+        echo "Configured Variables----------"
+        cat -- "$2"
+
+        echo ""
+        echo "Container Status--------------"
+        status
+
+        echo ""
+        echo "Logs--------------------------"
+        curl -s "$1" | ${compose_cmd} -p superblocks --env-file "$2" -f - up
+    else
+        echo "Starting Superblocks On-Premise-Agent..."
+
+        conf "SUPERBLOCKS_AGENT_DEBUG_MODE" 0
+        conf "SUPERBLOCKS_PROXY_LOG_LEVEL" "INFO"
+        curl -s "$1" | ${compose_cmd} -p superblocks --env-file "$2" -f - up > "$3" &
+    fi
 }
 
-case "$1" in
-    start)
-        start $compose_yaml $env_file $log_file
-        ;;
-    stop)
-        stop
-        ;;
-    status)
-        status
-        ;;
-    conf)
-        conf "$2" "$3"
-        ;;
-    log)
-        log
-        ;;
-    *)
-        show_instructions
-        ;;
-esac
+DEBUG_ENABLED=0
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        start)
+            start "$compose_yaml" "$env_file" "$log_file" "$DEBUG_ENABLED"
+            shift
+            ;;
+        stop)
+            stop
+            shift
+            ;;
+        status)
+            status
+            shift
+            ;;
+        conf)
+            conf "$2" "$3"
+            shift
+            shift
+            shift
+            ;;
+        log)
+            log
+            shift
+            ;;
+        -d|--debug)
+            DEBUG_ENABLED=1
+            shift
+            ;;
+        *)
+            echo "[Error] Unknown commands or options $1"
+            show_instructions
+            exit 1
+            ;;
+    esac
+done
