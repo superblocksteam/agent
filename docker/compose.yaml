@@ -30,6 +30,7 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock:ro'
       - './${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}:/${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}'
     command:
+      - '--log.level=${SUPERBLOCKS_PROXY_LOG_LEVEL:-INFO}'
       - '--providers.docker=true'
       - '--entrypoints.web.address=:80'
       - '--entrypoints.websecure.address=:443'
