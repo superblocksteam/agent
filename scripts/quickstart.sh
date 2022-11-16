@@ -138,7 +138,7 @@ start() {
     compose_cmd=$(get_compose_cmd)
 
     # Launch OPA
-    if [[ $4 = 1 ]]; then
+    if [ "$4" = 1 ]; then
         echo "Starting Superblocks On-Premise-Agent in debug mode..."
 
         conf "SUPERBLOCKS_AGENT_DEBUG_MODE" 1
