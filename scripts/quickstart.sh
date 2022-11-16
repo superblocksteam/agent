@@ -138,7 +138,7 @@ start() {
     compose_cmd=$(get_compose_cmd)
 
     # Launch OPA
-    if [ $4 = 1 ]; then
+    if [[ $4 = 1 ]]; then
         echo "Starting Superblocks On-Premise-Agent in debug mode..."
 
         conf "SUPERBLOCKS_AGENT_DEBUG_MODE" 1
@@ -146,7 +146,7 @@ start() {
 
         echo ""
         echo "Configured Variables----------"
-        cat $2
+        cat -- $2
 
         echo ""
         echo "Container Status--------------"
@@ -168,7 +168,7 @@ DEBUG_ENABLED=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         start)
-            start $compose_yaml $env_file $log_file $DEBUG_ENABLED
+            start "$compose_yaml" "$env_file" "$log_file" "$DEBUG_ENABLED"
             shift
             ;;
         stop)
