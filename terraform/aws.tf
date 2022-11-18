@@ -116,18 +116,11 @@ resource "aws_lb_listener" "opa_lb" {
 }
 
 resource "aws_lb_target_group" "opa_controller" {
-  name        = "opa-${random_pet.app.id}-lb"
-  port        = 80
+  name        = "lbtg-${random_pet.app.id}"
+  port        = 8020
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = module.vpc.vpc_id
-
-  health_check {
-    port     = 80
-    protocol = "HTTP"
-    timeout  = 5
-    interval = 10
-  }
 
   lifecycle {
     create_before_destroy = true
@@ -164,16 +157,65 @@ resource "aws_ecs_service" "opa_controller_service" {
 
   network_configuration {
     subnets          = module.vpc.public_subnets
+    security_groups  = [module.lb_security_group.this_security_group_id]
+    assign_public_ip = true
   }
+}
+
+resource "aws_iam_role" "task_role" {
+  name = "task_role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "task_policy" {
+  name        = "task-policy"
+  description = "ECS task policy"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "policy-attach" {
+  role       = aws_iam_role.task_role.name
+  policy_arn = aws_iam_policy.task_policy.arn
 }
 
 resource "aws_ecs_task_definition" "opa_controller" {
   family                     = "service"
   network_mode               = "awsvpc"
-  # requires_compatibilities   = ["FARGATE", "EC2"]
   requires_compatibilities   = ["FARGATE"]
-  cpu                        = 1024
-  memory                     = 2048
+  cpu                        = 2048
+  memory                     = 4096
+  execution_role_arn         = aws_iam_role.task_role.arn
   container_definitions      = <<DEFINITION
   [
     {
@@ -186,8 +228,21 @@ resource "aws_ecs_task_definition" "opa_controller" {
         {
           "containerPort"    : 8020,
           "hostPort"         : 8020
+        },
+        {
+          "containerPort"    : 5001,
+          "hostPort"         : 5001
         }
       ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-create-group": "true",
+          "awslogs-group": "/ecs/opa/controller",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
       "environment": [
         { "name": "SUPERBLOCKS_AGENT_KEY", "value": "wwkBnn7VxYNDZgw4BK1Gu63ngSyG0kbvNygKK64dhsMEF6Qb" },
         { "name": "SUPERBLOCKS_AGENT_ENVIRONMENT", "value": "*" },
@@ -197,6 +252,39 @@ resource "aws_ecs_task_definition" "opa_controller" {
         { "name": "SUPERBLOCKS_AGENT_PORT", "value": "8020" },
         { "name": "SUPERBLOCKS_WORKER_PORT", "value": "5001" },
         { "name": "__SUPERBLOCKS_AGENT_SERVER_URL", "value": "https://app.superblocks.com" }
+      ]
+    },
+    {
+      "name": "opa-worker",
+      "image": "ghcr.io/superblocksteam/agent-worker",
+      "cpu": 1024,
+      "memory": 2048,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort"    : 9090,
+          "hostPort"         : 9090
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-create-group": "true",
+          "awslogs-group": "/ecs/opa/worker",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "environment": [
+        { "name": "SUPERBLOCKS_AGENT_KEY", "value": "wwkBnn7VxYNDZgw4BK1Gu63ngSyG0kbvNygKK64dhsMEF6Qb" },
+        { "name": "SUPERBLOCKS_AGENT_ENVIRONMENT", "value": "*" },
+        { "name": "SUPERBLOCKS_WORKER_TLS_INSECURE", "value": "true" },
+        { "name": "SUPERBLOCKS_AGENT_HOST_URL", "value": "http://localhost:8020" },
+        { "name": "SUPERBLOCKS_AGENT_INTERNAL_HOST_AUTO", "value": "true" },
+        { "name": "SUPERBLOCKS_AGENT_PORT", "value": "8020" },
+        { "name": "SUPERBLOCKS_WORKER_PORT", "value": "5001" },
+        { "name": "__SUPERBLOCKS_AGENT_SERVER_URL", "value": "https://app.superblocks.com" },
+        { "name": "SUPERBLOCKS_WORKER_METRICS_PORT", "value": "9090" }
       ]
     }
   ]
