@@ -1,0 +1,70 @@
+version: '3.7'
+
+x-environment: &environment # REQUIRED
+  SUPERBLOCKS_AGENT_KEY: ${SUPERBLOCKS_AGENT_KEY}
+  # OPTIONAL
+  SUPERBLOCKS_AGENT_ENVIRONMENT: ${SUPERBLOCKS_AGENT_ENVIRONMENT:-*}
+  # SUPERBLOCKS_WORKER_TLS_INSECURE: ${SUPERBLOCKS_WORKER_TLS_INSECURE:-true}
+  SUPERBLOCKS_AGENT_HOST_URL: ${SUPERBLOCKS_AGENT_HOST_URL:-http://localhost:8020}
+  SUPERBLOCKS_AGENT_INTERNAL_HOST_AUTO: ${SUPERBLOCKS_AGENT_INTERNAL_HOST_AUTO:-true}
+  SUPERBLOCKS_AGENT_PORT: ${SUPERBLOCKS_AGENT_PORT:-8020}
+  SUPERBLOCKS_WORKER_PORT: ${SUPERBLOCKS_WORKER_PORT:-5001}
+  # INTERNAL OVERRIDES
+  __SUPERBLOCKS_AGENT_SERVER_URL: ${__SUPERBLOCKS_AGENT_SERVER_URL:-https://app.superblocks.com}
+  # OVERRIDES NEEDED FOR SINGLE IMAGE AGENT
+  SUPERBLOCKS_WORKER_TLS_INSECURE: 'true'
+  SUPERBLOCKS_CONTROLLER_DISCOVERY_ENABLED: 'false'
+  SUPERBLOCKS_WORKER_METRICS_PORT: '9091'
+
+services:
+  proxy:
+    # Configurable variables for traefik to set up https
+    # SUPERBLOCKS_LETSENCRYPT_EMAIL, default ''
+    # SUPERBLOCKS_PROXY_REPLICA_COUNT, default 0
+    # SUPERBLOCKS_LETSENCRYPT_DIR, default letsencrypt
+    # SUPERBLOCKS_AGENT_CUSTOM_DOMAIN, default .+
+    image: traefik:v2.8
+    deploy:
+      replicas: ${SUPERBLOCKS_PROXY_REPLICA_COUNT:-0}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+      - './${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}:/${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}'
+    command:
+      - '--log.level=${SUPERBLOCKS_PROXY_LOG_LEVEL:-INFO}'
+      - '--providers.docker=true'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--certificatesresolvers.letsencrypt.acme.email=${SUPERBLOCKS_LETSENCRYPT_EMAIL:-}'
+      - '--certificatesresolvers.letsencrypt.acme.storage=/${SUPERBLOCKS_LETSENCRYPT_DIR:-letsencrypt}/acme.json'
+      - '--certificatesresolvers.letsencrypt.acme.httpchallenge=true'
+      - '--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web'
+    labels:
+      ### core config
+      - 'traefik.enable=true'
+
+      ### http to https redirect
+      - 'traefik.http.routers.http-catchall.entrypoints=web'
+      - 'traefik.http.routers.http-catchall.rule=Host(`${SUPERBLOCKS_AGENT_CUSTOM_DOMAIN:-}`)'
+      - 'traefik.http.routers.http-catchall.middlewares=redirect-to-https'
+      - 'traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https'
+    restart: unless-stopped
+
+  # TODO(taha) remove hardcoded image
+  agent:
+    image: ghcr.io/superblocksteam/superblocks-agent-simplified:ts-20221130-1800
+    pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
+    environment:
+      <<: *environment
+    ports:
+      - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
+      - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9091}'
+    labels:
+      - 'traefik.http.routers.controller.rule=Host(`${SUPERBLOCKS_AGENT_CUSTOM_DOMAIN:-}`)'
+      - 'traefik.http.routers.controller.entrypoints=websecure'
+      - 'traefik.http.routers.controller.tls=true'
+      - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_AGENT_PORT:-8020}'
+    restart: unless-stopped
