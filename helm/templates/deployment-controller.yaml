@@ -79,6 +79,8 @@ spec:
           value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
         - name: SUPERBLOCKS_WORKER_TLS_INSECURE
           value: "true"
+        - name: __SUPERBLOCKS_WORKER_LOCAL_ENABLED
+          value: "true"
         {{- include "extra-env" (merge .Values.controller.extraEnv .Values.extraEnv) | indent 8 }}
       {{- with .Values.controller.nodeSelector }}
       nodeSelector:
