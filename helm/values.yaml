@@ -23,7 +23,6 @@ nameOverride: ''
 fullnameOverride: ''
 
 # Specify extra environment variables that will be applied
-# to both the Controllers and Workers.
 extraEnv: {}
 #   TEST_KEY: foobar
 #   DD_AGENT_HOST:
@@ -31,15 +30,14 @@ extraEnv: {}
 #       fieldRef:
 #         fieldPath: status.hostIP
 
-# Specify extra environment variables that will be applied
-# to both the Controllers and Workers.
+# Specify environment variables that will be applied from secrets or configmaps.
 envFrom: []
 #   - secretRef:
 #       name: my-agent-env-secret
 #   - configMapRef:
 #       name: my-agent-env-configmap
 
-# Controller specific values.
+# This node is being maintained for legacy reasons.
 controller:
   service:
     type: ClusterIP
@@ -71,7 +69,7 @@ controller:
     # minAvailable: 1
 
   image:
-    repository: ghcr.io/superblocksteam/agent-controller
+    repository: ghcr.io/superblocksteam/agent
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: ""
@@ -89,7 +87,6 @@ controller:
 
   ports:
     http: 8020
-    worker: 5001
 
   replicaCount: 1
 
@@ -103,8 +100,7 @@ controller:
     # name: superblocks-agent-controller
 
     # If using Service Account Volume Token Projection to authenticate
-    # OPA workloads, you must assign the IAM role to both the controller and worker service
-    # accounts.
+    # OPA workloads, you must assign the IAM role to the controller
     annotations: {}
     # eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/my-iam-role
     # iam.gke.io/gcp-service-account=service-account@my-gcp-project.iam.gserviceaccount.com
@@ -143,145 +139,3 @@ controller:
   nodeSelector: {}
   tolerations: []
   affinity: {}
-
-# Worker specific values.
-worker:
-  # The default replica count if:
-  # 1) autoscaling is not enabled
-  # 2) fleet specific replicaCount is not defined
-  replicaCount: 1
-
-  # Specify extra environment variables that will
-  # only be applied to the Workers.
-  extraEnv: {}
-  envFrom: []
-
-  # If there is demand, we can add a fleet specific PDB
-  # and if not set, default to this fleet agnostic one.
-  podDisruptionBudget: {}
-    # minAvailable: 1
-
-  # If there is demand, we can add a fleet specific HPA
-  # and if not set, default to this fleet agnostic one.
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 40
-    targetMemoryUtilizationPercentage: 80
-    customMetrics: []
-      # - type: External
-      #   external:
-      #     metricName: nginx.net.request_per_s
-      #     metricSelector:
-      #       matchLabels:
-      #           kube_container_name: nginx
-      #     targetAverageValue: 123
-
-  image:
-    repository: ghcr.io/superblocksteam/agent-worker
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    # tag: ""
-
-  tls:
-    enabled: true
-
-    # To use a secret not managed within this chart
-    # existingSecretName: superblocks-agent-worker-tls
-
-    # Set b64 encoded strings of your certificate values
-    # If not set the helm chart will generate these values on deploy
-    certificate:
-      # tls.ca: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURDakNDQWZLZ0F3SUJBZ0lSQU5nd21lb3pOWG5ocWVPWXlBZG5zYlV3RFFZSktvWklodmNOQVFFTEJRQXcKRHpFTk1Bc0dBMVVFQXhNRWNtOXZkREFlRncweU1qQTRNekF4T1RNNU5EQmFGdzB5TXpBNE16QXhPVE01TkRCYQpNQTh4RFRBTEJnTlZCQU1UQkhKdmIzUXdnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCCkFRRGw3Zlc0elVHK1lyQ0VFNDh2TVNrTVVzWDR6QjhqVm5vdVNpcitVWm1xZ2NnekdZUWhVRGdLWGFCOCtNeHMKMm5IWStJbCs4ZU1JQ2hKUXBHcFZSY2UwKytkWENXYU4yMDM2UkZaNUI0K0hPbGJpRDJlV3RGOHJKZnFLWVZiOQp5VU5RVkxuRmhWL2hQbTA3WVJQMmM5KzNPOTV3cEZiMVU3TGQrVk9TM2FhT2NKZjlSa293YkZmUEgrUDFXV2o5CjNqSjk2YnNYZHBQYTEySEhpUEYrcm9hdXl4WWw4WC9JRTFrcW85QjRqcWROTG1IL2ZiU0U1ZGpTbzRIR0h2bWUKajlTc1RHcHUxclNydWZKZEJKUEk5dWxNUGtKcjB5RGMxOXV0ZlJuV3FLZzVQMnVEZU0vWDJ3cjFyckJ1Y01LMwpMajdSL0FLdnBGSFQ5empCZU5FbFFmbkhBZ01CQUFHallUQmZNQTRHQTFVZER3RUIvd1FFQXdJQ3BEQWRCZ05WCkhTVUVGakFVQmdnckJnRUZCUWNEQVFZSUt3WUJCUVVIQXdJd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlYKSFE0RUZnUVVXeVRCajRpWUpkMFhxVHdjMGUwejNlSVRYVDB3RFFZSktvWklodmNOQVFFTEJRQURnZ0VCQU1xWAoxdXNJK3lHbjFsRFFMeG9NQXExT2FvQWQxNmlpUElKSFlxRlBQOFEvR1hrdWpqazI0eFhPTVFaS0d0UjljUnp5CjNVeVdiNGRpd1p1L3FwZ0k3cng5K0tvbXA1VzdmZnhnb2ZLRHBObWhlcVdwaTlybk04SHpGbXg5SXoreHMwLzMKWFRGYm1UYlJSRWNQYVdWRUE3dXNNWExRdngzdnZUSjA3ZDF1UnZmV1U5TUhqVndpVE1KYkhRWWlVbXdCcEovUwoxejE5MGVwbWtHUDFSbnBPV0krcFU1M0RxNkhFQWdBbWpzdGJYZ3BOdzV3N0JwMmZJMCs5OEt0YWJWYm1WTzRpCk5CNWZmL1ZwamIxZm0xY2tiRW1TdXBZT0VnT2w5clVCWUpFK1dsT0lORHNyLzF2TCtnZnlEb1RnbDY4Nk1CaXEKd2hXZjZLNVBvZWNESVFrdXdUaz0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
-      # tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURDekNDQWZPZ0F3SUJBZ0lSQVByUmliWllNZmNCYzJHQUl3TWM1WkV3RFFZSktvWklodmNOQVFFTEJRQXcKRHpFTk1Bc0dBMVVFQXhNRWNtOXZkREFlRncweU1qQTRNekF4T1RNNU5EQmFGdzB5TXpBNE16QXhPVE01TkRCYQpNQkV4RHpBTkJnTlZCQU1UQm1Oc2FXVnVkRENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTHVnai80cU9CSldCY2V0UUFVUEl3ZlBMbWoyb254M3BCVThrOUlaTkUxVHR6cmpMYmVkRzFmbGxmZXEKYlV2UVFIYVZ2c1ZJVW1mUkpEd1IxWUVPOGpDWGI3cWo2RDFQajFTdFRuMGx0dWNWNXh2eE9LZFA1SWQyMzFEWApBQU5SZ3ZkN3IwZnUwNlFjMEs2Y3hPK0tkUE1hVms4WGVpc2NacEpvVXZ4NWhYRUtselNrS3piMEdSWUtZWGQ4CmcrUnpNRzE4TStsSEFZTUZpOXVZb2xmNTNQTnNvK3EwL3pzb3ZUOHFDR1pEVlE4ZDliemg2OHJ0RGhNdEM4U0IKOVdkVi9uUFl2TDJ6ZTU3czFQbktaRkprRnNraXdpWW5aVTBNWXBFdDREaW5XenJhTGVTSGgxNHo0OWU0VXRSZgpwSmNFNXF0eXdOUjdQdzR4aDJOS2hxdFpmRjBDQXdFQUFhTmdNRjR3RGdZRFZSMFBBUUgvQkFRREFnV2dNQjBHCkExVWRKUVFXTUJRR0NDc0dBUVVGQndNQkJnZ3JCZ0VGQlFjREFqQU1CZ05WSFJNQkFmOEVBakFBTUI4R0ExVWQKSXdRWU1CYUFGRnNrd1krSW1DWGRGNms4SE5IdE05M2lFMTA5TUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFCdgpaNkRwV0FybDNsK0xML1pHcmpZbnBMWUhkQnVtbjYzb3pWKzVKcWNCSlJSM1c4T3ZVUTFUeTg2b3RLZFF0YUlsCldiRkV6d2VBdHplVnVMeFJEZG5CYVZQejV0VWpKa3dzRm9SVHhMNzlQY09RckJqbHRiWW0xcGFRUlk3bWVnM0gKUlpjZk1BVlQwVklTK085MkFQeFJhbmJoT3MzQThBRktsdnpOVElKVmEwREduNUt1TXd0MXpoZjFRaEkvOVdDMAphNlNOWGFkcW1uMGY5NUx0ajFLSkIrcHdjWmRJRFVrRUJjazBydXZ6ZWk5Z3FCRXZwUVFvM0crSy80dVZpeHp1CmJ1QnlsS2FTUFVHbERBeXpmOTVUTXprVlhKeWVWS1F5a2szSmZ3NnBYYjdyYjRrSXVTdVNwVVhpaHRXUmdkVnkKRURoRHpFL09PODF1VktxQXUzUE4KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
-      # tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb2dJQkFBS0NBUUVBdTZDUC9pbzRFbFlGeDYxQUJROGpCODh1YVBhaWZIZWtGVHlUMGhrMFRWTzNPdU10CnQ1MGJWK1dWOTZwdFM5QkFkcFcreFVoU1o5RWtQQkhWZ1E3eU1KZHZ1cVBvUFUrUFZLMU9mU1cyNXhYbkcvRTQKcDAva2gzYmZVTmNBQTFHQzkzdXZSKzdUcEJ6UXJwekU3NHAwOHhwV1R4ZDZLeHhta21oUy9IbUZjUXFYTktRcgpOdlFaRmdwaGQzeUQ1SE13Ylh3ejZVY0Jnd1dMMjVpaVYvbmM4MnlqNnJUL095aTlQeW9JWmtOVkR4MzF2T0hyCnl1ME9FeTBMeElIMVoxWCtjOWk4dmJON251elUrY3BrVW1RV3lTTENKaWRsVFF4aWtTM2dPS2RiT3RvdDVJZUgKWGpQajE3aFMxRitrbHdUbXEzTEExSHMvRGpHSFkwcUdxMWw4WFFJREFRQUJBb0lCQUVOV3QvY3ZiZHBlMTBvMwp5czlHQkh1TUJ3c1M0WFFzZUU1SzVINjJId2hWc0dCSklxSlFsM3l2WUdoMzJTd3BmTWxTcXhvZy83cFUzRjFXCnhUckJnM2lmRVRGNkhDTE5DQk1LOUMyRU9LV3RQYm5RbEZXd0hjUGtqUGQxZ29LdVlZT3k5MUNvelhxTUFQVjYKUEZBQWNFTER4QkEweTlybklZVVFQaUJ3K014OXN4MnArMUhOOXFKOTg3SVN0Z3pkRkVIV1UrckRDb0N4dUhJeApOek1wL0tocGV6dW9QSVdyK3E1dzYwK2lMOEhPM3czVFdDbVRzcHNUR2k0RkhBV0Y2SGJrV1I0RVppN2xKN2lyCmJUektNNFlJbHZUYW1LZzZoaVpkNkh4dUJVdFN4emNNZzZKWHplN2ZEZXhuY0RIRGhXeFR0ZU1tTTVJNDBZdTMKQlRLbkVBRUNnWUVBOXhxUzB5bjhMK2trTFArcS9zYnc1c1JoSUVsRTRzVGFhY2dCSjhSckFyNWkvNWxIYU9TYwpuZ3dobEJFbWV4S2lPNWlYOExsYXZ2OGZmU0tUZnFxZlIxamt6SlFPaFRhUTdQMkpRTEd1Nm5IMXVUMG1TL0JrCm82WWtTS1MvV0JMaDY0SFBmMmt4VGl2UWYxZzVZV01iOThmMGZBcGtiVHY3M242a2NvN0hVRjBDZ1lFQXdtSFMKL1lWUnczSmx1cjRKY0toK3JFZkpXaW1kSUNaVjlhNmRXaEt1Q1dKdXo3NUluTnZJVVJ1NVhTZVhRaVVwRTR1YQovVnJvb0laa00zZStEVVB2bXdGWVdsSDJyVFhWRWVFZWlsQ2VpQU5UUDQycElVRXhkMmE0ckFaZ3B3SmwxUno5CkhWV25mbzdDTnEvSFdUVXlnWmdodUh5WVNWcXpReXFnUWJKb0hBRUNnWUI0SkR0dTMrTDFpRzFHVTZoWDUzSUoKUVVIWDZNZk5XZGkzeGI2S0R6M1lQNmp5alJ2akxBUFo5QnYvV2JkVDcyTmhobmVaV3dWOEI1N1B3SmZsNWg4NwpHVVZsRWpkZEhZS3BOendjY0VlVFJZVXJZMGZUZERYNk96VTQvS0RydVlLT2RyYmtROGp0TVBCV2VoYXIrdndHCkpQb0J0U3ZPMEhOTllsV2lQVGs3SVFLQmdIK2ZwTjBKYkk2TGpKbFlibkJHWUswU2tQUWV3R2c4WTFIa2JMR1gKOUNaN04xQTBtZzVMQ3pHZHAwMnZVZE4rL0lJMXRmUkVmTm53Z3RkNzlnOVZuSHJFSGxObTN6UUlWVFhnL2FGSQpuMTJqK1VPUDZneklkZ2IwTGFuY29oYmxMeUVHWUhXaktFNml3b2NQVUM2VkMrMGtpbmRMYnQweXJPSWJtWTZvCjZVd0JBb0dBZFRWcmx0dGxITXJ2blFtN3JIdlU0TE5EUXlicVFXaDNodWp2c2gycDRlNzVxT1NxM012cnZQOU4KYkx1byswdEdQWmJxenpvblZnMkM5d0FIZjJmOVZyQmNTWHprVGRyL0d0NjhsVjlPaDYvTVBXTk1IR0lOQVhJcwpZeDMxcXpYWVdOdGxIWkJySlIzL1JwVE9wS2lsT2ZGTzFtZlJxMzlGaEwyem5TSTVQQm89Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
-
-  serviceAccount:
-    create: true
-    # name: superblocks-agent-worker
-
-    # If using Service Account Volume Token Projection to authenticate
-    # OPA workloads, you must assign the IAM role to both the controller and worker service
-    # accounts.
-    annotations: {}
-    # eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/my-iam-role
-    # iam.gke.io/gcp-service-account=service-account@my-gcp-project.iam.gserviceaccount.com
-    labels: {}
-
-  # If using something like kube2iam, pod annotations for roles would go here
-  podAnnotations: {}
-  # iam.amazonaws.com/role: arn:aws:iam::111111111111:role/my-iam-role
-  podLabels: {}
-
-  podSecurityContext: {}
-  containerSecurityContext: {}
-  securityContext: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-
-  # We recommend running two fleets for the most secure setup.
-  # If you would like to run a single fleet, then you can use:
-  #
-  # fleets:
-  #   all:
-  #     ...
-  #     enabled: true
-  #     plugins: "" # Either don't set or omit.
-  #     ...
-  #
-  fleets:
-    language:
-      # You can disable the default fleet options
-      # and set your own.
-      disabled: false
-      plugins: "javascript"
-      concurrency: 10
-      # replicaCount: 1
-      resources: {}
-      # These environment variables will only
-      # be applied to this Worker fleet.
-      extraEnv: {}
-      envFrom: []
-      # This will be merged with the worker's autoscaling
-      # settings. This is the higher priority.
-      autoscaling: {}
-
-    python:
-      disabled: false
-      plugins: "python"
-      concurrency: 10
-      # replicaCount: 1
-      resources: {}
-      # These environment variables will only
-      # be applied to this Worker fleet.
-      extraEnv: {}
-      envFrom: []
-      # This will be merged with the worker's autoscaling
-      # settings. This is the higher priority.
-      autoscaling: {}
-      # Enable the following if you wish to enable native process
-      # isolation in the python workers.
-      # podSecurityContext:
-      #   runAsNonRoot: false
-      #   runAsGroup: 0
-      #   runAsUser: 0
-      # containerSecurityContext:
-      #   readOnlyRootFilesystem: true
-      #   runAsNonRoot: false
-      #   runAsGroup: 0
-      #   runAsUser: 0
-      image:
-        repository: ghcr.io/superblocksteam/agent-worker-python
-
-    not-language:
-      # You can disable the default fleet options
-      # and set your own.
-      disabled: false
-      plugins: "!javascript,python"
-      # replicaCount: 1
-      resources: {}
-      extraEnv: {}
-      envFrom: []
-      autoscaling: {}
