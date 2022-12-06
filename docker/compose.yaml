@@ -57,6 +57,7 @@ services:
       <<: *environment
       SUPERBLOCKS_WORKER_METRICS_PORT: ${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}
       SUPERBLOCKS_WORKER_PLUGINS: "!python"
+      SUPERBLOCKS_CONTROLLER_DISCOVERY_ENABLED: "true"
     ports:
       - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}'
     restart: unless-stopped
@@ -68,6 +69,7 @@ services:
       <<: *environment
       SUPERBLOCKS_WORKER_METRICS_PORT: ${SUPERBLOCKS_WORKER_METRICS_PORT:-9091}
       SUPERBLOCKS_WORKER_PLUGINS: "python"
+      SUPERBLOCKS_CONTROLLER_DISCOVERY_ENABLED: "true"
     ports:
       - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9091}'
     restart: unless-stopped
@@ -77,6 +79,7 @@ services:
     pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
     environment:
       <<: *environment
+      __SUPERBLOCKS_WORKER_LOCAL_ENABLED: "false"
     ports:
       - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
       - '${SUPERBLOCKS_WORKER_PORT:-5001}'
