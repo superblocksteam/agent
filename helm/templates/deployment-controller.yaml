@@ -97,6 +97,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: __SUPERBLOCKS_WORKER_LOCAL_ENABLED
+          value: "true"
         {{- include "extra-env" (merge .Values.controller.extraEnv .Values.extraEnv) | indent 8 }}
         volumeMounts:
         {{- if $.Values.worker.tls.enabled }}
