@@ -126,15 +126,14 @@ controller:
       #           kube_container_name: nginx
       #     targetAverageValue: 123
 
-  # Please adjust these values as needed depending on your workloads. Allotting less
-  # than this could potentially cause your agents to crash from Out Of Memory errors.
+  # Please adjust these values as needed depending on your workloads. We recommend allocating
+  # minimally the following to prevent CPU throttling and Out of Memory errors under load.
   resources:
     limits:
-      cpu: 500m
-      memory: 1Gi
+      memory: 2Gi
     requests:
-      cpu: 500m
-      memory: 1Gi
+      cpu: 1
+      memory: 2Gi
 
   nodeSelector: {}
   tolerations: []
