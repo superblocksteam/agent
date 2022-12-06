@@ -11,7 +11,6 @@ x-environment: &environment
   SUPERBLOCKS_WORKER_METRICS_PORT: ${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}
   # INTERNAL OVERRIDES
   __SUPERBLOCKS_AGENT_SERVER_URL: ${__SUPERBLOCKS_AGENT_SERVER_URL:-https://app.superblocks.com}
-  SUPERBLOCKS_WORKER_TLS_INSECURE: 'true'
 
 services:
   proxy:
@@ -52,7 +51,11 @@ services:
   agent:
     image: ${SUPERBLOCKS_DOCKER_AGENT_REPOSITORY:-ghcr.io/superblocksteam/agent}:${SUPERBLOCKS_DOCKER_AGENT_TAG:-latest}
     pull_policy: ${SUPERBLOCKS_DOCKER_IMAGE_PULL_POLICY:-always}
-    environment: *environment
+    environment:
+      <<: *environment
+      __SUPERBLOCKS_WORKER_LOCAL_ENABLED: 'true'
+      SUPERBLOCKS_WORKER_TLS_INSECURE: 'true'
+      SUPERBLOCKS_CONTROLLER_DISCOVERY_ENABLED: 'false'
     ports:
       - '${SUPERBLOCKS_AGENT_PORT:-8020}:${SUPERBLOCKS_AGENT_PORT:-8020}'
       - '${SUPERBLOCKS_WORKER_METRICS_PORT:-9090}'

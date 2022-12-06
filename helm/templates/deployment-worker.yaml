@@ -1,5 +1,5 @@
 {{- range $k, $v := $.Values.worker.fleets }}
-{{- if (default true $v.enabled) }}
+{{- if not $v.disabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -85,6 +85,8 @@ spec:
         {{- end }}
         - name: SUPERBLOCKS_AGENT_ENVIRONMENT
           value: {{ default "*" $.Values.superblocks.agentEnvironment | quote }}
+        - name: SUPERBLOCKS_CONTROLLER_DISCOVERY_ENABLED
+          value: "true"
         {{- include "extra-env" (merge $v.extraEnv $.Values.worker.extraEnv $.Values.extraEnv) | indent 8 }}
         volumeMounts:
         {{- if $.Values.worker.tls.enabled }}
