@@ -79,6 +79,10 @@ spec:
           value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
         - name: SUPERBLOCKS_WORKER_TLS_INSECURE
           value: "true"
+        {{- if .Values.worker.concurrency }}
+        - name: SUPERBLOCKS_WORKER_CONCURRENCY
+          value: {{ .Values.worker.concurrency | quote }}
+        {{- end }}
         {{- include "extra-env" (merge .Values.controller.extraEnv .Values.extraEnv) | indent 8 }}
       {{- with .Values.controller.nodeSelector }}
       nodeSelector:
