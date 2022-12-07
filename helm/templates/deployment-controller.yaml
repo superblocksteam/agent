@@ -81,6 +81,8 @@ spec:
         - name: SUPERBLOCKS_AGENT_ENVIRONMENT
           value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
         {{- if $.Values.worker.tls.enabled }}
+        - name: SUPERBLOCKS_WORKER_TLS_INSECURE
+          value: "false"
         - name: SUPERBLOCKS_WORKER_TLS_CA_FILE
           value: /etc/config/tls/tls.ca
         - name: SUPERBLOCKS_WORKER_TLS_CERT_FILE
