@@ -13,20 +13,6 @@ Define the name of the controller.
 {{- end }}
 
 {{/*
-Define the name of the worker.
-*/}}
-{{- define "superblocks-agent.worker.name" -}}
-{{- printf "%s-worker" (default .Chart.Name .Values.nameOverride) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Define the name of a worker fleet.
-*/}}
-{{- define "superblocks-agent.worker.fleet.name" -}}
-{{- printf "%s-%s" (include "superblocks-agent.worker.name" .Global) .fleet | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
@@ -64,14 +50,6 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
-Worker labels
-*/}}
-{{- define "superblocks-agent.worker.labels" -}}
-component: worker
-fleet: {{ . }}
-{{- end -}}
-
-{{/*
 Controller labels
 */}}
 {{- define "superblocks-agent.controller.labels" -}}
@@ -85,17 +63,6 @@ Selector labels
 app.kubernetes.io/name: {{ include "superblocks-agent.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
-
-{{/*
-Generate certificates for controller <-> worker communication
-*/}}
-{{- define "superblocks-agent.worker.tls" -}}
-{{- $ca := genCA "root" 365 -}}
-{{- $cert := genSignedCert "client" nil nil 365 $ca -}}
-tls.crt: {{ $cert.Cert | b64enc }}
-tls.key: {{ $cert.Key | b64enc }}
-tls.ca: {{ $ca.Cert | b64enc }}
-{{- end -}}
 
 {{/*
 Parse multiple extraEnvs
