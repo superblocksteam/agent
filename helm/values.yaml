@@ -130,10 +130,10 @@ controller:
   # minimally the following to prevent CPU throttling and Out of Memory errors under load.
   resources:
     limits:
-      memory: 2Gi
+      memory: 4Gi
     requests:
       cpu: 1
-      memory: 2Gi
+      memory: 4Gi
 
   nodeSelector: {}
   tolerations: []
