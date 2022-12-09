@@ -6,13 +6,6 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
-Define the name of the controller.
-*/}}
-{{- define "superblocks-agent.controller.name" -}}
-{{- printf "%s-controller" (default .Chart.Name .Values.nameOverride) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
@@ -50,18 +43,12 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
-Controller labels
-*/}}
-{{- define "superblocks-agent.controller.labels" -}}
-component: controller
-{{- end -}}
-
-{{/*
 Selector labels
 */}}
 {{- define "superblocks-agent.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "superblocks-agent.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+component: agent
 {{- end }}
 
 {{/*

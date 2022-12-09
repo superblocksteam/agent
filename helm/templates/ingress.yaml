@@ -1,6 +1,6 @@
-{{- if .Values.controller.ingress.enabled -}}
+{{- if .Values.ingress.enabled -}}
 {{- $fullName := include "superblocks-agent.fullname" . -}}
-{{- $svcPort := .Values.controller.service.port -}}
+{{- $svcPort := .Values.service.port -}}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
 apiVersion: networking.k8s.io/v1
 {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
@@ -15,18 +15,18 @@ metadata:
     {{- include "superblocks-agent.labels" . | nindent 4 }}
   annotations:
     {{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.Version -}}
-    kubernetes.io/ingress.class: {{ .Values.controller.ingress.class }}
+    kubernetes.io/ingress.class: {{ .Values.ingress.class }}
     {{- end }}
-  {{- with .Values.controller.ingress.annotations }}
+  {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   {{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.Version }}
-  ingressClassName: {{ .Values.controller.ingress.class }}
+  ingressClassName: {{ .Values.ingress.class }}
   {{- end }}
-  {{- if .Values.controller.ingress.tls }}
+  {{- if .Values.ingress.tls }}
   tls:
-    {{- range .Values.controller.ingress.tls }}
+    {{- range .Values.ingress.tls }}
     - hosts:
         {{- range .hosts }}
         - {{ . | quote }}
@@ -35,7 +35,7 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .Values.controller.ingress.hosts }}
+    {{- range .Values.ingress.hosts }}
     - host: {{ .host | quote }}
       http:
         paths:

@@ -1,4 +1,4 @@
-{{- if .Values.controller.podDisruptionBudget -}}
+{{- if .Values.podDisruptionBudget -}}
 ---
 {{- if .Capabilities.APIVersions.Has "policy/v1" -}}
 apiVersion: policy/v1
@@ -10,11 +10,9 @@ metadata:
   name: {{ include "superblocks-agent.fullname" . }}
   labels:
     {{- include "superblocks-agent.labels" . | nindent 4 }}
-    {{- include "superblocks-agent.controller.labels" . | nindent 4 }}
 spec:
-{{- .Values.controller.podDisruptionBudget | toYaml | nindent 2 }}
+{{- .Values.podDisruptionBudget | toYaml | nindent 2 }}
   selector:
     matchLabels:
       {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
-      {{- include "superblocks-agent.controller.labels" . | nindent 6 }}
 {{- end }}

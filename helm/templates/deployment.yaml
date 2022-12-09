@@ -1,18 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "superblocks-agent.controller.name" . }}
+  name: {{ include "superblocks-agent.name" . }}
   labels:
     {{- include "superblocks-agent.labels" . | nindent 4 }}
-    {{- include "superblocks-agent.controller.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.controller.autoscaling.enabled }}
-  replicas: {{ .Values.controller.replicaCount }}
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
       {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
-      {{- include "superblocks-agent.controller.labels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -21,39 +19,38 @@ spec:
   template:
     metadata:
       annotations:
-      {{- if .Values.controller.podAnnotations }}
-        {{- toYaml .Values.controller.podAnnotations | nindent 8 }}
+      {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
       {{- if .Values.commonPodAnnotations }}
         {{- toYaml .Values.commonPodAnnotations | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "superblocks-agent.selectorLabels" . | nindent 8 }}
-        {{- include "superblocks-agent.controller.labels" . | nindent 8 }}
-        {{- if .Values.controller.podLabels }}
+        {{- include "superblocks-agent.labels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
           {{- toYaml .Values.commonPodLabels | nindent 8 }}
         {{- end }}
         {{- if .Values.commonPodLabels }}
           {{- toYaml .Values.commonPodLabels | nindent 8 }}
         {{- end }}
     spec:
-      terminationGracePeriodSeconds: {{ .Values.controller.terminationGracePeriodSeconds | default 1800 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 1800 }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}
-      serviceAccountName: {{ default (include "superblocks-agent.controller.name" $) .Values.controller.serviceAccount.name }}
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ default (include "superblocks-agent.name" $) .Values.serviceAccount.name }}
       containers:
-      - name: {{ .Chart.Name }}-controller
+      - name: {{ .Chart.Name }}
         securityContext:
-          {{- toYaml .Values.controller.securityContext | nindent 10 }}
-        image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag | default .Chart.AppVersion }}"
-        imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - name: http
-          containerPort: {{ .Values.controller.ports.http }}
+          containerPort: {{ .Values.ports.http }}
           protocol: TCP
         livenessProbe:
           httpGet:
@@ -64,15 +61,15 @@ spec:
             path: /health
             port: http
         resources:
-          {{- toYaml .Values.controller.resources | nindent 10 }}
+          {{- toYaml .Values.resources | nindent 10 }}
         envFrom:
         {{- include "superblocks-agent.key" . | indent 8 }}
-        {{- with (concat .Values.controller.envFrom .Values.envFrom) }}
+        {{- with (concat .Values.envFrom .Values.envFrom) }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         env:
         - name: SUPERBLOCKS_AGENT_PORT
-          value: {{ required "controller.ports.http is required!" .Values.controller.ports.http | quote }}
+          value: {{ required "controller.ports.http is required!" .Values.ports.http | quote }}
         - name: SUPERBLOCKS_AGENT_HOST_URL
           value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
         - name: SUPERBLOCKS_AGENT_ENVIRONMENT
@@ -81,16 +78,16 @@ spec:
           value: "true"
         - name: __SUPERBLOCKS_WORKER_LOCAL_ENABLED
           value: "true"
-        {{- include "extra-env" (merge .Values.controller.extraEnv .Values.extraEnv) | indent 8 }}
-      {{- with .Values.controller.nodeSelector }}
+        {{- include "extra-env" (merge .Values.extraEnv .Values.extraEnv) | indent 8 }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.controller.affinity }}
+      {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.controller.tolerations }}
+      {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
