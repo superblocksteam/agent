@@ -40,6 +40,9 @@ envFrom: []
 # This node is being maintained for legacy reasons.
 controller:
   service:
+    # Use ClusterIP if your ingress controller routes traffic directly to pods.
+    # Otherwise, update the type based on your ingress controller settings.
+    # For example, defaults for native cloud controllers require NodePort.
     type: ClusterIP
     port: 8020
 
