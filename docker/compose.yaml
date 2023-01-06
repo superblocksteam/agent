@@ -66,3 +66,12 @@ services:
       - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
       - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_AGENT_PORT:-8020}'
     restart: unless-stopped
+    logging:
+      options:
+        # Follows this format:
+        #
+        #   https://docs.docker.com/compose/compose-file/#specifying-byte-values
+        #
+        max-size: ${SUPERBLOCKS_AGENT_LOGGING_MAX_SIZE:-12m}
+        max-file: ${SUPERBLOCKS_AGENT_LOGGING_MAX_FILES:-5}
+      driver: ${SUPERBLOCKS_AGENT_LOGGING_DRIVER:-json-file}
