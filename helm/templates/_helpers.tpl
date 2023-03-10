@@ -91,3 +91,12 @@ Agent key
     name: {{ .Values.superblocks.agentKeyExistingSecret }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Check data domain
+*/}}
+{{- define "verify.datadomain" -}}
+{{- if not (or (eq .Values.superblocks.agentDataDomain "app.superblocks.com") (eq .Values.superblocks.agentDataDomain "eu.superblocks.com")) }}
+{{- fail "superblocks.agentDataDomain must be set to app.superblocks.com or eu.superblocks.com" }}}
+{{- end }}
+{{- end -}}

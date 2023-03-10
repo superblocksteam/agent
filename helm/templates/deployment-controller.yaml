@@ -81,6 +81,9 @@ spec:
           value: "true"
         - name: __SUPERBLOCKS_WORKER_LOCAL_ENABLED
           value: "true"
+          {{- include "verify.datadomain" $ }}
+        - name: SUPERBLOCKS_AGENT_DATA_DOMAIN
+          value: {{ default "app.superblocks.com" .Values.superblocks.agentDataDomain | quote }}
         {{- include "extra-env" (merge .Values.controller.extraEnv .Values.extraEnv) | indent 8 }}
       {{- with .Values.controller.nodeSelector }}
       nodeSelector:
