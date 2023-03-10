@@ -22,5 +22,6 @@ The following table lists the environment variables that can be used to configur
 | SUPERBLOCKS_AGENT_JSON_PARSE_LIMIT              | Express request body limit (in mb)                                                                                                                                                                       | No       | 50mb                          |
 | SUPERBLOCKS_AGENT_LOG_HTTP_DISABLE              | Flag to disable/enable Superblocks log collection                                                                                                                                                        | No       | false                         |
 SUPERBLOCKS_AGENT_MEMORY_LIMIT | Memory in mb to set as the Node heap size limit | No | 3000
+SUPERBLOCKS_AGENT_DATA_DOMAIN | The Superblocks region that stores your organization's data. It should correspond to whether you visit your applications on `app.superblocks.com` or `eu.superblocks.com`. | No | `app.superblocks.com`
 
 [env_support]: https://docs.superblocks.com/superblocks/software-development-lifecycle/staging-and-prod-environments
