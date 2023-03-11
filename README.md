@@ -42,7 +42,8 @@ helm upgrade -i -n superblocks superblocks-agent superblocks/superblocks-agent \
   --create-namespace \
   --set superblocks.agentKey='<agent-key>' # obtained during agent onboarding \
   --set superblocks.agentHostUrl='http[s]://<agent-host[:port]>/agent' \
-  --set superblocks.agentEnvironment='<"*"|"staging"|"production">'
+  --set superblocks.agentEnvironment='<"*"|"staging"|"production">' \
+  --set superblocks.agentDataDomain='<"app.superblocks.com"|"eu.superblocks.com">'
 ```
 
 ### docker
@@ -56,6 +57,7 @@ To do so, first export the agent configuration.
 export SUPERBLOCKS_AGENT_KEY='<agent-key>'
 export SUPERBLOCKS_AGENT_HOST_URL='http[s]://<agent-host[:port]>/agent'
 export SUPERBLOCKS_AGENT_ENVIRONMENT='<"*"|"staging"|"production">'
+export SUPERBLOCKS_AGENT_DATA_DOMAIN='<"app.superblocks.com"|"eu.superblocks.com">'
 ```
 
 Then, use our docker compose file to start the agent platform. The referenced docker compose file can be found [here](./docker/compose.yaml).
