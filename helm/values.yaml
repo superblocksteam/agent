@@ -38,6 +38,17 @@ envFrom: []
 #   - configMapRef:
 #       name: my-agent-env-configmap
 
+# Specify additional manifests that will be applied as part of the release
+extraManifests: []
+# extraManifests:
+#  - apiVersion: cloud.google.com/v1beta1
+#    kind: BackendConfig
+#    metadata:
+#      name: "{{ .Release.Name }}-test"
+#    spec:
+#      securityPolicy:
+#        name: "gcp-cloud-armor-policy-test"
+
 # This node is being maintained for legacy reasons.
 controller:
   service:
