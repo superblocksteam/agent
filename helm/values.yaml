@@ -12,6 +12,17 @@ superblocks: {}
   # SUPERBLOCKS_AGENT_KEY: <my-superblocks-agent-key>
   # agentKeyExistingSecret: "<my-superblocks-agent-key-secret>", optional. Secret is created for you if not specified.
 
+  # Tags can be used to specify which profile-specific workloads can be executed on this agent.
+  # This is a more flexible alternative to (and eventual replacement of) 'agentEnvironment'.
+  # This is being rolled out in beta, and the syntax may change in the future.
+  # For now, it accepts a comma (and colon) separated string representing key-value pairs, and only the "profile" tag/key is used.
+  # Some examples:
+  # agentTags: "profile:*"
+  # agentTags: "profile:staging,profile:production"
+  # agentTags: "profile:staging"
+  # agentTags: "profile:production"
+  # agentTags: "profile:dev"
+
 imagePullSecrets: []
 
 commonPodAnnotations: {}
