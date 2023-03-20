@@ -77,6 +77,10 @@ spec:
           value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}
         - name: SUPERBLOCKS_AGENT_ENVIRONMENT
           value: {{ default "*" .Values.superblocks.agentEnvironment | quote }}
+        {{- if .Values.superblocks.agentTags }}
+        - name: SUPERBLOCKS_AGENT_TAGS
+          value: {{ default "profile:*" .Values.superblocks.agentTags | quote }}
+        {{- end }}
         - name: SUPERBLOCKS_WORKER_TLS_INSECURE
           value: "true"
         - name: __SUPERBLOCKS_WORKER_LOCAL_ENABLED
