@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "superblocks-agent.name" . }}
+  labels:
+    {{- include "superblocks-agent.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
+      {{- include "superblocks-agent.labels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  template:
+    metadata:
+      annotations:
+      {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.commonPodAnnotations }}
+        {{- toYaml .Values.commonPodAnnotations | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "superblocks-agent.selectorLabels" . | nindent 8 }}
+        {{- include "superblocks-agent.labels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+          {{- toYaml .Values.commonPodLabels | nindent 8 }}
+        {{- end }}
+        {{- if .Values.commonPodLabels }}
+          {{- toYaml .Values.commonPodLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 1800 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ default (include "superblocks-agent.name" $) .Values.serviceAccount.name }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- include "verify.datadomain" $ }}
+        - name: SUPERBLOCKS_AGENT_DATA_DOMAIN
+          value: {{ default "app.superblocks.com" .Values.superblocks.agentDataDomain | quote }}
+        args:
+        - "--log.level={{ .Values.logLevel }}"
+        - "--http.port={{ .Values.service.ports.http }}"
+        - "--grpc.port={{ .Values.service.ports.grpc }}"
+        - "--metrics.port={{ .Values.service.ports.metrics }}"
+        - "--grpc.bind=0.0.0.0"
+        - "--http.bind=0.0.0.0"
+        - "--grpc.msg.res.max={{.Values.grpc.maxMsgSize}}"
+        - "--grpc.msg.req.max={{.Values.grpc.maxRecvMsgSize}}"
+        - "--superblocks.url={{ .Values.superblocks.url }}"
+        - "--superblocks.timeout={{ .Values.superblocks.timeout }}"
+        - "--otel.collector.http.url=https://traces.intake.superblocks.com:443/v1/traces"
+        - "--emitter.remote.intake=https://logs.intake.superblocks.com"
+        - "--intake.metadata.url=https://metadata.intake.superblocks.com"
+        - "--file.server.url=http://127.0.0.1:{{$.Values.service.ports.http}}/v2/files"
+        - "--kafka.bootstrap={{ .Values.kafka.bootstrap }}"
+        - "--agent.host.url={{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}"
+        - "--agent.environment={{ default "*" .Values.superblocks.agentEnvironment | quote }}"
+        - "--agent.tags={{ default "profile:*" .Values.superblocks.agentTags | quote }}"
+        {{- include "verify.datadomain" $ }}
+        - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain | quote }}"
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.ports.http }}
+          protocol: TCP
+        - name: grpc
+          containerPort: {{ .Values.service.ports.grpc }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        envFrom:
+        {{- include "superblocks-agent.key" . | indent 8 }}
+        {{- with (concat .Values.envFrom .Values.envFrom) }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        env:
+        {{- include "extra-env" (merge .Values.extraEnv .Values.extraEnv) | indent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

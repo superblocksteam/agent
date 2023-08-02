@@ -1,0 +1,165 @@
+# The default values for the Superblocks Agent Platform.
+
+# REQUIRED: agentKey, agentHostUrl
+# DOCS:     https://docs.superblockshq.com/superblocks/security-and-permissions/on-premise-agent-overview/deployment
+superblocks: {}
+  # agentKey: ""
+  # agentHostUrl: "http[s]://<agent-host[:port]>/agent"
+  # agentEnvironment: <"*"|"staging"|"production">
+  # agentDataDomain: <"app.superblocks.com"|"eu.superblocks.com">
+
+  # Existing agentKey secret must contain the value:
+  # SUPERBLOCKS_AGENT_KEY: <my-superblocks-agent-key>
+  # agentKeyExistingSecret: "<my-superblocks-agent-key-secret>", optional. Secret is created for you if not specified.
+
+  # Tags can be used to specify which profile-specific workloads can be executed on this agent.
+  # This is a more flexible alternative to (and eventual replacement of) 'agentEnvironment'.
+  # This is being rolled out in beta, and the syntax may change in the future.
+  # For now, it accepts a comma (and colon) separated string representing key-value pairs, and only the "profile" tag/key is used.
+  # Some examples:
+  # agentTags: "profile:*"
+  # agentTags: "profile:staging,profile:production"
+  # agentTags: "profile:staging"
+  # agentTags: "profile:production"
+  # agentTags: "profile:dev"
+
+imagePullSecrets: []
+
+commonPodAnnotations: {}
+commonPodLabels: {}
+
+# Change the prefix used in resource names.
+# Defaults to 'superblocks-agent'.
+nameOverride: ''
+
+fullnameOverride: ''
+
+# Specify extra environment variables that will be applied
+extraEnv: {}
+#   TEST_KEY: foobar
+#   DD_AGENT_HOST:
+#     valueFrom:
+#       fieldRef:
+#         fieldPath: status.hostIP
+
+# Specify environment variables that will be applied from secrets or configmaps.
+envFrom: []
+#   - secretRef:
+#       name: my-agent-env-secret
+#   - configMapRef:
+#       name: my-agent-env-configmap
+
+# Specify additional manifests that will be applied as part of the release
+extraManifests: []
+# extraManifests:
+#  - apiVersion: cloud.google.com/v1beta1
+#    kind: BackendConfig
+#    metadata:
+#      name: "{{ .Release.Name }}-test"
+#    spec:
+#      securityPolicy:
+#        name: "gcp-cloud-armor-policy-test"
+
+# This node is being maintained for legacy reasons.
+service:
+  # Use ClusterIP if your ingress controller routes traffic directly to pods.
+  # Otherwise, update the type based on your ingress controller settings.
+  # For example, defaults for native cloud controllers require NodePort.
+  type: ClusterIP
+  port: 8020
+
+ingress:
+  enabled: false
+  class: "" # nginx
+  annotations: {}
+    # kubernetes.io/tls-acme: "true"
+  hosts: []
+  # - host: chart-example.local
+  #   paths:
+  #   - /
+  #   - path: /agent
+  #     pathType: Prefix
+  #   - path: /health
+  tls: []
+  # - secretName: chart-example-tls
+  #   hosts:
+  #     - chart-example.local
+
+# Upon termination, there may be inflight requests and scheduled jobs.
+# If you want to force kill the agent after a certain point, this value
+# is what you're looking for. Defaults to 30 minutes (1800 seconds).
+terminationGracePeriodSeconds: 1800
+
+podDisruptionBudget: {}
+  # minAvailable: 1
+
+image:
+  repository: ghcr.io/superblocksteam/agent
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  # tag: ""
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+ports:
+  http: 8020
+
+replicaCount: 1
+
+# Specify extra environment variables that will
+# only be applied to the Controllers.
+extraEnv: {}
+envFrom: []
+
+serviceAccount:
+  create: true
+  # name: superblocks-agent-controller
+
+  # If using Service Account Volume Token Projection to authenticate
+  # OPA workloads, you must assign the IAM role to the controller
+  annotations: {}
+  # eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/my-iam-role
+  # iam.gke.io/gcp-service-account=service-account@my-gcp-project.iam.gserviceaccount.com
+  labels: {}
+
+# If using something like kube2iam, pod annotations for roles would go here
+podAnnotations: {}
+# iam.amazonaws.com/role: arn:aws:iam::111111111111:role/my-iam-role
+podLabels: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 40
+  targetMemoryUtilizationPercentage: 80
+  customMetrics: []
+    # - type: External
+    #   external:
+    #     metricName: nginx.net.request_per_s
+    #     metricSelector:
+    #       matchLabels:
+    #           kube_container_name: nginx
+    #     targetAverageValue: 123
+
+# Please adjust these values as needed depending on your workloads. We recommend allocating
+# minimally the following to prevent CPU throttling and Out of Memory errors under load.
+resources:
+  limits:
+    memory: 4Gi
+  requests:
+    cpu: 1
+    memory: 4Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
