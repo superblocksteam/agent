@@ -26,5 +26,5 @@ jobs:
         uses: superblocksteam/helm-release-action@v0.3
         with:
           repo: s3://superblocks-public-helm-repo/superblocks
-          chart: ./helm
+          chart: ./helm/v1
           forceRelease: false
