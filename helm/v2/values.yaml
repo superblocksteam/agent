@@ -9,7 +9,7 @@ superblocks: {}
   # agentDataDomain: <"app.superblocks.com"|"eu.superblocks.com">
 
   # Existing agentKey secret must contain the value:
-  # SUPERBLOCKS_AGENT_KEY: <my-superblocks-agent-key>
+  # SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_KEY: <my-superblocks-agent-key>
   # agentKeyExistingSecret: "<my-superblocks-agent-key-secret>", optional. Secret is created for you if not specified.
 
   # Tags can be used to specify which profile-specific workloads can be executed on this agent.
@@ -66,7 +66,15 @@ service:
   # Otherwise, update the type based on your ingress controller settings.
   # For example, defaults for native cloud controllers require NodePort.
   type: ClusterIP
-  port: 8020
+  ports:
+    grpc: 8081
+    http: 8080
+    metrics: 9090
+
+logLevel: info
+
+grpc:
+  maxMsgSize:
 
 ingress:
   enabled: false
@@ -114,11 +122,6 @@ ports:
   http: 8020
 
 replicaCount: 1
-
-# Specify extra environment variables that will
-# only be applied to the Controllers.
-extraEnv: {}
-envFrom: []
 
 serviceAccount:
   create: true

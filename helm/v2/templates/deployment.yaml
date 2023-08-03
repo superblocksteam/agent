@@ -50,9 +50,6 @@ spec:
           {{- toYaml .Values.securityContext | nindent 10 }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        {{- include "verify.datadomain" $ }}
-        - name: SUPERBLOCKS_AGENT_DATA_DOMAIN
-          value: {{ default "app.superblocks.com" .Values.superblocks.agentDataDomain | quote }}
         args:
         - "--log.level={{ .Values.logLevel }}"
         - "--http.port={{ .Values.service.ports.http }}"
@@ -60,26 +57,34 @@ spec:
         - "--metrics.port={{ .Values.service.ports.metrics }}"
         - "--grpc.bind=0.0.0.0"
         - "--http.bind=0.0.0.0"
+        {{- if (.Values.grpc).maxMsgSize }}
         - "--grpc.msg.res.max={{.Values.grpc.maxMsgSize}}"
+        {{- end }}
+        {{- if (.Values.grpc).maxRecvMsgSize }}
         - "--grpc.msg.req.max={{.Values.grpc.maxRecvMsgSize}}"
-        - "--superblocks.url={{ .Values.superblocks.url }}"
+        {{- end }}
+        - "--superblocks.url=https://api.superblocks.com"
+        {{- if .Values.superblocks.timeout }}}
         - "--superblocks.timeout={{ .Values.superblocks.timeout }}"
+        {{- end }}
         - "--otel.collector.http.url=https://traces.intake.superblocks.com:443/v1/traces"
         - "--emitter.remote.intake=https://logs.intake.superblocks.com"
         - "--intake.metadata.url=https://metadata.intake.superblocks.com"
         - "--file.server.url=http://127.0.0.1:{{$.Values.service.ports.http}}/v2/files"
-        - "--kafka.bootstrap={{ .Values.kafka.bootstrap }}"
-        - "--agent.host.url={{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl | quote }}"
-        - "--agent.environment={{ default "*" .Values.superblocks.agentEnvironment | quote }}"
-        - "--agent.tags={{ default "profile:*" .Values.superblocks.agentTags | quote }}"
+        - "--agent.host.url={{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl }}"
+        - "--agent.environment={{ default "*" .Values.superblocks.agentEnvironment  }}"
+        - "--agent.tags={{ default "profile:*" .Values.superblocks.agentTags }}"
         {{- include "verify.datadomain" $ }}
-        - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain | quote }}"
+        - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain  }}"
         ports:
         - name: http
           containerPort: {{ .Values.service.ports.http }}
           protocol: TCP
         - name: grpc
           containerPort: {{ .Values.service.ports.grpc }}
+          protocol: TCP
+        - name: metrics
+          containerPort: {{ .Values.service.ports.metrics }}
           protocol: TCP
         livenessProbe:
           httpGet:
@@ -97,7 +102,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
         env:
-        {{- include "extra-env" (merge .Values.extraEnv .Values.extraEnv) | indent 8 }}
+        {{- include "extra-env" .Values.extraEnv | indent 8 }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

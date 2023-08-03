@@ -7,9 +7,17 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-  - port: {{ .Values.service.port }}
+  - port: {{ .Values.service.ports.http }}
     targetPort: http
     protocol: TCP
     name: http
+  - port: {{ .Values.service.ports.grpc }}
+    targetPort: grpc
+    protocol: TCP
+    name: grpc
+  - port: {{ .Values.service.ports.metrics }}
+    targetPort: metrics
+    protocol: TCP
+    name: metrics
   selector:
     {{- include "superblocks-agent.selectorLabels" . | nindent 4 }}
