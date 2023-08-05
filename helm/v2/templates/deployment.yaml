@@ -50,6 +50,7 @@ spec:
           {{- toYaml .Values.securityContext | nindent 10 }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["dumb-init", "/bin/entrypoint", "/orchestrator"]
         args:
         - "--log.level={{ .Values.logLevel }}"
         - "--http.port={{ .Values.service.ports.http }}"
@@ -63,7 +64,7 @@ spec:
         {{- if (.Values.grpc).maxRecvMsgSize }}
         - "--grpc.msg.req.max={{.Values.grpc.maxRecvMsgSize}}"
         {{- end }}
-        - "--superblocks.url=https://api.superblocks.com"
+        - "--superblocks.url={{.Values.superblocks.serverUrl}}"
         {{- if .Values.superblocks.timeout }}}
         - "--superblocks.timeout={{ .Values.superblocks.timeout }}"
         {{- end }}
@@ -76,6 +77,8 @@ spec:
         - "--agent.tags={{ default "profile:*" .Values.superblocks.agentTags }}"
         {{- include "verify.datadomain" $ }}
         - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain  }}"
+        - "--transport.mode=grpc"
+        - "--store.mode=grpc"
         ports:
         - name: http
           containerPort: {{ .Values.service.ports.http }}

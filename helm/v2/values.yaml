@@ -2,7 +2,8 @@
 
 # REQUIRED: agentKey, agentHostUrl
 # DOCS:     https://docs.superblockshq.com/superblocks/security-and-permissions/on-premise-agent-overview/deployment
-superblocks: {}
+superblocks:
+  serverUrl: https://api.superblocks.com
   # agentKey: ""
   # agentHostUrl: "http[s]://<agent-host[:port]>/agent"
   # agentEnvironment: <"*"|"staging"|"production">
@@ -117,9 +118,6 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
-ports:
-  http: 8020
 
 replicaCount: 1
 
