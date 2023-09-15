@@ -79,6 +79,7 @@ spec:
         - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain  }}"
         - "--transport.mode=grpc"
         - "--store.mode=grpc"
+        - "--handle.cors={{ .Values.superblocks.handleCors }}"
         ports:
         - name: http
           containerPort: {{ .Values.service.ports.http }}

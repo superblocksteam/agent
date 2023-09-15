@@ -3,12 +3,14 @@ version: '3.7'
 x-environment: &environment
   # REQUIRED
   SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_KEY: ${SUPERBLOCKS_AGENT_KEY}
+  SUPERBLOCKS_AGENT_KEY: ${SUPERBLOCKS_AGENT_KEY}
   # OPTIONAL
   SUPERBLOCKS_ORCHESTRATOR_AGENT_ENVIRONMENT: ${SUPERBLOCKS_AGENT_ENVIRONMENT:-*}
   SUPERBLOCKS_ORCHESTRATOR_AGENT_TAGS: ${SUPERBLOCKS_AGENT_TAGS}
-  SUPERBLOCKS_ORCHESTRATOR_AGENT_HOST_URL: ${SUPERBLOCKS_AGENT_HOST_URL:-http://localhost:8020}
-  SUPERBLOCKS_AGENT_PORT: ${SUPERBLOCKS_AGENT_PORT:-8020}
+  SUPERBLOCKS_ORCHESTRATOR_AGENT_HOST_URL: ${SUPERBLOCKS_AGENT_HOST_URL:-http://localhost:8080}
+  SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT: ${SUPERBLOCKS_AGENT_PORT:-8080}
   SUPERBLOCKS_ORCHESTRATOR_DATA_DOMAIN: ${SUPERBLOCKS_AGENT_DATA_DOMAIN:-app.superblocks.com}
+  SUPERBLOCKS_ORCHESTRATOR_HANDLE_CORS: "true"
   NODE_OPTIONS: --max_old_space_size=${SUPERBLOCKS_AGENT_MEMORY_LIMIT:-3000}
 
 services:
@@ -64,7 +66,7 @@ services:
       - 'traefik.http.routers.controller.entrypoints=websecure'
       - 'traefik.http.routers.controller.tls=true'
       - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
-      - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-8020}'
+      - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-8080}'
     restart: unless-stopped
     logging:
       options:

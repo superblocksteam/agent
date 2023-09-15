@@ -24,6 +24,10 @@ superblocks:
   # agentTags: "profile:production"
   # agentTags: "profile:dev"
 
+  # Enables the agent to handle CORS requests. This is required if you want to use the agent
+  # without a reverse proxy.
+  handleCors: true
+
 imagePullSecrets: []
 
 commonPodAnnotations: {}
