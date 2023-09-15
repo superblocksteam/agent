@@ -2,7 +2,7 @@ name: Release Chart
 on:
   push:
     branches:
-      - main
+      - by/orchestrator-opa-chart
     paths:
       - 'helm/**'
 
@@ -26,5 +26,5 @@ jobs:
         uses: superblocksteam/helm-release-action@v0.3
         with:
           repo: s3://superblocks-public-helm-repo/superblocks
-          chart: ./helm/v1
+          chart: ./helm/v2
           forceRelease: false
