@@ -56,8 +56,6 @@ spec:
         - "--http.port={{ .Values.service.ports.http }}"
         - "--grpc.port={{ .Values.service.ports.grpc }}"
         - "--metrics.port={{ .Values.service.ports.metrics }}"
-        - "--grpc.bind=0.0.0.0"
-        - "--http.bind=0.0.0.0"
         {{- if (.Values.grpc).maxMsgSize }}
         - "--grpc.msg.res.max={{.Values.grpc.maxMsgSize}}"
         {{- end }}
@@ -77,8 +75,6 @@ spec:
         - "--agent.tags={{ default "profile:*" .Values.superblocks.agentTags }}"
         {{- include "verify.datadomain" $ }}
         - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain  }}"
-        - "--transport.mode=grpc"
-        - "--store.mode=grpc"
         - "--handle.cors={{ .Values.superblocks.handleCors }}"
         ports:
         - name: http
