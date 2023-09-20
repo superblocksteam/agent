@@ -18,8 +18,8 @@ jobs:
       - name: Bump app version
         run: |
           pip install pybump
-          pybump bump --file helm/Chart.yaml --level minor
-          pybump set --file helm/Chart.yaml --app-version --set-version ${{github.event.release.tag_name}}
+          pybump bump --file helm/v1/Chart.yaml --level minor
+          pybump set --file helm/v1/Chart.yaml --app-version --set-version ${{github.event.release.tag_name}}
 
       - name: Create Pull Request
         id: cpr

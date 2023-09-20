@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "superblocks-agent.fullname" . }}
+  labels:
+    {{- include "superblocks-agent.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.ports.http }}
+    targetPort: http
+    protocol: TCP
+    name: http
+  - port: {{ .Values.service.ports.grpc }}
+    targetPort: grpc
+    protocol: TCP
+    name: grpc
+  - port: {{ .Values.service.ports.metrics }}
+    targetPort: metrics
+    protocol: TCP
+    name: metrics
+  selector:
+    {{- include "superblocks-agent.selectorLabels" . | nindent 4 }}
