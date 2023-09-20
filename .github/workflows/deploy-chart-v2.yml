@@ -1,10 +1,10 @@
-name: Release Chart
+name: Release Chart V2
 on:
   push:
     branches:
       - main
     paths:
-      - 'helm/v1/**'
+      - 'helm/v2/**'
 
 jobs:
   release-chart:
@@ -26,5 +26,5 @@ jobs:
         uses: superblocksteam/helm-release-action@v0.3
         with:
           repo: s3://superblocks-public-helm-repo/superblocks
-          chart: ./helm/v1
+          chart: ./helm/v2
           forceRelease: false
