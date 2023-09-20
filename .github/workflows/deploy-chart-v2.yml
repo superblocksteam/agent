@@ -2,7 +2,7 @@ name: Release Chart V2
 on:
   push:
     branches:
-      - by/orchestrator-opa-chart
+      - main
     paths:
       - 'helm/v2/**'
 
