@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: v1.0.0-rc
+appVersion: v1.0.1-rc
 description: A Beta Helm chart for the Superblocks On-Prem Agent
 name: superblocks-agent-v2-rc
 type: application
