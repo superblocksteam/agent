@@ -6,7 +6,7 @@
 
 set -e
 
-compose_yaml="https://raw.githubusercontent.com/superblocksteam/agent/main/docker/compose.yaml"
+compose_yaml="https://raw.githubusercontent.com/superblocksteam/agent/main/docker/v2.compose.yaml"
 env_file="/etc/superblocks.conf"
 log_file="/var/log/superblocks.log"
 
@@ -43,7 +43,7 @@ install_docker_on_amzn() {
         echo "Installing docker on Amazon..."
         #Install docker
         yum update -y
-        amazon-linux-extras install docker
+        yum install -y docker 
 
         #Install docker-compose standalone
         curl -SL https://github.com/docker/compose/releases/download/v2.12.2/docker-compose-linux-x86_64 -o /usr/bin/docker-compose
