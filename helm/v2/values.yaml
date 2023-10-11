@@ -6,7 +6,6 @@ superblocks:
   serverUrl: https://api.superblocks.com
   # agentKey: ""
   # agentHostUrl: "http[s]://<agent-host[:port]>"
-  # agentEnvironment: <"*"|"staging"|"production">
   # agentDataDomain: <"app.superblocks.com"|"eu.superblocks.com">
 
   # Existing agentKey secret must contain the value:
@@ -90,9 +89,6 @@ ingress:
   # - host: chart-example.local
   #   paths:
   #   - /
-  #   - path: /agent
-  #     pathType: Prefix
-  #   - path: /health
   tls: []
   # - secretName: chart-example-tls
   #   hosts:

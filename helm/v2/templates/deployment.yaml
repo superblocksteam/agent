@@ -71,7 +71,6 @@ spec:
         - "--intake.metadata.url=https://metadata.intake.superblocks.com"
         - "--file.server.url=http://127.0.0.1:{{$.Values.service.ports.http}}/v2/files"
         - "--agent.host.url={{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl }}"
-        - "--agent.environment={{ default "*" .Values.superblocks.agentEnvironment  }}"
         - "--agent.tags={{ default "profile:*" .Values.superblocks.agentTags }}"
         {{- include "verify.datadomain" $ }}
         - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain  }}"
