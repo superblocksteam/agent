@@ -53,7 +53,7 @@ helm upgrade -i -n superblocks superblocks-agent superblocks/superblocks-agent \
   * `superblocks.agentEnvironment: "*"` is equivalent to `superblocks.agentTags: "profile:*"`
   * `superblocks.agentEnvironment: "staging"` is equivalent to `superblocks.agentTags: "profile:staging"`
   * `superblocks.agentEnvironment: "production"` is equivalent to `superblocks.agentTags: "profile:production"`
-* The `controller` block in the values file is deprecated. Everything underneath can be specified at one level higher. You can simply delete the `controller` block and unindent everything underneath it.
+* The `controller` block in the values file is deprecated. Everything underneath can be specified one level higher. You can simply delete the `controller` block and unindent everything underneath it.
 
   For example:
 
