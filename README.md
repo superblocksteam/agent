@@ -48,7 +48,7 @@ helm upgrade -i -n superblocks superblocks-agent superblocks/superblocks-agent \
 #### v0.x to v1.0 Migration Guide
 
 * Container ports are now specified under `service.ports.http`. It is recommended that you leave these settings as default.
-* Agent URL field `superblocks.agentUrl` must be updated from `https://myagent.example.com/agent` to `https://myagent.example.com`. The new OPA no longer has the `agent` prefix to its endpoints.
+* Agent URL field `superblocks.agentUrl` must be updated from `https://myagent.example.com/agent` to `https://myagent.example.com`. The new OPA no longer has the `agent` suffix path on its endpoints.
 * Agent Environment variable `superblocks.agentEnvironment` is deprecated and you must start using `superblocks.agentTags`.
   * `superblocks.agentEnvironment: "*"` is equivalent to `superblocks.agentTags: "profile:*"`
   * `superblocks.agentEnvironment: "staging"` is equivalent to `superblocks.agentTags: "profile:staging"`
