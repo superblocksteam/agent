@@ -22,7 +22,7 @@ sudo superblocks conf SUPERBLOCKS_AGENT_KEY [GET_YOUR_KEY_FROM_SUPERBLOCKS_APP]
 sudo superblocks conf SUPERBLOCKS_LETSENCRYPT_EMAIL [YOUR_EMAIL_ADDRESS]
 sudo superblocks conf SUPERBLOCKS_AGENT_HOST_URL https://YOUR.VALID.DOMAIN.COM
 sudo superblocks conf SUPERBLOCKS_PROXY_REPLICA_COUNT 1
-sudo superblocks conf SUPERBLOCKS_DOCKER_AGENT_TAG v1.0.0
+sudo superblocks conf SUPERBLOCKS_DOCKER_AGENT_TAG v1.0.1
 ```
 
 Start Superblocks Agent
@@ -44,7 +44,7 @@ sudo chmod +x /usr/bin/superblocks
 - Configure agent key
 ```
 sudo superblocks conf SUPERBLOCKS_AGENT_KEY [GET_YOUR_KEY_FROM_SUPERBLOCKS_APP]
-sudo superblocks conf SUPERBLOCKS_DOCKER_AGENT_TAG v1.0.0
+sudo superblocks conf SUPERBLOCKS_DOCKER_AGENT_TAG v1.0.1
 ```
 - Start the agent (when staring for the first time, it will install docker and pull docker images)
 ```
@@ -64,7 +64,7 @@ sudo superblocks conf SUPERBLOCKS_AGENT_KEY [GET_YOUR_KEY_FROM_SUPERBLOCKS_APP]
 sudo superblocks conf SUPERBLOCKS_LETSENCRYPT_EMAIL [YOUR_EMAIL_ADDRESS]
 sudo superblocks conf SUPERBLOCKS_AGENT_HOST_URL https://YOUR.VALID.DOMAIN.COM
 sudo superblocks conf SUPERBLOCKS_PROXY_REPLICA_COUNT 1
-sudo superblocks conf SUPERBLOCKS_DOCKER_AGENT_TAG v1.0.0
+sudo superblocks conf SUPERBLOCKS_DOCKER_AGENT_TAG v1.0.1
 ```
 - Make sure a CNAME or A record of the custom domain is created and pointed to the VM instance
 - Start the agent(as above)
