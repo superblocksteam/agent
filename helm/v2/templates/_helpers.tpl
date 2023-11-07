@@ -35,7 +35,6 @@ Common labels
 */}}
 {{- define "superblocks-agent.labels" -}}
 helm.sh/chart: {{ include "superblocks-agent.chart" . }}
-{{ include "superblocks-agent.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
