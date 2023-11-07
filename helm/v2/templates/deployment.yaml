@@ -10,7 +10,6 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
       {{- include "superblocks-agent.labels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
@@ -27,7 +26,6 @@ spec:
         {{- toYaml .Values.commonPodAnnotations | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "superblocks-agent.selectorLabels" . | nindent 8 }}
         {{- include "superblocks-agent.labels" . | nindent 8 }}
         {{- if .Values.podLabels }}
           {{- toYaml .Values.commonPodLabels | nindent 8 }}
