@@ -11,7 +11,6 @@ spec:
   selector:
     matchLabels:
       {{- include "superblocks-agent.selectorLabels" . | nindent 6 }}
-      {{- include "superblocks-agent.labels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
