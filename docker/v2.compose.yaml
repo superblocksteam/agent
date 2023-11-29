@@ -61,14 +61,14 @@ services:
       SUPERBLOCKS_WORKER_TLS_INSECURE: 'true'
       SUPERBLOCKS_CONTROLLER_DISCOVERY_ENABLED: 'false'
     ports:
-      - '${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-8080}:${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-8080}'
+      - '${SUPERBLOCKS_AGENT_PORT:-8080}:${SUPERBLOCKS_AGENT_PORT:-8080}'
       - '${SUPERBLOCKS_ORCHESTRATOR_METRICS_PORT:-9090}'
     labels:
       - 'traefik.http.routers.controller.rule=Host(`${SUPERBLOCKS_AGENT_CUSTOM_DOMAIN:-}`)'
       - 'traefik.http.routers.controller.entrypoints=websecure'
       - 'traefik.http.routers.controller.tls=true'
       - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
-      - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-8080}'
+      - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_AGENT_PORT:-8080}'
     restart: unless-stopped
     logging:
       options:
