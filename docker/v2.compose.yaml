@@ -12,6 +12,9 @@ x-environment: &environment
   SUPERBLOCKS_ORCHESTRATOR_HANDLE_CORS: "true"
   NODE_OPTIONS: --max_old_space_size=${SUPERBLOCKS_AGENT_MEMORY_LIMIT:-3000}
   SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_URL: ${__SUPERBLOCKS_AGENT_SERVER_URL:-https://api.superblocks.com}
+  SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL: "${SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL:-https://traces.intake.superblocks.com/v1/traces}"
+  SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE: "${SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE:-https://logs.intake.superblocks.com}"
+  SUPERBLOCKS_ORCHESTRATOR_INTAKE_METADATA_URL: "${SUPERBLOCKS_ORCHESTRATOR_INTAKE_METADATA_URL:-https://metadata.intake.superblocks.com}"
 
 services:
   proxy:
@@ -58,14 +61,14 @@ services:
       SUPERBLOCKS_WORKER_TLS_INSECURE: 'true'
       SUPERBLOCKS_CONTROLLER_DISCOVERY_ENABLED: 'false'
     ports:
-      - '${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-8080}:${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-8080}'
+      - '${SUPERBLOCKS_AGENT_PORT:-8080}:${SUPERBLOCKS_AGENT_PORT:-8080}'
       - '${SUPERBLOCKS_ORCHESTRATOR_METRICS_PORT:-9090}'
     labels:
       - 'traefik.http.routers.controller.rule=Host(`${SUPERBLOCKS_AGENT_CUSTOM_DOMAIN:-}`)'
       - 'traefik.http.routers.controller.entrypoints=websecure'
       - 'traefik.http.routers.controller.tls=true'
       - 'traefik.http.routers.controller.tls.certresolver=letsencrypt'
-      - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-8080}'
+      - 'traefik.http.services.controller.loadbalancer.server.port=${SUPERBLOCKS_AGENT_PORT:-8080}'
     restart: unless-stopped
     logging:
       options:
