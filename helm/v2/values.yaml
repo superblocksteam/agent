@@ -64,6 +64,26 @@ extraManifests: []
 #      securityPolicy:
 #        name: "gcp-cloud-armor-policy-test"
 
+# Specify additional containers that should be added
+extraContainers: []
+  # - command:
+  #   - /cloud_sql_proxy
+  #   - -instances=10.0.0.1:5432
+  #   - -credential_file=/secrets/cloudsql/credentials.json
+  #   image: 
+  #   name: 
+  #   volumeMounts:
+  #   - mountPath: /secrets/cloudsql
+  #     name: cloudsql-sa-volume
+
+# Specify init containers that should be added
+initContainers: []
+  # - name:
+  #   image:
+  #   volumeMounts:
+  #     - name: creds
+  #       mountPath: /creds
+
 # This node is being maintained for legacy reasons.
 service:
   # Use ClusterIP if your ingress controller routes traffic directly to pods.
