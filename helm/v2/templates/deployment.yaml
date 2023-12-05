@@ -106,8 +106,10 @@ spec:
         {{- with (concat .Values.envFrom .Values.envFrom) }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- if .Values.extraEnv }}
         env:
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
