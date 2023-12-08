@@ -66,5 +66,5 @@ sudo superblocks conf SUPERBLOCKS_PROXY_REPLICA_COUNT 1
 - Make sure a CNAME or A record of the custom domain is created and pointed to the VM instance
 - Start the agent(as above)
 - Check localhost
-- Visit https://YOUR.VALID.DOMAIN.COM to validate is service is up for https
+- Visit https://YOUR.VALID.DOMAIN.COM/health to validate is service is up for https
 
