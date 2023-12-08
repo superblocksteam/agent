@@ -43,7 +43,6 @@ sudo chmod +x /usr/bin/superblocks
 - Configure agent key
 ```
 sudo superblocks conf SUPERBLOCKS_AGENT_KEY [GET_YOUR_KEY_FROM_SUPERBLOCKS_APP]
-sudo superblocks conf SUPERBLOCKS_DOCKER_AGENT_TAG v1.0.1
 ```
 - Start the agent (when staring for the first time, it will install docker and pull docker images)
 ```
@@ -51,7 +50,7 @@ sudo superblocks start
 ```
 - Check if service is up
 ```
-curl localhost:8080
+curl localhost:8080/health
 ```
 
 ##### Manual test for https
