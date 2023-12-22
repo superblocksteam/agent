@@ -42,8 +42,15 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.initContainers }}
+      initContainers:
+{{ toYaml .Values.initContainers | indent 6 }}
+      {{- end }}
       serviceAccountName: {{ default (include "superblocks-agent.name" $) .Values.serviceAccount.name }}
       containers:
+      {{- if .Values.extraContainers }}
+{{ toYaml .Values.extraContainers | indent 6 }}
+      {{- end }}
       - name: {{ .Chart.Name }}
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
@@ -99,8 +106,10 @@ spec:
         {{- with (concat .Values.envFrom .Values.envFrom) }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- if .Values.extraEnv }}
         env:
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
