@@ -44,12 +44,12 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.initContainers }}
       initContainers:
-{{ toYaml .Values.initContainers | indent 6 }}
+        {{- toYaml .Values.initContainers | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ default (include "superblocks-agent.name" $) .Values.serviceAccount.name }}
       containers:
       {{- if .Values.extraContainers }}
-{{ toYaml .Values.extraContainers | indent 6 }}
+        {{ toYaml .Values.extraContainers | nindent 8 }}
       {{- end }}
       - name: {{ .Chart.Name }}
         securityContext:
@@ -96,21 +96,21 @@ spec:
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         envFrom:
-        {{- include "superblocks-agent.key" . | indent 8 }}
+        {{ include "superblocks-agent.key" . | nindent 8 }}
         {{- with (concat .Values.envFrom .Values.envFrom) }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- if .Values.extraEnv }}
         env:
         {{- if (.Values.grpc).maxMsgSize }}
-          - name: SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_RES_MAX
-            value: {{.Values.grpc.maxMsgSize | int64 | quote}}
+        - name: SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_RES_MAX
+          value: {{.Values.grpc.maxMsgSize | int64 | quote}}
         {{- end }}
         {{- if (.Values.grpc).maxRecvMsgSize }}
-          - name: SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX
-            value: {{.Values.grpc.maxRecvMsgSize | int64 | quote}}
+        - name: SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX
+          value: {{.Values.grpc.maxRecvMsgSize | int64 | quote}}
         {{- end }}
-        {{- include "extra-env" .Values.extraEnv | indent 10 }}
+        {{ include "extra-env" .Values.extraEnv | nindent 10 }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
