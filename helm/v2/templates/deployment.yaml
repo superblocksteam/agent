@@ -81,6 +81,13 @@ spec:
         {{- include "verify.datadomain" $ }}
         - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain  }}"
         - "--handle.cors={{ .Values.superblocks.handleCors }}"
+        - "--resigner.enabled={{ .Values.superblocks.signing.resigner.enabled }}"
+        - "--signature.enabled={{ .Values.superblocks.signing.signature.enabled }}"
+        - "--signature.signing_key_id={{ .Values.superblocks.signing.signingKeyId }}"
+        - "--signature.verification_key_ids={{ join "," .Values.superblocks.signing.verificationKeyIds }}"
+        {{- range $v := .Values.superblocks.signing.keyData }}
+        - "--signature.keys={{ $v.keyId }}={{ $v.keyData }}"
+        {{- end }}
         ports:
         - name: http
           containerPort: {{ .Values.service.ports.http }}

@@ -27,6 +27,20 @@ superblocks:
   # without a reverse proxy.
   handleCors: true
 
+  signing:
+    signature:
+      enabled: false
+    resigner:
+      enabled: false
+
+    # signingKeyId: "my-key-id"
+    # verificationKeyIds: ["my-key-id", "my-other-key-id"]
+    # keyData:
+    #   - keyId: "my-key-id"
+    #     keyData: "my-key-data"
+    #   - keyId: "my-other-key-id"
+    #     keyData: "my-other-key-data"
+
 imagePullSecrets: []
 
 commonPodAnnotations: {}
@@ -70,8 +84,8 @@ extraContainers: []
   #   - /cloud_sql_proxy
   #   - -instances=10.0.0.1:5432
   #   - -credential_file=/secrets/cloudsql/credentials.json
-  #   image: 
-  #   name: 
+  #   image:
+  #   name:
   #   volumeMounts:
   #   - mountPath: /secrets/cloudsql
   #     name: cloudsql-sa-volume
