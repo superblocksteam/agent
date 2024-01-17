@@ -97,8 +97,11 @@ service:
 
 logLevel: info
 
+# The following is used to configure how much data the agent can receive or send.
+# If you are producing large outputs in your workloads, you may want to adjust this value
 grpc:
-  maxMsgSize:
+  maxMsgSize: 100000000 # 100MB
+  maxRecvMsgSize: 100000000 # 100MB
 
 ingress:
   enabled: false
