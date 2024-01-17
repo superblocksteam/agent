@@ -70,8 +70,8 @@ extraContainers: []
   #   - /cloud_sql_proxy
   #   - -instances=10.0.0.1:5432
   #   - -credential_file=/secrets/cloudsql/credentials.json
-  #   image:
-  #   name:
+  #   image: 
+  #   name: 
   #   volumeMounts:
   #   - mountPath: /secrets/cloudsql
   #     name: cloudsql-sa-volume
