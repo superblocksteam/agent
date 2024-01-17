@@ -34,9 +34,9 @@ commonPodLabels: {}
 
 # Change the prefix used in resource names.
 # Defaults to 'superblocks-agent'.
-nameOverride: ''
+nameOverride: ""
 
-fullnameOverride: ''
+fullnameOverride: ""
 
 # Specify extra environment variables that will be applied
 extraEnv: {}
@@ -65,19 +65,21 @@ extraManifests: []
 #        name: "gcp-cloud-armor-policy-test"
 
 # Specify additional containers that should be added
-extraContainers: []
+extraContainers:
+  []
   # - command:
   #   - /cloud_sql_proxy
   #   - -instances=10.0.0.1:5432
   #   - -credential_file=/secrets/cloudsql/credentials.json
-  #   image: 
-  #   name: 
+  #   image:
+  #   name:
   #   volumeMounts:
   #   - mountPath: /secrets/cloudsql
   #     name: cloudsql-sa-volume
 
 # Specify init containers that should be added
-initContainers: []
+initContainers:
+  []
   # - name:
   #   image:
   #   volumeMounts:
@@ -99,11 +101,13 @@ logLevel: info
 
 grpc:
   maxMsgSize:
+  maxRecvMsgSize:
 
 ingress:
   enabled: false
   class: "" # nginx
-  annotations: {}
+  annotations:
+    {}
     # kubernetes.io/tls-acme: "true"
   hosts: []
   # - host: chart-example.local
@@ -119,7 +123,8 @@ ingress:
 # is what you're looking for. Defaults to 30 minutes (1800 seconds).
 terminationGracePeriodSeconds: 1800
 
-podDisruptionBudget: {}
+podDisruptionBudget:
+  {}
   # minAvailable: 1
 
 image:
@@ -128,10 +133,12 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   # tag: ""
 
-podSecurityContext: {}
+podSecurityContext:
+  {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext:
+  {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -163,7 +170,8 @@ autoscaling:
   maxReplicas: 100
   targetCPUUtilizationPercentage: 40
   targetMemoryUtilizationPercentage: 80
-  customMetrics: []
+  customMetrics:
+    []
     # - type: External
     #   external:
     #     metricName: nginx.net.request_per_s

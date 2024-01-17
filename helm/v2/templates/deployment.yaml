@@ -63,10 +63,10 @@ spec:
         - "--grpc.port={{ .Values.service.ports.grpc }}"
         - "--metrics.port={{ .Values.service.ports.metrics }}"
         {{- if (.Values.grpc).maxMsgSize }}
-        - "--grpc.msg.res.max={{.Values.grpc.maxMsgSize}}"
+        - "--grpc.msg.res.max={{.Values.grpc.maxMsgSize | int64}}"
         {{- end }}
         {{- if (.Values.grpc).maxRecvMsgSize }}
-        - "--grpc.msg.req.max={{.Values.grpc.maxRecvMsgSize}}"
+        - "--grpc.msg.req.max={{.Values.grpc.maxRecvMsgSize | int64}}"
         {{- end }}
         - "--superblocks.url={{.Values.superblocks.serverUrl}}"
         {{- if .Values.superblocks.timeout }}}
