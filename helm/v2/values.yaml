@@ -94,6 +94,11 @@ service:
     grpc: 8081
     http: 8080
     metrics: 9090
+  
+  # If you have cloud specific service annotations, you can add them here.
+  annotations: {}
+    # cloud.google.com/neg: '{"ingress": true}'
+    # cloud.google.com/backend-config: '{"ports": {"http": "superblocks-agent-backend"}}'
 
 logLevel: info
 
