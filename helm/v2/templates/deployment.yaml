@@ -56,25 +56,8 @@ spec:
           {{- toYaml .Values.securityContext | nindent 10 }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["dumb-init", "/bin/entrypoint", "/orchestrator"]
         args:
-        - "--log.level={{ .Values.logLevel }}"
-        - "--http.port={{ .Values.service.ports.http }}"
-        - "--grpc.port={{ .Values.service.ports.grpc }}"
-        - "--metrics.port={{ .Values.service.ports.metrics }}"
-        - "--superblocks.url={{.Values.superblocks.serverUrl}}"
-        {{- if .Values.superblocks.timeout }}}
-        - "--superblocks.timeout={{ .Values.superblocks.timeout }}"
-        {{- end }}
-        - "--otel.collector.http.url=https://traces.intake.superblocks.com:443/v1/traces"
-        - "--emitter.remote.intake=https://logs.intake.superblocks.com"
-        - "--intake.metadata.url=https://metadata.intake.superblocks.com"
-        - "--file.server.url=http://127.0.0.1:{{$.Values.service.ports.http}}/v2/files"
-        - "--agent.host.url={{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl }}"
-        - "--agent.tags={{ default "profile:*" .Values.superblocks.agentTags }}"
         {{- include "verify.datadomain" $ }}
-        - "--data.domain={{ default "app.superblocks.com" .Values.superblocks.agentDataDomain  }}"
-        - "--handle.cors={{ .Values.superblocks.handleCors }}"
         ports:
         - name: http
           containerPort: {{ .Values.service.ports.http }}
@@ -102,6 +85,36 @@ spec:
         {{- end }}
         {{- if .Values.extraEnv }}
         env:
+          - name: SUPERBLOCKS_ORCHESTRATOR_DATA_DOMAIN
+            value: {{ default "app.superblocks.com" .Values.superblocks.agentDataDomain }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_HANDLE_CORS
+            value: {{ .Values.superblocks.handleCors | quote }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_AGENT_HOST_URL
+            value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_AGENT_TAGS
+            value: {{ default "profile:*" .Values.superblocks.agentTags }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL
+            value: https://traces.intake.superblocks.com:443/v1/traces
+          - name: SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE
+            value: https://logs.intake.superblocks.com
+          - name: SUPERBLOCKS_ORCHESTRATOR_INTAKE_METADATA_URL
+            value: https://metadata.intake.superblocks.com
+          - name: SUPERBLOCKS_ORCHESTRATOR_FILE_SERVER_URL
+            value: http://127.0.0.1:{{ $.Values.service.ports.http }}/v2/files
+          - name: SUPERBLOCKS_ORCHESTRATOR_LOG_LEVEL
+            value: {{ .Values.logLevel }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT
+            value: {{ .Values.service.ports.http | quote }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_GRPC_PORT
+            value: {{ .Values.service.ports.grpc | quote }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_METRICS_PORT
+            value: {{ .Values.service.ports.metrics | quote }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_URL
+            value: {{ .Values.superblocks.serverUrl }}
+        {{- if .Values.superblocks.timeout }}
+          - name: SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_TIMEOUT
+            value: {{ .Values.superblocks.timeout | quote }}
+        {{- end }}
         {{- if (.Values.grpc).maxMsgSize }}
           - name: SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_RES_MAX
             value: {{.Values.grpc.maxMsgSize | int64 | quote}}
