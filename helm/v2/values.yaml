@@ -189,6 +189,22 @@ resources:
     cpu: 1
     memory: 4Gi
 
+probes:
+  liveness:
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    timeoutSeconds: 2
+    failureThreshold: 5
+    httpGet:
+      path: /health
+      port: http
+  readiness:
+    periodSeconds: 15
+    initialDelaySeconds: 0
+    httpGet:
+      path: /health 
+      port: http
+
 nodeSelector: {}
 tolerations: []
 affinity: {}
