@@ -189,6 +189,13 @@ resources:
     cpu: 1
     memory: 4Gi
 
+probes:
+  liveness:
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    timeoutSeconds: 2
+    failureThreshold: 5
+
 nodeSelector: {}
 tolerations: []
 affinity: {}
