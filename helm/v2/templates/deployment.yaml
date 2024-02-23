@@ -68,19 +68,9 @@ spec:
           containerPort: {{ .Values.service.ports.metrics }}
           protocol: TCP
         livenessProbe:
-          periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
-          initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
-          failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
-          timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
-          httpGet:
-            path: /health
-            port: http
+          {{- toYaml .Values.probes.liveness | nindent 10 }}
         readinessProbe:
-          periodSeconds: 15
-          initialDelaySeconds: 0
-          httpGet:
-            path: /health 
-            port: http
+          {{- toYaml .Values.probes.readiness | nindent 10 }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         envFrom:
