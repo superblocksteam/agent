@@ -68,13 +68,9 @@ spec:
           containerPort: {{ .Values.service.ports.metrics }}
           protocol: TCP
         livenessProbe:
-          httpGet:
-            path: /health
-            port: http
+          {{- toYaml .Values.probes.liveness | nindent 10 }}
         readinessProbe:
-          httpGet:
-            path: /health
-            port: http
+          {{- toYaml .Values.probes.readiness | nindent 10 }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         envFrom:
