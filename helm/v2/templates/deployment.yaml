@@ -118,7 +118,7 @@ spec:
           value: {{.Values.grpc.maxRecvMsgSize | int64 | quote}}
         {{- end }}
         {{- if .Values.extraEnv }}
-        {{- include "extra-env" .Values.extraEnv | indent 10 }}
+        {{- include "extra-env" .Values.extraEnv | indent 8 }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
