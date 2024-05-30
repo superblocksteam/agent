@@ -83,7 +83,7 @@ initContainers: []
   #   volumeMounts:
   #     - name: creds
   #       mountPath: /creds
-# Specify any volumes that has to be mounted on the container
+# Specify any volumes that has to be mounted on the container or extra containers
 volumes: [] 
 # - name: cloudsql-sa-volume
 #   secret:
