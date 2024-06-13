@@ -48,6 +48,10 @@ spec:
 {{ toYaml .Values.initContainers | indent 6 }}
       {{- end }}
       serviceAccountName: {{ default (include "superblocks-agent.name" $) .Values.serviceAccount.name }}
+      {{- if .Values.volumes }}
+      volumes:
+{{ toYaml .Values.volumes | indent 6 }}
+      {{- end }}
       containers:
       {{- if .Values.extraContainers }}
 {{ toYaml .Values.extraContainers | indent 6 }}
