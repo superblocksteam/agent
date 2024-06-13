@@ -83,7 +83,11 @@ initContainers: []
   #   volumeMounts:
   #     - name: creds
   #       mountPath: /creds
-
+# Specify any volumes that has to be mounted on the container or extra containers
+volumes: [] 
+# - name: cloudsql-sa-volume
+#   secret:
+#     secretName: cloudsql-proxy-sa
 # This node is being maintained for legacy reasons.
 service:
   # Use ClusterIP if your ingress controller routes traffic directly to pods.
