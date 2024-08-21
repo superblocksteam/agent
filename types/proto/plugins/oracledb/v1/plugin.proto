@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package plugins.oracledb.v1;
+
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/oracledb/v1";
+
+message Plugin {
+  string name = 1;
+  OracleDbConnection connection = 2;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 3;
+  plugins.common.v1.SQLExecution run_sql = 4;
+  plugins.common.v1.SQLBulkEdit bulk_edit = 5;
+  plugins.common.v1.SQLOperation operation = 6;
+
+  message OracleDbConnection {
+    string host_url = 1;
+    int32 port = 2;
+    string user = 3;
+    string password = 4;
+    string database_service = 5;
+    bool use_tcps = 6;
+    string connection_type = 7;
+    string connection_url = 8;
+  }
+}

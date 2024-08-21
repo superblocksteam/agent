@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package plugins.gsheets.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/gsheets/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Plugin {
+  string spreadsheetId = 1;
+  string sheetTitle = 2;
+  optional string range = 3;
+  // Super confusing but these are potentially bindings. Or stringified int
+  // If this was not a binding, it would be best to keep it int32 here
+  optional string rowNumber = 4;
+  bool extractFirstRowHeader = 5;
+  // Same as above comment
+  optional string headerRowNumber = 6;
+  optional string format = 7;
+  optional string data = 8;
+  bool preserveHeaderRow = 9;
+  bool includeHeaderRow = 10;
+  optional string action = 11;
+  optional string writeToDestinationType = 12;
+  optional string body = 13;
+  SuperblocksMetadata superblocksMetadata = 14;
+}

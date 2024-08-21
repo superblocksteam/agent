@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/common/v1";
+
+message Property {
+  optional string key = 1;
+  optional string value = 2;
+  optional bool editable = 3;
+  optional bool internal = 4;
+  optional string description = 5;
+  optional bool mandatory = 6;
+  optional string type = 7;
+  optional string defaultValue = 8;
+  optional string minRange = 9;
+  optional string maxRange = 10;
+  repeated string valueOptions = 11;
+  optional bool system = 12; // system properties are ones injected by the system
+  optional FileMetadata file = 13;
+}
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message HttpParameters {
+  // NOTE(frank): I originally was using `google.protobuf.Value`.bool
+  // However, we actually take these in as a string. If it's json,
+  // it will be passed in as an escaped value. I don't think this is
+  // the right way to do this as for API inputs, we take those in as
+  // real encoded JSON.
+  map<string, google.protobuf.Value> query = 1;
+  map<string, google.protobuf.Value> body = 2;
+}
+
+message FileMetadata {
+  string filename = 1;
+}

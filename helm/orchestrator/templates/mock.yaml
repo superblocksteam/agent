@@ -1,0 +1,48 @@
+{{- if .Values.server.mock }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock
+  labels:
+    component: mock
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3100
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    component: mock
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock
+  labels:
+    component: mock
+spec:
+  selector:
+    matchLabels:
+      component: mock
+  template:
+    metadata:
+      labels:
+        component: mock
+    spec:
+      serviceAccountName: default
+      containers:
+      - name: controller
+        image: ghcr.io/superblocksteam/mock:{{ .Values.image.tag | default "latest" }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3100
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /api/v1/agents/ping
+            port: http
+{{- end }}

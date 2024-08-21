@@ -1,0 +1,13 @@
+---
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    # should be 3, tune to 2 until we figure out why coverage is JSON formatted and unsupported
+    # thread: https://superblockshq.slack.com/archives/C04NZ1C2L31/p1712690097342629
+    # after_n_builds: 2
+    wait_for_ci: yes
+ignore:
+  - "./config/"
+  - "./mocks/"
+  - "**/*_mock.go"
+  - "**/mocks/*.go"

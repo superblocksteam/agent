@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package plugins.athena.v1;
+
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/athena/v1";
+
+message Connection {
+  enum DateFolderType {
+    DATE_FOLDER_TYPE_UNSPECIFIED = 0;
+    DATE_FOLDER_TYPE_YYYY = 1;
+    DATE_FOLDER_TYPE_YYYYMM = 2;
+    DATE_FOLDER_TYPE_YYYYMMDD = 3;
+  }
+  optional string workgroup_name = 1;
+  bool override_s3_output_location = 2;
+  optional string s3_output_location = 3;
+  optional DateFolderType s3_output_location_suffix = 4;
+  string database_name = 5;
+  plugins.common.v1.AWSConfig aws_config = 6;
+}
+
+message Plugin {
+  optional string name = 1;
+  Connection connection = 2;
+  plugins.common.v1.SQLExecution run_sql = 3;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 4;
+}

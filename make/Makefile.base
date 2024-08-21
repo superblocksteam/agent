@@ -1,0 +1,4 @@
+SHELL 			 = bash # github actions by default use /bin/sh which is trash
+SERVICE_NAME     =
+SERVICE_VERSION  = $(shell git rev-parse HEAD)
+ROOT_DIRECTORY   = $(shell pwd)

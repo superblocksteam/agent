@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package plugins.adls.v1;
+
+import "plugins/common/v1/auth.proto";
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/adls/v1";
+
+message Plugin {
+  optional string name = 1;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 2;
+  AdlsConnection connection = 3;
+  oneof adls_action {
+    CreateContainer create_container = 4;
+    CreateDirectory create_directory = 5;
+    RenameDirectory rename_directory = 6;
+    DeleteDirectory delete_directory = 7;
+    ListDirectoryContents list_directory_contents = 8;
+    UploadFile upload_file = 9;
+    DownloadFile download_file = 10;
+    DeleteFile delete_file = 11;
+  }
+
+  // We need to repeat that it's Adls because of the schema checker that's built
+  // based off of these types. It errors out when there is a duplicate type
+  // name.
+  message AdlsConnection {
+    string account_name = 1;
+    string tenant = 2;
+    plugins.common.v1.Azure auth = 3;
+  }
+
+  // Actions
+  message CreateContainer {
+    string file_system = 2;
+  }
+  message CreateDirectory {
+    string file_system = 1;
+    string path = 2;
+  }
+  message RenameDirectory {
+    string file_system = 1;
+    string path = 2;
+    string new_path = 3;
+  }
+  message DeleteDirectory {
+    string file_system = 1;
+    string path = 2;
+  }
+  message ListDirectoryContents {
+    string file_system = 1;
+    string path = 2;
+  }
+  message UploadFile {
+    string file_system = 1;
+    string path = 2;
+    string content = 3;
+  }
+  message DownloadFile {
+    string file_system = 1;
+    string path = 2;
+  }
+  message DeleteFile {
+    string file_system = 1;
+    string path = 2;
+  }
+
+  message Metadata {
+    repeated string file_systems = 1;
+  }
+}

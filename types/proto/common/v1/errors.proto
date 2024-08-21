@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/common/v1";
+
+enum Code {
+  CODE_UNSPECIFIED = 0;
+  CODE_INTEGRATION_AUTHORIZATION = 1;
+  CODE_INTEGRATION_NETWORK = 2;
+  CODE_INTEGRATION_QUERY_TIMEOUT = 3;
+  CODE_INTEGRATION_SYNTAX = 4;
+  CODE_INTEGRATION_LOGIC = 5;
+  CODE_INTEGRATION_MISSING_REQUIRED_FIELD = 6;
+  CODE_INTEGRATION_RATE_LIMIT = 7;
+  CODE_INTEGRATION_USER_CANCELLED = 8;
+  CODE_INTEGRATION_INTERNAL = 9;
+}
+
+message Error {
+  string name = 1;
+  string message = 2;
+  bool handled = 3;
+  string block_path = 4;
+  string form_path = 5;
+  Code code = 6;
+}

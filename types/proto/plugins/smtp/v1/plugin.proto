@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package plugins.smtp.v1;
+
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/smtp/v1";
+
+message Plugin {
+  optional string name = 1;
+  SmtpConnection connection = 2;
+  string from = 3;
+  string reply_to = 4;
+  string to = 5;
+  string cc = 6;
+  string bcc = 7;
+  string subject = 8;
+  string body = 9;
+  string attachments = 10; // stringified representation of a JSON array of objects with fields content, name, and type
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 11;
+
+  message SmtpConnection {
+    string host = 1;
+    int32 port = 2;
+    string username = 3;
+    string password = 4;
+    optional bool secure = 5;
+  }
+}

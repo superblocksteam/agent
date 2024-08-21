@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package plugins.common.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1";
+
+// This package/file defines auth methods for plugin, eventually this will
+// replace auth types defined in shared package. Currently it is only supporting
+// auth methods that will be used by new plugins that are defined in protobuf
+
+message OAuthCommon {
+  string client_id = 1;
+  string client_secret = 2;
+  string token_url = 3;
+  string audience = 4;
+  string scope = 5;
+}
+
+message OAuth {
+  message PasswordGrantFlow {
+    string client_id = 1;
+    string client_secret = 2;
+    string token_url = 3;
+    string username = 4;
+    string password = 5;
+    string audience = 6;
+    string scope = 7;
+  }
+
+  message ClientCredentialsFlow {
+    string client_id = 1;
+    string client_secret = 2;
+    string token_url = 3;
+    string audience = 4;
+    string scope = 5;
+  }
+
+  message AuthorizationCodeFlow {
+    string client_id = 1;
+    string client_secret = 2;
+    string token_url = 3;
+    string auth_url = 4;
+    string audience = 5;
+    string scope = 6;
+    string token_scope = 7;
+    bool refresh_token_from_server = 8;
+    string client_auth_method = 9;
+  }
+}
+
+message Basic {
+  string username = 1;
+  string password = 2;
+}
+
+message Azure {
+  message Key {
+    string master_key = 1;
+  }
+
+  message ClientCredentials {
+    string client_id = 1;
+    string client_secret = 2;
+  }
+
+  oneof config {
+    Key key = 1;
+    ClientCredentials client_credentials = 2;
+  }
+}
+
+message AwsAuth {
+  message Static {
+    string access_key_id = 1;
+    string secret_access_key = 2;
+  }
+
+  message AssumeRole {
+    string role_arn = 3;
+  }
+
+  oneof config {
+    Static static = 1;
+    AssumeRole assume_role = 2;
+  }
+
+  string region = 3;
+}
+
+message GcpAuth {
+  oneof config {
+    bytes service_account = 1;
+  }
+}
+
+message AkeylessAuth {
+  message ApiKey {
+    string access_id = 1;
+    string access_key = 2;
+  }
+
+  message Email {
+    string email = 1;
+    string password = 2;
+  }
+  oneof config {
+    ApiKey api_key = 1;
+    Email email = 2;
+  }
+}
+
+message Auth {
+  oneof method {
+    OAuth.PasswordGrantFlow password_grant_flow = 1;
+    OAuth.AuthorizationCodeFlow authorization_code_flow = 2;
+    Basic basic = 3;
+    OAuth.ClientCredentialsFlow client_credentials_flow = 4;
+    Azure.Key key = 5; // todo: remove me when cosmos updates
+  }
+}

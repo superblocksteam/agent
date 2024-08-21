@@ -1,0 +1,278 @@
+{
+  "flags": {
+    "agent.quota.step.size.bytes": {
+      "key": "agent.quota.step.size.bytes",
+      "on": true,
+      "targets": [
+        {
+          "values": [
+            "00000000-0000-0000-0000-300000000001"
+          ],
+          "variation": 1
+        },
+        {
+          "values": [
+            "00000000-0000-0000-0000-300000000111"
+          ],
+          "variation": 2
+        }
+      ],
+      "rules": [
+        {
+          "variation": 3,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "FREE",
+                "TRIAL"
+              ],
+              "negate": false
+            }
+          ]
+        },
+        {
+          "variation": 4,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "PRO",
+                "ENTERPRISE"
+              ],
+              "negate": false
+            }
+          ]
+        }
+      ],
+      "fallthrough": {
+        "variation": 0
+      },
+      "offVariation": 0,
+      "variations": [
+        100000,
+        10000,
+        1000000000,
+        20000,
+        40000
+      ],
+      "deleted": false
+    },
+    "agent.quota.org.step.rate.seconds": {
+      "key": "agent.quota.org.step.rate.seconds",
+      "on": true,
+      "targets": [
+        {
+          "values": [
+            "00000000-0000-0000-0000-300000000112"
+          ],
+          "variation": 1
+        }
+      ],
+      "fallthrough": {
+        "variation": 0
+      },
+      "offVariation": 0,
+      "variations": [
+        1000, 10
+      ],
+      "deleted": false
+    },
+    "agent.quota.api.step.rate.seconds": {
+      "key": "agent.quota.api.step.rate.seconds",
+      "on": true,
+      "targets": [],
+      "fallthrough": {
+        "variation": 0
+      },
+      "offVariation": 0,
+      "variations": [
+        1000
+      ],
+      "deleted": false
+    },
+    "agent.quota.user.step.rate.seconds": {
+      "key": "agent.quota.user.step.rate.seconds",
+      "on": true,
+      "targets": [],
+      "fallthrough": {
+        "variation": 0
+      },
+      "offVariation": 0,
+      "variations": [
+        1000
+      ],
+      "deleted": false
+    },
+    "agent.quota.org.step.duration.milliseconds": {
+      "key": "agent.quota.org.step.duration.milliseconds",
+      "on": true,
+      "targets": [
+        {
+          "values": [
+            "00000000-0000-0000-0000-300000000001"
+          ],
+          "variation": 1
+        }
+      ],
+      "fallthrough": {
+        "variation": 0
+      },
+      "offVariation": 0,
+      "variations": [
+        5000,
+        500
+      ],
+      "deleted": false
+    },
+    "agent.quota.org.stream.send.size.max": {
+      "key": "agent.quota.org.stream.send.size.max",
+      "on": true,
+      "targets": [
+        {
+          "values": [
+            "00000000-0000-0000-0000-300000000001"
+          ],
+          "variation": 1
+        }
+      ],
+      "fallthrough": {
+        "variation": 0
+      },
+      "offVariation": 0,
+      "variations": [
+        5000,
+        5
+      ],
+      "deleted": false
+    },
+    "agent.quota.minutes.rate.week": {
+      "key": "agent.quota.minutes.rate.week",
+      "on": true,
+      "rules": [
+        {
+          "variation": 0,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "TRIAL",
+                "FREE"
+              ],
+              "negate": false
+            }
+          ]
+        },
+        {
+          "variation": 1,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "PRO",
+                "ENTERPRISE"
+              ],
+              "negate": false
+            }
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "values": [
+            "00000000-0000-0000-0000-300000000114"
+          ],
+          "variation": 2
+        }
+      ],
+      "fallthrough": {
+        "variation": 0
+      },
+      "variations": [600, 6000, 0.05],
+      "deleted": false
+    },
+    "agent.quota.api.timeout.trigger.application.milliseconds": {
+      "key": "agent.quota.api.timeout.trigger.application.milliseconds",
+      "on": true,
+      "rules": [
+        {
+          "variation": 0,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "TRIAL",
+                "FREE"
+              ],
+              "negate": false
+            }
+          ]
+        },
+        {
+          "variation": 1,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "PRO",
+                "ENTERPRISE"
+              ],
+              "negate": false
+            }
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "values": [
+            "00000000-0000-0000-0000-000000000002"
+          ],
+          "variation": 2
+        }
+      ],
+      "fallthrough": {
+        "variation": 0
+      },
+      "variations": [30000, 300000, 3000],
+      "deleted": false
+    },
+    "agent.quota.api.parallel.pool.size.max": {
+      "key": "agent.quota.api.parallel.pool.size.max",
+      "on": true,
+      "rules": [
+        {
+          "variation": 0,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "TRIAL",
+                "FREE"
+              ],
+              "negate": false
+            }
+          ]
+        }
+      ],
+      "fallthrough": {
+        "variation": 1
+      },
+      "variations": [20, 50],
+      "deleted": false
+    }
+  }
+}

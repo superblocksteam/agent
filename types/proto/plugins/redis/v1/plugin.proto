@@ -1,0 +1,262 @@
+syntax = "proto3";
+
+package plugins.redis.v1;
+
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/redis/v1";
+
+message Plugin {
+  optional string name = 1;
+  Connection connection = 2;
+  oneof command_type {
+    Raw raw = 3;
+    Structured structured = 4;
+  }
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 5;
+
+  message Raw {
+    oneof action {
+      Singleton singleton = 1;
+    }
+    message Singleton {
+      string query = 1;
+    }
+  }
+
+  message Structured {
+    oneof action {
+      Get get = 6;
+      Set set = 7;
+      Del del = 8;
+      Keys keys = 9;
+      Mget mget = 10;
+      Hget hget = 11;
+      Hmget hmget = 12;
+      Hgetall hgetall = 13;
+      Hset hset = 14;
+      Hsetnx hsetnx = 15;
+      Hlen hlen = 16;
+      Hdel hdel = 17;
+      Hkeys hkeys = 18;
+      Hvals hvals = 19;
+      Lindex lindex = 20;
+      Llen llen = 21;
+      Lpush lpush = 22;
+      Lrem lrem = 23;
+      Lrange lrange = 24;
+      Sadd sadd = 25;
+      Scard scard = 26;
+      Smembers smembers = 27;
+      Sismember sismember = 28;
+      Srandmember srandmember = 29;
+      Srem srem = 30;
+      Zadd zadd = 31;
+      Zcard zcard = 32;
+      Zcount zcount = 33;
+      Zrange zrange = 34;
+      Zrank zrank = 35;
+      Zrem zrem = 36;
+      Zscore zscore = 37;
+      Expire expire = 38;
+      Ttl ttl = 39;
+    }
+  }
+
+  // NOTE: (joey) this does not have to be a separate message right now
+  // 1. this follows the "connection" pattern
+  // 2. this lets us easily add shared connection fields in the future
+  message Connection {
+    oneof connection_type {
+      Url url = 1;
+      Fields fields = 2;
+    }
+    message Url {
+      string url_string = 1;
+    }
+
+    message Fields {
+      string host = 1;
+      int32 port = 2;
+      optional int32 database_number = 3;
+      optional string username = 4;
+      optional string password = 5;
+      bool enable_ssl = 6;
+    }
+  }
+
+  message Get {
+    string key = 1;
+  }
+
+  message Set {
+    string key = 1;
+    string value = 2;
+    optional int32 expiration_ms = 3;
+  }
+
+  message Del {
+    string key = 1;
+  }
+
+  message Keys {
+    string pattern = 1;
+  }
+
+  message Mget {
+    string keys = 1; // comma-separated list
+  }
+
+  message Hget {
+    string key = 1;
+    string field = 2;
+  }
+
+  message Hmget {
+    string key = 1;
+    string fields = 2; // comma-separated list
+  }
+
+  message Hgetall {
+    string key = 1;
+  }
+
+  message Hset {
+    string key = 1;
+    string field = 2;
+    string value = 3;
+  }
+
+  message Hsetnx {
+    string key = 1;
+    string field = 2;
+    string value = 3;
+  }
+
+  message Hlen {
+    string key = 1;
+  }
+
+  message Hdel {
+    string key = 1;
+    string field = 2;
+  }
+
+  message Hkeys {
+    string key = 1;
+  }
+
+  message Hvals {
+    string key = 1;
+  }
+
+  message Lindex {
+    string key = 1;
+    int32 index = 2;
+  }
+
+  message Llen {
+    string key = 1;
+  }
+
+  message Lpush {
+    string key = 1;
+    string value = 2;
+  }
+
+  message Lrem {
+    string key = 1;
+    int32 count = 2;
+    string value = 3;
+  }
+
+  message Lrange {
+    string key = 1;
+    int32 start = 2;
+    int32 stop = 3;
+  }
+
+  message Sadd {
+    string key = 1;
+    string member = 2;
+  }
+
+  message Scard {
+    string key = 1;
+  }
+
+  message Smembers {
+    string key = 1;
+  }
+
+  message Sismember {
+    string key = 1;
+    string member = 2;
+  }
+
+  message Srandmember {
+    string key = 1;
+    optional int32 count = 2;
+  }
+
+  message Srem {
+    string key = 1;
+    string member = 2;
+  }
+
+  // TODO: (joey) support options as well: https://redis.io/commands/zadd/
+  message Zadd {
+    string key = 1;
+    double score = 2;
+    string member = 3;
+  }
+
+  message Zcard {
+    string key = 1;
+  }
+
+  message Zcount {
+    string key = 1;
+    double min = 2;
+    double max = 3;
+  }
+
+  message Zrange {
+    string key = 1;
+    int32 start = 2;
+    int32 stop = 3;
+  }
+
+  // TODO: (joey) add optional withscore
+  message Zrank {
+    string key = 1;
+    string member = 2;
+  }
+
+  message Zrem {
+    string key = 1;
+    string member = 2;
+  }
+
+  message Zscore {
+    string key = 1;
+    string member = 2;
+  }
+
+  message Expire {
+    string key = 1;
+    int32 seconds = 2;
+    enum Option {
+      OPTION_UNSPECIFIED = 0;
+      OPTION_NX = 1;
+      OPTION_XX = 2;
+      OPTION_GT = 3;
+      OPTION_LT = 4;
+    }
+    optional Option option = 3;
+  }
+
+  message Ttl {
+    string key = 1;
+  }
+}

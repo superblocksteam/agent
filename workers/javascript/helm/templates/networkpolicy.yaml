@@ -1,0 +1,196 @@
+# We should perhaps consider moving this to a separate deployment
+{{- if not .Values.networkpolicy.disable }}
+# API Documentation:
+#   https://projectcalico.docs.tigera.io/reference/resources/networkpolicy
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-deny-aws-instance-metadata
+spec:
+  order: 91
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Deny
+    destination:
+      nets:
+      # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
+      - 169.254.169.254/32
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-deny-rfc1918
+spec:
+  order: 90
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Deny
+    destination:
+      nets:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+
+{{- range $name, $rule := .Values.networkpolicy.egress }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-{{ $name }}
+spec:
+  order: {{ $rule.priority }}
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      {{- range $rule.cidrs }}
+      - {{ . }}
+      {{- end }}
+      ports:
+      {{- range $rule.ports }}
+      - {{ . }}
+      {{- end }}
+{{- end }}
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-controller-egress-allow
+spec:
+  order: 88
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    destination:
+      namespaceSelector: 'agent-namespace == "true"'
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-datadog-ingress-allow
+spec:
+  order: 82
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Ingress
+  ingress:
+  - action: Allow
+    destination:
+      ports:
+        - 8080
+        - 9090
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-allow-dns-tcp
+spec:
+  order: 81
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      services:
+        name: kube-dns
+        namespace: kube-system
+      ports:
+      - 53
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-allow-dns-udp
+spec:
+  order: 80
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: UDP
+    destination:
+      services:
+        name: kube-dns
+        namespace: kube-system
+      ports:
+      - 53
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-allow-datadog-udp-port
+spec:
+  order: 71
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: UDP
+    destination:
+      nets:
+      - 10.0.0.0/8
+      ports:
+      - 8125
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-allow-datadog-tcp-port
+spec:
+  order: 70
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      - 10.0.0.0/8
+      ports:
+      - 8126
+      - 4318 # HTTP OTLP
+      - 4317 # GRPC OTLP
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-allow-redis-tcp-port
+spec:
+  order: 60
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      - 10.0.0.0/8
+      ports:
+      - 6379
+{{- end }}

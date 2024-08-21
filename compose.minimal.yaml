@@ -1,0 +1,48 @@
+---
+version: "3.7"
+services:
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    command: "--requirepass dev-agent-key"
+    pull_policy: always
+  mock:
+    build:
+      context: ./mocks
+    environment:
+      # this URL is returned to orchestrator and orchestrator uses it to talk
+      # to the oauth server. ensure that whatever is here is can be resolved
+      # from wherever orchestrator is running
+      MOCK_OAUTH_SERVER_URL: http://${CI_ONLY_MOCK_OAUTH_SERVER-127.0.0.1}:5678
+    ports:
+      - "3100:3100"
+      - "3110:3110"
+  all:
+    platform: linux/x86_64
+    image: ghcr.io/superblocksteam/worker.js:v0.712.0
+    deploy:
+      replicas: 1
+    environment:
+      SUPERBLOCKS_AGENT_KEY: dev-agent-key
+      SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+      SUPERBLOCKS_AGENT_TLS_INSECURE: "true"
+      SUPERBLOCKS_AGENT_REDIS_HOST: redis
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_MAX_SIZE_BYTES: 10000000
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: "true"
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: "execute,metadata,test,pre_delete"
+      SUPERBLOCKS_AGENT_BUCKET: BA
+      SUPERBLOCKS_AGENT_REDIS_GROUP: one
+      FLEET: all
+      SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA: dev-private-rsa
+      SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519: dev-private-ed25519
+      SUPERBLOCKS_WORKER_EXECUTION_POOL_SIZE: 8
+    depends_on: [redis]
+  mock_oauth_server:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.8
+    environment:
+      SERVER_PORT: 5678
+    ports:
+      - "5678:5678"

@@ -1,0 +1,1 @@
+GOTESTSUM_OPTIONS = --format github-actions

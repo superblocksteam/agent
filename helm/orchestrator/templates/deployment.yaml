@@ -1,0 +1,169 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "orchestrator.fullname" . }}
+  labels:
+    component: orchestrator
+    app.kubernetes.io/instance: {{ .Values.environment }}
+    app.kubernetes.io/name: {{ include "orchestrator.name" . }}
+
+    # https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/?tab=kubernetes
+    tags.datadoghq.com/env: {{ .Values.environment }}
+    tags.datadoghq.com/service: orchestrator
+    tags.datadoghq.com/version: {{ .Values.image.tag | quote }}
+spec:
+  selector:
+    matchLabels:
+      component: orchestrator
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+        prometheus.io/scrape: "true"
+        prometheus.io/scrape_fast: "true"
+      labels:
+        component: orchestrator
+        app.kubernetes.io/instance: {{ .Values.environment }}
+        app.kubernetes.io/name: orchestrator
+
+        # https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/?tab=kubernetes
+        tags.datadoghq.com/env: {{ .Values.environment }}
+        tags.datadoghq.com/service: orchestrator
+        tags.datadoghq.com/version: {{ .Values.image.tag | quote }}
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: {{ .Values.service.terminationGracePeriodSeconds }}
+      {{- if $.Values.image.credentials }}
+      imagePullSecrets:
+      - name: orchestrator-docker
+      {{- end }}
+      containers:
+      - name: orchestrator
+        image: "{{ .Values.image.repository | default "ghcr.io/superblocksteam/orchestrator" }}:{{ .Values.image.tag | default "latest" }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        # TODO(frank): Turn the secure flags into env vars with viper.
+        args:
+        - "--log.level={{ .Values.service.logLevel }}"
+        - "--grpc.port={{ .Values.service.ports.grpc }}"
+        - "--http.port={{ .Values.service.ports.http }}"
+        - "--grpc.bind=0.0.0.0"
+        - "--http.bind=0.0.0.0"
+        - "--grpc.msg.req.max={{ .Values.service.grpc.maxMsgReq | int64 }}"
+        - "--grpc.msg.res.max={{ .Values.service.grpc.maxMsgRes | int64 }}"
+        - "--superblocks.url={{ .Values.superblocks.url }}"
+        - "--otel.collector.http.url={{ .Values.observability.tracing.exporter.scheme }}://{{ .Values.observability.tracing.exporter.host }}:{{ .Values.observability.tracing.exporter.port }}{{ .Values.observability.tracing.exporter.path }}"
+        - "--store.redis.tls={{ .Values.kvstore.enable_tls }}"
+        - "--store.redis.host={{ .Values.kvstore.host }}"
+        - "--store.redis.servername={{ .Values.kvstore.servername | default .Values.kvstore.host }}"
+        - "--store.redis.pool.min={{ .Values.kvstore.pool.min }}"
+        - "--store.redis.pool.max={{ .Values.kvstore.pool.max }}"
+        - "--store.redis.timeout.dial={{ .Values.kvstore.timeout.dial }}"
+        - "--secrets.cache.mode=redis"
+        - "--transport.redis.timeout.dial={{ .Values.queue.timeout.dial }}"
+        - "--transport.redis.tls={{ .Values.queue.enable_tls }}"
+        - "--transport.redis.host={{ .Values.queue.host }}"
+        - "--transport.redis.servername={{ .Values.queue.servername | default .Values.queue.host }}"
+        - "--transport.redis.pool.min={{ .Values.queue.pool.min }}"
+        - "--transport.redis.pool.max={{ .Values.queue.pool.max }}"
+        - "--buckets.config=/etc/orchestrator/buckets.json"
+        - "--emitter.remote.intake={{ .Values.observability.logs.intake.url }}"
+        - "--intake.metadata.url={{ .Values.observability.metadata.intake.url }}"
+        - "--intake.event.url={{ .Values.observability.event.intake.url }}"
+        - "--launchdarkly.local=false"
+        - "--quotas.enabled=true"
+        - "--registration.enabled=false"
+        - "--signature.verification.enabled=false"
+        - "--auth.jwt.enabled=true"
+        - "--auth.jwt.jwks_url={{ .Values.auth.jwt.jwks_url }}"
+        - "--file.server.url=http://$(SUPERBLOCKS_AGENT_INTERNAL_HOST):{{$.Values.service.ports.http}}/v2/files"
+        - "--kafka.bootstrap={{ .Values.kafka.bootstrap }}"
+        - "--kafka.enabled={{ .Values.kafka.enabled }}"
+        - "--events.cloud.enabled={{ .Values.events.cloud.enabled }}"
+        - "--handle.cors=false"
+        {{- if (.Values.superblocks).dataDomain }}
+        - "--data.domain={{ .Values.superblocks.dataDomain }}"
+        {{- end }}
+        env:
+        - name: DD_ENV
+          value: {{ .Values.environment }}
+        - name: DD_SERVICE
+          value: orchestrator
+        - name: DD_VERSION
+          value: {{ .Values.image.tag | quote }}
+        - name: SUPERBLOCKS_AGENT_INTERNAL_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        {{- include "extra-env" .Values.extraEnv | indent 8 }}
+        - name: SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: orchestrator-superblocks-key
+              key: key
+        - name: SUPERBLOCKS_ORCHESTRATOR_LAUNCHDARKLY_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: orchestrator-launchdarkly
+              key: apikey
+        {{- if .Values.kafka.enabled }}
+        - name: SUPERBLOCKS_ORCHESTRATOR_KAFKA_SASL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: orchestrator-kafka
+              key: username
+        - name: SUPERBLOCKS_ORCHESTRATOR_KAFKA_SASL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: orchestrator-kafka
+              key: password
+        {{- end }}
+        - name: SUPERBLOCKS_ORCHESTRATOR_TRANSPORT_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: orchestrator-redis
+              key: transport
+        - name: SUPERBLOCKS_ORCHESTRATOR_STORE_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: orchestrator-redis
+              key: store
+        - name: SUPERBLOCKS_AGENT_APP_ENV_TEST
+          value: {{.Values.agentAppEnvTestValue}}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.ports.http }}
+        - name: grpc
+          containerPort: {{ .Values.service.ports.grpc }}
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+        volumeMounts:
+        - name: buckets
+          mountPath: /etc/orchestrator
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: buckets
+        configMap:
+          name: orchestrator-buckets-config

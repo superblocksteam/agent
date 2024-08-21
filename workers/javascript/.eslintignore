@@ -1,0 +1,8 @@
+build
+node_modules
+.github
+data
+dist
+coverage
+jest.config.js
+test

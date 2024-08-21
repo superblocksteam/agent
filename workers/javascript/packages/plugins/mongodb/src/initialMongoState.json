@@ -1,0 +1,16 @@
+[
+  {
+    "database": "db_1",
+    "collection": "collection_1",
+    "data": {
+      "foo": "bar"
+    }
+  },
+  {
+    "database": "db_2",
+    "collection": "collection_1",
+    "data": {
+      "foo": "bar"
+    }
+  }
+]

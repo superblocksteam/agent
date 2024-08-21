@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package plugins.common.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1";
+
+// SQLMetadata represents metadata for any SQL based plugin.
+message SQLMetadata {
+  // This is nested so we can intuitively access it (i.e. plugins.common.v1.SQLMetadata.Minified).
+  message Minified {
+    message Table {
+      // <column_name>:<column_type>
+      map<string, string> columns = 1;
+    }
+
+    // If applicable, place the schema name here as well (i.e. my_schema.table_name).
+    map<string, Table> tables = 1;
+  }
+
+  // The unminified representation would go here.
+}
+
+// BucketsMetadata represents metadata for any Bucket based plugin.
+message BucketsMetadata {
+  // This is nested so we can intuitively access it (i.e. plugins.common.v1.BucketsMetadata.Minified).
+  message Minified {
+    repeated string names = 1;
+  }
+
+  // The unminified representation would go here.
+}

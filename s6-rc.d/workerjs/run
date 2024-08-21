@@ -1,0 +1,7 @@
+#!/command/with-contenv sh
+
+export SUPERBLOCKS_AGENT_KEY="${SB_AGENT_KEY:-${SUPERBLOCKS_AGENT_KEY}}"
+export SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST="${SB_EXECUTION_ENV_INCLUSION_LIST:-${SUPERBLOCKS_EXECUTION_ENV_INCLUSION_LIST}}"
+
+echo "{\"level\":\"info\",\"ts\":$(date +%s%3N),\"msg\":\"starting component worker.js\",\"component\":\"s6\"}"
+node /app/worker.js/packages/fleets/all/dist/src/index.js

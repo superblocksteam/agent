@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package plugins.custom.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/custom/v1";
+
+// NOTE(frank): THIS IS EXPERIMENTAL AND SUBJECT TO CHANGE
+message Plugin {
+  string name = 1;
+  string version = 2;
+  string config = 3; // NOTE(frank): Need to support JSON in the UI
+}

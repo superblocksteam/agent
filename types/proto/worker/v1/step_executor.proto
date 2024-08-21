@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package worker.v1;
+
+import "transport/v1/transport.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/worker/v1";
+
+service StepExecutorService {
+  rpc Stream(transport.v1.Request) returns (stream StringValue) {}
+  rpc Execute(transport.v1.Request) returns (transport.v1.Response) {}
+  rpc Metadata(transport.v1.Request) returns (transport.v1.Response) {}
+  rpc TestConnection(transport.v1.Request) returns (transport.v1.Response) {}
+  rpc DeleteDatasource(transport.v1.Request) returns (transport.v1.Response) {}
+}
+
+// NOTE(frank): We are running into so many issues using google.protobuf.StringValue
+// between go and javascript.
+message StringValue {
+  string value = 1;
+}

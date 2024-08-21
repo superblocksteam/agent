@@ -1,0 +1,3 @@
+[submodule "worker.js"]
+	path = worker.js
+	url = https://github.com/superblocksteam/worker.js

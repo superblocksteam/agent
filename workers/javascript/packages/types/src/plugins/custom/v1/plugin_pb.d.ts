@@ -1,0 +1,31 @@
+import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
+import { Message, proto3 } from "@bufbuild/protobuf";
+/**
+ * NOTE(frank): THIS IS EXPERIMENTAL AND SUBJECT TO CHANGE
+ *
+ * @generated from message plugins.custom.v1.Plugin
+ */
+export declare class Plugin extends Message<Plugin> {
+    /**
+     * @generated from field: string name = 1;
+     */
+    name: string;
+    /**
+     * @generated from field: string version = 2;
+     */
+    version: string;
+    /**
+     * NOTE(frank): Need to support JSON in the UI
+     *
+     * @generated from field: string config = 3;
+     */
+    config: string;
+    constructor(data?: PartialMessage<Plugin>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "plugins.custom.v1.Plugin";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin;
+    static equals(a: Plugin | PlainMessage<Plugin> | undefined, b: Plugin | PlainMessage<Plugin> | undefined): boolean;
+}

@@ -1,0 +1,38 @@
+---
+name: "Deploy Staging"
+on:
+  workflow_dispatch:
+    inputs:
+      appVersion:
+        description: "Application version to deploy."
+        required: true
+jobs:
+  staging:
+    if: github.ref == 'refs/heads/main'
+    uses: superblocksteam/internal-github-actions/.github/workflows/helm-deploy.yaml@main
+    with:
+      appVersion: ${{ needs.publish.outputs.semver }}
+      opItemK8sConfig: EKS_STAGING_GITHUB_CI_KUBE_CONFIG
+      opVault: Staging
+      opEnvFile: .env.staging
+      environment: staging
+      name: worker-go
+      namespace: cloud-agents
+    secrets:
+      OP_ACCOUNT: ${{ secrets.OP_ACCOUNT }}
+      OP_PASSWORD: ${{ secrets.OP_PASSWORD }}
+      OP_SECRET_KEY: ${{ secrets.OP_SECRET_KEY }}
+      OP_DEVICE: ${{ secrets.OP_DEVICE }}
+      SLACK_WEBHOOK_URL: ${{ secrets.STAGING_SLACK_WEBHOOK_URL }}
+      OVPN_PROFILE_CONFIG_FILE: ${{ secrets.STAGING_VPN_OVPN_FILE }}
+      OVPN_PASSWORD: ${{ secrets.STAGING_VPN_PASSWORD }}
+      OVPN_USERNAME: ${{ secrets.STAGING_VPN_USERNAME }}
+  trigger-synthetics:
+    needs:
+      - staging
+    uses: superblocksteam/internal-github-actions/.github/workflows/trigger-synthetics.yaml@main
+    with:
+      environment: staging
+    secrets:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_APP_KEY: ${{ secrets.DD_APP_KEY }}

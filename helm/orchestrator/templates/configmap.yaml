@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orchestrator-buckets-config
+data:
+  buckets.json: |-
+    {
+      "analysis": "BA",
+      "error": "BE",
+      "custom": [
+        {
+          "label": "B1",
+          "integrations": ["javascript", "python"],
+          "bound": 100
+        },
+        {
+          "label": "B2",
+          "integrations": ["javascript", "python"],
+          "bound": 500
+        },
+        {
+          "label": "B3",
+          "integrations": ["javascript", "python"],
+          "bound": 3000
+        },
+        {
+          "label": "B4",
+          "integrations": ["javascript", "python"],
+          "bound": 4294967295
+        }
+      ]
+    }

@@ -1,0 +1,49 @@
+---
+name: "Deploy Staging"
+on:
+  workflow_dispatch:
+    inputs:
+      appVersion:
+        description: "Application version to deploy."
+        required: true
+jobs:
+  staging:
+    if: github.ref == 'refs/heads/main'
+    uses: superblocksteam/internal-github-actions/.github/workflows/helm-deploy.yaml@main
+    with:
+      appVersion: ${{ github.event.inputs.appVersion }}
+      opItemK8sConfig: EKS_STAGING_GITHUB_CI_KUBE_CONFIG
+      opVault: Staging
+      opEnvFile: .env.staging
+      environment: staging
+      name: worker.py
+      namespace: cloud-agents
+    secrets:
+      OP_ACCOUNT: ${{ secrets.OP_ACCOUNT }}
+      OP_PASSWORD: ${{ secrets.OP_PASSWORD }}
+      OP_SECRET_KEY: ${{ secrets.OP_SECRET_KEY }}
+      OP_DEVICE: ${{ secrets.OP_DEVICE }}
+      SLACK_WEBHOOK_URL: ${{ secrets.STAGING_SLACK_WEBHOOK_URL }}
+      OVPN_PROFILE_CONFIG_FILE: ${{ secrets.STAGING_VPN_OVPN_FILE }}
+      OVPN_PASSWORD: ${{ secrets.STAGING_VPN_PASSWORD }}
+      OVPN_USERNAME: ${{ secrets.STAGING_VPN_USERNAME }}
+  speed_test:
+    needs: [staging]
+    name: speed test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: run speed test
+        run: make speed-test SPEED_TEST_ENV=staging
+  trigger-synthetics:
+    needs:
+      - staging
+    uses: superblocksteam/internal-github-actions/.github/workflows/trigger-synthetics.yaml@main
+    with:
+      environment: staging
+    secrets:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_APP_KEY: ${{ secrets.DD_APP_KEY }}

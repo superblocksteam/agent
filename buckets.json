@@ -1,0 +1,17 @@
+{
+  "analysis": "BA",
+  "error": "BE",
+  "custom": [
+    {
+      "label": "B1",
+      "integrations": ["javascript", "python"],
+      "bound": 100
+    },
+    {
+      "label": "B2",
+      "integrations": ["javascript", "python"],
+      "bound": 4294967295
+    }
+  ]
+}
+

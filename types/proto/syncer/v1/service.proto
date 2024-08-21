@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package syncer.v1;
+
+import "buf/validate/validate.proto";
+import "common/v1/errors.proto";
+import "event/v1/service.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "syncer/v1/syncer.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/syncer/v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Superblocks Syncer Service"
+    version: "1.0"
+  }
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+};
+
+service IntakeService {
+  rpc UpsertMetadata(UpsertMetadataRequest) returns (UpsertMetadataResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/metadata"
+      body: "*"
+      additional_bindings: [
+        {
+          post: "/api/v1/syncer/metadata"
+          body: "*"
+        }
+      ]
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Upsert Metadata"};
+  }
+  rpc DeleteMetadata(DeleteMetadataRequest) returns (DeleteMetadataResponse) {
+    option (google.api.http) = {delete: "/api/v1/metadata/{integration_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Delete Metadata"};
+  }
+  rpc IngestEvent(event.v1.IngestEventRequest) returns (event.v1.IngestEventResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/events"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Ingest Events"};
+  }
+}
+
+service SyncerService {
+  rpc Sync(SyncRequest) returns (SyncResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/integrations"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Sync metadata for integrations manually by their IDs"};
+  }
+}
+
+service IntegrationService {
+  rpc GetConfigurationMetadata(GetConfigurationMetadataRequest) returns (GetConfigurationMetadataResponse) {
+    option (google.api.http) = {get: "/api/v1/integrations/{integration_id=*}/metadata"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Get integration configuration metadata"};
+  }
+}
+
+message GetConfigurationMetadataRequest {
+  string integration_id = 1;
+}
+
+message GetConfigurationMetadataResponse {
+  string integration_id = 1;
+  map<string, google.protobuf.Struct> configurations = 2;
+  string integration_type = 3;
+  string organization_id = 4;
+  repeated common.v1.Error errors = 5;
+}
+
+message SyncRequest {
+  repeated string integration_ids = 1;
+}
+
+message SyncResponse {
+  message Integration {
+    repeated string configurationIds = 1;
+  }
+  map<string, Integration> integrations_synced = 1;
+  repeated common.v1.Error errors = 2;
+}
+
+message UpsertMetadataRequest {
+  repeated syncer.v1.Metadata metadata = 1 [
+    (validate.rules).repeated.min_items = 1,
+    (buf.validate.field).repeated.min_items = 1
+  ];
+}
+
+message UpsertMetadataResponse {
+  repeated common.v1.Error errors = 1;
+}
+
+message DeleteMetadataRequest {
+  string integration_id = 1;
+  repeated string configuration_ids = 2;
+}
+
+message DeleteMetadataResponse {
+  repeated common.v1.Error errors = 1;
+}

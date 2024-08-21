@@ -1,0 +1,65 @@
+---
+version: "3.7"
+services:
+  redis:
+    image: redis:6
+    command: "--requirepass dev-agent-key"
+    pull_policy: always
+  golang.ba.all:
+    image: ghcr.io/superblocksteam/worker.go:v0.136.0
+    environment:
+      SUPERBLOCKS_WORKER_GO_SUPERBLOCKS_KEY: dev-agent-key
+      SUPERBLOCKS_WROKER_GO_STORE_REDIS_PASSWORD: dev-agent-key
+      SUPERBLOCKS_WORKER_GO_STORE_REDIS_HOST: redis
+      SUPERBLOCKS_WORKER_GO_STORE_REDIS_TLS: "false"
+      SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_PASSWORD: dev-agent-key
+      SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_HOST: redis
+      SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_TLS: "false"
+      SUPERBLOCKS_WORKER_GO_WORKER_BUCKET: BA
+    depends_on: [redis]
+  non-lang.ba.execute:
+    platform: linux/x86_64
+    image: ghcr.io/superblocksteam/worker.js:v0.712.0
+    environment:
+      SUPERBLOCKS_AGENT_KEY: dev-agent-key
+      SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+      SUPERBLOCKS_AGENT_TLS_INSECURE: "true"
+      SUPERBLOCKS_AGENT_REDIS_HOST: redis
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_MAX_SIZE_BYTES: 10000000
+      SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA: dev-private-rsa
+      SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519: dev-private-ed25519
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: "true"
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: BA
+      SUPERBLOCKS_AGENT_REDIS_GROUP: three
+      SUPERBLOCKS_WORKER_EXECUTION_POOL_SIZE: 8
+      FLEET: non-lang
+    depends_on: [redis]
+  postgres:
+    image: postgres:16.2
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+  orchestrator:
+    image: ghcr.io/superblocksteam/orchestrator:${SUPERBLOCKS_ORCHESTRATOR_IMAGE_TAG:-v0.980.0}
+    command:
+      - --test
+      - --log.level=error
+      - --transport.redis.host=redis
+      - --store.redis.host=redis
+      - --signature.verification.enabled=false
+      - --emitter.audit.enabled=false
+      - --emitter.remote.enabled=false
+      - --emitter.event.enabled=false
+      - --events.cloud.enabled=false
+      - --buckets.config=./buckets.minimal.json
+      - --auth.jwt.enabled=true
+      - --registration.enabled=false
+      - --jobs.enabled=false
+      - --worker.go.enabled=true
+    depends_on: [redis]
+    ports:
+      - "50100:8080"

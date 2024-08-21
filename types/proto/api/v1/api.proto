@@ -1,0 +1,498 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "api/v1/blocks.proto";
+import "buf/validate/validate.proto";
+import "common/v1/common.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "plugins/adls/v1/plugin.proto";
+import "plugins/athena/v1/plugin.proto";
+import "plugins/bigquery/v1/plugin.proto";
+import "plugins/cockroachdb/v1/plugin.proto";
+import "plugins/cosmosdb/v1/plugin.proto";
+import "plugins/couchbase/v1/plugin.proto";
+import "plugins/custom/v1/plugin.proto";
+import "plugins/databricks/v1/plugin.proto";
+import "plugins/dynamodb/v1/plugin.proto";
+import "plugins/email/v1/plugin.proto";
+import "plugins/gcs/v1/plugin.proto";
+import "plugins/graphql/v1/plugin.proto";
+import "plugins/gsheets/v1/plugin.proto";
+import "plugins/javascript/v1/plugin.proto";
+import "plugins/kafka/v1/plugin.proto";
+import "plugins/mariadb/v1/plugin.proto";
+import "plugins/mongodb/v1/plugin.proto";
+import "plugins/mssql/v1/plugin.proto";
+import "plugins/mysql/v1/plugin.proto";
+import "plugins/ocr/v1/plugin.proto";
+import "plugins/openai/v1/plugin.proto";
+import "plugins/oracledb/v1/plugin.proto";
+import "plugins/pinecone/v1/plugin.proto";
+import "plugins/postgresql/v1/plugin.proto";
+import "plugins/python/v1/plugin.proto";
+import "plugins/redis/v1/plugin.proto";
+import "plugins/redshift/v1/plugin.proto";
+import "plugins/restapi/v1/plugin.proto";
+import "plugins/restapiintegration/v1/plugin.proto";
+import "plugins/rockset/v1/plugin.proto";
+import "plugins/s3/v1/plugin.proto";
+import "plugins/salesforce/v1/plugin.proto";
+import "plugins/smtp/v1/plugin.proto";
+import "plugins/snowflake/v1/plugin.proto";
+import "plugins/workflow/v1/plugin.proto";
+import "superblocks/v1/options.proto";
+import "utils/v1/utils.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/api/v1";
+
+message Api {
+  common.v1.Metadata metadata = 1 [
+    (validate.rules).message.required = true,
+    (buf.validate.field).required = true
+  ];
+  repeated Block blocks = 2;
+  Trigger trigger = 3;
+  optional utils.v1.Signature signature = 4;
+}
+
+message Profiles {
+  message Modes {
+    message Settings {
+      string default = 1;
+      repeated string available = 2;
+    }
+
+    Settings editor = 1;
+    Settings preview = 2;
+    Settings deployed = 3;
+  }
+
+  Modes modes = 1;
+}
+
+message Trigger {
+  message Application {
+    message Options {
+      optional bool execute_on_page_load = 1;
+    }
+
+    Options options = 1;
+    string id = 2;
+    optional string page_id = 3;
+  }
+
+  message Workflow {
+    message Options {
+      Profiles profiles = 1;
+      optional string deployedCommitId = 2;
+    }
+
+    message Parameters {
+      // You can specify multiple values for a single query parameter in a URL
+      message QueryParam {
+        repeated string values = 1;
+      }
+
+      map<string, QueryParam> query = 1;
+      map<string, google.protobuf.Value> body = 2;
+    }
+
+    Options options = 1;
+    Parameters parameters = 2;
+  }
+
+  message Job {
+    reserved 7;
+    reserved "days_utc";
+    message Options {
+      Profiles profiles = 1;
+      bool send_email_on_failure = 2;
+      optional string deployedCommitId = 3;
+    }
+
+    enum Interval {
+      INTERVAL_UNSPECIFIED = 0;
+      INTERVAL_MINUTE = 1;
+      INTERVAL_HOUR = 2;
+      INTERVAL_DAY = 3;
+      INTERVAL_WEEK = 4;
+      INTERVAL_MONTH = 5;
+    }
+
+    message Days {
+      bool sunday = 1;
+      bool monday = 2;
+      bool tuesday = 3;
+      bool wednesday = 4;
+      bool thursday = 5;
+      bool friday = 6;
+      bool saturday = 7;
+    }
+
+    Options options = 1;
+    int32 frequency = 2 [
+      (validate.rules).int32.gte = 1,
+      (buf.validate.field).int32.gte = 1
+    ];
+    Interval interval = 3;
+    int32 day_of_month = 4 [
+      (validate.rules).int32 = {
+        gte: 1
+        lte: 32
+      },
+      (buf.validate.field).int32 = {
+        gte: 1
+        lte: 32
+      }
+    ];
+    Days days = 5;
+    google.protobuf.Timestamp time = 6;
+    string timezone_locale = 8;
+  }
+
+  oneof config {
+    Application application = 1;
+    Workflow workflow = 2;
+    Job job = 3;
+  }
+}
+
+message Blocks {
+  repeated Block blocks = 1;
+}
+
+message Block {
+  message Parallel {
+    enum Wait {
+      WAIT_UNSPECIFIED = 0;
+      // Wait for every thread to complete.
+      WAIT_ALL = 1;
+      // Do not wait for any thread to complete.
+      WAIT_NONE = 2;
+    }
+
+    message Static {
+      map<string, Blocks> paths = 1;
+    }
+
+    message Dynamic {
+      message Variables {
+        string item = 1 [
+          (validate.rules).string = {min_len: 1},
+          (buf.validate.field).string = {min_len: 1}
+        ];
+      }
+
+      string paths = 1;
+      Variables variables = 2;
+      repeated Block blocks = 3;
+    }
+
+    oneof config {
+      option (validate.required) = true;
+      option (buf.validate.oneof).required = true;
+
+      Static static = 1;
+      Dynamic dynamic = 2;
+    }
+
+    Wait wait = 3 [
+      (validate.rules).enum = {
+        not_in: [0]
+      },
+      (buf.validate.field).enum = {
+        not_in: [0]
+      }
+    ];
+
+    optional int32 pool_size = 4 [(buf.validate.field).int32 = {gte: 1}];
+  }
+
+  message Conditional {
+    message Condition {
+      string condition = 1 [
+        (validate.rules).string = {
+          prefix: "{{"
+          suffix: "}}"
+        },
+        (buf.validate.field).string = {
+          prefix: "{{"
+          suffix: "}}"
+        }
+      ];
+      repeated Block blocks = 2;
+    }
+
+    Condition if = 1;
+    repeated Condition else_if = 2;
+    Blocks else = 3;
+  }
+
+  message Loop {
+    enum Type {
+      TYPE_UNSPECIFIED = 0;
+      TYPE_FOR = 1;
+      TYPE_FOREACH = 2;
+      TYPE_WHILE = 3;
+    }
+
+    message Variables {
+      // The index of the loop.
+      string index = 1 [
+        (validate.rules).string.min_len = 1,
+        (buf.validate.field).string.min_len = 1
+      ];
+      // The current item; index if none.
+      string item = 2 [
+        (validate.rules).string.min_len = 1,
+        (buf.validate.field).string.min_len = 1
+      ];
+    }
+
+    /**
+     * This can be a binding that evaluates to one of three things:
+     *  1. An integer           IF type if TYPE_FOR.
+     *  2. A JSON encoded list  IF type is TYPE_FOREACH.
+     *  3. A boolean            IF type is TYPE_WHILE. NOTE that this expressition will be re-evaluated on each iteration.
+     */
+    string range = 1 [
+      (validate.rules).string = {
+        prefix: "{{"
+        suffix: "}}"
+      },
+      (buf.validate.field).string = {
+        prefix: "{{"
+        suffix: "}}"
+      }
+    ];
+
+    Type type = 2;
+    Variables variables = 3;
+    repeated Block blocks = 4;
+  }
+
+  message TryCatch {
+    message Variables {
+      // The error inside of the catch block.
+      string error = 1 [
+        (validate.rules).string = {min_len: 1},
+        (buf.validate.field).string = {min_len: 1}
+      ];
+    }
+
+    Blocks try = 1;
+    Blocks catch = 2;
+    Blocks finally = 3;
+    Variables variables = 4;
+  }
+
+  message Break {
+    string condition = 1 [
+      (validate.rules).string = {
+        prefix: "{{"
+        suffix: "}}"
+      },
+      (buf.validate.field).string = {
+        prefix: "{{"
+        suffix: "}}"
+      }
+    ];
+  }
+
+  message Return {
+    string data = 1 [
+      (validate.rules).string = {
+        prefix: "{{"
+        suffix: "}}"
+      },
+      (buf.validate.field).string = {
+        prefix: "{{"
+        suffix: "}}"
+      }
+    ];
+  }
+
+  message Throw {
+    string error = 1 [
+      (validate.rules).string = {
+        prefix: "{{"
+        suffix: "}}"
+      },
+      (buf.validate.field).string = {
+        prefix: "{{"
+        suffix: "}}"
+      }
+    ];
+  }
+
+  message Wait {
+    string condition = 1 [
+      (validate.rules).string = {
+        prefix: "{{"
+        suffix: "}}"
+      },
+      (buf.validate.field).string = {
+        prefix: "{{"
+        suffix: "}}"
+      }
+    ];
+  }
+
+  message Stream {
+    message Variables {
+      string item = 1 [
+        (validate.rules).string = {min_len: 1},
+        (buf.validate.field).string = {min_len: 1}
+      ];
+    }
+
+    message Options {
+      // The UI has "auto send" but we need the default to be false
+      // So our name here needs to be the opposite.
+      bool disable_auto_send = 1;
+    }
+
+    message Trigger {
+      string name = 1 [
+        (validate.rules).string.min_len = 1,
+        (buf.validate.field).string.min_len = 1
+      ];
+      Step step = 2;
+    }
+
+    Trigger trigger = 1 [
+      (validate.rules).message.required = true,
+      (buf.validate.field).required = true
+    ];
+    Blocks process = 2;
+    Variables variables = 3 [
+      (validate.rules).message.required = true,
+      (buf.validate.field).required = true
+    ];
+    Options options = 4;
+  }
+
+  message Send {
+    string message = 1 [
+      (validate.rules).string = {min_len: 1},
+      (buf.validate.field).string = {min_len: 1}
+    ];
+  }
+
+  string name = 1 [
+    (validate.rules).string.min_len = 1,
+    (buf.validate.field).string.min_len = 1
+  ];
+
+  oneof config {
+    option (validate.required) = true;
+    option (buf.validate.oneof).required = true;
+
+    Break break = 2;
+    Return return = 3;
+    Wait wait = 4;
+    Parallel parallel = 5;
+    Conditional conditional = 6;
+    Loop loop = 7;
+    TryCatch try_catch = 8;
+    Step step = 9;
+    api.v1.Variables variables = 10;
+    Throw throw = 11;
+    Stream stream = 12;
+    Send send = 13;
+  }
+}
+
+message Step {
+  option (superblocks.v1.integrations) = {registry: true};
+
+  // Important: integration means integration id
+  string integration = 1;
+
+  oneof config {
+    option (validate.required) = true;
+    option (buf.validate.oneof).required = true;
+
+    plugins.python.v1.Plugin python = 2;
+    plugins.bigquery.v1.Plugin bigquery = 3;
+    plugins.dynamodb.v1.Plugin dynamodb = 4;
+    plugins.email.v1.Plugin email = 5;
+    plugins.graphql.v1.Plugin graphql = 6;
+    plugins.graphql.v1.Plugin graphqlintegration = 7;
+    plugins.gsheets.v1.Plugin gsheets = 8;
+    plugins.mariadb.v1.Plugin mariadb = 9;
+    plugins.mssql.v1.Plugin mssql = 10;
+    plugins.mysql.v1.Plugin mysql = 11;
+    plugins.postgresql.v1.Plugin postgres = 12;
+    plugins.redshift.v1.Plugin redshift = 13;
+    plugins.restapi.v1.Plugin restapi = 14;
+    plugins.restapiintegration.v1.Plugin restapiintegration = 15;
+    plugins.rockset.v1.Plugin rockset = 16;
+    plugins.s3.v1.Plugin s3 = 17;
+    plugins.snowflake.v1.Plugin snowflake = 18;
+    plugins.workflow.v1.Plugin workflow = 19;
+    plugins.javascript.v1.Plugin javascript = 20;
+    plugins.mongodb.v1.Plugin mongodb = 21;
+    plugins.gcs.v1.Plugin gcs = 22;
+    plugins.openai.v1.Plugin openai = 23;
+    // Remapped due to proto not allowing dashes in field names
+    plugins.ocr.v1.Plugin ocr = 24 [json_name = "superblocks-ocr"];
+    plugins.kafka.v1.Plugin kafka = 25;
+    plugins.kafka.v1.Plugin confluent = 26;
+    plugins.kafka.v1.Plugin msk = 27;
+    plugins.kafka.v1.Plugin redpanda = 28;
+    plugins.kafka.v1.Plugin aivenkafka = 29; // There's also aiven(postgres|opensearch|redis|mysql|cassandra)
+    plugins.cockroachdb.v1.Plugin cockroachdb = 30;
+
+    plugins.restapiintegration.v1.Plugin airtable = 31 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin notion = 32 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin pagerduty = 33 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin sendgrid = 34 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin slack = 35 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.athena.v1.Plugin athena = 36;
+    plugins.redis.v1.Plugin redis = 37;
+    plugins.restapiintegration.v1.Plugin asana = 38 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin github = 39 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.smtp.v1.Plugin smtp = 40;
+    plugins.salesforce.v1.Plugin salesforce = 41;
+    plugins.restapiintegration.v1.Plugin bitbucket = 42 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin circleci = 43 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin front = 44 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin intercom = 45 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin segment = 46 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin launchdarkly = 47 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin dropbox = 48 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin twilio = 49 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin googledrive = 50 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin googleanalytics = 51 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin box = 52 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin hubspot = 53 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin stripe = 54 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin zoom = 55 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin jira = 56 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin zendesk = 57 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.adls.v1.Plugin adls = 58;
+    plugins.pinecone.v1.Plugin pinecone = 59 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.cosmosdb.v1.Plugin cosmosdb = 60;
+    plugins.restapiintegration.v1.Plugin datadog = 61 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin xero = 62 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.oracledb.v1.Plugin oracledb = 63;
+    plugins.restapiintegration.v1.Plugin elasticsearch = 64 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.databricks.v1.Plugin databricks = 65;
+    plugins.couchbase.v1.Plugin couchbase = 66;
+
+    plugins.custom.v1.Plugin custom = 67;
+
+    plugins.restapiintegration.v1.Plugin anthropic = 68 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin cohere = 69 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin fireworks = 70 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin mistral = 71 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin groq = 72 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin perplexity = 73 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin stabilityai = 74 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin gemini = 75 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+  }
+}

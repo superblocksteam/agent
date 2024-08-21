@@ -1,0 +1,650 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Superblocks AI Service",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "MetadataService"
+    },
+    {
+      "name": "TaskService"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/ai/health": {
+      "get": {
+        "operationId": "Service Health",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HealthResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
+    "/api/v1/ai/tasks": {
+      "post": {
+        "operationId": "Create Task",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1TaskEvent"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of v1TaskEvent"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateTaskRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TaskService"
+        ]
+      }
+    },
+    "/v1/ai/health": {
+      "get": {
+        "operationId": "Service Health",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HealthResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
+    "/v1/ai/tasks": {
+      "post": {
+        "operationId": "Create Task",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1TaskEvent"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of v1TaskEvent"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateTaskRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TaskService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "TaskCreateContext": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object"
+        },
+        "configurationIds": {
+          "$ref": "#/definitions/v1StringList"
+        }
+      }
+    },
+    "TaskDebug": {
+      "type": "object"
+    },
+    "TaskEdit": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "syntax": {
+          "$ref": "#/definitions/v1Syntax"
+        },
+        "snippet": {
+          "type": "string"
+        },
+        "context": {
+          "$ref": "#/definitions/TaskEditContext"
+        }
+      }
+    },
+    "TaskEditContext": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object"
+        },
+        "configurationIds": {
+          "$ref": "#/definitions/v1StringList"
+        }
+      }
+    },
+    "TaskExplain": {
+      "type": "object",
+      "properties": {
+        "syntax": {
+          "$ref": "#/definitions/v1Syntax"
+        },
+        "snippet": {
+          "type": "string"
+        },
+        "contents": {
+          "type": "string"
+        },
+        "language": {
+          "$ref": "#/definitions/v1Language"
+        }
+      }
+    },
+    "TaskOptimize": {
+      "type": "object"
+    },
+    "TaskTranspile": {
+      "type": "object"
+    },
+    "aiv1Message": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "$ref": "#/definitions/v1Role"
+        },
+        "content": {
+          "type": "string"
+        }
+      }
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        }
+      },
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "protobufNullValue": {
+      "type": "string",
+      "enum": [
+        "NULL_VALUE"
+      ],
+      "default": "NULL_VALUE",
+      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
+    },
+    "v1CreateTaskRequest": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "$ref": "#/definitions/v1Task"
+        },
+        "overrides": {
+          "$ref": "#/definitions/v1Overrides"
+        }
+      }
+    },
+    "v1HealthResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "uptime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "version": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/v1Pool"
+        },
+        "stream": {
+          "$ref": "#/definitions/v1Pool"
+        },
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "v1LLM": {
+      "type": "string",
+      "enum": [
+        "LLM_UNSPECIFIED",
+        "LLM_OPENAI",
+        "LLM_ANTHROPIC",
+        "LLM_MOCK"
+      ],
+      "default": "LLM_UNSPECIFIED"
+    },
+    "v1Language": {
+      "type": "string",
+      "enum": [
+        "LANGUAGE_UNSPECIFIED",
+        "LANGUAGE_EN",
+        "LANGUAGE_AF",
+        "LANGUAGE_SQ",
+        "LANGUAGE_AR_DZ",
+        "LANGUAGE_AR_BH",
+        "LANGUAGE_AR_EG",
+        "LANGUAGE_AR_IQ",
+        "LANGUAGE_AR_JO",
+        "LANGUAGE_AR_KW",
+        "LANGUAGE_AR_LB",
+        "LANGUAGE_AR_LY",
+        "LANGUAGE_AR_MA",
+        "LANGUAGE_AR_OM",
+        "LANGUAGE_AR_QA",
+        "LANGUAGE_AR_SA",
+        "LANGUAGE_AR_SY",
+        "LANGUAGE_AR_TN",
+        "LANGUAGE_AR_AE",
+        "LANGUAGE_AR_YE",
+        "LANGUAGE_EU",
+        "LANGUAGE_BE",
+        "LANGUAGE_BG",
+        "LANGUAGE_CA",
+        "LANGUAGE_ZH_HK",
+        "LANGUAGE_ZH_CN",
+        "LANGUAGE_ZH_SG",
+        "LANGUAGE_ZH_TW",
+        "LANGUAGE_HR",
+        "LANGUAGE_CS",
+        "LANGUAGE_DA",
+        "LANGUAGE_NL_BE",
+        "LANGUAGE_NL",
+        "LANGUAGE_EN_AU",
+        "LANGUAGE_EN_BZ",
+        "LANGUAGE_EN_CA",
+        "LANGUAGE_EN_IE",
+        "LANGUAGE_EN_JM",
+        "LANGUAGE_EN_NZ",
+        "LANGUAGE_EN_ZA",
+        "LANGUAGE_EN_TT",
+        "LANGUAGE_EN_GB",
+        "LANGUAGE_EN_US",
+        "LANGUAGE_ET",
+        "LANGUAGE_FO",
+        "LANGUAGE_FA",
+        "LANGUAGE_FI",
+        "LANGUAGE_FR_BE",
+        "LANGUAGE_FR_CA",
+        "LANGUAGE_FR_LU",
+        "LANGUAGE_FR",
+        "LANGUAGE_FR_CH",
+        "LANGUAGE_GD",
+        "LANGUAGE_DE_AT",
+        "LANGUAGE_DE_LI",
+        "LANGUAGE_DE_LU",
+        "LANGUAGE_DE",
+        "LANGUAGE_DE_CH",
+        "LANGUAGE_EL",
+        "LANGUAGE_HE",
+        "LANGUAGE_HI",
+        "LANGUAGE_HU",
+        "LANGUAGE_IS",
+        "LANGUAGE_ID",
+        "LANGUAGE_GA",
+        "LANGUAGE_IT",
+        "LANGUAGE_IT_CH",
+        "LANGUAGE_JA",
+        "LANGUAGE_KO",
+        "LANGUAGE_KU",
+        "LANGUAGE_LV",
+        "LANGUAGE_LT",
+        "LANGUAGE_MK",
+        "LANGUAGE_ML",
+        "LANGUAGE_MS",
+        "LANGUAGE_MT",
+        "LANGUAGE_NO",
+        "LANGUAGE_NB",
+        "LANGUAGE_NN",
+        "LANGUAGE_PL",
+        "LANGUAGE_PT_BR",
+        "LANGUAGE_PT",
+        "LANGUAGE_PA",
+        "LANGUAGE_RM",
+        "LANGUAGE_RO",
+        "LANGUAGE_RO_MD",
+        "LANGUAGE_RU",
+        "LANGUAGE_RU_MD",
+        "LANGUAGE_SR",
+        "LANGUAGE_SK",
+        "LANGUAGE_SL",
+        "LANGUAGE_SB",
+        "LANGUAGE_ES_AR",
+        "LANGUAGE_ES_BO",
+        "LANGUAGE_ES_CL",
+        "LANGUAGE_ES_CO",
+        "LANGUAGE_ES_CR",
+        "LANGUAGE_ES_DO",
+        "LANGUAGE_ES_EC",
+        "LANGUAGE_ES_SV",
+        "LANGUAGE_ES_GT",
+        "LANGUAGE_ES_HN",
+        "LANGUAGE_ES_MX",
+        "LANGUAGE_ES_NI",
+        "LANGUAGE_ES_PA",
+        "LANGUAGE_ES_PY",
+        "LANGUAGE_ES_PE",
+        "LANGUAGE_ES_PR",
+        "LANGUAGE_ES",
+        "LANGUAGE_ES_UY",
+        "LANGUAGE_ES_VE",
+        "LANGUAGE_SV",
+        "LANGUAGE_SV_FI",
+        "LANGUAGE_TH",
+        "LANGUAGE_TS",
+        "LANGUAGE_TN",
+        "LANGUAGE_TR",
+        "LANGUAGE_UA",
+        "LANGUAGE_UR",
+        "LANGUAGE_VE",
+        "LANGUAGE_VI",
+        "LANGUAGE_CY",
+        "LANGUAGE_XH",
+        "LANGUAGE_JI",
+        "LANGUAGE_ZU"
+      ],
+      "default": "LANGUAGE_UNSPECIFIED"
+    },
+    "v1MODEL": {
+      "type": "string",
+      "enum": [
+        "MODEL_UNSPECIFIED",
+        "MODEL_ANTHROPIC_CLAUDE_V1",
+        "MODEL_ANTHROPIC_CLAUDE_V1_0",
+        "MODEL_ANTHROPIC_CLAUDE_V1_2",
+        "MODEL_ANTHROPIC_CLAUDE_INSTANT_V1",
+        "MODEL_ANTHROPIC_CLAUDE_INSTANT_V1_0",
+        "MODEL_OPENAI_GPT432K0314",
+        "MODEL_OPENAI_GPT432K0613",
+        "MODEL_OPENAI_GPT432K",
+        "MODEL_OPENAI_GPT40314",
+        "MODEL_OPENAI_GPT40613",
+        "MODEL_OPENAI_GPT4",
+        "MODEL_OPENAI_GPT3_5_TURBO_0301",
+        "MODEL_OPENAI_GPT3_5_TURBO_0613",
+        "MODEL_OPENAI_GPT3_5_TURBO",
+        "MODEL_OPENAI_GPT3_5_TURBO_16K",
+        "MODEL_OPENAI_GPT3_5_TURBO_16K_0613",
+        "MODEL_OPENAI_GPT3_TEXT_DAVINCI_003",
+        "MODEL_OPENAI_GPT3_TEXT_DAVINCI_002",
+        "MODEL_OPENAI_GPT3_TEXT_CURIE_001",
+        "MODEL_OPENAI_GPT3_TEXT_BAGGAGE_001",
+        "MODEL_OPENAI_GPT3_TEXT_ADA_001",
+        "MODEL_OPENAI_GPT3_TEXT_DAVINCI_001",
+        "MODEL_OPENAI_GPT3_DAVINCI_INSTRUCT_BETA",
+        "MODEL_OPENAI_GPT3_DAVINCI",
+        "MODEL_OPENAI_GPT3_CURIE_INSTRUCT_BETA",
+        "MODEL_OPENAI_GPT3_CURIE",
+        "MODEL_OPENAI_GPT3_ADA",
+        "MODEL_OPENAI_GPT3_BAGGAGE",
+        "MODEL_MOCK_TIER_ONE",
+        "MODEL_MOCK_TIER_TWO"
+      ],
+      "default": "MODEL_UNSPECIFIED"
+    },
+    "v1Overrides": {
+      "type": "object",
+      "properties": {
+        "llm": {
+          "$ref": "#/definitions/v1LLM"
+        },
+        "model": {
+          "$ref": "#/definitions/v1MODEL"
+        }
+      }
+    },
+    "v1Pool": {
+      "type": "object",
+      "properties": {
+        "hits": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "misses": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "timeouts": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "idle": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "stale": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "v1Role": {
+      "type": "string",
+      "enum": [
+        "ROLE_UNSPECIFIED",
+        "ROLE_USER",
+        "ROLE_ASSISTANT",
+        "ROLE_SYSTEM"
+      ],
+      "default": "ROLE_UNSPECIFIED"
+    },
+    "v1StringList": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1Syntax": {
+      "type": "string",
+      "enum": [
+        "SYNTAX_UNSPECIFIED",
+        "SYNTAX_JAVASCRIPT",
+        "SYNTAX_PYTHON",
+        "SYNTAX_POSTGRESQL",
+        "SYNTAX_MSSQL",
+        "SYNTAX_MYSQL",
+        "SYNTAX_MARIADB",
+        "SYNTAX_SNOWFLAKE",
+        "SYNTAX_COCKROACHDB",
+        "SYNTAX_ROCKSET",
+        "SYNTAX_REDSHIFT",
+        "SYNTAX_BIGQUERY",
+        "SYNTAX_DYNAMODB",
+        "SYNTAX_MONGODB",
+        "SYNTAX_BINDING",
+        "SYNTAX_JSON",
+        "SYNTAX_HTML",
+        "SYNTAX_API",
+        "SYNTAX_PLUGIN_RESTAPI",
+        "SYNTAX_PLUGIN_GRAPHQL",
+        "SYNTAX_ORACLEDB",
+        "SYNTAX_DATABRICKS"
+      ],
+      "default": "SYNTAX_UNSPECIFIED",
+      "description": "NOTE(frank): I guess these could just be in the Lnaguage enum."
+    },
+    "v1Task": {
+      "type": "object",
+      "properties": {
+        "optimize": {
+          "$ref": "#/definitions/TaskOptimize"
+        },
+        "edit": {
+          "$ref": "#/definitions/TaskEdit"
+        },
+        "explain": {
+          "$ref": "#/definitions/TaskExplain"
+        },
+        "create": {
+          "$ref": "#/definitions/v1TaskCreate"
+        },
+        "debug": {
+          "$ref": "#/definitions/TaskDebug"
+        },
+        "transpile": {
+          "$ref": "#/definitions/TaskTranspile"
+        },
+        "mock": {
+          "$ref": "#/definitions/v1TaskMock"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/aiv1Message"
+          }
+        }
+      }
+    },
+    "v1TaskCreate": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "syntax": {
+          "$ref": "#/definitions/v1Syntax"
+        },
+        "context": {
+          "$ref": "#/definitions/TaskCreateContext"
+        }
+      }
+    },
+    "v1TaskEvent": {
+      "type": "object",
+      "properties": {
+        "chunk": {
+          "type": "string"
+        },
+        "llm": {
+          "$ref": "#/definitions/v1LLM"
+        },
+        "model": {
+          "$ref": "#/definitions/v1MODEL"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "description": "NOTE(frank): I'm considering having two event types. I'm not sure how I feel about sending\ninforamation that doesn't need to be sent every message in every message (i.e. id). Rather,\nwe could send a \"hello\" event at the beginning with any metadata."
+    },
+    "v1TaskMock": {
+      "type": "object",
+      "properties": {
+        "syntax": {
+          "$ref": "#/definitions/v1Syntax"
+        },
+        "shape": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

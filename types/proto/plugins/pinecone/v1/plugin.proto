@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package plugins.pinecone.v1;
+
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/pinecone/v1";
+
+message Plugin {
+  optional string name = 1;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 2;
+  Connection connection = 3;
+  oneof action {
+    ListIndexes list_indexes = 4;
+    CreateIndex create_index = 5;
+    UpsertVector upsert_vector = 6;
+    Query query = 7;
+  }
+
+  message Connection {
+    string environment = 1;
+    string api_key = 2;
+  }
+
+  message ListIndexes {}
+  message CreateIndex {
+    string name = 1;
+  }
+  message UpsertVector {
+    oneof data {
+      string raw = 1;
+    }
+  }
+  message Query {
+    string vector = 1;
+    optional string top_k = 2;
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "options": {
+    "includeEventOutputs": false,
+    "includeEvents": false
+  },
+  "definition": {
+    "api": {
+      "metadata": {
+        "id": "00000000-0000-0000-0000-100000000000",
+        "name": "test",
+        "organization": "00000000-0000-0000-0000-000000000001"
+      },
+      "blocks": [
+        {
+          "name": "step",
+          "step": {
+            "javascript": {
+              "body": "return 5;"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

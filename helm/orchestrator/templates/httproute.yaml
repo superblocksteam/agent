@@ -1,0 +1,28 @@
+{{ $hosts := mustAppend ( .Values.ingress.additionalUrls | default (list) ) .Values.externalUrl }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "orchestrator.fullname" $ }}
+spec:
+  parentRefs:
+    {{- range $g := .Values.gateway.gatewayRefs }}
+    - name: {{ $g.name }}
+      namespace: {{ $g.namespace }}
+    {{- end }}
+  hostnames:
+    - {{ .Values.ingress.host }}
+    {{- with .Values.ingress.testHost}}
+    - {{ . }}
+    {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      timeouts:
+        request: {{ .Values.gateway.timeouts.request }}
+        backendRequest: {{ .Values.gateway.timeouts.backendRequest }}
+      backendRefs:
+        - name: {{ include "orchestrator.fullname" $ }}
+          kind: Service
+          port: {{ .Values.service.ports.http }}

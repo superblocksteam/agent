@@ -1,0 +1,18 @@
+---
+version: v1
+deps:
+  - buf.build/googleapis/googleapis:714ab03e10b34f4defb4c8bd7fe2a6b07384279f
+  - buf.build/grpc-ecosystem/grpc-gateway:e54bb31d0025f675a80908b6ddd0a62e336492f2
+  - buf.build/envoyproxy/protoc-gen-validate:fb8dce5914d69cbb60c6a7eb0278a3b66a0aef2d
+  - buf.build/bufbuild/protovalidate:v0.5.4
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+  except:
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_REQUEST_STANDARD_NAME
+    - RPC_RESPONSE_STANDARD_NAME
+    - FIELD_LOWER_SNAKE_CASE # NOTE(frank): please remove me

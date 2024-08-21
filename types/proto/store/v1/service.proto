@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package store.v1;
+
+import "common/v1/errors.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "store/v1/store.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/store/v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Superblocks Store"
+    version: "1.0"
+  }
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+};
+
+service StoreService {
+  rpc Read(ReadRequest) returns (ReadResponse) {
+    option (google.api.http) = {
+      // NOTE(frank): Obviously POST is wrong but this is only exposed for e2e testing.
+      post: "/v1/read"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Read"};
+  }
+  rpc Write(WriteRequest) returns (WriteResponse) {
+    option (google.api.http) = {
+      post: "/v1/write"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Write"};
+  }
+
+  // We can add other methods later.
+}
+
+message ReadRequest {
+  repeated string keys = 1;
+}
+
+message ReadResponse {
+  repeated google.protobuf.Value results = 1;
+  common.v1.Error error = 2;
+}
+
+message WriteRequest {
+  repeated store.v1.Pair pairs = 1;
+}
+
+message WriteResponse {
+  repeated store.v1.Pair pairs = 1;
+  common.v1.Error error = 2;
+}

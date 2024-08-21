@@ -1,0 +1,9 @@
+---
+testonly: False
+with-expecter: True
+keeptree: True
+all: True
+outpkg: mocks
+exclude:
+  - mocks
+  - worker.go
