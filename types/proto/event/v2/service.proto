@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package event.v2;
+
+import "event/v2/cloudevent.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/event/v2";
+
+service EventsService {
+  rpc Receive(google.protobuf.Empty) returns (stream event.v2.CloudEvent) {}
+  rpc Send(event.v2.CloudEvent) returns (google.protobuf.Empty) {}
+}

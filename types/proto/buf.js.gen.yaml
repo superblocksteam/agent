@@ -1,0 +1,20 @@
+---
+version: v1
+plugins:
+  # Generates .ts files
+  - plugin: buf.build/bufbuild/es:v1.2.0
+    opt: target=ts
+    out: ../../workers/javascript/packages/types/src
+  # ??
+  - plugin: buf.build/protocolbuffers/js
+    out: ../gen/js
+    opt: import_style=commonjs
+  # generates js server / client stubs files
+  - name: grpc
+    out: ../gen/js
+    opt: grpc_js
+    path: grpc_tools_node_protoc_plugin
+  # generates .d.ts files
+  - name: ts
+    out: ../gen/js
+    opt: grpc_js

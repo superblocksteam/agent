@@ -1,0 +1,315 @@
+---
+x-tolerations: &tolerations
+  tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      value: lang-exec-worker
+      operator: Equal
+x-selector: &selector
+  nodeSelector:
+    superblocks.com/node-type: lang-exec-worker
+x-worker-python-fleet-shared: &worker_python_fleet_shared
+  events: execute
+  autoscaling:
+    disable: false
+  package: python
+x-worker-javascript-process-worker: &worker_javascript_process_worker
+  worker:
+    execution:
+      pool:
+        size: 4
+server:
+  mock: false
+superblocks:
+  url: 'https://app.superblocks.com'
+  key: <override>
+autoscaling:
+  disable: false
+  min: 5
+  max: 50
+  cpu: 50
+podDisruptionBudget:
+  disable: false
+auth:
+  jwt:
+    jwks_url: 'https://prod-cdn.superblocks.com/.well-known/jwks.json'
+ingress:
+  opa:
+    enabled: false
+  dns: false
+  disable: false
+  certificate:
+    disable: false
+  host: <override>
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: '500m'
+    nginx.ingress.kubernetes.io/proxy-buffer-size: '128k'
+    nginx.ingress.kubernetes.io/proxy-buffers-number: '8'
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: '600'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '600'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '600'
+  cors:
+    # Can support multiple origins, comma separated
+    # For example: 'https://app.superblocks.com, https://app.superblockshq.com'
+    allowOrigin: '<override>'
+    age: 1728000
+    methods:
+      - GET
+      - PUT
+      - POST
+      - DELETE
+      - PATCH
+      - OPTIONS
+    headers:
+      - x-superblocks-request-id
+      - DNT
+      - Keep-Alive
+      - User-Agent
+      - X-Requested-With
+      - If-Modified-Since
+      - Cache-Control
+      - Content-Type
+      - Range
+      - Authorization
+      - X-Superblocks-Authorization
+      - X-Superblocks-Data-Domain
+service:
+  terminationGracePeriodSeconds: 86400
+  grpc:
+    maxMsgReq: 100000000
+    maxMsgRes: 100000000
+  logLevel: info
+  ports:
+    http: 8080
+    grpc: 8081
+observability:
+  logs:
+    intake:
+      endpoint: ''
+  metadata:
+    intake:
+      url: 'https://metadata.intake.superblocks.com'
+  event:
+    intake:
+      url: 'https://events.intake.superblocks.com'
+  tracing:
+    exporter:
+      scheme: http
+      port: 4318
+      path: '/v1/traces'
+      host: otelcol-collector.observability.svc.cluster.local
+resources:
+  limits:
+    memory: 1Gi
+  requests:
+    cpu: 150m
+    memory: 750Mi
+kvstore:
+  host: '<override>'
+  token: '<override>'
+  servername: ''
+  enable_tls: true
+  pool:
+    min: 10
+    max: 50
+  timeout:
+    dial: 20s
+queue:
+  deploy: false
+  host: '<override>'
+  token: '<override>'
+  servername: ''
+  enable_tls: true
+  pool:
+    min: 10
+    max: 50
+  timeout:
+    dial: 20s
+image:
+  repository: ghcr.io/superblocksteam/orchestrator
+  tag: latest
+  pullPolicy: IfNotPresent
+  credentials:
+    registry: ghcr.io
+    username: '<override>'
+    password: '<override>'
+launchdarkly:
+  apikey: '<override>'
+!!merge <<: *tolerations
+!!merge <<: *selector
+# to be used for local testing only
+redis:
+  auth:
+    enabled: true
+    password: frankbasilgrecojr
+  tls:
+    authClients: true
+  replica:
+    replicaCount: 0
+networkpolicy:
+  disable: true
+kafka:
+  bootstrap: <override>
+  username: <override>
+  password: <override>
+  enabled: true
+events:
+  cloud:
+    enabled: false
+extraEnv: {}
+gateway:
+  gatewayRefs:
+    - name: internal-gateway
+      namespace: kong-ingress-controller
+  maxBodySize: 500
+  timeouts:
+    request: 10m
+    backendRequest: 10m
+worker_go:
+  deploy: false
+  fleets:
+    main.ba.golang.all:
+      replicas: 10
+      bucket: BA
+    main.be.golang.all:
+      replicas: 5
+      bucket: BE
+  superblocks:
+    key: <override>
+  !!merge <<: *tolerations
+  !!merge <<: *selector
+worker_py:
+  deploy: false
+  environment: staging
+  fleets:
+    main.test.python.execute:
+      !!merge <<: *worker_python_fleet_shared
+      bucket: test
+      group: eleven
+    main.b1.python.execute:
+      !!merge <<: *worker_python_fleet_shared
+      bucket: B1
+      group: twelve
+    main.b2.python.execute:
+      !!merge <<: *worker_python_fleet_shared
+      bucket: B2
+      group: thirteen
+    main.b3.python.execute:
+      !!merge <<: *worker_python_fleet_shared
+      bucket: B3
+      group: fourteen
+    main.b4.python.execute:
+      !!merge <<: *worker_python_fleet_shared
+      bucket: B4
+      group: fifteen
+    main.ba.python.execute:
+      !!merge <<: *worker_python_fleet_shared
+      bucket: BA
+      group: sixteen
+    main.be.python.execute:
+      !!merge <<: *worker_python_fleet_shared
+      bucket: BE
+      group: seventeen
+worker_js:
+  deploy: false
+  !!merge <<: *tolerations
+  !!merge <<: *selector
+  fleets:
+    main.ba.javascript.shared.auxillary:
+      !!merge <<: *worker_javascript_process_worker
+      bucket: BA
+      async: true
+      events: '!execute'
+      group: one
+      package: all
+      resources:
+        requests:
+          memory: 400Mi
+      autoscaling:
+        min: 1
+    main.ba.javascript.shared.execute:
+      !!merge <<: *worker_javascript_process_worker
+      bucket: BA
+      async: true
+      group: two
+      package: non-lang
+      events: execute
+    main.be.javascript.shared.execute:
+      !!merge <<: *worker_javascript_process_worker
+      bucket: BE
+      async: true
+      group: three
+      package: non-lang
+      events: execute
+      autoscaling:
+        min: 1
+    main.ba.javascript.execute:
+      async: false
+      events: execute
+      !!merge <<: *worker_javascript_process_worker
+      bucket: BA
+      group: four
+      package: javascript
+      serviceRate: 1
+      autoscaling:
+        min: 1
+    main.be.javascript.execute:
+      async: false
+      events: execute
+      !!merge <<: *worker_javascript_process_worker
+      bucket: BE
+      group: five
+      package: javascript
+      serviceRate: 1
+      autoscaling:
+        disable: true
+    main.test.javascript.execute:
+      async: false
+      events: execute
+      !!merge <<: *worker_javascript_process_worker
+      bucket: test
+      group: six
+      package: javascript
+      serviceRate: 100
+      autoscaling:
+        disable: true
+    main.b1.javascript.execute:
+      async: false
+      events: execute
+      !!merge <<: *worker_javascript_process_worker
+      bucket: B1
+      group: seven
+      package: javascript
+      serviceRate: 100
+      autoscaling:
+        min: 1
+    main.b2.javascript.execute:
+      async: false
+      events: execute
+      !!merge <<: *worker_javascript_process_worker
+      bucket: B2
+      group: eight
+      package: javascript
+      serviceRate: 20
+      autoscaling:
+        min: 1
+    main.b3.javascript.execute:
+      async: false
+      events: execute
+      !!merge <<: *worker_javascript_process_worker
+      bucket: B3
+      group: nine
+      package: javascript
+      serviceRate: 3
+      autoscaling:
+        min: 1
+    main.b4.javascript.execute:
+      async: false
+      events: execute
+      !!merge <<: *worker_javascript_process_worker
+      bucket: B4
+      group: ten
+      package: javascript
+      serviceRate: 0.2
+      autoscaling:
+        min: 1

@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package ai.v1;
+
+import "buf/validate/validate.proto";
+import "plugins/common/v1/metadata.proto";
+import "plugins/kafka/v1/plugin.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/ai/v1";
+
+// This represents the metadata that the "AI stack" cares about. It is
+// not guaranteed to be the same as the metadata for the "plugin stack".
+// This is more than likely a minified representation of it.
+message Metadata {
+  oneof config {
+    option (validate.required) = true;
+    option (buf.validate.oneof).required = true;
+
+    plugins.common.v1.SQLMetadata.Minified mariadb = 1;
+    plugins.common.v1.SQLMetadata.Minified mssql = 2;
+    plugins.common.v1.SQLMetadata.Minified mysql = 3;
+    plugins.common.v1.SQLMetadata.Minified postgres = 4;
+    plugins.common.v1.SQLMetadata.Minified rockset = 5;
+    plugins.common.v1.SQLMetadata.Minified snowflake = 6;
+    plugins.common.v1.SQLMetadata.Minified cockroachdb = 7;
+    plugins.kafka.v1.Metadata.Minified kafka = 8;
+    plugins.kafka.v1.Metadata.Minified confluent = 9;
+    plugins.kafka.v1.Metadata.Minified msk = 10;
+    plugins.kafka.v1.Metadata.Minified redpanda = 11;
+    plugins.kafka.v1.Metadata.Minified aivenkafka = 12;
+
+    // TODO(frank): add other metadata here
+  }
+}

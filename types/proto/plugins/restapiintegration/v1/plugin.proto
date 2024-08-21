@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package plugins.restapiintegration.v1;
+
+import "common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/restapiintegration/v1";
+
+//message JsonBodyItem {
+//  string name = 1;
+//  string type = 2;
+//  string value = 3;
+//}
+//
+//message JsonBody {
+//  repeated JsonBodyItem parameters = 1;
+//}
+
+message Plugin {
+  string httpMethod = 1;
+  string responseType = 2;
+  repeated common.v1.Property headers = 3;
+  repeated common.v1.Property params = 4;
+  string bodyType = 5;
+  string body = 6;
+  string jsonBody = 7;
+  repeated common.v1.Property formData = 8;
+  string fileFormKey = 9;
+  string fileName = 10;
+  string urlBase = 11;
+  string urlPath = 12;
+  string authType = 13;
+  common.v1.SuperblocksMetadata superblocksMetadata = 14;
+
+  // OpenAPI fields
+  string openApiAction = 15;
+  string openApiSpecRef = 16;
+  optional string openApiTenantName = 17;
+}

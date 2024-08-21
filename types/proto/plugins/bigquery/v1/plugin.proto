@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package plugins.bigquery.v1;
+
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/bigquery/v1";
+
+message MappedColumns {
+  string json = 1;
+  string sql = 2;
+}
+
+message Tuple {
+  string key = 1;
+  google.protobuf.Any value = 2;
+}
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Plugin {
+  string body = 1;
+  bool usePreparedSql = 2;
+  optional string operation = 3;
+  optional string useAdvancedMatching = 4;
+  optional string table = 5;
+  repeated Tuple newValues = 6;
+  repeated Tuple oldValues = 7;
+  repeated string filterBy = 8;
+  optional string mappingMode = 9;
+  repeated MappedColumns mappedColumns = 10;
+  SuperblocksMetadata superblocksMetadata = 11;
+}

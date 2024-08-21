@@ -1,0 +1,40 @@
+[
+    {
+      "type": "kv",
+      "key": "name",
+      "value": "joey"
+    },
+    {
+      "type": "kv",
+      "key": "age",
+      "value": "26"
+    },
+    {
+      "type": "hash",
+      "key": "hashbrowns",
+      "fields": {
+        "taste": "yummy",
+        "price": "2.50"
+      }
+    },
+    {
+      "type": "list",
+      "key": "nfcnorth",
+      "values": ["packers", "bears", "vikings", "lions"]
+    },
+    {
+      "type": "set",
+      "key": "colors",
+      "values": ["purple", "teal", "pink"]
+    },
+    {
+      "type": "zset",
+      "key": "movies",
+      "values": [
+        [9, "the prestige"],
+        [8.5, "hotrod"],
+        [7, "barbie"]
+      ]
+    }
+  ]
+  

@@ -1,0 +1,31 @@
+EXTRA_LD_FLAGS          = -s -w
+EXTRA_GO_OPTIONS        =
+GO_BUILD_ROOT_DIRECTORY = .
+GO_OPTIONS              = -C $(GO_BUILD_ROOT_DIRECTORY) -ldflags="$(EXTRA_LD_FLAGS) -X main.version=$(SERVICE_VERSION)" -pgo=auto -tags netgo -o $(SERVICE_NAME) $(EXTRA_GO_OPTIONS)
+PASS                    = $(shell printf "\033[32mPASS\033[0m")
+FAIL                    = $(shell printf "\033[31mFAIL\033[0m")
+PACKAGES                = $(shell go list ./... | grep -v types)
+COLORIZE                = sed ''/PASS/s//$(PASS)/'' | sed ''/FAIL/s//$(FAIL)/''
+
+export GOPRIVATE = github.com/superblocksteam
+
+.PHONY: deps-go
+deps-go:
+	@go mod download
+	@go mod tidy
+
+.PHONY: test-go
+test-go:
+	@bash -c "set -e; set -o pipefail; go test -v -count=1 -race -covermode=atomic -coverprofile=coverage.out $(shell go list ./... | grep -v integration_test | grep -v github.com/superblocksteam/agent/types/gen/go) | $(COLORIZE)"
+
+.PHONY: build-go
+build-go: deps-go
+	CGO_ENABLED=1 go build $(GO_OPTIONS) ./cmd/$(SERVICE_NAME)/...
+
+.PHONY: fmt-go
+fmt-go:
+	@gofmt -e -s -l -w $(shell find . -name "*.go" -not -path '*/*.pb.go' -not -path './.git/**')
+
+.PHONY: vet-go
+vet-go:
+	@go vet $(PACKAGES)

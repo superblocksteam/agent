@@ -1,0 +1,61 @@
+# syntax=docker/dockerfile:1.9.0
+
+# Allow the Go version to be configured
+ARG GO_VERSION
+ARG SB_GIT_COMMIT_SHA
+
+# Builder base image
+FROM ghcr.io/superblocksteam/golang:${GO_VERSION}-bookworm as builder
+
+LABEL org.opencontainers.image.description "The Superblocks Orchestrator"
+
+# https://github.com/rogchap/v8go/issues/381#issuecomment-1660576038
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set a directory to work from
+WORKDIR /go/src/github.com/superblocksteam/orchestrator
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y build-essential gcc
+
+# Copy everything in and compile
+# There may be cache optimizations we can make
+COPY . .
+
+# Build our binary.
+ARG SERVICE_VERSION
+ARG EXTRA_GO_OPTIONS
+RUN make build-go SERVICE_VERSION=${SERVICE_VERSION} EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}
+
+# Build the final image
+FROM ghcr.io/superblocksteam/ubuntu-mirror:23.04 AS base
+
+# Install CA certificates
+RUN apt-get update \
+    && apt-get install ca-certificates -y \
+    && update-ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM base
+
+ARG SB_GIT_COMMIT_SHA
+
+# Create and switch to a non-root user
+RUN useradd -m -u 1001 orchestrator
+USER orchestrator
+
+# Copy in our compiled binary
+COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/orchestrator         /orchestrator
+COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/buckets.json         /buckets.json
+COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/buckets.minimal.json /buckets.minimal.json
+COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/buckets.minimal.json /buckets.minimal.json
+COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/flags.json           /flags.json
+
+ENV SB_GIT_REPOSITORY_URL "https://github.com/superblocksteam/orchestrator"
+ENV SB_GIT_COMMIT_SHA     ${SB_GIT_COMMIT_SHA}
+
+# Start the service
+ENTRYPOINT ["/orchestrator"]

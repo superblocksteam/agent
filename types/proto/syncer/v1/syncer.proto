@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package syncer.v1;
+
+import "ai/v1/metadata.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/syncer/v1";
+
+message Metadata {
+  string configuration_id = 1 [
+    (validate.rules).string = {min_len: 1},
+    (buf.validate.field).string = {min_len: 1}
+  ];
+  string integration_id = 2 [
+    (validate.rules).string = {min_len: 1},
+    (buf.validate.field).string = {min_len: 1}
+  ];
+  ai.v1.Metadata raw_metadata = 3 [
+    (validate.rules).message.required = true,
+    (buf.validate.field).required = true
+  ];
+  google.protobuf.Timestamp updated_datetime_utc = 4;
+  string integration_type = 5 [
+    (validate.rules).string = {min_len: 1},
+    (buf.validate.field).string = {min_len: 1}
+  ];
+  string organization_id = 6 [
+    (validate.rules).string = {min_len: 1},
+    (buf.validate.field).string = {min_len: 1}
+  ];
+}

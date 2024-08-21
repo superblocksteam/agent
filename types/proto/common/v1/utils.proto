@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/common/v1";
+
+message StringList {
+  repeated string items = 1;
+}

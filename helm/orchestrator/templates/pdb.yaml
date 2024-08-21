@@ -1,0 +1,14 @@
+{{- if not .Values.podDisruptionBudget.disable }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "orchestrator.fullname" . }}
+  labels:
+    component: orchestrator
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      component: orchestrator
+{{- end }}

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package superblocks.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/superblocks/v1";
+
+message Integrations {
+  bool registry = 1;
+}
+
+message IntegrationOptions {
+  reserved 1;
+  string pluginType = 2;
+}
+
+extend google.protobuf.MessageOptions {
+  Integrations integrations = 50000;
+}
+
+extend google.protobuf.FieldOptions {
+  IntegrationOptions integration_options = 60000;
+}

@@ -1,0 +1,24 @@
+---
+repos:
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+        name: "[go] format"
+      - id: go-mod-tidy
+        name: "[go] tidy"
+      - id: go-imports
+        name: "[go] imports"
+  - repo: local
+    hooks:
+      - id: mockery
+        name: "check that mocks are correctly generated"
+        entry: bash -c 'make gen-mocks && git diff --exit-code || (echo "please regenerate mocks (make deps && make gen-mocks)" && false)'
+        require_serial: true
+        language: system
+        types: [file]
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.10.0
+    hooks:
+      - id: yamlfmt
+        name: "[yaml] format"

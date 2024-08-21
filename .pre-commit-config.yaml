@@ -1,0 +1,45 @@
+---
+repos:
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+        name: "[go] format"
+      - id: go-mod-tidy
+        name: "[go] tidy"
+      - id: go-generate
+        name: "[go] generate"
+      - id: go-imports
+        name: "[go] imports"
+        exclude: |
+          (?x)^(
+              types/.*|
+              api/.*|
+              gen/.*
+          )$
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 2.1.6
+    hooks:
+      - id: shellcheck
+        name: "[shell] check"
+  - repo: local
+    hooks:
+      - id: npm-lint
+        name: "[mocks] lint"
+        entry: docker run --rm -v ./mocks:/app -w /app node:20-alpine sh -c "npm install && npm run lint"
+        language: system
+        always_run: true
+        pass_filenames: false
+  - repo: local
+    hooks:
+      - id: codecov-valid
+        name: "[codecov] validate"
+        entry: curl -X POST --data-binary @codecov.yml https://codecov.io/validate
+        language: system
+        pass_filenames: false
+        files: "^codecov.yml$"
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.10.0
+    hooks:
+      - id: yamlfmt
+        name: "[yaml] format"

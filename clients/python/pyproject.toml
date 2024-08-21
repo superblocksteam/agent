@@ -1,0 +1,25 @@
+[tool.coverage.run]
+omit = [
+  "*/gen/*",
+  "*/__init__.py",
+  "*/_version.py",
+  "test_unit/*",
+  "test_e2e/*",
+  "*/_BaseEnum.py",
+  "*/_DictDeserializable.py",
+  "superblocks_types/*",
+]
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/linter/
+ignore = ["E731"]
+exclude = ["superblocks_types/*"]
+select = [
+    # isort
+    "I001"
+]
+
+[tool.ruff.format]
+# https://docs.astral.sh/ruff/formatter/
+exclude = ["superblocks_types/*"]
+

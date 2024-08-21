@@ -1,0 +1,160 @@
+{{- range $k, $v := .Values.fleets }}
+{{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $k }}
+  labels:
+    {{- include "worker.labels" $v | nindent 4 }}
+spec:
+  {{- if $v.disabled }}
+  replicas: 0
+  {{- else }}
+  replicas: {{ ($v.autoscaling).min | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "worker.labels" $v | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  template:
+    metadata:
+      labels:
+        {{- include "worker.labels" $v | nindent 8 }}
+      annotations:
+        {{- toYaml $podAnnotations | nindent 8 }}
+    spec:
+      serviceAccountName: default
+      {{- if $.Values.image.credentials }}
+      imagePullSecrets:
+      - name: workers-docker
+      {{- end }}
+      containers:
+      - name: worker
+        image: "{{ (($v.image).repository) | default ($.Values.image.repository | default "ghcr.io/superblocksteam/worker.js") }}:{{ (($v.image).tag) | default ($.Values.image.tag | default "latest") }}"
+        imagePullPolicy: {{ $.Values.image.pullPolicy | default "IfNotPresent" }}
+        resources:
+          {{- toYaml (deepCopy ($.Values.resources | default dict) | merge ($v.resources)) | nindent 10 }}
+        env:
+        # OTEL
+        - name: __SUPERBLOCKS_AGENT_INTAKE_TRACES_SCHEME
+          value: {{ $.Values.observability.tracing.exporter.scheme }}
+        - name: __SUPERBLOCKS_AGENT_INTAKE_TRACES_PORT
+          value: {{ $.Values.observability.tracing.exporter.port | quote }}
+        - name: __SUPERBLOCKS_AGENT_INTAKE_TRACES_PATH
+          value: {{ $.Values.observability.tracing.exporter.path | quote }}
+        - name: __SUPERBLOCKS_AGENT_INTAKE_TRACES_HOST
+          value: {{ $.Values.observability.tracing.exporter.host }}
+        # Node.js "stuff"
+        - name: NODE_ENV
+          value: production
+        {{- if ($.Values.node).heap }}
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size={{ $.Values.node.heap }}"
+        {{- end }}
+        # Used to select the right entrypoint in our hyperimage.
+        - name: FLEET
+          value: {{ $v.package }}
+        # SUPERBLOCKS_ "stuff"
+        - name: __SUPERBLOCKS_AGENT_VERSION
+          value: {{ $.Values.image.tag | quote }}
+        - name: SUPERBLOCKS_AGENT_LOG_LEVEL
+          value: {{ $.Values.service.logLevel | default "info" }}
+        - name: SUPERBLOCKS_AGENT_TLS_INSECURE
+          value: {{ $.Values.service.tls.insecure | default "false" | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_HOST
+          value: {{ $.Values.queue.host | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST
+          value: {{ $.Values.kvstore.host | quote }}
+        - name: SUPERBLOCKS_AGENT_PROCESS_ASYNC
+          value: {{ $v.async | quote }}
+        - name: SUPERBLOCKS_WORKER_EXECUTION_POOL_SIZE
+          value: {{ ($v.worker).execution.pool.size | default $.Values.worker.execution.pool.size | quote }}
+        - name: SUPERBLOCKS_AGENT_PLUGIN_EVENTS
+          value: {{ $v.events | quote }}
+        - name: SUPERBLOCKS_AGENT_BUCKET
+          value: {{ $v.bucket | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_KVSTORE_MAX_SIZE_BYTES
+          value: {{ $.Values.kvstore.maxBytes | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_GROUP
+          value: {{ $v.group | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_POOL_FAST_MIN
+          value: {{ ($v.kvstore).pool.fast.min | default $.Values.kvstore.pool.fast.min | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_POOL_FAST_MAX
+          value: {{ ($v.kvstore).pool.fast.max | default $.Values.kvstore.pool.fast.max | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_POOL_SLOW_MIN
+          value: {{ ($v.kvstore).pool.slow.min | default $.Values.kvstore.pool.slow.min | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_POOL_SLOW_MAX
+          value: {{ ($v.kvstore).pool.slow.max | default $.Values.kvstore.pool.slow.max | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_POOL_QUEUE_MIN
+          value: {{ ($v.queue).pool.min | default $.Values.queue.pool.min | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_POOL_QUEUE_MAX
+          value: {{ ($v.queue).pool.max | default $.Values.queue.pool.max | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_SLOW_CLIENT_THRESHOLD_BYTES
+          value: {{ $.Values.kvstore.slowClientThreshold | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_QUEUE_BLOCK_MS
+          value: {{ $.Values.queue.blockMs | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_QUEUE_BATCH_SIZE
+          value: {{ $.Values.queue.batchSize | quote }}
+        - name: SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE
+          value: {{ $.Values.remoteIntakeUrl | quote }}
+        - name: SUPERBLOCKS_AGENT_REDIS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: workers-redis-token
+              key: token
+        - name: SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: workers-kvstore-token
+              key: token
+        - name: SUPERBLOCKS_AGENT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: workers-agent-key
+              key: key
+        - name: SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA
+          valueFrom:
+            secretKeyRef:
+              name: workers-tunnel-private-key-rsa
+              key: key
+        - name: SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519
+          valueFrom:
+            secretKeyRef:
+              name: workers-tunnel-private-key-ed25519
+              key: key
+        - name: DD_ENV
+          value: {{ $.Values.environment }}
+        - name: DD_SERVICE
+          value: worker.js
+        - name: DD_VERSION
+          value: {{ $.Values.image.tag }}
+        ports:
+        - name: health
+          containerPort: {{ $.Values.service.ports.health }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: health
+        readinessProbe:
+          httpGet:
+            path: /
+            port: health
+      {{- with $v.nodeSelector | default $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.affinity | default $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with $v.tolerations | default $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{- end }}

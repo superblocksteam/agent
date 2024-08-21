@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package plugins.javascript.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/javascript/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Plugin {
+  string body = 1;
+  SuperblocksMetadata superblocksMetadata = 2;
+}

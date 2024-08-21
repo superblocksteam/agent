@@ -1,0 +1,586 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "api/v1/api.proto";
+import "api/v1/event.proto";
+import "buf/validate/validate.proto";
+import "common/v1/common.proto";
+import "common/v1/errors.proto";
+import "common/v1/health.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "plugins/adls/v1/plugin.proto";
+import "plugins/cosmosdb/v1/plugin.proto";
+import "plugins/kafka/v1/plugin.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "store/v1/store.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/api/v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Superblocks API Executor Service"
+    description: "This is the contract that the Superblocks Orchestrator component exposes."
+    version: "1.0"
+    contact: {email: "frank@superblocks.com"}
+  }
+  schemes: HTTPS
+  host: "agent.superblocks.com"
+  consumes: "application/json"
+  produces: "application/json"
+};
+
+service MetadataService {
+  rpc Health(HealthRequest) returns (common.v1.HealthResponse) {
+    option (google.api.http) = {get: "/health"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Service Health"};
+  }
+}
+
+service DeprecatedService {
+  rpc Workflow(ExecuteRequest) returns (WorkflowResponse) {
+    option (google.api.http) = {
+      post: "/v1/workflows/{fetch.id=*}"
+      body: "*"
+      additional_bindings: [
+        {
+          post: "/agent/v1/workflows/{fetch.id=*}"
+          body: "*"
+        }
+      ]
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Sync Workflow Execution"};
+  }
+}
+
+service ExecutorService {
+  rpc Await(ExecuteRequest) returns (AwaitResponse) {
+    option (google.api.http) = {
+      post: "/v2/execute"
+      body: "*"
+      additional_bindings: [
+        {
+          post: "/v2/execute/{fetch.id=*}"
+          body: "*"
+        }
+      ]
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {summary: "Execute an API"};
+  }
+
+  rpc TwoWayStream(stream TwoWayRequest) returns (stream TwoWayResponse) {
+    option (google.api.http) = {
+      post: "/v2/execute/twoway"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Two Way Execution"};
+  }
+
+  rpc MetadataDeprecated(MetadataRequestDeprecated) returns (MetadataResponse) {
+    option (google.api.http) = {get: "/v2/metadata"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Integration Metadata"};
+  }
+
+  rpc Metadata(MetadataRequest) returns (MetadataResponse) {
+    option (google.api.http) = {
+      post: "/v2/metadata"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Integration Metadata"};
+  }
+
+  rpc Test(TestRequest) returns (TestResponse) {
+    option (google.api.http) = {
+      post: "/v2/test"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Integration Connection Test"};
+  }
+
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option (google.api.http) = {
+      post: "/v2/delete"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Delete Integration Hook"};
+  }
+
+  rpc Async(ExecuteRequest) returns (AsyncResponse) {
+    option (google.api.http) = {
+      post: "/v2/execute/async"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Async Execution"};
+  }
+
+  rpc Stream(ExecuteRequest) returns (stream StreamResponse) {
+    option (google.api.http) = {
+      post: "/v2/execute/stream"
+      body: "*"
+      additional_bindings: [
+        {
+          post: "/v2/execute/stream/{fetch.id=*}"
+          body: "*"
+        }
+      ]
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Stream Execution"};
+  }
+
+  rpc Status(StatusRequest) returns (AwaitResponse) {
+    option (google.api.http) = {get: "/v2/status"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Execution Status"};
+  }
+
+  rpc Output(OutputRequest) returns (OutputResponse) {
+    option (google.api.http) = {get: "/v2/output"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Block Output"};
+  }
+
+  rpc Download(DownloadRequest) returns (stream DownloadResponse) {
+    option (google.api.http) = {get: "/v2/files"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Download File"};
+  }
+
+  rpc Cancel(CancelRequest) returns (CancelResponse) {
+    option (google.api.http) = {post: "/v2/cancel"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Cancel an API's Execution"};
+  }
+
+  rpc Validate(ValidateRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v2/validate"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Validate an API specification"};
+  }
+}
+
+message HealthRequest {
+  bool detailed = 1;
+}
+
+message ValidateRequest {
+  api.v1.Api api = 1;
+}
+
+message ExecuteRequest {
+  message Options {
+    /*
+     * If true, the primary output will not be returned.
+     */
+    bool exclude_output = 1;
+
+    /*
+     * If true, all outputs will be returned. If false (default):
+     *
+     *       STREAM: The block output will not be returned.
+     *  ASYNC/AWAIT: Only the final block's output will be returned.
+     *
+     * WARNING: Returning more than the final block's output may
+     *          result in a significant performance regressions.
+     * NOTE: If 'exclude_events' is enabled, this flag has no effect.
+     */
+    bool include_event_outputs = 2;
+
+    /*
+     * Include system events.
+     */
+    bool include_events = 3;
+
+    /*
+     * The block ID to start execution at.
+     */
+    string start = 4;
+
+    /*
+     * The block ID to stop execution at.
+     */
+    string stop = 5;
+
+    /*
+     * If true, values for resolved bindings will be included.
+     */
+    bool include_resolved = 6;
+
+    /*
+     * If true, the api will immediately return and execution will continue in a detached manner.
+     */
+    bool async = 7;
+
+    /*
+     * If true, the begin and complete events will be sent. This flag is need to retain backwards compatibility.
+     */
+    bool include_api_events = 8;
+  }
+
+  message Fetch {
+    /*
+     * A reference to the API by ID.
+     */
+    string id = 1;
+
+    /*
+     * The integration profile to use.
+     */
+    common.v1.Profile profile = 2;
+
+    /*
+     * Use unpublished changes.
+     */
+    optional bool test = 3;
+
+    /*
+     * The auth token to use when fetching the definition.
+     * Used for workflows only.
+     */
+    optional string token = 4;
+
+    /*
+     * The view mode that this resource should be executed against.
+     */
+    ViewMode view_mode = 5;
+
+    /*
+     * The commit ID to use when fetching the API.
+     */
+    optional string commit_id = 6;
+
+    /*
+     * The branch name to use when fetching the API
+     */
+    optional string branch_name = 7;
+  }
+
+  /*
+   * Request options.
+   */
+  Options options = 1;
+
+  /*
+   * Inputs that can be access in steps.
+   */
+  map<string, google.protobuf.Value> inputs = 2;
+
+  oneof request {
+    option (validate.required) = true;
+    option (buf.validate.oneof).required = true;
+
+    /*
+     * The literal API specification.
+     */
+    Definition definition = 3;
+
+    /*
+     * Details on how to fetch the API specification.
+     */
+    Fetch fetch = 4;
+  }
+
+  message File {
+    string originalName = 1;
+    bytes buffer = 2;
+    string encoding = 3;
+    string mimeType = 4;
+    string size = 5;
+  }
+
+  repeated File files = 5;
+
+  common.v1.Profile profile = 6;
+
+  repeated Mock mocks = 7;
+}
+
+message Definition {
+  message Metadata {
+    string requester = 1; // This is the email
+    string profile = 2; // Because profile isn't a required execution parameter, the default will be different per org.
+    string organization_plan = 3;
+    string organization_name = 4;
+    optional common.v1.UserType requester_type = 5; // This is requester type since the same email could be used by external user as well as by internal
+  }
+
+  api.v1.Api api = 1 [
+    (validate.rules).message.required = true,
+    (buf.validate.field).required = true
+  ];
+  map<string, google.protobuf.Struct> integrations = 2;
+  Metadata metadata = 3;
+  store.v1.Stores stores = 4;
+}
+
+message StatusRequest {
+  /*
+   * The execution ID of an in-progress API execution.
+   */
+  string execution = 1;
+}
+
+message AwaitResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_COMPLETED = 1;
+    STATUS_EXECUTING = 2;
+  }
+
+  /*
+   * The execution ID. This can be used to retrieve outputs after the fact.
+   */
+  string execution = 1;
+
+  /*
+   * The block's output.
+   */
+  api.v1.Output output = 2;
+
+  /*
+   * The errors, if any.
+   */
+  repeated common.v1.Error errors = 3;
+
+  /*
+   * The current status of this execution. If response orginates
+   * from an AwaitRequest, the status will always be comppleted.
+   */
+  Status status = 4;
+
+  /*
+   * Aggregated performance stats.
+   */
+  api.v1.Performance performance = 5;
+
+  /*
+   * A log of the cuncurrent events that happened during this API's execution.
+   */
+  repeated api.v1.Event events = 6;
+}
+
+message AsyncResponse {
+  /*
+   * The execution ID. This can be used to retrieve outputs after the fact.
+   */
+  string execution = 1;
+  common.v1.Error error = 2;
+}
+
+message StreamResponse {
+  /*
+   * The execution ID. This can be used to retrieve outputs after the fact.
+   */
+  string execution = 1;
+  api.v1.Event event = 2;
+}
+
+message OutputRequest {
+  string execution = 1 [
+    (validate.rules).string.uuid = true,
+    (buf.validate.field).string.uuid = true
+  ];
+  string block = 2 [
+    (validate.rules).string.min_len = 1,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+message OutputResponse {
+  common.v1.Metadata metadata = 1;
+
+  /*
+   * The block's output.
+   */
+  Output output = 2;
+
+  /*
+   * The error, if any.
+   */
+  common.v1.Error error = 3;
+}
+
+message CancelRequest {
+  string execution = 1;
+}
+
+message CancelResponse {
+  common.v1.Error error = 1;
+}
+
+message TestRequest {
+  google.protobuf.Struct datasource_config = 1;
+  string integration_type = 2;
+  string configuration_id = 3;
+  common.v1.Profile profile = 4;
+  optional google.protobuf.Struct action_config = 5;
+}
+
+message TestResponse {}
+
+message DeleteRequest {
+  string integration = 1;
+  common.v1.Profile profile = 2;
+  string configuration_id = 3;
+  string plugin_name = 4;
+}
+
+message DeleteResponse {}
+
+message Function {
+  message Request {
+    string id = 1 [(buf.validate.field).string.min_len = 1];
+    string name = 2;
+    repeated google.protobuf.Value parameters = 3;
+  }
+
+  message Response {
+    string id = 1 [(buf.validate.field).string.min_len = 1];
+    google.protobuf.Value value = 2;
+    common.v1.Error error = 3;
+  }
+}
+
+message TwoWayRequest {
+  oneof type {
+    option (buf.validate.oneof).required = true;
+
+    ExecuteRequest execute = 1;
+    Function.Response function = 2;
+  }
+}
+
+message TwoWayResponse {
+  oneof type {
+    option (buf.validate.oneof).required = true;
+
+    StreamResponse stream = 1;
+    Function.Request function = 2;
+  }
+}
+
+message Mock {
+  message Params {
+    optional string integration_type = 1;
+    optional string step_name = 2;
+    optional google.protobuf.Value inputs = 3;
+  }
+  message On {
+    optional Params static = 1;
+    optional string dynamic = 2; // function name
+  }
+
+  message Return {
+    oneof type {
+      google.protobuf.Value static = 1;
+      string dynamic = 2; // function name
+    }
+  }
+
+  On on = 1;
+  Return return = 2;
+}
+
+// DEPRECATED
+message MetadataRequestDeprecated {
+  // This is confusing, but integration means integration id
+  string integration = 1;
+  string api_id = 2;
+  common.v1.Profile profile = 3;
+}
+
+message MetadataRequest {
+  // The integration id
+  string integration = 1;
+  common.v1.Profile profile = 2;
+  google.protobuf.Struct step_configuration = 3;
+}
+
+message MetadataResponse {
+  message DatabaseSchemaMetadata {
+    message Column {
+      string name = 1;
+      string type = 2;
+      string escaped_name = 3;
+    }
+
+    message Key {
+      string name = 1;
+      string type = 2;
+      repeated string columns = 3;
+    }
+
+    message Template {
+      string title = 1;
+      string body = 2;
+    }
+
+    message Table {
+      string id = 1;
+      string type = 2;
+      string name = 3;
+      repeated Column columns = 4;
+      repeated Key keys = 5;
+      repeated Template templates = 6;
+      // NOTE: (joey) this is optional in the TS version of this model. should be here as well
+      string schema = 7;
+    }
+
+    message Schema {
+      string id = 1;
+      string name = 2;
+    }
+
+    repeated Table tables = 1;
+    // NOTE: (joey) this is optional in the TS version of this model. should be here as well
+    repeated Schema schemas = 2;
+  }
+
+  message BucketMetadata {
+    string name = 1;
+  }
+
+  message BucketsMetadata {
+    repeated BucketMetadata buckets = 1;
+  }
+
+  oneof metadata {
+    DatabaseSchemaMetadata database_schema_metadata = 1;
+    BucketsMetadata buckets_metadata = 2;
+    plugins.kafka.v1.Metadata kafka = 3;
+    plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 4;
+    plugins.adls.v1.Plugin.Metadata adls = 5;
+  }
+
+  string g_sheets_next_page_token = 6;
+}
+
+message DownloadRequest {
+  string location = 1;
+}
+
+message DownloadResponse {
+  bytes data = 1;
+}
+
+/*
+ * DEPRECATED
+ */
+message WorkflowResponse {
+  message ResponseMeta {
+    int32 status = 1;
+    string message = 2;
+    bool success = 3;
+    // NOTE(frank): I'm omitting the timing. This may not be good. I'll revisit.
+  }
+
+  google.protobuf.Value data = 1;
+  ResponseMeta response_meta = 2;
+}
+
+enum ViewMode {
+  VIEW_MODE_UNSPECIFIED = 0;
+  VIEW_MODE_EDIT = 1;
+  VIEW_MODE_PREVIEW = 2;
+  VIEW_MODE_DEPLOYED = 3;
+}

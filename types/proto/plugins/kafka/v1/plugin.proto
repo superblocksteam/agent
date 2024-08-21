@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package plugins.kafka.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+import "plugins/common/v1/plugin.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/kafka/v1";
+
+message Metadata {
+  message Minified {
+    repeated string topics = 1;
+  }
+
+  repeated Topic topics = 1;
+  repeated Broker brokers = 2;
+}
+
+enum Operation {
+  OPERATION_UNSPECIFIED = 0;
+  OPERATION_CONSUME = 1;
+  OPERATION_PRODUCE = 2;
+}
+
+message Broker {
+  int32 node_id = 1;
+  string address = 2;
+}
+
+message Topic {
+  string name = 1;
+}
+
+message Messages {
+  repeated Message messages = 1;
+}
+
+message Message {
+  string topic = 1;
+  int32 partition = 2;
+  int32 offset = 4;
+
+  // NOTE(frank): Need to use google.protobuf.Timestamp here but our json schema library doesn't support bigint.
+  // Because of this, we can't use the google.protobuf.Timestamp type OR int64..... Since int32 isn't big enough
+  // we have to use a string... // rant over.
+  optional string timestamp = 3;
+  optional google.protobuf.Value key = 5;
+  optional google.protobuf.Value value = 6;
+  int32 length = 7; // NOTE(frank): We could use int64 but some Kafka clients (notably the one we're using) only supports int32.
+  int32 attributes = 8; // NOTE(frank): Protobuf doesn't have an int8 type.
+  map<string, string> headers = 9;
+}
+
+message SASL {
+  enum Mechanism {
+    MECHANISM_UNSPECIFIED = 0;
+    MECHANISM_PLAIN = 1;
+    MECHANISM_SCRAM_SHA256 = 2;
+    MECHANISM_SCRAM_SHA512 = 3;
+    MECHANISM_AWS = 4;
+  }
+
+  Mechanism mechanism = 1;
+
+  // NOTE(frank): I'm choosing not to use a nested oneof here since I think it's straightforward enough.
+
+  // non-aws fields
+  optional string username = 2;
+  optional string password = 3;
+
+  // aws fields
+  optional string access_key_id = 4;
+  optional string secret_key = 5;
+  optional string session_token = 6;
+  optional string authorization_identity = 7;
+}
+
+message Cluster {
+  // NOTE(frank): Due to limitations in our plugin template system, we can't use an array.....
+  string brokers = 1 [
+    (validate.rules).string = {min_len: 1},
+    (buf.validate.field).string = {min_len: 1}
+  ];
+  bool ssl = 2;
+  SASL sasl = 3;
+}
+
+enum Compression {
+  COMPRESSION_UNSPECIFIED = 0;
+  COMPRESSION_GZIP = 1;
+  COMPRESSION_SNAPPY = 2;
+  COMPRESSION_LZ4 = 3;
+  COMPRESSION_ZSTD = 4;
+}
+
+enum Acks {
+  ACKS_UNSPECIFIED = 0;
+  ACKS_NONE = 1;
+  ACKS_LEADER = 2;
+  ACKS_ALL = 3;
+}
+
+// NOTE(frank): Since it's Kafka, there's a zillion options. We'll start with the basics for now.
+message Plugin {
+  message Consume {
+    enum From {
+      FROM_UNSPECIFIED = 0;
+      FROM_BEGINNING = 1;
+      FROM_LATEST = 2;
+      FROM_SEEK = 3;
+    }
+
+    message Seek {
+      string topic = 1 [
+        (validate.rules).string = {min_len: 1},
+        (buf.validate.field).string = {min_len: 1}
+      ];
+      int32 offset = 2;
+      int32 partition = 3;
+    }
+
+    From from = 1 [
+      (validate.rules).enum = {
+        not_in: [0]
+      },
+      (buf.validate.field).enum = {
+        not_in: [0]
+      }
+    ];
+
+    // NOTE(frank): SMH. Because our form template system if VERY limited,
+    // there no way to send an array to the backend if we take in one topic in the UI.
+    string topic = 2;
+
+    optional string group_id = 3;
+    optional string client_id = 4;
+
+    // NOTE(frank): Another instance of template system limitations...
+    Seek seek = 5;
+
+    bool read_uncommitted = 6;
+  }
+
+  message Produce {
+    Acks acks = 1;
+
+    optional string client_id = 2;
+    optional int32 timeout = 3;
+    optional Compression compression = 4;
+    optional string transaction_id = 5;
+
+    bool auto_create_topic = 6;
+    bool idempotent = 7;
+    bool transaction = 8;
+    string messages = 9;
+  }
+
+  optional string name = 1;
+
+  Operation operation = 2;
+
+  Produce produce = 3;
+  Consume consume = 4;
+
+  // NOTE(frank): We can't use oneof because our integraton form template system cannot clear JSON fields.
+  // oneof action_config {
+  //   Produce produce = 3;
+  //   Consume consume = 4;
+  // }
+
+  Cluster cluster = 5;
+
+  // DEPRECATED
+  SuperblocksMetadata superblocksMetadata = 6;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 7;
+}
+
+// DEPRECATED
+message SuperblocksMetadata {
+  optional string plugin_version = 1;
+  optional string synced_from_profile_id = 2;
+}

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package plugins.email.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/email/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Plugin {
+  string emailFrom = 1;
+  string emailTo = 2;
+  string emailCc = 3;
+  string emailBcc = 4;
+  string emailSubject = 5;
+  string emailBody = 6;
+  string emailAttachments = 7;
+  SuperblocksMetadata superblocksMetadata = 8;
+}

@@ -1,0 +1,7 @@
+---
+version: v1
+plugins:
+  - plugin: buf.build/grpc/python
+    out: ../gen/py/superblocks_types
+  - plugin: buf.build/protocolbuffers/python
+    out: ../gen/py/superblocks_types

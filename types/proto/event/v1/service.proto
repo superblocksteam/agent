@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package event.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/event/v1";
+
+message IngestEventRequest {
+  repeated bytes events = 1;
+}
+
+message IngestEventResponse {
+  message ErrorWrapper {
+    string id = 1;
+    string error = 2;
+  }
+
+  int32 success = 1;
+  repeated ErrorWrapper errors = 2;
+}

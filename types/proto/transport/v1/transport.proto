@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package transport.v1;
+
+import "api/v1/api.proto";
+import "api/v1/blocks.proto";
+import "api/v1/service.proto";
+import "buf/validate/validate.proto";
+import "common/v1/errors.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+import "plugins/adls/v1/plugin.proto";
+import "plugins/cosmosdb/v1/plugin.proto";
+import "plugins/kafka/v1/plugin.proto";
+import "store/v1/store.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/transport/v1";
+
+message Performance {
+  message Observable {
+    double start = 1;
+    double end = 2;
+    double value = 3;
+    double bytes = 4;
+    double estimate = 5;
+  }
+
+  bool error = 1;
+  Observable plugin_execution = 2;
+  Observable queue_request = 3;
+  Observable queue_response = 4;
+  Observable kv_store_fetch = 5;
+  Observable kv_store_push = 6;
+  Observable total = 7;
+}
+
+message Variable {
+  string key = 1;
+  api.v1.Variables.Type type = 2;
+  api.v1.Variables.Mode mode = 3;
+}
+
+message Observability {
+  string trace_id = 1;
+  string span_id = 2;
+  map<string, string> baggage = 3;
+  bytes trace_flags = 4;
+}
+
+// NOTE(frank): Gross. I'm not spending any time trying to make this look pretty
+// because it needs to be re-done at some point after control flow. This is a raw
+// port of the existing interface.
+message Request {
+  message Data {
+    message Pinned {
+      string bucket = 1;
+      string name = 2;
+      string version = 3;
+      string event = 4;
+      // Deprecated, use observability instead
+      map<string, string> carrier = 5 [deprecated = true];
+      Observability observability = 6;
+    }
+
+    message Data {
+      message Props {
+        message Binding {
+          string key = 1;
+          string type = 2;
+        }
+
+        message File {
+          string fieldname = 1;
+          string originalname = 2;
+          string encoding = 3;
+          string mimetype = 4;
+          int64 size = 5;
+          string destination = 6;
+          string filename = 7;
+          string path = 8;
+          bytes buffer = 9;
+        }
+
+        google.protobuf.Struct action_configuration = 1;
+        google.protobuf.Struct datasource_configuration = 2;
+        google.protobuf.Struct redacted_datasource_configuration = 3;
+        string execution_id = 4;
+        string step_name = 5;
+        string environment = 6;
+
+        // DEPRECATED
+        repeated Binding binding_keys = 7;
+
+        map<string, Variable> variables = 8;
+        string fileServerUrl = 9 [json_name = "$fileServerUrl"];
+        repeated File files = 10;
+        bool render = 11; // If true, the worker will render the action configuration.
+        string version = 12;
+      }
+
+      message Quota {
+        int32 size = 1;
+        int32 duration = 2;
+      }
+
+      Props props = 1;
+      // d_config stands for datasource configuration - necessary to match the fields used
+      // in the existing worker interface
+      optional google.protobuf.Struct d_config = 2;
+      optional google.protobuf.Struct a_config = 3;
+      Quota quotas = 4;
+    }
+
+    Pinned pinned = 1;
+    Data data = 2;
+  }
+
+  string inbox = 1;
+  Data data = 2;
+  string topic = 3;
+}
+
+// NOTE(frank): We don't have control over this type. We have
+// to work with the existing controller <-> worker interface.
+// Usually it's not a best practice to inline nested structs
+// like this but I think it's okay in this case.
+message Response {
+  message Data {
+    message Data {
+      string key = 1;
+      common.v1.Error err = 2;
+      // Metadata response fields - necessary to match fields used in the existing worker interface
+      // https://github.com/superblocksteam/superblocks/blob/f75d3a80745253458865b66a885cb7f8eb258229/packages/shared/src/types/datasource/metadata/index.ts#L6-L9
+      optional api.v1.MetadataResponse.DatabaseSchemaMetadata db_schema = 3;
+      repeated api.v1.MetadataResponse.BucketMetadata buckets = 4;
+
+      // NOTE(frank): I think we'll need a transport/v2 for this but ideally
+      // we don't have duplcate types like this.
+      optional plugins.kafka.v1.Metadata kafka = 5;
+
+      optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 6;
+      optional plugins.adls.v1.Plugin.Metadata adls = 7;
+      optional google.protobuf.Any dynamodb = 8;
+      optional string g_sheets_next_page_token = 9;
+    }
+    Performance pinned = 1;
+    Data data = 2;
+  }
+  Data data = 1;
+  common.v1.Error pinned = 2;
+}
+
+// DEPRECATED: use api.v1.Definition instead
+message Fetch {
+  message Metadata {
+    string requester = 1; // This is the email
+    string profile = 2; // Because profile isn't a required execution parameter, the default will be different per org.
+    string organization_plan = 3;
+  }
+
+  api.v1.Api api = 1 [
+    (validate.rules).message.required = true,
+    (buf.validate.field).required = true
+  ];
+  map<string, google.protobuf.Struct> integrations = 2;
+  Metadata metadata = 3 [
+    (validate.rules).message.required = true,
+    (buf.validate.field).required = true
+  ];
+  store.v1.Stores stores = 4;
+}
+
+message FetchScheduleJobResp {
+  repeated api.v1.Definition apis = 1;
+}

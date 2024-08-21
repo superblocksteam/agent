@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package plugins.databricks.v1;
+
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/databricks/v1";
+
+message Plugin {
+  string name = 1;
+  DatabricksConnection connection = 2;
+  plugins.common.v1.SQLOperation operation = 3;
+  plugins.common.v1.SQLExecution run_sql = 4;
+  plugins.common.v1.SQLBulkEdit bulk_edit = 5;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 6;
+
+  message DatabricksConnection {
+    optional string default_catalog = 1;
+    optional string default_schema = 2;
+    string host_url = 3;
+    string path = 4;
+    int32 port = 5;
+    string token = 6;
+  }
+}

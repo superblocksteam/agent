@@ -1,0 +1,111 @@
+{
+  "options": {
+    "includeEventOutputs": false,
+    "includeEvents": false
+  },
+  "definition": {
+    "api": {
+      "metadata": {
+        "id": "00000000-0000-0000-0000-100000000003",
+        "organization": "00000000-0000-0000-0000-000000000001",
+        "name": "MyTestApi",
+        "tags": {
+          "inject": "true"
+        }
+      },
+      "trigger": {
+        "application": {
+          "id": "00000000-0000-0000-0000-000000000001"
+        }
+      },
+      "blocks": [
+        {
+          "name": "BLOCK_PARALLEL",
+          "parallel": {
+            "wait": "WAIT_ALL",
+            "static": {
+              "paths": {
+                "PATH_ONE": {
+                  "blocks": [
+                    {
+                      "name": "block_1",
+                      "step": {
+                        "integration": "postgres",
+                        "postgres": {
+                          "body": "SELECT 1;"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "PATH_TWO": {
+                  "blocks": [
+                    {
+                      "name": "block_2",
+                      "step": {
+                        "integration": "postgres",
+                        "postgres": {
+                          "body": "SELECT 1;"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "PATH_THREE": {
+                  "blocks": [
+                    {
+                      "name": "block_3",
+                      "step": {
+                        "integration": "postgres",
+                        "postgres": {
+                          "body": "SELECT 1;"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "PATH_FOUR": {
+                  "blocks": [
+                    {
+                      "name": "block_4",
+                      "step": {
+                        "integration": "postgres",
+                        "postgres": {
+                          "body": "SELECT 1;"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "metadata": {
+      "profile": "production"
+    },
+    "integrations": {
+      "postgres": {
+        "endpoint": {
+          "host": "postgres",
+          "port": 5432
+        },
+        "connection": {
+          "useSsl": false,
+          "useSelfSignedSsl": false
+        },
+        "authentication": {
+          "username": "{{ \"post\" }}{{ \"gres\"}}",
+          "password": "password",
+          "custom": {
+            "databaseName": {
+              "value": "postgres"
+            }
+          }
+        }
+      }
+    }
+  }
+}

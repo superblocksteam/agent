@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package ai.v1;
+
+import "buf/validate/validate.proto";
+import "common/v1/language.proto";
+import "common/v1/utils.proto";
+import "google/protobuf/struct.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/ai/v1";
+
+enum LLM {
+  LLM_UNSPECIFIED = 0;
+  LLM_OPENAI = 1;
+  LLM_ANTHROPIC = 2;
+  LLM_MOCK = 3;
+}
+
+enum MODEL {
+  MODEL_UNSPECIFIED = 0;
+  MODEL_ANTHROPIC_CLAUDE_V1 = 1;
+  MODEL_ANTHROPIC_CLAUDE_V1_0 = 2;
+  MODEL_ANTHROPIC_CLAUDE_V1_2 = 3;
+  MODEL_ANTHROPIC_CLAUDE_INSTANT_V1 = 4;
+  MODEL_ANTHROPIC_CLAUDE_INSTANT_V1_0 = 5;
+  MODEL_OPENAI_GPT432K0314 = 6;
+  MODEL_OPENAI_GPT432K0613 = 26;
+  MODEL_OPENAI_GPT432K = 7;
+  MODEL_OPENAI_GPT40314 = 8;
+  MODEL_OPENAI_GPT40613 = 27;
+  MODEL_OPENAI_GPT4 = 9;
+  MODEL_OPENAI_GPT3_5_TURBO_0301 = 10;
+  MODEL_OPENAI_GPT3_5_TURBO_0613 = 28;
+  MODEL_OPENAI_GPT3_5_TURBO = 11;
+  MODEL_OPENAI_GPT3_5_TURBO_16K = 29;
+  MODEL_OPENAI_GPT3_5_TURBO_16K_0613 = 30;
+  MODEL_OPENAI_GPT3_TEXT_DAVINCI_003 = 12;
+  MODEL_OPENAI_GPT3_TEXT_DAVINCI_002 = 13;
+  MODEL_OPENAI_GPT3_TEXT_CURIE_001 = 14;
+  MODEL_OPENAI_GPT3_TEXT_BAGGAGE_001 = 15;
+  MODEL_OPENAI_GPT3_TEXT_ADA_001 = 16;
+  MODEL_OPENAI_GPT3_TEXT_DAVINCI_001 = 17;
+  MODEL_OPENAI_GPT3_DAVINCI_INSTRUCT_BETA = 18;
+  MODEL_OPENAI_GPT3_DAVINCI = 19;
+  MODEL_OPENAI_GPT3_CURIE_INSTRUCT_BETA = 20;
+  MODEL_OPENAI_GPT3_CURIE = 21;
+  MODEL_OPENAI_GPT3_ADA = 22;
+  MODEL_OPENAI_GPT3_BAGGAGE = 23;
+  MODEL_MOCK_TIER_ONE = 24;
+  MODEL_MOCK_TIER_TWO = 25;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_USER = 1;
+  ROLE_ASSISTANT = 2;
+  ROLE_SYSTEM = 3;
+}
+
+// NOTE(frank): I guess these could just be in the Lnaguage enum.
+enum Syntax {
+  SYNTAX_UNSPECIFIED = 0;
+  SYNTAX_JAVASCRIPT = 1;
+  SYNTAX_PYTHON = 2;
+  SYNTAX_POSTGRESQL = 3;
+  SYNTAX_MSSQL = 4;
+  SYNTAX_MYSQL = 5;
+  SYNTAX_MARIADB = 6;
+  SYNTAX_SNOWFLAKE = 7;
+  SYNTAX_COCKROACHDB = 8;
+  SYNTAX_ROCKSET = 9;
+  SYNTAX_REDSHIFT = 10;
+  SYNTAX_BIGQUERY = 11;
+  SYNTAX_DYNAMODB = 12;
+  SYNTAX_MONGODB = 13;
+  SYNTAX_BINDING = 14;
+  SYNTAX_JSON = 15;
+  SYNTAX_HTML = 16;
+  SYNTAX_API = 17;
+  SYNTAX_PLUGIN_RESTAPI = 18;
+  SYNTAX_PLUGIN_GRAPHQL = 19;
+  SYNTAX_ORACLEDB = 20;
+  SYNTAX_DATABRICKS = 21;
+}
+
+enum Persona {
+  PERSONA_UNSPECIFIED = 0;
+  PERSONA_DEVELOPER = 1;
+  PERSONA_TEACHER = 2;
+}
+
+message Message {
+  Role role = 1;
+  string content = 2 [
+    (validate.rules).string = {min_len: 1},
+    (buf.validate.field).string = {min_len: 1}
+  ];
+}
+
+message Task {
+  message Optimize {
+    /* */
+  }
+
+  message Debug {
+    /* */
+  }
+
+  message Transpile {
+    /* */
+  }
+  message Edit {
+    message Context {
+      oneof configuration {
+        google.protobuf.Struct metadata = 1;
+        common.v1.StringList configuration_ids = 2;
+      }
+    }
+
+    string prompt = 1;
+    Syntax syntax = 2;
+    string snippet = 3;
+    Context context = 4;
+  }
+
+  message Create {
+    message Context {
+      oneof configuration {
+        google.protobuf.Struct metadata = 1;
+        common.v1.StringList configuration_ids = 2;
+      }
+    }
+
+    string prompt = 1;
+    Syntax syntax = 2;
+    Context context = 3;
+  }
+
+  message Explain {
+    Syntax syntax = 1;
+    string snippet = 2;
+    string contents = 3;
+    common.v1.Language language = 4;
+  }
+
+  message Mock {
+    Syntax syntax = 1;
+    string shape = 2;
+    string prompt = 3;
+  }
+
+  oneof kind {
+    Optimize optimize = 1;
+    Edit edit = 2;
+    Explain explain = 3;
+    Create create = 4;
+    Debug debug = 5;
+    Transpile transpile = 7;
+    Mock mock = 8;
+  }
+
+  repeated Message history = 6;
+}

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package plugins.graphql.v1;
+
+import "common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/graphql/v1";
+
+message Custom {
+  common.v1.Property variables = 1;
+  common.v1.Property requestFormat = 2;
+}
+
+message Plugin {
+  string path = 1;
+  repeated common.v1.Property headers = 2;
+  string body = 3;
+  optional Custom custom = 4;
+  common.v1.SuperblocksMetadata superblocksMetadata = 5;
+}

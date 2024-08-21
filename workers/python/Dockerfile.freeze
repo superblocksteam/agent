@@ -1,0 +1,24 @@
+FROM python:3.10.1
+
+WORKDIR /app
+
+# cmake and cython are required
+RUN apt-get update && apt-get install -y cmake && python -m pip install --no-cache-dir cython
+
+# install existing deps
+COPY requirements.txt .
+RUN python -m pip install --upgrade pip
+RUN python -m pip install --no-cache-dir -r requirements.txt
+
+# argument for additional dependency
+ARG ADDITIONAL_DEP
+
+# run additional install
+RUN python -m pip install --no-cache-dir ${ADDITIONAL_DEP}
+
+# update requirements file
+RUN pip freeze > requirements.txt
+
+# keep container running so we can yeet the requirements file
+CMD ["tail", "-f", "/dev/null"]
+

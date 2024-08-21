@@ -1,0 +1,72 @@
+---
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/metrics"
+  prometheus.io/port: "9090"
+autoscaling:
+  disable: false
+  min: 5
+  max: 50
+  cpu: 50
+node:
+  heap: 1024
+resources:
+  limits:
+    memory: 2Gi
+  requests:
+    cpu: 150m
+    memory: 500Mi
+agent: main
+remoteIntakeUrl: https://logs.intake.superblocks.com
+kvstore:
+  maxBytes: 500000000
+  slowClientThreshold: 100000000
+  pool:
+    slow:
+      min: 10
+      max: 50
+    fast:
+      min: 10
+      max: 50
+queue:
+  deploy: false
+  blockMs: 5000
+  batchSize: 2
+  pool:
+    min: 10
+    max: 50
+observability:
+  logs: {}
+  tracing:
+    exporter:
+      url: http://otelcol-collector.observability.svc.cluster.local:4318/v1/traces
+service:
+  logLevel: INFO
+  jsonLog: "true"
+  tls:
+    insecure: true
+  ports:
+    metrics: 9090
+image:
+  repository: ghcr.io/superblocksteam/worker.py
+  tag: <placeholder>
+  pullPolicy: IfNotPresent
+  credentials:
+    registry: ghcr.io
+tolerations:
+  - effect: NoSchedule
+    key: dedicated
+    value: lang-exec-worker
+    operator: Equal
+nodeSelector:
+  superblocks.com/node-type: lang-exec-worker
+# to be used for local testing only
+redis:
+  auth:
+    enabled: true
+    password: dev-agent-key
+  tls:
+    authClients: true
+  replica:
+    replicaCount: 0
+superblocks: {}

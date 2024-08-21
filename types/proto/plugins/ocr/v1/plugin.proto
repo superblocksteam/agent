@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package plugins.ocr.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/ocr/v1";
+
+message Plugin {
+  string action = 1;
+  string file = 2;
+  string fileUrl = 3;
+}

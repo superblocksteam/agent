@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if redis-cli -h 127.0.0.1 -p 6379 ping | grep -q PONG; then
+  echo "{\"level\":\"info\",\"ts\":$(date +%s%3N),\"msg\":\"redis is ready\",\"component\":\"s6\"}"
+  exit 0
+else
+  echo "{\"level\":\"info\",\"ts\":$(date +%s%3N),\"msg\":\"redis is not yet ready\",\"component\":\"s6\"}"
+  exit 1
+fi

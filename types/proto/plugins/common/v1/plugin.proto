@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package plugins.common.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1";
+
+message DynamicWorkflowConfiguration {
+  optional bool enabled = 1;
+  optional string workflow_id = 2;
+}
+
+message AWSConfig {
+  message Auth {
+    optional string access_key_id = 1;
+    optional string secret_key = 2;
+    optional string iam_role_arn = 3;
+  }
+
+  optional string region = 1;
+  optional Auth auth = 2;
+}
+
+message SQLExecution {
+  string sql_body = 1;
+  bool use_parameterized = 2;
+}
+
+message SQLMappedColumns {
+  string json = 1;
+  string sql = 2;
+}
+
+enum SSHAuthMethod {
+  SSH_AUTH_METHOD_UNSPECIFIED = 0;
+  SSH_AUTH_METHOD_PASSWORD = 1;
+  SSH_AUTH_METHOD_PUB_KEY_RSA = 2;
+  SSH_AUTH_METHOD_PUB_KEY_ED25519 = 3;
+  SSH_AUTH_METHOD_USER_PRIVATE_KEY = 4;
+}
+
+message SSHConfiguration {
+  optional SSHAuthMethod authentication_method = 1;
+  optional bool enabled = 2;
+  optional string host = 3;
+  optional string passphrase = 4;
+  optional string password = 5;
+  optional int32 port = 6;
+  optional string private_key = 7;
+  optional string public_key = 8;
+  optional string username = 9;
+}
+
+enum SQLMappingMode {
+  SQL_MAPPING_MODE_UNSPECIFIED = 0;
+  SQL_MAPPING_MODE_AUTO = 1;
+  SQL_MAPPING_MODE_MANUAL = 2;
+}
+
+enum SQLMatchingMode {
+  SQL_MATCHING_MODE_UNSPECIFIED = 0;
+  SQL_MATCHING_MODE_AUTO = 1;
+  SQL_MATCHING_MODE_ADVANCED = 2;
+}
+
+enum SQLOperation {
+  SQL_OPERATION_UNSPECIFIED = 0;
+  SQL_OPERATION_RUN_SQL = 1;
+  SQL_OPERATION_UPDATE_ROWS = 2;
+}
+
+message SQLBulkEdit {
+  optional SQLMatchingMode matching_mode = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    in: [
+      1,
+      2
+    ]
+  }];
+  optional string schema = 2;
+  optional string table = 3;
+  optional string updated_rows = 4;
+  optional string old_rows = 5;
+  repeated string filter_by = 6;
+  optional SQLMappingMode mapping_mode = 7 [(buf.validate.field).enum = {
+    defined_only: true
+    in: [
+      1,
+      2
+    ]
+  }];
+  repeated SQLMappedColumns mapped_columns = 8;
+  optional string inserted_rows = 9;
+  optional string deleted_rows = 10;
+}

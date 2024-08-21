@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package plugins.salesforce.v1;
+
+import "plugins/common/v1/auth.proto";
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/salesforce/v1";
+
+message Plugin {
+  // children messages
+  message SalesforceConnection {
+    string instance_url = 1;
+    common.v1.Auth auth = 2;
+  }
+
+  message Metadata {
+    message Object {
+      message Field {
+        string name = 1;
+        string label = 2;
+        string type = 3;
+      }
+
+      repeated Field fields = 1;
+    }
+
+    repeated Object objects = 1;
+  }
+
+  // In general actions are grouped into types (Soql, Crud, Bulk) that describe
+  // the shape of the requst. Each of these types will have a list of "actions"
+  // that they support.
+  //
+  // Seach "type" of action will have a field called "action" that specifies
+  // the type.
+  //
+  // For singleton actions (e.g. Soql), it will still follow the same pattern.
+
+  // Action Fields
+  message Soql {
+    // Specified for singleton types.
+    enum SoqlAction {
+      SOQL_ACTION_UNSPECIFIED = 0;
+      SOQL_ACTION_SOQL = 1;
+    }
+
+    string sql_body = 1;
+    SoqlAction action = 2;
+  }
+
+  message Crud {
+    enum CrudAction {
+      CRUD_ACTION_UNSPECIFIED = 0;
+      CRUD_ACTION_CREATE = 1;
+      CRUD_ACTION_UPDATE = 2;
+      CRUD_ACTION_DELETE = 3;
+      CRUD_ACTION_READ = 4;
+    }
+
+    string resource_type = 1;
+    CrudAction action = 2;
+    // delete doesn't require body, other actions do
+    string resource_body = 3;
+    // delete requires resource_id, other actions don't
+    string resource_id = 4;
+  }
+
+  message Bulk {
+    enum BulkAction {
+      BULK_ACTION_UNSPECIFIED = 0;
+      BULK_ACTION_CREATE = 1;
+      BULK_ACTION_UPDATE = 2;
+      BULK_ACTION_DELETE = 3;
+      BULK_ACTION_UPSERT = 4;
+    }
+
+    string resource_type = 1;
+    BulkAction action = 2;
+    // delete and update require Id, which will be part of body
+    string resource_body = 3;
+    // only used for upsert https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/walkthrough_upsert.htm
+    string external_id = 4;
+  }
+
+  // Plugin fields
+  optional string name = 1;
+  SalesforceConnection connection = 2;
+  oneof salesforce_action {
+    Soql soql = 3;
+    Crud crud = 4;
+    Bulk bulk = 5;
+  }
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 6;
+}

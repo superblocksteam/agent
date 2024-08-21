@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package security.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "utils/v1/utils.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/security/v1";
+
+service SignatureService {
+  rpc Sign(SignRequest) returns (SignResponse) {
+    option (google.api.http) = {
+      post: "/v1/signature/sign"
+      body: "*"
+    };
+  }
+  rpc Verify(VerifyRequest) returns (VerifyResponse) {
+    option (google.api.http) = {
+      post: "/v1/signature/verify"
+      body: "*"
+    };
+  }
+}
+
+message Resource {
+  message Literal {
+    google.protobuf.Value data = 1;
+    optional utils.v1.Signature signature = 2;
+    string resource_id = 3;
+    string organization_id = 4;
+    google.protobuf.Timestamp last_updated = 5;
+    string type = 6;
+    int32 page_version = 7;
+  }
+
+  message ApiLiteral {
+    google.protobuf.Value data = 1;
+  }
+
+  oneof config {
+    option (buf.validate.oneof).required = true;
+
+    google.protobuf.Value api = 1 [deprecated = true];
+    Literal literal = 2;
+    ApiLiteral api_literal = 5;
+  }
+
+  oneof git_ref {
+    option (buf.validate.oneof).required = true;
+    string commit_id = 3;
+    string branch_name = 4;
+  }
+}
+
+message SignRequest {
+  Resource resource = 1;
+}
+
+message SignResponse {
+  utils.v1.Signature signature = 1;
+}
+
+message VerifyRequest {
+  repeated Resource resources = 1;
+}
+
+message VerifyResponse {
+  string key_id = 1;
+}

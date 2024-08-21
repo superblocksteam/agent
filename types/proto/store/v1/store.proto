@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package store.v1;
+
+import "google/protobuf/struct.proto";
+import "secrets/v1/secrets.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/store/v1";
+
+message Pair {
+  string key = 1;
+  google.protobuf.Value value = 2;
+}
+
+message Stores {
+  repeated secrets.v1.Store secrets = 1;
+
+  // NOTE(frank): We could have other types of stores (i.e. cache, config, etc.) in the future.
+}

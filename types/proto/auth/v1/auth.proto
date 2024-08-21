@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/auth/v1";
+
+message Claims {
+  string user_email = 1;
+  string org_id = 2;
+  string org_type = 3;
+  string rbac_role = 4;
+  repeated string rbac_groups = 5;
+  string user_type = 6;
+}

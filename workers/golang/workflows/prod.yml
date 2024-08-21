@@ -1,0 +1,63 @@
+---
+name: "Deploy Prod"
+on:
+  workflow_dispatch:
+    inputs:
+      appVersion:
+        description: "Application version to deploy."
+        required: true
+jobs:
+  prod:
+    uses: superblocksteam/internal-github-actions/.github/workflows/helm-deploy.yaml@main
+    with:
+      appVersion: ${{ github.event.inputs.appVersion }}
+      opItemK8sConfig: EKS_PROD_GITHUB_CI_KUBE_CONFIG
+      opVault: Prod
+      opEnvFile: .env.prod
+      environment: production
+      name: worker-go
+      namespace: cloud-agents
+    secrets:
+      OP_ACCOUNT: ${{ secrets.OP_ACCOUNT }}
+      OP_PASSWORD: ${{ secrets.OP_PASSWORD }}
+      OP_SECRET_KEY: ${{ secrets.OP_SECRET_KEY }}
+      OP_DEVICE: ${{ secrets.OP_DEVICE }}
+      SLACK_WEBHOOK_URL: ${{ secrets.PROD_SLACK_WEBHOOK_URL }}
+      OVPN_PROFILE_CONFIG_FILE: ${{ secrets.PROD_VPN_OVPN_FILE }}
+      OVPN_PASSWORD: ${{ secrets.PROD_VPN_PASSWORD }}
+      OVPN_USERNAME: ${{ secrets.PROD_VPN_USERNAME }}
+  prod-eu:
+    uses: superblocksteam/internal-github-actions/.github/workflows/helm-deploy.yaml@main
+    with:
+      appVersion: ${{ github.event.inputs.appVersion }}
+      opItemK8sConfig: EKS_PROD_EU_KUBE_CONFIG
+      opVault: Prod
+      opEnvFile: .env.prod-eu
+      environment: prod-eu
+      name: worker-go
+      namespace: cloud-agents
+    secrets:
+      OP_ACCOUNT: ${{ secrets.OP_ACCOUNT }}
+      OP_PASSWORD: ${{ secrets.OP_PASSWORD }}
+      OP_SECRET_KEY: ${{ secrets.OP_SECRET_KEY }}
+      OP_DEVICE: ${{ secrets.OP_DEVICE }}
+      SLACK_WEBHOOK_URL: ${{ secrets.PROD_SLACK_WEBHOOK_URL }}
+      OVPN_PROFILE_CONFIG_FILE: ${{ secrets.PROD_EU_VPN_OVPN_FILE }}
+      OVPN_PASSWORD: ${{ secrets.PROD_EU_VPN_PASSWORD }}
+      OVPN_USERNAME: ${{ secrets.PROD_EU_VPN_USERNAME }}
+  trigger-synthetics:
+    needs:
+      - prod
+      - prod-eu
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - prod
+          - prod-eu
+    uses: superblocksteam/internal-github-actions/.github/workflows/trigger-synthetics.yaml@main
+    with:
+      environment: ${{ matrix.env }}
+    secrets:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_APP_KEY: ${{ secrets.DD_APP_KEY }}

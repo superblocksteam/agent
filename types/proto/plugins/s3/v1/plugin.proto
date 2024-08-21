@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package plugins.s3.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/s3/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Property {
+  string key = 1;
+  int32 value = 2;
+  bool editable = 3;
+  bool internal = 4;
+  string description = 5;
+  bool mandatory = 6;
+  string type = 7;
+  string defaultValue = 8;
+  string minRange = 9;
+  string maxRange = 10;
+  repeated string valueOptions = 11;
+}
+
+message Custom {
+  Property presignedExpiration = 1;
+}
+
+message Plugin {
+  string resource = 1;
+  string action = 2;
+  string path = 3;
+  string body = 4;
+  string fileObjects = 5;
+  string responseType = 6;
+  Custom custom = 7;
+  SuperblocksMetadata superblocksMetadata = 8;
+}

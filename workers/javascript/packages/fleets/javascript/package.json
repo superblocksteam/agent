@@ -1,0 +1,40 @@
+{
+  "name": "@superblocks/fleet.javascript",
+  "version": "0.0.1",
+  "description": "Fleet that handles the Javascript plugin.",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "engines": {
+    "node": "20.16.0",
+    "npm": "10.8.2"
+  },
+  "scripts": {
+    "start": "nodemon",
+    "clean": "rm -rf ./dist *tsbuildinfo",
+    "build": "swc ./src --out-dir ./dist --config-file .swcrc",
+    "lint": "eslint . --ext ts",
+    "lint:fix": "eslint . --ext ts --fix",
+    "typecheck": "npx tsc"
+  },
+  "devDependencies": {
+    "@swc/cli": "0.4.0",
+    "@swc/core": "1.7.9",
+    "@types/node": "20.14.8",
+    "@typescript-eslint/eslint-plugin": "7.8.0",
+    "@typescript-eslint/parser": "7.8.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "8.1.0",
+    "eslint-import-resolver-typescript": "2.5.0",
+    "eslint-plugin-import": "2.29.1",
+    "eslint-plugin-prettier": "5.2.1",
+    "nodemon": "3.1.4",
+    "ts-node": "10.9.2",
+    "typescript": "5.5.4"
+  },
+  "dependencies": {
+    "@superblocks/worker.js": "workspace:*",
+    "@superblocksteam/javascript": "workspace:*",
+    "ion-js": "5.2.1",
+    "jsbi": "4.3.0"
+  }
+}

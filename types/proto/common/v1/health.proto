@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/common/v1";
+
+message Pool {
+  optional uint32 hits = 1;
+  optional uint32 misses = 2;
+  optional uint32 timeouts = 3;
+  optional uint32 total = 4;
+  optional uint32 idle = 5;
+  optional uint32 stale = 6;
+}
+
+message HealthResponse {
+  string message = 1;
+  int64 uptime = 2;
+  string version = 3;
+  common.v1.Pool store = 4;
+  common.v1.Pool stream = 5;
+  string id = 6;
+}

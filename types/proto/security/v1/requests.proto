@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package security.v1;
+
+import "google/protobuf/timestamp.proto";
+import "security/v1/service.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/security/v1";
+
+// POST api/v1/keyrotations/claim-resources
+message ResourcesToResignRequest {
+  // Unique name for the caller for locking purposes
+  string claimed_by = 1;
+  int32 limit = 2;
+}
+message ResourcesToResignResponse {
+  repeated security.v1.Resource resources = 1;
+}
+
+// GET api/v1/keyrotations
+enum KeyRotationStatus {
+  KEY_ROTATION_STATUS_UNSPECIFIED = 0;
+  KEY_ROTATION_STATUS_IN_PROGRESS = 1;
+  KEY_ROTATION_STATUS_COMPLETED = 2;
+  KEY_ROTATION_STATUS_FAILED = 3;
+  KEY_ROTATION_STATUS_CANCELED = 4;
+}
+
+message KeyRotation {
+  string id = 1;
+  KeyRotationStatus status = 2;
+  int32 resources_completed = 3;
+  int32 resources_total = 4;
+  string signing_key_id = 5;
+  google.protobuf.Timestamp created = 6;
+  google.protobuf.Timestamp updated = 7;
+  google.protobuf.Timestamp completed = 8;
+}
+
+message KeyRotationsResponse {
+  repeated KeyRotation key_rotations = 1;
+}

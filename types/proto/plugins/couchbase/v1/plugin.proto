@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package plugins.couchbase.v1;
+
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/couchbase/v1";
+
+message Plugin {
+  string name = 1;
+  CouchbaseConnection connection = 2;
+
+  // TODO (jason4012) we should unify the interface
+  // so that endpoint doesn't have to be always be set here for SSH tunneling
+  CouchbaseEndpoint endpoint = 3;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 4;
+  plugins.common.v1.SSHConfiguration tunnel = 5;
+  oneof couchbase_action {
+    plugins.common.v1.SQLExecution run_sql = 6;
+    CouchbaseInsert insert = 7;
+    CouchbaseGet get = 8;
+    CouchbaseRemove remove = 9;
+  }
+
+  message CouchbaseEndpoint {
+    string host = 1;
+    int32 port = 2;
+  }
+
+  message CouchbaseIdentifier {
+    string scope = 1;
+    string collection = 2;
+  }
+
+  message CouchbaseConnection {
+    string user = 2;
+    string password = 3;
+    string bucket = 4;
+    bool use_tls = 5;
+    optional string url = 6;
+  }
+
+  message CouchbaseInsert {
+    string key = 1;
+    string value = 2;
+    CouchbaseIdentifier identifier = 3;
+  }
+
+  message CouchbaseGet {
+    string key = 1;
+    CouchbaseIdentifier identifier = 2;
+  }
+
+  message CouchbaseRemove {
+    string key = 1;
+    CouchbaseIdentifier identifier = 2;
+  }
+}

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ai.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/ai/v1";
+
+message Vector {
+  string id = 1;
+  repeated float values = 2;
+  google.protobuf.Struct metadata = 3;
+  optional float score = 4;
+}

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package plugins.mariadb.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/mariadb/v1";
+
+message MappedColumns {
+  string json = 1;
+  string sql = 2;
+}
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Plugin {
+  string body = 1;
+  bool usePreparedSql = 2;
+  optional string operation = 3;
+  optional string useAdvancedMatching = 4;
+  optional string table = 5;
+  optional string newValues = 6;
+  optional string oldValues = 7;
+  repeated string filterBy = 8;
+  optional string mappingMode = 9;
+  repeated MappedColumns mappedColumns = 10;
+  SuperblocksMetadata superblocksMetadata = 11;
+  optional string insertedRows = 12;
+  optional string deletedRows = 13;
+  optional string schema = 14;
+}

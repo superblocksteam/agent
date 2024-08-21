@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "buf/validate/validate.proto";
+import "common/v1/common.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "plugins/common/v1/auth.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/api/v1";
+
+service IntegrationAuthService {
+  rpc CheckAuth(CheckAuthRequest) returns (CheckAuthResponse) {
+    option (google.api.http) = {
+      post: "/v1/check-auth"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "CheckAuth"};
+  }
+
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/v1/login"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Login"};
+  }
+
+  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/logout"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Logout"};
+  }
+
+  rpc ExchangeOauthCodeForToken(ExchangeOauthCodeForTokenRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/exchange-code"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "ExchangeOauthCodeForToken"};
+  }
+
+  rpc RequestOauthPasswordToken(RequestOauthPasswordTokenRequest) returns (RequestOauthPasswordTokenResponse) {
+    option (google.api.http) = {
+      post: "/v1/request-token"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Request Token"};
+  }
+}
+
+message CheckAuthRequest {
+  string integration_id = 1 [
+    (validate.rules).string.uuid = true,
+    (buf.validate.field).string.uuid = true
+  ];
+  common.v1.Profile profile = 2;
+}
+
+message CheckAuthResponse {
+  bool authenticated = 1;
+}
+
+message LoginRequest {
+  string integration_id = 1 [
+    (validate.rules).string.uuid = true,
+    (buf.validate.field).string.uuid = true
+  ];
+  common.v1.Profile profile = 2;
+
+  optional string token = 3;
+  optional string refreshToken = 4;
+  optional string idToken = 5; // firebase
+  optional int64 expiryTimestamp = 6;
+}
+
+message LoginResponse {
+  bool success = 1;
+}
+
+message ExchangeOauthCodeForTokenRequest {
+  // this is deprecated, use auth_type/auth_config/configuration_id instead
+  string integration_id = 1 [
+    (validate.rules).string.uuid = true,
+    (buf.validate.field).string.uuid = true,
+    deprecated = true
+  ];
+  common.v1.Profile profile = 2;
+  string access_code = 3;
+  string auth_type = 4;
+  plugins.common.v1.OAuth.AuthorizationCodeFlow auth_config = 5;
+  //this is needed to construct authId for access/refresh token(s)
+  string configuration_id = 6 [
+    (validate.rules).string.uuid = true,
+    (buf.validate.field).string.uuid = true
+  ];
+}
+
+message RequestOauthPasswordTokenRequest {
+  string integration_id = 1 [
+    (validate.rules).string.uuid = true,
+    (buf.validate.field).string.uuid = true
+  ];
+  common.v1.Profile profile = 2;
+  string username = 3;
+  string password = 4;
+}
+
+message RequestOauthPasswordTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expiry_timestamp = 3;
+}

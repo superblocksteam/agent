@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package intake.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/intake/v1";
+
+message Logs {
+  repeated google.protobuf.Struct logs = 1;
+}

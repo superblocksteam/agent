@@ -1,0 +1,4 @@
+#!/command/with-contenv sh
+
+echo "{\"level\":\"info\",\"ts\":$(date +%s%3N),\"msg\":\"starting component redis\",\"component\":\"s6\"}"
+s6-notifyoncheck -d -w 2000 -n 60 s6-setuidgid 100:101 redis-server --dir /app/redis
