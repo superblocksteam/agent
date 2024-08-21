@@ -1,0 +1,321 @@
+---
+name: "Default"
+on:
+  push:
+    branches:
+      - "**"
+permissions:
+  id-token: write
+  contents: write
+env:
+  REGISTRY_IMAGE: ghcr.io/superblocksteam/worker.py
+jobs:
+  check:
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: install dev deps
+        run: make deps-dev
+      - name: pre-commit
+        uses: pre-commit/action@v3.0.1
+  test:
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: test
+        run: pip3 install tox && tox
+  # build assets (i.e. docker image)
+  # we don't push here so that we can optimize total CI time
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: blacksmith-4vcpu-ubuntu-2204
+            packages: "msodbcsql17"
+            imageType: "deps"
+            dockerfile: "./Dockerfile"
+          - runner: blacksmith-4vcpu-ubuntu-2204-arm
+            imageType: "deps"
+            dockerfile: "./Dockerfile"
+          - runner: blacksmith-4vcpu-ubuntu-2204
+            imageType: "slim"
+            dockerfile: "./slim.Dockerfile"
+          - runner: blacksmith-4vcpu-ubuntu-2204-arm
+            imageType: "slim"
+            dockerfile: "./slim.Dockerfile"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_ADMIN_TOKEN }}
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+      - name: login
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Configure AWS credentials - us-west-2
+        uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
+        with:
+          role-to-assume: arn:aws:iam::873097255122:role/cicd_ecr_write
+          aws-region: us-west-2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            EXTRA_DEBIAN_PACKAGES: ${{ matrix.packages }}
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.imageType }}-${{ matrix.runner }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+  merge:
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    needs:
+      - build
+    strategy:
+      matrix:
+        include:
+          - imageType: "deps"
+            suffix: ""
+          - imageType: "slim"
+            suffix: "-slim"
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digests-${{ matrix.imageType }}-*
+          merge-multiple: true
+          path: /tmp/digests
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          flavor: suffix=${{ matrix.suffix }}
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha,format=long
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+  integration:
+    needs: [merge]
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    strategy:
+      matrix:
+        include:
+          - suffix: ""
+          - suffix: "-slim"
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_ADMIN_TOKEN }}
+      - name: kind install
+        uses: helm/kind-action@e89fbc4770626936aff83e4c6d7cbb45dd44ec90
+        with:
+          version: v0.14.0
+          install_only: true
+      - name: kind deploy
+        timeout-minutes: 2
+        run: make deploy-kind
+      - name: login
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: pull image
+        run: |
+          docker pull ghcr.io/superblocksteam/worker.py:sha-${{ github.sha }}${{ matrix.suffix }}
+      - name: copy image
+        run: |
+          kind load docker-image ghcr.io/superblocksteam/worker.py:sha-${{ github.sha }}${{ matrix.suffix }} --name superblocks
+      - name: helm install
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.9.0
+      - name: worker.py deploy
+        run: |
+          env $(cat config/.env.ci) make deploy-helm \
+            ENVIRONMENT=ci \
+            IMAGE_TAG=sha-${{ github.sha }}${{ matrix.suffix }} \
+            HELM_TIMEOUT=2m \
+            HELM_EXTRA_ARGS="--debug --kube-context kind-superblocks --set queue.deploy=true --set kvstore.maxBytes=10000000 --set node.heap=100 --set autoscaling.disable=true --set autoscaling.min=5 --set resources=null --set tolerations=null --set nodeSelector=null --set image.credentials=null --set queue.token=dev-agent-key --set kvstore.token=dev-agent-key --set superblocks.key=dev-agent-key"
+        env:
+          K8S_NAMESPACE: worker
+      - name: expose redis
+        run: kubectl --context kind-superblocks -n worker port-forward svc/worker-python-redis-master 6379:6379 &
+      - name: cat
+        if: always()
+        run: |
+          kubectl --context kind-superblocks -n worker describe pods
+          kubectl --context kind-superblocks -n worker get all
+          kubectl --context kind-superblocks -n worker logs -l component=worker.py
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.1
+      - name: install deps
+        run: |
+          pushd worker.js || exit 1
+          npm install -g pnpm@8.15.4
+          pnpm config set @superblocksteam:registry https://npm.pkg.github.com/
+          pnpm config set //npm.pkg.github.com/:_authToken ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+          pnpm install
+          pnpm --filter @superblocksteam/worker.js build
+          popd
+        env:
+          NPM_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: run integration tests
+        run: |
+          pip install ".[test]"
+          pushd integration_test || exit 1
+          pytest .
+          popd
+        env:
+          SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
+          SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+      - name: run load tests
+        if: github.ref == 'refs/heads/main'
+        run: |
+          pushd worker.js || exit 1
+          pnpm --filter @superblocks/worker.js test:load
+          popd
+        env:
+          SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
+          SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+          SUPERBLOCKS_AGENT_LOAD_CONCURRENCY: 15
+          SUPERBLOCKS_AGENT_LOAD_REQUESTS: 1500
+          SUPERBLOCKS_PYTHON_TESTS: true
+  # We use this step as a dependency on other jobs
+  # This is why the conditionals are on the steps - hacky I know
+  publish:
+    needs: [integration]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Generate release
+        id: bump_semver
+        uses: anothrNick/github-tag-action@1.67.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+      - name: Tag Python worker
+        uses: shrink/actions-docker-registry-tag@v4
+        with:
+          registry: ghcr.io
+          repository: superblocksteam/worker.py
+          target: sha-${{ github.sha }}
+          token: ${{ secrets.GHCR_TOKEN }}
+          tags: |
+            ${{ steps.bump_semver.outputs.tag }}
+            latest
+      - name: Tag Python worker
+        uses: shrink/actions-docker-registry-tag@v4
+        with:
+          registry: ghcr.io
+          repository: superblocksteam/worker.py
+          target: sha-${{ github.sha }}-slim
+          token: ${{ secrets.GHCR_TOKEN }}
+          tags: |
+            ${{ steps.bump_semver.outputs.tag }}-slim
+            latest-slim
+    outputs:
+      semver: ${{ steps.bump_semver.outputs.tag }}
+  staging:
+    needs:
+      - publish
+    if: github.ref == 'refs/heads/main'
+    uses: superblocksteam/internal-github-actions/.github/workflows/helm-deploy.yaml@main
+    with:
+      appVersion: ${{ needs.publish.outputs.semver }}
+      opItemK8sConfig: EKS_STAGING_GITHUB_CI_KUBE_CONFIG
+      opVault: Staging
+      opEnvFile: .env.staging
+      environment: staging
+      name: worker.py
+      namespace: cloud-agents
+    secrets:
+      OP_ACCOUNT: ${{ secrets.OP_ACCOUNT }}
+      OP_PASSWORD: ${{ secrets.OP_PASSWORD }}
+      OP_SECRET_KEY: ${{ secrets.OP_SECRET_KEY }}
+      OP_DEVICE: ${{ secrets.OP_DEVICE }}
+      SLACK_WEBHOOK_URL: ${{ secrets.STAGING_SLACK_WEBHOOK_URL }}
+      OVPN_PROFILE_CONFIG_FILE: ${{ secrets.STAGING_VPN_OVPN_FILE }}
+      OVPN_PASSWORD: ${{ secrets.STAGING_VPN_PASSWORD }}
+      OVPN_USERNAME: ${{ secrets.STAGING_VPN_USERNAME }}
+  speed_test:
+    needs: [staging]
+    name: speed test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: run speed test
+        run: make speed-test SPEED_TEST_ENV=staging
+  trigger-synthetics:
+    needs:
+      - staging
+    uses: superblocksteam/internal-github-actions/.github/workflows/trigger-synthetics.yaml@main
+    with:
+      environment: staging
+    secrets:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_APP_KEY: ${{ secrets.DD_APP_KEY }}

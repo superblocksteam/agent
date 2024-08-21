@@ -1,0 +1,14 @@
+formatter:
+  type: basic
+  include_document_start: true
+
+indent: 2
+
+disallow_anchors: false
+
+include:
+  - .*\.(yaml|yml)$
+
+exclude:
+  - helm/
+  - docker-compose.yaml

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package plugins.mongodb.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/mongodb/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Plugin {
+  string resource = 1;
+  string action = 2;
+  string pipeline = 3;
+  string projection = 4;
+  string query = 5;
+  string field = 6;
+  string sortby = 7;
+  // Super confusing, but these could be bindings or string ints
+  // If they were not potential bindings, we should let them be int32s instead
+  string limit = 8;
+  string skip = 9;
+
+  string document = 10;
+  string replacement = 11;
+  string filter = 12;
+  string options = 13;
+  string update = 14;
+  string distinctKey = 15;
+  SuperblocksMetadata superblocksMetadata = 16;
+}

@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "commonjs",
+        "incremental": true,
+        "declaration": true,
+        "sourceMap": true,
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "composite": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "strictNullChecks": false,
+        "skipLibCheck": true,
+        "declarationMap": true,
+    },
+    "exclude": ["**/*.test.ts", "**/lib"]
+}

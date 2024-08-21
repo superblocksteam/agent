@@ -1,0 +1,1490 @@
+import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
+import { Message, proto3, Timestamp, Value } from "@bufbuild/protobuf";
+import { Metadata } from "../../common/v1/common_pb";
+import { Signature } from "../../utils/v1/utils_pb";
+import { Variables } from "./blocks_pb";
+import { Plugin } from "../../plugins/python/v1/plugin_pb";
+import { Plugin as Plugin$1 } from "../../plugins/bigquery/v1/plugin_pb";
+import { Plugin as Plugin$2 } from "../../plugins/dynamodb/v1/plugin_pb";
+import { Plugin as Plugin$3 } from "../../plugins/email/v1/plugin_pb";
+import { Plugin as Plugin$4 } from "../../plugins/graphql/v1/plugin_pb";
+import { Plugin as Plugin$5 } from "../../plugins/gsheets/v1/plugin_pb";
+import { Plugin as Plugin$6 } from "../../plugins/mariadb/v1/plugin_pb";
+import { Plugin as Plugin$7 } from "../../plugins/mssql/v1/plugin_pb";
+import { Plugin as Plugin$8 } from "../../plugins/mysql/v1/plugin_pb";
+import { Plugin as Plugin$9 } from "../../plugins/postgresql/v1/plugin_pb";
+import { Plugin as Plugin$10 } from "../../plugins/redshift/v1/plugin_pb";
+import { Plugin as Plugin$11 } from "../../plugins/restapi/v1/plugin_pb";
+import { Plugin as Plugin$12 } from "../../plugins/restapiintegration/v1/plugin_pb";
+import { Plugin as Plugin$13 } from "../../plugins/rockset/v1/plugin_pb";
+import { Plugin as Plugin$14 } from "../../plugins/s3/v1/plugin_pb";
+import { Plugin as Plugin$15 } from "../../plugins/snowflake/v1/plugin_pb";
+import { Plugin as Plugin$16 } from "../../plugins/workflow/v1/plugin_pb";
+import { Plugin as Plugin$17 } from "../../plugins/javascript/v1/plugin_pb";
+import { Plugin as Plugin$18 } from "../../plugins/mongodb/v1/plugin_pb";
+import { Plugin as Plugin$19 } from "../../plugins/gcs/v1/plugin_pb";
+import { Plugin as Plugin$20 } from "../../plugins/openai/v1/plugin_pb";
+import { Plugin as Plugin$21 } from "../../plugins/ocr/v1/plugin_pb";
+import { Plugin as Plugin$22 } from "../../plugins/kafka/v1/plugin_pb";
+import { Plugin as Plugin$23 } from "../../plugins/cockroachdb/v1/plugin_pb";
+import { Plugin as Plugin$24 } from "../../plugins/athena/v1/plugin_pb";
+import { Plugin as Plugin$25 } from "../../plugins/redis/v1/plugin_pb";
+import { Plugin as Plugin$26 } from "../../plugins/smtp/v1/plugin_pb";
+import { Plugin as Plugin$27 } from "../../plugins/salesforce/v1/plugin_pb";
+import { Plugin as Plugin$28 } from "../../plugins/adls/v1/plugin_pb";
+import { Plugin as Plugin$29 } from "../../plugins/pinecone/v1/plugin_pb";
+import { Plugin as Plugin$30 } from "../../plugins/cosmosdb/v1/plugin_pb";
+import { Plugin as Plugin$31 } from "../../plugins/oracledb/v1/plugin_pb";
+import { Plugin as Plugin$32 } from "../../plugins/databricks/v1/plugin_pb";
+import { Plugin as Plugin$33 } from "../../plugins/couchbase/v1/plugin_pb";
+import { Plugin as Plugin$34 } from "../../plugins/custom/v1/plugin_pb";
+/**
+ * @generated from message api.v1.Api
+ */
+export declare class Api extends Message<Api> {
+    /**
+     * @generated from field: common.v1.Metadata metadata = 1;
+     */
+    metadata?: Metadata;
+    /**
+     * @generated from field: repeated api.v1.Block blocks = 2;
+     */
+    blocks: Block[];
+    /**
+     * @generated from field: api.v1.Trigger trigger = 3;
+     */
+    trigger?: Trigger;
+    /**
+     * @generated from field: optional utils.v1.Signature signature = 4;
+     */
+    signature?: Signature;
+    constructor(data?: PartialMessage<Api>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Api";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Api;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Api;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Api;
+    static equals(a: Api | PlainMessage<Api> | undefined, b: Api | PlainMessage<Api> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Profiles
+ */
+export declare class Profiles extends Message<Profiles> {
+    /**
+     * @generated from field: api.v1.Profiles.Modes modes = 1;
+     */
+    modes?: Profiles_Modes;
+    constructor(data?: PartialMessage<Profiles>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Profiles";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Profiles;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Profiles;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Profiles;
+    static equals(a: Profiles | PlainMessage<Profiles> | undefined, b: Profiles | PlainMessage<Profiles> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Profiles.Modes
+ */
+export declare class Profiles_Modes extends Message<Profiles_Modes> {
+    /**
+     * @generated from field: api.v1.Profiles.Modes.Settings editor = 1;
+     */
+    editor?: Profiles_Modes_Settings;
+    /**
+     * @generated from field: api.v1.Profiles.Modes.Settings preview = 2;
+     */
+    preview?: Profiles_Modes_Settings;
+    /**
+     * @generated from field: api.v1.Profiles.Modes.Settings deployed = 3;
+     */
+    deployed?: Profiles_Modes_Settings;
+    constructor(data?: PartialMessage<Profiles_Modes>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Profiles.Modes";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Profiles_Modes;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Profiles_Modes;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Profiles_Modes;
+    static equals(a: Profiles_Modes | PlainMessage<Profiles_Modes> | undefined, b: Profiles_Modes | PlainMessage<Profiles_Modes> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Profiles.Modes.Settings
+ */
+export declare class Profiles_Modes_Settings extends Message<Profiles_Modes_Settings> {
+    /**
+     * @generated from field: string default = 1;
+     */
+    default: string;
+    /**
+     * @generated from field: repeated string available = 2;
+     */
+    available: string[];
+    constructor(data?: PartialMessage<Profiles_Modes_Settings>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Profiles.Modes.Settings";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Profiles_Modes_Settings;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Profiles_Modes_Settings;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Profiles_Modes_Settings;
+    static equals(a: Profiles_Modes_Settings | PlainMessage<Profiles_Modes_Settings> | undefined, b: Profiles_Modes_Settings | PlainMessage<Profiles_Modes_Settings> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Trigger
+ */
+export declare class Trigger extends Message<Trigger> {
+    /**
+     * @generated from oneof api.v1.Trigger.config
+     */
+    config: {
+        /**
+         * @generated from field: api.v1.Trigger.Application application = 1;
+         */
+        value: Trigger_Application;
+        case: "application";
+    } | {
+        /**
+         * @generated from field: api.v1.Trigger.Workflow workflow = 2;
+         */
+        value: Trigger_Workflow;
+        case: "workflow";
+    } | {
+        /**
+         * @generated from field: api.v1.Trigger.Job job = 3;
+         */
+        value: Trigger_Job;
+        case: "job";
+    } | {
+        case: undefined;
+        value?: undefined;
+    };
+    constructor(data?: PartialMessage<Trigger>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger;
+    static equals(a: Trigger | PlainMessage<Trigger> | undefined, b: Trigger | PlainMessage<Trigger> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Trigger.Application
+ */
+export declare class Trigger_Application extends Message<Trigger_Application> {
+    /**
+     * @generated from field: api.v1.Trigger.Application.Options options = 1;
+     */
+    options?: Trigger_Application_Options;
+    /**
+     * @generated from field: string id = 2;
+     */
+    id: string;
+    /**
+     * @generated from field: optional string page_id = 3;
+     */
+    pageId?: string;
+    constructor(data?: PartialMessage<Trigger_Application>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Application";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Application;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Application;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Application;
+    static equals(a: Trigger_Application | PlainMessage<Trigger_Application> | undefined, b: Trigger_Application | PlainMessage<Trigger_Application> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Trigger.Application.Options
+ */
+export declare class Trigger_Application_Options extends Message<Trigger_Application_Options> {
+    /**
+     * @generated from field: optional bool execute_on_page_load = 1;
+     */
+    executeOnPageLoad?: boolean;
+    constructor(data?: PartialMessage<Trigger_Application_Options>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Application.Options";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Application_Options;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Application_Options;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Application_Options;
+    static equals(a: Trigger_Application_Options | PlainMessage<Trigger_Application_Options> | undefined, b: Trigger_Application_Options | PlainMessage<Trigger_Application_Options> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Trigger.Workflow
+ */
+export declare class Trigger_Workflow extends Message<Trigger_Workflow> {
+    /**
+     * @generated from field: api.v1.Trigger.Workflow.Options options = 1;
+     */
+    options?: Trigger_Workflow_Options;
+    /**
+     * @generated from field: api.v1.Trigger.Workflow.Parameters parameters = 2;
+     */
+    parameters?: Trigger_Workflow_Parameters;
+    constructor(data?: PartialMessage<Trigger_Workflow>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Workflow";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Workflow;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Workflow;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Workflow;
+    static equals(a: Trigger_Workflow | PlainMessage<Trigger_Workflow> | undefined, b: Trigger_Workflow | PlainMessage<Trigger_Workflow> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Trigger.Workflow.Options
+ */
+export declare class Trigger_Workflow_Options extends Message<Trigger_Workflow_Options> {
+    /**
+     * @generated from field: api.v1.Profiles profiles = 1;
+     */
+    profiles?: Profiles;
+    /**
+     * @generated from field: optional string deployedCommitId = 2;
+     */
+    deployedCommitId?: string;
+    constructor(data?: PartialMessage<Trigger_Workflow_Options>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Workflow.Options";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Workflow_Options;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Workflow_Options;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Workflow_Options;
+    static equals(a: Trigger_Workflow_Options | PlainMessage<Trigger_Workflow_Options> | undefined, b: Trigger_Workflow_Options | PlainMessage<Trigger_Workflow_Options> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Trigger.Workflow.Parameters
+ */
+export declare class Trigger_Workflow_Parameters extends Message<Trigger_Workflow_Parameters> {
+    /**
+     * @generated from field: map<string, api.v1.Trigger.Workflow.Parameters.QueryParam> query = 1;
+     */
+    query: {
+        [key: string]: Trigger_Workflow_Parameters_QueryParam;
+    };
+    /**
+     * @generated from field: map<string, google.protobuf.Value> body = 2;
+     */
+    body: {
+        [key: string]: Value;
+    };
+    constructor(data?: PartialMessage<Trigger_Workflow_Parameters>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Workflow.Parameters";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Workflow_Parameters;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Workflow_Parameters;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Workflow_Parameters;
+    static equals(a: Trigger_Workflow_Parameters | PlainMessage<Trigger_Workflow_Parameters> | undefined, b: Trigger_Workflow_Parameters | PlainMessage<Trigger_Workflow_Parameters> | undefined): boolean;
+}
+/**
+ * You can specify multiple values for a single query parameter in a URL
+ *
+ * @generated from message api.v1.Trigger.Workflow.Parameters.QueryParam
+ */
+export declare class Trigger_Workflow_Parameters_QueryParam extends Message<Trigger_Workflow_Parameters_QueryParam> {
+    /**
+     * @generated from field: repeated string values = 1;
+     */
+    values: string[];
+    constructor(data?: PartialMessage<Trigger_Workflow_Parameters_QueryParam>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Workflow.Parameters.QueryParam";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Workflow_Parameters_QueryParam;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Workflow_Parameters_QueryParam;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Workflow_Parameters_QueryParam;
+    static equals(a: Trigger_Workflow_Parameters_QueryParam | PlainMessage<Trigger_Workflow_Parameters_QueryParam> | undefined, b: Trigger_Workflow_Parameters_QueryParam | PlainMessage<Trigger_Workflow_Parameters_QueryParam> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Trigger.Job
+ */
+export declare class Trigger_Job extends Message<Trigger_Job> {
+    /**
+     * @generated from field: api.v1.Trigger.Job.Options options = 1;
+     */
+    options?: Trigger_Job_Options;
+    /**
+     * @generated from field: int32 frequency = 2;
+     */
+    frequency: number;
+    /**
+     * @generated from field: api.v1.Trigger.Job.Interval interval = 3;
+     */
+    interval: Trigger_Job_Interval;
+    /**
+     * @generated from field: int32 day_of_month = 4;
+     */
+    dayOfMonth: number;
+    /**
+     * @generated from field: api.v1.Trigger.Job.Days days = 5;
+     */
+    days?: Trigger_Job_Days;
+    /**
+     * @generated from field: google.protobuf.Timestamp time = 6;
+     */
+    time?: Timestamp;
+    /**
+     * @generated from field: string timezone_locale = 8;
+     */
+    timezoneLocale: string;
+    constructor(data?: PartialMessage<Trigger_Job>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Job";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Job;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Job;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Job;
+    static equals(a: Trigger_Job | PlainMessage<Trigger_Job> | undefined, b: Trigger_Job | PlainMessage<Trigger_Job> | undefined): boolean;
+}
+/**
+ * @generated from enum api.v1.Trigger.Job.Interval
+ */
+export declare enum Trigger_Job_Interval {
+    /**
+     * @generated from enum value: INTERVAL_UNSPECIFIED = 0;
+     */
+    UNSPECIFIED = 0,
+    /**
+     * @generated from enum value: INTERVAL_MINUTE = 1;
+     */
+    MINUTE = 1,
+    /**
+     * @generated from enum value: INTERVAL_HOUR = 2;
+     */
+    HOUR = 2,
+    /**
+     * @generated from enum value: INTERVAL_DAY = 3;
+     */
+    DAY = 3,
+    /**
+     * @generated from enum value: INTERVAL_WEEK = 4;
+     */
+    WEEK = 4,
+    /**
+     * @generated from enum value: INTERVAL_MONTH = 5;
+     */
+    MONTH = 5
+}
+/**
+ * @generated from message api.v1.Trigger.Job.Options
+ */
+export declare class Trigger_Job_Options extends Message<Trigger_Job_Options> {
+    /**
+     * @generated from field: api.v1.Profiles profiles = 1;
+     */
+    profiles?: Profiles;
+    /**
+     * @generated from field: bool send_email_on_failure = 2;
+     */
+    sendEmailOnFailure: boolean;
+    /**
+     * @generated from field: optional string deployedCommitId = 3;
+     */
+    deployedCommitId?: string;
+    constructor(data?: PartialMessage<Trigger_Job_Options>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Job.Options";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Job_Options;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Job_Options;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Job_Options;
+    static equals(a: Trigger_Job_Options | PlainMessage<Trigger_Job_Options> | undefined, b: Trigger_Job_Options | PlainMessage<Trigger_Job_Options> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Trigger.Job.Days
+ */
+export declare class Trigger_Job_Days extends Message<Trigger_Job_Days> {
+    /**
+     * @generated from field: bool sunday = 1;
+     */
+    sunday: boolean;
+    /**
+     * @generated from field: bool monday = 2;
+     */
+    monday: boolean;
+    /**
+     * @generated from field: bool tuesday = 3;
+     */
+    tuesday: boolean;
+    /**
+     * @generated from field: bool wednesday = 4;
+     */
+    wednesday: boolean;
+    /**
+     * @generated from field: bool thursday = 5;
+     */
+    thursday: boolean;
+    /**
+     * @generated from field: bool friday = 6;
+     */
+    friday: boolean;
+    /**
+     * @generated from field: bool saturday = 7;
+     */
+    saturday: boolean;
+    constructor(data?: PartialMessage<Trigger_Job_Days>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Trigger.Job.Days";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Trigger_Job_Days;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Trigger_Job_Days;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Trigger_Job_Days;
+    static equals(a: Trigger_Job_Days | PlainMessage<Trigger_Job_Days> | undefined, b: Trigger_Job_Days | PlainMessage<Trigger_Job_Days> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Blocks
+ */
+export declare class Blocks extends Message<Blocks> {
+    /**
+     * @generated from field: repeated api.v1.Block blocks = 1;
+     */
+    blocks: Block[];
+    constructor(data?: PartialMessage<Blocks>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Blocks";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Blocks;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Blocks;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Blocks;
+    static equals(a: Blocks | PlainMessage<Blocks> | undefined, b: Blocks | PlainMessage<Blocks> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block
+ */
+export declare class Block extends Message<Block> {
+    /**
+     * @generated from field: string name = 1;
+     */
+    name: string;
+    /**
+     * @generated from oneof api.v1.Block.config
+     */
+    config: {
+        /**
+         * @generated from field: api.v1.Block.Break break = 2;
+         */
+        value: Block_Break;
+        case: "break";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Return return = 3;
+         */
+        value: Block_Return;
+        case: "return";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Wait wait = 4;
+         */
+        value: Block_Wait;
+        case: "wait";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Parallel parallel = 5;
+         */
+        value: Block_Parallel;
+        case: "parallel";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Conditional conditional = 6;
+         */
+        value: Block_Conditional;
+        case: "conditional";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Loop loop = 7;
+         */
+        value: Block_Loop;
+        case: "loop";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.TryCatch try_catch = 8;
+         */
+        value: Block_TryCatch;
+        case: "tryCatch";
+    } | {
+        /**
+         * @generated from field: api.v1.Step step = 9;
+         */
+        value: Step;
+        case: "step";
+    } | {
+        /**
+         * @generated from field: api.v1.Variables variables = 10;
+         */
+        value: Variables;
+        case: "variables";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Throw throw = 11;
+         */
+        value: Block_Throw;
+        case: "throw";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Stream stream = 12;
+         */
+        value: Block_Stream;
+        case: "stream";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Send send = 13;
+         */
+        value: Block_Send;
+        case: "send";
+    } | {
+        case: undefined;
+        value?: undefined;
+    };
+    constructor(data?: PartialMessage<Block>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block;
+    static equals(a: Block | PlainMessage<Block> | undefined, b: Block | PlainMessage<Block> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Parallel
+ */
+export declare class Block_Parallel extends Message<Block_Parallel> {
+    /**
+     * @generated from oneof api.v1.Block.Parallel.config
+     */
+    config: {
+        /**
+         * @generated from field: api.v1.Block.Parallel.Static static = 1;
+         */
+        value: Block_Parallel_Static;
+        case: "static";
+    } | {
+        /**
+         * @generated from field: api.v1.Block.Parallel.Dynamic dynamic = 2;
+         */
+        value: Block_Parallel_Dynamic;
+        case: "dynamic";
+    } | {
+        case: undefined;
+        value?: undefined;
+    };
+    /**
+     * @generated from field: api.v1.Block.Parallel.Wait wait = 3;
+     */
+    wait: Block_Parallel_Wait;
+    /**
+     * @generated from field: optional int32 pool_size = 4;
+     */
+    poolSize?: number;
+    constructor(data?: PartialMessage<Block_Parallel>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Parallel";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Parallel;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Parallel;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Parallel;
+    static equals(a: Block_Parallel | PlainMessage<Block_Parallel> | undefined, b: Block_Parallel | PlainMessage<Block_Parallel> | undefined): boolean;
+}
+/**
+ * @generated from enum api.v1.Block.Parallel.Wait
+ */
+export declare enum Block_Parallel_Wait {
+    /**
+     * @generated from enum value: WAIT_UNSPECIFIED = 0;
+     */
+    UNSPECIFIED = 0,
+    /**
+     * Wait for every thread to complete.
+     *
+     * @generated from enum value: WAIT_ALL = 1;
+     */
+    ALL = 1,
+    /**
+     * Do not wait for any thread to complete.
+     *
+     * @generated from enum value: WAIT_NONE = 2;
+     */
+    NONE = 2
+}
+/**
+ * @generated from message api.v1.Block.Parallel.Static
+ */
+export declare class Block_Parallel_Static extends Message<Block_Parallel_Static> {
+    /**
+     * @generated from field: map<string, api.v1.Blocks> paths = 1;
+     */
+    paths: {
+        [key: string]: Blocks;
+    };
+    constructor(data?: PartialMessage<Block_Parallel_Static>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Parallel.Static";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Parallel_Static;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Parallel_Static;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Parallel_Static;
+    static equals(a: Block_Parallel_Static | PlainMessage<Block_Parallel_Static> | undefined, b: Block_Parallel_Static | PlainMessage<Block_Parallel_Static> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Parallel.Dynamic
+ */
+export declare class Block_Parallel_Dynamic extends Message<Block_Parallel_Dynamic> {
+    /**
+     * @generated from field: string paths = 1;
+     */
+    paths: string;
+    /**
+     * @generated from field: api.v1.Block.Parallel.Dynamic.Variables variables = 2;
+     */
+    variables?: Block_Parallel_Dynamic_Variables;
+    /**
+     * @generated from field: repeated api.v1.Block blocks = 3;
+     */
+    blocks: Block[];
+    constructor(data?: PartialMessage<Block_Parallel_Dynamic>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Parallel.Dynamic";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Parallel_Dynamic;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Parallel_Dynamic;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Parallel_Dynamic;
+    static equals(a: Block_Parallel_Dynamic | PlainMessage<Block_Parallel_Dynamic> | undefined, b: Block_Parallel_Dynamic | PlainMessage<Block_Parallel_Dynamic> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Parallel.Dynamic.Variables
+ */
+export declare class Block_Parallel_Dynamic_Variables extends Message<Block_Parallel_Dynamic_Variables> {
+    /**
+     * @generated from field: string item = 1;
+     */
+    item: string;
+    constructor(data?: PartialMessage<Block_Parallel_Dynamic_Variables>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Parallel.Dynamic.Variables";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Parallel_Dynamic_Variables;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Parallel_Dynamic_Variables;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Parallel_Dynamic_Variables;
+    static equals(a: Block_Parallel_Dynamic_Variables | PlainMessage<Block_Parallel_Dynamic_Variables> | undefined, b: Block_Parallel_Dynamic_Variables | PlainMessage<Block_Parallel_Dynamic_Variables> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Conditional
+ */
+export declare class Block_Conditional extends Message<Block_Conditional> {
+    /**
+     * @generated from field: api.v1.Block.Conditional.Condition if = 1;
+     */
+    if?: Block_Conditional_Condition;
+    /**
+     * @generated from field: repeated api.v1.Block.Conditional.Condition else_if = 2;
+     */
+    elseIf: Block_Conditional_Condition[];
+    /**
+     * @generated from field: api.v1.Blocks else = 3;
+     */
+    else?: Blocks;
+    constructor(data?: PartialMessage<Block_Conditional>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Conditional";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Conditional;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Conditional;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Conditional;
+    static equals(a: Block_Conditional | PlainMessage<Block_Conditional> | undefined, b: Block_Conditional | PlainMessage<Block_Conditional> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Conditional.Condition
+ */
+export declare class Block_Conditional_Condition extends Message<Block_Conditional_Condition> {
+    /**
+     * @generated from field: string condition = 1;
+     */
+    condition: string;
+    /**
+     * @generated from field: repeated api.v1.Block blocks = 2;
+     */
+    blocks: Block[];
+    constructor(data?: PartialMessage<Block_Conditional_Condition>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Conditional.Condition";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Conditional_Condition;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Conditional_Condition;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Conditional_Condition;
+    static equals(a: Block_Conditional_Condition | PlainMessage<Block_Conditional_Condition> | undefined, b: Block_Conditional_Condition | PlainMessage<Block_Conditional_Condition> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Loop
+ */
+export declare class Block_Loop extends Message<Block_Loop> {
+    /**
+     * *
+     * This can be a binding that evaluates to one of three things:
+     *  1. An integer           IF type if TYPE_FOR.
+     *  2. A JSON encoded list  IF type is TYPE_FOREACH.
+     *  3. A boolean            IF type is TYPE_WHILE. NOTE that this expressition will be re-evaluated on each iteration.
+     *
+     * @generated from field: string range = 1;
+     */
+    range: string;
+    /**
+     * @generated from field: api.v1.Block.Loop.Type type = 2;
+     */
+    type: Block_Loop_Type;
+    /**
+     * @generated from field: api.v1.Block.Loop.Variables variables = 3;
+     */
+    variables?: Block_Loop_Variables;
+    /**
+     * @generated from field: repeated api.v1.Block blocks = 4;
+     */
+    blocks: Block[];
+    constructor(data?: PartialMessage<Block_Loop>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Loop";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Loop;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Loop;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Loop;
+    static equals(a: Block_Loop | PlainMessage<Block_Loop> | undefined, b: Block_Loop | PlainMessage<Block_Loop> | undefined): boolean;
+}
+/**
+ * @generated from enum api.v1.Block.Loop.Type
+ */
+export declare enum Block_Loop_Type {
+    /**
+     * @generated from enum value: TYPE_UNSPECIFIED = 0;
+     */
+    UNSPECIFIED = 0,
+    /**
+     * @generated from enum value: TYPE_FOR = 1;
+     */
+    FOR = 1,
+    /**
+     * @generated from enum value: TYPE_FOREACH = 2;
+     */
+    FOREACH = 2,
+    /**
+     * @generated from enum value: TYPE_WHILE = 3;
+     */
+    WHILE = 3
+}
+/**
+ * @generated from message api.v1.Block.Loop.Variables
+ */
+export declare class Block_Loop_Variables extends Message<Block_Loop_Variables> {
+    /**
+     * The index of the loop.
+     *
+     * @generated from field: string index = 1;
+     */
+    index: string;
+    /**
+     * The current item; index if none.
+     *
+     * @generated from field: string item = 2;
+     */
+    item: string;
+    constructor(data?: PartialMessage<Block_Loop_Variables>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Loop.Variables";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Loop_Variables;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Loop_Variables;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Loop_Variables;
+    static equals(a: Block_Loop_Variables | PlainMessage<Block_Loop_Variables> | undefined, b: Block_Loop_Variables | PlainMessage<Block_Loop_Variables> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.TryCatch
+ */
+export declare class Block_TryCatch extends Message<Block_TryCatch> {
+    /**
+     * @generated from field: api.v1.Blocks try = 1;
+     */
+    try?: Blocks;
+    /**
+     * @generated from field: api.v1.Blocks catch = 2;
+     */
+    catch?: Blocks;
+    /**
+     * @generated from field: api.v1.Blocks finally = 3;
+     */
+    finally?: Blocks;
+    /**
+     * @generated from field: api.v1.Block.TryCatch.Variables variables = 4;
+     */
+    variables?: Block_TryCatch_Variables;
+    constructor(data?: PartialMessage<Block_TryCatch>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.TryCatch";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_TryCatch;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_TryCatch;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_TryCatch;
+    static equals(a: Block_TryCatch | PlainMessage<Block_TryCatch> | undefined, b: Block_TryCatch | PlainMessage<Block_TryCatch> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.TryCatch.Variables
+ */
+export declare class Block_TryCatch_Variables extends Message<Block_TryCatch_Variables> {
+    /**
+     * The error inside of the catch block.
+     *
+     * @generated from field: string error = 1;
+     */
+    error: string;
+    constructor(data?: PartialMessage<Block_TryCatch_Variables>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.TryCatch.Variables";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_TryCatch_Variables;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_TryCatch_Variables;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_TryCatch_Variables;
+    static equals(a: Block_TryCatch_Variables | PlainMessage<Block_TryCatch_Variables> | undefined, b: Block_TryCatch_Variables | PlainMessage<Block_TryCatch_Variables> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Break
+ */
+export declare class Block_Break extends Message<Block_Break> {
+    /**
+     * @generated from field: string condition = 1;
+     */
+    condition: string;
+    constructor(data?: PartialMessage<Block_Break>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Break";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Break;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Break;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Break;
+    static equals(a: Block_Break | PlainMessage<Block_Break> | undefined, b: Block_Break | PlainMessage<Block_Break> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Return
+ */
+export declare class Block_Return extends Message<Block_Return> {
+    /**
+     * @generated from field: string data = 1;
+     */
+    data: string;
+    constructor(data?: PartialMessage<Block_Return>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Return";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Return;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Return;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Return;
+    static equals(a: Block_Return | PlainMessage<Block_Return> | undefined, b: Block_Return | PlainMessage<Block_Return> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Throw
+ */
+export declare class Block_Throw extends Message<Block_Throw> {
+    /**
+     * @generated from field: string error = 1;
+     */
+    error: string;
+    constructor(data?: PartialMessage<Block_Throw>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Throw";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Throw;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Throw;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Throw;
+    static equals(a: Block_Throw | PlainMessage<Block_Throw> | undefined, b: Block_Throw | PlainMessage<Block_Throw> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Wait
+ */
+export declare class Block_Wait extends Message<Block_Wait> {
+    /**
+     * @generated from field: string condition = 1;
+     */
+    condition: string;
+    constructor(data?: PartialMessage<Block_Wait>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Wait";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Wait;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Wait;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Wait;
+    static equals(a: Block_Wait | PlainMessage<Block_Wait> | undefined, b: Block_Wait | PlainMessage<Block_Wait> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Stream
+ */
+export declare class Block_Stream extends Message<Block_Stream> {
+    /**
+     * @generated from field: api.v1.Block.Stream.Trigger trigger = 1;
+     */
+    trigger?: Block_Stream_Trigger;
+    /**
+     * @generated from field: api.v1.Blocks process = 2;
+     */
+    process?: Blocks;
+    /**
+     * @generated from field: api.v1.Block.Stream.Variables variables = 3;
+     */
+    variables?: Block_Stream_Variables;
+    /**
+     * @generated from field: api.v1.Block.Stream.Options options = 4;
+     */
+    options?: Block_Stream_Options;
+    constructor(data?: PartialMessage<Block_Stream>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Stream";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Stream;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Stream;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Stream;
+    static equals(a: Block_Stream | PlainMessage<Block_Stream> | undefined, b: Block_Stream | PlainMessage<Block_Stream> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Stream.Variables
+ */
+export declare class Block_Stream_Variables extends Message<Block_Stream_Variables> {
+    /**
+     * @generated from field: string item = 1;
+     */
+    item: string;
+    constructor(data?: PartialMessage<Block_Stream_Variables>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Stream.Variables";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Stream_Variables;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Stream_Variables;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Stream_Variables;
+    static equals(a: Block_Stream_Variables | PlainMessage<Block_Stream_Variables> | undefined, b: Block_Stream_Variables | PlainMessage<Block_Stream_Variables> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Stream.Options
+ */
+export declare class Block_Stream_Options extends Message<Block_Stream_Options> {
+    /**
+     * The UI has "auto send" but we need the default to be false
+     * So our name here needs to be the opposite.
+     *
+     * @generated from field: bool disable_auto_send = 1;
+     */
+    disableAutoSend: boolean;
+    constructor(data?: PartialMessage<Block_Stream_Options>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Stream.Options";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Stream_Options;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Stream_Options;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Stream_Options;
+    static equals(a: Block_Stream_Options | PlainMessage<Block_Stream_Options> | undefined, b: Block_Stream_Options | PlainMessage<Block_Stream_Options> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Stream.Trigger
+ */
+export declare class Block_Stream_Trigger extends Message<Block_Stream_Trigger> {
+    /**
+     * @generated from field: string name = 1;
+     */
+    name: string;
+    /**
+     * @generated from field: api.v1.Step step = 2;
+     */
+    step?: Step;
+    constructor(data?: PartialMessage<Block_Stream_Trigger>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Stream.Trigger";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Stream_Trigger;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Stream_Trigger;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Stream_Trigger;
+    static equals(a: Block_Stream_Trigger | PlainMessage<Block_Stream_Trigger> | undefined, b: Block_Stream_Trigger | PlainMessage<Block_Stream_Trigger> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Block.Send
+ */
+export declare class Block_Send extends Message<Block_Send> {
+    /**
+     * @generated from field: string message = 1;
+     */
+    message: string;
+    constructor(data?: PartialMessage<Block_Send>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Block.Send";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Block_Send;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Block_Send;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Block_Send;
+    static equals(a: Block_Send | PlainMessage<Block_Send> | undefined, b: Block_Send | PlainMessage<Block_Send> | undefined): boolean;
+}
+/**
+ * @generated from message api.v1.Step
+ */
+export declare class Step extends Message<Step> {
+    /**
+     * Important: integration means integration id
+     *
+     * @generated from field: string integration = 1;
+     */
+    integration: string;
+    /**
+     * @generated from oneof api.v1.Step.config
+     */
+    config: {
+        /**
+         * @generated from field: plugins.python.v1.Plugin python = 2;
+         */
+        value: Plugin;
+        case: "python";
+    } | {
+        /**
+         * @generated from field: plugins.bigquery.v1.Plugin bigquery = 3;
+         */
+        value: Plugin$1;
+        case: "bigquery";
+    } | {
+        /**
+         * @generated from field: plugins.dynamodb.v1.Plugin dynamodb = 4;
+         */
+        value: Plugin$2;
+        case: "dynamodb";
+    } | {
+        /**
+         * @generated from field: plugins.email.v1.Plugin email = 5;
+         */
+        value: Plugin$3;
+        case: "email";
+    } | {
+        /**
+         * @generated from field: plugins.graphql.v1.Plugin graphql = 6;
+         */
+        value: Plugin$4;
+        case: "graphql";
+    } | {
+        /**
+         * @generated from field: plugins.graphql.v1.Plugin graphqlintegration = 7;
+         */
+        value: Plugin$4;
+        case: "graphqlintegration";
+    } | {
+        /**
+         * @generated from field: plugins.gsheets.v1.Plugin gsheets = 8;
+         */
+        value: Plugin$5;
+        case: "gsheets";
+    } | {
+        /**
+         * @generated from field: plugins.mariadb.v1.Plugin mariadb = 9;
+         */
+        value: Plugin$6;
+        case: "mariadb";
+    } | {
+        /**
+         * @generated from field: plugins.mssql.v1.Plugin mssql = 10;
+         */
+        value: Plugin$7;
+        case: "mssql";
+    } | {
+        /**
+         * @generated from field: plugins.mysql.v1.Plugin mysql = 11;
+         */
+        value: Plugin$8;
+        case: "mysql";
+    } | {
+        /**
+         * @generated from field: plugins.postgresql.v1.Plugin postgres = 12;
+         */
+        value: Plugin$9;
+        case: "postgres";
+    } | {
+        /**
+         * @generated from field: plugins.redshift.v1.Plugin redshift = 13;
+         */
+        value: Plugin$10;
+        case: "redshift";
+    } | {
+        /**
+         * @generated from field: plugins.restapi.v1.Plugin restapi = 14;
+         */
+        value: Plugin$11;
+        case: "restapi";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin restapiintegration = 15;
+         */
+        value: Plugin$12;
+        case: "restapiintegration";
+    } | {
+        /**
+         * @generated from field: plugins.rockset.v1.Plugin rockset = 16;
+         */
+        value: Plugin$13;
+        case: "rockset";
+    } | {
+        /**
+         * @generated from field: plugins.s3.v1.Plugin s3 = 17;
+         */
+        value: Plugin$14;
+        case: "s3";
+    } | {
+        /**
+         * @generated from field: plugins.snowflake.v1.Plugin snowflake = 18;
+         */
+        value: Plugin$15;
+        case: "snowflake";
+    } | {
+        /**
+         * @generated from field: plugins.workflow.v1.Plugin workflow = 19;
+         */
+        value: Plugin$16;
+        case: "workflow";
+    } | {
+        /**
+         * @generated from field: plugins.javascript.v1.Plugin javascript = 20;
+         */
+        value: Plugin$17;
+        case: "javascript";
+    } | {
+        /**
+         * @generated from field: plugins.mongodb.v1.Plugin mongodb = 21;
+         */
+        value: Plugin$18;
+        case: "mongodb";
+    } | {
+        /**
+         * @generated from field: plugins.gcs.v1.Plugin gcs = 22;
+         */
+        value: Plugin$19;
+        case: "gcs";
+    } | {
+        /**
+         * @generated from field: plugins.openai.v1.Plugin openai = 23;
+         */
+        value: Plugin$20;
+        case: "openai";
+    } | {
+        /**
+         * Remapped due to proto not allowing dashes in field names
+         *
+         * @generated from field: plugins.ocr.v1.Plugin ocr = 24 [json_name = "superblocks-ocr"];
+         */
+        value: Plugin$21;
+        case: "ocr";
+    } | {
+        /**
+         * @generated from field: plugins.kafka.v1.Plugin kafka = 25;
+         */
+        value: Plugin$22;
+        case: "kafka";
+    } | {
+        /**
+         * @generated from field: plugins.kafka.v1.Plugin confluent = 26;
+         */
+        value: Plugin$22;
+        case: "confluent";
+    } | {
+        /**
+         * @generated from field: plugins.kafka.v1.Plugin msk = 27;
+         */
+        value: Plugin$22;
+        case: "msk";
+    } | {
+        /**
+         * @generated from field: plugins.kafka.v1.Plugin redpanda = 28;
+         */
+        value: Plugin$22;
+        case: "redpanda";
+    } | {
+        /**
+         * There's also aiven(postgres|opensearch|redis|mysql|cassandra)
+         *
+         * @generated from field: plugins.kafka.v1.Plugin aivenkafka = 29;
+         */
+        value: Plugin$22;
+        case: "aivenkafka";
+    } | {
+        /**
+         * @generated from field: plugins.cockroachdb.v1.Plugin cockroachdb = 30;
+         */
+        value: Plugin$23;
+        case: "cockroachdb";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin airtable = 31;
+         */
+        value: Plugin$12;
+        case: "airtable";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin notion = 32;
+         */
+        value: Plugin$12;
+        case: "notion";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin pagerduty = 33;
+         */
+        value: Plugin$12;
+        case: "pagerduty";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin sendgrid = 34;
+         */
+        value: Plugin$12;
+        case: "sendgrid";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin slack = 35;
+         */
+        value: Plugin$12;
+        case: "slack";
+    } | {
+        /**
+         * @generated from field: plugins.athena.v1.Plugin athena = 36;
+         */
+        value: Plugin$24;
+        case: "athena";
+    } | {
+        /**
+         * @generated from field: plugins.redis.v1.Plugin redis = 37;
+         */
+        value: Plugin$25;
+        case: "redis";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin asana = 38;
+         */
+        value: Plugin$12;
+        case: "asana";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin github = 39;
+         */
+        value: Plugin$12;
+        case: "github";
+    } | {
+        /**
+         * @generated from field: plugins.smtp.v1.Plugin smtp = 40;
+         */
+        value: Plugin$26;
+        case: "smtp";
+    } | {
+        /**
+         * @generated from field: plugins.salesforce.v1.Plugin salesforce = 41;
+         */
+        value: Plugin$27;
+        case: "salesforce";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin bitbucket = 42;
+         */
+        value: Plugin$12;
+        case: "bitbucket";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin circleci = 43;
+         */
+        value: Plugin$12;
+        case: "circleci";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin front = 44;
+         */
+        value: Plugin$12;
+        case: "front";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin intercom = 45;
+         */
+        value: Plugin$12;
+        case: "intercom";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin segment = 46;
+         */
+        value: Plugin$12;
+        case: "segment";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin launchdarkly = 47;
+         */
+        value: Plugin$12;
+        case: "launchdarkly";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin dropbox = 48;
+         */
+        value: Plugin$12;
+        case: "dropbox";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin twilio = 49;
+         */
+        value: Plugin$12;
+        case: "twilio";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin googledrive = 50;
+         */
+        value: Plugin$12;
+        case: "googledrive";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin googleanalytics = 51;
+         */
+        value: Plugin$12;
+        case: "googleanalytics";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin box = 52;
+         */
+        value: Plugin$12;
+        case: "box";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin hubspot = 53;
+         */
+        value: Plugin$12;
+        case: "hubspot";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin stripe = 54;
+         */
+        value: Plugin$12;
+        case: "stripe";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin zoom = 55;
+         */
+        value: Plugin$12;
+        case: "zoom";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin jira = 56;
+         */
+        value: Plugin$12;
+        case: "jira";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin zendesk = 57;
+         */
+        value: Plugin$12;
+        case: "zendesk";
+    } | {
+        /**
+         * @generated from field: plugins.adls.v1.Plugin adls = 58;
+         */
+        value: Plugin$28;
+        case: "adls";
+    } | {
+        /**
+         * @generated from field: plugins.pinecone.v1.Plugin pinecone = 59;
+         */
+        value: Plugin$29;
+        case: "pinecone";
+    } | {
+        /**
+         * @generated from field: plugins.cosmosdb.v1.Plugin cosmosdb = 60;
+         */
+        value: Plugin$30;
+        case: "cosmosdb";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin datadog = 61;
+         */
+        value: Plugin$12;
+        case: "datadog";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin xero = 62;
+         */
+        value: Plugin$12;
+        case: "xero";
+    } | {
+        /**
+         * @generated from field: plugins.oracledb.v1.Plugin oracledb = 63;
+         */
+        value: Plugin$31;
+        case: "oracledb";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin elasticsearch = 64;
+         */
+        value: Plugin$12;
+        case: "elasticsearch";
+    } | {
+        /**
+         * @generated from field: plugins.databricks.v1.Plugin databricks = 65;
+         */
+        value: Plugin$32;
+        case: "databricks";
+    } | {
+        /**
+         * @generated from field: plugins.couchbase.v1.Plugin couchbase = 66;
+         */
+        value: Plugin$33;
+        case: "couchbase";
+    } | {
+        /**
+         * @generated from field: plugins.custom.v1.Plugin custom = 67;
+         */
+        value: Plugin$34;
+        case: "custom";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin anthropic = 68;
+         */
+        value: Plugin$12;
+        case: "anthropic";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin cohere = 69;
+         */
+        value: Plugin$12;
+        case: "cohere";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin fireworks = 70;
+         */
+        value: Plugin$12;
+        case: "fireworks";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin mistral = 71;
+         */
+        value: Plugin$12;
+        case: "mistral";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin groq = 72;
+         */
+        value: Plugin$12;
+        case: "groq";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin perplexity = 73;
+         */
+        value: Plugin$12;
+        case: "perplexity";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin stabilityai = 74;
+         */
+        value: Plugin$12;
+        case: "stabilityai";
+    } | {
+        /**
+         * @generated from field: plugins.restapiintegration.v1.Plugin gemini = 75;
+         */
+        value: Plugin$12;
+        case: "gemini";
+    } | {
+        case: undefined;
+        value?: undefined;
+    };
+    constructor(data?: PartialMessage<Step>);
+    static readonly runtime: typeof proto3;
+    static readonly typeName = "api.v1.Step";
+    static readonly fields: FieldList;
+    static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Step;
+    static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Step;
+    static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Step;
+    static equals(a: Step | PlainMessage<Step> | undefined, b: Step | PlainMessage<Step> | undefined): boolean;
+}

@@ -1,0 +1,129 @@
+---
+version: '3.7'
+x-build: &build
+  image: ghcr.io/superblocksteam/worker.js:${SUPERBLOCKS_AGENT_VERSION:-latest}
+  build:
+    context: .
+    secrets:
+      - npm_token
+secrets:
+  npm_token:
+    file: ~/.npmrc
+x-environment: &environment
+  SUPERBLOCKS_AGENT_KEY: dev-agent-key
+  SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
+  SUPERBLOCKS_AGENT_TLS_INSECURE: 'true'
+  SUPERBLOCKS_AGENT_REDIS_HOST: redis
+  SUPERBLOCKS_AGENT_REDIS_KVSTORE_MAX_SIZE_BYTES: 10000000
+  SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA: dev-private-rsa
+  SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519: dev-private-ed25519
+  __SUPERBLOCKS_AGENT_INTAKE_TRACES_HOST: host.docker.internal
+  __SUPERBLOCKS_AGENT_INTAKE_TRACES_ENABLE: 'false'
+services:
+  redis:
+    image: redis:7.2
+    ports:
+      - '6379:6379'
+    command: '--requirepass dev-agent-key'
+  auxillary:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'true'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: '!execute'
+      SUPERBLOCKS_AGENT_BUCKET: BA
+      SUPERBLOCKS_AGENT_REDIS_GROUP: one
+      FLEET: all
+    depends_on: [redis]
+  javascript.test.execute:
+    !!merge <<: *build
+    deploy:
+      replicas: 1
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'false'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: test
+      SUPERBLOCKS_AGENT_REDIS_GROUP: two
+      FLEET: javascript
+    depends_on: [redis]
+  non-lang.ba.execute:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'true'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: BA
+      SUPERBLOCKS_AGENT_REDIS_GROUP: three
+      FLEET: non-lang
+    depends_on: [redis]
+  javascript.b1.execute:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'false'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: B1
+      SUPERBLOCKS_AGENT_REDIS_GROUP: four
+      FLEET: javascript
+    depends_on: [redis]
+  javascript.b2.execute:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'false'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: B2
+      SUPERBLOCKS_AGENT_REDIS_GROUP: five
+      FLEET: javascript
+    depends_on: [redis]
+  javascript.b3.execute:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'false'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: B3
+      SUPERBLOCKS_AGENT_REDIS_GROUP: six
+      FLEET: javascript
+    depends_on: [redis]
+  javascript.b4.execute:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'false'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: B4
+      SUPERBLOCKS_AGENT_REDIS_GROUP: seven
+      FLEET: javascript
+    depends_on: [redis]
+  javascript.ba.execute:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'false'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: BA
+      SUPERBLOCKS_AGENT_REDIS_GROUP: eight
+      FLEET: javascript
+    depends_on: [redis]
+  javascript.be.execute:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'false'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: BE
+      SUPERBLOCKS_AGENT_REDIS_GROUP: nine
+      FLEET: javascript
+    depends_on: [redis]
+  non-lang.be.execute:
+    !!merge <<: *build
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'true'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: BE
+      SUPERBLOCKS_AGENT_REDIS_GROUP: ten
+      FLEET: non-lang
+    depends_on: [redis]

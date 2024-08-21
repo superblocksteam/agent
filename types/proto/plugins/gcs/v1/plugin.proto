@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package plugins.gcs.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/gcs/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Property {
+  string key = 1;
+  int32 value = 2;
+  bool editable = 3;
+  bool internal = 4;
+  string description = 5;
+  bool mandatory = 6;
+  string type = 7;
+  string defaultValue = 8;
+  string minRange = 9;
+  string maxRange = 10;
+  repeated string valueOptions = 11;
+}
+
+message Custom {
+  Property presignedExpiration = 1;
+}
+
+message Plugin {
+  string resource = 1;
+  string resourceType = 2;
+  string action = 3;
+  string path = 4;
+  string prefix = 5;
+  string body = 6;
+  string fileObjects = 7;
+  string responseType = 8;
+  Custom custom = 9;
+  SuperblocksMetadata superblocksMetadata = 10;
+}

@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1.9.0
+
+FROM ghcr.io/superblocksteam/golang:1.22.5-bookworm AS builder
+
+ARG GO_ARCH=amd64
+
+WORKDIR /go/src/github.com/superblocksteam/agent
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Copy everything in and compile
+# There may be cache optimizations we can make
+COPY . .
+
+RUN dpkg --add-architecture amd64 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends build-essential gcc
+
+# Build our binary.
+# TODO: build arm binary
+RUN GOOS=linux GOARCH=${GO_ARCH} make build-go SERVICE_NAME="worker.go"                     \
+                                               GO_BUILD_ROOT_DIRECTORY="./workers/golang"   \
+                                               EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"
+
+# Build the final image
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && apt-get clean
+
+# Copy in our compiled binary
+COPY --from=builder /go/src/github.com/superblocksteam/agent/workers/golang/worker.go /worker-go
+
+# Start the service
+ENTRYPOINT ["/worker-go"]

@@ -1,0 +1,14 @@
+{
+  "options": {
+    "includeEventOutputs": true,
+    "includeEvents": true
+  },
+  "inputs": {
+  },
+  "fetch": {
+    "id": "00000000-0000-0000-0000-100000000004",
+    "profile": {
+      "name": "profile-production"
+    }
+  }
+}

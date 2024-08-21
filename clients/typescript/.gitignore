@@ -1,0 +1,23 @@
+# Dirs
+logs/
+build/
+dist/
+data/
+
+# Typescript
+*.tsbuildinfo
+
+# Dependency
+node_modules
+
+# Lint
+.eslintcache
+
+# Misc
+.DS_Store
+*.log
+*.swp
+
+# Editor
+.vscode/*
+.idea

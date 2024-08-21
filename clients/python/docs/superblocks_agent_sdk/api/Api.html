@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>superblocks_agent_sdk.api.Api API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/highlight.min.js" integrity="sha512-tL84mD+FR70jI7X8vYj5AfRqe0EifOaFUapjt1KvDaPLHgTlUZ2gQL/Tzvvn8HXuQm9oHYShJpNFdyJmH2yHrw==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>superblocks_agent_sdk.api.Api</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># TODO: (joey) some of these imports are weird
+
+from typing import Optional
+
+from superblocks_agent_sdk._util.convert import from_protobuf_value, to_protobuf_value
+from superblocks_agent_sdk._util.decorator import support_sync
+from superblocks_agent_sdk._util.doc import modify_pdoc
+from superblocks_agent_sdk._util.generate import get_unique_id_for_object
+from superblocks_agent_sdk.api.Config import Config as ApiConfig
+from superblocks_agent_sdk.api.Result import Result
+from superblocks_agent_sdk.client import Client
+from superblocks_agent_sdk.testing.step import Mock, Params
+from superblocks_types.api.v1.service_pb2 import (
+    ExecuteRequest,
+    Function,
+    StreamResponse,
+    TwoWayRequest,
+    TwoWayResponse,
+)
+from superblocks_types.api.v1.service_pb2_grpc import ExecutorServiceStub
+from superblocks_types.common.v1.common_pb2 import Profile
+from superblocks_types.common.v1.errors_pb2 import Error
+
+
+class Api:
+    &#34;&#34;&#34;
+    A representation of a Superblocks API.
+    &#34;&#34;&#34;
+
+    def __init__(self, id_: str, *, config: Optional[ApiConfig] = None):
+        &#34;&#34;&#34;
+        Args:
+            id_ (str): The API ID.
+            config (Optional[superblocks_agent.api.Config]): The API configuration. Defaults to `ApiConfig`.
+        &#34;&#34;&#34;
+
+        self.id_ = id_
+        self.__config = config or ApiConfig()
+        self.mock_func_lookup: dict[str, callable] = {}
+
+    @support_sync(async_is_default=False)
+    async def run(
+        self, *, client: Client, inputs: Optional[dict] = None, mocks: Optional[list[Mock]] = None
+    ) -&gt; Result:
+        &#34;&#34;&#34;
+        Runs *this* api.
+
+        Args:
+            client (superblocks_agent.client.Client): The client to use for this API run.
+            inputs (Optional[dict]): The inputs to use for this API run. Defaults to `{}`.
+            mocks (Optional[list[superblocks_agent.testing.step.Mock]]): The mocks to use for this API run. Defaults to `[]`.
+            run_async (bool): Whether to run this function asyncronously or not. Defaults to `False`.
+
+        Returns:
+            superblocks_agent.api.Result: `run_async=False` The result of the API run.
+            typing.Coroutine[superblocks_agent.api.Result, None, None]: `run_async=True` The result of the API run.
+        &#34;&#34;&#34;
+        mocks = [] if mocks is None else mocks
+        inputs = {} if inputs is None else inputs
+
+        # hydrate mock lookup dict so we can reference it later
+        self.__hydrate_mock_func_lookup(mocks)
+
+        stream_responses = await client._run(
+            with_stub=ExecutorServiceStub,
+            stub_func_name=&#34;TwoWayStream&#34;,
+            initial_request=TwoWayRequest(
+                execute=self.__build_execute_request(inputs=inputs, mocks=mocks, client=client)
+            ),
+            response_handler=self.__get_handle_two_way_response_func(),
+        )
+        return Result._from_proto_stream_responses(stream_responses)
+
+    def __hydrate_mock_func_lookup(self, mocks: list[Mock]) -&gt; None:
+        &#34;&#34;&#34;
+        This function is called before every API run.
+        It hydrates a map that belongs to this API which allows the lookup of mock return functions.
+        &#34;&#34;&#34;
+        for mock in mocks:
+            if mock._get_return_callable() is not None:
+                self.mock_func_lookup[get_unique_id_for_object(mock._get_return_callable())] = (
+                    mock._get_return_callable()
+                )
+            if mock._get_when_callable() is not None:
+                self.mock_func_lookup[get_unique_id_for_object(mock._get_when_callable())] = (
+                    mock._get_when_callable()
+                )
+
+    def __get_handle_two_way_response_func(self) -&gt; callable:
+        def handle_two_way_response(
+            response: TwoWayResponse,
+        ) -&gt; tuple[Optional[TwoWayRequest], Optional[StreamResponse]]:
+            &#34;&#34;&#34;
+            Function to handle each TwoWayResponse.
+            &#34;&#34;&#34;
+            match response:
+                # CASE 1
+                # RESPONSE TYPE: TwoWayResponse.Function.Request
+                # the orchestrator is asking us to run a local function to determine the step output
+                # 1. locate the function we should run
+                # 2. call the function with the parameters the orchestrator gave us
+                # 3. send the orchestrator a response with the output/error of the function call
+                case _ if response.HasField(&#34;function&#34;):
+                    # find function we want to execute
+                    function_to_execute: Optional[callable] = self.mock_func_lookup.get(
+                        response.function.name
+                    )
+
+                    if function_to_execute is None:
+                        raise Exception(f&#34;FOUND NO FUNCTION TO EXECUTE!&#34;)
+                    # execute function with params and send response
+                    function_response = Function.Response(id=response.function.id)
+                    try:
+                        resp = function_to_execute(
+                            Params._from_dict(
+                                *[from_protobuf_value(v) for v in response.function.parameters]
+                            )
+                        )
+                        function_response.value.CopyFrom(to_protobuf_value(resp))
+                    except Exception as e:
+                        print(f&#34;ERROR DURING FUNCTION EXECUTION: {e}&#34;)
+                        function_response.error.CopyFrom(Error(message=str(e)))
+                        # TODO: (joey) may want to add more fields to the error here
+                    return TwoWayRequest(function=function_response), None
+
+                # CASE 2
+                # RESPONSE TYPE: TwoWayResponse.StreamResponse
+                # a &#34;normal&#34; response from the orchestrator
+                # just forward the metadata
+                case _ if response.HasField(&#34;stream&#34;):
+                    return None, response
+                case _:
+                    raise Exception(f&#34;got unexpected type: {type(response)}&#34;)
+
+        return handle_two_way_response
+
+    def __build_execute_request(
+        self, *, inputs: dict, mocks: list[Mock], client: Client
+    ) -&gt; ExecuteRequest:
+        &#34;&#34;&#34;
+        Returns a hydrated ExecuteRequest object.
+        &#34;&#34;&#34;
+        execute_request = ExecuteRequest()
+        for input_key, input_value in inputs.items():
+            value = to_protobuf_value(input_value)
+            execute_request.inputs[input_key].CopyFrom(value)
+
+        # set options
+        for self_mock in mocks:
+            execute_request.mocks.append(self_mock._to_proto_mock())
+        execute_request.options.include_event_outputs = True
+        execute_request.options.include_events = True
+        execute_request.options.include_api_events = True
+
+        # NOTE: (joey) do we need to set any other ExecuteRequest.Options fields?
+
+        # set inputs
+        for k, v in inputs.items():
+            execute_request.inputs[k].CopyFrom(to_protobuf_value(v))
+
+        # set fetch
+        execute_request.fetch.CopyFrom(self.__to_proto_fetch(client))
+
+        return execute_request
+
+    # TODO: (joey) add granular unit test for this
+    def __to_proto_fetch(self, client: Client) -&gt; ExecuteRequest.Fetch:
+        &#34;&#34;&#34;
+        Returns a hydrated Fetch object to be used in an ExecuteRequest.
+        &#34;&#34;&#34;
+        fetch = ExecuteRequest.Fetch()
+        fetch.id = self.id_
+        fetch.token = client.config.token_formatted
+
+        if self.__config is not None and client.defaults is not None:
+            profile_name = (
+                self.__config.profile
+                if self.__config.profile is not None
+                else client.defaults.profile
+            )
+            if profile_name is not None:
+                profile = Profile()
+                profile.name = profile_name
+                fetch.profile.CopyFrom(profile)
+            view_mode = (
+                self.__config.view_mode
+                if self.__config.view_mode is not None
+                else client.defaults.view_mode
+            )
+            if view_mode is not None:
+                fetch.view_mode = view_mode._to_proto_view_mode()
+            commit_id = (
+                self.__config.commit_id
+                if self.__config.commit_id is not None
+                else client.defaults.commit_id
+            )
+            if commit_id is not None:
+                fetch.commit_id = commit_id
+            branch_name = (
+                self.__config.branch_name
+                if self.__config.branch_name is not None
+                else client.defaults.branch_name
+            )
+            if branch_name is not None:
+                fetch.branch_name = branch_name
+        return fetch
+
+
+__pdoc__ = modify_pdoc(
+    exclude=[
+        &#34;Error&#34;,
+        &#34;ExecuteRequest&#34;,
+        &#34;Function&#34;,
+        &#34;Profile&#34;,
+        &#34;StreamResponse&#34;,
+        &#34;TwoWayRequest&#34;,
+        &#34;TwoWayResponse&#34;,
+    ]
+)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="superblocks_agent_sdk.api.Api.Api"><code class="flex name class">
+<span>class <span class="ident">Api</span></span>
+<span>(</span><span>id_: str, *, config: Optional[<a title="superblocks_agent_sdk.api.Config.Config" href="Config.html#superblocks_agent_sdk.api.Config.Config">Config</a>] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A representation of a Superblocks API.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>id_</code></strong> :&ensp;<code>str</code></dt>
+<dd>The API ID.</dd>
+<dt><strong><code>config</code></strong> :&ensp;<code>Optional[superblocks_agent.api.Config]</code></dt>
+<dd>The API configuration. Defaults to <code>ApiConfig</code>.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Api:
+    &#34;&#34;&#34;
+    A representation of a Superblocks API.
+    &#34;&#34;&#34;
+
+    def __init__(self, id_: str, *, config: Optional[ApiConfig] = None):
+        &#34;&#34;&#34;
+        Args:
+            id_ (str): The API ID.
+            config (Optional[superblocks_agent.api.Config]): The API configuration. Defaults to `ApiConfig`.
+        &#34;&#34;&#34;
+
+        self.id_ = id_
+        self.__config = config or ApiConfig()
+        self.mock_func_lookup: dict[str, callable] = {}
+
+    @support_sync(async_is_default=False)
+    async def run(
+        self, *, client: Client, inputs: Optional[dict] = None, mocks: Optional[list[Mock]] = None
+    ) -&gt; Result:
+        &#34;&#34;&#34;
+        Runs *this* api.
+
+        Args:
+            client (superblocks_agent.client.Client): The client to use for this API run.
+            inputs (Optional[dict]): The inputs to use for this API run. Defaults to `{}`.
+            mocks (Optional[list[superblocks_agent.testing.step.Mock]]): The mocks to use for this API run. Defaults to `[]`.
+            run_async (bool): Whether to run this function asyncronously or not. Defaults to `False`.
+
+        Returns:
+            superblocks_agent.api.Result: `run_async=False` The result of the API run.
+            typing.Coroutine[superblocks_agent.api.Result, None, None]: `run_async=True` The result of the API run.
+        &#34;&#34;&#34;
+        mocks = [] if mocks is None else mocks
+        inputs = {} if inputs is None else inputs
+
+        # hydrate mock lookup dict so we can reference it later
+        self.__hydrate_mock_func_lookup(mocks)
+
+        stream_responses = await client._run(
+            with_stub=ExecutorServiceStub,
+            stub_func_name=&#34;TwoWayStream&#34;,
+            initial_request=TwoWayRequest(
+                execute=self.__build_execute_request(inputs=inputs, mocks=mocks, client=client)
+            ),
+            response_handler=self.__get_handle_two_way_response_func(),
+        )
+        return Result._from_proto_stream_responses(stream_responses)
+
+    def __hydrate_mock_func_lookup(self, mocks: list[Mock]) -&gt; None:
+        &#34;&#34;&#34;
+        This function is called before every API run.
+        It hydrates a map that belongs to this API which allows the lookup of mock return functions.
+        &#34;&#34;&#34;
+        for mock in mocks:
+            if mock._get_return_callable() is not None:
+                self.mock_func_lookup[get_unique_id_for_object(mock._get_return_callable())] = (
+                    mock._get_return_callable()
+                )
+            if mock._get_when_callable() is not None:
+                self.mock_func_lookup[get_unique_id_for_object(mock._get_when_callable())] = (
+                    mock._get_when_callable()
+                )
+
+    def __get_handle_two_way_response_func(self) -&gt; callable:
+        def handle_two_way_response(
+            response: TwoWayResponse,
+        ) -&gt; tuple[Optional[TwoWayRequest], Optional[StreamResponse]]:
+            &#34;&#34;&#34;
+            Function to handle each TwoWayResponse.
+            &#34;&#34;&#34;
+            match response:
+                # CASE 1
+                # RESPONSE TYPE: TwoWayResponse.Function.Request
+                # the orchestrator is asking us to run a local function to determine the step output
+                # 1. locate the function we should run
+                # 2. call the function with the parameters the orchestrator gave us
+                # 3. send the orchestrator a response with the output/error of the function call
+                case _ if response.HasField(&#34;function&#34;):
+                    # find function we want to execute
+                    function_to_execute: Optional[callable] = self.mock_func_lookup.get(
+                        response.function.name
+                    )
+
+                    if function_to_execute is None:
+                        raise Exception(f&#34;FOUND NO FUNCTION TO EXECUTE!&#34;)
+                    # execute function with params and send response
+                    function_response = Function.Response(id=response.function.id)
+                    try:
+                        resp = function_to_execute(
+                            Params._from_dict(
+                                *[from_protobuf_value(v) for v in response.function.parameters]
+                            )
+                        )
+                        function_response.value.CopyFrom(to_protobuf_value(resp))
+                    except Exception as e:
+                        print(f&#34;ERROR DURING FUNCTION EXECUTION: {e}&#34;)
+                        function_response.error.CopyFrom(Error(message=str(e)))
+                        # TODO: (joey) may want to add more fields to the error here
+                    return TwoWayRequest(function=function_response), None
+
+                # CASE 2
+                # RESPONSE TYPE: TwoWayResponse.StreamResponse
+                # a &#34;normal&#34; response from the orchestrator
+                # just forward the metadata
+                case _ if response.HasField(&#34;stream&#34;):
+                    return None, response
+                case _:
+                    raise Exception(f&#34;got unexpected type: {type(response)}&#34;)
+
+        return handle_two_way_response
+
+    def __build_execute_request(
+        self, *, inputs: dict, mocks: list[Mock], client: Client
+    ) -&gt; ExecuteRequest:
+        &#34;&#34;&#34;
+        Returns a hydrated ExecuteRequest object.
+        &#34;&#34;&#34;
+        execute_request = ExecuteRequest()
+        for input_key, input_value in inputs.items():
+            value = to_protobuf_value(input_value)
+            execute_request.inputs[input_key].CopyFrom(value)
+
+        # set options
+        for self_mock in mocks:
+            execute_request.mocks.append(self_mock._to_proto_mock())
+        execute_request.options.include_event_outputs = True
+        execute_request.options.include_events = True
+        execute_request.options.include_api_events = True
+
+        # NOTE: (joey) do we need to set any other ExecuteRequest.Options fields?
+
+        # set inputs
+        for k, v in inputs.items():
+            execute_request.inputs[k].CopyFrom(to_protobuf_value(v))
+
+        # set fetch
+        execute_request.fetch.CopyFrom(self.__to_proto_fetch(client))
+
+        return execute_request
+
+    # TODO: (joey) add granular unit test for this
+    def __to_proto_fetch(self, client: Client) -&gt; ExecuteRequest.Fetch:
+        &#34;&#34;&#34;
+        Returns a hydrated Fetch object to be used in an ExecuteRequest.
+        &#34;&#34;&#34;
+        fetch = ExecuteRequest.Fetch()
+        fetch.id = self.id_
+        fetch.token = client.config.token_formatted
+
+        if self.__config is not None and client.defaults is not None:
+            profile_name = (
+                self.__config.profile
+                if self.__config.profile is not None
+                else client.defaults.profile
+            )
+            if profile_name is not None:
+                profile = Profile()
+                profile.name = profile_name
+                fetch.profile.CopyFrom(profile)
+            view_mode = (
+                self.__config.view_mode
+                if self.__config.view_mode is not None
+                else client.defaults.view_mode
+            )
+            if view_mode is not None:
+                fetch.view_mode = view_mode._to_proto_view_mode()
+            commit_id = (
+                self.__config.commit_id
+                if self.__config.commit_id is not None
+                else client.defaults.commit_id
+            )
+            if commit_id is not None:
+                fetch.commit_id = commit_id
+            branch_name = (
+                self.__config.branch_name
+                if self.__config.branch_name is not None
+                else client.defaults.branch_name
+            )
+            if branch_name is not None:
+                fetch.branch_name = branch_name
+        return fetch</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="superblocks_agent_sdk.api.Api.Api.run"><code class="name flex">
+<span>async def <span class="ident">run</span></span>(<span>self, *, client: <a title="superblocks_agent_sdk.client.Client.Client" href="../client/Client.html#superblocks_agent_sdk.client.Client.Client">Client</a>, inputs: Optional[dict] = None, mocks: Optional[list[<a title="superblocks_agent_sdk.testing.step.Mock.Mock" href="../testing/step/Mock.html#superblocks_agent_sdk.testing.step.Mock.Mock">Mock</a>]] = None) ‑> <a title="superblocks_agent_sdk.api.Result.Result" href="Result.html#superblocks_agent_sdk.api.Result.Result">Result</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs <em>this</em> api.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>client</code></strong> :&ensp;<code>superblocks_agent.client.Client</code></dt>
+<dd>The client to use for this API run.</dd>
+<dt><strong><code>inputs</code></strong> :&ensp;<code>Optional[dict]</code></dt>
+<dd>The inputs to use for this API run. Defaults to <code>{}</code>.</dd>
+<dt><strong><code>mocks</code></strong> :&ensp;<code>Optional[list[superblocks_agent.testing.step.Mock]]</code></dt>
+<dd>The mocks to use for this API run. Defaults to <code>[]</code>.</dd>
+<dt><strong><code>run_async</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to run this function asyncronously or not. Defaults to <code>False</code>.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>superblocks_agent.api.Result</code></dt>
+<dd><code>run_async=False</code> The result of the API run.</dd>
+<dt><code>typing.Coroutine[superblocks_agent.api.Result, None, None]</code></dt>
+<dd><code>run_async=True</code> The result of the API run.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@support_sync(async_is_default=False)
+async def run(
+    self, *, client: Client, inputs: Optional[dict] = None, mocks: Optional[list[Mock]] = None
+) -&gt; Result:
+    &#34;&#34;&#34;
+    Runs *this* api.
+
+    Args:
+        client (superblocks_agent.client.Client): The client to use for this API run.
+        inputs (Optional[dict]): The inputs to use for this API run. Defaults to `{}`.
+        mocks (Optional[list[superblocks_agent.testing.step.Mock]]): The mocks to use for this API run. Defaults to `[]`.
+        run_async (bool): Whether to run this function asyncronously or not. Defaults to `False`.
+
+    Returns:
+        superblocks_agent.api.Result: `run_async=False` The result of the API run.
+        typing.Coroutine[superblocks_agent.api.Result, None, None]: `run_async=True` The result of the API run.
+    &#34;&#34;&#34;
+    mocks = [] if mocks is None else mocks
+    inputs = {} if inputs is None else inputs
+
+    # hydrate mock lookup dict so we can reference it later
+    self.__hydrate_mock_func_lookup(mocks)
+
+    stream_responses = await client._run(
+        with_stub=ExecutorServiceStub,
+        stub_func_name=&#34;TwoWayStream&#34;,
+        initial_request=TwoWayRequest(
+            execute=self.__build_execute_request(inputs=inputs, mocks=mocks, client=client)
+        ),
+        response_handler=self.__get_handle_two_way_response_func(),
+    )
+    return Result._from_proto_stream_responses(stream_responses)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<img src="https://superblocks.s3.us-west-2.amazonaws.com/logo.png" alt="Superblocks Logo" width="100">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="superblocks_agent_sdk.api" href="index.html">superblocks_agent_sdk.api</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="superblocks_agent_sdk.api.Api.Api" href="#superblocks_agent_sdk.api.Api.Api">Api</a></code></h4>
+<ul class="">
+<li><code><a title="superblocks_agent_sdk.api.Api.Api.run" href="#superblocks_agent_sdk.api.Api.Api.run">run</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<a href="https://www.superblocks.com">superblocks.com</a>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

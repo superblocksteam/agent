@@ -1,0 +1,10 @@
+{
+  "canalyst_api_key": "<override>",
+  "s3_access_key_id": "<override>",
+  "s3_secret_key": "<override>",
+  "fred_key": "<override>",
+  "default_dir": "<override>",
+  "mds_host": "<override>",
+  "wp_host": "<override>",
+  "verify_ssl": true
+}

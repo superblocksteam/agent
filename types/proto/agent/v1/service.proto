@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package agent.v1;
+
+import "buf/validate/validate.proto";
+import "common/v1/common.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/agent/v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Superblocks Agent API"
+    version: "1.0"
+  }
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+};
+
+service AgentService {
+  rpc Register(RegistrationRequest) returns (RegistrationResponse) {
+    option (google.api.http) = {
+      post: "/v1/agents/register"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Register"};
+  }
+
+  rpc Audit(AuditLogRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v2/agents/audit"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Audit"};
+  }
+}
+
+message RegistrationRequest {
+  map<string, VersionList> plugin_versions = 1;
+  int32 type = 2;
+  map<string, TagList> tags = 3;
+  string signing_key_id = 4;
+  repeated string verification_key_ids = 5;
+}
+
+message RegistrationResponse {
+  ResponseMeta response_meta = 1;
+  ResponseBody data = 2;
+
+  message ResponseMeta {
+    int32 status = 1;
+    string message = 2;
+    bool success = 3;
+  }
+
+  message ResponseBody {
+    Agent agent = 1;
+    string billing_plan = 2;
+    string organization_id = 3;
+    string organization_name = 4;
+
+    message Agent {
+      string id = 1;
+      string key = 2;
+      string environment = 3;
+      string status = 4;
+      string version = 5;
+      string version_external = 6;
+      map<string, VersionList> supported_plugin_versions = 7;
+      string url = 8;
+      int32 type = 9;
+      google.protobuf.Timestamp updated = 10;
+      google.protobuf.Timestamp created = 11;
+      map<string, TagList> tags = 12;
+    }
+  }
+}
+
+message VersionList {
+  repeated string versions = 1;
+}
+
+message TagList {
+  repeated string tags = 1;
+}
+
+message AuditLogRequest {
+  repeated AuditLog audit_logs = 1;
+
+  message AuditLog {
+    string id = 1;
+    string entity_id = 2 [
+      (validate.rules).string.uuid = true,
+      (buf.validate.field).string.uuid = true
+    ];
+    AuditLogEntityType entity_type = 3;
+    string organization_id = 4;
+    bool is_deployed = 5;
+    string source = 6;
+    string target = 7;
+    AuditLogEventType type = 8;
+    optional string agent_id = 9;
+    optional ApiRunStatus status = 10;
+    optional string error = 11;
+    optional ApiLocationContext api_location_context = 12;
+    ApiTiming api_timing = 13;
+    optional common.v1.UserType user_type = 14;
+    optional string targetName = 15;
+
+    enum ApiRunStatus {
+      API_RUN_STATUS_UNSPECIFIED = 0;
+      API_RUN_STATUS_SUCCESS = 1;
+      API_RUN_STATUS_FAILED = 2;
+    }
+
+    enum AuditLogEntityType {
+      AUDIT_LOG_ENTITY_TYPE_UNSPECIFIED = 0;
+      AUDIT_LOG_ENTITY_TYPE_APPLICATION = 1;
+      AUDIT_LOG_ENTITY_TYPE_WORKFLOW = 2;
+      AUDIT_LOG_ENTITY_TYPE_SCHEDULED_JOB = 3;
+      AUDIT_LOG_ENTITY_TYPE_STEP = 4;
+    }
+
+    enum AuditLogEventType {
+      AUDIT_LOG_EVENT_TYPE_UNSPECIFIED = 0;
+      AUDIT_LOG_EVENT_TYPE_API_RUN = 1;
+    }
+
+    message ApiLocationContext {
+      string application_id = 1;
+    }
+
+    message ApiTiming {
+      int64 start = 1;
+      optional int64 end = 2;
+    }
+  }
+}

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package event.v1;
+
+import "api/v1/event.proto";
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/event/v1";
+
+message ExecutionEvent {
+  string execution_id = 1 [(buf.validate.field).string.pattern = "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"];
+  string resource_id = 2 [(buf.validate.field).string.pattern = "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"];
+  string resource_name = 3 [(buf.validate.field).required = true];
+  Type resource_type = 4 [(buf.validate.field).required = true];
+  optional api.v1.BlockType resource_subtype = 5;
+  optional api.v1.BlockStatus result = 6;
+  Status status = 7 [(buf.validate.field).required = true];
+  optional string integration_id = 8;
+  optional string integration_type = 9;
+  Mode mode = 10 [(buf.validate.field).required = true];
+  string organization_id = 11 [(buf.validate.field).string.pattern = "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"];
+  optional string user_id = 12;
+  Trigger trigger = 13 [(buf.validate.field).required = true];
+  optional string parent_id = 14;
+  optional string parent_name = 15;
+  optional Type parent_type = 16;
+  bool is_descendant_of_stream = 17;
+  optional string api_id = 18;
+}
+
+enum Mode {
+  MODE_UNSPECIFIED = 0;
+  MODE_DEPLOYED = 1;
+  MODE_EDITOR = 2;
+  MODE_PREVIEW = 3;
+}
+
+enum Type {
+  TYPE_UNSPECIFIED = 0;
+  TYPE_EXECUTION_API = 1;
+  TYPE_EXECUTION_BLOCK = 2;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_STARTED = 1;
+  STATUS_ENDED = 2;
+}
+
+enum Trigger {
+  TRIGGER_UNSPECIFIED = 0;
+  TRIGGER_APPLICATION = 1;
+  TRIGGER_WORKFLOW = 2;
+  TRIGGER_JOB = 3;
+}

@@ -1,0 +1,23 @@
+DOCKER_LABELS    = --label org.opencontainers.image.version=$(SERVICE_VERSION) --label org.opencontainers.image.revision=$(shell git rev-parse HEAD) --label org.opencontainers.image.created=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+DOCKER_SECRETS   =
+DOCKERFILE       = Dockerfile
+DOCKER_OPTIONS   = 
+IMAGE_REGISTRY   = ghcr.io/superblocksteam
+IMAGE_REPOSITORY = $(IMAGE_REGISTRY)/$(SERVICE_NAME)
+
+.PHONY: build-docker
+build-docker:
+	docker buildx build \
+		--platform linux/x86_64 \
+		$(DOCKER_SECRETS) \
+		$(DOCKER_LABELS) \
+		$(DOCKER_OPTIONS) \
+		--build-arg EXTRA_GO_OPTIONS=$(EXTRA_GO_OPTIONS) \
+		--build-arg GO_VERSION=$$(cat .go-version) \
+		--build-arg SB_GIT_COMMIT_SHA=$(shell git rev-parse HEAD) \
+		--build-arg SERVICE_VERSION=$(SERVICE_VERSION) \
+		--build-arg SERVICE_NAME=$(SERVICE_NAME) \
+		-t $(IMAGE_REPOSITORY):$(IMAGE_TAG) \
+		-f $(DOCKERFILE) \
+		$(ROOT_DIRECTORY) \
+		--load

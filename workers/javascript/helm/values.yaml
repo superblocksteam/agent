@@ -1,0 +1,85 @@
+---
+autoscaling:
+  min: 1
+  max: 50
+  cpu: 50
+podAnnotations:
+  prometheus.io/scrape: 'true'
+  prometheus.io/path: '/metrics'
+  prometheus.io/port: '8080'
+networkpolicy:
+  disable: false
+  egress: {}
+remoteIntakeUrl: https://logs.intake.superblocks.com
+resources:
+  limits:
+    memory: 1Gi
+  requests:
+    cpu: 150m
+    memory: 250Mi
+fleets: {}
+node:
+  heap: 3800
+agent: main
+superblocks:
+  key: <override>
+  privateKeyRSA: <override>
+  privateKeyEd25519: <override>
+kvstore:
+  host: '<override>'
+  token: '<override>'
+  maxBytes: 500000000
+  slowClientThreshold: 100000000
+  pool:
+    slow:
+      min: 10
+      max: 50
+    fast:
+      min: 10
+      max: 50
+worker:
+  execution:
+    pool:
+      size: 0
+queue:
+  deploy: false
+  host: '<override>'
+  token: '<override>'
+  blockMs: 5000
+  batchSize: 10
+  pool:
+    min: 10
+    max: 50
+observability:
+  logs: {}
+  tracing:
+    exporter:
+      scheme: http
+      port: 4318
+      path: '/v1/traces'
+      host: otelcol-collector.observability.svc.cluster.local
+service:
+  logLevel: info
+  tls:
+    insecure: true
+  ports:
+    health: 8080
+image:
+  repository: ghcr.io/superblocksteam/worker.js
+  tag: latest
+  pullPolicy: IfNotPresent
+  credentials:
+    registry: ghcr.io
+    username: '<override>'
+    password: '<override>'
+tolerations: {}
+nodeSelector: {}
+# to be used for local testing only
+redis:
+  auth:
+    enabled: true
+    password: dev-agent-key
+  tls:
+    authClients: true
+  replica:
+    replicaCount: 0

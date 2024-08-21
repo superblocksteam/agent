@@ -1,0 +1,14 @@
+bin/
+include/
+lib/
+etc/
+share/
+pyvenv.cfg
+__pycache__
+certs/
+*.egg-info
+.tox
+.coverage
+.hypothesis
+**/charts/*.tgz
+*.swp

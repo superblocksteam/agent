@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package kafka.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/kafka/v1";
+
+message IntegrationMetadataEvent {
+  message Upsert {
+    google.protobuf.Struct datasource_configuration = 1;
+    string integration_id = 2;
+    string configuration_id = 3;
+    string integration_type = 4;
+    string organization_id = 5;
+    string schema_version = 6;
+  }
+
+  oneof event {
+    Upsert upsert = 1;
+  }
+}

@@ -1,0 +1,39 @@
+---
+version: '3.7'
+x-build: &build
+  image: ghcr.io/superblocksteam/worker.py:${SUPERBLOCKS_AGENT_VERSION:-latest}
+  build:
+    context: .
+  platform: linux/amd64
+  volumes:
+    - type: bind
+      source: src
+      target: /usr/app/worker-python/src
+x-environment: &environment
+  SUPERBLOCKS_AGENT_KEY: dev-agent-key
+  SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
+  SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+  SUPERBLOCKS_AGENT_TLS_INSECURE: 'true'
+  SUPERBLOCKS_AGENT_REDIS_HOST: host.docker.internal
+  SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: host.docker.internal
+  SUPERBLOCKS_AGENT_REDIS_KVSTORE_MAX_SIZE_BYTES: 10000000
+services:
+  redis:
+    image: redis:7.0
+    ports:
+      - '6379:6379'
+    command: '--requirepass dev-agent-key'
+  python.test.execute:
+    !!merge <<: *build
+    deploy:
+      replicas: 1
+    environment:
+      !!merge <<: *environment
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
+      SUPERBLOCKS_AGENT_BUCKET: test
+      SUPERBLOCKS_AGENT_REDIS_GROUP: eleven
+      FLEET: python
+      SUPERBLOCKS_AGENT_REDIS_HOST: redis
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis
+volumes:
+  src:

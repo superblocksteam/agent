@@ -1,0 +1,28 @@
+---
+version: v1
+plugins:
+  # Language: Go
+  - plugin: buf.build/protocolbuffers/go:v1.32.0
+    out: ../gen/go
+    opt: paths=source_relative
+  - plugin: buf.build/grpc/go:v1.3.0
+    out: ../gen/go
+    opt:
+      - paths=source_relative
+      - require_unimplemented_servers=false
+  - plugin: buf.build/grpc-ecosystem/gateway:v2.19.0
+    out: ../gen/go
+    opt:
+      - paths=source_relative
+      - generate_unbound_methods=true
+  - plugin: buf.build/grpc-ecosystem/openapiv2:v2.19.0
+    out: ../api
+  - plugin: buf.build/bufbuild/validate-go:v1.0.2
+    out: ../gen/go
+    opt:
+      - paths=source_relative
+  - plugin: superblocks
+    out: ../gen/go
+    opt:
+      - lang=go
+      - paths=source_relative

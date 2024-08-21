@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "api/v1/api.proto";
+import "buf/validate/validate.proto";
+import "common/v1/api.proto";
+import "common/v1/errors.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "utils/v1/utils.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/api/v1";
+
+message PatchApi {
+  Api api = 1;
+
+  oneof git_ref {
+    option (buf.validate.oneof).required = true;
+    string commit_id = 2;
+    string branch_name = 3;
+  }
+}
+
+// PATCH api/v3/apis
+message PatchApisRequest {
+  repeated PatchApi patches = 1;
+}
+message PatchApisResponse {
+  message Status {
+    string api_id = 1;
+    int32 code = 2;
+    string message = 3;
+    common.v1.Error error = 4;
+  }
+
+  repeated Status statuses = 1;
+  map<string, common.v1.Link> links = 2;
+}
+
+message UpdateApplicationSignature {
+  string application_id = 1;
+
+  oneof git_ref {
+    option (buf.validate.oneof).required = true;
+    string commit_id = 2;
+    string branch_name = 3;
+  }
+
+  utils.v1.Signature signature = 4;
+  google.protobuf.Timestamp updated = 5;
+  int32 page_version = 6;
+}
+
+// PUT api/v2/application/signatures
+message UpdateApplicationSignaturesRequest {
+  repeated UpdateApplicationSignature updates = 1;
+}
+
+message UpdateApplicationSignaturesResponse {
+  message Status {
+    string application_id = 1;
+
+    oneof git_ref {
+      option (buf.validate.oneof).required = true;
+      string commit_id = 2;
+      string branch_name = 3;
+    }
+
+    int32 code = 4;
+    string message = 5;
+    common.v1.Error error = 6;
+  }
+
+  repeated Status statuses = 1;
+  map<string, common.v1.Link> links = 2;
+}
+
+message GenericBatch {
+  message Items {
+    repeated google.protobuf.Struct items = 1;
+  }
+
+  Items data = 1 [(buf.validate.field).required = true];
+}
+
+message GenericBatchResponse {
+  GenericBatch data = 1 [(buf.validate.field).required = true];
+}

@@ -1,0 +1,76 @@
+---
+name: "Deploy Production"
+on:
+  workflow_dispatch:
+    inputs:
+      appVersion:
+        description: "Application version to deploy."
+        required: true
+jobs:
+  prod:
+    if: github.ref == 'refs/heads/main'
+    uses: superblocksteam/internal-github-actions/.github/workflows/helm-deploy.yaml@main
+    with:
+      appVersion: ${{ github.event.inputs.appVersion }}
+      opItemK8sConfig: EKS_PROD_GITHUB_CI_KUBE_CONFIG
+      opVault: Prod
+      opEnvFile: .env.prod
+      environment: production
+      name: worker.py
+      namespace: cloud-agents
+    secrets:
+      OP_ACCOUNT: ${{ secrets.OP_ACCOUNT }}
+      OP_PASSWORD: ${{ secrets.OP_PASSWORD }}
+      OP_SECRET_KEY: ${{ secrets.OP_SECRET_KEY }}
+      OP_DEVICE: ${{ secrets.OP_DEVICE }}
+      SLACK_WEBHOOK_URL: ${{ secrets.PROD_SLACK_WEBHOOK_URL }}
+      OVPN_PROFILE_CONFIG_FILE: ${{ secrets.PROD_VPN_OVPN_FILE }}
+      OVPN_PASSWORD: ${{ secrets.PROD_VPN_PASSWORD }}
+      OVPN_USERNAME: ${{ secrets.PROD_VPN_USERNAME }}
+  prod-eu:
+    if: github.ref == 'refs/heads/main'
+    uses: superblocksteam/internal-github-actions/.github/workflows/helm-deploy.yaml@main
+    with:
+      appVersion: ${{ github.event.inputs.appVersion }}
+      opItemK8sConfig: EKS_PROD_EU_KUBE_CONFIG
+      opVault: Prod
+      opEnvFile: .env.prod-eu
+      environment: prod-eu
+      name: worker.py
+      namespace: cloud-agents
+    secrets:
+      OP_ACCOUNT: ${{ secrets.OP_ACCOUNT }}
+      OP_PASSWORD: ${{ secrets.OP_PASSWORD }}
+      OP_SECRET_KEY: ${{ secrets.OP_SECRET_KEY }}
+      OP_DEVICE: ${{ secrets.OP_DEVICE }}
+      SLACK_WEBHOOK_URL: ${{ secrets.PROD_SLACK_WEBHOOK_URL }}
+      OVPN_PROFILE_CONFIG_FILE: ${{ secrets.PROD_EU_VPN_OVPN_FILE }}
+      OVPN_PASSWORD: ${{ secrets.PROD_EU_VPN_PASSWORD }}
+      OVPN_USERNAME: ${{ secrets.PROD_EU_VPN_USERNAME }}
+  speed_test:
+    needs: [prod]
+    name: speed test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: run speed test
+        run: make speed-test SPEED_TEST_ENV=prod
+  trigger-synthetics:
+    needs:
+      - prod
+      - prod-eu
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - prod
+          - prod-eu
+    uses: superblocksteam/internal-github-actions/.github/workflows/trigger-synthetics.yaml@main
+    with:
+      environment: ${{ matrix.env }}
+    secrets:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_APP_KEY: ${{ secrets.DD_APP_KEY }}

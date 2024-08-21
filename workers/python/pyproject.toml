@@ -1,0 +1,88 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools >= 61.0"]
+
+[project]
+dependencies = [
+  "aiohttp==3.9.5",
+  "backoff==2.2.1",
+  "opentelemetry-api==1.16.0",
+  "opentelemetry-sdk==1.16.0",
+  "opentelemetry-exporter-otlp-proto-http==1.16.0",
+  "requests==2.32.0",
+  "requests-futures==1.0.1",
+  "python-dotenv==0.21.1",
+  "prometheus-client==0.14.1",
+  "dataclasses-json==0.5.7",
+  "nest_asyncio==1.5.6",
+  "pydash==6.0.2",
+  "redis==4.6.0",
+  "ujson==5.10.0",
+  "pydantic==1.10.14",
+  "psutil==5.9.8",
+  "simplejson==3.19.2",
+  "plotly==5.19.0",
+]
+dynamic = ["version"]
+name = "worker-py"
+
+authors = [
+  {name = "Bruce Yu", email = "bruce@superblockshq.com"},
+  {name = "Frank Greco", email = "frank@superblockshq.com"},
+  {name = "Carl Noel", email = "carl.noel@superblockshq.com"},
+  {name = "Joey Greco", email = "joey@superblockshq.com"},
+  {name = "Cheng Tan", email = "cheng@superblockshq.com"},
+  {name = "Dan LaMotte", email = "daniel.l@superblockshq.com"},
+]
+description = "Python Worker for the Superblocks Execution Platform"
+maintainers = [
+  {name = "Bruce Yu", email = "bruce@superblockshq.com"},
+  {name = "Frank Greco", email = "frank@superblockshq.com"},
+  {name = "Carl Noel", email = "carl.noel@superblockshq.com"},
+  {name = "Joey Greco", email = "joey@superblockshq.com"},
+  {name = "Cheng Tan", email = "cheng@superblockshq.com"},
+  {name = "Dan LaMotte", email = "daniel.l@superblockshq.com"},
+]
+readme = "README.md"
+requires-python = ">=3.10.1"
+
+[project.optional-dependencies]
+test = [
+  "pytest==7.2.0",
+  "pytest-cov==4.0.0",
+  "hypothesis==6.56.3",
+  "pandas==1.5.3",
+  "numpy==1.26.4",
+  "pytest-asyncio==0.20.1",
+  "pytest-mock==3.10.0",
+]
+typecheck = [
+  "types-requests==2.28.11.2",
+  "types-simplejson==3.17.7",
+  "types-urllib3==1.26.25.14",
+  "typing-inspect==0.8.0",
+  "typing_extensions==4.2.0",
+  "types-ujson==5.6.0.0",
+  "types-redis==4.3.21.6",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/superblocksteam/worker.py"
+Changelog = "https://github.com/superblocksteam/worker.py"
+Documentation = "https://github.com/superblocksteam/worker.py"
+Homepage = "https://github.com/superblocksteam/worker.py"
+Repository = "https://github.com/superblocksteam/worker.py"
+
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/linter/
+ignore = ["E731"]
+exclude = ["src/gen/*"]
+select = [
+    # isort
+    "I001"
+]
+
+[tool.ruff.format]
+# https://docs.astral.sh/ruff/formatter/
+exclude = ["src/gen/*"]

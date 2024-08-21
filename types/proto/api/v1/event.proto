@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "buf/validate/validate.proto";
+import "common/v1/errors.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/api/v1";
+
+enum BlockStatus {
+  BLOCK_STATUS_UNSPECIFIED = 0;
+  BLOCK_STATUS_SUCCEEDED = 1;
+  BLOCK_STATUS_ERRORED = 2;
+}
+
+enum BlockType {
+  BLOCK_TYPE_UNSPECIFIED = 0;
+  BLOCK_TYPE_BREAK = 1;
+  BLOCK_TYPE_RETURN = 2;
+  BLOCK_TYPE_WAIT = 3;
+  BLOCK_TYPE_PARALLEL = 4;
+  BLOCK_TYPE_CONDITIONAL = 5;
+  BLOCK_TYPE_LOOP = 6;
+  BLOCK_TYPE_TRYCATCH = 7;
+  BLOCK_TYPE_STEP = 8;
+  BLOCK_TYPE_VARIABLES = 9;
+  BLOCK_TYPE_THROW = 10;
+  BLOCK_TYPE_SEND = 11;
+  BLOCK_TYPE_STREAM = 12;
+}
+
+message Resolved {
+  google.protobuf.Value value = 1;
+
+  /*
+   * If the value was comprised of more than one bindings, the individual resolutions will be here.
+   */
+  repeated google.protobuf.Value bindings = 2;
+}
+
+message Event {
+  message Data {
+    google.protobuf.Value value = 1;
+
+    // TODO(frank): Add other stuff here like the block that it came from, etc.
+  }
+
+  /*
+   * Represents the start of an Api.
+   */
+  message Request {}
+
+  /*
+   * Represents the completion of an Api.
+   */
+  message Response {
+    /*
+     * The name of the block that represents the response of the Api.
+     */
+    string last = 1;
+
+    /*
+     * The errors, if any.
+     */
+    repeated common.v1.Error errors = 3;
+  }
+
+  message Start {}
+
+  message End {
+    /*
+     * Performance data for the block that just ended.
+     */
+    Performance performance = 1;
+
+    /*
+     * The block's output.
+     */
+    Output output = 2;
+
+    /*
+     * The error, if any.
+     */
+    common.v1.Error error = 3;
+
+    BlockStatus status = 4 [
+      (validate.rules).enum = {
+        not_in: [0]
+      },
+      (buf.validate.field).enum = {
+        not_in: [0]
+      }
+    ];
+
+    /*
+     * Any resolved bindings.
+     */
+    map<string, Resolved> resolved = 5;
+  }
+
+  string name = 1;
+  BlockType type = 2 [(buf.validate.field).enum = {
+    not_in: [0]
+  }];
+  google.protobuf.Timestamp timestamp = 3;
+
+  oneof event {
+    Start start = 4;
+    End end = 5;
+    Data data = 7;
+    Request request = 9;
+    Response response = 10;
+    // TODO(frank): Whoops; move function requests here.
+  }
+
+  /*
+   * The name of the parent block, if any.
+   */
+  optional string parent = 6;
+
+  /**
+   * The execution index if this is child step of parallels and loops.
+   */
+  optional string execution_index = 8;
+}
+
+message Performance {
+  int64 start = 1;
+  int64 finish = 2;
+  int64 total = 3;
+  int64 execution = 4;
+  int64 overhead = 5;
+  map<string, int64> custom = 6;
+}
+
+message Output {
+  message Request {
+    string summary = 1;
+    optional google.protobuf.Struct metadata = 5;
+  }
+  /*
+   * The JSON encoded response.
+   */
+  google.protobuf.Value result = 1;
+
+  /*
+   * The original request.
+   */
+  string request = 2;
+
+  repeated string stdout = 3;
+  repeated string stderr = 4;
+
+  Request request_v2 = 5;
+}
+
+message OutputOld {
+  google.protobuf.Value output = 1;
+  repeated string log = 2;
+  string request = 3;
+  google.protobuf.Value place_holders_info = 4;
+}

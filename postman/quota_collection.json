@@ -1,0 +1,902 @@
+{
+	"info": {
+		"_postman_id": "8ccc8975-a6a5-4832-bbb9-db8e4878bf83",
+		"name": "quota_collection.json - [HTTP] Superblocks Orchestrator Quotas",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_collection_link": "https://superblocks-orchestrator.postman.co/workspace/Team-Workspace~bcf1a403-94ab-4580-8a9c-ccd8827fda01/collection/24802700-11530ad7-559e-4be1-ad6b-fba9be3cfcf2?action=share&source=collection_link&creator=24802700"
+	},
+	"item": [
+		{
+			"name": "quota",
+			"item": [
+				{
+					"name": "js",
+					"item": [
+						{
+							"name": "size",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: The response size of block BLOCK_STEP_WELCOME has exceeded its limit of 0.1MB. Contact support to increase this quota.\")",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return Buffer.alloc(200000, 0);\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "duration",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: The duration of block BLOCK_STEP_WELCOME has exceeded its limit of 5 seconds. Contact support to increase this quota.\")",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return await new Promise(resolve => setTimeout(resolve, 25000));\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "free tier org size",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: The response size of block BLOCK_STEP_WELCOME has exceeded its limit of 0.02MB. Contact support to increase this quota.\")",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000111\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return Buffer.alloc(200000, 0);\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\",\n            \"organizationPlan\": \"TRIAL\"\n        },\n        \"integrations\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "enterprise tier org size",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: The response size of block BLOCK_STEP_WELCOME has exceeded its limit of 0.04MB. Contact support to increase this quota.\")",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000111\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return Buffer.alloc(200000, 0);\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\",\n            \"organizationPlan\": \"ENTERPRISE\"\n        },\n        \"integrations\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "py",
+					"item": [
+						{
+							"name": "size (python)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: The response size of block BLOCK_STEP_WELCOME has exceeded its limit of 0.1MB. Contact support to increase this quota.\")",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"python\": {\n                            \"body\": \"return bytearray(1000000)\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "duration (python)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: The duration of block BLOCK_STEP_WELCOME has exceeded its limit of 5 seconds. Contact support to increase this quota.\")",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"python\": {\n                            \"body\": \"import time\\ntime.sleep(25)\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "target",
+					"item": [
+						{
+							"name": "size",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-300000000001\",\n                \"organization\": \"00000000-0000-0000-0000-300000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return Buffer.alloc(20000, 0);\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "duration",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-300000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return await new Promise(resolve => setTimeout(resolve, 25000));\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "stream",
+					"item": [
+						{
+							"name": "stream send message size (target)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// const response = pm.response.json();",
+											"",
+											"// pm.test(\"assert response body\", () => {",
+											"//     const hasError = !!response.events.find((event) => event?.end?.error?.message === \"QuotaError\")",
+											"//     pm.expect(hasError).to.eql(true);",
+											"// });",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"include_events\": false\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"name\": \"Let's Get Hyped for Streaming!\",\n                \"organization\": \"00000000-0000-0000-0000-300000000001\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"variables\",\n                    \"variables\": {\n                        \"items\": [\n                            {\n                                \"key\": \"topicName\",\n                                \"value\": \"{{ `topic.${Math.floor(Math.random() * 1000)}` }}\",\n                                \"type\": \"TYPE_SIMPLE\"\n                            },\n                            {\n                                \"key\": \"count\",\n                                \"value\": \"{{ 0 }}\",\n                                \"type\": \"TYPE_SIMPLE\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"produce_dynamic\",\n                    \"step\": {\n                        \"integration\": \"kafka-integration-id\",\n                        \"kafka\": {\n                            \"operation\": \"OPERATION_PRODUCE\",\n                            \"produce\": {\n                                \"auto_create_topic\": true,\n                                \"messages\": \"{{ [{topic:topicName.value,value:'test value'},{topic:topicName.value,value:'test value'},{topic:topicName.value,value:'test value' }] }}\"\n                            }\n                        }\n                    }\n                },\n                {\n                    \"name\": \"consume\",\n                    \"parallel\": {\n                        \"wait\": \"WAIT_NONE\",\n                        \"static\": {\n                            \"paths\": {\n                                \"just_me\": {\n                                    \"blocks\": [\n                                        {\n                                            \"name\": \"stream\",\n                                            \"stream\": {\n                                                \"variables\": {\n                                                    \"item\": \"item\"\n                                                },\n                                                \"options\": {\n                                                    \"disable_auto_send\": true\n                                                },\n                                                \"trigger\": {\n                                                    \"name\": \"my_trigger\",\n                                                    \"step\": {\n                                                        \"integration\": \"kafka-integration-id\",\n                                                        \"kafka\": {\n                                                            \"operation\": \"OPERATION_CONSUME\",\n                                                            \"consume\": {\n                                                                \"topic\": \"{{ topicName.value }}\",\n                                                                \"from\": \"FROM_BEGINNING\"\n                                                            }\n                                                        }\n                                                    }\n                                                },\n                                                \"process\": {\n                                                    \"blocks\": [\n                                                        {\n                                                            \"name\": \"conditional\",\n                                                            \"conditional\": {\n                                                                \"if\": {\n                                                                    \"condition\": \"{{ count.value > 1 }}\",\n                                                                    \"blocks\": [\n                                                                        {\n                                                                            \"name\": \"return\",\n                                                                            \"return\": {\n                                                                                \"data\": \"{{ 'goodbye' }}\"\n                                                                            }\n                                                                        }\n                                                                    ]\n                                                                }\n                                                            }\n                                                        },\n                                                        {\n                                                            \"name\": \"batch\",\n                                                            \"step\": {\n                                                                \"javascript\": {\n                                                                    \"body\": \"count.set(++count.value); return item.value;\"\n                                                                }\n                                                            }\n                                                        },\n                                                        {\n                                                            \"name\": \"send\",\n                                                            \"send\": {\n                                                                \"message\": \"{{ 'a'.repeat(100) }}\"\n                                                            }\n                                                        }\n                                                    ]\n                                                }\n                                            }\n                                        }\n                                    ]\n                                }\n                            }\n                        }\n                    }\n                },\n                {\n                    \"name\": \"Wait1\",\n                    \"wait\": {\n                        \"condition\": \"{{ 'consume' }}\"\n                    }\n                }\n            ]\n        },\n        \"integrations\": {\n            \"kafka-integration-id\": {\n                \"cluster\": {\n                    \"brokers\": \"kafka:9092\"\n                }\n            }\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "compute units",
+					"item": [
+						{
+							"name": "works",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: Your organization has exceeded its weekly compute limit of 0.05 minutes. This only occurs under unexpected usage patterns. The Superblocks team has been notified.\");",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-300000000114\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Loop1\",\n                    \"loop\": {\n                        \"type\": \"TYPE_FOR\",\n                        \"range\": \"{{ 5 }}\",\n                        \"blocks\": [\n                            {\n                                \"name\": \"block1\",\n                                \"step\": {\n                                    \"integration\": \"javascript\",\n                                    \"javascript\": {\n                                        \"body\": \"return await new Promise(resolve => setTimeout(resolve, 45000));\"\n                                    }\n                                }\n                            }\n                        ]\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\",\n            \"organization_plan\": \"TRIAL\"\n        },\n        \"integrations\": {\n            \"javascript\": {}\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "step rate",
+					"item": [
+						{
+							"name": "works",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: Your organization has exceeded its block rate limit of 10 per second. This only occurs under unexpected usage patterns. The Superblocks team has been notified.\");",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"trigger\": {\n                \"application\": {\n                    \"id\": \"00000000-0000-0000-0000-000000000005\"\n                }\n            },\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-300000000112\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Loop1\",\n                    \"loop\": {\n                        \"type\": \"TYPE_FOR\",\n                        \"range\": \"{{ 20 }}\",\n                        \"blocks\": [\n                            {\n                                \"name\": \"block1\",\n                                \"step\": {\n                                    \"javascript\": {\n                                        \"body\": \"return 5;\"\n                                    }\n                                }\n                            }\n                        ]\n                    }\n                }\n            ]\n        },\n        \"metadata\": {}\n    },\n    \"metadata\": {\n        \"profile\": \"production\",\n        \"organization_plan\": \"TRIAL\"\n    },\n    \"integrations\": {\n        \"javascript\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "timeout",
+					"item": [
+						{
+							"name": "works",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: This API has exceeded its timeout of 3 seconds. Contact support to increase this quota.\");",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"trigger\": {\n                \"application\": {\n                    \"id\": \"00000000-0000-0000-0000-000000000005\"\n                }\n            },\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000002\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Loop1\",\n                    \"loop\": {\n                        \"type\": \"TYPE_FOR\",\n                        \"range\": \"{{ 5 }}\",\n                        \"blocks\": [\n                            {\n                                \"name\": \"block1\",\n                                \"step\": {\n                                    \"javascript\": {\n                                        \"body\": \"return await new Promise(resolve => setTimeout(resolve, 1000));\"\n                                    }\n                                }\n                            }\n                        ]\n                    }\n                }\n            ]\n        },\n        \"metadata\": {}\n    },\n    \"metadata\": {\n        \"profile\": \"production\",\n        \"organization_plan\": \"TRIAL\"\n    },\n    \"integrations\": {\n        \"javascript\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "works with single step",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: This API has exceeded its timeout of 3 seconds. Contact support to increase this quota.\");",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer TOKEN_GOES_HERE"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"trigger\": {\n                \"application\": {\n                    \"id\": \"00000000-0000-0000-0000-000000000005\"\n                }\n            },\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000002\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"block1\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return await new Promise(resolve => setTimeout(resolve, 3500));\"\n                        }\n                    }\n                }\n            ]\n        }\n    },\n    \"metadata\": {\n        \"profile\": \"production\",\n        \"organization_plan\": \"TRIAL\"\n    },\n    \"integrations\": {\n        \"javascript\": {}\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "works with workflow step",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"assert response body\", () => {",
+											"    pm.expect(response.message).to.eql(\"QuotaError: This API has exceeded its timeout of 3 seconds. Contact support to increase this quota.\");",
+											"});",
+											"",
+											"pm.test(\"assert status\", () => {",
+											"    pm.response.to.have.status(429);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer asdf.asdf.asdf"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"trigger\": {\n                \"application\": {\n                    \"id\": \"00000000-0000-0000-0000-000000000005\"\n                }\n            },\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000002\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Loop1\",\n                    \"loop\": {\n                        \"type\": \"TYPE_FOR\",\n                        \"range\": \"{{ 5 }}\",\n                        \"blocks\": [\n                            {\n                                \"name\": \"wf\",\n                                \"step\": {\n                                    \"workflow\": {\n                                        \"workflow\": \"00000000-0000-0000-0000-000000000024\"\n                                    }\n                                }\n                            }\n                        ]\n                    }\n                }\n            ]\n        }\n    },\n    \"metadata\": {\n        \"profile\": \"production\",\n        \"organization_plan\": \"TRIAL\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+									"protocol": "{{orchestrator_scheme}}",
+									"host": [
+										"{{orchestrator_host}}"
+									],
+									"port": "{{orchestrator_port}}",
+									"path": [
+										"v2",
+										"execute"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.request.headers.has('X-Superblocks-Authorization')) {",
+					"    pm.request.headers.add({",
+					"        key: 'X-Superblocks-Authorization',",
+					"        value: `Bearer ${pm.environment.get(\"superblocks_jwt\")}`",
+					"    })",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"const response = pm.response.json();",
+					"",
+					"pm.test(\"assert events\", () => {",
+					"    response.events?.forEach((event) => {",
+					"        pm.expect(event.type).to.match(/BLOCK_TYPE_.*/);",
+					"        pm.expect(event.type).to.not.be.eql(\"BLOCK_TYPE_UNSPECIFIED\");",
+					"        pm.expect(event.parent).to.not.be.eql(\"\");",
+					"        pm.expect(event.name).to.not.be.eql(\"\");",
+					"        pm.expect(event.name).to.not.be.eql(\"DEAD\"); // This is the block that shouldn't run. Requires at least 2 JS workers to pass.",
+					"    })",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "DOCKER_INTERNAL_HOST",
+			"value": "host.docker.internal",
+			"type": "string"
+		},
+		{
+			"key": "mock_oauth_server_url",
+			"value": "mock_oauth_server",
+			"type": "string"
+		}
+	]
+}

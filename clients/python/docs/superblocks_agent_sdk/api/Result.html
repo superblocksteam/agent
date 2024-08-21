@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>superblocks_agent_sdk.api.Result API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/highlight.min.js" integrity="sha512-tL84mD+FR70jI7X8vYj5AfRqe0EifOaFUapjt1KvDaPLHgTlUZ2gQL/Tzvvn8HXuQm9oHYShJpNFdyJmH2yHrw==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>superblocks_agent_sdk.api.Result</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># TODO: (joey) some of these imports are weird
+from __future__ import annotations
+
+from typing import Optional
+
+from superblocks_agent_sdk._util.convert import from_protobuf_value
+from superblocks_agent_sdk._util.doc import modify_pdoc
+from superblocks_agent_sdk.types_.common import JsonValue
+from superblocks_types.api.v1.event_pb2 import Event, Output
+from superblocks_types.api.v1.service_pb2 import StreamResponse
+from superblocks_types.common.v1.errors_pb2 import Error
+
+
+# @dataclass(kw_only=True)
+class Result:
+    &#34;&#34;&#34;
+    The result of a Superblocks API execution.
+
+    Attributes:
+        events (list[Event]): All events from the execution. Defaults to `[]`.
+        errors (list[Error]): All top-level errors from the execution. Defaults to `[]`.
+        output (Optional[Output]): The API run output. Defaults to `None`.
+    &#34;&#34;&#34;
+
+    __create_key = object()
+
+    def __init__(
+        self,
+        create_key,
+        *,
+        events: list[Event] = None,
+        errors: list[Error] = None,
+        output: Optional[Output] = None,
+    ):
+        # we don&#39;t want a public constructor
+        # pattern used is suggested here: https://stackoverflow.com/questions/8212053/private-constructor-in-python
+        assert create_key == self.__create_key, &#34;&#39;Result&#39; should not be instantiated&#34;
+        self.events = events or []
+        self.errors = errors or []
+        self.output = output
+
+    def __eq__(self, other: Result) -&gt; bool:
+        # this is needed since the __create_key field causes inequality always
+        eq = self.events == other.events
+        eq = eq and self.errors == other.errors
+        eq = eq and self.output == other.output
+        return eq
+
+    def get_result(self) -&gt; JsonValue:
+        # TODO: (joey) we should probably raise more specific errors for these cases
+        &#34;&#34;&#34;
+        Get the native Python value for the result of the API.
+        Returns:
+            superblocks_agent.types.common.JsonValue: The result.
+
+        Raises:
+            Exception: Raised when there is no result and there are errors. Exception will contain the errors from execution.
+            Exception: Raised when there is no result and there are no errors.
+        &#34;&#34;&#34;
+        if self.output is not None:
+            return from_protobuf_value(self.output.result)
+        if len(self.errors) &gt; 0:
+            raise Exception(self.errors)
+        raise Exception(&#34;no result found&#34;)
+
+    def get_block_result(self, name: str) -&gt; JsonValue:
+        &#34;&#34;&#34;
+        Get the native Python value for the result of a block by name.
+        Args:
+            name (str): The name of the block to get the result of.
+
+        Returns:
+            superblocks_agent.types.common.JsonValue: The result.
+
+        Raises:
+            KeyError: Raised when a block result isn&#39;t found.
+            Exception: Raised when a block has an error. Exception will contain that error.
+        &#34;&#34;&#34;
+        for event in self.events:
+            if event.HasField(&#34;end&#34;) and event.name == name:
+                if event.end.HasField(&#34;error&#34;):
+                    raise Exception(event.end.error)
+                return from_protobuf_value(event.end.output.result)
+        raise KeyError(f&#34;no block result found for &#39;{name}&#39;&#34;)
+
+    @classmethod
+    def _from_proto_stream_responses(cls, stream_responses: list[StreamResponse]) -&gt; Result:
+        events = []
+        errors = []
+        output = None
+        output_block_name = None
+
+        block_name_to_output_map = {}
+
+        for stream_response in stream_responses:
+            events.append(stream_response.event)
+            # check if this event holds the output
+            if stream_response.event.HasField(&#34;response&#34;):
+                output_block_name = stream_response.event.response.last
+                errors = stream_response.event.response.errors
+            elif stream_response.event.HasField(&#34;end&#34;):
+                block_name_to_output_map[stream_response.event.name] = (
+                    stream_response.event.end.output
+                )
+
+        # find &#34;response&#34; event by name
+        output = block_name_to_output_map.get(output_block_name)
+        if output_block_name is not None and output is None:
+            raise Exception(f&#34;no matching event found for block &#39;{output_block_name}&#39;&#34;)
+
+        return Result(cls.__create_key, events=events, errors=errors, output=output)
+
+
+__pdoc__ = modify_pdoc(
+    exclude=[
+        &#34;StreamResponse&#34;,
+        &#34;Result.__init__&#34;,
+        &#34;Error.DESCRIPTOR&#34;,
+        &#34;Event.DESCRIPTOR&#34;,
+        &#34;Output.DESCRIPTOR&#34;,
+    ]
+)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="superblocks_agent_sdk.api.Result.Error"><code class="flex name class">
+<span>class <span class="ident">Error</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>google._upb._message.Message</li>
+<li>google.protobuf.message.Message</li>
+</ul>
+</dd>
+<dt id="superblocks_agent_sdk.api.Result.Event"><code class="flex name class">
+<span>class <span class="ident">Event</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>google._upb._message.Message</li>
+<li>google.protobuf.message.Message</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="superblocks_agent_sdk.api.Result.Event.Data"><code class="name">var <span class="ident">Data</span></code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+</dd>
+<dt id="superblocks_agent_sdk.api.Result.Event.End"><code class="name">var <span class="ident">End</span></code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+</dd>
+<dt id="superblocks_agent_sdk.api.Result.Event.Request"><code class="name">var <span class="ident">Request</span></code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+</dd>
+<dt id="superblocks_agent_sdk.api.Result.Event.Response"><code class="name">var <span class="ident">Response</span></code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+</dd>
+<dt id="superblocks_agent_sdk.api.Result.Event.Start"><code class="name">var <span class="ident">Start</span></code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="superblocks_agent_sdk.api.Result.Output"><code class="flex name class">
+<span>class <span class="ident">Output</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>google._upb._message.Message</li>
+<li>google.protobuf.message.Message</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="superblocks_agent_sdk.api.Result.Output.Request"><code class="name">var <span class="ident">Request</span></code></dt>
+<dd>
+<div class="desc"><p>A ProtocolMessage</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="superblocks_agent_sdk.api.Result.Result"><code class="flex name class">
+<span>class <span class="ident">Result</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>The result of a Superblocks API execution.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>events</code></strong> :&ensp;<code>list[<a title="superblocks_agent_sdk.api.Result.Event" href="#superblocks_agent_sdk.api.Result.Event">Event</a>]</code></dt>
+<dd>All events from the execution. Defaults to <code>[]</code>.</dd>
+<dt><strong><code>errors</code></strong> :&ensp;<code>list[<a title="superblocks_agent_sdk.api.Result.Error" href="#superblocks_agent_sdk.api.Result.Error">Error</a>]</code></dt>
+<dd>All top-level errors from the execution. Defaults to <code>[]</code>.</dd>
+<dt><strong><code>output</code></strong> :&ensp;<code>Optional[<a title="superblocks_agent_sdk.api.Result.Output" href="#superblocks_agent_sdk.api.Result.Output">Output</a>]</code></dt>
+<dd>The API run output. Defaults to <code>None</code>.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Result:
+    &#34;&#34;&#34;
+    The result of a Superblocks API execution.
+
+    Attributes:
+        events (list[Event]): All events from the execution. Defaults to `[]`.
+        errors (list[Error]): All top-level errors from the execution. Defaults to `[]`.
+        output (Optional[Output]): The API run output. Defaults to `None`.
+    &#34;&#34;&#34;
+
+    __create_key = object()
+
+    def __init__(
+        self,
+        create_key,
+        *,
+        events: list[Event] = None,
+        errors: list[Error] = None,
+        output: Optional[Output] = None,
+    ):
+        # we don&#39;t want a public constructor
+        # pattern used is suggested here: https://stackoverflow.com/questions/8212053/private-constructor-in-python
+        assert create_key == self.__create_key, &#34;&#39;Result&#39; should not be instantiated&#34;
+        self.events = events or []
+        self.errors = errors or []
+        self.output = output
+
+    def __eq__(self, other: Result) -&gt; bool:
+        # this is needed since the __create_key field causes inequality always
+        eq = self.events == other.events
+        eq = eq and self.errors == other.errors
+        eq = eq and self.output == other.output
+        return eq
+
+    def get_result(self) -&gt; JsonValue:
+        # TODO: (joey) we should probably raise more specific errors for these cases
+        &#34;&#34;&#34;
+        Get the native Python value for the result of the API.
+        Returns:
+            superblocks_agent.types.common.JsonValue: The result.
+
+        Raises:
+            Exception: Raised when there is no result and there are errors. Exception will contain the errors from execution.
+            Exception: Raised when there is no result and there are no errors.
+        &#34;&#34;&#34;
+        if self.output is not None:
+            return from_protobuf_value(self.output.result)
+        if len(self.errors) &gt; 0:
+            raise Exception(self.errors)
+        raise Exception(&#34;no result found&#34;)
+
+    def get_block_result(self, name: str) -&gt; JsonValue:
+        &#34;&#34;&#34;
+        Get the native Python value for the result of a block by name.
+        Args:
+            name (str): The name of the block to get the result of.
+
+        Returns:
+            superblocks_agent.types.common.JsonValue: The result.
+
+        Raises:
+            KeyError: Raised when a block result isn&#39;t found.
+            Exception: Raised when a block has an error. Exception will contain that error.
+        &#34;&#34;&#34;
+        for event in self.events:
+            if event.HasField(&#34;end&#34;) and event.name == name:
+                if event.end.HasField(&#34;error&#34;):
+                    raise Exception(event.end.error)
+                return from_protobuf_value(event.end.output.result)
+        raise KeyError(f&#34;no block result found for &#39;{name}&#39;&#34;)
+
+    @classmethod
+    def _from_proto_stream_responses(cls, stream_responses: list[StreamResponse]) -&gt; Result:
+        events = []
+        errors = []
+        output = None
+        output_block_name = None
+
+        block_name_to_output_map = {}
+
+        for stream_response in stream_responses:
+            events.append(stream_response.event)
+            # check if this event holds the output
+            if stream_response.event.HasField(&#34;response&#34;):
+                output_block_name = stream_response.event.response.last
+                errors = stream_response.event.response.errors
+            elif stream_response.event.HasField(&#34;end&#34;):
+                block_name_to_output_map[stream_response.event.name] = (
+                    stream_response.event.end.output
+                )
+
+        # find &#34;response&#34; event by name
+        output = block_name_to_output_map.get(output_block_name)
+        if output_block_name is not None and output is None:
+            raise Exception(f&#34;no matching event found for block &#39;{output_block_name}&#39;&#34;)
+
+        return Result(cls.__create_key, events=events, errors=errors, output=output)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="superblocks_agent_sdk.api.Result.Result.get_block_result"><code class="name flex">
+<span>def <span class="ident">get_block_result</span></span>(<span>self, name: str) ‑> JsonValue</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the native Python value for the result of a block by name.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>The name of the block to get the result of.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>superblocks_agent.types.common.JsonValue</code></dt>
+<dd>The result.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>KeyError</code></dt>
+<dd>Raised when a block result isn't found.</dd>
+<dt><code>Exception</code></dt>
+<dd>Raised when a block has an error. Exception will contain that error.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_block_result(self, name: str) -&gt; JsonValue:
+    &#34;&#34;&#34;
+    Get the native Python value for the result of a block by name.
+    Args:
+        name (str): The name of the block to get the result of.
+
+    Returns:
+        superblocks_agent.types.common.JsonValue: The result.
+
+    Raises:
+        KeyError: Raised when a block result isn&#39;t found.
+        Exception: Raised when a block has an error. Exception will contain that error.
+    &#34;&#34;&#34;
+    for event in self.events:
+        if event.HasField(&#34;end&#34;) and event.name == name:
+            if event.end.HasField(&#34;error&#34;):
+                raise Exception(event.end.error)
+            return from_protobuf_value(event.end.output.result)
+    raise KeyError(f&#34;no block result found for &#39;{name}&#39;&#34;)</code></pre>
+</details>
+</dd>
+<dt id="superblocks_agent_sdk.api.Result.Result.get_result"><code class="name flex">
+<span>def <span class="ident">get_result</span></span>(<span>self) ‑> JsonValue</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the native Python value for the result of the API.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>superblocks_agent.types.common.JsonValue</code></dt>
+<dd>The result.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>Exception</code></dt>
+<dd>Raised when there is no result and there are errors. Exception will contain the errors from execution.</dd>
+<dt><code>Exception</code></dt>
+<dd>Raised when there is no result and there are no errors.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_result(self) -&gt; JsonValue:
+    # TODO: (joey) we should probably raise more specific errors for these cases
+    &#34;&#34;&#34;
+    Get the native Python value for the result of the API.
+    Returns:
+        superblocks_agent.types.common.JsonValue: The result.
+
+    Raises:
+        Exception: Raised when there is no result and there are errors. Exception will contain the errors from execution.
+        Exception: Raised when there is no result and there are no errors.
+    &#34;&#34;&#34;
+    if self.output is not None:
+        return from_protobuf_value(self.output.result)
+    if len(self.errors) &gt; 0:
+        raise Exception(self.errors)
+    raise Exception(&#34;no result found&#34;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<img src="https://superblocks.s3.us-west-2.amazonaws.com/logo.png" alt="Superblocks Logo" width="100">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="superblocks_agent_sdk.api" href="index.html">superblocks_agent_sdk.api</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="superblocks_agent_sdk.api.Result.Error" href="#superblocks_agent_sdk.api.Result.Error">Error</a></code></h4>
+</li>
+<li>
+<h4><code><a title="superblocks_agent_sdk.api.Result.Event" href="#superblocks_agent_sdk.api.Result.Event">Event</a></code></h4>
+<ul class="">
+<li><code><a title="superblocks_agent_sdk.api.Result.Event.Data" href="#superblocks_agent_sdk.api.Result.Event.Data">Data</a></code></li>
+<li><code><a title="superblocks_agent_sdk.api.Result.Event.End" href="#superblocks_agent_sdk.api.Result.Event.End">End</a></code></li>
+<li><code><a title="superblocks_agent_sdk.api.Result.Event.Request" href="#superblocks_agent_sdk.api.Result.Event.Request">Request</a></code></li>
+<li><code><a title="superblocks_agent_sdk.api.Result.Event.Response" href="#superblocks_agent_sdk.api.Result.Event.Response">Response</a></code></li>
+<li><code><a title="superblocks_agent_sdk.api.Result.Event.Start" href="#superblocks_agent_sdk.api.Result.Event.Start">Start</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="superblocks_agent_sdk.api.Result.Output" href="#superblocks_agent_sdk.api.Result.Output">Output</a></code></h4>
+<ul class="">
+<li><code><a title="superblocks_agent_sdk.api.Result.Output.Request" href="#superblocks_agent_sdk.api.Result.Output.Request">Request</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="superblocks_agent_sdk.api.Result.Result" href="#superblocks_agent_sdk.api.Result.Result">Result</a></code></h4>
+<ul class="">
+<li><code><a title="superblocks_agent_sdk.api.Result.Result.get_block_result" href="#superblocks_agent_sdk.api.Result.Result.get_block_result">get_block_result</a></code></li>
+<li><code><a title="superblocks_agent_sdk.api.Result.Result.get_result" href="#superblocks_agent_sdk.api.Result.Result.get_result">get_result</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<a href="https://www.superblocks.com">superblocks.com</a>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package integration.v1;
+
+import "common/v1/common.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/integration/v1";
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+  KIND_PLUGIN = 1;
+  KIND_SECRET = 2;
+}
+
+message GetIntegrationResponse {
+  Integration data = 1;
+}
+
+message GetIntegrationsRequest {
+  optional common.v1.Profile profile = 1;
+  repeated string ids = 2;
+  optional Kind kind = 3;
+  optional string slug = 4;
+}
+
+message GetIntegrationsResponse {
+  repeated Integration data = 1;
+}
+
+message Configuration {
+  string id = 1;
+  string created = 2;
+  string integration_id = 3;
+  google.protobuf.Struct configuration = 4;
+  bool is_default = 5;
+  repeated string profile_ids = 6;
+}
+
+message Integration {
+  string id = 1;
+  string created = 2;
+  string updated = 3;
+  string name = 4;
+  string plugin_id = 5;
+  string organization_id = 6;
+  string demo_integration_id = 7;
+  repeated Configuration configurations = 8;
+  bool is_user_configured = 9;
+  string slug = 10;
+}

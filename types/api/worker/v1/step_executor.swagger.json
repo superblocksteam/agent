@@ -1,0 +1,654 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "worker/v1/step_executor.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "StepExecutorService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {},
+  "definitions": {
+    "ContainerPartitionKey": {
+      "type": "object",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "kind": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "DataPinned": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "event": {
+          "type": "string"
+        },
+        "carrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Deprecated, use observability instead"
+        },
+        "observability": {
+          "$ref": "#/definitions/v1Observability"
+        }
+      }
+    },
+    "DataProps": {
+      "type": "object",
+      "properties": {
+        "actionConfiguration": {
+          "type": "object"
+        },
+        "datasourceConfiguration": {
+          "type": "object"
+        },
+        "redactedDatasourceConfiguration": {
+          "type": "object"
+        },
+        "executionId": {
+          "type": "string"
+        },
+        "stepName": {
+          "type": "string"
+        },
+        "environment": {
+          "type": "string"
+        },
+        "bindingKeys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PropsBinding"
+          },
+          "title": "DEPRECATED"
+        },
+        "variables": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1Variable"
+          }
+        },
+        "$fileServerUrl": {
+          "type": "string"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/DataPropsFile"
+          }
+        },
+        "render": {
+          "type": "boolean",
+          "description": "If true, the worker will render the action configuration."
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "DataPropsFile": {
+      "type": "object",
+      "properties": {
+        "fieldname": {
+          "type": "string"
+        },
+        "originalname": {
+          "type": "string"
+        },
+        "encoding": {
+          "type": "string"
+        },
+        "mimetype": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "buffer": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "DataQuota": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "duration": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "DatabaseSchemaMetadataColumn": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "escapedName": {
+          "type": "string"
+        }
+      }
+    },
+    "DatabaseSchemaMetadataTemplate": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        }
+      }
+    },
+    "MetadataContainer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "partitionKey": {
+          "$ref": "#/definitions/ContainerPartitionKey"
+        }
+      }
+    },
+    "MetadataResponseBucketMetadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "MetadataResponseDatabaseSchemaMetadata": {
+      "type": "object",
+      "properties": {
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataResponseDatabaseSchemaMetadataTable"
+          }
+        },
+        "schemas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataResponseDatabaseSchemaMetadataSchema"
+          },
+          "title": "NOTE: (joey) this is optional in the TS version of this model. should be here as well"
+        }
+      }
+    },
+    "MetadataResponseDatabaseSchemaMetadataKey": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "MetadataResponseDatabaseSchemaMetadataSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "MetadataResponseDatabaseSchemaMetadataTable": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/DatabaseSchemaMetadataColumn"
+          }
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataResponseDatabaseSchemaMetadataKey"
+          }
+        },
+        "templates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/DatabaseSchemaMetadataTemplate"
+          }
+        },
+        "schema": {
+          "type": "string",
+          "title": "NOTE: (joey) this is optional in the TS version of this model. should be here as well"
+        }
+      }
+    },
+    "PerformanceObservable": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "number",
+          "format": "double"
+        },
+        "end": {
+          "type": "number",
+          "format": "double"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        },
+        "bytes": {
+          "type": "number",
+          "format": "double"
+        },
+        "estimate": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "PropsBinding": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "pluginsadlsv1PluginMetadata": {
+      "type": "object",
+      "properties": {
+        "fileSystems": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pluginscosmosdbv1PluginMetadata": {
+      "type": "object",
+      "properties": {
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataContainer"
+          }
+        }
+      }
+    },
+    "pluginskafkav1Metadata": {
+      "type": "object",
+      "properties": {
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Topic"
+          }
+        },
+        "brokers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Broker"
+          }
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        }
+      },
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "protobufNullValue": {
+      "type": "string",
+      "enum": [
+        "NULL_VALUE"
+      ],
+      "default": "NULL_VALUE",
+      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
+    },
+    "transportv1Performance": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "boolean"
+        },
+        "pluginExecution": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "queueRequest": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "queueResponse": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "kvStoreFetch": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "kvStorePush": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "total": {
+          "$ref": "#/definitions/PerformanceObservable"
+        }
+      }
+    },
+    "transportv1Response": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/v1ResponseData"
+        },
+        "pinned": {
+          "$ref": "#/definitions/v1Error"
+        }
+      },
+      "description": "NOTE(frank): We don't have control over this type. We have\nto work with the existing controller \u003c-\u003e worker interface.\nUsually it's not a best practice to inline nested structs\nlike this but I think it's okay in this case."
+    },
+    "v1Broker": {
+      "type": "object",
+      "properties": {
+        "nodeId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "address": {
+          "type": "string"
+        }
+      }
+    },
+    "v1Code": {
+      "type": "string",
+      "enum": [
+        "CODE_UNSPECIFIED",
+        "CODE_INTEGRATION_AUTHORIZATION",
+        "CODE_INTEGRATION_NETWORK",
+        "CODE_INTEGRATION_QUERY_TIMEOUT",
+        "CODE_INTEGRATION_SYNTAX",
+        "CODE_INTEGRATION_LOGIC",
+        "CODE_INTEGRATION_MISSING_REQUIRED_FIELD",
+        "CODE_INTEGRATION_RATE_LIMIT",
+        "CODE_INTEGRATION_USER_CANCELLED",
+        "CODE_INTEGRATION_INTERNAL"
+      ],
+      "default": "CODE_UNSPECIFIED"
+    },
+    "v1Error": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "handled": {
+          "type": "boolean"
+        },
+        "blockPath": {
+          "type": "string"
+        },
+        "formPath": {
+          "type": "string"
+        },
+        "code": {
+          "$ref": "#/definitions/v1Code"
+        }
+      }
+    },
+    "v1Observability": {
+      "type": "object",
+      "properties": {
+        "traceId": {
+          "type": "string"
+        },
+        "spanId": {
+          "type": "string"
+        },
+        "baggage": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "traceFlags": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "v1RequestData": {
+      "type": "object",
+      "properties": {
+        "pinned": {
+          "$ref": "#/definitions/DataPinned"
+        },
+        "data": {
+          "$ref": "#/definitions/v1RequestDataData"
+        }
+      }
+    },
+    "v1RequestDataData": {
+      "type": "object",
+      "properties": {
+        "props": {
+          "$ref": "#/definitions/DataProps"
+        },
+        "dConfig": {
+          "type": "object",
+          "title": "d_config stands for datasource configuration - necessary to match the fields used\nin the existing worker interface"
+        },
+        "aConfig": {
+          "type": "object"
+        },
+        "quotas": {
+          "$ref": "#/definitions/DataQuota"
+        }
+      }
+    },
+    "v1ResponseData": {
+      "type": "object",
+      "properties": {
+        "pinned": {
+          "$ref": "#/definitions/transportv1Performance"
+        },
+        "data": {
+          "$ref": "#/definitions/v1ResponseDataData"
+        }
+      }
+    },
+    "v1ResponseDataData": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "err": {
+          "$ref": "#/definitions/v1Error"
+        },
+        "dbSchema": {
+          "$ref": "#/definitions/MetadataResponseDatabaseSchemaMetadata",
+          "title": "Metadata response fields - necessary to match fields used in the existing worker interface\nhttps://github.com/superblocksteam/superblocks/blob/f75d3a80745253458865b66a885cb7f8eb258229/packages/shared/src/types/datasource/metadata/index.ts#L6-L9"
+        },
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataResponseBucketMetadata"
+          }
+        },
+        "kafka": {
+          "$ref": "#/definitions/pluginskafkav1Metadata",
+          "description": "NOTE(frank): I think we'll need a transport/v2 for this but ideally\nwe don't have duplcate types like this."
+        },
+        "cosmosdb": {
+          "$ref": "#/definitions/pluginscosmosdbv1PluginMetadata"
+        },
+        "adls": {
+          "$ref": "#/definitions/pluginsadlsv1PluginMetadata"
+        },
+        "dynamodb": {
+          "$ref": "#/definitions/protobufAny"
+        },
+        "gSheetsNextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "v1StringValue": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      },
+      "description": "NOTE(frank): We are running into so many issues using google.protobuf.StringValue\nbetween go and javascript."
+    },
+    "v1Topic": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1Variable": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v1VariablesType"
+        },
+        "mode": {
+          "$ref": "#/definitions/v1VariablesMode"
+        }
+      }
+    },
+    "v1VariablesMode": {
+      "type": "string",
+      "enum": [
+        "MODE_UNSPECIFIED",
+        "MODE_READ",
+        "MODE_READWRITE"
+      ],
+      "default": "MODE_UNSPECIFIED"
+    },
+    "v1VariablesType": {
+      "type": "string",
+      "enum": [
+        "TYPE_UNSPECIFIED",
+        "TYPE_SIMPLE",
+        "TYPE_ADVANCED",
+        "TYPE_NATIVE",
+        "TYPE_FILEPICKER"
+      ],
+      "default": "TYPE_UNSPECIFIED",
+      "title": "- TYPE_SIMPLE: myVar1.get()\nmyVar1.set()\n - TYPE_ADVANCED: await myVar1.get()\nawait myVar1.set()\n - TYPE_NATIVE: myVar1\nmyVar1 = 5; // NOTE(frank): We won't implement MODE_READWRITE for this yet.\n - TYPE_FILEPICKER: await myVar1.readContentsAsync()\nawait myVar1.readContentsAsync(someMode)\nmyVar1.readContents()\nmyVar1.readContents(someMode)"
+    }
+  }
+}

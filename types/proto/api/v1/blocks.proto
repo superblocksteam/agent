@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "buf/validate/validate.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/api/v1";
+
+message Variables {
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+
+    /*
+     * myVar1.get()
+     * myVar1.set()
+     **/
+    TYPE_SIMPLE = 1;
+
+    /*
+     * await myVar1.get()
+     * await myVar1.set()
+     **/
+    TYPE_ADVANCED = 2;
+
+    /*
+     * myVar1
+     * myVar1 = 5; // NOTE(frank): We won't implement MODE_READWRITE for this yet.
+     **/
+    TYPE_NATIVE = 3;
+    /*
+     * await myVar1.readContentsAsync()
+     * await myVar1.readContentsAsync(someMode)
+     * myVar1.readContents()
+     * myVar1.readContents(someMode)
+     **/
+    TYPE_FILEPICKER = 4;
+  }
+
+  enum Mode {
+    MODE_UNSPECIFIED = 0;
+    MODE_READ = 1;
+    MODE_READWRITE = 2;
+  }
+
+  message Config {
+    string value = 1 [
+      (validate.rules).string = {
+        prefix: "{{"
+        suffix: "}}"
+      },
+      (buf.validate.field).string = {
+        prefix: "{{"
+        suffix: "}}"
+      }
+    ];
+
+    Type type = 2 [
+      (validate.rules).enum = {
+        not_in: [0]
+      },
+      (buf.validate.field).enum = {
+        not_in: [0]
+      }
+    ];
+
+    Mode mode = 3;
+    string key = 4;
+  }
+
+  repeated Config items = 1;
+}

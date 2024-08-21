@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/common/v1";
+
+message Timestamps {
+  google.protobuf.Timestamp created = 1;
+  google.protobuf.Timestamp updated = 2;
+  google.protobuf.Timestamp deactivated = 3;
+}
+
+message Metadata {
+  string id = 1;
+  optional string description = 2;
+  string name = 3 [
+    (validate.rules).string.min_len = 1,
+    (buf.validate.field).string.min_len = 1
+  ];
+  string organization = 4 [
+    (validate.rules).string.uuid = true,
+    (buf.validate.field).string.uuid = true
+  ];
+  optional string folder = 5;
+  Timestamps timestamps = 6;
+  optional string version = 7;
+  map<string, string> tags = 8;
+  optional string type = 9;
+}
+
+message Profile {
+  optional string id = 1;
+  optional string name = 2;
+
+  /*
+   * DEPRECATED
+   */
+  optional string environment = 3;
+}
+
+enum UserType {
+  USER_TYPE_UNSPECIFIED = 0;
+  USER_TYPE_SUPERBLOCKS = 1;
+  USER_TYPE_EXTERNAL = 2;
+}

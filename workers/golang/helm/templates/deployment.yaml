@@ -1,0 +1,154 @@
+{{- range $k, $v := .Values.fleets }}
+{{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $k }}
+  labels:
+    {{- include "worker.labels" $v | nindent 4 }}
+spec:
+  replicas: {{ $v.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "worker.labels" $v | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  template:
+    metadata:
+      labels:
+        {{- include "worker.labels" $v | nindent 8 }}
+      annotations:
+        {{- toYaml $podAnnotations | nindent 8 }}
+    spec:
+      serviceAccountName: default
+      imagePullSecrets:
+      - name: worker-docker
+      containers:
+      - name: worker
+        image: "{{ (($v.image).repository) | default ($.Values.image.repository | default "ghcr.io/superblocksteam/worker.go") }}:{{ (($v.image).tag) | default ($.Values.image.tag | default "latest") }}"
+        imagePullPolicy: {{ $.Values.image.pullPolicy | default "IfNotPresent" }}
+        resources:
+          {{- toYaml (deepCopy ($.Values.resources | default dict) | merge ($v.resources)) | nindent 10 }}
+        args:
+        - "--log.level={{ $.Values.service.logLevel }}"
+        - "--emitter.remote.intake={{ $.Values.observability.logging.url }}"
+        - "--emitter.remote.enabled={{ $.Values.observability.logging.enabled }}"
+        {{- if $.Values.observability.logging.maxFlushDuration }}
+        - "--emitter.remote.flush.max.duration={{ $.Values.observability.logging.maxFlushDuration }}"
+        {{- end }}
+        {{- if $.Values.observability.logging.maxFlushItems }}
+        - "--emitter.remote.flush.max.items={{ $.Values.observability.logging.maxFlushItems }}"
+        {{- end }}
+        - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"
+        {{- if $.Values.observability.tracing.batchTimeout }}
+        - "--otel.batcher.batch.timeout={{ $.Values.observability.tracing.batchTimeout }}"
+        {{- end }}
+        {{- if $.Values.observability.tracing.exportTimeout }}
+        - "--otel.batcher.export.timeout={{ $.Values.observability.tracing.exportTimeout }}"
+        {{- end }}
+        {{- if $.Values.observability.tracing.maxExportBatchSize }}
+        - "--otel.batcher.export.batch.max={{ $.Values.observability.tracing.maxBatchSize }}"
+        {{- end }}
+        {{- if $.Values.observability.tracing.maxQueueSize }}
+        - "--otel.batcher.export.queue.max={{ $.Values.observability.tracing.maxQueueSize }}"
+        {{- end }}
+        - "--store.redis.host={{ $.Values.kvstore.host }}"
+        - "--store.redis.servername={{ $.Values.kvstore.servername }}"
+        - "--store.redis.port={{ $.Values.kvstore.port }}"
+        - "--store.redis.tls={{ $.Values.kvstore.tls }}"
+        - "--transport.redis.tls={{ $.Values.queue.tls }}"
+        - "--transport.redis.host={{ $.Values.queue.host }}"
+        - "--transport.redis.servername={{ $.Values.queue.servername }}"
+        - "--transport.redis.port={{ $.Values.queue.port }}"
+        - "--transport.redis.execution.pool={{ $.Values.queue.executionPool }}"
+        {{- if $.Values.queue.timeoutDial }}
+        - "--transport.redis.timeout.dial={{ $.Values.queue.timeoutDial }}"
+        {{- end }}
+        {{- if $.Values.queue.timeoutRead }}
+        - "--transport.redis.timeout.read={{ $.Values.queue.timeoutRead }}"
+        {{- end }}
+        {{- if $.Values.queue.timeoutWrite }}
+        - "--transport.redis.timeout.write={{ $.Values.queue.timeoutWrite }}"
+        {{- end }}
+        {{- if $.Values.queue.timeoutPool }}
+        - "--transport.redis.timeout.pool={{ $.Values.queue.timeoutPool }}"
+        {{- end }}
+        - "--transport.redis.pool.max={{ $.Values.queue.pool.max }}"
+        - "--transport.redis.pool.min={{ $.Values.queue.pool.min }}"
+        - "--transport.redis.block.duration={{ $.Values.queue.blockMs }}"
+        - "--transport.redis.max.messages={{ $.Values.queue.batchSize }}"
+        {{- if $.Values.kvstore.timeoutDial }}
+        - "--store.redis.timeout.dial={{ $.Values.kvstore.timeoutDial }}"
+        {{- end }}
+        {{- if $.Values.kvstore.timeoutRead }}
+        - "--store.redis.timeout.read={{ $.Values.kvstore.timeoutRead }}"
+        {{- end }}
+        {{- if $.Values.kvstore.timeoutWrite }}
+        - "--store.redis.timeout.write={{ $.Values.kvstore.timeoutWrite }}"
+        {{- end }}
+        {{- if $.Values.kvstore.timeoutPool }}
+        - "--store.redis.timeout.pool={{ $.Values.kvstore.timeoutPool }}"
+        {{- end }}
+        - "--store.redis.pool.max={{ $.Values.kvstore.pool.max }}"
+        - "--store.redis.pool.min={{ $.Values.kvstore.pool.min }}"
+        - "--worker.group={{ $.Values.service.workerGroup }}"
+        - "--worker.consumer.group={{ $v.consumerGroup }}"
+        - "--worker.bucket={{ $v.bucket }}"
+        {{- if $v.events }}
+        - "--worker.events={{ $v.events }}"
+        {{- end }}
+        env:
+        - name: GOMEMLIMIT
+          value: {{ $.Values.goMemLimit }}
+        - name: SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: worker-redis-token
+              key: token
+        - name: SUPERBLOCKS_WORKER_GO_STORE_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: worker-kvstore-token
+              key: token
+        - name: SUPERBLOCKS_WORKER_GO_SUPERBLOCKS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: worker-agent-key
+              key: key
+        - name: DD_ENV
+          value: {{ $.Values.environment }}
+        - name: DD_SERVICE
+          value: worker.go
+        - name: DD_VERSION
+          value: {{ $.Values.image.tag }}
+        # ports:
+        # - name: health
+        #   containerPort: {{ $.Values.service.ports.health }}
+        #   protocol: TCP
+        # readinessProbe:
+        #   tcpSocket:
+        #     port: {{ $.Values.service.ports.health }}
+        #   initialDelaySeconds: 15
+        #   periodSeconds: 10
+        # livenessProbe:
+        #   tcpSocket:
+        #     port: {{ $.Values.service.ports.health }}
+        #   initialDelaySeconds: 15
+        #   periodSeconds: 10
+      {{- with $v.nodeSelector | default $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.affinity | default $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with $v.tolerations | default $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{- end }}

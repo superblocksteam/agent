@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package utils.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/utils/v1";
+
+message Signature {
+  string key_id = 1;
+  bytes data = 2;
+}

@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package plugins.cosmosdb.v1;
+
+import "plugins/common/v1/auth.proto";
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/cosmosdb/v1";
+
+message Plugin {
+  optional string name = 1;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 2;
+  CosmosDbConnection connection = 3;
+  // ideally, this would be inside the connection_type but due to our auth flow we do this.
+  oneof cosmosdb_action {
+    Sql sql = 5;
+    // these operations will only ever affect a single item
+    PointOperation point_operation = 6;
+  }
+
+  message CosmosDbConnection {
+    string host = 1;
+    int32 port = 2;
+    string database_id = 3;
+    common.v1.Azure auth = 4;
+  }
+
+  message Metadata {
+    message Container {
+      message PartitionKey {
+        repeated string paths = 1;
+        string kind = 2;
+        optional int32 version = 3;
+      }
+      string id = 1;
+      PartitionKey partition_key = 2;
+    }
+
+    repeated Container containers = 1;
+  }
+
+  // Action Fields
+  message Sql {
+    oneof action {
+      Singleton singleton = 1;
+    }
+
+    // https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/cosmosdb/cosmos/src/client/Item/Items.ts#L87
+    message Singleton {
+      string container_id = 1;
+      string query = 2;
+      bool cross_partition = 3;
+      optional string partition_key = 4;
+    }
+  }
+
+  message PointOperation {
+    // https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/cosmosdb/cosmos/src/client/Item/Item.ts#L78
+    message Read {
+      string id = 1;
+      optional string partition_key = 3;
+    }
+
+    // https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/cosmosdb/cosmos/src/client/Item/Item.ts#L196
+    message Delete {
+      string id = 1;
+      optional string partition_key = 3;
+    }
+
+    // https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/cosmosdb/cosmos/src/client/Item/Item.ts#L128
+    message Replace {
+      string body = 1;
+      optional string partition_key = 3;
+    }
+
+    // https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/cosmosdb/cosmos/src/client/Item/Items.ts#L355
+    message Upsert {
+      string body = 1;
+      optional string partition_key = 3;
+    }
+
+    // https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/cosmosdb/cosmos/src/client/Item/Items.ts#L295
+    message Create {
+      string body = 1;
+      optional string partition_key = 3;
+    }
+
+    string container_id = 1;
+    oneof action {
+      Read read = 2;
+      Replace replace = 3;
+      Upsert upsert = 4;
+      Delete delete = 5;
+      Create create = 6;
+    }
+  }
+}

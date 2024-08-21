@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package ai.v1;
+
+import "ai/v1/ai.proto";
+import "buf/validate/validate.proto";
+import "common/v1/health.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/ai/v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Superblocks AI Service"
+    version: "1.0"
+  }
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+};
+
+service MetadataService {
+  rpc Health(google.protobuf.Empty) returns (common.v1.HealthResponse) {
+    option (google.api.http) = {
+      get: "/v1/ai/health" // When going through the edge network.
+      additional_bindings: [
+        {
+          get: "/api/v1/ai/health" // When going through ai.superblocks.com.
+        }
+      ]
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Service Health"};
+  }
+}
+
+service TaskService {
+  rpc Create(CreateTaskRequest) returns (stream TaskEvent) {
+    option (google.api.http) = {
+      post: "/v1/ai/tasks" // When going through the edge network.
+      body: "*"
+      additional_bindings: [
+        {
+          post: "/api/v1/ai/tasks" // When going through ai.superblocks.com.
+          body: "*"
+        }
+      ]
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {operation_id: "Create Task"};
+  }
+}
+
+message Overrides {
+  ai.v1.LLM llm = 1;
+  ai.v1.MODEL model = 2;
+}
+
+message CreateTaskRequest {
+  ai.v1.Task task = 1 [
+    (validate.rules).message.required = true,
+    (buf.validate.field).required = true
+  ];
+  Overrides overrides = 2;
+}
+
+// NOTE(frank): I'm considering having two event types. I'm not sure how I feel about sending
+// inforamation that doesn't need to be sent every message in every message (i.e. id). Rather,
+// we could send a "hello" event at the beginning with any metadata.
+message TaskEvent {
+  string chunk = 1;
+  ai.v1.LLM llm = 2;
+  ai.v1.MODEL model = 3;
+  string id = 4;
+}

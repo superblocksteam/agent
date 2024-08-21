@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package cache.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/cache/v1";
+
+enum Operation {
+  OPERATION_UNSPECIFIED = 0;
+  OPERATION_UPSERT = 1;
+  OPERATION_DELETE = 2;
+}
+
+message Mutation {
+  string resource = 1;
+  string id = 2;
+  google.protobuf.Value data = 3;
+  string organization_id = 4;
+  bool tombstone = 5;
+  // this is an edge case that needs to be addressed and removed
+  string rbac_role = 6;
+}
+
+message MutationBatch {
+  Operation operation = 1;
+  repeated Mutation batch = 2;
+}

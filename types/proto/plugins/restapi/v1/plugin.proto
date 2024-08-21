@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package plugins.restapi.v1;
+
+import "common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/restapi/v1";
+
+message Plugin {
+  string httpMethod = 1;
+  string responseType = 2;
+  repeated common.v1.Property headers = 3;
+  repeated common.v1.Property params = 4;
+  string bodyType = 5;
+  string body = 6;
+  repeated common.v1.Property formData = 7;
+  string fileFormKey = 8;
+  string fileName = 9;
+  string path = 10;
+  string jsonBody = 11;
+  common.v1.SuperblocksMetadata superblocksMetadata = 12;
+}

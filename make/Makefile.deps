@@ -1,0 +1,127 @@
+SHELL = bash
+
+# use to force install all deps
+FORCE_DEPS ?= false
+
+#
+# air
+#
+
+DEPS_AIR_VERSION = v1.49.0
+.PHONY: deps-air
+deps-air:
+	@go install github.com/cosmtrek/air@$(DEPS_AIR_VERSION)
+
+ifneq ($(FORCE_DEPS),false)
+  deps: deps-air
+endif
+
+# add to deps if not installed
+ifneq ($(shell air -v 2>/dev/null | grep -c "$(DEPS_AIR_VERSION)"), 1)
+  deps: deps-air
+endif
+
+#
+# mockery
+#
+
+DEPS_MOCKERY_VERSION = v2.42.0
+.PHONY: deps-mockery
+deps-mockery:
+	@go install github.com/vektra/mockery/v2@$(DEPS_MOCKERY_VERSION)
+
+ifneq ($(FORCE_DEPS),false)
+  deps: deps-mockery
+endif
+
+# add to deps if not installed
+ifneq ($(shell mockery --version 2>/dev/null | grep -c "$(DEPS_MOCKERY_VERSION)"), 1)
+  deps: deps-mockery
+endif
+
+#
+# pprof
+#
+
+.PHONY: deps-pprof
+deps-pprof:
+	@go install github.com/google/pprof@latest
+
+ifneq ($(FORCE_DEPS),false)
+  deps: deps-pprof
+endif
+
+# add to deps if not installed
+ifeq ($(shell pprof --help &>/dev/null || echo no), no)
+  deps: deps-pprof
+endif
+
+#
+# goimports
+#
+
+.PHONY: deps-goimports
+deps-goimports:
+	@go install golang.org/x/tools/cmd/goimports@latest
+
+ifneq ($(FORCE_DEPS),false)
+  deps: deps-goimports
+endif
+
+# add to deps if not installed
+ifeq ($(shell goimports --help &>/dev/null || [[ $$? == 127 ]] && echo no), no)
+  deps: deps-goimports
+endif
+
+
+#
+# yamlfmt
+#
+
+DEPS_YAMLFMT_VERSION = 0.10.0
+.PHONY: deps-yamlfmt
+deps-yamlfmt:
+	@go install github.com/google/yamlfmt/cmd/yamlfmt@v$(DEPS_YAMLFMT_VERSION)
+
+ifneq ($(FORCE_DEPS),false)
+  deps: deps-yamlfmt
+endif
+
+# add to deps if not installed
+ifneq ($(shell yamlfmt -version 2>/dev/null),$(DEPS_YAMLFMT_VERSION))
+  deps: deps-yamlfmt
+endif
+
+#
+# gotestsum
+#
+
+.PHONY: deps-gotestsum
+deps-gotestsum:
+	go install gotest.tools/gotestsum@latest
+
+ifneq ($(FORCE_DEPS),false)
+  deps: deps-gotestsum
+endif
+
+# add to deps if not installed
+ifeq ($(shell gotestsum --help &>/dev/null || echo no), no)
+  deps: deps-gotestsum
+endif
+
+#
+# protoc-gen-superblocks
+#
+
+.PHONY: deps-protoc-gen-superblocks
+deps-protoc-gen-superblocks:
+	go install ./cmd/protoc-gen-superblocks/...
+
+ifneq ($(FORCE_DEPS),false)
+  deps: deps-protoc-gen-superblocks
+endif
+
+# add to deps if not installed
+ifeq ($(shell which protoc-gen-superblocks &>/dev/null || echo no), no)
+  deps: deps-protoc-gen-superblocks
+endif

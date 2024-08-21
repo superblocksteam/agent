@@ -1,0 +1,50 @@
+---
+# The default resources for all fleets. Fleets can override these values.
+resources:
+  limits:
+    memory: 3Gi
+  requests:
+    cpu: 150m
+    memory: 250Mi
+# Set to a little below the memory limit
+goMemLimit: 2750MiB
+fleets: {} # TODO(frank): Add good documention.
+observability:
+  logging:
+    url: https://logs.intake.superblocks.com
+    enabled: false
+  tracing:
+    url: https://traces.intake.superblocks.com
+superblocks:
+  key: <override>
+kvstore:
+  tls: false
+  port: 6379
+  pool:
+    min: 10
+    max: 50
+queue:
+  tls: false
+  port: 6379
+  blockMs: 5000ms
+  batchSize: 10
+  executionPool: 200
+  pool:
+    min: 10
+    max: 50
+service:
+  logLevel: info
+  workerGroup: main
+  ports:
+    health: 8080
+image:
+  repository: ghcr.io/superblocksteam/worker.go
+  tag: latest
+  pullPolicy: IfNotPresent
+tolerations:
+  - effect: NoSchedule
+    key: dedicated
+    value: agent-worker
+    operator: Equal
+nodeSelector:
+  superblocks.com/node-type: agent-worker

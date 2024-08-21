@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+      "baseUrl": ".",
+      "noEmit": false,
+      "rootDir": "./",
+      "outDir": "./dist",
+      "paths": {
+          "@superblocksteam/types/*": ["packages/types/src/*"]
+      },
+  },
+  "exclude": ["./node_modules", "./coverage", "./dist", "./src/**/*.test.ts"],
+  "include": ["./src/**/*.ts", "./src/**/*.js"]
+}

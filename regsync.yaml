@@ -1,0 +1,25 @@
+---
+# https://github.com/regclient/regclient/blob/main/docs/regsync.md
+x-tags: &tags
+  allow:
+    - latest
+    - "v\\d+\\.\\d+\\.\\d+"
+  deny:
+    - "v0.*"
+    - "v1\\.[0-6]\\.\\d+" # dont sync anything before v1.7.0
+    - ".*-rc"
+version: 1
+defaults:
+  ratelimit:
+    min: 100
+    retry: 5m
+  parallel: 3
+sync:
+  - source: ghcr.io/superblocksteam/agent
+    target: us-east1-docker.pkg.dev/superblocks-registry/superblocks/agent
+    type: repository
+    tags: *tags
+  - source: ghcr.io/superblocksteam/agent
+    target: docker.io/superblocksteam/agent
+    type: repository
+    tags: *tags

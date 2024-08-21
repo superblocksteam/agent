@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package plugins.openai.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/openai/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Property {
+  string key = 1;
+  int32 value = 2;
+  bool editable = 3;
+  bool internal = 4;
+  string description = 5;
+  bool mandatory = 6;
+  string type = 7;
+  string defaultValue = 8;
+  string minRange = 9;
+  string maxRange = 10;
+  repeated string valueOptions = 11;
+}
+
+message Custom {
+  Property presignedExpiration = 1;
+}
+
+message Plugin {
+  string action = 1;
+  optional string generateChatGptResponsePrompt = 2;
+  optional string generateChatGptResponseMessageHistory = 3;
+  optional string generateChatGptResponseSystemInstruction = 4;
+  optional string generateTextType = 5;
+  optional string generateTextNewTextPrompt = 6;
+  optional string generateTextEditTextTextToEdit = 7;
+  optional string generateTextEditTextPrompt = 8;
+  optional string generateCodeType = 9;
+  optional string generateCodeNewCodePrompt = 10;
+  optional string generateCodeEditCodeCodeToEdit = 11;
+  optional string generateCodeEditCodePrompt = 12;
+  optional string checkModerationText = 13;
+  optional string embeddingText = 14;
+  optional string generateImageMethod = 15;
+  optional string generateImageGenerateFromPromptPrompt = 16;
+  optional string generateImageGenerateFromPromptImageImageSize = 17;
+  optional string generateImageEditImagePrompt = 18;
+  optional string generateImageEditImageImageFileToEdit = 19;
+  optional string generateImageEditImageImageMask = 20;
+  optional string generateImageEditImageImageSizes = 21;
+  optional string generateImageVaryImageImageFile = 22;
+  optional string generateImageVaryImageImageSize = 23;
+  optional string transcribeAudioToTextAudioFile = 24;
+  optional string transcribeAudioToTextInputLanguage = 25;
+
+  // This is not a string because it is not a binding! Yay!
+  bool transcribeAudioToTextTranslateToEnglish = 26;
+
+  optional string generateChatGPTResponseAiModel = 27;
+  optional string generateTextNewTextAiModel = 28;
+  optional string generateTextEditTextAiModel = 29;
+  optional string generateCodeNewCodeAiModel = 30;
+  optional string generateCodeEditCodeAiModel = 31;
+  optional string checkModerationAiModel = 32;
+  optional string generateTextEmbeddingAiModel = 33;
+  optional string transcribeAudioToTextAiModel = 34;
+
+  // Super confusing - these fields might be bindings
+  // Otherwise, they should be ints
+  optional string generateChatGptResponseMaxTokens = 35;
+  optional string generateTextNewTextMaxTokens = 36;
+  optional string aiModel = 37;
+
+  SuperblocksMetadata superblocksMetadata = 38;
+}

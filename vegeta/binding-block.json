@@ -1,0 +1,46 @@
+{
+  "options": {
+    "includeEventOutputs": false,
+    "includeEvents": false
+  },
+  "inputs": {
+    "TestInput": {
+      "nestedKey": "VAR_ONE_VALUE"
+    }
+  },
+  "definition": {
+    "api": {
+      "metadata": {
+        "id": "00000000-0000-0000-0000-100000000000",
+        "name": "test",
+        "organization": "00000000-0000-0000-0000-000000000001"
+      },
+      "blocks": [
+        {
+          "name": "VARS_BLOCK",
+          "variables": {
+            "items": [
+              {
+                "key": "VAR_ONE",
+                "value": "{{ (() => TestInput.nestedKey)() }}",
+                "type": "TYPE_ADVANCED"
+              }
+            ]
+          }
+        },
+        {
+          "name": "BLOCK_CONDITIONAL",
+          "conditional": {
+            "if": {
+              "condition": "{{ await VAR_ONE.get() == \"VAR_ONE_VALUE\" }}",
+              "blocks": []
+            },
+            "else": {
+              "blocks": []
+            }
+          }
+        }
+      ]
+    }
+  }
+}

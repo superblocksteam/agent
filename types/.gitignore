@@ -1,0 +1,10 @@
+**/node_modules/
+**/dist/
+*.swp
+.idea
+tsconfig.tsbuildinfo
+
+*.egg-info
+
+build/
+dist/

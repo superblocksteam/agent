@@ -1,0 +1,79 @@
+{
+  "flags": {
+    "agent.quota.api.timeout.trigger.application.milliseconds": {
+      "key": "agent.quota.api.timeout.trigger.application.milliseconds",
+      "on": true,
+      "rules": [
+        {
+          "variation": 0,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "TRIAL"
+              ],
+              "negate": false
+            }
+          ]
+        }
+      ],
+      "fallthrough": {
+        "variation": 1
+      },
+      "variations": [1000.0, 2000.0],
+      "deleted": false
+    },
+    "agent.quota.api.timeout.trigger.workflow.milliseconds": {
+      "key": "agent.quota.api.timeout.trigger.workflow.milliseconds",
+      "on": true,
+      "rules": [
+        {
+          "variation": 0,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "TRIAL"
+              ],
+              "negate": false
+            }
+          ]
+        }
+      ],
+      "fallthrough": {
+        "variation": 1
+      },
+      "variations": [3000, 4000],
+      "deleted": false
+    },
+    "agent.quota.api.timeout.trigger.job.milliseconds": {
+      "key": "agent.quota.api.timeout.trigger.job.milliseconds",
+      "on": true,
+      "rules": [
+        {
+          "variation": 0,
+          "clauses": [
+            {
+              "contextKind": "user",
+              "attribute": "tier",
+              "op": "in",
+              "values": [
+                "TRIAL"
+              ],
+              "negate": false
+            }
+          ]
+        }
+      ],
+      "fallthrough": {
+        "variation": 1
+      },
+      "variations": [5000, 6000],
+      "deleted": false
+    }
+  }
+}
