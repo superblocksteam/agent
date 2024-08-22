@@ -33,7 +33,6 @@ charts/
 
 /workers/python/coverage.json
 
-/.github
 /.vscode
 /config
 /helm/cloud-opa
