@@ -16,8 +16,9 @@ RUN npm install -g clean-modules && \
 COPY ./workers/javascript/ ./
 
 RUN npx pnpm install -r --offline                     && \
-    make build                                        && \
+    npx pnpm --filter "*" build                       && \
     rm -rf node_modules                               && \
+    npm install                                       && \
     npx pnpm fetch --prod                             && \
     npx pnpm install -r --offline --prod              && \
     clean-modules -y '!**/googleapis/**/docs/'           \
