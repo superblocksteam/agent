@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for Okta SSO in the Snowflake plugin
 - Fix connection string support for RedShift, MySQL, MariaDB, Postgres, CockroachDB
 - Added connection string support for RedShift, MySQL, MariaDB, Postgres, CockroachDB
+- Fix Snowflake template version
 
 ## v1.14.1
 

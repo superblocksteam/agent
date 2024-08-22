@@ -88,8 +88,9 @@ RUN set -e; apt-get update && apt-get install -y curl                           
     npm install                                                                                                                      && \
     npx pnpm fetch                                                                                                                   && \
     npx pnpm install -r --offline                                                                                                    && \
-    make build                                                                                                                       && \
+    npx pnpm --filter "*" build                                                                                                      && \
     rm -rf node_modules                                                                                                              && \
+    npm install                                                                                                                      && \
     npx pnpm fetch --prod                                                                                                            && \
     npx pnpm install -r --offline --prod                                                                                             && \
     npm install --global clean-modules                                                                                               && \
