@@ -1,5 +1,5 @@
 import { SnowflakeDatasourceConfiguration, ErrorCode, IntegrationError } from '@superblocks/shared';
-import { ConnectionOptions } from './types/ConnectionOptions';
+import { ConnectionOptions } from 'snowflake-sdk';
 
 export function connectionOptionsFromDatasourceConfiguration(datasourceConfiguration: SnowflakeDatasourceConfiguration): ConnectionOptions {
   const auth = datasourceConfiguration.authentication;

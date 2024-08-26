@@ -105,9 +105,7 @@ export default class SnowflakePlugin extends DatabasePluginPooled<Snowflake, Sno
   protected async createConnection(datasourceConfiguration: SnowflakeDatasourceConfiguration): Promise<Snowflake> {
     try {
       const connectionOptions = connectionOptionsFromDatasourceConfiguration(datasourceConfiguration);
-      const client = new Snowflake(connectionOptions, {
-        logLevel: 'debug'
-      });
+      const client = new Snowflake(connectionOptions);
       await client.connectAsync();
       this.logger.debug(`Created connection`);
       return client;

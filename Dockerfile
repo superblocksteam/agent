@@ -72,7 +72,6 @@ ADD --chmod=777 https://github.com/just-containers/s6-overlay/releases/download/
 ADD --chmod=777 https://go.dev/dl/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz /tmp
 
 COPY --chmod=777 scripts/s6.sh /tmp/s6.sh
-COPY             .             .
 
 RUN set -e; apt-get update && apt-get install -y curl                                                                                && \
     S6_ARCH=$(/tmp/s6.sh)                                                                                                            && \
@@ -83,22 +82,28 @@ RUN set -e; apt-get update && apt-get install -y curl                           
     wget -P /tmp https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz && \
     tar -C /s6 -Jxpf /tmp/s6-overlay-${S6_ARCH}.tar.xz                                                                               && \
     tar -C /s6 -Jxpf /tmp/s6-overlay-noarch.tar.xz                                                                                   && \
-    tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz                                                           && \
-    cd /workers/javascript                                                                                                           && \
-    npm install                                                                                                                      && \
-    npx pnpm fetch                                                                                                                   && \
+    tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz
+
+COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock.yaml /workers/javascript/
+
+RUN cd /workers/javascript                && \
+    npm install -g clean-modules node-gyp && \
+    npm install                           && \
+    npx pnpm fetch
+
+COPY . .
+
+RUN cd /workers/javascript                                                                                                           && \
     npx pnpm install -r --offline                                                                                                    && \
     npx pnpm --filter "*" build                                                                                                      && \
     rm -rf node_modules                                                                                                              && \
     npm install                                                                                                                      && \
     npx pnpm fetch --prod                                                                                                            && \
     npx pnpm install -r --offline --prod                                                                                             && \
-    npm install --global clean-modules                                                                                               && \
     clean-modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
 
 # Install build the deasync binding for this architecture
-RUN npm install -g node-gyp                                                                                                                   && \
-    git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblocksteam/deasync.git                                           && \
+RUN git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblocksteam/deasync.git                                           && \
     cd deasync                                                                                                                                && \
     npm install                                                                                                                               && \
     node-gyp configure                                                                                                                        && \
@@ -169,7 +174,12 @@ COPY              --from=workers                        /s6/                    
 COPY --chmod=755                                        /workers/python                                                   /app/worker.py
 COPY                                                    s6-rc.d/                                                          /etc/s6-overlay/s6-rc.d/
 
-RUN cd /app/worker.py                                                                                                                            && \
+# NOTE(frank): I don't like this first line. However, the code in the dist/ folder of the plugins
+#              isn't looking in the dist folder of the types. I think this is because we don't 
+#              bubble up index.ts files.
+RUN cp -r /app/worker.js/packages/types/dist/src /app/worker.js/packages/types/                                                                  && \
+    rm -r /app/worker.js/packages/types/dist                                                                                                        && \
+    cd /app/worker.py                                                                                                                            && \
     pip install --no-cache-dir --upgrade pip setuptools                                                                                          && \
     apt-get update                                                                                                                               && \
     apt-get install -yqq --no-install-recommends lsb-release curl gpg                                                                            && \

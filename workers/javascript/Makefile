@@ -17,22 +17,23 @@ K8S_CONFIG = ~/.kube/config
 HELM_EXTRA_ARGS =
 
 PACKAGE=*
+PNPM_OPTIONS=--no-bail
 
 
 .PHONY: build
 build: deps
-	@npx pnpm --filter "$(PACKAGE)" build
+	@npx pnpm $(PNPM_OPTIONS) --filter "$(PACKAGE)" build
 
 .PHONY: fmt
 fmt: deps
-	@npx pnpm --filter "$(PACKAGE)" lint:fix
+	@npx pnpm $(PNPM_OPTIONS) --filter "$(PACKAGE)" lint:fix
 
 .PHONY: check
 check: build typecheck lint
 
 .PHONY: typecheck
 typecheck:
-	@npx pnpm --filter "$(PACKAGE)" typecheck
+	@npx pnpm $(PNPM_OPTIONS) --filter "$(PACKAGE)" typecheck
 
 .PHONY: lint
 lint:
