@@ -189,7 +189,7 @@ function push() {
 
   echo " [INFO] Moving the github directory to a safe place while we apply the patching."
   __do cp -r .github "${tmp}/"
-  __do cp -r "${internal}"/.github "${tmp}"/
+  __do cp -r "${internal}"/.github .
 
   echo " [INFO] Temporarily copying excluded files into the staged destination."
   for path in "${exclude[@]}"; do
@@ -205,7 +205,7 @@ function push() {
   done
 
   echo " [INFO] Restoring the .github directory."
-  __do cp -r "${tmp}"/.github "${internal}"/
+  __do cp -r "${tmp}"/.github .
 
   echo " [INFO] Adding the changes."
   __do git add .
