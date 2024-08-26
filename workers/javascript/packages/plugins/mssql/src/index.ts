@@ -78,6 +78,7 @@ export default class MicrosoftSQLPlugin extends DatabasePluginPooled<ConnectionP
   }
 
   public init(): void {
+    // @ts-ignore
     mssql.on('error', (err) => {
       this.logger.error(`${this.pluginName} connection errored: ${err}`);
     });

@@ -7,7 +7,7 @@
   },
   "license": "Superblocks Community Software License",
   "scripts": {
-    "build": "npx tsc",
+    "build": "npm run clean && npx tsc",
     "clean": "npx rimraf ./dist *tsbuildinfo"
   },
   "dependencies": {

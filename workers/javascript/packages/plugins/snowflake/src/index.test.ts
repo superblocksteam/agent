@@ -31,10 +31,6 @@ jest.mock('./Snowflake', () => {
 
   class MockSnowflake {
     constructor(connectionOptions, loggingOptions, configureOptions) {}
-    connect() {
-      // Simulate successful connection
-      return Promise.resolve();
-    }
     connectAsync() {
       // Simulate successful async connection
       return Promise.resolve();
@@ -133,7 +129,7 @@ describe('Snowflake Plugin', () => {
   });
 
   it('execute query', async () => {
-    jest.spyOn(Snowflake.prototype, 'connect').mockImplementation(() => {
+    jest.spyOn(Snowflake.prototype, 'connectAsync').mockImplementation(() => {
       return new Promise((_) => setTimeout(_, 100));
     });
 

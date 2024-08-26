@@ -35,14 +35,16 @@ RUN npm install -g node-gyp                                                     
 
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION}-bookworm-slim
 
-RUN id -u node &>/dev/null || useradd node && \
-    groupadd --force --gid 1000 node && \ 
-    usermod --uid 1000 --gid node --shell /bin/bash --move-home --home /home/node node
-
 WORKDIR /workers/javascript
 
 COPY --from=builder /workers/javascript/node_modules ./node_modules
 COPY --from=builder /workers/javascript/packages     ./packages
+
+RUN id -u node &>/dev/null || useradd node                                             && \
+    groupadd --force --gid 1000 node                                                   && \ 
+    usermod --uid 1000 --gid node --shell /bin/bash --move-home --home /home/node node && \
+    cp -r ./packages/types/dist/src ./packages/types/                                  && \
+    rm -r ./packages/types/dist    
 
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA=dev-private-rsa
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519=dev-private-ed25519
