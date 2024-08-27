@@ -1,9 +1,9 @@
+import { Closer, MaybeError } from '@superblocks/shared';
 import { ChildProcess, fork } from 'child_process';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
-import * as path from 'path';
-import { Closer, MaybeError } from '@superblocks/shared';
 import { Heap } from 'heap-js';
+import * as path from 'path';
 import P from 'pino';
 import { SUPERBLOCKS_WORKER_EXECUTION_JS_TIMEOUT_MS, SUPERBLOCKS_WORKER_NODE_USER_ID } from '../env';
 import logger from '../logger';
@@ -116,7 +116,7 @@ export class ExecutionPoolImpl implements ExecutionPool {
     // Spawn a new node process to execute plugins
     const abortController = new AbortController();
     const proc = fork(path.join(__dirname, './poolProcessExecutor' + path.extname(__filename)), {
-      uid: SUPERBLOCKS_WORKER_NODE_USER_ID,
+      uid: SUPERBLOCKS_WORKER_NODE_USER_ID === -1 ? undefined : SUPERBLOCKS_WORKER_NODE_USER_ID,
       env: this.buildPoolProcEnv(),
       detached: true,
       silent: true,

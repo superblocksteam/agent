@@ -1,5 +1,8 @@
 {
-  "watch": ["./src/**/*", ".env", "../../../../superblocks/packages/plugins/**/*"],
+  "watch": [
+    ".env",
+    "./src/**/*"
+  ],
   "ext": "ts",
   "exec": "ts-node --swc ./src/index.ts"
 }

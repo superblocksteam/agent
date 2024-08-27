@@ -66,7 +66,7 @@ jaeger:
 		jaegertracing/all-in-one:1.40
 
 .PHONY: up
-up: deps build redis
+up: deps build
 	@pnpm --filter @superblocks/fleet.all start
 
 .PHONY: clean

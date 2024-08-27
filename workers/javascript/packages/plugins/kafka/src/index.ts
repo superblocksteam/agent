@@ -10,7 +10,7 @@ import {
   PluginExecutionProps,
   StreamOptions
 } from '@superblocks/shared';
-import { KafkaV1 as Plugin } from '@superblocksteam/types/src/plugins';
+import { KafkaV1 as Plugin } from '@superblocksteam/types';
 import {
   Admin,
   CompressionTypes,

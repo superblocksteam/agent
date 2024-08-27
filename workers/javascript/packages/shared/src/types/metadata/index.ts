@@ -1,5 +1,5 @@
 import { Timestamp } from '@bufbuild/protobuf';
-import { Metadata } from '@superblocksteam/types/src/common/v1';
+import { Metadata } from '@superblocksteam/types';
 
 export type ResourceMetadata = object;
 

@@ -1,18 +1,18 @@
-import path from 'path';
 import {
-  DUMMY_EXECUTION_CONTEXT,
-  DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS,
-  ErrorCode,
-  ExecutionOutput,
-  MongoDBActionConfiguration,
-  MongoDBDatasourceConfiguration,
-  MongoDBOperationType,
-  PluginCommon,
-  PluginExecutionProps,
-  TableType
+    DUMMY_EXECUTION_CONTEXT,
+    DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS,
+    ErrorCode,
+    ExecutionOutput,
+    MongoDBActionConfiguration,
+    MongoDBDatasourceConfiguration,
+    MongoDBOperationType,
+    PluginCommon,
+    PluginExecutionProps,
+    TableType
 } from '@superblocks/shared';
+import path from 'path';
 
-import { PluginCommonV1 } from '@superblocksteam/types/src/plugins';
+import { PluginCommonV1 } from '@superblocksteam/types';
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
 import { MongoClient } from 'mongodb';

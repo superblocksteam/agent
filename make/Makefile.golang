@@ -1,16 +1,19 @@
 EXTRA_LD_FLAGS          = -s -w
 EXTRA_GO_OPTIONS        =
+GO_BINARY_NAME 		    = $(SERVICE_NAME)
 GO_BUILD_ROOT_DIRECTORY = .
-GO_OPTIONS              = -C $(GO_BUILD_ROOT_DIRECTORY) -ldflags="$(EXTRA_LD_FLAGS) -X main.version=$(SERVICE_VERSION)" -pgo=auto -tags netgo -o $(SERVICE_NAME) $(EXTRA_GO_OPTIONS)
+GO_OPTIONS              = -C $(GO_BUILD_ROOT_DIRECTORY) -ldflags="$(EXTRA_LD_FLAGS) -X main.version=$(SERVICE_VERSION)" -pgo=auto -tags netgo -o $(GO_BINARY_NAME) $(EXTRA_GO_OPTIONS)
 PASS                    = $(shell printf "\033[32mPASS\033[0m")
 FAIL                    = $(shell printf "\033[31mFAIL\033[0m")
 PACKAGES                = $(shell go list ./... | grep -v types)
 COLORIZE                = sed ''/PASS/s//$(PASS)/'' | sed ''/FAIL/s//$(FAIL)/''
+AIR_VERSION             = v1.52.3
 
 export GOPRIVATE = github.com/superblocksteam
 
 .PHONY: deps-go
 deps-go:
+	@go install github.com/air-verse/air@$(AIR_VERSION)
 	@go mod download
 	@go mod tidy
 

@@ -1,4 +1,3 @@
-import path from 'path';
 import { CosmosClient } from '@azure/cosmos';
 import {
   CosmosDbActionConfiguration,
@@ -8,10 +7,10 @@ import {
   PluginExecutionProps,
   RelayDelegate
 } from '@superblocks/shared';
-import { AuthCommonV1, CosmosDbPluginV1 } from '@superblocksteam/types/src/plugins';
-import { Plugin } from '@superblocksteam/types/src/plugins/cosmosdb/v1/plugin_pb';
+import { AuthCommonV1, CosmosDbPluginV1, CosmosDbPluginV1 as Plugin } from '@superblocksteam/types';
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
+import path from 'path';
 import CosmosDbPlugin from '.';
 
 // THESE TESTS SHOULD ONLY BE RUN

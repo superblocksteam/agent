@@ -1,5 +1,5 @@
 // Integration errors are external errors to Superblocks and thrown from API execution
-import { Code as CommonErrorCode } from '@superblocksteam/types/src/common/v1/errors_pb';
+import { Code as CommonErrorCode } from '@superblocksteam/types';
 import { isEmpty } from 'lodash';
 
 export interface IntegrationInternalError {

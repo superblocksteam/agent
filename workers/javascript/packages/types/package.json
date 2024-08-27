@@ -5,6 +5,7 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
+  "main": "dist/src/index.js",
   "license": "Superblocks Community Software License",
   "scripts": {
     "build": "npm run clean && npx tsc",

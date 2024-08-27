@@ -5,7 +5,7 @@ tmp_dir = ".air"
 [build]
 cmd = "make build-go EXTRA_GO_OPTIONS='-cover'"
 delay = 1000
-exclude_dir = ["assets", "configs", "deploy", "scripts", "postman", "mocks", "vegeta", "clients"]
+exclude_dir = ["assets", "configs", "deploy", "scripts", "postman", "mocks", "vegeta", "clients", "workers"]
 exclude_file = [".air.toml", ".air.opa.tom.", "Dockerfile", "Makefile"]
 exclude_regex = ["_test.go"]
 exclude_unchanged = false
@@ -31,7 +31,7 @@ full_bin = """ \
         --emitter.event.flush.max.duration='1s' \
         --emitter.remote.intake=http://127.0.0.1:3030 \
         --buckets.config=./buckets.minimal.json \
-        --auth.jwt.enabled=true \
+        --auth.jwt.enabled=false \
         --registration.enabled=${register} \
         --jobs.enabled=false \
         --grpc.bind=127.0.0.1 \

@@ -9,13 +9,13 @@ import {
   PluginCommonV1 as PluginCommon,
   RedisPluginV1 as RedisPlugin,
   SalesforcePluginV1 as SalesforcePlugin,
+  SecretsV1 as Secrets,
   SmtpPluginV1 as SmtpPlugin
-} from '@superblocksteam/types/src/plugins';
-import { SecretsV1 as Secrets } from '@superblocksteam/types/src/secrets/v1';
+} from '@superblocksteam/types';
 import { Property } from '../common/property';
 import { Plugin, PluginMetadata } from '../plugin';
 import { AWSAuthType, AuthConfig, AuthContext, AuthId, AuthType, IntegrationAuthType, PublicAuthConfig, getAuthId } from './auth';
-export { PluginCommonV1 as PluginCommon } from '@superblocksteam/types/src/plugins';
+export { PluginCommonV1 as PluginCommon } from '@superblocksteam/types';
 
 // The DTO for the full datasource (ie all fields). This should only be visible
 // to users that can configure the datasource.

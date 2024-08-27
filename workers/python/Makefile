@@ -21,19 +21,20 @@ RUFF_CHECK_FLAG=
 
 TOX_EXTRA_ARGS=
 
-PYTHON_CMD = python
+PYTHON = python
 
 .PHONY: deps
 deps:
-	@$(PYTHON_CMD) -m pip install -r requirements-slim.txt
+	@$(PYTHON) -m pip install python-dotenv[cli]
+	@$(PYTHON) -m pip install -r requirements-slim.txt
 
 .PHONY: deps-dev
 deps-dev:
-	@$(PYTHON_CMD) -m pip install -r requirements.dev.txt
+	@$(PYTHON) -m pip install -r requirements.dev.txt
 
 .PHONY: up
-up: redis
-	@dotenv -f .env.local run -- python ./src/entry.py
+up: deps
+	@dotenv -f .env.local run -- $(PYTHON) ./src/entry.py
 
 .PHONY: up-docker
 up-docker:

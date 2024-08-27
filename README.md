@@ -24,7 +24,7 @@ In the deployed app, when a user clicks a button to trigger an API call, the cal
 Build and run the agent from source. You can create an agent key access token [here](https://app.superblocks.com/access-tokens).
 
 ```sh
-$ docker build -t superblocks --build-arg VERSION=$(git describe --tags --abbrev=0)+$(git describe --always --dirty) .
+$ docker build -t superblocks --build-arg VERSION=$(git describe --tags --abbrev=0 --match "v*")+$(git describe --always --dirty) .
 $ docker run --rm -p 8080:8080 -e SB_AGENT_KEY=${SB_AGENT_KEY} superblocks
 $ curl -s http://127.0.0.1:8080/health | jq
 {

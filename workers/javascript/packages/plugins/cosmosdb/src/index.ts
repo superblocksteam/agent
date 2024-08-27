@@ -14,7 +14,7 @@ import {
 } from '@superblocks/shared';
 // NOTE: (joey) idk why the linter is whining about the CreateConnection import
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AuthCommonV1, CosmosDbPluginV1 } from '@superblocksteam/types/src/plugins';
+import { AuthCommonV1, CosmosDbPluginV1 } from '@superblocksteam/types';
 
 export default class CosmosDbPlugin extends DatabasePlugin {
   pluginName = 'CosmosDB';

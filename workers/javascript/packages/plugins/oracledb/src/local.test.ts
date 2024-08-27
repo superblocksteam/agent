@@ -1,4 +1,3 @@
-import path from 'path';
 import {
   DUMMY_EXECUTION_CONTEXT,
   DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS,
@@ -14,9 +13,9 @@ import {
   Table,
   TableType
 } from '@superblocks/shared';
+import path from 'path';
 
-import { SQLMappedColumns } from '@superblocksteam/types/src/plugins/common/v1/plugin_pb';
-import { Plugin } from '@superblocksteam/types/src/plugins/oracledb/v1/plugin_pb';
+import { OracleDbPluginV1 as Plugin, PluginCommonV1 } from '@superblocksteam/types';
 
 import * as dotenv from 'dotenv';
 import { cloneDeep, merge } from 'lodash';
@@ -367,9 +366,9 @@ runTests('OracleDb Plugin', () => {
         ]);
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_Name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_Name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
       }
@@ -395,8 +394,8 @@ runTests('OracleDb Plugin', () => {
         newProps.actionConfiguration.bulkEdit.insertedRows = JSON.stringify([{ m_id: 4 }, { m_id: 5, m_age: 4 }, { m_id: 7, m_age: 3 }]);
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
       }
@@ -497,9 +496,9 @@ runTests('OracleDb Plugin', () => {
         ]);
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.matchingMode = SQLMatchingModeEnum.SQL_MATCHING_MODE_AUTO;
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
@@ -566,9 +565,9 @@ runTests('OracleDb Plugin', () => {
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.matchingMode = SQLMatchingModeEnum.SQL_MATCHING_MODE_AUTO;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
       }
@@ -587,9 +586,9 @@ runTests('OracleDb Plugin', () => {
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.matchingMode = SQLMatchingModeEnum.SQL_MATCHING_MODE_AUTO;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
       }
@@ -627,9 +626,9 @@ runTests('OracleDb Plugin', () => {
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.matchingMode = SQLMatchingModeEnum.SQL_MATCHING_MODE_AUTO;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
       }
@@ -742,9 +741,9 @@ runTests('OracleDb Plugin', () => {
         newProps.actionConfiguration.bulkEdit.updatedRows = JSON.stringify([{ m_id: 2, m_name: 'Monika Marie', m_age: 27 }]);
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.matchingMode = SQLMatchingModeEnum.SQL_MATCHING_MODE_AUTO;
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
@@ -793,9 +792,9 @@ runTests('OracleDb Plugin', () => {
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.matchingMode = SQLMatchingModeEnum.SQL_MATCHING_MODE_AUTO;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
       }
@@ -841,9 +840,9 @@ runTests('OracleDb Plugin', () => {
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.matchingMode = SQLMatchingModeEnum.SQL_MATCHING_MODE_AUTO;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
       }
@@ -891,9 +890,9 @@ runTests('OracleDb Plugin', () => {
         newProps.actionConfiguration.bulkEdit.mappingMode = SQLMappingModeEnum.SQL_MAPPING_MODE_MANUAL;
         newProps.actionConfiguration.bulkEdit.matchingMode = SQLMatchingModeEnum.SQL_MATCHING_MODE_AUTO;
         newProps.actionConfiguration.bulkEdit.mappedColumns = [
-          SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
-          SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
-          SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_id', sql: 'id' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_name', sql: 'Name' }),
+          PluginCommonV1.SQLMappedColumns.fromJson({ json: 'm_age', sql: 'age' })
         ];
         newProps.actionConfiguration.bulkEdit.table = 'EETEST';
       }

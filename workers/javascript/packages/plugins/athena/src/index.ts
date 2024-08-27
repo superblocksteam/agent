@@ -27,7 +27,7 @@ import {
 } from '@superblocks/shared';
 // NOTE: (joey) idk why the linter is whining about the CreateConnection import
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AthenaPluginV1 } from '@superblocksteam/types/src/plugins';
+import { AthenaPluginV1 } from '@superblocksteam/types';
 import { isEmpty } from 'lodash';
 
 enum QueryExecutionStatus {

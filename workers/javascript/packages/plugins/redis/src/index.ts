@@ -12,48 +12,9 @@ import {
   RedisActionConfiguration,
   RedisDatasourceConfiguration
 } from '@superblocks/shared';
+import { RedisPluginV1 } from '@superblocksteam/types';
 // NOTE: (joey) idk why the linter is whining about the Create/DestroyConnection import
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import {
-  Plugin_Del,
-  Plugin_Expire,
-  Plugin_Expire_Option,
-  Plugin_Get,
-  Plugin_Hdel,
-  Plugin_Hget,
-  Plugin_Hgetall,
-  Plugin_Hkeys,
-  Plugin_Hlen,
-  Plugin_Hmget,
-  Plugin_Hset,
-  Plugin_Hsetnx,
-  Plugin_Hvals,
-  Plugin_Keys,
-  Plugin_Lindex,
-  Plugin_Llen,
-  Plugin_Lpush,
-  Plugin_Lrange,
-  Plugin_Lrem,
-  Plugin_Mget,
-  Plugin_Raw,
-  Plugin_Raw_Singleton,
-  Plugin_Sadd,
-  Plugin_Scard,
-  Plugin_Set,
-  Plugin_Sismember,
-  Plugin_Smembers,
-  Plugin_Srandmember,
-  Plugin_Srem,
-  Plugin_Structured,
-  Plugin_Ttl,
-  Plugin_Zadd,
-  Plugin_Zcard,
-  Plugin_Zcount,
-  Plugin_Zrange,
-  Plugin_Zrank,
-  Plugin_Zrem,
-  Plugin_Zscore
-} from '@superblocksteam/types/src/plugins/redis/v1/plugin_pb';
 import Redis from 'ioredis';
 
 export default class RedisPlugin extends DatabasePlugin {
@@ -128,10 +89,10 @@ export default class RedisPlugin extends DatabasePlugin {
     try {
       switch (actionConfiguration.commandType?.case) {
         case 'raw':
-          response = await this._handleRawCommand(client, actionConfiguration.commandType.value as Plugin_Raw, mutableOutput);
+          response = await this._handleRawCommand(client, actionConfiguration.commandType.value as RedisPluginV1.Plugin_Raw, mutableOutput);
           break;
         case 'structured':
-          response = await this._handleStructuredCommand(client, actionConfiguration.commandType.value as Plugin_Structured);
+          response = await this._handleStructuredCommand(client, actionConfiguration.commandType.value as RedisPluginV1.Plugin_Structured);
           break;
         default:
           throw new IntegrationError(
@@ -152,13 +113,13 @@ export default class RedisPlugin extends DatabasePlugin {
     return response;
   }
 
-  private async _handleRawCommand(client: Redis, raw: Plugin_Raw, mutableOutput: ExecutionOutput): Promise<ExecutionOutput> {
+  private async _handleRawCommand(client: Redis, raw: RedisPluginV1.Plugin_Raw, mutableOutput: ExecutionOutput): Promise<ExecutionOutput> {
     const ret = new ExecutionOutput();
     const rawAction = raw.action;
     let query;
     switch (rawAction.case) {
       case 'singleton': {
-        const rawActionValue = rawAction.value as Plugin_Raw_Singleton;
+        const rawActionValue = rawAction.value as RedisPluginV1.Plugin_Raw_Singleton;
         query = rawActionValue.query;
         break;
       }
@@ -217,18 +178,18 @@ export default class RedisPlugin extends DatabasePlugin {
     return ret;
   }
 
-  private async _handleStructuredCommand(client: Redis, structured: Plugin_Structured): Promise<ExecutionOutput> {
+  private async _handleStructuredCommand(client: Redis, structured: RedisPluginV1.Plugin_Structured): Promise<ExecutionOutput> {
     const ret = new ExecutionOutput();
     let response;
     const verbAction = structured.action;
 
     switch (verbAction.case) {
       case 'get':
-        response = await client.get((verbAction.value as Plugin_Get).key);
+        response = await client.get((verbAction.value as RedisPluginV1.Plugin_Get).key);
         break;
 
       case 'set': {
-        const setCmd = verbAction.value as Plugin_Set;
+        const setCmd = verbAction.value as RedisPluginV1.Plugin_Set;
         if (setCmd.expirationMs) {
           response = await client.set(setCmd.key, setCmd.value, 'PX', setCmd.expirationMs);
         } else {
@@ -237,99 +198,108 @@ export default class RedisPlugin extends DatabasePlugin {
         break;
       }
       case 'del':
-        response = await client.del((verbAction.value as Plugin_Del).key);
+        response = await client.del((verbAction.value as RedisPluginV1.Plugin_Del).key);
         break;
 
       case 'keys':
-        response = await client.keys((verbAction.value as Plugin_Keys).pattern);
+        response = await client.keys((verbAction.value as RedisPluginV1.Plugin_Keys).pattern);
         break;
 
       case 'mget':
-        response = await client.mget(this._getListFromString((verbAction.value as Plugin_Mget).keys));
+        response = await client.mget(this._getListFromString((verbAction.value as RedisPluginV1.Plugin_Mget).keys));
         break;
 
       case 'hget': {
-        const hgetCmd = verbAction.value as Plugin_Hget;
+        const hgetCmd = verbAction.value as RedisPluginV1.Plugin_Hget;
         response = await client.hget(hgetCmd.key, hgetCmd.field);
         break;
       }
       case 'hmget': {
-        const hmgetCmd = verbAction.value as Plugin_Hmget;
+        const hmgetCmd = verbAction.value as RedisPluginV1.Plugin_Hmget;
         response = await client.hmget(hmgetCmd.key, ...this._getListFromString(hmgetCmd.fields));
         break;
       }
       case 'hgetall':
-        response = await client.hgetall((verbAction.value as Plugin_Hgetall).key);
+        response = await client.hgetall((verbAction.value as RedisPluginV1.Plugin_Hgetall).key);
         break;
 
       case 'hset': {
-        const hsetCmd = verbAction.value as Plugin_Hset;
+        const hsetCmd = verbAction.value as RedisPluginV1.Plugin_Hset;
         response = await client.hset(hsetCmd.key, hsetCmd.field, hsetCmd.value);
         break;
       }
       case 'hsetnx': {
-        const hsetnxCmd = verbAction.value as Plugin_Hsetnx;
+        const hsetnxCmd = verbAction.value as RedisPluginV1.Plugin_Hsetnx;
         response = await client.hsetnx(hsetnxCmd.key, hsetnxCmd.field, hsetnxCmd.value);
         break;
       }
       case 'hlen':
-        response = await client.hlen((verbAction.value as Plugin_Hlen).key);
+        response = await client.hlen((verbAction.value as RedisPluginV1.Plugin_Hlen).key);
         break;
 
       case 'hdel': {
-        const hdelCmd = verbAction.value as Plugin_Hdel;
+        const hdelCmd = verbAction.value as RedisPluginV1.Plugin_Hdel;
         response = await client.hdel(hdelCmd.key, hdelCmd.field);
         break;
       }
       case 'hkeys':
-        response = await client.hkeys((verbAction.value as Plugin_Hkeys).key);
+        response = await client.hkeys((verbAction.value as RedisPluginV1.Plugin_Hkeys).key);
         break;
 
       case 'hvals':
-        response = await client.hvals((verbAction.value as Plugin_Hvals).key);
+        response = await client.hvals((verbAction.value as RedisPluginV1.Plugin_Hvals).key);
         break;
 
       case 'lindex': {
-        const lindexCmd = verbAction.value as Plugin_Lindex;
+        const lindexCmd = verbAction.value as RedisPluginV1.Plugin_Lindex;
         response = await client.lindex(lindexCmd.key, lindexCmd.index);
         break;
       }
       case 'llen':
-        response = await client.llen((verbAction.value as Plugin_Llen).key);
+        response = await client.llen((verbAction.value as RedisPluginV1.Plugin_Llen).key);
         break;
 
       case 'lpush':
-        response = await client.lpush((verbAction.value as Plugin_Lpush).key, (verbAction.value as Plugin_Lpush).value);
+        response = await client.lpush(
+          (verbAction.value as RedisPluginV1.Plugin_Lpush).key,
+          (verbAction.value as RedisPluginV1.Plugin_Lpush).value
+        );
         break;
 
       case 'lrem': {
-        const lremCmd = verbAction.value as Plugin_Lrem;
+        const lremCmd = verbAction.value as RedisPluginV1.Plugin_Lrem;
         response = await client.lrem(lremCmd.key, lremCmd.count, lremCmd.value);
         break;
       }
       case 'lrange': {
-        const lrangeCmd = verbAction.value as Plugin_Lrange;
+        const lrangeCmd = verbAction.value as RedisPluginV1.Plugin_Lrange;
         response = await client.lrange(lrangeCmd.key, lrangeCmd.start, lrangeCmd.stop);
         break;
       }
       case 'sadd':
-        response = await client.sadd((verbAction.value as Plugin_Sadd).key, (verbAction.value as Plugin_Sadd).member);
+        response = await client.sadd(
+          (verbAction.value as RedisPluginV1.Plugin_Sadd).key,
+          (verbAction.value as RedisPluginV1.Plugin_Sadd).member
+        );
         break;
 
       case 'scard':
-        response = await client.scard((verbAction.value as Plugin_Scard).key);
+        response = await client.scard((verbAction.value as RedisPluginV1.Plugin_Scard).key);
         break;
 
       case 'smembers':
-        response = await client.smembers((verbAction.value as Plugin_Smembers).key);
+        response = await client.smembers((verbAction.value as RedisPluginV1.Plugin_Smembers).key);
         break;
 
       case 'sismember':
-        response = await client.sismember((verbAction.value as Plugin_Sismember).key, (verbAction.value as Plugin_Sismember).member);
+        response = await client.sismember(
+          (verbAction.value as RedisPluginV1.Plugin_Sismember).key,
+          (verbAction.value as RedisPluginV1.Plugin_Sismember).member
+        );
         break;
 
       case 'srandmember': {
-        const srandmemberCmd = verbAction.value as Plugin_Srandmember;
+        const srandmemberCmd = verbAction.value as RedisPluginV1.Plugin_Srandmember;
         if (srandmemberCmd.count) {
           response = await client.srandmember(srandmemberCmd.key, srandmemberCmd.count);
         } else {
@@ -338,53 +308,65 @@ export default class RedisPlugin extends DatabasePlugin {
         break;
       }
       case 'srem':
-        response = await client.srem((verbAction.value as Plugin_Srem).key, (verbAction.value as Plugin_Srem).member);
+        response = await client.srem(
+          (verbAction.value as RedisPluginV1.Plugin_Srem).key,
+          (verbAction.value as RedisPluginV1.Plugin_Srem).member
+        );
         break;
 
       case 'zadd': {
-        const zaddCmd = verbAction.value as Plugin_Zadd;
+        const zaddCmd = verbAction.value as RedisPluginV1.Plugin_Zadd;
         response = await client.zadd(zaddCmd.key, zaddCmd.score, zaddCmd.member);
         break;
       }
       case 'zcard':
-        response = await client.zcard((verbAction.value as Plugin_Zcard).key);
+        response = await client.zcard((verbAction.value as RedisPluginV1.Plugin_Zcard).key);
         break;
 
       case 'zcount': {
-        const zcountCmd = verbAction.value as Plugin_Zcount;
+        const zcountCmd = verbAction.value as RedisPluginV1.Plugin_Zcount;
         response = await client.zcount(zcountCmd.key, zcountCmd.min, zcountCmd.max);
         break;
       }
       case 'zrange': {
-        const zrangeCmd = verbAction.value as Plugin_Zrange;
+        const zrangeCmd = verbAction.value as RedisPluginV1.Plugin_Zrange;
         response = await client.zrange(zrangeCmd.key, zrangeCmd.start, zrangeCmd.stop);
         break;
       }
       case 'zrank':
-        response = await client.zrank((verbAction.value as Plugin_Zrank).key, (verbAction.value as Plugin_Zrank).member);
+        response = await client.zrank(
+          (verbAction.value as RedisPluginV1.Plugin_Zrank).key,
+          (verbAction.value as RedisPluginV1.Plugin_Zrank).member
+        );
         break;
 
       case 'zrem':
-        response = await client.zrem((verbAction.value as Plugin_Zrem).key, (verbAction.value as Plugin_Zrem).member);
+        response = await client.zrem(
+          (verbAction.value as RedisPluginV1.Plugin_Zrem).key,
+          (verbAction.value as RedisPluginV1.Plugin_Zrem).member
+        );
         break;
 
       case 'zscore':
-        response = await client.zscore((verbAction.value as Plugin_Zscore).key, (verbAction.value as Plugin_Zscore).member);
+        response = await client.zscore(
+          (verbAction.value as RedisPluginV1.Plugin_Zscore).key,
+          (verbAction.value as RedisPluginV1.Plugin_Zscore).member
+        );
         break;
 
       case 'expire': {
-        const expireCmd = verbAction.value as Plugin_Expire;
+        const expireCmd = verbAction.value as RedisPluginV1.Plugin_Expire;
         switch (expireCmd.option) {
-          case Plugin_Expire_Option.NX:
+          case RedisPluginV1.Plugin_Expire_Option.NX:
             response = await client.expire(expireCmd.key, expireCmd.seconds, 'NX');
             break;
-          case Plugin_Expire_Option.XX:
+          case RedisPluginV1.Plugin_Expire_Option.XX:
             response = await client.expire(expireCmd.key, expireCmd.seconds, 'XX');
             break;
-          case Plugin_Expire_Option.GT:
+          case RedisPluginV1.Plugin_Expire_Option.GT:
             response = await client.expire(expireCmd.key, expireCmd.seconds, 'GT');
             break;
-          case Plugin_Expire_Option.LT:
+          case RedisPluginV1.Plugin_Expire_Option.LT:
             response = await client.expire(expireCmd.key, expireCmd.seconds, 'LT');
             break;
           default:
@@ -393,7 +375,7 @@ export default class RedisPlugin extends DatabasePlugin {
         break;
       }
       case 'ttl':
-        response = await client.ttl((verbAction.value as Plugin_Ttl).key);
+        response = await client.ttl((verbAction.value as RedisPluginV1.Plugin_Ttl).key);
         break;
 
       default:

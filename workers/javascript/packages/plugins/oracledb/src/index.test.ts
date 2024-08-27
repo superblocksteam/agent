@@ -14,7 +14,7 @@ import {
   TableType
 } from '@superblocks/shared';
 
-import { Plugin } from '@superblocksteam/types/src/plugins/oracledb/v1/plugin_pb';
+import { OracleDbPluginV1 } from '@superblocksteam/types';
 
 jest.mock('@superblocks/shared', () => {
   const originalModule = jest.requireActual('@superblocks/shared');
@@ -113,7 +113,7 @@ actionConfiguration.operation = SQLOperationEnum.SQL_OPERATION_UPDATE_ROWS;
 const props: PluginExecutionProps<OracleDbDatasourceConfiguration, OracleDbActionConfiguration> = {
   context,
   datasourceConfiguration,
-  actionConfiguration: Plugin.fromJson(actionConfiguration),
+  actionConfiguration: OracleDbPluginV1.Plugin.fromJson(actionConfiguration),
   mutableOutput: new ExecutionOutput(),
   ...DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS
 };
@@ -221,7 +221,7 @@ describe('OracleDb Plugin', () => {
     const localProps: PluginExecutionProps<OracleDbDatasourceConfiguration, OracleDbActionConfiguration> = {
       context,
       datasourceConfiguration,
-      actionConfiguration: Plugin.fromJson(localActionConfiguration),
+      actionConfiguration: OracleDbPluginV1.Plugin.fromJson(localActionConfiguration),
       mutableOutput: new ExecutionOutput(),
       ...DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS
     };
@@ -241,7 +241,7 @@ describe('OracleDb Plugin', () => {
     const localProps: PluginExecutionProps<OracleDbDatasourceConfiguration, OracleDbActionConfiguration> = {
       context,
       datasourceConfiguration,
-      actionConfiguration: Plugin.fromJson(localActionConfiguration),
+      actionConfiguration: OracleDbPluginV1.Plugin.fromJson(localActionConfiguration),
       mutableOutput: new ExecutionOutput(),
       ...DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS
     };
@@ -288,7 +288,7 @@ describe('OracleDb Plugin', () => {
         if (config.bulkEdit?.updatedRows !== undefined) {
           actionConfig.bulkEdit.updatedRows = config.bulkEdit?.updatedRows;
         }
-        const newProps = buildPropsWithActionConfiguration(Plugin.fromJson(actionConfig) as OracleDbActionConfiguration);
+        const newProps = buildPropsWithActionConfiguration(OracleDbPluginV1.Plugin.fromJson(actionConfig) as OracleDbActionConfiguration);
         await expect(async () => {
           await plugin.executePooled(newProps, client);
         }).rejects.toThrow(message);
@@ -302,7 +302,7 @@ describe('OracleDb Plugin', () => {
 
         const actionConfig = merge(cloneDeep(DUMMY_ORACLE_DB_ACTION_CONFIGURATION), config);
         actionConfig.operation = SQLOperationEnum.SQL_OPERATION_UPDATE_ROWS;
-        const newProps = buildPropsWithActionConfiguration(Plugin.fromJson(actionConfig) as OracleDbActionConfiguration);
+        const newProps = buildPropsWithActionConfiguration(OracleDbPluginV1.Plugin.fromJson(actionConfig) as OracleDbActionConfiguration);
         await plugin.executePooled(newProps, client);
         expect(newProps.mutableOutput.log).toHaveLength(0);
         expect(newProps.mutableOutput.error).not.toBeDefined();
@@ -326,7 +326,7 @@ describe('OracleDb Plugin', () => {
             price: 123.45
           }
         ]);
-        const newProps = buildPropsWithActionConfiguration(Plugin.fromJson(actionConfig) as OracleDbActionConfiguration);
+        const newProps = buildPropsWithActionConfiguration(OracleDbPluginV1.Plugin.fromJson(actionConfig) as OracleDbActionConfiguration);
         await plugin.executePooled(newProps, client);
       }).rejects.toThrow('Example failure for a user with restricted permissions');
       expect(client.execute).toBeCalledTimes(1);

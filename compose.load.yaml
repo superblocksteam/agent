@@ -3,16 +3,16 @@ version: "3.7"
 services:
   redis:
     image: redis:6
-    command: "--requirepass dev-agent-key"
+    command: "--requirepass koala"
     pull_policy: always
   golang.ba.all:
     image: ghcr.io/superblocksteam/worker.go:v0.136.0
     environment:
       SUPERBLOCKS_WORKER_GO_SUPERBLOCKS_KEY: dev-agent-key
-      SUPERBLOCKS_WROKER_GO_STORE_REDIS_PASSWORD: dev-agent-key
+      SUPERBLOCKS_WROKER_GO_STORE_REDIS_PASSWORD: koala
       SUPERBLOCKS_WORKER_GO_STORE_REDIS_HOST: redis
       SUPERBLOCKS_WORKER_GO_STORE_REDIS_TLS: "false"
-      SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_PASSWORD: dev-agent-key
+      SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_PASSWORD: koala
       SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_HOST: redis
       SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_TLS: "false"
       SUPERBLOCKS_WORKER_GO_WORKER_BUCKET: BA
@@ -22,8 +22,8 @@ services:
     image: ghcr.io/superblocksteam/worker.js:v0.712.0
     environment:
       SUPERBLOCKS_AGENT_KEY: dev-agent-key
-      SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
-      SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+      SUPERBLOCKS_AGENT_REDIS_TOKEN: koala
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: koala
       SUPERBLOCKS_AGENT_TLS_INSECURE: "true"
       SUPERBLOCKS_AGENT_REDIS_HOST: redis
       SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis

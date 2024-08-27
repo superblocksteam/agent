@@ -1,16 +1,16 @@
-import path from 'path';
 import {
-  ExecutionContext,
-  ExecutionOutput,
-  IntegrationError,
-  PluginExecutionProps,
-  RelayDelegate,
-  SalesforceActionConfiguration,
-  SalesforceDatasourceConfiguration
+    ExecutionContext,
+    ExecutionOutput,
+    IntegrationError,
+    PluginExecutionProps,
+    RelayDelegate,
+    SalesforceActionConfiguration,
+    SalesforceDatasourceConfiguration
 } from '@superblocks/shared';
-import { SalesforcePluginV1 } from '@superblocksteam/types/src/plugins';
+import { SalesforcePluginV1 } from '@superblocksteam/types';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
+import path from 'path';
 import SalesforcePlugin, { COMMON_OBJECTS } from '.';
 
 // THESE TESTS SHOULD ONLY BE RUN

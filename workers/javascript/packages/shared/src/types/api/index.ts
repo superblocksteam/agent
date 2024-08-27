@@ -1,5 +1,4 @@
-import { Api as ApiPb, Trigger_Job, Trigger_Workflow } from '@superblocksteam/types/src/api/v1';
-import { Metadata, UserType as ProtoUserType } from '@superblocksteam/types/src/common/v1';
+import { Api as ApiPb, Metadata, UserType as ProtoUserType, Trigger_Job, Trigger_Workflow } from '@superblocksteam/types';
 import { Param } from '../common/param';
 import { AuthContext, DatasourceDto, DatasourceEnvironments } from '../datasource';
 import { EventEntityType } from '../event';
@@ -135,7 +134,7 @@ export type ExportedApiPb = Omit<ApiPb, 'metadata' | 'trigger' | protoMethods> &
   trigger: ExportedApiPbTrigger | undefined;
 };
 
-export { ViewMode as OrchestratorViewMode } from '@superblocksteam/types/src/api/v1';
+export { ViewMode as OrchestratorViewMode } from '@superblocksteam/types';
 export * from './action';
 export * from './control-flow';
 export * from './execution';

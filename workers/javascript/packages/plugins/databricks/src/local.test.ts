@@ -1,4 +1,3 @@
-import path from 'path';
 import { DBSQLClient } from '@databricks/sql';
 import {
   DatabricksDatasourceConfiguration,
@@ -14,8 +13,9 @@ import {
   Table,
   TableType
 } from '@superblocks/shared';
+import path from 'path';
 
-import { Plugin } from '@superblocksteam/types/src/plugins/databricks/v1/plugin_pb';
+import { DatabricksPluginV1 as Plugin } from '@superblocksteam/types';
 
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';

@@ -14,7 +14,7 @@ import {
   Schema,
   TableType
 } from '@superblocks/shared';
-import { SQLExecution } from '@superblocksteam/types/src/plugins/common/v1/plugin_pb';
+import { PluginCommonV1 } from '@superblocksteam/types';
 import { Bucket, Cluster, Collection, CollectionManager, connect, Scope, ScopeSpec } from 'couchbase';
 import { Client as ssh2Client } from 'ssh2';
 
@@ -79,7 +79,7 @@ export default class CouchbasePlugin extends DatabasePluginPooled<ClientWrapper<
           executionOutput.output = (
             await this.executeQuery(() =>
               (client.client as Cluster).query(
-                (actionConfiguration?.couchbaseAction?.value as SQLExecution)?.sqlBody,
+                (actionConfiguration?.couchbaseAction?.value as PluginCommonV1.SQLExecution)?.sqlBody,
                 preparedStatementContext
               )
             )

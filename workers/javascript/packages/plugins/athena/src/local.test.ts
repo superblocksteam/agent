@@ -1,4 +1,3 @@
-import path from 'path';
 import {
   AthenaActionConfiguration,
   AthenaDatasourceConfiguration,
@@ -9,10 +8,10 @@ import {
   RelayDelegate,
   prepContextForBindings
 } from '@superblocks/shared';
-import { AthenaPluginV1 } from '@superblocksteam/types/src/plugins';
-import { SQLExecution } from '@superblocksteam/types/src/plugins/common/v1/plugin_pb';
+import { AthenaPluginV1, SQLExecution } from '@superblocksteam/types';
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
+import path from 'path';
 import AthenaPlugin from '.';
 
 // THESE TESTS SHOULD ONLY BE RUN
