@@ -24,9 +24,10 @@ func TestValidate(t *testing.T) {
 	private_ecdsa, public_ecdsa := pair_ecdsa(t)
 
 	for _, test := range []struct {
-		name string
-		err  string
-		ctx  context.Context
+		name    string
+		errType uint32
+		errMsg  string
+		ctx     context.Context
 	}{
 		{
 			name: "expired jwt",
@@ -37,7 +38,7 @@ func TestValidate(t *testing.T) {
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
-			err: "token is expired by 5m0s",
+			errType: jwt.ValidationErrorExpired,
 		},
 		{
 			name: "wrong signing key",
@@ -48,7 +49,7 @@ func TestValidate(t *testing.T) {
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
-			err: "signature is invalid",
+			errType: jwt.ValidationErrorSignatureInvalid,
 		},
 		{
 			name: "valid hmac jwt",
@@ -108,7 +109,7 @@ func TestValidate(t *testing.T) {
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
-			err: "could not get organization id",
+			errMsg: "could not get organization id",
 		},
 		{
 			name: "no orgID claim",
@@ -119,22 +120,22 @@ func TestValidate(t *testing.T) {
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
-			err: "could not get organization id",
+			errMsg: "could not get organization id",
 		},
 		{
-			name: "no incoming metadata",
-			ctx:  context.Background(),
-			err:  "could not get metadata from context",
+			name:   "no incoming metadata",
+			ctx:    context.Background(),
+			errMsg: "could not get metadata from context",
 		},
 		{
-			name: "no auth in metadata",
-			ctx:  metadata.NewIncomingContext(context.Background(), metadata.Pairs("other", "value")),
-			err:  "could not get authorization token",
+			name:   "no auth in metadata",
+			ctx:    metadata.NewIncomingContext(context.Background(), metadata.Pairs("other", "value")),
+			errMsg: "could not get authorization token",
 		},
 		{
-			name: "malformed auth metadata",
-			ctx:  metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer")),
-			err:  "authorization token malformed",
+			name:   "malformed auth metadata",
+			ctx:    metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer")),
+			errMsg: "authorization token malformed",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -146,7 +147,14 @@ func TestValidate(t *testing.T) {
 			})
 
 			if err != nil {
-				assert.Equal(t, err.Error(), test.err, test.name)
+				switch e := err.(type) {
+				case *jwt.ValidationError:
+					// we got a nicely typed error from the jwt lib, check that by code
+					assert.Equal(t, e.Errors, test.errType, test.name)
+				default:
+					// we got a different type of error, just check the error message
+					assert.Equal(t, err.Error(), test.errMsg, test.name)
+				}
 				return
 			}
 
