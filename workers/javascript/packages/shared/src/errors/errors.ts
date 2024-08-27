@@ -1,4 +1,4 @@
-import { Code } from '@superblocksteam/types/src/common/v1/errors_pb';
+import { Code } from '@superblocksteam/types';
 
 export type MaybeError = Error | void;
 

@@ -1,5 +1,3 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import {
   DUMMY_EXECUTION_CONTEXT,
   ErrorCode,
@@ -9,9 +7,11 @@ import {
   RedisDatasourceConfiguration,
   RelayDelegate
 } from '@superblocks/shared';
-import { Plugin_Connection, Plugin_Expire_Option, Plugin as RedisPluginV1 } from '@superblocksteam/types/src/plugins/redis/v1/plugin_pb';
+import { RedisPluginV1 as RedisTypes } from '@superblocksteam/types';
+import { promises as fs } from 'fs';
 import { Redis } from 'ioredis';
 import { cloneDeep } from 'lodash';
+import path from 'path';
 import RedisPlugin from '.';
 
 // all connection info
@@ -24,6 +24,8 @@ const REDIS_USER_PASSWORD = 'some_password';
 
 const REDIS_URL = `redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}/${REDIS_DATABASE_NUMBER}`;
 const REDIS_URL_USER = `redis://${REDIS_USER_USERNAME}:${REDIS_USER_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}/${REDIS_DATABASE_NUMBER}`;
+
+const { Plugin_Connection, Plugin_Expire_Option, Plugin: RedisPluginV1 } = RedisTypes;
 
 // helper functions
 async function resetDatabase(): Promise<Redis> {

@@ -17,7 +17,7 @@ import {
   TableType,
   UnauthorizedError
 } from '@superblocks/shared';
-import { SalesforcePluginV1 } from '@superblocksteam/types/src/plugins';
+import { SalesforcePluginV1 } from '@superblocksteam/types';
 
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 

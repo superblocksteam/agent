@@ -5,6 +5,7 @@ coverage/
 clients/
 tmp/
 
+.air
 .git
 
 **/node_modules
@@ -21,3 +22,7 @@ Dockerfile.worker.javascript
 ./workers/javascript/packages/**/.env
 ./workers/javascript/packages/ts
 ./workers/javascript/packages/**/*.test.ts
+
+
+./workers/golang/worker.go
+./workers/golang/worker_go

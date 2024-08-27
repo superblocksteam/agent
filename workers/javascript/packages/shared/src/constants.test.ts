@@ -1,7 +1,7 @@
-import { CosmosDbPluginV1, RedisPluginV1, SalesforcePluginV1 } from '@superblocksteam/types/src/plugins';
+import { CosmosDbPluginV1, RedisPluginV1, SalesforcePluginV1 } from '@superblocksteam/types';
 import {
-  PLUGIN_ID_TO_PROTO_ACTION_CONFIGURATION_OBJECT_CALLABLE,
-  PLUGIN_ID_TO_PROTO_DATASOURCE_CONFIGURATION_OBJECT_CALLABLE
+    PLUGIN_ID_TO_PROTO_ACTION_CONFIGURATION_OBJECT_CALLABLE,
+    PLUGIN_ID_TO_PROTO_DATASOURCE_CONFIGURATION_OBJECT_CALLABLE
 } from './constants';
 
 describe('redis plugin de-serialize', () => {

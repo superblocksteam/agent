@@ -1,7 +1,7 @@
 import { ErrorCode, RelayDelegate, SmtpActionConfiguration, SmtpDatasourceConfiguration } from '@superblocks/shared';
-import { Plugin_SmtpConnection } from '@superblocksteam/types/src/plugins/smtp/v1/plugin_pb';
-import { EmailOutput, buildPropsWithActionConfiguration } from './test.util';
+import { SmtpPluginV1 } from '@superblocksteam/types';
 import SmtpPlugin from '.';
+import { EmailOutput, buildPropsWithActionConfiguration } from './test.util';
 
 jest.unmock('nodemailer');
 jest.unmock('nodemailer/lib/mailer');
@@ -10,6 +10,7 @@ const SMTP_HOST = '127.0.0.1';
 const SMTP_PORT = 58703;
 const SMTP_USER = 'root';
 const SMTP_PASSWORD = 'password';
+const { Plugin_SmtpConnection } = SmtpPluginV1;
 
 const plugin: SmtpPlugin = new SmtpPlugin();
 

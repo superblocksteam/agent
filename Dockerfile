@@ -140,30 +140,6 @@ LABEL org.opencontainers.image.version=${EXTERNAL_TAG}
 LABEL org.opencontainers.image.created=${IMAGE_CREATED}
 LABEL io.snyk.containers.image.dockerfile="/Dockerfile"
 
-ENV SB_GIT_REPOSITORY_URL="https://github.com/superblocksteam/agent"
-ENV SB_GIT_COMMIT_SHA=${SB_GIT_COMMIT_SHA}
-ENV SUPERBLOCKS_AGENT_TLS_INSECURE="true"
-ENV SUPERBLOCKS_AGENT_REDIS_GROUP="main"
-ENV SUPERBLOCKS_AGENT_BUCKET="BA"
-ENV SUPERBLOCKS_AGENT_PLUGIN_EVENTS="execute,metadata,test,pre_delete,stream"
-ENV SUPERBLOCKS_ORCHESTRATOR_BUCKETS_CONFIG="/app/orchestrator/buckets.json"
-ENV SUPERBLOCKS_AGENT_HEALTH_PORT=9999
-ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA=dev-private-rsa
-ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519=dev-private-ed25519
-ENV SUPERBLOCKS_ORCHESTRATOR_AGENT_VERSION=$INTERNAL_TAG
-ENV SUPERBLOCKS_ORCHESTRATOR_AGENT_VERSION_EXTERNAL=$EXTERNAL_TAG
-ENV SUPERBLOCKS_ORCHESTRATOR_WORKER_GO_ENABLED=true
-ENV SUPERBLOCKS_WORKER_EXECUTION_POOL_SIZE=8
-ENV SUPERBLOCKS_WORKER_GO_OTEL_COLLECTOR_HTTP_URL="https://traces.intake.superblocks.com/v1/traces"
-ENV SUPERBLOCKS_EXECUTION_ENV_INCLUSION_LIST="AWS_DEFAULT_REGION,AWS_ROLE_ARN,AWS_WEB_IDENTITY_TOKEN_FILE,AWS_REGION"
-ENV AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE=1
-ENV SLACKCLIENT_SKIP_DEPRECATION=true
-ENV S6_VERBOSITY=0
-ENV S6_SERVICES_GRACETIME=10000
-ENV S6_KILL_GRACETIME=10000
-ENV S6_CMD_WAIT_FOR_SERVICES_MAXTIME=120000
-ENV SUPERBLOCKS_SLIM_IMAGE=$SLIM_IMAGE
-
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/orchestrator             /app/orchestrator/bin
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/buckets.minimal.json     /app/orchestrator/buckets.json
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/flags.json               /app/orchestrator/flags.json
@@ -177,9 +153,7 @@ COPY                                                    s6-rc.d/                
 # NOTE(frank): I don't like this first line. However, the code in the dist/ folder of the plugins
 #              isn't looking in the dist folder of the types. I think this is because we don't 
 #              bubble up index.ts files.
-RUN cp -r /app/worker.js/packages/types/dist/src /app/worker.js/packages/types/                                                                  && \
-    rm -r /app/worker.js/packages/types/dist                                                                                                        && \
-    cd /app/worker.py                                                                                                                            && \
+RUN cd /app/worker.py                                                                                                                            && \
     pip install --no-cache-dir --upgrade pip setuptools                                                                                          && \
     apt-get update                                                                                                                               && \
     apt-get install -yqq --no-install-recommends lsb-release curl gpg                                                                            && \
@@ -205,6 +179,34 @@ RUN cp -r /app/worker.js/packages/types/dist/src /app/worker.js/packages/types/ 
     find /app/orchestrator/buckets.json /app/orchestrator/flags.json /etc/s6-overlay/s6-rc.d -type f -exec chmod g=u,o=u {} \;                   && \
     groupadd --gid 1000 superblocks                                                                                                              && \
     useradd --uid 1000 --gid superblocks --shell /bin/bash --create-home superblocks
+
+ENV SB_GIT_REPOSITORY_URL="https://github.com/superblocksteam/agent"
+ENV SB_GIT_COMMIT_SHA=${SB_GIT_COMMIT_SHA}
+ENV SUPERBLOCKS_AGENT_REDIS_TOKEN=
+ENV SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN=
+ENV SUPERBLOCKS_ORCHESTRATOR_TRANSPORT_REDIS_PASSWORD=
+ENV SUPERBLOCKS_ORCHESTRATOR_STORE_REDIS_PASSWORD=
+ENV SUPERBLOCKS_AGENT_TLS_INSECURE="true"
+ENV SUPERBLOCKS_AGENT_REDIS_GROUP="main"
+ENV SUPERBLOCKS_AGENT_BUCKET="BA"
+ENV SUPERBLOCKS_AGENT_PLUGIN_EVENTS="execute,metadata,test,pre_delete,stream"
+ENV SUPERBLOCKS_ORCHESTRATOR_BUCKETS_CONFIG="/app/orchestrator/buckets.json"
+ENV SUPERBLOCKS_AGENT_HEALTH_PORT=9999
+ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA=dev-private-rsa
+ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519=dev-private-ed25519
+ENV SUPERBLOCKS_ORCHESTRATOR_AGENT_VERSION=$INTERNAL_TAG
+ENV SUPERBLOCKS_ORCHESTRATOR_AGENT_VERSION_EXTERNAL=$EXTERNAL_TAG
+ENV SUPERBLOCKS_ORCHESTRATOR_WORKER_GO_ENABLED=true
+ENV SUPERBLOCKS_WORKER_EXECUTION_POOL_SIZE=8
+ENV SUPERBLOCKS_WORKER_GO_OTEL_COLLECTOR_HTTP_URL="https://traces.intake.superblocks.com/v1/traces"
+ENV SUPERBLOCKS_EXECUTION_ENV_INCLUSION_LIST="AWS_DEFAULT_REGION,AWS_ROLE_ARN,AWS_WEB_IDENTITY_TOKEN_FILE,AWS_REGION"
+ENV AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE=1
+ENV SLACKCLIENT_SKIP_DEPRECATION=true
+ENV S6_VERBOSITY=0
+ENV S6_SERVICES_GRACETIME=10000
+ENV S6_KILL_GRACETIME=10000
+ENV S6_CMD_WAIT_FOR_SERVICES_MAXTIME=120000
+ENV SUPERBLOCKS_SLIM_IMAGE=$SLIM_IMAGE
 
 EXPOSE 8080
 EXPOSE 8081

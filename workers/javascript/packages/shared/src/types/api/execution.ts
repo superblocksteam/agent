@@ -1,4 +1,4 @@
-import { Code } from '@superblocksteam/types/src/common/v1';
+import { Code } from '@superblocksteam/types';
 import _ from 'lodash';
 import { ApiResourceTiming } from '../common/timing';
 import { ApiNotificationConfiguration, Global, PlaceholdersInfo } from '.';

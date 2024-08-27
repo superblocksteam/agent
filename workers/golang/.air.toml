@@ -3,8 +3,8 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  bin = "./worker-go --log.level=debug --emitter.remote.enabled=false --store.redis.password=dev-agent-key --transport.redis.password=dev-agent-key"
-  cmd = "make build-go"
+  bin = "./worker_go --log.level=debug --emitter.remote.enabled=false --store.redis.password=koala --transport.redis.password=koala"
+  cmd = "make build-go GO_BINARY_NAME=worker_go"
   delay = 1000
   exclude_dir = ["assets", "configs", "deploy", "scripts"]
   exclude_file = []

@@ -1,4 +1,3 @@
-import path from 'path';
 import {
   ClientWrapper,
   CouchbaseActionConfiguration,
@@ -9,10 +8,11 @@ import {
   PluginExecutionProps,
   RelayDelegate
 } from '@superblocks/shared';
-import { CouchbasePluginV1, PluginCommonV1 } from '@superblocksteam/types/src/plugins';
+import { CouchbasePluginV1, PluginCommonV1 } from '@superblocksteam/types';
 import { Cluster, connect } from 'couchbase';
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
+import path from 'path';
 import { Client as ssh2Client } from 'ssh2';
 import CouchbasePlugin from '.';
 

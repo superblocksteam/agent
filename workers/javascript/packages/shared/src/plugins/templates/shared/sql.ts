@@ -1,4 +1,6 @@
-import { SQLMappingMode, SQLMatchingMode, SQLOperation } from '@superblocksteam/types/src/plugins/common/v1/plugin_pb';
+import { PluginCommonV1 } from '@superblocksteam/types';
+
+const { SQLMappingMode, SQLMatchingMode, SQLOperation } = PluginCommonV1;
 
 export const SqlOperations = {
   RUN_SQL: 'run_sql',

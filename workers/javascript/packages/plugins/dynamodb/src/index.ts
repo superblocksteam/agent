@@ -33,7 +33,7 @@ import {
   safeJSONParse,
   TableType
 } from '@superblocks/shared';
-import { DynamoDbV1 } from '@superblocksteam/types/src/plugins';
+import { DynamoDbV1 } from '@superblocksteam/types';
 
 export default class DynamoDBPlugin extends DatabasePlugin {
   pluginName = 'DynamoDB';

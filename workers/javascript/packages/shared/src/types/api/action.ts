@@ -6,11 +6,11 @@ import {
   DatabricksPluginV1 as Databricks,
   KafkaV1 as Kafka,
   OracleDbPluginV1 as OracleDb,
+  PluginCommonV1,
   RedisPluginV1 as Redis,
   SalesforcePluginV1 as Salesforce,
   SmtpPluginV1 as Smtp
-} from '@superblocksteam/types/src/plugins';
-import { SQLMappingMode, SQLMatchingMode, SQLOperation } from '@superblocksteam/types/src/plugins/common/v1/plugin_pb';
+} from '@superblocksteam/types';
 import { GoogleSheetsActionType, GoogleSheetsDestinationType, GoogleSheetsFormatType } from '../../plugins';
 import { Property } from '../common/property';
 import { IntegrationAuthType } from '../datasource';
@@ -109,7 +109,7 @@ export type DBActionConfiguration = {
 // DEFER(jason4012) unify these types in protobuf instead of adding them manually here
 export type DBSQLActionConfiguration = {
   bulkEdit?: {
-    matchingMode?: SQLMatchingMode;
+    matchingMode?: PluginCommonV1.SQLMatchingMode;
     schema?: string;
     table?: string;
     oldRows?: string; // old rows
@@ -117,7 +117,7 @@ export type DBSQLActionConfiguration = {
     updatedRows?: string; // updated rows
     deletedRows?: string; // deleted rows
     filterBy?: string[];
-    mappingMode?: SQLMappingMode;
+    mappingMode?: PluginCommonV1.SQLMappingMode;
     // Sort order matters
     mappedColumns?: Array<{ json: string; sql: string }>;
   };
@@ -125,7 +125,7 @@ export type DBSQLActionConfiguration = {
     sqlBody?: string;
     useParameterized?: boolean;
   };
-  operation?: SQLOperation;
+  operation?: PluginCommonV1.SQLOperation;
 };
 
 export type BigqueryActionConfiguration = DBActionConfiguration;

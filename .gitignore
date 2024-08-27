@@ -16,10 +16,12 @@ orchestrator.*env
 *.pprof
 coverage/
 charts/
+.air
 
 /regsync
 
-/workers/golang/worker-go
+/workers/golang/worker.go
+/workers/golang/worker_go
 /workers/golang/tmp
 
 **/**/.pnpm-store

@@ -4,9 +4,9 @@ import {
   CouchbasePluginV1,
   OracleDbPluginV1,
   RedisPluginV1,
-  SalesforcePluginV1
-} from '@superblocksteam/types/src/plugins';
-import { SecretsV1 as Secrets } from '@superblocksteam/types/src/secrets/v1';
+  SalesforcePluginV1,
+  SecretsV1 as Secrets
+} from '@superblocksteam/types';
 import type {
   AdlsActionConfiguration,
   AdlsDatasourceConfiguration,

@@ -42,9 +42,7 @@ COPY --from=builder /workers/javascript/packages     ./packages
 
 RUN id -u node &>/dev/null || useradd node                                             && \
     groupadd --force --gid 1000 node                                                   && \ 
-    usermod --uid 1000 --gid node --shell /bin/bash --move-home --home /home/node node && \
-    cp -r ./packages/types/dist/src ./packages/types/                                  && \
-    rm -r ./packages/types/dist    
+    usermod --uid 1000 --gid node --shell /bin/bash --move-home --home /home/node node
 
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA=dev-private-rsa
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519=dev-private-ed25519

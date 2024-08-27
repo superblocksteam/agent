@@ -11,7 +11,7 @@ import {
   PluginExecutionProps,
   RawRequest
 } from '@superblocks/shared';
-import { AdlsPluginV1 } from '@superblocksteam/types/src/plugins';
+import { AdlsPluginV1 } from '@superblocksteam/types';
 
 export default class AdlsPlugin extends BasePlugin {
   pluginName = 'Azure Data Lake Service';

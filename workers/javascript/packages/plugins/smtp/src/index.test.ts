@@ -1,10 +1,12 @@
 import { ErrorCode, RelayDelegate, SmtpActionConfiguration, SmtpDatasourceConfiguration } from '@superblocks/shared';
-import { Plugin_SmtpConnection } from '@superblocksteam/types/src/plugins/smtp/v1/plugin_pb';
-import { EmailOutput, buildPropsWithActionConfiguration } from './test.util';
+import { SmtpPluginV1 } from '@superblocksteam/types';
 import SmtpPlugin from '.';
+import { EmailOutput, buildPropsWithActionConfiguration } from './test.util';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { mock } = require('nodemailer');
+
+const { Plugin_SmtpConnection } = SmtpPluginV1;
 
 const SMTP_HOST = '127.0.0.1';
 const SMTP_PORT = 58703;

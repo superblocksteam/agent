@@ -4,18 +4,17 @@ from multiprocessing import set_start_method
 from uuid import uuid4
 
 import nest_asyncio  # type: ignore
-from constants import (
-    SUPERBLOCKS_AGENT_REDIS_HOST,
-    SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST,
-    SUPERBLOCKS_AGENT_REDIS_KVSTORE_PORT,
-    SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN,
-    SUPERBLOCKS_AGENT_REDIS_PORT,
-    SUPERBLOCKS_AGENT_REDIS_QUEUE_BATCH_SIZE,
-    SUPERBLOCKS_AGENT_REDIS_TOKEN,
-    SUPERBLOCKS_AGENT_STEP_OUTPUT_RETENTION_SECONDS,
-    SUPERBLOCKS_AGENT_TLS_INSECURE,
-    SUPERBLOCKS_SLIM_IMAGE,
-)
+from constants import (SUPERBLOCKS_AGENT_REDIS_HOST,
+                       SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST,
+                       SUPERBLOCKS_AGENT_REDIS_KVSTORE_PORT,
+                       SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN,
+                       SUPERBLOCKS_AGENT_REDIS_PORT,
+                       SUPERBLOCKS_AGENT_REDIS_QUEUE_BATCH_SIZE,
+                       SUPERBLOCKS_AGENT_REDIS_TOKEN,
+                       SUPERBLOCKS_AGENT_STEP_OUTPUT_RETENTION_SECONDS,
+                       SUPERBLOCKS_AGENT_TLS_INSECURE,
+                       SUPERBLOCKS_METRICS_BIND_ADDRESS,
+                       SUPERBLOCKS_METRICS_PORT, SUPERBLOCKS_SLIM_IMAGE)
 from otel import init_otel
 from prometheus_client import start_http_server
 
@@ -85,13 +84,7 @@ if __name__ == "__main__":
     # as it's very slow. We could change the method based on OS but fork has worked fine so far.
     set_start_method("fork")
 
-    try:
-        metrics_port = int(os.environ.get("SB_METRICS_PORT", "9090"))
-    except Exception:
-        error("SB_METRICS_PORT is not an int")
-        raise
-
-    start_http_server(metrics_port)
+    start_http_server(SUPERBLOCKS_METRICS_PORT, SUPERBLOCKS_METRICS_BIND_ADDRESS)
 
     init_otel()
 

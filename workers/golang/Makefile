@@ -19,11 +19,8 @@ GO_ARCH = "amd64"
 K8S_NAMESPACE = orchestrator
 HELM_EXTRA_ARGS =
 
-.ONESHELL:
-
 .PHONY: up
 up: deps-go
-	@make up-deps DOCKER_COMPOSE_FILE=everything
 	@air -c .air.toml
 
 .PHONY: up-deps

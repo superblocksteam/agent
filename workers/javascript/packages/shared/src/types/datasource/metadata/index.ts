@@ -1,4 +1,4 @@
-import { AdlsPluginV1, CosmosDbPluginV1, DynamoDbV1, KafkaV1, SalesforcePluginV1 } from '@superblocksteam/types/src/plugins';
+import { AdlsPluginV1, CosmosDbPluginV1, DynamoDbV1, KafkaV1, SalesforcePluginV1 } from '@superblocksteam/types';
 import { DatasourceConfiguration } from '..';
 import { Plugin } from '../../plugin';
 import { ConnectedUserTokenDto } from '../../userToken';
