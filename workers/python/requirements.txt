@@ -45,7 +45,7 @@ defusedxml==0.7.1
 Deprecated==1.2.14
 distro==1.9.0
 dnspython==2.6.1
-ecos==2.0.13
+ecos==2.0.14
 et_xmlfile==1.1.0
 exceptiongroup==1.2.2
 executing==0.8.3
