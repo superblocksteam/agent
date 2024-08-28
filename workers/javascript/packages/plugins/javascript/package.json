@@ -21,7 +21,7 @@
     "pre-commit": "tsc && lint-staged"
   },
   "dependencies": {
-    "@notionhq/client": "2.2.5",
+    "@notionhq/client": "2.2.15",
     "@paralleldrive/cuid2": "2.2.0",
     "@superblocks/shared": "workspace:*",
     "amazon-qldb-driver-nodejs": "2.2.0",

@@ -1394,8 +1394,8 @@ importers:
   packages/plugins/javascript:
     dependencies:
       '@notionhq/client':
-        specifier: 2.2.5
-        version: 2.2.5
+        specifier: 2.2.15
+        version: 2.2.15
       '@paralleldrive/cuid2':
         specifier: 2.2.0
         version: 2.2.0
@@ -4371,10 +4371,6 @@ packages:
 
   '@notionhq/client@2.2.15':
     resolution: {integrity: sha512-XhdSY/4B1D34tSco/GION+23GMjaS9S2zszcqYkMHo8RcWInymF6L1x+Gk7EmHdrSxNFva2WM8orhC4BwQCwgw==}
-    engines: {node: '>=12'}
-
-  '@notionhq/client@2.2.5':
-    resolution: {integrity: sha512-NobSaeSK0DMuxAIy2pg53Iv850tGFxXYEYacFBQgO634L1uwQv7WQCAdeFQpD3kJiEycQfSYv6RGC5VENEXjiQ==}
     engines: {node: '>=12'}
 
   '@oozcitak/dom@1.15.10':
@@ -11136,13 +11132,6 @@ snapshots:
       fastq: 1.17.1
 
   '@notionhq/client@2.2.15':
-    dependencies:
-      '@types/node-fetch': 2.6.11
-      node-fetch: 2.6.12
-    transitivePeerDependencies:
-      - encoding
-
-  '@notionhq/client@2.2.5':
     dependencies:
       '@types/node-fetch': 2.6.11
       node-fetch: 2.6.12
