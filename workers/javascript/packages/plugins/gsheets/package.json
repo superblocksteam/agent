@@ -21,7 +21,7 @@
     "pre-commit": "tsc && lint-staged"
   },
   "dependencies": {
-    "@flighter/a1-notation": "2.1.2",
+    "@flighter/a1-notation": "2.1.3",
     "@superblocks/shared": "workspace:*",
     "googleapis": "98.0.0",
     "lodash": "4.17.21",
