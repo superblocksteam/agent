@@ -22,6 +22,7 @@ import "plugins/graphql/v1/plugin.proto";
 import "plugins/gsheets/v1/plugin.proto";
 import "plugins/javascript/v1/plugin.proto";
 import "plugins/kafka/v1/plugin.proto";
+import "plugins/kinesis/v1/plugin.proto";
 import "plugins/mariadb/v1/plugin.proto";
 import "plugins/mongodb/v1/plugin.proto";
 import "plugins/mssql/v1/plugin.proto";
@@ -494,5 +495,6 @@ message Step {
     plugins.restapiintegration.v1.Plugin perplexity = 73 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
     plugins.restapiintegration.v1.Plugin stabilityai = 74 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
     plugins.restapiintegration.v1.Plugin gemini = 75 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.kinesis.v1.Plugin kinesis = 76;
   }
 }

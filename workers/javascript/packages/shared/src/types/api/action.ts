@@ -5,6 +5,7 @@ import {
   CouchbasePluginV1 as Couchbase,
   DatabricksPluginV1 as Databricks,
   KafkaV1 as Kafka,
+  KinesisPluginV1 as Kinesis,
   OracleDbPluginV1 as OracleDb,
   PluginCommonV1,
   RedisPluginV1 as Redis,
@@ -312,6 +313,9 @@ export type LanguageActionConfiguration = JavascriptActionConfiguration & Python
 type KafkaPlugin = Kafka.Plugin;
 export type KafkaActionConfiguration = Partial<Omit<KafkaPlugin, 'cluster' | 'name' | 'superblocksMetadata'>>;
 
+type KinesisPlugin = Kinesis.Plugin;
+export type KinesisActionConfiguration = Partial<Omit<KinesisPlugin, 'name' | 'connection'>>;
+
 type AthenaPlugin = Athena.Plugin;
 export type AthenaActionConfiguration = Partial<Pick<AthenaPlugin, 'runSql'>>;
 
@@ -365,6 +369,7 @@ export type ActionConfiguration = PluginMetadata &
     | WorkflowActionConfiguration
     | GoogleSheetsActionConfiguration
     | KafkaActionConfiguration
+    | KinesisActionConfiguration
     | SmtpActionConfiguration
     | AdlsActionConfiguration
     | OracleDbActionConfiguration

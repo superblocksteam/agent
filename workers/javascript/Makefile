@@ -85,7 +85,7 @@ test: test-unit
 
 .PHONY: test-unit
 test-unit:
-	@pnpm --stream --no-bail --filter "*" test
+	@pnpm --stream --no-bail --filter "$(PACKAGE)" test
 
 .PHONY: test-integration
 test-integration:

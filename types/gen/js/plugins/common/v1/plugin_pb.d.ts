@@ -48,6 +48,11 @@ export class AWSConfig extends jspb.Message {
     getAuth(): AWSConfig.Auth | undefined;
     setAuth(value?: AWSConfig.Auth): AWSConfig;
 
+    hasEndpoint(): boolean;
+    clearEndpoint(): void;
+    getEndpoint(): string | undefined;
+    setEndpoint(value: string): AWSConfig;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): AWSConfig.AsObject;
     static toObject(includeInstance: boolean, msg: AWSConfig): AWSConfig.AsObject;
@@ -62,6 +67,7 @@ export namespace AWSConfig {
     export type AsObject = {
         region?: string,
         auth?: AWSConfig.Auth.AsObject,
+        endpoint?: string,
     }
 
 

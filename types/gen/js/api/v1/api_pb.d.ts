@@ -25,6 +25,7 @@ import * as plugins_graphql_v1_plugin_pb from "../../plugins/graphql/v1/plugin_p
 import * as plugins_gsheets_v1_plugin_pb from "../../plugins/gsheets/v1/plugin_pb";
 import * as plugins_javascript_v1_plugin_pb from "../../plugins/javascript/v1/plugin_pb";
 import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
+import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
 import * as plugins_mariadb_v1_plugin_pb from "../../plugins/mariadb/v1/plugin_pb";
 import * as plugins_mongodb_v1_plugin_pb from "../../plugins/mongodb/v1/plugin_pb";
 import * as plugins_mssql_v1_plugin_pb from "../../plugins/mssql/v1/plugin_pb";
@@ -1560,6 +1561,11 @@ export class Step extends jspb.Message {
     getGemini(): plugins_restapiintegration_v1_plugin_pb.Plugin | undefined;
     setGemini(value?: plugins_restapiintegration_v1_plugin_pb.Plugin): Step;
 
+    hasKinesis(): boolean;
+    clearKinesis(): void;
+    getKinesis(): plugins_kinesis_v1_plugin_pb.Plugin | undefined;
+    setKinesis(value?: plugins_kinesis_v1_plugin_pb.Plugin): Step;
+
     getConfigCase(): Step.ConfigCase;
 
     serializeBinary(): Uint8Array;
@@ -1649,6 +1655,7 @@ export namespace Step {
         perplexity?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
         stabilityai?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
         gemini?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
+        kinesis?: plugins_kinesis_v1_plugin_pb.Plugin.AsObject,
     }
 
     export enum ConfigCase {
@@ -1727,6 +1734,7 @@ export namespace Step {
         PERPLEXITY = 73,
         STABILITYAI = 74,
         GEMINI = 75,
+        KINESIS = 76,
     }
 
 }

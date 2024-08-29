@@ -205,6 +205,10 @@ func (m *AWSConfig) validate(all bool) error {
 
 	}
 
+	if m.Endpoint != nil {
+		// no validation rules for Endpoint
+	}
+
 	if len(errors) > 0 {
 		return AWSConfigMultiError(errors)
 	}

@@ -13,6 +13,7 @@ import sb_gcs from '@superblocksteam/gcs';
 import sb_graphql from '@superblocksteam/graphql';
 import sb_gsheets from '@superblocksteam/gsheets';
 import sb_kafka from '@superblocksteam/kafka';
+import sb_kinesis from '@superblocksteam/kinesis';
 import sb_mariadb from '@superblocksteam/mariadb';
 import sb_mongodb from '@superblocksteam/mongodb';
 import sb_mssql from '@superblocksteam/mssql';
@@ -51,6 +52,7 @@ const secretStore = secrets();
     'sb-graphqlintegration': graphql,
     'sb-gsheets': new sb_gsheets(),
     'sb-kafka': kafka,
+    'sb-kinesis': new sb_kinesis(),
     'sb-confluent': kafka,
     'sb-msk': kafka,
     'sb-redpanda': kafka,

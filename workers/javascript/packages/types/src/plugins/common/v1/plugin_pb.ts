@@ -179,6 +179,11 @@ export class AWSConfig extends Message<AWSConfig> {
    */
   auth?: AWSConfig_Auth;
 
+  /**
+   * @generated from field: optional string endpoint = 3;
+   */
+  endpoint?: string;
+
   constructor(data?: PartialMessage<AWSConfig>) {
     super();
     proto3.util.initPartial(data, this);
@@ -189,6 +194,7 @@ export class AWSConfig extends Message<AWSConfig> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "region", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 2, name: "auth", kind: "message", T: AWSConfig_Auth, opt: true },
+    { no: 3, name: "endpoint", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AWSConfig {

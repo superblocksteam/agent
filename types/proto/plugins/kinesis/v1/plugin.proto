@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package plugins.kinesis.v1;
+
+import "plugins/common/v1/plugin.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/kinesis/v1";
+
+message Plugin {
+  optional string name = 1;
+  Connection connection = 2;
+  oneof operation {
+    Put put = 3;
+    Get get = 4;
+  }
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 5;
+
+  message Connection {
+    plugins.common.v1.AWSConfig aws_config = 1;
+  }
+
+  // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html
+  // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html
+  message Put {
+    string data = 1;
+    string partition_key = 2;
+    oneof stream_identifier {
+      string stream_name = 3;
+      string stream_arn = 4;
+    }
+    // NOTE (joey): we can add these later if there is demand
+    // NOTE (joey): these options are specifically for when the user is putting a single item
+    // NOTE (joey): for now, let's keep the pattern of always sending a list of items
+    // optional string explicit_hash_key = 5;
+    // optional string sequence_number_for_ordering = 6;
+  }
+
+  // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetRecords.html
+  // we will need to get a shard iterator first
+  // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetShardIterator.html
+  message Get {
+    string shard_id = 2;
+    ShardIteratorType shard_iterator_type = 3;
+    int32 limit = 4;
+    // not required by kinesis, but something we want to allow users to configure
+    // this is the amount of time in milliseconds between asking kinesis to get records when polling in a loop
+    int32 polling_cooldown_ms = 5;
+    // these 2 are required depending on the shard iterator type selected
+    optional string starting_sequence_number = 6;
+    optional string timestamp = 7;
+    oneof stream_identifier {
+      string stream_name = 8;
+      string stream_arn = 9;
+    }
+  }
+
+  // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetShardIterator.html#API_GetShardIterator_RequestSyntax
+  enum ShardIteratorType {
+    SHARD_ITERATOR_TYPE_UNSPECIFIED = 0;
+    SHARD_ITERATOR_TYPE_AT_SEQUENCE_NUMBER = 1;
+    SHARD_ITERATOR_TYPE_AFTER_SEQUENCE_NUMBER = 2;
+    SHARD_ITERATOR_TYPE_AT_TIMESTAMP = 3;
+    SHARD_ITERATOR_TYPE_TRIM_HORIZON = 4;
+    SHARD_ITERATOR_TYPE_LATEST = 5;
+  }
+}
+
+message Metadata {
+  repeated string streams = 1;
+}

@@ -64,6 +64,8 @@ func TestMarshal(t *testing.T) {
 			built, err = step.GetConfig().(*apiv1.Step_Restapiintegration).Build()
 		} else if pluginId == `"redshift"` {
 			built, err = step.GetConfig().(*apiv1.Step_Redshift).Build()
+		} else if pluginId == `"kinesis"` {
+			built, err = step.GetConfig().(*apiv1.Step_Kinesis).Build()
 		} else if pluginId == `"mysql"` {
 			built, err = step.GetConfig().(*apiv1.Step_Mysql).Build()
 		} else if pluginId == `"mssql"` {
