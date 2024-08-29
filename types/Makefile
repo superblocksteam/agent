@@ -35,9 +35,6 @@ proto-base: deps
 	@buf dep update
 	@buf lint --error-format=json
 
-.PHONY: all
-all: deps-local proto build-ts
-
 .PHONY: proto
 proto: deps-buf proto-go proto-js proto-py
 

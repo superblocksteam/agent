@@ -5,6 +5,7 @@ import {
   OracleDbPluginV1,
   RedisPluginV1,
   SalesforcePluginV1,
+  KinesisPluginV1,
   SecretsV1 as Secrets
 } from '@superblocksteam/types';
 import type {
@@ -19,7 +20,9 @@ import type {
   RedisActionConfiguration,
   RedisDatasourceConfiguration,
   SalesforceActionConfiguration,
-  SalesforceDatasourceConfiguration
+  SalesforceDatasourceConfiguration,
+  KinesisActionConfiguration,
+  KinesisDatasourceConfiguration
 } from './types';
 
 export const SUPERBLOCKS_REQUEST_ID_HEADER = 'x-superblocks-request-id';
@@ -49,7 +52,8 @@ export const PLUGIN_ID_TO_PROTO_CLASS: Record<string, any> = {
   awssecretsmanager: Secrets.Store,
   hashicorpvault: Secrets.Store,
   akeylesssecretsmanager: Secrets.Store,
-  couchbase: CouchbasePluginV1.Plugin
+  couchbase: CouchbasePluginV1.Plugin,
+  kinesis: KinesisPluginV1.Plugin
 };
 
 // this is used to deserialize datasource configuration objects that contain
@@ -63,7 +67,8 @@ export const PLUGIN_ID_TO_PROTO_DATASOURCE_CONFIGURATION_OBJECT_CALLABLE: Record
   salesforce: deserializeSalesforceDatasourceConfig,
   adls: deserializeAdlsDatasourceConfig,
   oracledb: deserializeOracleDbDatasourceConfig,
-  couchbase: deserializeCouchbaseDatasourceConfig
+  couchbase: deserializeCouchbaseDatasourceConfig,
+  kinesis: deserializeKinesisDatasourceConfig
 };
 
 // this is used to deserialize action configuration objects that contain proto
@@ -77,7 +82,8 @@ export const PLUGIN_ID_TO_PROTO_ACTION_CONFIGURATION_OBJECT_CALLABLE: Record<str
   salesforce: deserializeSalesforceActionConfig,
   adls: deserializeAdlsActionConfig,
   oracledb: deserializeOracleDbActionConfig,
-  couchbase: deserializeCouchbaseActionConfig
+  couchbase: deserializeCouchbaseActionConfig,
+  kinesis: deserializeKinesisActionConfig
 };
 
 function deserializeRedisDatasourceConfig(serialized: Record<string, unknown>): RedisDatasourceConfiguration {
@@ -92,6 +98,19 @@ function deserializeRedisActionConfig(serialized: Record<string, unknown>): Redi
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { name, connection, ...rest } = plugin;
   return rest as RedisActionConfiguration;
+}
+
+function deserializeKinesisDatasourceConfig(serialized: Record<string, unknown>): KinesisDatasourceConfiguration {
+  const plugin = KinesisPluginV1.Plugin.fromJsonString(JSON.stringify(serialized), { ignoreUnknownFields: true });
+  const { name, connection } = plugin;
+  return { connection, name } as KinesisDatasourceConfiguration;
+}
+
+function deserializeKinesisActionConfig(serialized: Record<string, unknown>): KinesisActionConfiguration {
+  const plugin = KinesisPluginV1.Plugin.fromJsonString(JSON.stringify(serialized), { ignoreUnknownFields: true });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { name, connection, ...rest } = plugin;
+  return rest as KinesisActionConfiguration;
 }
 
 function deserializeSalesforceDatasourceConfig(serialized: Record<string, unknown>): SalesforceDatasourceConfiguration {

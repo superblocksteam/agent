@@ -47,6 +47,7 @@
     "@superblocksteam/gsheets": "workspace:*",
     "@superblocksteam/javascript": "workspace:*",
     "@superblocksteam/kafka": "workspace:*",
+    "@superblocksteam/kinesis": "workspace:*",
     "@superblocksteam/mariadb": "workspace:*",
     "@superblocksteam/mongodb": "workspace:*",
     "@superblocksteam/mssql": "workspace:*",

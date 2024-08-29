@@ -1,5 +1,5 @@
 {
-	"id": "554df7e6-8325-44c2-a6de-1489e1c43fd0",
+	"id": "44539040-1110-43e7-af06-ac63dc3366a7",
 	"name": "local",
 	"values": [
 		{
@@ -31,9 +31,15 @@
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IkdwV1QxNlpPM3FzTzRnT1hEbjVjU0F4Slk4TFpuWGU1Nk9FTWp5YXIxUUkifQ.eyJpYXQiOjE3MTc1MzkzNjMsIm9yZ19pZCI6ImY2ZWU1MTc4LWY0ODEtNDg5ZC1iZTVjLWRjYWY5Y2IxZTdiOCIsIm9yZ190eXBlIjoiZW50ZXJwcmlzZSIsInJiYWNfZ3JvdXBfaWRzIjpbXSwicmJhY19ncm91cHMiOlsiZ3JvdXAtYWJjZCJdLCJyYmFjX3JvbGUiOiJhZG1pbiIsInVzZXJfZW1haWwiOiJ0ZXN0QHN1cGVyYmxvY2tzdGVzdC5jb20iLCJ1c2VyX3R5cGUiOiJzdXBlcmJsb2NrcyJ9.B05c-wGggGxzS5rQfZJpFkaDQFRvhAFfl2zOTOvFjhdfnu6ccYDGIFJrV6Dwm-gB9GncCrdoJSR2Nlg4evFyzg",
 			"type": "secret",
 			"enabled": true
+		},
+		{
+			"key": "integration_kinesis_host",
+			"value": "http://host.docker.internal",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2024-07-24T19:02:58.638Z",
-	"_postman_exported_using": "Postman/11.3.1"
+	"_postman_exported_at": "2024-08-27T18:52:34.421Z",
+	"_postman_exported_using": "Postman/11.5.1"
 }

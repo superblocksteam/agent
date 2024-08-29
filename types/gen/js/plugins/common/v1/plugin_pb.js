@@ -410,7 +410,8 @@ proto.plugins.common.v1.AWSConfig.prototype.toObject = function(opt_includeInsta
 proto.plugins.common.v1.AWSConfig.toObject = function(includeInstance, msg) {
   var f, obj = {
 region: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-auth: (f = msg.getAuth()) && proto.plugins.common.v1.AWSConfig.Auth.toObject(includeInstance, f)
+auth: (f = msg.getAuth()) && proto.plugins.common.v1.AWSConfig.Auth.toObject(includeInstance, f),
+endpoint: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -456,6 +457,10 @@ proto.plugins.common.v1.AWSConfig.deserializeBinaryFromReader = function(msg, re
       reader.readMessage(value,proto.plugins.common.v1.AWSConfig.Auth.deserializeBinaryFromReader);
       msg.setAuth(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setEndpoint(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -498,6 +503,13 @@ proto.plugins.common.v1.AWSConfig.serializeBinaryToWriter = function(message, wr
       2,
       f,
       proto.plugins.common.v1.AWSConfig.Auth.serializeBinaryToWriter
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
+    writer.writeString(
+      3,
+      f
     );
   }
 };
@@ -817,6 +829,42 @@ proto.plugins.common.v1.AWSConfig.prototype.clearAuth = function() {
  */
 proto.plugins.common.v1.AWSConfig.prototype.hasAuth = function() {
   return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional string endpoint = 3;
+ * @return {string}
+ */
+proto.plugins.common.v1.AWSConfig.prototype.getEndpoint = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.common.v1.AWSConfig} returns this
+ */
+proto.plugins.common.v1.AWSConfig.prototype.setEndpoint = function(value) {
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.plugins.common.v1.AWSConfig} returns this
+ */
+proto.plugins.common.v1.AWSConfig.prototype.clearEndpoint = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.plugins.common.v1.AWSConfig.prototype.hasEndpoint = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 

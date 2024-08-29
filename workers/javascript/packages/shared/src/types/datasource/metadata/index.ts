@@ -1,4 +1,4 @@
-import { AdlsPluginV1, CosmosDbPluginV1, DynamoDbV1, KafkaV1, SalesforcePluginV1 } from '@superblocksteam/types';
+import { AdlsPluginV1, CosmosDbPluginV1, DynamoDbV1, KafkaV1, SalesforcePluginV1, KinesisPluginV1 } from '@superblocksteam/types';
 import { DatasourceConfiguration } from '..';
 import { Plugin } from '../../plugin';
 import { ConnectedUserTokenDto } from '../../userToken';
@@ -11,6 +11,7 @@ export interface DatasourceMetadataDto {
   dbSchema?: DatabaseSchemaMetadata;
   buckets?: BucketMetadata[];
   kafka?: KafkaV1.Metadata; // NOTE(frank): Why do we use a much different pattern here than we do for action and datasource configurations?
+  kinesis?: KinesisPluginV1.Metadata;
   integrationId?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   openApiSpec?: any;
@@ -34,6 +35,7 @@ export interface DatasourceMetadataV2Dto {
     buckets: BucketMetadata[];
   };
   kafka?: KafkaV1.Metadata;
+  kinesis?: KinesisPluginV1.Metadata;
   cosmosdb?: CosmosDbPluginV1.Plugin_Metadata;
   adls?: AdlsPluginV1.Plugin_Metadata;
   integrationId?: string;

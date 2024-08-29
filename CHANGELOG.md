@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added connection string support for RedShift, MySQL, MariaDB, Postgres, CockroachDB
 - Fix Snowflake template version
 - Fix connection for Snowflake integration so we do not hang for 90 seconds on an invalid configuration
+- Added AWS Kinesis plugin
 
 ## v1.14.1
 

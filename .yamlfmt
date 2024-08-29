@@ -7,14 +7,15 @@ indent: 2
 disallow_anchors: false
 
 include:
-  - '.*\.(yaml|yml)$'
+- .*\.(yaml|yml)$
 
 exclude:
-  - helm/orchestrator/templates/
-  - helm/agent/templates/
-  - workers/golang/helm/templates/
-  - workers/python/helm/templates/
-  - workers/javascript/helm/templates/
-  - workers/javascript/pnpm-lock.yaml
-  - helm/cloud-opa/templates/
-  - clients/
+- .github/workflows/
+- helm/orchestrator/templates/
+- helm/agent/templates/
+- workers/golang/helm/templates/
+- workers/python/helm/templates/
+- workers/javascript/helm/templates/
+- workers/javascript/pnpm-lock.yaml
+- helm/cloud-opa/templates/
+- clients/

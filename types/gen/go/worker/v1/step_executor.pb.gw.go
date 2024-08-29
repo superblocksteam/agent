@@ -15,7 +15,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/utilities"
-	v1_50 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	v1_51 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
@@ -33,7 +33,7 @@ var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
 func request_StepExecutorService_Stream_0(ctx context.Context, marshaler runtime.Marshaler, client StepExecutorServiceClient, req *http.Request, pathParams map[string]string) (StepExecutorService_StreamClient, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -54,7 +54,7 @@ func request_StepExecutorService_Stream_0(ctx context.Context, marshaler runtime
 }
 
 func request_StepExecutorService_Execute_0(ctx context.Context, marshaler runtime.Marshaler, client StepExecutorServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -67,7 +67,7 @@ func request_StepExecutorService_Execute_0(ctx context.Context, marshaler runtim
 }
 
 func local_request_StepExecutorService_Execute_0(ctx context.Context, marshaler runtime.Marshaler, server StepExecutorServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -80,7 +80,7 @@ func local_request_StepExecutorService_Execute_0(ctx context.Context, marshaler 
 }
 
 func request_StepExecutorService_Metadata_0(ctx context.Context, marshaler runtime.Marshaler, client StepExecutorServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -93,7 +93,7 @@ func request_StepExecutorService_Metadata_0(ctx context.Context, marshaler runti
 }
 
 func local_request_StepExecutorService_Metadata_0(ctx context.Context, marshaler runtime.Marshaler, server StepExecutorServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -106,7 +106,7 @@ func local_request_StepExecutorService_Metadata_0(ctx context.Context, marshaler
 }
 
 func request_StepExecutorService_TestConnection_0(ctx context.Context, marshaler runtime.Marshaler, client StepExecutorServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func request_StepExecutorService_TestConnection_0(ctx context.Context, marshaler
 }
 
 func local_request_StepExecutorService_TestConnection_0(ctx context.Context, marshaler runtime.Marshaler, server StepExecutorServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -132,7 +132,7 @@ func local_request_StepExecutorService_TestConnection_0(ctx context.Context, mar
 }
 
 func request_StepExecutorService_DeleteDatasource_0(ctx context.Context, marshaler runtime.Marshaler, client StepExecutorServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -145,7 +145,7 @@ func request_StepExecutorService_DeleteDatasource_0(ctx context.Context, marshal
 }
 
 func local_request_StepExecutorService_DeleteDatasource_0(ctx context.Context, marshaler runtime.Marshaler, server StepExecutorServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq v1_50.Request
+	var protoReq v1_51.Request
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {

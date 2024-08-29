@@ -14,7 +14,7 @@ x-environment: &environment
   SUPERBLOCKS_AGENT_KEY: dev-agent-key
   SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
   SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
-  SUPERBLOCKS_AGENT_TLS_INSECURE: "true"
+  SUPERBLOCKS_AGENT_TLS_INSECURE: 'true'
   SUPERBLOCKS_AGENT_REDIS_HOST: redis
   SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis
   SUPERBLOCKS_AGENT_REDIS_KVSTORE_MAX_SIZE_BYTES: 10000000
@@ -25,24 +25,24 @@ x-environment-golang: &environment-golang
   SUPERBLOCKS_WORKER_GO_SUPERBLOCKS_KEY: dev-agent-key
   SUPERBLOCKS_WORKER_GO_STORE_REDIS_PASSWORD: dev-agent-key
   SUPERBLOCKS_WORKER_GO_STORE_REDIS_HOST: redis
-  SUPERBLOCKS_WORKER_GO_STORE_REDIS_TLS: "false"
+  SUPERBLOCKS_WORKER_GO_STORE_REDIS_TLS: 'false'
   SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_PASSWORD: dev-agent-key
   SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_HOST: redis
-  SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_TLS: "false"
+  SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_TLS: 'false'
 x-environment-lang: &environment-lang
-  SUPERBLOCKS_AGENT_PROCESS_ASYNC: "false"
+  SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'false'
   SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
 services:
   redis:
     image: ghcr.io/superblocksteam/redis:6
     ports:
-      - "6379:6379"
-    command: "--requirepass dev-agent-key"
+      - 6379:6379
+    command: --requirepass dev-agent-key
     pull_policy: always
   postgres:
     image: ghcr.io/superblocksteam/postgres:16.1
     ports:
-      - "15432:5432"
+      - 15432:5432
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
@@ -64,24 +64,34 @@ services:
       - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
       - --advertise-kafka-addr internal://kafka:9092,external://localhost:19092
     ports:
-      - "18081:8081"
-      - "18082:8082"
-      - "19092:19092"
-      - "9644:9644"
+      - 18081:8081
+      - 18082:8082
+      - 19092:19092
+      - 9644:9644
   kafka-setup:
     image: docker.redpanda.com/redpandadata/redpanda:latest
     depends_on:
       - kafka
-    restart: "no"
+    restart: no
     # TODO(dlamotte): may be able to avoid the timeout/while/sleep loop
     # by using compose health checks. I tried initially, but didn't work on
     # the first try.
-    entrypoint: ["bash", "-c", "if ! timeout 30 bash -c 'while ! rpk -X brokers=kafka:9092 topic list; do sleep 1; done'; then exit 1; fi; rpk -X brokers=kafka:9092 topic create metadata.cloud && rpk -X brokers=kafka:9092 topic create intake.metadata.dymamo && rpk -X brokers=kafka:9092 topic create intake.metadata.vector && rpk -X brokers=kafka:9092 topic create events"]
+    entrypoint: [bash, -c, 'if ! timeout 30 bash -c ''while ! rpk -X brokers=kafka:9092 topic list; do sleep 1; done''; then exit 1; fi; rpk -X brokers=kafka:9092 topic create metadata.cloud && rpk -X brokers=kafka:9092 topic create intake.metadata.dymamo && rpk -X brokers=kafka:9092 topic create intake.metadata.vector && rpk -X brokers=kafka:9092 topic create events']
+  localstack:
+    image: localstack/localstack:latest
+    environment:
+      - SERVICES=kinesis
+    ports:
+      - 4566:4566
+    # auto runs this setup script when ready
+    # https://stackoverflow.com/questions/53563942/running-shell-script-against-localstack-in-docker-container
+    volumes:
+      - ./scripts/plugins/integration/kinesis/init-kinesis.sh:/etc/localstack/init/ready.d/init-kinesis.sh
   intake:
     image: ghcr.io/superblocksteam/intake:v0.88.0
     ports:
-      - "3030:3030"
-      - "10300:10300"
+      - 3030:3030
+      - 10300:10300
     environment:
       SUPERBLOCKS_INTAKE_KAFKA_BOOTSTRAP: kafka:9092
       SUPERBLOCKS_INTAKE_DB_URL: postgres://postgres:password@postgres:5432/postgres?sslmode=disable
@@ -96,14 +106,14 @@ services:
       # from wherever orchestrator is running
       MOCK_OAUTH_SERVER_URL: http://${CI_ONLY_MOCK_OAUTH_SERVER-127.0.0.1}:5678
     ports:
-      - "3100:3100"
-      - "3110:3110"
+      - 3100:3100
+      - 3110:3110
   auxillary:
     !!merge <<: *build-js
     environment:
       !!merge <<: *environment
-      SUPERBLOCKS_AGENT_PROCESS_ASYNC: "true"
-      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: "!execute"
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'true'
+      SUPERBLOCKS_AGENT_PLUGIN_EVENTS: '!execute'
       SUPERBLOCKS_AGENT_BUCKET: BA
       SUPERBLOCKS_AGENT_REDIS_GROUP: one
       FLEET: all
@@ -122,7 +132,7 @@ services:
     !!merge <<: [*build-js, *deploy]
     environment:
       !!merge <<: *environment
-      SUPERBLOCKS_AGENT_PROCESS_ASYNC: "true"
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'true'
       SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
       SUPERBLOCKS_AGENT_BUCKET: BA
       SUPERBLOCKS_AGENT_REDIS_GROUP: three
@@ -131,27 +141,27 @@ services:
   # deploy javascript with 2 replicas for pool
   # tests
   javascript.b1.execute:
-    !!merge <<: [*build-js]
+    !!merge <<: *build-js
     deploy:
       replicas: 2
     environment:
-      !!merge <<: [*environment]
+      !!merge <<: *environment
       SUPERBLOCKS_AGENT_BUCKET: B1
       SUPERBLOCKS_AGENT_REDIS_GROUP: four
       FLEET: javascript
     depends_on: [redis]
   javascript.b2.execute:
-    !!merge <<: [*build-js]
+    !!merge <<: *build-js
     deploy:
       replicas: 2
     environment:
-      !!merge <<: [*environment]
+      !!merge <<: *environment
       SUPERBLOCKS_AGENT_BUCKET: B2
       SUPERBLOCKS_AGENT_REDIS_GROUP: five
       FLEET: javascript
     depends_on: [redis]
   javascript.ba.execute:
-    !!merge <<: [*build-js]
+    !!merge <<: *build-js
     deploy:
       replicas: 2
     environment:
@@ -172,7 +182,7 @@ services:
     !!merge <<: [*build-js, *deploy]
     environment:
       !!merge <<: *environment
-      SUPERBLOCKS_AGENT_PROCESS_ASYNC: "true"
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'true'
       SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
       SUPERBLOCKS_AGENT_BUCKET: BE
       SUPERBLOCKS_AGENT_REDIS_GROUP: ten
@@ -182,7 +192,7 @@ services:
     !!merge <<: [*build-js, *deploy]
     environment:
       !!merge <<: *environment
-      SUPERBLOCKS_AGENT_PROCESS_ASYNC: "true"
+      SUPERBLOCKS_AGENT_PROCESS_ASYNC: 'true'
       SUPERBLOCKS_AGENT_PLUGIN_EVENTS: test
       SUPERBLOCKS_AGENT_BUCKET: BA
       SUPERBLOCKS_AGENT_REDIS_GROUP: eleven
@@ -207,13 +217,13 @@ services:
   golang.ba.all:
     !!merge <<: *build-go
     environment:
-      !!merge <<: [*environment-golang]
+      !!merge <<: *environment-golang
       SUPERBLOCKS_WORKER_GO_WORKER_BUCKET: BA
     depends_on: [redis]
   golang.be.all:
     !!merge <<: *build-go
     environment:
-      !!merge <<: [*environment-golang]
+      !!merge <<: *environment-golang
       SUPERBLOCKS_WORKER_GO_WORKER_BUCKET: BE
     depends_on: [redis]
   mock_oauth_server:
@@ -221,7 +231,7 @@ services:
     environment:
       SERVER_PORT: 5678
     ports:
-      - "5678:5678"
+      - 5678:5678
   echo:
     image: ghcr.io/superblocksteam/docker.io/ealen/echo-server:0.9.2
 volumes:

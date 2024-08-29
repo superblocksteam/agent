@@ -43,6 +43,7 @@ import { Plugin as Plugin$31 } from "../../plugins/oracledb/v1/plugin_pb";
 import { Plugin as Plugin$32 } from "../../plugins/databricks/v1/plugin_pb";
 import { Plugin as Plugin$33 } from "../../plugins/couchbase/v1/plugin_pb";
 import { Plugin as Plugin$34 } from "../../plugins/custom/v1/plugin_pb";
+import { Plugin as Plugin$35 } from "../../plugins/kinesis/v1/plugin_pb";
 
 /**
  * @generated from message api.v1.Api
@@ -2304,6 +2305,12 @@ export class Step extends Message<Step> {
      */
     value: Plugin$12;
     case: "gemini";
+  } | {
+    /**
+     * @generated from field: plugins.kinesis.v1.Plugin kinesis = 76;
+     */
+    value: Plugin$35;
+    case: "kinesis";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Step>) {
@@ -2389,6 +2396,7 @@ export class Step extends Message<Step> {
     { no: 73, name: "perplexity", kind: "message", T: Plugin$12, oneof: "config" },
     { no: 74, name: "stabilityai", kind: "message", T: Plugin$12, oneof: "config" },
     { no: 75, name: "gemini", kind: "message", T: Plugin$12, oneof: "config" },
+    { no: 76, name: "kinesis", kind: "message", T: Plugin$35, oneof: "config" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Step {

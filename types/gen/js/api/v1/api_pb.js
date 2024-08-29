@@ -61,6 +61,8 @@ var plugins_javascript_v1_plugin_pb = require('../../plugins/javascript/v1/plugi
 goog.object.extend(proto, plugins_javascript_v1_plugin_pb);
 var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
+var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
+goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
 var plugins_mariadb_v1_plugin_pb = require('../../plugins/mariadb/v1/plugin_pb');
 goog.object.extend(proto, plugins_mariadb_v1_plugin_pb);
 var plugins_mongodb_v1_plugin_pb = require('../../plugins/mongodb/v1/plugin_pb');
@@ -8604,7 +8606,7 @@ proto.api.v1.Block.prototype.hasSend = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75]];
+proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76]];
 
 /**
  * @enum {number}
@@ -8684,7 +8686,8 @@ proto.api.v1.Step.ConfigCase = {
   GROQ: 72,
   PERPLEXITY: 73,
   STABILITYAI: 74,
-  GEMINI: 75
+  GEMINI: 75,
+  KINESIS: 76
 };
 
 /**
@@ -8799,7 +8802,8 @@ mistral: (f = msg.getMistral()) && plugins_restapiintegration_v1_plugin_pb.Plugi
 groq: (f = msg.getGroq()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
 perplexity: (f = msg.getPerplexity()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
 stabilityai: (f = msg.getStabilityai()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-gemini: (f = msg.getGemini()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f)
+gemini: (f = msg.getGemini()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9209,6 +9213,11 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
       var value = new plugins_restapiintegration_v1_plugin_pb.Plugin;
       reader.readMessage(value,plugins_restapiintegration_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
       msg.setGemini(value);
+      break;
+    case 76:
+      var value = new plugins_kinesis_v1_plugin_pb.Plugin;
+      reader.readMessage(value,plugins_kinesis_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
+      msg.setKinesis(value);
       break;
     default:
       reader.skipField();
@@ -9836,6 +9845,14 @@ proto.api.v1.Step.serializeBinaryToWriter = function(message, writer) {
       75,
       f,
       plugins_restapiintegration_v1_plugin_pb.Plugin.serializeBinaryToWriter
+    );
+  }
+  f = message.getKinesis();
+  if (f != null) {
+    writer.writeMessage(
+      76,
+      f,
+      plugins_kinesis_v1_plugin_pb.Plugin.serializeBinaryToWriter
     );
   }
 };
@@ -12594,6 +12611,43 @@ proto.api.v1.Step.prototype.clearGemini = function() {
  */
 proto.api.v1.Step.prototype.hasGemini = function() {
   return jspb.Message.getField(this, 75) != null;
+};
+
+
+/**
+ * optional plugins.kinesis.v1.Plugin kinesis = 76;
+ * @return {?proto.plugins.kinesis.v1.Plugin}
+ */
+proto.api.v1.Step.prototype.getKinesis = function() {
+  return /** @type{?proto.plugins.kinesis.v1.Plugin} */ (
+    jspb.Message.getWrapperField(this, plugins_kinesis_v1_plugin_pb.Plugin, 76));
+};
+
+
+/**
+ * @param {?proto.plugins.kinesis.v1.Plugin|undefined} value
+ * @return {!proto.api.v1.Step} returns this
+*/
+proto.api.v1.Step.prototype.setKinesis = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 76, proto.api.v1.Step.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.Step} returns this
+ */
+proto.api.v1.Step.prototype.clearKinesis = function() {
+  return this.setKinesis(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.Step.prototype.hasKinesis = function() {
+  return jspb.Message.getField(this, 76) != null;
 };
 
 

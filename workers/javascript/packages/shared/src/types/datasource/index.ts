@@ -5,6 +5,7 @@ import {
   CouchbasePluginV1 as CouchbasePlugin,
   DatabricksPluginV1 as DatabricksPlugin,
   KafkaV1 as KafkaPlugin,
+  KinesisPluginV1 as KinesisPlugin,
   OracleDbPluginV1 as OracleDbPlugin,
   PluginCommonV1 as PluginCommon,
   RedisPluginV1 as RedisPlugin,
@@ -401,6 +402,8 @@ export type AthenaDatasourceConfiguration = Pick<AthenaPlugin.Plugin, 'name' | '
 
 export type RedisDatasourceConfiguration = Pick<RedisPlugin.Plugin, 'name' | 'connection' | 'dynamicWorkflowConfiguration'>;
 
+export type KinesisDatasourceConfiguration = Pick<KinesisPlugin.Plugin, 'name' | 'connection' | 'dynamicWorkflowConfiguration'>;
+
 // NOTE(frank): We should just be using `SecretV1.Store`. However, ts-json-schema-generator does not
 // support `bigint`. So you'd think I can just do `Omit<Secretv1.Store, 'metadata'>`. However, it doesn't
 // respect Pick, Omit, or Exclude.... Hence, this workaround where we literally dupe the type....
@@ -464,6 +467,7 @@ export type DatasourceConfiguration =
   | RocksetDatasourceConfiguration
   | GoogleSheetsDatasourceConfiguration
   | KafkaDatasourceConfiguration
+  | KinesisDatasourceConfiguration
   | SalesforceDatasourceConfiguration
   | SmtpDatasourceConfiguration
   | AdlsDatasourceConfiguration
@@ -487,6 +491,7 @@ export type DatasourceConfigurationByType = {
   graphqlintegration?: GraphQLDatasourceConfiguration;
   graphql?: GraphQLDatasourceConfiguration;
   javascript?: JavascriptDatasourceConfiguration;
+  kinesis?: KinesisDatasourceConfiguration;
   mariadb?: MariaDBDatasourceConfiguration;
   mongodb?: MongoDBDatasourceConfiguration;
   msk?: KafkaDatasourceConfiguration;
