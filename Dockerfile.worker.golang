@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.9.0
 
-FROM ghcr.io/superblocksteam/golang:1.22.5-bookworm AS builder
+FROM ghcr.io/superblocksteam/golang:1.23.0-bookworm AS builder
 
 ARG GO_ARCH=amd64
 
