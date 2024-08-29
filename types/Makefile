@@ -1,5 +1,5 @@
 # https://github.com/bufbuild/buf/releases
-BUF_VERSION = "1.37.0"
+BUF_VERSION = "1.39.0"
 .ONESHELL:
 
 PYTHON_CMD = python3.10
@@ -15,7 +15,6 @@ deps:
 
 .PHONY: deps-buf
 deps-buf:
-	@brew install bufbuild/buf/buf --quiet
 	@if [[ $(shell buf --version) != $(BUF_VERSION) ]]; then echo "wrong buf version:\ncurrent: $(shell buf --version)\nexpected: $(BUF_VERSION)\nyou may need to modify this version check if a newer version is available"; exit 1; fi
 
 .PHONY: deps-local
