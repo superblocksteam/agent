@@ -37,8 +37,8 @@ func NewZapTestObservedLogger(tb testing.TB) (*zap.Logger, *observer.ObservedLog
 	return log, logs
 }
 
-// RequireLogContains finds at least one log message that has the given Message at the given level.
-func RequireLogContains(tb FatalTB, logs *observer.ObservedLogs, level zapcore.Level, msg string) {
+// LogContains returns true if there is at least one log that has the given Message at the given level.
+func LogContains(logs *observer.ObservedLogs, level zapcore.Level, msg string) bool {
 	found := false
 	for _, le := range logs.FilterLevelExact(level).All() {
 		if le.Message == msg {
@@ -47,7 +47,13 @@ func RequireLogContains(tb FatalTB, logs *observer.ObservedLogs, level zapcore.L
 		}
 	}
 
-	if !found {
+	return found
+}
+
+// RequireLogContains finds at least one log message that has the given Message at the given level, or fails
+// the test if not.
+func RequireLogContains(tb FatalTB, logs *observer.ObservedLogs, level zapcore.Level, msg string) {
+	if !LogContains(logs, level, msg) {
 		tb.Fatalf("failed: logs (level %q) does not contain %q", level.String(), msg)
 	}
 }
