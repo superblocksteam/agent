@@ -210,8 +210,13 @@ function push() {
   echo " [INFO] Adding the changes."
   __do git add .
 
-  echo " [INFO] Committing changes."
-  __do git commit --quiet -m "syncing up to ${head}"$'\n\n'"$(_join $'\n' "${authors[@]}")"
+  if ! git diff-index --quiet HEAD --; then
+    echo " [INFO] Committing changes."
+    __do git commit --quiet -m "syncing up to ${head}"$'\n\n'"$(_join $'\n' "${authors[@]}")"
+  else
+    echo " [INFO] No changes to commit; bye."
+    exit 0
+  fi
   
   if [[ "$push" -eq 1 ]]; then
     echo " [INFO] Refusing to push changes to the destination repository unless the push option is enabled."
