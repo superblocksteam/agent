@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix Snowflake template version
 - Fix connection for Snowflake integration so we do not hang for 90 seconds on an invalid configuration
 - Added AWS Kinesis plugin
+- Fix worker/js helm limits.memory
 
 ## v1.14.1
 

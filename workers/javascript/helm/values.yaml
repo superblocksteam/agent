@@ -13,13 +13,13 @@ networkpolicy:
 remoteIntakeUrl: https://logs.intake.superblocks.com
 resources:
   limits:
-    memory: 1Gi
+    memory: 4Gi # node.heap must be less than this
   requests:
     cpu: 150m
     memory: 250Mi
-fleets: {}
 node:
   heap: 3800
+fleets: {}
 agent: main
 superblocks:
   key: <override>
