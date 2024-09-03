@@ -144,20 +144,34 @@ func (s *service) Flush(notify chan struct{}) error {
 				continue
 			}
 
-			uniqueApiPatchRef := fmt.Sprintf("%s:%s:%s", getApiIdFromLiteral(apiLiteral), item.GetBranchName(), item.GetCommitId())
+			uniqueApiPatchRef := fmt.Sprintf("%s:%s%s", getApiIdFromLiteral(apiLiteral), item.GetBranchName(), item.GetCommitId())
 			if !uniqueApiPatchRefs[uniqueApiPatchRef] {
 				apiPatches = append(apiPatches, patch)
 				uniqueApiPatchRefs[uniqueApiPatchRef] = true
 			}
 		case item.GetApi() != nil:
-			api := item.GetApi().GetStructValue()
-			patch, err := patchFromApiLiteral(item, api)
-			if err != nil {
-				s.Logger.Warn("failed to build patch from api", zap.Error(err))
-				continue
+			patch := &apiv1.PatchApi{
+				Api: &apiv1.Api{
+					// Don't update actual api, just the signature
+					Signature: item.GetApi().GetSignature(),
+					// This is necessary to retain for comparing updated timestamps
+					Metadata: item.GetApi().GetMetadata(),
+				},
 			}
 
-			uniqueApiPatchRef := fmt.Sprintf("%s:%s:%s", getApiIdFromLiteral(api), item.GetBranchName(), item.GetCommitId())
+			if item.GetCommitId() != "" {
+				patch.GitRef = &apiv1.PatchApi_CommitId{
+					CommitId: item.GetCommitId(),
+				}
+			}
+
+			if item.GetBranchName() != "" {
+				patch.GitRef = &apiv1.PatchApi_BranchName{
+					BranchName: item.GetBranchName(),
+				}
+			}
+
+			uniqueApiPatchRef := fmt.Sprintf("%s:%s%s", item.GetApi().GetMetadata().GetId(), item.GetBranchName(), item.GetCommitId())
 			if !uniqueApiPatchRefs[uniqueApiPatchRef] {
 				apiPatches = append(apiPatches, patch)
 				uniqueApiPatchRefs[uniqueApiPatchRef] = true
@@ -224,7 +238,7 @@ func (s *service) Flush(notify chan struct{}) error {
 func getApiIdFromLiteral(api *structpb.Struct) string {
 	apiId, err := utils.GetStructField(api, "metadata.id")
 	if err != nil {
-		return "unknown"
+		return ""
 	}
 	return apiId.GetStringValue()
 }

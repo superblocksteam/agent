@@ -5,6 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Timestamp, Value } from "@bufbuild/protobuf";
+import { Api } from "../../api/v1/api_pb";
 import { Signature } from "../../utils/v1/utils_pb";
 
 /**
@@ -16,10 +17,10 @@ export class Resource extends Message<Resource> {
    */
   config: {
     /**
-     * @generated from field: google.protobuf.Value api = 1 [deprecated = true];
+     * @generated from field: api.v1.Api api = 1 [deprecated = true];
      * @deprecated
      */
-    value: Value;
+    value: Api;
     case: "api";
   } | {
     /**
@@ -60,7 +61,7 @@ export class Resource extends Message<Resource> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "security.v1.Resource";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "api", kind: "message", T: Value, oneof: "config" },
+    { no: 1, name: "api", kind: "message", T: Api, oneof: "config" },
     { no: 2, name: "literal", kind: "message", T: Resource_Literal, oneof: "config" },
     { no: 5, name: "api_literal", kind: "message", T: Resource_ApiLiteral, oneof: "config" },
     { no: 3, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },

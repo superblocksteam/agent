@@ -5,6 +5,7 @@
 /* eslint-disable */
 
 import * as jspb from "google-protobuf";
+import * as api_v1_api_pb from "../../api/v1/api_pb";
 import * as buf_validate_validate_pb from "../../buf/validate/validate_pb";
 import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/struct_pb";
 import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
@@ -14,8 +15,8 @@ export class Resource extends jspb.Message {
 
     hasApi(): boolean;
     clearApi(): void;
-    getApi(): google_protobuf_struct_pb.Value | undefined;
-    setApi(value?: google_protobuf_struct_pb.Value): Resource;
+    getApi(): api_v1_api_pb.Api | undefined;
+    setApi(value?: api_v1_api_pb.Api): Resource;
 
     hasLiteral(): boolean;
     clearLiteral(): void;
@@ -52,7 +53,7 @@ export class Resource extends jspb.Message {
 
 export namespace Resource {
     export type AsObject = {
-        api?: google_protobuf_struct_pb.Value.AsObject,
+        api?: api_v1_api_pb.Api.AsObject,
         literal?: Resource.Literal.AsObject,
         apiLiteral?: Resource.ApiLiteral.AsObject,
         commitId: string,

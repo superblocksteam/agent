@@ -331,11 +331,26 @@ func prep(log *zap.Logger, resources []*pbsecurity.Resource) prepped {
 			}
 			prepped.apiPatches = append(prepped.apiPatches, patch)
 		} else if res.GetApi() != nil {
-			patch, err := patchFromApiLiteral(res, res.GetApi().GetStructValue())
-			if err != nil {
-				log.Error("error building patch from api", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, resId))
-				continue
+			api := res.GetApi()
+			patch := &pbapi.PatchApi{
+				Api: &pbapi.Api{
+					Signature: api.GetSignature(),
+					Metadata:  api.GetMetadata(),
+				},
 			}
+
+			if res.GetCommitId() != "" {
+				patch.GitRef = &pbapi.PatchApi_CommitId{
+					CommitId: res.GetCommitId(),
+				}
+			}
+
+			if res.GetBranchName() != "" {
+				patch.GitRef = &pbapi.PatchApi_BranchName{
+					BranchName: res.GetBranchName(),
+				}
+			}
+
 			prepped.apiPatches = append(prepped.apiPatches, patch)
 		} else if res.GetLiteral() != nil {
 			literal := res.GetLiteral()
@@ -404,11 +419,7 @@ func patchFromApiLiteral(res *pbsecurity.Resource, api *structpb.Struct) (*pbapi
 func resourceId(res *pbsecurity.Resource) string {
 	switch t := res.Config.(type) {
 	case *pbsecurity.Resource_Api:
-		resourceId, err := utils.GetStructField(t.Api.GetStructValue(), "metadata.id")
-		if err != nil {
-			resourceId = structpb.NewStringValue("unknown")
-		}
-		return "api-" + resourceId.GetStringValue()
+		return "api-" + t.Api.GetMetadata().GetId()
 	case *pbsecurity.Resource_ApiLiteral_:
 		resourceId, err := utils.GetStructField(t.ApiLiteral.GetData().GetStructValue(), "metadata.id")
 		if err != nil {
