@@ -28,7 +28,7 @@
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@swc/cli": "^0.4.0",
-    "@swc/core": "1.7.9",
+    "@swc/core": "1.7.23",
     "@swc/jest": "0.2.36",
     "@types/jest": "29.5.12",
     "@types/node": "20.14.8",
