@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix connection for Snowflake integration so we do not hang for 90 seconds on an invalid configuration
 - Added AWS Kinesis plugin
 - Fix worker/js helm limits.memory
+- Change `v1.security.Resource.config.api` type from `google.protobuf.Value` well known type back to `v1.Api`
 
 ## v1.14.1
 

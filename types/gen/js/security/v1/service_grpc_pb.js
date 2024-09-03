@@ -3,6 +3,7 @@
 'use strict';
 var grpc = require('@grpc/grpc-js');
 var security_v1_service_pb = require('../../security/v1/service_pb');
+var api_v1_api_pb = require('../../api/v1/api_pb');
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 var google_api_annotations_pb = require('../../google/api/annotations_pb');
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');

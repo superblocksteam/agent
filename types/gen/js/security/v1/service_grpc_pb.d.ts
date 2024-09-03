@@ -6,6 +6,7 @@
 
 import * as grpc from "@grpc/grpc-js";
 import * as security_v1_service_pb from "../../security/v1/service_pb";
+import * as api_v1_api_pb from "../../api/v1/api_pb";
 import * as buf_validate_validate_pb from "../../buf/validate/validate_pb";
 import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/struct_pb";
 import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";

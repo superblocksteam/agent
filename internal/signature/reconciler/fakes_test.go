@@ -139,8 +139,7 @@ func (f *fakeSigner) SigningKeyID() string {
 func setSignature(res *pbsecurity.Resource, sig *pbutils.Signature) error {
 	switch t := res.Config.(type) {
 	case *pbsecurity.Resource_Api:
-		sigStruct := signature.SignatureProtoToStructpb(sig)
-		t.Api.GetStructValue().GetFields()["signature"] = structpb.NewStructValue(sigStruct)
+		t.Api.Signature = sig
 	case *pbsecurity.Resource_ApiLiteral_:
 		sigStruct := signature.SignatureProtoToStructpb(sig)
 		t.ApiLiteral.GetData().GetStructValue().GetFields()["signature"] = structpb.NewStructValue(sigStruct)

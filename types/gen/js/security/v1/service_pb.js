@@ -21,6 +21,8 @@ var global =
     (function () { return this; }).call(null) ||
     Function('return this')();
 
+var api_v1_api_pb = require('../../api/v1/api_pb');
+goog.object.extend(proto, api_v1_api_pb);
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
 var google_api_annotations_pb = require('../../google/api/annotations_pb');
@@ -262,7 +264,7 @@ proto.security.v1.Resource.prototype.toObject = function(opt_includeInstance) {
  */
 proto.security.v1.Resource.toObject = function(includeInstance, msg) {
   var f, obj = {
-api: (f = msg.getApi()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+api: (f = msg.getApi()) && api_v1_api_pb.Api.toObject(includeInstance, f),
 literal: (f = msg.getLiteral()) && proto.security.v1.Resource.Literal.toObject(includeInstance, f),
 apiLiteral: (f = msg.getApiLiteral()) && proto.security.v1.Resource.ApiLiteral.toObject(includeInstance, f),
 commitId: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
@@ -304,8 +306,8 @@ proto.security.v1.Resource.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new google_protobuf_struct_pb.Value;
-      reader.readMessage(value,google_protobuf_struct_pb.Value.deserializeBinaryFromReader);
+      var value = new api_v1_api_pb.Api;
+      reader.readMessage(value,api_v1_api_pb.Api.deserializeBinaryFromReader);
       msg.setApi(value);
       break;
     case 2:
@@ -360,7 +362,7 @@ proto.security.v1.Resource.serializeBinaryToWriter = function(message, writer) {
     writer.writeMessage(
       1,
       f,
-      google_protobuf_struct_pb.Value.serializeBinaryToWriter
+      api_v1_api_pb.Api.serializeBinaryToWriter
     );
   }
   f = message.getLiteral();
@@ -921,17 +923,17 @@ proto.security.v1.Resource.ApiLiteral.prototype.hasData = function() {
 
 
 /**
- * optional google.protobuf.Value api = 1;
- * @return {?proto.google.protobuf.Value}
+ * optional api.v1.Api api = 1;
+ * @return {?proto.api.v1.Api}
  */
 proto.security.v1.Resource.prototype.getApi = function() {
-  return /** @type{?proto.google.protobuf.Value} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_struct_pb.Value, 1));
+  return /** @type{?proto.api.v1.Api} */ (
+    jspb.Message.getWrapperField(this, api_v1_api_pb.Api, 1));
 };
 
 
 /**
- * @param {?proto.google.protobuf.Value|undefined} value
+ * @param {?proto.api.v1.Api|undefined} value
  * @return {!proto.security.v1.Resource} returns this
 */
 proto.security.v1.Resource.prototype.setApi = function(value) {

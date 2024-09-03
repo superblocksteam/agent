@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package security.v1;
 
+import "api/v1/api.proto";
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
@@ -43,7 +44,7 @@ message Resource {
   oneof config {
     option (buf.validate.oneof).required = true;
 
-    google.protobuf.Value api = 1 [deprecated = true];
+    api.v1.Api api = 1 [deprecated = true];
     Literal literal = 2;
     ApiLiteral api_literal = 5;
   }
