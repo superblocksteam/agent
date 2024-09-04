@@ -1,4 +1,5 @@
 ---
+terminationGracePeriodSeconds: 16200
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/path: "/metrics"

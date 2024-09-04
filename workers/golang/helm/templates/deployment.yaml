@@ -24,6 +24,7 @@ spec:
       annotations:
         {{- toYaml $podAnnotations | nindent 8 }}
     spec:
+      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       serviceAccountName: default
       imagePullSecrets:
       - name: worker-docker
