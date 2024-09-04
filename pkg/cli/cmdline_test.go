@@ -20,12 +20,16 @@ type args struct {
 func validArgs(t *testing.T) *args {
 	t.Helper()
 
+	orig := pflag.CommandLine
 	t.Cleanup(func() {
 		// need to restore the package global at the end of the test so
 		// future tests don't redefine the same flag. this initialization
 		// is how pflag currently initializes pflag.CommandLine
-		pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
+		pflag.CommandLine = orig
 	})
+
+	// reset global to zero'd state to avoid re-defining flags panic
+	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 
 	args := &args{
 		name: "test",
