@@ -1,4 +1,5 @@
 ---
+terminationGracePeriodSeconds: 16200
 autoscaling:
   min: 1
   max: 50
