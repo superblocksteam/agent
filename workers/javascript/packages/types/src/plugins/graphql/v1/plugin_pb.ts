@@ -87,11 +87,11 @@ export class Plugin extends Message<Plugin> {
   verboseHttpOutput = false;
 
   /**
-   * Fail executions for GraphQL responses that contain errors
+   * Do not fail executions on failed requests (4xx/5xx). We use the negative here to ensure the default (falsy) behavior matches the existing API behavior.
    *
-   * @generated from field: bool failOnRequestError = 7;
+   * @generated from field: bool doNotFailOnRequestError = 7;
    */
-  failOnRequestError = false;
+  doNotFailOnRequestError = false;
 
   constructor(data?: PartialMessage<Plugin>) {
     super();
@@ -107,7 +107,7 @@ export class Plugin extends Message<Plugin> {
     { no: 4, name: "custom", kind: "message", T: Custom, opt: true },
     { no: 5, name: "superblocksMetadata", kind: "message", T: SuperblocksMetadata },
     { no: 6, name: "verboseHttpOutput", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 7, name: "failOnRequestError", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 7, name: "doNotFailOnRequestError", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin {

@@ -18,5 +18,5 @@ message Plugin {
   optional Custom custom = 4;
   common.v1.SuperblocksMetadata superblocksMetadata = 5;
   bool verboseHttpOutput = 6; // Include HTTP response metadata in output
-  bool failOnRequestError = 7; // Fail executions for GraphQL responses that contain errors
+  bool doNotFailOnRequestError = 7; // Do not fail executions on failed requests (4xx/5xx). We use the negative here to ensure the default (falsy) behavior matches the existing API behavior.
 }
