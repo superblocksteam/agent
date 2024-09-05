@@ -31,6 +31,8 @@ message Plugin {
   string urlPath = 12;
   string authType = 13;
   common.v1.SuperblocksMetadata superblocksMetadata = 14;
+  bool verboseHttpOutput = 18; // Include HTTP response metadata in output
+  bool doNotFailOnRequestError = 19; // Do not fail executions on failed requests (4xx/5xx). We use the negative here to ensure the default (falsy) behavior matches the existing API behavior.
 
   // OpenAPI fields
   string openApiAction = 15;

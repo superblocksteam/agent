@@ -45,7 +45,9 @@ export default class RestApiIntegrationPlugin extends ApiPlugin {
   }: PluginExecutionProps<RestApiIntegrationDatasourceConfiguration, RestApiIntegrationActionConfiguration>): Promise<ExecutionOutput> {
     return await this.executeRequest(
       this.constructAxiosRequest(actionConfiguration, datasourceConfiguration),
-      actionConfiguration.responseType
+      actionConfiguration.responseType,
+      actionConfiguration.verboseHttpOutput ?? false,
+      actionConfiguration.doNotFailOnRequestError !== undefined ? !actionConfiguration.doNotFailOnRequestError : true
     );
   }
 
@@ -119,10 +121,11 @@ export default class RestApiIntegrationPlugin extends ApiPlugin {
       return;
     }
     // axios will throw an error if the request fails
-    await this.execute({ context: {}, actionConfiguration, datasourceConfiguration } as PluginExecutionProps<
-      RestApiIntegrationDatasourceConfiguration,
-      RestApiIntegrationActionConfiguration
-    >);
+    await this.execute({
+      context: {},
+      datasourceConfiguration,
+      actionConfiguration: { ...actionConfiguration, verboseHttpOutput: false, doNotFailOnRequestError: false }
+    } as PluginExecutionProps<RestApiIntegrationDatasourceConfiguration, RestApiIntegrationActionConfiguration>);
   }
 
   private _getURLFromBaseAndTenant(urlBase: string, openApiTenantName?: string): string {

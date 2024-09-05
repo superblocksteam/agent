@@ -98,7 +98,9 @@ fileformkey: jspb.Message.getFieldWithDefault(msg, 8, ""),
 filename: jspb.Message.getFieldWithDefault(msg, 9, ""),
 path: jspb.Message.getFieldWithDefault(msg, 10, ""),
 jsonbody: jspb.Message.getFieldWithDefault(msg, 11, ""),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f)
+superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
+verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 13, false),
+donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 14, false)
   };
 
   if (includeInstance) {
@@ -186,6 +188,14 @@ proto.plugins.restapi.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       var value = new common_v1_plugin_pb.SuperblocksMetadata;
       reader.readMessage(value,common_v1_plugin_pb.SuperblocksMetadata.deserializeBinaryFromReader);
       msg.setSuperblocksmetadata(value);
+      break;
+    case 13:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setVerbosehttpoutput(value);
+      break;
+    case 14:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setDonotfailonrequesterror(value);
       break;
     default:
       reader.skipField();
@@ -302,6 +312,20 @@ proto.plugins.restapi.v1.Plugin.serializeBinaryToWriter = function(message, writ
       12,
       f,
       common_v1_plugin_pb.SuperblocksMetadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getVerbosehttpoutput();
+  if (f) {
+    writer.writeBool(
+      13,
+      f
+    );
+  }
+  f = message.getDonotfailonrequesterror();
+  if (f) {
+    writer.writeBool(
+      14,
+      f
     );
   }
 };
@@ -599,6 +623,42 @@ proto.plugins.restapi.v1.Plugin.prototype.clearSuperblocksmetadata = function() 
  */
 proto.plugins.restapi.v1.Plugin.prototype.hasSuperblocksmetadata = function() {
   return jspb.Message.getField(this, 12) != null;
+};
+
+
+/**
+ * optional bool verboseHttpOutput = 13;
+ * @return {boolean}
+ */
+proto.plugins.restapi.v1.Plugin.prototype.getVerbosehttpoutput = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 13, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.plugins.restapi.v1.Plugin} returns this
+ */
+proto.plugins.restapi.v1.Plugin.prototype.setVerbosehttpoutput = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 13, value);
+};
+
+
+/**
+ * optional bool doNotFailOnRequestError = 14;
+ * @return {boolean}
+ */
+proto.plugins.restapi.v1.Plugin.prototype.getDonotfailonrequesterror = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 14, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.plugins.restapi.v1.Plugin} returns this
+ */
+proto.plugins.restapi.v1.Plugin.prototype.setDonotfailonrequesterror = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 14, value);
 };
 
 

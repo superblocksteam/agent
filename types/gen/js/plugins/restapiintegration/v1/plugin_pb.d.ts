@@ -45,6 +45,10 @@ export class Plugin extends jspb.Message {
     clearSuperblocksmetadata(): void;
     getSuperblocksmetadata(): common_v1_plugin_pb.SuperblocksMetadata | undefined;
     setSuperblocksmetadata(value?: common_v1_plugin_pb.SuperblocksMetadata): Plugin;
+    getVerbosehttpoutput(): boolean;
+    setVerbosehttpoutput(value: boolean): Plugin;
+    getDonotfailonrequesterror(): boolean;
+    setDonotfailonrequesterror(value: boolean): Plugin;
     getOpenapiaction(): string;
     setOpenapiaction(value: string): Plugin;
     getOpenapispecref(): string;
@@ -81,6 +85,8 @@ export namespace Plugin {
         urlpath: string,
         authtype: string,
         superblocksmetadata?: common_v1_plugin_pb.SuperblocksMetadata.AsObject,
+        verbosehttpoutput: boolean,
+        donotfailonrequesterror: boolean,
         openapiaction: string,
         openapispecref: string,
         openapitenantname?: string,

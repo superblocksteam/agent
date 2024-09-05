@@ -203,6 +203,10 @@ func (m *Plugin) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for VerboseHttpOutput
+
+	// no validation rules for DoNotFailOnRequestError
+
 	if len(errors) > 0 {
 		return PluginMultiError(errors)
 	}

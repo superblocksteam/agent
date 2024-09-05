@@ -9,5 +9,6 @@ codecov:
 ignore:
   - "./config/"
   - "./mocks/"
+  - "./types/"
   - "**/*_mock.go"
   - "**/mocks/*.go"

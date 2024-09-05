@@ -17,6 +17,13 @@ import {
 import { bufferFromReadableStream, BufferJSON, extractResponseData, paramHasKeyValue } from '../../utils';
 import { BasePlugin, StreamOptions } from './BasePlugin';
 
+interface FullResponseOutput {
+  headers: Record<string, unknown>;
+  body: unknown;
+  status_code: number;
+  status_text: string;
+}
+
 function constructFormData({ formData }: ApiActionConfiguration): FormData {
   const data = new FormData();
 
@@ -207,7 +214,12 @@ export abstract class ApiPlugin extends BasePlugin {
   }
 
   // NOTE: the responseType argument will be ignored unless requestConfig.responseType is 'arraybuffer'
-  executeRequest(requestConfig: AxiosRequestConfig, responseType = ActionResponseType.AUTO): Promise<ExecutionOutput> {
+  executeRequest(
+    requestConfig: AxiosRequestConfig,
+    responseType = ActionResponseType.AUTO,
+    verboseHttpOutput: boolean = false,
+    failOnRequestError: boolean = false
+  ): Promise<ExecutionOutput> {
     if (responseType === ActionResponseType.RAW) {
       throw new IntegrationError(
         `The ${ActionResponseType.RAW} response type is only supported when streaming.`,
@@ -218,11 +230,18 @@ export abstract class ApiPlugin extends BasePlugin {
       );
     }
 
+    const finalRequestConfig: AxiosRequestConfig = { ...requestConfig };
+    if (!failOnRequestError) {
+      finalRequestConfig.validateStatus = (status: number) => {
+        return true;
+      };
+    }
+
     return new Promise((resolve, reject) => {
-      axios(requestConfig)
+      axios(finalRequestConfig)
         .then((response) => {
           const ret = new ExecutionOutput();
-          ret.output = this.extractResponseData(response, responseType);
+          ret.output = this.extractResponseData(response, responseType, verboseHttpOutput);
           resolve(ret);
         })
         .catch((error) => {
@@ -231,7 +250,7 @@ export abstract class ApiPlugin extends BasePlugin {
             errMessage += `: ${error.response?.statusText}`;
           }
           if (error.response?.data) {
-            const responseDataRaw = this.extractResponseData(error.response, ActionResponseType.TEXT);
+            const responseDataRaw = this.extractResponseData(error.response, ActionResponseType.TEXT, verboseHttpOutput);
             const responseData = typeof responseDataRaw === 'string' ? responseDataRaw : JSON.stringify(responseDataRaw, null, 2);
             errMessage += '\nBody:\n' + responseData;
           }
@@ -248,17 +267,33 @@ export abstract class ApiPlugin extends BasePlugin {
     });
   }
 
-  extractResponseData(response: AxiosResponse<unknown, unknown>, responseType: ActionResponseType): unknown | Buffer {
+  extractResponseData(
+    response: AxiosResponse<unknown, unknown>,
+    responseType: ActionResponseType,
+    verboseHttpOutput: boolean
+  ): unknown | Buffer | FullResponseOutput {
+    let responseData: unknown | Buffer;
     const dataRaw = response.data;
 
     // if the response body has already been decoded then return that
     if (!Buffer.isBuffer(dataRaw)) {
-      return dataRaw;
+      responseData = dataRaw;
+    } else {
+      const mimeTypeString = response.headers['content-type'] ?? 'text/plain';
+      // rely on the toJSON method of Buffer in node.js
+      responseData = extractResponseData(dataRaw, mimeTypeString, responseType);
     }
 
-    const mimeTypeString = response.headers['content-type'] ?? 'text/plain';
-    // rely on the toJSON method of Buffer in node.js
-    return extractResponseData(dataRaw, mimeTypeString, responseType);
+    if (!verboseHttpOutput) {
+      return responseData;
+    }
+
+    return {
+      headers: response.headers,
+      body: responseData,
+      status_code: response.status,
+      status_text: response.statusText
+    };
   }
 
   generateRequestConfig(actionConfiguration: ApiActionConfiguration): AxiosRequestConfig {

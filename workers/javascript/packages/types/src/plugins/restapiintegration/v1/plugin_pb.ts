@@ -82,6 +82,20 @@ export class Plugin extends Message<Plugin> {
   superblocksMetadata?: SuperblocksMetadata;
 
   /**
+   * Include HTTP response metadata in output
+   *
+   * @generated from field: bool verboseHttpOutput = 18;
+   */
+  verboseHttpOutput = false;
+
+  /**
+   * Do not fail executions on failed requests (4xx/5xx). We use the negative here to ensure the default (falsy) behavior matches the existing API behavior.
+   *
+   * @generated from field: bool doNotFailOnRequestError = 19;
+   */
+  doNotFailOnRequestError = false;
+
+  /**
    * OpenAPI fields
    *
    * @generated from field: string openApiAction = 15;
@@ -120,6 +134,8 @@ export class Plugin extends Message<Plugin> {
     { no: 12, name: "urlPath", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 13, name: "authType", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 14, name: "superblocksMetadata", kind: "message", T: SuperblocksMetadata },
+    { no: 18, name: "verboseHttpOutput", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 19, name: "doNotFailOnRequestError", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 15, name: "openApiAction", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 16, name: "openApiSpecRef", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 17, name: "openApiTenantName", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },

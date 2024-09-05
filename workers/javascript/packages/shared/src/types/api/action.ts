@@ -170,6 +170,8 @@ export type GraphQLActionConfiguration = {
   headers?: Property[];
   body?: string;
   custom?: CustomProperties;
+  verboseHttpOutput?: boolean;
+  failOnRequestError?: boolean;
 };
 
 export type JavascriptActionConfiguration = {
@@ -269,6 +271,8 @@ type RestApiCommonActionConfiguration = {
   formData?: Property[];
   fileFormKey?: string;
   fileName?: string;
+  verboseHttpOutput?: boolean;
+  doNotFailOnRequestError?: boolean;
 };
 
 export type RestApiActionConfiguration = RestApiCommonActionConfiguration & {

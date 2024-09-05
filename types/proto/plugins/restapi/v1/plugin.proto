@@ -19,4 +19,6 @@ message Plugin {
   string path = 10;
   string jsonBody = 11;
   common.v1.SuperblocksMetadata superblocksMetadata = 12;
+  bool verboseHttpOutput = 13; // Include HTTP response metadata in output
+  bool doNotFailOnRequestError = 14; // Do not fail executions on failed requests (4xx/5xx). We use the negative here to ensure the default (falsy) behavior matches the existing API behavior.
 }

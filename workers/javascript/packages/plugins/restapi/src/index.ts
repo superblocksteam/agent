@@ -34,7 +34,12 @@ export default class RestApiPlugin extends ApiPlugin {
   public async execute({
     actionConfiguration
   }: PluginExecutionProps<RestApiDatasourceConfiguration, RestApiActionConfiguration>): Promise<ExecutionOutput> {
-    return await this.executeRequest(this.constructAxiosRequest(actionConfiguration), actionConfiguration.responseType);
+    return await this.executeRequest(
+      this.constructAxiosRequest(actionConfiguration),
+      actionConfiguration.responseType,
+      actionConfiguration.verboseHttpOutput ?? false,
+      actionConfiguration.doNotFailOnRequestError !== undefined ? !actionConfiguration.doNotFailOnRequestError : true
+    );
   }
 
   getRequest(actionConfiguration: RestApiActionConfiguration): RawRequest {

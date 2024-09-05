@@ -313,7 +313,9 @@ headersList: jspb.Message.toObjectList(msg.getHeadersList(),
     common_v1_plugin_pb.Property.toObject, includeInstance),
 body: jspb.Message.getFieldWithDefault(msg, 3, ""),
 custom: (f = msg.getCustom()) && proto.plugins.graphql.v1.Custom.toObject(includeInstance, f),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f)
+superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
+verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+failonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
   };
 
   if (includeInstance) {
@@ -372,6 +374,14 @@ proto.plugins.graphql.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       var value = new common_v1_plugin_pb.SuperblocksMetadata;
       reader.readMessage(value,common_v1_plugin_pb.SuperblocksMetadata.deserializeBinaryFromReader);
       msg.setSuperblocksmetadata(value);
+      break;
+    case 6:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setVerbosehttpoutput(value);
+      break;
+    case 7:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFailonrequesterror(value);
       break;
     default:
       reader.skipField();
@@ -438,6 +448,20 @@ proto.plugins.graphql.v1.Plugin.serializeBinaryToWriter = function(message, writ
       5,
       f,
       common_v1_plugin_pb.SuperblocksMetadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getVerbosehttpoutput();
+  if (f) {
+    writer.writeBool(
+      6,
+      f
+    );
+  }
+  f = message.getFailonrequesterror();
+  if (f) {
+    writer.writeBool(
+      7,
+      f
     );
   }
 };
@@ -588,6 +612,42 @@ proto.plugins.graphql.v1.Plugin.prototype.clearSuperblocksmetadata = function() 
  */
 proto.plugins.graphql.v1.Plugin.prototype.hasSuperblocksmetadata = function() {
   return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional bool verboseHttpOutput = 6;
+ * @return {boolean}
+ */
+proto.plugins.graphql.v1.Plugin.prototype.getVerbosehttpoutput = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 6, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.plugins.graphql.v1.Plugin} returns this
+ */
+proto.plugins.graphql.v1.Plugin.prototype.setVerbosehttpoutput = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 6, value);
+};
+
+
+/**
+ * optional bool failOnRequestError = 7;
+ * @return {boolean}
+ */
+proto.plugins.graphql.v1.Plugin.prototype.getFailonrequesterror = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 7, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.plugins.graphql.v1.Plugin} returns this
+ */
+proto.plugins.graphql.v1.Plugin.prototype.setFailonrequesterror = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 7, value);
 };
 
 
