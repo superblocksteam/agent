@@ -1835,8 +1835,8 @@ importers:
         specifier: ^4.17.0
         version: 4.17.7
       '@types/mssql':
-        specifier: 9.1.4
-        version: 9.1.4
+        specifier: 9.1.5
+        version: 9.1.5
       '@types/node':
         specifier: 20.14.8
         version: 20.14.8
@@ -5341,8 +5341,8 @@ packages:
   '@types/lodash@4.17.7':
     resolution: {integrity: sha512-8wTvZawATi/lsmNu10/j2hk1KEP0IvjubqPE3cu1Xz7xfXXt5oCq3SNUz4fMIP4XGF9Ky+Ue2tBA3hcS7LSBlA==}
 
-  '@types/mssql@9.1.4':
-    resolution: {integrity: sha512-st2ryK+viraRuptxcGs+66J0RrABytxhGxUlpWcOniNPzpnxIaeNhPJVM3lZn1r+s/6lQARYID6Z+MBoseSD8g==}
+  '@types/mssql@9.1.5':
+    resolution: {integrity: sha512-Q9EsgXwuRoX5wvUSu24YfbKMbFChv7pZ/jeCzPkj47ehcuXYsBcfogwrtVFosSjinD4Q/MY2YPGk9Yy1cM2Ywg==}
 
   '@types/node-fetch@2.6.11':
     resolution: {integrity: sha512-24xFj9R5+rfQJLRyM56qh+wnVSYhyXC2tkoBndtY0U+vubqNsYXGjufB2nn8Q6gt0LrARwL6UBtMCSVCwl4B1g==}
@@ -12903,7 +12903,7 @@ snapshots:
 
   '@types/lodash@4.17.7': {}
 
-  '@types/mssql@9.1.4':
+  '@types/mssql@9.1.5':
     dependencies:
       '@types/node': 20.14.8
       '@types/tedious': 4.0.14
