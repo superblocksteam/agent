@@ -11,7 +11,7 @@ secrets:
     file: ~/.npmrc
 x-environment: &environment
   SUPERBLOCKS_AGENT_KEY: dev-agent-key
-  SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
+  SUPERBLOCKS_AGENT_REDIS_TOKEN: koala
   SUPERBLOCKS_AGENT_TLS_INSECURE: 'true'
   SUPERBLOCKS_AGENT_REDIS_HOST: redis
   SUPERBLOCKS_AGENT_REDIS_KVSTORE_MAX_SIZE_BYTES: 10000000
@@ -24,7 +24,7 @@ services:
     image: redis:7.2
     ports:
       - '6379:6379'
-    command: '--requirepass dev-agent-key'
+    command: '--requirepass koala'
   auxillary:
     !!merge <<: *build
     environment:

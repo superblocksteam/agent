@@ -79,7 +79,7 @@ nodeSelector: {}
 redis:
   auth:
     enabled: true
-    password: dev-agent-key
+    password: koala
   tls:
     authClients: true
   replica:

@@ -37,7 +37,7 @@ func TestV8Execution(t *testing.T) {
 	options := &r.Options{
 		Addr:         "127.0.0.1:6379",
 		Username:     "default",
-		Password:     "dev-agent-key",
+		Password:     "koala",
 		DB:           0,
 		PoolSize:     10,
 		MinIdleConns: 5,

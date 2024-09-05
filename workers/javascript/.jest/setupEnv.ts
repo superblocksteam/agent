@@ -1,5 +1,5 @@
 process.env.SUPERBLOCKS_AGENT_KEY = 'dev-agent-key';
-process.env.SUPERBLOCKS_AGENT_REDIS_TOKEN = 'dev-agent-key';
+process.env.SUPERBLOCKS_AGENT_REDIS_TOKEN = 'koala';
 process.env.SUPERBLOCKS_AGENT_REDIS_GROUP = 'some-group';
 process.env.SUPERBLOCKS_AGENT_BUCKET = 'bucket';
 process.env.SUPERBLOCKS_AGENT_TLS_INSECURE = 'true';

@@ -5,7 +5,7 @@ from redis import Redis
 
 
 def _get_redis_key():
-    return os.environ.get("TEST_REDIS_KEY", "dev-agent-key")
+    return os.environ.get("TEST_REDIS_KEY", "koala")
 
 
 def _get_redis_host():
