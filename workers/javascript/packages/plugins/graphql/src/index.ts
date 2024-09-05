@@ -68,7 +68,7 @@ export default class GraphQLPlugin extends ApiPlugin {
       requestConfig,
       ActionResponseType.AUTO,
       actionConfiguration.verboseHttpOutput ?? false,
-      actionConfiguration.failOnRequestError ?? false
+      actionConfiguration.doNotFailOnRequestError !== undefined ? !actionConfiguration.doNotFailOnRequestError : true
     );
   }
 

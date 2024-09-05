@@ -315,7 +315,7 @@ body: jspb.Message.getFieldWithDefault(msg, 3, ""),
 custom: (f = msg.getCustom()) && proto.plugins.graphql.v1.Custom.toObject(includeInstance, f),
 superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
 verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-failonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
+donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
   };
 
   if (includeInstance) {
@@ -381,7 +381,7 @@ proto.plugins.graphql.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       break;
     case 7:
       var value = /** @type {boolean} */ (reader.readBool());
-      msg.setFailonrequesterror(value);
+      msg.setDonotfailonrequesterror(value);
       break;
     default:
       reader.skipField();
@@ -457,7 +457,7 @@ proto.plugins.graphql.v1.Plugin.serializeBinaryToWriter = function(message, writ
       f
     );
   }
-  f = message.getFailonrequesterror();
+  f = message.getDonotfailonrequesterror();
   if (f) {
     writer.writeBool(
       7,
@@ -634,10 +634,10 @@ proto.plugins.graphql.v1.Plugin.prototype.setVerbosehttpoutput = function(value)
 
 
 /**
- * optional bool failOnRequestError = 7;
+ * optional bool doNotFailOnRequestError = 7;
  * @return {boolean}
  */
-proto.plugins.graphql.v1.Plugin.prototype.getFailonrequesterror = function() {
+proto.plugins.graphql.v1.Plugin.prototype.getDonotfailonrequesterror = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 7, false));
 };
 
@@ -646,7 +646,7 @@ proto.plugins.graphql.v1.Plugin.prototype.getFailonrequesterror = function() {
  * @param {boolean} value
  * @return {!proto.plugins.graphql.v1.Plugin} returns this
  */
-proto.plugins.graphql.v1.Plugin.prototype.setFailonrequesterror = function(value) {
+proto.plugins.graphql.v1.Plugin.prototype.setDonotfailonrequesterror = function(value) {
   return jspb.Message.setProto3BooleanField(this, 7, value);
 };
 

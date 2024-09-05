@@ -281,7 +281,7 @@ func (m *Plugin) validate(all bool) error {
 
 	// no validation rules for VerboseHttpOutput
 
-	// no validation rules for FailOnRequestError
+	// no validation rules for DoNotFailOnRequestError
 
 	if m.Custom != nil {
 
