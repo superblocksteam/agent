@@ -190,7 +190,7 @@ jobs:
             ENVIRONMENT=ci \
             IMAGE_TAG=sha-${{ github.sha }}${{ matrix.suffix }} \
             HELM_TIMEOUT=2m \
-            HELM_EXTRA_ARGS="--debug --kube-context kind-superblocks --set queue.deploy=true --set kvstore.maxBytes=10000000 --set node.heap=100 --set autoscaling.disable=true --set autoscaling.min=5 --set resources=null --set tolerations=null --set nodeSelector=null --set image.credentials=null --set queue.token=dev-agent-key --set kvstore.token=dev-agent-key --set superblocks.key=dev-agent-key"
+            HELM_EXTRA_ARGS="--debug --kube-context kind-superblocks --set queue.deploy=true --set kvstore.maxBytes=10000000 --set node.heap=100 --set autoscaling.disable=true --set autoscaling.min=5 --set resources=null --set tolerations=null --set nodeSelector=null --set image.credentials=null --set queue.token=koala --set kvstore.token=koala --set superblocks.key=dev-agent-key"
         env:
           K8S_NAMESPACE: worker
       - name: expose redis
@@ -226,8 +226,8 @@ jobs:
           pytest .
           popd
         env:
-          SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
-          SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+          SUPERBLOCKS_AGENT_REDIS_TOKEN: koala
+          SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: koala
       - name: run load tests
         if: github.ref == 'refs/heads/main'
         run: |
@@ -235,8 +235,8 @@ jobs:
           pnpm --filter @superblocks/worker.js test:load
           popd
         env:
-          SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
-          SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+          SUPERBLOCKS_AGENT_REDIS_TOKEN: koala
+          SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: koala
           SUPERBLOCKS_AGENT_LOAD_CONCURRENCY: 15
           SUPERBLOCKS_AGENT_LOAD_REQUESTS: 1500
           SUPERBLOCKS_PYTHON_TESTS: true

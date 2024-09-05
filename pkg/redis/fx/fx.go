@@ -60,7 +60,7 @@ func init() {
 	pflag.Duration("redis.timeout.write", 10*time.Second, "")
 	pflag.Duration("redis.timeout.pool", 5*time.Minute, "")
 	pflag.String("redis.username", "default", "")
-	pflag.String("redis.password", "dev-agent-key", "")
+	pflag.String("redis.password", "koala", "")
 	pflag.Bool("redis.tls", false, "")
 	pflag.String("redis.servername", "", "")
 }

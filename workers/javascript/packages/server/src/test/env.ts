@@ -8,11 +8,11 @@ const envs = new EnvStore(process.env);
 envs.addAll([
   {
     name: 'SUPERBLOCKS_AGENT_REDIS_TOKEN',
-    defaultValue: 'dev-agent-key'
+    defaultValue: 'koala'
   },
   {
     name: 'SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN',
-    defaultValue: 'dev-agent-key'
+    defaultValue: 'koala'
   },
   {
     name: 'SUPERBLOCKS_AGENT_TLS_INSECURE',

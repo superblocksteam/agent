@@ -5,7 +5,7 @@ services:
     image: redis:6
     ports:
       - "6379:6379"
-    command: "--requirepass dev-agent-key"
+    command: "--requirepass koala"
     pull_policy: always
   mock:
     build:
@@ -25,8 +25,8 @@ services:
       replicas: 1
     environment:
       SUPERBLOCKS_AGENT_KEY: dev-agent-key
-      SUPERBLOCKS_AGENT_REDIS_TOKEN: dev-agent-key
-      SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: dev-agent-key
+      SUPERBLOCKS_AGENT_REDIS_TOKEN: koala
+      SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: koala
       SUPERBLOCKS_AGENT_TLS_INSECURE: "true"
       SUPERBLOCKS_AGENT_REDIS_HOST: redis
       SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis
