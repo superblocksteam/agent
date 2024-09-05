@@ -71,6 +71,20 @@ export class Plugin extends Message<Plugin> {
    */
   superblocksMetadata?: SuperblocksMetadata;
 
+  /**
+   * Include HTTP response metadata in output
+   *
+   * @generated from field: bool verboseHttpOutput = 13;
+   */
+  verboseHttpOutput = false;
+
+  /**
+   * Do not fail executions on failed requests (4xx/5xx). We use the negative here to ensure the default (falsy) behavior matches the existing API behavior.
+   *
+   * @generated from field: bool doNotFailOnRequestError = 14;
+   */
+  doNotFailOnRequestError = false;
+
   constructor(data?: PartialMessage<Plugin>) {
     super();
     proto3.util.initPartial(data, this);
@@ -91,6 +105,8 @@ export class Plugin extends Message<Plugin> {
     { no: 10, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 11, name: "jsonBody", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 12, name: "superblocksMetadata", kind: "message", T: SuperblocksMetadata },
+    { no: 13, name: "verboseHttpOutput", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 14, name: "doNotFailOnRequestError", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin {

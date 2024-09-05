@@ -3516,6 +3516,14 @@
         },
         "superblocksMetadata": {
           "$ref": "#/definitions/commonv1SuperblocksMetadata"
+        },
+        "verboseHttpOutput": {
+          "type": "boolean",
+          "title": "Include HTTP response metadata in output"
+        },
+        "failOnRequestError": {
+          "type": "boolean",
+          "title": "Fail executions for GraphQL responses that contain errors"
         }
       }
     },
@@ -4481,6 +4489,14 @@
         "superblocksMetadata": {
           "$ref": "#/definitions/commonv1SuperblocksMetadata"
         },
+        "verboseHttpOutput": {
+          "type": "boolean",
+          "title": "Include HTTP response metadata in output"
+        },
+        "doNotFailOnRequestError": {
+          "type": "boolean",
+          "description": "Do not fail executions on failed requests (4xx/5xx). We use the negative here to ensure the default (falsy) behavior matches the existing API behavior."
+        },
         "openApiAction": {
           "type": "string",
           "title": "OpenAPI fields"
@@ -4543,6 +4559,14 @@
         },
         "superblocksMetadata": {
           "$ref": "#/definitions/commonv1SuperblocksMetadata"
+        },
+        "verboseHttpOutput": {
+          "type": "boolean",
+          "title": "Include HTTP response metadata in output"
+        },
+        "doNotFailOnRequestError": {
+          "type": "boolean",
+          "description": "Do not fail executions on failed requests (4xx/5xx). We use the negative here to ensure the default (falsy) behavior matches the existing API behavior."
         }
       }
     },

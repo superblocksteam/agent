@@ -3,7 +3,6 @@ export * from './email';
 export * from './gcs';
 export * from './gsheets';
 export * from './mongodb';
-export * from './restApi';
 export * from './rockset';
 export * from './s3';
 export * from './shared';

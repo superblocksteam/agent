@@ -79,6 +79,20 @@ export class Plugin extends Message<Plugin> {
    */
   superblocksMetadata?: SuperblocksMetadata;
 
+  /**
+   * Include HTTP response metadata in output
+   *
+   * @generated from field: bool verboseHttpOutput = 6;
+   */
+  verboseHttpOutput = false;
+
+  /**
+   * Fail executions for GraphQL responses that contain errors
+   *
+   * @generated from field: bool failOnRequestError = 7;
+   */
+  failOnRequestError = false;
+
   constructor(data?: PartialMessage<Plugin>) {
     super();
     proto3.util.initPartial(data, this);
@@ -92,6 +106,8 @@ export class Plugin extends Message<Plugin> {
     { no: 3, name: "body", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "custom", kind: "message", T: Custom, opt: true },
     { no: 5, name: "superblocksMetadata", kind: "message", T: SuperblocksMetadata },
+    { no: 6, name: "verboseHttpOutput", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 7, name: "failOnRequestError", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin {

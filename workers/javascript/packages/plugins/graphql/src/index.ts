@@ -1,4 +1,5 @@
 import {
+  ActionResponseType,
   ApiPlugin,
   DatasourceMetadataDto,
   ErrorCode,
@@ -63,7 +64,12 @@ export default class GraphQLPlugin extends ApiPlugin {
     requestConfig.method = HttpMethod.POST;
     requestConfig = { ...requestConfig, ...this.postRequestConfig(query ?? '', actionConfiguration) };
 
-    return await this.executeRequest(requestConfig);
+    return await this.executeRequest(
+      requestConfig,
+      ActionResponseType.AUTO,
+      actionConfiguration.verboseHttpOutput ?? false,
+      actionConfiguration.failOnRequestError ?? false
+    );
   }
 
   getRequest(actionConfiguration: GraphQLActionConfiguration, datasourceConfiguration: GraphQLDatasourceConfiguration): RawRequest {

@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from superblocks_types.common.v1 import plugin_pb2 as common_dot_v1_dot_plugin__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fplugins/graphql/v1/plugin.proto\x12\x12plugins.graphql.v1\x1a\x16\x63ommon/v1/plugin.proto\"v\n\x06\x43ustom\x12\x31\n\tvariables\x18\x01 \x01(\x0b\x32\x13.common.v1.PropertyR\tvariables\x12\x39\n\rrequestFormat\x18\x02 \x01(\x0b\x32\x13.common.v1.PropertyR\rrequestFormat\"\xf5\x01\n\x06Plugin\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12-\n\x07headers\x18\x02 \x03(\x0b\x32\x13.common.v1.PropertyR\x07headers\x12\x12\n\x04\x62ody\x18\x03 \x01(\tR\x04\x62ody\x12\x37\n\x06\x63ustom\x18\x04 \x01(\x0b\x32\x1a.plugins.graphql.v1.CustomH\x00R\x06\x63ustom\x88\x01\x01\x12P\n\x13superblocksMetadata\x18\x05 \x01(\x0b\x32\x1e.common.v1.SuperblocksMetadataR\x13superblocksMetadataB\t\n\x07_customBBZ@github.com/superblocksteam/agent/types/gen/go/plugins/graphql/v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fplugins/graphql/v1/plugin.proto\x12\x12plugins.graphql.v1\x1a\x16\x63ommon/v1/plugin.proto\"v\n\x06\x43ustom\x12\x31\n\tvariables\x18\x01 \x01(\x0b\x32\x13.common.v1.PropertyR\tvariables\x12\x39\n\rrequestFormat\x18\x02 \x01(\x0b\x32\x13.common.v1.PropertyR\rrequestFormat\"\xd3\x02\n\x06Plugin\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12-\n\x07headers\x18\x02 \x03(\x0b\x32\x13.common.v1.PropertyR\x07headers\x12\x12\n\x04\x62ody\x18\x03 \x01(\tR\x04\x62ody\x12\x37\n\x06\x63ustom\x18\x04 \x01(\x0b\x32\x1a.plugins.graphql.v1.CustomH\x00R\x06\x63ustom\x88\x01\x01\x12P\n\x13superblocksMetadata\x18\x05 \x01(\x0b\x32\x1e.common.v1.SuperblocksMetadataR\x13superblocksMetadata\x12,\n\x11verboseHttpOutput\x18\x06 \x01(\x08R\x11verboseHttpOutput\x12.\n\x12\x66\x61ilOnRequestError\x18\x07 \x01(\x08R\x12\x66\x61ilOnRequestErrorB\t\n\x07_customBBZ@github.com/superblocksteam/agent/types/gen/go/plugins/graphql/v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,5 +36,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CUSTOM']._serialized_start=79
   _globals['_CUSTOM']._serialized_end=197
   _globals['_PLUGIN']._serialized_start=200
-  _globals['_PLUGIN']._serialized_end=445
+  _globals['_PLUGIN']._serialized_end=539
 # @@protoc_insertion_point(module_scope)

@@ -53,7 +53,13 @@ describe('RestApiIntegrationPlugin', () => {
     jest.restoreAllMocks();
   });
 
-  it('execute removes empty params', async () => {
+  it.each([
+    { verboseOutput: true, doNotFailOnError: true, expectedOutput: true, expectedFailOnError: false },
+    { verboseOutput: false, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
+    { verboseOutput: undefined, doNotFailOnError: true, expectedOutput: false, expectedFailOnError: false },
+    { verboseOutput: undefined, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
+    { verboseOutput: undefined, doNotFailOnError: undefined, expectedOutput: false, expectedFailOnError: true }
+  ])('execute removes empty params', async ({ verboseOutput, doNotFailOnError, expectedOutput, expectedFailOnError }) => {
     const spy = jest.spyOn(plugin, 'executeRequest').mockImplementation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises
       (requestConfig: AxiosRequestConfig<any>, responseType?: any): Promise<ExecutionOutput> => {
@@ -61,7 +67,14 @@ describe('RestApiIntegrationPlugin', () => {
       }
     );
 
-    await plugin.execute(props);
+    const updatedProps = props
+    updatedProps.actionConfiguration = {
+      ...props.actionConfiguration,
+      verboseHttpOutput: verboseOutput,
+      doNotFailOnRequestError: doNotFailOnError
+    };
+
+    await plugin.execute(updatedProps);
     expect(spy).toHaveBeenCalledWith(
       {
         headers: {
@@ -75,11 +88,19 @@ describe('RestApiIntegrationPlugin', () => {
         timeout: 5000,
         url: 'https://api.example.com/?param1=value1'
       },
-      undefined
+      undefined,
+      expectedOutput,
+      expectedFailOnError
     );
   });
 
-  it('execute injects placeholder URL with tenant subdomain', async () => {
+  it.each([
+    { verboseOutput: true, doNotFailOnError: true, expectedOutput: true, expectedFailOnError: false },
+    { verboseOutput: false, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
+    { verboseOutput: undefined, doNotFailOnError: true, expectedOutput: false, expectedFailOnError: false },
+    { verboseOutput: undefined, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
+    { verboseOutput: undefined, doNotFailOnError: undefined, expectedOutput: false, expectedFailOnError: true }
+  ])('execute injects placeholder URL with tenant subdomain', async ({ verboseOutput, doNotFailOnError, expectedOutput, expectedFailOnError }) => {
     const spy = jest.spyOn(plugin, 'executeRequest').mockImplementation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises
       (requestConfig: AxiosRequestConfig<any>, responseType?: any): Promise<ExecutionOutput> => {
@@ -110,7 +131,12 @@ describe('RestApiIntegrationPlugin', () => {
 
     const tenantProps: PluginExecutionProps<RestApiIntegrationDatasourceConfiguration, RestApiIntegrationActionConfiguration> = {
       context: DUMMY_EXECUTION_CONTEXT,
-      actionConfiguration: { httpMethod: HttpMethod.GET, ...DUMMY_ACTION_CONFIGURATION },
+      actionConfiguration: {
+        httpMethod: HttpMethod.GET,
+        verboseHttpOutput: verboseOutput,
+        doNotFailOnRequestError: doNotFailOnError,
+        ...DUMMY_ACTION_CONFIGURATION
+      },
       datasourceConfiguration: tenantDatasourceConfiguration,
       mutableOutput: new ExecutionOutput(),
       ...DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS
@@ -130,11 +156,17 @@ describe('RestApiIntegrationPlugin', () => {
         timeout: 5000,
         url: 'https://sb-tenant.example.com/?param1=value1'
       },
-      undefined
+      undefined,
+      expectedOutput,
+      expectedFailOnError
     );
   });
 
-  it('test method executes without error', async () => {
+  it.each([
+      { verboseOutput: true, doNotFailOnError: true },
+      { verboseOutput: false, doNotFailOnError: false },
+      { verboseOutput: undefined, doNotFailOnError: undefined }
+    ])('test method executes without error', async ({ verboseOutput }) => {
     const spy = jest
       .spyOn(plugin, 'executeRequest')
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -142,7 +174,7 @@ describe('RestApiIntegrationPlugin', () => {
         return Promise.resolve(new ExecutionOutput());
       });
 
-    await plugin.test(datasourceConfiguration, { httpMethod: HttpMethod.GET, urlPath: 'test' });
+    await plugin.test(datasourceConfiguration, { httpMethod: HttpMethod.GET, urlPath: 'test', verboseHttpOutput: verboseOutput });
 
     expect(spy).toHaveBeenCalledWith(
       {
@@ -157,7 +189,9 @@ describe('RestApiIntegrationPlugin', () => {
         timeout: 5000,
         url: 'https://api.example.com/test?param1=value1'
       },
-      undefined
+      undefined,
+      false,
+      true
     );
   });
 });

@@ -207,6 +207,10 @@ func (m *Plugin) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for VerboseHttpOutput
+
+	// no validation rules for DoNotFailOnRequestError
+
 	// no validation rules for OpenApiAction
 
 	// no validation rules for OpenApiSpecRef
