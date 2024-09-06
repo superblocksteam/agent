@@ -4,7 +4,7 @@
 # They need to be redefined in each stage to be used in that stage
 ARG DEBIAN_BOOKWORM_VERSION=20240722
 ARG GO_VERSION=1.23.0
-ARG PYTHON_VERSION=3.10.14
+ARG PYTHON_VERSION=3.12.5
 ARG NODE_VERSION_MAJOR=20
 ARG NODE_VERSION=20.16.0
 ARG PNPM_VERSION=9.7.1
@@ -151,7 +151,7 @@ COPY --chmod=755                                        /workers/python         
 COPY                                                    s6-rc.d/                                                          /etc/s6-overlay/s6-rc.d/
 
 # NOTE(frank): I don't like this first line. However, the code in the dist/ folder of the plugins
-#              isn't looking in the dist folder of the types. I think this is because we don't 
+#              isn't looking in the dist folder of the types. I think this is because we don't
 #              bubble up index.ts files.
 RUN cd /app/worker.py                                                                                                                            && \
     pip install --no-cache-dir --upgrade pip setuptools                                                                                          && \
