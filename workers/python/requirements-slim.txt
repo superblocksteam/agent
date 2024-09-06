@@ -28,7 +28,7 @@ protobuf==4.25.3
 psutil==5.9.8
 pydantic==2.9.0
 pydash==6.0.2
-python_dotenv==0.21.1
+python-dotenv==1.0.0
 redis==4.6.0
 requests==2.32.3
 requests_futures==1.0.1
@@ -42,3 +42,4 @@ ujson==5.10.0
 urllib3==2.2.2
 wrapt==1.16.0
 yarl==1.9.4
+pycti-arbin==0.0.13
