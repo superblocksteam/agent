@@ -27,13 +27,10 @@ K8S_NAMESPACE = orchestrator
 HELM_EXTRA_ARGS =
 
 # go args
-GO_TEST_ARGS              = $(GO_TEST_ARGS_NO_RACE) -race
-UNIT_TEST_PACKAGES        = $(shell go list ./... | grep -v types | grep -v pkg/flags | grep -v ./integration)
+GO_TEST_ARGS              = -cover -covermode atomic -race
+UNIT_TEST_PACKAGES        = $(shell go list ./... | grep -v types | grep -v ./integration)
 INTEGRATION_TEST_PACKAGES = ./integration/...
 GOPRIVATE                 = github.com/superblocksteam
-
-PACKAGES_WITH_RACE_IN_DEPS = ./pkg/flags
-GO_TEST_ARGS_NO_RACE       = -cover -covermode atomic
 
 # gotestsum
 GOTESTSUM_OPTIONS =
@@ -155,9 +152,6 @@ generate:
 test-unit: deps
 	@mkdir -p coverage
 	@gotestsum $(GOTESTSUM_OPTIONS) -- $(GO_TEST_ARGS) $(UNIT_TEST_PACKAGES) -args -test.gocoverdir $(shell pwd)/coverage
-ifneq ($(PACKAGES_WITH_RACE_IN_DEPS),)
-	@gotestsum $(GOTESTSUM_OPTIONS) -- $(GO_TEST_ARGS_NO_RACE) $(PACKAGES_WITH_RACE_IN_DEPS) -args -test.gocoverdir $(shell pwd)/coverage
-endif
 	@go tool covdata textfmt -i=$(shell pwd)/coverage -o coverage.out
 	@rm -r coverage
 
