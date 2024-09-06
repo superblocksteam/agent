@@ -38,8 +38,8 @@ REDIS_STREAM_NOT_EXISTS_ERROR = "NOGROUP No such key"
 
 class RequestData(BaseModel):
     props: dict
-    baggage: Optional[dict]
-    quotas: Optional[Quotas]
+    baggage: Optional[dict | None] = None
+    quotas: Optional[Quotas | None] = None
 
 
 class RedisMessage(BaseModel):
@@ -53,12 +53,12 @@ class RequestMetadata(BaseModel):
     # Plugin Event
     event: str
     bucket: str
-    carrier: Optional[dict]
+    carrier: Optional[dict | None] = None
 
 
 class RequestDataWrapper(BaseModel):
     data: RequestData
-    pinned: Optional[RequestMetadata]
+    pinned: Optional[RequestMetadata | None]
 
 
 class ExecuteRequest(BaseModel):
