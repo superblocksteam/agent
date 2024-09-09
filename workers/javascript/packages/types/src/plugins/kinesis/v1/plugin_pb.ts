@@ -26,15 +26,15 @@ export class Plugin extends Message<Plugin> {
    */
   operation: {
     /**
-     * @generated from field: plugins.kinesis.v1.Plugin.Put put = 3;
+     * @generated from field: plugins.kinesis.v1.Plugin.KinesisPut put = 3;
      */
-    value: Plugin_Put;
+    value: Plugin_KinesisPut;
     case: "put";
   } | {
     /**
-     * @generated from field: plugins.kinesis.v1.Plugin.Get get = 4;
+     * @generated from field: plugins.kinesis.v1.Plugin.KinesisGet get = 4;
      */
-    value: Plugin_Get;
+    value: Plugin_KinesisGet;
     case: "get";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
@@ -53,8 +53,8 @@ export class Plugin extends Message<Plugin> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 2, name: "connection", kind: "message", T: Plugin_KinesisConnection },
-    { no: 3, name: "put", kind: "message", T: Plugin_Put, oneof: "operation" },
-    { no: 4, name: "get", kind: "message", T: Plugin_Get, oneof: "operation" },
+    { no: 3, name: "put", kind: "message", T: Plugin_KinesisPut, oneof: "operation" },
+    { no: 4, name: "get", kind: "message", T: Plugin_KinesisGet, oneof: "operation" },
     { no: 5, name: "dynamic_workflow_configuration", kind: "message", T: DynamicWorkflowConfiguration, opt: true },
   ]);
 
@@ -162,9 +162,9 @@ export class Plugin_KinesisConnection extends Message<Plugin_KinesisConnection> 
  * https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html
  * https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html
  *
- * @generated from message plugins.kinesis.v1.Plugin.Put
+ * @generated from message plugins.kinesis.v1.Plugin.KinesisPut
  */
-export class Plugin_Put extends Message<Plugin_Put> {
+export class Plugin_KinesisPut extends Message<Plugin_KinesisPut> {
   /**
    * @generated from field: string data = 1;
    */
@@ -176,7 +176,7 @@ export class Plugin_Put extends Message<Plugin_Put> {
   partitionKey = "";
 
   /**
-   * @generated from oneof plugins.kinesis.v1.Plugin.Put.stream_identifier
+   * @generated from oneof plugins.kinesis.v1.Plugin.KinesisPut.stream_identifier
    */
   streamIdentifier: {
     /**
@@ -192,13 +192,13 @@ export class Plugin_Put extends Message<Plugin_Put> {
     case: "streamArn";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
-  constructor(data?: PartialMessage<Plugin_Put>) {
+  constructor(data?: PartialMessage<Plugin_KinesisPut>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.kinesis.v1.Plugin.Put";
+  static readonly typeName = "plugins.kinesis.v1.Plugin.KinesisPut";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "data", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "partition_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
@@ -206,20 +206,20 @@ export class Plugin_Put extends Message<Plugin_Put> {
     { no: 4, name: "stream_arn", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "stream_identifier" },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_Put {
-    return new Plugin_Put().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_KinesisPut {
+    return new Plugin_KinesisPut().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_Put {
-    return new Plugin_Put().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_KinesisPut {
+    return new Plugin_KinesisPut().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_Put {
-    return new Plugin_Put().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_KinesisPut {
+    return new Plugin_KinesisPut().fromJsonString(jsonString, options);
   }
 
-  static equals(a: Plugin_Put | PlainMessage<Plugin_Put> | undefined, b: Plugin_Put | PlainMessage<Plugin_Put> | undefined): boolean {
-    return proto3.util.equals(Plugin_Put, a, b);
+  static equals(a: Plugin_KinesisPut | PlainMessage<Plugin_KinesisPut> | undefined, b: Plugin_KinesisPut | PlainMessage<Plugin_KinesisPut> | undefined): boolean {
+    return proto3.util.equals(Plugin_KinesisPut, a, b);
   }
 }
 
@@ -228,9 +228,9 @@ export class Plugin_Put extends Message<Plugin_Put> {
  * we will need to get a shard iterator first
  * https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetShardIterator.html
  *
- * @generated from message plugins.kinesis.v1.Plugin.Get
+ * @generated from message plugins.kinesis.v1.Plugin.KinesisGet
  */
-export class Plugin_Get extends Message<Plugin_Get> {
+export class Plugin_KinesisGet extends Message<Plugin_KinesisGet> {
   /**
    * @generated from field: string shard_id = 2;
    */
@@ -267,7 +267,7 @@ export class Plugin_Get extends Message<Plugin_Get> {
   timestamp?: string;
 
   /**
-   * @generated from oneof plugins.kinesis.v1.Plugin.Get.stream_identifier
+   * @generated from oneof plugins.kinesis.v1.Plugin.KinesisGet.stream_identifier
    */
   streamIdentifier: {
     /**
@@ -283,13 +283,13 @@ export class Plugin_Get extends Message<Plugin_Get> {
     case: "streamArn";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
-  constructor(data?: PartialMessage<Plugin_Get>) {
+  constructor(data?: PartialMessage<Plugin_KinesisGet>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.kinesis.v1.Plugin.Get";
+  static readonly typeName = "plugins.kinesis.v1.Plugin.KinesisGet";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 2, name: "shard_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "shard_iterator_type", kind: "enum", T: proto3.getEnumType(Plugin_ShardIteratorType) },
@@ -301,20 +301,20 @@ export class Plugin_Get extends Message<Plugin_Get> {
     { no: 9, name: "stream_arn", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "stream_identifier" },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_Get {
-    return new Plugin_Get().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_KinesisGet {
+    return new Plugin_KinesisGet().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_Get {
-    return new Plugin_Get().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_KinesisGet {
+    return new Plugin_KinesisGet().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_Get {
-    return new Plugin_Get().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_KinesisGet {
+    return new Plugin_KinesisGet().fromJsonString(jsonString, options);
   }
 
-  static equals(a: Plugin_Get | PlainMessage<Plugin_Get> | undefined, b: Plugin_Get | PlainMessage<Plugin_Get> | undefined): boolean {
-    return proto3.util.equals(Plugin_Get, a, b);
+  static equals(a: Plugin_KinesisGet | PlainMessage<Plugin_KinesisGet> | undefined, b: Plugin_KinesisGet | PlainMessage<Plugin_KinesisGet> | undefined): boolean {
+    return proto3.util.equals(Plugin_KinesisGet, a, b);
   }
 }
 

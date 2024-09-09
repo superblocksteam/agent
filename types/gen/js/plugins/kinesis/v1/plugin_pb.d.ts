@@ -21,13 +21,13 @@ export class Plugin extends jspb.Message {
 
     hasPut(): boolean;
     clearPut(): void;
-    getPut(): Plugin.Put | undefined;
-    setPut(value?: Plugin.Put): Plugin;
+    getPut(): Plugin.KinesisPut | undefined;
+    setPut(value?: Plugin.KinesisPut): Plugin;
 
     hasGet(): boolean;
     clearGet(): void;
-    getGet(): Plugin.Get | undefined;
-    setGet(value?: Plugin.Get): Plugin;
+    getGet(): Plugin.KinesisGet | undefined;
+    setGet(value?: Plugin.KinesisGet): Plugin;
 
     hasDynamicWorkflowConfiguration(): boolean;
     clearDynamicWorkflowConfiguration(): void;
@@ -50,8 +50,8 @@ export namespace Plugin {
     export type AsObject = {
         name?: string,
         connection?: Plugin.KinesisConnection.AsObject,
-        put?: Plugin.Put.AsObject,
-        get?: Plugin.Get.AsObject,
+        put?: Plugin.KinesisPut.AsObject,
+        get?: Plugin.KinesisGet.AsObject,
         dynamicWorkflowConfiguration?: plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.AsObject,
     }
 
@@ -79,35 +79,35 @@ export namespace Plugin {
         }
     }
 
-    export class Put extends jspb.Message { 
+    export class KinesisPut extends jspb.Message { 
         getData(): string;
-        setData(value: string): Put;
+        setData(value: string): KinesisPut;
         getPartitionKey(): string;
-        setPartitionKey(value: string): Put;
+        setPartitionKey(value: string): KinesisPut;
 
         hasStreamName(): boolean;
         clearStreamName(): void;
         getStreamName(): string;
-        setStreamName(value: string): Put;
+        setStreamName(value: string): KinesisPut;
 
         hasStreamArn(): boolean;
         clearStreamArn(): void;
         getStreamArn(): string;
-        setStreamArn(value: string): Put;
+        setStreamArn(value: string): KinesisPut;
 
-        getStreamIdentifierCase(): Put.StreamIdentifierCase;
+        getStreamIdentifierCase(): KinesisPut.StreamIdentifierCase;
 
         serializeBinary(): Uint8Array;
-        toObject(includeInstance?: boolean): Put.AsObject;
-        static toObject(includeInstance: boolean, msg: Put): Put.AsObject;
+        toObject(includeInstance?: boolean): KinesisPut.AsObject;
+        static toObject(includeInstance: boolean, msg: KinesisPut): KinesisPut.AsObject;
         static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
         static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-        static serializeBinaryToWriter(message: Put, writer: jspb.BinaryWriter): void;
-        static deserializeBinary(bytes: Uint8Array): Put;
-        static deserializeBinaryFromReader(message: Put, reader: jspb.BinaryReader): Put;
+        static serializeBinaryToWriter(message: KinesisPut, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): KinesisPut;
+        static deserializeBinaryFromReader(message: KinesisPut, reader: jspb.BinaryReader): KinesisPut;
     }
 
-    export namespace Put {
+    export namespace KinesisPut {
         export type AsObject = {
             data: string,
             partitionKey: string,
@@ -123,49 +123,49 @@ export namespace Plugin {
 
     }
 
-    export class Get extends jspb.Message { 
+    export class KinesisGet extends jspb.Message { 
         getShardId(): string;
-        setShardId(value: string): Get;
+        setShardId(value: string): KinesisGet;
         getShardIteratorType(): Plugin.ShardIteratorType;
-        setShardIteratorType(value: Plugin.ShardIteratorType): Get;
+        setShardIteratorType(value: Plugin.ShardIteratorType): KinesisGet;
         getLimit(): number;
-        setLimit(value: number): Get;
+        setLimit(value: number): KinesisGet;
         getPollingCooldownMs(): number;
-        setPollingCooldownMs(value: number): Get;
+        setPollingCooldownMs(value: number): KinesisGet;
 
         hasStartingSequenceNumber(): boolean;
         clearStartingSequenceNumber(): void;
         getStartingSequenceNumber(): string | undefined;
-        setStartingSequenceNumber(value: string): Get;
+        setStartingSequenceNumber(value: string): KinesisGet;
 
         hasTimestamp(): boolean;
         clearTimestamp(): void;
         getTimestamp(): string | undefined;
-        setTimestamp(value: string): Get;
+        setTimestamp(value: string): KinesisGet;
 
         hasStreamName(): boolean;
         clearStreamName(): void;
         getStreamName(): string;
-        setStreamName(value: string): Get;
+        setStreamName(value: string): KinesisGet;
 
         hasStreamArn(): boolean;
         clearStreamArn(): void;
         getStreamArn(): string;
-        setStreamArn(value: string): Get;
+        setStreamArn(value: string): KinesisGet;
 
-        getStreamIdentifierCase(): Get.StreamIdentifierCase;
+        getStreamIdentifierCase(): KinesisGet.StreamIdentifierCase;
 
         serializeBinary(): Uint8Array;
-        toObject(includeInstance?: boolean): Get.AsObject;
-        static toObject(includeInstance: boolean, msg: Get): Get.AsObject;
+        toObject(includeInstance?: boolean): KinesisGet.AsObject;
+        static toObject(includeInstance: boolean, msg: KinesisGet): KinesisGet.AsObject;
         static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
         static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-        static serializeBinaryToWriter(message: Get, writer: jspb.BinaryWriter): void;
-        static deserializeBinary(bytes: Uint8Array): Get;
-        static deserializeBinaryFromReader(message: Get, reader: jspb.BinaryReader): Get;
+        static serializeBinaryToWriter(message: KinesisGet, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): KinesisGet;
+        static deserializeBinaryFromReader(message: KinesisGet, reader: jspb.BinaryReader): KinesisGet;
     }
 
-    export namespace Get {
+    export namespace KinesisGet {
         export type AsObject = {
             shardId: string,
             shardIteratorType: Plugin.ShardIteratorType,

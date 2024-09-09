@@ -5,7 +5,7 @@ import { KinesisPluginV1 as Plugin } from '@superblocksteam/types';
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/kinesis/command/PutRecordsCommand/
 export function actionConfigurationToRecords(actionConfiguration: KinesisActionConfiguration): PutRecordsRequestEntry[] {
-  const put = actionConfiguration.operation.value as Plugin.Plugin_Put;
+  const put = actionConfiguration.operation.value as Plugin.Plugin_KinesisPut;
   const partitionKey = put.partitionKey;
   if (!partitionKey) {
     throw new IntegrationError('partitionKey is required');
@@ -57,7 +57,7 @@ export function getStreamIdentifierConfig(streamIdentifier: any): StreamIdentifi
 }
 
 // converts the ac (action configuration) GET object to something AWS can handle
-export function acGetToGetShardIteratorCommand(acGet: Plugin.Plugin_Get): GetShardIteratorCommandInput {
+export function acGetToGetShardIteratorCommand(acGet: Plugin.Plugin_KinesisGet): GetShardIteratorCommandInput {
   const shardIteratorConfig = configFromShardIteratorType(acGet);
   const streamIdentifierConfig = getStreamIdentifierConfig(acGet.streamIdentifier);
   return { ShardId: acGet.shardId, ...shardIteratorConfig, ...streamIdentifierConfig } as GetShardIteratorCommandInput;
@@ -70,7 +70,7 @@ type ShardConfig = {
   StartingSequenceNumber?: string;
 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function configFromShardIteratorType(acGet: Plugin.Plugin_Get): ShardConfig {
+export function configFromShardIteratorType(acGet: Plugin.Plugin_KinesisGet): ShardConfig {
   switch (acGet.shardIteratorType) {
     case Plugin.Plugin_ShardIteratorType.TRIM_HORIZON:
       return { ShardIteratorType: 'TRIM_HORIZON' };

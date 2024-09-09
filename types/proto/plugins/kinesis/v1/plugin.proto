@@ -10,8 +10,8 @@ message Plugin {
   optional string name = 1;
   KinesisConnection connection = 2;
   oneof operation {
-    Put put = 3;
-    Get get = 4;
+    KinesisPut put = 3;
+    KinesisGet get = 4;
   }
   optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 5;
 
@@ -21,7 +21,7 @@ message Plugin {
 
   // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html
   // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html
-  message Put {
+  message KinesisPut {
     string data = 1;
     string partition_key = 2;
     oneof stream_identifier {
@@ -38,7 +38,7 @@ message Plugin {
   // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetRecords.html
   // we will need to get a shard iterator first
   // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetShardIterator.html
-  message Get {
+  message KinesisGet {
     string shard_id = 2;
     ShardIteratorType shard_iterator_type = 3;
     int32 limit = 4;

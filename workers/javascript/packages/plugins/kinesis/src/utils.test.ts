@@ -101,7 +101,7 @@ describe('acGetToGetShardIteratorCommand happy path', () => {
       expectedOutput: { ShardIteratorType: 'TRIM_HORIZON', ShardId: 'si', StreamARN: 'sa' }
     }
   ])('$description', ({ acGet, expectedOutput }) => {
-    expect(acGetToGetShardIteratorCommand(acGet as Plugin.Plugin_Get)).toEqual(expectedOutput);
+    expect(acGetToGetShardIteratorCommand(acGet as Plugin.Plugin_KinesisGet)).toEqual(expectedOutput);
   });
 });
 
@@ -118,7 +118,7 @@ describe('acGetToGetShardIteratorCommand throws', () => {
     }
   ])('$description', ({ acGet, expectedErrorMessage }) => {
     expect(() => {
-      acGetToGetShardIteratorCommand(acGet as Plugin.Plugin_Get);
+      acGetToGetShardIteratorCommand(acGet as Plugin.Plugin_KinesisGet);
     }).toThrow(expectedErrorMessage);
   });
 });
@@ -201,7 +201,7 @@ describe('configFromShardIteratorType happy path', () => {
       expectedConfig: { ShardIteratorType: 'AFTER_SEQUENCE_NUMBER', StartingSequenceNumber: '12345' }
     }
   ])('$description', ({ acGet, expectedConfig }) => {
-    expect(configFromShardIteratorType(acGet as Plugin.Plugin_Get)).toEqual(expectedConfig);
+    expect(configFromShardIteratorType(acGet as Plugin.Plugin_KinesisGet)).toEqual(expectedConfig);
   });
 });
 
@@ -229,7 +229,7 @@ describe('convertShardIteratorType throws', () => {
     }
   ])('$description', ({ acGet, expectedErrorMessage }) => {
     expect(() => {
-      configFromShardIteratorType(acGet as Plugin.Plugin_Get);
+      configFromShardIteratorType(acGet as Plugin.Plugin_KinesisGet);
     }).toThrow(expectedErrorMessage);
   });
 });
