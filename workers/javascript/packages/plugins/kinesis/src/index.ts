@@ -50,7 +50,7 @@ export default class KinesisPlugin extends BasePlugin {
       throw new IntegrationError(`options.until not set.`);
     }
 
-    const get = props.actionConfiguration.operation.value as Plugin.Plugin_Get;
+    const get = props.actionConfiguration.operation.value as Plugin.Plugin_KinesisGet;
 
     if (!get.pollingCooldownMs || get.pollingCooldownMs <= 0) {
       throw new IntegrationError('pollingCooldownMs must be present and greater than 0');
@@ -115,7 +115,7 @@ export default class KinesisPlugin extends BasePlugin {
         'The consume action is not supported outside of a Stream block trigger. Please add a Stream block and place this block in the Trigger section'
       );
     }
-    const put = (actionConfiguration as KinesisActionConfiguration).operation.value as Plugin.Plugin_Put;
+    const put = (actionConfiguration as KinesisActionConfiguration).operation.value as Plugin.Plugin_KinesisPut;
 
     const output: ExecutionOutput = new ExecutionOutput();
     {

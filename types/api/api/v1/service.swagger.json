@@ -1769,6 +1769,14 @@
         }
       }
     },
+    "PluginGet": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        }
+      }
+    },
     "PluginHdel": {
       "type": "object",
       "properties": {
@@ -1878,6 +1886,58 @@
           "$ref": "#/definitions/v1AWSConfig"
         }
       }
+    },
+    "PluginKinesisGet": {
+      "type": "object",
+      "properties": {
+        "shardId": {
+          "type": "string"
+        },
+        "shardIteratorType": {
+          "$ref": "#/definitions/PluginShardIteratorType"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pollingCooldownMs": {
+          "type": "integer",
+          "format": "int32",
+          "title": "not required by kinesis, but something we want to allow users to configure\nthis is the amount of time in milliseconds between asking kinesis to get records when polling in a loop"
+        },
+        "startingSequenceNumber": {
+          "type": "string",
+          "title": "these 2 are required depending on the shard iterator type selected"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "streamName": {
+          "type": "string"
+        },
+        "streamArn": {
+          "type": "string"
+        }
+      },
+      "title": "https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetRecords.html\nwe will need to get a shard iterator first\nhttps://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetShardIterator.html"
+    },
+    "PluginKinesisPut": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string"
+        },
+        "partitionKey": {
+          "type": "string"
+        },
+        "streamName": {
+          "type": "string"
+        },
+        "streamArn": {
+          "type": "string"
+        }
+      },
+      "title": "https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html\nhttps://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html"
     },
     "PluginLindex": {
       "type": "object",
@@ -2098,24 +2158,6 @@
         }
       }
     },
-    "PluginPut": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "string"
-        },
-        "partitionKey": {
-          "type": "string"
-        },
-        "streamName": {
-          "type": "string"
-        },
-        "streamArn": {
-          "type": "string"
-        }
-      },
-      "title": "https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html\nhttps://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html"
-    },
     "PluginQuery": {
       "type": "object",
       "properties": {
@@ -2322,7 +2364,7 @@
       "type": "object",
       "properties": {
         "get": {
-          "$ref": "#/definitions/pluginsredisv1PluginGet"
+          "$ref": "#/definitions/PluginGet"
         },
         "set": {
           "$ref": "#/definitions/PluginSet"
@@ -3689,49 +3731,15 @@
           "$ref": "#/definitions/PluginKinesisConnection"
         },
         "put": {
-          "$ref": "#/definitions/PluginPut"
+          "$ref": "#/definitions/PluginKinesisPut"
         },
         "get": {
-          "$ref": "#/definitions/pluginskinesisv1PluginGet"
+          "$ref": "#/definitions/PluginKinesisGet"
         },
         "dynamicWorkflowConfiguration": {
           "$ref": "#/definitions/v1DynamicWorkflowConfiguration"
         }
       }
-    },
-    "pluginskinesisv1PluginGet": {
-      "type": "object",
-      "properties": {
-        "shardId": {
-          "type": "string"
-        },
-        "shardIteratorType": {
-          "$ref": "#/definitions/PluginShardIteratorType"
-        },
-        "limit": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "pollingCooldownMs": {
-          "type": "integer",
-          "format": "int32",
-          "title": "not required by kinesis, but something we want to allow users to configure\nthis is the amount of time in milliseconds between asking kinesis to get records when polling in a loop"
-        },
-        "startingSequenceNumber": {
-          "type": "string",
-          "title": "these 2 are required depending on the shard iterator type selected"
-        },
-        "timestamp": {
-          "type": "string"
-        },
-        "streamName": {
-          "type": "string"
-        },
-        "streamArn": {
-          "type": "string"
-        }
-      },
-      "title": "https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetRecords.html\nwe will need to get a shard iterator first\nhttps://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetShardIterator.html"
     },
     "pluginsmariadbv1MappedColumns": {
       "type": "object",
@@ -4340,14 +4348,6 @@
         }
       },
       "title": "NOTE: (joey) this does not have to be a separate message right now\n1. this follows the \"connection\" pattern\n2. this lets us easily add shared connection fields in the future"
-    },
-    "pluginsredisv1PluginGet": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        }
-      }
     },
     "pluginsredshiftv1MappedColumns": {
       "type": "object",

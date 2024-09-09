@@ -86,7 +86,7 @@ func (m *Plugin) validate(all bool) error {
 	}
 
 	switch v := m.Operation.(type) {
-	case *Plugin_Put_:
+	case *Plugin_Put:
 		if v == nil {
 			err := PluginValidationError{
 				field:  "Operation",
@@ -127,7 +127,7 @@ func (m *Plugin) validate(all bool) error {
 			}
 		}
 
-	case *Plugin_Get_:
+	case *Plugin_Get:
 		if v == nil {
 			err := PluginValidationError{
 				field:  "Operation",
@@ -516,22 +516,22 @@ var _ interface {
 	ErrorName() string
 } = Plugin_KinesisConnectionValidationError{}
 
-// Validate checks the field values on Plugin_Put with the rules defined in the
-// proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *Plugin_Put) Validate() error {
+// Validate checks the field values on Plugin_KinesisPut with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *Plugin_KinesisPut) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on Plugin_Put with the rules defined in
-// the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in Plugin_PutMultiError, or
-// nil if none found.
-func (m *Plugin_Put) ValidateAll() error {
+// ValidateAll checks the field values on Plugin_KinesisPut with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// Plugin_KinesisPutMultiError, or nil if none found.
+func (m *Plugin_KinesisPut) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *Plugin_Put) validate(all bool) error {
+func (m *Plugin_KinesisPut) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -543,9 +543,9 @@ func (m *Plugin_Put) validate(all bool) error {
 	// no validation rules for PartitionKey
 
 	switch v := m.StreamIdentifier.(type) {
-	case *Plugin_Put_StreamName:
+	case *Plugin_KinesisPut_StreamName:
 		if v == nil {
-			err := Plugin_PutValidationError{
+			err := Plugin_KinesisPutValidationError{
 				field:  "StreamIdentifier",
 				reason: "oneof value cannot be a typed-nil",
 			}
@@ -555,9 +555,9 @@ func (m *Plugin_Put) validate(all bool) error {
 			errors = append(errors, err)
 		}
 		// no validation rules for StreamName
-	case *Plugin_Put_StreamArn:
+	case *Plugin_KinesisPut_StreamArn:
 		if v == nil {
-			err := Plugin_PutValidationError{
+			err := Plugin_KinesisPutValidationError{
 				field:  "StreamIdentifier",
 				reason: "oneof value cannot be a typed-nil",
 			}
@@ -572,18 +572,19 @@ func (m *Plugin_Put) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return Plugin_PutMultiError(errors)
+		return Plugin_KinesisPutMultiError(errors)
 	}
 
 	return nil
 }
 
-// Plugin_PutMultiError is an error wrapping multiple validation errors
-// returned by Plugin_Put.ValidateAll() if the designated constraints aren't met.
-type Plugin_PutMultiError []error
+// Plugin_KinesisPutMultiError is an error wrapping multiple validation errors
+// returned by Plugin_KinesisPut.ValidateAll() if the designated constraints
+// aren't met.
+type Plugin_KinesisPutMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m Plugin_PutMultiError) Error() string {
+func (m Plugin_KinesisPutMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -592,11 +593,11 @@ func (m Plugin_PutMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m Plugin_PutMultiError) AllErrors() []error { return m }
+func (m Plugin_KinesisPutMultiError) AllErrors() []error { return m }
 
-// Plugin_PutValidationError is the validation error returned by
-// Plugin_Put.Validate if the designated constraints aren't met.
-type Plugin_PutValidationError struct {
+// Plugin_KinesisPutValidationError is the validation error returned by
+// Plugin_KinesisPut.Validate if the designated constraints aren't met.
+type Plugin_KinesisPutValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -604,22 +605,24 @@ type Plugin_PutValidationError struct {
 }
 
 // Field function returns field value.
-func (e Plugin_PutValidationError) Field() string { return e.field }
+func (e Plugin_KinesisPutValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e Plugin_PutValidationError) Reason() string { return e.reason }
+func (e Plugin_KinesisPutValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e Plugin_PutValidationError) Cause() error { return e.cause }
+func (e Plugin_KinesisPutValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e Plugin_PutValidationError) Key() bool { return e.key }
+func (e Plugin_KinesisPutValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e Plugin_PutValidationError) ErrorName() string { return "Plugin_PutValidationError" }
+func (e Plugin_KinesisPutValidationError) ErrorName() string {
+	return "Plugin_KinesisPutValidationError"
+}
 
 // Error satisfies the builtin error interface
-func (e Plugin_PutValidationError) Error() string {
+func (e Plugin_KinesisPutValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -631,14 +634,14 @@ func (e Plugin_PutValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sPlugin_Put.%s: %s%s",
+		"invalid %sPlugin_KinesisPut.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = Plugin_PutValidationError{}
+var _ error = Plugin_KinesisPutValidationError{}
 
 var _ interface {
 	Field() string
@@ -646,24 +649,24 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = Plugin_PutValidationError{}
+} = Plugin_KinesisPutValidationError{}
 
-// Validate checks the field values on Plugin_Get with the rules defined in the
-// proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *Plugin_Get) Validate() error {
+// Validate checks the field values on Plugin_KinesisGet with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *Plugin_KinesisGet) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on Plugin_Get with the rules defined in
-// the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in Plugin_GetMultiError, or
-// nil if none found.
-func (m *Plugin_Get) ValidateAll() error {
+// ValidateAll checks the field values on Plugin_KinesisGet with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// Plugin_KinesisGetMultiError, or nil if none found.
+func (m *Plugin_KinesisGet) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *Plugin_Get) validate(all bool) error {
+func (m *Plugin_KinesisGet) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -679,9 +682,9 @@ func (m *Plugin_Get) validate(all bool) error {
 	// no validation rules for PollingCooldownMs
 
 	switch v := m.StreamIdentifier.(type) {
-	case *Plugin_Get_StreamName:
+	case *Plugin_KinesisGet_StreamName:
 		if v == nil {
-			err := Plugin_GetValidationError{
+			err := Plugin_KinesisGetValidationError{
 				field:  "StreamIdentifier",
 				reason: "oneof value cannot be a typed-nil",
 			}
@@ -691,9 +694,9 @@ func (m *Plugin_Get) validate(all bool) error {
 			errors = append(errors, err)
 		}
 		// no validation rules for StreamName
-	case *Plugin_Get_StreamArn:
+	case *Plugin_KinesisGet_StreamArn:
 		if v == nil {
-			err := Plugin_GetValidationError{
+			err := Plugin_KinesisGetValidationError{
 				field:  "StreamIdentifier",
 				reason: "oneof value cannot be a typed-nil",
 			}
@@ -716,18 +719,19 @@ func (m *Plugin_Get) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return Plugin_GetMultiError(errors)
+		return Plugin_KinesisGetMultiError(errors)
 	}
 
 	return nil
 }
 
-// Plugin_GetMultiError is an error wrapping multiple validation errors
-// returned by Plugin_Get.ValidateAll() if the designated constraints aren't met.
-type Plugin_GetMultiError []error
+// Plugin_KinesisGetMultiError is an error wrapping multiple validation errors
+// returned by Plugin_KinesisGet.ValidateAll() if the designated constraints
+// aren't met.
+type Plugin_KinesisGetMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m Plugin_GetMultiError) Error() string {
+func (m Plugin_KinesisGetMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -736,11 +740,11 @@ func (m Plugin_GetMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m Plugin_GetMultiError) AllErrors() []error { return m }
+func (m Plugin_KinesisGetMultiError) AllErrors() []error { return m }
 
-// Plugin_GetValidationError is the validation error returned by
-// Plugin_Get.Validate if the designated constraints aren't met.
-type Plugin_GetValidationError struct {
+// Plugin_KinesisGetValidationError is the validation error returned by
+// Plugin_KinesisGet.Validate if the designated constraints aren't met.
+type Plugin_KinesisGetValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -748,22 +752,24 @@ type Plugin_GetValidationError struct {
 }
 
 // Field function returns field value.
-func (e Plugin_GetValidationError) Field() string { return e.field }
+func (e Plugin_KinesisGetValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e Plugin_GetValidationError) Reason() string { return e.reason }
+func (e Plugin_KinesisGetValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e Plugin_GetValidationError) Cause() error { return e.cause }
+func (e Plugin_KinesisGetValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e Plugin_GetValidationError) Key() bool { return e.key }
+func (e Plugin_KinesisGetValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e Plugin_GetValidationError) ErrorName() string { return "Plugin_GetValidationError" }
+func (e Plugin_KinesisGetValidationError) ErrorName() string {
+	return "Plugin_KinesisGetValidationError"
+}
 
 // Error satisfies the builtin error interface
-func (e Plugin_GetValidationError) Error() string {
+func (e Plugin_KinesisGetValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -775,14 +781,14 @@ func (e Plugin_GetValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sPlugin_Get.%s: %s%s",
+		"invalid %sPlugin_KinesisGet.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = Plugin_GetValidationError{}
+var _ error = Plugin_KinesisGetValidationError{}
 
 var _ interface {
 	Field() string
@@ -790,4 +796,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = Plugin_GetValidationError{}
+} = Plugin_KinesisGetValidationError{}
