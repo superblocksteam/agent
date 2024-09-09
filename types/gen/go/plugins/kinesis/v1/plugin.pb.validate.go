@@ -385,22 +385,22 @@ var _ interface {
 	ErrorName() string
 } = MetadataValidationError{}
 
-// Validate checks the field values on Plugin_Connection with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// first error encountered is returned, or nil if there are no violations.
-func (m *Plugin_Connection) Validate() error {
+// Validate checks the field values on Plugin_KinesisConnection with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *Plugin_KinesisConnection) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on Plugin_Connection with the rules
-// defined in the proto definition for this message. If any rules are
+// ValidateAll checks the field values on Plugin_KinesisConnection with the
+// rules defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// Plugin_ConnectionMultiError, or nil if none found.
-func (m *Plugin_Connection) ValidateAll() error {
+// Plugin_KinesisConnectionMultiError, or nil if none found.
+func (m *Plugin_KinesisConnection) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *Plugin_Connection) validate(all bool) error {
+func (m *Plugin_KinesisConnection) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -411,7 +411,7 @@ func (m *Plugin_Connection) validate(all bool) error {
 		switch v := interface{}(m.GetAwsConfig()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, Plugin_ConnectionValidationError{
+				errors = append(errors, Plugin_KinesisConnectionValidationError{
 					field:  "AwsConfig",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -419,7 +419,7 @@ func (m *Plugin_Connection) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, Plugin_ConnectionValidationError{
+				errors = append(errors, Plugin_KinesisConnectionValidationError{
 					field:  "AwsConfig",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -428,7 +428,7 @@ func (m *Plugin_Connection) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetAwsConfig()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return Plugin_ConnectionValidationError{
+			return Plugin_KinesisConnectionValidationError{
 				field:  "AwsConfig",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -437,19 +437,19 @@ func (m *Plugin_Connection) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return Plugin_ConnectionMultiError(errors)
+		return Plugin_KinesisConnectionMultiError(errors)
 	}
 
 	return nil
 }
 
-// Plugin_ConnectionMultiError is an error wrapping multiple validation errors
-// returned by Plugin_Connection.ValidateAll() if the designated constraints
-// aren't met.
-type Plugin_ConnectionMultiError []error
+// Plugin_KinesisConnectionMultiError is an error wrapping multiple validation
+// errors returned by Plugin_KinesisConnection.ValidateAll() if the designated
+// constraints aren't met.
+type Plugin_KinesisConnectionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m Plugin_ConnectionMultiError) Error() string {
+func (m Plugin_KinesisConnectionMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -458,11 +458,11 @@ func (m Plugin_ConnectionMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m Plugin_ConnectionMultiError) AllErrors() []error { return m }
+func (m Plugin_KinesisConnectionMultiError) AllErrors() []error { return m }
 
-// Plugin_ConnectionValidationError is the validation error returned by
-// Plugin_Connection.Validate if the designated constraints aren't met.
-type Plugin_ConnectionValidationError struct {
+// Plugin_KinesisConnectionValidationError is the validation error returned by
+// Plugin_KinesisConnection.Validate if the designated constraints aren't met.
+type Plugin_KinesisConnectionValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -470,24 +470,24 @@ type Plugin_ConnectionValidationError struct {
 }
 
 // Field function returns field value.
-func (e Plugin_ConnectionValidationError) Field() string { return e.field }
+func (e Plugin_KinesisConnectionValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e Plugin_ConnectionValidationError) Reason() string { return e.reason }
+func (e Plugin_KinesisConnectionValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e Plugin_ConnectionValidationError) Cause() error { return e.cause }
+func (e Plugin_KinesisConnectionValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e Plugin_ConnectionValidationError) Key() bool { return e.key }
+func (e Plugin_KinesisConnectionValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e Plugin_ConnectionValidationError) ErrorName() string {
-	return "Plugin_ConnectionValidationError"
+func (e Plugin_KinesisConnectionValidationError) ErrorName() string {
+	return "Plugin_KinesisConnectionValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e Plugin_ConnectionValidationError) Error() string {
+func (e Plugin_KinesisConnectionValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -499,14 +499,14 @@ func (e Plugin_ConnectionValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sPlugin_Connection.%s: %s%s",
+		"invalid %sPlugin_KinesisConnection.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = Plugin_ConnectionValidationError{}
+var _ error = Plugin_KinesisConnectionValidationError{}
 
 var _ interface {
 	Field() string
@@ -514,7 +514,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = Plugin_ConnectionValidationError{}
+} = Plugin_KinesisConnectionValidationError{}
 
 // Validate checks the field values on Plugin_Put with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
