@@ -16,8 +16,8 @@ export class Plugin extends jspb.Message {
 
     hasConnection(): boolean;
     clearConnection(): void;
-    getConnection(): Plugin.Connection | undefined;
-    setConnection(value?: Plugin.Connection): Plugin;
+    getConnection(): Plugin.KinesisConnection | undefined;
+    setConnection(value?: Plugin.KinesisConnection): Plugin;
 
     hasPut(): boolean;
     clearPut(): void;
@@ -49,31 +49,31 @@ export class Plugin extends jspb.Message {
 export namespace Plugin {
     export type AsObject = {
         name?: string,
-        connection?: Plugin.Connection.AsObject,
+        connection?: Plugin.KinesisConnection.AsObject,
         put?: Plugin.Put.AsObject,
         get?: Plugin.Get.AsObject,
         dynamicWorkflowConfiguration?: plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.AsObject,
     }
 
 
-    export class Connection extends jspb.Message { 
+    export class KinesisConnection extends jspb.Message { 
 
         hasAwsConfig(): boolean;
         clearAwsConfig(): void;
         getAwsConfig(): plugins_common_v1_plugin_pb.AWSConfig | undefined;
-        setAwsConfig(value?: plugins_common_v1_plugin_pb.AWSConfig): Connection;
+        setAwsConfig(value?: plugins_common_v1_plugin_pb.AWSConfig): KinesisConnection;
 
         serializeBinary(): Uint8Array;
-        toObject(includeInstance?: boolean): Connection.AsObject;
-        static toObject(includeInstance: boolean, msg: Connection): Connection.AsObject;
+        toObject(includeInstance?: boolean): KinesisConnection.AsObject;
+        static toObject(includeInstance: boolean, msg: KinesisConnection): KinesisConnection.AsObject;
         static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
         static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-        static serializeBinaryToWriter(message: Connection, writer: jspb.BinaryWriter): void;
-        static deserializeBinary(bytes: Uint8Array): Connection;
-        static deserializeBinaryFromReader(message: Connection, reader: jspb.BinaryReader): Connection;
+        static serializeBinaryToWriter(message: KinesisConnection, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): KinesisConnection;
+        static deserializeBinaryFromReader(message: KinesisConnection, reader: jspb.BinaryReader): KinesisConnection;
     }
 
-    export namespace Connection {
+    export namespace KinesisConnection {
         export type AsObject = {
             awsConfig?: plugins_common_v1_plugin_pb.AWSConfig.AsObject,
         }

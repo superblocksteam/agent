@@ -17,9 +17,9 @@ export class Plugin extends Message<Plugin> {
   name?: string;
 
   /**
-   * @generated from field: plugins.kinesis.v1.Plugin.Connection connection = 2;
+   * @generated from field: plugins.kinesis.v1.Plugin.KinesisConnection connection = 2;
    */
-  connection?: Plugin_Connection;
+  connection?: Plugin_KinesisConnection;
 
   /**
    * @generated from oneof plugins.kinesis.v1.Plugin.operation
@@ -52,7 +52,7 @@ export class Plugin extends Message<Plugin> {
   static readonly typeName = "plugins.kinesis.v1.Plugin";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
-    { no: 2, name: "connection", kind: "message", T: Plugin_Connection },
+    { no: 2, name: "connection", kind: "message", T: Plugin_KinesisConnection },
     { no: 3, name: "put", kind: "message", T: Plugin_Put, oneof: "operation" },
     { no: 4, name: "get", kind: "message", T: Plugin_Get, oneof: "operation" },
     { no: 5, name: "dynamic_workflow_configuration", kind: "message", T: DynamicWorkflowConfiguration, opt: true },
@@ -122,39 +122,39 @@ proto3.util.setEnumType(Plugin_ShardIteratorType, "plugins.kinesis.v1.Plugin.Sha
 ]);
 
 /**
- * @generated from message plugins.kinesis.v1.Plugin.Connection
+ * @generated from message plugins.kinesis.v1.Plugin.KinesisConnection
  */
-export class Plugin_Connection extends Message<Plugin_Connection> {
+export class Plugin_KinesisConnection extends Message<Plugin_KinesisConnection> {
   /**
    * @generated from field: plugins.common.v1.AWSConfig aws_config = 1;
    */
   awsConfig?: AWSConfig;
 
-  constructor(data?: PartialMessage<Plugin_Connection>) {
+  constructor(data?: PartialMessage<Plugin_KinesisConnection>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.kinesis.v1.Plugin.Connection";
+  static readonly typeName = "plugins.kinesis.v1.Plugin.KinesisConnection";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "aws_config", kind: "message", T: AWSConfig },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_Connection {
-    return new Plugin_Connection().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_KinesisConnection {
+    return new Plugin_KinesisConnection().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_Connection {
-    return new Plugin_Connection().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_KinesisConnection {
+    return new Plugin_KinesisConnection().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_Connection {
-    return new Plugin_Connection().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_KinesisConnection {
+    return new Plugin_KinesisConnection().fromJsonString(jsonString, options);
   }
 
-  static equals(a: Plugin_Connection | PlainMessage<Plugin_Connection> | undefined, b: Plugin_Connection | PlainMessage<Plugin_Connection> | undefined): boolean {
-    return proto3.util.equals(Plugin_Connection, a, b);
+  static equals(a: Plugin_KinesisConnection | PlainMessage<Plugin_KinesisConnection> | undefined, b: Plugin_KinesisConnection | PlainMessage<Plugin_KinesisConnection> | undefined): boolean {
+    return proto3.util.equals(Plugin_KinesisConnection, a, b);
   }
 }
 

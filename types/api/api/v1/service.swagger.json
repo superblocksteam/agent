@@ -1871,6 +1871,14 @@
         }
       }
     },
+    "PluginKinesisConnection": {
+      "type": "object",
+      "properties": {
+        "awsConfig": {
+          "$ref": "#/definitions/v1AWSConfig"
+        }
+      }
+    },
     "PluginLindex": {
       "type": "object",
       "properties": {
@@ -3678,7 +3686,7 @@
           "type": "string"
         },
         "connection": {
-          "$ref": "#/definitions/pluginskinesisv1PluginConnection"
+          "$ref": "#/definitions/PluginKinesisConnection"
         },
         "put": {
           "$ref": "#/definitions/PluginPut"
@@ -3688,14 +3696,6 @@
         },
         "dynamicWorkflowConfiguration": {
           "$ref": "#/definitions/v1DynamicWorkflowConfiguration"
-        }
-      }
-    },
-    "pluginskinesisv1PluginConnection": {
-      "type": "object",
-      "properties": {
-        "awsConfig": {
-          "$ref": "#/definitions/v1AWSConfig"
         }
       }
     },

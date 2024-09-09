@@ -8,14 +8,14 @@ option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/kines
 
 message Plugin {
   optional string name = 1;
-  Connection connection = 2;
+  KinesisConnection connection = 2;
   oneof operation {
     Put put = 3;
     Get get = 4;
   }
   optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 5;
 
-  message Connection {
+  message KinesisConnection {
     plugins.common.v1.AWSConfig aws_config = 1;
   }
 
