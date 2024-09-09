@@ -3207,8 +3207,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@types/esprima':
-        specifier: 4.0.3
-        version: 4.0.3
+        specifier: 4.0.6
+        version: 4.0.6
       '@types/estree':
         specifier: ^1.0.5
         version: 1.0.5
@@ -5294,9 +5294,6 @@ packages:
 
   '@types/command-line-usage@5.0.2':
     resolution: {integrity: sha512-n7RlEEJ+4x4TS7ZQddTmNSxP+zziEG0TNsMfiRIxcIVXt71ENJ9ojeXmGO3wPoTdn7pJcU2xc3CJYMktNT6DPg==}
-
-  '@types/esprima@4.0.3':
-    resolution: {integrity: sha512-jo14dIWVVtF0iMsKkYek6++4cWJjwpvog+rchLulwgFJGTXqIeTdCOvY0B3yMLTaIwMcKCdJ6mQbSR6wYHy98A==}
 
   '@types/esprima@4.0.6':
     resolution: {integrity: sha512-lIk+kSt9lGv5hxK6aZNjiUEGZqKmOTpmg0tKiJQI+Ow98fLillxsiZNik5+RcP7mXL929KiTH/D9jGtpDlMbVw==}
@@ -12853,10 +12850,6 @@ snapshots:
   '@types/command-line-args@5.2.0': {}
 
   '@types/command-line-usage@5.0.2': {}
-
-  '@types/esprima@4.0.3':
-    dependencies:
-      '@types/estree': 1.0.5
 
   '@types/esprima@4.0.6':
     dependencies:

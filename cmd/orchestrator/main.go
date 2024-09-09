@@ -1058,28 +1058,32 @@ func main() {
 		}
 	}
 
-	// sometimes start these runnables
-	g.Add(viper.GetBool("quotas.enabled"), flagsClient)
-	g.Add(viper.GetBool("registration.enabled"), registrator)
-	g.Add(viper.GetBool("registration.enabled"), metricsExporter)
+	// shutdown of runnables is synchronous so we need to take into account the order of shutdown
+	// order of shutdown is the same as the order of creation
+	g.Always(process.New())
+
 	g.Add(viper.GetBool("kafka.enabled"), kafkaConsumerRunnable)
 	g.Add(viper.GetBool("kafka.enabled"), kafkaProducerRunnable)
 	g.Add(viper.GetBool("resigner.enabled"), resignerRunnable)
 	g.Add(viper.GetBool("jobs.enabled"), scheduledJobRunner)
 	g.Add(viper.GetBool("events.cloud.enabled"), eventsCloudRunnable)
-	g.Add(viper.GetBool("pprof.enabled"), profiler)
-	g.Add(viper.GetBool("emitter.remote.enabled"), remoteEmitter)
 
-	// always start these runnables
+	// close server runnables, these should block while requests are still being processed
 	g.Always(grpcRunnable)
 	g.Always(httpRunnable)
-	g.Always(process.New())
+	g.Always(waitgroup.New(wg))
+
+	// close rest of the runnables
+	g.Add(viper.GetBool("quotas.enabled"), flagsClient)
+	g.Add(viper.GetBool("registration.enabled"), registrator)
+	g.Add(viper.GetBool("registration.enabled"), metricsExporter)
+	g.Add(viper.GetBool("emitter.remote.enabled"), remoteEmitter)
+
 	g.Always(metricsRunnable)
 	g.Always(tracerRunnable)
 	g.Always(auditEmitter)
 	g.Always(eventEmitter)
 	g.Always(workerClient)
-	g.Always(waitgroup.New(wg))
 
 	if storeRedisClient != nil {
 		g.Always(pkgrun.Redis("store", storeRedisClient, logger))
@@ -1088,6 +1092,8 @@ func main() {
 	if transportRedisClient != nil {
 		g.Always(pkgrun.Redis("transport", transportRedisClient, logger))
 	}
+
+	g.Add(viper.GetBool("pprof.enabled"), profiler)
 
 	ready = true
 
