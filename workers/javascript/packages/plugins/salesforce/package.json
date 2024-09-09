@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "1.2.0",
-    "@json2csv/node": "7.0.3",
+    "@json2csv/node": "7.0.6",
     "@superblocks/shared": "workspace:*",
         "@superblocksteam/types": "workspace:*",
     "@types/jest": "29.5.12",

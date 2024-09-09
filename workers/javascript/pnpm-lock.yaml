@@ -2634,8 +2634,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@json2csv/node':
-        specifier: 7.0.3
-        version: 7.0.3
+        specifier: 7.0.6
+        version: 7.0.6
       '@superblocks/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -4520,8 +4520,8 @@ packages:
   '@json2csv/formatters@7.0.6':
     resolution: {integrity: sha512-hjIk1H1TR4ydU5ntIENEPgoMGW+Q7mJ+537sDFDbsk+Y3EPl2i4NfFVjw0NJRgT+ihm8X30M67mA8AS6jPidSA==}
 
-  '@json2csv/node@7.0.3':
-    resolution: {integrity: sha512-lmIprTZLw5UgetRXfkYlzHhs5juXFmeDR03Ao9ahOim7GYqsqMMCDe7SZGSXHYBLNVu5f2ClsUMOKLhHJtW7Zg==}
+  '@json2csv/node@7.0.6':
+    resolution: {integrity: sha512-J3AX8cDBeQyriJj0oFxJot52hScUN4hhUBRnUGIPt+yI1YpwUuftriJi1RJS60Uz6Stce1sewHeG56dBc9/XGg==}
 
   '@json2csv/plainjs@7.0.6':
     resolution: {integrity: sha512-4Md7RPDCSYpmW1HWIpWBOqCd4vWfIqm53S3e/uzQ62iGi7L3r34fK/8nhOMEe+/eVfCx8+gdSCt1d74SlacQHw==}
@@ -11817,7 +11817,7 @@ snapshots:
 
   '@json2csv/formatters@7.0.6': {}
 
-  '@json2csv/node@7.0.3':
+  '@json2csv/node@7.0.6':
     dependencies:
       '@json2csv/plainjs': 7.0.6
 
