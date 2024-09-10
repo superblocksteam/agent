@@ -39,7 +39,7 @@ type pflagStringSlicer interface {
 // Types with special handling:
 //
 //	stringSlice - creates new flag of same type throwing away original pointer reader feature
-func TPflagParse(t TestingT, args []string) {
+func TPflagParse(t TestingT, args []string) *pflag.FlagSet {
 	_, ok := _parseMap.Load(t) // only lock once per test
 	if !ok {
 		_parseMu.Lock() // only one test may modify global state at a time
@@ -86,4 +86,6 @@ func TPflagParse(t TestingT, args []string) {
 	require.NoError(t, err)
 	err = viper.BindPFlags(fs)
 	require.NoError(t, err)
+
+	return fs
 }
