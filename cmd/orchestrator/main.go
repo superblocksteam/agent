@@ -86,6 +86,8 @@ import (
 	"github.com/superblocksteam/run"
 	"github.com/superblocksteam/run/contrib/process"
 	"github.com/superblocksteam/run/contrib/waitgroup"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"golang.org/x/text/cases"
@@ -864,6 +866,7 @@ func main() {
 			grpc.ChainStreamInterceptor(streamInterceptors...),
 			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
 			grpc.MaxSendMsgSize(viper.GetInt("grpc.msg.res.max")),
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		)
 		apiv1.RegisterExecutorServiceServer(s, grpcServer)
 		apiv1.RegisterMetadataServiceServer(s, grpcServer)
@@ -920,6 +923,7 @@ func main() {
 
 		opts := []grpc.DialOption{
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 			grpc.WithDefaultCallOptions(
 				// note that gateway uses the opposite of grpc direction.
 				// grpc send max (response) is gateway receive max
@@ -958,9 +962,11 @@ func main() {
 			}
 		}
 
+		handler = otelhttp.NewHandler(transport.HackUntilWeHaveGoKit(handler), "grpc-gateway")
+
 		httpRunnable = httpserver.Prepare(&httpserver.Options{
 			Name:         "main",
-			Handler:      transport.HackUntilWeHaveGoKit(handler),
+			Handler:      handler,
 			InsecurePort: viper.GetInt("http.port"),
 			Logger:       logger,
 			InsecureAddr: viper.GetString("http.bind"),
