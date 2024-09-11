@@ -64,7 +64,7 @@
     "deasync": "0.1.30",
     "dotenv": "16.4.5",
     "esprima": "4.0.1",
-    "express": "4.19.2",
+    "express": "4.20.0",
     "express-prom-bundle": "6.6.0",
     "generic-pool": "3.9.0",
     "google-protobuf": "3.21.4",
