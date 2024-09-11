@@ -212,6 +212,18 @@ func TestMetadata(t *testing.T) {
 			expectedMetadataErr:  nil,
 		},
 		{
+			name:          "handles missing step configuration gracefully",
+			integrationId: "test-integration-id",
+			pluginId:      "gsheets",
+			req: &apiv1.MetadataRequest{
+				Integration: "test-integration-id",
+				Profile:     &v1.Profile{Name: &profileName},
+			},
+			expectedActionConfig: testActionConfig,
+			expectedMetadataResp: nil,
+			expectedMetadataErr:  nil,
+		},
+		{
 			name:          "handles wrong plugin gracefully",
 			integrationId: "test-integration-id",
 			pluginId:      "gsheets",

@@ -544,7 +544,7 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 	}
 
 	// TODO: fix ui to send the action configuration, not the step
-	pluginConfig, ok := req.GetStepConfiguration().Fields[integration.PluginId]
+	pluginConfig, ok := req.GetStepConfiguration().GetFields()[integration.PluginId]
 	if !ok {
 		empty := make(map[string]interface{})
 		emptyConfig, err := structpb.NewStruct(empty)
