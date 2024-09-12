@@ -263,7 +263,7 @@ thrift==0.16.0
 tldextract==5.1.2
 tokenizers==0.19.1
 tomli==2.0.1
-tomlkit==0.12.5
+tomlkit==0.13.2
 tqdm==4.66.3
 traitlets==5.2.0
 transaction==3.0.1
