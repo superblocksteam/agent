@@ -4,14 +4,15 @@ import { KinesisActionConfiguration, KinesisDatasourceConfiguration, Integration
 import { KinesisPluginV1 as Plugin } from '@superblocksteam/types';
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/kinesis/command/PutRecordsCommand/
+// this will only ever be called for PUT
 export function actionConfigurationToRecords(actionConfiguration: KinesisActionConfiguration): PutRecordsRequestEntry[] {
-  const put = actionConfiguration.operation.value as Plugin.Plugin_KinesisPut;
-  const partitionKey = put.partitionKey;
+  // const put = actionConfiguration.operation.value as Plugin.Plugin_KinesisPut;
+  const partitionKey = actionConfiguration?.put?.partitionKey;
   if (!partitionKey) {
     throw new IntegrationError('partitionKey is required');
   }
 
-  const rawRecordsStr = put.data;
+  const rawRecordsStr = actionConfiguration?.put?.data;
   if (!rawRecordsStr) {
     throw new IntegrationError('data is required');
   }
@@ -40,27 +41,50 @@ export function actionConfigurationToRecords(actionConfiguration: KinesisActionC
 }
 
 type StreamIdentifierConfig = { StreamARN?: string; StreamName?: string };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getStreamIdentifierConfig(streamIdentifier: any): StreamIdentifierConfig {
+export function getStreamIdentifierConfig(
+  actionConfiguration: KinesisActionConfiguration,
+  operationType: Plugin.Plugin_OperationType
+): StreamIdentifierConfig {
   const streamIdentifierConfig: StreamIdentifierConfig = {};
-  switch (streamIdentifier.case) {
-    case 'streamArn':
-      streamIdentifierConfig.StreamARN = streamIdentifier.value;
+  let obj;
+
+  switch (operationType) {
+    case Plugin.Plugin_OperationType.GET:
+      obj = actionConfiguration.get;
       break;
-    case 'streamName':
-      streamIdentifierConfig.StreamName = streamIdentifier.value;
+    case Plugin.Plugin_OperationType.PUT:
+      obj = actionConfiguration.put;
       break;
     default:
-      throw new IntegrationError('stream identifier must be given');
+      throw new IntegrationError(`unknown operation type ${operationType}`);
+  }
+
+  let identifier = '';
+
+  switch (obj.streamIdentifierType) {
+    case Plugin.Plugin_StreamIdentifier.STREAM_NAME:
+      streamIdentifierConfig.StreamName = obj.streamName;
+      identifier = obj.streamName;
+      break;
+    case Plugin.Plugin_StreamIdentifier.STREAM_ARN:
+      streamIdentifierConfig.StreamARN = obj.streamArn;
+      identifier = obj.streamArn;
+      break;
+    default:
+      throw new IntegrationError(`unknown stream identifier type ${obj.streamIdentifierType}`);
+  }
+  if (!identifier) {
+    throw new IntegrationError('stream identifier cannot be empty');
   }
   return streamIdentifierConfig;
 }
 
 // converts the ac (action configuration) GET object to something AWS can handle
-export function acGetToGetShardIteratorCommand(acGet: Plugin.Plugin_KinesisGet): GetShardIteratorCommandInput {
-  const shardIteratorConfig = configFromShardIteratorType(acGet);
-  const streamIdentifierConfig = getStreamIdentifierConfig(acGet.streamIdentifier);
-  return { ShardId: acGet.shardId, ...shardIteratorConfig, ...streamIdentifierConfig } as GetShardIteratorCommandInput;
+// this will only ever be called for GET
+export function acGetToGetShardIteratorCommand(actionConfiguration: KinesisActionConfiguration): GetShardIteratorCommandInput {
+  const shardIteratorConfig = configFromShardIteratorType(actionConfiguration);
+  const streamIdentifierConfig = getStreamIdentifierConfig(actionConfiguration, Plugin.Plugin_OperationType.GET);
+  return { ShardId: actionConfiguration.get.shardId, ...shardIteratorConfig, ...streamIdentifierConfig } as GetShardIteratorCommandInput;
 }
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/kinesis/command/GetShardIteratorCommand/
@@ -70,29 +94,30 @@ type ShardConfig = {
   StartingSequenceNumber?: string;
 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function configFromShardIteratorType(acGet: Plugin.Plugin_KinesisGet): ShardConfig {
-  switch (acGet.shardIteratorType) {
+// this will only ever be called for GET
+export function configFromShardIteratorType(actionConfiguration: KinesisActionConfiguration): ShardConfig {
+  switch (actionConfiguration.get.shardIteratorType) {
     case Plugin.Plugin_ShardIteratorType.TRIM_HORIZON:
       return { ShardIteratorType: 'TRIM_HORIZON' };
     case Plugin.Plugin_ShardIteratorType.LATEST:
       return { ShardIteratorType: 'LATEST' };
     case Plugin.Plugin_ShardIteratorType.AT_TIMESTAMP:
-      if (!acGet.timestamp) {
+      if (!actionConfiguration.get.timestamp) {
         throw new IntegrationError('timestamp required for shardIteratorType AT_TIMESTAMP');
       }
-      return { ShardIteratorType: 'AT_TIMESTAMP', Timestamp: new Date(acGet.timestamp) };
+      return { ShardIteratorType: 'AT_TIMESTAMP', Timestamp: new Date(actionConfiguration.get.timestamp) };
     case Plugin.Plugin_ShardIteratorType.AT_SEQUENCE_NUMBER:
-      if (!acGet.startingSequenceNumber) {
+      if (!actionConfiguration.get.startingSequenceNumber) {
         throw new IntegrationError('startingSequeceNumber required for shardIteratorType AT_SEQUENCE_NUMBER');
       }
-      return { ShardIteratorType: 'AT_SEQUENCE_NUMBER', StartingSequenceNumber: acGet.startingSequenceNumber };
+      return { ShardIteratorType: 'AT_SEQUENCE_NUMBER', StartingSequenceNumber: actionConfiguration.get.startingSequenceNumber };
     case Plugin.Plugin_ShardIteratorType.AFTER_SEQUENCE_NUMBER:
-      if (!acGet.startingSequenceNumber) {
+      if (!actionConfiguration.get.startingSequenceNumber) {
         throw new IntegrationError('startingSequeceNumber required for shardIteratorType AFTER_SEQUENCE_NUMBER');
       }
-      return { ShardIteratorType: 'AFTER_SEQUENCE_NUMBER', StartingSequenceNumber: acGet.startingSequenceNumber };
+      return { ShardIteratorType: 'AFTER_SEQUENCE_NUMBER', StartingSequenceNumber: actionConfiguration.get.startingSequenceNumber };
     default:
-      throw new IntegrationError(`unknown shardIteratorType: ${acGet.shardIteratorType}`);
+      throw new IntegrationError(`unknown shardIteratorType: ${actionConfiguration.get.shardIteratorType}`);
   }
 }
 

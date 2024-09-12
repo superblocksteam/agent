@@ -42,22 +42,23 @@ export default class KinesisPlugin extends BasePlugin {
     send: (_message: unknown) => Promise<void>,
     options?: StreamOptions
   ): Promise<void> {
-    if (props.actionConfiguration.operation.case != 'get') {
+    if (props.actionConfiguration.operationType != Plugin.Plugin_OperationType.GET) {
       throw new IntegrationError('expected get');
     }
     if (!options || !options.until) {
       this.logger?.error('The KinesisPlugin.stream method requires options.until to be set.');
       throw new IntegrationError(`options.until not set.`);
     }
-
-    const get = props.actionConfiguration.operation.value as Plugin.Plugin_KinesisGet;
+    const get = props.actionConfiguration.get;
 
     if (!get.pollingCooldownMs || get.pollingCooldownMs <= 0) {
       throw new IntegrationError('pollingCooldownMs must be present and greater than 0');
     }
 
     const client = this.getClient(props.datasourceConfiguration);
-    const getInitialShardIteratorResponse = await client.send(new GetShardIteratorCommand(acGetToGetShardIteratorCommand(get)));
+    const getInitialShardIteratorResponse = await client.send(
+      new GetShardIteratorCommand(acGetToGetShardIteratorCommand(props.actionConfiguration))
+    );
 
     let shardIterator = getInitialShardIteratorResponse.ShardIterator;
     if (!shardIterator) {
@@ -109,22 +110,25 @@ export default class KinesisPlugin extends BasePlugin {
     datasourceConfiguration,
     actionConfiguration
   }: PluginExecutionProps<KinesisDatasourceConfiguration>): Promise<ExecutionOutput> {
-    // initial check that this is a produce
-    if ((actionConfiguration as KinesisActionConfiguration).operation.case != 'put') {
+    // initial check that this is a PUT
+    if ((actionConfiguration as KinesisActionConfiguration).operationType === Plugin.Plugin_OperationType.GET) {
       throw new IntegrationError(
-        'The consume action is not supported outside of a Stream block trigger. Please add a Stream block and place this block in the Trigger section'
+        'The get action is not supported outside of a Stream block trigger. Please add a Stream block and place this block in the Trigger section'
       );
     }
-    const put = (actionConfiguration as KinesisActionConfiguration).operation.value as Plugin.Plugin_KinesisPut;
+    // const put = (actionConfiguration as KinesisActionConfiguration).operation.value as Plugin.Plugin_KinesisPut;
 
     const output: ExecutionOutput = new ExecutionOutput();
     {
       output.startTimeUtc = new Date();
     }
-    // produce
+    // put
     const client = this.getClient(datasourceConfiguration as KinesisDatasourceConfiguration);
     const records = actionConfigurationToRecords(actionConfiguration as KinesisActionConfiguration);
-    const streamIdentifierConfig = getStreamIdentifierConfig(put.streamIdentifier);
+    const streamIdentifierConfig = getStreamIdentifierConfig(
+      actionConfiguration as KinesisActionConfiguration,
+      (actionConfiguration as KinesisActionConfiguration).operationType
+    );
     const command = new PutRecordsCommand({
       Records: records,
       ...streamIdentifierConfig
