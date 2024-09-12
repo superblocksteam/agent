@@ -22,24 +22,22 @@ export class Plugin extends Message<Plugin> {
   connection?: Plugin_KinesisConnection;
 
   /**
-   * @generated from oneof plugins.kinesis.v1.Plugin.operation
+   * @generated from field: plugins.kinesis.v1.Plugin.OperationType operation_type = 3;
    */
-  operation: {
-    /**
-     * @generated from field: plugins.kinesis.v1.Plugin.KinesisPut put = 3;
-     */
-    value: Plugin_KinesisPut;
-    case: "put";
-  } | {
-    /**
-     * @generated from field: plugins.kinesis.v1.Plugin.KinesisGet get = 4;
-     */
-    value: Plugin_KinesisGet;
-    case: "get";
-  } | { case: undefined; value?: undefined } = { case: undefined };
+  operationType = Plugin_OperationType.UNSPECIFIED;
 
   /**
-   * @generated from field: optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 5;
+   * @generated from field: optional plugins.kinesis.v1.Plugin.KinesisPut put = 4;
+   */
+  put?: Plugin_KinesisPut;
+
+  /**
+   * @generated from field: optional plugins.kinesis.v1.Plugin.KinesisGet get = 5;
+   */
+  get?: Plugin_KinesisGet;
+
+  /**
+   * @generated from field: optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 6;
    */
   dynamicWorkflowConfiguration?: DynamicWorkflowConfiguration;
 
@@ -53,9 +51,10 @@ export class Plugin extends Message<Plugin> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 2, name: "connection", kind: "message", T: Plugin_KinesisConnection },
-    { no: 3, name: "put", kind: "message", T: Plugin_KinesisPut, oneof: "operation" },
-    { no: 4, name: "get", kind: "message", T: Plugin_KinesisGet, oneof: "operation" },
-    { no: 5, name: "dynamic_workflow_configuration", kind: "message", T: DynamicWorkflowConfiguration, opt: true },
+    { no: 3, name: "operation_type", kind: "enum", T: proto3.getEnumType(Plugin_OperationType) },
+    { no: 4, name: "put", kind: "message", T: Plugin_KinesisPut, opt: true },
+    { no: 5, name: "get", kind: "message", T: Plugin_KinesisGet, opt: true },
+    { no: 6, name: "dynamic_workflow_configuration", kind: "message", T: DynamicWorkflowConfiguration, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin {
@@ -122,6 +121,58 @@ proto3.util.setEnumType(Plugin_ShardIteratorType, "plugins.kinesis.v1.Plugin.Sha
 ]);
 
 /**
+ * @generated from enum plugins.kinesis.v1.Plugin.OperationType
+ */
+export enum Plugin_OperationType {
+  /**
+   * @generated from enum value: OPERATION_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: OPERATION_TYPE_GET = 1;
+   */
+  GET = 1,
+
+  /**
+   * @generated from enum value: OPERATION_TYPE_PUT = 2;
+   */
+  PUT = 2,
+}
+// Retrieve enum metadata with: proto3.getEnumType(Plugin_OperationType)
+proto3.util.setEnumType(Plugin_OperationType, "plugins.kinesis.v1.Plugin.OperationType", [
+  { no: 0, name: "OPERATION_TYPE_UNSPECIFIED" },
+  { no: 1, name: "OPERATION_TYPE_GET" },
+  { no: 2, name: "OPERATION_TYPE_PUT" },
+]);
+
+/**
+ * @generated from enum plugins.kinesis.v1.Plugin.StreamIdentifier
+ */
+export enum Plugin_StreamIdentifier {
+  /**
+   * @generated from enum value: STREAM_IDENTIFIER_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: STREAM_IDENTIFIER_STREAM_NAME = 1;
+   */
+  STREAM_NAME = 1,
+
+  /**
+   * @generated from enum value: STREAM_IDENTIFIER_STREAM_ARN = 2;
+   */
+  STREAM_ARN = 2,
+}
+// Retrieve enum metadata with: proto3.getEnumType(Plugin_StreamIdentifier)
+proto3.util.setEnumType(Plugin_StreamIdentifier, "plugins.kinesis.v1.Plugin.StreamIdentifier", [
+  { no: 0, name: "STREAM_IDENTIFIER_UNSPECIFIED" },
+  { no: 1, name: "STREAM_IDENTIFIER_STREAM_NAME" },
+  { no: 2, name: "STREAM_IDENTIFIER_STREAM_ARN" },
+]);
+
+/**
  * @generated from message plugins.kinesis.v1.Plugin.KinesisConnection
  */
 export class Plugin_KinesisConnection extends Message<Plugin_KinesisConnection> {
@@ -176,21 +227,19 @@ export class Plugin_KinesisPut extends Message<Plugin_KinesisPut> {
   partitionKey = "";
 
   /**
-   * @generated from oneof plugins.kinesis.v1.Plugin.KinesisPut.stream_identifier
+   * @generated from field: plugins.kinesis.v1.Plugin.StreamIdentifier stream_identifier_type = 3;
    */
-  streamIdentifier: {
-    /**
-     * @generated from field: string stream_name = 3;
-     */
-    value: string;
-    case: "streamName";
-  } | {
-    /**
-     * @generated from field: string stream_arn = 4;
-     */
-    value: string;
-    case: "streamArn";
-  } | { case: undefined; value?: undefined } = { case: undefined };
+  streamIdentifierType = Plugin_StreamIdentifier.UNSPECIFIED;
+
+  /**
+   * @generated from field: optional string stream_name = 4;
+   */
+  streamName?: string;
+
+  /**
+   * @generated from field: optional string stream_arn = 5;
+   */
+  streamArn?: string;
 
   constructor(data?: PartialMessage<Plugin_KinesisPut>) {
     super();
@@ -202,8 +251,9 @@ export class Plugin_KinesisPut extends Message<Plugin_KinesisPut> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "data", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "partition_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "stream_name", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "stream_identifier" },
-    { no: 4, name: "stream_arn", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "stream_identifier" },
+    { no: 3, name: "stream_identifier_type", kind: "enum", T: proto3.getEnumType(Plugin_StreamIdentifier) },
+    { no: 4, name: "stream_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 5, name: "stream_arn", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_KinesisPut {
@@ -267,21 +317,19 @@ export class Plugin_KinesisGet extends Message<Plugin_KinesisGet> {
   timestamp?: string;
 
   /**
-   * @generated from oneof plugins.kinesis.v1.Plugin.KinesisGet.stream_identifier
+   * @generated from field: plugins.kinesis.v1.Plugin.StreamIdentifier stream_identifier_type = 8;
    */
-  streamIdentifier: {
-    /**
-     * @generated from field: string stream_name = 8;
-     */
-    value: string;
-    case: "streamName";
-  } | {
-    /**
-     * @generated from field: string stream_arn = 9;
-     */
-    value: string;
-    case: "streamArn";
-  } | { case: undefined; value?: undefined } = { case: undefined };
+  streamIdentifierType = Plugin_StreamIdentifier.UNSPECIFIED;
+
+  /**
+   * @generated from field: optional string stream_name = 9;
+   */
+  streamName?: string;
+
+  /**
+   * @generated from field: optional string stream_arn = 10;
+   */
+  streamArn?: string;
 
   constructor(data?: PartialMessage<Plugin_KinesisGet>) {
     super();
@@ -297,8 +345,9 @@ export class Plugin_KinesisGet extends Message<Plugin_KinesisGet> {
     { no: 5, name: "polling_cooldown_ms", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 6, name: "starting_sequence_number", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 7, name: "timestamp", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
-    { no: 8, name: "stream_name", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "stream_identifier" },
-    { no: 9, name: "stream_arn", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "stream_identifier" },
+    { no: 8, name: "stream_identifier_type", kind: "enum", T: proto3.getEnumType(Plugin_StreamIdentifier) },
+    { no: 9, name: "stream_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 10, name: "stream_arn", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_KinesisGet {

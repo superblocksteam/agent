@@ -85,18 +85,13 @@ func (m *Plugin) validate(all bool) error {
 		}
 	}
 
-	switch v := m.Operation.(type) {
-	case *Plugin_Put:
-		if v == nil {
-			err := PluginValidationError{
-				field:  "Operation",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
+	// no validation rules for OperationType
+
+	if m.Name != nil {
+		// no validation rules for Name
+	}
+
+	if m.Put != nil {
 
 		if all {
 			switch v := interface{}(m.GetPut()).(type) {
@@ -127,17 +122,9 @@ func (m *Plugin) validate(all bool) error {
 			}
 		}
 
-	case *Plugin_Get:
-		if v == nil {
-			err := PluginValidationError{
-				field:  "Operation",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
+	}
+
+	if m.Get != nil {
 
 		if all {
 			switch v := interface{}(m.GetGet()).(type) {
@@ -168,12 +155,6 @@ func (m *Plugin) validate(all bool) error {
 			}
 		}
 
-	default:
-		_ = v // ensures v is used
-	}
-
-	if m.Name != nil {
-		// no validation rules for Name
 	}
 
 	if m.DynamicWorkflowConfiguration != nil {
@@ -542,33 +523,14 @@ func (m *Plugin_KinesisPut) validate(all bool) error {
 
 	// no validation rules for PartitionKey
 
-	switch v := m.StreamIdentifier.(type) {
-	case *Plugin_KinesisPut_StreamName:
-		if v == nil {
-			err := Plugin_KinesisPutValidationError{
-				field:  "StreamIdentifier",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
+	// no validation rules for StreamIdentifierType
+
+	if m.StreamName != nil {
 		// no validation rules for StreamName
-	case *Plugin_KinesisPut_StreamArn:
-		if v == nil {
-			err := Plugin_KinesisPutValidationError{
-				field:  "StreamIdentifier",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
+	}
+
+	if m.StreamArn != nil {
 		// no validation rules for StreamArn
-	default:
-		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -681,34 +643,7 @@ func (m *Plugin_KinesisGet) validate(all bool) error {
 
 	// no validation rules for PollingCooldownMs
 
-	switch v := m.StreamIdentifier.(type) {
-	case *Plugin_KinesisGet_StreamName:
-		if v == nil {
-			err := Plugin_KinesisGetValidationError{
-				field:  "StreamIdentifier",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-		// no validation rules for StreamName
-	case *Plugin_KinesisGet_StreamArn:
-		if v == nil {
-			err := Plugin_KinesisGetValidationError{
-				field:  "StreamIdentifier",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-		// no validation rules for StreamArn
-	default:
-		_ = v // ensures v is used
-	}
+	// no validation rules for StreamIdentifierType
 
 	if m.StartingSequenceNumber != nil {
 		// no validation rules for StartingSequenceNumber
@@ -716,6 +651,14 @@ func (m *Plugin_KinesisGet) validate(all bool) error {
 
 	if m.Timestamp != nil {
 		// no validation rules for Timestamp
+	}
+
+	if m.StreamName != nil {
+		// no validation rules for StreamName
+	}
+
+	if m.StreamArn != nil {
+		// no validation rules for StreamArn
 	}
 
 	if len(errors) > 0 {

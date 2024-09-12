@@ -14,10 +14,8 @@ describe('actionConfigurationToRecords happy path', () => {
     {
       description: 'converts string data to Uint8Array correctly',
       actionConfiguration: new Plugin.Plugin({
-        operation: {
-          case: 'put',
-          value: { partitionKey: 'pk', data: `[{"foo": "bar"}]` }
-        }
+        operationType: Plugin.Plugin_OperationType.PUT,
+        put: { partitionKey: 'pk', data: `[{"foo": "bar"}]` }
       }),
       expectedRecords: [
         {
@@ -36,40 +34,32 @@ describe('actionConfigurationToRecords errors', () => {
     {
       description: 'no partition key',
       actionConfiguration: new Plugin.Plugin({
-        operation: {
-          case: 'put',
-          value: { data: `[{"foo": "bar"}]` }
-        }
+        operationType: Plugin.Plugin_OperationType.PUT,
+        put: { data: `[{"foo": "bar"}]` }
       }),
       expectedErrorMessage: 'partitionKey is required'
     },
     {
       description: 'no data',
       actionConfiguration: new Plugin.Plugin({
-        operation: {
-          case: 'put',
-          value: { partitionKey: 'pk' }
-        }
+        operationType: Plugin.Plugin_OperationType.PUT,
+        put: { partitionKey: 'pk' }
       }),
       expectedErrorMessage: 'data is required'
     },
     {
       description: 'data is not valid json',
       actionConfiguration: new Plugin.Plugin({
-        operation: {
-          case: 'put',
-          value: { partitionKey: 'pk', data: 'foo' }
-        }
+        operationType: Plugin.Plugin_OperationType.PUT,
+        put: { partitionKey: 'pk', data: 'foo' }
       }),
       expectedErrorMessage: 'could not parse data as JSON'
     },
     {
       description: 'data is not an array',
       actionConfiguration: new Plugin.Plugin({
-        operation: {
-          case: 'put',
-          value: { partitionKey: 'pk', data: '{}' }
-        }
+        operationType: Plugin.Plugin_OperationType.PUT,
+        put: { partitionKey: 'pk', data: '{}' }
       }),
       expectedErrorMessage: 'data must be a JSON array'
     }
@@ -84,24 +74,30 @@ describe('acGetToGetShardIteratorCommand happy path', () => {
   it.each([
     {
       description: 'with stream name',
-      acGet: {
-        shardIteratorType: Plugin.Plugin_ShardIteratorType.TRIM_HORIZON,
-        streamIdentifier: { value: 'sn', case: 'streamName' },
-        shardId: 'si'
+      actionConfiguration: {
+        get: {
+          shardIteratorType: Plugin.Plugin_ShardIteratorType.TRIM_HORIZON,
+          streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_NAME,
+          streamName: 'sn',
+          shardId: 'si'
+        }
       },
       expectedOutput: { ShardIteratorType: 'TRIM_HORIZON', ShardId: 'si', StreamName: 'sn' }
     },
     {
       description: 'with stream arn',
-      acGet: {
-        shardIteratorType: Plugin.Plugin_ShardIteratorType.TRIM_HORIZON,
-        streamIdentifier: { value: 'sa', case: 'streamArn' },
-        shardId: 'si'
+      actionConfiguration: {
+        get: {
+          shardIteratorType: Plugin.Plugin_ShardIteratorType.TRIM_HORIZON,
+          streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_ARN,
+          streamArn: 'sa',
+          shardId: 'si'
+        }
       },
       expectedOutput: { ShardIteratorType: 'TRIM_HORIZON', ShardId: 'si', StreamARN: 'sa' }
     }
-  ])('$description', ({ acGet, expectedOutput }) => {
-    expect(acGetToGetShardIteratorCommand(acGet as Plugin.Plugin_KinesisGet)).toEqual(expectedOutput);
+  ])('$description', ({ actionConfiguration, expectedOutput }) => {
+    expect(acGetToGetShardIteratorCommand(actionConfiguration as KinesisActionConfiguration)).toEqual(expectedOutput);
   });
 });
 
@@ -110,15 +106,21 @@ describe('acGetToGetShardIteratorCommand throws', () => {
     {
       description: 'with invalid shard iterator type',
       acGet: {
-        shardIteratorType: Plugin.Plugin_ShardIteratorType.UNSPECIFIED,
-        streamIdentifier: { value: 'sn', case: 'streamName' },
-        shardId: 'si'
+        shardIteratorType: Plugin.Plugin_ShardIteratorType.UNSPECIFIED
       },
       expectedErrorMessage: 'unknown shardIteratorType: 0'
     }
   ])('$description', ({ acGet, expectedErrorMessage }) => {
     expect(() => {
-      acGetToGetShardIteratorCommand(acGet as Plugin.Plugin_KinesisGet);
+      const actionConfiguration = {
+        get: {
+          limit: 1,
+          pollingCooldownMs: 1,
+          streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_NAME,
+          ...acGet
+        }
+      };
+      acGetToGetShardIteratorCommand(actionConfiguration as KinesisActionConfiguration);
     }).toThrow(expectedErrorMessage);
   });
 });
@@ -201,7 +203,16 @@ describe('configFromShardIteratorType happy path', () => {
       expectedConfig: { ShardIteratorType: 'AFTER_SEQUENCE_NUMBER', StartingSequenceNumber: '12345' }
     }
   ])('$description', ({ acGet, expectedConfig }) => {
-    expect(configFromShardIteratorType(acGet as Plugin.Plugin_KinesisGet)).toEqual(expectedConfig);
+    const actionConfiguration = {
+      get: {
+        shardId: 'sid',
+        limit: 1,
+        pollingCooldownMs: 1,
+        streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_NAME,
+        ...acGet
+      }
+    };
+    expect(configFromShardIteratorType(actionConfiguration as KinesisActionConfiguration)).toEqual(expectedConfig);
   });
 });
 
@@ -229,7 +240,16 @@ describe('convertShardIteratorType throws', () => {
     }
   ])('$description', ({ acGet, expectedErrorMessage }) => {
     expect(() => {
-      configFromShardIteratorType(acGet as Plugin.Plugin_KinesisGet);
+      const actionConfiguration = {
+        get: {
+          shardId: 'sid',
+          limit: 1,
+          pollingCooldownMs: 1,
+          streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_NAME,
+          ...acGet
+        }
+      };
+      configFromShardIteratorType(actionConfiguration as KinesisActionConfiguration);
     }).toThrow(expectedErrorMessage);
   });
 });

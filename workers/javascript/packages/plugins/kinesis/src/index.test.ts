@@ -92,9 +92,12 @@ describe('execute', () => {
     await plugin.execute(
       propsWithActionConfig(
         new Plugin.Plugin({
-          operation: {
-            case: 'put',
-            value: { partitionKey: 'pk', data: `[{"foo": "bar"}]`, streamIdentifier: { value: 'arn', case: 'streamArn' } }
+          operationType: Plugin.Plugin_OperationType.PUT,
+          put: {
+            partitionKey: 'pk',
+            data: `[{"foo": "bar"}]`,
+            streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_ARN,
+            streamArn: 'arn'
           }
         })
       )
@@ -114,21 +117,66 @@ describe('execute', () => {
     });
   });
 
-  test('stream arn and stream name not given', async () => {
+  test('stream arn not given', async () => {
     const sendMock = jest.spyOn(KinesisClient.prototype, 'send');
 
     await expect(
       plugin.execute(
         propsWithActionConfig(
           new Plugin.Plugin({
-            operation: {
-              case: 'put',
-              value: { partitionKey: 'pk', data: `[{"foo": "bar"}]` }
+            operationType: Plugin.Plugin_OperationType.PUT,
+            put: {
+              partitionKey: 'pk',
+              data: '[{}]',
+              streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_ARN
             }
           })
         )
       )
-    ).rejects.toThrow('stream identifier must be given');
+    ).rejects.toThrow('stream identifier cannot be empty');
+
+    expect(sendMock).toHaveBeenCalledTimes(0);
+  });
+
+  test('stream name not given', async () => {
+    const sendMock = jest.spyOn(KinesisClient.prototype, 'send');
+
+    await expect(
+      plugin.execute(
+        propsWithActionConfig(
+          new Plugin.Plugin({
+            operationType: Plugin.Plugin_OperationType.PUT,
+            put: {
+              partitionKey: 'pk',
+              data: '[{}]',
+              streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_NAME
+            }
+          })
+        )
+      )
+    ).rejects.toThrow('stream identifier cannot be empty');
+
+    expect(sendMock).toHaveBeenCalledTimes(0);
+  });
+
+  test('unknown operation type', async () => {
+    const sendMock = jest.spyOn(KinesisClient.prototype, 'send');
+
+    await expect(
+      plugin.execute(
+        propsWithActionConfig(
+          new Plugin.Plugin({
+            operationType: Plugin.Plugin_OperationType.UNSPECIFIED,
+            put: {
+              partitionKey: 'pk',
+              data: '[{}]',
+              streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_ARN,
+              streamArn: 'arn'
+            }
+          })
+        )
+      )
+    ).rejects.toThrow('unknown operation type 0');
 
     expect(sendMock).toHaveBeenCalledTimes(0);
   });
@@ -143,9 +191,12 @@ describe('execute', () => {
       plugin.execute(
         propsWithActionConfig(
           new Plugin.Plugin({
-            operation: {
-              case: 'put',
-              value: { partitionKey: 'pk', data: `[{"foo": "bar"}]`, streamIdentifier: { value: 'arn', case: 'streamArn' } }
+            operationType: Plugin.Plugin_OperationType.PUT,
+            put: {
+              partitionKey: 'pk',
+              data: `[{"foo": "bar"}]`,
+              streamIdentifierType: Plugin.Plugin_StreamIdentifier.STREAM_ARN,
+              streamArn: 'arn'
             }
           })
         )
@@ -173,15 +224,13 @@ describe('execute', () => {
       plugin.execute(
         propsWithActionConfig(
           new Plugin.Plugin({
-            operation: {
-              case: 'get',
-              value: {}
-            }
+            operationType: Plugin.Plugin_OperationType.GET,
+            get: {}
           })
         )
       )
     ).rejects.toThrow(
-      'The consume action is not supported outside of a Stream block trigger. Please add a Stream block and place this block in the Trigger section'
+      'The get action is not supported outside of a Stream block trigger. Please add a Stream block and place this block in the Trigger section'
     );
 
     expect(sendMock).toHaveBeenCalledTimes(0);

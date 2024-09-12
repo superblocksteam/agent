@@ -18,6 +18,8 @@ export class Plugin extends jspb.Message {
     clearConnection(): void;
     getConnection(): Plugin.KinesisConnection | undefined;
     setConnection(value?: Plugin.KinesisConnection): Plugin;
+    getOperationType(): Plugin.OperationType;
+    setOperationType(value: Plugin.OperationType): Plugin;
 
     hasPut(): boolean;
     clearPut(): void;
@@ -34,8 +36,6 @@ export class Plugin extends jspb.Message {
     getDynamicWorkflowConfiguration(): plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration | undefined;
     setDynamicWorkflowConfiguration(value?: plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration): Plugin;
 
-    getOperationCase(): Plugin.OperationCase;
-
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Plugin.AsObject;
     static toObject(includeInstance: boolean, msg: Plugin): Plugin.AsObject;
@@ -50,6 +50,7 @@ export namespace Plugin {
     export type AsObject = {
         name?: string,
         connection?: Plugin.KinesisConnection.AsObject,
+        operationType: Plugin.OperationType,
         put?: Plugin.KinesisPut.AsObject,
         get?: Plugin.KinesisGet.AsObject,
         dynamicWorkflowConfiguration?: plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.AsObject,
@@ -84,18 +85,18 @@ export namespace Plugin {
         setData(value: string): KinesisPut;
         getPartitionKey(): string;
         setPartitionKey(value: string): KinesisPut;
+        getStreamIdentifierType(): Plugin.StreamIdentifier;
+        setStreamIdentifierType(value: Plugin.StreamIdentifier): KinesisPut;
 
         hasStreamName(): boolean;
         clearStreamName(): void;
-        getStreamName(): string;
+        getStreamName(): string | undefined;
         setStreamName(value: string): KinesisPut;
 
         hasStreamArn(): boolean;
         clearStreamArn(): void;
-        getStreamArn(): string;
+        getStreamArn(): string | undefined;
         setStreamArn(value: string): KinesisPut;
-
-        getStreamIdentifierCase(): KinesisPut.StreamIdentifierCase;
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): KinesisPut.AsObject;
@@ -111,16 +112,10 @@ export namespace Plugin {
         export type AsObject = {
             data: string,
             partitionKey: string,
-            streamName: string,
-            streamArn: string,
+            streamIdentifierType: Plugin.StreamIdentifier,
+            streamName?: string,
+            streamArn?: string,
         }
-
-        export enum StreamIdentifierCase {
-            STREAM_IDENTIFIER_NOT_SET = 0,
-            STREAM_NAME = 3,
-            STREAM_ARN = 4,
-        }
-
     }
 
     export class KinesisGet extends jspb.Message { 
@@ -142,18 +137,18 @@ export namespace Plugin {
         clearTimestamp(): void;
         getTimestamp(): string | undefined;
         setTimestamp(value: string): KinesisGet;
+        getStreamIdentifierType(): Plugin.StreamIdentifier;
+        setStreamIdentifierType(value: Plugin.StreamIdentifier): KinesisGet;
 
         hasStreamName(): boolean;
         clearStreamName(): void;
-        getStreamName(): string;
+        getStreamName(): string | undefined;
         setStreamName(value: string): KinesisGet;
 
         hasStreamArn(): boolean;
         clearStreamArn(): void;
-        getStreamArn(): string;
+        getStreamArn(): string | undefined;
         setStreamArn(value: string): KinesisGet;
-
-        getStreamIdentifierCase(): KinesisGet.StreamIdentifierCase;
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): KinesisGet.AsObject;
@@ -173,16 +168,10 @@ export namespace Plugin {
             pollingCooldownMs: number,
             startingSequenceNumber?: string,
             timestamp?: string,
-            streamName: string,
-            streamArn: string,
+            streamIdentifierType: Plugin.StreamIdentifier,
+            streamName?: string,
+            streamArn?: string,
         }
-
-        export enum StreamIdentifierCase {
-            STREAM_IDENTIFIER_NOT_SET = 0,
-            STREAM_NAME = 8,
-            STREAM_ARN = 9,
-        }
-
     }
 
 
@@ -195,11 +184,16 @@ export namespace Plugin {
     SHARD_ITERATOR_TYPE_LATEST = 5,
     }
 
+    export enum OperationType {
+    OPERATION_TYPE_UNSPECIFIED = 0,
+    OPERATION_TYPE_GET = 1,
+    OPERATION_TYPE_PUT = 2,
+    }
 
-    export enum OperationCase {
-        OPERATION_NOT_SET = 0,
-        PUT = 3,
-        GET = 4,
+    export enum StreamIdentifier {
+    STREAM_IDENTIFIER_UNSPECIFIED = 0,
+    STREAM_IDENTIFIER_STREAM_NAME = 1,
+    STREAM_IDENTIFIER_STREAM_ARN = 2,
     }
 
 }

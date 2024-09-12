@@ -9,11 +9,10 @@ option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/kines
 message Plugin {
   optional string name = 1;
   KinesisConnection connection = 2;
-  oneof operation {
-    KinesisPut put = 3;
-    KinesisGet get = 4;
-  }
-  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 5;
+  OperationType operation_type = 3;
+  optional KinesisPut put = 4;
+  optional KinesisGet get = 5;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 6;
 
   message KinesisConnection {
     plugins.common.v1.AWSConfig aws_config = 1;
@@ -24,15 +23,9 @@ message Plugin {
   message KinesisPut {
     string data = 1;
     string partition_key = 2;
-    oneof stream_identifier {
-      string stream_name = 3;
-      string stream_arn = 4;
-    }
-    // NOTE (joey): we can add these later if there is demand
-    // NOTE (joey): these options are specifically for when the user is putting a single item
-    // NOTE (joey): for now, let's keep the pattern of always sending a list of items
-    // optional string explicit_hash_key = 5;
-    // optional string sequence_number_for_ordering = 6;
+    StreamIdentifier stream_identifier_type = 3;
+    optional string stream_name = 4;
+    optional string stream_arn = 5;
   }
 
   // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetRecords.html
@@ -48,10 +41,9 @@ message Plugin {
     // these 2 are required depending on the shard iterator type selected
     optional string starting_sequence_number = 6;
     optional string timestamp = 7;
-    oneof stream_identifier {
-      string stream_name = 8;
-      string stream_arn = 9;
-    }
+    StreamIdentifier stream_identifier_type = 8;
+    optional string stream_name = 9;
+    optional string stream_arn = 10;
   }
 
   // https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetShardIterator.html#API_GetShardIterator_RequestSyntax
@@ -62,6 +54,18 @@ message Plugin {
     SHARD_ITERATOR_TYPE_AT_TIMESTAMP = 3;
     SHARD_ITERATOR_TYPE_TRIM_HORIZON = 4;
     SHARD_ITERATOR_TYPE_LATEST = 5;
+  }
+
+  enum OperationType {
+    OPERATION_TYPE_UNSPECIFIED = 0;
+    OPERATION_TYPE_GET = 1;
+    OPERATION_TYPE_PUT = 2;
+  }
+
+  enum StreamIdentifier {
+    STREAM_IDENTIFIER_UNSPECIFIED = 0;
+    STREAM_IDENTIFIER_STREAM_NAME = 1;
+    STREAM_IDENTIFIER_STREAM_ARN = 2;
   }
 }
 

@@ -976,6 +976,9 @@
         "timestamp": {
           "type": "string"
         },
+        "streamIdentifierType": {
+          "$ref": "#/definitions/PluginStreamIdentifier"
+        },
         "streamName": {
           "type": "string"
         },
@@ -993,6 +996,9 @@
         },
         "partitionKey": {
           "type": "string"
+        },
+        "streamIdentifierType": {
+          "$ref": "#/definitions/PluginStreamIdentifier"
         },
         "streamName": {
           "type": "string"
@@ -1087,6 +1093,15 @@
           "title": "comma-separated list"
         }
       }
+    },
+    "PluginOperationType": {
+      "type": "string",
+      "enum": [
+        "OPERATION_TYPE_UNSPECIFIED",
+        "OPERATION_TYPE_GET",
+        "OPERATION_TYPE_PUT"
+      ],
+      "default": "OPERATION_TYPE_UNSPECIFIED"
     },
     "PluginOracleDbConnection": {
       "type": "object",
@@ -1423,6 +1438,15 @@
           "type": "string"
         }
       }
+    },
+    "PluginStreamIdentifier": {
+      "type": "string",
+      "enum": [
+        "STREAM_IDENTIFIER_UNSPECIFIED",
+        "STREAM_IDENTIFIER_STREAM_NAME",
+        "STREAM_IDENTIFIER_STREAM_ARN"
+      ],
+      "default": "STREAM_IDENTIFIER_UNSPECIFIED"
     },
     "PluginStructured": {
       "type": "object",
@@ -2713,6 +2737,9 @@
         },
         "connection": {
           "$ref": "#/definitions/PluginKinesisConnection"
+        },
+        "operationType": {
+          "$ref": "#/definitions/PluginOperationType"
         },
         "put": {
           "$ref": "#/definitions/PluginKinesisPut"
