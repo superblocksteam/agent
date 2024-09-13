@@ -256,6 +256,13 @@ deploy-helm-opa:
 		--values helm/cloud-opa/values.yaml \
 		--values helm/cloud-opa/values-$(ENVIRONMENT).yaml $(HELM_EXTRA_ARGS)
 
+	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) cloud-opa-new helm/cloud-opa \
+		--debug \
+		--force \
+		--set superblocks-agent.image.tag="$(IMAGE_TAG)" \
+		--values helm/cloud-opa/values.yaml \
+		--values helm/cloud-opa/values-$(ENVIRONMENT)-new.yaml $(HELM_EXTRA_ARGS)
+
 .PHONY: helm-template
 helm-template:
 	# curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
