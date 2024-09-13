@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+## v1.15.0
+
 - Added support for Okta SSO in the Snowflake plugin
 - Fix connection string support for RedShift, MySQL, MariaDB, Postgres, CockroachDB
 - Added connection string support for RedShift, MySQL, MariaDB, Postgres, CockroachDB
@@ -18,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change `v1.security.Resource.config.api` type from `google.protobuf.Value` well known type back to `v1.Api`
 - Added support for enabling `restapi`, `restapiintegration`, `openapi` and `graphql` plugins to return more verbose HTTP response data in result (e.g. response status text, status code, etc.)
 - Added support for configuring whether or not a step using a `restapi`, `restapiintegration`, `openapi` or `graphql` plugin fails if the underlying web request fails
-
+- Update dependencies to remove critical vulnerabilities in wget and libexpat1
 
 ## v1.14.1
 
