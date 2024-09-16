@@ -64,12 +64,24 @@ export default class GraphQLPlugin extends ApiPlugin {
     requestConfig.method = HttpMethod.POST;
     requestConfig = { ...requestConfig, ...this.postRequestConfig(query ?? '', actionConfiguration) };
 
-    return await this.executeRequest(
+    const execOutput = await this.executeRequest(
       requestConfig,
       ActionResponseType.AUTO,
       actionConfiguration.verboseHttpOutput ?? false,
-      actionConfiguration.doNotFailOnRequestError !== undefined ? !actionConfiguration.doNotFailOnRequestError : true
+      true
     );
+
+    const shouldFailOnGraphqlError = actionConfiguration.failOnGraphqlErrors ?? false;
+    if (shouldFailOnGraphqlError && execOutput.output['errors'] !== undefined) {
+      let errMsg = 'GraphQL request failed';
+      if (execOutput.output['errors'].length > 0) {
+        errMsg += `\nErrors:\n${JSON.stringify(execOutput.output['errors'], null, 2)}`;
+      }
+
+      throw new Error(errMsg);
+    }
+
+    return execOutput;
   }
 
   getRequest(actionConfiguration: GraphQLActionConfiguration, datasourceConfiguration: GraphQLDatasourceConfiguration): RawRequest {

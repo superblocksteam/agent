@@ -57,8 +57,8 @@ export class Plugin extends jspb.Message {
     setSuperblocksmetadata(value?: common_v1_plugin_pb.SuperblocksMetadata): Plugin;
     getVerbosehttpoutput(): boolean;
     setVerbosehttpoutput(value: boolean): Plugin;
-    getDonotfailonrequesterror(): boolean;
-    setDonotfailonrequesterror(value: boolean): Plugin;
+    getFailongraphqlerrors(): boolean;
+    setFailongraphqlerrors(value: boolean): Plugin;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Plugin.AsObject;
@@ -78,6 +78,6 @@ export namespace Plugin {
         custom?: Custom.AsObject,
         superblocksmetadata?: common_v1_plugin_pb.SuperblocksMetadata.AsObject,
         verbosehttpoutput: boolean,
-        donotfailonrequesterror: boolean,
+        failongraphqlerrors: boolean,
     }
 }
