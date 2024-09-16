@@ -171,7 +171,7 @@ export type GraphQLActionConfiguration = {
   body?: string;
   custom?: CustomProperties;
   verboseHttpOutput?: boolean;
-  doNotFailOnRequestError?: boolean;
+  failOnGraphqlErrors?: boolean;
 };
 
 export type JavascriptActionConfiguration = {

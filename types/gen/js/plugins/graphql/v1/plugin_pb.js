@@ -315,7 +315,7 @@ body: jspb.Message.getFieldWithDefault(msg, 3, ""),
 custom: (f = msg.getCustom()) && proto.plugins.graphql.v1.Custom.toObject(includeInstance, f),
 superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
 verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
+failongraphqlerrors: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
   };
 
   if (includeInstance) {
@@ -381,7 +381,7 @@ proto.plugins.graphql.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       break;
     case 7:
       var value = /** @type {boolean} */ (reader.readBool());
-      msg.setDonotfailonrequesterror(value);
+      msg.setFailongraphqlerrors(value);
       break;
     default:
       reader.skipField();
@@ -457,7 +457,7 @@ proto.plugins.graphql.v1.Plugin.serializeBinaryToWriter = function(message, writ
       f
     );
   }
-  f = message.getDonotfailonrequesterror();
+  f = message.getFailongraphqlerrors();
   if (f) {
     writer.writeBool(
       7,
@@ -634,10 +634,10 @@ proto.plugins.graphql.v1.Plugin.prototype.setVerbosehttpoutput = function(value)
 
 
 /**
- * optional bool doNotFailOnRequestError = 7;
+ * optional bool failOnGraphqlErrors = 7;
  * @return {boolean}
  */
-proto.plugins.graphql.v1.Plugin.prototype.getDonotfailonrequesterror = function() {
+proto.plugins.graphql.v1.Plugin.prototype.getFailongraphqlerrors = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 7, false));
 };
 
@@ -646,7 +646,7 @@ proto.plugins.graphql.v1.Plugin.prototype.getDonotfailonrequesterror = function(
  * @param {boolean} value
  * @return {!proto.plugins.graphql.v1.Plugin} returns this
  */
-proto.plugins.graphql.v1.Plugin.prototype.setDonotfailonrequesterror = function(value) {
+proto.plugins.graphql.v1.Plugin.prototype.setFailongraphqlerrors = function(value) {
   return jspb.Message.setProto3BooleanField(this, 7, value);
 };
 
