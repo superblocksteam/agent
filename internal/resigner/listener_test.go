@@ -141,12 +141,7 @@ func TestRun(t *testing.T) {
 
 	queue <- &securityv1.Resource{
 		Config: &securityv1.Resource_Api{
-			Api: &apiv1.Api{
-				Signature: &utilsv1.Signature{
-					KeyId: "example",
-					Data:  sig,
-				},
-			},
+			Api: structpb.NewStructValue(apiStruct),
 		},
 		GitRef: &securityv1.Resource_BranchName{
 			BranchName: "main",

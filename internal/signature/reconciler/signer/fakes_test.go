@@ -66,7 +66,11 @@ func (f *fakeSignerManager) SigningKeyID() string {
 func getSignature(res *pbsecurity.Resource) []byte {
 	switch t := res.Config.(type) {
 	case *pbsecurity.Resource_Api:
-		return t.Api.GetSignature().GetData()
+		sig, err := signature.StructpbToSignatureProto(t.Api.GetStructValue().GetFields()["signature"].GetStructValue())
+		if err != nil {
+			return []byte("invalid-type-no-signature-" + uuid.NewString())
+		}
+		return sig.GetData()
 	case *pbsecurity.Resource_ApiLiteral_:
 		sigStruct := t.ApiLiteral.GetData().GetStructValue().GetFields()["signature"].GetStructValue()
 		sig, err := signature.StructpbToSignatureProto(sigStruct)
@@ -86,7 +90,13 @@ func getSignature(res *pbsecurity.Resource) []byte {
 func setSignature(res *pbsecurity.Resource, sig *pbutils.Signature) {
 	switch t := res.Config.(type) {
 	case *pbsecurity.Resource_Api:
-		t.Api.Signature = sig
+		if sig == nil {
+			t.Api.GetStructValue().Fields["signature"] = structpb.NewNullValue()
+			break
+		}
+
+		sigStruct := signature.SignatureProtoToStructpb(sig)
+		t.Api.GetStructValue().Fields["signature"] = structpb.NewStructValue(sigStruct)
 	case *pbsecurity.Resource_ApiLiteral_:
 		if sig == nil {
 			t.ApiLiteral.Data.GetStructValue().Fields["signature"] = structpb.NewNullValue()

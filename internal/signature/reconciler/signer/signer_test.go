@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	pbapi "github.com/superblocksteam/agent/types/gen/go/api/v1"
-	pbcommon "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	pbsecurity "github.com/superblocksteam/agent/types/gen/go/security/v1"
 	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 	"go.uber.org/zap/zaptest"
@@ -31,6 +29,13 @@ func validArgs(t *testing.T) *args {
 }
 
 func validParamResourceTypes(t *testing.T) []*paramResourceType {
+	api, err := structpb.NewStruct(map[string]any{
+		"metadata": map[string]any{
+			"id": "0",
+		},
+	})
+	require.NoError(t, err)
+
 	literal, err := structpb.NewStruct(map[string]any{
 		"metadata": map[string]any{
 			"id": "0",
@@ -43,11 +48,7 @@ func validParamResourceTypes(t *testing.T) []*paramResourceType {
 			name: "api",
 			res: &pbsecurity.Resource{
 				Config: &pbsecurity.Resource_Api{
-					Api: &pbapi.Api{
-						Metadata: &pbcommon.Metadata{
-							Id: "0",
-						},
-					},
+					Api: structpb.NewStructValue(api),
 				},
 				GitRef: &pbsecurity.Resource_CommitId{
 					CommitId: "0",

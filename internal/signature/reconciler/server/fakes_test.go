@@ -11,7 +11,6 @@ import (
 	"time"
 
 	pbapi "github.com/superblocksteam/agent/types/gen/go/api/v1"
-	pbcommon "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	pbsecurity "github.com/superblocksteam/agent/types/gen/go/security/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -77,21 +76,7 @@ func (f *fakeServerClient) PostClaimKeyRotationResourcesForSigningV2(ctx context
 		Resources: []*pbsecurity.Resource{
 			{
 				Config: &pbsecurity.Resource_Api{
-					Api: &pbapi.Api{
-						Metadata: &pbcommon.Metadata{
-							Id: "0",
-						},
-					},
-				},
-				GitRef: &pbsecurity.Resource_CommitId{
-					CommitId: "0",
-				},
-			},
-			{
-				Config: &pbsecurity.Resource_ApiLiteral_{
-					ApiLiteral: &pbsecurity.Resource_ApiLiteral{
-						Data: structpb.NewStructValue(api),
-					},
+					Api: structpb.NewStructValue(api),
 				},
 				GitRef: &pbsecurity.Resource_CommitId{
 					CommitId: "0",

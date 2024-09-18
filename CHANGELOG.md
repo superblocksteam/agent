@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added AWS Kinesis plugin
 - Fix worker/js helm limits.memory
 - Update shutdown ordering so critical processes are not terminated prior to the webserver
-- Change `v1.security.Resource.config.api` type from `google.protobuf.Value` well known type back to `v1.Api`
 - Update dependencies to remove critical vulnerabilities in wget and libexpat1
 - Added support for enabling `restapi`, `restapiintegration`, `openapi`, `graphql` and `graphqlintegration` plugins to return more verbose HTTP response data in result (e.g. response status text, status code, etc.)
 - Added support for configuring whether or not a step using a `restapi`, `restapiintegration` or `openapi` plugin fails if the underlying web request fails

@@ -11,7 +11,6 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/superblocksteam/agent/pkg/utils"
 	pbapi "github.com/superblocksteam/agent/types/gen/go/api/v1"
-	pbcommon "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	pbsecurity "github.com/superblocksteam/agent/types/gen/go/security/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -92,12 +91,15 @@ func validArgs(t *testing.T) *args {
 
 		switch i % typesOfResources {
 		case 0:
-			res.Config = &pbsecurity.Resource_Api{
-				Api: &pbapi.Api{
-					Metadata: &pbcommon.Metadata{
-						Id: fmt.Sprintf("%d", i),
-					},
+			api, err := structpb.NewStruct(map[string]any{
+				"metadata": map[string]any{
+					"id": fmt.Sprintf("%d", i),
 				},
+			})
+			require.NoError(t, err)
+
+			res.Config = &pbsecurity.Resource_Api{
+				Api: structpb.NewStructValue(api),
 			}
 		case 1:
 			literal, err := structpb.NewStruct(map[string]any{
@@ -276,15 +278,18 @@ func TestNoResourcesToSign(t *testing.T) {
 func TestOnlyApisToSign(t *testing.T) {
 	t.Parallel()
 
+	api, err := structpb.NewStruct(map[string]any{
+		"metadata": map[string]any{
+			"id": "0",
+		},
+	})
+	require.NoError(t, err)
+
 	args := validArgs(t)
 	args.server.ClaimBatchToSignSet([]*pbsecurity.Resource{
 		{
 			Config: &pbsecurity.Resource_Api{
-				Api: &pbapi.Api{
-					Metadata: &pbcommon.Metadata{
-						Id: "0",
-					},
-				},
+				Api: structpb.NewStructValue(api),
 			},
 			GitRef: &pbsecurity.Resource_CommitId{
 				CommitId: "0",
@@ -636,10 +641,8 @@ func TestPatchFromApiLiteralMissingMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	resource := &pbsecurity.Resource{
-		Config: &pbsecurity.Resource_ApiLiteral_{
-			ApiLiteral: &pbsecurity.Resource_ApiLiteral{
-				Data: structpb.NewStructValue(apiNoMetadata),
-			},
+		Config: &pbsecurity.Resource_Api{
+			Api: structpb.NewStructValue(apiNoMetadata),
 		},
 	}
 	err = args.signer.SignAndUpdateResource(resource)
@@ -661,10 +664,8 @@ func TestPatchFromApiLiteralMissingSignature(t *testing.T) {
 	require.NoError(t, err)
 
 	resource := &pbsecurity.Resource{
-		Config: &pbsecurity.Resource_ApiLiteral_{
-			ApiLiteral: &pbsecurity.Resource_ApiLiteral{
-				Data: structpb.NewStructValue(apiNoSig),
-			},
+		Config: &pbsecurity.Resource_Api{
+			Api: structpb.NewStructValue(apiNoSig),
 		},
 	}
 
