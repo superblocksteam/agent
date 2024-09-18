@@ -22,7 +22,6 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from superblocks_types.api.v1 import api_pb2 as api_dot_v1_dot_api__pb2
 from superblocks_types.buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
 from superblocks_types.google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
 from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
@@ -30,7 +29,7 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from superblocks_types.utils.v1 import utils_pb2 as utils_dot_v1_dot_utils__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x19security/v1/service.proto\x12\x0bsecurity.v1\x1a\x10\x61pi/v1/api.proto\x1a\x1b\x62uf/validate/validate.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14utils/v1/utils.proto\"\x8c\x05\n\x08Resource\x12#\n\x03\x61pi\x18\x01 \x01(\x0b\x32\x0b.api.v1.ApiB\x02\x18\x01H\x00R\x03\x61pi\x12\x39\n\x07literal\x18\x02 \x01(\x0b\x32\x1d.security.v1.Resource.LiteralH\x00R\x07literal\x12\x43\n\x0b\x61pi_literal\x18\x05 \x01(\x0b\x32 .security.v1.Resource.ApiLiteralH\x00R\napiLiteral\x12\x1d\n\tcommit_id\x18\x03 \x01(\tH\x01R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x04 \x01(\tH\x01R\nbranchName\x1a\xbb\x02\n\x07Literal\x12*\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x16.google.protobuf.ValueR\x04\x64\x61ta\x12\x36\n\tsignature\x18\x02 \x01(\x0b\x32\x13.utils.v1.SignatureH\x00R\tsignature\x88\x01\x01\x12\x1f\n\x0bresource_id\x18\x03 \x01(\tR\nresourceId\x12\'\n\x0forganization_id\x18\x04 \x01(\tR\x0eorganizationId\x12=\n\x0clast_updated\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x0blastUpdated\x12\x12\n\x04type\x18\x06 \x01(\tR\x04type\x12!\n\x0cpage_version\x18\x07 \x01(\x05R\x0bpageVersionB\x0c\n\n_signature\x1a\x38\n\nApiLiteral\x12*\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x16.google.protobuf.ValueR\x04\x64\x61taB\x0f\n\x06\x63onfig\x12\x05\xbaH\x02\x08\x01\x42\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\"@\n\x0bSignRequest\x12\x31\n\x08resource\x18\x01 \x01(\x0b\x32\x15.security.v1.ResourceR\x08resource\"A\n\x0cSignResponse\x12\x31\n\tsignature\x18\x01 \x01(\x0b\x32\x13.utils.v1.SignatureR\tsignature\"D\n\rVerifyRequest\x12\x33\n\tresources\x18\x01 \x03(\x0b\x32\x15.security.v1.ResourceR\tresources\"\'\n\x0eVerifyResponse\x12\x15\n\x06key_id\x18\x01 \x01(\tR\x05keyId2\xd2\x01\n\x10SignatureService\x12Z\n\x04Sign\x12\x18.security.v1.SignRequest\x1a\x19.security.v1.SignResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\"\x12/v1/signature/sign:\x01*\x12\x62\n\x06Verify\x12\x1a.security.v1.VerifyRequest\x1a\x1b.security.v1.VerifyResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\"\x14/v1/signature/verify:\x01*B;Z9github.com/superblocksteam/agent/types/gen/go/security/v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x19security/v1/service.proto\x12\x0bsecurity.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14utils/v1/utils.proto\"\x97\x05\n\x08Resource\x12.\n\x03\x61pi\x18\x01 \x01(\x0b\x32\x16.google.protobuf.ValueB\x02\x18\x01H\x00R\x03\x61pi\x12\x39\n\x07literal\x18\x02 \x01(\x0b\x32\x1d.security.v1.Resource.LiteralH\x00R\x07literal\x12\x43\n\x0b\x61pi_literal\x18\x05 \x01(\x0b\x32 .security.v1.Resource.ApiLiteralH\x00R\napiLiteral\x12\x1d\n\tcommit_id\x18\x03 \x01(\tH\x01R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x04 \x01(\tH\x01R\nbranchName\x1a\xbb\x02\n\x07Literal\x12*\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x16.google.protobuf.ValueR\x04\x64\x61ta\x12\x36\n\tsignature\x18\x02 \x01(\x0b\x32\x13.utils.v1.SignatureH\x00R\tsignature\x88\x01\x01\x12\x1f\n\x0bresource_id\x18\x03 \x01(\tR\nresourceId\x12\'\n\x0forganization_id\x18\x04 \x01(\tR\x0eorganizationId\x12=\n\x0clast_updated\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x0blastUpdated\x12\x12\n\x04type\x18\x06 \x01(\tR\x04type\x12!\n\x0cpage_version\x18\x07 \x01(\x05R\x0bpageVersionB\x0c\n\n_signature\x1a\x38\n\nApiLiteral\x12*\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x16.google.protobuf.ValueR\x04\x64\x61taB\x0f\n\x06\x63onfig\x12\x05\xbaH\x02\x08\x01\x42\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\"@\n\x0bSignRequest\x12\x31\n\x08resource\x18\x01 \x01(\x0b\x32\x15.security.v1.ResourceR\x08resource\"A\n\x0cSignResponse\x12\x31\n\tsignature\x18\x01 \x01(\x0b\x32\x13.utils.v1.SignatureR\tsignature\"D\n\rVerifyRequest\x12\x33\n\tresources\x18\x01 \x03(\x0b\x32\x15.security.v1.ResourceR\tresources\"\'\n\x0eVerifyResponse\x12\x15\n\x06key_id\x18\x01 \x01(\tR\x05keyId2\xd2\x01\n\x10SignatureService\x12Z\n\x04Sign\x12\x18.security.v1.SignRequest\x1a\x19.security.v1.SignResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\"\x12/v1/signature/sign:\x01*\x12\x62\n\x06Verify\x12\x1a.security.v1.VerifyRequest\x1a\x1b.security.v1.VerifyResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\"\x14/v1/signature/verify:\x01*B;Z9github.com/superblocksteam/agent/types/gen/go/security/v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -48,20 +47,20 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SIGNATURESERVICE'].methods_by_name['Sign']._serialized_options = b'\202\323\344\223\002\027\"\022/v1/signature/sign:\001*'
   _globals['_SIGNATURESERVICE'].methods_by_name['Verify']._loaded_options = None
   _globals['_SIGNATURESERVICE'].methods_by_name['Verify']._serialized_options = b'\202\323\344\223\002\031\"\024/v1/signature/verify:\001*'
-  _globals['_RESOURCE']._serialized_start=205
-  _globals['_RESOURCE']._serialized_end=857
-  _globals['_RESOURCE_LITERAL']._serialized_start=449
-  _globals['_RESOURCE_LITERAL']._serialized_end=764
-  _globals['_RESOURCE_APILITERAL']._serialized_start=766
-  _globals['_RESOURCE_APILITERAL']._serialized_end=822
-  _globals['_SIGNREQUEST']._serialized_start=859
-  _globals['_SIGNREQUEST']._serialized_end=923
-  _globals['_SIGNRESPONSE']._serialized_start=925
-  _globals['_SIGNRESPONSE']._serialized_end=990
-  _globals['_VERIFYREQUEST']._serialized_start=992
-  _globals['_VERIFYREQUEST']._serialized_end=1060
-  _globals['_VERIFYRESPONSE']._serialized_start=1062
-  _globals['_VERIFYRESPONSE']._serialized_end=1101
-  _globals['_SIGNATURESERVICE']._serialized_start=1104
-  _globals['_SIGNATURESERVICE']._serialized_end=1314
+  _globals['_RESOURCE']._serialized_start=187
+  _globals['_RESOURCE']._serialized_end=850
+  _globals['_RESOURCE_LITERAL']._serialized_start=442
+  _globals['_RESOURCE_LITERAL']._serialized_end=757
+  _globals['_RESOURCE_APILITERAL']._serialized_start=759
+  _globals['_RESOURCE_APILITERAL']._serialized_end=815
+  _globals['_SIGNREQUEST']._serialized_start=852
+  _globals['_SIGNREQUEST']._serialized_end=916
+  _globals['_SIGNRESPONSE']._serialized_start=918
+  _globals['_SIGNRESPONSE']._serialized_end=983
+  _globals['_VERIFYREQUEST']._serialized_start=985
+  _globals['_VERIFYREQUEST']._serialized_end=1053
+  _globals['_VERIFYRESPONSE']._serialized_start=1055
+  _globals['_VERIFYRESPONSE']._serialized_end=1094
+  _globals['_SIGNATURESERVICE']._serialized_start=1097
+  _globals['_SIGNATURESERVICE']._serialized_end=1307
 # @@protoc_insertion_point(module_scope)

@@ -196,7 +196,7 @@ func verify(t *testing.T, a *args, expectedPayload string, newSignature *pbutils
 func verifySerialize(t *testing.T, a *args, expectedPayload string, expectedErr error) {
 	payload, sig, err := a.serializer.Serialize(&securityv1.Resource{
 		Config: &securityv1.Resource_Api{
-			Api: a.api,
+			Api: structpb.NewStructValue(a.apiLiteral),
 		},
 	})
 	verifyPayloadAndSignature(t, string(payload), expectedPayload, sig, a.expectedSig, err, expectedErr)
@@ -241,11 +241,13 @@ func verifyPayloadAndSignature(t *testing.T, actualPayload, expectedPayload stri
 func verifyUpdateResourceWithSignature(t *testing.T, a *args, newSignature *pbutils.Signature, expectedErr error) {
 	res := &securityv1.Resource{
 		Config: &securityv1.Resource_Api{
-			Api: a.api,
+			Api: structpb.NewStructValue(a.apiLiteral),
 		},
 	}
 	verifyUpdatedSignature(t, a, res, newSignature, expectedErr, func(res *securityv1.Resource) *pbutils.Signature {
-		return res.GetApi().GetSignature()
+		sigStruct := res.GetApi().GetStructValue().Fields["signature"].GetStructValue()
+		sig, _ := StructpbToSignatureProto(sigStruct)
+		return sig
 	})
 
 	res = &securityv1.Resource{

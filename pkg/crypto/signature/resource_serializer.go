@@ -32,28 +32,15 @@ func (r *resourceSerializer) Serialize(resource *securityv1.Resource) ([]byte, [
 	{
 		switch v := resource.Config.(type) {
 		case *securityv1.Resource_Api:
-			api := &apiv1.Api{
-				Blocks:  v.Api.GetBlocks(),
-				Trigger: v.Api.GetTrigger(),
-			}
-
-			if v.Api.GetTrigger() != nil {
-				// NOTE(frank): We do not want to sign any profile settings.
-				switch v := v.Api.GetTrigger().Config.(type) {
-				case *apiv1.Trigger_Job_:
-					v.Job.Options = nil
-				case *apiv1.Trigger_Workflow_:
-					v.Workflow.Options = nil
-				}
-			}
-
-			var err error
-			payload, err = ApiProtoToStructpb(api)
+			err := validateApiLiteral(v.Api)
 			if err != nil {
-				return nil, nil, fmt.Errorf("%w: converting payload to structpb failed: %w", sberrors.ErrInternal, err)
+				return nil, nil, err
 			}
 
-			signature = v.Api.GetSignature().GetData()
+			payload, signature, err = unwrapApiLiteral(v.Api)
+			if err != nil {
+				return nil, nil, fmt.Errorf("%w: unwrapping api failed: %w", sberrors.ErrInternal, err)
+			}
 		case *securityv1.Resource_ApiLiteral_:
 			err := validateApiLiteral(v.ApiLiteral.GetData())
 			if err != nil {
@@ -101,7 +88,11 @@ func (r *resourceSerializer) UpdateResourceWithSignature(resource *securityv1.Re
 
 	switch v := resource.Config.(type) {
 	case *securityv1.Resource_Api:
-		v.Api.Signature = sig
+		if err := validateApiLiteral(v.Api); err != nil {
+			return err
+		}
+
+		v.Api.GetStructValue().GetFields()["signature"] = structpb.NewStructValue(SignatureProtoToStructpb(sig))
 	case *securityv1.Resource_ApiLiteral_:
 		api := v.ApiLiteral.GetData()
 		if err := validateApiLiteral(api); err != nil {
