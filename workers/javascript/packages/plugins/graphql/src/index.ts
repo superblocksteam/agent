@@ -72,10 +72,17 @@ export default class GraphQLPlugin extends ApiPlugin {
     );
 
     const shouldFailOnGraphqlError = actionConfiguration.failOnGraphqlErrors ?? false;
-    if (shouldFailOnGraphqlError && execOutput.output['errors'] !== undefined) {
+    let respBody: unknown;
+    if (actionConfiguration.verboseHttpOutput) {
+      respBody = execOutput.output['body'];
+    } else {
+      respBody = execOutput.output;
+    }
+
+    if (shouldFailOnGraphqlError && respBody['errors'] !== undefined) {
       let errMsg = 'GraphQL request failed';
-      if (execOutput.output['errors'].length > 0) {
-        errMsg += `\nErrors:\n${JSON.stringify(execOutput.output['errors'], null, 2)}`;
+      if (respBody['errors'].length > 0) {
+        errMsg += `\nErrors:\n${JSON.stringify(respBody['errors'], null, 2)}`;
       }
 
       throw new Error(errMsg);
@@ -135,8 +142,8 @@ export default class GraphQLPlugin extends ApiPlugin {
     actionConfiguration: GraphQLActionConfiguration
   ): GraphQLActionConfiguration {
     const mergedConfig = { ...actionConfiguration };
-    mergedConfig.path = datasourceConfiguration.path ?? actionConfiguration.path;
-    mergedConfig.headers = (datasourceConfiguration.headers ?? []).concat(actionConfiguration.headers ?? []);
+    mergedConfig.path = datasourceConfiguration?.path ?? actionConfiguration?.path;
+    mergedConfig.headers = (datasourceConfiguration?.headers ?? []).concat(actionConfiguration?.headers ?? []);
     return mergedConfig;
   }
 }

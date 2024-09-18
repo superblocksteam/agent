@@ -68,7 +68,16 @@ describe('GraphQLPlugin', () => {
       const spy = jest.spyOn(plugin, 'executeRequest').mockImplementation(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (requestConfig, responseType?: any, verboseOutput?: boolean): Promise<ExecutionOutput> => {
-          return Promise.resolve(new ExecutionOutput());
+          const executionOutput = new ExecutionOutput();
+          if (verboseOutput) {
+            executionOutput.output = {
+              headers: {},
+              body: {},
+              status_code: 200,
+              status_text: 'OK'
+            };
+          }
+          return Promise.resolve(executionOutput);
         }
       );
 
@@ -112,7 +121,16 @@ describe('GraphQLPlugin', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (requestConfig, responseType?: any, verboseOutput?: boolean): Promise<ExecutionOutput> => {
           const executionOutput = new ExecutionOutput();
-          executionOutput.output = { errors: queryErrors };
+          if (verboseOutput) {
+            executionOutput.output = {
+              headers: {},
+              body: { errors: queryErrors },
+              status_code: 200,
+              status_text: 'OK'
+            };
+          } else {
+            executionOutput.output = { errors: queryErrors };
+          }
 
           return Promise.resolve(executionOutput);
         }
@@ -146,7 +164,16 @@ describe('GraphQLPlugin', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (requestConfig, responseType?: any, verboseOutput?: boolean): Promise<ExecutionOutput> => {
           const executionOutput = new ExecutionOutput();
-          executionOutput.output = { errors: queryErrors };
+          if (verboseOutput) {
+            executionOutput.output = {
+              headers: {},
+              body: { errors: queryErrors },
+              status_code: 200,
+              status_text: 'OK'
+            };
+          } else {
+            executionOutput.output = { errors: queryErrors };
+          }
 
           return Promise.resolve(executionOutput);
         }
