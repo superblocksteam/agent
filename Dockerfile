@@ -183,7 +183,7 @@ RUN cd /app/worker.py                                                           
     apt-get update                                                                                                                               && \
     # Installing redis also creates a user and group called redis with id 101 and an user called redis with id 100
     apt-get install -yqq --no-install-recommends gcc gnupg libc6-dev libpq-dev dnsutils iputils-ping nodejs=${NODE_VERSION}-1nodesource1            \
-                                                 ca-certificates curl build-essential cmake redis                                                && \
+                                                 ca-certificates curl build-essential cmake redis libblas-dev liblapack-dev                      && \
     mkdir -p /app/redis                                                                                                                          && \
     chown -R redis:redis /app/redis                                                                                                              && \
     curl https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/trusted.gpg.d/microsoft.asc                                            && \

@@ -236,7 +236,7 @@ s3transfer==0.5.2
 schematics==2.1.1
 scikit_learn==1.5.0
 scipy==1.14.0
-scs==3.2.0
+scs==3.2.7
 SecretStorage==3.3.3
 sgmllib3k==1.0.0
 simple_salesforce==1.11.4
