@@ -26,7 +26,7 @@ import {
   WorkerOptions,
   Wrapped
 } from './types';
-import { spanned, unpack, withJitter } from './utils';
+import { spanned, withJitter } from './utils';
 
 export class Worker implements Closer {
   private _alive: boolean;
@@ -106,23 +106,22 @@ export class Worker implements Closer {
         continue;
       } // read timed out
 
-      let messages: RedisMessage[];
-      {
-        try {
-          messages = unpack(next);
-          this._logger.debug({ messages: messages.length }, 'received messages from the queue');
-        } catch (err) {
-          this._logger.warn({ err }, 'potential issue with returned redis message');
-          continue;
+      try {
+        let nmessages = 0;
+        for (const stream of next) {
+          for (const msg of stream.messages) {
+            nmessages++;
+            if (this._options.sync) {
+              await this._unload(msg, stream.name);
+            } else {
+              void this._unload(msg, stream.name);
+            }
+          }
         }
-      }
-
-      for (const msg of messages) {
-        if (this._options.sync) {
-          await this._unload(msg, streams[msg.idx].key);
-        } else {
-          void this._unload(msg, streams[msg.idx].key);
-        }
+        this._logger.debug({ messages: nmessages }, 'processed messages from the queue');
+      } catch (err) {
+        this._logger.warn({ err }, 'potential issue with returned redis message');
+        continue;
       }
     }
   }
@@ -148,7 +147,13 @@ export class Worker implements Closer {
   }
 
   private async _unload({ id, message }: RedisMessage, stream: string): Promise<void> {
-    const ack: Promise<void> = this._options.client.xAck(stream, this._options.group, id);
+    try {
+      // ensure ack is complete prior to processing messages to ensure execution happens exactly
+      // once (re-execute is a bug as there is no guarantee of idempotency in the API)
+      await this._options.client.xAck(stream, this._options.group, id);
+    } catch (err) {
+      this._logger.error({ err }, 'could not ack message');
+    }
 
     try {
       if (!('data' in message)) {
@@ -159,13 +164,6 @@ export class Worker implements Closer {
       this._logger.error({ err }, 'could not process message');
     }
 
-    try {
-      // We don't really care to wait for the ack before processing.
-      // By the time we're done processing, it should be done.
-      await ack;
-    } catch (err) {
-      this._logger.error({ err }, 'could not ack message');
-    }
   }
 
   /**
