@@ -112,24 +112,6 @@ RUN git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblo
     mkdir -p ../workers/javascript/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build                                   && \
     cp build/Release/deasync.node ../workers/javascript/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node
 
-#########################
-## VULNERABILITY FIXES ##
-#########################
-
-FROM ghcr.io/superblocksteam/debian:bookworm-${DEBIAN_BOOKWORM_VERSION}-slim AS vulnerabilites
-
-ARG LIBEXPAT_VERSION
-
-RUN apt-get update                                                                                                 && \
-    apt-get install -y build-essential wget                                                                        && \
-    EXPAT_RELEASE=R_$(echo $LIBEXPAT_VERSION | sed 's/\./_/g')                                                     && \
-    wget https://github.com/libexpat/libexpat/releases/download/${EXPAT_RELEASE}/expat-${LIBEXPAT_VERSION}.tar.bz2 && \
-    tar xf expat-${LIBEXPAT_VERSION}.tar.bz2                                                                       && \
-    cd expat-${LIBEXPAT_VERSION}                                                                                   && \
-    ./configure --prefix=/usr                                                                                      && \
-    make                                                                                                           && \
-    make install DESTDIR=/tmp/libexpat
-
 ############
 ## PARENT ##
 ############
@@ -193,14 +175,22 @@ RUN cd /app/worker.py                                                           
     ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18                                                                         && \
     pip3 install --no-cache-dir -r ${REQUIREMENTS_FILE}                                                                                          && \
     rm -rf /var/lib/apt/lists/*                                                                                                                  && \
-    dpkg -r --force-depends libexpat1                                                                                                            && \
     apt-get clean                                                                                                                                && \
     find /app/orchestrator/bin /etc/s6-overlay/s6-rc.d -type d -exec chmod 755 {} \;                                                             && \
     find /app/orchestrator/buckets.json /app/orchestrator/flags.json /etc/s6-overlay/s6-rc.d -type f -exec chmod g=u,o=u {} \;                   && \
     groupadd --gid 1000 superblocks                                                                                                              && \
     useradd --uid 1000 --gid superblocks --shell /bin/bash --create-home superblocks
 
-COPY              --from=vulnerabilites                 /tmp/libexpat                                                     /
+COPY --chmod=755 debian_testing.sources /etc/apt/sources.list.d/debian_testing.sources
+
+RUN apt-get update                                                                                                                               && \
+    apt-get -t testing install -yqq --no-install-recommends libexpat1 libexpat1-dev zlib1g-dev curl xz-utils  libk5crypto3                       && \
+    apt-get -t unstable install -yqq --no-install-recommends libcurl4                                                                            && \
+    apt-get clean                                                                                                                                && \
+    rm -rf /var/lib/apt/lists/*                                                                                                                  && \
+    apt-get autoremove -y                                                                                                                        && \
+    apt-get autoclean -y                                                                                                                         && \
+    rm /etc/apt/sources.list.d/debian_testing.sources
 
 ENV SB_GIT_REPOSITORY_URL="https://github.com/superblocksteam/agent"
 ENV SB_GIT_COMMIT_SHA=${SB_GIT_COMMIT_SHA}
