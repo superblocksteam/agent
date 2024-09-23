@@ -67,7 +67,7 @@ jaeger:
 
 .PHONY: up
 up: deps build
-	@pnpm --filter @superblocks/fleet.all start
+	@npx pnpm --filter @superblocks/fleet.all start
 
 .PHONY: clean
 clean:
