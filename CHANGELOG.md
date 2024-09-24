@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+## v1.15.1
+
+- Updated debian packages to address a few vulnerabilities
+
 ## v1.15.0
 
 - Added support for Okta SSO in the Snowflake plugin
