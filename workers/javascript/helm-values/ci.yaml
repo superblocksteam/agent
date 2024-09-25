@@ -1,0 +1,116 @@
+---
+x-js-shared: &jsShared
+  async: false
+  events: execute
+x-exec-pool-proc-shared: &execPoolProcShared
+  worker:
+    execution:
+      pool:
+        size: 4
+environment: ci
+service:
+  logLevel: debug
+  tls:
+    insecure: true
+fleets:
+  # handles {bucket=BA} [event=!execute] (plugin=*)
+  agent.main.bucket.ba.worker.javascript-all.event.auxillary:
+    !!merge <<: *execPoolProcShared
+    bucket: BA
+    async: true
+    events: '!execute'
+    group: one
+    package: all
+    resources:
+      requests:
+        memory: 400Mi
+    autoscaling:
+      min: 1
+  # handles {bucket=BA} [event=execute] (plugin=!javascript,python)
+  agent.main.bucket.ba.worker.javascript-nonlang.event.execute:
+    !!merge <<: *execPoolProcShared
+    bucket: BA
+    async: true
+    group: two
+    package: non-lang
+    events: execute
+  # handles {bucket=BE} [event=execute]  (plugin=javascript)
+  agent.main.bucket.be.worker.javascript-nonlang.event.execute:
+    !!merge <<: *execPoolProcShared
+    bucket: BE
+    async: true
+    group: three
+    package: non-lang
+    events: execute
+    autoscaling:
+      min: 1
+  # handles {bucket=BA} [event=execute]  (plugin=javascript)
+  agent.main.bucket.ba.worker.javascript-lang.event.execute:
+    !!merge <<: *jsShared
+    !!merge <<: *execPoolProcShared
+    bucket: BA
+    group: four
+    package: javascript
+    serviceRate: 1
+    autoscaling:
+      min: 1
+  # handles {bucket=BE} [event=execute]  (plugin=javascript)
+  agent.main.bucket.be.worker.javascript-lang.event.execute:
+    !!merge <<: *jsShared
+    !!merge <<: *execPoolProcShared
+    bucket: BE
+    group: five
+    package: javascript
+    serviceRate: 1
+    autoscaling:
+      disable: true
+  # handles {bucket=test} [event=execute]  (plugin=javascript)
+  agent.main.bucket.test.worker.javascript-lang.event.execute:
+    !!merge <<: *jsShared
+    !!merge <<: *execPoolProcShared
+    bucket: test
+    group: six
+    package: javascript
+    serviceRate: 100
+    autoscaling:
+      disable: true
+  # handles {bucket=B1} [event=execute]  (plugin=javascript)
+  agent.main.bucket.b1.worker.javascript-lang.event.execute:
+    !!merge <<: *jsShared
+    !!merge <<: *execPoolProcShared
+    bucket: B1
+    group: seven
+    package: javascript
+    serviceRate: 100
+    autoscaling:
+      min: 1
+  # handles {bucket=B2} [event=execute]  (plugin=javascript)
+  agent.main.bucket.b2.worker.javascript-lang.event.execute:
+    !!merge <<: *jsShared
+    !!merge <<: *execPoolProcShared
+    bucket: B2
+    group: eight
+    package: javascript
+    serviceRate: 20
+    autoscaling:
+      min: 1
+  # handles {bucket=B3} [event=execute]  (plugin=javascript)
+  agent.main.bucket.b3.worker.javascript-lang.event.execute:
+    !!merge <<: *jsShared
+    !!merge <<: *execPoolProcShared
+    bucket: B3
+    group: nine
+    package: javascript
+    serviceRate: 3
+    autoscaling:
+      min: 1
+  # handles {bucket=B4} [event=execute]  (plugin=javascript)
+  agent.main.bucket.b4.worker.javascript-lang.event.execute:
+    !!merge <<: *jsShared
+    !!merge <<: *execPoolProcShared
+    bucket: B4
+    group: ten
+    package: javascript
+    serviceRate: 0.2
+    autoscaling:
+      min: 1

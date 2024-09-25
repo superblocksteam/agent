@@ -51,7 +51,9 @@ export class RedisTx implements KVStoreTx {
     }
 
     // NOTE(frank): This scares me. I'm not sure what the side effects are of this.
-    if (!value) {
+    // NOTE(dlamotte): previous check was !value, which when dropped led to the following error:
+    //   The "string" argument must be of type string or an instance of Buffer or ArrayBuffer. Received undefined
+    if (value === undefined) {
       return;
     }
 
