@@ -66,10 +66,11 @@ describe('variables', () => {
       }
     };
     await kvStore.write('key1', 10);
-    await kvStore.write('key2', 20);
+    await kvStore.write('key2', 20); // becomes 0
     await kvStore.write('key3', 30);
-    await kvStore.write('key4', 40);
+    await kvStore.write('key4', 40); // becomes 0
     await kvStore.write('key5', 50);
+    // total of non-zero is 90
 
     const props: PluginProps = {
       stepName: 'Step1',
@@ -84,7 +85,7 @@ describe('variables', () => {
       agentCredentials: {},
       redactedDatasourceConfiguration: {},
       actionConfiguration: {
-        body: 'simpleVar2.set(0); await advancedVar2.set(0); return simpleVar1.value + simpleVar2.value + await advancedVar1.get() + await advancedVar2.get() + nativeVar1;',
+        body: 'simpleVar2.set(0); await advancedVar2.set(0); console.log("state", simpleVar1.value, simpleVar2.value, await advancedVar1.get(), await advancedVar2.get(), nativeVar1); return simpleVar1.value + simpleVar2.value + await advancedVar1.get() + await advancedVar2.get() + nativeVar1;',
         spreadsheetId: '',
         sheetTitle: ''
       },
@@ -123,6 +124,7 @@ describe('variables', () => {
     expect(completed.err).not.toBeDefined();
 
     const output = await kvStore.read([completed.key]);
+    logger.info({data: output.data[0]}, "data");
     // @ts-ignore
     expect(output.data[0].output).toEqual(90);
     // @ts-ignore

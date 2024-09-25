@@ -151,7 +151,7 @@ deploy-helm:
 
 	helm upgrade -i --wait --timeout 3m -n $(K8S_NAMESPACE) worker helm \
 		--create-namespace \
-		--values helm/$(ENVIRONMENT).yaml \
+		--values helm-values/$(ENVIRONMENT).yaml \
 		--set queue.host="${HELM_QUEUE_HOST}" \
 		--set queue.token="${HELM_QUEUE_TOKEN}" \
 		--set kvstore.host="${HELM_KVSTORE_HOST}" \
