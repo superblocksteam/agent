@@ -508,6 +508,197 @@ var _ interface {
 	ErrorName() string
 } = PatchApisResponseValidationError{}
 
+// Validate checks the field values on UpdateApiSignature with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateApiSignature) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateApiSignature with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateApiSignatureMultiError, or nil if none found.
+func (m *UpdateApiSignature) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateApiSignature) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ApiId
+
+	if all {
+		switch v := interface{}(m.GetSignature()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateApiSignatureValidationError{
+					field:  "Signature",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateApiSignatureValidationError{
+					field:  "Signature",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetSignature()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateApiSignatureValidationError{
+				field:  "Signature",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetUpdated()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateApiSignatureValidationError{
+					field:  "Updated",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateApiSignatureValidationError{
+					field:  "Updated",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetUpdated()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateApiSignatureValidationError{
+				field:  "Updated",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	switch v := m.GitRef.(type) {
+	case *UpdateApiSignature_CommitId:
+		if v == nil {
+			err := UpdateApiSignatureValidationError{
+				field:  "GitRef",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for CommitId
+	case *UpdateApiSignature_BranchName:
+		if v == nil {
+			err := UpdateApiSignatureValidationError{
+				field:  "GitRef",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for BranchName
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return UpdateApiSignatureMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateApiSignatureMultiError is an error wrapping multiple validation errors
+// returned by UpdateApiSignature.ValidateAll() if the designated constraints
+// aren't met.
+type UpdateApiSignatureMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateApiSignatureMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateApiSignatureMultiError) AllErrors() []error { return m }
+
+// UpdateApiSignatureValidationError is the validation error returned by
+// UpdateApiSignature.Validate if the designated constraints aren't met.
+type UpdateApiSignatureValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateApiSignatureValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateApiSignatureValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateApiSignatureValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateApiSignatureValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateApiSignatureValidationError) ErrorName() string {
+	return "UpdateApiSignatureValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateApiSignatureValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateApiSignature.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateApiSignatureValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateApiSignatureValidationError{}
+
 // Validate checks the field values on UpdateApplicationSignature with the
 // rules defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -700,6 +891,142 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UpdateApplicationSignatureValidationError{}
+
+// Validate checks the field values on UpdateApiSignaturesRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateApiSignaturesRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateApiSignaturesRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateApiSignaturesRequestMultiError, or nil if none found.
+func (m *UpdateApiSignaturesRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateApiSignaturesRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetUpdates() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateApiSignaturesRequestValidationError{
+						field:  fmt.Sprintf("Updates[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateApiSignaturesRequestValidationError{
+						field:  fmt.Sprintf("Updates[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateApiSignaturesRequestValidationError{
+					field:  fmt.Sprintf("Updates[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return UpdateApiSignaturesRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateApiSignaturesRequestMultiError is an error wrapping multiple
+// validation errors returned by UpdateApiSignaturesRequest.ValidateAll() if
+// the designated constraints aren't met.
+type UpdateApiSignaturesRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateApiSignaturesRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateApiSignaturesRequestMultiError) AllErrors() []error { return m }
+
+// UpdateApiSignaturesRequestValidationError is the validation error returned
+// by UpdateApiSignaturesRequest.Validate if the designated constraints aren't met.
+type UpdateApiSignaturesRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateApiSignaturesRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateApiSignaturesRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateApiSignaturesRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateApiSignaturesRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateApiSignaturesRequestValidationError) ErrorName() string {
+	return "UpdateApiSignaturesRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateApiSignaturesRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateApiSignaturesRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateApiSignaturesRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateApiSignaturesRequestValidationError{}
 
 // Validate checks the field values on UpdateApplicationSignaturesRequest with
 // the rules defined in the proto definition for this message. If any rules
@@ -1024,6 +1351,189 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UpdateApplicationSignaturesResponseValidationError{}
+
+// Validate checks the field values on UpdateApiSignaturesResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateApiSignaturesResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateApiSignaturesResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateApiSignaturesResponseMultiError, or nil if none found.
+func (m *UpdateApiSignaturesResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateApiSignaturesResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetStatuses() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateApiSignaturesResponseValidationError{
+						field:  fmt.Sprintf("Statuses[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateApiSignaturesResponseValidationError{
+						field:  fmt.Sprintf("Statuses[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateApiSignaturesResponseValidationError{
+					field:  fmt.Sprintf("Statuses[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	{
+		sorted_keys := make([]string, len(m.GetLinks()))
+		i := 0
+		for key := range m.GetLinks() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetLinks()[key]
+			_ = val
+
+			// no validation rules for Links[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, UpdateApiSignaturesResponseValidationError{
+							field:  fmt.Sprintf("Links[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, UpdateApiSignaturesResponseValidationError{
+							field:  fmt.Sprintf("Links[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return UpdateApiSignaturesResponseValidationError{
+						field:  fmt.Sprintf("Links[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpdateApiSignaturesResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateApiSignaturesResponseMultiError is an error wrapping multiple
+// validation errors returned by UpdateApiSignaturesResponse.ValidateAll() if
+// the designated constraints aren't met.
+type UpdateApiSignaturesResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateApiSignaturesResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateApiSignaturesResponseMultiError) AllErrors() []error { return m }
+
+// UpdateApiSignaturesResponseValidationError is the validation error returned
+// by UpdateApiSignaturesResponse.Validate if the designated constraints
+// aren't met.
+type UpdateApiSignaturesResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateApiSignaturesResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateApiSignaturesResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateApiSignaturesResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateApiSignaturesResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateApiSignaturesResponseValidationError) ErrorName() string {
+	return "UpdateApiSignaturesResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateApiSignaturesResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateApiSignaturesResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateApiSignaturesResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateApiSignaturesResponseValidationError{}
 
 // Validate checks the field values on GenericBatch with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
@@ -1590,6 +2100,175 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UpdateApplicationSignaturesResponse_StatusValidationError{}
+
+// Validate checks the field values on UpdateApiSignaturesResponse_Status with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *UpdateApiSignaturesResponse_Status) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateApiSignaturesResponse_Status
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// UpdateApiSignaturesResponse_StatusMultiError, or nil if none found.
+func (m *UpdateApiSignaturesResponse_Status) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateApiSignaturesResponse_Status) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ApiId
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	if all {
+		switch v := interface{}(m.GetError()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateApiSignaturesResponse_StatusValidationError{
+					field:  "Error",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateApiSignaturesResponse_StatusValidationError{
+					field:  "Error",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetError()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateApiSignaturesResponse_StatusValidationError{
+				field:  "Error",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	switch v := m.GitRef.(type) {
+	case *UpdateApiSignaturesResponse_Status_CommitId:
+		if v == nil {
+			err := UpdateApiSignaturesResponse_StatusValidationError{
+				field:  "GitRef",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for CommitId
+	case *UpdateApiSignaturesResponse_Status_BranchName:
+		if v == nil {
+			err := UpdateApiSignaturesResponse_StatusValidationError{
+				field:  "GitRef",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for BranchName
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return UpdateApiSignaturesResponse_StatusMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateApiSignaturesResponse_StatusMultiError is an error wrapping multiple
+// validation errors returned by
+// UpdateApiSignaturesResponse_Status.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateApiSignaturesResponse_StatusMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateApiSignaturesResponse_StatusMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateApiSignaturesResponse_StatusMultiError) AllErrors() []error { return m }
+
+// UpdateApiSignaturesResponse_StatusValidationError is the validation error
+// returned by UpdateApiSignaturesResponse_Status.Validate if the designated
+// constraints aren't met.
+type UpdateApiSignaturesResponse_StatusValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateApiSignaturesResponse_StatusValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateApiSignaturesResponse_StatusValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateApiSignaturesResponse_StatusValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateApiSignaturesResponse_StatusValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateApiSignaturesResponse_StatusValidationError) ErrorName() string {
+	return "UpdateApiSignaturesResponse_StatusValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateApiSignaturesResponse_StatusValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateApiSignaturesResponse_Status.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateApiSignaturesResponse_StatusValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateApiSignaturesResponse_StatusValidationError{}
 
 // Validate checks the field values on GenericBatch_Items with the rules
 // defined in the proto definition for this message. If any rules are
