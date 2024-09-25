@@ -1,0 +1,16 @@
+---
+x-shared: &shared
+  events: execute
+environment: ci
+service:
+  tls:
+    insecure: true
+fleets:
+  # handles {bucket=test} [event=execute]  (plugin=python)
+  agent.main.bucket.test.plugin.python.event.execute:
+    !!merge <<: *shared
+    bucket: test
+    group: eleven
+    package: python
+    autoscaling:
+      disable: true

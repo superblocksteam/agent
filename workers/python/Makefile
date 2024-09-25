@@ -79,7 +79,7 @@ deploy-helm:
 	helm dependency build ./helm
 	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) worker-python helm \
 		--create-namespace \
-		--values helm/$(ENVIRONMENT).yaml \
+		--values helm-values/$(ENVIRONMENT).yaml \
 		--set queue.host="${HELM_QUEUE_HOST}" \
 		--set kvstore.host="${HELM_KVSTORE_HOST}" \
 		--set image.tag="$(IMAGE_TAG)" \
@@ -103,7 +103,7 @@ redis:
 
 .PHONY: deploy-kind
 deploy-kind:
-	make -C worker.js deploy-kind
+	make -C ../javascript deploy-kind
 
 .PHONY: add-package
 add-package:
