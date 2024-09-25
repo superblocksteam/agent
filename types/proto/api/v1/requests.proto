@@ -38,6 +38,19 @@ message PatchApisResponse {
   map<string, common.v1.Link> links = 2;
 }
 
+message UpdateApiSignature {
+  string api_id = 1;
+
+  oneof git_ref {
+    option (buf.validate.oneof).required = true;
+    string commit_id = 2;
+    string branch_name = 3;
+  }
+
+  utils.v1.Signature signature = 4;
+  google.protobuf.Timestamp updated = 5;
+}
+
 message UpdateApplicationSignature {
   string application_id = 1;
 
@@ -52,6 +65,11 @@ message UpdateApplicationSignature {
   int32 page_version = 6;
 }
 
+// PUT api/v3/api/signatures
+message UpdateApiSignaturesRequest {
+  repeated UpdateApiSignature updates = 1;
+}
+
 // PUT api/v2/application/signatures
 message UpdateApplicationSignaturesRequest {
   repeated UpdateApplicationSignature updates = 1;
@@ -60,6 +78,25 @@ message UpdateApplicationSignaturesRequest {
 message UpdateApplicationSignaturesResponse {
   message Status {
     string application_id = 1;
+
+    oneof git_ref {
+      option (buf.validate.oneof).required = true;
+      string commit_id = 2;
+      string branch_name = 3;
+    }
+
+    int32 code = 4;
+    string message = 5;
+    common.v1.Error error = 6;
+  }
+
+  repeated Status statuses = 1;
+  map<string, common.v1.Link> links = 2;
+}
+
+message UpdateApiSignaturesResponse {
+  message Status {
+    string api_id = 1;
 
     oneof git_ref {
       option (buf.validate.oneof).required = true;

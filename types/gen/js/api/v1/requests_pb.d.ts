@@ -140,6 +140,59 @@ export namespace PatchApisResponse {
 
 }
 
+export class UpdateApiSignature extends jspb.Message { 
+    getApiId(): string;
+    setApiId(value: string): UpdateApiSignature;
+
+    hasCommitId(): boolean;
+    clearCommitId(): void;
+    getCommitId(): string;
+    setCommitId(value: string): UpdateApiSignature;
+
+    hasBranchName(): boolean;
+    clearBranchName(): void;
+    getBranchName(): string;
+    setBranchName(value: string): UpdateApiSignature;
+
+    hasSignature(): boolean;
+    clearSignature(): void;
+    getSignature(): utils_v1_utils_pb.Signature | undefined;
+    setSignature(value?: utils_v1_utils_pb.Signature): UpdateApiSignature;
+
+    hasUpdated(): boolean;
+    clearUpdated(): void;
+    getUpdated(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setUpdated(value?: google_protobuf_timestamp_pb.Timestamp): UpdateApiSignature;
+
+    getGitRefCase(): UpdateApiSignature.GitRefCase;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): UpdateApiSignature.AsObject;
+    static toObject(includeInstance: boolean, msg: UpdateApiSignature): UpdateApiSignature.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: UpdateApiSignature, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): UpdateApiSignature;
+    static deserializeBinaryFromReader(message: UpdateApiSignature, reader: jspb.BinaryReader): UpdateApiSignature;
+}
+
+export namespace UpdateApiSignature {
+    export type AsObject = {
+        apiId: string,
+        commitId: string,
+        branchName: string,
+        signature?: utils_v1_utils_pb.Signature.AsObject,
+        updated?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    }
+
+    export enum GitRefCase {
+        GIT_REF_NOT_SET = 0,
+        COMMIT_ID = 2,
+        BRANCH_NAME = 3,
+    }
+
+}
+
 export class UpdateApplicationSignature extends jspb.Message { 
     getApplicationId(): string;
     setApplicationId(value: string): UpdateApplicationSignature;
@@ -194,6 +247,28 @@ export namespace UpdateApplicationSignature {
         BRANCH_NAME = 3,
     }
 
+}
+
+export class UpdateApiSignaturesRequest extends jspb.Message { 
+    clearUpdatesList(): void;
+    getUpdatesList(): Array<UpdateApiSignature>;
+    setUpdatesList(value: Array<UpdateApiSignature>): UpdateApiSignaturesRequest;
+    addUpdates(value?: UpdateApiSignature, index?: number): UpdateApiSignature;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): UpdateApiSignaturesRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: UpdateApiSignaturesRequest): UpdateApiSignaturesRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: UpdateApiSignaturesRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): UpdateApiSignaturesRequest;
+    static deserializeBinaryFromReader(message: UpdateApiSignaturesRequest, reader: jspb.BinaryReader): UpdateApiSignaturesRequest;
+}
+
+export namespace UpdateApiSignaturesRequest {
+    export type AsObject = {
+        updatesList: Array<UpdateApiSignature.AsObject>,
+    }
 }
 
 export class UpdateApplicationSignaturesRequest extends jspb.Message { 
@@ -283,6 +358,88 @@ export namespace UpdateApplicationSignaturesResponse {
     export namespace Status {
         export type AsObject = {
             applicationId: string,
+            commitId: string,
+            branchName: string,
+            code: number,
+            message: string,
+            error?: common_v1_errors_pb.Error.AsObject,
+        }
+
+        export enum GitRefCase {
+            GIT_REF_NOT_SET = 0,
+            COMMIT_ID = 2,
+            BRANCH_NAME = 3,
+        }
+
+    }
+
+}
+
+export class UpdateApiSignaturesResponse extends jspb.Message { 
+    clearStatusesList(): void;
+    getStatusesList(): Array<UpdateApiSignaturesResponse.Status>;
+    setStatusesList(value: Array<UpdateApiSignaturesResponse.Status>): UpdateApiSignaturesResponse;
+    addStatuses(value?: UpdateApiSignaturesResponse.Status, index?: number): UpdateApiSignaturesResponse.Status;
+
+    getLinksMap(): jspb.Map<string, common_v1_api_pb.Link>;
+    clearLinksMap(): void;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): UpdateApiSignaturesResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: UpdateApiSignaturesResponse): UpdateApiSignaturesResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: UpdateApiSignaturesResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): UpdateApiSignaturesResponse;
+    static deserializeBinaryFromReader(message: UpdateApiSignaturesResponse, reader: jspb.BinaryReader): UpdateApiSignaturesResponse;
+}
+
+export namespace UpdateApiSignaturesResponse {
+    export type AsObject = {
+        statusesList: Array<UpdateApiSignaturesResponse.Status.AsObject>,
+
+        linksMap: Array<[string, common_v1_api_pb.Link.AsObject]>,
+    }
+
+
+    export class Status extends jspb.Message { 
+        getApiId(): string;
+        setApiId(value: string): Status;
+
+        hasCommitId(): boolean;
+        clearCommitId(): void;
+        getCommitId(): string;
+        setCommitId(value: string): Status;
+
+        hasBranchName(): boolean;
+        clearBranchName(): void;
+        getBranchName(): string;
+        setBranchName(value: string): Status;
+        getCode(): number;
+        setCode(value: number): Status;
+        getMessage(): string;
+        setMessage(value: string): Status;
+
+        hasError(): boolean;
+        clearError(): void;
+        getError(): common_v1_errors_pb.Error | undefined;
+        setError(value?: common_v1_errors_pb.Error): Status;
+
+        getGitRefCase(): Status.GitRefCase;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): Status.AsObject;
+        static toObject(includeInstance: boolean, msg: Status): Status.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: Status, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): Status;
+        static deserializeBinaryFromReader(message: Status, reader: jspb.BinaryReader): Status;
+    }
+
+    export namespace Status {
+        export type AsObject = {
+            apiId: string,
             commitId: string,
             branchName: string,
             code: number,

@@ -204,6 +204,74 @@ export class PatchApisResponse_Status extends Message<PatchApisResponse_Status> 
 }
 
 /**
+ * @generated from message api.v1.UpdateApiSignature
+ */
+export class UpdateApiSignature extends Message<UpdateApiSignature> {
+  /**
+   * @generated from field: string api_id = 1;
+   */
+  apiId = "";
+
+  /**
+   * @generated from oneof api.v1.UpdateApiSignature.git_ref
+   */
+  gitRef: {
+    /**
+     * @generated from field: string commit_id = 2;
+     */
+    value: string;
+    case: "commitId";
+  } | {
+    /**
+     * @generated from field: string branch_name = 3;
+     */
+    value: string;
+    case: "branchName";
+  } | { case: undefined; value?: undefined } = { case: undefined };
+
+  /**
+   * @generated from field: utils.v1.Signature signature = 4;
+   */
+  signature?: Signature;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp updated = 5;
+   */
+  updated?: Timestamp;
+
+  constructor(data?: PartialMessage<UpdateApiSignature>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.UpdateApiSignature";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "api_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
+    { no: 3, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
+    { no: 4, name: "signature", kind: "message", T: Signature },
+    { no: 5, name: "updated", kind: "message", T: Timestamp },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateApiSignature {
+    return new UpdateApiSignature().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateApiSignature {
+    return new UpdateApiSignature().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateApiSignature {
+    return new UpdateApiSignature().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateApiSignature | PlainMessage<UpdateApiSignature> | undefined, b: UpdateApiSignature | PlainMessage<UpdateApiSignature> | undefined): boolean {
+    return proto3.util.equals(UpdateApiSignature, a, b);
+  }
+}
+
+/**
  * @generated from message api.v1.UpdateApplicationSignature
  */
 export class UpdateApplicationSignature extends Message<UpdateApplicationSignature> {
@@ -274,6 +342,45 @@ export class UpdateApplicationSignature extends Message<UpdateApplicationSignatu
 
   static equals(a: UpdateApplicationSignature | PlainMessage<UpdateApplicationSignature> | undefined, b: UpdateApplicationSignature | PlainMessage<UpdateApplicationSignature> | undefined): boolean {
     return proto3.util.equals(UpdateApplicationSignature, a, b);
+  }
+}
+
+/**
+ * PUT api/v3/api/signatures
+ *
+ * @generated from message api.v1.UpdateApiSignaturesRequest
+ */
+export class UpdateApiSignaturesRequest extends Message<UpdateApiSignaturesRequest> {
+  /**
+   * @generated from field: repeated api.v1.UpdateApiSignature updates = 1;
+   */
+  updates: UpdateApiSignature[] = [];
+
+  constructor(data?: PartialMessage<UpdateApiSignaturesRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.UpdateApiSignaturesRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "updates", kind: "message", T: UpdateApiSignature, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateApiSignaturesRequest {
+    return new UpdateApiSignaturesRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateApiSignaturesRequest {
+    return new UpdateApiSignaturesRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateApiSignaturesRequest {
+    return new UpdateApiSignaturesRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateApiSignaturesRequest | PlainMessage<UpdateApiSignaturesRequest> | undefined, b: UpdateApiSignaturesRequest | PlainMessage<UpdateApiSignaturesRequest> | undefined): boolean {
+    return proto3.util.equals(UpdateApiSignaturesRequest, a, b);
   }
 }
 
@@ -430,6 +537,123 @@ export class UpdateApplicationSignaturesResponse_Status extends Message<UpdateAp
 
   static equals(a: UpdateApplicationSignaturesResponse_Status | PlainMessage<UpdateApplicationSignaturesResponse_Status> | undefined, b: UpdateApplicationSignaturesResponse_Status | PlainMessage<UpdateApplicationSignaturesResponse_Status> | undefined): boolean {
     return proto3.util.equals(UpdateApplicationSignaturesResponse_Status, a, b);
+  }
+}
+
+/**
+ * @generated from message api.v1.UpdateApiSignaturesResponse
+ */
+export class UpdateApiSignaturesResponse extends Message<UpdateApiSignaturesResponse> {
+  /**
+   * @generated from field: repeated api.v1.UpdateApiSignaturesResponse.Status statuses = 1;
+   */
+  statuses: UpdateApiSignaturesResponse_Status[] = [];
+
+  /**
+   * @generated from field: map<string, common.v1.Link> links = 2;
+   */
+  links: { [key: string]: Link } = {};
+
+  constructor(data?: PartialMessage<UpdateApiSignaturesResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.UpdateApiSignaturesResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "statuses", kind: "message", T: UpdateApiSignaturesResponse_Status, repeated: true },
+    { no: 2, name: "links", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Link} },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateApiSignaturesResponse {
+    return new UpdateApiSignaturesResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateApiSignaturesResponse {
+    return new UpdateApiSignaturesResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateApiSignaturesResponse {
+    return new UpdateApiSignaturesResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateApiSignaturesResponse | PlainMessage<UpdateApiSignaturesResponse> | undefined, b: UpdateApiSignaturesResponse | PlainMessage<UpdateApiSignaturesResponse> | undefined): boolean {
+    return proto3.util.equals(UpdateApiSignaturesResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message api.v1.UpdateApiSignaturesResponse.Status
+ */
+export class UpdateApiSignaturesResponse_Status extends Message<UpdateApiSignaturesResponse_Status> {
+  /**
+   * @generated from field: string api_id = 1;
+   */
+  apiId = "";
+
+  /**
+   * @generated from oneof api.v1.UpdateApiSignaturesResponse.Status.git_ref
+   */
+  gitRef: {
+    /**
+     * @generated from field: string commit_id = 2;
+     */
+    value: string;
+    case: "commitId";
+  } | {
+    /**
+     * @generated from field: string branch_name = 3;
+     */
+    value: string;
+    case: "branchName";
+  } | { case: undefined; value?: undefined } = { case: undefined };
+
+  /**
+   * @generated from field: int32 code = 4;
+   */
+  code = 0;
+
+  /**
+   * @generated from field: string message = 5;
+   */
+  message = "";
+
+  /**
+   * @generated from field: common.v1.Error error = 6;
+   */
+  error?: Error;
+
+  constructor(data?: PartialMessage<UpdateApiSignaturesResponse_Status>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.UpdateApiSignaturesResponse.Status";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "api_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
+    { no: 3, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
+    { no: 4, name: "code", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "error", kind: "message", T: Error },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateApiSignaturesResponse_Status {
+    return new UpdateApiSignaturesResponse_Status().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateApiSignaturesResponse_Status {
+    return new UpdateApiSignaturesResponse_Status().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateApiSignaturesResponse_Status {
+    return new UpdateApiSignaturesResponse_Status().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateApiSignaturesResponse_Status | PlainMessage<UpdateApiSignaturesResponse_Status> | undefined, b: UpdateApiSignaturesResponse_Status | PlainMessage<UpdateApiSignaturesResponse_Status> | undefined): boolean {
+    return proto3.util.equals(UpdateApiSignaturesResponse_Status, a, b);
   }
 }
 

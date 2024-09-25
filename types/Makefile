@@ -1,5 +1,5 @@
 # https://github.com/bufbuild/buf/releases
-BUF_VERSION = "1.39.0"
+BUF_VERSION = "1.42.0"
 .ONESHELL:
 
 PYTHON_CMD = python3.10
@@ -11,7 +11,7 @@ PYPI_TOKEN=
 
 
 .PHONY: deps
-deps: 
+deps:
 
 .PHONY: deps-buf
 deps-buf:
