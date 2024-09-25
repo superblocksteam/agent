@@ -85,7 +85,7 @@ describe('variables', () => {
       agentCredentials: {},
       redactedDatasourceConfiguration: {},
       actionConfiguration: {
-        body: 'simpleVar2.set(0); await advancedVar2.set(0); console.log("state", simpleVar1.value, simpleVar2.value, await advancedVar1.get(), await advancedVar2.get(), nativeVar1); return simpleVar1.value + simpleVar2.value + await advancedVar1.get() + await advancedVar2.get() + nativeVar1;',
+        body: 'simpleVar2.set(0); await advancedVar2.set(0); console.log("simpleVar1.value", simpleVar1.value, "simpleVar2.value", simpleVar2.value, "await advancedVar1.get()", await advancedVar1.get(), "await advancedVar2.get()", await advancedVar2.get(), "nativeVar1", nativeVar1); return simpleVar1.value + simpleVar2.value + await advancedVar1.get() + await advancedVar2.get() + nativeVar1;',
         spreadsheetId: '',
         sheetTitle: ''
       },
