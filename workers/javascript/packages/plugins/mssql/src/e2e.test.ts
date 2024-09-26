@@ -37,7 +37,7 @@ const config: sql.config = {
 
 async function resetDatabase() {
   try {
-    const initScriptPath = join(__dirname, '../../../../scripts/initMsSql.sql');
+    const initScriptPath = join(__dirname, '../../scripts/initMsSql.sql');
     const initScript = await ps.readFile(initScriptPath, 'utf8');
     await pool.request().batch(initScript);
   } catch (err) {

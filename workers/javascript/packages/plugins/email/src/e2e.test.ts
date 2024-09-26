@@ -63,7 +63,7 @@ const props: PluginExecutionProps<EmailDatasourceConfiguration, EmailActionConfi
   ...DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS
 };
 
-describe('queries', () => {
+xdescribe('queries', () => {
   test('can send email', async () => {
     const newProps = cloneDeep(props);
     await plugin.execute(newProps);

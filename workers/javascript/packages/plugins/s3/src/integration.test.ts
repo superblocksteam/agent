@@ -14,7 +14,10 @@ const USER2_SECRET_KEY = '';
 const USER3_ACCESS_KEY_ID = '';
 const USER3_SECRET_KEY = '';
 
-describe('s3 list with iam auth', () => {
+// TODO(dlamotte): skipping these tests as they rely on the above variables being non-empty strings,
+// but they used to be hardcoded credentials that were removed. as a result, these tests no longer
+// run
+xdescribe('s3 list with iam auth', () => {
   const plugin: S3Plugin = new S3Plugin();
 
   test('user has direct s3 access', async () => {

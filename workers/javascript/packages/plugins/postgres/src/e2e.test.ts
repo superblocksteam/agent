@@ -36,7 +36,7 @@ const POSTGRES_BASTION_DESTINATION_PORT = 5432;
 
 // helper functions
 async function resetDatabase() {
-  const initScriptPath = path.join(__dirname, '../../../../scripts/initPostgres.sql');
+  const initScriptPath = path.join(__dirname, '../../scripts/initPostgres.sql');
   const initScript = await fs.promises.readFile(initScriptPath, 'utf8');
   await clientWrapper.client.query(initScript);
 }
