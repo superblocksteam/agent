@@ -1,0 +1,149 @@
+---
+version: "3.7"
+services:
+  bastion:
+    image: ghcr.io/superblocksteam/binlab/bastion-mirror:1.2.0
+    container_name: bastion
+    hostname: bastion
+    restart: always
+    expose:
+      - 22/tcp
+    ports:
+      - 22222:22/tcp
+    environment:
+      PUBKEY_AUTHENTICATION: "true"
+      GATEWAY_PORTS: "false"
+      PERMIT_TUNNEL: "false"
+      X11_FORWARDING: "false"
+      TCP_FORWARDING: "true"
+      AGENT_FORWARDING: "true"
+    volumes:
+      - ./scripts/keys/superblocks_key.pub:/var/lib/bastion/authorized_keys:ro
+      - bastion:/usr/etc/ssh:rw
+    networks:
+      - vpcbastion
+    command: ["sh", "./scripts/init-bastion.sh"]
+  vpc-plugin-standard:
+    image: ghcr.io/superblocksteam/alpine:3.19
+    command: ["sh", "/usr/local/bin/run.sh"]
+    container_name: vpc-plugin-standard
+    volumes:
+      - ./scripts/setup-vpc-plugin.sh:/usr/local/bin/run.sh
+    networks:
+      - vpcstandard
+    ports:
+      - 13306:13306/tcp
+      - 15432:15432/tcp
+      - 23306:23306/tcp
+      - 1433:1433/tcp
+      - 61379:61379/tcp
+      - 58703:58703/tcp
+  vpc-plugin-tunnel:
+    image: ghcr.io/superblocksteam/alpine:3.19
+    command: ["sh", "/usr/local/bin/run.sh"]
+    container_name: vpc-plugin-tunnel
+    volumes:
+      - ./scripts/setup-vpc-plugin-tunnel.sh:/usr/local/bin/run.sh
+    networks:
+      - vpcbastion
+  plugin-postgres:
+    image: ghcr.io/superblocksteam/postgres-mirror:15.4
+    container_name: plugin-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+    volumes:
+      - ./scripts/initPostgres.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - vpcstandard
+      - vpcbastion
+  plugin-mysql:
+    image: ghcr.io/superblocksteam/mysql-mirror:8.0
+    container_name: plugin-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=public
+      - MYSQL_USER=mysql
+      - MYSQL_PASSWORD=password
+    volumes:
+      - ./scripts/initMySql.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
+    networks:
+      - vpcstandard
+      - vpcbastion
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+  plugin-mariadb:
+    image: ghcr.io/superblocksteam/mariadb:11.5
+    container_name: plugin-mariadb
+    environment:
+      - MARIADB_ROOT_PASSWORD=password
+      - MARIADB_DATABASE=public
+      - MARIADB_USER=mariadb
+      - MARIADB_PASSWORD=password
+    volumes:
+      - ./scripts/initMariaDb.sql:/docker-entrypoint-initdb.d/init.sql
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - vpcstandard
+      - vpcbastion
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 60s
+      start_period: 60s
+      retries: 5
+  plugin-mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: plugin-mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Password1.
+    volumes:
+      - ./scripts/initMsSql.sql:/docker-entrypoint-initdb.d/init.sql
+      - mssql-data:/var/opt/mssql
+    networks:
+      - vpcstandard
+      - vpcbastion
+  plugin-mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+  plugin-redis:
+    # redis-cli -h 127.0.0.1 -p 61379 -a pass
+    image: ghcr.io/superblocksteam/redis-mirror:7
+    container_name: plugin-redis
+    volumes:
+      - ./scripts/redis.conf:/usr/local/etc/redis/redis.conf
+      - redis-data:/data
+    networks:
+      - vpcstandard
+      - vpcbastion
+    command: redis-server /usr/local/etc/redis/redis.conf
+  plugin-smtp:
+    image: ghcr.io/superblocksteam/python-mirror:3.9.11
+    container_name: plugin-smtp
+    networks:
+      - vpcstandard
+      - vpcbastion
+    command: bash -c "python -m smtpd -n -c DebuggingServer 0.0.0.0:58703"
+volumes:
+  postgres-tunnel-data:
+  postgres-data:
+  mysql-data:
+  mariadb-data:
+  mssql-data:
+  redis-data:
+  bastion:
+networks:
+  vpcbastion:
+    driver: bridge
+  vpcstandard:
+    driver: bridge

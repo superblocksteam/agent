@@ -26,7 +26,7 @@ const MARIADB_DATABASE = 'public';
 
 // helper functions
 async function resetDatabase() {
-  const initScriptPath = path.join(__dirname, '../../../../scripts/initMariaDb.sql');
+  const initScriptPath = path.join(__dirname, '../../scripts/initMariaDb.sql');
   const initScript = await fs.promises.readFile(initScriptPath, 'utf8');
 
   // NOTE: (JOEY) we have to first connect to the default database to create the new database we want to use

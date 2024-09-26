@@ -40,7 +40,7 @@ let clientWrapper: ClientWrapper<Connection, ssh2Client>;
 
 // helper functions
 async function resetDatabase(useTunnel: boolean) {
-  const initScriptPath = path.join(__dirname, '../../../../scripts/initMySql.sql');
+  const initScriptPath = path.join(__dirname, '../../scripts/initMySql.sql');
   const initScript = await fs.promises.readFile(initScriptPath, 'utf8');
 
   // NOTE: (JOEY) we have to first connect to the default database to create the new database we want to use
