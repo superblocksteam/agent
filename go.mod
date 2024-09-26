@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/secretmanager v1.13.5
 	github.com/akeylesslabs/akeyless-go/v4 v4.2.1
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/aws/aws-sdk-go v1.55.3
+	github.com/aws/aws-sdk-go v1.55.5
 	github.com/aws/aws-sdk-go-v2 v1.30.5
 	github.com/aws/aws-sdk-go-v2/config v1.27.33
 	github.com/bufbuild/protovalidate-go v0.6.3
