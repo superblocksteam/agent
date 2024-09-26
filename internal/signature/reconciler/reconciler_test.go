@@ -235,7 +235,7 @@ func verify(t *testing.T, args *args) {
 		return a.ApplicationId < b.ApplicationId
 	})
 
-	if diff := cmp.Diff(expected.apiPatches, args.server.apiPatches, sortApiPatchesOption, protocmp.Transform()); diff != "" {
+	if diff := cmp.Diff(expected.apiUpdates, args.server.apiUpdates, sortApiPatchesOption, protocmp.Transform()); diff != "" {
 		t.Fatalf("unexpected apiPatches\n%s", diff)
 	}
 
@@ -648,7 +648,7 @@ func TestPatchFromApiLiteralMissingMetadata(t *testing.T) {
 	err = args.signer.SignAndUpdateResource(resource)
 	require.NoError(t, err)
 
-	patchApi, err := patchFromApiLiteral(resource, apiNoMetadata)
+	patchApi, err := updateFromApiLiteral(resource, apiNoMetadata)
 	require.NoError(t, err)
 	require.NotNil(t, patchApi)
 }
@@ -669,7 +669,7 @@ func TestPatchFromApiLiteralMissingSignature(t *testing.T) {
 		},
 	}
 
-	patchApi, err := patchFromApiLiteral(resource, apiNoSig)
+	patchApi, err := updateFromApiLiteral(resource, apiNoSig)
 	require.NoError(t, err)
 	require.NotNil(t, patchApi)
 }

@@ -62,6 +62,7 @@ type ServerClient interface {
 	PostGSheetsTokenRefresh(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                        // Post GSheets token refresh
 	GetIntegrations(context.Context, *time.Duration, http.Header, url.Values, bool) (*http.Response, error)                                               // Get configurations
 	PatchApis(context.Context, *time.Duration, http.Header, url.Values, *apiv1.PatchApisRequest) (*http.Response, error)                                  // Patch APIs
+	PutApiSignatures(context.Context, *time.Duration, http.Header, url.Values, *apiv1.UpdateApiSignaturesRequest) (*http.Response, error)                 // Put API Signatures
 	PutApplicationSignatures(context.Context, *time.Duration, http.Header, url.Values, *apiv1.UpdateApplicationSignaturesRequest) (*http.Response, error) // Put Application Signatures
 	PostClaimKeyRotationResourcesForSigningV2(context.Context, *time.Duration, http.Header, *securityv1.ResourcesToResignRequest) (*http.Response, error) // Claim key rotation resources for signing
 
@@ -171,6 +172,10 @@ func (s *serverClient) PatchApis(ctx context.Context, timeout *time.Duration, he
 
 func (s *serverClient) PutApplicationSignatures(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, body *apiv1.UpdateApplicationSignaturesRequest) (*http.Response, error) {
 	return s.sendRequest(ctx, timeout, http.MethodPut, "api/v2/applications/signatures", headers, query, body, true)
+}
+
+func (s *serverClient) PutApiSignatures(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, body *apiv1.UpdateApiSignaturesRequest) (*http.Response, error) {
+	return s.sendRequest(ctx, timeout, http.MethodPut, "api/v3/apis/signatures", headers, query, body, true)
 }
 
 func (s *serverClient) PostClaimKeyRotationResourcesForSigning(ctx context.Context, timeout *time.Duration, headers http.Header, body *securityv1.ResourcesToResignRequest) (*http.Response, error) {

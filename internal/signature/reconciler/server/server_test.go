@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/pkg/utils"
 	pbapi "github.com/superblocksteam/agent/types/gen/go/api/v1"
-	pbcommon "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
@@ -19,26 +18,22 @@ import (
 var broken = errors.New("broken")
 
 type args struct {
-	client  *fakeServerClient
-	log     *zap.Logger
-	patches []*pbapi.PatchApi
-	updates []*pbapi.UpdateApplicationSignature
+	client     *fakeServerClient
+	log        *zap.Logger
+	apiUpdates []*pbapi.UpdateApiSignature
+	appUpdates []*pbapi.UpdateApplicationSignature
 }
 
 func validArgs(t *testing.T) *args {
 	return &args{
 		client: newFakeServerClient(t),
 		log:    zaptest.NewLogger(t),
-		patches: []*pbapi.PatchApi{
+		apiUpdates: []*pbapi.UpdateApiSignature{
 			{
-				Api: &pbapi.Api{
-					Metadata: &pbcommon.Metadata{
-						Id: "api-1",
-					},
-				},
+				ApiId: "api-1",
 			},
 		},
-		updates: []*pbapi.UpdateApplicationSignature{
+		appUpdates: []*pbapi.UpdateApplicationSignature{
 			{
 				ApplicationId: "app-1",
 			},
@@ -61,14 +56,14 @@ func verify(t *testing.T, args *args, expectedErr error) {
 		require.ErrorIs(t, err, expectedErr)
 	}
 
-	err = server.PatchApiAsSignedResources(ctx, args.patches)
+	err = server.UpdateApiAsSignedResources(ctx, args.apiUpdates)
 	if expectedErr == nil {
 		require.NoError(t, err)
 	} else {
 		require.ErrorIs(t, err, expectedErr)
 	}
 
-	err = server.UpdateAppAsSignedResources(ctx, args.updates)
+	err = server.UpdateAppAsSignedResources(ctx, args.appUpdates)
 	if expectedErr == nil {
 		require.NoError(t, err)
 	} else {

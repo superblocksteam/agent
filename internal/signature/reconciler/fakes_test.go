@@ -24,7 +24,7 @@ type fakeServer struct {
 	onClaim                       func(ctx context.Context)
 
 	mu         sync.Mutex
-	apiPatches []*pbapi.PatchApi
+	apiUpdates []*pbapi.UpdateApiSignature
 	appUpdates []*pbapi.UpdateApplicationSignature
 	resources  []*pbsecurity.Resource
 }
@@ -70,12 +70,12 @@ func (f *fakeServer) ClaimBatchToSignSet(resources []*pbsecurity.Resource) {
 }
 
 func (f *fakeServer) markDoneLocked() {
-	if f.doneWhen > 0 && len(f.apiPatches)+len(f.appUpdates) >= f.doneWhen {
+	if f.doneWhen > 0 && len(f.apiUpdates)+len(f.appUpdates) >= f.doneWhen {
 		close(f.done)
 	}
 }
 
-func (f *fakeServer) PatchApiAsSignedResources(ctx context.Context, patches []*pbapi.PatchApi) error {
+func (f *fakeServer) UpdateApiAsSignedResources(ctx context.Context, updates []*pbapi.UpdateApiSignature) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -86,7 +86,7 @@ func (f *fakeServer) PatchApiAsSignedResources(ctx context.Context, patches []*p
 
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.apiPatches = append(f.apiPatches, patches...)
+	f.apiUpdates = append(f.apiUpdates, updates...)
 	f.markDoneLocked()
 	return nil
 }

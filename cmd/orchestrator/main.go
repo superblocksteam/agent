@@ -32,7 +32,6 @@ import (
 	"github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/internal/registration"
-	"github.com/superblocksteam/agent/internal/resigner"
 	"github.com/superblocksteam/agent/internal/schedule"
 	signatureReconciler "github.com/superblocksteam/agent/internal/signature/reconciler"
 	signatureReconcilerServer "github.com/superblocksteam/agent/internal/signature/reconciler/server"
@@ -95,7 +94,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
@@ -186,10 +184,6 @@ func init() {
 	pflag.String("kafka.topic.metadata", "metadata.cloud", "Kafka topic for metadata")
 	pflag.Int("kafka.consumer.workers", 10, "")
 	pflag.Bool("kafka.enabled", false, "")
-	pflag.Bool("resigner.enabled", false, "Whether or not to enable the resigner")
-	pflag.Duration("resigner.flush.max.duration", 10*time.Second, "")
-	pflag.Int("resigner.flush.max.items", 10000, "")
-	pflag.Int("resigner.consumer.workers", 10, "Number of workers to use for the resigner")
 	pflag.Bool("events.cloud.enabled", false, "Whether or not to listen for cloud events")
 	pflag.String("events.cloud.url", "queue.intake.superblocks.com:8443", "URL to listen on for cloud events")
 	pflag.Bool("events.cloud.insecure", false, "Whether or not to use an insecure grpc connection for cloud events")
@@ -672,15 +666,6 @@ func main() {
 		}
 	}
 
-	// Communication between the resigner and the cloud events listener.
-	resignerConsumer := &events.Consumer{
-		Zero: func() protoreflect.ProtoMessage {
-			return new(securityv1.Resource)
-		},
-		Channel: make(chan protoreflect.ProtoMessage, viper.GetInt("resigner.consumer.workers")),
-		Wait:    &sync.WaitGroup{},
-	}
-
 	var eventsCloudRunnable run.Runnable
 	{
 		headers := map[string]string{
@@ -694,29 +679,11 @@ func main() {
 			viper.GetString("events.cloud.url"),
 			headers,
 			&events.Options{
-				Consumers: map[string]*events.Consumer{
-					events.EventTypeResign: resignerConsumer,
-				},
+				Consumers:        map[string]*events.Consumer{},
 				KeepaliveTime:    viper.GetDuration("events.cloud.keepalive.time"),
 				KeepaliveTimeout: viper.GetDuration("events.cloud.keepalive.timeout"),
 				Insecure:         viper.GetBool("events.cloud.insecure"),
 				Logger:           logger,
-			},
-		)
-	}
-
-	var resignerRunnable run.Runnable
-	if viper.GetBool("resigner.enabled") {
-		resignerRunnable = resigner.NewListener(
-			resigner.New(registry, logger),
-			serverHttpClient,
-			&resigner.Options{
-				Logger:           logger,
-				Workers:          viper.GetInt("resigner.consumer.workers"),
-				FlushMaxDuration: viper.GetDuration("resigner.flush.max.duration"),
-				FlushMaxItems:    viper.GetInt("resigner.flush.max.items"),
-				Queue:            resignerConsumer.Channel,
-				Wait:             resignerConsumer.Wait,
 			},
 		)
 	}
@@ -1070,7 +1037,6 @@ func main() {
 
 	g.Add(viper.GetBool("kafka.enabled"), kafkaConsumerRunnable)
 	g.Add(viper.GetBool("kafka.enabled"), kafkaProducerRunnable)
-	g.Add(viper.GetBool("resigner.enabled"), resignerRunnable)
 	g.Add(viper.GetBool("jobs.enabled"), scheduledJobRunner)
 	g.Add(viper.GetBool("events.cloud.enabled"), eventsCloudRunnable)
 

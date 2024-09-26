@@ -29,9 +29,9 @@ var (
 )
 
 type ServerClient interface {
-	PatchApis(context.Context, *time.Duration, http.Header, url.Values, *pbapi.PatchApisRequest) (*http.Response, error)
 	PostClaimKeyRotationResourcesForSigningV2(context.Context, *time.Duration, http.Header, *pbsecurity.ResourcesToResignRequest) (*http.Response, error) // Claim key rotation resources for signing
 	PutApplicationSignatures(context.Context, *time.Duration, http.Header, url.Values, *pbapi.UpdateApplicationSignaturesRequest) (*http.Response, error) // Put Application Signatures
+	PutApiSignatures(context.Context, *time.Duration, http.Header, url.Values, *pbapi.UpdateApiSignaturesRequest) (*http.Response, error)                 // Put API Signatures
 }
 
 type server struct {
@@ -78,17 +78,17 @@ func (s *server) ClaimBatchToSign(ctx context.Context) ([]*pbsecurity.Resource, 
 	return typed.GetResources(), nil
 }
 
-func (s *server) PatchApiAsSignedResources(ctx context.Context, patches []*pbapi.PatchApi) error {
+func (s *server) UpdateApiAsSignedResources(ctx context.Context, updates []*pbapi.UpdateApiSignature) error {
 	log := s.log
 
-	resp, err := s.client.PatchApis(ctx, nil, headers, nil, &pbapi.PatchApisRequest{
-		Patches: patches,
+	resp, err := s.client.PutApiSignatures(ctx, nil, headers, nil, &pbapi.UpdateApiSignaturesRequest{
+		Updates: updates,
 	})
 	if err != nil {
 		return fmt.Errorf("error patching APIs: %w", err)
 	}
 
-	typed := &pbapi.PatchApisResponse{}
+	typed := &pbapi.UpdateApiSignaturesResponse{}
 	err = readResponse(s.unmarshaler, resp, typed)
 	if err != nil {
 		return fmt.Errorf("cannot read typed response: %w", err)

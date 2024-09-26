@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+- Update signing rotation endpoint for APIs
+
 ## v1.15.1
 
 - Updated debian packages to address a few vulnerabilities

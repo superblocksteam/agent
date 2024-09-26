@@ -595,6 +595,36 @@ func (_m *ServerClient) PostSpecificUserToken(_a0 context.Context, _a1 *time.Dur
 	return r0, r1
 }
 
+// PutApiSignatures provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
+func (_m *ServerClient) PutApiSignatures(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values, _a4 *v1.UpdateApiSignaturesRequest) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PutApiSignatures")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values, *v1.UpdateApiSignaturesRequest) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3, _a4)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values, *v1.UpdateApiSignaturesRequest) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3, _a4)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, url.Values, *v1.UpdateApiSignaturesRequest) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3, _a4)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PutApplicationSignatures provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
 func (_m *ServerClient) PutApplicationSignatures(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values, _a4 *v1.UpdateApplicationSignaturesRequest) (*http.Response, error) {
 	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)
