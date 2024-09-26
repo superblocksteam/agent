@@ -20,7 +20,7 @@ import (
 
 type Server interface {
 	ClaimBatchToSign(ctx context.Context) ([]*pbsecurity.Resource, error)
-	PatchApiAsSignedResources(ctx context.Context, patches []*pbapi.PatchApi) error
+	UpdateApiAsSignedResources(ctx context.Context, patches []*pbapi.UpdateApiSignature) error
 	UpdateAppAsSignedResources(ctx context.Context, updates []*pbapi.UpdateApplicationSignature) error
 }
 
@@ -54,7 +54,7 @@ type Signer interface {
 }
 
 type prepped struct {
-	apiPatches []*pbapi.PatchApi
+	apiUpdates []*pbapi.UpdateApiSignature
 	appUpdates []*pbapi.UpdateApplicationSignature
 }
 
@@ -278,14 +278,14 @@ func (r *reconciler) signAllAndUpdateServer(ctx context.Context) error {
 		var errApi error
 		var errApp error
 
-		if len(prepped.apiPatches) > 0 {
+		if len(prepped.apiUpdates) > 0 {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 
-				errApi = r.server.PatchApiAsSignedResources(ctx, prepped.apiPatches)
+				errApi = r.server.UpdateApiAsSignedResources(ctx, prepped.apiUpdates)
 				if errApi == nil {
-					log.Info("signed apis patched", zap.Int("len(apiPatches)", len(prepped.apiPatches)))
+					log.Info("signed apis updated", zap.Int("len(apiUpdates)", len(prepped.apiUpdates)))
 				}
 			}()
 		} else {
@@ -324,19 +324,19 @@ func prep(log *zap.Logger, resources []*pbsecurity.Resource) prepped {
 		resId := resourceId(res)
 
 		if res.GetApiLiteral() != nil {
-			patch, err := patchFromApiLiteral(res, res.GetApiLiteral().GetData().GetStructValue())
+			update, err := updateFromApiLiteral(res, res.GetApiLiteral().GetData().GetStructValue())
 			if err != nil {
 				log.Error("error building patch from api literal", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, resId))
 				continue
 			}
-			prepped.apiPatches = append(prepped.apiPatches, patch)
+			prepped.apiUpdates = append(prepped.apiUpdates, update)
 		} else if res.GetApi() != nil {
-			patch, err := patchFromApiLiteral(res, res.GetApi().GetStructValue())
+			update, err := updateFromApiLiteral(res, res.GetApi().GetStructValue())
 			if err != nil {
 				log.Error("error building patch from api", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, resId))
 				continue
 			}
-			prepped.apiPatches = append(prepped.apiPatches, patch)
+			prepped.apiUpdates = append(prepped.apiUpdates, update)
 		} else if res.GetLiteral() != nil {
 			literal := res.GetLiteral()
 			update := &pbapi.UpdateApplicationSignature{
@@ -368,7 +368,7 @@ func prep(log *zap.Logger, resources []*pbsecurity.Resource) prepped {
 	return prepped
 }
 
-func patchFromApiLiteral(res *pbsecurity.Resource, api *structpb.Struct) (*pbapi.PatchApi, error) {
+func updateFromApiLiteral(res *pbsecurity.Resource, api *structpb.Struct) (*pbapi.UpdateApiSignature, error) {
 	metadata := &commonv1.Metadata{}
 	if err := utils.StructPbToProto(api.GetFields()["metadata"].GetStructValue(), metadata); err != nil {
 		return nil, fmt.Errorf("error converting metadata literal to proto: %w", err)
@@ -379,26 +379,24 @@ func patchFromApiLiteral(res *pbsecurity.Resource, api *structpb.Struct) (*pbapi
 		return nil, fmt.Errorf("error converting signature literal to proto: %w", err)
 	}
 
-	patch := &pbapi.PatchApi{
-		Api: &pbapi.Api{
-			Metadata:  metadata,
-			Signature: sig,
-		},
+	update := &pbapi.UpdateApiSignature{
+		ApiId:     metadata.GetId(),
+		Signature: sig,
 	}
 
 	if res.GetCommitId() != "" {
-		patch.GitRef = &pbapi.PatchApi_CommitId{
+		update.GitRef = &pbapi.UpdateApiSignature_CommitId{
 			CommitId: res.GetCommitId(),
 		}
 	}
 
 	if res.GetBranchName() != "" {
-		patch.GitRef = &pbapi.PatchApi_BranchName{
+		update.GitRef = &pbapi.UpdateApiSignature_BranchName{
 			BranchName: res.GetBranchName(),
 		}
 	}
 
-	return patch, nil
+	return update, nil
 }
 
 func resourceId(res *pbsecurity.Resource) string {

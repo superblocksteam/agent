@@ -32,7 +32,7 @@ func newFakeServerClient(t testing.TB) *fakeServerClient {
 	}
 }
 
-func (f *fakeServerClient) PatchApis(ctx context.Context, td *time.Duration, headers http.Header, query url.Values, req *pbapi.PatchApisRequest) (*http.Response, error) {
+func (f *fakeServerClient) PutApiSignatures(ctx context.Context, td *time.Duration, headers http.Header, query url.Values, req *pbapi.UpdateApiSignaturesRequest) (*http.Response, error) {
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -40,17 +40,18 @@ func (f *fakeServerClient) PatchApis(ctx context.Context, td *time.Duration, hea
 		return f.resp, nil
 	}
 
-	statuses := make([]*pbapi.PatchApisResponse_Status, len(req.GetPatches()))
-	for i, patch := range req.GetPatches() {
-		statuses[i] = &pbapi.PatchApisResponse_Status{
-			ApiId:   patch.GetApi().GetMetadata().GetId(),
+	statuses := make([]*pbapi.UpdateApiSignaturesResponse_Status, len(req.
+		GetUpdates()))
+	for i, update := range req.GetUpdates() {
+		statuses[i] = &pbapi.UpdateApiSignaturesResponse_Status{
+			ApiId:   update.GetApiId(),
 			Code:    f.statusesCode,
 			Message: "fake-message",
 			Error:   nil,
 		}
 	}
 
-	return makeResponse(f.code, &pbapi.PatchApisResponse{
+	return makeResponse(f.code, &pbapi.UpdateApiSignaturesResponse{
 		Statuses: statuses,
 	})
 }
