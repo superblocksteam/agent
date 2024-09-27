@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 
 - Update signing rotation endpoint for APIs
+- 403 status codes from the server now return as 403 instead of 500
 
 ## v1.15.1
 

@@ -37,6 +37,14 @@ func TestCheck(t *testing.T) {
 			expectedExternal: errors.AuthorizationError(),
 		},
 		{
+			name:             "Status Forbidden",
+			err:              nil,
+			statusCode:       http.StatusForbidden,
+			responseBody:     nil,
+			expectedInternal: nil,
+			expectedExternal: errors.AuthorizationError(),
+		},
+		{
 			name:             "Status NotFound",
 			err:              nil,
 			statusCode:       http.StatusNotFound,

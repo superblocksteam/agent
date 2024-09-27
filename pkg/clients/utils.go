@@ -91,7 +91,7 @@ func Check(err error, resp *http.Response) (internal, external error) {
 		return err, new(errors.InternalError)
 	}
 
-	if resp.StatusCode == http.StatusUnauthorized {
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 		return err, errors.AuthorizationError()
 	}
 	if resp.StatusCode == http.StatusNotFound {
