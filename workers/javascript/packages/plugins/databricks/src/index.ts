@@ -46,6 +46,8 @@ interface TableQueryEntity {
 }
 
 export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, DatabricksDatasourceConfiguration> {
+  // This is a NON SECRET id that identifies Superblocks to Databricks for partnership purposes.
+  private readonly DATABRICKS_PARTNER_CLIENT_ID = 'Superblocks';
   pluginName = 'Databricks';
   protected readonly parameterType = ':PARAM';
   protected readonly columnEscapeCharacter = '`';
@@ -220,8 +222,6 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
     });
     await client.connect(poolConfig);
 
-    this.attachLoggerToClient(client, datasourceConfiguration);
-
     this.logger.debug(`Databricks client connected. ${datasourceConfiguration.connection?.hostUrl}`);
     return client;
   }
@@ -237,45 +237,21 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
     }
   }
 
-  private attachLoggerToClient(client: DBSQLClient, datasourceConfiguration: DatabricksDatasourceConfiguration) {
-    if (!datasourceConfiguration.connection) {
-      return;
-    }
-  }
-
-  private _validateSQLActionConfigurationForUpdate(actionConfiguration: DatabricksActionConfiguration): void {
-    if (!actionConfiguration.bulkEdit?.table) {
-      throw new IntegrationError('Table is required', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, { pluginName: this.pluginName });
-    }
-    if (!actionConfiguration.bulkEdit?.schema) {
-      throw new IntegrationError('Schema is required', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, { pluginName: this.pluginName });
-    }
-    if (
-      !actionConfiguration.bulkEdit.insertedRows &&
-      !actionConfiguration.bulkEdit.updatedRows &&
-      !actionConfiguration.bulkEdit.deletedRows
-    ) {
-      throw new IntegrationError(
-        'No rows given. Must provide at least one of Inserted Rows, Updated Rows, or Deleted Rows',
-        ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD,
-        { pluginName: this.pluginName }
-      );
-    }
-  }
-
   private getConnectionConfigFromDatasourceConfiguration(datasourceConfiguration: DatabricksDatasourceConfiguration) {
     if (!isEmpty(datasourceConfiguration.connection?.port)) {
       return {
         host: datasourceConfiguration.connection?.hostUrl as string,
         path: datasourceConfiguration.connection?.path as string,
         port: datasourceConfiguration.connection?.port as number,
-        token: datasourceConfiguration.connection?.token as string
+        token: datasourceConfiguration.connection?.token as string,
+        clientId: this.DATABRICKS_PARTNER_CLIENT_ID
       };
     }
     return {
       host: datasourceConfiguration.connection?.hostUrl as string,
       path: datasourceConfiguration.connection?.path as string,
-      token: datasourceConfiguration.connection?.token as string
+      token: datasourceConfiguration.connection?.token as string,
+      clientId: this.DATABRICKS_PARTNER_CLIENT_ID
     };
   }
 
