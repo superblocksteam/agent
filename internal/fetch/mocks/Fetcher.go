@@ -175,7 +175,7 @@ func (_m *Fetcher) FetchIntegrations(_a0 context.Context, _a1 *integrationv1.Get
 }
 
 // FetchScheduledJobs provides a mock function with given fields: _a0
-func (_m *Fetcher) FetchScheduledJobs(_a0 context.Context) (*transportv1.FetchScheduleJobResp, error) {
+func (_m *Fetcher) FetchScheduledJobs(_a0 context.Context) (*transportv1.FetchScheduleJobResp, *structpb.Struct, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -183,8 +183,9 @@ func (_m *Fetcher) FetchScheduledJobs(_a0 context.Context) (*transportv1.FetchSc
 	}
 
 	var r0 *transportv1.FetchScheduleJobResp
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*transportv1.FetchScheduleJobResp, error)); ok {
+	var r1 *structpb.Struct
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*transportv1.FetchScheduleJobResp, *structpb.Struct, error)); ok {
 		return rf(_a0)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context) *transportv1.FetchScheduleJobResp); ok {
@@ -195,13 +196,21 @@ func (_m *Fetcher) FetchScheduledJobs(_a0 context.Context) (*transportv1.FetchSc
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context) *structpb.Struct); ok {
 		r1 = rf(_a0)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*structpb.Struct)
+		}
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(_a0)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // UpsertMetadata provides a mock function with given fields: _a0, _a1

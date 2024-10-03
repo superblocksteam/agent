@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/superblocksteam/agent/internal/auth"
 	"github.com/superblocksteam/agent/internal/fetch"
 	"github.com/superblocksteam/agent/internal/metrics"
@@ -67,7 +68,7 @@ func (r *ScheduleJobRunner) pollOnce() {
 	r.Logger.Debug("asking if there are jobs to run")
 
 	// TODO(frank): This is where we'd pass in a timeout override.
-	response, err := r.Fetcher.FetchScheduledJobs(context.Background())
+	resp, rawResp, err := r.Fetcher.FetchScheduledJobs(context.Background())
 	if err != nil {
 		metrics.ApiFetchRequestsTotal.WithLabelValues("failed").Inc()
 		r.Logger.Error("failed to fetch schedule jobs", zap.Error(err))
@@ -75,25 +76,26 @@ func (r *ScheduleJobRunner) pollOnce() {
 	}
 	metrics.ApiFetchRequestsTotal.WithLabelValues("succeeded").Inc()
 
-	if len(response.Apis) == 0 {
+	if len(resp.Apis) == 0 {
 		r.Logger.Debug("there were no jobs to execute")
 		return
 	}
 
-	r.Logger.Debug("successfully polled jobs", zap.Int("count", len(response.Apis)))
+	r.Logger.Debug("successfully polled jobs", zap.Int("count", len(resp.Apis)))
 
-	r.wg.Add(len(response.Apis))
+	r.wg.Add(len(resp.Apis))
 
-	for _, api := range response.Apis {
-		go func(x *apiv1.Definition) {
+	for i, def := range resp.Apis {
+		rawDef := rawResp.GetFields()["apis"].GetListValue().GetValues()[i].GetStructValue()
+		go func(x *apiv1.Definition, y *structpb.Struct) {
 			defer r.wg.Done()
 
-			r.executeScheduleJob(x)
-		}(api)
+			r.executeScheduleJob(x, y)
+		}(def, rawDef)
 	}
 }
 
-func (r *ScheduleJobRunner) executeScheduleJob(def *apiv1.Definition) {
+func (r *ScheduleJobRunner) executeScheduleJob(def *apiv1.Definition, rawDef *structpb.Struct) {
 	logger := r.Logger.With(observability.Enrich(def.Api, apiv1.ViewMode_VIEW_MODE_DEPLOYED.Enum())...)
 
 	if err := utils.ProtoValidate(def); err != nil {
@@ -117,6 +119,8 @@ func (r *ScheduleJobRunner) executeScheduleJob(def *apiv1.Definition) {
 		return
 	}
 
+	rawApiValue, _ := utils.GetStructField(rawDef, "api")
+
 	_, err = tracer.Observe(context.Background(), "execute.api.schedule", nil, func(spanCtx context.Context, _ trace.Span) (*apiv1.Output, error) {
 		_, err, _ := executor.Execute(spanCtx, &executor.Options{
 			Logger:                logger,
@@ -124,6 +128,7 @@ func (r *ScheduleJobRunner) executeScheduleJob(def *apiv1.Definition) {
 			Worker:                r.Worker,
 			Integrations:          def.Integrations,
 			Api:                   def.Api,
+			RawApi:                rawApiValue,
 			DefinitionMetadata:    def.GetMetadata(),
 			Options:               &apiv1.ExecuteRequest_Options{},
 			Inputs:                inputs,

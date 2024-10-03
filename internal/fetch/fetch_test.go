@@ -9,13 +9,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/clients/mocks"
+	"github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/utils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
 	syncerv1 "github.com/superblocksteam/agent/types/gen/go/syncer/v1"
+	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
@@ -655,35 +658,202 @@ func TestScheduleJobRequest(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range []struct {
-		name        string
-		expectedURL string
-		err         error
-		response    *http.Response
+		name     string
+		response *http.Response
+		err      error
+
+		expectedScheduledJobs    *transportv1.FetchScheduleJobResp
+		expectedRawScheduledJobs map[string]any
+		expectedErr              error
 	}{
 		{
 			name: "normal",
 			response: &http.Response{
 				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+				{
+					"apis": [
+						{
+							"api": {
+								"metadata": {
+									"id": "00000000-0000-0000-0000-000000000001",
+									"organization": "org-id",
+									"name": "TestApi"
+								},
+								"trigger": {
+									"application": {
+										"id": "app-id"
+									}
+								},
+								"blocks": [],
+								"signature": {
+									"keyId": "key-id",
+									"data": "YXBpLXNpZ25hdHVyZQ=="
+								},
+								"extraField": "extraValue"
+							}
+						},
+						{
+							"api": {
+								"metadata": {
+									"id": "00000000-0000-0000-0000-000000000002",
+									"organization": "org-id",
+									"name": "TestApi"
+								},
+								"trigger": {
+									"application": {
+										"id": "app-id"
+									}
+								},
+								"blocks": [],
+								"extraField": "extraValue"
+							}
+						}
+					]
+				}
+				`)),
 			},
-			err:         nil,
-			expectedURL: "https://api.superblocks.com/api/v1/agents/jobs/00000000-0000-0000-0000-000000000001",
+			expectedScheduledJobs: &transportv1.FetchScheduleJobResp{
+				Apis: []*apiv1.Definition{
+					{
+						Api: &apiv1.Api{
+							Metadata: &commonv1.Metadata{
+								Id:           "00000000-0000-0000-0000-000000000001",
+								Organization: "org-id",
+								Name:         "TestApi",
+							},
+							Trigger: &apiv1.Trigger{
+								Config: &apiv1.Trigger_Application_{
+									Application: &apiv1.Trigger_Application{
+										Id: "app-id",
+									},
+								},
+							},
+							Blocks: []*apiv1.Block{},
+							Signature: &pbutils.Signature{
+								KeyId: "key-id",
+								Data:  []byte("api-signature"),
+							},
+						},
+					},
+					{
+						Api: &apiv1.Api{
+							Metadata: &commonv1.Metadata{
+								Id:           "00000000-0000-0000-0000-000000000002",
+								Organization: "org-id",
+								Name:         "TestApi",
+							},
+							Trigger: &apiv1.Trigger{
+								Config: &apiv1.Trigger_Application_{
+									Application: &apiv1.Trigger_Application{
+										Id: "app-id",
+									},
+								},
+							},
+							Blocks: []*apiv1.Block{},
+						},
+					},
+				},
+			},
+			expectedRawScheduledJobs: map[string]any{
+				"apis": []any{
+					map[string]any{
+						"api": map[string]any{
+							"metadata": map[string]any{
+								"id":           "00000000-0000-0000-0000-000000000001",
+								"organization": "org-id",
+								"name":         "TestApi",
+							},
+							"trigger": map[string]any{
+								"application": map[string]any{
+									"id": "app-id",
+								},
+							},
+							"blocks": []any{},
+							"signature": map[string]any{
+								"keyId": "key-id",
+								"data":  "api-signature",
+							},
+							"extraField": "extraValue",
+						},
+					},
+					map[string]any{
+						"api": map[string]any{
+							"metadata": map[string]any{
+								"id":           "00000000-0000-0000-0000-000000000002",
+								"organization": "org-id",
+								"name":         "TestApi",
+							},
+							"trigger": map[string]any{
+								"application": map[string]any{
+									"id": "app-id",
+								},
+							},
+							"blocks":     []any{},
+							"extraField": "extraValue",
+						},
+					},
+				},
+			},
 		},
 		{
-			name:        "timed out, nil response",
-			expectedURL: "https://api.superblocks.com/api/v1/agents/jobs/00000000-0000-0000-0000-000000000001",
-			response:    nil,
+			name: "empty apis",
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+				{
+					"apis": []
+				}
+				`)),
+			},
+			expectedScheduledJobs: &transportv1.FetchScheduleJobResp{
+				Apis: []*apiv1.Definition{},
+			},
+			expectedRawScheduledJobs: map[string]any{
+				"apis": []any{},
+			},
+		},
+		{
+			name: "empty response",
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{}`)),
+			},
+			expectedScheduledJobs:    &transportv1.FetchScheduleJobResp{},
+			expectedRawScheduledJobs: map[string]any{},
+		},
+		{
+			name: "malformed response",
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+				{
+					"apis": {
+						"name": "Invalid top level apis type"
+					}
+				}
+				`)),
+			},
+			expectedErr: &errors.InternalError{},
+		},
+		{
+			name: "timed out, nil response",
 			err: &commonv1.Error{
 				Message: "context deadline exceeded",
 			},
+			expectedErr: &errors.InternalError{},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			mockHttpClient := mocks.NewHttpClient(t)
-			mockHttpClient.On("Do", mock.Anything).Return(&http.Response{
-				StatusCode: http.StatusOK,
-			}, nil)
+			mockHttpClient.On("Do", mock.Anything).Return(test.response, test.err)
 
-			logger := zap.NewNop()
+			var expectedRaw *structpb.Struct
+			if test.expectedRawScheduledJobs != nil {
+				var err error
+				expectedRaw, err = structpb.NewStruct(test.expectedRawScheduledJobs)
+				require.NoError(t, err)
+			}
 
 			serverClient := clients.NewServerClient(&clients.ServerClientOptions{
 				URL: "https://foo.bar.com",
@@ -695,14 +865,15 @@ func TestScheduleJobRequest(t *testing.T) {
 			})
 
 			fetcher := New(&Options{
-				Logger:       logger,
+				Logger:       zap.NewNop(),
 				ServerClient: serverClient,
 			}).(*fetcher)
 
-			ctx := context.Background()
+			actual, actualRaw, err := fetcher.FetchScheduledJobs(context.Background())
 
-			_, err := fetcher.sendFetchScheduleJobRequest(ctx)
-			assert.NoError(t, err)
+			assert.Equal(t, test.expectedErr, err)
+			utils.AssertProtoEqual(t, test.expectedScheduledJobs, actual)
+			utils.AssertProtoEqual(t, expectedRaw, actualRaw)
 
 			expectedRequestHeaders := http.Header{}
 			expectedRequestHeaders.Set("x-superblocks-agent-key", "foobar")
@@ -710,9 +881,10 @@ func TestScheduleJobRequest(t *testing.T) {
 
 			mockHttpClient.AssertNumberOfCalls(t, "Do", 1)
 			request := mockHttpClient.Calls[0].Arguments[0].(*http.Request)
+
 			assert.Equal(t, http.MethodPost, request.Method)
-			assert.Equal(t, "https://foo.bar.com/api/v2/agents/pending-jobs", request.URL.String())
 			assert.Equal(t, expectedRequestHeaders, request.Header)
+			assert.Equal(t, "https://foo.bar.com/api/v2/agents/pending-jobs", request.URL.String())
 		})
 	}
 }
