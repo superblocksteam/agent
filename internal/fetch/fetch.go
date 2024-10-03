@@ -57,7 +57,7 @@ type Options struct {
 //go:generate mockery --name=Fetcher --output ./mocks --structname Fetcher
 type Fetcher interface {
 	FetchApi(context context.Context, request *apiv1.ExecuteRequest_Fetch, useAgentKey bool) (*apiv1.Definition, *structpb.Struct, error)
-	FetchScheduledJobs(context.Context) (*transportv1.FetchScheduleJobResp, error)
+	FetchScheduledJobs(context.Context) (*transportv1.FetchScheduleJobResp, *structpb.Struct, error)
 	FetchIntegrationMetadata(context.Context, string) (*integrationv1.GetIntegrationResponse, error)
 	FetchIntegration(context context.Context, integrationId string, profile *commonv1.Profile) (*Integration, error)
 	FetchIntegrations(context.Context, *integrationv1.GetIntegrationsRequest, bool) (*integrationv1.GetIntegrationsResponse, error)
@@ -134,14 +134,9 @@ func (f *fetcher) FetchApi(ctx context.Context, options *apiv1.ExecuteRequest_Fe
 			return nil, nil, new(sberrors.InternalError)
 		}
 
-		if sig := result.GetApi().GetSignature().GetData(); sig != nil {
-			rawResultSig, err := utils.GetStructField(&rawResult, "api.signature")
-			if err != nil {
-				logger.Error("could not unmarshal raw response into struct", zap.Error(err))
-				return nil, nil, new(sberrors.InternalError)
-			}
-
-			rawResultSig.GetStructValue().Fields["data"] = structpb.NewStringValue(string(sig))
+		if err := f.setSignatureOnRawResponse(&result, &rawResult, logger); err != nil {
+			logger.Error("could not set signature on raw response", zap.Error(err))
+			return nil, nil, err
 		}
 	}
 
@@ -243,9 +238,7 @@ func (f *fetcher) FetchIntegration(ctx context.Context, integrationId string, pr
 	return result.Data.Integration, nil
 }
 
-func (f *fetcher) FetchScheduledJobs(ctx context.Context) (*transportv1.FetchScheduleJobResp, error) {
-	var cancel context.CancelFunc
-
+func (f *fetcher) FetchScheduledJobs(ctx context.Context) (*transportv1.FetchScheduleJobResp, *structpb.Struct, error) {
 	resp, err := tracer.Observe(
 		ctx,
 		"fetch.job",
@@ -255,10 +248,6 @@ func (f *fetcher) FetchScheduledJobs(ctx context.Context) (*transportv1.FetchSch
 		},
 		nil,
 	)
-
-	if cancel != nil {
-		defer cancel()
-	}
 
 	if i, e := clients.Check(err, resp); e != nil {
 		f.logger.Error(
@@ -270,25 +259,56 @@ func (f *fetcher) FetchScheduledJobs(ctx context.Context) (*transportv1.FetchSch
 			zap.String("resp.StatusCode.String", http.StatusText(respStatusCode(resp))),
 			zap.Error(i),
 		)
-		return nil, e
+		return nil, nil, e
 	}
 
 	if resp != nil {
 		defer resp.Body.Close()
 	} else {
 		f.logger.Error("could not fetch scheduled jobs from superblocks: response is nil", zap.Error(err))
-		return nil, new(sberrors.InternalError)
+		return nil, nil, new(sberrors.InternalError)
+	}
+
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		f.logger.Error("could not read fetch schedule job response body", zap.Error(err))
+		return nil, nil, new(sberrors.InternalError)
 	}
 
 	var result transportv1.FetchScheduleJobResp
 	{
-		if err := f.unmarshaler.Unmarshal(resp.Body, &result); err != nil {
-			f.logger.Error("could not unmarshal api", zap.Error(err))
-			return nil, new(sberrors.InternalError)
+		if err := f.unmarshaler.Unmarshal(bytes.NewReader(respData), &result); err != nil {
+			f.logger.Error("could not unmarshal apis", zap.Error(err))
+			return nil, nil, new(sberrors.InternalError)
 		}
 	}
 
-	return &result, nil
+	var rawResult structpb.Struct
+	{
+		if err := f.unmarshaler.Unmarshal(bytes.NewReader(respData), &rawResult); err != nil {
+			f.logger.Error("could not unmarshal raw response into struct", zap.Error(err))
+			return nil, nil, new(sberrors.InternalError)
+		}
+
+		rawApis := rawResult.GetFields()["apis"]
+		for i, rawApi := range rawApis.GetListValue().GetValues() {
+			if i >= len(result.Apis) {
+				f.logger.Error(
+					"raw response has more apis than the typed response",
+					zap.Int("rawApis", len(rawApis.GetListValue().GetValues())),
+					zap.Int("typedApis", len(result.Apis)),
+				)
+				return nil, nil, new(sberrors.InternalError)
+			}
+
+			if err := f.setSignatureOnRawResponse(result.GetApis()[i], rawApi.GetStructValue(), f.logger); err != nil {
+				f.logger.Error("could not set signature on raw response", zap.Error(err))
+				return nil, nil, err
+			}
+		}
+	}
+
+	return &result, &rawResult, nil
 }
 
 // NOTE(frank: All of this becomes SO MUCH EASIER the server exposes a gRPC client.
@@ -543,6 +563,24 @@ func (f *fetcher) process(resp *http.Response, err error, dest protoiface.Messag
 
 	if err := f.unmarshaler.Unmarshal(resp.Body, dest); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (f *fetcher) setSignatureOnRawResponse(result *apiv1.Definition, rawResult *structpb.Struct, logger *zap.Logger) error {
+	if logger == nil {
+		logger = f.logger
+	}
+
+	if sig := result.GetApi().GetSignature().GetData(); sig != nil {
+		rawResultSig, err := utils.GetStructField(rawResult, "api.signature")
+		if err != nil {
+			logger.Error("could not unmarshal raw response into struct", zap.Error(err))
+			return new(sberrors.InternalError)
+		}
+
+		rawResultSig.GetStructValue().Fields["data"] = structpb.NewStringValue(string(sig))
 	}
 
 	return nil
