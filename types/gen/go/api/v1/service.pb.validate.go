@@ -3631,6 +3631,47 @@ func (m *MetadataResponse) validate(all bool) error {
 			}
 		}
 
+	case *MetadataResponse_Kinesis:
+		if v == nil {
+			err := MetadataResponseValidationError{
+				field:  "Metadata",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetKinesis()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, MetadataResponseValidationError{
+						field:  "Kinesis",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, MetadataResponseValidationError{
+						field:  "Kinesis",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetKinesis()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return MetadataResponseValidationError{
+					field:  "Kinesis",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *MetadataResponse_Cosmosdb:
 		if v == nil {
 			err := MetadataResponseValidationError{

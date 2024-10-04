@@ -21,6 +21,7 @@ import (
 	v1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
 	gsheets "github.com/superblocksteam/agent/types/gen/go/plugins/gsheets/v1"
+	kinesis "github.com/superblocksteam/agent/types/gen/go/plugins/kinesis/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -193,6 +194,8 @@ func TestMetadata(t *testing.T) {
 		expectedActionConfig *structpb.Value
 		expectedMetadataResp *transportv1.Response
 		expectedMetadataErr  error
+		// the response we expect from the metadata call
+		expectResponse any
 	}{
 		{
 			name:          "gsheets with integration id",
@@ -210,6 +213,23 @@ func TestMetadata(t *testing.T) {
 			expectedActionConfig: testActionConfig,
 			expectedMetadataResp: nil,
 			expectedMetadataErr:  nil,
+		},
+		{
+			name:          "kinesis metadata happy path",
+			integrationId: "test-integration-id",
+			pluginId:      "kinesis",
+			req: &apiv1.MetadataRequest{
+				Integration: "test-integration-id",
+				Profile:     &v1.Profile{Name: &profileName},
+				StepConfiguration: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"kinesis": testActionConfig,
+					},
+				},
+			},
+			expectedActionConfig: testActionConfig,
+			expectedMetadataResp: &transportv1.Response{Data: &transportv1.Response_Data{Data: &transportv1.Response_Data_Data{Kinesis: &kinesis.Metadata{Streams: []string{"foo", "bar"}}}}},
+			expectResponse:       &apiv1.MetadataResponse_Kinesis{Kinesis: &kinesis.Metadata{Streams: []string{"foo", "bar"}}},
 		},
 		{
 			name:          "handles missing step configuration gracefully",
@@ -333,6 +353,10 @@ func TestMetadata(t *testing.T) {
 
 			if tc.expectedMetadataResp.GetData().GetData().GetGSheetsNextPageToken() == "" {
 				assert.Equal(t, resp.GetGSheetsNextPageToken(), "")
+			}
+
+			if tc.expectResponse != nil {
+				assert.Equal(t, resp.Metadata, tc.expectResponse)
 			}
 		})
 	}

@@ -391,6 +391,17 @@
         }
       }
     },
+    "pluginskinesisv1Metadata": {
+      "type": "object",
+      "properties": {
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -583,6 +594,9 @@
         "kafka": {
           "$ref": "#/definitions/pluginskafkav1Metadata",
           "description": "NOTE(frank): I think we'll need a transport/v2 for this but ideally\nwe don't have duplcate types like this."
+        },
+        "kinesis": {
+          "$ref": "#/definitions/pluginskinesisv1Metadata"
         },
         "cosmosdb": {
           "$ref": "#/definitions/pluginscosmosdbv1PluginMetadata"

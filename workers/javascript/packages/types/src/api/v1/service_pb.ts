@@ -11,6 +11,7 @@ import { Stores } from "../../store/v1/store_pb";
 import { Event, Output, Performance } from "./event_pb";
 import { Error } from "../../common/v1/errors_pb";
 import { Metadata as Metadata$1 } from "../../plugins/kafka/v1/plugin_pb";
+import { Metadata as Metadata$2 } from "../../plugins/kinesis/v1/plugin_pb";
 import { Plugin_Metadata } from "../../plugins/cosmosdb/v1/plugin_pb";
 import { Plugin_Metadata as Plugin_Metadata$1 } from "../../plugins/adls/v1/plugin_pb";
 
@@ -1743,20 +1744,26 @@ export class MetadataResponse extends Message<MetadataResponse> {
     case: "kafka";
   } | {
     /**
-     * @generated from field: plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 4;
+     * @generated from field: plugins.kinesis.v1.Metadata kinesis = 4;
+     */
+    value: Metadata$2;
+    case: "kinesis";
+  } | {
+    /**
+     * @generated from field: plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 5;
      */
     value: Plugin_Metadata;
     case: "cosmosdb";
   } | {
     /**
-     * @generated from field: plugins.adls.v1.Plugin.Metadata adls = 5;
+     * @generated from field: plugins.adls.v1.Plugin.Metadata adls = 6;
      */
     value: Plugin_Metadata$1;
     case: "adls";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
-   * @generated from field: string g_sheets_next_page_token = 6;
+   * @generated from field: string g_sheets_next_page_token = 7;
    */
   gSheetsNextPageToken = "";
 
@@ -1771,9 +1778,10 @@ export class MetadataResponse extends Message<MetadataResponse> {
     { no: 1, name: "database_schema_metadata", kind: "message", T: MetadataResponse_DatabaseSchemaMetadata, oneof: "metadata" },
     { no: 2, name: "buckets_metadata", kind: "message", T: MetadataResponse_BucketsMetadata, oneof: "metadata" },
     { no: 3, name: "kafka", kind: "message", T: Metadata$1, oneof: "metadata" },
-    { no: 4, name: "cosmosdb", kind: "message", T: Plugin_Metadata, oneof: "metadata" },
-    { no: 5, name: "adls", kind: "message", T: Plugin_Metadata$1, oneof: "metadata" },
-    { no: 6, name: "g_sheets_next_page_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "kinesis", kind: "message", T: Metadata$2, oneof: "metadata" },
+    { no: 5, name: "cosmosdb", kind: "message", T: Plugin_Metadata, oneof: "metadata" },
+    { no: 6, name: "adls", kind: "message", T: Plugin_Metadata$1, oneof: "metadata" },
+    { no: 7, name: "g_sheets_next_page_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MetadataResponse {

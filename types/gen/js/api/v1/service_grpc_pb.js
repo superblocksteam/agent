@@ -15,6 +15,7 @@ var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_
 var plugins_adls_v1_plugin_pb = require('../../plugins/adls/v1/plugin_pb');
 var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb');
 var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
+var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
 var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
 var store_v1_store_pb = require('../../store/v1/store_pb');
 var validate_validate_pb = require('../../validate/validate_pb');
