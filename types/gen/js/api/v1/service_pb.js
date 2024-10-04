@@ -45,6 +45,8 @@ var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb
 goog.object.extend(proto, plugins_cosmosdb_v1_plugin_pb);
 var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
+var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
+goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
 var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
 goog.object.extend(proto, protoc$gen$openapiv2_options_annotations_pb);
 var store_v1_store_pb = require('../../store/v1/store_pb');
@@ -8016,7 +8018,7 @@ proto.api.v1.MetadataRequest.prototype.hasStepConfiguration = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.MetadataResponse.oneofGroups_ = [[1,2,3,4,5]];
+proto.api.v1.MetadataResponse.oneofGroups_ = [[1,2,3,4,5,6]];
 
 /**
  * @enum {number}
@@ -8026,8 +8028,9 @@ proto.api.v1.MetadataResponse.MetadataCase = {
   DATABASE_SCHEMA_METADATA: 1,
   BUCKETS_METADATA: 2,
   KAFKA: 3,
-  COSMOSDB: 4,
-  ADLS: 5
+  KINESIS: 4,
+  COSMOSDB: 5,
+  ADLS: 6
 };
 
 /**
@@ -8071,9 +8074,10 @@ proto.api.v1.MetadataResponse.toObject = function(includeInstance, msg) {
 databaseSchemaMetadata: (f = msg.getDatabaseSchemaMetadata()) && proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.toObject(includeInstance, f),
 bucketsMetadata: (f = msg.getBucketsMetadata()) && proto.api.v1.MetadataResponse.BucketsMetadata.toObject(includeInstance, f),
 kafka: (f = msg.getKafka()) && plugins_kafka_v1_plugin_pb.Metadata.toObject(includeInstance, f),
+kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Metadata.toObject(includeInstance, f),
 cosmosdb: (f = msg.getCosmosdb()) && plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
 adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
-gSheetsNextPageToken: jspb.Message.getFieldWithDefault(msg, 6, "")
+gSheetsNextPageToken: jspb.Message.getFieldWithDefault(msg, 7, "")
   };
 
   if (includeInstance) {
@@ -8126,16 +8130,21 @@ proto.api.v1.MetadataResponse.deserializeBinaryFromReader = function(msg, reader
       msg.setKafka(value);
       break;
     case 4:
+      var value = new plugins_kinesis_v1_plugin_pb.Metadata;
+      reader.readMessage(value,plugins_kinesis_v1_plugin_pb.Metadata.deserializeBinaryFromReader);
+      msg.setKinesis(value);
+      break;
+    case 5:
       var value = new plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata;
       reader.readMessage(value,plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
       msg.setCosmosdb(value);
       break;
-    case 5:
+    case 6:
       var value = new plugins_adls_v1_plugin_pb.Plugin.Metadata;
       reader.readMessage(value,plugins_adls_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
       msg.setAdls(value);
       break;
-    case 6:
+    case 7:
       var value = /** @type {string} */ (reader.readString());
       msg.setGSheetsNextPageToken(value);
       break;
@@ -8192,10 +8201,18 @@ proto.api.v1.MetadataResponse.serializeBinaryToWriter = function(message, writer
       plugins_kafka_v1_plugin_pb.Metadata.serializeBinaryToWriter
     );
   }
-  f = message.getCosmosdb();
+  f = message.getKinesis();
   if (f != null) {
     writer.writeMessage(
       4,
+      f,
+      plugins_kinesis_v1_plugin_pb.Metadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getCosmosdb();
+  if (f != null) {
+    writer.writeMessage(
+      5,
       f,
       plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
     );
@@ -8203,7 +8220,7 @@ proto.api.v1.MetadataResponse.serializeBinaryToWriter = function(message, writer
   f = message.getAdls();
   if (f != null) {
     writer.writeMessage(
-      5,
+      6,
       f,
       plugins_adls_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
     );
@@ -8211,7 +8228,7 @@ proto.api.v1.MetadataResponse.serializeBinaryToWriter = function(message, writer
   f = message.getGSheetsNextPageToken();
   if (f.length > 0) {
     writer.writeString(
-      6,
+      7,
       f
     );
   }
@@ -9945,12 +9962,49 @@ proto.api.v1.MetadataResponse.prototype.hasKafka = function() {
 
 
 /**
- * optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 4;
+ * optional plugins.kinesis.v1.Metadata kinesis = 4;
+ * @return {?proto.plugins.kinesis.v1.Metadata}
+ */
+proto.api.v1.MetadataResponse.prototype.getKinesis = function() {
+  return /** @type{?proto.plugins.kinesis.v1.Metadata} */ (
+    jspb.Message.getWrapperField(this, plugins_kinesis_v1_plugin_pb.Metadata, 4));
+};
+
+
+/**
+ * @param {?proto.plugins.kinesis.v1.Metadata|undefined} value
+ * @return {!proto.api.v1.MetadataResponse} returns this
+*/
+proto.api.v1.MetadataResponse.prototype.setKinesis = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 4, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.MetadataResponse} returns this
+ */
+proto.api.v1.MetadataResponse.prototype.clearKinesis = function() {
+  return this.setKinesis(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.MetadataResponse.prototype.hasKinesis = function() {
+  return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 5;
  * @return {?proto.plugins.cosmosdb.v1.Plugin.Metadata}
  */
 proto.api.v1.MetadataResponse.prototype.getCosmosdb = function() {
   return /** @type{?proto.plugins.cosmosdb.v1.Plugin.Metadata} */ (
-    jspb.Message.getWrapperField(this, plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata, 4));
+    jspb.Message.getWrapperField(this, plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata, 5));
 };
 
 
@@ -9959,7 +10013,7 @@ proto.api.v1.MetadataResponse.prototype.getCosmosdb = function() {
  * @return {!proto.api.v1.MetadataResponse} returns this
 */
 proto.api.v1.MetadataResponse.prototype.setCosmosdb = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 4, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 5, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
 };
 
 
@@ -9977,17 +10031,17 @@ proto.api.v1.MetadataResponse.prototype.clearCosmosdb = function() {
  * @return {boolean}
  */
 proto.api.v1.MetadataResponse.prototype.hasCosmosdb = function() {
-  return jspb.Message.getField(this, 4) != null;
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
 /**
- * optional plugins.adls.v1.Plugin.Metadata adls = 5;
+ * optional plugins.adls.v1.Plugin.Metadata adls = 6;
  * @return {?proto.plugins.adls.v1.Plugin.Metadata}
  */
 proto.api.v1.MetadataResponse.prototype.getAdls = function() {
   return /** @type{?proto.plugins.adls.v1.Plugin.Metadata} */ (
-    jspb.Message.getWrapperField(this, plugins_adls_v1_plugin_pb.Plugin.Metadata, 5));
+    jspb.Message.getWrapperField(this, plugins_adls_v1_plugin_pb.Plugin.Metadata, 6));
 };
 
 
@@ -9996,7 +10050,7 @@ proto.api.v1.MetadataResponse.prototype.getAdls = function() {
  * @return {!proto.api.v1.MetadataResponse} returns this
 */
 proto.api.v1.MetadataResponse.prototype.setAdls = function(value) {
-  return jspb.Message.setOneofWrapperField(this, 5, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 6, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
 };
 
 
@@ -10014,16 +10068,16 @@ proto.api.v1.MetadataResponse.prototype.clearAdls = function() {
  * @return {boolean}
  */
 proto.api.v1.MetadataResponse.prototype.hasAdls = function() {
-  return jspb.Message.getField(this, 5) != null;
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
 /**
- * optional string g_sheets_next_page_token = 6;
+ * optional string g_sheets_next_page_token = 7;
  * @return {string}
  */
 proto.api.v1.MetadataResponse.prototype.getGSheetsNextPageToken = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
 };
 
 
@@ -10032,7 +10086,7 @@ proto.api.v1.MetadataResponse.prototype.getGSheetsNextPageToken = function() {
  * @return {!proto.api.v1.MetadataResponse} returns this
  */
 proto.api.v1.MetadataResponse.prototype.setGSheetsNextPageToken = function(value) {
-  return jspb.Message.setProto3StringField(this, 6, value);
+  return jspb.Message.setProto3StringField(this, 7, value);
 };
 
 

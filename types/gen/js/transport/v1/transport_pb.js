@@ -41,6 +41,8 @@ var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb
 goog.object.extend(proto, plugins_cosmosdb_v1_plugin_pb);
 var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
+var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
+goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
 var store_v1_store_pb = require('../../store/v1/store_pb');
 goog.object.extend(proto, store_v1_store_pb);
 var validate_validate_pb = require('../../validate/validate_pb');
@@ -4182,10 +4184,11 @@ dbSchema: (f = msg.getDbSchema()) && api_v1_service_pb.MetadataResponse.Database
 bucketsList: jspb.Message.toObjectList(msg.getBucketsList(),
     api_v1_service_pb.MetadataResponse.BucketMetadata.toObject, includeInstance),
 kafka: (f = msg.getKafka()) && plugins_kafka_v1_plugin_pb.Metadata.toObject(includeInstance, f),
+kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Metadata.toObject(includeInstance, f),
 cosmosdb: (f = msg.getCosmosdb()) && plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
 adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
 dynamodb: (f = msg.getDynamodb()) && google_protobuf_any_pb.Any.toObject(includeInstance, f),
-gSheetsNextPageToken: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f
+gSheetsNextPageToken: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -4247,21 +4250,26 @@ proto.transport.v1.Response.Data.Data.deserializeBinaryFromReader = function(msg
       msg.setKafka(value);
       break;
     case 6:
+      var value = new plugins_kinesis_v1_plugin_pb.Metadata;
+      reader.readMessage(value,plugins_kinesis_v1_plugin_pb.Metadata.deserializeBinaryFromReader);
+      msg.setKinesis(value);
+      break;
+    case 7:
       var value = new plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata;
       reader.readMessage(value,plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
       msg.setCosmosdb(value);
       break;
-    case 7:
+    case 8:
       var value = new plugins_adls_v1_plugin_pb.Plugin.Metadata;
       reader.readMessage(value,plugins_adls_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
       msg.setAdls(value);
       break;
-    case 8:
+    case 9:
       var value = new google_protobuf_any_pb.Any;
       reader.readMessage(value,google_protobuf_any_pb.Any.deserializeBinaryFromReader);
       msg.setDynamodb(value);
       break;
-    case 9:
+    case 10:
       var value = /** @type {string} */ (reader.readString());
       msg.setGSheetsNextPageToken(value);
       break;
@@ -4333,10 +4341,18 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
       plugins_kafka_v1_plugin_pb.Metadata.serializeBinaryToWriter
     );
   }
-  f = message.getCosmosdb();
+  f = message.getKinesis();
   if (f != null) {
     writer.writeMessage(
       6,
+      f,
+      plugins_kinesis_v1_plugin_pb.Metadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getCosmosdb();
+  if (f != null) {
+    writer.writeMessage(
+      7,
       f,
       plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
     );
@@ -4344,7 +4360,7 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
   f = message.getAdls();
   if (f != null) {
     writer.writeMessage(
-      7,
+      8,
       f,
       plugins_adls_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
     );
@@ -4352,15 +4368,15 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
   f = message.getDynamodb();
   if (f != null) {
     writer.writeMessage(
-      8,
+      9,
       f,
       google_protobuf_any_pb.Any.serializeBinaryToWriter
     );
   }
-  f = /** @type {string} */ (jspb.Message.getField(message, 9));
+  f = /** @type {string} */ (jspb.Message.getField(message, 10));
   if (f != null) {
     writer.writeString(
-      9,
+      10,
       f
     );
   }
@@ -4535,12 +4551,49 @@ proto.transport.v1.Response.Data.Data.prototype.hasKafka = function() {
 
 
 /**
- * optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 6;
+ * optional plugins.kinesis.v1.Metadata kinesis = 6;
+ * @return {?proto.plugins.kinesis.v1.Metadata}
+ */
+proto.transport.v1.Response.Data.Data.prototype.getKinesis = function() {
+  return /** @type{?proto.plugins.kinesis.v1.Metadata} */ (
+    jspb.Message.getWrapperField(this, plugins_kinesis_v1_plugin_pb.Metadata, 6));
+};
+
+
+/**
+ * @param {?proto.plugins.kinesis.v1.Metadata|undefined} value
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+*/
+proto.transport.v1.Response.Data.Data.prototype.setKinesis = function(value) {
+  return jspb.Message.setWrapperField(this, 6, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+ */
+proto.transport.v1.Response.Data.Data.prototype.clearKinesis = function() {
+  return this.setKinesis(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Response.Data.Data.prototype.hasKinesis = function() {
+  return jspb.Message.getField(this, 6) != null;
+};
+
+
+/**
+ * optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 7;
  * @return {?proto.plugins.cosmosdb.v1.Plugin.Metadata}
  */
 proto.transport.v1.Response.Data.Data.prototype.getCosmosdb = function() {
   return /** @type{?proto.plugins.cosmosdb.v1.Plugin.Metadata} */ (
-    jspb.Message.getWrapperField(this, plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata, 6));
+    jspb.Message.getWrapperField(this, plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata, 7));
 };
 
 
@@ -4549,7 +4602,7 @@ proto.transport.v1.Response.Data.Data.prototype.getCosmosdb = function() {
  * @return {!proto.transport.v1.Response.Data.Data} returns this
 */
 proto.transport.v1.Response.Data.Data.prototype.setCosmosdb = function(value) {
-  return jspb.Message.setWrapperField(this, 6, value);
+  return jspb.Message.setWrapperField(this, 7, value);
 };
 
 
@@ -4567,17 +4620,17 @@ proto.transport.v1.Response.Data.Data.prototype.clearCosmosdb = function() {
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasCosmosdb = function() {
-  return jspb.Message.getField(this, 6) != null;
+  return jspb.Message.getField(this, 7) != null;
 };
 
 
 /**
- * optional plugins.adls.v1.Plugin.Metadata adls = 7;
+ * optional plugins.adls.v1.Plugin.Metadata adls = 8;
  * @return {?proto.plugins.adls.v1.Plugin.Metadata}
  */
 proto.transport.v1.Response.Data.Data.prototype.getAdls = function() {
   return /** @type{?proto.plugins.adls.v1.Plugin.Metadata} */ (
-    jspb.Message.getWrapperField(this, plugins_adls_v1_plugin_pb.Plugin.Metadata, 7));
+    jspb.Message.getWrapperField(this, plugins_adls_v1_plugin_pb.Plugin.Metadata, 8));
 };
 
 
@@ -4586,7 +4639,7 @@ proto.transport.v1.Response.Data.Data.prototype.getAdls = function() {
  * @return {!proto.transport.v1.Response.Data.Data} returns this
 */
 proto.transport.v1.Response.Data.Data.prototype.setAdls = function(value) {
-  return jspb.Message.setWrapperField(this, 7, value);
+  return jspb.Message.setWrapperField(this, 8, value);
 };
 
 
@@ -4604,17 +4657,17 @@ proto.transport.v1.Response.Data.Data.prototype.clearAdls = function() {
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasAdls = function() {
-  return jspb.Message.getField(this, 7) != null;
+  return jspb.Message.getField(this, 8) != null;
 };
 
 
 /**
- * optional google.protobuf.Any dynamodb = 8;
+ * optional google.protobuf.Any dynamodb = 9;
  * @return {?proto.google.protobuf.Any}
  */
 proto.transport.v1.Response.Data.Data.prototype.getDynamodb = function() {
   return /** @type{?proto.google.protobuf.Any} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_any_pb.Any, 8));
+    jspb.Message.getWrapperField(this, google_protobuf_any_pb.Any, 9));
 };
 
 
@@ -4623,7 +4676,7 @@ proto.transport.v1.Response.Data.Data.prototype.getDynamodb = function() {
  * @return {!proto.transport.v1.Response.Data.Data} returns this
 */
 proto.transport.v1.Response.Data.Data.prototype.setDynamodb = function(value) {
-  return jspb.Message.setWrapperField(this, 8, value);
+  return jspb.Message.setWrapperField(this, 9, value);
 };
 
 
@@ -4641,16 +4694,16 @@ proto.transport.v1.Response.Data.Data.prototype.clearDynamodb = function() {
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasDynamodb = function() {
-  return jspb.Message.getField(this, 8) != null;
+  return jspb.Message.getField(this, 9) != null;
 };
 
 
 /**
- * optional string g_sheets_next_page_token = 9;
+ * optional string g_sheets_next_page_token = 10;
  * @return {string}
  */
 proto.transport.v1.Response.Data.Data.prototype.getGSheetsNextPageToken = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
 };
 
 
@@ -4659,7 +4712,7 @@ proto.transport.v1.Response.Data.Data.prototype.getGSheetsNextPageToken = functi
  * @return {!proto.transport.v1.Response.Data.Data} returns this
  */
 proto.transport.v1.Response.Data.Data.prototype.setGSheetsNextPageToken = function(value) {
-  return jspb.Message.setField(this, 9, value);
+  return jspb.Message.setField(this, 10, value);
 };
 
 
@@ -4668,7 +4721,7 @@ proto.transport.v1.Response.Data.Data.prototype.setGSheetsNextPageToken = functi
  * @return {!proto.transport.v1.Response.Data.Data} returns this
  */
 proto.transport.v1.Response.Data.Data.prototype.clearGSheetsNextPageToken = function() {
-  return jspb.Message.setField(this, 9, undefined);
+  return jspb.Message.setField(this, 10, undefined);
 };
 
 
@@ -4677,7 +4730,7 @@ proto.transport.v1.Response.Data.Data.prototype.clearGSheetsNextPageToken = func
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasGSheetsNextPageToken = function() {
-  return jspb.Message.getField(this, 9) != null;
+  return jspb.Message.getField(this, 10) != null;
 };
 
 

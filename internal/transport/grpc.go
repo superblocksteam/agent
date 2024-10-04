@@ -582,6 +582,12 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 		}
 	}
 
+	if kinesis := resp.GetData().GetData().GetKinesis(); kinesis != nil {
+		metaRes.Metadata = &apiv1.MetadataResponse_Kinesis{
+			Kinesis: kinesis,
+		}
+	}
+
 	if cosmosdb := resp.GetData().GetData().GetCosmosdb(); cosmosdb != nil {
 		metaRes.Metadata = &apiv1.MetadataResponse_Cosmosdb{
 			Cosmosdb: cosmosdb,

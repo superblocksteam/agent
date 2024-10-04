@@ -15,6 +15,7 @@ import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/stru
 import * as plugins_adls_v1_plugin_pb from "../../plugins/adls/v1/plugin_pb";
 import * as plugins_cosmosdb_v1_plugin_pb from "../../plugins/cosmosdb/v1/plugin_pb";
 import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
+import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
 import * as store_v1_store_pb from "../../store/v1/store_pb";
 import * as validate_validate_pb from "../../validate/validate_pb";
 
@@ -555,6 +556,11 @@ export namespace Response {
             getKafka(): plugins_kafka_v1_plugin_pb.Metadata | undefined;
             setKafka(value?: plugins_kafka_v1_plugin_pb.Metadata): Data;
 
+            hasKinesis(): boolean;
+            clearKinesis(): void;
+            getKinesis(): plugins_kinesis_v1_plugin_pb.Metadata | undefined;
+            setKinesis(value?: plugins_kinesis_v1_plugin_pb.Metadata): Data;
+
             hasCosmosdb(): boolean;
             clearCosmosdb(): void;
             getCosmosdb(): plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata | undefined;
@@ -592,6 +598,7 @@ export namespace Response {
                 dbSchema?: api_v1_service_pb.MetadataResponse.DatabaseSchemaMetadata.AsObject,
                 bucketsList: Array<api_v1_service_pb.MetadataResponse.BucketMetadata.AsObject>,
                 kafka?: plugins_kafka_v1_plugin_pb.Metadata.AsObject,
+                kinesis?: plugins_kinesis_v1_plugin_pb.Metadata.AsObject,
                 cosmosdb?: plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.AsObject,
                 adls?: plugins_adls_v1_plugin_pb.Plugin.Metadata.AsObject,
                 dynamodb?: google_protobuf_any_pb.Any.AsObject,
