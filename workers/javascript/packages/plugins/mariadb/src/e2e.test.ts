@@ -18,9 +18,6 @@ import { cloneDeep } from 'lodash';
 import { Connection, createConnection } from 'mariadb';
 import MariaDBPlugin from '.';
 
-const SECOND = 1000;
-jest.setTimeout(10 * SECOND);
-
 const MARIADB_HOST = '127.0.0.1';
 const MARIADB_PORT = 23306;
 const MARIADB_USER = 'root';
