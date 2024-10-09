@@ -114,6 +114,14 @@
         }
       }
     },
+    "SignatureAlgorithm": {
+      "type": "string",
+      "enum": [
+        "ALGORITHM_UNSPECIFIED",
+        "ALGORITHM_ED25519"
+      ],
+      "default": "ALGORITHM_UNSPECIFIED"
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -195,6 +203,13 @@
         "data": {
           "type": "string",
           "format": "byte"
+        },
+        "publicKey": {
+          "type": "string",
+          "format": "byte"
+        },
+        "algorithm": {
+          "$ref": "#/definitions/SignatureAlgorithm"
         }
       }
     },

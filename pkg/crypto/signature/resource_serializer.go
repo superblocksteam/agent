@@ -10,6 +10,7 @@ import (
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	securityv1 "github.com/superblocksteam/agent/types/gen/go/security/v1"
 	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -17,7 +18,7 @@ import (
 //go:generate mockery --name=ResourceSerializer --output . --filename resource_serializer_mock.go --inpackage --outpkg signature --structname MockResourceSerializer
 type ResourceSerializer interface {
 	Serialize(*securityv1.Resource) ([]byte, []byte, error)
-	UpdateResourceWithSignature(*securityv1.Resource, string, []byte) error
+	UpdateResourceWithSignature(*securityv1.Resource, string, pbutils.Signature_Algorithm, []byte, []byte) error
 }
 
 type resourceSerializer struct{}
@@ -80,10 +81,18 @@ func (r *resourceSerializer) Serialize(resource *securityv1.Resource) ([]byte, [
 	return data, signature, nil
 }
 
-func (r *resourceSerializer) UpdateResourceWithSignature(resource *securityv1.Resource, signingKeyId string, signature []byte) error {
+func (r *resourceSerializer) UpdateResourceWithSignature(
+	resource *securityv1.Resource,
+	signingKeyId string,
+	algorithm pbutils.Signature_Algorithm,
+	publicKey []byte,
+	signature []byte,
+) error {
 	sig := &pbutils.Signature{
-		KeyId: signingKeyId,
-		Data:  signature,
+		KeyId:     signingKeyId,
+		Data:      signature,
+		PublicKey: publicKey,
+		Algorithm: algorithm,
 	}
 
 	switch v := resource.Config.(type) {
@@ -192,11 +201,15 @@ func SignatureProtoToStructpb(sig *pbutils.Signature) *structpb.Struct {
 		return nil
 	}
 
-	sigStruct, _ := utils.ProtoToStructPb(sig)
+	sigStruct, _ := utils.ProtoToStructPb(sig, &protojson.MarshalOptions{UseEnumNumbers: true})
 	sigData := sig.GetData()
+	sigPubKey := sig.GetPublicKey()
 
 	if sigData != nil {
 		sigStruct.Fields["data"] = structpb.NewStringValue(string(sigData))
+	}
+	if sigPubKey != nil {
+		sigStruct.Fields["publicKey"] = structpb.NewStringValue(string(sigPubKey))
 	}
 
 	return sigStruct
@@ -214,6 +227,12 @@ func StructpbToSignatureProto(data *structpb.Struct) (*pbutils.Signature, error)
 		data.Fields["data"] = structpb.NewStringValue(encodedSigData)
 	}
 
+	sigPubKey, err := utils.GetStructField(data, "publicKey")
+	if err == nil && sigPubKey != nil {
+		encodedSigPubKey := base64.StdEncoding.EncodeToString([]byte(sigPubKey.GetStringValue()))
+		data.Fields["publicKey"] = structpb.NewStringValue(encodedSigPubKey)
+	}
+
 	sig := &pbutils.Signature{}
 	if err := utils.StructPbToProto(data, sig); err != nil {
 		return nil, fmt.Errorf("failed to convert %T into %T: %w", data, sig, err)
@@ -227,18 +246,14 @@ func ApiProtoToStructpb(api *apiv1.Api) (*structpb.Struct, error) {
 		return nil, nil
 	}
 
-	apiStruct, _ := utils.ProtoToStructPb(api)
-	sig := api.GetSignature().GetData()
+	apiStruct, _ := utils.ProtoToStructPb(api, &protojson.MarshalOptions{UseEnumNumbers: true})
+	sig := api.GetSignature()
 	if sig == nil {
 		return apiStruct, nil
 	}
 
-	sigStruct, err := utils.GetStructField(apiStruct, "signature")
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert %T into %T: %w", api, apiStruct, err)
-	}
-
-	sigStruct.GetStructValue().Fields["data"] = structpb.NewStringValue(string(sig))
+	sigStruct := SignatureProtoToStructpb(sig)
+	apiStruct.Fields["signature"] = structpb.NewStructValue(sigStruct)
 
 	return apiStruct, nil
 }
@@ -249,15 +264,20 @@ func StructpbToApiProto(data *structpb.Struct) (*apiv1.Api, error) {
 	}
 
 	data = proto.Clone(data).(*structpb.Struct)
-	sig, err := utils.GetStructField(data, "signature.data")
-	if err == nil && sig != nil {
-		encodedSig := base64.StdEncoding.EncodeToString([]byte(sig.GetStringValue()))
-		data.Fields["signature"].GetStructValue().Fields["data"] = structpb.NewStringValue(encodedSig)
-	}
-
 	api := &apiv1.Api{}
+
 	if err := utils.StructPbToProto(data, api); err != nil {
 		return nil, fmt.Errorf("failed to convert %T into %T: %w", data, api, err)
+	}
+
+	sig, err := utils.GetStructField(data, "signature")
+	if err == nil && sig != nil {
+		sigProto, err := StructpbToSignatureProto(sig.GetStructValue())
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert %T into %T: %w", data, api, err)
+		}
+
+		api.Signature = sigProto
 	}
 
 	return api, nil

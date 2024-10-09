@@ -478,6 +478,86 @@ func TestFetchApi(t *testing.T) {
 					},
 					Blocks: []*apiv1.Block{},
 					Signature: &pbutils.Signature{
+						KeyId:     "key-id",
+						Data:      []byte("api-signature"),
+						PublicKey: []byte("any-public-key"),
+						Algorithm: pbutils.Signature_ALGORITHM_ED25519,
+					},
+				},
+			},
+			expectedRawDef: map[string]any{
+				"api": map[string]any{
+					"metadata": map[string]any{
+						"id":           "00000000-0000-0000-0000-000000000001",
+						"organization": "org-id",
+						"name":         "TestApi",
+					},
+					"trigger": map[string]any{
+						"application": map[string]any{
+							"id": "app-id",
+						},
+					},
+					"blocks": []any{},
+					"signature": map[string]any{
+						"keyId":     "key-id",
+						"data":      "api-signature",
+						"publicKey": "any-public-key",
+						"algorithm": 1,
+					},
+					"extraField": "extraValue",
+				},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+				{
+					"api": {
+						"metadata": {
+						  "id": "00000000-0000-0000-0000-000000000001",
+						  "organization": "org-id",
+						  "name": "TestApi"
+						},
+						"trigger": {
+						  "application": {
+						    "id": "app-id"
+						  }
+						},
+						"blocks": [],
+						"signature": {
+						  "keyId": "key-id",
+						  "data": "YXBpLXNpZ25hdHVyZQ==",
+						  "publicKey": "YW55LXB1YmxpYy1rZXk=",
+						  "algorithm": 1
+						},
+						"extraField": "extraValue"
+					}
+				}
+				`)),
+			},
+			err:         nil,
+			expectedURL: "https://api.superblocks.com/api/v3/apis/00000000-0000-0000-0000-000000000001?hydrate=true&v2=true",
+		},
+		{
+			name: "signed api, no algorithm public key",
+			request: &apiv1.ExecuteRequest_Fetch{
+				Id: "00000000-0000-0000-0000-000000000001",
+			},
+			expectedDef: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:           "00000000-0000-0000-0000-000000000001",
+						Organization: "org-id",
+						Name:         "TestApi",
+					},
+					Trigger: &apiv1.Trigger{
+						Config: &apiv1.Trigger_Application_{
+							Application: &apiv1.Trigger_Application{
+								Id: "app-id",
+							},
+						},
+					},
+					Blocks: []*apiv1.Block{},
+					Signature: &pbutils.Signature{
 						KeyId: "key-id",
 						Data:  []byte("api-signature"),
 					},
@@ -696,6 +776,28 @@ func TestScheduleJobRequest(t *testing.T) {
 						{
 							"api": {
 								"metadata": {
+								  "id": "00000000-0000-0000-0000-000000000001",
+								  "organization": "org-id",
+								  "name": "TestApi"
+								},
+								"trigger": {
+								  "application": {
+								    "id": "app-id"
+								  }
+								},
+								"blocks": [],
+								"signature": {
+								  "keyId": "key-id",
+								  "data": "YXBpLXNpZ25hdHVyZQ==",
+								  "publicKey": "YW55LXB1YmxpYy1rZXk=",
+								  "algorithm": 1
+								},
+								"extraField": "extraValue"
+							}
+						},
+						{
+							"api": {
+								"metadata": {
 									"id": "00000000-0000-0000-0000-000000000002",
 									"organization": "org-id",
 									"name": "TestApi"
@@ -739,6 +841,29 @@ func TestScheduleJobRequest(t *testing.T) {
 					{
 						Api: &apiv1.Api{
 							Metadata: &commonv1.Metadata{
+								Id:           "00000000-0000-0000-0000-000000000001",
+								Organization: "org-id",
+								Name:         "TestApi",
+							},
+							Trigger: &apiv1.Trigger{
+								Config: &apiv1.Trigger_Application_{
+									Application: &apiv1.Trigger_Application{
+										Id: "app-id",
+									},
+								},
+							},
+							Blocks: []*apiv1.Block{},
+							Signature: &pbutils.Signature{
+								KeyId:     "key-id",
+								Data:      []byte("api-signature"),
+								PublicKey: []byte("any-public-key"),
+								Algorithm: pbutils.Signature_ALGORITHM_ED25519,
+							},
+						},
+					},
+					{
+						Api: &apiv1.Api{
+							Metadata: &commonv1.Metadata{
 								Id:           "00000000-0000-0000-0000-000000000002",
 								Organization: "org-id",
 								Name:         "TestApi",
@@ -773,6 +898,28 @@ func TestScheduleJobRequest(t *testing.T) {
 							"signature": map[string]any{
 								"keyId": "key-id",
 								"data":  "api-signature",
+							},
+							"extraField": "extraValue",
+						},
+					},
+					map[string]any{
+						"api": map[string]any{
+							"metadata": map[string]any{
+								"id":           "00000000-0000-0000-0000-000000000001",
+								"organization": "org-id",
+								"name":         "TestApi",
+							},
+							"trigger": map[string]any{
+								"application": map[string]any{
+									"id": "app-id",
+								},
+							},
+							"blocks": []any{},
+							"signature": map[string]any{
+								"keyId":     "key-id",
+								"data":      "api-signature",
+								"publicKey": "any-public-key",
+								"algorithm": 1,
 							},
 							"extraField": "extraValue",
 						},

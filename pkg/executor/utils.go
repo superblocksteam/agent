@@ -280,7 +280,7 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 		return nil, nil, err
 	}
 
-	rawDef, err := utils.ProtoToStructPb(def)
+	rawDef, err := utils.ProtoToStructPb(def, nil)
 	if err != nil {
 		return nil, nil, err
 	}

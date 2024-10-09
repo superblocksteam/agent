@@ -5,6 +5,13 @@ package utils.v1;
 option go_package = "github.com/superblocksteam/agent/types/gen/go/utils/v1";
 
 message Signature {
+  enum Algorithm {
+    ALGORITHM_UNSPECIFIED = 0;
+    ALGORITHM_ED25519 = 1;
+  }
+
   string key_id = 1;
   bytes data = 2;
+  bytes public_key = 3;
+  Algorithm algorithm = 4;
 }

@@ -59,8 +59,12 @@ func FindStringsInStruct(value *structpb.Value, f func(string)) {
 	}
 }
 
-func ProtoToStructPb(message proto.Message) (*structpb.Struct, error) {
-	data, err := protojson.Marshal(message)
+func ProtoToStructPb(message proto.Message, options *protojson.MarshalOptions) (*structpb.Struct, error) {
+	if options == nil {
+		options = &protojson.MarshalOptions{}
+	}
+
+	data, err := (*options).Marshal(message)
 	if err != nil {
 		return nil, err
 	}

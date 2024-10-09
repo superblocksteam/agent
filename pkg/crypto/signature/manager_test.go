@@ -346,29 +346,36 @@ func TestManagerSignAndUpdateResource(t *testing.T) {
 	}
 	anySerializedOutput := []byte("any-serialized-output")
 	anySignature := []byte("any-signature-value")
+	anyPublicKey := []byte("any-public-key")
 	signedResourceSignature := []byte("signed-payload")
 
 	for _, test := range []struct {
-		name              string
-		signingErr        bool
-		updateErr         error
-		shouldCallUpdate  bool
-		expectedSignature []byte
+		name                     string
+		signingErr               bool
+		updateErr                error
+		shouldCallUpdate         bool
+		signerAlgorithm          SigningAlgorithm
+		expectedSignature        []byte
+		expectedSigningAlgorithm utilsv1.Signature_Algorithm
 	}{
 		{
-			name:              "valid",
-			shouldCallUpdate:  true,
-			expectedSignature: signedResourceSignature,
+			name:                     "valid",
+			shouldCallUpdate:         true,
+			signerAlgorithm:          ED25519,
+			expectedSignature:        signedResourceSignature,
+			expectedSigningAlgorithm: utilsv1.Signature_ALGORITHM_ED25519,
 		},
 		{
 			name:       "signing fails",
 			signingErr: true,
 		},
 		{
-			name:              "update fails fails",
-			shouldCallUpdate:  true,
-			updateErr:         errors.New("update error"),
-			expectedSignature: signedResourceSignature,
+			name:                     "update fails fails",
+			shouldCallUpdate:         true,
+			signerAlgorithm:          UNKNOWN,
+			updateErr:                errors.New("update error"),
+			expectedSignature:        signedResourceSignature,
+			expectedSigningAlgorithm: utilsv1.Signature_ALGORITHM_UNSPECIFIED,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -379,14 +386,24 @@ func TestManagerSignAndUpdateResource(t *testing.T) {
 
 			signingKeyId := "my_key"
 
+			mockSignature := NewMockSignature(t)
+			mockSignature.On("Sign", anySerializedOutput).Return(signedResourceSignature, signingErr).Once()
+
 			mockResourceSerializer := NewMockResourceSerializer(t)
 			mockResourceSerializer.On("Serialize", anyResource).Return(anySerializedOutput, anySignature, nil).Once()
 			if test.shouldCallUpdate {
-				mockResourceSerializer.On("UpdateResourceWithSignature", anyResource, signingKeyId, signedResourceSignature).Return(test.updateErr).Once()
-			}
+				mockSignature.On("Algorithm").Return(test.signerAlgorithm).Once()
+				mockSignature.On("PublicKey").Return(anyPublicKey).Once()
 
-			mockSignature := NewMockSignature(t)
-			mockSignature.On("Sign", anySerializedOutput).Return(signedResourceSignature, signingErr).Once()
+				mockResourceSerializer.On(
+					"UpdateResourceWithSignature",
+					anyResource,
+					signingKeyId,
+					test.expectedSigningAlgorithm,
+					anyPublicKey,
+					signedResourceSignature,
+				).Return(test.updateErr).Once()
+			}
 
 			signers := map[string]Signature{
 				"my_key": mockSignature,

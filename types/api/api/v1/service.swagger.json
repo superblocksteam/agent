@@ -2648,6 +2648,14 @@
       ],
       "default": "MECHANISM_UNSPECIFIED"
     },
+    "SignatureAlgorithm": {
+      "type": "string",
+      "enum": [
+        "ALGORITHM_UNSPECIFIED",
+        "ALGORITHM_ED25519"
+      ],
+      "default": "ALGORITHM_UNSPECIFIED"
+    },
     "SoqlSoqlAction": {
       "type": "string",
       "enum": [
@@ -6274,6 +6282,13 @@
         "data": {
           "type": "string",
           "format": "byte"
+        },
+        "publicKey": {
+          "type": "string",
+          "format": "byte"
+        },
+        "algorithm": {
+          "$ref": "#/definitions/SignatureAlgorithm"
         }
       }
     },

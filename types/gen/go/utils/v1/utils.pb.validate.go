@@ -61,6 +61,10 @@ func (m *Signature) validate(all bool) error {
 
 	// no validation rules for Data
 
+	// no validation rules for PublicKey
+
+	// no validation rules for Algorithm
+
 	if len(errors) > 0 {
 		return SignatureMultiError(errors)
 	}

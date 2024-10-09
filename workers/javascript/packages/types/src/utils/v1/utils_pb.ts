@@ -20,6 +20,16 @@ export class Signature extends Message<Signature> {
    */
   data = new Uint8Array(0);
 
+  /**
+   * @generated from field: bytes public_key = 3;
+   */
+  publicKey = new Uint8Array(0);
+
+  /**
+   * @generated from field: utils.v1.Signature.Algorithm algorithm = 4;
+   */
+  algorithm = Signature_Algorithm.UNSPECIFIED;
+
   constructor(data?: PartialMessage<Signature>) {
     super();
     proto3.util.initPartial(data, this);
@@ -30,6 +40,8 @@ export class Signature extends Message<Signature> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "key_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "data", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
+    { no: 3, name: "public_key", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
+    { no: 4, name: "algorithm", kind: "enum", T: proto3.getEnumType(Signature_Algorithm) },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Signature {
@@ -48,4 +60,24 @@ export class Signature extends Message<Signature> {
     return proto3.util.equals(Signature, a, b);
   }
 }
+
+/**
+ * @generated from enum utils.v1.Signature.Algorithm
+ */
+export enum Signature_Algorithm {
+  /**
+   * @generated from enum value: ALGORITHM_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: ALGORITHM_ED25519 = 1;
+   */
+  ED25519 = 1,
+}
+// Retrieve enum metadata with: proto3.getEnumType(Signature_Algorithm)
+proto3.util.setEnumType(Signature_Algorithm, "utils.v1.Signature.Algorithm", [
+  { no: 0, name: "ALGORITHM_UNSPECIFIED" },
+  { no: 1, name: "ALGORITHM_ED25519" },
+]);
 

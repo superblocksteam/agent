@@ -573,16 +573,23 @@ func (f *fetcher) setSignatureOnRawResponse(result *apiv1.Definition, rawResult 
 		logger = f.logger
 	}
 
-	if sig := result.GetApi().GetSignature().GetData(); sig != nil {
-		rawResultSig, err := utils.GetStructField(rawResult, "api.signature")
-		if err != nil {
-			logger.Error("could not unmarshal raw response into struct", zap.Error(err))
-			return new(sberrors.InternalError)
-		}
-
-		rawResultSig.GetStructValue().Fields["data"] = structpb.NewStringValue(string(sig))
+	sig := result.GetApi().GetSignature()
+	if sig == nil {
+		return nil
 	}
 
+	rawResultSig, err := utils.GetStructField(rawResult, "api.signature")
+	if err != nil {
+		logger.Error("could not unmarshal raw response into struct", zap.Error(err))
+		return new(sberrors.InternalError)
+	}
+
+	if sig.Data != nil {
+		rawResultSig.GetStructValue().Fields["data"] = structpb.NewStringValue(string(sig.Data))
+	}
+	if sig.PublicKey != nil {
+		rawResultSig.GetStructValue().Fields["publicKey"] = structpb.NewStringValue(string(sig.PublicKey))
+	}
 	return nil
 }
 

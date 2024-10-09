@@ -13,6 +13,12 @@ export class Signature extends jspb.Message {
     getData_asU8(): Uint8Array;
     getData_asB64(): string;
     setData(value: Uint8Array | string): Signature;
+    getPublicKey(): Uint8Array | string;
+    getPublicKey_asU8(): Uint8Array;
+    getPublicKey_asB64(): string;
+    setPublicKey(value: Uint8Array | string): Signature;
+    getAlgorithm(): Signature.Algorithm;
+    setAlgorithm(value: Signature.Algorithm): Signature;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Signature.AsObject;
@@ -28,5 +34,13 @@ export namespace Signature {
     export type AsObject = {
         keyId: string,
         data: Uint8Array | string,
+        publicKey: Uint8Array | string,
+        algorithm: Signature.Algorithm,
     }
+
+    export enum Algorithm {
+    ALGORITHM_UNSPECIFIED = 0,
+    ALGORITHM_ED25519 = 1,
+    }
+
 }
