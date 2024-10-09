@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
+	utilsv1 "github.com/superblocksteam/agent/types/gen/go/utils/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -239,9 +241,10 @@ func Test_ProtoToStructPb(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range []struct {
-		name     string
-		data     proto.Message
-		expected map[string]any
+		name           string
+		data           proto.Message
+		marshalOptions *protojson.MarshalOptions
+		expected       map[string]any
 	}{
 		{
 			name:     "empty proto",
@@ -287,12 +290,37 @@ func Test_ProtoToStructPb(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "convert proto to structpb with enums",
+			data: &utilsv1.Signature{
+				KeyId:     "key-id",
+				Algorithm: utilsv1.Signature_ALGORITHM_ED25519,
+			},
+			expected: map[string]any{
+				"keyId":     "key-id",
+				"algorithm": "ALGORITHM_ED25519",
+			},
+		},
+		{
+			name: "convert proto to structpb with enums as integers",
+			data: &utilsv1.Signature{
+				KeyId:     "key-id",
+				Algorithm: utilsv1.Signature_ALGORITHM_ED25519,
+			},
+			marshalOptions: &protojson.MarshalOptions{
+				UseEnumNumbers: true,
+			},
+			expected: map[string]any{
+				"keyId":     "key-id",
+				"algorithm": 1,
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			expectedStruct, err := structpb.NewStruct(test.expected)
 			assert.NoError(t, err)
 
-			actual, err := ProtoToStructPb(test.data)
+			actual, err := ProtoToStructPb(test.data, test.marshalOptions)
 
 			assert.NoError(t, err)
 			AssertProtoEqual(t, expectedStruct, actual)

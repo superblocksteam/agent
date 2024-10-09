@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
@@ -37,6 +38,8 @@ type args struct {
 }
 
 func validArgs(t *testing.T, trigger triggerType, withSignature bool) *args {
+	t.Helper()
+
 	apiMap := map[string]any{
 		"metadata": map[string]any{
 			"id":           "00000000-0000-0000-0000-000000000001",
@@ -159,14 +162,19 @@ func validArgs(t *testing.T, trigger triggerType, withSignature bool) *args {
 	var sig []byte
 	if withSignature {
 		sig = []byte("api-literal-signature")
+		pubKey := []byte("public-key")
 
 		apiMap["signature"] = map[string]any{
-			"keyId": "signing-key-id",
-			"data":  string(sig),
+			"keyId":     "signing-key-id",
+			"data":      string(sig),
+			"publicKey": string(pubKey),
+			"algorithm": 1,
 		}
 		api.Signature = &pbutils.Signature{
-			KeyId: "signing-key-id",
-			Data:  sig,
+			KeyId:     "signing-key-id",
+			Data:      sig,
+			PublicKey: pubKey,
+			Algorithm: pbutils.Signature_ALGORITHM_ED25519,
 		}
 	}
 
@@ -176,12 +184,14 @@ func validArgs(t *testing.T, trigger triggerType, withSignature bool) *args {
 	literalExpectedPayload, err := json.Marshal(apiLiteral)
 	require.NoError(t, err)
 
+	literalStruct := proto.Clone(apiLiteral).(*structpb.Struct)
+
 	return &args{
 		serializer:             NewResourceSerializer(),
 		apiMap:                 apiMap,
 		api:                    api,
 		apiLiteral:             apiLiteral,
-		literal:                structpb.NewStructValue(apiLiteral),
+		literal:                structpb.NewStructValue(literalStruct),
 		expectedPayload:        expectedPayload,
 		literalExpectedPayload: string(literalExpectedPayload),
 		expectedSig:            sig,
@@ -189,11 +199,15 @@ func validArgs(t *testing.T, trigger triggerType, withSignature bool) *args {
 }
 
 func verify(t *testing.T, a *args, expectedPayload string, newSignature *pbutils.Signature, expectedSerializeErr, expectedUpdateErr error) {
+	t.Helper()
+
 	verifySerialize(t, a, expectedPayload, expectedSerializeErr)
 	verifyUpdateResourceWithSignature(t, a, newSignature, expectedUpdateErr)
 }
 
 func verifySerialize(t *testing.T, a *args, expectedPayload string, expectedErr error) {
+	t.Helper()
+
 	payload, sig, err := a.serializer.Serialize(&securityv1.Resource{
 		Config: &securityv1.Resource_Api{
 			Api: structpb.NewStructValue(a.apiLiteral),
@@ -215,8 +229,10 @@ func verifySerialize(t *testing.T, a *args, expectedPayload string, expectedErr 
 	}
 	if a.expectedSig != nil {
 		literal.Signature = &pbutils.Signature{
-			KeyId: "signing-key-id",
-			Data:  a.expectedSig,
+			KeyId:     "signing-key-id",
+			Data:      a.expectedSig,
+			PublicKey: []byte("public-key"),
+			Algorithm: pbutils.Signature_ALGORITHM_ED25519,
 		}
 	}
 
@@ -229,6 +245,8 @@ func verifySerialize(t *testing.T, a *args, expectedPayload string, expectedErr 
 }
 
 func verifyPayloadAndSignature(t *testing.T, actualPayload, expectedPayload string, actualSig, expectedSig []byte, actualErr, expectedErr error) {
+	t.Helper()
+
 	if expectedErr != nil {
 		assert.ErrorIs(t, actualErr, expectedErr)
 	} else {
@@ -239,6 +257,8 @@ func verifyPayloadAndSignature(t *testing.T, actualPayload, expectedPayload stri
 }
 
 func verifyUpdateResourceWithSignature(t *testing.T, a *args, newSignature *pbutils.Signature, expectedErr error) {
+	t.Helper()
+
 	res := &securityv1.Resource{
 		Config: &securityv1.Resource_Api{
 			Api: structpb.NewStructValue(a.apiLiteral),
@@ -276,7 +296,9 @@ func verifyUpdateResourceWithSignature(t *testing.T, a *args, newSignature *pbut
 }
 
 func verifyUpdatedSignature(t *testing.T, a *args, res *securityv1.Resource, newSignature *pbutils.Signature, expectedErr error, getSignature func(res *securityv1.Resource) *pbutils.Signature) {
-	err := a.serializer.UpdateResourceWithSignature(res, newSignature.KeyId, newSignature.Data)
+	t.Helper()
+
+	err := a.serializer.UpdateResourceWithSignature(res, newSignature.KeyId, newSignature.Algorithm, newSignature.PublicKey, newSignature.Data)
 	if expectedErr != nil {
 		assert.ErrorIs(t, err, expectedErr)
 	} else {
@@ -288,12 +310,37 @@ func verifyUpdatedSignature(t *testing.T, a *args, res *securityv1.Resource, new
 
 func TestOk(t *testing.T) {
 	newSig := &pbutils.Signature{
+		KeyId:     "new-signing-key-id",
+		Data:      []byte("new-payload-signature"),
+		PublicKey: []byte("new-public-key"),
+		Algorithm: pbutils.Signature_ALGORITHM_ED25519,
+	}
+
+	for _, trigger := range []triggerType{noTrigger, applicationTrigger, jobTrigger, workflowTrigger} {
+		a := validArgs(t, trigger, true)
+		verify(t, a, a.expectedPayload, newSig, nil, nil)
+	}
+}
+
+func TestOkNoPublicKeyAlgorithm(t *testing.T) {
+	newSig := &pbutils.Signature{
 		KeyId: "new-signing-key-id",
 		Data:  []byte("new-payload-signature"),
 	}
 
 	for _, trigger := range []triggerType{noTrigger, applicationTrigger, jobTrigger, workflowTrigger} {
 		a := validArgs(t, trigger, true)
+
+		// Remove public key and algorithm from strict api type
+		a.api.Signature.PublicKey = nil
+		a.api.Signature.Algorithm = pbutils.Signature_ALGORITHM_UNSPECIFIED
+
+		// Remove public key and algorithm from api literal type
+		delete(a.apiLiteral.Fields["signature"].GetStructValue().Fields, "publicKey")
+		delete(a.apiLiteral.Fields["signature"].GetStructValue().Fields, "algorithm")
+
+		// No need to remove any data from the literal type as it is just a blob of data
+
 		verify(t, a, a.expectedPayload, newSig, nil, nil)
 	}
 }
@@ -373,7 +420,7 @@ func TestSerializeMarshalToJsonError(t *testing.T) {
 	payload, sig, err := a.serializer.Serialize(&securityv1.Resource{
 		Config: &securityv1.Resource_Literal_{
 			Literal: &securityv1.Resource_Literal{
-				Data: structpb.NewStructValue(a.apiLiteral),
+				Data: a.literal,
 			},
 		},
 	})
@@ -474,7 +521,7 @@ func TestConvertBetweenStructpbAndSignatureProto(t *testing.T) {
 			},
 		},
 		{
-			name: "populated proto with signature",
+			name: "populated proto with signature, no public key",
 			sigMap: map[string]any{
 				"keyId": "any-key-id",
 				"data":  "some-signature-value",
@@ -482,6 +529,21 @@ func TestConvertBetweenStructpbAndSignatureProto(t *testing.T) {
 			sigProto: &pbutils.Signature{
 				KeyId: "any-key-id",
 				Data:  []byte("some-signature-value"),
+			},
+		},
+		{
+			name: "populated proto with signature",
+			sigMap: map[string]any{
+				"keyId":     "any-key-id",
+				"data":      "some-signature-value",
+				"publicKey": "some-public-key",
+				"algorithm": 1,
+			},
+			sigProto: &pbutils.Signature{
+				KeyId:     "any-key-id",
+				Data:      []byte("some-signature-value"),
+				PublicKey: []byte("some-public-key"),
+				Algorithm: pbutils.Signature_ALGORITHM_ED25519,
 			},
 		},
 	}
@@ -550,7 +612,7 @@ func TestConvertBetweenApiProtoAndStructpb(t *testing.T) {
 			},
 		},
 		{
-			name: "populated proto with signature",
+			name: "populated proto with signature, no public key",
 			apiProto: &apiv1.Api{
 				Metadata: &commonv1.Metadata{
 					Id: "00000000-0000-0000-0000-000000000001",
@@ -580,6 +642,44 @@ func TestConvertBetweenApiProtoAndStructpb(t *testing.T) {
 				"signature": map[string]any{
 					"keyId": "any-key-id",
 					"data":  "some-signature-value",
+				},
+			},
+		},
+		{
+			name: "populated proto with signature",
+			apiProto: &apiv1.Api{
+				Metadata: &commonv1.Metadata{
+					Id: "00000000-0000-0000-0000-000000000001",
+				},
+				Trigger: &apiv1.Trigger{
+					Config: &apiv1.Trigger_Application_{
+						Application: &apiv1.Trigger_Application{
+							Id: "app-id",
+						},
+					},
+				},
+				Blocks: []*apiv1.Block{},
+				Signature: &pbutils.Signature{
+					KeyId:     "any-key-id",
+					Data:      []byte("some-signature-value"),
+					PublicKey: []byte("some-public-key"),
+					Algorithm: pbutils.Signature_ALGORITHM_ED25519,
+				},
+			},
+			apiMap: map[string]any{
+				"metadata": map[string]any{
+					"id": "00000000-0000-0000-0000-000000000001",
+				},
+				"trigger": map[string]any{
+					"application": map[string]any{
+						"id": "app-id",
+					},
+				},
+				"signature": map[string]any{
+					"keyId":     "any-key-id",
+					"data":      "some-signature-value",
+					"publicKey": "some-public-key",
+					"algorithm": 1,
 				},
 			},
 		},

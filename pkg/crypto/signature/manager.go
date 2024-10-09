@@ -8,6 +8,7 @@ import (
 
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	securityv1 "github.com/superblocksteam/agent/types/gen/go/security/v1"
+	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 )
 
 type Registry interface {
@@ -124,7 +125,14 @@ func (m *manager) SignAndUpdateResource(resource *securityv1.Resource) error {
 		return fmt.Errorf("failed to sign resource: %w", err)
 	}
 
-	return m.serializer.UpdateResourceWithSignature(resource, m.SigningKeyID(), signature)
+	signer := m.resourceSigners[m.SigningKeyID()]
+	return m.serializer.UpdateResourceWithSignature(
+		resource,
+		m.SigningKeyID(),
+		toAlgorithmEnumProto(signer.Algorithm()),
+		signer.PublicKey(),
+		signature,
+	)
 }
 
 func (m *manager) Verify(resource *securityv1.Resource) error {
@@ -152,4 +160,13 @@ func (m *manager) Verify(resource *securityv1.Resource) error {
 	}
 
 	return verifyErrs
+}
+
+func toAlgorithmEnumProto(algo SigningAlgorithm) pbutils.Signature_Algorithm {
+	switch algo {
+	case ED25519:
+		return pbutils.Signature_ALGORITHM_ED25519
+	default:
+		return pbutils.Signature_ALGORITHM_UNSPECIFIED
+	}
 }
