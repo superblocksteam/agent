@@ -12,6 +12,7 @@ import "google/protobuf/struct.proto";
 import "plugins/adls/v1/plugin.proto";
 import "plugins/cosmosdb/v1/plugin.proto";
 import "plugins/kafka/v1/plugin.proto";
+import "plugins/couchbase/v1/plugin.proto";
 import "plugins/kinesis/v1/plugin.proto";
 import "store/v1/store.proto";
 import "validate/validate.proto";
@@ -138,13 +139,14 @@ message Response {
 
       // NOTE(frank): I think we'll need a transport/v2 for this but ideally
       // we don't have duplcate types like this.
-      optional plugins.kafka.v1.Metadata kafka = 5;
-      optional plugins.kinesis.v1.Metadata kinesis = 6;
+      optional plugins.couchbase.v1.Metadata couchbase = 5;
+      optional plugins.kafka.v1.Metadata kafka = 6;
+      optional plugins.kinesis.v1.Metadata kinesis = 7;
 
-      optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 7;
-      optional plugins.adls.v1.Plugin.Metadata adls = 8;
-      optional google.protobuf.Any dynamodb = 9;
-      optional string g_sheets_next_page_token = 10;
+      optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 8;
+      optional plugins.adls.v1.Plugin.Metadata adls = 9;
+      optional google.protobuf.Any dynamodb = 10;
+      optional string g_sheets_next_page_token = 11;
     }
     Performance pinned = 1;
     Data data = 2;

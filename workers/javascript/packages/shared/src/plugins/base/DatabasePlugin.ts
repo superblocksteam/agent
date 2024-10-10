@@ -21,7 +21,7 @@ import { extractMustacheStrings, renderValueWithLoc, resolveAllBindings } from '
 import { SQLMappingModeEnum, SqlOperations } from '../templates';
 import { BasePlugin, ResolveActionConfigurationProperty, getKeyFromSSHAuthMethod } from './BasePlugin';
 
-interface SSHTunnelConfig {
+export interface SSHTunnelConfig {
   client?: Client;
   host?: string;
   port?: number;

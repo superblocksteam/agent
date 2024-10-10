@@ -576,6 +576,12 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 		}
 	}
 
+	if couchbase := resp.GetData().GetData().GetCouchbase(); couchbase != nil {
+		metaRes.Metadata = &apiv1.MetadataResponse_Couchbase{
+			Couchbase: couchbase,
+		}
+	}
+
 	if kafka := resp.GetData().GetData().GetKafka(); kafka != nil {
 		metaRes.Metadata = &apiv1.MetadataResponse_Kafka{
 			Kafka: kafka,

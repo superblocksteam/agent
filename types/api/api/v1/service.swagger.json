@@ -1226,6 +1226,29 @@
       ],
       "default": "INTERVAL_UNSPECIFIED"
     },
+    "MetadataBucket": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataScope"
+          }
+        }
+      }
+    },
+    "MetadataCollection": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "MetadataContainer": {
       "type": "object",
       "properties": {
@@ -1329,6 +1352,21 @@
         "schema": {
           "type": "string",
           "title": "NOTE: (joey) this is optional in the TS version of this model. should be here as well"
+        }
+      }
+    },
+    "MetadataScope": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "collections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataCollection"
+          }
         }
       }
     },
@@ -1572,26 +1610,8 @@
         "password": {
           "type": "string"
         },
-        "bucket": {
-          "type": "string"
-        },
-        "useTls": {
-          "type": "boolean"
-        },
         "url": {
           "type": "string"
-        }
-      }
-    },
-    "PluginCouchbaseEndpoint": {
-      "type": "object",
-      "properties": {
-        "host": {
-          "type": "string"
-        },
-        "port": {
-          "type": "integer",
-          "format": "int32"
         }
       }
     },
@@ -3278,6 +3298,18 @@
         }
       }
     },
+    "pluginscouchbasev1Metadata": {
+      "type": "object",
+      "properties": {
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataBucket"
+          }
+        }
+      }
+    },
     "pluginscouchbasev1Plugin": {
       "type": "object",
       "properties": {
@@ -3287,15 +3319,15 @@
         "connection": {
           "$ref": "#/definitions/PluginCouchbaseConnection"
         },
-        "endpoint": {
-          "$ref": "#/definitions/PluginCouchbaseEndpoint",
-          "title": "TODO (jason4012) we should unify the interface\nso that endpoint doesn't have to be always be set here for SSH tunneling"
-        },
         "dynamicWorkflowConfiguration": {
           "$ref": "#/definitions/v1DynamicWorkflowConfiguration"
         },
         "tunnel": {
           "$ref": "#/definitions/v1SSHConfiguration"
+        },
+        "bucketName": {
+          "type": "string",
+          "title": "used for all couchbase actions"
         },
         "runSql": {
           "$ref": "#/definitions/v1SQLExecution"
@@ -5949,6 +5981,9 @@
         },
         "bucketsMetadata": {
           "$ref": "#/definitions/v1MetadataResponseBucketsMetadata"
+        },
+        "couchbase": {
+          "$ref": "#/definitions/pluginscouchbasev1Metadata"
         },
         "kafka": {
           "$ref": "#/definitions/pluginskafkav1Metadata"

@@ -172,13 +172,13 @@ function deserializeAdlsActionConfig(serialized: Record<string, unknown>): AdlsA
 function deserializeCouchbaseDatasourceConfig(serialized: Record<string, unknown>): CouchbaseDatasourceConfiguration {
   const plugin = CouchbasePluginV1.Plugin.fromJsonString(JSON.stringify(serialized), { ignoreUnknownFields: true });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { name, endpoint, connection, tunnel, ...rest } = plugin;
-  return { name, endpoint, connection, tunnel } as CouchbaseDatasourceConfiguration;
+  const { name, connection, tunnel, ...rest } = plugin;
+  return { name, connection, tunnel } as CouchbaseDatasourceConfiguration;
 }
 
 function deserializeCouchbaseActionConfig(serialized: Record<string, unknown>): CouchbaseActionConfiguration {
   const plugin = CouchbasePluginV1.Plugin.fromJsonString(JSON.stringify(serialized), { ignoreUnknownFields: true });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { name, endpoint, connection, tunnel, ...rest } = plugin;
+  const { name, connection, tunnel, ...rest } = plugin;
   return rest as CouchbaseActionConfiguration;
 }

@@ -22,22 +22,21 @@ export class Plugin extends Message<Plugin> {
   connection?: Plugin_CouchbaseConnection;
 
   /**
-   * TODO (jason4012) we should unify the interface
-   * so that endpoint doesn't have to be always be set here for SSH tunneling
-   *
-   * @generated from field: plugins.couchbase.v1.Plugin.CouchbaseEndpoint endpoint = 3;
-   */
-  endpoint?: Plugin_CouchbaseEndpoint;
-
-  /**
-   * @generated from field: optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 4;
+   * @generated from field: optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 3;
    */
   dynamicWorkflowConfiguration?: DynamicWorkflowConfiguration;
 
   /**
-   * @generated from field: plugins.common.v1.SSHConfiguration tunnel = 5;
+   * @generated from field: plugins.common.v1.SSHConfiguration tunnel = 4;
    */
   tunnel?: SSHConfiguration;
+
+  /**
+   * used for all couchbase actions
+   *
+   * @generated from field: string bucket_name = 5;
+   */
+  bucketName = "";
 
   /**
    * @generated from oneof plugins.couchbase.v1.Plugin.couchbase_action
@@ -78,9 +77,9 @@ export class Plugin extends Message<Plugin> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "connection", kind: "message", T: Plugin_CouchbaseConnection },
-    { no: 3, name: "endpoint", kind: "message", T: Plugin_CouchbaseEndpoint },
-    { no: 4, name: "dynamic_workflow_configuration", kind: "message", T: DynamicWorkflowConfiguration, opt: true },
-    { no: 5, name: "tunnel", kind: "message", T: SSHConfiguration },
+    { no: 3, name: "dynamic_workflow_configuration", kind: "message", T: DynamicWorkflowConfiguration, opt: true },
+    { no: 4, name: "tunnel", kind: "message", T: SSHConfiguration },
+    { no: 5, name: "bucket_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "run_sql", kind: "message", T: SQLExecution, oneof: "couchbase_action" },
     { no: 7, name: "insert", kind: "message", T: Plugin_CouchbaseInsert, oneof: "couchbase_action" },
     { no: 8, name: "get", kind: "message", T: Plugin_CouchbaseGet, oneof: "couchbase_action" },
@@ -101,49 +100,6 @@ export class Plugin extends Message<Plugin> {
 
   static equals(a: Plugin | PlainMessage<Plugin> | undefined, b: Plugin | PlainMessage<Plugin> | undefined): boolean {
     return proto3.util.equals(Plugin, a, b);
-  }
-}
-
-/**
- * @generated from message plugins.couchbase.v1.Plugin.CouchbaseEndpoint
- */
-export class Plugin_CouchbaseEndpoint extends Message<Plugin_CouchbaseEndpoint> {
-  /**
-   * @generated from field: string host = 1;
-   */
-  host = "";
-
-  /**
-   * @generated from field: int32 port = 2;
-   */
-  port = 0;
-
-  constructor(data?: PartialMessage<Plugin_CouchbaseEndpoint>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.couchbase.v1.Plugin.CouchbaseEndpoint";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "host", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_CouchbaseEndpoint {
-    return new Plugin_CouchbaseEndpoint().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_CouchbaseEndpoint {
-    return new Plugin_CouchbaseEndpoint().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_CouchbaseEndpoint {
-    return new Plugin_CouchbaseEndpoint().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: Plugin_CouchbaseEndpoint | PlainMessage<Plugin_CouchbaseEndpoint> | undefined, b: Plugin_CouchbaseEndpoint | PlainMessage<Plugin_CouchbaseEndpoint> | undefined): boolean {
-    return proto3.util.equals(Plugin_CouchbaseEndpoint, a, b);
   }
 }
 
@@ -205,19 +161,9 @@ export class Plugin_CouchbaseConnection extends Message<Plugin_CouchbaseConnecti
   password = "";
 
   /**
-   * @generated from field: string bucket = 4;
+   * @generated from field: string url = 5;
    */
-  bucket = "";
-
-  /**
-   * @generated from field: bool use_tls = 5;
-   */
-  useTls = false;
-
-  /**
-   * @generated from field: optional string url = 6;
-   */
-  url?: string;
+  url = "";
 
   constructor(data?: PartialMessage<Plugin_CouchbaseConnection>) {
     super();
@@ -229,9 +175,7 @@ export class Plugin_CouchbaseConnection extends Message<Plugin_CouchbaseConnecti
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 2, name: "user", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "password", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "bucket", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "use_tls", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 6, name: "url", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 5, name: "url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_CouchbaseConnection {
@@ -383,6 +327,166 @@ export class Plugin_CouchbaseRemove extends Message<Plugin_CouchbaseRemove> {
 
   static equals(a: Plugin_CouchbaseRemove | PlainMessage<Plugin_CouchbaseRemove> | undefined, b: Plugin_CouchbaseRemove | PlainMessage<Plugin_CouchbaseRemove> | undefined): boolean {
     return proto3.util.equals(Plugin_CouchbaseRemove, a, b);
+  }
+}
+
+/**
+ * @generated from message plugins.couchbase.v1.Metadata
+ */
+export class Metadata extends Message<Metadata> {
+  /**
+   * @generated from field: repeated plugins.couchbase.v1.Metadata.Bucket buckets = 1;
+   */
+  buckets: Metadata_Bucket[] = [];
+
+  constructor(data?: PartialMessage<Metadata>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "plugins.couchbase.v1.Metadata";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "buckets", kind: "message", T: Metadata_Bucket, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Metadata {
+    return new Metadata().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Metadata {
+    return new Metadata().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Metadata {
+    return new Metadata().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Metadata | PlainMessage<Metadata> | undefined, b: Metadata | PlainMessage<Metadata> | undefined): boolean {
+    return proto3.util.equals(Metadata, a, b);
+  }
+}
+
+/**
+ * @generated from message plugins.couchbase.v1.Metadata.Collection
+ */
+export class Metadata_Collection extends Message<Metadata_Collection> {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name = "";
+
+  constructor(data?: PartialMessage<Metadata_Collection>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "plugins.couchbase.v1.Metadata.Collection";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Metadata_Collection {
+    return new Metadata_Collection().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Metadata_Collection {
+    return new Metadata_Collection().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Metadata_Collection {
+    return new Metadata_Collection().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Metadata_Collection | PlainMessage<Metadata_Collection> | undefined, b: Metadata_Collection | PlainMessage<Metadata_Collection> | undefined): boolean {
+    return proto3.util.equals(Metadata_Collection, a, b);
+  }
+}
+
+/**
+ * @generated from message plugins.couchbase.v1.Metadata.Scope
+ */
+export class Metadata_Scope extends Message<Metadata_Scope> {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name = "";
+
+  /**
+   * @generated from field: repeated plugins.couchbase.v1.Metadata.Collection collections = 2;
+   */
+  collections: Metadata_Collection[] = [];
+
+  constructor(data?: PartialMessage<Metadata_Scope>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "plugins.couchbase.v1.Metadata.Scope";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "collections", kind: "message", T: Metadata_Collection, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Metadata_Scope {
+    return new Metadata_Scope().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Metadata_Scope {
+    return new Metadata_Scope().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Metadata_Scope {
+    return new Metadata_Scope().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Metadata_Scope | PlainMessage<Metadata_Scope> | undefined, b: Metadata_Scope | PlainMessage<Metadata_Scope> | undefined): boolean {
+    return proto3.util.equals(Metadata_Scope, a, b);
+  }
+}
+
+/**
+ * @generated from message plugins.couchbase.v1.Metadata.Bucket
+ */
+export class Metadata_Bucket extends Message<Metadata_Bucket> {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name = "";
+
+  /**
+   * @generated from field: repeated plugins.couchbase.v1.Metadata.Scope scopes = 2;
+   */
+  scopes: Metadata_Scope[] = [];
+
+  constructor(data?: PartialMessage<Metadata_Bucket>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "plugins.couchbase.v1.Metadata.Bucket";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "scopes", kind: "message", T: Metadata_Scope, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Metadata_Bucket {
+    return new Metadata_Bucket().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Metadata_Bucket {
+    return new Metadata_Bucket().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Metadata_Bucket {
+    return new Metadata_Bucket().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Metadata_Bucket | PlainMessage<Metadata_Bucket> | undefined, b: Metadata_Bucket | PlainMessage<Metadata_Bucket> | undefined): boolean {
+    return proto3.util.equals(Metadata_Bucket, a, b);
   }
 }
 

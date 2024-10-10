@@ -16,11 +16,6 @@ export class Plugin extends jspb.Message {
     getConnection(): Plugin.CouchbaseConnection | undefined;
     setConnection(value?: Plugin.CouchbaseConnection): Plugin;
 
-    hasEndpoint(): boolean;
-    clearEndpoint(): void;
-    getEndpoint(): Plugin.CouchbaseEndpoint | undefined;
-    setEndpoint(value?: Plugin.CouchbaseEndpoint): Plugin;
-
     hasDynamicWorkflowConfiguration(): boolean;
     clearDynamicWorkflowConfiguration(): void;
     getDynamicWorkflowConfiguration(): plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration | undefined;
@@ -30,6 +25,8 @@ export class Plugin extends jspb.Message {
     clearTunnel(): void;
     getTunnel(): plugins_common_v1_plugin_pb.SSHConfiguration | undefined;
     setTunnel(value?: plugins_common_v1_plugin_pb.SSHConfiguration): Plugin;
+    getBucketName(): string;
+    setBucketName(value: string): Plugin;
 
     hasRunSql(): boolean;
     clearRunSql(): void;
@@ -67,38 +64,15 @@ export namespace Plugin {
     export type AsObject = {
         name: string,
         connection?: Plugin.CouchbaseConnection.AsObject,
-        endpoint?: Plugin.CouchbaseEndpoint.AsObject,
         dynamicWorkflowConfiguration?: plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.AsObject,
         tunnel?: plugins_common_v1_plugin_pb.SSHConfiguration.AsObject,
+        bucketName: string,
         runSql?: plugins_common_v1_plugin_pb.SQLExecution.AsObject,
         insert?: Plugin.CouchbaseInsert.AsObject,
         get?: Plugin.CouchbaseGet.AsObject,
         remove?: Plugin.CouchbaseRemove.AsObject,
     }
 
-
-    export class CouchbaseEndpoint extends jspb.Message { 
-        getHost(): string;
-        setHost(value: string): CouchbaseEndpoint;
-        getPort(): number;
-        setPort(value: number): CouchbaseEndpoint;
-
-        serializeBinary(): Uint8Array;
-        toObject(includeInstance?: boolean): CouchbaseEndpoint.AsObject;
-        static toObject(includeInstance: boolean, msg: CouchbaseEndpoint): CouchbaseEndpoint.AsObject;
-        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-        static serializeBinaryToWriter(message: CouchbaseEndpoint, writer: jspb.BinaryWriter): void;
-        static deserializeBinary(bytes: Uint8Array): CouchbaseEndpoint;
-        static deserializeBinaryFromReader(message: CouchbaseEndpoint, reader: jspb.BinaryReader): CouchbaseEndpoint;
-    }
-
-    export namespace CouchbaseEndpoint {
-        export type AsObject = {
-            host: string,
-            port: number,
-        }
-    }
 
     export class CouchbaseIdentifier extends jspb.Message { 
         getScope(): string;
@@ -128,14 +102,7 @@ export namespace Plugin {
         setUser(value: string): CouchbaseConnection;
         getPassword(): string;
         setPassword(value: string): CouchbaseConnection;
-        getBucket(): string;
-        setBucket(value: string): CouchbaseConnection;
-        getUseTls(): boolean;
-        setUseTls(value: boolean): CouchbaseConnection;
-
-        hasUrl(): boolean;
-        clearUrl(): void;
-        getUrl(): string | undefined;
+        getUrl(): string;
         setUrl(value: string): CouchbaseConnection;
 
         serializeBinary(): Uint8Array;
@@ -152,9 +119,7 @@ export namespace Plugin {
         export type AsObject = {
             user: string,
             password: string,
-            bucket: string,
-            useTls: boolean,
-            url?: string,
+            url: string,
         }
     }
 
@@ -246,6 +211,100 @@ export namespace Plugin {
         INSERT = 7,
         GET = 8,
         REMOVE = 9,
+    }
+
+}
+
+export class Metadata extends jspb.Message { 
+    clearBucketsList(): void;
+    getBucketsList(): Array<Metadata.Bucket>;
+    setBucketsList(value: Array<Metadata.Bucket>): Metadata;
+    addBuckets(value?: Metadata.Bucket, index?: number): Metadata.Bucket;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Metadata.AsObject;
+    static toObject(includeInstance: boolean, msg: Metadata): Metadata.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: Metadata, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): Metadata;
+    static deserializeBinaryFromReader(message: Metadata, reader: jspb.BinaryReader): Metadata;
+}
+
+export namespace Metadata {
+    export type AsObject = {
+        bucketsList: Array<Metadata.Bucket.AsObject>,
+    }
+
+
+    export class Collection extends jspb.Message { 
+        getName(): string;
+        setName(value: string): Collection;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): Collection.AsObject;
+        static toObject(includeInstance: boolean, msg: Collection): Collection.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: Collection, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): Collection;
+        static deserializeBinaryFromReader(message: Collection, reader: jspb.BinaryReader): Collection;
+    }
+
+    export namespace Collection {
+        export type AsObject = {
+            name: string,
+        }
+    }
+
+    export class Scope extends jspb.Message { 
+        getName(): string;
+        setName(value: string): Scope;
+        clearCollectionsList(): void;
+        getCollectionsList(): Array<Metadata.Collection>;
+        setCollectionsList(value: Array<Metadata.Collection>): Scope;
+        addCollections(value?: Metadata.Collection, index?: number): Metadata.Collection;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): Scope.AsObject;
+        static toObject(includeInstance: boolean, msg: Scope): Scope.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: Scope, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): Scope;
+        static deserializeBinaryFromReader(message: Scope, reader: jspb.BinaryReader): Scope;
+    }
+
+    export namespace Scope {
+        export type AsObject = {
+            name: string,
+            collectionsList: Array<Metadata.Collection.AsObject>,
+        }
+    }
+
+    export class Bucket extends jspb.Message { 
+        getName(): string;
+        setName(value: string): Bucket;
+        clearScopesList(): void;
+        getScopesList(): Array<Metadata.Scope>;
+        setScopesList(value: Array<Metadata.Scope>): Bucket;
+        addScopes(value?: Metadata.Scope, index?: number): Metadata.Scope;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): Bucket.AsObject;
+        static toObject(includeInstance: boolean, msg: Bucket): Bucket.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: Bucket, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): Bucket;
+        static deserializeBinaryFromReader(message: Bucket, reader: jspb.BinaryReader): Bucket;
+    }
+
+    export namespace Bucket {
+        export type AsObject = {
+            name: string,
+            scopesList: Array<Metadata.Scope.AsObject>,
+        }
     }
 
 }

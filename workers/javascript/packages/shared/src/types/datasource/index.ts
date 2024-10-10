@@ -417,7 +417,7 @@ export type CosmosDbDatasourceConfiguration = Pick<CosmosDbPlugin.Plugin, 'name'
 
 export type CouchbaseDatasourceConfiguration = Pick<
   CouchbasePlugin.Plugin,
-  'name' | 'endpoint' | 'connection' | 'tunnel' | 'dynamicWorkflowConfiguration'
+  'name' | 'connection' | 'tunnel' | 'dynamicWorkflowConfiguration'
 >;
 
 export type DatabricksDatasourceConfiguration = Pick<DatabricksPlugin.Plugin, 'name' | 'connection' | 'dynamicWorkflowConfiguration'>;

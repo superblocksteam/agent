@@ -2767,6 +2767,39 @@ func (m *Response_Data_Data) validate(all bool) error {
 
 	}
 
+	if m.Couchbase != nil {
+
+		if all {
+			switch v := interface{}(m.GetCouchbase()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, Response_Data_DataValidationError{
+						field:  "Couchbase",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, Response_Data_DataValidationError{
+						field:  "Couchbase",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCouchbase()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return Response_Data_DataValidationError{
+					field:  "Couchbase",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if m.Kafka != nil {
 
 		if all {

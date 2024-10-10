@@ -15,6 +15,7 @@ import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/stru
 import * as plugins_adls_v1_plugin_pb from "../../plugins/adls/v1/plugin_pb";
 import * as plugins_cosmosdb_v1_plugin_pb from "../../plugins/cosmosdb/v1/plugin_pb";
 import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
+import * as plugins_couchbase_v1_plugin_pb from "../../plugins/couchbase/v1/plugin_pb";
 import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
 import * as store_v1_store_pb from "../../store/v1/store_pb";
 import * as validate_validate_pb from "../../validate/validate_pb";
@@ -551,6 +552,11 @@ export namespace Response {
             setBucketsList(value: Array<api_v1_service_pb.MetadataResponse.BucketMetadata>): Data;
             addBuckets(value?: api_v1_service_pb.MetadataResponse.BucketMetadata, index?: number): api_v1_service_pb.MetadataResponse.BucketMetadata;
 
+            hasCouchbase(): boolean;
+            clearCouchbase(): void;
+            getCouchbase(): plugins_couchbase_v1_plugin_pb.Metadata | undefined;
+            setCouchbase(value?: plugins_couchbase_v1_plugin_pb.Metadata): Data;
+
             hasKafka(): boolean;
             clearKafka(): void;
             getKafka(): plugins_kafka_v1_plugin_pb.Metadata | undefined;
@@ -597,6 +603,7 @@ export namespace Response {
                 err?: common_v1_errors_pb.Error.AsObject,
                 dbSchema?: api_v1_service_pb.MetadataResponse.DatabaseSchemaMetadata.AsObject,
                 bucketsList: Array<api_v1_service_pb.MetadataResponse.BucketMetadata.AsObject>,
+                couchbase?: plugins_couchbase_v1_plugin_pb.Metadata.AsObject,
                 kafka?: plugins_kafka_v1_plugin_pb.Metadata.AsObject,
                 kinesis?: plugins_kinesis_v1_plugin_pb.Metadata.AsObject,
                 cosmosdb?: plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.AsObject,

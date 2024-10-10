@@ -17,6 +17,7 @@ import * as plugins_adls_v1_plugin_pb from "../../plugins/adls/v1/plugin_pb";
 import * as plugins_cosmosdb_v1_plugin_pb from "../../plugins/cosmosdb/v1/plugin_pb";
 import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
 import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
+import * as plugins_couchbase_v1_plugin_pb from "../../plugins/couchbase/v1/plugin_pb";
 import * as protoc_gen_openapiv2_options_annotations_pb from "../../protoc-gen-openapiv2/options/annotations_pb";
 import * as store_v1_store_pb from "../../store/v1/store_pb";
 import * as validate_validate_pb from "../../validate/validate_pb";
@@ -1029,6 +1030,11 @@ export class MetadataResponse extends jspb.Message {
     getBucketsMetadata(): MetadataResponse.BucketsMetadata | undefined;
     setBucketsMetadata(value?: MetadataResponse.BucketsMetadata): MetadataResponse;
 
+    hasCouchbase(): boolean;
+    clearCouchbase(): void;
+    getCouchbase(): plugins_couchbase_v1_plugin_pb.Metadata | undefined;
+    setCouchbase(value?: plugins_couchbase_v1_plugin_pb.Metadata): MetadataResponse;
+
     hasKafka(): boolean;
     clearKafka(): void;
     getKafka(): plugins_kafka_v1_plugin_pb.Metadata | undefined;
@@ -1067,6 +1073,7 @@ export namespace MetadataResponse {
     export type AsObject = {
         databaseSchemaMetadata?: MetadataResponse.DatabaseSchemaMetadata.AsObject,
         bucketsMetadata?: MetadataResponse.BucketsMetadata.AsObject,
+        couchbase?: plugins_couchbase_v1_plugin_pb.Metadata.AsObject,
         kafka?: plugins_kafka_v1_plugin_pb.Metadata.AsObject,
         kinesis?: plugins_kinesis_v1_plugin_pb.Metadata.AsObject,
         cosmosdb?: plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.AsObject,
@@ -1295,10 +1302,11 @@ export namespace MetadataResponse {
         METADATA_NOT_SET = 0,
         DATABASE_SCHEMA_METADATA = 1,
         BUCKETS_METADATA = 2,
-        KAFKA = 3,
-        KINESIS = 4,
-        COSMOSDB = 5,
-        ADLS = 6,
+        COUCHBASE = 3,
+        KAFKA = 4,
+        KINESIS = 5,
+        COSMOSDB = 6,
+        ADLS = 7,
     }
 
 }

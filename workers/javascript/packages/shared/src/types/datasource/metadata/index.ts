@@ -1,4 +1,12 @@
-import { AdlsPluginV1, CosmosDbPluginV1, DynamoDbV1, KafkaV1, SalesforcePluginV1, KinesisPluginV1 } from '@superblocksteam/types';
+import {
+  AdlsPluginV1,
+  CosmosDbPluginV1,
+  DynamoDbV1,
+  KafkaV1,
+  SalesforcePluginV1,
+  KinesisPluginV1,
+  CouchbasePluginV1
+} from '@superblocksteam/types';
 import { DatasourceConfiguration } from '..';
 import { Plugin } from '../../plugin';
 import { ConnectedUserTokenDto } from '../../userToken';
@@ -10,6 +18,7 @@ export interface DatasourceMetadataDto {
   // NOTE(joey): each integration type should have their own field here for metadata
   dbSchema?: DatabaseSchemaMetadata;
   buckets?: BucketMetadata[];
+  couchbase?: CouchbasePluginV1.Metadata;
   kafka?: KafkaV1.Metadata; // NOTE(frank): Why do we use a much different pattern here than we do for action and datasource configurations?
   kinesis?: KinesisPluginV1.Metadata;
   integrationId?: string;
@@ -34,6 +43,7 @@ export interface DatasourceMetadataV2Dto {
   bucketsMetadata?: {
     buckets: BucketMetadata[];
   };
+  couchbase: CouchbasePluginV1.Metadata;
   kafka?: KafkaV1.Metadata;
   kinesis?: KinesisPluginV1.Metadata;
   cosmosdb?: CosmosDbPluginV1.Plugin_Metadata;

@@ -188,6 +188,29 @@
         }
       }
     },
+    "MetadataBucket": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataScope"
+          }
+        }
+      }
+    },
+    "MetadataCollection": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "MetadataContainer": {
       "type": "object",
       "properties": {
@@ -294,6 +317,21 @@
         }
       }
     },
+    "MetadataScope": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "collections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataCollection"
+          }
+        }
+      }
+    },
     "PerformanceObservable": {
       "type": "object",
       "properties": {
@@ -368,6 +406,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/MetadataContainer"
+          }
+        }
+      }
+    },
+    "pluginscouchbasev1Metadata": {
+      "type": "object",
+      "properties": {
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataBucket"
           }
         }
       }
@@ -591,9 +641,12 @@
             "$ref": "#/definitions/MetadataResponseBucketMetadata"
           }
         },
-        "kafka": {
-          "$ref": "#/definitions/pluginskafkav1Metadata",
+        "couchbase": {
+          "$ref": "#/definitions/pluginscouchbasev1Metadata",
           "description": "NOTE(frank): I think we'll need a transport/v2 for this but ideally\nwe don't have duplcate types like this."
+        },
+        "kafka": {
+          "$ref": "#/definitions/pluginskafkav1Metadata"
         },
         "kinesis": {
           "$ref": "#/definitions/pluginskinesisv1Metadata"
