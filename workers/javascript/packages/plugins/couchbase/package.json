@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-        "@superblocksteam/types": "workspace:*",
+    "@superblocksteam/types": "workspace:*",
     "couchbase": "4.2.9",
     "lodash": "^4.17.21",
     "minimist": "1.2.6",
@@ -47,6 +47,7 @@
     "jest": "29.7.0",
     "prettier": "3.3.3",
     "rimraf": "^5.0.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "@jest/globals": "^29.7.0"
   }
 }

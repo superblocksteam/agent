@@ -41,6 +41,8 @@ var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb
 goog.object.extend(proto, plugins_cosmosdb_v1_plugin_pb);
 var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
+var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb');
+goog.object.extend(proto, plugins_couchbase_v1_plugin_pb);
 var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
 goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
 var store_v1_store_pb = require('../../store/v1/store_pb');
@@ -4183,12 +4185,13 @@ err: (f = msg.getErr()) && common_v1_errors_pb.Error.toObject(includeInstance, f
 dbSchema: (f = msg.getDbSchema()) && api_v1_service_pb.MetadataResponse.DatabaseSchemaMetadata.toObject(includeInstance, f),
 bucketsList: jspb.Message.toObjectList(msg.getBucketsList(),
     api_v1_service_pb.MetadataResponse.BucketMetadata.toObject, includeInstance),
+couchbase: (f = msg.getCouchbase()) && plugins_couchbase_v1_plugin_pb.Metadata.toObject(includeInstance, f),
 kafka: (f = msg.getKafka()) && plugins_kafka_v1_plugin_pb.Metadata.toObject(includeInstance, f),
 kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Metadata.toObject(includeInstance, f),
 cosmosdb: (f = msg.getCosmosdb()) && plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
 adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
 dynamodb: (f = msg.getDynamodb()) && google_protobuf_any_pb.Any.toObject(includeInstance, f),
-gSheetsNextPageToken: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f
+gSheetsNextPageToken: (f = jspb.Message.getField(msg, 11)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -4245,31 +4248,36 @@ proto.transport.v1.Response.Data.Data.deserializeBinaryFromReader = function(msg
       msg.addBuckets(value);
       break;
     case 5:
+      var value = new plugins_couchbase_v1_plugin_pb.Metadata;
+      reader.readMessage(value,plugins_couchbase_v1_plugin_pb.Metadata.deserializeBinaryFromReader);
+      msg.setCouchbase(value);
+      break;
+    case 6:
       var value = new plugins_kafka_v1_plugin_pb.Metadata;
       reader.readMessage(value,plugins_kafka_v1_plugin_pb.Metadata.deserializeBinaryFromReader);
       msg.setKafka(value);
       break;
-    case 6:
+    case 7:
       var value = new plugins_kinesis_v1_plugin_pb.Metadata;
       reader.readMessage(value,plugins_kinesis_v1_plugin_pb.Metadata.deserializeBinaryFromReader);
       msg.setKinesis(value);
       break;
-    case 7:
+    case 8:
       var value = new plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata;
       reader.readMessage(value,plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
       msg.setCosmosdb(value);
       break;
-    case 8:
+    case 9:
       var value = new plugins_adls_v1_plugin_pb.Plugin.Metadata;
       reader.readMessage(value,plugins_adls_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
       msg.setAdls(value);
       break;
-    case 9:
+    case 10:
       var value = new google_protobuf_any_pb.Any;
       reader.readMessage(value,google_protobuf_any_pb.Any.deserializeBinaryFromReader);
       msg.setDynamodb(value);
       break;
-    case 10:
+    case 11:
       var value = /** @type {string} */ (reader.readString());
       msg.setGSheetsNextPageToken(value);
       break;
@@ -4333,10 +4341,18 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
       api_v1_service_pb.MetadataResponse.BucketMetadata.serializeBinaryToWriter
     );
   }
-  f = message.getKafka();
+  f = message.getCouchbase();
   if (f != null) {
     writer.writeMessage(
       5,
+      f,
+      plugins_couchbase_v1_plugin_pb.Metadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getKafka();
+  if (f != null) {
+    writer.writeMessage(
+      6,
       f,
       plugins_kafka_v1_plugin_pb.Metadata.serializeBinaryToWriter
     );
@@ -4344,7 +4360,7 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
   f = message.getKinesis();
   if (f != null) {
     writer.writeMessage(
-      6,
+      7,
       f,
       plugins_kinesis_v1_plugin_pb.Metadata.serializeBinaryToWriter
     );
@@ -4352,7 +4368,7 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
   f = message.getCosmosdb();
   if (f != null) {
     writer.writeMessage(
-      7,
+      8,
       f,
       plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
     );
@@ -4360,7 +4376,7 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
   f = message.getAdls();
   if (f != null) {
     writer.writeMessage(
-      8,
+      9,
       f,
       plugins_adls_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
     );
@@ -4368,15 +4384,15 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
   f = message.getDynamodb();
   if (f != null) {
     writer.writeMessage(
-      9,
+      10,
       f,
       google_protobuf_any_pb.Any.serializeBinaryToWriter
     );
   }
-  f = /** @type {string} */ (jspb.Message.getField(message, 10));
+  f = /** @type {string} */ (jspb.Message.getField(message, 11));
   if (f != null) {
     writer.writeString(
-      10,
+      11,
       f
     );
   }
@@ -4514,12 +4530,49 @@ proto.transport.v1.Response.Data.Data.prototype.clearBucketsList = function() {
 
 
 /**
- * optional plugins.kafka.v1.Metadata kafka = 5;
+ * optional plugins.couchbase.v1.Metadata couchbase = 5;
+ * @return {?proto.plugins.couchbase.v1.Metadata}
+ */
+proto.transport.v1.Response.Data.Data.prototype.getCouchbase = function() {
+  return /** @type{?proto.plugins.couchbase.v1.Metadata} */ (
+    jspb.Message.getWrapperField(this, plugins_couchbase_v1_plugin_pb.Metadata, 5));
+};
+
+
+/**
+ * @param {?proto.plugins.couchbase.v1.Metadata|undefined} value
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+*/
+proto.transport.v1.Response.Data.Data.prototype.setCouchbase = function(value) {
+  return jspb.Message.setWrapperField(this, 5, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+ */
+proto.transport.v1.Response.Data.Data.prototype.clearCouchbase = function() {
+  return this.setCouchbase(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Response.Data.Data.prototype.hasCouchbase = function() {
+  return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional plugins.kafka.v1.Metadata kafka = 6;
  * @return {?proto.plugins.kafka.v1.Metadata}
  */
 proto.transport.v1.Response.Data.Data.prototype.getKafka = function() {
   return /** @type{?proto.plugins.kafka.v1.Metadata} */ (
-    jspb.Message.getWrapperField(this, plugins_kafka_v1_plugin_pb.Metadata, 5));
+    jspb.Message.getWrapperField(this, plugins_kafka_v1_plugin_pb.Metadata, 6));
 };
 
 
@@ -4528,7 +4581,7 @@ proto.transport.v1.Response.Data.Data.prototype.getKafka = function() {
  * @return {!proto.transport.v1.Response.Data.Data} returns this
 */
 proto.transport.v1.Response.Data.Data.prototype.setKafka = function(value) {
-  return jspb.Message.setWrapperField(this, 5, value);
+  return jspb.Message.setWrapperField(this, 6, value);
 };
 
 
@@ -4546,17 +4599,17 @@ proto.transport.v1.Response.Data.Data.prototype.clearKafka = function() {
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasKafka = function() {
-  return jspb.Message.getField(this, 5) != null;
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
 /**
- * optional plugins.kinesis.v1.Metadata kinesis = 6;
+ * optional plugins.kinesis.v1.Metadata kinesis = 7;
  * @return {?proto.plugins.kinesis.v1.Metadata}
  */
 proto.transport.v1.Response.Data.Data.prototype.getKinesis = function() {
   return /** @type{?proto.plugins.kinesis.v1.Metadata} */ (
-    jspb.Message.getWrapperField(this, plugins_kinesis_v1_plugin_pb.Metadata, 6));
+    jspb.Message.getWrapperField(this, plugins_kinesis_v1_plugin_pb.Metadata, 7));
 };
 
 
@@ -4565,7 +4618,7 @@ proto.transport.v1.Response.Data.Data.prototype.getKinesis = function() {
  * @return {!proto.transport.v1.Response.Data.Data} returns this
 */
 proto.transport.v1.Response.Data.Data.prototype.setKinesis = function(value) {
-  return jspb.Message.setWrapperField(this, 6, value);
+  return jspb.Message.setWrapperField(this, 7, value);
 };
 
 
@@ -4583,17 +4636,17 @@ proto.transport.v1.Response.Data.Data.prototype.clearKinesis = function() {
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasKinesis = function() {
-  return jspb.Message.getField(this, 6) != null;
+  return jspb.Message.getField(this, 7) != null;
 };
 
 
 /**
- * optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 7;
+ * optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 8;
  * @return {?proto.plugins.cosmosdb.v1.Plugin.Metadata}
  */
 proto.transport.v1.Response.Data.Data.prototype.getCosmosdb = function() {
   return /** @type{?proto.plugins.cosmosdb.v1.Plugin.Metadata} */ (
-    jspb.Message.getWrapperField(this, plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata, 7));
+    jspb.Message.getWrapperField(this, plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata, 8));
 };
 
 
@@ -4602,7 +4655,7 @@ proto.transport.v1.Response.Data.Data.prototype.getCosmosdb = function() {
  * @return {!proto.transport.v1.Response.Data.Data} returns this
 */
 proto.transport.v1.Response.Data.Data.prototype.setCosmosdb = function(value) {
-  return jspb.Message.setWrapperField(this, 7, value);
+  return jspb.Message.setWrapperField(this, 8, value);
 };
 
 
@@ -4620,17 +4673,17 @@ proto.transport.v1.Response.Data.Data.prototype.clearCosmosdb = function() {
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasCosmosdb = function() {
-  return jspb.Message.getField(this, 7) != null;
+  return jspb.Message.getField(this, 8) != null;
 };
 
 
 /**
- * optional plugins.adls.v1.Plugin.Metadata adls = 8;
+ * optional plugins.adls.v1.Plugin.Metadata adls = 9;
  * @return {?proto.plugins.adls.v1.Plugin.Metadata}
  */
 proto.transport.v1.Response.Data.Data.prototype.getAdls = function() {
   return /** @type{?proto.plugins.adls.v1.Plugin.Metadata} */ (
-    jspb.Message.getWrapperField(this, plugins_adls_v1_plugin_pb.Plugin.Metadata, 8));
+    jspb.Message.getWrapperField(this, plugins_adls_v1_plugin_pb.Plugin.Metadata, 9));
 };
 
 
@@ -4639,7 +4692,7 @@ proto.transport.v1.Response.Data.Data.prototype.getAdls = function() {
  * @return {!proto.transport.v1.Response.Data.Data} returns this
 */
 proto.transport.v1.Response.Data.Data.prototype.setAdls = function(value) {
-  return jspb.Message.setWrapperField(this, 8, value);
+  return jspb.Message.setWrapperField(this, 9, value);
 };
 
 
@@ -4657,17 +4710,17 @@ proto.transport.v1.Response.Data.Data.prototype.clearAdls = function() {
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasAdls = function() {
-  return jspb.Message.getField(this, 8) != null;
+  return jspb.Message.getField(this, 9) != null;
 };
 
 
 /**
- * optional google.protobuf.Any dynamodb = 9;
+ * optional google.protobuf.Any dynamodb = 10;
  * @return {?proto.google.protobuf.Any}
  */
 proto.transport.v1.Response.Data.Data.prototype.getDynamodb = function() {
   return /** @type{?proto.google.protobuf.Any} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_any_pb.Any, 9));
+    jspb.Message.getWrapperField(this, google_protobuf_any_pb.Any, 10));
 };
 
 
@@ -4676,7 +4729,7 @@ proto.transport.v1.Response.Data.Data.prototype.getDynamodb = function() {
  * @return {!proto.transport.v1.Response.Data.Data} returns this
 */
 proto.transport.v1.Response.Data.Data.prototype.setDynamodb = function(value) {
-  return jspb.Message.setWrapperField(this, 9, value);
+  return jspb.Message.setWrapperField(this, 10, value);
 };
 
 
@@ -4694,16 +4747,16 @@ proto.transport.v1.Response.Data.Data.prototype.clearDynamodb = function() {
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasDynamodb = function() {
-  return jspb.Message.getField(this, 9) != null;
+  return jspb.Message.getField(this, 10) != null;
 };
 
 
 /**
- * optional string g_sheets_next_page_token = 10;
+ * optional string g_sheets_next_page_token = 11;
  * @return {string}
  */
 proto.transport.v1.Response.Data.Data.prototype.getGSheetsNextPageToken = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 11, ""));
 };
 
 
@@ -4712,7 +4765,7 @@ proto.transport.v1.Response.Data.Data.prototype.getGSheetsNextPageToken = functi
  * @return {!proto.transport.v1.Response.Data.Data} returns this
  */
 proto.transport.v1.Response.Data.Data.prototype.setGSheetsNextPageToken = function(value) {
-  return jspb.Message.setField(this, 10, value);
+  return jspb.Message.setField(this, 11, value);
 };
 
 
@@ -4721,7 +4774,7 @@ proto.transport.v1.Response.Data.Data.prototype.setGSheetsNextPageToken = functi
  * @return {!proto.transport.v1.Response.Data.Data} returns this
  */
 proto.transport.v1.Response.Data.Data.prototype.clearGSheetsNextPageToken = function() {
-  return jspb.Message.setField(this, 10, undefined);
+  return jspb.Message.setField(this, 11, undefined);
 };
 
 
@@ -4730,7 +4783,7 @@ proto.transport.v1.Response.Data.Data.prototype.clearGSheetsNextPageToken = func
  * @return {boolean}
  */
 proto.transport.v1.Response.Data.Data.prototype.hasGSheetsNextPageToken = function() {
-  return jspb.Message.getField(this, 10) != null;
+  return jspb.Message.getField(this, 11) != null;
 };
 
 

@@ -88,35 +88,6 @@ func (m *Plugin) validate(all bool) error {
 	}
 
 	if all {
-		switch v := interface{}(m.GetEndpoint()).(type) {
-		case interface{ ValidateAll() error }:
-			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, PluginValidationError{
-					field:  "Endpoint",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		case interface{ Validate() error }:
-			if err := v.Validate(); err != nil {
-				errors = append(errors, PluginValidationError{
-					field:  "Endpoint",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		}
-	} else if v, ok := interface{}(m.GetEndpoint()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return PluginValidationError{
-				field:  "Endpoint",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
-	if all {
 		switch v := interface{}(m.GetTunnel()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
@@ -144,6 +115,8 @@ func (m *Plugin) validate(all bool) error {
 			}
 		}
 	}
+
+	// no validation rules for BucketName
 
 	switch v := m.CouchbaseAction.(type) {
 	case *Plugin_RunSql:
@@ -424,46 +397,75 @@ var _ interface {
 	ErrorName() string
 } = PluginValidationError{}
 
-// Validate checks the field values on Plugin_CouchbaseEndpoint with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the first error encountered is returned, or nil if there are no violations.
-func (m *Plugin_CouchbaseEndpoint) Validate() error {
+// Validate checks the field values on Metadata with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Metadata) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on Plugin_CouchbaseEndpoint with the
-// rules defined in the proto definition for this message. If any rules are
-// violated, the result is a list of violation errors wrapped in
-// Plugin_CouchbaseEndpointMultiError, or nil if none found.
-func (m *Plugin_CouchbaseEndpoint) ValidateAll() error {
+// ValidateAll checks the field values on Metadata with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in MetadataMultiError, or nil
+// if none found.
+func (m *Metadata) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *Plugin_CouchbaseEndpoint) validate(all bool) error {
+func (m *Metadata) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
 
 	var errors []error
 
-	// no validation rules for Host
+	for idx, item := range m.GetBuckets() {
+		_, _ = idx, item
 
-	// no validation rules for Port
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, MetadataValidationError{
+						field:  fmt.Sprintf("Buckets[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, MetadataValidationError{
+						field:  fmt.Sprintf("Buckets[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return MetadataValidationError{
+					field:  fmt.Sprintf("Buckets[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
 
 	if len(errors) > 0 {
-		return Plugin_CouchbaseEndpointMultiError(errors)
+		return MetadataMultiError(errors)
 	}
 
 	return nil
 }
 
-// Plugin_CouchbaseEndpointMultiError is an error wrapping multiple validation
-// errors returned by Plugin_CouchbaseEndpoint.ValidateAll() if the designated
-// constraints aren't met.
-type Plugin_CouchbaseEndpointMultiError []error
+// MetadataMultiError is an error wrapping multiple validation errors returned
+// by Metadata.ValidateAll() if the designated constraints aren't met.
+type MetadataMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m Plugin_CouchbaseEndpointMultiError) Error() string {
+func (m MetadataMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -472,11 +474,11 @@ func (m Plugin_CouchbaseEndpointMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m Plugin_CouchbaseEndpointMultiError) AllErrors() []error { return m }
+func (m MetadataMultiError) AllErrors() []error { return m }
 
-// Plugin_CouchbaseEndpointValidationError is the validation error returned by
-// Plugin_CouchbaseEndpoint.Validate if the designated constraints aren't met.
-type Plugin_CouchbaseEndpointValidationError struct {
+// MetadataValidationError is the validation error returned by
+// Metadata.Validate if the designated constraints aren't met.
+type MetadataValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -484,24 +486,22 @@ type Plugin_CouchbaseEndpointValidationError struct {
 }
 
 // Field function returns field value.
-func (e Plugin_CouchbaseEndpointValidationError) Field() string { return e.field }
+func (e MetadataValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e Plugin_CouchbaseEndpointValidationError) Reason() string { return e.reason }
+func (e MetadataValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e Plugin_CouchbaseEndpointValidationError) Cause() error { return e.cause }
+func (e MetadataValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e Plugin_CouchbaseEndpointValidationError) Key() bool { return e.key }
+func (e MetadataValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e Plugin_CouchbaseEndpointValidationError) ErrorName() string {
-	return "Plugin_CouchbaseEndpointValidationError"
-}
+func (e MetadataValidationError) ErrorName() string { return "MetadataValidationError" }
 
 // Error satisfies the builtin error interface
-func (e Plugin_CouchbaseEndpointValidationError) Error() string {
+func (e MetadataValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -513,14 +513,14 @@ func (e Plugin_CouchbaseEndpointValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sPlugin_CouchbaseEndpoint.%s: %s%s",
+		"invalid %sMetadata.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = Plugin_CouchbaseEndpointValidationError{}
+var _ error = MetadataValidationError{}
 
 var _ interface {
 	Field() string
@@ -528,7 +528,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = Plugin_CouchbaseEndpointValidationError{}
+} = MetadataValidationError{}
 
 // Validate checks the field values on Plugin_CouchbaseIdentifier with the
 // rules defined in the proto definition for this message. If any rules are
@@ -662,13 +662,7 @@ func (m *Plugin_CouchbaseConnection) validate(all bool) error {
 
 	// no validation rules for Password
 
-	// no validation rules for Bucket
-
-	// no validation rules for UseTls
-
-	if m.Url != nil {
-		// no validation rules for Url
-	}
+	// no validation rules for Url
 
 	if len(errors) > 0 {
 		return Plugin_CouchbaseConnectionMultiError(errors)
@@ -1150,3 +1144,379 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = Plugin_CouchbaseRemoveValidationError{}
+
+// Validate checks the field values on Metadata_Collection with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *Metadata_Collection) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Metadata_Collection with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// Metadata_CollectionMultiError, or nil if none found.
+func (m *Metadata_Collection) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Metadata_Collection) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	if len(errors) > 0 {
+		return Metadata_CollectionMultiError(errors)
+	}
+
+	return nil
+}
+
+// Metadata_CollectionMultiError is an error wrapping multiple validation
+// errors returned by Metadata_Collection.ValidateAll() if the designated
+// constraints aren't met.
+type Metadata_CollectionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m Metadata_CollectionMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m Metadata_CollectionMultiError) AllErrors() []error { return m }
+
+// Metadata_CollectionValidationError is the validation error returned by
+// Metadata_Collection.Validate if the designated constraints aren't met.
+type Metadata_CollectionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e Metadata_CollectionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e Metadata_CollectionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e Metadata_CollectionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e Metadata_CollectionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e Metadata_CollectionValidationError) ErrorName() string {
+	return "Metadata_CollectionValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e Metadata_CollectionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sMetadata_Collection.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = Metadata_CollectionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = Metadata_CollectionValidationError{}
+
+// Validate checks the field values on Metadata_Scope with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Metadata_Scope) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Metadata_Scope with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in Metadata_ScopeMultiError,
+// or nil if none found.
+func (m *Metadata_Scope) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Metadata_Scope) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	for idx, item := range m.GetCollections() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, Metadata_ScopeValidationError{
+						field:  fmt.Sprintf("Collections[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, Metadata_ScopeValidationError{
+						field:  fmt.Sprintf("Collections[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return Metadata_ScopeValidationError{
+					field:  fmt.Sprintf("Collections[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return Metadata_ScopeMultiError(errors)
+	}
+
+	return nil
+}
+
+// Metadata_ScopeMultiError is an error wrapping multiple validation errors
+// returned by Metadata_Scope.ValidateAll() if the designated constraints
+// aren't met.
+type Metadata_ScopeMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m Metadata_ScopeMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m Metadata_ScopeMultiError) AllErrors() []error { return m }
+
+// Metadata_ScopeValidationError is the validation error returned by
+// Metadata_Scope.Validate if the designated constraints aren't met.
+type Metadata_ScopeValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e Metadata_ScopeValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e Metadata_ScopeValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e Metadata_ScopeValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e Metadata_ScopeValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e Metadata_ScopeValidationError) ErrorName() string { return "Metadata_ScopeValidationError" }
+
+// Error satisfies the builtin error interface
+func (e Metadata_ScopeValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sMetadata_Scope.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = Metadata_ScopeValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = Metadata_ScopeValidationError{}
+
+// Validate checks the field values on Metadata_Bucket with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *Metadata_Bucket) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Metadata_Bucket with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// Metadata_BucketMultiError, or nil if none found.
+func (m *Metadata_Bucket) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Metadata_Bucket) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	for idx, item := range m.GetScopes() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, Metadata_BucketValidationError{
+						field:  fmt.Sprintf("Scopes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, Metadata_BucketValidationError{
+						field:  fmt.Sprintf("Scopes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return Metadata_BucketValidationError{
+					field:  fmt.Sprintf("Scopes[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return Metadata_BucketMultiError(errors)
+	}
+
+	return nil
+}
+
+// Metadata_BucketMultiError is an error wrapping multiple validation errors
+// returned by Metadata_Bucket.ValidateAll() if the designated constraints
+// aren't met.
+type Metadata_BucketMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m Metadata_BucketMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m Metadata_BucketMultiError) AllErrors() []error { return m }
+
+// Metadata_BucketValidationError is the validation error returned by
+// Metadata_Bucket.Validate if the designated constraints aren't met.
+type Metadata_BucketValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e Metadata_BucketValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e Metadata_BucketValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e Metadata_BucketValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e Metadata_BucketValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e Metadata_BucketValidationError) ErrorName() string { return "Metadata_BucketValidationError" }
+
+// Error satisfies the builtin error interface
+func (e Metadata_BucketValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sMetadata_Bucket.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = Metadata_BucketValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = Metadata_BucketValidationError{}

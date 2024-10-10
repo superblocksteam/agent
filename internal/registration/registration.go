@@ -22,7 +22,7 @@ const (
 	AGENT_VERSION_EXTERNAL_HEADER = "x-superblocks-agent-version-external"
 )
 
-// NOTE: (joey) this must be updated each time the template for a plugin in the monorepo is bumped in order for OPA customers to see the latest plugin template changes
+// NOTE: (joey) this must be updated each time the template for a plugin in the monorepo is bumped in order for OPA customers to see the latest plugin template changes supported by their agent
 var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"athena":             {"0.0.1"},
 	"bigquery":           {"0.0.7"},
@@ -56,7 +56,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"smtp":               {"0.0.1"},
 	"confluent":          {"0.0.1"},
 	"redpanda":           {"0.0.1"},
-	"couchbase":          {"0.0.2"},
+	"couchbase":          {"0.0.1"},
 	"databricks":         {"0.0.1"},
 	"oracledb":           {"0.0.1"},
 }

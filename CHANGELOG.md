@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix scheduled job execution for signed jobs (when signature verification is enabled)
 - Now return Kinesis Plugin Metadata
 - Add signing key's corresponding public key and algorithm to the `Signature` proto message
+- Fixes to Couchbase Plugin
 
 ## v1.15.1
 

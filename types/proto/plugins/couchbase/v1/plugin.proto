@@ -10,21 +10,15 @@ message Plugin {
   string name = 1;
   CouchbaseConnection connection = 2;
 
-  // TODO (jason4012) we should unify the interface
-  // so that endpoint doesn't have to be always be set here for SSH tunneling
-  CouchbaseEndpoint endpoint = 3;
-  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 4;
-  plugins.common.v1.SSHConfiguration tunnel = 5;
+  optional plugins.common.v1.DynamicWorkflowConfiguration dynamic_workflow_configuration = 3;
+  plugins.common.v1.SSHConfiguration tunnel = 4;
+  // used for all couchbase actions
+  string bucket_name = 5;
   oneof couchbase_action {
     plugins.common.v1.SQLExecution run_sql = 6;
     CouchbaseInsert insert = 7;
     CouchbaseGet get = 8;
     CouchbaseRemove remove = 9;
-  }
-
-  message CouchbaseEndpoint {
-    string host = 1;
-    int32 port = 2;
   }
 
   message CouchbaseIdentifier {
@@ -35,9 +29,7 @@ message Plugin {
   message CouchbaseConnection {
     string user = 2;
     string password = 3;
-    string bucket = 4;
-    bool use_tls = 5;
-    optional string url = 6;
+    string url = 5;
   }
 
   message CouchbaseInsert {
@@ -55,4 +47,19 @@ message Plugin {
     string key = 1;
     CouchbaseIdentifier identifier = 2;
   }
+}
+
+message Metadata {
+  message Collection {
+    string name = 1;
+  }
+  message Scope {
+    string name = 1;
+    repeated Collection collections = 2; 
+  }
+  message Bucket {
+    string name = 1;
+    repeated Scope scopes = 2; 
+  }
+  repeated Bucket buckets = 1;
 }

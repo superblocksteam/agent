@@ -15,6 +15,7 @@ import "plugins/adls/v1/plugin.proto";
 import "plugins/cosmosdb/v1/plugin.proto";
 import "plugins/kafka/v1/plugin.proto";
 import "plugins/kinesis/v1/plugin.proto";
+import "plugins/couchbase/v1/plugin.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "store/v1/store.proto";
 import "validate/validate.proto";
@@ -548,13 +549,14 @@ message MetadataResponse {
   oneof metadata {
     DatabaseSchemaMetadata database_schema_metadata = 1;
     BucketsMetadata buckets_metadata = 2;
-    plugins.kafka.v1.Metadata kafka = 3;
-    plugins.kinesis.v1.Metadata kinesis = 4;
-    plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 5;
-    plugins.adls.v1.Plugin.Metadata adls = 6;
+    plugins.couchbase.v1.Metadata couchbase = 3;
+    plugins.kafka.v1.Metadata kafka = 4;
+    plugins.kinesis.v1.Metadata kinesis = 5;
+    plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 6;
+    plugins.adls.v1.Plugin.Metadata adls = 7;
   }
 
-  string g_sheets_next_page_token = 7;
+  string g_sheets_next_page_token = 8;
 }
 
 message DownloadRequest {

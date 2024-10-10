@@ -327,7 +327,7 @@ type CosmosDbPlugin = CosmosDb.Plugin;
 export type CosmosDbActionConfiguration = Partial<Pick<CosmosDbPlugin, 'cosmosdbAction'>>;
 
 type CouchbasePlugin = Couchbase.Plugin;
-export type CouchbaseActionConfiguration = Partial<Omit<CouchbasePlugin, 'name' | 'endpoint' | 'connection' | 'tunnel'>>;
+export type CouchbaseActionConfiguration = Partial<Omit<CouchbasePlugin, 'name' | 'connection' | 'tunnel'>>;
 
 type DatabricksPlugin = Databricks.Plugin;
 export type DatabricksActionConfiguration = Partial<Omit<DatabricksPlugin, 'name' | 'connection'>>;

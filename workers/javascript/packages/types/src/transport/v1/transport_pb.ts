@@ -8,8 +8,9 @@ import { Any, Message, proto3, protoInt64, Struct } from "@bufbuild/protobuf";
 import { Variables_Mode, Variables_Type } from "../../api/v1/blocks_pb";
 import { Error } from "../../common/v1/errors_pb";
 import { Definition, MetadataResponse_BucketMetadata, MetadataResponse_DatabaseSchemaMetadata } from "../../api/v1/service_pb";
-import { Metadata } from "../../plugins/kafka/v1/plugin_pb";
-import { Metadata as Metadata$1 } from "../../plugins/kinesis/v1/plugin_pb";
+import { Metadata } from "../../plugins/couchbase/v1/plugin_pb";
+import { Metadata as Metadata$1 } from "../../plugins/kafka/v1/plugin_pb";
+import { Metadata as Metadata$2 } from "../../plugins/kinesis/v1/plugin_pb";
 import { Plugin_Metadata } from "../../plugins/cosmosdb/v1/plugin_pb";
 import { Plugin_Metadata as Plugin_Metadata$1 } from "../../plugins/adls/v1/plugin_pb";
 import { Api } from "../../api/v1/api_pb";
@@ -877,32 +878,37 @@ export class Response_Data_Data extends Message<Response_Data_Data> {
    * NOTE(frank): I think we'll need a transport/v2 for this but ideally
    * we don't have duplcate types like this.
    *
-   * @generated from field: optional plugins.kafka.v1.Metadata kafka = 5;
+   * @generated from field: optional plugins.couchbase.v1.Metadata couchbase = 5;
    */
-  kafka?: Metadata;
+  couchbase?: Metadata;
 
   /**
-   * @generated from field: optional plugins.kinesis.v1.Metadata kinesis = 6;
+   * @generated from field: optional plugins.kafka.v1.Metadata kafka = 6;
    */
-  kinesis?: Metadata$1;
+  kafka?: Metadata$1;
 
   /**
-   * @generated from field: optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 7;
+   * @generated from field: optional plugins.kinesis.v1.Metadata kinesis = 7;
+   */
+  kinesis?: Metadata$2;
+
+  /**
+   * @generated from field: optional plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 8;
    */
   cosmosdb?: Plugin_Metadata;
 
   /**
-   * @generated from field: optional plugins.adls.v1.Plugin.Metadata adls = 8;
+   * @generated from field: optional plugins.adls.v1.Plugin.Metadata adls = 9;
    */
   adls?: Plugin_Metadata$1;
 
   /**
-   * @generated from field: optional google.protobuf.Any dynamodb = 9;
+   * @generated from field: optional google.protobuf.Any dynamodb = 10;
    */
   dynamodb?: Any;
 
   /**
-   * @generated from field: optional string g_sheets_next_page_token = 10;
+   * @generated from field: optional string g_sheets_next_page_token = 11;
    */
   gSheetsNextPageToken?: string;
 
@@ -918,12 +924,13 @@ export class Response_Data_Data extends Message<Response_Data_Data> {
     { no: 2, name: "err", kind: "message", T: Error },
     { no: 3, name: "db_schema", kind: "message", T: MetadataResponse_DatabaseSchemaMetadata, opt: true },
     { no: 4, name: "buckets", kind: "message", T: MetadataResponse_BucketMetadata, repeated: true },
-    { no: 5, name: "kafka", kind: "message", T: Metadata, opt: true },
-    { no: 6, name: "kinesis", kind: "message", T: Metadata$1, opt: true },
-    { no: 7, name: "cosmosdb", kind: "message", T: Plugin_Metadata, opt: true },
-    { no: 8, name: "adls", kind: "message", T: Plugin_Metadata$1, opt: true },
-    { no: 9, name: "dynamodb", kind: "message", T: Any, opt: true },
-    { no: 10, name: "g_sheets_next_page_token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 5, name: "couchbase", kind: "message", T: Metadata, opt: true },
+    { no: 6, name: "kafka", kind: "message", T: Metadata$1, opt: true },
+    { no: 7, name: "kinesis", kind: "message", T: Metadata$2, opt: true },
+    { no: 8, name: "cosmosdb", kind: "message", T: Plugin_Metadata, opt: true },
+    { no: 9, name: "adls", kind: "message", T: Plugin_Metadata$1, opt: true },
+    { no: 10, name: "dynamodb", kind: "message", T: Any, opt: true },
+    { no: 11, name: "g_sheets_next_page_token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Response_Data_Data {

@@ -2,6 +2,7 @@ import {
   ClientWrapper,
   CouchbaseActionConfiguration,
   CouchbaseDatasourceConfiguration,
+  SSHTunnelConfig,
   CreateConnection,
   DatabasePluginPooled,
   DatasourceMetadataDto,
@@ -10,30 +11,23 @@ import {
   ExecutionOutput,
   IntegrationError,
   PluginExecutionProps,
-  safeEJSONParse,
-  Schema,
-  TableType
+  safeEJSONParse
 } from '@superblocks/shared';
-import { PluginCommonV1 } from '@superblocksteam/types';
+import { CouchbasePluginV1, PluginCommonV1 } from '@superblocksteam/types';
 import { Bucket, Cluster, Collection, CollectionManager, connect, Scope, ScopeSpec } from 'couchbase';
 import { Client as ssh2Client } from 'ssh2';
+import { getConnectionOptionsFromDatasourceConfiguration, getConnectionStringFromDatasourceConfiguration } from './utils';
 
 export default class CouchbasePlugin extends DatabasePluginPooled<ClientWrapper<Cluster, ssh2Client>, CouchbaseDatasourceConfiguration> {
   pluginName = 'Couchbase';
 
   public async executePooled(
-    {
-      context,
-      datasourceConfiguration,
-      actionConfiguration,
-      mutableOutput
-    }: PluginExecutionProps<CouchbaseDatasourceConfiguration, CouchbaseActionConfiguration>,
+    { context, actionConfiguration, mutableOutput }: PluginExecutionProps<CouchbaseDatasourceConfiguration, CouchbaseActionConfiguration>,
     client: ClientWrapper<Cluster, ssh2Client>
   ): Promise<undefined> {
-    const bucketName = datasourceConfiguration.connection?.bucket ?? '';
     const operation = actionConfiguration.couchbaseAction?.case;
     const executionOutput = new ExecutionOutput();
-    const bucket = client.client.bucket(bucketName);
+    const bucket = client.client.bucket(actionConfiguration.bucketName);
     let scope: Scope;
     let collection: Collection;
     try {
@@ -86,6 +80,9 @@ export default class CouchbasePlugin extends DatabasePluginPooled<ClientWrapper<
           ).rows;
           break;
         }
+        default: {
+          throw new IntegrationError(`invalid operation: ${operation}`);
+        }
       }
     } catch (err) {
       throw this._handleError(err, 'Operation failed');
@@ -95,10 +92,6 @@ export default class CouchbasePlugin extends DatabasePluginPooled<ClientWrapper<
   }
 
   public async metadata(datasourceConfiguration: CouchbaseDatasourceConfiguration): Promise<DatasourceMetadataDto> {
-    const bucketName = datasourceConfiguration.connection?.bucket ?? '';
-    if (!bucketName) {
-      throw new IntegrationError('Bucket name missing', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, { pluginName: this.pluginName });
-    }
     let client;
     try {
       client = await this.createConnection(datasourceConfiguration);
@@ -106,31 +99,24 @@ export default class CouchbasePlugin extends DatabasePluginPooled<ClientWrapper<
       throw this._handleError(e, 'Metadata connection failed');
     }
     try {
-      const bucket: Bucket = client.client.bucket(bucketName);
-      const collectionResults: CollectionManager = bucket.collections();
-
-      // treat scope --> schema, collection --> database here
-      const collectionScopes: ScopeSpec[] = await collectionResults.getAllScopes();
-      const schemas: Schema[] = collectionScopes.map((collectionScope: ScopeSpec) => new Schema(collectionScope.name));
-      const tables =
-        collectionScopes
-          .map((collectionScope: ScopeSpec) =>
-            collectionScope.collections.map((collection: { name: string }) => {
-              return {
-                type: TableType.COLLECTION,
-                schema: collectionScope.name,
-                name: collection.name,
-                columns: []
-              };
-            })
-          )
-          ?.flat() ?? [];
-      return {
-        dbSchema: {
-          schemas,
-          tables: tables
+      const metadata = { buckets: [] };
+      const buckets = await client.client.buckets().getAllBuckets();
+      for (const bucket of buckets) {
+        const metadataBucketObj = { name: bucket.name, scopes: [] };
+        const clientBucket: Bucket = client.client.bucket(bucket.name);
+        const collectionResults: CollectionManager = clientBucket.collections();
+        const collectionScopes: ScopeSpec[] = await collectionResults.getAllScopes();
+        for (const collectionScope of collectionScopes) {
+          const metadataScopeObj = { name: collectionScope.name, collections: [] };
+          for (const collection of collectionScope.collections) {
+            metadataScopeObj.collections.push({ name: collection.name });
+          }
+          metadataBucketObj.scopes.push(metadataScopeObj);
         }
-      };
+        metadata.buckets.push(metadataBucketObj);
+      }
+
+      return { couchbase: metadata as CouchbasePluginV1.Metadata };
     } catch (err) {
       throw this._handleError(err, 'Metadata operation failed');
     } finally {
@@ -161,24 +147,13 @@ export default class CouchbasePlugin extends DatabasePluginPooled<ClientWrapper<
       });
     }
     try {
-      const uri = datasourceConfiguration.endpoint?.host;
-      if (!uri) {
-        throw new IntegrationError('Connection URL not specified', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, {
-          pluginName: this.pluginName
-        });
-      }
-
-      // The final endpoint might actually be overwritten by an SSH tunnel.
-      const finalEndpoint: { host?: string; port?: number } = {
-        host: datasourceConfiguration.endpoint?.host,
-        port: datasourceConfiguration.endpoint?.port
-      };
+      // The final endpoint might be overwritten by an SSH tunnel.
+      let sshTunnelConfig: SSHTunnelConfig;
       if (datasourceConfiguration.tunnel && datasourceConfiguration.tunnel.enabled) {
+        // we are using an SSH tunnel
         try {
-          const tunneledAddress = await super.createTunnel(datasourceConfiguration);
-          finalEndpoint.host = tunneledAddress?.host;
-          finalEndpoint.port = tunneledAddress?.port;
-          tunnel = tunneledAddress?.client;
+          sshTunnelConfig = await super.createTunnel(datasourceConfiguration);
+          tunnel = sshTunnelConfig?.client;
         } catch (e) {
           throw new IntegrationError(`SSH tunnel connection failed for ${this.pluginName}: ${e.message}`, e.code, {
             pluginName: this.pluginName
@@ -186,14 +161,9 @@ export default class CouchbasePlugin extends DatabasePluginPooled<ClientWrapper<
         }
       }
 
-      const options = {
-        username: datasourceConfiguration.connection?.user,
-        password: datasourceConfiguration.connection?.password
-      };
-
       const cluster: Cluster = await connect(
-        this.getConnectionStringFromDatasourceConfiguration(datasourceConfiguration, finalEndpoint),
-        options
+        getConnectionStringFromDatasourceConfiguration(datasourceConfiguration, sshTunnelConfig),
+        getConnectionOptionsFromDatasourceConfiguration(datasourceConfiguration)
       );
       return { client: cluster, tunnel };
     } catch (err) {
@@ -207,16 +177,6 @@ export default class CouchbasePlugin extends DatabasePluginPooled<ClientWrapper<
     this.destroyConnection(client).catch(() => {
       // Error handling is done in the decorator
     });
-  }
-
-  public getConnectionStringFromDatasourceConfiguration(
-    datasourceConfiguration: CouchbaseDatasourceConfiguration,
-    tunnelInfo: { host?: string; port?: number }
-  ): string {
-    if (datasourceConfiguration.connection?.url) {
-      return datasourceConfiguration.connection?.url;
-    }
-    return `couchbase${datasourceConfiguration.connection?.useTls ? 's' : ''}://${tunnelInfo?.host}:${tunnelInfo?.port}`;
   }
 
   private _handleError(error: Error, initialMessage: string): IntegrationError {
