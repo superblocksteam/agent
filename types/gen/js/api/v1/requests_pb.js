@@ -809,7 +809,7 @@ proto.api.v1.PatchApisRequest.prototype.clearPatchesList = function() {
  * @private {!Array<number>}
  * @const
  */
-proto.api.v1.PatchApisResponse.repeatedFields_ = [1];
+proto.api.v1.PatchApisResponse.repeatedFields_ = [1,3];
 
 
 
@@ -844,7 +844,9 @@ proto.api.v1.PatchApisResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
 statusesList: jspb.Message.toObjectList(msg.getStatusesList(),
     proto.api.v1.PatchApisResponse.Status.toObject, includeInstance),
-linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : []
+linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : [],
+linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
+    common_v1_api_pb.Links.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -892,6 +894,11 @@ proto.api.v1.PatchApisResponse.deserializeBinaryFromReader = function(msg, reade
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
+    case 3:
+      var value = new common_v1_api_pb.Links;
+      reader.readMessage(value,common_v1_api_pb.Links.deserializeBinaryFromReader);
+      msg.addLinksV2(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -932,6 +939,14 @@ proto.api.v1.PatchApisResponse.serializeBinaryToWriter = function(message, write
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
+  }
+  f = message.getLinksV2List();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      3,
+      f,
+      common_v1_api_pb.Links.serializeBinaryToWriter
+    );
   }
 };
 
@@ -1235,6 +1250,44 @@ proto.api.v1.PatchApisResponse.prototype.getLinksMap = function(opt_noLazyCreate
 proto.api.v1.PatchApisResponse.prototype.clearLinksMap = function() {
   this.getLinksMap().clear();
   return this;
+};
+
+
+/**
+ * repeated common.v1.Links links_v2 = 3;
+ * @return {!Array<!proto.common.v1.Links>}
+ */
+proto.api.v1.PatchApisResponse.prototype.getLinksV2List = function() {
+  return /** @type{!Array<!proto.common.v1.Links>} */ (
+    jspb.Message.getRepeatedWrapperField(this, common_v1_api_pb.Links, 3));
+};
+
+
+/**
+ * @param {!Array<!proto.common.v1.Links>} value
+ * @return {!proto.api.v1.PatchApisResponse} returns this
+*/
+proto.api.v1.PatchApisResponse.prototype.setLinksV2List = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 3, value);
+};
+
+
+/**
+ * @param {!proto.common.v1.Links=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.common.v1.Links}
+ */
+proto.api.v1.PatchApisResponse.prototype.addLinksV2 = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.common.v1.Links, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api.v1.PatchApisResponse} returns this
+ */
+proto.api.v1.PatchApisResponse.prototype.clearLinksV2List = function() {
+  return this.setLinksV2List([]);
 };
 
 
@@ -2302,7 +2355,7 @@ proto.api.v1.UpdateApplicationSignaturesRequest.prototype.clearUpdatesList = fun
  * @private {!Array<number>}
  * @const
  */
-proto.api.v1.UpdateApplicationSignaturesResponse.repeatedFields_ = [1];
+proto.api.v1.UpdateApplicationSignaturesResponse.repeatedFields_ = [1,3];
 
 
 
@@ -2337,7 +2390,9 @@ proto.api.v1.UpdateApplicationSignaturesResponse.toObject = function(includeInst
   var f, obj = {
 statusesList: jspb.Message.toObjectList(msg.getStatusesList(),
     proto.api.v1.UpdateApplicationSignaturesResponse.Status.toObject, includeInstance),
-linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : []
+linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : [],
+linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
+    common_v1_api_pb.Links.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -2385,6 +2440,11 @@ proto.api.v1.UpdateApplicationSignaturesResponse.deserializeBinaryFromReader = f
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
+    case 3:
+      var value = new common_v1_api_pb.Links;
+      reader.readMessage(value,common_v1_api_pb.Links.deserializeBinaryFromReader);
+      msg.addLinksV2(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2425,6 +2485,14 @@ proto.api.v1.UpdateApplicationSignaturesResponse.serializeBinaryToWriter = funct
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
+  }
+  f = message.getLinksV2List();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      3,
+      f,
+      common_v1_api_pb.Links.serializeBinaryToWriter
+    );
   }
 };
 
@@ -2853,13 +2921,51 @@ proto.api.v1.UpdateApplicationSignaturesResponse.prototype.clearLinksMap = funct
 };
 
 
+/**
+ * repeated common.v1.Links links_v2 = 3;
+ * @return {!Array<!proto.common.v1.Links>}
+ */
+proto.api.v1.UpdateApplicationSignaturesResponse.prototype.getLinksV2List = function() {
+  return /** @type{!Array<!proto.common.v1.Links>} */ (
+    jspb.Message.getRepeatedWrapperField(this, common_v1_api_pb.Links, 3));
+};
+
+
+/**
+ * @param {!Array<!proto.common.v1.Links>} value
+ * @return {!proto.api.v1.UpdateApplicationSignaturesResponse} returns this
+*/
+proto.api.v1.UpdateApplicationSignaturesResponse.prototype.setLinksV2List = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 3, value);
+};
+
+
+/**
+ * @param {!proto.common.v1.Links=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.common.v1.Links}
+ */
+proto.api.v1.UpdateApplicationSignaturesResponse.prototype.addLinksV2 = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.common.v1.Links, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api.v1.UpdateApplicationSignaturesResponse} returns this
+ */
+proto.api.v1.UpdateApplicationSignaturesResponse.prototype.clearLinksV2List = function() {
+  return this.setLinksV2List([]);
+};
+
+
 
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
  * @const
  */
-proto.api.v1.UpdateApiSignaturesResponse.repeatedFields_ = [1];
+proto.api.v1.UpdateApiSignaturesResponse.repeatedFields_ = [1,3];
 
 
 
@@ -2894,7 +3000,9 @@ proto.api.v1.UpdateApiSignaturesResponse.toObject = function(includeInstance, ms
   var f, obj = {
 statusesList: jspb.Message.toObjectList(msg.getStatusesList(),
     proto.api.v1.UpdateApiSignaturesResponse.Status.toObject, includeInstance),
-linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : []
+linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : [],
+linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
+    common_v1_api_pb.Links.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -2942,6 +3050,11 @@ proto.api.v1.UpdateApiSignaturesResponse.deserializeBinaryFromReader = function(
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
+    case 3:
+      var value = new common_v1_api_pb.Links;
+      reader.readMessage(value,common_v1_api_pb.Links.deserializeBinaryFromReader);
+      msg.addLinksV2(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2982,6 +3095,14 @@ proto.api.v1.UpdateApiSignaturesResponse.serializeBinaryToWriter = function(mess
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
+  }
+  f = message.getLinksV2List();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      3,
+      f,
+      common_v1_api_pb.Links.serializeBinaryToWriter
+    );
   }
 };
 
@@ -3407,6 +3528,44 @@ proto.api.v1.UpdateApiSignaturesResponse.prototype.getLinksMap = function(opt_no
 proto.api.v1.UpdateApiSignaturesResponse.prototype.clearLinksMap = function() {
   this.getLinksMap().clear();
   return this;
+};
+
+
+/**
+ * repeated common.v1.Links links_v2 = 3;
+ * @return {!Array<!proto.common.v1.Links>}
+ */
+proto.api.v1.UpdateApiSignaturesResponse.prototype.getLinksV2List = function() {
+  return /** @type{!Array<!proto.common.v1.Links>} */ (
+    jspb.Message.getRepeatedWrapperField(this, common_v1_api_pb.Links, 3));
+};
+
+
+/**
+ * @param {!Array<!proto.common.v1.Links>} value
+ * @return {!proto.api.v1.UpdateApiSignaturesResponse} returns this
+*/
+proto.api.v1.UpdateApiSignaturesResponse.prototype.setLinksV2List = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 3, value);
+};
+
+
+/**
+ * @param {!proto.common.v1.Links=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.common.v1.Links}
+ */
+proto.api.v1.UpdateApiSignaturesResponse.prototype.addLinksV2 = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.common.v1.Links, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api.v1.UpdateApiSignaturesResponse} returns this
+ */
+proto.api.v1.UpdateApiSignaturesResponse.prototype.clearLinksV2List = function() {
+  return this.setLinksV2List([]);
 };
 
 

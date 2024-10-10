@@ -428,6 +428,40 @@ func (m *PatchApisResponse) validate(all bool) error {
 		}
 	}
 
+	for idx, item := range m.GetLinksV2() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, PatchApisResponseValidationError{
+						field:  fmt.Sprintf("LinksV2[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, PatchApisResponseValidationError{
+						field:  fmt.Sprintf("LinksV2[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return PatchApisResponseValidationError{
+					field:  fmt.Sprintf("LinksV2[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return PatchApisResponseMultiError(errors)
 	}
@@ -1270,6 +1304,40 @@ func (m *UpdateApplicationSignaturesResponse) validate(all bool) error {
 		}
 	}
 
+	for idx, item := range m.GetLinksV2() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateApplicationSignaturesResponseValidationError{
+						field:  fmt.Sprintf("LinksV2[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateApplicationSignaturesResponseValidationError{
+						field:  fmt.Sprintf("LinksV2[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateApplicationSignaturesResponseValidationError{
+					field:  fmt.Sprintf("LinksV2[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return UpdateApplicationSignaturesResponseMultiError(errors)
 	}
@@ -1452,6 +1520,40 @@ func (m *UpdateApiSignaturesResponse) validate(all bool) error {
 			}
 
 		}
+	}
+
+	for idx, item := range m.GetLinksV2() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateApiSignaturesResponseValidationError{
+						field:  fmt.Sprintf("LinksV2[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateApiSignaturesResponseValidationError{
+						field:  fmt.Sprintf("LinksV2[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateApiSignaturesResponseValidationError{
+					field:  fmt.Sprintf("LinksV2[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {

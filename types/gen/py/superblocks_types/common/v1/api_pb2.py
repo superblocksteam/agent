@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13\x63ommon/v1/api.proto\x12\tcommon.v1\"\x85\x01\n\x05Links\x12\x31\n\x05links\x18\x01 \x03(\x0b\x32\x1b.common.v1.Links.LinksEntryR\x05links\x1aI\n\nLinksEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x0f.common.v1.LinkR\x05value:\x02\x38\x01\"\x18\n\x04Link\x12\x10\n\x03url\x18\x01 \x01(\tR\x03urlB9Z7github.com/superblocksteam/agent/types/gen/go/common/v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13\x63ommon/v1/api.proto\x12\tcommon.v1\"\x85\x01\n\x05Links\x12\x31\n\x05links\x18\x01 \x03(\x0b\x32\x1b.common.v1.Links.LinksEntryR\x05links\x1aI\n\nLinksEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x0f.common.v1.LinkR\x05value:\x02\x38\x01\"1\n\x07LinksV2\x12&\n\x05links\x18\x01 \x03(\x0b\x32\x10.common.v1.LinksR\x05links\"\x18\n\x04Link\x12\x10\n\x03url\x18\x01 \x01(\tR\x03urlB9Z7github.com/superblocksteam/agent/types/gen/go/common/v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,6 +38,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LINKS']._serialized_end=168
   _globals['_LINKS_LINKSENTRY']._serialized_start=95
   _globals['_LINKS_LINKSENTRY']._serialized_end=168
-  _globals['_LINK']._serialized_start=170
-  _globals['_LINK']._serialized_end=194
+  _globals['_LINKSV2']._serialized_start=170
+  _globals['_LINKSV2']._serialized_end=219
+  _globals['_LINK']._serialized_start=221
+  _globals['_LINK']._serialized_end=245
 # @@protoc_insertion_point(module_scope)
