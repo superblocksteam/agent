@@ -6,7 +6,7 @@
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Struct, Timestamp } from "@bufbuild/protobuf";
 import { Api } from "./api_pb";
-import { Link } from "../../common/v1/api_pb";
+import { Link, Links } from "../../common/v1/api_pb";
 import { Error } from "../../common/v1/errors_pb";
 import { Signature } from "../../utils/v1/utils_pb";
 
@@ -119,6 +119,11 @@ export class PatchApisResponse extends Message<PatchApisResponse> {
    */
   links: { [key: string]: Link } = {};
 
+  /**
+   * @generated from field: repeated common.v1.Links links_v2 = 3;
+   */
+  linksV2: Links[] = [];
+
   constructor(data?: PartialMessage<PatchApisResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -129,6 +134,7 @@ export class PatchApisResponse extends Message<PatchApisResponse> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "statuses", kind: "message", T: PatchApisResponse_Status, repeated: true },
     { no: 2, name: "links", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Link} },
+    { no: 3, name: "links_v2", kind: "message", T: Links, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PatchApisResponse {
@@ -437,6 +443,11 @@ export class UpdateApplicationSignaturesResponse extends Message<UpdateApplicati
    */
   links: { [key: string]: Link } = {};
 
+  /**
+   * @generated from field: repeated common.v1.Links links_v2 = 3;
+   */
+  linksV2: Links[] = [];
+
   constructor(data?: PartialMessage<UpdateApplicationSignaturesResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -447,6 +458,7 @@ export class UpdateApplicationSignaturesResponse extends Message<UpdateApplicati
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "statuses", kind: "message", T: UpdateApplicationSignaturesResponse_Status, repeated: true },
     { no: 2, name: "links", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Link} },
+    { no: 3, name: "links_v2", kind: "message", T: Links, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateApplicationSignaturesResponse {
@@ -554,6 +566,11 @@ export class UpdateApiSignaturesResponse extends Message<UpdateApiSignaturesResp
    */
   links: { [key: string]: Link } = {};
 
+  /**
+   * @generated from field: repeated common.v1.Links links_v2 = 3;
+   */
+  linksV2: Links[] = [];
+
   constructor(data?: PartialMessage<UpdateApiSignaturesResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -564,6 +581,7 @@ export class UpdateApiSignaturesResponse extends Message<UpdateApiSignaturesResp
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "statuses", kind: "message", T: UpdateApiSignaturesResponse_Status, repeated: true },
     { no: 2, name: "links", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Link} },
+    { no: 3, name: "links_v2", kind: "message", T: Links, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateApiSignaturesResponse {

@@ -8,6 +8,10 @@ message Links {
   map<string, Link> links = 1;
 }
 
+message LinksV2 {
+  repeated Links links = 1;
+}
+
 message Link {
   string url = 1;
 }

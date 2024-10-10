@@ -44,6 +44,43 @@ export class Links extends Message<Links> {
 }
 
 /**
+ * @generated from message common.v1.LinksV2
+ */
+export class LinksV2 extends Message<LinksV2> {
+  /**
+   * @generated from field: repeated common.v1.Links links = 1;
+   */
+  links: Links[] = [];
+
+  constructor(data?: PartialMessage<LinksV2>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "common.v1.LinksV2";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "links", kind: "message", T: Links, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LinksV2 {
+    return new LinksV2().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LinksV2 {
+    return new LinksV2().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LinksV2 {
+    return new LinksV2().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: LinksV2 | PlainMessage<LinksV2> | undefined, b: LinksV2 | PlainMessage<LinksV2> | undefined): boolean {
+    return proto3.util.equals(LinksV2, a, b);
+  }
+}
+
+/**
  * @generated from message common.v1.Link
  */
 export class Link extends Message<Link> {

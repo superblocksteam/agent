@@ -28,6 +28,28 @@ export namespace Links {
     }
 }
 
+export class LinksV2 extends jspb.Message { 
+    clearLinksList(): void;
+    getLinksList(): Array<Links>;
+    setLinksList(value: Array<Links>): LinksV2;
+    addLinks(value?: Links, index?: number): Links;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): LinksV2.AsObject;
+    static toObject(includeInstance: boolean, msg: LinksV2): LinksV2.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: LinksV2, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): LinksV2;
+    static deserializeBinaryFromReader(message: LinksV2, reader: jspb.BinaryReader): LinksV2;
+}
+
+export namespace LinksV2 {
+    export type AsObject = {
+        linksList: Array<Links.AsObject>,
+    }
+}
+
 export class Link extends jspb.Message { 
     getUrl(): string;
     setUrl(value: string): Link;

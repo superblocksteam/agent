@@ -31,7 +31,7 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from superblocks_types.utils.v1 import utils_pb2 as utils_dot_v1_dot_utils__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x61pi/v1/requests.proto\x12\x06\x61pi.v1\x1a\x10\x61pi/v1/api.proto\x1a\x1b\x62uf/validate/validate.proto\x1a\x13\x63ommon/v1/api.proto\x1a\x16\x63ommon/v1/errors.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14utils/v1/utils.proto\"}\n\x08PatchApi\x12\x1d\n\x03\x61pi\x18\x01 \x01(\x0b\x32\x0b.api.v1.ApiR\x03\x61pi\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchNameB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\">\n\x10PatchApisRequest\x12*\n\x07patches\x18\x01 \x03(\x0b\x32\x10.api.v1.PatchApiR\x07patches\"\xcf\x02\n\x11PatchApisResponse\x12<\n\x08statuses\x18\x01 \x03(\x0b\x32 .api.v1.PatchApisResponse.StatusR\x08statuses\x12:\n\x05links\x18\x02 \x03(\x0b\x32$.api.v1.PatchApisResponse.LinksEntryR\x05links\x1au\n\x06Status\x12\x15\n\x06\x61pi_id\x18\x01 \x01(\tR\x05\x61piId\x12\x12\n\x04\x63ode\x18\x02 \x01(\x05R\x04\x63ode\x12\x18\n\x07message\x18\x03 \x01(\tR\x07message\x12&\n\x05\x65rror\x18\x04 \x01(\x0b\x32\x10.common.v1.ErrorR\x05\x65rror\x1aI\n\nLinksEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x0f.common.v1.LinkR\x05value:\x02\x38\x01\"\xe8\x01\n\x12UpdateApiSignature\x12\x15\n\x06\x61pi_id\x18\x01 \x01(\tR\x05\x61piId\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchName\x12\x31\n\tsignature\x18\x04 \x01(\x0b\x32\x13.utils.v1.SignatureR\tsignature\x12\x34\n\x07updated\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x07updatedB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\"\xa3\x02\n\x1aUpdateApplicationSignature\x12%\n\x0e\x61pplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchName\x12\x31\n\tsignature\x18\x04 \x01(\x0b\x32\x13.utils.v1.SignatureR\tsignature\x12\x34\n\x07updated\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x07updated\x12!\n\x0cpage_version\x18\x06 \x01(\x05R\x0bpageVersionB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\"R\n\x1aUpdateApiSignaturesRequest\x12\x34\n\x07updates\x18\x01 \x03(\x0b\x32\x1a.api.v1.UpdateApiSignatureR\x07updates\"b\n\"UpdateApplicationSignaturesRequest\x12<\n\x07updates\x18\x01 \x03(\x0b\x32\".api.v1.UpdateApplicationSignatureR\x07updates\"\xea\x03\n#UpdateApplicationSignaturesResponse\x12N\n\x08statuses\x18\x01 \x03(\x0b\x32\x32.api.v1.UpdateApplicationSignaturesResponse.StatusR\x08statuses\x12L\n\x05links\x18\x02 \x03(\x0b\x32\x36.api.v1.UpdateApplicationSignaturesResponse.LinksEntryR\x05links\x1a\xd9\x01\n\x06Status\x12%\n\x0e\x61pplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchName\x12\x12\n\x04\x63ode\x18\x04 \x01(\x05R\x04\x63ode\x12\x18\n\x07message\x18\x05 \x01(\tR\x07message\x12&\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x10.common.v1.ErrorR\x05\x65rrorB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\x1aI\n\nLinksEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x0f.common.v1.LinkR\x05value:\x02\x38\x01\"\xc2\x03\n\x1bUpdateApiSignaturesResponse\x12\x46\n\x08statuses\x18\x01 \x03(\x0b\x32*.api.v1.UpdateApiSignaturesResponse.StatusR\x08statuses\x12\x44\n\x05links\x18\x02 \x03(\x0b\x32..api.v1.UpdateApiSignaturesResponse.LinksEntryR\x05links\x1a\xc9\x01\n\x06Status\x12\x15\n\x06\x61pi_id\x18\x01 \x01(\tR\x05\x61piId\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchName\x12\x12\n\x04\x63ode\x18\x04 \x01(\x05R\x04\x63ode\x12\x18\n\x07message\x18\x05 \x01(\tR\x07message\x12&\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x10.common.v1.ErrorR\x05\x65rrorB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\x1aI\n\nLinksEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x0f.common.v1.LinkR\x05value:\x02\x38\x01\"~\n\x0cGenericBatch\x12\x36\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1a.api.v1.GenericBatch.ItemsB\x06\xbaH\x03\xc8\x01\x01R\x04\x64\x61ta\x1a\x36\n\x05Items\x12-\n\x05items\x18\x01 \x03(\x0b\x32\x17.google.protobuf.StructR\x05items\"H\n\x14GenericBatchResponse\x12\x30\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x14.api.v1.GenericBatchB\x06\xbaH\x03\xc8\x01\x01R\x04\x64\x61taB6Z4github.com/superblocksteam/agent/types/gen/go/api/v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x61pi/v1/requests.proto\x12\x06\x61pi.v1\x1a\x10\x61pi/v1/api.proto\x1a\x1b\x62uf/validate/validate.proto\x1a\x13\x63ommon/v1/api.proto\x1a\x16\x63ommon/v1/errors.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14utils/v1/utils.proto\"}\n\x08PatchApi\x12\x1d\n\x03\x61pi\x18\x01 \x01(\x0b\x32\x0b.api.v1.ApiR\x03\x61pi\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchNameB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\">\n\x10PatchApisRequest\x12*\n\x07patches\x18\x01 \x03(\x0b\x32\x10.api.v1.PatchApiR\x07patches\"\xfc\x02\n\x11PatchApisResponse\x12<\n\x08statuses\x18\x01 \x03(\x0b\x32 .api.v1.PatchApisResponse.StatusR\x08statuses\x12:\n\x05links\x18\x02 \x03(\x0b\x32$.api.v1.PatchApisResponse.LinksEntryR\x05links\x12+\n\x08links_v2\x18\x03 \x03(\x0b\x32\x10.common.v1.LinksR\x07linksV2\x1au\n\x06Status\x12\x15\n\x06\x61pi_id\x18\x01 \x01(\tR\x05\x61piId\x12\x12\n\x04\x63ode\x18\x02 \x01(\x05R\x04\x63ode\x12\x18\n\x07message\x18\x03 \x01(\tR\x07message\x12&\n\x05\x65rror\x18\x04 \x01(\x0b\x32\x10.common.v1.ErrorR\x05\x65rror\x1aI\n\nLinksEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x0f.common.v1.LinkR\x05value:\x02\x38\x01\"\xe8\x01\n\x12UpdateApiSignature\x12\x15\n\x06\x61pi_id\x18\x01 \x01(\tR\x05\x61piId\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchName\x12\x31\n\tsignature\x18\x04 \x01(\x0b\x32\x13.utils.v1.SignatureR\tsignature\x12\x34\n\x07updated\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x07updatedB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\"\xa3\x02\n\x1aUpdateApplicationSignature\x12%\n\x0e\x61pplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchName\x12\x31\n\tsignature\x18\x04 \x01(\x0b\x32\x13.utils.v1.SignatureR\tsignature\x12\x34\n\x07updated\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x07updated\x12!\n\x0cpage_version\x18\x06 \x01(\x05R\x0bpageVersionB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\"R\n\x1aUpdateApiSignaturesRequest\x12\x34\n\x07updates\x18\x01 \x03(\x0b\x32\x1a.api.v1.UpdateApiSignatureR\x07updates\"b\n\"UpdateApplicationSignaturesRequest\x12<\n\x07updates\x18\x01 \x03(\x0b\x32\".api.v1.UpdateApplicationSignatureR\x07updates\"\x97\x04\n#UpdateApplicationSignaturesResponse\x12N\n\x08statuses\x18\x01 \x03(\x0b\x32\x32.api.v1.UpdateApplicationSignaturesResponse.StatusR\x08statuses\x12L\n\x05links\x18\x02 \x03(\x0b\x32\x36.api.v1.UpdateApplicationSignaturesResponse.LinksEntryR\x05links\x12+\n\x08links_v2\x18\x03 \x03(\x0b\x32\x10.common.v1.LinksR\x07linksV2\x1a\xd9\x01\n\x06Status\x12%\n\x0e\x61pplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchName\x12\x12\n\x04\x63ode\x18\x04 \x01(\x05R\x04\x63ode\x12\x18\n\x07message\x18\x05 \x01(\tR\x07message\x12&\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x10.common.v1.ErrorR\x05\x65rrorB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\x1aI\n\nLinksEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x0f.common.v1.LinkR\x05value:\x02\x38\x01\"\xef\x03\n\x1bUpdateApiSignaturesResponse\x12\x46\n\x08statuses\x18\x01 \x03(\x0b\x32*.api.v1.UpdateApiSignaturesResponse.StatusR\x08statuses\x12\x44\n\x05links\x18\x02 \x03(\x0b\x32..api.v1.UpdateApiSignaturesResponse.LinksEntryR\x05links\x12+\n\x08links_v2\x18\x03 \x03(\x0b\x32\x10.common.v1.LinksR\x07linksV2\x1a\xc9\x01\n\x06Status\x12\x15\n\x06\x61pi_id\x18\x01 \x01(\tR\x05\x61piId\x12\x1d\n\tcommit_id\x18\x02 \x01(\tH\x00R\x08\x63ommitId\x12!\n\x0b\x62ranch_name\x18\x03 \x01(\tH\x00R\nbranchName\x12\x12\n\x04\x63ode\x18\x04 \x01(\x05R\x04\x63ode\x12\x18\n\x07message\x18\x05 \x01(\tR\x07message\x12&\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x10.common.v1.ErrorR\x05\x65rrorB\x10\n\x07git_ref\x12\x05\xbaH\x02\x08\x01\x1aI\n\nLinksEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x0f.common.v1.LinkR\x05value:\x02\x38\x01\"~\n\x0cGenericBatch\x12\x36\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1a.api.v1.GenericBatch.ItemsB\x06\xbaH\x03\xc8\x01\x01R\x04\x64\x61ta\x1a\x36\n\x05Items\x12-\n\x05items\x18\x01 \x03(\x0b\x32\x17.google.protobuf.StructR\x05items\"H\n\x14GenericBatchResponse\x12\x30\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x14.api.v1.GenericBatchB\x06\xbaH\x03\xc8\x01\x01R\x04\x64\x61taB6Z4github.com/superblocksteam/agent/types/gen/go/api/v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -64,35 +64,35 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PATCHAPISREQUEST']._serialized_start=337
   _globals['_PATCHAPISREQUEST']._serialized_end=399
   _globals['_PATCHAPISRESPONSE']._serialized_start=402
-  _globals['_PATCHAPISRESPONSE']._serialized_end=737
-  _globals['_PATCHAPISRESPONSE_STATUS']._serialized_start=545
-  _globals['_PATCHAPISRESPONSE_STATUS']._serialized_end=662
-  _globals['_PATCHAPISRESPONSE_LINKSENTRY']._serialized_start=664
-  _globals['_PATCHAPISRESPONSE_LINKSENTRY']._serialized_end=737
-  _globals['_UPDATEAPISIGNATURE']._serialized_start=740
-  _globals['_UPDATEAPISIGNATURE']._serialized_end=972
-  _globals['_UPDATEAPPLICATIONSIGNATURE']._serialized_start=975
-  _globals['_UPDATEAPPLICATIONSIGNATURE']._serialized_end=1266
-  _globals['_UPDATEAPISIGNATURESREQUEST']._serialized_start=1268
-  _globals['_UPDATEAPISIGNATURESREQUEST']._serialized_end=1350
-  _globals['_UPDATEAPPLICATIONSIGNATURESREQUEST']._serialized_start=1352
-  _globals['_UPDATEAPPLICATIONSIGNATURESREQUEST']._serialized_end=1450
-  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE']._serialized_start=1453
-  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE']._serialized_end=1943
-  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE_STATUS']._serialized_start=1651
-  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE_STATUS']._serialized_end=1868
-  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE_LINKSENTRY']._serialized_start=664
-  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE_LINKSENTRY']._serialized_end=737
-  _globals['_UPDATEAPISIGNATURESRESPONSE']._serialized_start=1946
-  _globals['_UPDATEAPISIGNATURESRESPONSE']._serialized_end=2396
-  _globals['_UPDATEAPISIGNATURESRESPONSE_STATUS']._serialized_start=2120
-  _globals['_UPDATEAPISIGNATURESRESPONSE_STATUS']._serialized_end=2321
-  _globals['_UPDATEAPISIGNATURESRESPONSE_LINKSENTRY']._serialized_start=664
-  _globals['_UPDATEAPISIGNATURESRESPONSE_LINKSENTRY']._serialized_end=737
-  _globals['_GENERICBATCH']._serialized_start=2398
-  _globals['_GENERICBATCH']._serialized_end=2524
-  _globals['_GENERICBATCH_ITEMS']._serialized_start=2470
-  _globals['_GENERICBATCH_ITEMS']._serialized_end=2524
-  _globals['_GENERICBATCHRESPONSE']._serialized_start=2526
-  _globals['_GENERICBATCHRESPONSE']._serialized_end=2598
+  _globals['_PATCHAPISRESPONSE']._serialized_end=782
+  _globals['_PATCHAPISRESPONSE_STATUS']._serialized_start=590
+  _globals['_PATCHAPISRESPONSE_STATUS']._serialized_end=707
+  _globals['_PATCHAPISRESPONSE_LINKSENTRY']._serialized_start=709
+  _globals['_PATCHAPISRESPONSE_LINKSENTRY']._serialized_end=782
+  _globals['_UPDATEAPISIGNATURE']._serialized_start=785
+  _globals['_UPDATEAPISIGNATURE']._serialized_end=1017
+  _globals['_UPDATEAPPLICATIONSIGNATURE']._serialized_start=1020
+  _globals['_UPDATEAPPLICATIONSIGNATURE']._serialized_end=1311
+  _globals['_UPDATEAPISIGNATURESREQUEST']._serialized_start=1313
+  _globals['_UPDATEAPISIGNATURESREQUEST']._serialized_end=1395
+  _globals['_UPDATEAPPLICATIONSIGNATURESREQUEST']._serialized_start=1397
+  _globals['_UPDATEAPPLICATIONSIGNATURESREQUEST']._serialized_end=1495
+  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE']._serialized_start=1498
+  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE']._serialized_end=2033
+  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE_STATUS']._serialized_start=1741
+  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE_STATUS']._serialized_end=1958
+  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE_LINKSENTRY']._serialized_start=709
+  _globals['_UPDATEAPPLICATIONSIGNATURESRESPONSE_LINKSENTRY']._serialized_end=782
+  _globals['_UPDATEAPISIGNATURESRESPONSE']._serialized_start=2036
+  _globals['_UPDATEAPISIGNATURESRESPONSE']._serialized_end=2531
+  _globals['_UPDATEAPISIGNATURESRESPONSE_STATUS']._serialized_start=2255
+  _globals['_UPDATEAPISIGNATURESRESPONSE_STATUS']._serialized_end=2456
+  _globals['_UPDATEAPISIGNATURESRESPONSE_LINKSENTRY']._serialized_start=709
+  _globals['_UPDATEAPISIGNATURESRESPONSE_LINKSENTRY']._serialized_end=782
+  _globals['_GENERICBATCH']._serialized_start=2533
+  _globals['_GENERICBATCH']._serialized_end=2659
+  _globals['_GENERICBATCH_ITEMS']._serialized_start=2605
+  _globals['_GENERICBATCH_ITEMS']._serialized_end=2659
+  _globals['_GENERICBATCHRESPONSE']._serialized_start=2661
+  _globals['_GENERICBATCHRESPONSE']._serialized_end=2733
 # @@protoc_insertion_point(module_scope)

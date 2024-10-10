@@ -87,6 +87,10 @@ export class PatchApisResponse extends jspb.Message {
 
     getLinksMap(): jspb.Map<string, common_v1_api_pb.Link>;
     clearLinksMap(): void;
+    clearLinksV2List(): void;
+    getLinksV2List(): Array<common_v1_api_pb.Links>;
+    setLinksV2List(value: Array<common_v1_api_pb.Links>): PatchApisResponse;
+    addLinksV2(value?: common_v1_api_pb.Links, index?: number): common_v1_api_pb.Links;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PatchApisResponse.AsObject;
@@ -103,6 +107,7 @@ export namespace PatchApisResponse {
         statusesList: Array<PatchApisResponse.Status.AsObject>,
 
         linksMap: Array<[string, common_v1_api_pb.Link.AsObject]>,
+        linksV2List: Array<common_v1_api_pb.Links.AsObject>,
     }
 
 
@@ -301,6 +306,10 @@ export class UpdateApplicationSignaturesResponse extends jspb.Message {
 
     getLinksMap(): jspb.Map<string, common_v1_api_pb.Link>;
     clearLinksMap(): void;
+    clearLinksV2List(): void;
+    getLinksV2List(): Array<common_v1_api_pb.Links>;
+    setLinksV2List(value: Array<common_v1_api_pb.Links>): UpdateApplicationSignaturesResponse;
+    addLinksV2(value?: common_v1_api_pb.Links, index?: number): common_v1_api_pb.Links;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): UpdateApplicationSignaturesResponse.AsObject;
@@ -317,6 +326,7 @@ export namespace UpdateApplicationSignaturesResponse {
         statusesList: Array<UpdateApplicationSignaturesResponse.Status.AsObject>,
 
         linksMap: Array<[string, common_v1_api_pb.Link.AsObject]>,
+        linksV2List: Array<common_v1_api_pb.Links.AsObject>,
     }
 
 
@@ -383,6 +393,10 @@ export class UpdateApiSignaturesResponse extends jspb.Message {
 
     getLinksMap(): jspb.Map<string, common_v1_api_pb.Link>;
     clearLinksMap(): void;
+    clearLinksV2List(): void;
+    getLinksV2List(): Array<common_v1_api_pb.Links>;
+    setLinksV2List(value: Array<common_v1_api_pb.Links>): UpdateApiSignaturesResponse;
+    addLinksV2(value?: common_v1_api_pb.Links, index?: number): common_v1_api_pb.Links;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): UpdateApiSignaturesResponse.AsObject;
@@ -399,6 +413,7 @@ export namespace UpdateApiSignaturesResponse {
         statusesList: Array<UpdateApiSignaturesResponse.Status.AsObject>,
 
         linksMap: Array<[string, common_v1_api_pb.Link.AsObject]>,
+        linksV2List: Array<common_v1_api_pb.Links.AsObject>,
     }
 
 

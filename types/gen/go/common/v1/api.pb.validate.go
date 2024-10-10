@@ -179,6 +179,138 @@ var _ interface {
 	ErrorName() string
 } = LinksValidationError{}
 
+// Validate checks the field values on LinksV2 with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *LinksV2) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on LinksV2 with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in LinksV2MultiError, or nil if none found.
+func (m *LinksV2) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *LinksV2) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetLinks() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, LinksV2ValidationError{
+						field:  fmt.Sprintf("Links[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, LinksV2ValidationError{
+						field:  fmt.Sprintf("Links[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return LinksV2ValidationError{
+					field:  fmt.Sprintf("Links[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return LinksV2MultiError(errors)
+	}
+
+	return nil
+}
+
+// LinksV2MultiError is an error wrapping multiple validation errors returned
+// by LinksV2.ValidateAll() if the designated constraints aren't met.
+type LinksV2MultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m LinksV2MultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m LinksV2MultiError) AllErrors() []error { return m }
+
+// LinksV2ValidationError is the validation error returned by LinksV2.Validate
+// if the designated constraints aren't met.
+type LinksV2ValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e LinksV2ValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e LinksV2ValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e LinksV2ValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e LinksV2ValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e LinksV2ValidationError) ErrorName() string { return "LinksV2ValidationError" }
+
+// Error satisfies the builtin error interface
+func (e LinksV2ValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sLinksV2.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = LinksV2ValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = LinksV2ValidationError{}
+
 // Validate checks the field values on Link with the rules defined in the proto
 // definition for this message. If any rules are violated, the first error
 // encountered is returned, or nil if there are no violations.

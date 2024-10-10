@@ -36,6 +36,7 @@ message PatchApisResponse {
 
   repeated Status statuses = 1;
   map<string, common.v1.Link> links = 2;
+  repeated common.v1.Links links_v2 = 3;
 }
 
 message UpdateApiSignature {
@@ -92,6 +93,7 @@ message UpdateApplicationSignaturesResponse {
 
   repeated Status statuses = 1;
   map<string, common.v1.Link> links = 2;
+  repeated common.v1.Links links_v2 = 3;
 }
 
 message UpdateApiSignaturesResponse {
@@ -111,6 +113,7 @@ message UpdateApiSignaturesResponse {
 
   repeated Status statuses = 1;
   map<string, common.v1.Link> links = 2;
+  repeated common.v1.Links links_v2 = 3;
 }
 
 message GenericBatch {
