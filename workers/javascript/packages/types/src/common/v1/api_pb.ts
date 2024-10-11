@@ -117,3 +117,46 @@ export class Link extends Message<Link> {
   }
 }
 
+/**
+ * @generated from message common.v1.CombinedLinks
+ */
+export class CombinedLinks extends Message<CombinedLinks> {
+  /**
+   * @generated from field: map<string, common.v1.Link> links = 1;
+   */
+  links: { [key: string]: Link } = {};
+
+  /**
+   * @generated from field: repeated common.v1.Links links_v2 = 2;
+   */
+  linksV2: Links[] = [];
+
+  constructor(data?: PartialMessage<CombinedLinks>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "common.v1.CombinedLinks";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "links", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Link} },
+    { no: 2, name: "links_v2", kind: "message", T: Links, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CombinedLinks {
+    return new CombinedLinks().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CombinedLinks {
+    return new CombinedLinks().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CombinedLinks {
+    return new CombinedLinks().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CombinedLinks | PlainMessage<CombinedLinks> | undefined, b: CombinedLinks | PlainMessage<CombinedLinks> | undefined): boolean {
+    return proto3.util.equals(CombinedLinks, a, b);
+  }
+}
+

@@ -410,3 +410,183 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = LinkValidationError{}
+
+// Validate checks the field values on CombinedLinks with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *CombinedLinks) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CombinedLinks with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in CombinedLinksMultiError, or
+// nil if none found.
+func (m *CombinedLinks) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CombinedLinks) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	{
+		sorted_keys := make([]string, len(m.GetLinks()))
+		i := 0
+		for key := range m.GetLinks() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetLinks()[key]
+			_ = val
+
+			// no validation rules for Links[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, CombinedLinksValidationError{
+							field:  fmt.Sprintf("Links[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, CombinedLinksValidationError{
+							field:  fmt.Sprintf("Links[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return CombinedLinksValidationError{
+						field:  fmt.Sprintf("Links[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	for idx, item := range m.GetLinksV2() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CombinedLinksValidationError{
+						field:  fmt.Sprintf("LinksV2[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CombinedLinksValidationError{
+						field:  fmt.Sprintf("LinksV2[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CombinedLinksValidationError{
+					field:  fmt.Sprintf("LinksV2[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return CombinedLinksMultiError(errors)
+	}
+
+	return nil
+}
+
+// CombinedLinksMultiError is an error wrapping multiple validation errors
+// returned by CombinedLinks.ValidateAll() if the designated constraints
+// aren't met.
+type CombinedLinksMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CombinedLinksMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CombinedLinksMultiError) AllErrors() []error { return m }
+
+// CombinedLinksValidationError is the validation error returned by
+// CombinedLinks.Validate if the designated constraints aren't met.
+type CombinedLinksValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CombinedLinksValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CombinedLinksValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CombinedLinksValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CombinedLinksValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CombinedLinksValidationError) ErrorName() string { return "CombinedLinksValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CombinedLinksValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCombinedLinks.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CombinedLinksValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CombinedLinksValidationError{}

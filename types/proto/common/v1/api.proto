@@ -15,3 +15,8 @@ message LinksV2 {
 message Link {
   string url = 1;
 }
+
+message CombinedLinks {
+  map<string, Link> links = 1;
+  repeated Links links_v2 = 2;
+}

@@ -69,3 +69,30 @@ export namespace Link {
         url: string,
     }
 }
+
+export class CombinedLinks extends jspb.Message { 
+
+    getLinksMap(): jspb.Map<string, Link>;
+    clearLinksMap(): void;
+    clearLinksV2List(): void;
+    getLinksV2List(): Array<Links>;
+    setLinksV2List(value: Array<Links>): CombinedLinks;
+    addLinksV2(value?: Links, index?: number): Links;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): CombinedLinks.AsObject;
+    static toObject(includeInstance: boolean, msg: CombinedLinks): CombinedLinks.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: CombinedLinks, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): CombinedLinks;
+    static deserializeBinaryFromReader(message: CombinedLinks, reader: jspb.BinaryReader): CombinedLinks;
+}
+
+export namespace CombinedLinks {
+    export type AsObject = {
+
+        linksMap: Array<[string, Link.AsObject]>,
+        linksV2List: Array<Links.AsObject>,
+    }
+}
