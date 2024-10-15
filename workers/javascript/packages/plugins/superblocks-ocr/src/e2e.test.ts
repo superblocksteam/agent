@@ -15,7 +15,7 @@ import SuperblocksOcrPlugin from '.';
 
 // RUN: `npm run env:secrets:fetch:plugins` to fetch the latest plugin credentials
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-const VALID_IMAGE_URL = 'https://cdn.graciousquotes.com/wp-content/uploads/2020/05/Aspire-to-inspire-before-we-expire..jpg';
+const VALID_IMAGE_URL = 'https://superblocks.s3.us-west-2.amazonaws.com/img/integrations/test-resources/hilarious-joke.jpg';
 const MICROSOFT_COMPUTER_VISION_API_KEY = process.env.MICROSOFT_COMPUTER_VISION_API_KEY;
 const MICROSOFT_COMPUTER_VISION_BASE_URL = process.env.MICROSOFT_COMPUTER_VISION_BASE_URL;
 
@@ -84,7 +84,7 @@ describe('execute', () => {
       newProps.actionConfiguration.action = SUPERBLOCKS_OCR_ACTION.FROM_URL;
       newProps.actionConfiguration.fileUrl = VALID_IMAGE_URL;
       const resp = await plugin.execute(newProps);
-      expect(resp.output).toEqual('Aspire to inspire before\nwe expire.\nGRACIOUSQUOTES.COM');
+      expect(resp.output).toEqual('What do you call a\nfly with no wings?\nA walk.\nRD');
     },
     TEST_TIMEOUT_MS
   );
