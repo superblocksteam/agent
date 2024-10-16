@@ -1,4 +1,4 @@
 protobuf~=5.27.0
-grpcio~=1.65.1
+grpcio~=1.67.0
 # TODO: move back to using this package once it is published
 # superblocks-types==0.0.14
