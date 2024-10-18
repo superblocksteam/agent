@@ -17,6 +17,7 @@ var (
 	unsupportedNodeGlobalsRegex *regexp.Regexp
 	unsupportedNodeGlobals      = []string{
 		"AbortController",
+		"Blob",
 		"Buffer",
 		"clearImmediate",
 		"clearInterval",
