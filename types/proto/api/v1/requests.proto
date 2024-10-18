@@ -48,7 +48,12 @@ message UpdateApiSignature {
     string branch_name = 3;
   }
 
-  utils.v1.Signature signature = 4;
+  oneof result {
+    option (buf.validate.oneof).required = true;
+    utils.v1.Signature signature = 4;
+    SignatureRotationErrors errors = 6;
+  }
+
   google.protobuf.Timestamp updated = 5;
 }
 
@@ -61,9 +66,25 @@ message UpdateApplicationSignature {
     string branch_name = 3;
   }
 
-  utils.v1.Signature signature = 4;
+  oneof result {
+    option (buf.validate.oneof).required = true;
+    utils.v1.Signature signature = 4;
+    SignatureRotationErrors errors = 7;
+  }
+
   google.protobuf.Timestamp updated = 5;
   int32 page_version = 6;
+}
+
+message SignatureRotationErrors {
+  repeated SignatureRotationError errors = 1;
+  string key_id = 2;
+  bytes public_key = 3;
+  utils.v1.Signature.Algorithm algorithm = 4;
+}
+
+message SignatureRotationError {
+  string message = 1;
 }
 
 // PUT api/v3/api/signatures

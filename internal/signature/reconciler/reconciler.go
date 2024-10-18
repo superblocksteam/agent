@@ -341,9 +341,11 @@ func prep(log *zap.Logger, resources []*pbsecurity.Resource) prepped {
 			literal := res.GetLiteral()
 			update := &pbapi.UpdateApplicationSignature{
 				ApplicationId: literal.GetResourceId(),
-				Signature:     literal.GetSignature(),
-				Updated:       literal.GetLastUpdated(),
-				PageVersion:   literal.GetPageVersion(),
+				Result: &pbapi.UpdateApplicationSignature_Signature{
+					Signature: literal.GetSignature(),
+				},
+				Updated:     literal.GetLastUpdated(),
+				PageVersion: literal.GetPageVersion(),
 			}
 
 			if res.GetCommitId() != "" {
@@ -380,8 +382,10 @@ func updateFromApiLiteral(res *pbsecurity.Resource, api *structpb.Struct) (*pbap
 	}
 
 	update := &pbapi.UpdateApiSignature{
-		ApiId:     metadata.GetId(),
-		Signature: sig,
+		ApiId: metadata.GetId(),
+		Result: &pbapi.UpdateApiSignature_Signature{
+			Signature: sig,
+		},
 	}
 
 	if res.GetCommitId() != "" {

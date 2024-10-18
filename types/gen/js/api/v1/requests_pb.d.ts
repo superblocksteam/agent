@@ -164,12 +164,18 @@ export class UpdateApiSignature extends jspb.Message {
     getSignature(): utils_v1_utils_pb.Signature | undefined;
     setSignature(value?: utils_v1_utils_pb.Signature): UpdateApiSignature;
 
+    hasErrors(): boolean;
+    clearErrors(): void;
+    getErrors(): SignatureRotationErrors | undefined;
+    setErrors(value?: SignatureRotationErrors): UpdateApiSignature;
+
     hasUpdated(): boolean;
     clearUpdated(): void;
     getUpdated(): google_protobuf_timestamp_pb.Timestamp | undefined;
     setUpdated(value?: google_protobuf_timestamp_pb.Timestamp): UpdateApiSignature;
 
     getGitRefCase(): UpdateApiSignature.GitRefCase;
+    getResultCase(): UpdateApiSignature.ResultCase;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): UpdateApiSignature.AsObject;
@@ -187,6 +193,7 @@ export namespace UpdateApiSignature {
         commitId: string,
         branchName: string,
         signature?: utils_v1_utils_pb.Signature.AsObject,
+        errors?: SignatureRotationErrors.AsObject,
         updated?: google_protobuf_timestamp_pb.Timestamp.AsObject,
     }
 
@@ -194,6 +201,12 @@ export namespace UpdateApiSignature {
         GIT_REF_NOT_SET = 0,
         COMMIT_ID = 2,
         BRANCH_NAME = 3,
+    }
+
+    export enum ResultCase {
+        RESULT_NOT_SET = 0,
+        SIGNATURE = 4,
+        ERRORS = 6,
     }
 
 }
@@ -217,6 +230,11 @@ export class UpdateApplicationSignature extends jspb.Message {
     getSignature(): utils_v1_utils_pb.Signature | undefined;
     setSignature(value?: utils_v1_utils_pb.Signature): UpdateApplicationSignature;
 
+    hasErrors(): boolean;
+    clearErrors(): void;
+    getErrors(): SignatureRotationErrors | undefined;
+    setErrors(value?: SignatureRotationErrors): UpdateApplicationSignature;
+
     hasUpdated(): boolean;
     clearUpdated(): void;
     getUpdated(): google_protobuf_timestamp_pb.Timestamp | undefined;
@@ -225,6 +243,7 @@ export class UpdateApplicationSignature extends jspb.Message {
     setPageVersion(value: number): UpdateApplicationSignature;
 
     getGitRefCase(): UpdateApplicationSignature.GitRefCase;
+    getResultCase(): UpdateApplicationSignature.ResultCase;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): UpdateApplicationSignature.AsObject;
@@ -242,6 +261,7 @@ export namespace UpdateApplicationSignature {
         commitId: string,
         branchName: string,
         signature?: utils_v1_utils_pb.Signature.AsObject,
+        errors?: SignatureRotationErrors.AsObject,
         updated?: google_protobuf_timestamp_pb.Timestamp.AsObject,
         pageVersion: number,
     }
@@ -252,6 +272,65 @@ export namespace UpdateApplicationSignature {
         BRANCH_NAME = 3,
     }
 
+    export enum ResultCase {
+        RESULT_NOT_SET = 0,
+        SIGNATURE = 4,
+        ERRORS = 7,
+    }
+
+}
+
+export class SignatureRotationErrors extends jspb.Message { 
+    clearErrorsList(): void;
+    getErrorsList(): Array<SignatureRotationError>;
+    setErrorsList(value: Array<SignatureRotationError>): SignatureRotationErrors;
+    addErrors(value?: SignatureRotationError, index?: number): SignatureRotationError;
+    getKeyId(): string;
+    setKeyId(value: string): SignatureRotationErrors;
+    getPublicKey(): Uint8Array | string;
+    getPublicKey_asU8(): Uint8Array;
+    getPublicKey_asB64(): string;
+    setPublicKey(value: Uint8Array | string): SignatureRotationErrors;
+    getAlgorithm(): utils_v1_utils_pb.Signature.Algorithm;
+    setAlgorithm(value: utils_v1_utils_pb.Signature.Algorithm): SignatureRotationErrors;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SignatureRotationErrors.AsObject;
+    static toObject(includeInstance: boolean, msg: SignatureRotationErrors): SignatureRotationErrors.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SignatureRotationErrors, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SignatureRotationErrors;
+    static deserializeBinaryFromReader(message: SignatureRotationErrors, reader: jspb.BinaryReader): SignatureRotationErrors;
+}
+
+export namespace SignatureRotationErrors {
+    export type AsObject = {
+        errorsList: Array<SignatureRotationError.AsObject>,
+        keyId: string,
+        publicKey: Uint8Array | string,
+        algorithm: utils_v1_utils_pb.Signature.Algorithm,
+    }
+}
+
+export class SignatureRotationError extends jspb.Message { 
+    getMessage(): string;
+    setMessage(value: string): SignatureRotationError;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SignatureRotationError.AsObject;
+    static toObject(includeInstance: boolean, msg: SignatureRotationError): SignatureRotationError.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SignatureRotationError, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SignatureRotationError;
+    static deserializeBinaryFromReader(message: SignatureRotationError, reader: jspb.BinaryReader): SignatureRotationError;
+}
+
+export namespace SignatureRotationError {
+    export type AsObject = {
+        message: string,
+    }
 }
 
 export class UpdateApiSignaturesRequest extends jspb.Message { 
