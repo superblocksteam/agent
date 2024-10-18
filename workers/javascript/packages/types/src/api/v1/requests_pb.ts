@@ -8,7 +8,7 @@ import { Message, proto3, Struct, Timestamp } from "@bufbuild/protobuf";
 import { Api } from "./api_pb";
 import { Link, Links } from "../../common/v1/api_pb";
 import { Error } from "../../common/v1/errors_pb";
-import { Signature } from "../../utils/v1/utils_pb";
+import { Signature, Signature_Algorithm } from "../../utils/v1/utils_pb";
 
 /**
  * @generated from message api.v1.PatchApi
@@ -236,9 +236,21 @@ export class UpdateApiSignature extends Message<UpdateApiSignature> {
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
-   * @generated from field: utils.v1.Signature signature = 4;
+   * @generated from oneof api.v1.UpdateApiSignature.result
    */
-  signature?: Signature;
+  result: {
+    /**
+     * @generated from field: utils.v1.Signature signature = 4;
+     */
+    value: Signature;
+    case: "signature";
+  } | {
+    /**
+     * @generated from field: api.v1.SignatureRotationErrors errors = 6;
+     */
+    value: SignatureRotationErrors;
+    case: "errors";
+  } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
    * @generated from field: google.protobuf.Timestamp updated = 5;
@@ -256,7 +268,8 @@ export class UpdateApiSignature extends Message<UpdateApiSignature> {
     { no: 1, name: "api_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
     { no: 3, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
-    { no: 4, name: "signature", kind: "message", T: Signature },
+    { no: 4, name: "signature", kind: "message", T: Signature, oneof: "result" },
+    { no: 6, name: "errors", kind: "message", T: SignatureRotationErrors, oneof: "result" },
     { no: 5, name: "updated", kind: "message", T: Timestamp },
   ]);
 
@@ -304,9 +317,21 @@ export class UpdateApplicationSignature extends Message<UpdateApplicationSignatu
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
-   * @generated from field: utils.v1.Signature signature = 4;
+   * @generated from oneof api.v1.UpdateApplicationSignature.result
    */
-  signature?: Signature;
+  result: {
+    /**
+     * @generated from field: utils.v1.Signature signature = 4;
+     */
+    value: Signature;
+    case: "signature";
+  } | {
+    /**
+     * @generated from field: api.v1.SignatureRotationErrors errors = 7;
+     */
+    value: SignatureRotationErrors;
+    case: "errors";
+  } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
    * @generated from field: google.protobuf.Timestamp updated = 5;
@@ -329,7 +354,8 @@ export class UpdateApplicationSignature extends Message<UpdateApplicationSignatu
     { no: 1, name: "application_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
     { no: 3, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
-    { no: 4, name: "signature", kind: "message", T: Signature },
+    { no: 4, name: "signature", kind: "message", T: Signature, oneof: "result" },
+    { no: 7, name: "errors", kind: "message", T: SignatureRotationErrors, oneof: "result" },
     { no: 5, name: "updated", kind: "message", T: Timestamp },
     { no: 6, name: "page_version", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
   ]);
@@ -348,6 +374,98 @@ export class UpdateApplicationSignature extends Message<UpdateApplicationSignatu
 
   static equals(a: UpdateApplicationSignature | PlainMessage<UpdateApplicationSignature> | undefined, b: UpdateApplicationSignature | PlainMessage<UpdateApplicationSignature> | undefined): boolean {
     return proto3.util.equals(UpdateApplicationSignature, a, b);
+  }
+}
+
+/**
+ * @generated from message api.v1.SignatureRotationErrors
+ */
+export class SignatureRotationErrors extends Message<SignatureRotationErrors> {
+  /**
+   * @generated from field: repeated api.v1.SignatureRotationError errors = 1;
+   */
+  errors: SignatureRotationError[] = [];
+
+  /**
+   * @generated from field: string key_id = 2;
+   */
+  keyId = "";
+
+  /**
+   * @generated from field: bytes public_key = 3;
+   */
+  publicKey = new Uint8Array(0);
+
+  /**
+   * @generated from field: utils.v1.Signature.Algorithm algorithm = 4;
+   */
+  algorithm = Signature_Algorithm.UNSPECIFIED;
+
+  constructor(data?: PartialMessage<SignatureRotationErrors>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.SignatureRotationErrors";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "errors", kind: "message", T: SignatureRotationError, repeated: true },
+    { no: 2, name: "key_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "public_key", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
+    { no: 4, name: "algorithm", kind: "enum", T: proto3.getEnumType(Signature_Algorithm) },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SignatureRotationErrors {
+    return new SignatureRotationErrors().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SignatureRotationErrors {
+    return new SignatureRotationErrors().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SignatureRotationErrors {
+    return new SignatureRotationErrors().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SignatureRotationErrors | PlainMessage<SignatureRotationErrors> | undefined, b: SignatureRotationErrors | PlainMessage<SignatureRotationErrors> | undefined): boolean {
+    return proto3.util.equals(SignatureRotationErrors, a, b);
+  }
+}
+
+/**
+ * @generated from message api.v1.SignatureRotationError
+ */
+export class SignatureRotationError extends Message<SignatureRotationError> {
+  /**
+   * @generated from field: string message = 1;
+   */
+  message = "";
+
+  constructor(data?: PartialMessage<SignatureRotationError>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.SignatureRotationError";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SignatureRotationError {
+    return new SignatureRotationError().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SignatureRotationError {
+    return new SignatureRotationError().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SignatureRotationError {
+    return new SignatureRotationError().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: SignatureRotationError | PlainMessage<SignatureRotationError> | undefined, b: SignatureRotationError | PlainMessage<SignatureRotationError> | undefined): boolean {
+    return proto3.util.equals(SignatureRotationError, a, b);
   }
 }
 

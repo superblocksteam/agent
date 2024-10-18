@@ -17,6 +17,8 @@ import (
 	"unicode/utf8"
 
 	"google.golang.org/protobuf/types/known/anypb"
+
+	v1 "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 )
 
 // ensure the imports are used
@@ -33,6 +35,8 @@ var (
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
 	_ = sort.Sort
+
+	_ = v1.Signature_Algorithm(0)
 )
 
 // Validate checks the field values on PatchApi with the rules defined in the
@@ -567,35 +571,6 @@ func (m *UpdateApiSignature) validate(all bool) error {
 	// no validation rules for ApiId
 
 	if all {
-		switch v := interface{}(m.GetSignature()).(type) {
-		case interface{ ValidateAll() error }:
-			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, UpdateApiSignatureValidationError{
-					field:  "Signature",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		case interface{ Validate() error }:
-			if err := v.Validate(); err != nil {
-				errors = append(errors, UpdateApiSignatureValidationError{
-					field:  "Signature",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		}
-	} else if v, ok := interface{}(m.GetSignature()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return UpdateApiSignatureValidationError{
-				field:  "Signature",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
-	if all {
 		switch v := interface{}(m.GetUpdated()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
@@ -649,6 +624,92 @@ func (m *UpdateApiSignature) validate(all bool) error {
 			errors = append(errors, err)
 		}
 		// no validation rules for BranchName
+	default:
+		_ = v // ensures v is used
+	}
+	switch v := m.Result.(type) {
+	case *UpdateApiSignature_Signature:
+		if v == nil {
+			err := UpdateApiSignatureValidationError{
+				field:  "Result",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetSignature()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateApiSignatureValidationError{
+						field:  "Signature",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateApiSignatureValidationError{
+						field:  "Signature",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetSignature()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateApiSignatureValidationError{
+					field:  "Signature",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *UpdateApiSignature_Errors:
+		if v == nil {
+			err := UpdateApiSignatureValidationError{
+				field:  "Result",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetErrors()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateApiSignatureValidationError{
+						field:  "Errors",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateApiSignatureValidationError{
+						field:  "Errors",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetErrors()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateApiSignatureValidationError{
+					field:  "Errors",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -758,35 +819,6 @@ func (m *UpdateApplicationSignature) validate(all bool) error {
 	// no validation rules for ApplicationId
 
 	if all {
-		switch v := interface{}(m.GetSignature()).(type) {
-		case interface{ ValidateAll() error }:
-			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, UpdateApplicationSignatureValidationError{
-					field:  "Signature",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		case interface{ Validate() error }:
-			if err := v.Validate(); err != nil {
-				errors = append(errors, UpdateApplicationSignatureValidationError{
-					field:  "Signature",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		}
-	} else if v, ok := interface{}(m.GetSignature()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return UpdateApplicationSignatureValidationError{
-				field:  "Signature",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
-	if all {
 		switch v := interface{}(m.GetUpdated()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
@@ -842,6 +874,92 @@ func (m *UpdateApplicationSignature) validate(all bool) error {
 			errors = append(errors, err)
 		}
 		// no validation rules for BranchName
+	default:
+		_ = v // ensures v is used
+	}
+	switch v := m.Result.(type) {
+	case *UpdateApplicationSignature_Signature:
+		if v == nil {
+			err := UpdateApplicationSignatureValidationError{
+				field:  "Result",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetSignature()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateApplicationSignatureValidationError{
+						field:  "Signature",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateApplicationSignatureValidationError{
+						field:  "Signature",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetSignature()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateApplicationSignatureValidationError{
+					field:  "Signature",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *UpdateApplicationSignature_Errors:
+		if v == nil {
+			err := UpdateApplicationSignatureValidationError{
+				field:  "Result",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetErrors()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateApplicationSignatureValidationError{
+						field:  "Errors",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateApplicationSignatureValidationError{
+						field:  "Errors",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetErrors()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateApplicationSignatureValidationError{
+					field:  "Errors",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -925,6 +1043,252 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UpdateApplicationSignatureValidationError{}
+
+// Validate checks the field values on SignatureRotationErrors with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *SignatureRotationErrors) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on SignatureRotationErrors with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// SignatureRotationErrorsMultiError, or nil if none found.
+func (m *SignatureRotationErrors) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SignatureRotationErrors) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetErrors() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, SignatureRotationErrorsValidationError{
+						field:  fmt.Sprintf("Errors[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, SignatureRotationErrorsValidationError{
+						field:  fmt.Sprintf("Errors[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return SignatureRotationErrorsValidationError{
+					field:  fmt.Sprintf("Errors[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for KeyId
+
+	// no validation rules for PublicKey
+
+	// no validation rules for Algorithm
+
+	if len(errors) > 0 {
+		return SignatureRotationErrorsMultiError(errors)
+	}
+
+	return nil
+}
+
+// SignatureRotationErrorsMultiError is an error wrapping multiple validation
+// errors returned by SignatureRotationErrors.ValidateAll() if the designated
+// constraints aren't met.
+type SignatureRotationErrorsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SignatureRotationErrorsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SignatureRotationErrorsMultiError) AllErrors() []error { return m }
+
+// SignatureRotationErrorsValidationError is the validation error returned by
+// SignatureRotationErrors.Validate if the designated constraints aren't met.
+type SignatureRotationErrorsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SignatureRotationErrorsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SignatureRotationErrorsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SignatureRotationErrorsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SignatureRotationErrorsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SignatureRotationErrorsValidationError) ErrorName() string {
+	return "SignatureRotationErrorsValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SignatureRotationErrorsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSignatureRotationErrors.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SignatureRotationErrorsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SignatureRotationErrorsValidationError{}
+
+// Validate checks the field values on SignatureRotationError with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *SignatureRotationError) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on SignatureRotationError with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// SignatureRotationErrorMultiError, or nil if none found.
+func (m *SignatureRotationError) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SignatureRotationError) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Message
+
+	if len(errors) > 0 {
+		return SignatureRotationErrorMultiError(errors)
+	}
+
+	return nil
+}
+
+// SignatureRotationErrorMultiError is an error wrapping multiple validation
+// errors returned by SignatureRotationError.ValidateAll() if the designated
+// constraints aren't met.
+type SignatureRotationErrorMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SignatureRotationErrorMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SignatureRotationErrorMultiError) AllErrors() []error { return m }
+
+// SignatureRotationErrorValidationError is the validation error returned by
+// SignatureRotationError.Validate if the designated constraints aren't met.
+type SignatureRotationErrorValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SignatureRotationErrorValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SignatureRotationErrorValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SignatureRotationErrorValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SignatureRotationErrorValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SignatureRotationErrorValidationError) ErrorName() string {
+	return "SignatureRotationErrorValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SignatureRotationErrorValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSignatureRotationError.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SignatureRotationErrorValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SignatureRotationErrorValidationError{}
 
 // Validate checks the field values on UpdateApiSignaturesRequest with the
 // rules defined in the proto definition for this message. If any rules are
