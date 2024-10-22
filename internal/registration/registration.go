@@ -46,7 +46,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"restapi":            {"0.0.13"},
 	"restapiintegration": {"0.0.14"},
 	"rockset":            {"0.0.7"},
-	"s3":                 {"0.0.10"},
+	"s3":                 {"0.0.11"},
 	"salesforce":         {"0.0.1"},
 	"snowflake":          {"0.0.7"},
 	"superblocks-ocr":    {"0.0.1"},

@@ -1,5 +1,5 @@
 {
-	"id": "14138d29-ab66-4142-9da1-d5414feeb2e8",
+	"id": "5927d27a-53e9-4c36-ac5f-540c10cd3488",
 	"name": "ci-opa",
 	"values": [
 		{
@@ -43,9 +43,15 @@
 			"value": "http://localstack",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "integration_s3_host",
+			"value": "http://localstack",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2024-08-27T19:23:58.022Z",
-	"_postman_exported_using": "Postman/11.5.1"
+	"_postman_exported_at": "2024-10-22T14:24:40.747Z",
+	"_postman_exported_using": "Postman/11.14.1"
 }

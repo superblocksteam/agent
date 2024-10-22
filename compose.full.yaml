@@ -80,13 +80,14 @@ services:
   localstack:
     image: localstack/localstack:latest
     environment:
-      - SERVICES=kinesis
+      - SERVICES=kinesis,s3
     ports:
       - 4566:4566
     # auto runs this setup script when ready
     # https://stackoverflow.com/questions/53563942/running-shell-script-against-localstack-in-docker-container
     volumes:
       - ./scripts/plugins/integration/kinesis/init-kinesis.sh:/etc/localstack/init/ready.d/init-kinesis.sh
+      - ./scripts/plugins/integration/s3/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh
   intake:
     image: ghcr.io/superblocksteam/intake:v0.88.0
     ports:

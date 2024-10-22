@@ -353,7 +353,7 @@ export type OpenAiDatasourceConfiguration = BaseDatasourceConfiguration & {
 
 export type RestApiIntegrationDatasourceConfiguration = RestApiDatasourceConfiguration;
 
-export type S3DatasourceConfiguration = AWSDatasourceConfiguration;
+export type S3DatasourceConfiguration = AWSDatasourceConfiguration & { endpoint?: string };
 
 export type SnowflakeDatasourceConfiguration = DBDatasourceConfiguration &
   DBConnection & {

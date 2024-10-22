@@ -33,6 +33,8 @@ import {
   S3DatasourceConfiguration
 } from '@superblocks/shared';
 
+import { getS3ClientConfig } from './utils';
+
 export default class S3Plugin extends BasePlugin {
   pluginName = 'S3';
 
@@ -54,7 +56,14 @@ export default class S3Plugin extends BasePlugin {
             pluginName: this.pluginName
           });
         }
-        const data = await this.listObjects(s3Client, new ListObjectsV2Command({ Bucket: configuration.resource }));
+        const data = await this.listObjects(
+          s3Client,
+          new ListObjectsV2Command({
+            Bucket: configuration.resource,
+            ...(configuration?.listFilesConfig?.prefix && { Prefix: configuration.listFilesConfig.prefix }),
+            ...(configuration?.listFilesConfig?.delimiter && { Delimiter: configuration.listFilesConfig.delimiter })
+          })
+        );
         ret.output = data.Contents;
       } else if (s3Action === S3ActionType.LIST_BUCKETS) {
         const data = await this.listBuckets(s3Client);
@@ -283,7 +292,10 @@ export default class S3Plugin extends BasePlugin {
   }
 
   private async getS3Client(datasourceConfig: S3DatasourceConfiguration): Promise<S3Client> {
-    return new S3Client(await getAwsClientConfig(datasourceConfig));
+    return new S3Client({
+      ...(await getAwsClientConfig(datasourceConfig)),
+      ...getS3ClientConfig(datasourceConfig)
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
