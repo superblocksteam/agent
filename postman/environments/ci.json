@@ -1,5 +1,5 @@
 {
-	"id": "fbd57182-5a5e-470b-945b-b45fcc0b95af",
+	"id": "483ba6f1-d328-4b85-858c-57b12b90af70",
 	"name": "ci",
 	"values": [
 		{
@@ -37,9 +37,15 @@
 			"value": "http://localstack",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "integration_s3_host",
+			"value": "http://localstack",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2024-08-27T18:52:51.866Z",
-	"_postman_exported_using": "Postman/11.5.1"
+	"_postman_exported_at": "2024-10-22T14:24:50.557Z",
+	"_postman_exported_using": "Postman/11.14.1"
 }

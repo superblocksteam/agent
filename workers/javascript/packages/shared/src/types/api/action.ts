@@ -296,6 +296,12 @@ export type S3ActionConfiguration = {
   fileObjects?: unknown;
   custom?: CustomProperties;
   responseType?: ActionResponseType;
+  listFilesConfig?: {
+    // Limits the response to keys that begin with the specified prefix.
+    prefix?: string;
+    // A delimiter is a character that you use to group keys.
+    delimiter?: string;
+  };
 };
 
 export type SnowflakeActionConfiguration = DBActionConfiguration;
