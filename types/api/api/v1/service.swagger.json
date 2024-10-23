@@ -4768,6 +4768,9 @@
         },
         "superblocksMetadata": {
           "$ref": "#/definitions/pluginss3v1SuperblocksMetadata"
+        },
+        "listFilesConfig": {
+          "$ref": "#/definitions/v1ListFilesConfig"
         }
       }
     },
@@ -5955,6 +5958,19 @@
         },
         "id": {
           "type": "string"
+        }
+      }
+    },
+    "v1ListFilesConfig": {
+      "type": "object",
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "description": "Limits the response to keys that begin with the specified prefix."
+        },
+        "delimiter": {
+          "type": "string",
+          "description": "A delimiter is a character that you use to group keys."
         }
       }
     },
