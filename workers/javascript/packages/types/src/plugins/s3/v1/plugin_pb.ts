@@ -178,6 +178,53 @@ export class Custom extends Message<Custom> {
 }
 
 /**
+ * @generated from message plugins.s3.v1.ListFilesConfig
+ */
+export class ListFilesConfig extends Message<ListFilesConfig> {
+  /**
+   * Limits the response to keys that begin with the specified prefix.
+   *
+   * @generated from field: optional string prefix = 1;
+   */
+  prefix?: string;
+
+  /**
+   * A delimiter is a character that you use to group keys.
+   *
+   * @generated from field: optional string delimiter = 2;
+   */
+  delimiter?: string;
+
+  constructor(data?: PartialMessage<ListFilesConfig>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "plugins.s3.v1.ListFilesConfig";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "prefix", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 2, name: "delimiter", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListFilesConfig {
+    return new ListFilesConfig().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListFilesConfig {
+    return new ListFilesConfig().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListFilesConfig {
+    return new ListFilesConfig().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ListFilesConfig | PlainMessage<ListFilesConfig> | undefined, b: ListFilesConfig | PlainMessage<ListFilesConfig> | undefined): boolean {
+    return proto3.util.equals(ListFilesConfig, a, b);
+  }
+}
+
+/**
  * @generated from message plugins.s3.v1.Plugin
  */
 export class Plugin extends Message<Plugin> {
@@ -221,6 +268,11 @@ export class Plugin extends Message<Plugin> {
    */
   superblocksMetadata?: SuperblocksMetadata;
 
+  /**
+   * @generated from field: optional plugins.s3.v1.ListFilesConfig list_files_config = 9;
+   */
+  listFilesConfig?: ListFilesConfig;
+
   constructor(data?: PartialMessage<Plugin>) {
     super();
     proto3.util.initPartial(data, this);
@@ -237,6 +289,7 @@ export class Plugin extends Message<Plugin> {
     { no: 6, name: "responseType", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 7, name: "custom", kind: "message", T: Custom },
     { no: 8, name: "superblocksMetadata", kind: "message", T: SuperblocksMetadata },
+    { no: 9, name: "list_files_config", kind: "message", T: ListFilesConfig, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin {

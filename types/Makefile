@@ -1,5 +1,5 @@
 # https://github.com/bufbuild/buf/releases
-BUF_VERSION = "1.42.0"
+BUF_VERSION = "1.45.0"
 .ONESHELL:
 
 PYTHON_CMD = python3.10

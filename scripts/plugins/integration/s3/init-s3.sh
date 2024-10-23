@@ -11,3 +11,13 @@ awslocal s3api put-object \
   --bucket $BUCKET_NAME \
   --key foo.txt \
   --body foo.txt
+
+awslocal s3api put-object \
+  --bucket $BUCKET_NAME \
+  --key prefix1/foo.txt \
+  --body foo.txt
+
+awslocal s3api put-object \
+  --bucket $BUCKET_NAME \
+  --key prefix1/bar.txt \
+  --body foo.txt

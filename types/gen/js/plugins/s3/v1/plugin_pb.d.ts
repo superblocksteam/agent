@@ -101,6 +101,35 @@ export namespace Custom {
     }
 }
 
+export class ListFilesConfig extends jspb.Message { 
+
+    hasPrefix(): boolean;
+    clearPrefix(): void;
+    getPrefix(): string | undefined;
+    setPrefix(value: string): ListFilesConfig;
+
+    hasDelimiter(): boolean;
+    clearDelimiter(): void;
+    getDelimiter(): string | undefined;
+    setDelimiter(value: string): ListFilesConfig;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ListFilesConfig.AsObject;
+    static toObject(includeInstance: boolean, msg: ListFilesConfig): ListFilesConfig.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ListFilesConfig, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ListFilesConfig;
+    static deserializeBinaryFromReader(message: ListFilesConfig, reader: jspb.BinaryReader): ListFilesConfig;
+}
+
+export namespace ListFilesConfig {
+    export type AsObject = {
+        prefix?: string,
+        delimiter?: string,
+    }
+}
+
 export class Plugin extends jspb.Message { 
     getResource(): string;
     setResource(value: string): Plugin;
@@ -125,6 +154,11 @@ export class Plugin extends jspb.Message {
     getSuperblocksmetadata(): SuperblocksMetadata | undefined;
     setSuperblocksmetadata(value?: SuperblocksMetadata): Plugin;
 
+    hasListFilesConfig(): boolean;
+    clearListFilesConfig(): void;
+    getListFilesConfig(): ListFilesConfig | undefined;
+    setListFilesConfig(value?: ListFilesConfig): Plugin;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Plugin.AsObject;
     static toObject(includeInstance: boolean, msg: Plugin): Plugin.AsObject;
@@ -145,5 +179,6 @@ export namespace Plugin {
         responsetype: string,
         custom?: Custom.AsObject,
         superblocksmetadata?: SuperblocksMetadata.AsObject,
+        listFilesConfig?: ListFilesConfig.AsObject,
     }
 }

@@ -33,7 +33,7 @@ import {
   S3DatasourceConfiguration
 } from '@superblocks/shared';
 
-import { getS3ClientConfig } from './utils';
+import { getS3ClientConfig, buildListObjectsV2Command } from './utils';
 
 export default class S3Plugin extends BasePlugin {
   pluginName = 'S3';
@@ -56,14 +56,7 @@ export default class S3Plugin extends BasePlugin {
             pluginName: this.pluginName
           });
         }
-        const data = await this.listObjects(
-          s3Client,
-          new ListObjectsV2Command({
-            Bucket: configuration.resource,
-            ...(configuration?.listFilesConfig?.prefix && { Prefix: configuration.listFilesConfig.prefix }),
-            ...(configuration?.listFilesConfig?.delimiter && { Delimiter: configuration.listFilesConfig.delimiter })
-          })
-        );
+        const data = await this.listObjects(s3Client, new ListObjectsV2Command(buildListObjectsV2Command(configuration)));
         ret.output = data.Contents;
       } else if (s3Action === S3ActionType.LIST_BUCKETS) {
         const data = await this.listBuckets(s3Client);

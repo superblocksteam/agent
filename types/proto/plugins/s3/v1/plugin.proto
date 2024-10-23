@@ -26,6 +26,13 @@ message Custom {
   Property presignedExpiration = 1;
 }
 
+message ListFilesConfig {
+  // Limits the response to keys that begin with the specified prefix.
+  optional string prefix = 1;
+  // A delimiter is a character that you use to group keys.
+  optional string delimiter = 2;
+}
+
 message Plugin {
   string resource = 1;
   string action = 2;
@@ -35,4 +42,5 @@ message Plugin {
   string responseType = 6;
   Custom custom = 7;
   SuperblocksMetadata superblocksMetadata = 8;
+  optional ListFilesConfig list_files_config = 9;
 }

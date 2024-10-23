@@ -385,6 +385,114 @@ var _ interface {
 	ErrorName() string
 } = CustomValidationError{}
 
+// Validate checks the field values on ListFilesConfig with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ListFilesConfig) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListFilesConfig with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListFilesConfigMultiError, or nil if none found.
+func (m *ListFilesConfig) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListFilesConfig) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.Prefix != nil {
+		// no validation rules for Prefix
+	}
+
+	if m.Delimiter != nil {
+		// no validation rules for Delimiter
+	}
+
+	if len(errors) > 0 {
+		return ListFilesConfigMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListFilesConfigMultiError is an error wrapping multiple validation errors
+// returned by ListFilesConfig.ValidateAll() if the designated constraints
+// aren't met.
+type ListFilesConfigMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListFilesConfigMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListFilesConfigMultiError) AllErrors() []error { return m }
+
+// ListFilesConfigValidationError is the validation error returned by
+// ListFilesConfig.Validate if the designated constraints aren't met.
+type ListFilesConfigValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListFilesConfigValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListFilesConfigValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListFilesConfigValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListFilesConfigValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListFilesConfigValidationError) ErrorName() string { return "ListFilesConfigValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ListFilesConfigValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListFilesConfig.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListFilesConfigValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListFilesConfigValidationError{}
+
 // Validate checks the field values on Plugin with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -474,6 +582,39 @@ func (m *Plugin) validate(all bool) error {
 				cause:  err,
 			}
 		}
+	}
+
+	if m.ListFilesConfig != nil {
+
+		if all {
+			switch v := interface{}(m.GetListFilesConfig()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, PluginValidationError{
+						field:  "ListFilesConfig",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, PluginValidationError{
+						field:  "ListFilesConfig",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetListFilesConfig()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return PluginValidationError{
+					field:  "ListFilesConfig",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
