@@ -86,15 +86,20 @@ deploy-helm:
 		--debug \
 		$(HELM_EXTRA_ARGS)
 
-# make freeze dep=foo==1.2.3
+
+# USAGE: make freeze dep=foo==1.2.3
 .PHONY: freeze
 freeze:
-	-docker stop freeze_py && docker rm freeze_py
-	docker build -t freeze_py . -f Dockerfile.freeze --build-arg ADDITIONAL_DEP=$(dep)
+	-docker stop freeze_py 2>/dev/null || true
+	-docker rm -f freeze_py 2>/dev/null || true
+
+	docker build --no-cache -t freeze_py . -f Dockerfile.freeze --build-arg ADDITIONAL_DEP=$(dep)
+
 	docker run -d --name freeze_py freeze_py
 	docker cp freeze_py:/app/requirements.txt .
-	sed 's/-/_/g' requirements.txt > tmpfile && mv tmpfile requirements.txt
 
+	# works on macos and linux
+	sed -i.bak 's/-/_/g' requirements.txt && rm requirements.txt.bak
 
 
 .PHONY: redis

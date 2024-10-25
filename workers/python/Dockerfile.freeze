@@ -2,8 +2,8 @@ FROM python:3.10.1
 
 WORKDIR /app
 
-# cmake and cython are required
-RUN apt-get update && apt-get install -y cmake && python -m pip install --no-cache-dir cython
+# install some global dependencies
+RUN apt-get update && apt-get install -y cmake libblas-dev liblapack-dev && python -m pip install --no-cache-dir cython
 
 # install existing deps
 COPY requirements.txt .
