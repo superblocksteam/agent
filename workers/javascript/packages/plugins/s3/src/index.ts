@@ -33,7 +33,7 @@ import {
   S3DatasourceConfiguration
 } from '@superblocks/shared';
 
-import { getS3ClientConfig, buildListObjectsV2Command } from './utils';
+import { getS3ClientConfig, buildListObjectsV2Command, validateS3Action } from './utils';
 
 export default class S3Plugin extends BasePlugin {
   pluginName = 'S3';
@@ -47,20 +47,35 @@ export default class S3Plugin extends BasePlugin {
     try {
       const s3Client = await this.getS3Client(datasourceConfiguration);
       const s3Action = actionConfiguration.action;
+      validateS3Action(s3Action);
       const configuration = actionConfiguration;
       const ret = new ExecutionOutput();
       // TODO: Clean this up with a switch statement.
       if (s3Action === S3ActionType.LIST_OBJECTS) {
+        ret.logWarn(
+          `${S3_ACTION_DISPLAY_NAMES[s3Action]} has been deprecated, use ${S3_ACTION_DISPLAY_NAMES[S3ActionType.LIST_BUCKET_OBJECTS]} instead`
+        );
         if (!configuration.resource) {
           throw new IntegrationError('Resource required for list objects', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, {
             pluginName: this.pluginName
           });
         }
-        const data = await this.listObjects(s3Client, new ListObjectsV2Command(buildListObjectsV2Command(configuration)));
+        const data = await this.listObjects(s3Client, new ListObjectsV2Command({ Bucket: configuration.resource }));
         ret.output = data.Contents;
       } else if (s3Action === S3ActionType.LIST_BUCKETS) {
         const data = await this.listBuckets(s3Client);
         ret.output = data.Buckets;
+      } else if (s3Action === S3ActionType.LIST_BUCKET_OBJECTS) {
+        if (!configuration.resource) {
+          throw new IntegrationError(
+            `Resource required for ${S3_ACTION_DISPLAY_NAMES[s3Action]}`,
+            ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD,
+            {
+              pluginName: this.pluginName
+            }
+          );
+        }
+        ret.output = await this.listObjects(s3Client, new ListObjectsV2Command(buildListObjectsV2Command(configuration)));
       } else if (s3Action === S3ActionType.GET_OBJECT) {
         if (!configuration.resource) {
           throw new IntegrationError('Resource required for get objects', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, {

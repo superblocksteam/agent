@@ -1,12 +1,9 @@
-export const S3PluginVersions = {
-  V1: '0.0.1',
-  V5: '0.0.5',
-  V6: '0.0.6',
-  V10: '0.0.10'
-};
-
 export enum S3ActionType {
+  /**
+   * @deprecated Use LIST_BUCKET_OBJECTS instead.
+   */
   LIST_OBJECTS = 'LIST_OBJECTS',
+  LIST_BUCKET_OBJECTS = 'LIST_BUCKET_OBJECTS',
   GET_OBJECT = 'GET_OBJECT',
   DELETE_OBJECT = 'DELETE_OBJECT',
   UPLOAD_OBJECT = 'UPLOAD_OBJECT',
@@ -17,7 +14,8 @@ export enum S3ActionType {
 }
 
 export const S3_ACTION_DISPLAY_NAMES: Record<S3ActionType, string> = {
-  [S3ActionType.LIST_OBJECTS]: 'List files',
+  [S3ActionType.LIST_OBJECTS]: 'List files (deprecated)',
+  [S3ActionType.LIST_BUCKET_OBJECTS]: 'List bucket objects',
   [S3ActionType.GET_OBJECT]: 'Read file',
   [S3ActionType.DELETE_OBJECT]: 'Delete files',
   [S3ActionType.UPLOAD_OBJECT]: 'Upload file',
