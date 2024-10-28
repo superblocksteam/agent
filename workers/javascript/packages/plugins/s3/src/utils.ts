@@ -1,5 +1,5 @@
 import { S3ClientConfig, ListObjectsV2CommandInput } from '@aws-sdk/client-s3';
-import { S3ActionConfiguration, S3DatasourceConfiguration } from '@superblocks/shared';
+import { S3ActionConfiguration, S3DatasourceConfiguration, S3ActionType } from '@superblocks/shared';
 export function getS3ClientConfig(datasourceConfig: S3DatasourceConfiguration): S3ClientConfig {
   const config: S3ClientConfig = {};
   if (datasourceConfig?.endpoint) {
@@ -24,4 +24,10 @@ export function buildListObjectsV2Command(actionConfig: S3ActionConfiguration): 
     commandInput.Delimiter = actionConfig.listFilesConfig.delimiter;
   }
   return commandInput;
+}
+
+export function validateS3Action(action: string) {
+  if (!Object.values(S3ActionType).includes(action as S3ActionType)) {
+    throw new Error(`Invalid S3 action type: ${action}`);
+  }
 }

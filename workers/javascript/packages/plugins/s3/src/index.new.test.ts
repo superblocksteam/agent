@@ -48,26 +48,26 @@ function propsFromConfigs({
 }
 
 describe('execute', () => {
-  describe('list files', () => {
+  describe('list bucket objects', () => {
     it.each([
       {
         description: 'happy path no prefix or delimiter',
         datasourceConfiguration: { awsAuthType: AWSAuthType.ACCESS_KEY },
-        actionConfiguration: { action: S3ActionType.LIST_OBJECTS, resource: 'foo' },
+        actionConfiguration: { action: S3ActionType.LIST_BUCKET_OBJECTS, resource: 'foo' },
         mockSendResponse: { Contents: { foo: 'bar' } },
         expectedListRequest: { Bucket: 'foo' }
       },
       {
         description: 'happy path with prefix and no delimiter',
         datasourceConfiguration: { awsAuthType: AWSAuthType.ACCESS_KEY },
-        actionConfiguration: { action: S3ActionType.LIST_OBJECTS, resource: 'foo', listFilesConfig: { delimiter: 'd' } },
+        actionConfiguration: { action: S3ActionType.LIST_BUCKET_OBJECTS, resource: 'foo', listFilesConfig: { delimiter: 'd' } },
         mockSendResponse: { Contents: { foo: 'bar' } },
         expectedListRequest: { Bucket: 'foo', Delimiter: 'd' }
       },
       {
         description: 'happy path with delimiter and no prefix',
         datasourceConfiguration: { awsAuthType: AWSAuthType.ACCESS_KEY },
-        actionConfiguration: { action: S3ActionType.LIST_OBJECTS, resource: 'foo', listFilesConfig: { prefix: 'p' } },
+        actionConfiguration: { action: S3ActionType.LIST_BUCKET_OBJECTS, resource: 'foo', listFilesConfig: { prefix: 'p' } },
         mockSendResponse: { Contents: { foo: 'bar' } },
         expectedListRequest: { Bucket: 'foo', Prefix: 'p' }
       }

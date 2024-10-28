@@ -1,5 +1,5 @@
-import { AWSAuthType } from '@superblocks/shared';
-import { buildListObjectsV2Command, getS3ClientConfig } from './utils';
+import { AWSAuthType, S3ActionType } from '@superblocks/shared';
+import { buildListObjectsV2Command, getS3ClientConfig, validateS3Action } from './utils';
 
 describe('getS3ClientConfig', () => {
   it.each([
@@ -44,5 +44,28 @@ describe('buildListObjectsV2Command', () => {
   ])('$description', async ({ actionConfiguration, expectedResponse }) => {
     const actualResponse = buildListObjectsV2Command(actionConfiguration);
     expect(expectedResponse).toEqual(actualResponse);
+  });
+});
+
+describe('validateS3Action', () => {
+  const allActionsTestCases = Object.values(S3ActionType).map((action) => ({
+    description: `valid action: ${action}`,
+    action,
+    shouldError: false
+  }));
+
+  it.each([
+    ...allActionsTestCases,
+    {
+      description: 'invalid action',
+      action: 'foo',
+      shouldError: true
+    }
+  ])('$description', ({ action, shouldError }) => {
+    if (shouldError) {
+      expect(() => validateS3Action(action)).toThrow(`Invalid S3 action type: ${action}`);
+    } else {
+      expect(() => validateS3Action(action)).not.toThrow();
+    }
   });
 });
