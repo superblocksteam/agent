@@ -42,7 +42,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.9.0
-	github.com/superblocksteam/run v0.0.5
+	github.com/superblocksteam/run v0.0.6
 	github.com/thejerf/abtime v1.0.7
 	github.com/titanous/json5 v1.0.0
 	go.kuoruan.net/v8go-polyfills v0.5.0

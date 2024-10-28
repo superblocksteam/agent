@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add "signature rotation errors" field to `UpdateApiSignature` and `UpdateApplicationSignature` proto messages (move existing `Signature` into `result` oneof field)
 - Added `prefix` and `delimeter` support to S3 Plugin 
 - Added [`moment-timezone`](https://www.npmjs.com/package/moment-timezone) package to JavaScript worker
+- Bump superblocksteam/run dep to v0.0.6
 
 ## v1.15.1
 

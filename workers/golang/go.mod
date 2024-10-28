@@ -47,7 +47,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.9.0
 	github.com/superblocksteam/agent v0.0.0-00010101000000-000000000000
-	github.com/superblocksteam/run v0.0.5
+	github.com/superblocksteam/run v0.0.6
 	go.opentelemetry.io/otel v1.26.0
 	go.opentelemetry.io/otel/sdk v1.26.0
 	go.opentelemetry.io/otel/trace v1.26.0
