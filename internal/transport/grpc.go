@@ -907,10 +907,15 @@ func (s *server) Sign(_ context.Context, req *securityv1.SignRequest) (*security
 		return nil, err
 	}
 
+	signingKeyId := s.Signature.SigningKeyID()
+	publicKeys := s.Signature.PublicKeys()
+
 	return &securityv1.SignResponse{
 		Signature: &utilsv1.Signature{
-			KeyId: s.Signature.SigningKeyID(),
-			Data:  signature,
+			KeyId:     signingKeyId,
+			Algorithm: publicKeys[signingKeyId].Algorithm,
+			PublicKey: publicKeys[signingKeyId].Value,
+			Data:      signature,
 		},
 	}, nil
 }

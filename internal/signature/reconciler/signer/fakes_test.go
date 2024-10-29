@@ -23,11 +23,15 @@ type fakeSignerManager struct {
 	errSign   error
 	errVerify error
 	keyId     string
+	algorithm pbutils.Signature_Algorithm
+	publicKey []byte
 }
 
 func newFakeSignerManager() *fakeSignerManager {
 	return &fakeSignerManager{
-		keyId: "fake-key-id",
+		keyId:     "fake-key-id",
+		algorithm: pbutils.Signature_ALGORITHM_ED25519,
+		publicKey: []byte("fake-public-key"),
 	}
 }
 
@@ -37,7 +41,15 @@ func (f *fakeSignerManager) SignAndUpdateResource(res *pbsecurity.Resource) erro
 	}
 
 	sig, _ := hash(res)
-	setSignature(res, &pbutils.Signature{KeyId: f.keyId, Data: sig})
+	setSignature(
+		res,
+		&pbutils.Signature{
+			KeyId:     f.keyId,
+			Algorithm: f.algorithm,
+			PublicKey: f.publicKey,
+			Data:      sig,
+		},
+	)
 
 	return nil
 }

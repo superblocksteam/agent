@@ -108,13 +108,17 @@ func (f *fakeServer) UpdateAppAsSignedResources(ctx context.Context, updates []*
 }
 
 type fakeSigner struct {
-	errSign error
-	keyId   string
+	errSign   error
+	keyId     string
+	algorithm pbutils.Signature_Algorithm
+	publicKey []byte
 }
 
 func newFakeSigner() *fakeSigner {
 	return &fakeSigner{
-		keyId: "fake-key-id",
+		keyId:     "fake-key-id",
+		algorithm: pbutils.Signature_ALGORITHM_ED25519,
+		publicKey: []byte("fake-public-key"),
 	}
 }
 
@@ -129,7 +133,15 @@ func (f *fakeSigner) SignAndUpdateResource(res *pbsecurity.Resource) error {
 	}
 
 	hash := sha256.Sum256(data)
-	return setSignature(res, &pbutils.Signature{KeyId: f.keyId, Data: hash[:]})
+	return setSignature(
+		res,
+		&pbutils.Signature{
+			KeyId:     f.keyId,
+			Algorithm: f.algorithm,
+			PublicKey: f.publicKey,
+			Data:      hash[:],
+		},
+	)
 }
 
 func (f *fakeSigner) SigningKeyID() string {

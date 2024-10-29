@@ -168,8 +168,9 @@ func TestManagerPublicKeys(t *testing.T) {
 			},
 			expected: map[string]PublicKey{
 				"my_key": {
-					Algorithm: utilsv1.Signature_ALGORITHM_ED25519,
-					Key:       base64.StdEncoding.EncodeToString([]byte("public-key")),
+					Algorithm:    utilsv1.Signature_ALGORITHM_ED25519,
+					EncodedValue: base64.StdEncoding.EncodeToString([]byte("public-key")),
+					Value:        []byte("public-key"),
 				},
 			},
 		},
@@ -189,12 +190,14 @@ func TestManagerPublicKeys(t *testing.T) {
 			},
 			expected: map[string]PublicKey{
 				"my_key": {
-					Algorithm: utilsv1.Signature_ALGORITHM_ED25519,
-					Key:       base64.StdEncoding.EncodeToString([]byte("public-key")),
+					Algorithm:    utilsv1.Signature_ALGORITHM_ED25519,
+					EncodedValue: base64.StdEncoding.EncodeToString([]byte("public-key")),
+					Value:        []byte("public-key"),
 				},
 				"my_other_key": {
-					Algorithm: utilsv1.Signature_ALGORITHM_ED25519,
-					Key:       base64.StdEncoding.EncodeToString([]byte("public-key")),
+					Algorithm:    utilsv1.Signature_ALGORITHM_ED25519,
+					EncodedValue: base64.StdEncoding.EncodeToString([]byte("public-key")),
+					Value:        []byte("public-key"),
 				},
 			},
 		},
