@@ -141,7 +141,7 @@ func TestManager(t *testing.T) {
 				for _, key := range test.keys {
 					resourceSigner := registry.(*manager).resourceSigners[key.ID]
 					assert.NotNil(t, resourceSigner)
-					assert.Equal(t, ED25519, resourceSigner.Algorithm())
+					assert.Equal(t, utilsv1.Signature_ALGORITHM_ED25519, resourceSigner.Algorithm())
 				}
 			}
 		})
@@ -154,7 +154,7 @@ func TestManagerPublicKeys(t *testing.T) {
 		verificationEnabled bool
 		signingKeyId        string
 		keys                []Key
-		expected            map[string]string
+		expected            map[string]PublicKey
 	}{
 		{
 			name:                "single key",
@@ -166,8 +166,11 @@ func TestManagerPublicKeys(t *testing.T) {
 					Value: []byte("secret"),
 				},
 			},
-			expected: map[string]string{
-				"my_key": base64.StdEncoding.EncodeToString([]byte("public-key")),
+			expected: map[string]PublicKey{
+				"my_key": {
+					Algorithm: utilsv1.Signature_ALGORITHM_ED25519,
+					Key:       base64.StdEncoding.EncodeToString([]byte("public-key")),
+				},
 			},
 		},
 		{
@@ -184,25 +187,32 @@ func TestManagerPublicKeys(t *testing.T) {
 					Value: []byte("other_secret"),
 				},
 			},
-			expected: map[string]string{
-				"my_key":       base64.StdEncoding.EncodeToString([]byte("public-key")),
-				"my_other_key": base64.StdEncoding.EncodeToString([]byte("public-key")),
+			expected: map[string]PublicKey{
+				"my_key": {
+					Algorithm: utilsv1.Signature_ALGORITHM_ED25519,
+					Key:       base64.StdEncoding.EncodeToString([]byte("public-key")),
+				},
+				"my_other_key": {
+					Algorithm: utilsv1.Signature_ALGORITHM_ED25519,
+					Key:       base64.StdEncoding.EncodeToString([]byte("public-key")),
+				},
 			},
 		},
 		{
 			name:     "no keys",
 			keys:     []Key{},
-			expected: map[string]string{},
+			expected: map[string]PublicKey{},
 		},
 		{
 			name:     "nil keys",
 			keys:     nil,
-			expected: map[string]string{},
+			expected: map[string]PublicKey{},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			mockSignature := NewMockSignature(t)
 			if len(test.keys) > 0 {
+				mockSignature.On("Algorithm").Return(utilsv1.Signature_ALGORITHM_ED25519).Times(len(test.keys))
 				mockSignature.On("PublicKey").Return([]byte("public-key")).Times(len(test.keys))
 			}
 
@@ -350,32 +360,29 @@ func TestManagerSignAndUpdateResource(t *testing.T) {
 	signedResourceSignature := []byte("signed-payload")
 
 	for _, test := range []struct {
-		name                     string
-		signingErr               bool
-		updateErr                error
-		shouldCallUpdate         bool
-		signerAlgorithm          SigningAlgorithm
-		expectedSignature        []byte
-		expectedSigningAlgorithm utilsv1.Signature_Algorithm
+		name              string
+		signingErr        bool
+		updateErr         error
+		shouldCallUpdate  bool
+		signerAlgorithm   utilsv1.Signature_Algorithm
+		expectedSignature []byte
 	}{
 		{
-			name:                     "valid",
-			shouldCallUpdate:         true,
-			signerAlgorithm:          ED25519,
-			expectedSignature:        signedResourceSignature,
-			expectedSigningAlgorithm: utilsv1.Signature_ALGORITHM_ED25519,
+			name:              "valid",
+			shouldCallUpdate:  true,
+			signerAlgorithm:   utilsv1.Signature_ALGORITHM_ED25519,
+			expectedSignature: signedResourceSignature,
 		},
 		{
 			name:       "signing fails",
 			signingErr: true,
 		},
 		{
-			name:                     "update fails fails",
-			shouldCallUpdate:         true,
-			signerAlgorithm:          UNKNOWN,
-			updateErr:                errors.New("update error"),
-			expectedSignature:        signedResourceSignature,
-			expectedSigningAlgorithm: utilsv1.Signature_ALGORITHM_UNSPECIFIED,
+			name:              "update fails fails",
+			shouldCallUpdate:  true,
+			signerAlgorithm:   utilsv1.Signature_ALGORITHM_UNSPECIFIED,
+			updateErr:         errors.New("update error"),
+			expectedSignature: signedResourceSignature,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -399,7 +406,7 @@ func TestManagerSignAndUpdateResource(t *testing.T) {
 					"UpdateResourceWithSignature",
 					anyResource,
 					signingKeyId,
-					test.expectedSigningAlgorithm,
+					test.signerAlgorithm,
 					anyPublicKey,
 					signedResourceSignature,
 				).Return(test.updateErr).Once()

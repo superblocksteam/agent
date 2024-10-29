@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
+	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 )
 
 var (
@@ -108,7 +109,7 @@ func TestAlgorithm(t *testing.T) {
 	ed25519Signer, err := NewEd25519Signer(signingKeySecret, sha256.New())
 	require.NoError(t, err)
 
-	assert.Equal(t, ED25519, ed25519Signer.Algorithm())
+	assert.Equal(t, pbutils.Signature_ALGORITHM_ED25519, ed25519Signer.Algorithm())
 }
 
 func TestSign(t *testing.T) {

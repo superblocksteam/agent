@@ -690,6 +690,14 @@ func main() {
 
 	var registrator registration.Registrator
 	{
+		verificationKeys := make(map[string]clients.VerificationKey)
+		for keyId, publicKey := range registry.PublicKeys() {
+			verificationKeys[keyId] = clients.VerificationKey{
+				Algorithm: publicKey.Algorithm.String(),
+				Key:       publicKey.Key,
+			}
+		}
+
 		registrator = registration.New(&registration.Options{
 			Logger:               logger,
 			ServerClient:         serverHttpClient,
@@ -699,7 +707,7 @@ func main() {
 			AgentUrl:             viper.GetString("agent.host.url"),
 			Environment:          viper.GetString("agent.environment"),
 			SigningKeyId:         registry.SigningKeyID(),
-			VerificationKeys:     registry.PublicKeys(),
+			VerificationKeys:     verificationKeys,
 			SuperblocksKey:       viper.GetString("superblocks.key"),
 		})
 	}

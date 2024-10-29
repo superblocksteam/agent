@@ -17,12 +17,17 @@ type Registry interface {
 	Verify(*securityv1.Resource) error
 
 	SigningKeyID() string
-	PublicKeys() map[string]string
+	PublicKeys() map[string]PublicKey
 }
 
 type Key struct {
 	ID    string
 	Value []byte
+}
+
+type PublicKey struct {
+	Algorithm pbutils.Signature_Algorithm
+	Key       string
 }
 
 type manager struct {
@@ -97,10 +102,13 @@ func (m *manager) SigningKeyID() string {
 	return m.signingKeyID
 }
 
-func (m *manager) PublicKeys() map[string]string {
-	publicKeys := make(map[string]string, len(m.resourceSigners))
+func (m *manager) PublicKeys() map[string]PublicKey {
+	publicKeys := make(map[string]PublicKey, len(m.resourceSigners))
 	for keyId := range m.resourceSigners {
-		publicKeys[keyId] = base64.StdEncoding.EncodeToString(m.resourceSigners[keyId].PublicKey())
+		publicKeys[keyId] = PublicKey{
+			Algorithm: m.resourceSigners[keyId].Algorithm(),
+			Key:       base64.StdEncoding.EncodeToString(m.resourceSigners[keyId].PublicKey()),
+		}
 	}
 
 	return publicKeys
@@ -129,7 +137,7 @@ func (m *manager) SignAndUpdateResource(resource *securityv1.Resource) error {
 	return m.serializer.UpdateResourceWithSignature(
 		resource,
 		m.SigningKeyID(),
-		toAlgorithmEnumProto(signer.Algorithm()),
+		signer.Algorithm(),
 		signer.PublicKey(),
 		signature,
 	)
@@ -160,13 +168,4 @@ func (m *manager) Verify(resource *securityv1.Resource) error {
 	}
 
 	return verifyErrs
-}
-
-func toAlgorithmEnumProto(algo SigningAlgorithm) pbutils.Signature_Algorithm {
-	switch algo {
-	case ED25519:
-		return pbutils.Signature_ALGORITHM_ED25519
-	default:
-		return pbutils.Signature_ALGORITHM_UNSPECIFIED
-	}
 }
