@@ -84,7 +84,7 @@ type Options struct {
 	AgentVersion         string
 	AgentVersionExternal string
 	SigningKeyId         string
-	VerificationKeys     map[string]string
+	VerificationKeys     map[string]clients.VerificationKey
 	SuperblocksKey       string
 }
 

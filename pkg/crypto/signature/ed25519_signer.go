@@ -7,6 +7,7 @@ import (
 	"hash"
 
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
+	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 )
 
 type ed25519Signer struct {
@@ -26,8 +27,8 @@ func NewEd25519Signer(keySecret []byte, hashFn hash.Hash) (*ed25519Signer, error
 	}, nil
 }
 
-func (s *ed25519Signer) Algorithm() SigningAlgorithm {
-	return ED25519
+func (s *ed25519Signer) Algorithm() pbutils.Signature_Algorithm {
+	return pbutils.Signature_ALGORITHM_ED25519
 }
 
 func (s *ed25519Signer) PublicKey() []byte {

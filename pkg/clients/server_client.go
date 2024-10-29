@@ -34,13 +34,18 @@ type ServerClientOptions struct {
 	SuperblocksAgentKey string
 }
 
+type VerificationKey struct {
+	Algorithm string `json:"algorithm"`
+	Key       string `json:"key"`
+}
+
 type RegisterAgentBody struct {
-	PluginVersions     map[string][]string `json:"pluginVersions"`
-	Type               int                 `json:"type"`
-	Tags               map[string][]string `json:"tags"`
-	SigningKeyId       string              `json:"signingKeyId"`
-	VerificationKeyIds []string            `json:"verificationKeyIds"`
-	VerificationKeys   map[string]string   `json:"verificationKeys"`
+	PluginVersions     map[string][]string        `json:"pluginVersions"`
+	Type               int                        `json:"type"`
+	Tags               map[string][]string        `json:"tags"`
+	SigningKeyId       string                     `json:"signingKeyId"`
+	VerificationKeyIds []string                   `json:"verificationKeyIds"`
+	VerificationKeys   map[string]VerificationKey `json:"verificationKeys"`
 }
 
 //go:generate mockery --name=ServerClient --output ./mocks --structname ServerClient
