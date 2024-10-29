@@ -26,8 +26,9 @@ type Key struct {
 }
 
 type PublicKey struct {
-	Algorithm pbutils.Signature_Algorithm
-	Key       string
+	Algorithm    pbutils.Signature_Algorithm
+	EncodedValue string
+	Value        []byte
 }
 
 type manager struct {
@@ -105,9 +106,11 @@ func (m *manager) SigningKeyID() string {
 func (m *manager) PublicKeys() map[string]PublicKey {
 	publicKeys := make(map[string]PublicKey, len(m.resourceSigners))
 	for keyId := range m.resourceSigners {
+		publicKeyValue := m.resourceSigners[keyId].PublicKey()
 		publicKeys[keyId] = PublicKey{
-			Algorithm: m.resourceSigners[keyId].Algorithm(),
-			Key:       base64.StdEncoding.EncodeToString(m.resourceSigners[keyId].PublicKey()),
+			Algorithm:    m.resourceSigners[keyId].Algorithm(),
+			EncodedValue: base64.StdEncoding.EncodeToString(publicKeyValue),
+			Value:        publicKeyValue,
 		}
 	}
 

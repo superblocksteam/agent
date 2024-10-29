@@ -694,7 +694,7 @@ func main() {
 		for keyId, publicKey := range registry.PublicKeys() {
 			verificationKeys[keyId] = clients.VerificationKey{
 				Algorithm: publicKey.Algorithm.String(),
-				Key:       publicKey.Key,
+				Key:       publicKey.EncodedValue,
 			}
 		}
 
