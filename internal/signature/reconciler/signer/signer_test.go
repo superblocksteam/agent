@@ -105,6 +105,8 @@ func verify(t *testing.T, args *args, expectedErr error, res *pbsecurity.Resourc
 	require.NoError(t, err)
 
 	require.Equal(t, args.sm.keyId, signer.SigningKeyID())
+	require.Equal(t, args.sm.algorithm, signer.Algorithm())
+	require.Equal(t, args.sm.publicKey, signer.PublicKey())
 
 	err = signer.SignAndUpdateResource(res)
 	if expectedErr == nil {

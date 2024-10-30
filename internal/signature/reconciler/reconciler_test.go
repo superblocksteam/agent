@@ -38,6 +38,7 @@ type args struct {
 	logs       *observer.ObservedLogs
 	noTestLoop bool
 	onLoop     chan SigningKeyRotationEvent
+	reconciler *reconciler
 	server     *fakeServer
 	signer     *fakeSigner
 	skre       chan SigningKeyRotationEvent
@@ -137,6 +138,8 @@ func validArgs(t *testing.T) *args {
 		}
 	}
 
+	args.reconciler = New(args.log, args.server, args.signer, args.skre, WithClock(args.clock))
+
 	return args
 }
 
@@ -163,6 +166,42 @@ func verifyError(t *testing.T, args *args, msg string, expectedErr error) {
 	}
 }
 
+func verifyResultErrors(t *testing.T, args *args, apiErrors, appErrors map[string]*pbapi.SignatureRotationErrors) {
+	for apiId, rotationErrs := range apiErrors {
+		resourceFound := false
+		for _, doneApi := range args.server.apiUpdates {
+			if doneApi.GetApiId() == apiId {
+				resourceFound = true
+				actual := doneApi.GetErrors()
+
+				require.Equal(t, rotationErrs.GetKeyId(), actual.GetKeyId())
+				require.Equal(t, rotationErrs.GetAlgorithm(), actual.GetAlgorithm())
+				require.Equal(t, rotationErrs.GetPublicKey(), actual.GetPublicKey())
+				require.ElementsMatch(t, rotationErrs.GetErrors(), actual.GetErrors())
+				break
+			}
+		}
+		require.True(t, resourceFound, "apiId %s not found in done apis", apiId)
+	}
+
+	for appId, rotationErrs := range appErrors {
+		resourceFound := false
+		for _, doneApp := range args.server.appUpdates {
+			if doneApp.GetApplicationId() == appId {
+				resourceFound = true
+				actual := doneApp.GetErrors()
+
+				require.Equal(t, rotationErrs.GetKeyId(), actual.GetKeyId())
+				require.Equal(t, rotationErrs.GetAlgorithm(), actual.GetAlgorithm())
+				require.Equal(t, rotationErrs.GetPublicKey(), actual.GetPublicKey())
+				require.ElementsMatch(t, rotationErrs.GetErrors(), actual.GetErrors())
+				break
+			}
+		}
+		require.True(t, resourceFound, "appId %s not found in done apps", appId)
+	}
+}
+
 func testRunLoop(t *testing.T, args *args) {
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
@@ -172,14 +211,12 @@ func testRunLoop(t *testing.T, args *args) {
 	})
 
 	args.cancel = cancel
-	r := New(args.log, args.server, args.signer, args.skre,
-		WithClock(args.clock),
-	)
+	args.reconciler = New(args.log, args.server, args.signer, args.skre, WithClock(args.clock))
 
 	if args.noTestLoop {
 		args.server.doneWhen = len(args.server.resources)
 	} else {
-		r.testLoop = func(state string, ctxErr error) {
+		args.reconciler.testLoop = func(state string, ctxErr error) {
 			t.Logf("testLoop: ctxErr %v, state %s, now %v", ctxErr, state, args.clock.Now())
 
 			e, ok := <-args.onLoop
@@ -199,7 +236,7 @@ func testRunLoop(t *testing.T, args *args) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := r.Run(ctx)
+		err := args.reconciler.Run(ctx)
 		if err == nil {
 			t.Fatalf("err must not be nil, it must return only when ctx is canceled")
 		}
@@ -217,14 +254,14 @@ func testRunLoop(t *testing.T, args *args) {
 func verify(t *testing.T, args *args) {
 	resources := args.server.resources
 
-	resourcesCloned := make([]*pbsecurity.Resource, len(resources))
+	resourcesCloned := make([]*signingResult, len(resources))
 	for i, res := range resources {
 		res := proto.Clone(res).(*pbsecurity.Resource)
-		resourcesCloned[i] = res
+		resourcesCloned[i] = &signingResult{resource: res}
 		require.NoError(t, args.signer.SignAndUpdateResource(res))
 	}
 
-	expected := prep(args.log, resourcesCloned)
+	expected := args.reconciler.prep(args.log, resourcesCloned)
 
 	testRunLoop(t, args)
 
@@ -601,8 +638,30 @@ func TestErrSignerSignError(t *testing.T) {
 
 	args := validArgs(t)
 	args.signer.errSign = broken
+
+	expectedApiErrs := make(map[string]*pbapi.SignatureRotationErrors)
+	expectedAppErrs := make(map[string]*pbapi.SignatureRotationErrors)
+
+	for _, res := range args.server.resources {
+		err := &pbapi.SignatureRotationErrors{
+			KeyId:     args.signer.SigningKeyID(),
+			Algorithm: args.signer.Algorithm(),
+			PublicKey: args.signer.PublicKey(),
+			Errors: []*pbapi.SignatureRotationError{
+				{Message: broken.Error()},
+			},
+		}
+
+		resType, resId := resourceId(res)
+		if resType == "app" {
+			expectedAppErrs[resId] = err
+		} else {
+			expectedApiErrs[resId] = err
+		}
+	}
+
 	testRunLoop(t, args)
-	verifyError(t, args, "error signing single resource", broken)
+	verifyResultErrors(t, args, expectedApiErrs, expectedAppErrs)
 }
 
 func TestErrSignerSignErrorInvalidResourceType(t *testing.T) {
@@ -617,8 +676,20 @@ func TestErrSignerSignErrorInvalidResourceType(t *testing.T) {
 			},
 		},
 	})
+
+	expectedApiErrs := map[string]*pbapi.SignatureRotationErrors{
+		"unknown": {
+			KeyId:     args.signer.SigningKeyID(),
+			Algorithm: args.signer.Algorithm(),
+			PublicKey: args.signer.PublicKey(),
+			Errors: []*pbapi.SignatureRotationError{
+				{Message: "unknown resource type: <nil>"},
+			},
+		},
+	}
+
 	testRunLoop(t, args)
-	verifyError(t, args, "error signing single resource", nil)
+	verifyResultErrors(t, args, expectedApiErrs, nil)
 }
 
 func TestErrServerUpdatesError(t *testing.T) {
@@ -631,34 +702,14 @@ func TestErrServerUpdatesError(t *testing.T) {
 	verifyError(t, args, "error signing all resources", broken)
 }
 
-func TestPatchFromApiLiteralMissingMetadata(t *testing.T) {
-	t.Parallel()
-
-	args := validArgs(t)
-	apiNoMetadata, err := structpb.NewStruct(map[string]any{
-		"blocks": map[string]any{},
-	})
-	require.NoError(t, err)
-
-	resource := &pbsecurity.Resource{
-		Config: &pbsecurity.Resource_Api{
-			Api: structpb.NewStructValue(apiNoMetadata),
-		},
-	}
-	err = args.signer.SignAndUpdateResource(resource)
-	require.NoError(t, err)
-
-	patchApi, err := updateFromApiLiteral(resource, apiNoMetadata)
-	require.NoError(t, err)
-	require.NotNil(t, patchApi)
-}
-
 func TestPatchFromApiLiteralMissingSignature(t *testing.T) {
 	t.Parallel()
 
+	args := validArgs(t)
+	apiId := "0"
 	apiNoSig, err := structpb.NewStruct(map[string]any{
 		"metadata": map[string]any{
-			"id": "0",
+			"id": apiId,
 		},
 	})
 	require.NoError(t, err)
@@ -669,7 +720,7 @@ func TestPatchFromApiLiteralMissingSignature(t *testing.T) {
 		},
 	}
 
-	patchApi, err := updateFromApiLiteral(resource, apiNoSig)
+	patchApi, err := args.reconciler.updateFromApiLiteral(apiId, &signingResult{resource: resource}, apiNoSig)
 	require.NoError(t, err)
 	require.NotNil(t, patchApi)
 }

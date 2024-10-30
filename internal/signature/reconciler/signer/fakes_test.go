@@ -75,6 +75,15 @@ func (f *fakeSignerManager) SigningKeyID() string {
 	return f.keyId
 }
 
+func (f *fakeSignerManager) PublicKeys() map[string]signature.PublicKey {
+	return map[string]signature.PublicKey{
+		f.keyId: {
+			Algorithm: f.algorithm,
+			Value:     f.publicKey,
+		},
+	}
+}
+
 func getSignature(res *pbsecurity.Resource) []byte {
 	switch t := res.Config.(type) {
 	case *pbsecurity.Resource_Api:

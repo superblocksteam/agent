@@ -2,6 +2,7 @@ package errors
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -232,6 +233,39 @@ func TestToCommonV1Error(t *testing.T) {
 			assert.Equal(t, actualErr.Name, test.actualName)
 			assert.Equal(t, actualErr.Code, test.actualCode)
 			assert.Equal(t, actualErr.Message, test.actualMessage)
+		})
+	}
+}
+
+func TestUnwrapJoined(t *testing.T) {
+	for _, testCase := range []struct {
+		name         string
+		err          error
+		expectedErrs []error
+	}{
+		{
+			name:         "no error",
+			err:          nil,
+			expectedErrs: nil,
+		},
+		{
+			name:         "not wrapped error",
+			err:          errors.New("not wrapped error"),
+			expectedErrs: nil,
+		},
+		{
+			name:         "wrapped error",
+			err:          fmt.Errorf("wrapped: %w", errors.New("not wrapped error")),
+			expectedErrs: []error{errors.New("not wrapped error")},
+		},
+		{
+			name:         "joined errors",
+			err:          errors.Join(errors.New("error 1"), errors.New("error 2"), errors.New("error 3")),
+			expectedErrs: []error{errors.New("error 1"), errors.New("error 2"), errors.New("error 3")},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			assert.Equal(t, testCase.expectedErrs, UnwrapJoined(testCase.err))
 		})
 	}
 }
