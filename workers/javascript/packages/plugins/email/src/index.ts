@@ -65,8 +65,11 @@ export default class EmailPlugin extends BasePlugin {
 
   createClient(datasourceConfiguration: EmailDatasourceConfiguration): MailService {
     const key = datasourceConfiguration.authentication?.custom?.apiKey?.value ?? '';
+    // NOTE: (joey) the api key will be empty when an organization is not allowed to use this plugin
     if (isEmpty(key)) {
-      throw new IntegrationError(`No API key found`, ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, { pluginName: this.pluginName });
+      const errorMsg =
+        "Payment required. Email isn't available for your organization's plan. Upgrade your account or [contact sales](mailto://billing-requests@superblockshq.com) to use this feature.";
+      throw new IntegrationError(errorMsg, ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, { pluginName: this.pluginName });
     }
 
     sgMail.setApiKey(key);
