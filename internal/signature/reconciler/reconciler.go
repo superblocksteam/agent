@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/superblocksteam/agent/pkg/crypto/signature"
+	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/utils"
 	pbapi "github.com/superblocksteam/agent/types/gen/go/api/v1"
-	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	pbsecurity "github.com/superblocksteam/agent/types/gen/go/security/v1"
+	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.uber.org/zap"
@@ -51,6 +53,13 @@ type SigningKeyRotationEvent struct {
 type Signer interface {
 	SignAndUpdateResource(res *pbsecurity.Resource) error
 	SigningKeyID() string
+	Algorithm() pbutils.Signature_Algorithm
+	PublicKey() []byte
+}
+
+type signingResult struct {
+	resource *pbsecurity.Resource
+	err      error
 }
 
 type prepped struct {
@@ -253,26 +262,24 @@ func (r *reconciler) signAllAndUpdateServer(ctx context.Context) error {
 		}
 
 		log.Info("signing resources", zap.Int("len(batch)", len(batch)))
-		toUpdate := []*pbsecurity.Resource{}
+		toUpdate := make([]*signingResult, 0, len(batch))
 		for _, res := range batch {
-			err = r.signer.SignAndUpdateResource(res)
-			if err != nil {
+			if err := r.signer.SignAndUpdateResource(res); err != nil {
+				resType, resId := resourceId(res)
+				fullResId := strings.TrimLeft(strings.Join([]string{resType, resId}, "-"), "-")
+
 				log.Error("error signing single resource",
 					zap.Error(err),
-					zap.String("resourcetype-id", resourceId(res)),
+					zap.String("resourcetype-id", fullResId),
 				)
-				continue
+
+				toUpdate = append(toUpdate, &signingResult{resource: res, err: err})
+			} else {
+				toUpdate = append(toUpdate, &signingResult{resource: res})
 			}
-
-			toUpdate = append(toUpdate, res)
 		}
 
-		if len(toUpdate) == 0 {
-			log.Info("no resources to update after signing")
-			break
-		}
-
-		prepped := prep(log, toUpdate)
+		prepped := r.prep(log, toUpdate)
 
 		var wg sync.WaitGroup
 		var errApi error
@@ -317,35 +324,34 @@ func (r *reconciler) signAllAndUpdateServer(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func prep(log *zap.Logger, resources []*pbsecurity.Resource) prepped {
+func (r *reconciler) prep(log *zap.Logger, resources []*signingResult) prepped {
 	prepped := prepped{}
 
-	for _, res := range resources {
-		resId := resourceId(res)
+	for _, result := range resources {
+		res := result.resource
+		resType, resId := resourceId(res)
+		fullResId := strings.TrimLeft(strings.Join([]string{resType, resId}, "-"), "-")
 
 		if res.GetApiLiteral() != nil {
-			update, err := updateFromApiLiteral(res, res.GetApiLiteral().GetData().GetStructValue())
+			update, err := r.updateFromApiLiteral(resId, result, res.GetApiLiteral().GetData().GetStructValue())
 			if err != nil {
-				log.Error("error building patch from api literal", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, resId))
+				log.Error("error building patch from api literal", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, fullResId))
 				continue
 			}
 			prepped.apiUpdates = append(prepped.apiUpdates, update)
 		} else if res.GetApi() != nil {
-			update, err := updateFromApiLiteral(res, res.GetApi().GetStructValue())
+			update, err := r.updateFromApiLiteral(resId, result, res.GetApi().GetStructValue())
 			if err != nil {
-				log.Error("error building patch from api", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, resId))
+				log.Error("error building patch from api", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, fullResId))
 				continue
 			}
 			prepped.apiUpdates = append(prepped.apiUpdates, update)
 		} else if res.GetLiteral() != nil {
 			literal := res.GetLiteral()
 			update := &pbapi.UpdateApplicationSignature{
-				ApplicationId: literal.GetResourceId(),
-				Result: &pbapi.UpdateApplicationSignature_Signature{
-					Signature: literal.GetSignature(),
-				},
-				Updated:     literal.GetLastUpdated(),
-				PageVersion: literal.GetPageVersion(),
+				ApplicationId: resId,
+				Updated:       literal.GetLastUpdated(),
+				PageVersion:   literal.GetPageVersion(),
 			}
 
 			if res.GetCommitId() != "" {
@@ -360,66 +366,115 @@ func prep(log *zap.Logger, resources []*pbsecurity.Resource) prepped {
 				}
 			}
 
+			r.updateWithAppSigningResult(update, result)
 			prepped.appUpdates = append(prepped.appUpdates, update)
 		} else {
 			log.Error("unknown resource type", zap.Any("resource", res))
-			continue
+			update := &pbapi.UpdateApiSignature{
+				ApiId: resId,
+				Result: &pbapi.UpdateApiSignature_Errors{
+					Errors: r.sigRotationErrsFromErrs([]error{result.err}),
+				},
+			}
+			prepped.apiUpdates = append(prepped.apiUpdates, update)
 		}
 	}
 
 	return prepped
 }
 
-func updateFromApiLiteral(res *pbsecurity.Resource, api *structpb.Struct) (*pbapi.UpdateApiSignature, error) {
-	metadata := &commonv1.Metadata{}
-	if err := utils.StructPbToProto(api.GetFields()["metadata"].GetStructValue(), metadata); err != nil {
-		return nil, fmt.Errorf("error converting metadata literal to proto: %w", err)
-	}
-
-	sig, err := signature.StructpbToSignatureProto(api.GetFields()["signature"].GetStructValue())
-	if err != nil {
-		return nil, fmt.Errorf("error converting signature literal to proto: %w", err)
-	}
-
+func (r *reconciler) updateFromApiLiteral(id string, res *signingResult, api *structpb.Struct) (*pbapi.UpdateApiSignature, error) {
 	update := &pbapi.UpdateApiSignature{
-		ApiId: metadata.GetId(),
-		Result: &pbapi.UpdateApiSignature_Signature{
-			Signature: sig,
-		},
+		ApiId: id,
 	}
+	errs := []error{res.err}
 
-	if res.GetCommitId() != "" {
-		update.GitRef = &pbapi.UpdateApiSignature_CommitId{
-			CommitId: res.GetCommitId(),
+	var sig *pbutils.Signature
+	if res.err == nil {
+		var err error
+		sig, err = signature.StructpbToSignatureProto(api.GetFields()["signature"].GetStructValue())
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error converting signature literal to proto: %w", err))
 		}
 	}
 
-	if res.GetBranchName() != "" {
+	if errs := sberrors.UnwrapJoined(errors.Join(errs...)); len(errs) > 0 {
+		result := &pbapi.UpdateApiSignature_Errors{
+			Errors: &pbapi.SignatureRotationErrors{
+				KeyId:     r.signer.SigningKeyID(),
+				Algorithm: r.signer.Algorithm(),
+				PublicKey: r.signer.PublicKey(),
+			},
+		}
+		for _, err := range errs {
+			if err != nil {
+				result.Errors.Errors = append(result.Errors.Errors, &pbapi.SignatureRotationError{Message: err.Error()})
+			}
+		}
+
+		update.Result = result
+	} else {
+		update.Result = &pbapi.UpdateApiSignature_Signature{Signature: sig}
+	}
+
+	if res.resource.GetCommitId() != "" {
+		update.GitRef = &pbapi.UpdateApiSignature_CommitId{
+			CommitId: res.resource.GetCommitId(),
+		}
+	}
+
+	if res.resource.GetBranchName() != "" {
 		update.GitRef = &pbapi.UpdateApiSignature_BranchName{
-			BranchName: res.GetBranchName(),
+			BranchName: res.resource.GetBranchName(),
 		}
 	}
 
 	return update, nil
 }
 
-func resourceId(res *pbsecurity.Resource) string {
+func (r *reconciler) updateWithAppSigningResult(update *pbapi.UpdateApplicationSignature, sr *signingResult) {
+	if sr.err != nil {
+		update.Result = &pbapi.UpdateApplicationSignature_Errors{
+			Errors: r.sigRotationErrsFromErrs([]error{sr.err}),
+		}
+	} else {
+		update.Result = &pbapi.UpdateApplicationSignature_Signature{
+			Signature: sr.resource.GetLiteral().GetSignature(),
+		}
+	}
+}
+
+func (r *reconciler) sigRotationErrsFromErrs(errs []error) *pbapi.SignatureRotationErrors {
+	result := &pbapi.SignatureRotationErrors{
+		KeyId:     r.signer.SigningKeyID(),
+		Algorithm: r.signer.Algorithm(),
+		PublicKey: r.signer.PublicKey(),
+	}
+	for _, err := range errs {
+		if err != nil {
+			result.Errors = append(result.Errors, &pbapi.SignatureRotationError{Message: err.Error()})
+		}
+	}
+	return result
+}
+
+func resourceId(res *pbsecurity.Resource) (string, string) {
 	switch t := res.Config.(type) {
 	case *pbsecurity.Resource_Api:
 		resourceId, err := utils.GetStructField(t.Api.GetStructValue(), "metadata.id")
 		if err != nil {
 			resourceId = structpb.NewStringValue("unknown")
 		}
-		return "api-" + resourceId.GetStringValue()
+		return "api", resourceId.GetStringValue()
 	case *pbsecurity.Resource_ApiLiteral_:
 		resourceId, err := utils.GetStructField(t.ApiLiteral.GetData().GetStructValue(), "metadata.id")
 		if err != nil {
 			resourceId = structpb.NewStringValue("unknown")
 		}
-		return "api-" + resourceId.GetStringValue()
+		return "api", resourceId.GetStringValue()
 	case *pbsecurity.Resource_Literal_:
-		return "app-" + t.Literal.GetResourceId()
+		return "app", t.Literal.GetResourceId()
 	default:
-		return "unknown"
+		return "", "unknown"
 	}
 }

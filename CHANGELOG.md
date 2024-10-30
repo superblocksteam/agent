@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump superblocksteam/run dep to v0.0.6
 - Include signing algorithms with verification keys when registering agent
 - Include signing algorithm and public key in response from Sign endpoint (`/v1/signature/sign`)
+- Set errors on responses for all resources that fail to get re-signed during a signature rotation job
 
 ## v1.15.1
 

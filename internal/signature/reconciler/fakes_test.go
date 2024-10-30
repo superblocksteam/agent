@@ -148,6 +148,14 @@ func (f *fakeSigner) SigningKeyID() string {
 	return f.keyId
 }
 
+func (f *fakeSigner) Algorithm() pbutils.Signature_Algorithm {
+	return f.algorithm
+}
+
+func (f *fakeSigner) PublicKey() []byte {
+	return f.publicKey
+}
+
 func setSignature(res *pbsecurity.Resource, sig *pbutils.Signature) error {
 	switch t := res.Config.(type) {
 	case *pbsecurity.Resource_Api:

@@ -6,7 +6,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/superblocksteam/agent/internal/signature/reconciler"
+	"github.com/superblocksteam/agent/pkg/crypto/signature"
 	pbsecurity "github.com/superblocksteam/agent/types/gen/go/security/v1"
+	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 )
 
 type SignerManager interface {
@@ -14,6 +16,7 @@ type SignerManager interface {
 	Verify(res *pbsecurity.Resource) error
 
 	SigningKeyID() string
+	PublicKeys() map[string]signature.PublicKey
 }
 
 type signer struct {
@@ -45,4 +48,12 @@ func (s *signer) SignAndUpdateResource(res *pbsecurity.Resource) error {
 
 func (s *signer) SigningKeyID() string {
 	return s.sm.SigningKeyID()
+}
+
+func (s *signer) PublicKey() []byte {
+	return s.sm.PublicKeys()[s.SigningKeyID()].Value
+}
+
+func (s *signer) Algorithm() pbutils.Signature_Algorithm {
+	return s.sm.PublicKeys()[s.SigningKeyID()].Algorithm
 }

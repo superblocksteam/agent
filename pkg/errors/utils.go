@@ -62,3 +62,16 @@ func IsProtoValidateError(err error) bool {
 	var typed *protovalidate.ValidationError
 	return errors.As(err, &typed)
 }
+
+func UnwrapJoined(err error) []error {
+	if joinedErr, ok := err.(interface{ Unwrap() []error }); ok {
+		return joinedErr.Unwrap()
+	}
+
+	var result []error
+	if unwrapped := errors.Unwrap(err); unwrapped != nil {
+		result = append(result, unwrapped)
+	}
+
+	return result
+}
