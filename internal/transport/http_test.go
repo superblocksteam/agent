@@ -5,10 +5,21 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/stretchr/testify/require"
+
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"github.com/stretchr/testify/assert"
+	utils "github.com/superblocksteam/agent/pkg/utils"
+	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
+	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 )
 
 func TestHackUntilWeHaveGoKit(t *testing.T) {
@@ -331,6 +342,144 @@ func TestHackUntilWeHaveGoKit(t *testing.T) {
 			if test.expectedErr != "" {
 				assert.Equal(t, test.expectedErr, string(body))
 			}
+		})
+	}
+}
+
+func TestTransformWorkflowRequest(t *testing.T) {
+	for _, tc := range []struct {
+		name                   string
+		httpRequest            *http.Request
+		version                string
+		expectedExecuteRequest *apiv1.ExecuteRequest
+		expectError            bool
+	}{
+		{
+			name: "happy path",
+			httpRequest: &http.Request{
+				Method: http.MethodPost,
+				URL:    &url.URL{Path: "/foo/bar", RawQuery: ""},
+			},
+			version: "v2",
+			expectedExecuteRequest: &apiv1.ExecuteRequest{
+				Options: &apiv1.ExecuteRequest_Options{},
+				Inputs: map[string]*structpb.Value{
+					"body":   structpb.NewStructValue(&structpb.Struct{}),
+					"params": structpb.NewStructValue(&structpb.Struct{}),
+				},
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{
+						ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+						Profile:  &commonv1.Profile{},
+					},
+				},
+			},
+		},
+		{
+			name: "with query param fetch.token",
+			httpRequest: &http.Request{
+				Method: http.MethodPost,
+				URL:    &url.URL{Path: "/foo/bar", RawQuery: "fetch.token=foo"},
+			},
+			version: "v2",
+			expectedExecuteRequest: &apiv1.ExecuteRequest{
+				Options: &apiv1.ExecuteRequest_Options{},
+				Inputs: map[string]*structpb.Value{
+					"body":   structpb.NewStructValue(&structpb.Struct{}),
+					"params": structpb.NewStructValue(&structpb.Struct{}),
+				},
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{
+						Token:    proto.String("foo"),
+						ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+						Profile:  &commonv1.Profile{},
+					},
+				},
+			},
+		},
+		{
+			name: "with query param fetch.profile.environment",
+			httpRequest: &http.Request{
+				Method: http.MethodPost,
+				URL:    &url.URL{Path: "/foo/bar", RawQuery: "fetch.profile.environment=foo"},
+			},
+			version: "v2",
+			expectedExecuteRequest: &apiv1.ExecuteRequest{
+				Options: &apiv1.ExecuteRequest_Options{},
+				Inputs: map[string]*structpb.Value{
+					"body":   structpb.NewStructValue(&structpb.Struct{}),
+					"params": structpb.NewStructValue(&structpb.Struct{}),
+				},
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{
+						ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+						Profile: &commonv1.Profile{
+							Environment: proto.String("foo"),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "with query param fetch.branch_name",
+			httpRequest: &http.Request{
+				Method: http.MethodPost,
+				URL:    &url.URL{Path: "/foo/bar", RawQuery: "fetch.branch_name=foo"},
+			},
+			version: "v2",
+			expectedExecuteRequest: &apiv1.ExecuteRequest{
+				Options: &apiv1.ExecuteRequest_Options{},
+				Inputs: map[string]*structpb.Value{
+					"body":   structpb.NewStructValue(&structpb.Struct{}),
+					"params": structpb.NewStructValue(&structpb.Struct{}),
+				},
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{
+						ViewMode:   apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+						Profile:    &commonv1.Profile{},
+						BranchName: proto.String("foo"),
+					},
+				},
+			},
+		},
+		{
+			name: "with multiple query params",
+			httpRequest: &http.Request{
+				Method: http.MethodPost,
+				URL:    &url.URL{Path: "/foo/bar", RawQuery: "fetch.profile.environment=foo&fetch.branch_name=bar"},
+			},
+			version: "v2",
+			expectedExecuteRequest: &apiv1.ExecuteRequest{
+				Options: &apiv1.ExecuteRequest_Options{},
+				Inputs: map[string]*structpb.Value{
+					"body":   structpb.NewStructValue(&structpb.Struct{}),
+					"params": structpb.NewStructValue(&structpb.Struct{}),
+				},
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{
+						ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+						Profile: &commonv1.Profile{
+							Environment: proto.String("foo"),
+						},
+						BranchName: proto.String("bar"),
+					},
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := transformWorkflowRequest(tc.httpRequest, tc.version)
+			require.NoError(t, err)
+
+			bodyBytes, err := io.ReadAll(tc.httpRequest.Body)
+			require.NoError(t, err)
+			defer tc.httpRequest.Body.Close()
+
+			actualExecuteRequest := &apiv1.ExecuteRequest{}
+			err = protojson.Unmarshal(bodyBytes, actualExecuteRequest)
+			require.NoError(t, err)
+
+			utils.ProtoEquals(t, tc.expectedExecuteRequest, actualExecuteRequest)
 		})
 	}
 }

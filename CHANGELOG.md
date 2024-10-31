@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Include signing algorithm and public key in response from Sign endpoint (`/v1/signature/sign`)
 - Set errors on responses for all resources that fail to get re-signed during a signature rotation job
 - Improved error messages in Email Plugin
+- Allow branch name to be given in workflow URLs as a query param: `fetch.branch_name`
 
 ## v1.15.1
 
