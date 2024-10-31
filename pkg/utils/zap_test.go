@@ -13,10 +13,10 @@ type fakeTB struct {
 	tb     testing.TB
 }
 
-func newFakeTB(tb testing.TB) *fakeTB {
+func newFakeTB(tb testing.TB, expectTestFailure bool) *fakeTB {
 	f := &fakeTB{tb: tb}
 	tb.Cleanup(func() {
-		require.True(tb, f.failed, "fakeTB did not fail as expected")
+		require.Equal(tb, expectTestFailure, f.failed, "fakeTB did not fail as expected")
 	})
 	return f
 }
@@ -44,7 +44,7 @@ func TestZapTestRequireLogContains(t *testing.T) {
 func TestZapTestRequireLogContainsMissing(t *testing.T) {
 	log, logs := NewZapTestObservedLogger(t)
 	log.Info("here", zap.String("else", "else")) // else for coverage
-	RequireLogContains(newFakeTB(t), logs, zap.InfoLevel, "hello world")
+	RequireLogContains(newFakeTB(t, true), logs, zap.InfoLevel, "hello world")
 }
 
 func TestZapTestRequireLogErrorEqual(t *testing.T) {
@@ -58,7 +58,7 @@ func TestZapTestRequireLogErrorEqualMissing(t *testing.T) {
 	log, logs := NewZapTestObservedLogger(t)
 	err := errors.New("hello world")
 	log.Error("error", zap.String("else", "else")) // else for coverage
-	RequireLogErrorEqual(newFakeTB(t), logs, zap.ErrorLevel, err.Error())
+	RequireLogErrorEqual(newFakeTB(t, true), logs, zap.ErrorLevel, err.Error())
 }
 
 func TestZapTestRequireLogErrorIs(t *testing.T) {
@@ -72,5 +72,5 @@ func TestZapTestRequireLogErrorIsMissing(t *testing.T) {
 	log, logs := NewZapTestObservedLogger(t)
 	err := errors.New("hello world")
 	log.Error("error", zap.String("else", "else")) // else for coverage
-	RequireLogErrorIs(newFakeTB(t), logs, zap.ErrorLevel, err)
+	RequireLogErrorIs(newFakeTB(t, true), logs, zap.ErrorLevel, err)
 }

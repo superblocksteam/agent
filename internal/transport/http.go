@@ -21,6 +21,7 @@ import (
 const (
 	TransformedTokenQueryParam                 = "fetch.token"
 	TransformedTestQueryParam                  = "fetch.test"
+	TransformedBranchNameQueryParam            = "fetch.branch_name"
 	TransformedEnvironmentQueryParam           = "fetch.profile.environment"
 	TransformedProfileNameQueryParam           = "fetch.profile.name"
 	TransformedProfileIdQueryParam             = "fetch.profile.id"
@@ -33,6 +34,7 @@ var (
 	knownQueryParams = map[string]bool{
 		TransformedTokenQueryParam:                 true,
 		TransformedTestQueryParam:                  true,
+		TransformedBranchNameQueryParam:            true,
 		TransformedEnvironmentQueryParam:           true,
 		TransformedOptionsAsync:                    true,
 		TransformedProfileNameQueryParam:           true,
@@ -258,6 +260,10 @@ func transformWorkflowRequest(r *http.Request, version string) (err error) {
 
 	if profileID := r.URL.Query().Get(TransformedProfileIdQueryParam); profileID != "" {
 		request.Request.(*apiv1.ExecuteRequest_Fetch_).Fetch.Profile.Id = &profileID
+	}
+
+	if branchName := r.URL.Query().Get(TransformedBranchNameQueryParam); branchName != "" {
+		request.Request.(*apiv1.ExecuteRequest_Fetch_).Fetch.BranchName = &branchName
 	}
 
 	if include := r.URL.Query().Get(TransformedOptionsIncludeEventOutputsParam); include != "" {
