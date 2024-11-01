@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set errors on responses for all resources that fail to get re-signed during a signature rotation job
 - Improved error messages in Email Plugin
 - Allow branch name to be given in workflow URLs as a query param: `fetch.branch_name`
+- Upgrade Google Cloud Secret Manager Go package to `v1.14.2` (fixes "certificate_config.json: permission denied" error connecting to GCP secret manager)
 
 ## v1.15.1
 
