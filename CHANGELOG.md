@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Allow branch name to be given in workflow URLs as a query param: `fetch.branch_name`
 - Upgrade Google Cloud Secret Manager Go package to `v1.14.2` (fixes "certificate_config.json: permission denied" error connecting to GCP secret manager)
+- Added support for key-pair authentication in Snowflake Plugin
 
 ## v1.16.0
 

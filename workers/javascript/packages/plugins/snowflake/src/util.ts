@@ -1,5 +1,18 @@
+import * as crypto from 'crypto';
 import { SnowflakeDatasourceConfiguration, ErrorCode, IntegrationError } from '@superblocks/shared';
 import { ConnectionOptions } from 'snowflake-sdk';
+
+export function getPrivateKeyValue({ privateKey, password }: { privateKey: string; password: string }): string {
+  const privateKeyObject = crypto.createPrivateKey({
+    key: privateKey,
+    format: 'pem',
+    passphrase: password
+  });
+  return privateKeyObject.export({
+    format: 'pem',
+    type: 'pkcs8'
+  }) as string;
+}
 
 export function connectionOptionsFromDatasourceConfiguration(datasourceConfiguration: SnowflakeDatasourceConfiguration): ConnectionOptions {
   const auth = datasourceConfiguration.authentication;
@@ -9,24 +22,43 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
 
   const missingFields: string[] = [];
 
-  // these fields are always required regardless of auth type
-  if (!auth.username) {
-    missingFields.push('username');
-  }
-  if (!auth.password) {
-    missingFields.push('password');
-  }
   if (!auth.custom?.account?.value) {
     missingFields.push('account');
   }
 
   switch (datasourceConfiguration.connectionType) {
+    case 'key-pair': {
+      // https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-key-pair-authentication
+
+      if (!datasourceConfiguration?.keyPair?.privateKey) {
+        missingFields.push('privateKey');
+      }
+
+      handleMissingFields(missingFields);
+      let privateKey = datasourceConfiguration.keyPair.privateKey;
+      let password = datasourceConfiguration?.keyPair?.password;
+      if (password) {
+        privateKey = getPrivateKeyValue({ privateKey, password });
+      }
+      return {
+        account: auth.custom.account.value,
+        authenticator: 'SNOWFLAKE_JWT',
+        privateKey
+      };
+    }
     case 'okta': {
       // https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#using-native-sso-through-okta
 
+      if (!auth.username) {
+        missingFields.push('username');
+      }
+      if (!auth.password) {
+        missingFields.push('password');
+      }
       if (!datasourceConfiguration?.okta?.authenticatorUrl) {
         missingFields.push('authenticatorUrl');
       }
+
       handleMissingFields(missingFields);
       return {
         account: auth.custom.account.value,
@@ -36,6 +68,12 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
       };
     }
     default: {
+      if (!auth.username) {
+        missingFields.push('username');
+      }
+      if (!auth.password) {
+        missingFields.push('password');
+      }
       if (!auth.custom?.databaseName?.value) {
         missingFields.push('databaseName');
       }

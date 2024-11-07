@@ -357,9 +357,15 @@ export type S3DatasourceConfiguration = AWSDatasourceConfiguration & { endpoint?
 
 export type SnowflakeDatasourceConfiguration = DBDatasourceConfiguration &
   DBConnection & {
-    connectionType?: 'fields' | 'okta';
+    // okta: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#use-native-sso-through-okta
+    // key-pair: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-key-pair-authentication
+    connectionType?: 'fields' | 'okta' | 'key-pair';
     okta?: {
       authenticatorUrl?: string;
+    };
+    keyPair?: {
+      privateKey: string;
+      password?: string;
     };
     authentication?: {
       username?: string;
