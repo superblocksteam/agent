@@ -22,8 +22,15 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
 
   const missingFields: string[] = [];
 
+  // fields that are always required
   if (!auth.custom?.account?.value) {
     missingFields.push('account');
+  }
+  if (!auth.username) {
+    missingFields.push('username');
+  }
+  if (!auth.password) {
+    missingFields.push('password');
   }
 
   switch (datasourceConfiguration.connectionType) {
@@ -42,6 +49,8 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
       }
       return {
         account: auth.custom.account.value,
+        username: auth.username,
+        password: auth.password,
         authenticator: 'SNOWFLAKE_JWT',
         privateKey
       };
@@ -49,12 +58,6 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
     case 'okta': {
       // https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#using-native-sso-through-okta
 
-      if (!auth.username) {
-        missingFields.push('username');
-      }
-      if (!auth.password) {
-        missingFields.push('password');
-      }
       if (!datasourceConfiguration?.okta?.authenticatorUrl) {
         missingFields.push('authenticatorUrl');
       }
@@ -68,12 +71,6 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
       };
     }
     default: {
-      if (!auth.username) {
-        missingFields.push('username');
-      }
-      if (!auth.password) {
-        missingFields.push('password');
-      }
       if (!auth.custom?.databaseName?.value) {
         missingFields.push('databaseName');
       }
