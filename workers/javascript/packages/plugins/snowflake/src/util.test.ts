@@ -82,10 +82,12 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
     });
   });
 
-  it('works for key-pair without password', async () => {
+  it('works for key-pair without key-pair password', async () => {
     const datasourceConfiguration = {
       connectionType: 'key-pair',
       authentication: {
+        username: 'user',
+        password: 'pass',
         custom: {
           account: { value: 'account' }
         }
@@ -99,6 +101,8 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
     expect(connectionOptions).toEqual({
       account: 'account',
       authenticator: 'SNOWFLAKE_JWT',
+      username: 'user',
+      password: 'pass',
       privateKey: 'pk'
     });
   });
@@ -108,6 +112,9 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
     const datasourceConfiguration = {
       connectionType: 'key-pair',
       authentication: {
+        username: 'user',
+        password: 'pass',
+
         custom: {
           account: { value: 'account' }
         }
@@ -150,6 +157,8 @@ y4BdZfATsd4Q1gjGoALvDK0i7pwG+40wxmKFDkj95QmskRMSX8q0DUg=
 
     expect(connectionOptions).toEqual({
       account: 'account',
+      username: 'user',
+      password: 'pass',
       authenticator: 'SNOWFLAKE_JWT',
       privateKey: `-----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCXjMqyEL55ZO7b
@@ -188,6 +197,8 @@ oBHJaYtVCXd3VBWCVLcfnw==
       connectionOptionsFromDatasourceConfiguration({
         connectionType: 'key-pair',
         authentication: {
+          username: 'user',
+          password: 'pass',
           custom: {
             account: { value: 'account' }
           }
@@ -217,6 +228,16 @@ oBHJaYtVCXd3VBWCVLcfnw==
     } as SnowflakeDatasourceConfiguration;
     expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
       'Missing required fields: account,username,password,authenticatorUrl'
+    );
+  });
+
+  it('fails with missing fields listed for connection type key-pair', () => {
+    const datasourceConfiguration = {
+      connectionType: 'key-pair',
+      authentication: {}
+    } as SnowflakeDatasourceConfiguration;
+    expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
+      'Missing required fields: account,username,password,privateKey'
     );
   });
 });
