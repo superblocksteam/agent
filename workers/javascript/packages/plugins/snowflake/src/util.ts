@@ -29,9 +29,6 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
   if (!auth.username) {
     missingFields.push('username');
   }
-  if (!auth.password) {
-    missingFields.push('password');
-  }
 
   switch (datasourceConfiguration.connectionType) {
     case 'key-pair': {
@@ -42,7 +39,8 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
       }
 
       handleMissingFields(missingFields);
-      let privateKey = datasourceConfiguration.keyPair.privateKey;
+      // remove leading and trailing whitespace, as snowflake will not accept private keys with that
+      let privateKey = datasourceConfiguration.keyPair.privateKey.trim();
       let password = datasourceConfiguration?.keyPair?.password;
       if (password) {
         privateKey = getPrivateKeyValue({ privateKey, password });
@@ -50,7 +48,6 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
       return {
         account: auth.custom.account.value,
         username: auth.username,
-        password: auth.password,
         authenticator: 'SNOWFLAKE_JWT',
         privateKey
       };
@@ -58,6 +55,9 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
     case 'okta': {
       // https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#using-native-sso-through-okta
 
+      if (!auth.password) {
+        missingFields.push('password');
+      }
       if (!datasourceConfiguration?.okta?.authenticatorUrl) {
         missingFields.push('authenticatorUrl');
       }
@@ -71,6 +71,9 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
       };
     }
     default: {
+      if (!auth.password) {
+        missingFields.push('password');
+      }
       if (!auth.custom?.databaseName?.value) {
         missingFields.push('databaseName');
       }

@@ -82,12 +82,11 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
     });
   });
 
-  it('works for key-pair without key-pair password', async () => {
+  it('works for key-pair without private key password', async () => {
     const datasourceConfiguration = {
       connectionType: 'key-pair',
       authentication: {
         username: 'user',
-        password: 'pass',
         custom: {
           account: { value: 'account' }
         }
@@ -100,9 +99,31 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
 
     expect(connectionOptions).toEqual({
       account: 'account',
-      authenticator: 'SNOWFLAKE_JWT',
       username: 'user',
-      password: 'pass',
+      authenticator: 'SNOWFLAKE_JWT',
+      privateKey: 'pk'
+    });
+  });
+
+  it('trims leading and trailing whitespace from private key', async () => {
+    const datasourceConfiguration = {
+      connectionType: 'key-pair',
+      authentication: {
+        username: 'user',
+        custom: {
+          account: { value: 'account' }
+        }
+      },
+      keyPair: {
+        privateKey: ' pk   '
+      }
+    } as SnowflakeDatasourceConfiguration;
+    const connectionOptions = connectionOptionsFromDatasourceConfiguration(datasourceConfiguration);
+
+    expect(connectionOptions).toEqual({
+      account: 'account',
+      username: 'user',
+      authenticator: 'SNOWFLAKE_JWT',
       privateKey: 'pk'
     });
   });
@@ -113,8 +134,6 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
       connectionType: 'key-pair',
       authentication: {
         username: 'user',
-        password: 'pass',
-
         custom: {
           account: { value: 'account' }
         }
@@ -157,9 +176,8 @@ y4BdZfATsd4Q1gjGoALvDK0i7pwG+40wxmKFDkj95QmskRMSX8q0DUg=
 
     expect(connectionOptions).toEqual({
       account: 'account',
-      username: 'user',
-      password: 'pass',
       authenticator: 'SNOWFLAKE_JWT',
+      username: 'user',
       privateKey: `-----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCXjMqyEL55ZO7b
 /20zZeOPOCeWT87Z2L+mt7fz0Jw9F9Qi7xjopxfadEf9+lAKzFA0WqpaflF0CkUh
@@ -192,19 +210,17 @@ oBHJaYtVCXd3VBWCVLcfnw==
     });
   });
 
-  it('fails for key-pair when privateKey is not present', () => {
+  it('fails for key-pair when required fields are not present', () => {
     expect(() =>
       connectionOptionsFromDatasourceConfiguration({
         connectionType: 'key-pair',
         authentication: {
-          username: 'user',
-          password: 'pass',
           custom: {
             account: { value: 'account' }
           }
         }
       })
-    ).toThrow('Missing required fields: privateKey');
+    ).toThrow('Missing required fields: username,privateKey');
   });
 
   it('fails when authentication is not present', () => {
@@ -228,16 +244,6 @@ oBHJaYtVCXd3VBWCVLcfnw==
     } as SnowflakeDatasourceConfiguration;
     expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
       'Missing required fields: account,username,password,authenticatorUrl'
-    );
-  });
-
-  it('fails with missing fields listed for connection type key-pair', () => {
-    const datasourceConfiguration = {
-      connectionType: 'key-pair',
-      authentication: {}
-    } as SnowflakeDatasourceConfiguration;
-    expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
-      'Missing required fields: account,username,password,privateKey'
     );
   });
 });
