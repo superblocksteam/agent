@@ -71,8 +71,26 @@ export namespace Plugin {
         setPath(value: string): DatabricksConnection;
         getPort(): number;
         setPort(value: number): DatabricksConnection;
-        getToken(): string;
+
+        hasConnectionType(): boolean;
+        clearConnectionType(): void;
+        getConnectionType(): Plugin.ConnectionType | undefined;
+        setConnectionType(value: Plugin.ConnectionType): DatabricksConnection;
+
+        hasToken(): boolean;
+        clearToken(): void;
+        getToken(): string | undefined;
         setToken(value: string): DatabricksConnection;
+
+        hasOauthClientId(): boolean;
+        clearOauthClientId(): void;
+        getOauthClientId(): string | undefined;
+        setOauthClientId(value: string): DatabricksConnection;
+
+        hasOauthClientSecret(): boolean;
+        clearOauthClientSecret(): void;
+        getOauthClientSecret(): string | undefined;
+        setOauthClientSecret(value: string): DatabricksConnection;
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): DatabricksConnection.AsObject;
@@ -91,8 +109,18 @@ export namespace Plugin {
             hostUrl: string,
             path: string,
             port: number,
-            token: string,
+            connectionType?: Plugin.ConnectionType,
+            token?: string,
+            oauthClientId?: string,
+            oauthClientSecret?: string,
         }
+    }
+
+
+    export enum ConnectionType {
+    CONNECTION_TYPE_UNSPECIFIED = 0,
+    CONNECTION_TYPE_PAT = 1,
+    CONNECTION_TYPE_M2M = 2,
     }
 
 }

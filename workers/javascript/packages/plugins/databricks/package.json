@@ -21,9 +21,9 @@
     "pre-commit": "tsc && lint-staged"
   },
   "dependencies": {
-    "@databricks/sql": "1.7.0",
+    "@databricks/sql": "1.8.4",
     "@superblocks/shared": "workspace:*",
-        "@superblocksteam/types": "workspace:*",
+    "@superblocksteam/types": "workspace:*",
     "lodash": "^4.17.21",
     "minimist": "1.2.6"
   },

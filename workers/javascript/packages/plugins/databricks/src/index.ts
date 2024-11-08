@@ -26,6 +26,7 @@ import {
 
 import { isEmpty, merge } from 'lodash';
 import { KEYS_QUERY, SQL_SINGLE_TABLE_METADATA, TABLE_QUERY } from './queries';
+import { getConnectionOptionsFromDatasourceConfiguration } from './utils';
 
 const TEST_CONNECTION_TIMEOUT = 5000;
 
@@ -212,15 +213,14 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
     }
 
     this.connectionTimeoutMillis = connectionTimeoutMillis;
-
-    // create pooled connection
-    const poolConfig = this.getConnectionConfigFromDatasourceConfiguration(datasourceConfiguration);
     // TODO(jason4012) we decided not to use pools for now as the connection is being persisted across connections for each worker
     const client = new DBSQLClient();
     client.on('error', (error) => {
       console.log('Caught error at connect: ', error.message);
     });
-    await client.connect(poolConfig);
+
+    const connectionOptions = getConnectionOptionsFromDatasourceConfiguration(datasourceConfiguration);
+    await client.connect(connectionOptions);
 
     this.logger.debug(`Databricks client connected. ${datasourceConfiguration.connection?.hostUrl}`);
     return client;
@@ -235,24 +235,6 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
         pluginName: this.pluginName
       });
     }
-  }
-
-  private getConnectionConfigFromDatasourceConfiguration(datasourceConfiguration: DatabricksDatasourceConfiguration) {
-    if (!isEmpty(datasourceConfiguration.connection?.port)) {
-      return {
-        host: datasourceConfiguration.connection?.hostUrl as string,
-        path: datasourceConfiguration.connection?.path as string,
-        port: datasourceConfiguration.connection?.port as number,
-        token: datasourceConfiguration.connection?.token as string,
-        clientId: this.DATABRICKS_PARTNER_CLIENT_ID
-      };
-    }
-    return {
-      host: datasourceConfiguration.connection?.hostUrl as string,
-      path: datasourceConfiguration.connection?.path as string,
-      token: datasourceConfiguration.connection?.token as string,
-      clientId: this.DATABRICKS_PARTNER_CLIENT_ID
-    };
   }
 
   public async test(datasourceConfiguration: DatabricksDatasourceConfiguration): Promise<void> {

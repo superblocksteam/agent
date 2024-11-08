@@ -289,14 +289,28 @@ func (m *Plugin_DatabricksConnection) validate(all bool) error {
 
 	// no validation rules for Port
 
-	// no validation rules for Token
-
 	if m.DefaultCatalog != nil {
 		// no validation rules for DefaultCatalog
 	}
 
 	if m.DefaultSchema != nil {
 		// no validation rules for DefaultSchema
+	}
+
+	if m.ConnectionType != nil {
+		// no validation rules for ConnectionType
+	}
+
+	if m.Token != nil {
+		// no validation rules for Token
+	}
+
+	if m.OauthClientId != nil {
+		// no validation rules for OauthClientId
+	}
+
+	if m.OauthClientSecret != nil {
+		// no validation rules for OauthClientSecret
 	}
 
 	if len(errors) > 0 {
