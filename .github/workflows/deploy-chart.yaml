@@ -5,6 +5,7 @@ on:
       - main
     paths:
       - 'helm/agent/**'
+  workflow_dispatch:
 
 jobs:
   release-chart:
