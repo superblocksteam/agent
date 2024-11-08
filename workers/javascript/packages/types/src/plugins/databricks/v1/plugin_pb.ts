@@ -75,6 +75,38 @@ export class Plugin extends Message<Plugin> {
 }
 
 /**
+ * @generated from enum plugins.databricks.v1.Plugin.ConnectionType
+ */
+export enum Plugin_ConnectionType {
+  /**
+   * @generated from enum value: CONNECTION_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * PERSONAL ACCESS TOKEN
+   * https://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#databricks-personal-access-token-authentication
+   *
+   * @generated from enum value: CONNECTION_TYPE_PAT = 1;
+   */
+  PAT = 1,
+
+  /**
+   * MACHINE TO MACHINE
+   * https://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#oauth-machine-to-machine-m2m-authentication
+   *
+   * @generated from enum value: CONNECTION_TYPE_M2M = 2;
+   */
+  M2M = 2,
+}
+// Retrieve enum metadata with: proto3.getEnumType(Plugin_ConnectionType)
+proto3.util.setEnumType(Plugin_ConnectionType, "plugins.databricks.v1.Plugin.ConnectionType", [
+  { no: 0, name: "CONNECTION_TYPE_UNSPECIFIED" },
+  { no: 1, name: "CONNECTION_TYPE_PAT" },
+  { no: 2, name: "CONNECTION_TYPE_M2M" },
+]);
+
+/**
  * @generated from message plugins.databricks.v1.Plugin.DatabricksConnection
  */
 export class Plugin_DatabricksConnection extends Message<Plugin_DatabricksConnection> {
@@ -104,9 +136,28 @@ export class Plugin_DatabricksConnection extends Message<Plugin_DatabricksConnec
   port = 0;
 
   /**
-   * @generated from field: string token = 6;
+   * @generated from field: optional plugins.databricks.v1.Plugin.ConnectionType connection_type = 7;
    */
-  token = "";
+  connectionType?: Plugin_ConnectionType;
+
+  /**
+   * PAT
+   *
+   * @generated from field: optional string token = 6;
+   */
+  token?: string;
+
+  /**
+   * M2M
+   *
+   * @generated from field: optional string oauth_client_id = 8;
+   */
+  oauthClientId?: string;
+
+  /**
+   * @generated from field: optional string oauth_client_secret = 9;
+   */
+  oauthClientSecret?: string;
 
   constructor(data?: PartialMessage<Plugin_DatabricksConnection>) {
     super();
@@ -121,7 +172,10 @@ export class Plugin_DatabricksConnection extends Message<Plugin_DatabricksConnec
     { no: 3, name: "host_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 6, name: "token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "connection_type", kind: "enum", T: proto3.getEnumType(Plugin_ConnectionType), opt: true },
+    { no: 6, name: "token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 8, name: "oauth_client_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 9, name: "oauth_client_secret", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_DatabricksConnection {

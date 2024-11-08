@@ -20,6 +20,21 @@ message Plugin {
     string host_url = 3;
     string path = 4;
     int32 port = 5;
-    string token = 6;
+    optional ConnectionType connection_type = 7;
+    // PAT
+    optional string token = 6;
+    // M2M
+    optional string oauth_client_id = 8;
+    optional string oauth_client_secret = 9;
+  }
+
+  enum ConnectionType {
+    CONNECTION_TYPE_UNSPECIFIED = 0;
+    // PERSONAL ACCESS TOKEN
+    // https://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#databricks-personal-access-token-authentication
+    CONNECTION_TYPE_PAT = 1;
+    // MACHINE TO MACHINE
+    // https://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#oauth-machine-to-machine-m2m-authentication
+    CONNECTION_TYPE_M2M = 2;
   }
 }

@@ -1558,6 +1558,16 @@
         }
       }
     },
+    "PluginConnectionType": {
+      "type": "string",
+      "enum": [
+        "CONNECTION_TYPE_UNSPECIFIED",
+        "CONNECTION_TYPE_PAT",
+        "CONNECTION_TYPE_M2M"
+      ],
+      "default": "CONNECTION_TYPE_UNSPECIFIED",
+      "title": "- CONNECTION_TYPE_PAT: PERSONAL ACCESS TOKEN\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#databricks-personal-access-token-authentication\n - CONNECTION_TYPE_M2M: MACHINE TO MACHINE\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#oauth-machine-to-machine-m2m-authentication"
+    },
     "PluginConsume": {
       "type": "object",
       "properties": {
@@ -1728,7 +1738,18 @@
           "type": "integer",
           "format": "int32"
         },
+        "connectionType": {
+          "$ref": "#/definitions/PluginConnectionType"
+        },
         "token": {
+          "type": "string",
+          "title": "PAT"
+        },
+        "oauthClientId": {
+          "type": "string",
+          "title": "M2M"
+        },
+        "oauthClientSecret": {
           "type": "string"
         }
       }
