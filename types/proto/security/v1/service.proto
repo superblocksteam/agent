@@ -53,6 +53,8 @@ message Resource {
     string commit_id = 3;
     string branch_name = 4;
   }
+
+  google.protobuf.Timestamp last_updated = 6;
 }
 
 message SignRequest {

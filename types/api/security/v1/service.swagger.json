@@ -175,6 +175,10 @@
         },
         "branchName": {
           "type": "string"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

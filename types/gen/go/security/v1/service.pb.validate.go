@@ -57,6 +57,35 @@ func (m *Resource) validate(all bool) error {
 
 	var errors []error
 
+	if all {
+		switch v := interface{}(m.GetLastUpdated()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ResourceValidationError{
+					field:  "LastUpdated",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ResourceValidationError{
+					field:  "LastUpdated",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetLastUpdated()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ResourceValidationError{
+				field:  "LastUpdated",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	switch v := m.Config.(type) {
 	case *Resource_Api:
 		if v == nil {

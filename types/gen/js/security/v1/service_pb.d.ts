@@ -37,6 +37,11 @@ export class Resource extends jspb.Message {
     getBranchName(): string;
     setBranchName(value: string): Resource;
 
+    hasLastUpdated(): boolean;
+    clearLastUpdated(): void;
+    getLastUpdated(): google_protobuf_timestamp_pb.Timestamp | undefined;
+    setLastUpdated(value?: google_protobuf_timestamp_pb.Timestamp): Resource;
+
     getConfigCase(): Resource.ConfigCase;
     getGitRefCase(): Resource.GitRefCase;
 
@@ -57,6 +62,7 @@ export namespace Resource {
         apiLiteral?: Resource.ApiLiteral.AsObject,
         commitId: string,
         branchName: string,
+        lastUpdated?: google_protobuf_timestamp_pb.Timestamp.AsObject,
     }
 
 

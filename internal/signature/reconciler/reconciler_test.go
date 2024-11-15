@@ -15,6 +15,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -715,12 +716,46 @@ func TestPatchFromApiLiteralMissingSignature(t *testing.T) {
 	require.NoError(t, err)
 
 	resource := &pbsecurity.Resource{
+		LastUpdated: &timestamppb.Timestamp{Seconds: 1},
 		Config: &pbsecurity.Resource_Api{
 			Api: structpb.NewStructValue(apiNoSig),
 		},
 	}
 
-	patchApi, err := args.reconciler.updateFromApiLiteral(apiId, &signingResult{resource: resource}, apiNoSig)
+	patchApi, err := args.reconciler.updateFromApiLiteral(apiId, &signingResult{resource: resource}, apiNoSig, nil)
 	require.NoError(t, err)
 	require.NotNil(t, patchApi)
+	require.NotNil(t, patchApi.GetResult())
+	require.Nil(t, patchApi.GetUpdated())
+}
+
+func TestUpdateFromApiLiteral(t *testing.T) {
+	t.Parallel()
+
+	args := validArgs(t)
+	apiId := "0"
+	api, err := structpb.NewStruct(map[string]any{
+		"blocks": map[string]any{},
+		"metadata": map[string]any{
+			"id": apiId,
+		},
+	})
+	require.NoError(t, err)
+
+	resource := &pbsecurity.Resource{
+		LastUpdated: &timestamppb.Timestamp{Seconds: 1},
+		Config: &pbsecurity.Resource_ApiLiteral_{
+			ApiLiteral: &pbsecurity.Resource_ApiLiteral{
+				Data: structpb.NewStructValue(api),
+			},
+		},
+	}
+	err = args.signer.SignAndUpdateResource(resource)
+	require.NoError(t, err)
+
+	patchApi, err := args.reconciler.updateFromApiLiteral(apiId, &signingResult{resource: resource}, api, resource.GetLastUpdated())
+	require.NoError(t, err)
+	require.NotNil(t, patchApi)
+	require.NotNil(t, patchApi.GetResult())
+	require.NotNil(t, patchApi.GetUpdated())
 }
