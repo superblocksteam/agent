@@ -1051,7 +1051,7 @@ func main() {
 	// close server runnables, these should block while requests are still being processed
 	g.Always(grpcRunnable)
 	g.Always(httpRunnable)
-	g.Always(waitgroup.New(wg))
+	g.Always(waitgroup.New(wg, true))
 
 	// close rest of the runnables
 	g.Add(viper.GetBool("quotas.enabled"), flagsClient)

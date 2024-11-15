@@ -21,7 +21,6 @@ import (
 const (
 	TransformedTokenQueryParam                 = "fetch.token"
 	TransformedTestQueryParam                  = "fetch.test"
-	TransformedBranchNameQueryParam            = "fetch.branch_name"
 	TransformedEnvironmentQueryParam           = "fetch.profile.environment"
 	TransformedProfileNameQueryParam           = "fetch.profile.name"
 	TransformedProfileIdQueryParam             = "fetch.profile.id"
@@ -34,7 +33,6 @@ var (
 	knownQueryParams = map[string]bool{
 		TransformedTokenQueryParam:                 true,
 		TransformedTestQueryParam:                  true,
-		TransformedBranchNameQueryParam:            true,
 		TransformedEnvironmentQueryParam:           true,
 		TransformedOptionsAsync:                    true,
 		TransformedProfileNameQueryParam:           true,
@@ -262,10 +260,6 @@ func transformWorkflowRequest(r *http.Request, version string) (err error) {
 		request.Request.(*apiv1.ExecuteRequest_Fetch_).Fetch.Profile.Id = &profileID
 	}
 
-	if branchName := r.URL.Query().Get(TransformedBranchNameQueryParam); branchName != "" {
-		request.Request.(*apiv1.ExecuteRequest_Fetch_).Fetch.BranchName = &branchName
-	}
-
 	if include := r.URL.Query().Get(TransformedOptionsIncludeEventOutputsParam); include != "" {
 		includeBool, err := strconv.ParseBool(include)
 		if err != nil {
@@ -288,6 +282,11 @@ func transformWorkflowRequest(r *http.Request, version string) (err error) {
 			return err
 		}
 		request.Options.Async = asyncBool
+	}
+
+	// headers
+	if branchName := r.Header.Get("X-Superblocks-Branch"); branchName != "" {
+		request.Request.(*apiv1.ExecuteRequest_Fetch_).Fetch.BranchName = &branchName
 	}
 
 	var buf bytes.Buffer

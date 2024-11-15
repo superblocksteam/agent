@@ -421,10 +421,13 @@ func TestTransformWorkflowRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "with query param fetch.branch_name",
+			name: "with header X-Superblocks-Branch",
 			httpRequest: &http.Request{
 				Method: http.MethodPost,
-				URL:    &url.URL{Path: "/foo/bar", RawQuery: "fetch.branch_name=foo"},
+				URL:    &url.URL{Path: "/foo/bar"},
+				Header: http.Header{
+					"X-Superblocks-Branch": []string{"foo"},
+				},
 			},
 			version: "v2",
 			expectedExecuteRequest: &apiv1.ExecuteRequest{
@@ -446,7 +449,7 @@ func TestTransformWorkflowRequest(t *testing.T) {
 			name: "with multiple query params",
 			httpRequest: &http.Request{
 				Method: http.MethodPost,
-				URL:    &url.URL{Path: "/foo/bar", RawQuery: "fetch.profile.environment=foo&fetch.branch_name=bar"},
+				URL:    &url.URL{Path: "/foo/bar", RawQuery: "fetch.profile.environment=foo&fetch.profile.id=bar"},
 			},
 			version: "v2",
 			expectedExecuteRequest: &apiv1.ExecuteRequest{
@@ -460,8 +463,8 @@ func TestTransformWorkflowRequest(t *testing.T) {
 						ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
 						Profile: &commonv1.Profile{
 							Environment: proto.String("foo"),
+							Id:          proto.String("bar"),
 						},
-						BranchName: proto.String("bar"),
 					},
 				},
 			},
