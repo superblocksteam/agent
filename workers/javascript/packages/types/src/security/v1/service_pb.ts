@@ -52,6 +52,11 @@ export class Resource extends Message<Resource> {
     case: "branchName";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
+  /**
+   * @generated from field: google.protobuf.Timestamp last_updated = 6;
+   */
+  lastUpdated?: Timestamp;
+
   constructor(data?: PartialMessage<Resource>) {
     super();
     proto3.util.initPartial(data, this);
@@ -65,6 +70,7 @@ export class Resource extends Message<Resource> {
     { no: 5, name: "api_literal", kind: "message", T: Resource_ApiLiteral, oneof: "config" },
     { no: 3, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
     { no: 4, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "git_ref" },
+    { no: 6, name: "last_updated", kind: "message", T: Timestamp },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Resource {

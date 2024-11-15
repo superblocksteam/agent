@@ -16,6 +16,7 @@ import (
 	pbsecurity "github.com/superblocksteam/agent/types/gen/go/security/v1"
 	pbutils "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.uber.org/zap"
 )
@@ -333,14 +334,14 @@ func (r *reconciler) prep(log *zap.Logger, resources []*signingResult) prepped {
 		fullResId := strings.TrimLeft(strings.Join([]string{resType, resId}, "-"), "-")
 
 		if res.GetApiLiteral() != nil {
-			update, err := r.updateFromApiLiteral(resId, result, res.GetApiLiteral().GetData().GetStructValue())
+			update, err := r.updateFromApiLiteral(resId, result, res.GetApiLiteral().GetData().GetStructValue(), res.GetLastUpdated())
 			if err != nil {
 				log.Error("error building patch from api literal", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, fullResId))
 				continue
 			}
 			prepped.apiUpdates = append(prepped.apiUpdates, update)
 		} else if res.GetApi() != nil {
-			update, err := r.updateFromApiLiteral(resId, result, res.GetApi().GetStructValue())
+			update, err := r.updateFromApiLiteral(resId, result, res.GetApi().GetStructValue(), res.GetLastUpdated())
 			if err != nil {
 				log.Error("error building patch from api", zap.Error(err), zap.String(observability.OBS_TAG_RESOURCE_ID, fullResId))
 				continue
@@ -383,9 +384,10 @@ func (r *reconciler) prep(log *zap.Logger, resources []*signingResult) prepped {
 	return prepped
 }
 
-func (r *reconciler) updateFromApiLiteral(id string, res *signingResult, api *structpb.Struct) (*pbapi.UpdateApiSignature, error) {
+func (r *reconciler) updateFromApiLiteral(id string, res *signingResult, api *structpb.Struct, lastUpdated *timestamppb.Timestamp) (*pbapi.UpdateApiSignature, error) {
 	update := &pbapi.UpdateApiSignature{
-		ApiId: id,
+		ApiId:   id,
+		Updated: lastUpdated,
 	}
 	errs := []error{res.err}
 

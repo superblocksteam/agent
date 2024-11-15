@@ -266,7 +266,8 @@ api: (f = msg.getApi()) && google_protobuf_struct_pb.Value.toObject(includeInsta
 literal: (f = msg.getLiteral()) && proto.security.v1.Resource.Literal.toObject(includeInstance, f),
 apiLiteral: (f = msg.getApiLiteral()) && proto.security.v1.Resource.ApiLiteral.toObject(includeInstance, f),
 commitId: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-branchName: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
+branchName: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
+lastUpdated: (f = msg.getLastUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -325,6 +326,11 @@ proto.security.v1.Resource.deserializeBinaryFromReader = function(msg, reader) {
     case 4:
       var value = /** @type {string} */ (reader.readString());
       msg.setBranchName(value);
+      break;
+    case 6:
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      msg.setLastUpdated(value);
       break;
     default:
       reader.skipField();
@@ -391,6 +397,14 @@ proto.security.v1.Resource.serializeBinaryToWriter = function(message, writer) {
     writer.writeString(
       4,
       f
+    );
+  }
+  f = message.getLastUpdated();
+  if (f != null) {
+    writer.writeMessage(
+      6,
+      f,
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -1100,6 +1114,43 @@ proto.security.v1.Resource.prototype.clearBranchName = function() {
  */
 proto.security.v1.Resource.prototype.hasBranchName = function() {
   return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional google.protobuf.Timestamp last_updated = 6;
+ * @return {?proto.google.protobuf.Timestamp}
+ */
+proto.security.v1.Resource.prototype.getLastUpdated = function() {
+  return /** @type{?proto.google.protobuf.Timestamp} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 6));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Timestamp|undefined} value
+ * @return {!proto.security.v1.Resource} returns this
+*/
+proto.security.v1.Resource.prototype.setLastUpdated = function(value) {
+  return jspb.Message.setWrapperField(this, 6, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.security.v1.Resource} returns this
+ */
+proto.security.v1.Resource.prototype.clearLastUpdated = function() {
+  return this.setLastUpdated(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.security.v1.Resource.prototype.hasLastUpdated = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 

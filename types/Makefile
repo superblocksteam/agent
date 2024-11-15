@@ -2,7 +2,7 @@
 BUF_VERSION = "1.45.0"
 .ONESHELL:
 
-PYTHON_CMD = python3.10
+PYTHON_CMD = python
 # ":" delimited string of paths
 PYTHONPATH=.:superblocks_types
 
