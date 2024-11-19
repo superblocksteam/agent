@@ -88,6 +88,13 @@ services:
     volumes:
       - ./scripts/plugins/integration/kinesis/init-kinesis.sh:/etc/localstack/init/ready.d/init-kinesis.sh
       - ./scripts/plugins/integration/s3/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
   intake:
     image: ghcr.io/superblocksteam/intake:v0.88.0
     ports:

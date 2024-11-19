@@ -1,5 +1,5 @@
 {
-	"id": "ea82efb7-428b-419a-baa9-212196510670",
+	"id": "665bdd03-b9df-4971-a9c7-cc72b94608d5",
 	"name": "local",
 	"values": [
 		{
@@ -43,9 +43,15 @@
 			"value": "http://localhost",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "integration_mongodb_host",
+			"value": "localhost",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2024-10-22T14:24:28.804Z",
+	"_postman_exported_at": "2024-11-13T14:42:19.653Z",
 	"_postman_exported_using": "Postman/11.14.1"
 }
