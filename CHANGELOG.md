@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `WaitGroup` runnable to block `Close` method on the `WaitGroup` completing (addresses `redis: client is closed` errors)
 - Allow branch name to be given in workflow HTTP requests as a header: `X-Superblocks-Branch` 
 - Add `last_updated` field to the `Resource` proto, and set last updated time in update signature requests to server
+- Fixed projection for findOne action in MongoDB integration
 
 ## v1.16.0
 

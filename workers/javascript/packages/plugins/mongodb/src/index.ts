@@ -141,7 +141,7 @@ export default class MongoDBPlugin extends DatabasePluginPooled<ClientWrapper<Mo
       const projection = this.safeJSONParse(actionConfiguration.projection);
       return [
         { paramName: 'Query', paramValue: query },
-        { paramName: 'Projection', paramValue: projection }
+        { paramName: 'Query options', paramValue: { projection } }
       ];
     } else if ([MongoDBOperationType.insertOne, MongoDBOperationType.insertMany].includes(operation)) {
       const document = this.safeJSONParse(actionConfiguration.document);

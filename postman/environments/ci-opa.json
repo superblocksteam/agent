@@ -1,5 +1,5 @@
 {
-	"id": "5927d27a-53e9-4c36-ac5f-540c10cd3488",
+	"id": "b57f083e-9acd-4dd0-b2c1-e47dab3f127f",
 	"name": "ci-opa",
 	"values": [
 		{
@@ -49,9 +49,15 @@
 			"value": "http://localstack",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "integration_mongodb_host",
+			"value": "mongodb",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2024-10-22T14:24:40.747Z",
+	"_postman_exported_at": "2024-11-13T14:42:30.880Z",
 	"_postman_exported_using": "Postman/11.14.1"
 }

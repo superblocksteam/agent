@@ -1,5 +1,5 @@
 {
-	"id": "483ba6f1-d328-4b85-858c-57b12b90af70",
+	"id": "b8ef3215-f073-44a4-aa42-6859f5d84c3d",
 	"name": "ci",
 	"values": [
 		{
@@ -43,9 +43,15 @@
 			"value": "http://localstack",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "integration_mongodb_host",
+			"value": "mongodb",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2024-10-22T14:24:50.557Z",
+	"_postman_exported_at": "2024-11-13T14:42:36.789Z",
 	"_postman_exported_using": "Postman/11.14.1"
 }
