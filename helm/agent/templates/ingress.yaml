@@ -61,7 +61,7 @@ spec:
           {{- end }}
     {{- end }}
 ---
-{{- $grpcPort := .Values.service.ports.grpc -}}
+{{ $grpcPort := .Values.service.ports.grpc -}}
 {{- $services := list "/grpc.reflection.v1.ServerReflection" "/grpc.reflection.v1alpha.ServerReflection" "/api.v1.ExecutorService" }}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
 apiVersion: networking.k8s.io/v1
