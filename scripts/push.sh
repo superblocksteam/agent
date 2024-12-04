@@ -159,7 +159,7 @@ function push() {
     fi
   done
 
-  echo "    HEAD (external) -> [$last_synced_commit]" 
+  echo "    HEAD (external) -> [$last_synced_commit]"
 
   if [ ${#authors[@]} -eq 0 ]; then
       echo ""
@@ -184,7 +184,7 @@ function push() {
 
   mkdir -p "${tmp}"/dest
   pushd "${tmp}"/dest
-  
+
   __do git clone --quiet "${destination}" .
 
   echo " [INFO] Moving the github directory to a safe place while we apply the patching."
@@ -212,12 +212,12 @@ function push() {
 
   if ! git diff-index --quiet HEAD --; then
     echo " [INFO] Committing changes."
-    __do git commit --quiet -m "syncing up to ${head}"$'\n\n'"$(_join $'\n' "${authors[@]}")"
+    __do git commit -S --quiet -m "syncing up to ${head}"$'\n\n'"$(_join $'\n' "${authors[@]}")"
   else
     echo " [INFO] No changes to commit; bye."
     exit 0
   fi
-  
+
   if [[ "$push" -eq 1 ]]; then
     echo " [INFO] Refusing to push changes to the destination repository unless the push option is enabled."
     exit 0
