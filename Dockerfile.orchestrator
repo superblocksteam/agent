@@ -30,7 +30,7 @@ ARG EXTRA_GO_OPTIONS
 RUN make build-go SERVICE_VERSION=${SERVICE_VERSION} EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}
 
 # Build the final image
-FROM ghcr.io/superblocksteam/ubuntu-mirror:23.04 AS base
+FROM ghcr.io/superblocksteam/ubuntu:24.04 AS base
 
 # Install CA certificates
 RUN apt-get update \
