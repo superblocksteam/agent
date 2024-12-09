@@ -28,6 +28,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/superblocksteam/agent/internal/auth"
 	"github.com/superblocksteam/agent/internal/fetch"
+	"github.com/superblocksteam/agent/internal/flags"
+	flagoptions "github.com/superblocksteam/agent/internal/flags/options"
 	"github.com/superblocksteam/agent/internal/kafka"
 	"github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
@@ -48,8 +50,7 @@ import (
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/events"
 	"github.com/superblocksteam/agent/pkg/executor/options"
-	"github.com/superblocksteam/agent/pkg/flags"
-	flagoptions "github.com/superblocksteam/agent/pkg/flags/options"
+	internalflagsclient "github.com/superblocksteam/agent/pkg/flagsclient"
 	grpcserver "github.com/superblocksteam/agent/pkg/grpc"
 	httpserver "github.com/superblocksteam/agent/pkg/http"
 	"github.com/superblocksteam/agent/pkg/httpretry"
@@ -483,13 +484,18 @@ func main() {
 			flagoptions.WithDefaultGoWorkerEnabled(viper.GetBool("worker.go.enabled")),
 			flagoptions.WithDefaultWorkflowPluginInheritanceEnabled(viper.GetBool("agent.plugins.workflow.inherit_parameters.enabled")),
 		}
+		internalOptions := []internalflagsclient.Option{
+			internalflagsclient.WithLogger(logger),
+		}
 
 		if viper.GetBool("launchdarkly.local") {
 			options = append(options, flagoptions.WithLocal(viper.GetString("launchdarkly.config")))
+			internalOptions = append(internalOptions, internalflagsclient.WithLocal(viper.GetString("launchdarkly.config")))
 		}
 
 		if viper.GetBool("quotas.enabled") {
-			flagsClient = flags.LaunchDarkly(viper.GetString("launchdarkly.apikey"), options...)
+			internalFlagsClient := internalflagsclient.NewLaunchDarklyClient(viper.GetString("launchdarkly.apikey"), internalOptions...)
+			flagsClient = flags.LaunchDarkly(internalFlagsClient, options...)
 		} else {
 			flagsClient = flags.NoopFlags(options...)
 		}

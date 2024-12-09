@@ -13,8 +13,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	mockflags "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/internal/metrics"
-	mockflags "github.com/superblocksteam/agent/pkg/flags/mock"
 	"go.uber.org/zap"
 
 	apictx "github.com/superblocksteam/agent/pkg/context"

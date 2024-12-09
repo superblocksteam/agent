@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/superblocksteam/agent/internal/flags"
 	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/crypto/signature"
-	"github.com/superblocksteam/agent/pkg/flags"
 	"github.com/superblocksteam/agent/pkg/mocker"
 	"github.com/superblocksteam/agent/pkg/observability/emitter/event"
 	"github.com/superblocksteam/agent/pkg/observability/log"
