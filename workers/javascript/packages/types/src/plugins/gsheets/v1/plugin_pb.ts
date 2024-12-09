@@ -53,9 +53,9 @@ export class Plugin extends Message<Plugin> {
   spreadsheetId = "";
 
   /**
-   * @generated from field: string sheetTitle = 2;
+   * @generated from field: optional string sheetTitle = 2;
    */
-  sheetTitle = "";
+  sheetTitle?: string;
 
   /**
    * @generated from field: optional string range = 3;
@@ -122,6 +122,11 @@ export class Plugin extends Message<Plugin> {
    */
   superblocksMetadata?: SuperblocksMetadata;
 
+  /**
+   * @generated from field: optional plugins.gsheets.v1.Plugin.AddSheet addSheet = 15;
+   */
+  addSheet?: Plugin_AddSheet;
+
   constructor(data?: PartialMessage<Plugin>) {
     super();
     proto3.util.initPartial(data, this);
@@ -131,7 +136,7 @@ export class Plugin extends Message<Plugin> {
   static readonly typeName = "plugins.gsheets.v1.Plugin";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "spreadsheetId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "sheetTitle", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "sheetTitle", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 3, name: "range", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 4, name: "rowNumber", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 5, name: "extractFirstRowHeader", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
@@ -144,6 +149,7 @@ export class Plugin extends Message<Plugin> {
     { no: 12, name: "writeToDestinationType", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 13, name: "body", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 14, name: "superblocksMetadata", kind: "message", T: SuperblocksMetadata },
+    { no: 15, name: "addSheet", kind: "message", T: Plugin_AddSheet, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin {
@@ -160,6 +166,55 @@ export class Plugin extends Message<Plugin> {
 
   static equals(a: Plugin | PlainMessage<Plugin> | undefined, b: Plugin | PlainMessage<Plugin> | undefined): boolean {
     return proto3.util.equals(Plugin, a, b);
+  }
+}
+
+/**
+ * @generated from message plugins.gsheets.v1.Plugin.AddSheet
+ */
+export class Plugin_AddSheet extends Message<Plugin_AddSheet> {
+  /**
+   * @generated from field: string sheetTitle = 1;
+   */
+  sheetTitle = "";
+
+  /**
+   * @generated from field: optional string rowCount = 2;
+   */
+  rowCount?: string;
+
+  /**
+   * @generated from field: optional string columnCount = 3;
+   */
+  columnCount?: string;
+
+  constructor(data?: PartialMessage<Plugin_AddSheet>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "plugins.gsheets.v1.Plugin.AddSheet";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "sheetTitle", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "rowCount", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "columnCount", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_AddSheet {
+    return new Plugin_AddSheet().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_AddSheet {
+    return new Plugin_AddSheet().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_AddSheet {
+    return new Plugin_AddSheet().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Plugin_AddSheet | PlainMessage<Plugin_AddSheet> | undefined, b: Plugin_AddSheet | PlainMessage<Plugin_AddSheet> | undefined): boolean {
+    return proto3.util.equals(Plugin_AddSheet, a, b);
   }
 }
 

@@ -29,7 +29,10 @@ export namespace SuperblocksMetadata {
 export class Plugin extends jspb.Message { 
     getSpreadsheetid(): string;
     setSpreadsheetid(value: string): Plugin;
-    getSheettitle(): string;
+
+    hasSheettitle(): boolean;
+    clearSheettitle(): void;
+    getSheettitle(): string | undefined;
     setSheettitle(value: string): Plugin;
 
     hasRange(): boolean;
@@ -83,6 +86,11 @@ export class Plugin extends jspb.Message {
     getSuperblocksmetadata(): SuperblocksMetadata | undefined;
     setSuperblocksmetadata(value?: SuperblocksMetadata): Plugin;
 
+    hasAddsheet(): boolean;
+    clearAddsheet(): void;
+    getAddsheet(): Plugin.AddSheet | undefined;
+    setAddsheet(value?: Plugin.AddSheet): Plugin;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Plugin.AsObject;
     static toObject(includeInstance: boolean, msg: Plugin): Plugin.AsObject;
@@ -96,7 +104,7 @@ export class Plugin extends jspb.Message {
 export namespace Plugin {
     export type AsObject = {
         spreadsheetid: string,
-        sheettitle: string,
+        sheettitle?: string,
         range?: string,
         rownumber?: string,
         extractfirstrowheader: boolean,
@@ -109,5 +117,40 @@ export namespace Plugin {
         writetodestinationtype?: string,
         body?: string,
         superblocksmetadata?: SuperblocksMetadata.AsObject,
+        addsheet?: Plugin.AddSheet.AsObject,
     }
+
+
+    export class AddSheet extends jspb.Message { 
+        getSheettitle(): string;
+        setSheettitle(value: string): AddSheet;
+
+        hasRowcount(): boolean;
+        clearRowcount(): void;
+        getRowcount(): string | undefined;
+        setRowcount(value: string): AddSheet;
+
+        hasColumncount(): boolean;
+        clearColumncount(): void;
+        getColumncount(): string | undefined;
+        setColumncount(value: string): AddSheet;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): AddSheet.AsObject;
+        static toObject(includeInstance: boolean, msg: AddSheet): AddSheet.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: AddSheet, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): AddSheet;
+        static deserializeBinaryFromReader(message: AddSheet, reader: jspb.BinaryReader): AddSheet;
+    }
+
+    export namespace AddSheet {
+        export type AsObject = {
+            sheettitle: string,
+            rowcount?: string,
+            columncount?: string,
+        }
+    }
+
 }

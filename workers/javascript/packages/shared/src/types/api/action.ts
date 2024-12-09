@@ -85,6 +85,12 @@ export type GoogleSheetsActionConfiguration = {
   pageToken?: string;
   /** used by metadata to fetch spreadsheets with keyword */
   keyword?: string;
+  // used when creating a new sheet
+  addSheet?: {
+    sheetTitle: string;
+    rowCount?: string;
+    columnCount?: string;
+  };
 };
 
 export type DBActionConfiguration = {

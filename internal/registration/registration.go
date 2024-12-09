@@ -31,7 +31,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"email":              {"0.0.7"},
 	"gcs":                {"0.0.1"},
 	"graphql":            {"0.0.10"},
-	"gsheets":            {"0.0.18"},
+	"gsheets":            {"0.0.19"},
 	"kafka":              {"0.0.1"},
 	"javascript":         {"0.0.9"},
 	"kinesis":            {"0.0.1"},

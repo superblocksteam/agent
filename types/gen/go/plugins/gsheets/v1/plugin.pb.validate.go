@@ -162,8 +162,6 @@ func (m *Plugin) validate(all bool) error {
 
 	// no validation rules for SpreadsheetId
 
-	// no validation rules for SheetTitle
-
 	// no validation rules for ExtractFirstRowHeader
 
 	// no validation rules for PreserveHeaderRow
@@ -199,6 +197,10 @@ func (m *Plugin) validate(all bool) error {
 		}
 	}
 
+	if m.SheetTitle != nil {
+		// no validation rules for SheetTitle
+	}
+
 	if m.Range != nil {
 		// no validation rules for Range
 	}
@@ -229,6 +231,39 @@ func (m *Plugin) validate(all bool) error {
 
 	if m.Body != nil {
 		// no validation rules for Body
+	}
+
+	if m.AddSheet != nil {
+
+		if all {
+			switch v := interface{}(m.GetAddSheet()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, PluginValidationError{
+						field:  "AddSheet",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, PluginValidationError{
+						field:  "AddSheet",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAddSheet()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return PluginValidationError{
+					field:  "AddSheet",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -307,3 +342,113 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = PluginValidationError{}
+
+// Validate checks the field values on Plugin_AddSheet with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *Plugin_AddSheet) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Plugin_AddSheet with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// Plugin_AddSheetMultiError, or nil if none found.
+func (m *Plugin_AddSheet) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Plugin_AddSheet) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for SheetTitle
+
+	if m.RowCount != nil {
+		// no validation rules for RowCount
+	}
+
+	if m.ColumnCount != nil {
+		// no validation rules for ColumnCount
+	}
+
+	if len(errors) > 0 {
+		return Plugin_AddSheetMultiError(errors)
+	}
+
+	return nil
+}
+
+// Plugin_AddSheetMultiError is an error wrapping multiple validation errors
+// returned by Plugin_AddSheet.ValidateAll() if the designated constraints
+// aren't met.
+type Plugin_AddSheetMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m Plugin_AddSheetMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m Plugin_AddSheetMultiError) AllErrors() []error { return m }
+
+// Plugin_AddSheetValidationError is the validation error returned by
+// Plugin_AddSheet.Validate if the designated constraints aren't met.
+type Plugin_AddSheetValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e Plugin_AddSheetValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e Plugin_AddSheetValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e Plugin_AddSheetValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e Plugin_AddSheetValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e Plugin_AddSheetValidationError) ErrorName() string { return "Plugin_AddSheetValidationError" }
+
+// Error satisfies the builtin error interface
+func (e Plugin_AddSheetValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPlugin_AddSheet.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = Plugin_AddSheetValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = Plugin_AddSheetValidationError{}
