@@ -10,7 +10,7 @@ message SuperblocksMetadata {
 
 message Plugin {
   string spreadsheetId = 1;
-  string sheetTitle = 2;
+  optional string sheetTitle = 2;
   optional string range = 3;
   // Super confusing but these are potentially bindings. Or stringified int
   // If this was not a binding, it would be best to keep it int32 here
@@ -26,4 +26,10 @@ message Plugin {
   optional string writeToDestinationType = 12;
   optional string body = 13;
   SuperblocksMetadata superblocksMetadata = 14;
+  message AddSheet {
+    string sheetTitle = 1;
+    optional string rowCount = 2;
+    optional string columnCount = 3;
+  }
+  optional AddSheet addSheet = 15;
 }

@@ -19,6 +19,7 @@ import { drive_v3, google, sheets_v4 } from 'googleapis';
 import { GoogleAuth, OAuth2Client } from 'googleapis-common';
 import { isEmpty } from 'lodash';
 import { validateRowsSchema } from './RowSchema';
+import { validateCreateWorksheet } from './util';
 
 type CellValueType = boolean | string | number | sheets_v4.Schema$ErrorValue;
 export type GoogleClients = [OAuth2Client | GoogleAuth, drive_v3.Drive, sheets_v4.Sheets];
@@ -174,11 +175,61 @@ export default class GoogleSheetsPlugin extends BasePlugin {
             parseInt(actionConfiguration.headerRowNumber ?? '1')
           );
           return ret;
+        case GoogleSheetsActionType.CREATE_WORKSHEET:
+          validateCreateWorksheet(actionConfiguration);
+          ret.output = await this.createWorksheet(
+            sheetsClient,
+            actionConfiguration.spreadsheetId as string,
+            actionConfiguration?.addSheet?.sheetTitle,
+            actionConfiguration?.addSheet?.rowCount,
+            actionConfiguration?.addSheet?.columnCount
+          );
+          return ret;
       }
       throw new IntegrationError(`${googleSheetsAction} is not supported action`);
     } catch (err) {
       throw new IntegrationError(`Request failed. ${err.message}`);
     }
+  }
+
+  async createWorksheet(
+    sheetsClient: sheets_v4.Sheets,
+    spreadsheetId: string,
+    sheetTitle?: string,
+    rowCountStr?: string,
+    columnCountStr?: string
+  ): Promise<sheets_v4.Schema$BatchUpdateSpreadsheetResponse> {
+    const addSheetObj: sheets_v4.Schema$AddSheetRequest = {};
+    if (sheetTitle) {
+      addSheetObj.properties = addSheetObj.properties || {};
+      addSheetObj.properties.title = sheetTitle;
+    }
+    if (rowCountStr) {
+      addSheetObj.properties = addSheetObj.properties || {};
+      addSheetObj.properties.gridProperties = addSheetObj.properties.gridProperties || {};
+      addSheetObj.properties.gridProperties.rowCount = parseInt(rowCountStr);
+    }
+    if (columnCountStr) {
+      addSheetObj.properties = addSheetObj.properties || {};
+      addSheetObj.properties.gridProperties = addSheetObj.properties.gridProperties || {};
+      addSheetObj.properties.gridProperties.columnCount = parseInt(columnCountStr);
+    }
+
+    const response = await sheetsClient.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [
+          {
+            addSheet: addSheetObj
+          }
+        ]
+      }
+    });
+
+    if (response.status != 200) {
+      throw new IntegrationError(`Failed to create a new sheet, unexpected status: ${response.status}`);
+    }
+    return response.data;
   }
 
   async clearSheet(
@@ -626,7 +677,7 @@ function validateCommon(actionConfiguration: GoogleSheetsActionConfiguration) {
   if (!actionConfiguration.spreadsheetId) {
     throw new IntegrationError(`Spreadsheet is required`);
   }
-  if (!actionConfiguration.sheetTitle) {
+  if (!actionConfiguration.sheetTitle && !actionConfiguration?.addSheet?.sheetTitle) {
     throw new IntegrationError(`Sheet name is required`);
   }
 }

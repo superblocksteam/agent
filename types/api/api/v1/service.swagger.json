@@ -1524,6 +1524,20 @@
       },
       "title": "You can specify multiple values for a single query parameter in a URL"
     },
+    "PluginAddSheet": {
+      "type": "object",
+      "properties": {
+        "sheetTitle": {
+          "type": "string"
+        },
+        "rowCount": {
+          "type": "string"
+        },
+        "columnCount": {
+          "type": "string"
+        }
+      }
+    },
     "PluginAdlsConnection": {
       "type": "object",
       "properties": {
@@ -3708,6 +3722,9 @@
         },
         "superblocksMetadata": {
           "$ref": "#/definitions/pluginsgsheetsv1SuperblocksMetadata"
+        },
+        "addSheet": {
+          "$ref": "#/definitions/PluginAddSheet"
         }
       }
     },
