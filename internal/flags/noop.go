@@ -4,7 +4,7 @@ import (
 	"context"
 	"math"
 
-	"github.com/superblocksteam/agent/pkg/flags/options"
+	"github.com/superblocksteam/agent/internal/flags/options"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	"github.com/superblocksteam/run"
 )

@@ -5,18 +5,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/superblocksteam/agent/pkg/context"
-	"github.com/superblocksteam/agent/pkg/flags"
-	v1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
-
 	"github.com/stretchr/testify/mock"
+	"github.com/superblocksteam/agent/internal/flags"
+	mockflags "github.com/superblocksteam/agent/internal/flags/mock"
+	"github.com/superblocksteam/agent/pkg/context"
 	"github.com/superblocksteam/agent/pkg/executor/options"
-	mockflags "github.com/superblocksteam/agent/pkg/flags/mock"
+	"github.com/superblocksteam/agent/pkg/store"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
+	v1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap/zaptest"
-
-	"github.com/superblocksteam/agent/pkg/store"
 )
 
 func dummyStepFunc(*context.Context, *apiv1.Step, ...options.Option) (*transportv1.Performance, string, error) {

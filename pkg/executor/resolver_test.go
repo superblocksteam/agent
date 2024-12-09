@@ -5,7 +5,7 @@ import (
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/stretchr/testify/assert"
-	mocks "github.com/superblocksteam/agent/pkg/flags/mock"
+	mocks "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/pkg/plugin"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 )

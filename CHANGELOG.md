@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `last_updated` field to the `Resource` proto, and set last updated time in update signature requests to server
 - Fixed projection for findOne action in MongoDB integration
 - Added support for creating a worksheet in GSheets integration
+- Refactor `launchdarkly` client to separate wrapper around LaunchDarkly SDK into its own package separate from the interface for agent specific flags
 
 ## v1.16.0
 

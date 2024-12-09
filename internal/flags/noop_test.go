@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/superblocksteam/agent/pkg/flags/options"
+	"github.com/superblocksteam/agent/internal/flags/options"
 	"go.uber.org/zap"
 )
 

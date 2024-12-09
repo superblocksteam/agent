@@ -5,10 +5,10 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/superblocksteam/agent/internal/flags"
 	"github.com/superblocksteam/agent/pkg/context"
 	"github.com/superblocksteam/agent/pkg/executor/middleware"
 	"github.com/superblocksteam/agent/pkg/executor/options"
-	"github.com/superblocksteam/agent/pkg/flags"
 	"github.com/superblocksteam/agent/pkg/store"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 )

@@ -11,6 +11,7 @@ import (
 
 	"github.com/superblocksteam/agent/internal/auth"
 	"github.com/superblocksteam/agent/internal/fetch"
+	"github.com/superblocksteam/agent/internal/flags"
 	internalutils "github.com/superblocksteam/agent/internal/utils"
 	"github.com/superblocksteam/agent/pkg/constants"
 	apictx "github.com/superblocksteam/agent/pkg/context"
@@ -20,7 +21,6 @@ import (
 	sberror "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/executor"
 	"github.com/superblocksteam/agent/pkg/executor/options"
-	"github.com/superblocksteam/agent/pkg/flags"
 	"github.com/superblocksteam/agent/pkg/functions"
 	"github.com/superblocksteam/agent/pkg/mocker"
 	"github.com/superblocksteam/agent/pkg/observability"

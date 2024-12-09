@@ -12,10 +12,10 @@ import (
 	javascriptv1 "github.com/superblocksteam/agent/types/gen/go/plugins/javascript/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 
+	mockflags "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/pkg/context"
 	"github.com/superblocksteam/agent/pkg/executor/options"
-	mockflags "github.com/superblocksteam/agent/pkg/flags/mock"
 	"github.com/superblocksteam/agent/pkg/store"
 )
 

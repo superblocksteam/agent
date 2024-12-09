@@ -7,11 +7,11 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/superblocksteam/agent/internal/flags"
 	"github.com/superblocksteam/agent/pkg/context"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/executor/middleware"
 	"github.com/superblocksteam/agent/pkg/executor/options"
-	"github.com/superblocksteam/agent/pkg/flags"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/plugin"
 	"github.com/superblocksteam/agent/pkg/store"

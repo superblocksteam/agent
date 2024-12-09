@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	mockflags "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/pkg/context"
 	"github.com/superblocksteam/agent/pkg/executor/options"
-	mockflags "github.com/superblocksteam/agent/pkg/flags/mock"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	"go.uber.org/zap"
 
