@@ -36,19 +36,3 @@ config:
   allowed_payload_size: {{ .Values.gateway.maxBodySize }}
   size_unit: megabytes
   require_content_length: false
----
-{{- if .Values.ingress.opa.enabled }}
-apiVersion: configuration.konghq.com/v1
-kind: KongPlugin
-metadata:
-  name: {{ include "orchestrator.fullname" . }}-workflows
-  label:
-    global: "false"
-plugin: workflows
-config:
-  organizations:
-  {{- range .Values.ingress.opa.organizations }}
-    - {{ . }}
-  {{- end }}
-  header: X-Superblocks-Organization-Id
-{{- end }}

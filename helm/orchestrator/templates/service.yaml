@@ -5,7 +5,7 @@ kind: Service
 metadata:
   name: {{ include "orchestrator.fullname" . }}
   annotations:
-    konghq.com/plugins: {{ $fullname }}-cors,{{ $fullname }}-request-size,{{ $fullname }}-workflows
+    konghq.com/plugins: {{ $fullname }}-cors,{{ $fullname }}-request-size
   labels:
     component: orchestrator
 spec:
@@ -24,7 +24,6 @@ kind: Service
 metadata:
   name: {{ include "orchestrator.fullname" . }}-grpc
   annotations:
-    konghq.com/plugins: {{ $fullname }}-workflows
     konghq.com/protocol: "grpc"
   labels:
     component: orchestrator
