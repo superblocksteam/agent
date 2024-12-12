@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+- Added support for creating a worksheet in GSheets integration
+- Refactor `launchdarkly` client to separate wrapper around LaunchDarkly SDK into its own package separate from the interface for agent specific flags
+
+## v1.17.0
+
 - Upgrade Google Cloud Secret Manager Go package to `v1.14.2` (fixes "certificate_config.json: permission denied" error connecting to GCP secret manager)
 - Added support for key-pair authentication in Snowflake Plugin
 - Add support for machine-to-machine (M2M) authentication for Databricks plugin
@@ -14,8 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow branch name to be given in workflow HTTP requests as a header: `X-Superblocks-Branch` 
 - Add `last_updated` field to the `Resource` proto, and set last updated time in update signature requests to server
 - Fixed projection for findOne action in MongoDB integration
-- Added support for creating a worksheet in GSheets integration
-- Refactor `launchdarkly` client to separate wrapper around LaunchDarkly SDK into its own package separate from the interface for agent specific flags
 
 ## v1.16.0
 
