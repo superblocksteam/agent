@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for creating a worksheet in GSheets integration
 - Refactor `launchdarkly` client to separate wrapper around LaunchDarkly SDK into its own package separate from the interface for agent specific flags
+- Fixed bug in Redis integration that caused some raw Redis queries to error unexpectedly
 
 ## v1.17.0
 
