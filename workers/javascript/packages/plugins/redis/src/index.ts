@@ -138,20 +138,21 @@ export default class RedisPlugin extends DatabasePlugin {
     try {
       const parts = trimmedCommand.split(/\s+/);
 
-      // Take the first part as the verb and the rest as args
-      const verb = parts.shift();
+      // Take the first part as the command and the rest as args
+      const command = parts.shift();
       const args = parts;
 
-      // If no verb or arg(s) exists after splitting, it means the input was not structured correctly.
-      if (!verb || args.length === 0) {
+      // If no command exists after splitting, it means the input was not structured correctly.
+      if (!command) {
         throw new IntegrationError(`Invalid command. Received '${trimmedCommand}'`, ErrorCode.INTEGRATION_SYNTAX, {
           pluginName: this.pluginName
         });
       }
-      const commandDisplayString = `${verb.toUpperCase()} ${args.join(' ')}`;
+
+      const commandDisplayString = `${command.toUpperCase()}${args.length ? ' ' + args.join(' ') : ''}`;
 
       mutableOutput.logInfo(`Running command: ${commandDisplayString}`);
-      const response = await client.sendCommand(new Redis.Command(verb, args));
+      const response = await client.sendCommand(new Redis.Command(command, args));
 
       // in some cases, we can format the response to make the output easier to consume
       let formattedResponse = response;

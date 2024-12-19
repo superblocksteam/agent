@@ -371,6 +371,7 @@ describe('Redis Connection', () => {
       });
   });
 });
+
 describe('Redis Raw Commands', () => {
   test('executing an empty raw command does nothing', async () => {
     const newProps = buildPropsWithActionConfiguration(
@@ -385,6 +386,41 @@ describe('Redis Raw Commands', () => {
 
     const resp = await plugin.execute(newProps);
     expect(resp.output).toEqual({});
+    await assertDbStateHasNotChanged();
+  });
+
+  test('executing a raw command works [DBSIZE]', async () => {
+    const newProps = buildPropsWithActionConfiguration(
+      RedisPluginV1.fromJson({
+        raw: {
+          singleton: {
+            query: 'dbsize'
+          }
+        }
+      })
+    );
+
+    const resp = await plugin.execute(newProps);
+    expect((resp.output as RawOutput).response).toEqual(6);
+    expect(newProps.mutableOutput.log[0]).toEqual('Running command: DBSIZE');
+    await assertDbStateHasNotChanged();
+  });
+
+  test('executing a raw command works [INFO]', async () => {
+    const newProps = buildPropsWithActionConfiguration(
+      RedisPluginV1.fromJson({
+        raw: {
+          singleton: {
+            query: 'info'
+          }
+        }
+      })
+    );
+
+    const resp = await plugin.execute(newProps);
+    // no need to make this assertion brittle by asserting on the entire output. this should suffice.
+    expect((resp.output as RawOutput).response).toContain('redis_version');
+    expect(newProps.mutableOutput.log[0]).toEqual('Running command: INFO');
     await assertDbStateHasNotChanged();
   });
 
@@ -1493,7 +1529,7 @@ describe('Redis Misc. Checks', () => {
         expect('should not pass').toEqual(true);
       })
       .catch((err) => {
-        expect(err.message).toMatch(`Invalid command. Received 'GET'`);
+        expect(err.message).toMatch(`Error executing command: ERR wrong number of arguments for 'get' command`);
         expect(err.code).toEqual(ErrorCode.INTEGRATION_SYNTAX);
       });
   });
