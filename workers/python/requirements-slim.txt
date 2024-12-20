@@ -29,7 +29,7 @@ pydantic==1.10.14
 pydash==6.0.2
 python-dotenv==0.21.1
 redis==4.6.0
-requests==2.32.0
+requests==2.32.3
 requests-futures==1.0.1
 simplejson==3.19.2
 six==1.16.0
