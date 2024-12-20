@@ -36,7 +36,7 @@ require (
 	github.com/pkoukk/tiktoken-go v0.1.7
 	github.com/prometheus/client_golang v1.19.1
 	github.com/redis/go-redis/v9 v9.6.1
-	github.com/rs/cors v1.11.0
+	github.com/rs/cors v1.11.1
 	github.com/samber/slog-zap/v2 v2.4.0
 	github.com/sashabaranov/go-openai v1.22.0
 	github.com/spf13/pflag v1.0.5
