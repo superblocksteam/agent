@@ -154,8 +154,10 @@ COPY                                                    s6-rc.d/                
 # NOTE(frank): I don't like this first line. However, the code in the dist/ folder of the plugins
 #              isn't looking in the dist folder of the types. I think this is because we don't
 #              bubble up index.ts files.
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN cd /app/worker.py                                                                                                                            && \
-    pip install --no-cache-dir --upgrade pip setuptools                                                                                          && \
+    uv pip install --system --no-cache-dir --upgrade pip setuptools                                                                              && \
     apt-get update                                                                                                                               && \
     apt-get install -yqq --no-install-recommends lsb-release curl gpg                                                                            && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION_MAJOR}.x | bash -                                                                 && \
@@ -173,7 +175,7 @@ RUN cd /app/worker.py                                                           
     echo "deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list && \
     apt-get update                                                                                                                               && \
     ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18                                                                         && \
-    pip3 install --no-cache-dir -r ${REQUIREMENTS_FILE}                                                                                          && \
+    uv pip install --system --no-cache-dir -r ${REQUIREMENTS_FILE}                                                                               && \
     rm -rf /var/lib/apt/lists/*                                                                                                                  && \
     apt-get clean                                                                                                                                && \
     find /app/orchestrator/bin /etc/s6-overlay/s6-rc.d -type d -exec chmod 755 {} \;                                                             && \

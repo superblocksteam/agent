@@ -26,9 +26,10 @@ COPY ./workers/python/src/ /usr/app/worker-python/src/
 #              by write this file to disk, the import of this dependency will not log the creation of a file.
 COPY ./workers/python/canalyst.json /root/canalyst/keys.json
 
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN set -ex; \
-    pip install --upgrade pip && \
-    pip install --upgrade setuptools && \
+    uv pip install --system --upgrade setuptools && \
     groupadd --gid 1000 node && \
     useradd --uid 1000 --gid node --shell /bin/bash --create-home node && \
     apt-get update && \
@@ -39,7 +40,7 @@ RUN set -ex; \
     apt-get update && \
     ACCEPT_EULA=Y apt-get install -y msodbcsql18 ${EXTRA_DEBIAN_PACKAGES} && \
     rm -rf /var/lib/apt/lists/* && \
-    pip3 install -r requirements.txt && \
+    uv pip install --system -r requirements.txt && \
     chmod -R u=rwx,go=rx /usr/app/worker-python
 
 # this will fail if theres a dif
