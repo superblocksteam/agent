@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 appVersion: v1.17.0
 description: A Helm chart for the Superblocks On-Prem Agent
