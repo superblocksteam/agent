@@ -50,17 +50,18 @@ type RegisterAgentBody struct {
 
 //go:generate mockery --name=ServerClient --output ./mocks --structname ServerClient
 type ServerClient interface {
-	PostRegister(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                                   // Registers an agent
-	DeleteAgent(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                                         // Deletes an agent
-	PostHealthcheck(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                                // Sends a healthcheck
-	GetApi(context.Context, *time.Duration, http.Header, url.Values, string, bool, string) (*http.Response, error)                                        // Fetches an api
-	PostDatasource(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                                              // Fetches an integration
-	PostSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                          // Create user specific auth token
-	DeleteSpecificUserTokens(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                            // Delete user specific auth token
-	GetSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                           // Fetch user specific auth token
-	PostOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                               // Create org specific auth token
-	DeleteOrgUserToken(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                                  // Delete org specific auth token
-	GetOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                                // Get org specific auth token
+	PostRegister(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)            // Registers an agent
+	DeleteAgent(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                  // Deletes an agent
+	PostHealthcheck(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)         // Sends a healthcheck
+	GetApi(context.Context, *time.Duration, http.Header, url.Values, string, bool, string) (*http.Response, error) // Fetches an api
+	PostDatasource(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)       // Fetches an integration
+	PostSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)   // Create user specific auth token
+	DeleteSpecificUserTokens(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)     // Delete user specific auth token
+	GetSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)    // Fetch user specific auth token
+	PostOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)        // Create org specific auth token
+	DeleteOrgUserToken(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)           // Delete org specific auth token
+	GetOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)         // Get org specific auth token
+	// TODO:(bruce) This endpoint has been deleted in the server so we need to look into this, this actually looks like a dead code path, but I do see 404s in server logs on this endpoint
 	GetIntegrationConfiguration(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                                 // Get integration configuration
 	PostPendingJobs(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                                // Post pending jobs
 	PostAuditLogs(context.Context, *time.Duration, http.Header, url.Values, *agentv1.AuditLogRequest) (*http.Response, error)                             // Post audit logs
@@ -144,6 +145,7 @@ func (s *serverClient) GetOrgUserToken(ctx context.Context, timeout *time.Durati
 }
 
 func (s *serverClient) GetIntegrationConfiguration(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, integrationId string) (*http.Response, error) {
+	// TODO:(bruce) This endpoint has been deleted in the server so we need to look into this, this actually looks like a dead code path, but I do see 404s in server logs on this endpoint
 	path := fmt.Sprintf("%s/%s", "api/v1/agents/integrations", integrationId)
 	return s.sendRequest(ctx, timeout, http.MethodGet, path, headers, query, nil, false)
 }
