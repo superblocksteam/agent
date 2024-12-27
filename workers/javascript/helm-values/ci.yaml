@@ -6,7 +6,7 @@ x-exec-pool-proc-shared: &execPoolProcShared
   worker:
     execution:
       pool:
-        size: 4
+        size: 8
 environment: ci
 service:
   logLevel: debug
