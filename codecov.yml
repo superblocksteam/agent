@@ -8,6 +8,7 @@ codecov:
     wait_for_ci: yes
 ignore:
   - "./config/"
+  - "./docs/"
   - "./mocks/"
   - "./types/"
   - "**/*_mock.go"
