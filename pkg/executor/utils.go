@@ -640,6 +640,7 @@ func EvaluateDatasource(
 	authToken := tokenPayload.Token
 	authIdToken := tokenPayload.IdToken
 	authUserId := tokenPayload.UserId
+	tokenDecoded := tokenPayload.TokenDecoded
 	bindingName := tokenPayload.BindingName
 
 	newVars := []*apiv1.Variables_Config{}
@@ -655,6 +656,14 @@ func EvaluateDatasource(
 		if authIdToken != "" {
 			objPairs = append(objPairs, fmt.Sprintf("idToken: '%s'", authIdToken))
 			redactedObjPairs = append(redactedObjPairs, fmt.Sprintf("idToken: '%s'", auth.RedactedSecret))
+		}
+		if tokenDecoded != nil {
+			tokenDecodedJson, err := protojson.Marshal(tokenDecoded)
+			if err != nil {
+				return nil, nil, err
+			}
+			objPairs = append(objPairs, fmt.Sprintf("tokenDecoded: %s", string(tokenDecodedJson)))
+			redactedObjPairs = append(redactedObjPairs, fmt.Sprintf("tokenDecoded: %s", "{}"))
 		}
 		value := fmt.Sprintf("{{ { %s } }}", strings.Join(objPairs, ", "))
 		valueRedacted := fmt.Sprintf("{{ { %s } }}", strings.Join(redactedObjPairs, ", "))

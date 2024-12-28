@@ -65,8 +65,9 @@ func transform(value any) (int, error) {
 }
 
 type TokenPayload struct {
-	Token       string
-	IdToken     string
-	UserId      string
-	BindingName string
+	Token        string
+	IdToken      string
+	UserId       string
+	TokenDecoded *structpb.Struct
+	BindingName  string
 }
