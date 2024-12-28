@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	authtypes "github.com/superblocksteam/agent/internal/auth/types"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
@@ -160,6 +161,17 @@ func (t *tokenManager) AddTokenIfNeeded(
 			}
 			authConfig.Fields["authToken"] = structpb.NewStringValue(tokenPayload.Token)
 			authConfig.Fields["idToken"] = structpb.NewStringValue(tokenPayload.IdToken)
+
+			{
+				decodedToken, err := t.decodeJwt(ctx, tokenPayload.IdToken)
+				if err == nil {
+					tokenPayload.TokenDecoded = decodedToken
+					// We might also want to call this tokenClaims instead of tokenDecoded
+					authConfig.Fields["tokenDecoded"] = structpb.NewStructValue(decodedToken)
+				} else {
+					log.Warn("error decoding id token", zap.Error(err))
+				}
+			}
 		}
 
 		tokenPayload.BindingName = "oauth"
@@ -439,6 +451,29 @@ func (t *tokenManager) addParam(ctx context.Context, datasourceConfig *structpb.
 			},
 		},
 	})
+}
+
+func (t *tokenManager) decodeJwt(ctx context.Context, token string) (*structpb.Struct, error) {
+	if token == "" {
+		return nil, fmt.Errorf("empty token")
+	}
+
+	parsedToken, _, err := new(jwt.Parser).ParseUnverified(token, jwt.MapClaims{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JWT: %w", err)
+	}
+
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("failed to get JWT claims")
+	}
+
+	result, err := structpb.NewStruct(map[string]interface{}(claims))
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert claims to Struct: %w", err)
+	}
+
+	return result, nil
 }
 
 func (t *tokenManager) marshalInputToJSONString(ctx context.Context, input interface{}) string {

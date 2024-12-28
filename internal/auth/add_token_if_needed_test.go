@@ -1262,3 +1262,53 @@ func DatasourceConfig(authType string, authConfig map[string]interface{}) *struc
 	}
 	return s
 }
+
+func TestDecodeJwt(t *testing.T) {
+	tm := &tokenManager{logger: zaptest.NewLogger(t)}
+
+	tests := []struct {
+		name        string
+		token       string
+		wantErr     bool
+		wantClaims  map[string]interface{}
+		errContains string
+	}{
+		{
+			name:        "empty token",
+			token:       "",
+			wantErr:     true,
+			errContains: "empty token",
+		},
+		{
+			name:        "invalid token",
+			token:       "invalid.token",
+			wantErr:     true,
+			errContains: "failed to parse JWT",
+		},
+		{
+			name:  "valid token",
+			token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZW1haWwiOiJmb29Ac3VwZXJibG9ja3MuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.acxuPTE4HrmSFMY9v73QY5qgQWrXsRrbWdLo5Ss7fgU",
+			wantClaims: map[string]interface{}{
+				"sub":   "1234567890",
+				"name":  "John Doe",
+				"email": "foo@superblocks.com",
+				"iat":   float64(1516239022),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			claims, err := tm.decodeJwt(context.Background(), tt.token)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errContains)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantClaims, claims.AsMap())
+		})
+	}
+}
