@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+- ...
+
+## v1.18.0
+
 - Added support for creating a worksheet in GSheets integration
 - Refactor `launchdarkly` client to separate wrapper around LaunchDarkly SDK into its own package separate from the interface for agent specific flags
 - Fixed bug in Redis integration that caused some raw Redis queries to error unexpectedly
+- Added support for exposing claims as part of Oauth payloads in the Oauth Code authorization flows
 
 ## v1.17.0
 
@@ -17,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for key-pair authentication in Snowflake Plugin
 - Add support for machine-to-machine (M2M) authentication for Databricks plugin
 - Update `WaitGroup` runnable to block `Close` method on the `WaitGroup` completing (addresses `redis: client is closed` errors)
-- Allow branch name to be given in workflow HTTP requests as a header: `X-Superblocks-Branch` 
+- Allow branch name to be given in workflow HTTP requests as a header: `X-Superblocks-Branch`
 - Add `last_updated` field to the `Resource` proto, and set last updated time in update signature requests to server
 - Fixed projection for findOne action in MongoDB integration
 
@@ -31,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add signing key's corresponding public key and algorithm to the `Signature` proto message
 - Fixes to Couchbase Plugin
 - Add "signature rotation errors" field to `UpdateApiSignature` and `UpdateApplicationSignature` proto messages (move existing `Signature` into `result` oneof field)
-- Added `prefix` and `delimeter` support to S3 Plugin 
+- Added `prefix` and `delimeter` support to S3 Plugin
 - Added [`moment-timezone`](https://www.npmjs.com/package/moment-timezone) package to JavaScript worker
 - Bump superblocksteam/run dep to v0.0.6
 - Include signing algorithms with verification keys when registering agent
