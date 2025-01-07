@@ -17,7 +17,7 @@ import {
 } from '@superblocks/shared';
 import { isEmpty } from 'lodash';
 import { Snowflake } from './Snowflake';
-import { connectionOptionsFromDatasourceConfiguration } from './util';
+import { connectionOptionsFromDatasourceConfiguration, getMetadataQuery } from './util';
 
 export default class SnowflakePlugin extends DatabasePluginPooled<Snowflake, SnowflakeDatasourceConfiguration> {
   protected readonly parameterType = '?';
@@ -63,11 +63,11 @@ export default class SnowflakePlugin extends DatabasePluginPooled<Snowflake, Sno
       const schema = auth?.custom?.schema?.value;
       try {
         rows = await this.executeQuery(() => {
-          return client.execute(this.getMetadataQuery(database, schema));
+          return client.execute(getMetadataQuery(database, schema));
         });
       } catch (err) {
         rows = await this.executeQuery(() => {
-          return client.execute(this.getMetadataQuery(database, schema, false));
+          return client.execute(getMetadataQuery(database, schema, false));
         });
       }
     } catch (err) {
@@ -117,25 +117,6 @@ export default class SnowflakePlugin extends DatabasePluginPooled<Snowflake, Sno
   @DestroyConnection
   protected async destroyConnection(client: Snowflake): Promise<void> {
     await client.destroy();
-  }
-
-  private getMetadataQuery(database: string, schema?: string, dbNameQuoted = true) {
-    let query: string;
-    if (dbNameQuoted) {
-      query = `select c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME, c.ORDINAL_POSITION, c.DATA_TYPE, t.TABLE_TYPE
-      FROM "${database}"."INFORMATION_SCHEMA"."COLUMNS" as c
-      LEFT JOIN "${database}"."INFORMATION_SCHEMA"."TABLES" AS t ON t.TABLE_NAME = c.TABLE_NAME `;
-    } else {
-      query = `select c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME, c.ORDINAL_POSITION, c.DATA_TYPE, t.TABLE_TYPE
-      FROM ${database}."INFORMATION_SCHEMA"."COLUMNS" as c
-      LEFT JOIN ${database}."INFORMATION_SCHEMA"."TABLES" AS t ON t.TABLE_NAME = c.TABLE_NAME `;
-    }
-    if (schema) {
-      query += ` WHERE c.TABLE_SCHEMA ILIKE '${schema}'`;
-    }
-    query += ` ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION ASC`;
-
-    return query;
   }
 
   private getTestQuery(database?: string, schema?: string, dbNameQuoted = true) {
