@@ -45,8 +45,7 @@ redis:
 
 .PHONY: deps
 deps:
-	@npm install
-	@npx pnpm install
+	@scripts/install-worker-dependencies.sh
 
 .PHONY: jaeger
 jaeger:
