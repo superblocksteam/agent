@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 
 - Updated Snowflake integration to not include `INFORMATION_SCHEMA` data in metadata
+- Updated `slim` image to only include JavaScript packages required to run the JavaScript worker
 
 ## v1.18.0
 
