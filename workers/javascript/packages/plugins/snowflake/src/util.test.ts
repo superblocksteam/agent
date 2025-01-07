@@ -1,6 +1,6 @@
 import { SnowflakeDatasourceConfiguration } from '@superblocks/shared';
 
-import { connectionOptionsFromDatasourceConfiguration } from './util';
+import { connectionOptionsFromDatasourceConfiguration, getMetadataQuery } from './util';
 
 describe('connectionOptionsFromDatasourceConfiguration', () => {
   it('works for fields when connectionType is not given (backwards compatible)', async () => {
@@ -244,6 +244,38 @@ oBHJaYtVCXd3VBWCVLcfnw==
     } as SnowflakeDatasourceConfiguration;
     expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
       'Missing required fields: account,username,password,authenticatorUrl'
+    );
+  });
+});
+
+describe('getMetadataQuery', () => {
+  it('without schema, not quoted', async () => {
+    const metadataQuery = getMetadataQuery('db');
+
+    expect(metadataQuery).toEqual(
+      `select c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME, c.ORDINAL_POSITION, c.DATA_TYPE, t.TABLE_TYPE
+      FROM "db"."INFORMATION_SCHEMA"."COLUMNS" as c
+      LEFT JOIN "db"."INFORMATION_SCHEMA"."TABLES" AS t ON t.TABLE_NAME = c.TABLE_NAME WHERE c.TABLE_SCHEMA != 'INFORMATION_SCHEMA'  ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION ASC;`
+    );
+  });
+
+  it('with schema, not quoted', async () => {
+    const metadataQuery = getMetadataQuery('db', 'schema');
+
+    expect(metadataQuery).toEqual(
+      `select c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME, c.ORDINAL_POSITION, c.DATA_TYPE, t.TABLE_TYPE
+      FROM "db"."INFORMATION_SCHEMA"."COLUMNS" as c
+      LEFT JOIN "db"."INFORMATION_SCHEMA"."TABLES" AS t ON t.TABLE_NAME = c.TABLE_NAME WHERE c.TABLE_SCHEMA ILIKE 'schema' ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION ASC;`
+    );
+  });
+
+  it('quoted', async () => {
+    const metadataQuery = getMetadataQuery('"db"', 'schema', false);
+
+    expect(metadataQuery).toEqual(
+      `select c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME, c.ORDINAL_POSITION, c.DATA_TYPE, t.TABLE_TYPE
+      FROM "db"."INFORMATION_SCHEMA"."COLUMNS" as c
+      LEFT JOIN "db"."INFORMATION_SCHEMA"."TABLES" AS t ON t.TABLE_NAME = c.TABLE_NAME WHERE c.TABLE_SCHEMA ILIKE 'schema' ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION ASC;`
     );
   });
 });

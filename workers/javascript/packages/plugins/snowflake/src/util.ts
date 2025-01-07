@@ -92,6 +92,27 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
   }
 }
 
+export function getMetadataQuery(database: string, schema?: string, dbNameQuoted = true): string {
+  let query: string;
+  if (dbNameQuoted) {
+    query = `select c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME, c.ORDINAL_POSITION, c.DATA_TYPE, t.TABLE_TYPE
+      FROM "${database}"."INFORMATION_SCHEMA"."COLUMNS" as c
+      LEFT JOIN "${database}"."INFORMATION_SCHEMA"."TABLES" AS t ON t.TABLE_NAME = c.TABLE_NAME`;
+  } else {
+    query = `select c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME, c.ORDINAL_POSITION, c.DATA_TYPE, t.TABLE_TYPE
+      FROM ${database}."INFORMATION_SCHEMA"."COLUMNS" as c
+      LEFT JOIN ${database}."INFORMATION_SCHEMA"."TABLES" AS t ON t.TABLE_NAME = c.TABLE_NAME`;
+  }
+  if (schema) {
+    query += ` WHERE c.TABLE_SCHEMA ILIKE '${schema}'`;
+  } else {
+    query += ` WHERE c.TABLE_SCHEMA != 'INFORMATION_SCHEMA' `;
+  }
+  query += ` ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION ASC;`;
+
+  return query;
+}
+
 function handleMissingFields(missingFields: string[]) {
   if (missingFields.length > 0) {
     throw new IntegrationError(`Missing required fields: ${missingFields}`, ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD);

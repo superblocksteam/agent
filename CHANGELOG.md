@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
-- ...
+- Updated Snowflake integration to not include `INFORMATION_SCHEMA` data in metadata
 
 ## v1.18.0
 
