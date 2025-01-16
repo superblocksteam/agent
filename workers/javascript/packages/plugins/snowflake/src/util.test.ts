@@ -65,7 +65,11 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
         username: 'username',
         password: 'password',
         custom: {
-          account: { value: 'account' }
+          account: { value: 'account' },
+          databaseName: { value: 'databaseName' },
+          warehouse: { value: 'warehouse' },
+          role: { value: 'role' },
+          schema: { value: 'schema' }
         }
       },
       okta: {
@@ -78,7 +82,11 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
       username: 'username',
       password: 'password',
       account: 'account',
-      authenticator: 'foo.com'
+      authenticator: 'foo.com',
+      database: 'databaseName',
+      warehouse: 'warehouse',
+      schema: 'schema',
+      role: 'role'
     });
   });
 
@@ -88,7 +96,11 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
       authentication: {
         username: 'user',
         custom: {
-          account: { value: 'account' }
+          account: { value: 'account' },
+          databaseName: { value: 'databaseName' },
+          warehouse: { value: 'warehouse' },
+          role: { value: 'role' },
+          schema: { value: 'schema' }
         }
       },
       keyPair: {
@@ -101,7 +113,11 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
       account: 'account',
       username: 'user',
       authenticator: 'SNOWFLAKE_JWT',
-      privateKey: 'pk'
+      privateKey: 'pk',
+      database: 'databaseName',
+      warehouse: 'warehouse',
+      schema: 'schema',
+      role: 'role'
     });
   });
 
@@ -233,7 +249,7 @@ oBHJaYtVCXd3VBWCVLcfnw==
       authentication: {}
     } as SnowflakeDatasourceConfiguration;
     expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
-      'Missing required fields: account,username,password,databaseName'
+      'Missing required fields: account,username,password'
     );
   });
 
