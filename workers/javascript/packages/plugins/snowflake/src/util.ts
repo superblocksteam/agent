@@ -49,7 +49,11 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
         account: auth.custom.account.value,
         username: auth.username,
         authenticator: 'SNOWFLAKE_JWT',
-        privateKey
+        privateKey,
+        database: auth.custom?.databaseName?.value,
+        schema: auth.custom?.schema?.value,
+        warehouse: auth.custom?.warehouse?.value,
+        role: auth.custom?.role?.value
       };
     }
     case 'okta': {
@@ -67,15 +71,16 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
         account: auth.custom.account.value,
         username: auth.username,
         password: auth.password,
-        authenticator: datasourceConfiguration.okta.authenticatorUrl
+        authenticator: datasourceConfiguration.okta.authenticatorUrl,
+        database: auth.custom?.databaseName?.value,
+        schema: auth.custom?.schema?.value,
+        warehouse: auth.custom?.warehouse?.value,
+        role: auth.custom?.role?.value
       };
     }
     default: {
       if (!auth.password) {
         missingFields.push('password');
-      }
-      if (!auth.custom?.databaseName?.value) {
-        missingFields.push('databaseName');
       }
 
       handleMissingFields(missingFields);
@@ -84,8 +89,8 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
         username: auth.username,
         password: auth.password,
         database: auth.custom?.databaseName?.value,
-        schema: auth.custom?.schema?.value ?? '',
-        warehouse: auth.custom?.warehouse?.value ?? '',
+        schema: auth.custom?.schema?.value,
+        warehouse: auth.custom?.warehouse?.value,
         role: auth.custom?.role?.value
       };
     }

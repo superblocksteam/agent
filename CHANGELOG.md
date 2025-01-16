@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 
 - Updated Snowflake integration to not include `INFORMATION_SCHEMA` data in metadata
+- Updated Snowflake integration to no longer require database name in integration configuration
+- Updated Snowflake integration to pipe through database, schema, warehouse, and role for key-pair and sso auth types
 - Updated `slim` image to only include JavaScript packages required to run the JavaScript worker
 
 ## v1.18.0
