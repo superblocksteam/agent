@@ -20,6 +20,7 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	grpc_selector "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/jonboulle/clockwork"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	redis "github.com/redis/go-redis/v9"
 	"github.com/rs/cors"
@@ -718,6 +719,11 @@ func main() {
 		})
 	}
 
+	var clock clockwork.Clock
+	{
+		clock = clockwork.NewRealClock()
+	}
+
 	var grpcRunnable run.Runnable
 	{
 		grpcServer := transport.NewServer(&transport.Config{
@@ -729,7 +735,7 @@ func main() {
 			Flags:                 flagsClient,
 			DefaultResolveOptions: defaultResolveOptions,
 			Fetcher:               fetcher,
-			TokenManager:          auth.NewTokenManager(serverHttpClient, logger, viper.GetInt64("auth.eager.refresh.threshold.ms")),
+			TokenManager:          auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms")),
 			AgentId:               id,
 			AgentVersion:          version,
 			SecretManager:         secretManager,
@@ -974,6 +980,7 @@ func main() {
 	var scheduledJobRunner run.Runnable
 	{
 		scheduledJobRunner = schedule.New(&schedule.Config{
+			Clock:                   clock,
 			Logger:                  logger,
 			Store:                   storage,
 			Worker:                  workerClient,

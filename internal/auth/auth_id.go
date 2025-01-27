@@ -28,7 +28,7 @@ func GetAuthId(authType string, authConfig *structpb.Struct, datasourceId string
 		suffix = datasourceId
 	case authTypeOauthPassword:
 		suffix = authConfig.GetFields()["clientId"].GetStringValue()
-	case authTypeOauthClientCreds, AuthTypeOauthCode, authTypeOauthImplicit:
+	case authTypeOauthClientCreds, AuthTypeOauthCode, authTypeOauthImplicit, authTypeOauthTokenExchange:
 		apiId := authConfig.GetFields()["clientId"].GetStringValue()
 		if apiId == "" {
 			apiId = datasourceId

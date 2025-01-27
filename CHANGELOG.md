@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Snowflake integration to no longer require database name in integration configuration
 - Updated Snowflake integration to pipe through database, schema, warehouse, and role for key-pair and sso auth types
 - Updated `slim` image to only include JavaScript packages required to run the JavaScript worker
+- Added support for performing new "oauth on behalf of token exchange" auth type
 
 ## v1.18.0
 

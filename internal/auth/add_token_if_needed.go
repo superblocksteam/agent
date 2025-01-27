@@ -21,16 +21,17 @@ import (
 
 // https://github.com/superblocksteam/superblocks/blob/cc5e43b49acd26537704bc113d2f53fbbb167f29/packages/shared/src/types/datasource/auth.ts#L68C1-L78
 const (
-	authTypeOauthClientCreds = "oauth-client-cred"
-	authTypeOauthPassword    = "oauth-pword"
-	AuthTypeOauthCode        = "oauth-code"
-	authTypeOauthImplicit    = "oauth-implicit"
-	authTypeBasic            = "basic"
-	authTypeBearer           = "bearer"
-	authTypeTokenPrefixed    = "token-prefixed"
-	authTypeApiKey           = "api-key"
-	authTypeApiKeyForm       = "api-key-form"
-	authTypeFirebase         = "Firebase"
+	authTypeOauthClientCreds   = "oauth-client-cred"
+	authTypeOauthPassword      = "oauth-pword"
+	AuthTypeOauthCode          = "oauth-code"
+	authTypeOauthImplicit      = "oauth-implicit"
+	authTypeOauthTokenExchange = "oauth-token-exchange"
+	authTypeBasic              = "basic"
+	authTypeBearer             = "bearer"
+	authTypeTokenPrefixed      = "token-prefixed"
+	authTypeApiKey             = "api-key"
+	authTypeApiKeyForm         = "api-key-form"
+	authTypeFirebase           = "Firebase"
 
 	apiKeyMethodHeader     = "header"
 	apiKeyMethodQueryParam = "query-param"
@@ -46,6 +47,8 @@ const (
 
 	// This is the proto defined auth method names, those are defined as oneof
 	authTypePasswordGrantFlow = "passwordGrantFlow"
+
+	idpAccessTokenClaimKey = "https://superblocks/idp_token"
 )
 
 // AddTokenIfNeeded adds the token to the datasource config if needed,
@@ -163,7 +166,7 @@ func (t *tokenManager) AddTokenIfNeeded(
 			authConfig.Fields["idToken"] = structpb.NewStringValue(tokenPayload.IdToken)
 
 			{
-				decodedToken, err := t.decodeJwt(ctx, tokenPayload.IdToken)
+				decodedToken, err := t.decodeJwt(tokenPayload.IdToken)
 				if err == nil {
 					tokenPayload.TokenDecoded = decodedToken
 					// We might also want to call this tokenClaims instead of tokenDecoded
@@ -172,6 +175,14 @@ func (t *tokenManager) AddTokenIfNeeded(
 					log.Warn("error decoding id token", zap.Error(err))
 				}
 			}
+		}
+
+		tokenPayload.BindingName = "oauth"
+	case authTypeOauthTokenExchange:
+		tokenPayload.Token, err = t.exchangeOauthTokenForToken(ctx, authType, authConfig, datasourceId, configurationId, pluginId)
+		if err != nil {
+			log.Error("error getting oauth on behalf of exchange token", zap.Error(err))
+			return
 		}
 
 		tokenPayload.BindingName = "oauth"
@@ -376,16 +387,64 @@ func (t *tokenManager) getOauthPasswordToken(ctx context.Context, authType strin
 	return token, nil
 }
 
+func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType string, authConfig *structpb.Struct, datasourceId string, configurationId string, pluginId string) (string, error) {
+	log := observability.ZapLogger(ctx, t.logger)
+
+	log.Info("exchangeOauthTokenForToken", zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId))
+	authConfigProto := &pluginscommon.OAuth_AuthorizationCodeFlow{}
+	err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto)
+	if err != nil {
+		log.Error("error converting auth config to proto", zap.Error(err))
+		return "", err
+	}
+
+	// Get exchanged token from cache if previously exchanged
+	cachedToken, _, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, datasourceId, configurationId, pluginId)
+	if err == nil {
+		log.Info("using cached token from previous exchange")
+		return cachedToken, nil
+	}
+
+	// TODO(colin): also support using the static token from the auth config
+	subjectToken, err := t.getIdentityProviderAccessToken(ctx)
+	if err != nil {
+		log.Error("error getting identity provider access token", zap.Error(err))
+		return "", fmt.Errorf("error getting identity provider access token: %w", err)
+	}
+
+	if claims, err := getClaimsFromJwt(subjectToken); err == nil {
+		if exp, ok := claims["exp"]; ok {
+			expiry := int64(exp.(float64))
+			if t.clock.Now().Unix() > expiry {
+				log.Error("subject token is expired", zap.Int64("expiry", expiry))
+				return "", fmt.Errorf("subject token is expired")
+			}
+		}
+	} else {
+		log.Error("subject token is not a valid JWT", zap.Error(err))
+		return "", fmt.Errorf("subject token is not a valid JWT: %w", err)
+	}
+
+	// Attempt token exchange using token from identity provider
+	exchangedToken, err := t.OAuthClient.ExchangeOAuthTokenOnBehalfOf(ctx, authConfigProto, subjectToken, datasourceId, configurationId)
+	if err != nil {
+		log.Error("error exchanging identity provider access token for token", zap.Error(err))
+		return "", fmt.Errorf("error exchanging identity provider access token for token: %w", err)
+	}
+
+	return exchangedToken, nil
+}
+
 func (t *tokenManager) getOauthCodeToken(ctx context.Context, authType string, authConfig *structpb.Struct, datasourceId string, configurationId string, pluginId string) (string, string, error) {
 	log := observability.ZapLogger(ctx, t.logger)
 
 	log.Info("getOauthCodeToken", zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId))
 	authConfigProto := &pluginscommon.OAuth_AuthorizationCodeFlow{}
-	err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto)
-	if err != nil {
+	if err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto); err != nil {
 		log.Error("error converting auth config to proto", zap.Error(err))
 		return "", "", err
 	}
+
 	token, idToken, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, datasourceId, configurationId, pluginId)
 	if err != nil {
 		log.Error("error getting oauth code token", zap.Error(err))
@@ -453,19 +512,10 @@ func (t *tokenManager) addParam(ctx context.Context, datasourceConfig *structpb.
 	})
 }
 
-func (t *tokenManager) decodeJwt(ctx context.Context, token string) (*structpb.Struct, error) {
-	if token == "" {
-		return nil, fmt.Errorf("empty token")
-	}
-
-	parsedToken, _, err := new(jwt.Parser).ParseUnverified(token, jwt.MapClaims{})
+func (t *tokenManager) decodeJwt(token string) (*structpb.Struct, error) {
+	claims, err := getClaimsFromJwt(token)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse JWT: %w", err)
-	}
-
-	claims, ok := parsedToken.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, fmt.Errorf("failed to get JWT claims")
+		return nil, fmt.Errorf("failed to get JWT claims: %w", err)
 	}
 
 	result, err := structpb.NewStruct(map[string]interface{}(claims))
@@ -485,6 +535,47 @@ func (t *tokenManager) marshalInputToJSONString(ctx context.Context, input inter
 		return fmt.Sprintf("`%v`", input)
 	}
 	return string(b)
+}
+
+func (t *tokenManager) getIdentityProviderAccessToken(ctx context.Context) (string, error) {
+	var auth0Jwt string
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if jwt, ok := md["authorization"]; ok {
+			auth0Jwt = jwt[0]
+		}
+	}
+	// just need the jwt itself
+	auth0Jwt = strings.TrimPrefix(auth0Jwt, "Bearer ")
+
+	if auth0Jwt == "" {
+		return "", fmt.Errorf("no authorization jwt found")
+	}
+
+	claims, err := getClaimsFromJwt(auth0Jwt)
+	if err != nil {
+		return "", fmt.Errorf("failed to get claims from JWT: %w", err)
+	}
+
+	// Extract identity provider JWT from claims
+	idpAccessToken, ok := claims[idpAccessTokenClaimKey].(string)
+	if !ok {
+		return "", fmt.Errorf("no identity provider access token found, expected claim key: %s", idpAccessTokenClaimKey)
+	}
+
+	return idpAccessToken, nil
+}
+
+func getClaimsFromJwt(token string) (jwt.MapClaims, error) {
+	if token == "" {
+		return nil, fmt.Errorf("empty token")
+	}
+
+	parsedToken, _, err := new(jwt.Parser).ParseUnverified(token, jwt.MapClaims{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JWT: %w", err)
+	}
+
+	return parsedToken.Claims.(jwt.MapClaims), nil
 }
 
 func GetCookies(ctx context.Context) []*http.Cookie {

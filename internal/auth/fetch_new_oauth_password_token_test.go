@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
@@ -17,13 +18,16 @@ import (
 func TestFetchNewOauthPasswordToken(t *testing.T) {
 	httpMock := &mocks.HttpClient{}
 	fetcherCacher := &mocks.FetcherCacher{}
+	clock := clockwork.NewFakeClock()
 
 	tm := &tokenManager{
 		OAuthClient: &oauth.OAuthClient{
 			HttpClient:    httpMock,
 			FetcherCacher: fetcherCacher,
+			Clock:         clock,
 			Logger:        zap.NewNop(),
 		},
+		clock:  clock,
 		logger: zap.NewNop(),
 	}
 
