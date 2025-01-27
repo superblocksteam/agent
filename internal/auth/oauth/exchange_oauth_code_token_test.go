@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/mock"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
 
@@ -97,6 +98,7 @@ func TestExchangeCode(t *testing.T) {
 			oauthClient := &OAuthClient{
 				HttpClient:    httpMock,
 				FetcherCacher: fetcherCacher,
+				Clock:         clockwork.NewFakeClock(),
 				Logger:        zap.NewNop(),
 			}
 

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
@@ -190,11 +191,6 @@ func TestCheckAuth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			httpMock := &mocks.HttpClient{}
 			fetcherCacher := &mocks.FetcherCacher{}
-			oauthClient := &oauth.OAuthClient{
-				HttpClient:    httpMock,
-				FetcherCacher: fetcherCacher,
-				Logger:        zap.NewExample(),
-			}
 
 			serverClient := clients.NewServerClient(&clients.ServerClientOptions{
 				URL:    "https://google.com",
@@ -205,12 +201,21 @@ func TestCheckAuth(t *testing.T) {
 				SuperblocksAgentKey: "foo",
 			})
 
+			clock := clockwork.NewFakeClock()
+			oauthClient := &oauth.OAuthClient{
+				HttpClient:    httpMock,
+				FetcherCacher: fetcherCacher,
+				Clock:         clock,
+				Logger:        zap.NewNop(),
+			}
+
 			oauthCodeTokenFetcher := oauth.NewOAuthCodeTokenFetcher(oauthClient, fetcherCacher, serverClient)
 
 			tm := &tokenManager{
 				OAuthClient:           oauthClient,
 				OAuthCodeTokenFetcher: oauthCodeTokenFetcher,
-				logger:                zap.NewExample(),
+				clock:                 clock,
+				logger:                zap.NewNop(),
 			}
 			ctx := ctxWithCookie(tt.cookie)
 

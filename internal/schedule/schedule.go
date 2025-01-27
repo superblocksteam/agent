@@ -6,6 +6,7 @@ import (
 	"time"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"github.com/jonboulle/clockwork"
 	"github.com/superblocksteam/agent/internal/auth"
 	"github.com/superblocksteam/agent/internal/fetch"
 	"github.com/superblocksteam/agent/internal/flags"
@@ -41,6 +42,7 @@ type ScheduleJobRunner struct {
 
 type Config struct {
 	PollInterval            time.Duration
+	Clock                   clockwork.Clock
 	Logger                  *zap.Logger
 	Worker                  worker.Client
 	Fetcher                 fetch.Fetcher
@@ -134,7 +136,7 @@ func (r *ScheduleJobRunner) executeScheduleJob(def *apiv1.Definition, rawDef *st
 			Inputs:                inputs,
 			Fetcher:               r.Fetcher,
 			Flags:                 r.Flags,
-			TokenManager:          auth.NewTokenManager(r.ServerClient, logger, r.EagerRefreshThresholdMs),
+			TokenManager:          auth.NewTokenManager(r.ServerClient, r.Clock, logger, r.EagerRefreshThresholdMs),
 			IsDeployed:            true,
 			Requester:             "Schedule",
 			RootStartTime:         time.Now(),

@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -121,12 +125,15 @@ func TestAddTokenIfNeeded_OauthClientCreds(t *testing.T) {
 			httpMock := &mocks.HttpClient{}
 			fetcherCacher := &mocks.FetcherCacher{}
 
+			clock := clockwork.NewFakeClock()
 			tm := &tokenManager{
 				OAuthClient: &oauth.OAuthClient{
 					HttpClient:    httpMock,
 					FetcherCacher: fetcherCacher,
+					Clock:         clock,
 					Logger:        zap.NewNop(),
 				},
+				clock:  clock,
 				logger: zap.NewNop(),
 			}
 
@@ -334,12 +341,15 @@ func TestAddTokenIfNeeded_OauthPassword(t *testing.T) {
 			httpMock := &mocks.HttpClient{}
 			fetcherCacher := &mocks.FetcherCacher{}
 
+			clock := clockwork.NewFakeClock()
 			tm := &tokenManager{
 				OAuthClient: &oauth.OAuthClient{
 					HttpClient:    httpMock,
 					FetcherCacher: fetcherCacher,
+					Clock:         clock,
 					Logger:        zap.NewNop(),
 				},
+				clock:  clock,
 				logger: zap.NewNop(),
 			}
 
@@ -566,11 +576,6 @@ func TestAddTokenIfNeeded_OauthCode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			httpMock := &mocks.HttpClient{}
 			fetcherCacher := &mocks.FetcherCacher{}
-			oauthClient := &oauth.OAuthClient{
-				HttpClient:    httpMock,
-				FetcherCacher: fetcherCacher,
-				Logger:        zap.NewNop(),
-			}
 
 			serverClient := clients.NewServerClient(&clients.ServerClientOptions{
 				URL:    "https://google.com",
@@ -581,11 +586,20 @@ func TestAddTokenIfNeeded_OauthCode(t *testing.T) {
 				SuperblocksAgentKey: "foo",
 			})
 
+			clock := clockwork.NewFakeClock()
+			oauthClient := &oauth.OAuthClient{
+				HttpClient:    httpMock,
+				FetcherCacher: fetcherCacher,
+				Clock:         clock,
+				Logger:        zap.NewNop(),
+			}
+
 			oauthCodeTokenFetcher := oauth.NewOAuthCodeTokenFetcher(oauthClient, fetcherCacher, serverClient)
 
 			tm := &tokenManager{
 				OAuthClient:           oauthClient,
 				OAuthCodeTokenFetcher: oauthCodeTokenFetcher,
+				clock:                 clock,
 				logger:                zap.NewNop(),
 			}
 
@@ -671,11 +685,197 @@ func TestAddTokenIfNeeded_OauthCode(t *testing.T) {
 	}
 }
 
+type args struct {
+	authType                  string
+	authConfig                map[string]any
+	configurationId           string
+	cookies                   []string
+	datasourceId              string
+	identityProviderToken     string
+	pluginId                  string
+	cachedToken               string
+	expectedToken             string
+	expectedError             string
+	tokenExchangeStatusCode   int
+	clock                     clockwork.FakeClock
+	mockHttpClient            *mocks.HttpClient
+	mockFetcherCacher         *mocks.FetcherCacher
+	mockOAuthCodeTokenFetcher *mocks.OAuthCodeTokenFetcher
+}
+
+func validArgs(t *testing.T) *args {
+	httpMock := &mocks.HttpClient{}
+	fetcherCacher := &mocks.FetcherCacher{}
+
+	clock := clockwork.NewFakeClock()
+	claims := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"exp": clock.Now().Add(5 * time.Minute).Unix(),
+		},
+	)
+	idpJwt, _ := claims.SignedString([]byte("test-secret"))
+
+	return &args{
+		authType: authTypeOauthTokenExchange,
+		authConfig: map[string]any{
+			"audience":     "audience",
+			"clientId":     "clientId",
+			"clientSecret": "clientSecret",
+			"scope":        "user",
+			"tokenUrl":     "https://test-token-url.com",
+		},
+		configurationId:           "configurationId",
+		cookies:                   []string{},
+		datasourceId:              "integrationId",
+		identityProviderToken:     idpJwt,
+		pluginId:                  "restapiintegration",
+		cachedToken:               "",
+		expectedToken:             "token",
+		expectedError:             "",
+		tokenExchangeStatusCode:   http.StatusOK,
+		clock:                     clock,
+		mockHttpClient:            httpMock,
+		mockFetcherCacher:         fetcherCacher,
+		mockOAuthCodeTokenFetcher: mocks.NewOAuthCodeTokenFetcher(t),
+	}
+}
+
+func verify(t *testing.T, args *args) {
+	datasourceConfig, err := structpb.NewStruct(
+		map[string]any{
+			"authType":   args.authType,
+			"authConfig": args.authConfig,
+		},
+	)
+	if err != nil {
+		t.Fatalf("failed to create datasource config struct: %v", err)
+	}
+
+	oauthClient := &oauth.OAuthClient{
+		HttpClient:    args.mockHttpClient,
+		FetcherCacher: args.mockFetcherCacher,
+		Clock:         args.clock,
+		Logger:        zap.NewNop(),
+	}
+
+	tm := &tokenManager{
+		OAuthClient:           oauthClient,
+		OAuthCodeTokenFetcher: args.mockOAuthCodeTokenFetcher,
+		clock:                 args.clock,
+		logger:                zap.NewNop(),
+	}
+
+	claims := jwt.MapClaims{
+		"exp": time.Now().Add(5 * time.Minute).Unix(),
+	}
+	if args.identityProviderToken != "" {
+		claims[idpAccessTokenClaimKey] = args.identityProviderToken
+	}
+
+	authJwt, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-secret"))
+	if err != nil {
+		t.Fatalf("failed to create auth jwt: %v", err)
+	}
+
+	ctxMetadata := map[string]string{
+		"authorization": fmt.Sprintf("Bearer %s", authJwt),
+		"origin":        "test",
+	}
+	if len(args.cookies) > 0 {
+		ctxMetadata["cookie"] = strings.Join(args.cookies, ";")
+	}
+
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.New(ctxMetadata))
+
+	// Set expectations for the cached token fetch, this accounts for initial cache lookup and lookup after token exchange
+	var fetchCacheErr error
+	if args.cachedToken == "" {
+		fetchCacheErr = fmt.Errorf("fetch error: not found")
+	}
+	args.mockOAuthCodeTokenFetcher.On("Fetch", ctx, args.authType, mock.Anything, args.datasourceId, args.configurationId, args.pluginId).Return(args.cachedToken, "", fetchCacheErr).Once()
+
+	// Set expectations for the token exchange and caching of response
+	// Success/failure will be configured by the tokenExchangeStatusCode value
+	args.mockHttpClient.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: args.tokenExchangeStatusCode,
+		Body:       io.NopCloser(strings.NewReader(fmt.Sprintf(`{ "access_token": "%s", "token_type": "access", "expires_in": 3600, "scope": "user" }`, args.expectedToken))),
+	}, nil).Maybe()
+	args.mockFetcherCacher.On("CacheUserToken", ctx, args.authType, mock.Anything, oauth.TokenTypeAccess, args.expectedToken, mock.Anything, args.datasourceId, args.configurationId).Return(nil).Maybe()
+
+	tokenPayload, err := tm.AddTokenIfNeeded(
+		ctx,
+		datasourceConfig,
+		nil,
+		nil,
+		args.datasourceId,
+		args.configurationId,
+		args.pluginId,
+	)
+
+	if args.expectedError != "" {
+		assert.EqualError(t, err, args.expectedError)
+	} else {
+		assert.NoError(t, err)
+		assert.Equal(t, args.expectedToken, tokenPayload.Token)
+		assert.Equal(t, "oauth", tokenPayload.BindingName)
+	}
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange(t *testing.T) {
+	validArgs := validArgs(t)
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_FetchCachedToken(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.cachedToken = "cachedToken"
+	validArgs.expectedToken = "cachedToken"
+
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_MissingIdpAccessToken(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.identityProviderToken = ""
+	validArgs.expectedError = "error getting identity provider access token: no identity provider access token found, expected claim key: https://superblocks/idp_token"
+
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredIdpToken(t *testing.T) {
+	validArgs := validArgs(t)
+	// The identity provider token from validArgs() is valid for 5 minutes, advance the clock by 1 hour to make it expired
+	validArgs.clock.Advance(time.Hour)
+	validArgs.expectedError = "subject token is expired"
+
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_IdpTokenNotJwt(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.identityProviderToken = "not-a-jwt"
+	validArgs.expectedError = "subject token is not a valid JWT: failed to parse JWT: token contains an invalid number of segments"
+
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_OnBehalfOfExchangeFails(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.tokenExchangeStatusCode = http.StatusBadRequest
+	validArgs.expectedError = "error exchanging identity provider access token for token: token exchange request failed with status 400: { \"access_token\": \"token\", \"token_type\": \"access\", \"expires_in\": 3600, \"scope\": \"user\" }"
+
+	verify(t, validArgs)
+}
+
 func TestAddTokenIfNeeded_OauthImplicit(t *testing.T) {
+	clock := clockwork.NewFakeClock()
 	tm := &tokenManager{
 		OAuthClient: &oauth.OAuthClient{
+			Clock:  clock,
 			Logger: zap.NewNop(),
 		},
+		clock:  clock,
 		logger: zap.NewNop(),
 	}
 
@@ -718,7 +918,10 @@ func TestAddTokenIfNeeded_OauthImplicit(t *testing.T) {
 }
 
 func TestAddTokenIfNeeded_authConfigNil(t *testing.T) {
-	tm := &tokenManager{logger: zaptest.NewLogger(t)}
+	tm := &tokenManager{
+		clock:  clockwork.NewFakeClock(),
+		logger: zaptest.NewLogger(t),
+	}
 
 	dsConfig := DatasourceConfig(authTypeBearer, nil)
 	dsConfigRedacted := DatasourceConfig(authTypeBearer, nil)
@@ -1188,7 +1391,10 @@ func TestAddTokenIfNeeded_Tokens(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tm := &tokenManager{logger: zap.NewNop()}
+			tm := &tokenManager{
+				clock:  clockwork.NewFakeClock(),
+				logger: zap.NewNop(),
+			}
 
 			dsConfig := DatasourceConfig(tt.authType, tt.authConfig)
 			dsConfigRedacted := DatasourceConfig(tt.authType, tt.authConfig)
@@ -1220,7 +1426,10 @@ func TestAddTokenIfNeeded_Tokens(t *testing.T) {
 }
 
 func TestAddTokenIfNeeded_Firebase(t *testing.T) {
-	tm := &tokenManager{logger: zap.NewNop()}
+	tm := &tokenManager{
+		clock:  clockwork.NewFakeClock(),
+		logger: zap.NewNop(),
+	}
 
 	// json5, not valid json
 	authConfig := map[string]interface{}{
@@ -1264,7 +1473,10 @@ func DatasourceConfig(authType string, authConfig map[string]interface{}) *struc
 }
 
 func TestDecodeJwt(t *testing.T) {
-	tm := &tokenManager{logger: zaptest.NewLogger(t)}
+	tm := &tokenManager{
+		clock:  clockwork.NewFakeClock(),
+		logger: zaptest.NewLogger(t),
+	}
 
 	tests := []struct {
 		name        string
@@ -1299,7 +1511,7 @@ func TestDecodeJwt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			claims, err := tm.decodeJwt(context.Background(), tt.token)
+			claims, err := tm.decodeJwt(tt.token)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1309,6 +1521,118 @@ func TestDecodeJwt(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantClaims, claims.AsMap())
+		})
+	}
+}
+
+func TestGetIdentityProviderAccessToken(t *testing.T) {
+	tm := &tokenManager{
+		clock:  clockwork.NewFakeClock(),
+		logger: zaptest.NewLogger(t),
+	}
+
+	testCases := []struct {
+		name                string
+		authHeaderClaims    jwt.MapClaims
+		isAuthHeaderNotAJwt bool
+		expectedToken       string
+		expectedErr         string
+	}{
+		{
+			name:        "no auth header",
+			expectedErr: "no authorization jwt found",
+		},
+		{
+			name:                "invalid auth header",
+			isAuthHeaderNotAJwt: true,
+			expectedErr:         "failed to get claims from JWT: failed to parse JWT: token contains an invalid number of segments",
+		},
+		{
+			name: "no identity provider access token",
+			authHeaderClaims: map[string]any{
+				"exp": "1234567890",
+			},
+			expectedErr: "no identity provider access token found, expected claim key: https://superblocks/idp_token",
+		},
+		{
+			name: "gets identity provider access token",
+			authHeaderClaims: map[string]any{
+				idpAccessTokenClaimKey: "idp-access-token",
+				"exp":                  "1234567890",
+			},
+			expectedToken: "idp-access-token",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var authHeader string
+			if tc.isAuthHeaderNotAJwt {
+				authHeader = "Bearer not-a-jwt"
+			} else if len(tc.authHeaderClaims) > 0 {
+				authHeaderJwt, err := jwt.NewWithClaims(jwt.SigningMethodHS256, tc.authHeaderClaims).SignedString([]byte("test-secret"))
+				require.NoError(t, err)
+
+				authHeader = fmt.Sprintf("Bearer %s", authHeaderJwt)
+			}
+			ctx := metadata.NewIncomingContext(
+				context.Background(),
+				metadata.New(
+					map[string]string{
+						"authorization": authHeader,
+					},
+				),
+			)
+
+			actualToken, err := tm.getIdentityProviderAccessToken(ctx)
+
+			if tc.expectedErr != "" {
+				assert.EqualError(t, err, tc.expectedErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedToken, actualToken)
+			}
+		})
+	}
+}
+
+func TestGetClaimsFromJwt(t *testing.T) {
+	testCases := []struct {
+		name           string
+		token          string
+		expectedClaims jwt.MapClaims
+		expectedErr    string
+	}{
+		{
+			name:        "empty token",
+			token:       "",
+			expectedErr: "empty token",
+		},
+		{
+			name:        "invalid token",
+			token:       "invalid.token",
+			expectedErr: "failed to parse JWT: token contains an invalid number of segments",
+		},
+		{
+			name:  "valid token",
+			token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZW1haWwiOiJmb29Ac3VwZXJibG9ja3MuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.acxuPTE4HrmSFMY9v73QY5qgQWrXsRrbWdLo5Ss7fgU",
+			expectedClaims: map[string]interface{}{
+				"sub":   "1234567890",
+				"name":  "John Doe",
+				"email": "foo@superblocks.com",
+				"iat":   float64(1516239022),
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actualClaims, err := getClaimsFromJwt(tc.token)
+
+			if tc.expectedErr != "" {
+				assert.EqualError(t, err, tc.expectedErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedClaims, actualClaims)
+			}
 		})
 	}
 }

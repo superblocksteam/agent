@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
@@ -136,14 +137,18 @@ func TestExchangeOAuthCodeForToken(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			httpMock := &mocks.HttpClient{}
 			fetcherCacher := &mocks.FetcherCacher{}
+
+			clock := clockwork.NewFakeClock()
 			oauthClient := &oauth.OAuthClient{
 				HttpClient:    httpMock,
 				FetcherCacher: fetcherCacher,
+				Clock:         clock,
 				Logger:        zap.NewNop(),
 			}
 
 			tm := &tokenManager{
 				OAuthClient: oauthClient,
+				clock:       clock,
 				logger:      zap.NewExample(),
 			}
 
@@ -261,14 +266,18 @@ func TestExchangeOAuthCodeForSharedToken(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			httpMock := &mocks.HttpClient{}
 			fetcherCacher := &mocks.FetcherCacher{}
+
+			clock := clockwork.NewFakeClock()
 			oauthClient := &oauth.OAuthClient{
 				HttpClient:    httpMock,
 				FetcherCacher: fetcherCacher,
+				Clock:         clock,
 				Logger:        zap.NewNop(),
 			}
 
 			tm := &tokenManager{
 				OAuthClient: oauthClient,
+				clock:       clock,
 				logger:      zap.NewExample(),
 			}
 

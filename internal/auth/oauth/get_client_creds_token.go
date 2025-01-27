@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jonboulle/clockwork"
 	"github.com/superblocksteam/agent/internal/auth/types"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
@@ -33,13 +34,15 @@ type HttpClient interface {
 type OAuthClient struct {
 	HttpClient
 	FetcherCacher
+	Clock  clockwork.Clock
 	Logger *zap.Logger
 }
 
-func NewOAuthClient(fetcherCacher FetcherCacher, logger *zap.Logger) *OAuthClient {
+func NewOAuthClient(fetcherCacher FetcherCacher, clock clockwork.Clock, logger *zap.Logger) *OAuthClient {
 	return &OAuthClient{
 		HttpClient:    &http.Client{},
 		FetcherCacher: fetcherCacher,
+		Clock:         clock,
 		Logger:        logger.With(zap.String("who", "oauth.client")),
 	}
 }
