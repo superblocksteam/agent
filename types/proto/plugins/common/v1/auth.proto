@@ -36,6 +36,12 @@ message OAuth {
   }
 
   message AuthorizationCodeFlow {
+    enum SubjectTokenSource {
+      SUBJECT_TOKEN_SOURCE_UNSPECIFIED = 0;
+      SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER = 1;
+      SUBJECT_TOKEN_SOURCE_STATIC_TOKEN = 2;
+    }
+
     string client_id = 1;
     string client_secret = 2;
     string token_url = 3;
@@ -45,6 +51,8 @@ message OAuth {
     string token_scope = 7;
     bool refresh_token_from_server = 8;
     string client_auth_method = 9;
+    SubjectTokenSource subject_token_source = 10;
+    string subject_token_source_static_token = 11;
   }
 }
 

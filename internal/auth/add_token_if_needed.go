@@ -388,15 +388,17 @@ func (t *tokenManager) getOauthPasswordToken(ctx context.Context, authType strin
 }
 
 func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType string, authConfig *structpb.Struct, datasourceId string, configurationId string, pluginId string) (string, error) {
-	log := observability.ZapLogger(ctx, t.logger)
+	log := observability.ZapLogger(ctx, t.logger).With(zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId))
 
-	log.Info("exchangeOauthTokenForToken", zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId))
+	log.Info("exchangeOauthTokenForToken")
 	authConfigProto := &pluginscommon.OAuth_AuthorizationCodeFlow{}
 	err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto)
 	if err != nil {
 		log.Error("error converting auth config to proto", zap.Error(err))
 		return "", err
 	}
+
+	log = log.With(zap.String("subjectTokenSource", authConfigProto.GetSubjectTokenSource().String()))
 
 	// Get exchanged token from cache if previously exchanged
 	cachedToken, _, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, datasourceId, configurationId, pluginId)
@@ -405,11 +407,19 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 		return cachedToken, nil
 	}
 
-	// TODO(colin): also support using the static token from the auth config
-	subjectToken, err := t.getIdentityProviderAccessToken(ctx)
-	if err != nil {
-		log.Error("error getting identity provider access token", zap.Error(err))
-		return "", fmt.Errorf("error getting identity provider access token: %w", err)
+	var subjectToken string
+	switch authConfigProto.GetSubjectTokenSource() {
+	case pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER:
+		subjectToken, err = t.getIdentityProviderAccessToken(ctx)
+		if err != nil {
+			log.Error("error getting identity provider access token", zap.Error(err))
+			return "", fmt.Errorf("error getting identity provider access token: %w", err)
+		}
+	case pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN:
+		subjectToken = authConfigProto.GetSubjectTokenSourceStaticToken()
+	default:
+		log.Error("invalid subject token source")
+		return "", fmt.Errorf("invalid subject token source: %s", authConfigProto.GetSubjectTokenSource().String())
 	}
 
 	if claims, err := getClaimsFromJwt(subjectToken); err == nil {

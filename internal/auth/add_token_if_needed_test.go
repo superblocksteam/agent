@@ -692,6 +692,7 @@ type args struct {
 	cookies                   []string
 	datasourceId              string
 	identityProviderToken     string
+	staticToken               string
 	pluginId                  string
 	cachedToken               string
 	expectedToken             string
@@ -708,27 +709,39 @@ func validArgs(t *testing.T) *args {
 	fetcherCacher := &mocks.FetcherCacher{}
 
 	clock := clockwork.NewFakeClock()
-	claims := jwt.NewWithClaims(
+	idpClaims := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"exp": clock.Now().Add(5 * time.Minute).Unix(),
+			"sub": "idp",
 		},
 	)
-	idpJwt, _ := claims.SignedString([]byte("test-secret"))
+	idpJwt, _ := idpClaims.SignedString([]byte("test-secret"))
+
+	staticClaims := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"exp": clock.Now().Add(5 * time.Minute).Unix(),
+			"sub": "static",
+		},
+	)
+	staticJwt, _ := staticClaims.SignedString([]byte("test-secret"))
 
 	return &args{
 		authType: authTypeOauthTokenExchange,
 		authConfig: map[string]any{
-			"audience":     "audience",
-			"clientId":     "clientId",
-			"clientSecret": "clientSecret",
-			"scope":        "user",
-			"tokenUrl":     "https://test-token-url.com",
+			"audience":           "audience",
+			"clientId":           "clientId",
+			"clientSecret":       "clientSecret",
+			"scope":              "user",
+			"subjectTokenSource": int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+			"tokenUrl":           "https://test-token-url.com",
 		},
 		configurationId:           "configurationId",
 		cookies:                   []string{},
 		datasourceId:              "integrationId",
 		identityProviderToken:     idpJwt,
+		staticToken:               staticJwt,
 		pluginId:                  "restapiintegration",
 		cachedToken:               "",
 		expectedToken:             "token",
@@ -827,10 +840,25 @@ func TestAddTokenIfNeeded_OauthTokenExchange(t *testing.T) {
 	verify(t, validArgs)
 }
 
+func TestAddTokenIfNeeded_OauthTokenExchange_StaticToken(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN)
+	validArgs.authConfig["subjectTokenSourceStaticToken"] = validArgs.staticToken
+	verify(t, validArgs)
+}
+
 func TestAddTokenIfNeeded_OauthTokenExchange_FetchCachedToken(t *testing.T) {
 	validArgs := validArgs(t)
 	validArgs.cachedToken = "cachedToken"
 	validArgs.expectedToken = "cachedToken"
+
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_UnsupportedSubjectTokenSource(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_UNSPECIFIED)
+	validArgs.expectedError = "invalid subject token source: SUBJECT_TOKEN_SOURCE_UNSPECIFIED"
 
 	verify(t, validArgs)
 }
@@ -843,7 +871,17 @@ func TestAddTokenIfNeeded_OauthTokenExchange_MissingIdpAccessToken(t *testing.T)
 	verify(t, validArgs)
 }
 
-func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredIdpToken(t *testing.T) {
+func TestAddTokenIfNeeded_OauthTokenExchange_EmptyStaticToken(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN)
+	validArgs.authConfig["subjectTokenSourceStaticToken"] = ""
+	validArgs.staticToken = ""
+	validArgs.expectedError = "subject token is not a valid JWT: empty token"
+
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredSubjectToken(t *testing.T) {
 	validArgs := validArgs(t)
 	// The identity provider token from validArgs() is valid for 5 minutes, advance the clock by 1 hour to make it expired
 	validArgs.clock.Advance(time.Hour)
@@ -852,7 +890,7 @@ func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredIdpToken(t *testing.T) {
 	verify(t, validArgs)
 }
 
-func TestAddTokenIfNeeded_OauthTokenExchange_IdpTokenNotJwt(t *testing.T) {
+func TestAddTokenIfNeeded_OauthTokenExchange_SubjectTokenNotJwt(t *testing.T) {
 	validArgs := validArgs(t)
 	validArgs.identityProviderToken = "not-a-jwt"
 	validArgs.expectedError = "subject token is not a valid JWT: failed to parse JWT: token contains an invalid number of segments"

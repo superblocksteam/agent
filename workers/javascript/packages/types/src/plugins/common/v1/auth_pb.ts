@@ -281,6 +281,16 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
    */
   clientAuthMethod = "";
 
+  /**
+   * @generated from field: plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource subject_token_source = 10;
+   */
+  subjectTokenSource = OAuth_AuthorizationCodeFlow_SubjectTokenSource.UNSPECIFIED;
+
+  /**
+   * @generated from field: string subject_token_source_static_token = 11;
+   */
+  subjectTokenSourceStaticToken = "";
+
   constructor(data?: PartialMessage<OAuth_AuthorizationCodeFlow>) {
     super();
     proto3.util.initPartial(data, this);
@@ -298,6 +308,8 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
     { no: 7, name: "token_scope", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "refresh_token_from_server", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 9, name: "client_auth_method", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 10, name: "subject_token_source", kind: "enum", T: proto3.getEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource) },
+    { no: 11, name: "subject_token_source_static_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OAuth_AuthorizationCodeFlow {
@@ -316,6 +328,32 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
     return proto3.util.equals(OAuth_AuthorizationCodeFlow, a, b);
   }
 }
+
+/**
+ * @generated from enum plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource
+ */
+export enum OAuth_AuthorizationCodeFlow_SubjectTokenSource {
+  /**
+   * @generated from enum value: SUBJECT_TOKEN_SOURCE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER = 1;
+   */
+  LOGIN_IDENTITY_PROVIDER = 1,
+
+  /**
+   * @generated from enum value: SUBJECT_TOKEN_SOURCE_STATIC_TOKEN = 2;
+   */
+  STATIC_TOKEN = 2,
+}
+// Retrieve enum metadata with: proto3.getEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource)
+proto3.util.setEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource, "plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource", [
+  { no: 0, name: "SUBJECT_TOKEN_SOURCE_UNSPECIFIED" },
+  { no: 1, name: "SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER" },
+  { no: 2, name: "SUBJECT_TOKEN_SOURCE_STATIC_TOKEN" },
+]);
 
 /**
  * @generated from message plugins.common.v1.Basic

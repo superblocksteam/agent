@@ -144,6 +144,10 @@ export namespace OAuth {
         setRefreshTokenFromServer(value: boolean): AuthorizationCodeFlow;
         getClientAuthMethod(): string;
         setClientAuthMethod(value: string): AuthorizationCodeFlow;
+        getSubjectTokenSource(): OAuth.AuthorizationCodeFlow.SubjectTokenSource;
+        setSubjectTokenSource(value: OAuth.AuthorizationCodeFlow.SubjectTokenSource): AuthorizationCodeFlow;
+        getSubjectTokenSourceStaticToken(): string;
+        setSubjectTokenSourceStaticToken(value: string): AuthorizationCodeFlow;
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): AuthorizationCodeFlow.AsObject;
@@ -166,7 +170,16 @@ export namespace OAuth {
             tokenScope: string,
             refreshTokenFromServer: boolean,
             clientAuthMethod: string,
+            subjectTokenSource: OAuth.AuthorizationCodeFlow.SubjectTokenSource,
+            subjectTokenSourceStaticToken: string,
         }
+
+        export enum SubjectTokenSource {
+    SUBJECT_TOKEN_SOURCE_UNSPECIFIED = 0,
+    SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER = 1,
+    SUBJECT_TOKEN_SOURCE_STATIC_TOKEN = 2,
+        }
+
     }
 
 }
