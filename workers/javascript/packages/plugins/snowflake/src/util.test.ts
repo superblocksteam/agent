@@ -127,7 +127,8 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
       authentication: {
         username: 'user',
         custom: {
-          account: { value: 'account' }
+          account: { value: 'account' },
+          databaseName: { value: 'databaseName' }
         }
       },
       keyPair: {
@@ -139,6 +140,7 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
     expect(connectionOptions).toEqual({
       account: 'account',
       username: 'user',
+      database: 'databaseName',
       authenticator: 'SNOWFLAKE_JWT',
       privateKey: 'pk'
     });
@@ -151,7 +153,8 @@ describe('connectionOptionsFromDatasourceConfiguration', () => {
       authentication: {
         username: 'user',
         custom: {
-          account: { value: 'account' }
+          account: { value: 'account' },
+          databaseName: { value: 'databaseName' }
         }
       },
       keyPair: {
@@ -194,6 +197,7 @@ y4BdZfATsd4Q1gjGoALvDK0i7pwG+40wxmKFDkj95QmskRMSX8q0DUg=
       account: 'account',
       authenticator: 'SNOWFLAKE_JWT',
       username: 'user',
+      database: 'databaseName',
       privateKey: `-----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCXjMqyEL55ZO7b
 /20zZeOPOCeWT87Z2L+mt7fz0Jw9F9Qi7xjopxfadEf9+lAKzFA0WqpaflF0CkUh
@@ -236,7 +240,7 @@ oBHJaYtVCXd3VBWCVLcfnw==
           }
         }
       })
-    ).toThrow('Missing required fields: username,privateKey');
+    ).toThrow('Missing required fields: username,databaseName,privateKey');
   });
 
   it('fails when authentication is not present', () => {
@@ -249,7 +253,7 @@ oBHJaYtVCXd3VBWCVLcfnw==
       authentication: {}
     } as SnowflakeDatasourceConfiguration;
     expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
-      'Missing required fields: account,username,password'
+      'Missing required fields: account,username,databaseName,password'
     );
   });
 
@@ -259,7 +263,7 @@ oBHJaYtVCXd3VBWCVLcfnw==
       authentication: {}
     } as SnowflakeDatasourceConfiguration;
     expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
-      'Missing required fields: account,username,password,authenticatorUrl'
+      'Missing required fields: account,username,databaseName,password,authenticatorUrl'
     );
   });
 });

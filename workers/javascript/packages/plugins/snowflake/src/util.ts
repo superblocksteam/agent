@@ -29,6 +29,9 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
   if (!auth.username) {
     missingFields.push('username');
   }
+  if (!auth.custom?.databaseName?.value) {
+    missingFields.push('databaseName');
+  }
 
   switch (datasourceConfiguration.connectionType) {
     case 'key-pair': {
