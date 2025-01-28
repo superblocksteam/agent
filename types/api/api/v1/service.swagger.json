@@ -732,6 +732,15 @@
         }
       }
     },
+    "AuthorizationCodeFlowSubjectTokenSource": {
+      "type": "string",
+      "enum": [
+        "SUBJECT_TOKEN_SOURCE_UNSPECIFIED",
+        "SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER",
+        "SUBJECT_TOKEN_SOURCE_STATIC_TOKEN"
+      ],
+      "default": "SUBJECT_TOKEN_SOURCE_UNSPECIFIED"
+    },
     "AwsAuthAssumeRole": {
       "type": "object",
       "properties": {
@@ -1436,6 +1445,12 @@
           "type": "boolean"
         },
         "clientAuthMethod": {
+          "type": "string"
+        },
+        "subjectTokenSource": {
+          "$ref": "#/definitions/AuthorizationCodeFlowSubjectTokenSource"
+        },
+        "subjectTokenSourceStaticToken": {
           "type": "string"
         }
       }

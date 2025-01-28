@@ -1594,6 +1594,10 @@ func (m *OAuth_AuthorizationCodeFlow) validate(all bool) error {
 
 	// no validation rules for ClientAuthMethod
 
+	// no validation rules for SubjectTokenSource
+
+	// no validation rules for SubjectTokenSourceStaticToken
+
 	if len(errors) > 0 {
 		return OAuth_AuthorizationCodeFlowMultiError(errors)
 	}

@@ -40,6 +40,7 @@ goog.exportSymbol('proto.plugins.common.v1.GcpAuth', null, global);
 goog.exportSymbol('proto.plugins.common.v1.GcpAuth.ConfigCase', null, global);
 goog.exportSymbol('proto.plugins.common.v1.OAuth', null, global);
 goog.exportSymbol('proto.plugins.common.v1.OAuth.AuthorizationCodeFlow', null, global);
+goog.exportSymbol('proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource', null, global);
 goog.exportSymbol('proto.plugins.common.v1.OAuth.ClientCredentialsFlow', null, global);
 goog.exportSymbol('proto.plugins.common.v1.OAuth.PasswordGrantFlow', null, global);
 goog.exportSymbol('proto.plugins.common.v1.OAuthCommon', null, global);
@@ -1351,7 +1352,9 @@ audience: jspb.Message.getFieldWithDefault(msg, 5, ""),
 scope: jspb.Message.getFieldWithDefault(msg, 6, ""),
 tokenScope: jspb.Message.getFieldWithDefault(msg, 7, ""),
 refreshTokenFromServer: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
-clientAuthMethod: jspb.Message.getFieldWithDefault(msg, 9, "")
+clientAuthMethod: jspb.Message.getFieldWithDefault(msg, 9, ""),
+subjectTokenSource: jspb.Message.getFieldWithDefault(msg, 10, 0),
+subjectTokenSourceStaticToken: jspb.Message.getFieldWithDefault(msg, 11, "")
   };
 
   if (includeInstance) {
@@ -1423,6 +1426,14 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.deserializeBinaryFromReader 
     case 9:
       var value = /** @type {string} */ (reader.readString());
       msg.setClientAuthMethod(value);
+      break;
+    case 10:
+      var value = /** @type {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource} */ (reader.readEnum());
+      msg.setSubjectTokenSource(value);
+      break;
+    case 11:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setSubjectTokenSourceStaticToken(value);
       break;
     default:
       reader.skipField();
@@ -1516,8 +1527,31 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.serializeBinaryToWriter = fu
       f
     );
   }
+  f = message.getSubjectTokenSource();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      10,
+      f
+    );
+  }
+  f = message.getSubjectTokenSourceStaticToken();
+  if (f.length > 0) {
+    writer.writeString(
+      11,
+      f
+    );
+  }
 };
 
+
+/**
+ * @enum {number}
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource = {
+  SUBJECT_TOKEN_SOURCE_UNSPECIFIED: 0,
+  SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER: 1,
+  SUBJECT_TOKEN_SOURCE_STATIC_TOKEN: 2
+};
 
 /**
  * optional string client_id = 1;
@@ -1678,6 +1712,42 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getClientAuthMetho
  */
 proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setClientAuthMethod = function(value) {
   return jspb.Message.setProto3StringField(this, 9, value);
+};
+
+
+/**
+ * optional SubjectTokenSource subject_token_source = 10;
+ * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource}
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getSubjectTokenSource = function() {
+  return /** @type {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
+};
+
+
+/**
+ * @param {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource} value
+ * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow} returns this
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setSubjectTokenSource = function(value) {
+  return jspb.Message.setProto3EnumField(this, 10, value);
+};
+
+
+/**
+ * optional string subject_token_source_static_token = 11;
+ * @return {string}
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getSubjectTokenSourceStaticToken = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 11, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow} returns this
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setSubjectTokenSourceStaticToken = function(value) {
+  return jspb.Message.setProto3StringField(this, 11, value);
 };
 
 
