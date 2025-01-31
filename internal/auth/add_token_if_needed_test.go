@@ -832,6 +832,7 @@ func verify(t *testing.T, args *args) {
 		assert.NoError(t, err)
 		assert.Equal(t, args.expectedToken, tokenPayload.Token)
 		assert.Equal(t, "oauth", tokenPayload.BindingName)
+		assert.Equal(t, args.expectedToken, datasourceConfig.GetFields()["authConfig"].GetStructValue().GetFields()["authToken"].GetStringValue())
 	}
 }
 

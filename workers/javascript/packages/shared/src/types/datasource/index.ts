@@ -355,11 +355,13 @@ export type RestApiIntegrationDatasourceConfiguration = RestApiDatasourceConfigu
 
 export type S3DatasourceConfiguration = AWSDatasourceConfiguration & { endpoint?: string };
 
-export type SnowflakeDatasourceConfiguration = DBDatasourceConfiguration &
+export type SnowflakeDatasourceConfiguration = AuthenticatedDatasourceConfig &
+  DBDatasourceConfiguration &
   DBConnection & {
     // okta: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#use-native-sso-through-okta
     // key-pair: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-key-pair-authentication
-    connectionType?: 'fields' | 'okta' | 'key-pair';
+    // oauth: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-oauth
+    connectionType?: 'fields' | 'okta' | 'key-pair' | 'oauth2-on-behalf-of-token-exchange';
     okta?: {
       authenticatorUrl?: string;
     };

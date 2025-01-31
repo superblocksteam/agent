@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Snowflake integration to pipe through database, schema, warehouse, and role for key-pair and sso auth types
 - Updated `slim` image to only include JavaScript packages required to run the JavaScript worker
 - Added support for performing new "oauth on behalf of token exchange" auth type
-- Added support for static subject token sources in "oauth on behalf of token exchange" auth type
+- Added support for static subject token sources in "oauth2 on-behalf-of token exchange" auth type
+- Updated Snowflake integration to support "oauth2 on-behalf-of token exchange" auth type
 
 ## v1.18.0
 
