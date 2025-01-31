@@ -4,10 +4,73 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/superblocksteam/agent/pkg/constants"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	javascriptv1 "github.com/superblocksteam/agent/types/gen/go/plugins/javascript/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+func TestApiType(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		api      *apiv1.Api
+		expected string
+	}{
+		{
+			name:     "nil api returns unknown",
+			api:      nil,
+			expected: constants.ApiTypeUnknown,
+		},
+		{
+			name:     "api with no trigger returns unknown",
+			api:      &apiv1.Api{},
+			expected: constants.ApiTypeUnknown,
+		},
+		{
+			name: "api with application trigger returns api",
+			api: &apiv1.Api{
+				Trigger: &apiv1.Trigger{
+					Config: &apiv1.Trigger_Application_{
+						Application: &apiv1.Trigger_Application{},
+					},
+				},
+			},
+			expected: constants.ApiTypeApi,
+		},
+		{
+			name: "api with scheduled job trigger returns scheduled job",
+			api: &apiv1.Api{
+				Trigger: &apiv1.Trigger{
+					Config: &apiv1.Trigger_Job_{
+						Job: &apiv1.Trigger_Job{},
+					},
+				},
+			},
+			expected: constants.ApiTypeScheduledJob,
+		},
+		{
+			name: "api with workflow trigger returns workflow",
+			api: &apiv1.Api{
+				Trigger: &apiv1.Trigger{
+					Config: &apiv1.Trigger_Workflow_{
+						Workflow: &apiv1.Trigger_Workflow{},
+					},
+				},
+			},
+			expected: constants.ApiTypeWorkflow,
+		},
+		{
+			name:     "api with unknown trigger returns unknown",
+			api:      &apiv1.Api{Trigger: &apiv1.Trigger{}},
+			expected: constants.ApiTypeUnknown,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			actual := ApiType(test.api)
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
 
 func TestContainsSuperblocksSecrets(t *testing.T) {
 	for _, test := range []struct {

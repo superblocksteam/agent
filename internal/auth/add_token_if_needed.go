@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	authtypes "github.com/superblocksteam/agent/internal/auth/types"
+	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
 	"github.com/superblocksteam/agent/pkg/observability"
 	pluginscommon "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
@@ -49,6 +50,15 @@ const (
 	authTypePasswordGrantFlow = "passwordGrantFlow"
 
 	idpAccessTokenClaimKey = "https://superblocks/idp_token"
+)
+
+var (
+	supportedApiTypesIdpTokenForwarding = map[string]bool{
+		// Unknown is supported because it implies that the token forwarding is occurring outside of an execution
+		// request (i.e. a metadata request or test connection request)
+		constants.ApiTypeUnknown: true,
+		constants.ApiTypeApi:     true,
+	}
 )
 
 // AddTokenIfNeeded adds the token to the datasource config if needed,
@@ -412,6 +422,11 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 	var subjectToken string
 	switch authConfigProto.GetSubjectTokenSource() {
 	case pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER:
+		if apiType := constants.ApiType(ctx); !supportedApiTypesIdpTokenForwarding[apiType] {
+			log.Error("identity provider token forwarding is not supported for the api type", zap.String("apiType", apiType))
+			return "", fmt.Errorf("identity provider token forwarding is not supported for api type: %s", apiType)
+		}
+
 		subjectToken, err = t.getIdentityProviderAccessToken(ctx)
 		if err != nil {
 			log.Error("error getting identity provider access token", zap.Error(err))

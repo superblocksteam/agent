@@ -19,6 +19,7 @@ import (
 	"github.com/superblocksteam/agent/internal/auth/mocks"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/pkg/clients"
+	"github.com/superblocksteam/agent/pkg/constants"
 	pluginscommon "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
@@ -688,6 +689,7 @@ func TestAddTokenIfNeeded_OauthCode(t *testing.T) {
 type args struct {
 	authType                  string
 	authConfig                map[string]any
+	apiType                   string
 	configurationId           string
 	cookies                   []string
 	datasourceId              string
@@ -737,6 +739,7 @@ func validArgs(t *testing.T) *args {
 			"subjectTokenSource": int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
 			"tokenUrl":           "https://test-token-url.com",
 		},
+		apiType:                   constants.ApiTypeApi,
 		configurationId:           "configurationId",
 		cookies:                   []string{},
 		datasourceId:              "integrationId",
@@ -800,6 +803,7 @@ func verify(t *testing.T, args *args) {
 	}
 
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.New(ctxMetadata))
+	ctx = constants.WithApiType(ctx, args.apiType)
 
 	// Set expectations for the cached token fetch, this accounts for initial cache lookup and lookup after token exchange
 	var fetchCacheErr error
@@ -841,6 +845,16 @@ func TestAddTokenIfNeeded_OauthTokenExchange(t *testing.T) {
 	verify(t, validArgs)
 }
 
+func TestAddTokenIfNeeded_OauthTokenExchange_SupportedSubjectTokenSource(t *testing.T) {
+	args := validArgs(t)
+	args.apiType = constants.ApiTypeApi
+	verify(t, args)
+
+	args = validArgs(t)
+	args.apiType = constants.ApiTypeUnknown
+	verify(t, args)
+}
+
 func TestAddTokenIfNeeded_OauthTokenExchange_StaticToken(t *testing.T) {
 	validArgs := validArgs(t)
 	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN)
@@ -862,6 +876,20 @@ func TestAddTokenIfNeeded_OauthTokenExchange_UnsupportedSubjectTokenSource(t *te
 	validArgs.expectedError = "invalid subject token source: SUBJECT_TOKEN_SOURCE_UNSPECIFIED"
 
 	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_UnsupportedApiType(t *testing.T) {
+	args := validArgs(t)
+	args.apiType = constants.ApiTypeScheduledJob
+	args.expectedError = "identity provider token forwarding is not supported for api type: scheduled_job"
+
+	verify(t, args)
+
+	args = validArgs(t)
+	args.apiType = constants.ApiTypeWorkflow
+	args.expectedError = "identity provider token forwarding is not supported for api type: workflow"
+
+	verify(t, args)
 }
 
 func TestAddTokenIfNeeded_OauthTokenExchange_MissingIdpAccessToken(t *testing.T) {

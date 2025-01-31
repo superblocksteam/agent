@@ -25,6 +25,11 @@ const (
 
 	HeaderCorrelationId  = "x-superblocks-correlation-id"
 	HeaderOrganizationId = "x-superblocks-organization-id"
+
+	ApiTypeUnknown      = "unknown"
+	ApiTypeApi          = "api"
+	ApiTypeScheduledJob = "scheduled_job"
+	ApiTypeWorkflow     = "workflow"
 )
 
 func WithAgentId(ctx context.Context, agentId string) context.Context {
@@ -74,7 +79,7 @@ func ApiType(ctx context.Context) string {
 		return apiType
 	}
 
-	return ""
+	return ApiTypeUnknown
 }
 
 func WithExecutionID(ctx context.Context, executionID string) context.Context {
