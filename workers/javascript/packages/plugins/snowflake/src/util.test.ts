@@ -230,6 +230,35 @@ oBHJaYtVCXd3VBWCVLcfnw==
     });
   });
 
+  it('works for oauth2-on-behalf-of-token-exchange', async () => {
+    const datasourceConfiguration = {
+      connectionType: 'oauth2-on-behalf-of-token-exchange',
+      authentication: {
+        custom: {
+          account: { value: 'account' },
+          databaseName: { value: 'databaseName' },
+          warehouse: { value: 'warehouse' },
+          role: { value: 'role' },
+          schema: { value: 'schema' }
+        }
+      },
+      authConfig: {
+        authToken: 'token'
+      }
+    } as SnowflakeDatasourceConfiguration;
+    const connectionOptions = connectionOptionsFromDatasourceConfiguration(datasourceConfiguration);
+
+    expect(connectionOptions).toEqual({
+      account: 'account',
+      authenticator: 'OAUTH',
+      token: 'token',
+      database: 'databaseName',
+      warehouse: 'warehouse',
+      schema: 'schema',
+      role: 'role'
+    });
+  });
+
   it('fails for key-pair when required fields are not present', () => {
     expect(() =>
       connectionOptionsFromDatasourceConfiguration({
@@ -240,7 +269,7 @@ oBHJaYtVCXd3VBWCVLcfnw==
           }
         }
       })
-    ).toThrow('Missing required fields: username,databaseName,privateKey');
+    ).toThrow('Missing required fields: databaseName,username,privateKey');
   });
 
   it('fails when authentication is not present', () => {
@@ -253,7 +282,7 @@ oBHJaYtVCXd3VBWCVLcfnw==
       authentication: {}
     } as SnowflakeDatasourceConfiguration;
     expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
-      'Missing required fields: account,username,databaseName,password'
+      'Missing required fields: account,databaseName,username,password'
     );
   });
 
@@ -263,8 +292,21 @@ oBHJaYtVCXd3VBWCVLcfnw==
       authentication: {}
     } as SnowflakeDatasourceConfiguration;
     expect(() => connectionOptionsFromDatasourceConfiguration(datasourceConfiguration)).toThrow(
-      'Missing required fields: account,username,databaseName,password,authenticatorUrl'
+      'Missing required fields: account,databaseName,username,password,authenticatorUrl'
     );
+  });
+
+  it('fails for oauth-2-on-behalf-of-token-exchange when required fields are not present', () => {
+    expect(() =>
+      connectionOptionsFromDatasourceConfiguration({
+        connectionType: 'oauth2-on-behalf-of-token-exchange',
+        authentication: {
+          custom: {
+            account: { value: 'account' }
+          }
+        }
+      })
+    ).toThrow('Missing required fields: databaseName,token');
   });
 });
 

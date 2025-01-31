@@ -185,6 +185,8 @@ func (t *tokenManager) AddTokenIfNeeded(
 			return
 		}
 
+		// this will set the token at datasourceConfiguration['authConfig']['authToken']
+		authConfig.Fields["authToken"] = structpb.NewStringValue(tokenPayload.Token)
 		tokenPayload.BindingName = "oauth"
 	case authTypeOauthImplicit:
 		tokenPayload.Token, cookieName = FirstMatchingCookie(cookies, authId+"-token", authIdExtra+"-token")

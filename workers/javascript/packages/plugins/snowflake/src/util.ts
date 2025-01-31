@@ -26,9 +26,6 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
   if (!auth.custom?.account?.value) {
     missingFields.push('account');
   }
-  if (!auth.username) {
-    missingFields.push('username');
-  }
   if (!auth.custom?.databaseName?.value) {
     missingFields.push('databaseName');
   }
@@ -37,6 +34,9 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
     case 'key-pair': {
       // https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-key-pair-authentication
 
+      if (!auth.username) {
+        missingFields.push('username');
+      }
       if (!datasourceConfiguration?.keyPair?.privateKey) {
         missingFields.push('privateKey');
       }
@@ -62,6 +62,9 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
     case 'okta': {
       // https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#using-native-sso-through-okta
 
+      if (!auth.username) {
+        missingFields.push('username');
+      }
       if (!auth.password) {
         missingFields.push('password');
       }
@@ -81,7 +84,28 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
         role: auth.custom?.role?.value
       };
     }
+    case 'oauth2-on-behalf-of-token-exchange': {
+      // https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-oauth
+
+      if (!datasourceConfiguration.authConfig?.authToken) {
+        missingFields.push('token');
+      }
+
+      handleMissingFields(missingFields);
+      return {
+        account: auth.custom.account.value,
+        authenticator: 'OAUTH',
+        token: datasourceConfiguration.authConfig?.authToken,
+        database: auth.custom?.databaseName?.value,
+        schema: auth.custom?.schema?.value,
+        warehouse: auth.custom?.warehouse?.value,
+        role: auth.custom?.role?.value
+      };
+    }
     default: {
+      if (!auth.username) {
+        missingFields.push('username');
+      }
       if (!auth.password) {
         missingFields.push('password');
       }
