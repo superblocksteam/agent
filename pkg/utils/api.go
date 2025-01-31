@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/observability"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -11,22 +12,22 @@ import (
 
 func ApiType(api *apiv1.Api) string {
 	if api == nil || api.Trigger == nil {
-		return "unknown"
+		return constants.ApiTypeUnknown
 	}
 
 	if api.Trigger.GetApplication() != nil {
-		return "api"
+		return constants.ApiTypeApi
 	}
 
 	if api.Trigger.GetJob() != nil {
-		return "scheduled_job"
+		return constants.ApiTypeScheduledJob
 	}
 
 	if api.Trigger.GetWorkflow() != nil {
-		return "workflow"
+		return constants.ApiTypeWorkflow
 	}
 
-	return "unknown"
+	return constants.ApiTypeUnknown
 }
 
 func ApiObservabilityFields(api *apiv1.Api) map[string]any {
