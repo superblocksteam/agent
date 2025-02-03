@@ -10,15 +10,12 @@ import (
 	"strings"
 	"time"
 
+	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
 	"github.com/superblocksteam/agent/pkg/utils"
 	v1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
-)
-
-const (
-	authTypeOauthTokenExchange = "oauth-token-exchange"
 )
 
 // Executes an OAuth token exchange on behalf of the subject token
@@ -40,12 +37,12 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 	}
 
 	if origin == "" {
-		return "", fmt.Errorf("origin header is required to exchange oauth token")
+		return "", &sberrors.InternalError{Err: fmt.Errorf("origin header is required to exchange oauth token")}
 	}
 
 	c.Logger.Info(
 		"start exchange oauth token",
-		zap.String("oauth-request-type", "oauth-token-exchange"),
+		zap.String("oauth-request-type", string(OauthTokenExchange)),
 		zap.String("origin", origin),
 		zap.String("tokenUrl", authConfig.TokenUrl),
 		zap.String("clientId", authConfig.ClientId),
@@ -66,7 +63,7 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 
 	req, err := http.NewRequestWithContext(ctx, "POST", authConfig.TokenUrl, strings.NewReader(data.Encode()))
 	if err != nil {
-		return "", fmt.Errorf("error creating token exchange request: %w", err)
+		return "", &sberrors.InternalError{Err: fmt.Errorf("error creating token exchange request: %w", err)}
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -74,17 +71,17 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error executing token exchange request: %w", err)
+		return "", sberrors.IntegrationOAuthError(ErrTokenUriServerError, err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("error reading token exchange response: %w", err)
+		return "", sberrors.IntegrationOAuthError(ErrTokenUriServerInvalidResponse, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("token exchange request failed with status %d: %s", resp.StatusCode, string(body))
+		return "", sberrors.IntegrationOAuthError(ErrTokenUriServerBadResponseCode, fmt.Errorf("Unexpected status code: %d: %s", resp.StatusCode, string(body))) //lint:ignore ST1005 This error message is user facing
 	}
 
 	var tokenResponse struct {
@@ -95,12 +92,16 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 	}
 
 	if err := json.Unmarshal(body, &tokenResponse); err != nil {
-		return "", fmt.Errorf("error parsing token exchange response: %w", err)
+		return "", sberrors.IntegrationOAuthError(ErrTokenUriServerInvalidResponse, err)
+	}
+
+	if tokenResponse.AccessToken == "" {
+		return "", sberrors.IntegrationOAuthError(ErrTokenUriServerInvalidResponse, fmt.Errorf("No access token returned in Token URI response")) //lint:ignore ST1005 This error message is user facing
 	}
 
 	c.Logger.Info(
 		"end exchange oauth token",
-		zap.String("oauth-request-type", "oauth-token-exchange"),
+		zap.String("oauth-request-type", string(OauthTokenExchange)),
 		zap.Bool("has_access_token", tokenResponse.AccessToken != ""),
 		zap.Int("expires_in", tokenResponse.ExpiresIn),
 	)
@@ -108,19 +109,17 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 	accessToken := tokenResponse.AccessToken
 	accessExpiresAt := c.Clock.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second).Unix()
 
-	if tokenResponse.AccessToken != "" {
-		authConfigStruct, err := jsonutils.ToStruct(authConfig)
-		if err != nil {
-			return "", err
-		}
-		if authConfig.Scope == "datasource" {
-			err = c.FetcherCacher.CacheSharedToken(authTypeOauthTokenExchange, authConfigStruct, TokenTypeAccess, accessToken, accessExpiresAt, integrationId, configurationId)
-		} else {
-			err = c.FetcherCacher.CacheUserToken(ctx, authTypeOauthTokenExchange, authConfigStruct, TokenTypeAccess, accessToken, accessExpiresAt, integrationId, configurationId)
-		}
-		if err != nil {
-			c.Logger.Warn("error caching access token", zap.String("oauth-request-type", "oauth-token-exchange"), zap.Error(err))
-		}
+	authConfigStruct, err := jsonutils.ToStruct(authConfig)
+	if err != nil {
+		return "", err
+	}
+	if authConfig.Scope == "datasource" {
+		err = c.FetcherCacher.CacheSharedToken(string(OauthTokenExchange), authConfigStruct, TokenTypeAccess, accessToken, accessExpiresAt, integrationId, configurationId)
+	} else {
+		err = c.FetcherCacher.CacheUserToken(ctx, string(OauthTokenExchange), authConfigStruct, TokenTypeAccess, accessToken, accessExpiresAt, integrationId, configurationId)
+	}
+	if err != nil {
+		c.Logger.Warn("error caching access token", zap.String("oauth-request-type", string(OauthTokenExchange)), zap.Error(err))
 	}
 
 	return accessToken, nil

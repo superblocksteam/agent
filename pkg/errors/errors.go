@@ -274,7 +274,11 @@ func (e *InternalError) Is(target error) bool {
 }
 
 func (e *InternalError) Error() string {
-	return "InternalError"
+	if e.Err == nil {
+		return "InternalError"
+	}
+
+	return "InternalError: " + e.Err.Error()
 }
 
 type healthCheckError struct {

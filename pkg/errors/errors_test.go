@@ -154,6 +154,29 @@ func TestToIntegrationError(t *testing.T) {
 	}
 }
 
+func TestIsInternalError(t *testing.T) {
+	for _, test := range []struct {
+		name          string
+		err           error
+		expectedError string
+	}{
+		{
+			name:          "happy path",
+			err:           &InternalError{Err: errors.New("foo")},
+			expectedError: "InternalError: foo",
+		},
+		{
+			name:          "nil error",
+			err:           &InternalError{},
+			expectedError: "InternalError",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			assert.EqualError(t, test.err, test.expectedError)
+		})
+	}
+}
+
 func TestIsIntegrationOAuthError(t *testing.T) {
 	for _, test := range []struct {
 		name           string

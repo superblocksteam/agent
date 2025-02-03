@@ -707,6 +707,8 @@ type args struct {
 }
 
 func validArgs(t *testing.T) *args {
+	t.Helper()
+
 	httpMock := &mocks.HttpClient{}
 	fetcherCacher := &mocks.FetcherCacher{}
 
@@ -758,6 +760,8 @@ func validArgs(t *testing.T) *args {
 }
 
 func verify(t *testing.T, args *args) {
+	t.Helper()
+
 	datasourceConfig, err := structpb.NewStruct(
 		map[string]any{
 			"authType":   args.authType,
@@ -873,7 +877,7 @@ func TestAddTokenIfNeeded_OauthTokenExchange_FetchCachedToken(t *testing.T) {
 func TestAddTokenIfNeeded_OauthTokenExchange_UnsupportedSubjectTokenSource(t *testing.T) {
 	validArgs := validArgs(t)
 	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_UNSPECIFIED)
-	validArgs.expectedError = "invalid subject token source: SUBJECT_TOKEN_SOURCE_UNSPECIFIED"
+	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" invalid subject token source\n\nPlease check the subject token source provided in the integration and try again."
 
 	verify(t, validArgs)
 }
@@ -881,13 +885,13 @@ func TestAddTokenIfNeeded_OauthTokenExchange_UnsupportedSubjectTokenSource(t *te
 func TestAddTokenIfNeeded_OauthTokenExchange_UnsupportedApiType(t *testing.T) {
 	args := validArgs(t)
 	args.apiType = constants.ApiTypeScheduledJob
-	args.expectedError = "identity provider token forwarding is not supported for api type: scheduled_job"
+	args.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" could not find a user JWT\n\nAuth method can't be used headlessly, like in Workflows or Scheduled Jobs."
 
 	verify(t, args)
 
 	args = validArgs(t)
 	args.apiType = constants.ApiTypeWorkflow
-	args.expectedError = "identity provider token forwarding is not supported for api type: workflow"
+	args.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" could not find a user JWT\n\nAuth method can't be used headlessly, like in Workflows or Scheduled Jobs."
 
 	verify(t, args)
 }
@@ -895,7 +899,7 @@ func TestAddTokenIfNeeded_OauthTokenExchange_UnsupportedApiType(t *testing.T) {
 func TestAddTokenIfNeeded_OauthTokenExchange_MissingIdpAccessToken(t *testing.T) {
 	validArgs := validArgs(t)
 	validArgs.identityProviderToken = ""
-	validArgs.expectedError = "error getting identity provider access token: no identity provider access token found, expected claim key: https://superblocks/idp_token"
+	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" could not find identity provider token\n\nPlease log in using a valid OIDC-based SSO provider. To configure or update your orgs SSO, or for assistance troubleshooting, please reach out to support."
 
 	verify(t, validArgs)
 }
@@ -905,24 +909,46 @@ func TestAddTokenIfNeeded_OauthTokenExchange_EmptyStaticToken(t *testing.T) {
 	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN)
 	validArgs.authConfig["subjectTokenSourceStaticToken"] = ""
 	validArgs.staticToken = ""
-	validArgs.expectedError = "subject token is not a valid JWT: empty token"
+	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" invalid static token provided\n\nPlease check the static token provided in the integration and try again."
 
 	verify(t, validArgs)
 }
 
-func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredSubjectToken(t *testing.T) {
+func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredIdentityProviderToken(t *testing.T) {
 	validArgs := validArgs(t)
+	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER)
 	// The identity provider token from validArgs() is valid for 5 minutes, advance the clock by 1 hour to make it expired
 	validArgs.clock.Advance(time.Hour)
-	validArgs.expectedError = "subject token is expired"
+	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" identity provider token expired\n\nRefresh your browser and follow prompts to reauthenticate with SSO."
 
 	verify(t, validArgs)
 }
 
-func TestAddTokenIfNeeded_OauthTokenExchange_SubjectTokenNotJwt(t *testing.T) {
+func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredStaticToken(t *testing.T) {
 	validArgs := validArgs(t)
+	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN)
+	validArgs.authConfig["subjectTokenSourceStaticToken"] = validArgs.staticToken
+	// The identity provider token from validArgs() is valid for 5 minutes, advance the clock by 1 hour to make it expired
+	validArgs.clock.Advance(time.Hour)
+	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" static token expired\n\nPlease check the static token provided in the integration and try again."
+
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_IdentityProviderTokenNotJwt(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER)
 	validArgs.identityProviderToken = "not-a-jwt"
-	validArgs.expectedError = "subject token is not a valid JWT: failed to parse JWT: token contains an invalid number of segments"
+	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" invalid identity provider token provided\n\nPlease log in using a valid OIDC-based SSO provider. To configure or update your orgs SSO, or for assistance troubleshooting, please reach out to support."
+
+	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_StaticTokenNotJwt(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN)
+	validArgs.authConfig["subjectTokenSourceStaticToken"] = "not-a-jwt"
+	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" invalid static token provided\n\nPlease check the static token provided in the integration and try again."
 
 	verify(t, validArgs)
 }
@@ -930,7 +956,7 @@ func TestAddTokenIfNeeded_OauthTokenExchange_SubjectTokenNotJwt(t *testing.T) {
 func TestAddTokenIfNeeded_OauthTokenExchange_OnBehalfOfExchangeFails(t *testing.T) {
 	validArgs := validArgs(t)
 	validArgs.tokenExchangeStatusCode = http.StatusBadRequest
-	validArgs.expectedError = "error exchanging identity provider access token for token: token exchange request failed with status 400: { \"access_token\": \"token\", \"token_type\": \"access\", \"expires_in\": 3600, \"scope\": \"user\" }"
+	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nUnexpected status code: 400: { \"access_token\": \"token\", \"token_type\": \"access\", \"expires_in\": 3600, \"scope\": \"user\" }"
 
 	verify(t, validArgs)
 }
@@ -1607,19 +1633,19 @@ func TestGetIdentityProviderAccessToken(t *testing.T) {
 	}{
 		{
 			name:        "no auth header",
-			expectedErr: "no authorization jwt found",
+			expectedErr: "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" could not find a user JWT\n\nAuth method can't be used headlessly, like in Workflows or Scheduled Jobs.",
 		},
 		{
 			name:                "invalid auth header",
 			isAuthHeaderNotAJwt: true,
-			expectedErr:         "failed to get claims from JWT: failed to parse JWT: token contains an invalid number of segments",
+			expectedErr:         "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" could not find identity provider token\n\nPlease log in using a valid OIDC-based SSO provider. To configure or update your orgs SSO, or for assistance troubleshooting, please reach out to support.",
 		},
 		{
 			name: "no identity provider access token",
 			authHeaderClaims: map[string]any{
 				"exp": "1234567890",
 			},
-			expectedErr: "no identity provider access token found, expected claim key: https://superblocks/idp_token",
+			expectedErr: "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" could not find identity provider token\n\nPlease log in using a valid OIDC-based SSO provider. To configure or update your orgs SSO, or for assistance troubleshooting, please reach out to support.",
 		},
 		{
 			name: "gets identity provider access token",
