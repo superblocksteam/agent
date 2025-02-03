@@ -12,6 +12,7 @@ import (
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	authtypes "github.com/superblocksteam/agent/internal/auth/types"
 	"github.com/superblocksteam/agent/pkg/constants"
+	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
 	"github.com/superblocksteam/agent/pkg/observability"
 	pluginscommon "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
@@ -407,7 +408,7 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 	err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto)
 	if err != nil {
 		log.Error("error converting auth config to proto", zap.Error(err))
-		return "", err
+		return "", &sberrors.InternalError{Err: err}
 	}
 
 	log = log.With(zap.String("subjectTokenSource", authConfigProto.GetSubjectTokenSource().String()))
@@ -424,19 +425,19 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 	case pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER:
 		if apiType := constants.ApiType(ctx); !supportedApiTypesIdpTokenForwarding[apiType] {
 			log.Error("identity provider token forwarding is not supported for the api type", zap.String("apiType", apiType))
-			return "", fmt.Errorf("identity provider token forwarding is not supported for api type: %s", apiType)
+			return "", sberrors.IntegrationOAuthError(oauth.ErrNoAuthorizationJwtFound)
 		}
 
 		subjectToken, err = t.getIdentityProviderAccessToken(ctx)
 		if err != nil {
 			log.Error("error getting identity provider access token", zap.Error(err))
-			return "", fmt.Errorf("error getting identity provider access token: %w", err)
+			return "", err
 		}
 	case pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN:
 		subjectToken = authConfigProto.GetSubjectTokenSourceStaticToken()
 	default:
 		log.Error("invalid subject token source")
-		return "", fmt.Errorf("invalid subject token source: %s", authConfigProto.GetSubjectTokenSource().String())
+		return "", sberrors.IntegrationOAuthError(oauth.ErrInvalidSubjectTokenSource)
 	}
 
 	if claims, err := getClaimsFromJwt(subjectToken); err == nil {
@@ -444,19 +445,19 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 			expiry := int64(exp.(float64))
 			if t.clock.Now().Unix() > expiry {
 				log.Error("subject token is expired", zap.Int64("expiry", expiry))
-				return "", fmt.Errorf("subject token is expired")
+				return "", sberrors.IntegrationOAuthError(oauth.SubjectTokenErrorMap[authConfigProto.GetSubjectTokenSource()][oauth.OAuth2ErrorTypeExpired])
 			}
 		}
 	} else {
 		log.Error("subject token is not a valid JWT", zap.Error(err))
-		return "", fmt.Errorf("subject token is not a valid JWT: %w", err)
+		return "", sberrors.IntegrationOAuthError(oauth.SubjectTokenErrorMap[authConfigProto.GetSubjectTokenSource()][oauth.OAuth2ErrorTypeInvalid])
 	}
 
 	// Attempt token exchange using token from identity provider
 	exchangedToken, err := t.OAuthClient.ExchangeOAuthTokenOnBehalfOf(ctx, authConfigProto, subjectToken, datasourceId, configurationId)
 	if err != nil {
 		log.Error("error exchanging identity provider access token for token", zap.Error(err))
-		return "", fmt.Errorf("error exchanging identity provider access token for token: %w", err)
+		return "", err
 	}
 
 	return exchangedToken, nil
@@ -575,18 +576,18 @@ func (t *tokenManager) getIdentityProviderAccessToken(ctx context.Context) (stri
 	auth0Jwt = strings.TrimPrefix(auth0Jwt, "Bearer ")
 
 	if auth0Jwt == "" {
-		return "", fmt.Errorf("no authorization jwt found")
+		return "", sberrors.IntegrationOAuthError(oauth.ErrNoAuthorizationJwtFound)
 	}
 
 	claims, err := getClaimsFromJwt(auth0Jwt)
 	if err != nil {
-		return "", fmt.Errorf("failed to get claims from JWT: %w", err)
+		return "", sberrors.IntegrationOAuthError(oauth.ErrNoIdentityProviderJwtFound)
 	}
 
 	// Extract identity provider JWT from claims
 	idpAccessToken, ok := claims[idpAccessTokenClaimKey].(string)
 	if !ok {
-		return "", fmt.Errorf("no identity provider access token found, expected claim key: %s", idpAccessTokenClaimKey)
+		return "", sberrors.IntegrationOAuthError(oauth.ErrNoIdentityProviderJwtFound)
 	}
 
 	return idpAccessToken, nil

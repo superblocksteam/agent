@@ -64,22 +64,9 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "organization"}`,
 		},
 		{
-			name: "success, no-op no access token returned from token exchange",
-			authConfig: &v1.OAuth_AuthorizationCodeFlow{
-				Audience:     "https://example.com/userinfo",
-				ClientId:     "client-id",
-				ClientSecret: "client-secret",
-				Scope:        "user",
-				TokenUrl:     "https://example.com/token",
-			},
-			origin:                    "origin",
-			exchangeRequestStatusCode: http.StatusOK,
-			exchangeResponseBody:      `{"refresh_token": "refresh-token", "expires_in": 86400, "scope": "user"}`,
-		},
-		{
 			name:        "no origin in context",
 			origin:      "",
-			expectedErr: "origin header is required to exchange oauth token",
+			expectedErr: "InternalError: origin header is required to exchange oauth token",
 		},
 		{
 			name: "error creating request, bad token url",
@@ -87,7 +74,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				TokenUrl: "invalid\n-token-\turl",
 			},
 			origin:      "origin",
-			expectedErr: "error creating token exchange request: parse \"invalid\\n-token-\\turl\": net/url: invalid control character in URL",
+			expectedErr: "InternalError: error creating token exchange request: parse \"invalid\\n-token-\\turl\": net/url: invalid control character in URL",
 		},
 		{
 			name: "error executing token exchange request",
@@ -99,7 +86,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				TokenUrl:     "https://example.com/token",
 			},
 			origin:             "origin",
-			expectedErr:        "error executing token exchange request: upstream disconnect",
+			expectedErr:        "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nupstream disconnect",
 			exchangeRequestErr: errors.New("upstream disconnect"),
 		},
 		{
@@ -112,7 +99,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				TokenUrl:     "https://example.com/token",
 			},
 			origin:                    "origin",
-			expectedErr:               "token exchange request failed with status 400: {\"error\": \"invalid_grant\"}",
+			expectedErr:               "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nUnexpected status code: 400: {\"error\": \"invalid_grant\"}",
 			exchangeRequestStatusCode: http.StatusBadRequest,
 			exchangeResponseBody:      `{"error": "invalid_grant"}`,
 		},
@@ -126,9 +113,23 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				TokenUrl:     "https://example.com/token",
 			},
 			origin:                    "origin",
-			expectedErr:               "error parsing token exchange response: unexpected end of JSON input",
+			expectedErr:               "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nunexpected end of JSON input",
 			exchangeRequestStatusCode: http.StatusOK,
 			exchangeResponseBody:      `{"access_token": "access-token", "token...`,
+		},
+		{
+			name: "no access token returned in token exchange response",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience:     "https://example.com/userinfo",
+				ClientId:     "client-id",
+				ClientSecret: "client-secret",
+				Scope:        "user",
+				TokenUrl:     "https://example.com/token",
+			},
+			origin:                    "origin",
+			exchangeRequestStatusCode: http.StatusOK,
+			exchangeResponseBody:      `{"refresh_token": "refresh-token", "expires_in": 86400, "scope": "user"}`,
+			expectedErr:               "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nNo access token returned in Token URI response",
 		},
 		{
 			name: "error caching user access token",
@@ -199,7 +200,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				if tc.authConfig.Scope == "datasource" {
 					fetcherCacher.On(
 						"CacheSharedToken",
-						authTypeOauthTokenExchange,
+						string(OauthTokenExchange),
 						mock.Anything,
 						TokenTypeAccess,
 						tc.accessToken,
@@ -211,7 +212,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 					fetcherCacher.On(
 						"CacheUserToken",
 						ctx,
-						authTypeOauthTokenExchange,
+						string(OauthTokenExchange),
 						mock.Anything,
 						TokenTypeAccess,
 						tc.accessToken,
