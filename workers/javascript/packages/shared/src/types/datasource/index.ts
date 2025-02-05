@@ -15,7 +15,17 @@ import {
 } from '@superblocksteam/types';
 import { Property } from '../common/property';
 import { Plugin, PluginMetadata } from '../plugin';
-import { AWSAuthType, AuthConfig, AuthContext, AuthId, AuthType, IntegrationAuthType, PublicAuthConfig, getAuthId } from './auth';
+import {
+  AUTH_TYPE_OAUTH_TOKEN_EXCHANGE,
+  AWSAuthType,
+  AuthConfig,
+  AuthContext,
+  AuthId,
+  AuthType,
+  IntegrationAuthType,
+  PublicAuthConfig,
+  getAuthId
+} from './auth';
 export { PluginCommonV1 as PluginCommon } from '@superblocksteam/types';
 
 // The DTO for the full datasource (ie all fields). This should only be visible
@@ -360,8 +370,10 @@ export type SnowflakeDatasourceConfiguration = AuthenticatedDatasourceConfig &
   DBConnection & {
     // okta: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#use-native-sso-through-okta
     // key-pair: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-key-pair-authentication
-    // oauth: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-oauth
-    connectionType?: 'fields' | 'okta' | 'key-pair' | 'oauth2-on-behalf-of-token-exchange';
+    // oauth token exchange: https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-oauth
+    connectionType?: 'fields' | 'okta' | 'key-pair' | typeof AUTH_TYPE_OAUTH_TOKEN_EXCHANGE;
+    // if set, will be "connectionType"
+    authTypeField?: string;
     okta?: {
       authenticatorUrl?: string;
     };

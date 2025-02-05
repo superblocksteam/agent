@@ -7,6 +7,9 @@ import { Property } from '../common/property';
 
 export const OAUTH_CALLBACK_PATH = 'oauth/callback';
 
+// this exact string is referenced in addTokenIfNeeded.go, so we need it to match here
+export const AUTH_TYPE_OAUTH_TOKEN_EXCHANGE = 'oauth-token-exchange';
+
 export type AuthId = string;
 
 // getAuthId returns the key that is used to identify which token should be used
