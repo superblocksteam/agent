@@ -27,6 +27,59 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+func TestGetAuthTypeFromDatasourceConfiguration(t *testing.T) {
+	tests := []struct {
+		name                    string
+		datasourceConfiguration *structpb.Struct
+		expectedAuthType        string
+	}{
+		{
+			"authType not present, authTypeField not present in datasourceConfiguration",
+			&structpb.Struct{},
+			"",
+		},
+		{
+			"authType present, authTypeField not present in datasourceConfiguration",
+			&structpb.Struct{Fields: map[string]*structpb.Value{
+				"authType": structpb.NewStringValue("foo"),
+			}},
+			"foo",
+		},
+		{
+			"authType not present, authTypeField present in datasourceConfiguration. authTypeField value not present in datasourceConfiguration",
+			&structpb.Struct{Fields: map[string]*structpb.Value{
+				"authTypeField": structpb.NewStringValue("foo"),
+			}},
+			"",
+		},
+		{
+			"authType not present, authTypeField present in datasourceConfiguration. authTypeField value present in datasourceConfiguration",
+			&structpb.Struct{Fields: map[string]*structpb.Value{
+				"authTypeField": structpb.NewStringValue("foo"),
+				"foo":           structpb.NewStringValue("bar"),
+			}},
+			"bar",
+		},
+		{
+			"authType present, authTypeField present in datasourceConfiguration",
+			&structpb.Struct{Fields: map[string]*structpb.Value{
+				"authType":      structpb.NewStringValue("baz"),
+				"authTypeField": structpb.NewStringValue("foo"),
+				"foo":           structpb.NewStringValue("bar"),
+			}},
+			"bar",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger := zap.NewNop()
+			actualAuthType := getAuthTypeFromDatasourceConfiguration(logger, tt.datasourceConfiguration)
+			assert.Equal(t, tt.expectedAuthType, actualAuthType)
+		})
+	}
+
+}
+
 func TestAddTokenIfNeeded_OauthClientCreds(t *testing.T) {
 	tests := []struct {
 		name          string
