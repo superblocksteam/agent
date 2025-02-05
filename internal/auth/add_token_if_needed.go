@@ -90,7 +90,7 @@ func (t *tokenManager) AddTokenIfNeeded(
 	}
 
 	cookies := GetCookies(ctx)
-	authType := datasourceConfig.Fields["authType"].GetStringValue()
+	authType := getAuthTypeFromDatasourceConfiguration(log, datasourceConfig)
 	authConfig := datasourceConfig.Fields["authConfig"].GetStructValue()
 	log = log.With(zap.String("authType", authType))
 
@@ -300,6 +300,32 @@ func (t *tokenManager) AddTokenIfNeeded(
 	log.Debug("[end] AddTokenIfNeeded", zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId), zap.String("authType", authType), zap.String("cookieName", cookieName), zap.String("userId", tokenPayload.UserId), zap.String("bindingName", tokenPayload.BindingName), zap.Bool("has_token", tokenPayload.Token != ""), zap.Bool("has_id_token", tokenPayload.IdToken != ""))
 
 	return
+}
+
+func getAuthTypeFromDatasourceConfiguration(log *zap.Logger, datasourceConfig *structpb.Struct) string {
+	// NOTE: (joeyagreco) authType is used to communicate the type of authentication an integration wants to use.
+	// this information is used by:
+	//	1. the javascript worker (where the integration logic lives)
+	//	2. the template system (think the integration ui)
+	//	3. the agent (specifically, here)
+	// some integrations need to use this flow here in the agent to enable oauth as a valid authentication type,
+	// but already use a different key in their datasource configuration to denote the type of authentication to use.
+	// any integration using "authType" as a top level key in its datasource configuration is communicating in the 3 places listed above WHAT TYPE OF AUTH THE INTEGRATION IS CONFIGURED TO USE
+	// some integrations are already configured for #1 and #2 with a key that is NOT "authType"
+	// for these cases, we do not have any (good or safe) way to make the templating system migrate and use "authType" as a top level field for denoting the type of authentication to use.
+	// because of this, here we allow integrations to give us a top level field "authTypeField" which can point to the EXISTING field that denotes the authentication type for an integration.
+
+	authType := datasourceConfig.Fields["authType"].GetStringValue()
+	authTypeField := datasourceConfig.Fields["authTypeField"].GetStringValue()
+	if authTypeField != "" {
+		authType = datasourceConfig.Fields[authTypeField].GetStringValue()
+		// we don't expect to get an "authTypeField" and there to be nothing at that field
+		// let's at least log a warning
+		if authType == "" {
+			log.Warn("could not find authTypeField in datasourceConfiguration", zap.String("authTypeField", authTypeField))
+		}
+	}
+	return authType
 }
 
 func FirstMatchingCookie(cookies []*http.Cookie, key string, fallback string) (string, string) {
