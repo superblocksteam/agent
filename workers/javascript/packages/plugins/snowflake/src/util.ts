@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { SnowflakeDatasourceConfiguration, ErrorCode, IntegrationError } from '@superblocks/shared';
+import { AUTH_TYPE_OAUTH_TOKEN_EXCHANGE, SnowflakeDatasourceConfiguration, ErrorCode, IntegrationError } from '@superblocks/shared';
 import { ConnectionOptions } from 'snowflake-sdk';
 
 export function getPrivateKeyValue({ privateKey, password }: { privateKey: string; password: string }): string {
@@ -84,7 +84,7 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
         role: auth.custom?.role?.value
       };
     }
-    case 'oauth2-on-behalf-of-token-exchange': {
+    case AUTH_TYPE_OAUTH_TOKEN_EXCHANGE: {
       // https://docs.snowflake.com/en/developer-guide/node-js/nodejs-driver-authenticate#label-nodejs-oauth
 
       if (!datasourceConfiguration.authConfig?.authToken) {

@@ -1,4 +1,4 @@
-import { SnowflakeDatasourceConfiguration } from '@superblocks/shared';
+import { AUTH_TYPE_OAUTH_TOKEN_EXCHANGE, SnowflakeDatasourceConfiguration } from '@superblocks/shared';
 
 import { connectionOptionsFromDatasourceConfiguration, getMetadataQuery } from './util';
 
@@ -230,9 +230,9 @@ oBHJaYtVCXd3VBWCVLcfnw==
     });
   });
 
-  it('works for oauth2-on-behalf-of-token-exchange', async () => {
+  it('works for oauth token exchange', async () => {
     const datasourceConfiguration = {
-      connectionType: 'oauth2-on-behalf-of-token-exchange',
+      connectionType: AUTH_TYPE_OAUTH_TOKEN_EXCHANGE,
       authentication: {
         custom: {
           account: { value: 'account' },
@@ -296,10 +296,10 @@ oBHJaYtVCXd3VBWCVLcfnw==
     );
   });
 
-  it('fails for oauth-2-on-behalf-of-token-exchange when required fields are not present', () => {
+  it('fails for oauth token exchange when required fields are not present', () => {
     expect(() =>
       connectionOptionsFromDatasourceConfiguration({
-        connectionType: 'oauth2-on-behalf-of-token-exchange',
+        connectionType: AUTH_TYPE_OAUTH_TOKEN_EXCHANGE,
         authentication: {
           custom: {
             account: { value: 'account' }

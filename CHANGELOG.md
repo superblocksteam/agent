@@ -12,9 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `slim` image to only include JavaScript packages required to run the JavaScript worker
 - Added support for performing new "oauth on behalf of token exchange" auth type
 - Added support for static subject token sources in "oauth2 on-behalf-of token exchange" auth type
-- Updated Snowflake integration to support "oauth2 on-behalf-of token exchange" auth type
 - Updated token forwarding auth type with IDP subject tokens to explicitly fail for workflows and scheduled jobs
 - Added support for "authTypeField" in integration OAuth flow
+- Updated Snowflake integration to support "oauth2 on-behalf-of token exchange" auth type
 
 ## v1.18.0
 
