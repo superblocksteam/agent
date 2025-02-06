@@ -84,11 +84,18 @@ if __name__ == "__main__":
     # as it's very slow. We could change the method based on OS but fork has worked fine so far.
     set_start_method("fork")
 
-    start_http_server(SUPERBLOCKS_METRICS_PORT, SUPERBLOCKS_METRICS_BIND_ADDRESS)
+    # Start prometheus metrics server
+    prom_server = None
+    try:
+        prom_server, _ = start_http_server(SUPERBLOCKS_METRICS_PORT, SUPERBLOCKS_METRICS_BIND_ADDRESS)
 
-    init_otel()
+        init_otel()
 
-    kvstore = get_kvstore()
-    transport = get_transport(kvstore)
+        kvstore = get_kvstore()
+        transport = get_transport(kvstore)
 
-    run_transport_forever(transport)
+        run_transport_forever(transport)
+    finally:
+        if prom_server is not None:
+            prom_server.shutdown()
+            prom_server.server_close()

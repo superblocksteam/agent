@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated token forwarding auth type with IDP subject tokens to explicitly fail for workflows and scheduled jobs
 - Added support for "authTypeField" in integration OAuth flow
 - Updated Snowflake integration to support "oauth2 on-behalf-of token exchange" auth type
+- Explicitly shutdown prometheus metrics server when Python worker terminates
 
 ## v1.18.0
 

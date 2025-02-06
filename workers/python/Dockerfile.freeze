@@ -5,10 +5,12 @@ WORKDIR /app
 # install some global dependencies
 RUN apt-get update && apt-get install -y cmake libblas-dev liblapack-dev && python -m pip install --no-cache-dir cython
 
+ARG REQUIREMENTS_FILE=requirements.txt
+
 # install existing deps
-COPY requirements.txt .
+COPY ${REQUIREMENTS_FILE} .
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-RUN uv pip install --system --no-cache-dir -r requirements.txt
+RUN uv pip install --system --no-cache-dir -r ${REQUIREMENTS_FILE}
 
 # argument for additional dependency
 ARG ADDITIONAL_DEP
@@ -17,7 +19,7 @@ ARG ADDITIONAL_DEP
 RUN uv pip install --system --no-cache-dir ${ADDITIONAL_DEP}
 
 # update requirements file
-RUN pip freeze > requirements.txt
+RUN pip freeze > ${REQUIREMENTS_FILE}
 
 # keep container running so we can yeet the requirements file
 CMD ["tail", "-f", "/dev/null"]

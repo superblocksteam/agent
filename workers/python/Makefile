@@ -90,16 +90,23 @@ deploy-helm:
 # USAGE: make freeze dep=foo==1.2.3
 .PHONY: freeze
 freeze:
+	@make freeze-reqs file=requirements.txt dep=$(dep)
+	@make freeze-reqs file=requirements-slim.txt dep=$(dep)
+
+
+# USAGE: make freeze-reqs file=requirements.txt dep=foo==1.2.3
+.PHONY: freeze-reqs
+freeze-reqs:
 	-docker stop freeze_py 2>/dev/null || true
 	-docker rm -f freeze_py 2>/dev/null || true
 
-	docker build --no-cache -t freeze_py . -f Dockerfile.freeze --build-arg ADDITIONAL_DEP=$(dep)
+	docker build --no-cache -t freeze_py . -f Dockerfile.freeze --build-arg REQUIREMENTS_FILE=$(file) --build-arg ADDITIONAL_DEP=$(dep)
 
 	docker run -d --name freeze_py freeze_py
-	docker cp freeze_py:/app/requirements.txt .
+	docker cp freeze_py:/app/$(file) .
 
 	# works on macos and linux
-	sed -i.bak 's/-/_/g' requirements.txt && rm requirements.txt.bak
+	sed -i.bak 's/-/_/g' $(file) && rm $(file).bak
 
 
 .PHONY: redis

@@ -169,7 +169,7 @@ pinecone_client==2.2.4
 platformdirs==4.2.2
 plotly==5.19.0
 postgresql_audit==0.17.1
-prometheus_client==0.14.1
+prometheus_client==0.21.1
 prompt_toolkit==3.0.43
 proto_plus==1.23.0
 protobuf==3.20.3
