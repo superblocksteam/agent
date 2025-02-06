@@ -90,7 +90,9 @@ if __name__ == "__main__":
     # Start prometheus metrics server
     prom_server = None
     try:
-        prom_server, _ = start_http_server(SUPERBLOCKS_METRICS_PORT, SUPERBLOCKS_METRICS_BIND_ADDRESS)
+        prom_server, _ = start_http_server(
+            SUPERBLOCKS_METRICS_PORT, SUPERBLOCKS_METRICS_BIND_ADDRESS
+        )
 
         init_otel()
 
