@@ -141,9 +141,7 @@ SUPERBLOCKS_AGENT_HEALTH_PORT = get_env_var(
 SUPERBLOCKS_AGENT_ASYNC_REDIS = get_env_var(
     "SUPERBLOCKS_AGENT_ASYNC_REDIS", default=True, as_type=bool
 )
-SUPERBLOCKS_METRICS_PORT = get_env_var(
-    "SB_METRICS_PORT", default=9090, as_type=int
-)
+SUPERBLOCKS_METRICS_PORT = get_env_var("SB_METRICS_PORT", default=9090, as_type=int)
 SUPERBLOCKS_METRICS_BIND_ADDRESS = get_env_var(
     "SUPERBLOCKS_METRICS_BIND_ADDRESS", default="0.0.0.0", as_type=str
 )
