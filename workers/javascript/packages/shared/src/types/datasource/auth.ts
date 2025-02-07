@@ -91,6 +91,7 @@ export enum IntegrationAuthType {
   OAUTH2_CLIENT_CREDS = 'oauth-client-cred',
   OAUTH2_IMPLICIT = 'oauth-implicit',
   OAUTH2_PASSWORD = 'oauth-pword',
+  OAUTH2_TOKEN_EXCHANGE = 'oauth-token-exchange',
   FIREBASE = 'Firebase',
   BEARER = 'bearer',
   API_KEY = 'api-key',
@@ -103,7 +104,8 @@ export enum IntegrationAuthType {
 export enum NewAuthType {
   OAUTH2_PASSWORD_GRANT_FLOW = 'passwordGrantFlow',
   OAUTH2_AUTH_CODE_FLOW = 'authorizationCodeFlow',
-  OAUTH2_CLIENT_CREDS_FLOW = 'clientCredentialsFlow'
+  OAUTH2_CLIENT_CREDS_FLOW = 'clientCredentialsFlow',
+  OAUTH2_TOKEN_EXCHANGE_FLOW = 'tokenExchangeFlow'
 }
 
 export function isRedirectRequired(authType: AuthType | undefined): boolean {
@@ -177,6 +179,8 @@ export function getDisplayName(authType: AuthType): string {
     case NewAuthType.OAUTH2_AUTH_CODE_FLOW:
     case IntegrationAuthType.OAUTH2_CODE:
       return 'OAuth2 - Authorization Code';
+    case IntegrationAuthType.OAUTH2_TOKEN_EXCHANGE:
+      return 'OAuth2 - On-Behalf-Of Token Exchange';
     case IntegrationAuthType.BEARER:
       return 'Bearer Token';
     case IntegrationAuthType.TOKEN_PREFIXED:
@@ -202,12 +206,14 @@ export type FirebaseAuthConfig = PublicFirebaseAuthConfig;
 export type PublicOAuthConfig = PublicOAuthPasswordConfig &
   PublicOAuthClientCredsConfig &
   PublicOAuthImplicitConfig &
-  PublicOAuthCodeConfig;
+  PublicOAuthCodeConfig &
+  PublicOAuthTokenExchangeConfig;
 export type OAuthConfig = OAuthPasswordConfig &
   OAuthClientCredsConfig &
   OAuthImplicitConfig &
   OAuthCodeConfig &
-  OAuthBringYourOwnClientConfig;
+  OAuthBringYourOwnClientConfig &
+  OAuthTokenExchangeConfig;
 
 type PublicOAuthPasswordConfig = {
   clientId?: string;
@@ -497,4 +503,17 @@ export type DatasourceOneTimeState = {
 export type DeleteDatasourceOnAgentResult = {
   message?: string;
   success: boolean;
+};
+
+type PublicOAuthTokenExchangeConfig = {
+  tokenUrl?: string;
+  audience?: string;
+  scope?: string;
+  subjectTokenSource?: string;
+  subjectTokenSourceStaticToken?: string;
+  clientId?: string;
+};
+
+export type OAuthTokenExchangeConfig = PublicOAuthTokenExchangeConfig & {
+  clientSecret?: string;
 };
