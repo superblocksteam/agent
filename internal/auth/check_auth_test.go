@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"context"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -14,6 +16,7 @@ import (
 	"github.com/superblocksteam/agent/internal/auth/types"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestCheckAuth(t *testing.T) {
@@ -265,6 +268,96 @@ func TestCheckAuth(t *testing.T) {
 				assert.Equal(t, tt.expected.Cookies[i].Name, response.Cookies[i].Name)
 				assert.Equal(t, tt.expected.Cookies[i].Value, response.Cookies[i].Value)
 			}
+		})
+	}
+}
+
+func TestCheckAuth_OauthTokenExchange(t *testing.T) {
+	clock := clockwork.NewFakeClock()
+
+	testCases := []struct {
+		name        string
+		authConfig  map[string]any
+		cachedToken string
+		fetchErr    error
+		expected    *types.CheckAuthResponse
+	}{
+		{
+			name: "valid cached token",
+			authConfig: map[string]any{
+				"clientId":     "clientId",
+				"clientSecret": "clientSecret",
+				"tokenUrl":     "tokenUrl",
+				"authUrl":      "authUrl",
+				"audience":     "audience",
+				"scope":        "scope",
+				"tokenScope":   "datasource",
+			},
+			cachedToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjk5OTk5OTk5OTl9.K7BXzRQZpuTb1hMGYwF7yQGRyXb1_prtBJHt7NqdhJU",
+			expected: &types.CheckAuthResponse{
+				Authenticated: true,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+		{
+			name: "no cached token",
+			authConfig: map[string]any{
+				"clientId":     "clientId",
+				"clientSecret": "clientSecret",
+				"tokenUrl":     "tokenUrl",
+				"authUrl":      "authUrl",
+				"audience":     "audience",
+				"scope":        "scope",
+				"tokenScope":   "datasource",
+			},
+			cachedToken: "",
+			fetchErr:    errors.New("no cached token"),
+			expected: &types.CheckAuthResponse{
+				Authenticated: false,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+		{
+			name: "invalid cached token",
+			authConfig: map[string]any{
+				"clientId":     "clientId",
+				"clientSecret": "clientSecret",
+				"tokenUrl":     "tokenUrl",
+				"authUrl":      "authUrl",
+				"audience":     "audience",
+				"scope":        "scope",
+				"tokenScope":   "datasource",
+			},
+			cachedToken: "invalid-token",
+			fetchErr:    errors.New("invalid token"),
+			expected: &types.CheckAuthResponse{
+				Authenticated: false,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			anyIntegrationId := "any-integration-id"
+			anyConfigurationId := "any-configuration-id"
+			anyPluginId := "any-plugin-id"
+
+			anyCtx := context.Background()
+			dataSourceConfig := DatasourceConfig(authTypeOauthTokenExchange, tc.authConfig)
+
+			mockTokenFetcher := &mocks.OAuthCodeTokenFetcher{}
+			mockTokenFetcher.On("Fetch", anyCtx, authTypeOauthTokenExchange, mock.Anything, anyIntegrationId, anyConfigurationId, anyPluginId).Return(tc.cachedToken, "id-token", tc.fetchErr)
+			tm := &tokenManager{
+				OAuthCodeTokenFetcher: mockTokenFetcher,
+				clock:                 clock,
+				logger:                zaptest.NewLogger(t),
+			}
+
+			response, err := tm.CheckAuth(anyCtx, dataSourceConfig, anyIntegrationId, anyConfigurationId, anyPluginId)
+
+			assert.Equal(t, tc.expected.Authenticated, response.Authenticated)
+			assert.Equal(t, len(tc.expected.Cookies), len(response.Cookies))
+			assert.NoError(t, err)
 		})
 	}
 }

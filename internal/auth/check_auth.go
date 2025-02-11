@@ -8,6 +8,7 @@ import (
 
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/auth/types"
+	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
 	"github.com/superblocksteam/agent/pkg/observability"
 	v1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
@@ -143,6 +144,19 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 			authenticated = token != ""
 		} else {
 			authenticated = true
+		}
+	case authTypeOauthTokenExchange:
+		authConfigProto := &v1.OAuth_AuthorizationCodeFlow{}
+		if err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto); err != nil {
+			log.Error("error converting auth config to proto", zap.Error(err))
+			return nil, &sberrors.InternalError{Err: err}
+		}
+
+		authenticated = false
+		if cachedToken, _, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, integrationId, configurationId, pluginId); err == nil {
+			if valid, _ := t.isValidJwt(cachedToken, v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_UNSPECIFIED, log); valid {
+				authenticated = true
+			}
 		}
 	case authTypeFirebase:
 		if cookieValue == "" {

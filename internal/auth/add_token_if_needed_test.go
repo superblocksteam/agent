@@ -1741,6 +1741,94 @@ func TestGetIdentityProviderAccessToken(t *testing.T) {
 	}
 }
 
+func TestIsValidJwt(t *testing.T) {
+	tm := &tokenManager{
+		clock:  clockwork.NewFakeClock(),
+		logger: zaptest.NewLogger(t),
+	}
+	startTime := tm.clock.Now().Unix()
+	oneHourFromNow := startTime + 3600
+	oneHourAgo := startTime - 3600
+
+	testCases := []struct {
+		name               string
+		claims             jwt.MapClaims
+		isNotAJwt          bool
+		subjectTokenSource pluginscommon.OAuth_AuthorizationCodeFlow_SubjectTokenSource
+		expectedValid      bool
+		expectedErr        string
+	}{
+		{
+			name: "valid token",
+			claims: map[string]any{
+				"exp": oneHourFromNow,
+			},
+			expectedValid: true,
+		},
+		{
+			name: "valid token with no exp",
+			claims: map[string]any{
+				idpAccessTokenClaimKey: "idp-access-token",
+			},
+			expectedValid: true,
+		},
+		{
+			name:          "valid token with no claims",
+			claims:        map[string]any{},
+			expectedValid: true,
+		},
+		{
+			name: "expired token",
+			claims: map[string]any{
+				"exp": oneHourAgo,
+			},
+			expectedValid: false,
+			expectedErr:   "IntegrationOAuthError",
+		},
+		{
+			name:        "not a jwt",
+			isNotAJwt:   true,
+			expectedErr: "IntegrationOAuthError",
+		},
+		{
+			name: "expired token with subject token source",
+			claims: map[string]any{
+				"exp": oneHourAgo,
+			},
+			subjectTokenSource: pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER,
+			expectedValid:      false,
+			expectedErr:        "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" identity provider token expired\n\nRefresh your browser and follow prompts to reauthenticate with SSO.",
+		},
+		{
+			name:               "not a jwt with subject token source",
+			isNotAJwt:          true,
+			subjectTokenSource: pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN,
+			expectedErr:        "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" invalid static token provided\n\nPlease check the static token provided in the integration and try again.",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var token string
+			if tc.isNotAJwt {
+				token = "not-a-jwt"
+			} else if tc.claims != nil {
+				var err error
+				token, err = jwt.NewWithClaims(jwt.SigningMethodHS256, tc.claims).SignedString([]byte("test-secret"))
+				require.NoError(t, err)
+			}
+
+			actualValid, err := tm.isValidJwt(token, tc.subjectTokenSource, nil)
+
+			assert.Equal(t, tc.expectedValid, actualValid)
+			if tc.expectedErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.expectedErr)
+			}
+		})
+	}
+}
+
 func TestGetClaimsFromJwt(t *testing.T) {
 	testCases := []struct {
 		name           string
