@@ -466,17 +466,8 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 		return "", sberrors.IntegrationOAuthError(oauth.ErrInvalidSubjectTokenSource)
 	}
 
-	if claims, err := getClaimsFromJwt(subjectToken); err == nil {
-		if exp, ok := claims["exp"]; ok {
-			expiry := int64(exp.(float64))
-			if t.clock.Now().Unix() > expiry {
-				log.Error("subject token is expired", zap.Int64("expiry", expiry))
-				return "", sberrors.IntegrationOAuthError(oauth.SubjectTokenErrorMap[authConfigProto.GetSubjectTokenSource()][oauth.OAuth2ErrorTypeExpired])
-			}
-		}
-	} else {
-		log.Error("subject token is not a valid JWT", zap.Error(err))
-		return "", sberrors.IntegrationOAuthError(oauth.SubjectTokenErrorMap[authConfigProto.GetSubjectTokenSource()][oauth.OAuth2ErrorTypeInvalid])
+	if valid, err := t.isValidJwt(subjectToken, authConfigProto.GetSubjectTokenSource(), log); !valid {
+		return "", err
 	}
 
 	// Attempt token exchange using token from identity provider
@@ -617,6 +608,27 @@ func (t *tokenManager) getIdentityProviderAccessToken(ctx context.Context) (stri
 	}
 
 	return idpAccessToken, nil
+}
+
+func (t *tokenManager) isValidJwt(token string, tokenSource pluginscommon.OAuth_AuthorizationCodeFlow_SubjectTokenSource, log *zap.Logger) (bool, error) {
+	if log == nil {
+		log = t.logger
+	}
+
+	if claims, err := getClaimsFromJwt(token); err != nil {
+		log.Error("subject token is not a valid JWT", zap.Error(err))
+		return false, sberrors.IntegrationOAuthError(oauth.SubjectTokenErrorMap[tokenSource][oauth.OAuth2ErrorTypeInvalid])
+	} else {
+		if exp, ok := claims["exp"]; ok {
+			expiry := int64(exp.(float64))
+			if t.clock.Now().Unix() > expiry {
+				log.Error("subject token is expired", zap.Int64("expiry", expiry))
+				return false, sberrors.IntegrationOAuthError(oauth.SubjectTokenErrorMap[tokenSource][oauth.OAuth2ErrorTypeExpired])
+			}
+		}
+	}
+
+	return true, nil
 }
 
 func getClaimsFromJwt(token string) (jwt.MapClaims, error) {

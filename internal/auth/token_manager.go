@@ -9,7 +9,6 @@ import (
 	"github.com/superblocksteam/agent/internal/auth/types"
 	"github.com/superblocksteam/agent/pkg/clients"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
-	pluginscommon "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	v1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -21,7 +20,7 @@ type TokenManager interface {
 		ctx context.Context,
 		datasourceConfig *structpb.Struct,
 		redactedDatasourceConfig *structpb.Struct,
-		auth *pluginscommon.Auth,
+		auth *v1.Auth,
 		datasourceId string,
 		configurationId string,
 		pluginId string,
