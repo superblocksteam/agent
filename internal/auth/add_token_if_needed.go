@@ -426,6 +426,23 @@ func (t *tokenManager) getOauthPasswordToken(ctx context.Context, authType strin
 	return token, nil
 }
 
+// Returns the cached OAuth token if there is one.
+// Will not return a cached token if we should not be using a cached token based on the inputs.
+func (t *tokenManager) getCachedOauthToken(ctx context.Context, authType string, authConfigProto *pluginscommon.OAuth_AuthorizationCodeFlow, datasourceId string, configurationId string, pluginId string, log *zap.Logger) string {
+	// don't use a cached token if we are doing a "Test Connection"
+	if eventType := constants.EventType(ctx); eventType == constants.EventTypeTest {
+		return ""
+	}
+
+	// get exchanged token from cache if previously exchanged
+	if cachedToken, _, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, datasourceId, configurationId, pluginId); err == nil {
+		log.Info("using cached token from previous exchange")
+		return cachedToken
+	}
+
+	return ""
+}
+
 func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType string, authConfig *structpb.Struct, datasourceId string, configurationId string, pluginId string) (string, error) {
 	log := observability.ZapLogger(ctx, t.logger).With(zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId))
 
@@ -439,10 +456,7 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 
 	log = log.With(zap.String("subjectTokenSource", authConfigProto.GetSubjectTokenSource().String()))
 
-	// Get exchanged token from cache if previously exchanged
-	cachedToken, _, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, datasourceId, configurationId, pluginId)
-	if err == nil {
-		log.Info("using cached token from previous exchange")
+	if cachedToken := t.getCachedOauthToken(ctx, authType, authConfigProto, datasourceId, configurationId, pluginId, log); cachedToken != "" {
 		return cachedToken, nil
 	}
 

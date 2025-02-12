@@ -1870,3 +1870,76 @@ func TestGetClaimsFromJwt(t *testing.T) {
 		})
 	}
 }
+
+func TestGetCachedOauthToken(t *testing.T) {
+	t.Helper()
+	testCases := []struct {
+		name               string
+		ctx                context.Context
+		expectedToken      string
+		withCachedToken    string
+		withCachedTokenErr error
+	}{
+		{
+			name:            "does not return a cached token if no cached token exists",
+			ctx:             context.Background(),
+			withCachedToken: "",
+			expectedToken:   "",
+		},
+		{
+			name:            "returns a cached token if a cached token exists",
+			ctx:             context.Background(),
+			withCachedToken: "foo",
+			expectedToken:   "foo",
+		},
+		{
+			name:               "does not return a cached token if the fetch call returns an error",
+			ctx:                context.Background(),
+			withCachedTokenErr: errors.New("foo"),
+			expectedToken:      "",
+		},
+		{
+			name:            "does not return an existing cached token if event type is test",
+			ctx:             constants.WithEventType(metadata.NewIncomingContext(context.Background(), nil), constants.EventTypeTest),
+			withCachedToken: "foo",
+			expectedToken:   "",
+		},
+		{
+			name:            "does not return an non-existing cached token if event type is test",
+			ctx:             constants.WithEventType(metadata.NewIncomingContext(context.Background(), nil), constants.EventTypeTest),
+			withCachedToken: "",
+			expectedToken:   "",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			args := validArgs(t)
+
+			tm := &tokenManager{
+				OAuthClient: &oauth.OAuthClient{
+					HttpClient:    args.mockHttpClient,
+					FetcherCacher: args.mockFetcherCacher,
+					Clock:         args.clock,
+					Logger:        zap.NewNop(),
+				},
+
+				OAuthCodeTokenFetcher: args.mockOAuthCodeTokenFetcher,
+				clock:                 args.clock,
+				logger:                zap.NewNop(),
+			}
+
+			args.mockOAuthCodeTokenFetcher.On("Fetch", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.withCachedToken, "", tc.withCachedTokenErr).Maybe()
+
+			tokenPayload := tm.getCachedOauthToken(tc.ctx,
+				"",
+				nil,
+				"",
+				"",
+				"",
+				zap.NewNop(),
+			)
+
+			assert.Equal(t, tc.expectedToken, tokenPayload)
+		})
+	}
+}

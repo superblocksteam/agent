@@ -768,6 +768,7 @@ func (s *server) Test(ctx context.Context, req *apiv1.TestRequest) (*apiv1.TestR
 		}
 	}
 
+	ctx = constants.WithEventType(ctx, constants.EventTypeTest)
 	renderedIntegrationConfig, err := s.evaluateDatasource(ctx, req.GetDatasourceConfig(), integration, req.ConfigurationId, plugin, profile)
 	if err != nil {
 		return nil, err
