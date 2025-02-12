@@ -21,6 +21,7 @@ const (
 	ContextKeyCorrelationId
 	ContextKeyAgentId
 	ContextKeyAgentVersion
+	ContextKeyEventType
 	// TODO(frank): Add other context keys here.
 
 	HeaderCorrelationId  = "x-superblocks-correlation-id"
@@ -30,6 +31,9 @@ const (
 	ApiTypeApi          = "api"
 	ApiTypeScheduledJob = "scheduled_job"
 	ApiTypeWorkflow     = "workflow"
+
+	EventTypeUnknown = "unknown"
+	EventTypeTest    = "test"
 )
 
 func WithAgentId(ctx context.Context, agentId string) context.Context {
@@ -80,6 +84,18 @@ func ApiType(ctx context.Context) string {
 	}
 
 	return ApiTypeUnknown
+}
+
+func WithEventType(ctx context.Context, eventType string) context.Context {
+	return context.WithValue(ctx, ContextKeyEventType, eventType)
+}
+
+func EventType(ctx context.Context) string {
+	if eventType, ok := ctx.Value(ContextKeyEventType).(string); ok {
+		return eventType
+	}
+
+	return EventTypeUnknown
 }
 
 func WithExecutionID(ctx context.Context, executionID string) context.Context {
