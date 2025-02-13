@@ -14,7 +14,13 @@ export class Snowflake {
    * @param configureOptions Additional configuration options
    */
   constructor(connectionOptions: ConnectionOptions) {
-    configure({ logLevel: 'DEBUG' } as ConfigureOptions);
+    // We set insecureConnect to true here to disable OCSP checking.
+    //
+    // There's a bug in the snowflake-sdk version we're using that causes
+    // the event loop to be blocked (indefinitely) when attempting to write
+    // the OCSP cache file to disk, when running in an OPA. This causes the
+    // worker to become unresponsive and unable to execute any plugins.
+    configure({ logLevel: 'DEBUG', insecureConnect: true } as ConfigureOptions);
 
     // here we set timeout globally
     // maximum amount of time to keep the connection alive with no response (ms)

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Snowflake integration to support "oauth2 on-behalf-of token exchange" auth type
 - Explicitly shutdown prometheus metrics server when Python worker terminates
 - Update `CheckAuth` to support integration configurations using the OAuth on-behalf-of token exchange auth type
+- Updated Snowflake node sdk to `v1.15.0` and disabled OCSP checking when connecting to Snowflake
 
 ## v1.18.0
 
