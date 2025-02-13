@@ -2801,8 +2801,8 @@ importers:
         specifier: 1.2.6
         version: 1.2.6
       snowflake-sdk:
-        specifier: 1.12.0
-        version: 1.12.0(asn1.js@5.4.1)
+        specifier: 1.15.0
+        version: 1.15.0(asn1.js@5.4.1)
     devDependencies:
       '@swc/cli':
         specifier: ^0.4.0
@@ -8436,8 +8436,8 @@ packages:
     resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
     engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
 
-  snowflake-sdk@1.12.0:
-    resolution: {integrity: sha512-ZUFYR327vh+Tgo4s/1NhZTjg24g6t7rA3VTgP13sy9WBxdgPVuKN2G4rgeoml8vYKfARPCYmQBr6ysVF/y7EKw==}
+  snowflake-sdk@1.15.0:
+    resolution: {integrity: sha512-u7eNIT2JWkA8USJF6gTOCcReNrdh8V9LCazJi3F0XnX5ZJkgPz2gNSn67drT4ywqNaXdXfFM0i/yNSa58fi2Rg==}
     peerDependencies:
       asn1.js: ^5.4.1
 
@@ -16385,7 +16385,7 @@ snapshots:
 
   smart-buffer@4.2.0: {}
 
-  snowflake-sdk@1.12.0(asn1.js@5.4.1):
+  snowflake-sdk@1.15.0(asn1.js@5.4.1):
     dependencies:
       '@aws-sdk/client-s3': 3.388.0
       '@aws-sdk/node-http-handler': 3.374.0
@@ -16407,7 +16407,7 @@ snapshots:
       generic-pool: 3.9.0
       glob: 10.4.5
       https-proxy-agent: 7.0.5
-      jsonwebtoken: 9.0.2
+      jsonwebtoken: 9.0.0
       mime-types: 2.1.35
       mkdirp: 1.0.4
       moment: 2.30.1
