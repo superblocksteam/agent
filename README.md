@@ -7,7 +7,7 @@
 
 ----
 
-The Superblocks [On-Premise Agent](https://www.superblocks.com/on-prem-agent) is a stateless service that securly connects the Superblocks platform to your data without leaving your network. It is the execution engine that powers Superblocks Application APIs, Workflows, and Scheduled Jobs. Here's how it works.
+The Superblocks [On-Premise Agent](https://www.superblocks.com/on-prem-agent) is a stateless service that securely connects the Superblocks platform to your data without leaving your network. It is the execution engine that powers Superblocks Application APIs, Workflows, and Scheduled Jobs. Here's how it works.
 
 When your developers build apps in Superblocks and write SQL statements or API calls, your customer data flows from your Database to the On-premise Agent to the browser directly; never to Superblocks Cloud. In addition, the Superblocks Cloud cannot make any inbound network calls to the customer’s network.
 
