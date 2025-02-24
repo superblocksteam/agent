@@ -1,0 +1,25 @@
+---
+providers:
+  docker:
+    endpoint: unix:///var/run/docker.sock
+    exposedByDefault: false
+    # Uncomment to use custom certificates
+    # file:
+    #   filename: /etc/traefik/tls.yaml
+log:
+  level: info
+entryPoints:
+  web:
+    address: :80
+  websecure:
+    address: :443
+
+# Configure HTTP01 Challenge for Let's Encrypt
+
+# certificatesResolvers:
+#   letsencrypt:
+#     acme:
+#       email: myemail@example.com
+#       storage: /letsencrypt/acme.json
+#       httpChallenge:
+#         entryPoint: web

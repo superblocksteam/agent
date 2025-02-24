@@ -1,6 +1,5 @@
 orchestrator
 Dockerfile
-Dockerfile
 coverage/
 clients/
 tmp/
@@ -26,3 +25,7 @@ Dockerfile.worker.javascript
 
 ./workers/golang/worker.go
 ./workers/golang/worker_go
+
+traefik.yaml
+tls.yaml
+certs/
