@@ -39,7 +39,7 @@ repos:
         pass_filenames: false
         files: "^codecov.yml$"
   - repo: https://github.com/google/yamlfmt
-    rev: v0.10.0
+    rev: v0.16.0
     hooks:
       - id: yamlfmt
         name: "[yaml] format"
