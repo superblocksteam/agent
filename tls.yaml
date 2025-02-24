@@ -1,0 +1,12 @@
+---
+tls:
+  stores:
+    # Default certificate without SNI
+    default:
+      defaultCertificate:
+        certFile: /etc/certs/testCert.pem
+        keyFile: /etc/certs/testKey.pem
+  # Specify certificates to be served with matching domain names
+  certificates:
+    - certFile: /etc/certs/testCert.pem
+      keyFile: /etc/certs/testKey.pem
