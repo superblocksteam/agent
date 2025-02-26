@@ -3,9 +3,9 @@ providers:
   docker:
     endpoint: unix:///var/run/docker.sock
     exposedByDefault: false
-    # Uncomment to use custom certificates
-    # file:
-    #   filename: /etc/traefik/tls.yaml
+  # Remove the file provider section if using certificate resolver
+  file:
+    filename: /etc/traefik/tls.yaml
 log:
   level: info
 entryPoints:
