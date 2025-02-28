@@ -194,6 +194,13 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 		}
 
 		metrics.ApiFetchRequestsTotal.WithLabelValues("succeeded").Inc()
+	} else if f := request.GetFetchByPath(); f != nil {
+		if def, rawDef, err = fetcher.FetchApiByPath(ctx, f, useAgentKey); err != nil {
+			metrics.ApiFetchRequestsTotal.WithLabelValues("failed").Inc()
+			return nil, nil, err
+		}
+
+		metrics.ApiFetchRequestsTotal.WithLabelValues("succeeded").Inc()
 	}
 
 	if def == nil {

@@ -257,6 +257,43 @@ message ExecuteRequest {
     optional string branch_name = 7;
   }
 
+  message FetchByPath {
+    /*
+     * The integration profile to use.
+     */
+    common.v1.Profile profile = 1;
+
+    /*
+     * Use unpublished changes.
+     */
+    optional bool test = 2;
+
+    /*
+     * The view mode that this resource should be executed against.
+     */
+    ViewMode view_mode = 3;
+
+    /*
+     * The path to the API specification, relative from the root of a bundle.
+     */
+    string path = 4;
+
+    /*
+     * The application ID to use when fetching the API.
+     */
+    optional string application_id = 5;
+
+    /*
+     * The commit ID to use when fetching the API.
+     */
+    optional string commit_id = 6;
+
+    /*
+     * The branch name to use when fetching the API
+     */
+    optional string branch_name = 7;
+  }
+
   /*
    * Request options.
    */
@@ -280,6 +317,11 @@ message ExecuteRequest {
      * Details on how to fetch the API specification.
      */
     Fetch fetch = 4;
+
+    /*
+     * Details on how to fetch the API by a path relative to the root of an (application) bundle.
+     */
+    FetchByPath fetch_by_path = 8;
   }
 
   message File {

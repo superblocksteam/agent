@@ -659,6 +659,353 @@ func TestFetchApi(t *testing.T) {
 	}
 }
 
+func TestFetchApiByPath(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name           string
+		request        *apiv1.ExecuteRequest_FetchByPath
+		expectedURL    string
+		expectedDef    *apiv1.Definition
+		expectedRawDef map[string]any
+		err            error
+		response       *http.Response
+	}{
+		{
+			name: "normal fetch with commit id",
+			request: &apiv1.ExecuteRequest_FetchByPath{
+				Path:          "/pages/Page 2/apis/TestApi1/api.json",
+				ApplicationId: proto.String("app-id"),
+				CommitId:      proto.String("commit-id"),
+			},
+			expectedDef: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:           "00000000-0000-0000-0000-000000000001",
+						Organization: "org-id",
+						Name:         "TestApi1",
+					},
+					Trigger: &apiv1.Trigger{
+						Config: &apiv1.Trigger_Application_{
+							Application: &apiv1.Trigger_Application{
+								Id: "app-id",
+							},
+						},
+					},
+					Blocks: []*apiv1.Block{},
+				},
+			},
+			expectedRawDef: map[string]any{
+				"api": map[string]any{
+					"metadata": map[string]any{
+						"id":           "00000000-0000-0000-0000-000000000001",
+						"organization": "org-id",
+						"name":         "TestApi1",
+					},
+					"trigger": map[string]any{
+						"application": map[string]any{
+							"id": "app-id",
+						},
+					},
+					"blocks":     []any{},
+					"extraField": "extraValue",
+				},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+				{
+					"api": {
+						"metadata": {
+						  "id": "00000000-0000-0000-0000-000000000001",
+						  "organization": "org-id",
+						  "name": "TestApi1"
+						},
+						"trigger": {
+						  "application": {
+						    "id": "app-id"
+						  }
+						},
+						"blocks": [],
+						"extraField": "extraValue"
+					}
+				}
+				`)),
+			},
+			err:         nil,
+			expectedURL: "https://api.superblocks.com/api/v3/apis/applications/app-id/commits/commit-id/%2Fpages%2FPage%202%2Fapis%2FTestApi1%2Fapi.json?hydrate=true",
+		},
+		{
+			name: "normal fetch with branch name",
+			request: &apiv1.ExecuteRequest_FetchByPath{
+				Path:          "/pages/Page 2/apis/TestApi1/api.json",
+				ApplicationId: proto.String("app-id"),
+				BranchName:    proto.String("jdoe/test-branch"),
+			},
+			expectedDef: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:           "00000000-0000-0000-0000-000000000001",
+						Organization: "org-id",
+						Name:         "TestApi1",
+					},
+					Trigger: &apiv1.Trigger{
+						Config: &apiv1.Trigger_Application_{
+							Application: &apiv1.Trigger_Application{
+								Id: "app-id",
+							},
+						},
+					},
+					Blocks: []*apiv1.Block{},
+				},
+			},
+			expectedRawDef: map[string]any{
+				"api": map[string]any{
+					"metadata": map[string]any{
+						"id":           "00000000-0000-0000-0000-000000000001",
+						"organization": "org-id",
+						"name":         "TestApi1",
+					},
+					"trigger": map[string]any{
+						"application": map[string]any{
+							"id": "app-id",
+						},
+					},
+					"blocks":     []any{},
+					"extraField": "extraValue",
+				},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+				{
+					"api": {
+						"metadata": {
+						  "id": "00000000-0000-0000-0000-000000000001",
+						  "organization": "org-id",
+						  "name": "TestApi1"
+						},
+						"trigger": {
+						  "application": {
+						    "id": "app-id"
+						  }
+						},
+						"blocks": [],
+						"extraField": "extraValue"
+					}
+				}
+				`)),
+			},
+			err:         nil,
+			expectedURL: "https://api.superblocks.com/api/v3/apis/applications/app-id/branches/jdoe%2Ftest-branch/%2Fpages%2FPage%202%2Fapis%2FTestApi1%2Fapi.json?hydrate=true",
+		},
+		{
+			name: "signed api",
+			request: &apiv1.ExecuteRequest_FetchByPath{
+				Path:          "/pages/Page 2/apis/TestApi1/api.json",
+				ApplicationId: proto.String("app-id"),
+				CommitId:      proto.String("commit-id"),
+			},
+			expectedDef: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:           "00000000-0000-0000-0000-000000000001",
+						Organization: "org-id",
+						Name:         "TestApi1",
+					},
+					Trigger: &apiv1.Trigger{
+						Config: &apiv1.Trigger_Application_{
+							Application: &apiv1.Trigger_Application{
+								Id: "app-id",
+							},
+						},
+					},
+					Blocks: []*apiv1.Block{},
+					Signature: &pbutils.Signature{
+						KeyId:     "key-id",
+						Data:      []byte("api-signature"),
+						PublicKey: []byte("any-public-key"),
+						Algorithm: pbutils.Signature_ALGORITHM_ED25519,
+					},
+				},
+			},
+			expectedRawDef: map[string]any{
+				"api": map[string]any{
+					"metadata": map[string]any{
+						"id":           "00000000-0000-0000-0000-000000000001",
+						"organization": "org-id",
+						"name":         "TestApi1",
+					},
+					"trigger": map[string]any{
+						"application": map[string]any{
+							"id": "app-id",
+						},
+					},
+					"blocks": []any{},
+					"signature": map[string]any{
+						"keyId":     "key-id",
+						"data":      "api-signature",
+						"publicKey": "any-public-key",
+						"algorithm": 1,
+					},
+					"extraField": "extraValue",
+				},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+				{
+					"api": {
+						"metadata": {
+						  "id": "00000000-0000-0000-0000-000000000001",
+						  "organization": "org-id",
+						  "name": "TestApi1"
+						},
+						"trigger": {
+						  "application": {
+						    "id": "app-id"
+						  }
+						},
+						"blocks": [],
+						"signature": {
+						  "keyId": "key-id",
+						  "data": "YXBpLXNpZ25hdHVyZQ==",
+						  "publicKey": "YW55LXB1YmxpYy1rZXk=",
+						  "algorithm": 1
+						},
+						"extraField": "extraValue"
+					}
+				}
+				`)),
+			},
+			err:         nil,
+			expectedURL: "https://api.superblocks.com/api/v3/apis/applications/app-id/commits/commit-id/%2Fpages%2FPage%202%2Fapis%2FTestApi1%2Fapi.json?hydrate=true",
+		},
+		{
+			name: "signed api, no algorithm public key",
+			request: &apiv1.ExecuteRequest_FetchByPath{
+				Path:          "/pages/Page 2/apis/TestApi1/api.json",
+				ApplicationId: proto.String("app-id"),
+				BranchName:    proto.String("jdoe/test-branch"),
+			},
+			expectedDef: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:           "00000000-0000-0000-0000-000000000001",
+						Organization: "org-id",
+						Name:         "TestApi1",
+					},
+					Trigger: &apiv1.Trigger{
+						Config: &apiv1.Trigger_Application_{
+							Application: &apiv1.Trigger_Application{
+								Id: "app-id",
+							},
+						},
+					},
+					Blocks: []*apiv1.Block{},
+					Signature: &pbutils.Signature{
+						KeyId: "key-id",
+						Data:  []byte("api-signature"),
+					},
+				},
+			},
+			expectedRawDef: map[string]any{
+				"api": map[string]any{
+					"metadata": map[string]any{
+						"id":           "00000000-0000-0000-0000-000000000001",
+						"organization": "org-id",
+						"name":         "TestApi1",
+					},
+					"trigger": map[string]any{
+						"application": map[string]any{
+							"id": "app-id",
+						},
+					},
+					"blocks": []any{},
+					"signature": map[string]any{
+						"keyId": "key-id",
+						"data":  "api-signature",
+					},
+					"extraField": "extraValue",
+				},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+				{
+					"api": {
+						"metadata": {
+						  "id": "00000000-0000-0000-0000-000000000001",
+						  "organization": "org-id",
+						  "name": "TestApi1"
+						},
+						"trigger": {
+						  "application": {
+						    "id": "app-id"
+						  }
+						},
+						"blocks": [],
+						"signature": {
+						  "keyId": "key-id",
+						  "data": "YXBpLXNpZ25hdHVyZQ=="
+						},
+						"extraField": "extraValue"
+					}
+				}
+				`)),
+			},
+			err:         nil,
+			expectedURL: "https://api.superblocks.com/api/v3/apis/applications/app-id/branches/jdoe%2Ftest-branch/%2Fpages%2FPage%202%2Fapis%2FTestApi1%2Fapi.json?hydrate=true",
+		},
+		{
+			name: "timed out, nil response",
+			request: &apiv1.ExecuteRequest_FetchByPath{
+				Path:          "/pages/Page 2/apis/TestApi1/api.json",
+				ApplicationId: proto.String("app-id"),
+				CommitId:      proto.String("commit-id"),
+			},
+			expectedURL: "https://api.superblocks.com/api/v3/apis/applications/app-id/commits/commit-id/%2Fpages%2FPage%202%2Fapis%2FTestApi1%2Fapi.json?hydrate=true",
+			response:    nil,
+			err: &commonv1.Error{
+				Message: "context deadline exceeded",
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			client := mocks.NewHttpClient(t)
+			client.On("Do", mock.Anything).Return(test.response, test.err)
+
+			expectedRaw, err := structpb.NewStruct(test.expectedRawDef)
+			assert.NoError(t, err)
+
+			fetcher := New(&Options{
+				Logger: zap.NewNop(),
+				ServerClient: clients.NewServerClient(&clients.ServerClientOptions{
+					URL:                 "https://api.superblocks.com",
+					Client:              client,
+					SuperblocksAgentKey: "foobar",
+				}),
+			}).(*fetcher)
+
+			actual, actualRaw, err := fetcher.FetchApiByPath(context.Background(), test.request, false)
+
+			if test.err != nil {
+				assert.Error(t, err, test.name)
+			} else {
+				assert.NoError(t, err, test.name)
+				utils.AssertProtoEqual(t, test.expectedDef, actual)
+				utils.AssertProtoEqual(t, expectedRaw, actualRaw)
+			}
+
+			client.AssertNumberOfCalls(t, "Do", 1)
+			req := client.Calls[0].Arguments[0].(*http.Request)
+
+			assert.Equal(t, http.MethodGet, req.Method)
+			assert.Equal(t, test.expectedURL, req.URL.String(), test.name)
+		})
+	}
+}
+
 func TestFetchIntegration(t *testing.T) {
 	t.Parallel()
 

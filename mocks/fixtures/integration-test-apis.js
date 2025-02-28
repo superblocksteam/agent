@@ -1548,6 +1548,70 @@ const integrationTestApis = [
       profile: 'production',
     },
   },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000029',
+        organization: '00000000-0000-0000-0000-000000000001',
+        name: 'TestApi1',
+        path: '/pages/Page 2/apis/TestApi1/api.json',
+        commitId: '8c3f54b6a4f9c16a24bfa8397499ed577f7931ac',
+      },
+      signature: {
+        data: 'pgqNTDxjk5l+EeAWD2Vh793330J9lJtOsqRTrmNryJD1juLDdgBYIrPjjJMXja5nzKIza9GJFHDoshrPgbHoBA==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            javascript: {
+              body: "return 'hello path based api world!!! (from a commit)';",
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+  },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000030',
+        organization: '00000000-0000-0000-0000-000000000001',
+        name: 'TestApi1',
+        path: '/pages/Page 2/apis/TestApi1/api.json',
+        branch: 'jdoe/test-branch',
+      },
+      signature: {
+        data: 'n6//XLSyG4zD//wXXtu2l/DZjb49u0mS43YwZwc0iVL/7pKZnz3cehon0I9HCgMVFKmw9zImUq/gnLqQCtWQBg==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            javascript: {
+              body: "return 'hello path based api world!!! (from a branch)';",
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+  },
 ];
 
 module.exports = integrationTestApis;

@@ -163,6 +163,15 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
      */
     value: ExecuteRequest_Fetch;
     case: "fetch";
+  } | {
+    /**
+     *
+     * Details on how to fetch the API by a path relative to the root of an (application) bundle.
+     *
+     * @generated from field: api.v1.ExecuteRequest.FetchByPath fetch_by_path = 8;
+     */
+    value: ExecuteRequest_FetchByPath;
+    case: "fetchByPath";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
@@ -192,6 +201,7 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
     { no: 2, name: "inputs", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Value} },
     { no: 3, name: "definition", kind: "message", T: Definition, oneof: "request" },
     { no: 4, name: "fetch", kind: "message", T: ExecuteRequest_Fetch, oneof: "request" },
+    { no: 8, name: "fetch_by_path", kind: "message", T: ExecuteRequest_FetchByPath, oneof: "request" },
     { no: 5, name: "files", kind: "message", T: ExecuteRequest_File, repeated: true },
     { no: 6, name: "profile", kind: "message", T: Profile },
     { no: 7, name: "mocks", kind: "message", T: Mock, repeated: true },
@@ -416,6 +426,100 @@ export class ExecuteRequest_Fetch extends Message<ExecuteRequest_Fetch> {
 
   static equals(a: ExecuteRequest_Fetch | PlainMessage<ExecuteRequest_Fetch> | undefined, b: ExecuteRequest_Fetch | PlainMessage<ExecuteRequest_Fetch> | undefined): boolean {
     return proto3.util.equals(ExecuteRequest_Fetch, a, b);
+  }
+}
+
+/**
+ * @generated from message api.v1.ExecuteRequest.FetchByPath
+ */
+export class ExecuteRequest_FetchByPath extends Message<ExecuteRequest_FetchByPath> {
+  /**
+   *
+   * The integration profile to use.
+   *
+   * @generated from field: common.v1.Profile profile = 1;
+   */
+  profile?: Profile;
+
+  /**
+   *
+   * Use unpublished changes.
+   *
+   * @generated from field: optional bool test = 2;
+   */
+  test?: boolean;
+
+  /**
+   *
+   * The view mode that this resource should be executed against.
+   *
+   * @generated from field: api.v1.ViewMode view_mode = 3;
+   */
+  viewMode = ViewMode.UNSPECIFIED;
+
+  /**
+   *
+   * The path to the API specification, relative from the root of a bundle.
+   *
+   * @generated from field: string path = 4;
+   */
+  path = "";
+
+  /**
+   *
+   * The application ID to use when fetching the API.
+   *
+   * @generated from field: optional string application_id = 5;
+   */
+  applicationId?: string;
+
+  /**
+   *
+   * The commit ID to use when fetching the API.
+   *
+   * @generated from field: optional string commit_id = 6;
+   */
+  commitId?: string;
+
+  /**
+   *
+   * The branch name to use when fetching the API
+   *
+   * @generated from field: optional string branch_name = 7;
+   */
+  branchName?: string;
+
+  constructor(data?: PartialMessage<ExecuteRequest_FetchByPath>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.ExecuteRequest.FetchByPath";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "profile", kind: "message", T: Profile },
+    { no: 2, name: "test", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 3, name: "view_mode", kind: "enum", T: proto3.getEnumType(ViewMode) },
+    { no: 4, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "application_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 6, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 7, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteRequest_FetchByPath {
+    return new ExecuteRequest_FetchByPath().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ExecuteRequest_FetchByPath {
+    return new ExecuteRequest_FetchByPath().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ExecuteRequest_FetchByPath {
+    return new ExecuteRequest_FetchByPath().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ExecuteRequest_FetchByPath | PlainMessage<ExecuteRequest_FetchByPath> | undefined, b: ExecuteRequest_FetchByPath | PlainMessage<ExecuteRequest_FetchByPath> | undefined): boolean {
+    return proto3.util.equals(ExecuteRequest_FetchByPath, a, b);
   }
 }
 

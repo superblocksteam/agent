@@ -57,6 +57,7 @@ type Options struct {
 //go:generate mockery --name=Fetcher --output ./mocks --structname Fetcher
 type Fetcher interface {
 	FetchApi(context context.Context, request *apiv1.ExecuteRequest_Fetch, useAgentKey bool) (*apiv1.Definition, *structpb.Struct, error)
+	FetchApiByPath(context context.Context, request *apiv1.ExecuteRequest_FetchByPath, useAgentKey bool) (*apiv1.Definition, *structpb.Struct, error)
 	FetchScheduledJobs(context.Context) (*transportv1.FetchScheduleJobResp, *structpb.Struct, error)
 	FetchIntegrationMetadata(context.Context, string) (*integrationv1.GetIntegrationResponse, error)
 	FetchIntegration(context context.Context, integrationId string, profile *commonv1.Profile) (*Integration, error)
@@ -100,6 +101,28 @@ func (f *fetcher) FetchApi(ctx context.Context, options *apiv1.ExecuteRequest_Fe
 	}
 	defer resp.Body.Close()
 
+	return f.handleFetchApiResponse(ctx, resp, err, logger)
+}
+
+func (f *fetcher) FetchApiByPath(ctx context.Context, options *apiv1.ExecuteRequest_FetchByPath, useAgentKey bool) (*apiv1.Definition, *structpb.Struct, error) {
+	logger := utils.ContexualLogger(ctx, f.logger.With(zap.String("application_id", options.GetApplicationId()), zap.String("api_path", options.GetPath())))
+
+	resp, err := tracer.Observe(ctx, "fetch.api_by_path", map[string]any{
+		observability.OBS_TAG_RESOURCE_ID: options.ApplicationId,
+	}, func(ctx context.Context, _ trace.Span) (*http.Response, error) {
+		return f.sendFetchApiByPathRequest(ctx, options, useAgentKey)
+	}, nil)
+
+	if resp == nil {
+		logger.Error("could not fetch api from superblocks: response is nil", zap.Error(err))
+		return nil, nil, new(sberrors.InternalError)
+	}
+	defer resp.Body.Close()
+
+	return f.handleFetchApiResponse(ctx, resp, err, logger)
+}
+
+func (f *fetcher) handleFetchApiResponse(ctx context.Context, resp *http.Response, err error, logger *zap.Logger) (*apiv1.Definition, *structpb.Struct, error) {
 	if i, e := clients.Check(err, resp); e != nil {
 		logger.Error(
 			"could not fetch api from superblocks",
@@ -468,6 +491,53 @@ func (f *fetcher) sendFetchApiRequest(ctx context.Context, options *apiv1.Execut
 	}
 
 	return f.serverClient.GetApi(ctx, nil, headers, query, options.Id, useAgentKey, branchName)
+}
+
+func (f *fetcher) sendFetchApiByPathRequest(ctx context.Context, options *apiv1.ExecuteRequest_FetchByPath, useAgentKey bool) (*http.Response, error) {
+	headers := map[string][]string{}
+	{
+		if metadata, ok := metadata.FromIncomingContext(ctx); ok {
+			headers["Authorization"] = metadata.Get("authorization")
+			headers["X-Superblocks-Authorization"] = metadata.Get("x-superblocks-authorization")
+		}
+	}
+
+	query := url.Values{}
+	query.Set("hydrate", "true")
+
+	if profile := options.Profile; profile != nil {
+		if profile.Name != nil {
+			query.Set(QueryParamProfileName, profile.GetName())
+		}
+		if profile.Environment != nil {
+			query.Set(QueryParamEnvironment, profile.GetEnvironment())
+		}
+		if profile.Id != nil {
+			query.Set(QueryParamProfileID, profile.GetId())
+		}
+	}
+
+	// https://github.com/superblocksteam/superblocks/blob/master/packages/shared/src/types/event/index.ts#L24-L28
+	switch options.ViewMode {
+	case apiv1.ViewMode_VIEW_MODE_EDIT:
+		query.Set("viewMode", "editor")
+	case apiv1.ViewMode_VIEW_MODE_PREVIEW:
+		query.Set("viewMode", "preview")
+	case apiv1.ViewMode_VIEW_MODE_DEPLOYED:
+		query.Set("viewMode", "deployed")
+	}
+
+	return f.serverClient.GetApiByPath(
+		ctx,
+		nil,
+		headers,
+		query,
+		options.Path,
+		options.GetApplicationId(),
+		options.GetBranchName(),
+		options.GetCommitId(),
+		useAgentKey,
+	)
 }
 
 func (f *fetcher) DeleteSpecificUserTokens(ctx context.Context) error {

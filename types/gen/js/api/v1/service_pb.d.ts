@@ -84,6 +84,11 @@ export class ExecuteRequest extends jspb.Message {
     clearFetch(): void;
     getFetch(): ExecuteRequest.Fetch | undefined;
     setFetch(value?: ExecuteRequest.Fetch): ExecuteRequest;
+
+    hasFetchByPath(): boolean;
+    clearFetchByPath(): void;
+    getFetchByPath(): ExecuteRequest.FetchByPath | undefined;
+    setFetchByPath(value?: ExecuteRequest.FetchByPath): ExecuteRequest;
     clearFilesList(): void;
     getFilesList(): Array<ExecuteRequest.File>;
     setFilesList(value: Array<ExecuteRequest.File>): ExecuteRequest;
@@ -117,6 +122,7 @@ export namespace ExecuteRequest {
         inputsMap: Array<[string, google_protobuf_struct_pb.Value.AsObject]>,
         definition?: Definition.AsObject,
         fetch?: ExecuteRequest.Fetch.AsObject,
+        fetchByPath?: ExecuteRequest.FetchByPath.AsObject,
         filesList: Array<ExecuteRequest.File.AsObject>,
         profile?: common_v1_common_pb.Profile.AsObject,
         mocksList: Array<Mock.AsObject>,
@@ -217,6 +223,59 @@ export namespace ExecuteRequest {
         }
     }
 
+    export class FetchByPath extends jspb.Message { 
+
+        hasProfile(): boolean;
+        clearProfile(): void;
+        getProfile(): common_v1_common_pb.Profile | undefined;
+        setProfile(value?: common_v1_common_pb.Profile): FetchByPath;
+
+        hasTest(): boolean;
+        clearTest(): void;
+        getTest(): boolean | undefined;
+        setTest(value: boolean): FetchByPath;
+        getViewMode(): ViewMode;
+        setViewMode(value: ViewMode): FetchByPath;
+        getPath(): string;
+        setPath(value: string): FetchByPath;
+
+        hasApplicationId(): boolean;
+        clearApplicationId(): void;
+        getApplicationId(): string | undefined;
+        setApplicationId(value: string): FetchByPath;
+
+        hasCommitId(): boolean;
+        clearCommitId(): void;
+        getCommitId(): string | undefined;
+        setCommitId(value: string): FetchByPath;
+
+        hasBranchName(): boolean;
+        clearBranchName(): void;
+        getBranchName(): string | undefined;
+        setBranchName(value: string): FetchByPath;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): FetchByPath.AsObject;
+        static toObject(includeInstance: boolean, msg: FetchByPath): FetchByPath.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: FetchByPath, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): FetchByPath;
+        static deserializeBinaryFromReader(message: FetchByPath, reader: jspb.BinaryReader): FetchByPath;
+    }
+
+    export namespace FetchByPath {
+        export type AsObject = {
+            profile?: common_v1_common_pb.Profile.AsObject,
+            test?: boolean,
+            viewMode: ViewMode,
+            path: string,
+            applicationId?: string,
+            commitId?: string,
+            branchName?: string,
+        }
+    }
+
     export class File extends jspb.Message { 
         getOriginalname(): string;
         setOriginalname(value: string): File;
@@ -256,6 +315,7 @@ export namespace ExecuteRequest {
         REQUEST_NOT_SET = 0,
         DEFINITION = 3,
         FETCH = 4,
+        FETCH_BY_PATH = 8,
     }
 
 }
