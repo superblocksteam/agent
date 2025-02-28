@@ -84,6 +84,45 @@ func (_m *Fetcher) FetchApi(_a0 context.Context, request *v1.ExecuteRequest_Fetc
 	return r0, r1, r2
 }
 
+// FetchApiByPath provides a mock function with given fields: _a0, request, useAgentKey
+func (_m *Fetcher) FetchApiByPath(_a0 context.Context, request *v1.ExecuteRequest_FetchByPath, useAgentKey bool) (*v1.Definition, *structpb.Struct, error) {
+	ret := _m.Called(_a0, request, useAgentKey)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FetchApiByPath")
+	}
+
+	var r0 *v1.Definition
+	var r1 *structpb.Struct
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, *v1.ExecuteRequest_FetchByPath, bool) (*v1.Definition, *structpb.Struct, error)); ok {
+		return rf(_a0, request, useAgentKey)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *v1.ExecuteRequest_FetchByPath, bool) *v1.Definition); ok {
+		r0 = rf(_a0, request, useAgentKey)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*v1.Definition)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *v1.ExecuteRequest_FetchByPath, bool) *structpb.Struct); ok {
+		r1 = rf(_a0, request, useAgentKey)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*structpb.Struct)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, *v1.ExecuteRequest_FetchByPath, bool) error); ok {
+		r2 = rf(_a0, request, useAgentKey)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // FetchIntegration provides a mock function with given fields: _a0, integrationId, profile
 func (_m *Fetcher) FetchIntegration(_a0 context.Context, integrationId string, profile *commonv1.Profile) (*fetch.Integration, error) {
 	ret := _m.Called(_a0, integrationId, profile)

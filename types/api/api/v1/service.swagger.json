@@ -1111,6 +1111,39 @@
     "EventStart": {
       "type": "object"
     },
+    "ExecuteRequestFetchByPath": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "$ref": "#/definitions/v1Profile",
+          "description": "The integration profile to use."
+        },
+        "test": {
+          "type": "boolean",
+          "description": "Use unpublished changes."
+        },
+        "viewMode": {
+          "$ref": "#/definitions/v1ViewMode",
+          "description": "The view mode that this resource should be executed against."
+        },
+        "path": {
+          "type": "string",
+          "description": "The path to the API specification, relative from the root of a bundle."
+        },
+        "applicationId": {
+          "type": "string",
+          "description": "The application ID to use when fetching the API."
+        },
+        "commitId": {
+          "type": "string",
+          "description": "The commit ID to use when fetching the API."
+        },
+        "branchName": {
+          "type": "string",
+          "title": "The branch name to use when fetching the API"
+        }
+      }
+    },
     "ExecutorServiceAwaitBody": {
       "type": "object",
       "properties": {
@@ -1157,6 +1190,10 @@
           },
           "description": "Details on how to fetch the API specification.",
           "title": "Details on how to fetch the API specification."
+        },
+        "fetchByPath": {
+          "$ref": "#/definitions/ExecuteRequestFetchByPath",
+          "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
         },
         "files": {
           "type": "array",
@@ -5570,6 +5607,10 @@
           "description": "Details on how to fetch the API specification.",
           "title": "Details on how to fetch the API specification."
         },
+        "fetchByPath": {
+          "$ref": "#/definitions/ExecuteRequestFetchByPath",
+          "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
+        },
         "files": {
           "type": "array",
           "items": {
@@ -5718,6 +5759,10 @@
         "fetch": {
           "$ref": "#/definitions/v1ExecuteRequestFetch",
           "description": "Details on how to fetch the API specification."
+        },
+        "fetchByPath": {
+          "$ref": "#/definitions/ExecuteRequestFetchByPath",
+          "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
         },
         "files": {
           "type": "array",
@@ -5876,6 +5921,10 @@
           },
           "description": "Details on how to fetch the API specification.",
           "title": "Details on how to fetch the API specification."
+        },
+        "fetchByPath": {
+          "$ref": "#/definitions/ExecuteRequestFetchByPath",
+          "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
         },
         "files": {
           "type": "array",

@@ -90,6 +90,112 @@ module.exports = [
     ],
   },
   {
+    id: 'fetch-by-path-with-commit-id',
+    url: '/api/v3/apis/applications/:applicationId/commits/:commitId/:path',
+    method: 'GET',
+    variants: [
+      {
+        id: 'default',
+        type: 'middleware',
+        options: {
+          middleware: (req, res) => {
+            const data = apiDefinitions.find(
+              (definition) => definition.api.trigger?.application?.id === req.params.applicationId
+                && definition.api.metadata.path === req.params.path
+                && definition.api.metadata.commitId === req.params.commitId,
+            );
+            if (!data) {
+              return res.sendStatus(404);
+            }
+
+            if (!checkAuth(req, data.api)) {
+              return res.sendStatus(401);
+            }
+
+            // We need a consistent signature for the injected metadata.
+            if (req.headers['x-superblocks-agent-id']) {
+              req.headers['x-superblocks-agent-id'] = '018b9575-f5f9-7215-ba8f-3376c3f24cf9';
+            }
+
+            delete req.headers.traceparent;
+            delete req.headers['x-superblocks-authorization'];
+
+            // We set a custom user agent so reverting to default one to pass signature verification.
+            req.headers['user-agent'] = 'Go-http-client/1.1';
+
+            if (req.headers.host) {
+              req.headers.host = 'host';
+            }
+
+            const metadata = data.api.metadata.tags && data.api.metadata.tags.inject === 'true' ? [{
+              name: 'INJECTED_FETCH_METADATA',
+              step: {
+                javascript: {
+                  body: `return { query: ${JSON.stringify(req.query)}, headers: ${JSON.stringify(req.headers)} }`,
+                },
+              },
+            }] : [];
+
+            return res.status(200).json({ ...data, ...{ api: { ...data.api, ...{ blocks: metadata.concat(data.api.blocks) } } } });
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: 'fetch-by-path-with-branch-name',
+    url: '/api/v3/apis/applications/:applicationId/branches/:branchName/:path',
+    method: 'GET',
+    variants: [
+      {
+        id: 'default',
+        type: 'middleware',
+        options: {
+          middleware: (req, res) => {
+            const data = apiDefinitions.find(
+              (definition) => definition.api.trigger?.application?.id === req.params.applicationId
+                && definition.api.metadata.path === req.params.path
+                && definition.api.metadata.branch === req.params.branchName,
+            );
+            if (!data) {
+              return res.sendStatus(404);
+            }
+
+            if (!checkAuth(req, data.api)) {
+              return res.sendStatus(401);
+            }
+
+            // We need a consistent signature for the injected metadata.
+            if (req.headers['x-superblocks-agent-id']) {
+              req.headers['x-superblocks-agent-id'] = '018b9575-f5f9-7215-ba8f-3376c3f24cf9';
+            }
+
+            delete req.headers.traceparent;
+            delete req.headers['x-superblocks-authorization'];
+
+            // We set a custom user agent so reverting to default one to pass signature verification.
+            req.headers['user-agent'] = 'Go-http-client/1.1';
+
+            if (req.headers.host) {
+              req.headers.host = 'host';
+            }
+
+            const metadata = data.api.metadata.tags && data.api.metadata.tags.inject === 'true' ? [{
+              name: 'INJECTED_FETCH_METADATA',
+              step: {
+                javascript: {
+                  body: `return { query: ${JSON.stringify(req.query)}, headers: ${JSON.stringify(req.headers)} }`,
+                },
+              },
+            }] : [];
+
+            return res.status(200).json({ ...data, ...{ api: { ...data.api, ...{ blocks: metadata.concat(data.api.blocks) } } } });
+          },
+        },
+      },
+    ],
+  },
+  {
     id: 'fetch-job',
     url: '/api/v2/agents/pending-jobs',
     method: 'POST',

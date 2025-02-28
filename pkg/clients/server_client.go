@@ -50,17 +50,18 @@ type RegisterAgentBody struct {
 
 //go:generate mockery --name=ServerClient --output ./mocks --structname ServerClient
 type ServerClient interface {
-	PostRegister(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)            // Registers an agent
-	DeleteAgent(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                  // Deletes an agent
-	PostHealthcheck(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)         // Sends a healthcheck
-	GetApi(context.Context, *time.Duration, http.Header, url.Values, string, bool, string) (*http.Response, error) // Fetches an api
-	PostDatasource(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)       // Fetches an integration
-	PostSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)   // Create user specific auth token
-	DeleteSpecificUserTokens(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)     // Delete user specific auth token
-	GetSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)    // Fetch user specific auth token
-	PostOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)        // Create org specific auth token
-	DeleteOrgUserToken(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)           // Delete org specific auth token
-	GetOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)         // Get org specific auth token
+	PostRegister(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                  // Registers an agent
+	DeleteAgent(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                        // Deletes an agent
+	PostHealthcheck(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                               // Sends a healthcheck
+	GetApi(context.Context, *time.Duration, http.Header, url.Values, string, bool, string) (*http.Response, error)                       // Fetches an api
+	GetApiByPath(context.Context, *time.Duration, http.Header, url.Values, string, string, string, string, bool) (*http.Response, error) // Fetches an api by path
+	PostDatasource(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                             // Fetches an integration
+	PostSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                         // Create user specific auth token
+	DeleteSpecificUserTokens(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                           // Delete user specific auth token
+	GetSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                          // Fetch user specific auth token
+	PostOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                              // Create org specific auth token
+	DeleteOrgUserToken(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                 // Delete org specific auth token
+	GetOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                               // Get org specific auth token
 	// TODO:(bruce) This endpoint has been deleted in the server so we need to look into this, this actually looks like a dead code path, but I do see 404s in server logs on this endpoint
 	GetIntegrationConfiguration(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                                 // Get integration configuration
 	PostPendingJobs(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                                // Post pending jobs
@@ -98,6 +99,26 @@ func (s *serverClient) GetApi(ctx context.Context, timeout *time.Duration, heade
 	path := fmt.Sprintf("%s/%s", "api/v3/apis", apiId)
 	if branchName != "" {
 		path = fmt.Sprintf("%s/%s/%s/%s", "api/v3/apis", apiId, "branches", url.PathEscape(branchName))
+	}
+	return s.sendRequest(ctx, timeout, http.MethodGet, path, headers, query, nil, useAgentKey)
+}
+
+func (s *serverClient) GetApiByPath(
+	ctx context.Context,
+	timeout *time.Duration,
+	headers http.Header,
+	query url.Values,
+	apiPath string,
+	applicationId string,
+	branchName string,
+	commitId string,
+	useAgentKey bool,
+) (*http.Response, error) {
+	path := fmt.Sprintf("%s/%s", "api/v3/apis/applications", applicationId)
+	if commitId != "" {
+		path = fmt.Sprintf("%s/%s/%s/%s", path, "commits", commitId, url.PathEscape(apiPath))
+	} else {
+		path = fmt.Sprintf("%s/%s/%s/%s", path, "branches", url.PathEscape(branchName), url.PathEscape(apiPath))
 	}
 	return s.sendRequest(ctx, timeout, http.MethodGet, path, headers, query, nil, useAgentKey)
 }
