@@ -282,6 +282,34 @@ describe.each(tunnelInputs)('MySQL Test', (useTunnel) => {
     expect(resp.placeholdersInfo?.['?']?.value).toEqual('"1"');
   });
 
+  test('repeated bindings resolve correctly when using parameterized sql', async () => {
+    const newProps = cloneDeep(props);
+    newProps.actionConfiguration.body = `SELECT * FROM public.mytable as mt WHERE mt.name NOT LIKE '{{binding1}}' AND LENGTH(mt.name) > LENGTH({{binding1}});`;
+    newProps.actionConfiguration.usePreparedSql = true;
+
+    prepContextForBindings(newProps.context, { binding1: 'Frank Basil' });
+
+    const resolvedConfig = await plugin.resolveActionConfigurationProperty({
+      context: newProps.context,
+      actionConfiguration: newProps.actionConfiguration as ActionConfiguration,
+      files: null,
+      property: 'body',
+      escapeStrings: false
+    });
+
+    expect(resolvedConfig.resolved).toEqual("SELECT * FROM public.mytable as mt WHERE mt.name NOT LIKE '?' AND LENGTH(mt.name) > LENGTH(?);");
+    expect(resolvedConfig.placeholdersInfo?.['?']?.value).toEqual('"Frank Basil"');
+
+    newProps.actionConfiguration.body = resolvedConfig.resolved as string;
+
+    await plugin.executePooled(newProps, clientWrapper);
+    const output = newProps.mutableOutput.output as { [key: string]: Record<string, unknown> };
+
+    expect(Object.keys(output).length).toEqual(2);
+    expect('0' in output).toEqual(true);
+    expect(output['0']).toEqual({ id: 2, name: 'Joey Antonio', age: 26 });
+  });
+
   test('bindings dont resolve when not using parameterized sql', async () => {
     const newProps = cloneDeep(props);
     newProps.actionConfiguration.body = `SELECT * FROM public.myTable LIMIT {{binding1}};`;

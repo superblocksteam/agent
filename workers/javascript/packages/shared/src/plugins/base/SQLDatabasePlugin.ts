@@ -345,15 +345,17 @@ export abstract class SQLDatabasePlugin extends BasePlugin {
     resolutionContext.context.preparedStatementContext = [];
     let bindingCount = 1;
     for (const toEval of extractMustacheStrings(propertyToResolve)) {
-      // if this binding has been handled already, keep the value assigned to it the first time
-      if (!Object.prototype.hasOwnProperty.call(bindingResolution, toEval)) {
-        // TODO: Include MSSQL
-        bindingResolution[toEval] =
-          this.parameterType === '{{'
-            ? `{{PARAM_${bindingCount++}}}`
-            : ['$', ':'].includes(this.parameterType ?? '')
-              ? `${this.parameterType}${bindingCount++}`
-              : '?';
+      if (['{{', '$', ':'].includes(this.parameterType ?? '')) {
+        // if this binding has been handled already, keep the value assigned to it the first time
+        if (!Object.prototype.hasOwnProperty.call(bindingResolution, toEval)) {
+          // TODO: Include MSSQL
+          bindingResolution[toEval] = this.parameterType === '{{' ? `{{PARAM_${bindingCount++}}}` : `${this.parameterType}${bindingCount++}`;
+          resolutionContext.context.preparedStatementContext.push(bindingResolutions[toEval]);
+        }
+      } else {
+        // The '?' syntax for bindings/parameters doesn't differentiate between different instances of the same
+        // binding, so we need to add the value to the prepared statement context list every time we encounter it.
+        bindingResolution[toEval] = '?';
         resolutionContext.context.preparedStatementContext.push(bindingResolutions[toEval]);
       }
     }

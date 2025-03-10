@@ -13,3 +13,5 @@ ignore:
   - "./types/"
   - "**/*_mock.go"
   - "**/mocks/*.go"
+  - "**/*.test.ts"
+  - "**/*_test.ts"

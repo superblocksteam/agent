@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 
 - Added support for fetching (and executing) APIs referenced by application ID and path, rather than by api ID
+- Fixed bug in building query parameters list for DB plugins leveraging '?' placeholder syntax (repeated bindings fix)
 
 ## v1.19.0
 
