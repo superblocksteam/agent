@@ -57,7 +57,7 @@
     "acorn": "8.12.1",
     "amazon-qldb-driver-nodejs": "2.2.0",
     "aws-sdk": "2.1664.0",
-    "axios": "1.7.7",
+    "axios": "1.8.3",
     "base64url": "3.0.1",
     "bcrypt": "5.1.1",
     "date-fns": "3.6.0",
