@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for fetching (and executing) APIs referenced by application ID and path, rather than by api ID
 - Fixed bug in building query parameters list for DB plugins leveraging '?' placeholder syntax (repeated bindings fix)
+- Bump golang version to 1.23.7
 
 ## v1.19.0
 
