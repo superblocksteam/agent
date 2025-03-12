@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-        "axios": "^1.8.3",
+        "axios": "^1.6.8",
     "form-data": "^4.0.0",
     "lodash": "^4.17.21",
     "minimist": "1.2.6"
