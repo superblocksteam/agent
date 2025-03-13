@@ -2,7 +2,7 @@
 
 # List all build-time variables with their default values
 # They need to be redefined in each stage to be used in that stage
-ARG DEBIAN_BOOKWORM_VERSION=20240722
+ARG DEBIAN_BOOKWORM_VERSION=20250224
 ARG GO_VERSION=1.23.7
 ARG PYTHON_VERSION=3.10.14
 ARG NODE_VERSION_MAJOR=20
@@ -190,13 +190,19 @@ RUN cd /app/worker.py                                                           
     groupadd --gid 1000 superblocks                                                                                                              && \
     useradd --uid 1000 --gid superblocks --shell /bin/bash --create-home superblocks
 
+# Remove package managers as they include the cross-spawn dependency
+RUN rm -rf /app/worker.js/node_modules/pnpm && \
+rm -rf /usr/lib/node_modules/npm
+
+
 COPY --chmod=755 debian_testing.sources /etc/apt/sources.list.d/debian_testing.sources
 
 RUN apt-get update                                                                                                                               && \
+    apt-get purge --auto-remove -yqq dnsutils                                                                                                    && \
     apt-get -t testing install -yqq --no-install-recommends libexpat1 libexpat1-dev zlib1g-dev                                                      \
-        curl xz-utils libk5crypto3 libxml2-dev systemd perl libarchive-dev libxml2 libuv1-dev                                                   && \
+        curl xz-utils libk5crypto3 libxml2-dev systemd perl libarchive-dev libxml2 libuv1-dev                                                    && \
     apt-get -t bookworm-backports install -yqq --no-install-recommends libcurl4                                                                  && \
-    apt-get -t unstable install -yqq --no-install-recommends libldap-2.5-0 bind9                                                                 && \
+    apt-get -t unstable install -yqq --no-install-recommends libldap-2.5-0 bind9 bind9-dnsutils                                                  && \
     apt-get clean                                                                                                                                && \
     rm -rf /var/lib/apt/lists/*                                                                                                                  && \
     apt-get autoremove -y                                                                                                                        && \

@@ -53,7 +53,7 @@
     "@redis/client": "1.5.17",
     "@superblocks/shared": "workspace:*",
     "dotenv": "16.4.5",
-    "express": "4.20.0",
+    "express": "4.21.2",
     "generic-pool": "3.9.0",
     "google-protobuf": "3.21.4",
     "heap-js": "2.5.0",

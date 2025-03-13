@@ -8,5 +8,10 @@
   },
   "devDependencies": {
     "pnpm": "9.7.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "foreground-child>cross-spawn": "7.0.6"
+    }
   }
 }
