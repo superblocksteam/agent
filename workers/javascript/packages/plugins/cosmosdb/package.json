@@ -29,7 +29,7 @@
     "@superblocksteam/types": "workspace:*"
   },
   "devDependencies": {
-    "@swc/cli": "0.4.0",
+    "@swc/cli": "0.6.0",
     "@swc/core": "1.7.26",
     "@swc/jest": "0.2.36",
     "@types/jest": "29.5.12",
