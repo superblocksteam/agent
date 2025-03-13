@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-    "@aws-sdk/client-kinesis": "3.637.0",
+    "@aws-sdk/client-kinesis": "3.758.0",
     "@superblocksteam/types": "workspace:*"
   },
   "devDependencies": {
