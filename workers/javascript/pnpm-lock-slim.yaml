@@ -1114,11 +1114,11 @@ importers:
   packages/plugins/email:
     dependencies:
       '@sendgrid/helpers':
-        specifier: 7.7.0
-        version: 7.7.0
+        specifier: 8.0.0
+        version: 8.0.0
       '@sendgrid/mail':
-        specifier: 7.6.1
-        version: 7.6.1
+        specifier: 8.1.4
+        version: 8.1.4
       '@superblocks/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -1418,8 +1418,8 @@ importers:
         specifier: 2.1367.0
         version: 2.1367.0
       axios:
-        specifier: ^1.6.8
-        version: 1.7.4
+        specifier: 1.8.3
+        version: 1.8.3(debug@4.3.6)
       base64url:
         specifier: 3.0.1
         version: 3.0.1
@@ -1962,8 +1962,8 @@ importers:
         specifier: workspace:*
         version: link:../../shared
       axios:
-        specifier: ^1.6.8
-        version: 1.7.4
+        specifier: 1.8.3
+        version: 1.8.3(debug@4.3.6)
       form-data:
         specifier: ^4.0.0
         version: 4.0.0
@@ -2345,8 +2345,8 @@ importers:
         specifier: workspace:*
         version: link:../../shared
       axios:
-        specifier: 1.7.7
-        version: 1.7.7(debug@4.3.6)
+        specifier: 1.8.3
+        version: 1.8.3(debug@4.3.6)
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -2418,8 +2418,8 @@ importers:
         specifier: workspace:*
         version: link:../../shared
       axios:
-        specifier: ^1.6.8
-        version: 1.7.4
+        specifier: 1.8.3
+        version: 1.8.3(debug@4.3.6)
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -2649,8 +2649,8 @@ importers:
         specifier: 29.5.12
         version: 29.5.12
       axios:
-        specifier: ^1.6.8
-        version: 1.7.4
+        specifier: 1.8.3
+        version: 1.8.3(debug@4.3.6)
       lodash:
         specifier: 4.17.21
         version: 4.17.21
@@ -2865,8 +2865,8 @@ importers:
         specifier: workspace:*
         version: link:../../shared
       axios:
-        specifier: ^1.6.8
-        version: 1.7.4
+        specifier: 1.8.3
+        version: 1.8.3(debug@4.3.6)
       form-data:
         specifier: ^4.0.0
         version: 4.0.0
@@ -3171,8 +3171,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1(ajv@8.12.0)
       axios:
-        specifier: ^1.6.8
-        version: 1.7.4
+        specifier: 1.8.3
+        version: 1.8.3(debug@4.3.6)
       base64url:
         specifier: 3.0.1
         version: 3.0.1
@@ -4371,17 +4371,17 @@ packages:
   '@rockset/client@0.8.32':
     resolution: {integrity: sha512-RTv2kAfw16lIvqxOGEg0IvZczWeynRTcTod19X3srC1EECYHfDgV+cSlken4NCw7bhkdl3ZA8t5MAk1Wfz8Xdg==}
 
-  '@sendgrid/client@7.7.0':
-    resolution: {integrity: sha512-SxH+y8jeAQSnDavrTD0uGDXYIIkFylCo+eDofVmZLQ0f862nnqbC3Vd1ej6b7Le7lboyzQF6F7Fodv02rYspuA==}
-    engines: {node: 6.* || 8.* || >=10.*}
+  '@sendgrid/client@8.1.4':
+    resolution: {integrity: sha512-VxZoQ82MpxmjSXLR3ZAE2OWxvQIW2k2G24UeRPr/SYX8HqWLV/8UBN15T2WmjjnEb5XSmFImTJOKDzzSeKr9YQ==}
+    engines: {node: '>=12.*'}
 
-  '@sendgrid/helpers@7.7.0':
-    resolution: {integrity: sha512-3AsAxfN3GDBcXoZ/y1mzAAbKzTtUZ5+ZrHOmWQ279AuaFXUNCh9bPnRpN504bgveTqoW+11IzPg3I0WVgDINpw==}
-    engines: {node: '>= 6.0.0'}
+  '@sendgrid/helpers@8.0.0':
+    resolution: {integrity: sha512-Ze7WuW2Xzy5GT5WRx+yEv89fsg/pgy3T1E3FS0QEx0/VvRmigMZ5qyVGhJz4SxomegDkzXv/i0aFPpHKN8qdAA==}
+    engines: {node: '>= 12.0.0'}
 
-  '@sendgrid/mail@7.6.1':
-    resolution: {integrity: sha512-F+HXpDLIU4PGZyZznOiFLDGJDwLn2qh7/wD5MvwurrldDx5DaGQHrYBKHopceOl15FVuq9ElU9VIxQJF8SMvTg==}
-    engines: {node: 6.* || 8.* || >=10.*}
+  '@sendgrid/mail@8.1.4':
+    resolution: {integrity: sha512-MUpIZykD9ARie8LElYCqbcBhGGMaA/E6I7fEcG7Hc2An26QJyLtwOaKQ3taGp8xO8BICPJrSKuYV4bDeAJKFGQ==}
+    engines: {node: '>=12.*'}
 
   '@server-sent-stream/node@1.0.5':
     resolution: {integrity: sha512-iu00JLEEnbjCaGSLpegk/L+919h7DmtE/qexOeVfRCjTeltqKJtxrhD9WXDanMePcoPySzD45/+zT8UQPwxQyg==}
@@ -5325,14 +5325,8 @@ packages:
     resolution: {integrity: sha512-ZlN3iXazEVPwjmQzC1TfkRUPOKruF6RkAFnVz4hOPjQQT91RYi2lCRWtipWk4ZoONBLX7gFLGUgIfiHjf/A+iA==}
     engines: {node: '>= 10.0.0'}
 
-  axios@0.26.1:
-    resolution: {integrity: sha512-fPwcX4EvnSHuInCMItEhAGnaSEXRBjtzh9fOtsE6E1G6p7vl7edEeZe11QHf18+6+9gR5PbKV/sGKNaD8YaMeA==}
-
-  axios@1.7.4:
-    resolution: {integrity: sha512-DukmaFRnY6AzAALSH4J2M3k6PkaC+MfaAGdEERRWcC9q3/TWQwLpHR8ZRLKTdQ3aBDL64EdluRDjJqKw+BPZEw==}
-
-  axios@1.7.7:
-    resolution: {integrity: sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==}
+  axios@1.8.3:
+    resolution: {integrity: sha512-iP4DebzoNlP/YN2dpwCgb8zoCmhtkajzS48JvwmkSkXvPI3DHc7m+XYL5tGnSlJtR6nImXZmdCuN5aP8dh1d8A==}
 
   babel-jest@29.7.0:
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
@@ -11058,21 +11052,21 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@sendgrid/client@7.7.0':
+  '@sendgrid/client@8.1.4':
     dependencies:
-      '@sendgrid/helpers': 7.7.0
-      axios: 0.26.1
+      '@sendgrid/helpers': 8.0.0
+      axios: 1.8.3(debug@4.3.6)
     transitivePeerDependencies:
       - debug
 
-  '@sendgrid/helpers@7.7.0':
+  '@sendgrid/helpers@8.0.0':
     dependencies:
       deepmerge: 4.3.1
 
-  '@sendgrid/mail@7.6.1':
+  '@sendgrid/mail@8.1.4':
     dependencies:
-      '@sendgrid/client': 7.7.0
-      '@sendgrid/helpers': 7.7.0
+      '@sendgrid/client': 8.1.4
+      '@sendgrid/helpers': 8.0.0
     transitivePeerDependencies:
       - debug
 
@@ -12322,21 +12316,7 @@ snapshots:
       uuid: 8.0.0
       xml2js: 0.5.0
 
-  axios@0.26.1:
-    dependencies:
-      follow-redirects: 1.15.9(debug@4.3.6)
-    transitivePeerDependencies:
-      - debug
-
-  axios@1.7.4:
-    dependencies:
-      follow-redirects: 1.15.9(debug@4.3.6)
-      form-data: 4.0.0
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-
-  axios@1.7.7(debug@4.3.6):
+  axios@1.8.3(debug@4.3.6):
     dependencies:
       follow-redirects: 1.15.9(debug@4.3.6)
       form-data: 4.0.0
@@ -12641,7 +12621,7 @@ snapshots:
 
   cmake-js@7.3.0:
     dependencies:
-      axios: 1.7.7(debug@4.3.6)
+      axios: 1.8.3(debug@4.3.6)
       debug: 4.3.6(supports-color@5.5.0)
       fs-extra: 11.2.0
       lodash.isplainobject: 4.0.6
@@ -15622,7 +15602,7 @@ snapshots:
       asn1.js: 5.4.1
       asn1.js-rfc2560: 5.0.1(asn1.js@5.4.1)
       asn1.js-rfc5280: 3.0.0
-      axios: 1.7.7(debug@4.3.6)
+      axios: 1.8.3(debug@4.3.6)
       big-integer: 1.6.52
       bignumber.js: 9.1.2
       binascii: 0.0.2
@@ -16174,7 +16154,7 @@ snapshots:
 
   webflow-api@1.2.2:
     dependencies:
-      axios: 1.7.4
+      axios: 1.8.3(debug@4.3.6)
     transitivePeerDependencies:
       - debug
 
