@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  foreground-child>cross-spawn: 7.0.6
+
 importers:
 
   .:
@@ -2801,8 +2804,8 @@ importers:
         specifier: 1.2.6
         version: 1.2.6
       snowflake-sdk:
-        specifier: 1.15.0
-        version: 1.15.0(asn1.js@5.4.1)
+        specifier: 2.0.3
+        version: 2.0.3(asn1.js@5.4.1)
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0
@@ -3038,8 +3041,8 @@ importers:
         specifier: 16.4.5
         version: 16.4.5
       express:
-        specifier: 4.20.0
-        version: 4.20.0
+        specifier: 4.21.2
+        version: 4.21.2
       generic-pool:
         specifier: 3.9.0
         version: 3.9.0
@@ -3572,11 +3575,6 @@ packages:
     resolution: {integrity: sha512-YZ5s7PSvyF3Mt2h1EQulCG93uybprNGbBkPmVuy/HMMfbFTt4iL3SbKjxqvOZelm86epFfj7pvK7FliI2WOEcg==}
     engines: {node: '>=18.0.0'}
 
-  '@aws-sdk/node-http-handler@3.374.0':
-    resolution: {integrity: sha512-v1Z6m0wwkf65/tKuhwrtPRqVoOtNkDTRn2MBMtxCwEw+8V8Q+YRFqVgGN+J1n53ktE0G5OYVBux/NHiAjJHReQ==}
-    engines: {node: '>=14.0.0'}
-    deprecated: This package has moved to @smithy/node-http-handler
-
   '@aws-sdk/region-config-resolver@3.734.0':
     resolution: {integrity: sha512-Lvj1kPRC5IuJBr9DyJ9T9/plkh+EfKLy+12s/mykOy1JaKHDpvj+XGy2YO6YgYVOb8JFtaqloid+5COtje4JTQ==}
     engines: {node: '>=18.0.0'}
@@ -3680,11 +3678,6 @@ packages:
     resolution: {integrity: sha512-5MnV1yqzZwgNLLjlizsU3QqOeQChkIXw781Fwh1xdAqJR5AA32IUaq6xv1BICJvfbHoa+JYcaij2HFkhLbNTJQ==}
     engines: {node: '>=18.0.0'}
 
-  '@azure/core-http@3.0.4':
-    resolution: {integrity: sha512-Fok9VVhMdxAFOtqiiAtg74fL0UJkt0z3D+ouUUxcRLzZNBioPRAMJFVxiWoJljYpXsRi4GDQHzQHDc9AiYaIUQ==}
-    engines: {node: '>=14.0.0'}
-    deprecated: This package is no longer supported. Please migrate to use @azure/core-rest-pipeline
-
   '@azure/core-lro@2.7.2':
     resolution: {integrity: sha512-0YIpccoX8m/k00O7mDDMdJpbr6mf1yWo2dfmxt5A8XVZVVMz2SSKaEbMCeJRvgQ0IaSlqhjT47p4hVIRRy90xw==}
     engines: {node: '>=18.0.0'}
@@ -3696,10 +3689,6 @@ packages:
   '@azure/core-rest-pipeline@1.16.3':
     resolution: {integrity: sha512-VxLk4AHLyqcHsfKe4MZ6IQ+D+ShuByy+RfStKfSjxJoL3WBWq17VNmrz8aT8etKzqc2nAeIyLxScjpzsS4fz8w==}
     engines: {node: '>=18.0.0'}
-
-  '@azure/core-tracing@1.0.0-preview.13':
-    resolution: {integrity: sha512-KxDlhXyMlh2Jhj2ykX6vNEU0Vou4nHr025KoSEiz7cS3BNiHNaZcdECk/DmLkEB0as5T7b/TpRcehJ5yV6NeXQ==}
-    engines: {node: '>=12.0.0'}
 
   '@azure/core-tracing@1.1.2':
     resolution: {integrity: sha512-dawW9ifvWAWmUm9/h+/UQ2jrdvjCJ7VJEuCJ6XVNudzcOwm53BFZH4Q845vjfgoUAM8ZxokvVNxNxAITc502YA==}
@@ -3741,12 +3730,12 @@ packages:
     resolution: {integrity: sha512-DhP97ycs7qlCVzzzWGzJiwAFyFj5okno74E4FUZ61oCLfKh4IxA1kxirqzrWuYZWpBe9HVPL6GA4NvmlEOBN5Q==}
     engines: {node: '>=16'}
 
-  '@azure/storage-blob@12.18.0':
-    resolution: {integrity: sha512-BzBZJobMoDyjJsPRMLNHvqHycTGrT8R/dtcTx9qUFcqwSRfGVK9A/cZ7Nx38UQydT9usZGbaDCN75QRNjezSAA==}
-    engines: {node: '>=14.0.0'}
-
   '@azure/storage-blob@12.24.0':
     resolution: {integrity: sha512-l8cmWM4C7RoNCBOImoFMxhTXe1Lr+8uQ/IgnhRNMpfoA9bAFWoLG4XrWm6O5rKXortreVQuD+fc1hbzWklOZbw==}
+    engines: {node: '>=18.0.0'}
+
+  '@azure/storage-blob@12.26.0':
+    resolution: {integrity: sha512-SriLPKezypIsiZ+TtlFfE46uuBIap2HeaQVS78e1P7rz5OSbq0rsd52WE1mC5f7vAeLiXqv7I7oRhL3WFZEw3Q==}
     engines: {node: '>=18.0.0'}
 
   '@azure/storage-file-datalake@12.23.0':
@@ -4409,10 +4398,6 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
-  '@smithy/abort-controller@1.1.0':
-    resolution: {integrity: sha512-5imgGUlZL4dW4YWdMYAKLmal9ny/tlenM81QZY7xYyb76z9Z/QOg7oM5Ak9HQl8QfFTlGVWwcMXl+54jroRgEQ==}
-    engines: {node: '>=14.0.0'}
-
   '@smithy/abort-controller@2.2.0':
     resolution: {integrity: sha512-wRlta7GuLWpTqtFfGo+nZyOO1vEvewdNR1R4rTxpC8XU6vG/NDyrFBhwLZsqg1NUoR1noVaXJPC/7ZK47QCySw==}
     engines: {node: '>=14.0.0'}
@@ -4559,10 +4544,6 @@ packages:
     resolution: {integrity: sha512-8mRTjvCtVET8+rxvmzRNRR0hH2JjV0DFOmwXPrISmTIJEfnCBugpYYGAsCj8t41qd+RB5gbheSQ/6aKZCQvFLQ==}
     engines: {node: '>=18.0.0'}
 
-  '@smithy/node-http-handler@1.1.0':
-    resolution: {integrity: sha512-d3kRriEgaIiGXLziAM8bjnaLn1fthCJeTLZIwEIpzQqe6yPX0a+yQoLCTyjb2fvdLwkMoG4p7THIIB5cj5lkbg==}
-    engines: {node: '>=14.0.0'}
-
   '@smithy/node-http-handler@2.5.0':
     resolution: {integrity: sha512-mVGyPBzkkGQsPoxQUbxlEfRjrj6FPyA3u3u2VXGr9hT8wilsoQdZdvKpMBFMB8Crfhv5dNkKHIW0Yyuc7eABqA==}
     engines: {node: '>=14.0.0'}
@@ -4579,10 +4560,6 @@ packages:
     resolution: {integrity: sha512-o+VRiwC2cgmk/WFV0jaETGOtX16VNPp2bSQEzu0whbReqE1BMqsP2ami2Vi3cbGVdKu1kq9gQkDAGKbt0WOHAQ==}
     engines: {node: '>=18.0.0'}
 
-  '@smithy/protocol-http@1.2.0':
-    resolution: {integrity: sha512-GfGfruksi3nXdFok5RhgtOnWe5f6BndzYfmEXISD+5gAGdayFGpjWu5pIqIweTudMtse20bGbc+7MFZXT1Tb8Q==}
-    engines: {node: '>=14.0.0'}
-
   '@smithy/protocol-http@2.0.5':
     resolution: {integrity: sha512-d2hhHj34mA2V86doiDfrsy2fNTnUOowGaf9hKb0hIPHqvcnShU4/OSc4Uf1FwHkAdYF3cFXTrj5VGUYbEuvMdw==}
     engines: {node: '>=14.0.0'}
@@ -4594,10 +4571,6 @@ packages:
   '@smithy/protocol-http@5.0.1':
     resolution: {integrity: sha512-TE4cpj49jJNB/oHyh/cRVEgNZaoPaxd4vteJNB0yGidOCVR0jCw/hjPVsT8Q8FRmj8Bd3bFZt8Dh7xGCT+xMBQ==}
     engines: {node: '>=18.0.0'}
-
-  '@smithy/querystring-builder@1.1.0':
-    resolution: {integrity: sha512-gDEi4LxIGLbdfjrjiY45QNbuDmpkwh9DX4xzrR2AzjjXpxwGyfSpbJaYhXARw9p17VH0h9UewnNQXNwaQyYMDA==}
-    engines: {node: '>=14.0.0'}
 
   '@smithy/querystring-builder@2.2.0':
     resolution: {integrity: sha512-L1kSeviUWL+emq3CUVSgdogoM/D9QMFaqxL/dd0X7PCNWmPXqt+ExtrBjqT0V7HLN03Vs9SuiLrG3zy3JGnE5A==}
@@ -4646,10 +4619,6 @@ packages:
   '@smithy/smithy-client@4.1.6':
     resolution: {integrity: sha512-UYDolNg6h2O0L+cJjtgSyKKvEKCOa/8FHYJnBobyeoeWDmNpXjwOAtw16ezyeu1ETuuLEOZbrynK0ZY1Lx9Jbw==}
     engines: {node: '>=18.0.0'}
-
-  '@smithy/types@1.2.0':
-    resolution: {integrity: sha512-z1r00TvBqF3dh4aHhya7nz1HhvCg4TRmw51fjMrh5do3h+ngSstt/yKlNbHeb9QxJmFbmN8KEVSWgb1bRvfEoA==}
-    engines: {node: '>=14.0.0'}
 
   '@smithy/types@2.12.0':
     resolution: {integrity: sha512-QwYgloJ0sVNBeBuBs65cIkTbfzV/Q6ZNPCJ99EICFEdJYG50nGIY/uYXp+TbsdJReIuPr0a0kXmCvren3MbRRw==}
@@ -4760,10 +4729,6 @@ packages:
   '@smithy/util-stream@4.1.2':
     resolution: {integrity: sha512-44PKEqQ303d3rlQuiDpcCcu//hV8sn+u2JBo84dWCE0rvgeiVl0IlLMagbU++o0jCWhYCsHaAt9wZuZqNe05Hw==}
     engines: {node: '>=18.0.0'}
-
-  '@smithy/util-uri-escape@1.1.0':
-    resolution: {integrity: sha512-/jL/V1xdVRt5XppwiaEU8Etp5WHZj609n0xMTuehmCqdoOFbId1M+aEeDWZsQ+8JbEB/BJ6ynY2SlYmOaKtt8w==}
-    engines: {node: '>=14.0.0'}
 
   '@smithy/util-uri-escape@2.2.0':
     resolution: {integrity: sha512-jtmJMyt1xMD/d8OtbVJ2gFZOSKc+ueYJZPW20ULW1GOp/q/YIM0wNh+u8ZFao9UaIGz4WoPW8hC64qlWLIfoDA==}
@@ -5053,9 +5018,6 @@ packages:
 
   '@types/triple-beam@1.3.5':
     resolution: {integrity: sha512-6WaYesThRMCl19iryMYP7/x2OVgCtbIVflDGFpWnb9irXI3UjYE4AzmYuiUKY1AJstGijoY+MgUszMgRxIYTYw==}
-
-  '@types/tunnel@0.0.3':
-    resolution: {integrity: sha512-sOUTGn6h1SfQ+gbgqC364jLFBw2lnFqkgF3q0WovEHRLMrVD1sd5aufqi/aJObLekJO+Aq5z646U4Oxy6shXMA==}
 
   '@types/uuid@9.0.8':
     resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
@@ -5740,10 +5702,6 @@ packages:
   cookie-signature@1.0.6:
     resolution: {integrity: sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==}
 
-  cookie@0.6.0:
-    resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
-    engines: {node: '>= 0.6'}
-
   cookie@0.7.1:
     resolution: {integrity: sha512-6DnInpx7SJ2AK3+CTUE/ZM0vWTUboZCegxhC2xiIydHR9jNuTAASBrfEpHhiGOZw/nX51bHt6YQl8jsGo4y/0w==}
     engines: {node: '>= 0.6'}
@@ -5769,6 +5727,10 @@ packages:
 
   cross-spawn@7.0.3:
     resolution: {integrity: sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==}
+    engines: {node: '>= 8'}
+
+  cross-spawn@7.0.6:
+    resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
 
   cuint@0.2.2:
@@ -6184,10 +6146,6 @@ packages:
     resolution: {integrity: sha512-2Zks0hf1VLFYI1kbh0I5jP3KHHyCHpkfyHBzsSXRFgl/Bg9mWYfMW8oD+PdMPlEwy5HNsR9JutYy6pMeOh61nw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  express@4.20.0:
-    resolution: {integrity: sha512-pLdae7I6QqShF5PnNTCVn4hI91Dx0Grkn2+IAsMTgMIKuQVte2dN9PeGSSAME2FR8anOhVA62QDIUaWVfEXVLw==}
-    engines: {node: '>= 0.10.0'}
-
   express@4.21.2:
     resolution: {integrity: sha512-28HqgMZAmih1Czt9ny7qr6ek2qddF4FclbMzwhCREB6OFfH+rXAnuNCwo1/wFvrtbgsQDb4kSbX9de9lFbrXnA==}
     engines: {node: '>= 0.10.0'}
@@ -6289,10 +6247,6 @@ packages:
   fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
-
-  finalhandler@1.2.0:
-    resolution: {integrity: sha512-5uXcUVftlQMFnWC9qu/svkWv3GTd2PfUhK/3PLkYNAe7FbqJMt3515HaxE6eRL74GdsriiwujiawdaB1BpEISg==}
-    engines: {node: '>= 0.8'}
 
   finalhandler@1.3.1:
     resolution: {integrity: sha512-6BN9trH7bp3qvnrRyzsBz+g3lZxTNZTbVO2EV1CS0WIcDbawYVdYvGflME/9QP0h0pYlCDBCTjYa9nZzMDpyxQ==}
@@ -7812,9 +7766,6 @@ packages:
     resolution: {integrity: sha512-ypGJsmGtdXUOeM5u93TyeIEfEhM6s+ljAhrk5vAvSx8uyY/02OvrZnA0YNGUrPXfpJMgI1ODd3nwz8Npx4O4cg==}
     engines: {node: 20 || >=22}
 
-  path-to-regexp@0.1.10:
-    resolution: {integrity: sha512-7lf7qcQidTku0Gu3YDPc8DJ1q7OOucfa/BSsIwjuh56VU7katFvuM8hULfkwB3Fns/rsVF7PwPKVw1sl5KQS9w==}
-
   path-to-regexp@0.1.12:
     resolution: {integrity: sha512-RA1GjUVMnvYFxuqovrEqZoxxW5NUZqbwKtYz/Tt7nXerk0LbLblQmrsgdeOxV5SFHf0UDggjS/bSeOZwt1pmEQ==}
 
@@ -8019,10 +7970,6 @@ packages:
       You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
 
       (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
-
-  qs@6.11.0:
-    resolution: {integrity: sha512-MvjoMCJwEarSbUYk5O+nmoSzSutSsTwF85zcHPQ9OrlFoZOYIjaqBAJIqIXjptyD5vThxGq52Xu/MaJzRkIk4Q==}
-    engines: {node: '>=0.6'}
 
   qs@6.13.0:
     resolution: {integrity: sha512-+38qI9SOr8tfZ4QmJNplMUxqjbe7LKvvZgWdExBOmd+egZTtjLB67Gu0HRX3u/XOq7UU2Nx6nsjvS16Z9uwfpg==}
@@ -8235,16 +8182,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  send@0.18.0:
-    resolution: {integrity: sha512-qqWzuOjSFOuqPjFe4NOsMLafToQQwBSOEpS+FwEt3A2V3vKubTquT3vmLTQpFgMXp8AlFWFuP1qKaJZOtPpVXg==}
-    engines: {node: '>= 0.8.0'}
-
   send@0.19.0:
     resolution: {integrity: sha512-dW41u5VfLXu8SJh5bwRmyYUbAoSB3c9uQh6L8h/KtsFREPWpbX1lrljJo186Jc4nmci/sGUZ9a0a0J2zgfq2hw==}
-    engines: {node: '>= 0.8.0'}
-
-  serve-static@1.16.0:
-    resolution: {integrity: sha512-pDLK8zwl2eKaYrs8mrPZBJua4hMplRWJ1tIFksVC3FtBEBnl8dxgeHtsaMS8DhS9i4fLObaon6ABoc4/hQGdPA==}
     engines: {node: '>= 0.8.0'}
 
   serve-static@1.16.2:
@@ -8317,8 +8256,8 @@ packages:
     resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
     engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
 
-  snowflake-sdk@1.15.0:
-    resolution: {integrity: sha512-u7eNIT2JWkA8USJF6gTOCcReNrdh8V9LCazJi3F0XnX5ZJkgPz2gNSn67drT4ywqNaXdXfFM0i/yNSa58fi2Rg==}
+  snowflake-sdk@2.0.3:
+    resolution: {integrity: sha512-17mkapCBVLAPCzI6TZwcyUFOpje1Nd42KUfIzDT36CYCbw9JuOBoCP9Cs49XmQ38TRhOT3a+Mz9P9Vx1q/7riw==}
     peerDependencies:
       asn1.js: ^5.4.1
 
@@ -8679,10 +8618,6 @@ packages:
 
   tunnel-ssh@5.1.1:
     resolution: {integrity: sha512-wJdv+iHdBw1Wym6ooislvpVF6OLU+NtfbsGE29fiBHPfiKY5W6vArFK7jaSQeuKtZVjmYdk9zTRPJveAZQfmpg==}
-
-  tunnel@0.0.6:
-    resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
-    engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
 
   tweetnacl@0.14.5:
     resolution: {integrity: sha512-KXXFFdAbFXY4geFIwoyNK+f5Z1b7swfXABfL7HXCmoIWMKU3dmS26672A4EeQtDzLKy7SXmfBu51JolvEKwtGA==}
@@ -10051,11 +9986,6 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/node-http-handler@3.374.0':
-    dependencies:
-      '@smithy/node-http-handler': 1.1.0
-      tslib: 2.6.3
-
   '@aws-sdk/region-config-resolver@3.734.0':
     dependencies:
       '@aws-sdk/types': 3.734.0
@@ -10257,25 +10187,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@azure/core-http@3.0.4':
-    dependencies:
-      '@azure/abort-controller': 1.1.0
-      '@azure/core-auth': 1.7.2
-      '@azure/core-tracing': 1.0.0-preview.13
-      '@azure/core-util': 1.9.2
-      '@azure/logger': 1.1.4
-      '@types/node-fetch': 2.6.11
-      '@types/tunnel': 0.0.3
-      form-data: 4.0.0
-      node-fetch: 2.6.12
-      process: 0.11.10
-      tslib: 2.6.3
-      tunnel: 0.0.6
-      uuid: 8.3.2
-      xml2js: 0.5.0
-    transitivePeerDependencies:
-      - encoding
-
   '@azure/core-lro@2.7.2':
     dependencies:
       '@azure/abort-controller': 2.1.2
@@ -10299,11 +10210,6 @@ snapshots:
       tslib: 2.6.3
     transitivePeerDependencies:
       - supports-color
-
-  '@azure/core-tracing@1.0.0-preview.13':
-    dependencies:
-      '@opentelemetry/api': 1.9.0
-      tslib: 2.6.3
 
   '@azure/core-tracing@1.1.2':
     dependencies:
@@ -10388,22 +10294,27 @@ snapshots:
       jsonwebtoken: 9.0.2
       uuid: 8.3.2
 
-  '@azure/storage-blob@12.18.0':
+  '@azure/storage-blob@12.24.0':
     dependencies:
       '@azure/abort-controller': 1.1.0
-      '@azure/core-http': 3.0.4
+      '@azure/core-auth': 1.7.2
+      '@azure/core-client': 1.9.2
+      '@azure/core-http-compat': 2.1.2
       '@azure/core-lro': 2.7.2
       '@azure/core-paging': 1.6.2
-      '@azure/core-tracing': 1.0.0-preview.13
+      '@azure/core-rest-pipeline': 1.16.3
+      '@azure/core-tracing': 1.1.2
+      '@azure/core-util': 1.9.2
+      '@azure/core-xml': 1.4.3
       '@azure/logger': 1.1.4
       events: 3.3.0
       tslib: 2.6.3
     transitivePeerDependencies:
-      - encoding
+      - supports-color
 
-  '@azure/storage-blob@12.24.0':
+  '@azure/storage-blob@12.26.0':
     dependencies:
-      '@azure/abort-controller': 1.1.0
+      '@azure/abort-controller': 2.1.2
       '@azure/core-auth': 1.7.2
       '@azure/core-client': 1.9.2
       '@azure/core-http-compat': 2.1.2
@@ -11307,11 +11218,6 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@smithy/abort-controller@1.1.0':
-    dependencies:
-      '@smithy/types': 1.2.0
-      tslib: 2.6.3
-
   '@smithy/abort-controller@2.2.0':
     dependencies:
       '@smithy/types': 2.12.0
@@ -11574,14 +11480,6 @@ snapshots:
       '@smithy/types': 4.1.0
       tslib: 2.6.3
 
-  '@smithy/node-http-handler@1.1.0':
-    dependencies:
-      '@smithy/abort-controller': 1.1.0
-      '@smithy/protocol-http': 1.2.0
-      '@smithy/querystring-builder': 1.1.0
-      '@smithy/types': 1.2.0
-      tslib: 2.6.3
-
   '@smithy/node-http-handler@2.5.0':
     dependencies:
       '@smithy/abort-controller': 2.2.0
@@ -11610,11 +11508,6 @@ snapshots:
       '@smithy/types': 4.1.0
       tslib: 2.6.3
 
-  '@smithy/protocol-http@1.2.0':
-    dependencies:
-      '@smithy/types': 1.2.0
-      tslib: 2.6.3
-
   '@smithy/protocol-http@2.0.5':
     dependencies:
       '@smithy/types': 2.12.0
@@ -11630,12 +11523,6 @@ snapshots:
   '@smithy/protocol-http@5.0.1':
     dependencies:
       '@smithy/types': 4.1.0
-      tslib: 2.6.3
-
-  '@smithy/querystring-builder@1.1.0':
-    dependencies:
-      '@smithy/types': 1.2.0
-      '@smithy/util-uri-escape': 1.1.0
       tslib: 2.6.3
 
   '@smithy/querystring-builder@2.2.0':
@@ -11722,10 +11609,6 @@ snapshots:
       '@smithy/protocol-http': 5.0.1
       '@smithy/types': 4.1.0
       '@smithy/util-stream': 4.1.2
-      tslib: 2.6.3
-
-  '@smithy/types@1.2.0':
-    dependencies:
       tslib: 2.6.3
 
   '@smithy/types@2.12.0':
@@ -11903,10 +11786,6 @@ snapshots:
       '@smithy/util-buffer-from': 4.0.0
       '@smithy/util-hex-encoding': 4.0.0
       '@smithy/util-utf8': 4.0.0
-      tslib: 2.6.3
-
-  '@smithy/util-uri-escape@1.1.0':
-    dependencies:
       tslib: 2.6.3
 
   '@smithy/util-uri-escape@2.2.0':
@@ -12207,10 +12086,6 @@ snapshots:
   '@types/tough-cookie@4.0.5': {}
 
   '@types/triple-beam@1.3.5': {}
-
-  '@types/tunnel@0.0.3':
-    dependencies:
-      '@types/node': 20.14.8
 
   '@types/uuid@9.0.8': {}
 
@@ -13044,8 +12919,6 @@ snapshots:
 
   cookie-signature@1.0.6: {}
 
-  cookie@0.6.0: {}
-
   cookie@0.7.1: {}
 
   couchbase@4.2.9:
@@ -13092,6 +12965,12 @@ snapshots:
       which: 1.3.1
 
   cross-spawn@7.0.3:
+    dependencies:
+      path-key: 3.1.1
+      shebang-command: 2.0.0
+      which: 2.0.2
+
+  cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
       shebang-command: 2.0.0
@@ -13557,42 +13436,6 @@ snapshots:
       jest-message-util: 29.7.0
       jest-util: 29.7.0
 
-  express@4.20.0:
-    dependencies:
-      accepts: 1.3.8
-      array-flatten: 1.1.1
-      body-parser: 1.20.3
-      content-disposition: 0.5.4
-      content-type: 1.0.5
-      cookie: 0.6.0
-      cookie-signature: 1.0.6
-      debug: 2.6.9
-      depd: 2.0.0
-      encodeurl: 2.0.0
-      escape-html: 1.0.3
-      etag: 1.8.1
-      finalhandler: 1.2.0
-      fresh: 0.5.2
-      http-errors: 2.0.0
-      merge-descriptors: 1.0.3
-      methods: 1.1.2
-      on-finished: 2.4.1
-      parseurl: 1.3.3
-      path-to-regexp: 0.1.10
-      proxy-addr: 2.0.7
-      qs: 6.11.0
-      range-parser: 1.2.1
-      safe-buffer: 5.2.1
-      send: 0.19.0
-      serve-static: 1.16.0
-      setprototypeof: 1.2.0
-      statuses: 2.0.1
-      type-is: 1.6.18
-      utils-merge: 1.0.1
-      vary: 1.1.2
-    transitivePeerDependencies:
-      - supports-color
-
   express@4.21.2:
     dependencies:
       accepts: 1.3.8
@@ -13730,18 +13573,6 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  finalhandler@1.2.0:
-    dependencies:
-      debug: 2.6.9
-      encodeurl: 1.0.2
-      escape-html: 1.0.3
-      on-finished: 2.4.1
-      parseurl: 1.3.3
-      statuses: 2.0.1
-      unpipe: 1.0.0
-    transitivePeerDependencies:
-      - supports-color
-
   finalhandler@1.3.1:
     dependencies:
       debug: 2.6.9
@@ -13800,7 +13631,7 @@ snapshots:
 
   foreground-child@3.3.0:
     dependencies:
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
   form-data-encoder@1.7.2: {}
@@ -15532,8 +15363,6 @@ snapshots:
       lru-cache: 11.0.0
       minipass: 7.1.2
 
-  path-to-regexp@0.1.10: {}
-
   path-to-regexp@0.1.12: {}
 
   path-type@4.0.0: {}
@@ -15743,10 +15572,6 @@ snapshots:
 
   q@1.5.1: {}
 
-  qs@6.11.0:
-    dependencies:
-      side-channel: 1.0.6
-
   qs@6.13.0:
     dependencies:
       side-channel: 1.0.6
@@ -15945,24 +15770,6 @@ snapshots:
 
   semver@7.6.3: {}
 
-  send@0.18.0:
-    dependencies:
-      debug: 2.6.9
-      depd: 2.0.0
-      destroy: 1.2.0
-      encodeurl: 1.0.2
-      escape-html: 1.0.3
-      etag: 1.8.1
-      fresh: 0.5.2
-      http-errors: 2.0.0
-      mime: 1.6.0
-      ms: 2.1.3
-      on-finished: 2.4.1
-      range-parser: 1.2.1
-      statuses: 2.0.1
-    transitivePeerDependencies:
-      - supports-color
-
   send@0.19.0:
     dependencies:
       debug: 2.6.9
@@ -15978,15 +15785,6 @@ snapshots:
       on-finished: 2.4.1
       range-parser: 1.2.1
       statuses: 2.0.1
-    transitivePeerDependencies:
-      - supports-color
-
-  serve-static@1.16.0:
-    dependencies:
-      encodeurl: 1.0.2
-      escape-html: 1.0.3
-      parseurl: 1.3.3
-      send: 0.18.0
     transitivePeerDependencies:
       - supports-color
 
@@ -16060,12 +15858,12 @@ snapshots:
 
   smart-buffer@4.2.0: {}
 
-  snowflake-sdk@1.15.0(asn1.js@5.4.1):
+  snowflake-sdk@2.0.3(asn1.js@5.4.1):
     dependencies:
       '@aws-sdk/client-s3': 3.758.0
-      '@aws-sdk/node-http-handler': 3.374.0
-      '@azure/storage-blob': 12.18.0
+      '@azure/storage-blob': 12.26.0
       '@google-cloud/storage': 7.12.1
+      '@smithy/node-http-handler': 4.0.3
       '@techteamer/ocsp': 1.0.1
       asn1.js: 5.4.1
       asn1.js-rfc2560: 5.0.1(asn1.js@5.4.1)
@@ -16516,8 +16314,6 @@ snapshots:
   tunnel-ssh@5.1.1:
     dependencies:
       ssh2: 1.15.0
-
-  tunnel@0.0.6: {}
 
   tweetnacl@0.14.5: {}
 

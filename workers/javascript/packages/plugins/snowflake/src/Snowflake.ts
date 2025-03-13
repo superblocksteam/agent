@@ -20,7 +20,7 @@ export class Snowflake {
     // the event loop to be blocked (indefinitely) when attempting to write
     // the OCSP cache file to disk, when running in an OPA. This causes the
     // worker to become unresponsive and unable to execute any plugins.
-    configure({ logLevel: 'DEBUG', insecureConnect: true } as ConfigureOptions);
+    configure({ logLevel: 'DEBUG', disableOCSPChecks: true } as ConfigureOptions);
 
     // here we set timeout globally
     // maximum amount of time to keep the connection alive with no response (ms)
