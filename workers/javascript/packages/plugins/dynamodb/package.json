@@ -21,7 +21,7 @@
     "pre-commit": "tsc && lint-staged"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.388.0",
+    "@aws-sdk/client-dynamodb": "3.758.0",
     "@superblocks/shared": "workspace:*",
         "@superblocksteam/types": "workspace:*",
     "minimist": "1.2.6"

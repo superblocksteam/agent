@@ -21,8 +21,8 @@
     "pre-commit": "tsc && lint-staged"
   },
   "dependencies": {
-    "@aws-sdk/client-athena": "3.391.0",
-    "@aws-sdk/client-glue": "3.33.0",
+    "@aws-sdk/client-athena": "3.758.0",
+    "@aws-sdk/client-glue": "3.758.0",
     "@bufbuild/protobuf": "1.2.0",
     "@superblocks/shared": "workspace:*",
         "@superblocksteam/types": "workspace:*",
