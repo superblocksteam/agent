@@ -44,14 +44,14 @@ RUN apt-get update                                                              
     apt-get upgrade -y                                                              && \
     apt-get install -y build-essential gcc                                          && \
     make build-go SERVICE_NAME="orchestrator"                                          \
-                  SERVICE_VERSION=${SERVICE_VERSION}                                   \
-                  EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"                        \
-                  EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}                              && \
+    SERVICE_VERSION=${SERVICE_VERSION}                                   \
+    EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"                        \
+    EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}                              && \
     make build-go SERVICE_NAME="worker.go"                                             \
-                  SERVICE_VERSION=${SERVICE_VERSION}                                   \
-                  GO_BUILD_ROOT_DIRECTORY=./workers/golang                             \
-                  EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}                                 \
-                  EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"
+    SERVICE_VERSION=${SERVICE_VERSION}                                   \
+    GO_BUILD_ROOT_DIRECTORY=./workers/golang                             \
+    EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}                                 \
+    EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"
 
 #############
 ## WORKERS ##
@@ -174,7 +174,7 @@ RUN cd /app/worker.py                                                           
     apt-get update                                                                                                                               && \
     # Installing redis also creates a user and group called redis with id 101 and an user called redis with id 100
     apt-get install -yqq --no-install-recommends gcc gnupg libc6-dev libpq-dev dnsutils iputils-ping nodejs=${NODE_VERSION}-1nodesource1            \
-                                                 ca-certificates curl build-essential cmake redis libblas-dev liblapack-dev                      && \
+    ca-certificates curl build-essential cmake redis libblas-dev liblapack-dev                      && \
     mkdir -p /app/redis                                                                                                                          && \
     chown -R redis:redis /app/redis                                                                                                              && \
     curl https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/trusted.gpg.d/microsoft.asc                                            && \
@@ -193,13 +193,18 @@ RUN cd /app/worker.py                                                           
 COPY --chmod=755 debian_testing.sources /etc/apt/sources.list.d/debian_testing.sources
 
 RUN apt-get update                                                                                                                               && \
-    apt-get -t testing install -yqq --no-install-recommends libexpat1 libexpat1-dev zlib1g-dev curl xz-utils libk5crypto3                        && \
-    apt-get -t unstable install -yqq --no-install-recommends libcurl4                                                                            && \
+    apt-get -t testing install -yqq --no-install-recommends libexpat1 libexpat1-dev zlib1g-dev                                                      \
+        curl xz-utils libk5crypto3 libxml2-dev systemd perl libarchive-dev libxml2 libuv1-dev                                                   && \
+    apt-get -t bookworm-backports install -yqq --no-install-recommends libcurl4                                                                  && \
+    apt-get -t unstable install -yqq --no-install-recommends libldap-2.5-0 bind9                                                                 && \
     apt-get clean                                                                                                                                && \
     rm -rf /var/lib/apt/lists/*                                                                                                                  && \
     apt-get autoremove -y                                                                                                                        && \
     apt-get autoclean -y                                                                                                                         && \
-    rm /etc/apt/sources.list.d/debian_testing.sources
+    rm /etc/apt/sources.list.d/debian_testing.sources                                                                                            && \
+    rm -rf /usr/share/doc                                                                                                                        && \
+    rm -rf /usr/share/man                                                                                                                        && \
+    rm -rf /usr/share/locale
 
 ENV SB_GIT_REPOSITORY_URL="https://github.com/superblocksteam/agent"
 ENV SB_GIT_COMMIT_SHA=${SB_GIT_COMMIT_SHA}

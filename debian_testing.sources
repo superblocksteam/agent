@@ -9,3 +9,9 @@ URIs: http://ftp.de.debian.org/debian/
 Suites: unstable
 Components: main
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: http://ftp.de.debian.org/debian/
+Suites: bookworm-backports
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
