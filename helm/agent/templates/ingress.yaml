@@ -62,7 +62,7 @@ spec:
     {{- end }}
 ---
 {{- $grpcPort := .Values.service.ports.grpc -}}
-{{- $services := list "/grpc.reflection.v1.ServerReflection" "/grpc.reflection.v1alpha.ServerReflection" "/api.v1.ExecutorService" }}
+{{- $services := .Values.ingress.grpcServices | default (list "/grpc.reflection.v1.ServerReflection" "/grpc.reflection.v1alpha.ServerReflection" "/api.v1.ExecutorService") }}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
 apiVersion: networking.k8s.io/v1
 {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
@@ -103,8 +103,14 @@ spec:
       http:
         paths:
           {{- range $services }}
-          - path: {{ . }}
-            pathType: Prefix 
+	     {{- range .paths }}
+		  {{- if and . (kindIs "map" .) }}
+		  - path: {{ required "ingress.hosts.paths[].path is required" .path | quote }}
+		    pathType: {{ default "Prefix" .pathType | quote }}
+		  {{- else }}
+		  - path: {{ . }}
+		    pathType: Prefix 
+	     {{- end }}
           {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.Version }}
             backend:
               service:

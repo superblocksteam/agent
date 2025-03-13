@@ -117,6 +117,13 @@ ingress:
   # - secretName: chart-example-tls
   #   hosts:
   #     - chart-example.local
+  # grpcServices:
+  #   - path: "/grpc.reflection.v1.ServerReflection"
+  #     pathType: "Prefix"
+  #   - path: "/grpc.reflection.v1alpha.ServerReflection"
+  #     pathType: "Prefix"
+  #   - path: "/api.v1.ExecutorService"
+  #     pathType: "Prefix"
 # Upon termination, there may be inflight requests and scheduled jobs.
 # If you want to force kill the agent after a certain point, this value
 # is what you're looking for. Defaults to 30 minutes (1800 seconds).
