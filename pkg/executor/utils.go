@@ -849,6 +849,7 @@ func executeDynamicWorkflow(
 
 	executeOpts.Logger.Debug("adding dynamic workflow output to variables", zap.String("workflowName", workflowName))
 
+	// old way to reference a dynamic workflow output
 	newVars := []*apiv1.Variables_Config{
 		{
 			Key:   workflowName,
@@ -857,6 +858,14 @@ func executeDynamicWorkflow(
 			Mode:  apiv1.Variables_MODE_READ,
 		},
 	}
+
+	// the new way to reference a dynamic workflow output
+	newVars = append(newVars, &apiv1.Variables_Config{
+		Key:   "credentials",
+		Value: result,
+		Type:  apiv1.Variables_TYPE_NATIVE,
+		Mode:  apiv1.Variables_MODE_READ,
+	})
 
 	newCtx, err := Variables(ctx, &apiv1.Variables{Items: newVars}, sandbox, executeOpts.Logger, garbage, executeOpts.Store, options...)
 	if err != nil {
