@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
-- <>
+- Update `slim` image builds to support `package-slim.json` files in any `worker.js` subdirectory
+- Add `slim` variant to `packages/plugins/javascript` package (i.e. `package-slim.json`) which keeps only dependencies required for binding resolution
 
 ## v1.20.0
 
