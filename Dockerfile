@@ -14,8 +14,7 @@ ARG LIBEXPAT_VERSION=2.6.3
 ARG REQUIREMENTS_FILE=/app/worker.py/requirements-slim.txt
 ARG SLIM_IMAGE=true
 ARG SB_GIT_COMMIT_SHA=unset
-ARG WORKER_JS_LOCK_FILE=pnpm-lock-slim.yaml
-ARG WORKER_JS_SERVER_PACKAGE_JSON=packages/server/package-slim.json
+ARG WORKER_JS_PREPARE_FS_ARGS
 ARG SERVICE_VERSION
 ARG EXTRA_GO_OPTIONS
 ARG INTERNAL_TAG
@@ -67,8 +66,7 @@ ARG GO_VERSION
 ARG PNPM_VERSION
 ARG S6_OVERLAY_VERSION
 ARG DEASYNC_VERSION
-ARG WORKER_JS_LOCK_FILE
-ARG WORKER_JS_SERVER_PACKAGE_JSON
+ARG WORKER_JS_PREPARE_FS_ARGS
 
 ENV PATH=/usr/local/go/bin:$PATH
 ENV BUILDARCH=$BUILDARCH
@@ -89,19 +87,19 @@ RUN set -e; apt-get update && apt-get install -y curl                           
     tar -C /s6 -Jxpf /tmp/s6-overlay-noarch.tar.xz                                                                                   && \
     tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz
 
-COPY ./workers/javascript/package*.json /workers/javascript/
-COPY ./workers/javascript/${WORKER_JS_LOCK_FILE} /workers/javascript/pnpm-lock.yaml
+COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock*.yaml /workers/javascript/
+COPY ./workers/javascript/scripts/prepare-fs-for-build.sh /workers/javascript/scripts/
 
 RUN cd /workers/javascript                && \
+    scripts/prepare-fs-for-build.sh --working-dir /workers/javascript ${WORKER_JS_PREPARE_FS_ARGS} && \
     npm install -g clean-modules node-gyp && \
     npm install                           && \
     npx pnpm fetch
 
 COPY . .
-COPY ./workers/javascript/${WORKER_JS_LOCK_FILE} /workers/javascript/pnpm-lock.yaml
-COPY ./workers/javascript/${WORKER_JS_SERVER_PACKAGE_JSON} /workers/javascript/packages/server/package.json
 
 RUN cd /workers/javascript                                                                                                           && \
+    scripts/prepare-fs-for-build.sh --working-dir /workers/javascript ${WORKER_JS_PREPARE_FS_ARGS} && \
     npx pnpm install -r --offline                                                                                                    && \
     npx pnpm --filter "*" build                                                                                                      && \
     rm -rf node_modules                                                                                                              && \
