@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Optional, Tuple
 
+import redis
 import superblocks_json
 import ujson
 from exceptions import QuotaError
+from kvstore.kvstore import KV, KVStore, WriteOps
 from log import error, info, warn
 from redis.asyncio import Redis
-
-from kvstore.kvstore import KV, KVStore, WriteOps
 
 
 class RedisKVStore(KVStore):
@@ -107,6 +107,11 @@ class RedisKVStore(KVStore):
 
         except QuotaError:
             raise
+
+        except redis.exceptions.TimeoutError as e:
+            error("redis client timed out when trying to write", err=str(e))
+            raise e
+
         except Exception as e:
             error("failed to write to redis", err=str(e))
             raise e

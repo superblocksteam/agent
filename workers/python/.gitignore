@@ -12,3 +12,4 @@ certs/
 .hypothesis
 **/charts/*.tgz
 *.swp
+.mise.toml
