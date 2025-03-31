@@ -196,11 +196,11 @@ rm -rf /usr/lib/node_modules/npm
 COPY --chmod=755 debian_testing.sources /etc/apt/sources.list.d/debian_testing.sources
 
 RUN apt-get update                                                                                                                               && \
-    apt-get purge --auto-remove -yqq dnsutils                                                                                                    && \
-    apt-get -t testing install -yqq --no-install-recommends libexpat1 libexpat1-dev zlib1g-dev                                                      \
-        curl xz-utils libk5crypto3 libxml2-dev systemd perl libarchive-dev libxml2 libuv1-dev                                                    && \
+    apt-get purge --auto-remove -yqq dnsutils libxml2 libxml2-dev libarchive-dev bind9-dnsutils bind9                                                           && \
+    apt-get -t testing install -yqq --no-install-recommends zlib1g-dev curl xz-utils libk5crypto3                                                   \
+         systemd perl libarchive-dev libuv1-dev                                                                                                  && \
     apt-get -t bookworm-backports install -yqq --no-install-recommends libcurl4                                                                  && \
-    apt-get -t unstable install -yqq --no-install-recommends libldap-2.5-0 bind9 bind9-dnsutils                                                  && \
+    apt-get -t unstable install -yqq --no-install-recommends libldap-2.5-0 libexpat1 libexpat1-dev                          && \
     apt-get clean                                                                                                                                && \
     rm -rf /var/lib/apt/lists/*                                                                                                                  && \
     apt-get autoremove -y                                                                                                                        && \
