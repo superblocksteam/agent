@@ -4,6 +4,7 @@ from typing import Any, Generator
 import pytest
 from pytest_mock import MockFixture
 from redis.asyncio import Redis
+
 from transport.redis import RedisMessage, RedisTransport
 
 
