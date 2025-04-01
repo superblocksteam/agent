@@ -2,8 +2,9 @@ from pathlib import Path
 from typing import IO
 
 import pytest
-from health import mark_worker_healthy, mark_worker_unhealthy
 from pytest_mock import MockerFixture
+
+from health import mark_worker_healthy, mark_worker_unhealthy
 
 
 def patch_path_object(

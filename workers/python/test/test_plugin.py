@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+
 from plugin.plugin import DATETIME_FORMAT, Python
 
 

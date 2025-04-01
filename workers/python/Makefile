@@ -65,9 +65,9 @@ ifeq ($(CHECK_ONLY),true)
 	$(eval RUFF_CHECK_FLAG=--check)
 endif
 	# linting
-	@ruff check $(RUFF_FIX_FLAG)
+	@ruff check $(RUFF_FIX_FLAG) --config pyproject.toml
 	# formatting
-	@ruff format $(RUFF_CHECK_FLAG)
+	@ruff format $(RUFF_CHECK_FLAG) --config pyproject.toml
 
 .PHONY: test
 test:

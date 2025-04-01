@@ -2,8 +2,14 @@ import asyncio
 import traceback
 from typing import Any, Coroutine, Dict, List, Optional, Set
 
-import log
 import ujson
+from opentelemetry import baggage, trace
+from opentelemetry.baggage.propagation import W3CBaggagePropagator
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from pydantic import BaseModel
+from redis.asyncio import Redis
+
+import log
 from constants import (
     OBS_CORRELATION_ID_TAG,
     PLUGIN_EVENT,
@@ -18,15 +24,9 @@ from health import mark_worker_healthy, mark_worker_unhealthy
 from kvstore.kvstore import KVStore
 from metrics import busy_seconds_counter
 from models import Quotas
-from opentelemetry import baggage, trace
-from opentelemetry.baggage.propagation import W3CBaggagePropagator
-from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from otel import get_tracer
 from performance.utils import now_microseconds, now_seconds
 from plugin.plugin import Event, Python
-from pydantic import BaseModel
-from redis.asyncio import Redis
-
 from transport.constants import INBOX_ACK_MESSAGE_ID, INBOX_DATA_MESSAGE_ID
 from transport.errors import RedisMalformedResponseError
 from transport.signal import attach_signal_handlers

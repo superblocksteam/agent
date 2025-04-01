@@ -19,6 +19,9 @@ from typing import Optional
 
 import psutil
 from backoff import constant, on_exception
+from plotly.graph_objects import Figure as PlotlyFigure
+from simplejson import dumps
+
 from constants import (
     SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST,
     SUPERBLOCKS_WORKER_SUBPROCESS_GID,
@@ -27,8 +30,6 @@ from constants import (
 from exceptions import BusyError
 from kvstore.kvstore import KVStore
 from pipe import publish, receiveAll
-from plotly.graph_objects import Figure as PlotlyFigure
-from simplejson import dumps
 from superblocks import Object, Reader
 from superblocks_json import encode_bytestring_as_json
 from transport.signal import remove_signal_handlers

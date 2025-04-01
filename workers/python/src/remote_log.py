@@ -1,12 +1,13 @@
 from typing import List
 
+from requests_futures.sessions import FuturesSession
+
 from constants import (
     SUPERBLOCKS_AGENT_KEY,
     SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE,
     SUPERBLOCKS_WORKER_ID,
 )
 from log import construct_json_msg, error
-from requests_futures.sessions import FuturesSession
 
 session = FuturesSession()
 

@@ -1,5 +1,11 @@
 from typing import Optional
 
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
+
 from constants import (
     AGENT_KEY_HEADER,
     SUPERBLOCKS_AGENT_INTAKE_TRACES_ENABLE,
@@ -8,11 +14,6 @@ from constants import (
     SUPERBLOCKS_WORKER_VERSION,
 )
 from log import debug, info
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
 
 SERVICE_NAME = "worker.py"
 

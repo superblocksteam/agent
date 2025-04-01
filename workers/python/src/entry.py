@@ -3,6 +3,8 @@ from multiprocessing import set_start_method
 from uuid import uuid4
 
 import nest_asyncio  # type: ignore
+from prometheus_client import start_http_server
+
 from constants import (
     SUPERBLOCKS_AGENT_REDIS_HOST,
     SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST,
@@ -19,7 +21,6 @@ from constants import (
     SUPERBLOCKS_SLIM_IMAGE,
 )
 from otel import init_otel
-from prometheus_client import start_http_server
 
 # FREE SPEED!
 if not SUPERBLOCKS_SLIM_IMAGE:

@@ -2,9 +2,10 @@ import os
 
 import nest_asyncio  # type: ignore
 import pytest
+from pytest_mock import MockFixture
+
 from kvstore.kvstore import MockStore
 from plugin.plugin import Python
-from pytest_mock import MockFixture
 from variables.constants import VariableMode, VariableType
 
 nest_asyncio.apply()

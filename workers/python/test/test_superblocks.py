@@ -1,8 +1,9 @@
 import pandas as pd
-import superblocks
 from fixtures import dump_and_load
 from hypothesis import given
 from hypothesis import strategies as st
+
+import superblocks
 
 
 def test_to_superblocks_datastructure_object():

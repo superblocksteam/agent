@@ -3,7 +3,6 @@ from signal import SIGINT, SIGTERM, Signals
 
 import log
 from health import mark_worker_unhealthy
-
 from transport.transport import Transport
 
 

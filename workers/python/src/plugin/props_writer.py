@@ -4,7 +4,6 @@ from exceptions import QuotaError
 from kvstore.kvstore import KVStore, WriteOps
 from kvstore.redis import KV
 from performance.utils import observe
-
 from plugin.constants import STORE_PROPERTY, ContextCategory, get_store_key
 
 

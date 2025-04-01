@@ -1,12 +1,13 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import redis
-import superblocks_json
 import ujson
+from redis.asyncio import Redis
+
+import superblocks_json
 from exceptions import QuotaError
 from kvstore.kvstore import KV, KVStore, WriteOps
 from log import error, info, warn
-from redis.asyncio import Redis
 
 
 class RedisKVStore(KVStore):
