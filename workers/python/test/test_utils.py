@@ -1,6 +1,7 @@
 import pytest
-import superblocks
 from fixtures import dump_and_load
+
+import superblocks
 from utils import extract_vars, get_tree_path_to_disk_path
 
 

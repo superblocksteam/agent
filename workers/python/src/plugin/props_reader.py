@@ -4,11 +4,10 @@ from typing import Any, Dict, List
 from kvstore.kvstore import KVStore
 from log import warn
 from performance.utils import observe
+from plugin.constants import STREAM_PROPERTIES, ContextCategory
 from superblocks import Object
 from utils import deep_contains
 from variables.constants import VariableType
-
-from plugin.constants import STREAM_PROPERTIES, ContextCategory
 
 
 class PluginPropReaderException(Exception):
