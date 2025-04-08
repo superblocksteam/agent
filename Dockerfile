@@ -188,6 +188,10 @@ RUN cd /app/worker.py                                                           
     groupadd --gid 1000 superblocks                                                                                                              && \
     useradd --uid 1000 --gid superblocks --shell /bin/bash --create-home superblocks
 
+# Remove package managers as they include the cross-spawn dependency
+RUN rm -rf /app/worker.js/node_modules/pnpm && \
+rm -rf /usr/lib/node_modules/npm
+
 
 COPY --chmod=755 debian_testing.sources /etc/apt/sources.list.d/debian_testing.sources
 
