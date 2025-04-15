@@ -104,7 +104,7 @@ type resolver struct {
 	profile            string
 	organizationPlan   string
 	definitionMetadata *apiv1.Definition_Metadata
-	sandbox            engine.Sandbox
+	createSandboxFunc  func() engine.Sandbox
 	secrets            secrets.Secrets
 	SecretManager      secrets.SecretManager
 	attributes         []attribute.KeyValue
@@ -439,7 +439,9 @@ func (r *resolver) Block(ctx *apictx.Context, block *apiv1.Block, ops ...options
 }
 
 func (r *resolver) Variables(ctx *apictx.Context, variables *apiv1.Variables, ops ...options.Option) (*apictx.Context, error) {
-	return Variables(ctx, variables, r.sandbox, r.logger, r.variables, r.store, ops...)
+	sandbox := r.createSandboxFunc()
+	defer sandbox.Close()
+	return Variables(ctx, variables, sandbox, r.logger, r.variables, r.store, ops...)
 }
 
 // Variables writes / updates variables to the store and returns the modified context with the new variables
@@ -553,7 +555,9 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 
 	// workflows are handled a bit differently
 	if workflowv1 := step.GetWorkflow(); workflowv1 != nil {
-		_, ref, _, err := HandleWorkflow(ctx, r.sandbox, workflowv1, func(_ *apiv1.Definition) string { return ctx.Name }, true, r.Options, ops...)
+		sandbox := r.createSandboxFunc()
+		defer sandbox.Close()
+		_, ref, _, err := HandleWorkflow(ctx, sandbox, workflowv1, func(_ *apiv1.Definition) string { return ctx.Name }, true, r.Options, ops...)
 		return nil, ref, err
 	}
 
@@ -587,7 +591,9 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 		var shouldRender bool
 		{
 			if shouldRender = shouldRenderActionConfig(action, p.Type(), wops.Apply(opts.Worker...).Stream != nil); shouldRender {
-				rendered, err := template.RenderProtoValue(ctx, structpb.NewStructValue(action), mustache.Instance, r.sandbox, r.logger)
+				sandbox := r.createSandboxFunc()
+				defer sandbox.Close()
+				rendered, err := template.RenderProtoValue(ctx, structpb.NewStructValue(action), mustache.Instance, sandbox, r.logger)
 				if err != nil {
 					return nil, "", err
 				}
@@ -618,9 +624,12 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 				return nil, "", err
 			}
 
+			sandbox := r.createSandboxFunc()
+			defer sandbox.Close()
+
 			rendered, renderedRedacted, err := EvaluateDatasource(
 				ctx,
-				r.sandbox,
+				sandbox,
 				unrenderedDatasourceConfig,
 				unrenderedRedactedDatasourceConfig,
 				step.GetIntegration(),
@@ -879,7 +888,9 @@ func (r *resolver) Send(ctx *apictx.Context, block *apiv1.Block_Send, ops ...opt
 				return err
 			}
 		} else {
-			message, err := resolve[string](ctx, r.sandbox, r.logger, block.Message, true)
+			sandbox := r.createSandboxFunc()
+			defer sandbox.Close()
+			message, err := resolve[string](ctx, sandbox, r.logger, block.Message, true)
 			if err != nil {
 				r.logger.Error("could not resolve message", zap.Error(err), zap.String("message", block.Message))
 				ctx.AppendFormPath("message")
@@ -910,7 +921,9 @@ func (r *resolver) Wait(ctx *apictx.Context, step *apiv1.Block_Wait, ops ...opti
 	var condition string
 	{
 		if utils.IsTemplate(step.Condition) {
-			cond, err := resolve[string](ctx, r.sandbox, r.logger, step.Condition, false, engine.WithResolved("condition"))
+			sandbox := r.createSandboxFunc()
+			defer sandbox.Close()
+			cond, err := resolve[string](ctx, sandbox, r.logger, step.Condition, false, engine.WithResolved("condition"))
 			if err != nil {
 				ctx.AppendFormPath("condition")
 				return "", "", err
@@ -976,7 +989,9 @@ func (r *resolver) Return(ctx *apictx.Context, block *apiv1.Block_Return, ops ..
 }
 
 func (r *resolver) Throw(ctx *apictx.Context, throw *apiv1.Block_Throw, ops ...options.Option) error {
-	message, err := resolve[string](ctx, r.sandbox, r.logger, throw.Error, false, engine.WithResolved("error"))
+	sandbox := r.createSandboxFunc()
+	defer sandbox.Close()
+	message, err := resolve[string](ctx, sandbox, r.logger, throw.Error, false, engine.WithResolved("error"))
 	if err != nil {
 		ctx.AppendFormPath("error")
 		return err
@@ -987,7 +1002,9 @@ func (r *resolver) Throw(ctx *apictx.Context, throw *apiv1.Block_Throw, ops ...o
 
 func (r *resolver) Break(ctx *apictx.Context, step *apiv1.Block_Break, ops ...options.Option) error {
 	// We set as boolean to allow truthy / falsy conditions to be used.
-	shouldBreak, err := resolve[bool](ctx, r.sandbox, r.logger, step.Condition, false, engine.WithAsBoolean(), engine.WithResolved("condition"))
+	sandbox := r.createSandboxFunc()
+	defer sandbox.Close()
+	shouldBreak, err := resolve[bool](ctx, sandbox, r.logger, step.Condition, false, engine.WithAsBoolean(), engine.WithResolved("condition"))
 	if err != nil {
 		ctx.AppendFormPath("condition")
 		return err
@@ -1073,7 +1090,9 @@ func (r *resolver) Conditional(ctx *apictx.Context, step *apiv1.Block_Conditiona
 		condition := utils.Escape(branch.Condition)
 
 		// We set as boolean to allow truthy / falsy conditions to be used.
-		shouldRunBranch, err := resolve[bool](ctx, r.sandbox, r.logger, condition, false, engine.WithAsBoolean(), engine.WithResolved(strings.Join(path, ".")))
+		sandbox := r.createSandboxFunc()
+		defer sandbox.Close()
+		shouldRunBranch, err := resolve[bool](ctx, sandbox, r.logger, condition, false, engine.WithAsBoolean(), engine.WithResolved(strings.Join(path, ".")))
 		if err != nil {
 			ctx.AppendFormPath("if", "condition")
 			return err
@@ -1129,7 +1148,9 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 
 	switch step.Type {
 	case apiv1.Block_Loop_TYPE_FOR:
-		v, err := resolve[int32](ctx, r.sandbox, r.logger, step.Range, false, engine.WithResolved("range"))
+		sandbox := r.createSandboxFunc()
+		defer sandbox.Close()
+		v, err := resolve[int32](ctx, sandbox, r.logger, step.Range, false, engine.WithResolved("range"))
 		if err != nil {
 			ctx.AppendFormPath("range")
 			return "", sberrors.BindingError(errors.New("loop range must evalute to a number"))
@@ -1139,7 +1160,9 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 			items = append(items, "null")
 		}
 	case apiv1.Block_Loop_TYPE_FOREACH:
-		vals, err := resolve[[]string](ctx, r.sandbox, r.logger, step.Range, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("range"))
+		sandbox := r.createSandboxFunc()
+		defer sandbox.Close()
+		vals, err := resolve[[]string](ctx, sandbox, r.logger, step.Range, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("range"))
 		if err != nil {
 			ctx.AppendFormPath("range")
 			return "", sberrors.BindingError(errors.New("loop range must evalute to an array"))
@@ -1164,7 +1187,9 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 
 		if step.Type == apiv1.Block_Loop_TYPE_WHILE {
 			// We set as boolean to allow truthy / falsy conditions to be used.
-			shouldContinue, err := resolve[bool](ctx, r.sandbox, r.logger, step.Range, false, engine.WithAsBoolean())
+			sandbox := r.createSandboxFunc()
+			defer sandbox.Close()
+			shouldContinue, err := resolve[bool](ctx, sandbox, r.logger, step.Range, false, engine.WithAsBoolean())
 			if err != nil {
 				ctx.AppendFormPath("range")
 				return 0, "", false, err
@@ -1291,7 +1316,9 @@ func (r *resolver) Parallel(ctx *apictx.Context, step *apiv1.Block_Parallel, ops
 			}
 		} else if step.GetDynamic() != nil {
 			variation = "dynamic"
-			loopable, err := resolve[any](ctx, r.sandbox, r.logger, step.GetDynamic().Paths, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("dynamic.paths"))
+			sandbox := r.createSandboxFunc()
+			defer sandbox.Close()
+			loopable, err := resolve[any](ctx, sandbox, r.logger, step.GetDynamic().Paths, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("dynamic.paths"))
 			if err != nil {
 				ctx.AppendFormPath("dynamic", "paths")
 				return "", sberrors.BindingError(errors.New("parallel paths must evalute to a number or an array"))
