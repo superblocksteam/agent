@@ -42,6 +42,7 @@ endif
 POSTMAN_ENV = local
 GRPC_HOST=host.docker.internal
 GRPC_PORT=8081
+QUOTAS_ENABLED = true
 
 .PHONY: deps
 deps: deps-go
@@ -89,7 +90,7 @@ run-docker:
 		--transport.redis.host=redis \
 		--store.redis.host=redis \
 		--superblocks.url="http://mock:3100" \
-		--quotas.enabled=true \
+		--quotas.enabled=$(QUOTAS_ENABLED) \
 		--registration.enabled=false \
 		--auth.jwt.enabled=true \
 		--worker.go.enabled=true \

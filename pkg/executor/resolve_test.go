@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 
 	apictx "github.com/superblocksteam/agent/pkg/context"
+	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
 	mocker "github.com/superblocksteam/agent/pkg/mocker/mocks"
 	"github.com/superblocksteam/agent/pkg/store"
@@ -184,11 +185,12 @@ func TestVariables(t *testing.T) {
 
 				ctx, cancel := context.WithCancelCause(context.Background())
 
-				sandbox := javascript.Sandbox(ctx, &javascript.Options{
-					Logger: zap.NewNop(),
-					Store:  memory,
-				})
-				defer sandbox.Close()
+				createSandboxFunc := func() engine.Sandbox {
+					return javascript.Sandbox(ctx, &javascript.Options{
+						Logger: zap.NewNop(),
+						Store:  memory,
+					})
+				}
 
 				flags := new(mockflags.Flags)
 				flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
@@ -198,16 +200,16 @@ func TestVariables(t *testing.T) {
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
 
 				_, _, err := (&resolver{
-					wg:        wg,
-					ctx:       ctx,
-					cancel:    cancel,
-					flags:     flags,
-					logger:    zap.NewNop(),
-					key:       utils.NewMap[string](),
-					variables: gc.New(&gc.Options{Store: store.Memory()}),
-					store:     memory,
-					execution: "ABCD-1234",
-					sandbox:   sandbox,
+					wg:                wg,
+					ctx:               ctx,
+					cancel:            cancel,
+					flags:             flags,
+					logger:            zap.NewNop(),
+					key:               utils.NewMap[string](),
+					variables:         gc.New(&gc.Options{Store: store.Memory()}),
+					store:             memory,
+					execution:         "ABCD-1234",
+					createSandboxFunc: createSandboxFunc,
 					manager: &manager{
 						mutex:   sync.RWMutex{},
 						exiters: map[string](chan *exit){},
@@ -1638,10 +1640,14 @@ func TestBlocks(t *testing.T) {
 
 				ctx, cancel := context.WithCancelCause(context.Background())
 
-				sandbox := javascript.Sandbox(ctx, &javascript.Options{
-					Logger: zap.NewNop(),
-					Store:  variables,
-				})
+				createSandboxFunc := func() engine.Sandbox {
+					return javascript.Sandbox(ctx, &javascript.Options{
+						Logger: zap.NewNop(),
+						Store:  variables,
+					})
+				}
+
+				sandbox := createSandboxFunc()
 				defer sandbox.Close()
 
 				flags := new(mockflags.Flags)
@@ -1653,20 +1659,20 @@ func TestBlocks(t *testing.T) {
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
 
 				last, ref, err := (&resolver{
-					wg:            wg,
-					ctx:           ctx,
-					cancel:        cancel,
-					flags:         flags,
-					logger:        zap.NewNop(),
-					worker:        mockWorker,
-					key:           utils.NewMap[string](),
-					variables:     gc.New(&gc.Options{Store: store.Memory()}),
-					parallels:     utils.NewList[chan struct{}](),
-					store:         variables,
-					execution:     "ABCD-1234",
-					rootStartTime: time.Now(),
-					timeout:       time.Second * 10,
-					sandbox:       sandbox,
+					wg:                wg,
+					ctx:               ctx,
+					cancel:            cancel,
+					flags:             flags,
+					logger:            zap.NewNop(),
+					worker:            mockWorker,
+					key:               utils.NewMap[string](),
+					variables:         gc.New(&gc.Options{Store: store.Memory()}),
+					parallels:         utils.NewList[chan struct{}](),
+					store:             variables,
+					execution:         "ABCD-1234",
+					rootStartTime:     time.Now(),
+					timeout:           time.Second * 10,
+					createSandboxFunc: createSandboxFunc,
 					manager: &manager{
 						mutex:   sync.RWMutex{},
 						exiters: map[string](chan *exit){},
@@ -1783,11 +1789,12 @@ func TestQuota(t *testing.T) {
 
 			ctx, cancel := context.WithCancelCause(context.Background())
 
-			sandbox := javascript.Sandbox(ctx, &javascript.Options{
-				Logger: zap.NewNop(),
-				Store:  variables,
-			})
-			defer sandbox.Close()
+			createSandboxFunc := func() engine.Sandbox {
+				return javascript.Sandbox(ctx, &javascript.Options{
+					Logger: zap.NewNop(),
+					Store:  variables,
+				})
+			}
 
 			flags := new(mockflags.Flags)
 			flags.On("GetStepRateV2", mock.Anything, mock.Anything).Return(1000, nil)
@@ -1801,21 +1808,21 @@ func TestQuota(t *testing.T) {
 			mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
 
 			resolver := &resolver{
-				orgId:         "ABC",
-				wg:            wg,
-				ctx:           ctx,
-				cancel:        cancel,
-				logger:        zap.NewNop(),
-				worker:        mockWorker,
-				flags:         flags,
-				key:           utils.NewMap[string](),
-				variables:     gc.New(&gc.Options{Store: store.Memory()}),
-				parallels:     utils.NewList[chan struct{}](),
-				store:         variables,
-				execution:     "ABCD-1234",
-				rootStartTime: time.Now(),
-				timeout:       time.Second * 10,
-				sandbox:       sandbox,
+				orgId:             "ABC",
+				wg:                wg,
+				ctx:               ctx,
+				cancel:            cancel,
+				logger:            zap.NewNop(),
+				worker:            mockWorker,
+				flags:             flags,
+				key:               utils.NewMap[string](),
+				variables:         gc.New(&gc.Options{Store: store.Memory()}),
+				parallels:         utils.NewList[chan struct{}](),
+				store:             variables,
+				execution:         "ABCD-1234",
+				rootStartTime:     time.Now(),
+				timeout:           time.Second * 10,
+				createSandboxFunc: createSandboxFunc,
 				manager: &manager{
 					mutex:   sync.RWMutex{},
 					exiters: map[string](chan *exit){},
@@ -1910,11 +1917,12 @@ func TestStream(t *testing.T) {
 
 				ctx, cancel := context.WithCancelCause(context.Background())
 
-				sandbox := javascript.Sandbox(ctx, &javascript.Options{
-					Logger: zap.NewNop(),
-					Store:  variables,
-				})
-				defer sandbox.Close()
+				createSandboxFunc := func() engine.Sandbox {
+					return javascript.Sandbox(ctx, &javascript.Options{
+						Logger: zap.NewNop(),
+						Store:  variables,
+					})
+				}
 
 				flags := new(mockflags.Flags)
 				flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
@@ -1933,20 +1941,20 @@ func TestStream(t *testing.T) {
 				})
 
 				last, _, err := (&resolver{
-					wg:            wg,
-					ctx:           ctx,
-					cancel:        cancel,
-					flags:         flags,
-					logger:        zap.NewNop(),
-					worker:        mockWorker,
-					key:           utils.NewMap[string](),
-					variables:     gc.New(&gc.Options{Store: store.Memory()}),
-					parallels:     utils.NewList[chan struct{}](),
-					store:         variables,
-					execution:     "ABCD-1234",
-					rootStartTime: time.Now(),
-					timeout:       time.Second * 10,
-					sandbox:       sandbox,
+					wg:                wg,
+					ctx:               ctx,
+					cancel:            cancel,
+					flags:             flags,
+					logger:            zap.NewNop(),
+					worker:            mockWorker,
+					key:               utils.NewMap[string](),
+					variables:         gc.New(&gc.Options{Store: store.Memory()}),
+					parallels:         utils.NewList[chan struct{}](),
+					store:             variables,
+					execution:         "ABCD-1234",
+					rootStartTime:     time.Now(),
+					timeout:           time.Second * 10,
+					createSandboxFunc: createSandboxFunc,
 					manager: &manager{
 						mutex:   sync.RWMutex{},
 						exiters: map[string](chan *exit){},

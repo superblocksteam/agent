@@ -15,6 +15,7 @@ import (
 	"github.com/superblocksteam/agent/internal/flags"
 	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/crypto/signature"
+	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/mocker"
 	"github.com/superblocksteam/agent/pkg/observability/emitter/event"
 	"github.com/superblocksteam/agent/pkg/observability/log"
@@ -445,12 +446,13 @@ func (e *execution) Run(ctx context.Context) {
 	e.resolver.files = files
 	defer e.deleteFiles(files)
 
-	e.resolver.sandbox = javascript.Sandbox(ctx, &javascript.Options{
-		Logger:    e.Logger,
-		Store:     e.Store,
-		AfterFunc: internalutils.EngineAfterFunc,
-	})
-	defer e.resolver.sandbox.Close()
+	e.resolver.createSandboxFunc = func() engine.Sandbox {
+		return javascript.Sandbox(ctx, &javascript.Options{
+			Logger:    e.Logger,
+			Store:     e.Store,
+			AfterFunc: internalutils.EngineAfterFunc,
+		})
+	}
 
 	var sbctx *apictx.Context
 	{
