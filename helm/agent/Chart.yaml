@@ -1,7 +1,7 @@
 ---
 apiVersion: v2
-appVersion: v1.19.0
+appVersion: v1.20.0
 description: A Helm chart for the Superblocks On-Prem Agent
 name: superblocks-agent
 type: application
-version: 2.36.0
+version: 2.37.0
