@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `SUPERBLOCKS_AGENT_REDIS_SOCKET_TIMEOUT_SECONDS` to configure socket timeout for Redis client in Python worker
 - Update OPA Dockerfile's `WORKER_JS_PREPARE_FS_ARGS` argument's default value to match value for building `slim` variant
 - Update OPA variants doc with new arguments for building `standard`/`slim` variants
+- Fix the agent Helm Chart to support gRPC routes
 
 ## v1.20.0
 
