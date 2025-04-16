@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `slim` image builds to support `package-slim.json` files in any `worker.js` subdirectory
 - Added `slim` variant to `packages/plugins/javascript` package (i.e. `package-slim.json`) which keeps only dependencies required for binding resolution
 - Added `SUPERBLOCKS_AGENT_REDIS_SOCKET_TIMEOUT_SECONDS` to configure socket timeout for Redis client in Python worker
+- Update OPA Dockerfile's `WORKER_JS_PREPARE_FS_ARGS` argument's default value to match value for building `slim` variant
+- Update OPA variants doc with new arguments for building `standard`/`slim` variants
 
 ## v1.20.0
 

@@ -1,15 +1,15 @@
 # On-Premise Agent Variants
-The Superblocks On-premise Agent has two variants: the `standard` agent and the `slim` agent. The agent variants give you different levels of control over the packages included in the agent and that are available when your developers write Python and JavaScript code in their APIs.
+The Superblocks On-premise Agent has two variants: the `standard` agent and the `slim` agent. The agent variants give you different levels of control over the packages included in the agent, that are available when your developers write Python and JavaScript code in their APIs.
 
 ## Which variant should I use?
 
-If you're unsure where to start, want to get up and running quickly, or need to minimize dependencies on your DevOps team, the `standard` image is the way to go. The `standard` image includes all the same JavaScript and Python libraries included in Superblocks Cloud, so will let developers get started quickly with a bunch of useful libraries out of the box. Since devs have access to many of the libraries they may need, they won't need to come to your DevOps team to install new packages to unblock development.
+If you're unsure where to start, want to get up and running quickly, or need to minimize dependencies on your DevOps team, the `standard` image is the way to go. The `standard` image includes all the same JavaScript and Python libraries included in Superblocks Cloud, so it will let developers get started quickly with a bunch of useful libraries out of the box. Since devs have access to many of the libraries they may need, they won't need to come to your DevOps team to install new packages to unblock development.
 
 The `standard` image is also recommended if you're a current Superblocks Cloud customer and already have tools deployed and you're not sure which packages/libraries you're developers are using.
 
-The `slim` image on the other hand is ideal for organizations that have a high need for customization or have stringent security requirements where it is acceptable for the DevOps team to be involved in assisting developers with installing or upgrading necessary packages.
+The `slim` image, on the other hand, is ideal for organizations that have a high need for customization or have stringent security requirements where it is acceptable for the DevOps team to be involved in assisting developers with installing or upgrading necessary packages.
 
-Unlike the `standard` image the `slim` image only includes the minimum packages required for the agent to run. Because of this, you'll have greater control over your agent's dependencies and can fully manage security patches and version upgrades on your own.
+Unlike the `standard` image, the `slim` image only includes the minimum packages required for the agent to run. Because of this, you'll have greater control over your agent's dependencies and can fully manage security patches and version upgrades on your own.
 
 ## Variants
 ### Standard
@@ -56,11 +56,10 @@ To use this agent variant, you'll set an environment variable as follows based o
 
 
 ## Building From Source
-When building the on-premise agent from source, there are four build arguments that are used to determine the variant of the agent being built:
+When building the on-premise agent from source, there are three build arguments that are used to determine the variant of the agent being built:
 * `SLIM_IMAGE`
 * `REQUIREMENTS_FILE`
-* `WORKER_JS_LOCK_FILE`
-* `WORKER_JS_SERVER_PACKAGE_JSON`
+* `WORKER_JS_PREPARE_FS_ARGS`
 
 If none of these arguments are specified, building the image from source will build the `slim` variant of the agent (i.e. the default value for all of these arguments is the `slim` variant value).
 
@@ -70,8 +69,7 @@ The following table describes the build arguments and what their respective valu
 | --------------------------------- | ------- | --------------------------------- | -------------------------------------- | ----------- |
 | `SLIM_IMAGE`                      | boolean | `false`                           | `true`                                 | Sets `SUPERBLOCKS_SLIM_IMAGE` env var, which is used by the Python worker to determine which modules to import |
 | `REQUIREMENTS_FILE`               | string  | `/app/worker.py/requirements.txt` | `/app/worker.py/requirements-slim.txt` | Specifies the path to the requirements file to use when installing dependencies for the Python worker |
-| `WORKER_JS_LOCK_FILE`             | string  | `pnpm-lock.yaml`                  | `pnpm-lock-slim.yaml`                  | Specifies the path to the JavaScript worker's pnpm lock file to use when installing dependencies for the JavaScript worker (relative from `/app/worker.js/`) |
-| `WORKER_JS_SERVER_PACKAGE_JSON`   | string  | `packages/server/package.json`    | `packages/server/package-slim.json`    | Specifies the path to the JavaScript worker's, `server` package's `package.json` to use when installing dependencies for the JavaScript worker (relative from `/app/worker.js/`) |
+| `WORKER_JS_PREPARE_FS_ARGS`       | string  | `''`                              | `--slim`                               | Specifies the arguments for the JavaScript worker's "prepare filesystem" script. The `--slim` argument tells the build to prefer `package-slim.json` files over `package.json` files, when installing dependencies, if both are present in a package (no arguments/default value will tell the build to only use `package.json` files) |
 
 ### Build Command
 The following command can be used to build the on-premise agent from source, setting each of the build arguments to the appropriate value for the desired variant:
@@ -80,8 +78,7 @@ $ docker build -t superblocks \
     --build-arg VERSION=$(git describe --tags --abbrev=0 --match "v*")+$(git describe --always --dirty) \
     --build-arg SLIM_IMAGE=<slim_image> \
     --build-arg REQUIREMENTS_FILE=<requirements_file> \
-    --build-arg WORKER_JS_LOCK_FILE=<lock_file> \
-    --build-arg WORKER_JS_SERVER_PACKAGE_JSON=<package_json_file> \
+    --build-arg WORKER_JS_PREPARE_FS_ARGS=<prepare_fs_script_args> \
     .
 ```
 
