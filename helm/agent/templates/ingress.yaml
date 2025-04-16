@@ -42,10 +42,10 @@ spec:
           {{- range .paths }}
           {{- if and . (kindIs "map" .) }}
           - path: {{ required "ingress.hosts.paths[].path is required" .path | quote }}
-            pathType: {{ default "ImplementationSpecific" .pathType | quote }}
+            pathType: {{ default "Prefix" .pathType | quote }}
           {{- else }}
           - path: {{ quote . }}
-            pathType: ImplementationSpecific
+            pathType: Prefix
           {{- end }}
           {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.Version }}
             backend:
@@ -103,25 +103,24 @@ spec:
       http:
         paths:
           {{- range $services }}
-	     {{- range .paths }}
-		  {{- if and . (kindIs "map" .) }}
-		  - path: {{ required "ingress.hosts.paths[].path is required" .path | quote }}
-		    pathType: {{ default "Prefix" .pathType | quote }}
-		  {{- else }}
-		  - path: {{ . }}
-		    pathType: Prefix 
-	     {{- end }}
-          {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.Version }}
-            backend:
-              service:
-                name: {{ $fullName }}
-                port:
-                  number: {{ $grpcPort }}
-          {{- else }}
-            backend:
-              serviceName: {{ $fullName }}
-              servicePort: {{ $grpcPort }}
-          {{- end }}
+            {{- if and . (kindIs "map" .) }}
+            - path: {{ required ".path is required" .path | quote }}
+              pathType: {{ default "ImplementationSpecific" .pathType | quote }}
+            {{- else }}
+            - path: {{ . }}
+              pathType: ImplementationSpecific
+            {{- end }}
+            {{- if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.Version }}
+              backend:
+                service:
+                  name: {{ $fullName }}
+                  port:
+                    number: {{ $grpcPort }}
+            {{- else }}
+              backend:
+                serviceName: {{ $fullName }}
+                servicePort: {{ $grpcPort }}
+            {{- end }}
           {{- end }}
     {{- end }}
-  {{- end }}
+{{- end }}

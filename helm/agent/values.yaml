@@ -119,11 +119,11 @@ ingress:
   #     - chart-example.local
   # grpcServices:
   #   - path: "/grpc.reflection.v1.ServerReflection"
-  #     pathType: "Prefix"
+  #     pathType: ImplementationSpecific
   #   - path: "/grpc.reflection.v1alpha.ServerReflection"
-  #     pathType: "Prefix"
+  #     pathType: ImplementationSpecific
   #   - path: "/api.v1.ExecutorService"
-  #     pathType: "Prefix"
+  #     pathType: ImplementationSpecific
 # Upon termination, there may be inflight requests and scheduled jobs.
 # If you want to force kill the agent after a certain point, this value
 # is what you're looking for. Defaults to 30 minutes (1800 seconds).
