@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+## v1.21.0
+
 - Updated `slim` image builds to support `package-slim.json` files in any `worker.js` subdirectory
 - Added `slim` variant to `packages/plugins/javascript` package (i.e. `package-slim.json`) which keeps only dependencies required for binding resolution
 - Added `SUPERBLOCKS_AGENT_REDIS_SOCKET_TIMEOUT_SECONDS` to configure socket timeout for Redis client in Python worker
