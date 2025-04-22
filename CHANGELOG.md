@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+- Included azure blob storage and azure identities libraries to python worker
+
 ## v1.21.0
 
 - Updated `slim` image builds to support `package-slim.json` files in any `worker.js` subdirectory
