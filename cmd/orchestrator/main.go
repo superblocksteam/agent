@@ -31,6 +31,7 @@ import (
 	"github.com/superblocksteam/agent/internal/fetch"
 	"github.com/superblocksteam/agent/internal/flags"
 	flagoptions "github.com/superblocksteam/agent/internal/flags/options"
+	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"github.com/superblocksteam/agent/internal/kafka"
 	"github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
@@ -793,6 +794,8 @@ func main() {
 			grpc_jwt.WithLogger(logger),
 			grpc_jwt.WithMetadataKey("X-Superblocks-Authorization"),
 			grpc_jwt.WithSigningKeyECDSA(key),
+			grpc_jwt.WithClaimsFactory(jwt_validator.NewClaims),
+			grpc_jwt.WithAdditionalValidators(jwt_validator.Validate),
 		}
 
 		jwtDecider := func(ctx context.Context, callMeta interceptors.CallMeta) bool {

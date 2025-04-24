@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	grpc_jwt "github.com/superblocksteam/agent/pkg/middleware/jwt"
+	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -129,7 +129,7 @@ func WithOrganizationID(ctx context.Context, organizationID string) context.Cont
 }
 
 func OrganizationID(ctx context.Context) string {
-	if id, ok := grpc_jwt.GetOrganizationID(ctx); ok {
+	if id, ok := jwt_validator.GetOrganizationID(ctx); ok {
 		return id
 	}
 
