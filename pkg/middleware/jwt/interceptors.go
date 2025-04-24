@@ -12,21 +12,9 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	sb_errors "github.com/superblocksteam/agent/pkg/errors"
-	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 )
 
-const (
-	jwtClaimOrganizationID   = "org_id"
-	jwtClaimOrganizationType = "org_type"
-	jwtClaimUserEmail        = "user_email"
-	jwtClaimRbacRole         = "rbac_role"
-	jwtClaimRbacGroups       = "rbac_groups"
-)
-
-type claims struct {
-	jwt.StandardClaims
-	authv1.Claims
-}
+type JwtValidator func(context.Context, *jwt.Token, jwt.Claims) (context.Context, error)
 
 func UnaryServerInterceptor(options ...Option) grpc.UnaryServerInterceptor {
 	opts := newOptions(options...)
@@ -80,7 +68,7 @@ func validate(ctx context.Context, opts *options) (context.Context, error) {
 		token = parts[1]
 	}
 
-	parsed, err := jwt.ParseWithClaims(token, new(claims), func(token *jwt.Token) (any, error) {
+	parsed, err := jwt.ParseWithClaims(token, opts.claimsFactory(), func(token *jwt.Token) (any, error) {
 		switch token.Method.(type) {
 		case *jwt.SigningMethodHMAC:
 			return opts.hmacSigningKey, nil
@@ -97,48 +85,12 @@ func validate(ctx context.Context, opts *options) (context.Context, error) {
 		return nil, err
 	}
 
-	c, ok := parsed.Claims.(*claims)
-	if !ok || !parsed.Valid {
-		return nil, errors.New("could not parse jwt claims")
+	for _, validator := range opts.additionalValidators {
+		ctx, err = validator(ctx, parsed, parsed.Claims)
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	orgID := c.OrgId
-	if orgID == "" {
-		return nil, errors.New("could not get organization id")
-	}
-	ctx = WithOrganizationID(ctx, orgID)
-
-	orgType := c.OrgType
-	if orgType == "" {
-		return nil, errors.New("could not get organization type")
-	}
-	ctx = WithOrganizationType(ctx, orgType)
-
-	userEmail := c.UserEmail
-	if userEmail == "" {
-		return nil, errors.New("could not get user email")
-	}
-	ctx = context.WithValue(ctx, ContextKeyUserEmail, userEmail)
-
-	userType := c.UserType
-	if userType == "" {
-		return nil, errors.New("could not get user type")
-	}
-	ctx = context.WithValue(ctx, ContextKeyUserType, userType)
-
-	rbacRole := c.RbacRole
-	if rbacRole == "" {
-		return nil, errors.New("could not get rbac role")
-	}
-	ctx = context.WithValue(ctx, ContextKeyRbacRole, rbacRole)
-
-	rbacGroups := c.RbacGroups
-	if len(rbacGroups) == 0 {
-		return nil, errors.New("could not get rbac groups")
-	}
-	ctx = context.WithValue(ctx, ContextKeyRbacGroups, rbacGroups)
-
-	// We would hook up other claims here.
 
 	return ctx, nil
 }

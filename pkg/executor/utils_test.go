@@ -13,13 +13,13 @@ import (
 	"github.com/stretchr/testify/mock"
 	fetchmocks "github.com/superblocksteam/agent/internal/fetch/mocks"
 	mocks "github.com/superblocksteam/agent/internal/flags/mock"
+	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/pkg/constants"
 	apictx "github.com/superblocksteam/agent/pkg/context"
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
-	grpc_jwt "github.com/superblocksteam/agent/pkg/middleware/jwt"
 	"github.com/superblocksteam/agent/pkg/utils"
 	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
@@ -550,7 +550,7 @@ func TestGenerateAuditLog(t *testing.T) {
 		},
 		{
 			name: "get user email and user type from context with external user type",
-			ctx:  context.WithValue(grpc_jwt.WithUserEmail(context.WithValue(context.Background(), constants.ContextKeyApiStartTime, int64(123456)), "test@sb.com"), grpc_jwt.ContextKeyUserType, "external"),
+			ctx:  context.WithValue(jwt_validator.WithUserEmail(context.WithValue(context.Background(), constants.ContextKeyApiStartTime, int64(123456)), "test@sb.com"), jwt_validator.ContextKeyUserType, "external"),
 			options: Options{
 				IsDeployed: true,
 				Api: &apiv1.Api{

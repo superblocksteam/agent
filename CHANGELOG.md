@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 
 - Included azure blob storage and azure identities libraries to python worker
+- Generalized JWT middleware to allow for better reusability across repositories (moved agent specific validation to internal package)
 
 ## v1.21.0
 

@@ -6,15 +6,21 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
-
-	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 )
+
+type testClaims struct {
+	jwt.RegisteredClaims
+
+	UserEmail string `json:"user_email,omitempty"`
+	OrgId     string `json:"org_id,omitempty"`
+}
 
 func TestValidate(t *testing.T) {
 	t.Parallel()
@@ -30,39 +36,14 @@ func TestValidate(t *testing.T) {
 		ctx     context.Context
 	}{
 		{
-			name: "expired jwt",
-			ctx: func() context.Context {
-				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-					ExpiresAt: jwt.NewNumericDate(time.Now().Add(-5 * time.Minute)),
-				}).SignedString(signingKey)
-				assert.NoError(t, err)
-				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
-			}(),
-			errType: jwt.ValidationErrorExpired,
-		},
-		{
-			name: "wrong signing key",
-			ctx: func() context.Context {
-				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-					jwtClaimOrganizationID: "12345",
-				}).SignedString([]byte("wrongSigningKey"))
-				assert.NoError(t, err)
-				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
-			}(),
-			errType: jwt.ValidationErrorSignatureInvalid,
-		},
-		{
 			name: "valid hmac jwt",
 			ctx: func() context.Context {
-				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims{
-					Claims: authv1.Claims{
-						OrgId:      "12345",
-						OrgType:    "free",
-						UserEmail:  "fbgrecojr@me.com",
-						RbacRole:   "admin",
-						RbacGroups: []string{"admin", "user"},
-						UserType:   "awesome",
+				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, testClaims{
+					RegisteredClaims: jwt.RegisteredClaims{
+						ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
 					},
+					UserEmail: "fbgrecojr@me.com",
+					OrgId:     "12345",
 				}).SignedString(signingKey)
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
@@ -71,15 +52,12 @@ func TestValidate(t *testing.T) {
 		{
 			name: "valid rsa jwt",
 			ctx: func() context.Context {
-				token, err := jwt.NewWithClaims(jwt.SigningMethodRS256, claims{
-					Claims: authv1.Claims{
-						OrgId:      "12345",
-						OrgType:    "free",
-						UserEmail:  "fbgrecojr@me.com",
-						RbacRole:   "admin",
-						RbacGroups: []string{"admin", "user"},
-						UserType:   "awesome",
+				token, err := jwt.NewWithClaims(jwt.SigningMethodRS256, testClaims{
+					RegisteredClaims: jwt.RegisteredClaims{
+						ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
 					},
+					UserEmail: "fbgrecojr@me.com",
+					OrgId:     "12345",
 				}).SignedString(private_rsa)
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
@@ -88,39 +66,24 @@ func TestValidate(t *testing.T) {
 		{
 			name: "valid ecdsa jwt",
 			ctx: func() context.Context {
-				token, err := jwt.NewWithClaims(jwt.SigningMethodES256, claims{
-					Claims: authv1.Claims{
-						OrgId:      "12345",
-						OrgType:    "free",
-						UserEmail:  "fbgrecojr@me.com",
-						RbacRole:   "admin",
-						RbacGroups: []string{"admin", "user"},
-						UserType:   "awesome",
+				token, err := jwt.NewWithClaims(jwt.SigningMethodES256, testClaims{
+					RegisteredClaims: jwt.RegisteredClaims{
+						ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
 					},
+					UserEmail: "fbgrecojr@me.com",
+					OrgId:     "12345",
 				}).SignedString(private_ecdsa)
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
 		},
 		{
-			name: "no claims",
+			name: "valid jwt with no claims",
 			ctx: func() context.Context {
 				token, err := jwt.New(jwt.SigningMethodHS256).SignedString(signingKey)
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
-			errMsg: "could not get organization id",
-		},
-		{
-			name: "no orgID claim",
-			ctx: func() context.Context {
-				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-					"sub": "12345",
-				}).SignedString(signingKey)
-				assert.NoError(t, err)
-				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
-			}(),
-			errMsg: "could not get organization id",
 		},
 		{
 			name:   "no incoming metadata",
@@ -137,13 +100,36 @@ func TestValidate(t *testing.T) {
 			ctx:    metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer")),
 			errMsg: "authorization token malformed",
 		},
+		{
+			name: "wrong signing key",
+			ctx: func() context.Context {
+				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{}).SignedString([]byte("wrongSigningKey"))
+				assert.NoError(t, err)
+				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
+			}(),
+			errType: jwt.ValidationErrorSignatureInvalid,
+		},
+		{
+			name: "expired jwt",
+			ctx: func() context.Context {
+				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+					ExpiresAt: jwt.NewNumericDate(time.Now().Add(-5 * time.Minute)),
+				}).SignedString(signingKey)
+				assert.NoError(t, err)
+				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
+			}(),
+			errType: jwt.ValidationErrorExpired,
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			ctx, err := validate(test.ctx, &options{
+			_, err := validate(test.ctx, &options{
+				key:             "authorization",
 				hmacSigningKey:  []byte("testSigningKey"),
 				rsaSigningKey:   public_rsa,
 				ecdsaSigningKey: public_ecdsa,
-				key:             "authorization",
+				claimsFactory: func() jwt.Claims {
+					return &testClaims{}
+				},
 			})
 
 			if err != nil {
@@ -153,20 +139,93 @@ func TestValidate(t *testing.T) {
 					assert.Equal(t, e.Errors, test.errType, test.name)
 				default:
 					// we got a different type of error, just check the error message
-					assert.Equal(t, err.Error(), test.errMsg, test.name)
+					assert.EqualError(t, err, test.errMsg, test.name)
 				}
 				return
+			} else if test.errType != 0 {
+				t.Fatalf("expected validation error %d, got nil", test.errType)
+			} else if test.errMsg != "" {
+				t.Fatalf("expected error %s, got nil", test.errMsg)
 			}
 
 			assert.NoError(t, err, test.name)
+		})
+	}
+}
 
-			value := ctx.Value(ContextKeyOrganziationID)
-			assert.NotNil(t, value)
+func TestValidate_AdditionalValidators(t *testing.T) {
+	t.Parallel()
 
-			orgID, ok := value.(string)
-			assert.True(t, ok, "orgID should be a string")
+	signingKey := []byte("testSigningKey")
+	for _, test := range []struct {
+		name   string
+		errMsg string
+		ctx    context.Context
+	}{
+		{
+			name: "valid jwt with additional validator",
+			ctx: func() context.Context {
+				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, testClaims{
+					RegisteredClaims: jwt.RegisteredClaims{
+						ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+					},
+					UserEmail: "testUser@test.com",
+					OrgId:     "12345",
+				}).SignedString(signingKey)
+				assert.NoError(t, err)
+				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
+			}(),
+		},
+		{
+			name: "invalid jwt additional validator missing org id claim",
+			ctx: func() context.Context {
+				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, testClaims{
+					RegisteredClaims: jwt.RegisteredClaims{
+						ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+					},
+				}).SignedString(signingKey)
+				assert.NoError(t, err)
+				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
+			}(),
+			errMsg: "could not get organization id",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctx, err := validate(test.ctx, &options{
+				key:            "authorization",
+				hmacSigningKey: []byte("testSigningKey"),
+				claimsFactory: func() jwt.Claims {
+					return &testClaims{}
+				},
+				additionalValidators: []JwtValidator{
+					func(ctx context.Context, token *jwt.Token, claims jwt.Claims) (context.Context, error) {
+						c, ok := claims.(*testClaims)
+						if !ok || !token.Valid {
+							return nil, errors.New("could not parse jwt claims")
+						}
 
-			assert.Equal(t, orgID, "12345", test.name)
+						orgID := c.OrgId
+						if orgID == "" {
+							return nil, errors.New("could not get organization id")
+						}
+						ctx = context.WithValue(ctx, "org_id", orgID)
+
+						return ctx, nil
+					},
+				},
+			})
+
+			if err != nil {
+				assert.EqualError(t, err, test.errMsg, test.name)
+				return
+			} else if test.errMsg != "" {
+				t.Fatalf("expected error %s, got nil", test.errMsg)
+			}
+
+			assert.NoError(t, err, test.name)
+			orgID, ok := ctx.Value("org_id").(string)
+			assert.True(t, ok)
+			assert.Equal(t, orgID, "12345")
 		})
 	}
 }

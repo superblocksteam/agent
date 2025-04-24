@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	grpc_jwt "github.com/superblocksteam/agent/pkg/middleware/jwt"
+	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	"go.uber.org/zap"
@@ -21,7 +21,7 @@ func TestEnrichUserInfo(t *testing.T) {
 	}{
 		{
 			name:       "Valid context with superblocks user type",
-			ctx:        context.WithValue(context.WithValue(context.Background(), grpc_jwt.ContextKeyUserEmail, "test@sb.com"), grpc_jwt.ContextKeyUserType, "superblocks"),
+			ctx:        context.WithValue(context.WithValue(context.Background(), jwt_validator.ContextKeyUserEmail, "test@sb.com"), jwt_validator.ContextKeyUserType, "superblocks"),
 			definition: &apiv1.Definition_Metadata{},
 			expectedFields: []zap.Field{
 				zap.String(OBS_TAG_USER_EMAIL, "test@sb.com"),
@@ -30,7 +30,7 @@ func TestEnrichUserInfo(t *testing.T) {
 		},
 		{
 			name:       "Valid context with external user type",
-			ctx:        context.WithValue(context.WithValue(context.Background(), grpc_jwt.ContextKeyUserEmail, "test@sb.com"), grpc_jwt.ContextKeyUserType, "external"),
+			ctx:        context.WithValue(context.WithValue(context.Background(), jwt_validator.ContextKeyUserEmail, "test@sb.com"), jwt_validator.ContextKeyUserType, "external"),
 			definition: &apiv1.Definition_Metadata{},
 			expectedFields: []zap.Field{
 				zap.String(OBS_TAG_USER_EMAIL, "test@sb.com"),
@@ -39,7 +39,7 @@ func TestEnrichUserInfo(t *testing.T) {
 		},
 		{
 			name:       "Valid context with unspecified user type",
-			ctx:        context.WithValue(context.WithValue(context.Background(), grpc_jwt.ContextKeyUserEmail, "test@sb.com"), grpc_jwt.ContextKeyUserType, "unspecified"),
+			ctx:        context.WithValue(context.WithValue(context.Background(), jwt_validator.ContextKeyUserEmail, "test@sb.com"), jwt_validator.ContextKeyUserType, "unspecified"),
 			definition: &apiv1.Definition_Metadata{},
 			expectedFields: []zap.Field{
 				zap.String(OBS_TAG_USER_EMAIL, "test@sb.com"),

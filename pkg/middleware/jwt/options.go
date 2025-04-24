@@ -10,17 +10,21 @@ import (
 type Option func(*options)
 
 type options struct {
-	hmacSigningKey  []byte
-	rsaSigningKey   *rsa.PublicKey
-	ecdsaSigningKey *ecdsa.PublicKey
-	logger          *zap.Logger
-	key             string
+	logger *zap.Logger
+	key    string
+
+	hmacSigningKey       []byte
+	rsaSigningKey        *rsa.PublicKey
+	ecdsaSigningKey      *ecdsa.PublicKey
+	claimsFactory        ClaimsFactory
+	additionalValidators []JwtValidator
 }
 
 func newOptions(opts ...Option) *options {
 	opt := options{
-		logger: zap.NewNop(),
-		key:    "authorization",
+		logger:        zap.NewNop(),
+		key:           "authorization",
+		claimsFactory: defaultClaimsFactory,
 	}
 
 	for _, o := range opts {
@@ -28,6 +32,18 @@ func newOptions(opts ...Option) *options {
 	}
 
 	return &opt
+}
+
+func WithLogger(logger *zap.Logger) Option {
+	return func(o *options) {
+		o.logger = logger
+	}
+}
+
+func WithMetadataKey(key string) Option {
+	return func(o *options) {
+		o.key = key
+	}
 }
 
 // DEPRECATED: Use WithSigningKeyHMAC.
@@ -53,14 +69,14 @@ func WithSigningKeyECDSA(key *ecdsa.PublicKey) Option {
 	}
 }
 
-func WithLogger(logger *zap.Logger) Option {
+func WithClaimsFactory(factory ClaimsFactory) Option {
 	return func(o *options) {
-		o.logger = logger
+		o.claimsFactory = factory
 	}
 }
 
-func WithMetadataKey(key string) Option {
+func WithAdditionalValidators(validators ...JwtValidator) Option {
 	return func(o *options) {
-		o.key = key
+		o.additionalValidators = validators
 	}
 }

@@ -7,8 +7,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"github.com/superblocksteam/agent/pkg/constants"
-	grpc_jwt "github.com/superblocksteam/agent/pkg/middleware/jwt"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 )
@@ -110,8 +110,8 @@ func Enrich(api *apiv1.Api, viewMode *apiv1.ViewMode) (fields []zap.Field) {
 }
 
 func ExtractUserInfo(ctx context.Context, definitionMetadata *apiv1.Definition_Metadata) (string, *commonv1.UserType, bool) {
-	userEmail, ok1 := grpc_jwt.GetUserEmail(ctx)
-	userTypeStr, ok2 := grpc_jwt.GetUserType(ctx)
+	userEmail, ok1 := jwt_validator.GetUserEmail(ctx)
+	userTypeStr, ok2 := jwt_validator.GetUserType(ctx)
 	var userType = commonv1.UserType_USER_TYPE_UNSPECIFIED
 	if ok1 && ok2 && userEmail != "" && userTypeStr != "" {
 		userType = GetUserTypePbFromString(userTypeStr)
