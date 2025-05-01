@@ -68,7 +68,7 @@ The following table describes the build arguments and what their respective valu
 | Build Argument                    | Type    | Standard Variant                  | Slim Variant                           | Description |
 | --------------------------------- | ------- | --------------------------------- | -------------------------------------- | ----------- |
 | `SLIM_IMAGE`                      | boolean | `false`                           | `true`                                 | Sets `SUPERBLOCKS_SLIM_IMAGE` env var, which is used by the Python worker to determine which modules to import |
-| `REQUIREMENTS_FILE`               | string  | `/app/worker.py/requirements.txt` | `/app/worker.py/requirements-slim.txt` | Specifies the path to the requirements file to use when installing dependencies for the Python worker |
+| `REQUIREMENTS_FILE`               | string  | `requirements.txt`                | `requirements-slim.txt`                | Specifies the path to the requirements file to use when installing dependencies for the Python worker (relative from the Python worker root i.e. `/app/worker.py/`) |
 | `WORKER_JS_PREPARE_FS_ARGS`       | string  | `''`                              | `--slim`                               | Specifies the arguments for the JavaScript worker's "prepare filesystem" script. The `--slim` argument tells the build to prefer `package-slim.json` files over `package.json` files, when installing dependencies, if both are present in a package (no arguments/default value will tell the build to only use `package.json` files) |
 
 ### Build Command
