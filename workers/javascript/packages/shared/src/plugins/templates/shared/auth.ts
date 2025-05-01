@@ -647,7 +647,20 @@ export const authSections = ({
           type: 'warning',
           display: {
             show: {
-              authType: [IntegrationAuthType.OAUTH2_CODE, IntegrationAuthType.OAUTH2_IMPLICIT, IntegrationAuthType.OAUTH2_PASSWORD]
+              authType: [IntegrationAuthType.OAUTH2_IMPLICIT]
+            }
+          }
+        },
+        {
+          label: '',
+          messageTemplate: `Bindings such as \`{{ Env.client_secret }}\` are only supported for the "Client secret" field for this auth type. Please explicitly set configuration values for the remaining fields.`,
+          name: 'oauth-binding-alert',
+          startVersion: startVersion,
+          componentType: FormComponentType.ALERT,
+          type: 'warning',
+          display: {
+            show: {
+              authType: [IntegrationAuthType.OAUTH2_CODE]
             }
           }
         },

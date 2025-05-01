@@ -91,7 +91,7 @@ func TestResolve(t *testing.T) {
 				},
 			})
 
-			result, err := resolve[any](ctx, sandbox, zap.NewNop(), test.template, false, append(test.options, engine.WithResolved("test_path"))...)
+			result, err := ResolveTemplate[any](ctx, sandbox, zap.NewNop(), test.template, false, append(test.options, engine.WithResolved("test_path"))...)
 
 			if test.err != "" {
 				assert.Error(t, err)

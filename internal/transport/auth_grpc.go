@@ -7,12 +7,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/superblocksteam/agent/internal/auth"
+	apictx "github.com/superblocksteam/agent/pkg/context"
+	"github.com/superblocksteam/agent/pkg/engine"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
+	"github.com/superblocksteam/agent/pkg/executor"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
+	"github.com/superblocksteam/agent/pkg/store/gc"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -139,6 +145,50 @@ func (s *server) Logout(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, 
 	return &emptypb.Empty{}, nil
 }
 
+func (s *server) resolveBindings(
+	ctx context.Context,
+	fields []*string,
+) error {
+	var sbctx *apictx.Context
+	var sandbox engine.Sandbox
+	var garbage gc.GC
+	var err error
+
+	var fieldResolutionGroup errgroup.Group
+	for _, field := range fields {
+		if strings.HasPrefix(*field, "{{") && strings.HasSuffix(*field, "}}") {
+			// avoid using unnecessary resources by creating sbctx every time
+			if sbctx == nil || sandbox == nil || garbage == nil {
+				sbctx, sandbox, garbage, err = s.getSbctx(ctx, s.Store, "", map[string]*structpb.Struct{})
+				if sandbox != nil {
+					defer sandbox.Close()
+				}
+				if garbage != nil {
+					defer func() {
+						if err := garbage.Run(context.Background()); err != nil {
+							s.Logger.Error("could not run garbage collection", zap.Error(err))
+						}
+					}()
+				}
+				if err != nil {
+					return err
+				}
+			}
+			// copy field to avoid race condition
+			curField := field
+			fieldResolutionGroup.Go(func() error {
+				resolvedField, err := executor.ResolveTemplate[string](sbctx, sandbox, s.Logger, *curField, false)
+				if err != nil {
+					return errors.Wrap(err, fmt.Sprintf("error resolving field %s", *curField))
+				}
+				*curField = *resolvedField
+				return nil
+			})
+		}
+	}
+	return fieldResolutionGroup.Wait()
+}
+
 func (s *server) ExchangeOauthCodeForToken(ctx context.Context, req *apiv1.ExchangeOauthCodeForTokenRequest) (*emptypb.Empty, error) {
 	var authType string
 	var authConfig *commonv1.OAuth_AuthorizationCodeFlow = &commonv1.OAuth_AuthorizationCodeFlow{}
@@ -151,6 +201,11 @@ func (s *server) ExchangeOauthCodeForToken(ctx context.Context, req *apiv1.Excha
 			// but we still want to exchange the code for a token
 			authType = req.AuthType
 			authConfig = req.AuthConfig
+
+			err = s.resolveBindings(ctx, []*string{&authConfig.ClientSecret})
+			if err != nil {
+				return nil, err
+			}
 			err = s.TokenManager.ExchangeOauthCodeForToken(
 				ctx,
 				authType,
@@ -185,6 +240,10 @@ func (s *server) ExchangeOauthCodeForToken(ctx context.Context, req *apiv1.Excha
 		return nil, &sberrors.InternalError{}
 	}
 
+	err = s.resolveBindings(ctx, []*string{&authConfig.ClientSecret})
+	if err != nil {
+		return nil, err
+	}
 	err = s.TokenManager.ExchangeOauthCodeForToken(
 		ctx,
 		authType,
@@ -219,6 +278,20 @@ func (s *server) RequestOauthPasswordToken(ctx context.Context, req *apiv1.Reque
 	// Otherwise, we would have gotten the username / password from the authConfig itself
 	passwordGrantFlowAuthConfig.Username = req.Username
 	passwordGrantFlowAuthConfig.Password = req.Password
+
+	err = s.resolveBindings(ctx, []*string{
+		&passwordGrantFlowAuthConfig.Username,
+		&passwordGrantFlowAuthConfig.Password,
+		&passwordGrantFlowAuthConfig.ClientSecret,
+		&passwordGrantFlowAuthConfig.ClientId,
+		&passwordGrantFlowAuthConfig.TokenUrl,
+		&passwordGrantFlowAuthConfig.Audience,
+		&passwordGrantFlowAuthConfig.Scope,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	res, err := s.TokenManager.FetchNewOauthPasswordToken(passwordGrantFlowAuthConfig)
 	if err != nil {
 		return nil, err

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generalized JWT middleware to allow for better reusability across repositories (moved agent specific validation to internal package)
 - Overwrite the default `requirements.txt` file with the contents of the desired requirements file (only affects `slim` variant and custom image builds)
 - Added scoped permission JWT types and validators to orchestrator
+- Updated Auth Code/Password Grant flows to enable bindings in certain fields
 
 ## v1.21.0
 
