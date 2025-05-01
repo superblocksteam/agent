@@ -890,7 +890,7 @@ func (r *resolver) Send(ctx *apictx.Context, block *apiv1.Block_Send, ops ...opt
 		} else {
 			sandbox := r.createSandboxFunc()
 			defer sandbox.Close()
-			message, err := resolve[string](ctx, sandbox, r.logger, block.Message, true)
+			message, err := ResolveTemplate[string](ctx, sandbox, r.logger, block.Message, true)
 			if err != nil {
 				r.logger.Error("could not resolve message", zap.Error(err), zap.String("message", block.Message))
 				ctx.AppendFormPath("message")
@@ -923,7 +923,7 @@ func (r *resolver) Wait(ctx *apictx.Context, step *apiv1.Block_Wait, ops ...opti
 		if utils.IsTemplate(step.Condition) {
 			sandbox := r.createSandboxFunc()
 			defer sandbox.Close()
-			cond, err := resolve[string](ctx, sandbox, r.logger, step.Condition, false, engine.WithResolved("condition"))
+			cond, err := ResolveTemplate[string](ctx, sandbox, r.logger, step.Condition, false, engine.WithResolved("condition"))
 			if err != nil {
 				ctx.AppendFormPath("condition")
 				return "", "", err
@@ -991,7 +991,7 @@ func (r *resolver) Return(ctx *apictx.Context, block *apiv1.Block_Return, ops ..
 func (r *resolver) Throw(ctx *apictx.Context, throw *apiv1.Block_Throw, ops ...options.Option) error {
 	sandbox := r.createSandboxFunc()
 	defer sandbox.Close()
-	message, err := resolve[string](ctx, sandbox, r.logger, throw.Error, false, engine.WithResolved("error"))
+	message, err := ResolveTemplate[string](ctx, sandbox, r.logger, throw.Error, false, engine.WithResolved("error"))
 	if err != nil {
 		ctx.AppendFormPath("error")
 		return err
@@ -1004,7 +1004,7 @@ func (r *resolver) Break(ctx *apictx.Context, step *apiv1.Block_Break, ops ...op
 	// We set as boolean to allow truthy / falsy conditions to be used.
 	sandbox := r.createSandboxFunc()
 	defer sandbox.Close()
-	shouldBreak, err := resolve[bool](ctx, sandbox, r.logger, step.Condition, false, engine.WithAsBoolean(), engine.WithResolved("condition"))
+	shouldBreak, err := ResolveTemplate[bool](ctx, sandbox, r.logger, step.Condition, false, engine.WithAsBoolean(), engine.WithResolved("condition"))
 	if err != nil {
 		ctx.AppendFormPath("condition")
 		return err
@@ -1092,7 +1092,7 @@ func (r *resolver) Conditional(ctx *apictx.Context, step *apiv1.Block_Conditiona
 		// We set as boolean to allow truthy / falsy conditions to be used.
 		sandbox := r.createSandboxFunc()
 		defer sandbox.Close()
-		shouldRunBranch, err := resolve[bool](ctx, sandbox, r.logger, condition, false, engine.WithAsBoolean(), engine.WithResolved(strings.Join(path, ".")))
+		shouldRunBranch, err := ResolveTemplate[bool](ctx, sandbox, r.logger, condition, false, engine.WithAsBoolean(), engine.WithResolved(strings.Join(path, ".")))
 		if err != nil {
 			ctx.AppendFormPath("if", "condition")
 			return err
@@ -1150,7 +1150,7 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 	case apiv1.Block_Loop_TYPE_FOR:
 		sandbox := r.createSandboxFunc()
 		defer sandbox.Close()
-		v, err := resolve[int32](ctx, sandbox, r.logger, step.Range, false, engine.WithResolved("range"))
+		v, err := ResolveTemplate[int32](ctx, sandbox, r.logger, step.Range, false, engine.WithResolved("range"))
 		if err != nil {
 			ctx.AppendFormPath("range")
 			return "", sberrors.BindingError(errors.New("loop range must evalute to a number"))
@@ -1162,7 +1162,7 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 	case apiv1.Block_Loop_TYPE_FOREACH:
 		sandbox := r.createSandboxFunc()
 		defer sandbox.Close()
-		vals, err := resolve[[]string](ctx, sandbox, r.logger, step.Range, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("range"))
+		vals, err := ResolveTemplate[[]string](ctx, sandbox, r.logger, step.Range, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("range"))
 		if err != nil {
 			ctx.AppendFormPath("range")
 			return "", sberrors.BindingError(errors.New("loop range must evalute to an array"))
@@ -1189,7 +1189,7 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 			// We set as boolean to allow truthy / falsy conditions to be used.
 			sandbox := r.createSandboxFunc()
 			defer sandbox.Close()
-			shouldContinue, err := resolve[bool](ctx, sandbox, r.logger, step.Range, false, engine.WithAsBoolean())
+			shouldContinue, err := ResolveTemplate[bool](ctx, sandbox, r.logger, step.Range, false, engine.WithAsBoolean())
 			if err != nil {
 				ctx.AppendFormPath("range")
 				return 0, "", false, err
@@ -1318,7 +1318,7 @@ func (r *resolver) Parallel(ctx *apictx.Context, step *apiv1.Block_Parallel, ops
 			variation = "dynamic"
 			sandbox := r.createSandboxFunc()
 			defer sandbox.Close()
-			loopable, err := resolve[any](ctx, sandbox, r.logger, step.GetDynamic().Paths, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("dynamic.paths"))
+			loopable, err := ResolveTemplate[any](ctx, sandbox, r.logger, step.GetDynamic().Paths, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("dynamic.paths"))
 			if err != nil {
 				ctx.AppendFormPath("dynamic", "paths")
 				return "", sberrors.BindingError(errors.New("parallel paths must evalute to a number or an array"))

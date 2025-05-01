@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+//go:generate mockery --name=SecretManager --output ./mocks --structname SecretManager
 type SecretManager interface {
 	GetSecrets() map[string]string
 }

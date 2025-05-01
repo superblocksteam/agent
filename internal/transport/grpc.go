@@ -959,38 +959,22 @@ func transformCommonQuotaErrorToError(err *commonv1.Error) error {
 	return nil
 }
 
-func (s *server) evaluateDatasource(
-	ctx context.Context,
-	unrenderedIntegrationConfig *structpb.Struct,
-	integrationId, integrationConfigurationId, pluginName, profileName string,
-) (*structpb.Struct, error) {
-	unrenderedRedactedIntegrationConfig, err := structpb.NewValue(unrenderedIntegrationConfig.AsMap())
-	if err != nil {
-		return nil, err
-	}
-
-	memory := store.Memory()
-
+// client must call sandbox.Close() and garbage.Run
+func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfileName string, integrationConfigs map[string]*structpb.Struct) (*apictx.Context, engine.Sandbox, gc.GC, error) {
 	var sandbox engine.Sandbox
 	{
 		sandbox = javascript.Sandbox(ctx, &javascript.Options{
 			Logger:    s.Logger,
-			Store:     memory,
+			Store:     st,
 			AfterFunc: internalutils.EngineAfterFunc,
 		})
-		defer sandbox.Close()
 	}
 
 	var garbage gc.GC
 	{
 		garbage = gc.New(&gc.Options{
-			Store: memory,
+			Store: st,
 		})
-		defer func() {
-			if err := garbage.Run(context.Background()); err != nil {
-				s.Logger.Error("could not run garbage collection", zap.Error(err))
-			}
-		}()
 	}
 
 	var inputs map[string]*structpb.Value
@@ -1003,10 +987,10 @@ func (s *server) evaluateDatasource(
 		}
 		inputs["Env"] = structpb.NewStructValue(&structpb.Struct{Fields: agentAppVarMap})
 
-		stores, err := executor.FetchSecretStores(ctx, s.Fetcher, profileName, false, s.Logger)
+		stores, err := executor.FetchSecretStores(ctx, s.Fetcher, integrationProfileName, false, s.Logger)
 		if err != nil {
 			s.Logger.Error("failed to fetch secret stores", zap.Error(err))
-			return nil, err
+			return nil, nil, nil, err
 		}
 
 		if _, err := tracer.Observe[any](ctx, "fetch.secrets", nil, func(ctx context.Context, _ trace.Span) (any, error) {
@@ -1015,14 +999,12 @@ func (s *server) evaluateDatasource(
 				s.Secrets,
 				stores,
 				nil,
-				map[string]*structpb.Struct{
-					"anonymous": unrenderedIntegrationConfig,
-				},
+				integrationConfigs,
 				inputs,
 			)
 		}, nil); err != nil {
 			s.Logger.Error("failed to retrieve secrets", zap.Error(err))
-			return nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -1036,18 +1018,48 @@ func (s *server) evaluateDatasource(
 		variables, err := executor.ExtractVariablesFromInputs(inputs, nil)
 		if err != nil {
 			s.Logger.Error("could not transform secrets into variables", zap.Error(err))
-			return nil, err
+			return nil, nil, nil, err
 		}
 
 		sbctxWithVariables, err := executor.Variables(sbctx, &apiv1.Variables{
 			Items: variables,
-		}, sandbox, s.Logger, garbage, memory)
+		}, sandbox, s.Logger, garbage, st)
 		if err != nil {
 			s.Logger.Error("could not initialize variables", zap.Error(err))
-			return nil, err
+			return nil, nil, nil, err
 		}
 
 		sbctx = sbctxWithVariables
+	}
+	return sbctx, sandbox, garbage, nil
+}
+
+func (s *server) evaluateDatasource(
+	ctx context.Context,
+	unrenderedIntegrationConfig *structpb.Struct,
+	integrationId, integrationConfigurationId, pluginName, profileName string,
+) (*structpb.Struct, error) {
+	unrenderedRedactedIntegrationConfig, err := structpb.NewValue(unrenderedIntegrationConfig.AsMap())
+	if err != nil {
+		return nil, err
+	}
+
+	memory := store.Memory()
+	sbctx, sandbox, garbage, err := s.getSbctx(ctx, memory, profileName, map[string]*structpb.Struct{
+		"anonymous": unrenderedIntegrationConfig,
+	})
+	if sandbox != nil {
+		defer sandbox.Close()
+	}
+	if garbage != nil {
+		defer func() {
+			if err := garbage.Run(context.Background()); err != nil {
+				s.Logger.Error("could not run garbage collection", zap.Error(err))
+			}
+		}()
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	// Handles auth tokens and dynamic workflow configs

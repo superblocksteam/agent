@@ -47,7 +47,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func resolve[T any](ctx *apictx.Context, sandbox engine.Sandbox, logger *zap.Logger, template string, json bool, options ...engine.ResultOption) (*T, error) {
+func ResolveTemplate[T any](ctx *apictx.Context, sandbox engine.Sandbox, logger *zap.Logger, template string, json bool, options ...engine.ResultOption) (*T, error) {
 	e, err := sandbox.Engine(ctx.Context)
 	if err != nil {
 		return nil, err
