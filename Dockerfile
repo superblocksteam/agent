@@ -157,7 +157,9 @@ COPY              --chmod=755                           /workers/python         
 COPY                                                    s6-rc.d/                                                          /etc/s6-overlay/s6-rc.d/
 
 # Overwrite default requirements.txt file with the contents of the desired requirements file
-RUN cp "/app/worker.py/${REQUIREMENTS_FILE}" "/app/worker.py/requirements.txt"
+RUN src="/app/worker.py/${REQUIREMENTS_FILE}" && \
+    dest="/app/worker.py/requirements.txt"    && \
+    [ "$src" = "$dest" ] ||  cp "$src" "$dest"
 
 # NOTE(frank): I don't like this first line. However, the code in the dist/ folder of the plugins
 #              isn't looking in the dist folder of the types. I think this is because we don't
