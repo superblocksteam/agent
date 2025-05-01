@@ -11,7 +11,7 @@ ARG PNPM_VERSION=9.7.1
 ARG S6_OVERLAY_VERSION=3.2.0.0
 ARG DEASYNC_VERSION=0.1.29
 ARG LIBEXPAT_VERSION=2.6.3
-ARG REQUIREMENTS_FILE=/app/worker.py/requirements-slim.txt
+ARG REQUIREMENTS_FILE=requirements-slim.txt
 ARG SLIM_IMAGE=true
 ARG SB_GIT_COMMIT_SHA=unset
 ARG WORKER_JS_PREPARE_FS_ARGS=--slim
@@ -153,8 +153,11 @@ COPY              --from=orchestrator_and_golang_worker /go/src/github.com/super
 COPY              --from=workers                        /workers/javascript/node_modules                                  /app/worker.js/node_modules
 COPY              --from=workers                        /workers/javascript/packages                                      /app/worker.js/packages
 COPY              --from=workers                        /s6/                                                              /
-COPY --chmod=755                                        /workers/python                                                   /app/worker.py
+COPY              --chmod=755                           /workers/python                                                   /app/worker.py
 COPY                                                    s6-rc.d/                                                          /etc/s6-overlay/s6-rc.d/
+
+# Overwrite default requirements.txt file with the contents of the desired requirements file
+RUN cp "/app/worker.py/${REQUIREMENTS_FILE}" "/app/worker.py/requirements.txt"
 
 # NOTE(frank): I don't like this first line. However, the code in the dist/ folder of the plugins
 #              isn't looking in the dist folder of the types. I think this is because we don't
@@ -196,11 +199,11 @@ rm -rf /usr/lib/node_modules/npm
 COPY --chmod=755 debian_testing.sources /etc/apt/sources.list.d/debian_testing.sources
 
 RUN apt-get update                                                                                                                               && \
-    apt-get purge --auto-remove -yqq dnsutils libxml2 libxml2-dev libarchive-dev bind9-dnsutils bind9                                                           && \
+    apt-get purge --auto-remove -yqq dnsutils libxml2 libxml2-dev libarchive-dev bind9-dnsutils bind9                                            && \
     apt-get -t testing install -yqq --no-install-recommends zlib1g-dev curl xz-utils libk5crypto3                                                   \
          systemd perl libarchive-dev libuv1-dev                                                                                                  && \
     apt-get -t bookworm-backports install -yqq --no-install-recommends libcurl4                                                                  && \
-    apt-get -t unstable install -yqq --no-install-recommends libldap-2.5-0 libexpat1 libexpat1-dev                          && \
+    apt-get -t unstable install -yqq --no-install-recommends libldap-2.5-0 libexpat1 libexpat1-dev                                               && \
     apt-get clean                                                                                                                                && \
     rm -rf /var/lib/apt/lists/*                                                                                                                  && \
     apt-get autoremove -y                                                                                                                        && \
