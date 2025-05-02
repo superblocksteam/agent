@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 )
@@ -269,7 +269,7 @@ func TestErr_ClaimsNotValid(t *testing.T) {
 	clock := clockwork.NewFakeClock()
 	clock.Advance(-24 * time.Hour)
 
-	expirationErr := errors.New("invalid jwt claims: token is expired by 23h")
+	expirationErr := errors.New("invalid jwt claims: token is expired")
 
 	args := validValidatorArgs(t, WithClock(clock))
 	args.buildScopeValidationErr = expirationErr

@@ -3,7 +3,7 @@ package jwt
 import (
 	"errors"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type UserType string
@@ -26,8 +26,8 @@ func (s TokenScopes) String() string {
 }
 
 type ScopedTokenClaims interface {
+	jwt.Claims
 	GetScope() TokenScopes
-	Valid() error
 }
 
 type ScopedTokenBaseClaims struct {
@@ -54,7 +54,9 @@ func (c BuildScopedClaims) Valid() error {
 		return errors.New("invalid scope")
 	}
 
-	return c.RegisteredClaims.Valid()
+	validator := jwt.NewValidator()
+
+	return validator.Validate(c)
 }
 
 type ViewScopedClaims struct {
@@ -74,7 +76,9 @@ func (c ViewScopedClaims) Valid() error {
 		return errors.New("invalid scope")
 	}
 
-	return c.RegisteredClaims.Valid()
+	validator := jwt.NewValidator()
+
+	return validator.Validate(c)
 }
 
 type EditScopedClaims struct {
@@ -92,5 +96,7 @@ func (c EditScopedClaims) Valid() error {
 		return errors.New("invalid scope")
 	}
 
-	return c.RegisteredClaims.Valid()
+	validator := jwt.NewValidator()
+
+	return validator.Validate(c)
 }
