@@ -110,7 +110,7 @@ func init() {
 	systemruntime.GOMAXPROCS(systemruntime.NumCPU())
 
 	pflag.Bool("zen", false, "go easy on the log fields")
-	pflag.String("file.server.url", "http://localhost:8080/v2/files", "the url to send to workers by which it can access orchestrators file server endpoint")
+	pflag.String("file.server.url", "http://localhost:18080/v2/files", "the url to send to workers by which it can access orchestrators file server endpoint")
 	pflag.Bool("test", false, "Are we in test mode?")
 	pflag.String("log.level", "info", "The logging level.")
 	pflag.Int("metrics.port", 9090, "The port to expose the metrics server on.")
@@ -795,26 +795,34 @@ func main() {
 			grpc_jwt.WithMetadataKey("X-Superblocks-Authorization"),
 			grpc_jwt.WithSigningKeyECDSA(key),
 			grpc_jwt.WithClaimsFactory(jwt_validator.NewClaims),
-			grpc_jwt.WithAdditionalValidators(jwt_validator.Validate),
+			grpc_jwt.WithAdditionalValidators(jwt_validator.MarkCtxAsJwtAuth, jwt_validator.Validate),
 		}
 
 		jwtDecider := func(ctx context.Context, callMeta interceptors.CallMeta) bool {
+
 			if callMeta.ReqOrNil == nil {
-				return false
+				// we reach this path for streaming
+
+				// we do not pass the Superblocks JWT from the workers for file downloads, so we can't use JWT auth for that
+				if callMeta.Method == "Download" {
+					return false
+				}
+
+				return viper.GetBool("auth.jwt.enabled")
 			}
 
-			switch v := callMeta.ReqOrNil.(type) {
-			case *apiv1.ExecuteRequest:
-				return viper.GetBool("auth.jwt.enabled") && v.GetDefinition() != nil
+			switch callMeta.ReqOrNil.(type) {
+			case *apiv1.ExecuteRequest, *apiv1.TestRequest, *apiv1.MetadataRequest:
+				return viper.GetBool("auth.jwt.enabled")
 			case *secretsv1.InvalidateRequest:
 				// TODO: This endpoint depends on the JWT for getting org ID, so we must return true even if flag is off
 				// Consider supporting JWTs without validation for this endpoint, or moving the org ID to the body
 				return true
-			case *apiv1.TestRequest, *apiv1.MetadataRequest:
-				return viper.GetBool("auth.jwt.enabled")
 			case *securityv1.SignRequest:
 				return false
 			default:
+				// TODO: @joeyagreco - should probably respect the jwt auth by default but this would be a breaking change.
+				// TODO: @joeyagreco - unsure of the scope of things that fall into this. should look into.
 				return false
 			}
 		}
