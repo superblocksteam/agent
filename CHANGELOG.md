@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+## v1.22.0
+
 - Included azure blob storage and azure identities libraries to python worker
 - Generalized JWT middleware to allow for better reusability across repositories (moved agent specific validation to internal package)
 - Overwrite the default `requirements.txt` file with the contents of the desired requirements file (only affects `slim` variant and custom image builds)
