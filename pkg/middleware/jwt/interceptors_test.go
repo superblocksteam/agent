@@ -7,10 +7,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 )
@@ -30,10 +31,9 @@ func TestValidate(t *testing.T) {
 	private_ecdsa, public_ecdsa := pair_ecdsa(t)
 
 	for _, test := range []struct {
-		name    string
-		errType uint32
-		errMsg  string
-		ctx     context.Context
+		name   string
+		errMsg string
+		ctx    context.Context
 	}{
 		{
 			name: "valid hmac jwt",
@@ -107,7 +107,7 @@ func TestValidate(t *testing.T) {
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
-			errType: jwt.ValidationErrorSignatureInvalid,
+			errMsg: fmt.Sprintf("%s: %s", jwt.ErrTokenSignatureInvalid.Error(), "signature is invalid"),
 		},
 		{
 			name: "expired jwt",
@@ -118,7 +118,7 @@ func TestValidate(t *testing.T) {
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
-			errType: jwt.ValidationErrorExpired,
+			errMsg: fmt.Sprintf("%s: %s", jwt.ErrTokenInvalidClaims.Error(), jwt.ErrTokenExpired.Error()),
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -133,17 +133,8 @@ func TestValidate(t *testing.T) {
 			})
 
 			if err != nil {
-				switch e := err.(type) {
-				case *jwt.ValidationError:
-					// we got a nicely typed error from the jwt lib, check that by code
-					assert.Equal(t, e.Errors, test.errType, test.name)
-				default:
-					// we got a different type of error, just check the error message
-					assert.EqualError(t, err, test.errMsg, test.name)
-				}
+				assert.EqualError(t, err, test.errMsg, test.name)
 				return
-			} else if test.errType != 0 {
-				t.Fatalf("expected validation error %d, got nil", test.errType)
 			} else if test.errMsg != "" {
 				t.Fatalf("expected error %s, got nil", test.errMsg)
 			}

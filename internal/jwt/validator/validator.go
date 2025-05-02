@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 )
 
@@ -17,7 +17,7 @@ const (
 )
 
 type claims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 	authv1.Claims
 }
 
