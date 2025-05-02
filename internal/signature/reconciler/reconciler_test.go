@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jonboulle/clockwork"
-	"github.com/superblocksteam/agent/pkg/testutils"
+	"github.com/superblocksteam/agent/pkg/utils"
 	pbapi "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	pbsecurity "github.com/superblocksteam/agent/types/gen/go/security/v1"
 	"google.golang.org/protobuf/proto"
@@ -54,7 +54,7 @@ func makeChan(events ...SigningKeyRotationEvent) chan SigningKeyRotationEvent {
 }
 
 func validArgs(t *testing.T) *args {
-	log, logs := testutils.NewZapTestObservedLogger(t)
+	log, logs := utils.NewZapTestObservedLogger(t)
 
 	args := &args{
 		clock:  clockwork.NewFakeClock(),
@@ -402,7 +402,7 @@ func TestInvalidEventStatus(t *testing.T) {
 	verifyOneTurn(t, args, SigningKeyRotationEvent{
 		Status: "not-a-valid-status",
 	})
-	testutils.RequireLogContains(t, args.logs, zap.ErrorLevel, "unknown signing key rotation event status")
+	utils.RequireLogContains(t, args.logs, zap.ErrorLevel, "unknown signing key rotation event status")
 }
 
 func TestInitial(t *testing.T) {
@@ -410,7 +410,7 @@ func TestInitial(t *testing.T) {
 
 	args := validArgs(t)
 	verifyOneTurn(t, args, SigningKeyRotationEvent{})
-	testutils.RequireLogContains(t, args.logs, zap.InfoLevel, "initial signing state")
+	utils.RequireLogContains(t, args.logs, zap.InfoLevel, "initial signing state")
 }
 
 func TestFailed(t *testing.T) {
@@ -420,7 +420,7 @@ func TestFailed(t *testing.T) {
 	verifyOneTurn(t, args, SigningKeyRotationEvent{
 		Status: SigningStatus_Failed,
 	})
-	testutils.RequireLogContains(t, args.logs, zap.WarnLevel, "signing key rotation event reports signing failed")
+	utils.RequireLogContains(t, args.logs, zap.WarnLevel, "signing key rotation event reports signing failed")
 }
 
 func TestWrongSigningKey(t *testing.T) {
@@ -431,7 +431,7 @@ func TestWrongSigningKey(t *testing.T) {
 		KeyId:  "wrong-key-id",
 		Status: SigningStatus_InProgress,
 	})
-	testutils.RequireLogContains(t, args.logs, zap.WarnLevel,
+	utils.RequireLogContains(t, args.logs, zap.WarnLevel,
 		"cannot participate in signing rotation job as signing key id differs",
 	)
 }
@@ -453,7 +453,7 @@ func TestCancelReconcileOnContextCancel(t *testing.T) {
 		Status: SigningStatus_InProgress,
 	})
 	verify(t, args)
-	testutils.RequireLogContains(t, args.logs, zap.InfoLevel, "looking for resources to sign")
+	utils.RequireLogContains(t, args.logs, zap.InfoLevel, "looking for resources to sign")
 }
 
 func TestCancelReconcileOnEventCancel(t *testing.T) {
@@ -484,8 +484,8 @@ func TestCancelReconcileOnEventCancel(t *testing.T) {
 	args.onLoop <- emptySkre // signing needs extra loop to start
 
 	verify(t, args)
-	testutils.RequireLogContains(t, args.logs, zap.InfoLevel, "canceling in progress rotation due to rotation event request")
-	testutils.RequireLogContains(t, args.logs, zap.InfoLevel, "signing canceled")
+	utils.RequireLogContains(t, args.logs, zap.InfoLevel, "canceling in progress rotation due to rotation event request")
+	utils.RequireLogContains(t, args.logs, zap.InfoLevel, "signing canceled")
 }
 
 func TestInProgressSentTwice(t *testing.T) {
@@ -517,7 +517,7 @@ func TestInProgressSentTwice(t *testing.T) {
 	close(args.onLoop)
 
 	verify(t, args)
-	testutils.RequireLogContains(t, args.logs, zap.InfoLevel, "signing still in progress")
+	utils.RequireLogContains(t, args.logs, zap.InfoLevel, "signing still in progress")
 }
 
 func TestBackoffRetry(t *testing.T) {
@@ -576,7 +576,7 @@ func TestBackoffRetry(t *testing.T) {
 	}()
 
 	verify(t, args)
-	testutils.RequireLogContains(t, args.logs, zap.WarnLevel, "signing retrying, in backoff")
+	utils.RequireLogContains(t, args.logs, zap.WarnLevel, "signing retrying, in backoff")
 	require.Less(t, attempts, 100)
 }
 
@@ -621,8 +621,8 @@ func TestBackoffRetryButCanceled(t *testing.T) {
 	}()
 
 	verify(t, args)
-	testutils.RequireLogContains(t, args.logs, zap.WarnLevel, "signing retrying, in backoff")
-	testutils.RequireLogContains(t, args.logs, zap.DebugLevel, "would have retried, but event canceled")
+	utils.RequireLogContains(t, args.logs, zap.WarnLevel, "signing retrying, in backoff")
+	utils.RequireLogContains(t, args.logs, zap.DebugLevel, "would have retried, but event canceled")
 }
 
 func TestErrServerGetBatchError(t *testing.T) {

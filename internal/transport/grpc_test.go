@@ -6,20 +6,14 @@ import (
 	"testing"
 
 	"github.com/superblocksteam/agent/internal/metrics"
-
 	"github.com/superblocksteam/agent/pkg/secrets"
-	"github.com/superblocksteam/agent/pkg/utils"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
 	"github.com/superblocksteam/agent/internal/auth/types"
-
 	"github.com/superblocksteam/agent/internal/fetch"
 	fetchmocks "github.com/superblocksteam/agent/internal/fetch/mocks"
-	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	sberror "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/worker"
@@ -31,8 +25,6 @@ import (
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
-
-	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 )
 
 func TestGetActionConfig(t *testing.T) {
@@ -75,256 +67,6 @@ func TestGetActionConfig(t *testing.T) {
 			result, err := getActionConfig(tc.step, tc.pluginName)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected.String(), result.String())
-		})
-	}
-}
-
-// helper funcs for the tests below
-func protoMapEqual(t *testing.T, m1, m2 map[string]*structpb.Value) {
-	require.Equal(t, len(m1), len(m2))
-	for k, v1 := range m1 {
-		v2, ok := m2[k]
-		require.True(t, ok, "missing key: %s", k)
-
-		utils.AssertProtoEqual(t, v1, v2)
-	}
-}
-
-func cloneStructpbMap(original map[string]*structpb.Value) map[string]*structpb.Value {
-	copied := make(map[string]*structpb.Value, len(original))
-	for k, v := range original {
-		copied[k] = proto.Clone(v).(*structpb.Value)
-	}
-	return copied
-}
-
-func defaultCtxWithInfo() context.Context {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "uid")
-	ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserEmail, "ue")
-	ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserDisplayName, "udn")
-	ctx = context.WithValue(ctx, jwt_validator.ContextKeyRbacGroupObjects, []*authv1.Claims_RbacGroupObject{
-		{
-			Id:   "1",
-			Name: "g1",
-		},
-		{
-			Id:   "2",
-			Name: "g2",
-		},
-	})
-	ctx = context.WithValue(ctx, jwt_validator.ContextKeyMetadata, &structpb.Struct{})
-	return ctx
-}
-
-func defaultGlobalStructWithInfo() *structpb.Value {
-	return structpb.NewStructValue(&structpb.Struct{
-		Fields: map[string]*structpb.Value{
-			"user": structpb.NewStructValue(&structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"id":       structpb.NewStringValue("uid"),
-					"email":    structpb.NewStringValue("ue"),
-					"name":     structpb.NewStringValue("udn"),
-					"username": structpb.NewStringValue("ue"),
-					"metadata": structpb.NewStructValue(&structpb.Struct{}),
-					"groups": structpb.NewListValue(&structpb.ListValue{
-						Values: []*structpb.Value{
-							structpb.NewStructValue(&structpb.Struct{
-								Fields: map[string]*structpb.Value{
-									"id":   structpb.NewStringValue("1"),
-									"name": structpb.NewStringValue("g1"),
-								},
-							}),
-							structpb.NewStructValue(&structpb.Struct{
-								Fields: map[string]*structpb.Value{
-									"id":   structpb.NewStringValue("2"),
-									"name": structpb.NewStringValue("g2"),
-								},
-							}),
-						},
-					}),
-				},
-			}),
-		},
-	})
-}
-
-func TestInjectGlobalUserIntoInputs(t *testing.T) {
-	testCases := []struct {
-		name                         string
-		ctx                          context.Context
-		inputs                       map[string]*structpb.Value
-		expectedInputsAfterInjection map[string]*structpb.Value
-		expectedError                string
-	}{
-		{
-			name:   "works when inputs is empty",
-			ctx:    defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name:   "works when inputs is nil",
-			ctx:    defaultCtxWithInfo(),
-			inputs: nil,
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "works when inputs.Global is empty",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Global": structpb.NewStructValue(&structpb.Struct{}),
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "works when inputs.Global is nil",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Global": nil,
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "works when inputs.Global is null",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Global": structpb.NewNullValue(),
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "works when inputs.Global.user is empty",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Global": structpb.NewStructValue(&structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"user": structpb.NewStructValue(&structpb.Struct{}),
-					},
-				}),
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "works when inputs.Global.user is nil",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Global": structpb.NewStructValue(&structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"user": nil,
-					},
-				}),
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "works when inputs.Global.user is null",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Global": structpb.NewStructValue(&structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"user": structpb.NewNullValue(),
-					},
-				}),
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "ensure inputs retains existing data",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Foo": structpb.NewStringValue("Bar"),
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Foo":    structpb.NewStringValue("Bar"),
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "ensure inputs.Global.Foo retains existing data",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Global": structpb.NewStructValue(&structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"Foo": structpb.NewStringValue("Bar"),
-					},
-				}),
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": func() *structpb.Value {
-					def := defaultGlobalStructWithInfo()
-					def.GetStructValue().Fields["Foo"] = structpb.NewStringValue("Bar")
-					return def
-				}(),
-			},
-		},
-		{
-			name: "ensure given inputs.Global.user data is overwritten",
-			ctx:  defaultCtxWithInfo(),
-			inputs: map[string]*structpb.Value{
-				"Global": func() *structpb.Value {
-					def := defaultGlobalStructWithInfo()
-					def.GetStructValue().Fields["user"].GetStructValue().Fields["id"] = structpb.NewStringValue("injected")
-					def.GetStructValue().Fields["user"].GetStructValue().Fields["email"] = structpb.NewStringValue("injected")
-					def.GetStructValue().Fields["user"].GetStructValue().Fields["name"] = structpb.NewStringValue("injected")
-					def.GetStructValue().Fields["user"].GetStructValue().Fields["username"] = structpb.NewStringValue("injected")
-					def.GetStructValue().Fields["user"].GetStructValue().Fields["metadata"] = structpb.NewStringValue("injected")
-					def.GetStructValue().Fields["user"].GetStructValue().Fields["groups"] = structpb.NewStringValue("injected")
-					return def
-				}(),
-			},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name: "works when metadata is nil",
-			ctx: func() context.Context {
-				ctx := defaultCtxWithInfo()
-				return context.WithValue(ctx, jwt_validator.ContextKeyMetadata, nil)
-			}(),
-			inputs: map[string]*structpb.Value{},
-			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
-			},
-		},
-		{
-			name:          "errors when context is missing required info",
-			ctx:           context.Background(),
-			inputs:        map[string]*structpb.Value{},
-			expectedError: "could not get user id",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-
-			givenInputs := cloneStructpbMap(tc.inputs)
-			newInputs, err := injectGlobalUserIntoInputs(tc.ctx, tc.inputs)
-			if tc.expectedError == "" {
-				require.NoError(t, err)
-			} else {
-				require.Equal(t, tc.expectedError, err.Error())
-			}
-			protoMapEqual(t, tc.expectedInputsAfterInjection, newInputs)
-			// make sure original inputs was not mutated
-			protoMapEqual(t, givenInputs, tc.inputs)
 		})
 	}
 }

@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
-	"github.com/superblocksteam/agent/pkg/testutils"
+	"github.com/superblocksteam/agent/pkg/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
@@ -36,7 +36,7 @@ func (f *fakeReader) Read(p []byte) (n int, err error) {
 }
 
 func validArgs(t *testing.T) *args {
-	log, logs := testutils.NewZapTestObservedLogger(t)
+	log, logs := utils.NewZapTestObservedLogger(t)
 	return &args{
 		events: make(chan Event),
 		log:    log,
@@ -170,7 +170,7 @@ data: {
 
 `)
 	<-verify(t, args, nil)
-	testutils.RequireLogContains(t, args.logs, zap.WarnLevel, "found garbage in SSE stream")
+	utils.RequireLogContains(t, args.logs, zap.WarnLevel, "found garbage in SSE stream")
 }
 
 func TestErrGarbage(t *testing.T) {
