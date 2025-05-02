@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -1844,7 +1844,7 @@ func TestGetClaimsFromJwt(t *testing.T) {
 		{
 			name:        "invalid token",
 			token:       "invalid.token",
-			expectedErr: "failed to parse JWT: token contains an invalid number of segments",
+			expectedErr: "failed to parse JWT: token is malformed: token contains an invalid number of segments",
 		},
 		{
 			name:  "valid token",
