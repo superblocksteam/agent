@@ -4,26 +4,19 @@ import (
 	"context"
 	"testing"
 
-	"github.com/superblocksteam/agent/pkg/testutils"
-
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/assert"
-
-	"google.golang.org/protobuf/types/known/structpb"
 
 	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 )
 
 type results struct {
-	orgID            string
-	orgType          string
-	userEmail        string
-	userType         string
-	userId           string
-	userName         string
-	rbacRole         string
-	rbacGroupObjects []*authv1.Claims_RbacGroupObject
-	metadata         *structpb.Struct
+	orgID      string
+	orgType    string
+	userEmail  string
+	userType   string
+	rbacRole   string
+	rbacGroups []string
 }
 
 func TestValidate(t *testing.T) {
@@ -41,99 +34,21 @@ func TestValidate(t *testing.T) {
 			parsedToken: &jwt.Token{Valid: true},
 			parsedClaims: &claims{
 				Claims: authv1.Claims{
-					OrgId:     "12345",
-					OrgType:   "free",
-					UserEmail: "test_user@test.com",
-					UserId:    "test_user_id",
-					UserName:  "Mr. Test User",
-					RbacRole:  "admin",
-					RbacGroupObjects: []*authv1.Claims_RbacGroupObject{
-						{
-							Id:   "1",
-							Name: "admin",
-						},
-						{
-							Id:   "2",
-							Name: "user",
-						},
-					},
-					UserType: "awesome",
+					OrgId:      "12345",
+					OrgType:    "free",
+					UserEmail:  "test_user@test.com",
+					RbacRole:   "admin",
+					RbacGroups: []string{"admin", "user"},
+					UserType:   "awesome",
 				},
 			},
 			expected: results{
-				orgID:     "12345",
-				orgType:   "free",
-				userEmail: "test_user@test.com",
-				userId:    "test_user_id",
-				userName:  "Mr. Test User",
-				userType:  "awesome",
-				rbacRole:  "admin",
-				rbacGroupObjects: []*authv1.Claims_RbacGroupObject{
-					{
-						Id:   "1",
-						Name: "admin",
-					},
-					{
-						Id:   "2",
-						Name: "user",
-					},
-				},
-			},
-		},
-		{
-			name:        "valid parsed jwt and claims with metadata",
-			parsedToken: &jwt.Token{Valid: true},
-			parsedClaims: &claims{
-				Claims: authv1.Claims{
-					OrgId:     "12345",
-					OrgType:   "free",
-					UserEmail: "test_user@test.com",
-					UserId:    "test_user_id",
-					UserName:  "Mr. Test User",
-					RbacRole:  "admin",
-					RbacGroupObjects: []*authv1.Claims_RbacGroupObject{
-						{
-							Id:   "1",
-							Name: "admin",
-						},
-						{
-							Id:   "2",
-							Name: "user",
-						},
-					},
-					UserType: "awesome",
-					Metadata: func() *structpb.Struct {
-						s, _ := structpb.NewStruct(map[string]any{
-							"foo": "bar",
-						})
-						return s
-					}(),
-				},
-			},
-			expected: results{
-				orgID:     "12345",
-				orgType:   "free",
-				userEmail: "test_user@test.com",
-				userId:    "test_user_id",
-				userName:  "Mr. Test User",
-				userType:  "awesome",
-				rbacRole:  "admin",
-				rbacGroupObjects: []*authv1.Claims_RbacGroupObject{
-					{
-						Id:   "1",
-						Name: "admin",
-					},
-					{
-						Id:   "2",
-						Name: "user",
-					},
-				},
-				metadata: func() *structpb.Struct {
-					s, _ := structpb.NewStruct(map[string]any{
-						"foo": "bar",
-					})
-					return s
-				}(),
+				orgID:      "12345",
+				orgType:    "free",
+				userEmail:  "test_user@test.com",
+				userType:   "awesome",
+				rbacRole:   "admin",
+				rbacGroups: []string{"admin", "user"},
 			},
 		},
 		{
@@ -189,8 +104,6 @@ func TestValidate(t *testing.T) {
 					OrgType:   "free",
 					UserEmail: "test_user@test.com",
 					UserType:  "awesome",
-					UserId:    "id",
-					UserName:  "name",
 				},
 			},
 			errMsg: "could not get rbac role",
@@ -205,11 +118,9 @@ func TestValidate(t *testing.T) {
 					UserEmail: "test_user@test.com",
 					UserType:  "awesome",
 					RbacRole:  "admin",
-					UserId:    "id",
-					UserName:  "name",
 				},
 			},
-			errMsg: "could not get rbac group objects",
+			errMsg: "could not get rbac groups",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -224,56 +135,39 @@ func TestValidate(t *testing.T) {
 
 			assert.NoError(t, err, test.name)
 
-			testEquals(t, ctx, test.expected)
+			ret := getResultsFromCtx(t, ctx)
+			assert.Equal(t, test.expected, ret, test.name)
 		})
 	}
 }
 
-func testEquals(t *testing.T, ctx context.Context, expected results) {
+func getResultsFromCtx(t *testing.T, ctx context.Context) results {
 	t.Helper()
 
 	orgID, ok := GetOrganizationID(ctx)
-	assert.True(t, ok, "could not get orgId")
+	assert.True(t, ok, "orgID should be a string")
 
 	orgType, ok := GetOrganizationType(ctx)
-	assert.True(t, ok, "could not get orgType")
+	assert.True(t, ok, "orgType should be a string")
 
 	userEmail, ok := GetUserEmail(ctx)
-	assert.True(t, ok, "could not get userEmail")
+	assert.True(t, ok, "userEmail should be a string")
 
 	userType, ok := GetUserType(ctx)
-	assert.True(t, ok, "could not get userType")
-
-	userId, ok := GetUserId(ctx)
-	assert.True(t, ok, "could not get userId")
-
-	userName, ok := GetUserDisplayName(ctx)
-	assert.True(t, ok, "could not get userName")
+	assert.True(t, ok, "userType should be a string")
 
 	rbacRole, ok := GetRbacRole(ctx)
-	assert.True(t, ok, "could not get rbacRole")
+	assert.True(t, ok, "rbacRole should be a string")
 
-	rbacGroupObjects, ok := GetRbacGroupObjects(ctx)
-	assert.True(t, ok, "could not get rbacGroupObjects")
+	rbacGroups, ok := GetRbacGroups(ctx)
+	assert.True(t, ok, "rbacGroups should be a string")
 
-	actualMetadata, ok := GetMetadata(ctx)
-	assert.True(t, ok, "could not get metadata")
-
-	// since metadata is proto, we just assert that separately
-	// first, check that metadata matches
-	testutils.ProtoEquals(t, expected.metadata, actualMetadata)
-
-	// second, check that results (minus metadata) matches
-	expected.metadata = nil
-	actual := results{
-		orgID:            orgID,
-		orgType:          orgType,
-		userEmail:        userEmail,
-		userType:         userType,
-		userId:           userId,
-		userName:         userName,
-		rbacRole:         rbacRole,
-		rbacGroupObjects: rbacGroupObjects,
+	return results{
+		orgID:      orgID,
+		orgType:    orgType,
+		userEmail:  userEmail,
+		userType:   userType,
+		rbacRole:   rbacRole,
+		rbacGroups: rbacGroups,
 	}
-	assert.Equal(t, expected, actual)
 }

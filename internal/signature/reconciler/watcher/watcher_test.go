@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/internal/signature/reconciler"
 	"github.com/superblocksteam/agent/internal/sse"
-	"github.com/superblocksteam/agent/pkg/testutils"
+	"github.com/superblocksteam/agent/pkg/utils"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
@@ -37,7 +37,7 @@ func must(skre reconciler.SigningKeyRotationEvent, err error) reconciler.Signing
 }
 
 func validArgs(t *testing.T) *args {
-	log, logs := testutils.NewZapTestObservedLogger(t)
+	log, logs := utils.NewZapTestObservedLogger(t)
 
 	args := &args{
 		handler: newFakeHandler(t),
@@ -157,7 +157,7 @@ func TestOkServerRestart(t *testing.T) {
 
 		cancel()
 
-		testutils.RequireLogContains(t, args.logs, zap.DebugLevel, "received EOF, retrying")
+		utils.RequireLogContains(t, args.logs, zap.DebugLevel, "received EOF, retrying")
 	})
 }
 
@@ -177,7 +177,7 @@ func TestOkShutdownRestart(t *testing.T) {
 
 		cancel()
 
-		testutils.RequireLogContains(t, args.logs, zap.DebugLevel, "received server shutdown, retrying")
+		utils.RequireLogContains(t, args.logs, zap.DebugLevel, "received server shutdown, retrying")
 	})
 }
 
@@ -216,7 +216,7 @@ func TestErrInvalidEvent(t *testing.T) {
 		_, ok := <-watcher.C
 		require.False(t, ok, "watcher channel should be empty")
 
-		testutils.RequireLogContains(t, args.logs, zap.WarnLevel, "unknown event")
+		utils.RequireLogContains(t, args.logs, zap.WarnLevel, "unknown event")
 	})
 }
 
@@ -242,7 +242,7 @@ func TestErrMalformedData(t *testing.T) {
 		_, ok := <-watcher.C
 		require.False(t, ok, "watcher channel should be empty")
 
-		testutils.RequireLogContains(t, args.logs, zap.WarnLevel, "issue parsing event")
+		utils.RequireLogContains(t, args.logs, zap.WarnLevel, "issue parsing event")
 	})
 }
 
@@ -301,8 +301,8 @@ func TestErrStatusCode(t *testing.T) {
 
 		_, ok := <-watcher.C
 		require.False(t, ok, "watcher channel should not have messages")
-		testutils.RequireLogContains(t, args.logs, zap.ErrorLevel, "watch error")
-		testutils.RequireLogErrorEqual(t, args.logs, zap.ErrorLevel,
+		utils.RequireLogContains(t, args.logs, zap.ErrorLevel, "watch error")
+		utils.RequireLogErrorEqual(t, args.logs, zap.ErrorLevel,
 			"request status not-OK: Unauthorized (401)",
 		)
 	})

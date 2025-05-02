@@ -25,19 +25,12 @@ func NewClaims() jwt.Claims {
 	return &claims{}
 }
 
-// the purpose of this function is to communicate downstream that the current request has used JWT auth
-func MarkCtxAsJwtAuth(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
-	return WithUsedJwtAuth(ctx, true), nil
-}
-
 func Validate(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
-	// ensure we can parse claims
 	c, ok := jwtClaims.(*claims)
 	if !ok || !parsed.Valid {
 		return nil, errors.New("could not parse jwt claims")
 	}
 
-	// extract and validate all claims
 	orgID := c.OrgId
 	if orgID == "" {
 		return nil, errors.New("could not get organization id")
@@ -50,7 +43,6 @@ func Validate(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (con
 	}
 	ctx = WithOrganizationType(ctx, orgType)
 
-	// USER
 	userEmail := c.UserEmail
 	if userEmail == "" {
 		return nil, errors.New("could not get user email")
@@ -63,34 +55,17 @@ func Validate(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (con
 	}
 	ctx = context.WithValue(ctx, ContextKeyUserType, userType)
 
-	userId := c.UserId
-	if userId == "" {
-		return nil, errors.New("could not get user id")
-	}
-	ctx = context.WithValue(ctx, ContextKeyUserId, userId)
-
-	userDisplayName := c.UserName
-	if userDisplayName == "" {
-		return nil, errors.New("could not get user display name")
-	}
-	ctx = context.WithValue(ctx, ContextKeyUserDisplayName, userDisplayName)
-
-	// RBAC
 	rbacRole := c.RbacRole
 	if rbacRole == "" {
 		return nil, errors.New("could not get rbac role")
 	}
 	ctx = context.WithValue(ctx, ContextKeyRbacRole, rbacRole)
 
-	rbacGroupObjects := c.RbacGroupObjects
-	if len(rbacGroupObjects) == 0 {
-		return nil, errors.New("could not get rbac group objects")
+	rbacGroups := c.RbacGroups
+	if len(rbacGroups) == 0 {
+		return nil, errors.New("could not get rbac groups")
 	}
-	ctx = context.WithValue(ctx, ContextKeyRbacGroupObjects, rbacGroupObjects)
-
-	// OPTIONAL
-	metadata := c.Metadata
-	ctx = context.WithValue(ctx, ContextKeyMetadata, metadata)
+	ctx = context.WithValue(ctx, ContextKeyRbacGroups, rbacGroups)
 
 	return ctx, nil
 }
