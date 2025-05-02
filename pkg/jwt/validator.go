@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type JwtValidator func(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (context.Context, error)
@@ -151,10 +151,11 @@ func ValidateEditScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.C
 func getScopedClaims[T ScopedTokenClaims](jwtClaims jwt.Claims) (T, error) {
 	c, ok := jwtClaims.(T)
 	var err error
+	validator := jwt.NewValidator()
 
 	if !ok {
 		err = errors.New("could not parse jwt claims")
-	} else if validErr := c.Valid(); validErr != nil {
+	} else if validErr := validator.Validate(c); validErr != nil {
 		err = fmt.Errorf("invalid jwt claims: %w", validErr)
 	}
 

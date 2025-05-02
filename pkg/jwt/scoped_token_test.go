@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 )
@@ -136,7 +136,7 @@ func TestScopedTokenClaims_ExpiredScopedToken(t *testing.T) {
 	clock := clockwork.NewFakeClock()
 	clock.Advance(-24 * time.Hour)
 
-	expirationErr := errors.New("token is expired by 23h")
+	expirationErr := errors.New("token is expired")
 
 	args := validArgs(t, WithClock(clock))
 	args.buildScopeValidationErr = expirationErr
