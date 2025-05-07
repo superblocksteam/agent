@@ -16,17 +16,17 @@ func TestNewScopedTokenClaims(t *testing.T) {
 		{
 			name:           "BuildScopedTokenClaims",
 			claimsFactory:  NewBuildScopedTokenClaims,
-			expectedClaims: BuildScopedClaims{},
+			expectedClaims: &BuildScopedClaims{},
 		},
 		{
 			name:           "ViewScopedTokenClaims",
 			claimsFactory:  NewViewScopedTokenClaims,
-			expectedClaims: ViewScopedClaims{},
+			expectedClaims: &ViewScopedClaims{},
 		},
 		{
 			name:           "EditScopedTokenClaims",
 			claimsFactory:  NewEditScopedTokenClaims,
-			expectedClaims: EditScopedClaims{},
+			expectedClaims: &EditScopedClaims{},
 		},
 	}
 	for _, tc := range testCases {

@@ -7,13 +7,13 @@ import (
 type ClaimsFactory func() jwt.Claims
 
 func NewBuildScopedTokenClaims() jwt.Claims {
-	return BuildScopedClaims{}
+	return &BuildScopedClaims{}
 }
 
 func NewViewScopedTokenClaims() jwt.Claims {
-	return ViewScopedClaims{}
+	return &ViewScopedClaims{}
 }
 
 func NewEditScopedTokenClaims() jwt.Claims {
-	return EditScopedClaims{}
+	return &EditScopedClaims{}
 }

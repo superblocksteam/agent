@@ -25,9 +25,9 @@ func WithClock(clock clockwork.Clock) option {
 type args struct {
 	registeredClaims jwt.RegisteredClaims
 
-	buildScopeClaims BuildScopedClaims
-	viewScopeClaims  ViewScopedClaims
-	editScopeClaims  EditScopedClaims
+	buildScopeClaims *BuildScopedClaims
+	viewScopeClaims  *ViewScopedClaims
+	editScopeClaims  *EditScopedClaims
 
 	buildScopeValidationErr error
 	viewScopeValidationErr  error
@@ -53,7 +53,7 @@ func validArgs(t *testing.T, opts ...option) *args {
 
 	return &args{
 		registeredClaims: validRegisteredClaims,
-		buildScopeClaims: BuildScopedClaims{
+		buildScopeClaims: &BuildScopedClaims{
 			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
 				Scope:            TokenScopesBuildApplication,
@@ -63,7 +63,7 @@ func validArgs(t *testing.T, opts ...option) *args {
 			DirectoryHash:  "dir1",
 			CommitId:       "commit1",
 		},
-		viewScopeClaims: ViewScopedClaims{
+		viewScopeClaims: &ViewScopedClaims{
 			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
 				Scope:            TokenScopesViewApplication,
@@ -76,7 +76,7 @@ func validArgs(t *testing.T, opts ...option) *args {
 			UserType:       UserTypeSuperblocks,
 			Name:           "User 1",
 		},
-		editScopeClaims: EditScopedClaims{
+		editScopeClaims: &EditScopedClaims{
 			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
 				Scope:            TokenScopesEditApplication,

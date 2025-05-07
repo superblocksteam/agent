@@ -7,5 +7,5 @@ import (
 type ClaimsFactory func() jwt.Claims
 
 func defaultClaimsFactory() jwt.Claims {
-	return jwt.RegisteredClaims{}
+	return &jwt.RegisteredClaims{}
 }
