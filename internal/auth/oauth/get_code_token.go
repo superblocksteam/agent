@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -26,6 +27,7 @@ const (
 var (
 	ErrNoTokenFound        = errors.New("[oauth-code] no token found")
 	ErrNoRefreshTokenFound = errors.New("[oauth-code] no refresh token found")
+	ErrInvalidRefreshToken = errors.New("[oauth-code] invalid refresh token")
 )
 
 //go:generate mockery --name OAuthCodeTokenFetcher --output ../mocks --outpkg mocks
@@ -153,6 +155,10 @@ func (c *CodeTokenFetcher) refreshFromServerGsheets(logger *zap.Logger, authType
 	}
 
 	if res.StatusCode != http.StatusOK {
+		if strings.Contains(string(resBody), "invalid_grant") {
+			l.Warn("failed to get access token due to invalid refresh token", zap.Error(err))
+			return "", ErrInvalidRefreshToken
+		}
 		return "", fmt.Errorf("failed to refresh token from server, status code: %d: %s", res.StatusCode, string(resBody))
 	}
 

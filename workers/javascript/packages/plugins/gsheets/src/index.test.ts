@@ -850,8 +850,21 @@ describe('g-sheets pre-delete', () => {
   });
 
   test('pre-delete: service account - should be a no op', async () => {
-    mockGoogleApis({});
+    const setCredentialsMock = jest.fn();
+    const revokeCredentialsMock = jest.fn();
+    mockGoogleApis({ setCredentialsMock, revokeCredentialsMock });
     await plugin.preDelete({ authType: GoogleSheetsAuthType.SERVICE_ACCOUNT });
+    expect(setCredentialsMock).not.toHaveBeenCalled();
+    expect(revokeCredentialsMock).not.toHaveBeenCalled();
+  });
+
+  test('pre-delete: no access token - should be a no op', async () => {
+    const setCredentialsMock = jest.fn();
+    const revokeCredentialsMock = jest.fn();
+    mockGoogleApis({ setCredentialsMock, revokeCredentialsMock });
+    await plugin.preDelete({ authType: GoogleSheetsAuthType.oauth2 });
+    expect(setCredentialsMock).not.toHaveBeenCalled();
+    expect(revokeCredentialsMock).not.toHaveBeenCalled();
   });
 
   test('pre-delete: revoke credentials returned non 200', async () => {
