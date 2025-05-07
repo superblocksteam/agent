@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
+	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/auth/types"
 	"github.com/superblocksteam/agent/internal/fetch"
 	fetchmocks "github.com/superblocksteam/agent/internal/fetch/mocks"
@@ -177,6 +178,69 @@ func TestGetActionConfig(t *testing.T) {
 // 		})
 // 	}
 // }
+
+func TestDelete(t *testing.T) {
+	testCases := []struct {
+		name             string
+		req              *apiv1.DeleteRequest
+		addTokenResponse string
+		shouldErr        bool
+	}{
+		{
+			name: "ghsheets delete with invalid refresh token - no error when receive invalid_grant error",
+			req: &apiv1.DeleteRequest{
+				Integration: "test-integration-id",
+			},
+			addTokenResponse: "invalid_grant",
+			shouldErr:        false,
+		},
+		{
+			name: "gsheets delete fail without invalid grant error",
+			req: &apiv1.DeleteRequest{
+				Integration: "test-integration-id",
+			},
+			shouldErr:        true,
+			addTokenResponse: "",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tm := &mocks.TokenManager{}
+			ctx := context.Background()
+			if tc.addTokenResponse == "invalid_grant" {
+				tm.On("AddTokenIfNeeded", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(types.TokenPayload{}, oauth.ErrInvalidRefreshToken)
+			} else {
+				tm.On("AddTokenIfNeeded", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(types.TokenPayload{}, errors.New(tc.addTokenResponse))
+			}
+
+			fetcher := &fetchmocks.Fetcher{}
+			fetcher.On("FetchIntegration", ctx, "test-integration-id", mock.Anything).Return(&fetch.Integration{
+				PluginId: "gsheets",
+				Configuration: map[string]interface{}{
+					"authConfig": map[string]interface{}{},
+					"authType":   "oauth-code",
+				},
+			}, nil)
+			fetcher.On("FetchIntegrations", mock.Anything, mock.Anything, mock.Anything).Return(new(integrationv1.GetIntegrationsResponse), nil)
+
+			mockWorker := &worker.MockClient{}
+			mockWorker.On("PreDelete", ctx, "gsheets", mock.Anything).Return((*transportv1.Response)(nil), nil)
+			server := NewServer(&Config{
+				Logger:       zap.NewNop(),
+				TokenManager: tm,
+				Fetcher:      fetcher,
+				Worker:       mockWorker,
+			})
+			_, err := server.Delete(ctx, tc.req)
+
+			if tc.shouldErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
 
 func TestMetadata(t *testing.T) {
 	testToken := "test-token"

@@ -255,6 +255,13 @@ func IsIntegrationOAuthError(err error) bool {
 	return errors.As(err, &typed)
 }
 
+func (e *integrationOAuthError) Is(target error) bool {
+	if _, ok := target.(*integrationOAuthError); ok {
+		return true
+	}
+	return errors.Is(e.err, target)
+}
+
 type NotFoundError struct{}
 
 func (e *NotFoundError) Error() string {

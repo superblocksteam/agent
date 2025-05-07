@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/superblocksteam/agent/internal/auth"
+	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/fetch"
 	"github.com/superblocksteam/agent/internal/flags"
 	internalutils "github.com/superblocksteam/agent/internal/utils"
@@ -808,7 +809,12 @@ func (s *server) Delete(ctx context.Context, req *apiv1.DeleteRequest) (*apiv1.D
 		// for gsheet it's guaranteed there will be a token, but for rest or graphql with oauth-code auth,
 		// token might not be there at all, so it's ok to continue the deletion
 		if err != nil && pluginName == "gsheets" {
-			return nil, err
+			if errors.Is(err, oauth.ErrInvalidRefreshToken) {
+				// log and continue with deletion for this case of expired refresh token (indicates integration was deleted on google side)
+				s.Logger.Warn("Failed to add token due to invalid refresh token", zap.String("integrationId", integrationId))
+			} else {
+				return nil, err
+			}
 		}
 	}
 

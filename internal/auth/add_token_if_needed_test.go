@@ -624,6 +624,27 @@ func TestAddTokenIfNeeded_OauthCode(t *testing.T) {
 			"",
 			"failed to get token",
 		},
+		{
+			"oauth code - gsheets invalid refresh token",
+			AuthTypeOauthCode,
+			map[string]interface{}{
+				"tokenUrl":               "tokenUrl",
+				"audience":               "audience",
+				"username":               "username",
+				"password":               "password",
+				"clientId":               "clientId",
+				"clientSecret":           "clientSecret",
+				"tokenScope":             "datasource",
+				"refreshTokenFromServer": true,
+			},
+			"",
+			"gsheets",
+			"",
+			"",
+			"",
+			"",
+			"[oauth-code] invalid refresh token",
+		},
 	}
 
 	for _, tt := range tests {
@@ -667,7 +688,7 @@ func TestAddTokenIfNeeded_OauthCode(t *testing.T) {
 				fetcherCacher.On("FetchUserToken", ctx, AuthTypeOauthCode, mock.Anything, oauth.TokenTypeId).Return(tt.cachedIdToken, nil)
 			}
 
-			if tt.expectedError != "" {
+			if tt.expectedError != "" && tt.pluginId != "gsheets" {
 				fetcherCacher.On("FetchUserToken", ctx, AuthTypeOauthCode, mock.Anything, oauth.TokenTypeAccess).Return("", nil)
 				fetcherCacher.On("FetchUserToken", ctx, AuthTypeOauthCode, mock.Anything, oauth.TokenTypeId).Return("", nil)
 				fetcherCacher.On("FetchUserToken", ctx, AuthTypeOauthCode, mock.Anything, oauth.TokenTypeRefresh).Return("refresh", nil)
@@ -681,25 +702,35 @@ func TestAddTokenIfNeeded_OauthCode(t *testing.T) {
 					Body:       io.NopCloser(strings.NewReader("failed to get token")),
 				}, errors.New("failed to get token"))
 			} else if tt.cachedToken == "" && tt.pluginId == "gsheets" {
-				httpMock.On("Do", mock.MatchedBy(func(r *http.Request) bool {
-					body, err := r.GetBody()
-					if err != nil {
-						return false
-					}
-					bs, err := io.ReadAll(body)
-					if err != nil {
-						return false
-					}
-					req := &oauth.RefreshTokenRequest{}
-					err = json.Unmarshal(bs, req)
-					if err != nil {
-						return false
-					}
-					return req.AuthType == AuthTypeOauthCode && req.DatasourceId == "datasourceId"
-				})).Return(&http.Response{
-					StatusCode: 200,
-					Body:       io.NopCloser(strings.NewReader(`{"data":"token"}`)),
-				}, nil)
+				if tt.expectedError == "[oauth-code] invalid refresh token" {
+					httpMock.On("Do", mock.MatchedBy(func(r *http.Request) bool {
+						return r.Method == "POST" &&
+							r.URL.String() == "https://google.com/api/v1/oauth2/gsheets/refresh"
+					})).Return(&http.Response{
+						StatusCode: 400,
+						Body:       io.NopCloser(strings.NewReader(`{"error": "invalid_grant", "error_description": "Token has been expired or revoked"}`)),
+					}, nil)
+				} else {
+					httpMock.On("Do", mock.MatchedBy(func(r *http.Request) bool {
+						body, err := r.GetBody()
+						if err != nil {
+							return false
+						}
+						bs, err := io.ReadAll(body)
+						if err != nil {
+							return false
+						}
+						req := &oauth.RefreshTokenRequest{}
+						err = json.Unmarshal(bs, req)
+						if err != nil {
+							return false
+						}
+						return req.AuthType == AuthTypeOauthCode && req.DatasourceId == "datasourceId"
+					})).Return(&http.Response{
+						StatusCode: 200,
+						Body:       io.NopCloser(strings.NewReader(`{"data":"token"}`)),
+					}, nil)
+				}
 			} else if tt.cachedToken == "" && tt.cookie == "" {
 				fetcherCacher.On("FetchUserToken", ctx, AuthTypeOauthCode, mock.Anything, oauth.TokenTypeRefresh).Return("refresh", nil)
 
