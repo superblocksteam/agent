@@ -1,5 +1,5 @@
 {
-	"id": "b57f083e-9acd-4dd0-b2c1-e47dab3f127f",
+	"id": "7be9cf7e-25af-43f4-bb1b-11eead8509bf",
 	"name": "ci-opa",
 	"values": [
 		{
@@ -34,7 +34,7 @@
 		},
 		{
 			"key": "superblocks_jwt",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IkdwV1QxNlpPM3FzTzRnT1hEbjVjU0F4Slk4TFpuWGU1Nk9FTWp5YXIxUUkifQ.eyJpYXQiOjE3MTc1MzkzNjMsIm9yZ19pZCI6ImY2ZWU1MTc4LWY0ODEtNDg5ZC1iZTVjLWRjYWY5Y2IxZTdiOCIsIm9yZ190eXBlIjoiZW50ZXJwcmlzZSIsInJiYWNfZ3JvdXBfaWRzIjpbXSwicmJhY19ncm91cHMiOlsiZ3JvdXAtYWJjZCJdLCJyYmFjX3JvbGUiOiJhZG1pbiIsInVzZXJfZW1haWwiOiJ0ZXN0QHN1cGVyYmxvY2tzdGVzdC5jb20iLCJ1c2VyX3R5cGUiOiJzdXBlcmJsb2NrcyJ9.B05c-wGggGxzS5rQfZJpFkaDQFRvhAFfl2zOTOvFjhdfnu6ccYDGIFJrV6Dwm-gB9GncCrdoJSR2Nlg4evFyzg",
+			"value": "eyJhbGciOiJFUzI1NiIsImtpZCI6IkdwV1QxNlpPM3FzTzRnT1hEbjVjU0F4Slk4TFpuWGU1Nk9FTWp5YXIxUUkiLCJ0eXAiOiJKV1QifQ.eyJpYXQiOjE3NDYwMzc4MjksIm9yZ19pZCI6ImY2ZWU1MTc4LWY0ODEtNDg5ZC1iZTVjLWRjYWY5Y2IxZTdiOCIsIm9yZ190eXBlIjoiZW50ZXJwcmlzZSIsInVzZXJfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ1c2VyX25hbWUiOiJtaXN0YSBzdXBhIGJsb2NrcyIsInVzZXJfZW1haWwiOiJ0ZXN0QHN1cGVyYmxvY2tzdGVzdC5jb20iLCJ1c2VyX3R5cGUiOiJzdXBlcmJsb2NrcyIsInJiYWNfZ3JvdXBfaWRzIjpbIjEiXSwicmJhY19ncm91cHMiOlsiZ3JvdXAtYWJjZCJdLCJyYmFjX2dyb3VwX29iamVjdHMiOlt7Im5hbWUiOiJncm91cC1hYmNkIiwiaWQiOiIxIn1dLCJyYmFjX3JvbGUiOiJhZG1pbiJ9.OcXnEvD7zdNulwSiYEBuE_HyPdUbd7Q72tbgNfaGXwKx7YuiAmYqFwCX2VVWE61KaJR4WwcfFLa7RTzW5pqV9Q",
 			"type": "secret",
 			"enabled": true
 		},
@@ -55,9 +55,15 @@
 			"value": "mongodb",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "auth0_jwt",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsIm5hbWUiOiJKb2V5IERvZSIsImlhdCI6MTY4MDAwMDAwMH0.dummysignature1234567890",
+			"type": "secret",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2024-11-13T14:42:30.880Z",
-	"_postman_exported_using": "Postman/11.14.1"
+	"_postman_exported_at": "2025-05-06T14:30:48.292Z",
+	"_postman_exported_using": "Postman/11.43.2"
 }

@@ -1612,6 +1612,143 @@ const integrationTestApis = [
       profile: 'production',
     },
   },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000031',
+        name: 'generic workflow',
+        organization: '00000000-0000-0000-0000-000000000001',
+      },
+      signature: {
+        data: 'COj5QcisvF9fT258amCjPIGkZgZI1/+wWhg3XG1qXh7x5C8IgqU/vfbheHc8WlVUW8oLGThiASCPsTcl5+vDAw==',
+      },
+      trigger: {
+        workflow: {},
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            integration: 'javascript',
+            javascript: {
+              body: "return 'foobarbaz from a workflow';",
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+    integrations: {
+      javascript: {
+      },
+    },
+  },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000032',
+        name: 'generic app api',
+        organization: '00000000-0000-0000-0000-000000000001',
+      },
+      signature: {
+        data: 'z2tTjckCyLTv/4DRsDch6UCJPpFkfFVGkJF5EscmbwgwLjcQMgPBn6AjV9rVCiPclYfje/NYRvl+HCS3kN43CA==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            integration: 'javascript',
+            javascript: {
+              body: "return 'foobarbaz from an app api';",
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+    integrations: {
+      javascript: {
+      },
+    },
+  },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000033',
+        name: 'generic scheduled job',
+        organization: '00000000-0000-0000-0000-000000000001',
+      },
+      signature: {
+        data: '451UIQcgvvf4aTx16eF0snTCk0jMcBHnhadL3ll+82jf32/2lGJAnWwqsN2VNC/S/iSr0TngHW0e3xv5kZJ2Dg==',
+      },
+      trigger: {
+        job: { frequency: 1, day_of_month: 1 },
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            integration: 'javascript',
+            javascript: {
+              body: "return 'foobarbaz from a scheduled job';",
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+    integrations: {
+      javascript: {
+      },
+    },
+  },
+  // public app api
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000034',
+        name: 'public app api',
+        organization: '00000000-0000-0000-0000-000000000001',
+      },
+      signature: {
+        data: 'Bx1pMTu//k0wwKld2b/twcLg5qFvKTgVrBwOoPrj7d5JoBm8jbJYvpSZTo5alwHDoPn5YsD1zREEyT3C5bghAQ==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            integration: 'javascript',
+            javascript: {
+              body: "return 'foobarbaz from a public app api';",
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+    integrations: {
+      javascript: {
+      },
+    },
+  },
 ];
 
 module.exports = integrationTestApis;

@@ -59,6 +59,7 @@ import (
 	kafkaconsumer "github.com/superblocksteam/agent/pkg/kafka/consumer"
 	kafkaproducer "github.com/superblocksteam/agent/pkg/kafka/producer"
 	metrics_exporter "github.com/superblocksteam/agent/pkg/metrics"
+	grpc_auth "github.com/superblocksteam/agent/pkg/middleware/auth"
 	grpc_cancellation "github.com/superblocksteam/agent/pkg/middleware/cancellation"
 	grpc_correlation "github.com/superblocksteam/agent/pkg/middleware/correlation"
 	grpc_errors "github.com/superblocksteam/agent/pkg/middleware/errors"
@@ -799,19 +800,31 @@ func main() {
 		}
 
 		jwtDecider := func(ctx context.Context, callMeta interceptors.CallMeta) bool {
-			if callMeta.ReqOrNil == nil {
+			jwtEnabled := viper.GetBool("auth.jwt.enabled")
+			requestUsesJwtAuth, err := constants.GetRequestUsesJwtAuth(ctx)
+			if err != nil {
+				// NOTE: @joeyagreco - we always expect this to be set by auth middleware, so if it is not set, that's unexpected
+				// NOTE: @joeyagreco - unsure if there's a better way to handle this here
+				logger.Error("could not get requestUsesJwtAuth", zap.Error(err))
 				return false
 			}
+			if callMeta.ReqOrNil == nil {
+				// we reach this path for streaming
 
-			switch v := callMeta.ReqOrNil.(type) {
-			case *apiv1.ExecuteRequest:
-				return viper.GetBool("auth.jwt.enabled") && v.GetDefinition() != nil
+				// we do not pass the Superblocks JWT from the workers for file downloads, so we can't use JWT auth for that
+				if callMeta.Method == "Download" {
+					return false
+				}
+				return jwtEnabled && requestUsesJwtAuth
+			}
+
+			switch callMeta.ReqOrNil.(type) {
+			case *apiv1.ExecuteRequest, *apiv1.TestRequest, *apiv1.MetadataRequest:
+				return jwtEnabled && requestUsesJwtAuth
 			case *secretsv1.InvalidateRequest:
 				// TODO: This endpoint depends on the JWT for getting org ID, so we must return true even if flag is off
 				// Consider supporting JWTs without validation for this endpoint, or moving the org ID to the body
 				return true
-			case *apiv1.TestRequest, *apiv1.MetadataRequest:
-				return viper.GetBool("auth.jwt.enabled")
 			case *securityv1.SignRequest:
 				return false
 			default:
@@ -829,6 +842,7 @@ func main() {
 			),
 			grpc_errors.StreamServerInterceptor(),
 			grpc_recovery.StreamServerInterceptor(),
+			grpc_auth.StreamServerInterceptor(),
 			grpc_selector.StreamServerInterceptor(
 				grpc_jwt.StreamServerInterceptor(jwtOptions...),
 				grpc_selector.MatchFunc(jwtDecider),
@@ -845,6 +859,7 @@ func main() {
 			),
 			grpc_errors.UnaryServerInterceptor(),
 			grpc_recovery.UnaryServerInterceptor(),
+			grpc_auth.UnaryServerInterceptor(),
 			grpc_selector.UnaryServerInterceptor(
 				grpc_jwt.UnaryServerInterceptor(jwtOptions...),
 				grpc_selector.MatchFunc(jwtDecider),

@@ -1,3 +1,7 @@
+function isPublicApi(api) {
+  return api && api.metadata && ['00000000-0000-0000-0000-000000000034'].includes(api.metadata.id);
+}
+
 function doValidateBearerToken(token) {
   if (!token) {
     return false;
@@ -59,6 +63,11 @@ module.exports = {
   checkAuth: (req, api = null) => {
     if (!req) {
       return false;
+    }
+
+    // we expect the server to always return the api def for public app apis
+    if (isPublicApi(api)) {
+      return true;
     }
 
     // Workflows should only auth with the API key

@@ -2,6 +2,7 @@ package constants
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -22,10 +23,13 @@ const (
 	ContextKeyAgentId
 	ContextKeyAgentVersion
 	ContextKeyEventType
+	ContextKeyRequestUsesJwtAuth
 	// TODO(frank): Add other context keys here.
 
+	HeaderAgentKey       = "x-superblocks-agent-key"
 	HeaderCorrelationId  = "x-superblocks-correlation-id"
 	HeaderOrganizationId = "x-superblocks-organization-id"
+	HeaderSuperblocksJwt = "x-superblocks-authorization"
 
 	ApiTypeUnknown      = "unknown"
 	ApiTypeApi          = "api"
@@ -70,6 +74,18 @@ func ApiStartTime(ctx context.Context) int64 {
 	}
 
 	return time.Time{}.UnixMilli()
+}
+
+func WithRequestUsesJwtAuth(ctx context.Context, requestUsesJwtAuth bool) context.Context {
+	return context.WithValue(ctx, ContextKeyRequestUsesJwtAuth, requestUsesJwtAuth)
+}
+
+func GetRequestUsesJwtAuth(ctx context.Context) (bool, error) {
+	requestUsesJwtAuth, ok := ctx.Value(ContextKeyRequestUsesJwtAuth).(bool)
+	if !ok {
+		return false, errors.New("could not get requestUsesJwtAuth")
+	}
+	return requestUsesJwtAuth, nil
 }
 
 // NOTE(frank): This was added because we record a metric in the individual implementations
