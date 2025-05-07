@@ -1,5 +1,5 @@
 {
-	"id": "6e574967-7e56-4743-83c2-b2f463cbd7c0",
+	"id": "d713ce45-9e70-46ab-9f39-1cf4f493d4dc",
 	"name": "staging",
 	"values": [
 		{
@@ -22,27 +22,36 @@
 		},
 		{
 			"key": "auth0_client_id",
+			"value": "",
 			"type": "default",
 			"enabled": true
 		},
 		{
 			"key": "auth0_client_secret",
+			"value": "",
 			"type": "default",
 			"enabled": true
 		},
 		{
 			"key": "auth0_password",
+			"value": "",
 			"type": "default",
 			"enabled": true
 		},
 		{
 			"key": "superblocks_jwt",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6ImJ2cXBrNTZUQTA3NDBOMXdxTUUxV1lWOUJZNW1WYzFqcEtPMnJsWVAzaUkifQ.eyJpYXQiOjE3MTc1NDAwNjYsIm9yZ19pZCI6ImY2ZWU1MTc4LWY0ODEtNDg5ZC1iZTVjLWRjYWY5Y2IxZTdiOCIsIm9yZ190eXBlIjoiZW50ZXJwcmlzZSIsInJiYWNfZ3JvdXBfaWRzIjpbXSwicmJhY19ncm91cHMiOlsiZ3JvdXAtYWJjZCJdLCJyYmFjX3JvbGUiOiJhZG1pbiIsInVzZXJfZW1haWwiOiJ0ZXN0QHN1cGVyYmxvY2tzdGVzdC5jb20iLCJ1c2VyX3R5cGUiOiJzdXBlcmJsb2NrcyJ9.X9ZVc0bQciDZkhKB3YfYZJw-Rh8dAc2U2Kvap3Nb-z9jJEz7zywm-2VZ41tkfkmxKK9FB4vUvLOSSxP7DTeneA",
+			"value": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ2cXBrNTZUQTA3NDBOMXdxTUUxV1lWOUJZNW1WYzFqcEtPMnJsWVAzaUkiLCJ0eXAiOiJKV1QifQ.eyJpYXQiOjE3NDYwMzc0MDEsIm9yZ19pZCI6ImY2ZWU1MTc4LWY0ODEtNDg5ZC1iZTVjLWRjYWY5Y2IxZTdiOCIsIm9yZ190eXBlIjoiZW50ZXJwcmlzZSIsInVzZXJfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ1c2VyX25hbWUiOiJtaXN0YSBzdXBhIGJsb2NrcyIsInVzZXJfZW1haWwiOiJ0ZXN0QHN1cGVyYmxvY2tzdGVzdC5jb20iLCJ1c2VyX3R5cGUiOiJzdXBlcmJsb2NrcyIsInJiYWNfZ3JvdXBfaWRzIjpbIjEiXSwicmJhY19ncm91cHMiOlsiZ3JvdXAtYWJjZCJdLCJyYmFjX2dyb3VwX29iamVjdHMiOlt7Im5hbWUiOiJncm91cC1hYmNkIiwiaWQiOiIxIn1dLCJyYmFjX3JvbGUiOiJhZG1pbiJ9.Z48QNRRb-0ApqVA186NF49UylWqaT90o58IAmuyZlODsMDu-SwuomtQCwPiTfYY23wsdklZgNYT27OtENKFeYA",
+			"type": "secret",
+			"enabled": true
+		},
+		{
+			"key": "auth0_jwt",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsIm5hbWUiOiJKb2V5IERvZSIsImlhdCI6MTY4MDAwMDAwMH0.dummysignature1234567890",
 			"type": "secret",
 			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2024-06-04T23:32:28.143Z",
-	"_postman_exported_using": "Postman/11.1.14"
+	"_postman_exported_at": "2025-05-06T14:31:17.946Z",
+	"_postman_exported_using": "Postman/11.43.2"
 }

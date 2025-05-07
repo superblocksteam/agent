@@ -5,9 +5,19 @@ tmp_dir = ".air"
 [build]
 cmd = "make build-go EXTRA_GO_OPTIONS='-cover'"
 delay = 1000
-exclude_dir = ["assets", "configs", "deploy", "scripts", "postman", "mocks", "vegeta", "clients", "workers"]
-exclude_file = [".air.toml", ".air.opa.tom.", "Dockerfile", "Makefile"]
-exclude_regex = ["_test.go"]
+exclude_dir = [
+   "assets",
+   "configs",
+   "deploy",
+   "scripts",
+   "postman",
+   "mocks",
+   "vegeta",
+   "clients",
+   "workers",
+]
+exclude_file = [ ".air.toml", ".air.opa.tom.", "Dockerfile", "Makefile" ]
+exclude_regex = [ "_test.go" ]
 exclude_unchanged = false
 follow_symlink = false
 full_bin = """ \
@@ -31,7 +41,7 @@ full_bin = """ \
         --emitter.event.flush.max.duration='1s' \
         --emitter.remote.intake=http://127.0.0.1:3030 \
         --buckets.config=./buckets.minimal.json \
-        --auth.jwt.enabled=false \
+        --auth.jwt.enabled=true \
         --registration.enabled=${register} \
         --jobs.enabled=false \
         --grpc.bind=127.0.0.1 \
@@ -47,8 +57,8 @@ full_bin = """ \
         --worker.go.enabled=true \
         --file.server.url=http://host.docker.internal:18080/v2/files \
     """
-include_dir = []
-include_ext = ["go", "tpl", "tmpl", "json", "mod", "sum", "toml"]
+include_dir = [  ]
+include_ext = [ "go", "tpl", "tmpl", "json", "mod", "sum", "toml" ]
 kill_delay = 2000
 log = "build-errors.log"
 send_interrupt = true
