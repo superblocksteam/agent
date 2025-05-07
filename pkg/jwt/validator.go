@@ -16,20 +16,25 @@ func ValidateScopedClaims(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.
 		return nil, err
 	}
 
+	ctxWithJwt := ctx
+	if parsed != nil {
+		ctxWithJwt = WithRawJwt(ctx, parsed.Raw)
+	}
+
 	switch c.GetScope() {
 	case TokenScopesBuildApplication:
-		return ValidateBuildScopedClaims(WithTokenScope(ctx, TokenScopesBuildApplication), parsed, c)
+		return ValidateBuildScopedClaims(WithTokenScope(ctxWithJwt, TokenScopesBuildApplication), parsed, c)
 	case TokenScopesViewApplication:
-		return ValidateViewScopedClaims(WithTokenScope(ctx, TokenScopesViewApplication), parsed, c)
+		return ValidateViewScopedClaims(WithTokenScope(ctxWithJwt, TokenScopesViewApplication), parsed, c)
 	case TokenScopesEditApplication:
-		return ValidateEditScopedClaims(WithTokenScope(ctx, TokenScopesEditApplication), parsed, c)
+		return ValidateEditScopedClaims(WithTokenScope(ctxWithJwt, TokenScopesEditApplication), parsed, c)
 	default:
 		return nil, fmt.Errorf("unexpected scope: %s", c.GetScope())
 	}
 }
 
 func ValidateBuildScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
-	c, err := getScopedClaims[BuildScopedClaims](jwtClaims)
+	c, err := getScopedClaims[*BuildScopedClaims](jwtClaims)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +67,7 @@ func ValidateBuildScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.
 }
 
 func ValidateViewScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
-	c, err := getScopedClaims[ViewScopedClaims](jwtClaims)
+	c, err := getScopedClaims[*ViewScopedClaims](jwtClaims)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +115,7 @@ func ValidateViewScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.C
 }
 
 func ValidateEditScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
-	c, err := getScopedClaims[EditScopedClaims](jwtClaims)
+	c, err := getScopedClaims[*EditScopedClaims](jwtClaims)
 	if err != nil {
 		return nil, err
 	}

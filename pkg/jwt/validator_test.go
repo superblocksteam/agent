@@ -14,10 +14,11 @@ import (
 type validatorArgs struct {
 	ctx              context.Context
 	registeredClaims jwt.RegisteredClaims
+	parsedJwt        *jwt.Token
 
-	buildScopeClaims BuildScopedClaims
-	viewScopeClaims  ViewScopedClaims
-	editScopeClaims  EditScopedClaims
+	buildScopeClaims *BuildScopedClaims
+	viewScopeClaims  *ViewScopedClaims
+	editScopeClaims  *EditScopedClaims
 
 	buildScopeValidationErr error
 	viewScopeValidationErr  error
@@ -44,7 +45,15 @@ func validValidatorArgs(t *testing.T, opts ...option) *validatorArgs {
 	return &validatorArgs{
 		ctx:              context.Background(),
 		registeredClaims: validRegisteredClaims,
-		buildScopeClaims: BuildScopedClaims{
+		parsedJwt: &jwt.Token{
+			Raw:    "test.payload.signature",
+			Method: jwt.SigningMethodHS256,
+			Claims: &jwt.MapClaims{
+				"exp": expiration.Unix(),
+			},
+			Valid: true,
+		},
+		buildScopeClaims: &BuildScopedClaims{
 			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
 				Scope:            TokenScopesBuildApplication,
@@ -54,7 +63,7 @@ func validValidatorArgs(t *testing.T, opts ...option) *validatorArgs {
 			DirectoryHash:  "dir1",
 			CommitId:       "commit1",
 		},
-		viewScopeClaims: ViewScopedClaims{
+		viewScopeClaims: &ViewScopedClaims{
 			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
 				Scope:            TokenScopesViewApplication,
@@ -67,7 +76,7 @@ func validValidatorArgs(t *testing.T, opts ...option) *validatorArgs {
 			UserType:       UserTypeSuperblocks,
 			Name:           "User 1",
 		},
-		editScopeClaims: EditScopedClaims{
+		editScopeClaims: &EditScopedClaims{
 			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
 				Scope:            TokenScopesEditApplication,
@@ -96,9 +105,9 @@ func verifyBuildScopedClaims(t *testing.T, a *validatorArgs, useScopedValidation
 	var err error
 
 	if useScopedValidationFunc {
-		buildCtx, err = ValidateBuildScopedClaims(a.ctx, nil, a.buildScopeClaims)
+		buildCtx, err = ValidateBuildScopedClaims(a.ctx, a.parsedJwt, a.buildScopeClaims)
 	} else {
-		buildCtx, err = ValidateScopedClaims(a.ctx, nil, a.buildScopeClaims)
+		buildCtx, err = ValidateScopedClaims(a.ctx, a.parsedJwt, a.buildScopeClaims)
 	}
 
 	if a.buildScopeValidationErr != nil {
@@ -108,6 +117,14 @@ func verifyBuildScopedClaims(t *testing.T, a *validatorArgs, useScopedValidation
 
 	assert.NoError(t, err)
 	assert.NotNil(t, buildCtx)
+
+	rawJwt, exists := GetRawJwt(buildCtx)
+	if !useScopedValidationFunc && a.parsedJwt != nil {
+		assert.True(t, exists)
+		assert.Equal(t, a.parsedJwt.Raw, rawJwt)
+	} else {
+		assert.False(t, exists)
+	}
 
 	scope, exists := GetTokenScope(buildCtx)
 	assert.True(t, exists)
@@ -135,9 +152,9 @@ func verifyViewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 	var err error
 
 	if useScopedValidationFunc {
-		viewCtx, err = ValidateViewScopedClaims(a.ctx, nil, a.viewScopeClaims)
+		viewCtx, err = ValidateViewScopedClaims(a.ctx, a.parsedJwt, a.viewScopeClaims)
 	} else {
-		viewCtx, err = ValidateScopedClaims(a.ctx, nil, a.viewScopeClaims)
+		viewCtx, err = ValidateScopedClaims(a.ctx, a.parsedJwt, a.viewScopeClaims)
 	}
 
 	if a.viewScopeValidationErr != nil {
@@ -147,6 +164,14 @@ func verifyViewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 
 	assert.NoError(t, err)
 	assert.NotNil(t, viewCtx)
+
+	rawJwt, exists := GetRawJwt(viewCtx)
+	if !useScopedValidationFunc && a.parsedJwt != nil {
+		assert.True(t, exists)
+		assert.Equal(t, a.parsedJwt.Raw, rawJwt)
+	} else {
+		assert.False(t, exists)
+	}
 
 	scope, exists := GetTokenScope(viewCtx)
 	assert.True(t, exists)
@@ -198,9 +223,9 @@ func verifyEditScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 	var err error
 
 	if useScopedValidationFunc {
-		editCtx, err = ValidateEditScopedClaims(a.ctx, nil, a.editScopeClaims)
+		editCtx, err = ValidateEditScopedClaims(a.ctx, a.parsedJwt, a.editScopeClaims)
 	} else {
-		editCtx, err = ValidateScopedClaims(a.ctx, nil, a.editScopeClaims)
+		editCtx, err = ValidateScopedClaims(a.ctx, a.parsedJwt, a.editScopeClaims)
 	}
 
 	if a.editScopeValidationErr != nil {
@@ -210,6 +235,14 @@ func verifyEditScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 
 	assert.NoError(t, err)
 	assert.NotNil(t, editCtx)
+
+	rawJwt, exists := GetRawJwt(editCtx)
+	if !useScopedValidationFunc && a.parsedJwt != nil {
+		assert.True(t, exists)
+		assert.Equal(t, a.parsedJwt.Raw, rawJwt)
+	} else {
+		assert.False(t, exists)
+	}
 
 	scope, exists := GetTokenScope(editCtx)
 	assert.True(t, exists)
@@ -238,6 +271,12 @@ func verifyEditScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 
 func TestOk(t *testing.T) {
 	args := validValidatorArgs(t)
+	verifyValidators(t, args)
+}
+
+func TestOk_NoParsedJwt(t *testing.T) {
+	args := validValidatorArgs(t)
+	args.parsedJwt = nil
 	verifyValidators(t, args)
 }
 

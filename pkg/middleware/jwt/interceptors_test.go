@@ -31,9 +31,10 @@ func TestValidate(t *testing.T) {
 	private_ecdsa, public_ecdsa := pair_ecdsa(t)
 
 	for _, test := range []struct {
-		name   string
-		errMsg string
-		ctx    context.Context
+		name          string
+		claimsFactory func() jwt.Claims
+		errMsg        string
+		ctx           context.Context
 	}{
 		{
 			name: "valid hmac jwt",
@@ -76,6 +77,17 @@ func TestValidate(t *testing.T) {
 				assert.NoError(t, err)
 				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
 			}(),
+		},
+		{
+			name: "valid jwt with default claims factory",
+			ctx: func() context.Context {
+				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.RegisteredClaims{
+					ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+				}).SignedString(signingKey)
+				assert.NoError(t, err)
+				return metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+token))
+			}(),
+			claimsFactory: defaultClaimsFactory,
 		},
 		{
 			name: "valid jwt with no claims",
@@ -122,14 +134,19 @@ func TestValidate(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			claimsFactory := test.claimsFactory
+			if claimsFactory == nil {
+				claimsFactory = func() jwt.Claims {
+					return &testClaims{}
+				}
+			}
+
 			_, err := validate(test.ctx, &options{
 				key:             "authorization",
 				hmacSigningKey:  []byte("testSigningKey"),
 				rsaSigningKey:   public_rsa,
 				ecdsaSigningKey: public_ecdsa,
-				claimsFactory: func() jwt.Claims {
-					return &testClaims{}
-				},
+				claimsFactory:   claimsFactory,
 			})
 
 			if err != nil {

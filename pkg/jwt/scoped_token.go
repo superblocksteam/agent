@@ -36,7 +36,7 @@ type ScopedTokenBaseClaims struct {
 	Scope TokenScopes `json:"scope"`
 }
 
-func (c ScopedTokenBaseClaims) GetScope() TokenScopes {
+func (c *ScopedTokenBaseClaims) GetScope() TokenScopes {
 	return c.Scope
 }
 
@@ -49,7 +49,7 @@ type BuildScopedClaims struct {
 	CommitId       string `json:"commit_id"`
 }
 
-func (c BuildScopedClaims) Valid() error {
+func (c *BuildScopedClaims) Valid() error {
 	if c.Scope != TokenScopesBuildApplication {
 		return errors.New("invalid scope")
 	}
@@ -71,7 +71,7 @@ type ViewScopedClaims struct {
 	Name           string   `json:"name,omitempty"`
 }
 
-func (c ViewScopedClaims) Valid() error {
+func (c *ViewScopedClaims) Valid() error {
 	if c.Scope != TokenScopesViewApplication {
 		return errors.New("invalid scope")
 	}
@@ -91,7 +91,7 @@ type EditScopedClaims struct {
 	Name           string   `json:"name"`
 }
 
-func (c EditScopedClaims) Valid() error {
+func (c *EditScopedClaims) Valid() error {
 	if c.GetScope() != TokenScopesEditApplication {
 		return errors.New("invalid scope")
 	}

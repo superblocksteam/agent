@@ -10,6 +10,7 @@ type ContextKey int32
 
 const (
 	ContextKeyScope ContextKey = iota
+	ContextKeyRawJwt
 	ContextKeyApplicationId
 	ContextKeyOrganziationId
 	ContextKeyDirectoryHash
@@ -18,6 +19,15 @@ const (
 	ContextKeyUserType
 	ContextKeyName
 )
+
+func WithRawJwt(ctx context.Context, rawJwt string) context.Context {
+	return context.WithValue(ctx, ContextKeyRawJwt, rawJwt)
+}
+
+func GetRawJwt(ctx context.Context) (string, bool) {
+	val, ok := ctx.Value(ContextKeyRawJwt).(string)
+	return val, ok
+}
 
 func WithTokenScope(ctx context.Context, scope TokenScopes) context.Context {
 	return context.WithValue(ctx, ContextKeyScope, scope)

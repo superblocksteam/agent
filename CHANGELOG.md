@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+- Switch to using pointers for custom JWT claims in JWT middleware and scoped token permissions JWTs
+- Add raw JWT to Go context when using the scoped permissions JWT validators
+
 ## v1.22.0
 
 - Included azure blob storage and azure identities libraries to python worker
