@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
-import { Message, proto3 } from "@bufbuild/protobuf";
+import { Message, proto3, Struct } from "@bufbuild/protobuf";
 
 /**
  * @generated from message auth.v1.Claims
@@ -31,14 +31,31 @@ export class Claims extends Message<Claims> {
   rbacRole = "";
 
   /**
-   * @generated from field: repeated string rbac_groups = 5;
+   * @generated from field: repeated auth.v1.Claims.RbacGroupObject rbac_group_objects = 5;
    */
-  rbacGroups: string[] = [];
+  rbacGroupObjects: Claims_RbacGroupObject[] = [];
 
   /**
    * @generated from field: string user_type = 6;
    */
   userType = "";
+
+  /**
+   * @generated from field: string user_id = 7;
+   */
+  userId = "";
+
+  /**
+   * user display name
+   *
+   * @generated from field: string user_name = 8;
+   */
+  userName = "";
+
+  /**
+   * @generated from field: optional google.protobuf.Struct metadata = 9;
+   */
+  metadata?: Struct;
 
   constructor(data?: PartialMessage<Claims>) {
     super();
@@ -52,8 +69,11 @@ export class Claims extends Message<Claims> {
     { no: 2, name: "org_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "org_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "rbac_role", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "rbac_groups", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 5, name: "rbac_group_objects", kind: "message", T: Claims_RbacGroupObject, repeated: true },
     { no: 6, name: "user_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "user_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 8, name: "user_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 9, name: "metadata", kind: "message", T: Struct, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Claims {
@@ -70,6 +90,49 @@ export class Claims extends Message<Claims> {
 
   static equals(a: Claims | PlainMessage<Claims> | undefined, b: Claims | PlainMessage<Claims> | undefined): boolean {
     return proto3.util.equals(Claims, a, b);
+  }
+}
+
+/**
+ * @generated from message auth.v1.Claims.RbacGroupObject
+ */
+export class Claims_RbacGroupObject extends Message<Claims_RbacGroupObject> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name = "";
+
+  constructor(data?: PartialMessage<Claims_RbacGroupObject>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.v1.Claims.RbacGroupObject";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Claims_RbacGroupObject {
+    return new Claims_RbacGroupObject().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Claims_RbacGroupObject {
+    return new Claims_RbacGroupObject().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Claims_RbacGroupObject {
+    return new Claims_RbacGroupObject().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Claims_RbacGroupObject | PlainMessage<Claims_RbacGroupObject> | undefined, b: Claims_RbacGroupObject | PlainMessage<Claims_RbacGroupObject> | undefined): boolean {
+    return proto3.util.equals(Claims_RbacGroupObject, a, b);
   }
 }
 

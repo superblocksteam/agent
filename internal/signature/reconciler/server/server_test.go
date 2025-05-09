@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/superblocksteam/agent/pkg/utils"
+	"github.com/superblocksteam/agent/pkg/testutils"
 	pbapi "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
@@ -82,7 +82,7 @@ func TestOkPerResourceStatusConflict(t *testing.T) {
 	t.Parallel()
 
 	args := validArgs(t)
-	log, logs := utils.NewZapTestObservedLogger(t)
+	log, logs := testutils.NewZapTestObservedLogger(t)
 	args.log = log
 	args.client.statusesCode = int32(http.StatusConflict)
 
@@ -95,7 +95,7 @@ func TestOkPerResourceStatusNotFound(t *testing.T) {
 	t.Parallel()
 
 	args := validArgs(t)
-	log, logs := utils.NewZapTestObservedLogger(t)
+	log, logs := testutils.NewZapTestObservedLogger(t)
 	args.log = log
 	args.client.statusesCode = int32(http.StatusNotFound)
 
@@ -108,7 +108,7 @@ func TestOkPerResourceStatusUnhandled(t *testing.T) {
 	t.Parallel()
 
 	args := validArgs(t)
-	log, logs := utils.NewZapTestObservedLogger(t)
+	log, logs := testutils.NewZapTestObservedLogger(t)
 	args.log = log
 	args.client.statusesCode = 0 // invalid status code, should never be handled
 

@@ -1,5 +1,5 @@
 function isPublicApi(api) {
-  return api && api.metadata && ['00000000-0000-0000-0000-000000000034'].includes(api.metadata.id);
+  return api && api.metadata && ['00000000-0000-0000-0000-000000000034', '00000000-0000-0000-0000-000000000036'].includes(api.metadata.id);
 }
 
 function doValidateBearerToken(token) {

@@ -4,6 +4,9 @@ import (
 	"context"
 
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 )
 
 type ContextKey int32
@@ -13,9 +16,13 @@ const (
 	ContextKeyUserEmail
 	ContextKeyRbacRole
 	ContextKeyRbacGroups
+	ContextKeyRbacGroupObjects
 	ContextKeyQuotaTier
 	ContextKeyOrganizationType
+	ContextKeyMetadata
 	ContextKeyUserType
+	ContextKeyUserId
+	ContextKeyUserDisplayName
 )
 
 type QuotaTier int32
@@ -71,6 +78,16 @@ func GetUserType(ctx context.Context) (string, bool) {
 	return val, ok
 }
 
+func GetUserId(ctx context.Context) (string, bool) {
+	val, ok := ctx.Value(ContextKeyUserId).(string)
+	return val, ok
+}
+
+func GetUserDisplayName(ctx context.Context) (string, bool) {
+	val, ok := ctx.Value(ContextKeyUserDisplayName).(string)
+	return val, ok
+}
+
 func WithRbacRole(ctx context.Context, rbacRole string) context.Context {
 	return context.WithValue(ctx, ContextKeyRbacRole, rbacRole)
 }
@@ -86,6 +103,16 @@ func WithRbacGroups(ctx context.Context, rbacGroups []string) context.Context {
 
 func GetRbacGroups(ctx context.Context) ([]string, bool) {
 	val, ok := ctx.Value(ContextKeyRbacGroups).([]string)
+	return val, ok
+}
+
+func GetRbacGroupObjects(ctx context.Context) ([]*authv1.Claims_RbacGroupObject, bool) {
+	val, ok := ctx.Value(ContextKeyRbacGroupObjects).([]*authv1.Claims_RbacGroupObject)
+	return val, ok
+}
+
+func GetMetadata(ctx context.Context) (*structpb.Struct, bool) {
+	val, ok := ctx.Value(ContextKeyMetadata).(*structpb.Struct)
 	return val, ok
 }
 

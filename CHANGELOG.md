@@ -6,11 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
-- Updated the flow for detecting if JWT middleware should be used 
-
 - Fail silently when trying to delete a GSheets integration that has already been revoked
 - Switch to using pointers for custom JWT claims in JWT middleware and scoped token permissions JWTs
 - Add raw JWT to Go context when using the scoped permissions JWT validators
+- Updated the flow for detecting if JWT middleware should be used 
+- Updated execution inputs to use `Global.user` derived from Superblocks JWT
+
+
 
 ## v1.22.0
 

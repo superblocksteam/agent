@@ -1749,6 +1749,75 @@ const integrationTestApis = [
       },
     },
   },
+  // Global
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000035',
+        name: 'app api that returns Global',
+        organization: '00000000-0000-0000-0000-000000000001',
+      },
+      signature: {
+        data: 'JSCml/IxbLg1EkbODeOVInWI17KAVK+B3il9EhSKD8E6nrwAKsZpmAjVL81YX9Rqwiq+xrrrfGNZbPXzCG9PBQ==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            integration: 'javascript',
+            javascript: {
+              body: 'return Global;',
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+    integrations: {
+      javascript: {},
+    },
+  },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000036',
+        name: 'public app api that returns Global',
+        organization: '00000000-0000-0000-0000-000000000001',
+      },
+      signature: {
+        data: 'JSCml/IxbLg1EkbODeOVInWI17KAVK+B3il9EhSKD8E6nrwAKsZpmAjVL81YX9Rqwiq+xrrrfGNZbPXzCG9PBQ==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            integration: 'javascript',
+            javascript: {
+              body: 'return Global;',
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+    integrations: {
+      javascript: {},
+    },
+  },
 ];
 
 module.exports = integrationTestApis;

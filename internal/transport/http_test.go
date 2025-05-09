@@ -17,7 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/stretchr/testify/assert"
-	utils "github.com/superblocksteam/agent/pkg/utils"
+	"github.com/superblocksteam/agent/pkg/testutils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 )
@@ -482,7 +482,7 @@ func TestTransformWorkflowRequest(t *testing.T) {
 			err = protojson.Unmarshal(bodyBytes, actualExecuteRequest)
 			require.NoError(t, err)
 
-			utils.ProtoEquals(t, tc.expectedExecuteRequest, actualExecuteRequest)
+			testutils.ProtoEquals(t, tc.expectedExecuteRequest, actualExecuteRequest)
 		})
 	}
 }
