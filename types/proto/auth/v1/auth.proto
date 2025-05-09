@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package auth.v1;
 
+import "google/protobuf/struct.proto";
+
 option go_package = "github.com/superblocksteam/agent/types/gen/go/auth/v1";
 
 message Claims {
@@ -9,6 +11,14 @@ message Claims {
   string org_id = 2;
   string org_type = 3;
   string rbac_role = 4;
-  repeated string rbac_groups = 5;
+  repeated RbacGroupObject rbac_group_objects = 5;
   string user_type = 6;
+  string user_id = 7;
+  string user_name = 8; // user display name
+  optional google.protobuf.Struct metadata = 9;
+
+  message RbacGroupObject {
+    string id = 1;
+    string name = 2;
+  }
 }

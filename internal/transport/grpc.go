@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/fetch"
 	"github.com/superblocksteam/agent/internal/flags"
+	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	internalutils "github.com/superblocksteam/agent/internal/utils"
 	"github.com/superblocksteam/agent/pkg/constants"
 	apictx "github.com/superblocksteam/agent/pkg/context"
@@ -353,6 +355,80 @@ func (s *server) Download(req *apiv1.DownloadRequest, stream apiv1.ExecutorServi
 	return nil
 }
 
+// returns a copy of the given inputs with 'Global.user' populated with values from the upstream JWT
+// this will not mutate the given inputs
+func injectGlobalUserIntoInputs(ctx context.Context, inputs map[string]*structpb.Value) (map[string]*structpb.Value, error) {
+	// construct the user from the jwt
+	id, ok := jwt_validator.GetUserId(ctx)
+	if !ok {
+		return nil, errors.New("could not get user id")
+	}
+
+	email, ok := jwt_validator.GetUserEmail(ctx)
+	if !ok {
+		return nil, errors.New("could not get user email")
+	}
+
+	displayName, ok := jwt_validator.GetUserDisplayName(ctx)
+	if !ok {
+		return nil, errors.New("could not get user display name")
+	}
+
+	rbacGroupObjects, ok := jwt_validator.GetRbacGroupObjects(ctx)
+	if !ok {
+		return nil, errors.New("could not get rbac group objects")
+	}
+	// NOTE: @joeyagreco - gross.. not ideal that we have to do this conversion manually
+	structPbRbacGroupObjects := make([]*structpb.Value, len(rbacGroupObjects))
+	for i, obj := range rbacGroupObjects {
+		structPbObj, err := utils.ProtoToStructPb(obj, nil)
+		if err != nil {
+			return nil, errors.New("error converting rbac groups")
+		}
+		structPbRbacGroupObjects[i] = structpb.NewStructValue(structPbObj)
+	}
+
+	// OPTIONAL
+	metadata, _ := jwt_validator.GetMetadata(ctx)
+
+	userStruct := &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"id":       structpb.NewStringValue(id),
+			"email":    structpb.NewStringValue(email),
+			"name":     structpb.NewStringValue(displayName),
+			"username": structpb.NewStringValue(email),
+			"metadata": structpb.NewStructValue(metadata),
+			"groups":   structpb.NewListValue(&structpb.ListValue{Values: structPbRbacGroupObjects}),
+		},
+	}
+
+	// clone or create the global struct
+	var globalStruct *structpb.Struct
+	if val, ok := inputs["Global"]; ok && val.GetStructValue() != nil {
+		globalStruct = proto.Clone(val.GetStructValue()).(*structpb.Struct)
+	} else {
+		globalStruct = &structpb.Struct{Fields: map[string]*structpb.Value{}}
+	}
+
+	if globalStruct.Fields == nil {
+		globalStruct.Fields = map[string]*structpb.Value{}
+	}
+
+	// upsert 'user' field
+	globalStruct.Fields["user"] = structpb.NewStructValue(userStruct)
+
+	// clone inputs map and insert updated global
+	outputs := make(map[string]*structpb.Value, len(inputs))
+	for k, v := range inputs {
+		if v != nil {
+			outputs[k] = proto.Clone(v).(*structpb.Value)
+		}
+	}
+	outputs["Global"] = structpb.NewStructValue(globalStruct)
+
+	return outputs, nil
+}
+
 func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send func(*apiv1.StreamResponse) error, bus functions.Bus) (done *executor.Done, err error) {
 	ctx = constants.WithAgentId(
 		constants.WithAgentVersion(
@@ -419,6 +495,20 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 			}
 		} else {
 			inputs = req.Inputs
+		}
+	}
+
+	// check if we used a JWT for auth
+	// if we did, then we are safe to inject `Global.user` based on claims from JWT
+	requestUsesJwtAuth, err := constants.GetRequestUsesJwtAuth(ctx)
+	if err != nil {
+		s.Logger.Error("could not determine if request used jwt auth")
+		return nil, err
+	}
+	if requestUsesJwtAuth {
+		inputs, err = injectGlobalUserIntoInputs(ctx, inputs)
+		if err != nil {
+			return nil, fmt.Errorf("error injecting 'Global.user' into inputs: %w", err)
 		}
 	}
 
