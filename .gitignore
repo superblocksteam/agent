@@ -17,6 +17,7 @@ orchestrator.*env
 coverage/
 charts/
 .air
+*.env*
 
 /regsync
 
@@ -34,15 +35,3 @@ charts/
 /workers/javascript/packages/**/dist
 
 /workers/python/coverage.json
-
-/.vscode
-/config
-/helm/cloud-opa
-/helm/orchestrator/templates/networkpolicy.yaml
-/helm/orchestrator/templates/httproute-migration.yaml
-/helm/orchestrator/ci.yaml
-/helm/orchestrator/dev.yaml
-/helm/orchestrator/ephemeral.yaml
-/helm/orchestrator/prod-eu.yaml
-/helm/orchestrator/production.yaml
-/helm/orchestrator/staging.yaml
