@@ -26,10 +26,15 @@ func NewClaims() jwt.Claims {
 }
 
 func Validate(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
+	// NOTE: @joeyagreco - the only claims that we should validate are ALWAYS present are: org_id, org_type, and user_email
+	// NOTE: @joeyagreco - everything else is optional
+
 	c, ok := jwtClaims.(*claims)
 	if !ok || !parsed.Valid {
 		return nil, errors.New("could not parse jwt claims")
 	}
+
+	// REQUIRED CLAIMS
 
 	orgID := c.OrgId
 	if orgID == "" {
@@ -49,37 +54,23 @@ func Validate(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (con
 	}
 	ctx = context.WithValue(ctx, ContextKeyUserEmail, userEmail)
 
+	// OPTIONAL CLAIMS
+
 	userType := c.UserType
-	if userType == "" {
-		return nil, errors.New("could not get user type")
-	}
 	ctx = context.WithValue(ctx, ContextKeyUserType, userType)
 
 	userId := c.UserId
-	if userId == "" {
-		return nil, errors.New("could not get user id")
-	}
 	ctx = context.WithValue(ctx, ContextKeyUserId, userId)
 
 	userDisplayName := c.UserName
-	if userDisplayName == "" {
-		return nil, errors.New("could not get user display name")
-	}
 	ctx = context.WithValue(ctx, ContextKeyUserDisplayName, userDisplayName)
 
 	rbacRole := c.RbacRole
-	if rbacRole == "" {
-		return nil, errors.New("could not get rbac role")
-	}
 	ctx = context.WithValue(ctx, ContextKeyRbacRole, rbacRole)
 
 	rbacGroupObjects := c.RbacGroupObjects
-	if len(rbacGroupObjects) == 0 {
-		return nil, errors.New("could not get rbac group objects")
-	}
 	ctx = context.WithValue(ctx, ContextKeyRbacGroupObjects, rbacGroupObjects)
 
-	// OPTIONAL
 	metadata := c.Metadata
 	ctx = context.WithValue(ctx, ContextKeyMetadata, metadata)
 
