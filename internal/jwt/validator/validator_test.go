@@ -169,7 +169,7 @@ func TestValidate(t *testing.T) {
 			errMsg: "could not get user email",
 		},
 		{
-			name:        "missing user type",
+			name:        "only required claims given",
 			parsedToken: &jwt.Token{Valid: true},
 			parsedClaims: &claims{
 				Claims: authv1.Claims{
@@ -178,38 +178,11 @@ func TestValidate(t *testing.T) {
 					UserEmail: "test_user@test.com",
 				},
 			},
-			errMsg: "could not get user type",
-		},
-		{
-			name:        "missing rbac role",
-			parsedToken: &jwt.Token{Valid: true},
-			parsedClaims: &claims{
-				Claims: authv1.Claims{
-					OrgId:     "12345",
-					OrgType:   "free",
-					UserEmail: "test_user@test.com",
-					UserType:  "awesome",
-					UserId:    "id",
-					UserName:  "name",
-				},
+			expected: results{
+				orgID:     "12345",
+				orgType:   "free",
+				userEmail: "test_user@test.com",
 			},
-			errMsg: "could not get rbac role",
-		},
-		{
-			name:        "missing rbac groups",
-			parsedToken: &jwt.Token{Valid: true},
-			parsedClaims: &claims{
-				Claims: authv1.Claims{
-					OrgId:     "12345",
-					OrgType:   "free",
-					UserEmail: "test_user@test.com",
-					UserType:  "awesome",
-					RbacRole:  "admin",
-					UserId:    "id",
-					UserName:  "name",
-				},
-			},
-			errMsg: "could not get rbac group objects",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {

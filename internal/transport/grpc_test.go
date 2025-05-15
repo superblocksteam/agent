@@ -117,33 +117,47 @@ func defaultCtxWithInfo() context.Context {
 	return ctx
 }
 
-func defaultGlobalStructWithInfo() *structpb.Value {
+func defaultGlobalStructWithInfo(dontIncludeKeys []string) *structpb.Value {
+	keys := map[string]*structpb.Value{
+		"id":       structpb.NewStringValue("uid"),
+		"email":    structpb.NewStringValue("ue"),
+		"name":     structpb.NewStringValue("udn"),
+		"username": structpb.NewStringValue("ue"),
+		"metadata": structpb.NewStructValue(&structpb.Struct{}),
+		"groups": structpb.NewListValue(&structpb.ListValue{
+			Values: []*structpb.Value{
+				structpb.NewStructValue(&structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"id":   structpb.NewStringValue("1"),
+						"name": structpb.NewStringValue("g1"),
+					},
+				}),
+				structpb.NewStructValue(&structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"id":   structpb.NewStringValue("2"),
+						"name": structpb.NewStringValue("g2"),
+					},
+				}),
+			},
+		}),
+	}
+
+	skip := make(map[string]struct{}, len(dontIncludeKeys))
+	for _, k := range dontIncludeKeys {
+		skip[k] = struct{}{}
+	}
+
+	filtered := make(map[string]*structpb.Value)
+	for k, v := range keys {
+		if _, excluded := skip[k]; !excluded {
+			filtered[k] = v
+		}
+	}
+
 	return structpb.NewStructValue(&structpb.Struct{
 		Fields: map[string]*structpb.Value{
 			"user": structpb.NewStructValue(&structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"id":       structpb.NewStringValue("uid"),
-					"email":    structpb.NewStringValue("ue"),
-					"name":     structpb.NewStringValue("udn"),
-					"username": structpb.NewStringValue("ue"),
-					"metadata": structpb.NewStructValue(&structpb.Struct{}),
-					"groups": structpb.NewListValue(&structpb.ListValue{
-						Values: []*structpb.Value{
-							structpb.NewStructValue(&structpb.Struct{
-								Fields: map[string]*structpb.Value{
-									"id":   structpb.NewStringValue("1"),
-									"name": structpb.NewStringValue("g1"),
-								},
-							}),
-							structpb.NewStructValue(&structpb.Struct{
-								Fields: map[string]*structpb.Value{
-									"id":   structpb.NewStringValue("2"),
-									"name": structpb.NewStringValue("g2"),
-								},
-							}),
-						},
-					}),
-				},
+				Fields: filtered,
 			}),
 		},
 	})
@@ -162,7 +176,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 			ctx:    defaultCtxWithInfo(),
 			inputs: map[string]*structpb.Value{},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -170,7 +184,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 			ctx:    defaultCtxWithInfo(),
 			inputs: nil,
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -180,7 +194,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 				"Global": structpb.NewStructValue(&structpb.Struct{}),
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -190,7 +204,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 				"Global": nil,
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -200,7 +214,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 				"Global": structpb.NewNullValue(),
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -214,7 +228,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 				}),
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -228,7 +242,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 				}),
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -242,7 +256,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 				}),
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -253,7 +267,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
 				"Foo":    structpb.NewStringValue("Bar"),
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
 			},
 		},
 		{
@@ -268,7 +282,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
 				"Global": func() *structpb.Value {
-					def := defaultGlobalStructWithInfo()
+					def := defaultGlobalStructWithInfo(nil)
 					def.GetStructValue().Fields["Foo"] = structpb.NewStringValue("Bar")
 					return def
 				}(),
@@ -279,7 +293,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 			ctx:  defaultCtxWithInfo(),
 			inputs: map[string]*structpb.Value{
 				"Global": func() *structpb.Value {
-					def := defaultGlobalStructWithInfo()
+					def := defaultGlobalStructWithInfo([]string{})
 					def.GetStructValue().Fields["user"].GetStructValue().Fields["id"] = structpb.NewStringValue("injected")
 					def.GetStructValue().Fields["user"].GetStructValue().Fields["email"] = structpb.NewStringValue("injected")
 					def.GetStructValue().Fields["user"].GetStructValue().Fields["name"] = structpb.NewStringValue("injected")
@@ -290,7 +304,40 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 				}(),
 			},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo(nil),
+			},
+		},
+		{
+			name: "works when user id is nil",
+			ctx: func() context.Context {
+				ctx := defaultCtxWithInfo()
+				return context.WithValue(ctx, jwt_validator.ContextKeyUserId, nil)
+			}(),
+			inputs: map[string]*structpb.Value{},
+			expectedInputsAfterInjection: map[string]*structpb.Value{
+				"Global": defaultGlobalStructWithInfo([]string{"id"}),
+			},
+		},
+		{
+			name: "works when display name is nil",
+			ctx: func() context.Context {
+				ctx := defaultCtxWithInfo()
+				return context.WithValue(ctx, jwt_validator.ContextKeyUserDisplayName, nil)
+			}(),
+			inputs: map[string]*structpb.Value{},
+			expectedInputsAfterInjection: map[string]*structpb.Value{
+				"Global": defaultGlobalStructWithInfo([]string{"name"}),
+			},
+		},
+		{
+			name: "works when rbac group objects is nil",
+			ctx: func() context.Context {
+				ctx := defaultCtxWithInfo()
+				return context.WithValue(ctx, jwt_validator.ContextKeyRbacGroupObjects, nil)
+			}(),
+			inputs: map[string]*structpb.Value{},
+			expectedInputsAfterInjection: map[string]*structpb.Value{
+				"Global": defaultGlobalStructWithInfo([]string{"groups"}),
 			},
 		},
 		{
@@ -301,14 +348,14 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 			}(),
 			inputs: map[string]*structpb.Value{},
 			expectedInputsAfterInjection: map[string]*structpb.Value{
-				"Global": defaultGlobalStructWithInfo(),
+				"Global": defaultGlobalStructWithInfo([]string{"metadata"}),
 			},
 		},
 		{
-			name:          "errors when context is missing required info",
+			name:          "errors when context is missing user email",
 			ctx:           context.Background(),
 			inputs:        map[string]*structpb.Value{},
-			expectedError: "could not get user id",
+			expectedError: "could not get user email",
 		},
 	}
 

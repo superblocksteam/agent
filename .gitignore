@@ -17,6 +17,7 @@ orchestrator.*env
 coverage/
 charts/
 .air
+*.env*
 
 /regsync
 

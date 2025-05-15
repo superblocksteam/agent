@@ -359,47 +359,51 @@ func (s *server) Download(req *apiv1.DownloadRequest, stream apiv1.ExecutorServi
 // this will not mutate the given inputs
 func injectGlobalUserIntoInputs(ctx context.Context, inputs map[string]*structpb.Value) (map[string]*structpb.Value, error) {
 	// construct the user from the jwt
-	id, ok := jwt_validator.GetUserId(ctx)
-	if !ok {
-		return nil, errors.New("could not get user id")
-	}
+
+	// REQUIRED
 
 	email, ok := jwt_validator.GetUserEmail(ctx)
 	if !ok {
 		return nil, errors.New("could not get user email")
 	}
 
-	displayName, ok := jwt_validator.GetUserDisplayName(ctx)
-	if !ok {
-		return nil, errors.New("could not get user display name")
-	}
-
-	rbacGroupObjects, ok := jwt_validator.GetRbacGroupObjects(ctx)
-	if !ok {
-		return nil, errors.New("could not get rbac group objects")
-	}
-	// NOTE: @joeyagreco - gross.. not ideal that we have to do this conversion manually
-	structPbRbacGroupObjects := make([]*structpb.Value, len(rbacGroupObjects))
-	for i, obj := range rbacGroupObjects {
-		structPbObj, err := utils.ProtoToStructPb(obj, nil)
-		if err != nil {
-			return nil, errors.New("error converting rbac groups")
-		}
-		structPbRbacGroupObjects[i] = structpb.NewStructValue(structPbObj)
+	userStruct := &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"email":    structpb.NewStringValue(email),
+			"username": structpb.NewStringValue(email),
+		},
 	}
 
 	// OPTIONAL
-	metadata, _ := jwt_validator.GetMetadata(ctx)
 
-	userStruct := &structpb.Struct{
-		Fields: map[string]*structpb.Value{
-			"id":       structpb.NewStringValue(id),
-			"email":    structpb.NewStringValue(email),
-			"name":     structpb.NewStringValue(displayName),
-			"username": structpb.NewStringValue(email),
-			"metadata": structpb.NewStructValue(metadata),
-			"groups":   structpb.NewListValue(&structpb.ListValue{Values: structPbRbacGroupObjects}),
-		},
+	id, ok := jwt_validator.GetUserId(ctx)
+	if ok {
+		userStruct.Fields["id"] = structpb.NewStringValue(id)
+	}
+
+	displayName, ok := jwt_validator.GetUserDisplayName(ctx)
+	if ok {
+		userStruct.Fields["name"] = structpb.NewStringValue(displayName)
+	}
+
+	rbacGroupObjects, ok := jwt_validator.GetRbacGroupObjects(ctx)
+	if ok {
+		// NOTE: @joeyagreco - gross.. not ideal that we have to do this conversion manually
+		structPbRbacGroupObjects := make([]*structpb.Value, len(rbacGroupObjects))
+		for i, obj := range rbacGroupObjects {
+			structPbObj, err := utils.ProtoToStructPb(obj, nil)
+			if err != nil {
+				return nil, errors.New("error converting rbac groups")
+			}
+			structPbRbacGroupObjects[i] = structpb.NewStructValue(structPbObj)
+		}
+		userStruct.Fields["groups"] = structpb.NewListValue(&structpb.ListValue{Values: structPbRbacGroupObjects})
+	}
+
+	// OPTIONAL
+	metadata, ok := jwt_validator.GetMetadata(ctx)
+	if ok {
+		userStruct.Fields["metadata"] = structpb.NewStructValue(metadata)
 	}
 
 	// clone or create the global struct
