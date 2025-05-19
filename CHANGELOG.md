@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the flow for detecting if JWT middleware should be used 
 - Updated execution inputs to use `Global.user` derived from Superblocks JWT
 - Updated claims required to be present in a JWT for agent authorization
+- Updated the "oauth on behalf of token exchange" flow to use the identity provider access token from the Superblocks JWT instead of from the Auth0 JWT 
 
 
 
