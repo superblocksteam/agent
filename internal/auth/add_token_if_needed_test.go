@@ -883,8 +883,8 @@ func verify(t *testing.T, args *args) {
 	}
 
 	ctxMetadata := map[string]string{
-		"authorization": fmt.Sprintf("Bearer %s", authJwt),
-		"origin":        "test",
+		constants.HeaderSuperblocksJwt: fmt.Sprintf("Bearer %s", authJwt),
+		"origin":                       "test",
 	}
 	if len(args.cookies) > 0 {
 		ctxMetadata["cookie"] = strings.Join(args.cookies, ";")
@@ -1755,7 +1755,7 @@ func TestGetIdentityProviderAccessToken(t *testing.T) {
 				context.Background(),
 				metadata.New(
 					map[string]string{
-						"authorization": authHeader,
+						constants.HeaderSuperblocksJwt: authHeader,
 					},
 				),
 			)

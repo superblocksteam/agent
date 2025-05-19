@@ -50,7 +50,7 @@ const (
 	// This is the proto defined auth method names, those are defined as oneof
 	authTypePasswordGrantFlow = "passwordGrantFlow"
 
-	idpAccessTokenClaimKey = "https://superblocks/idp_token"
+	idpAccessTokenClaimKey = "federated_token"
 )
 
 var (
@@ -597,20 +597,20 @@ func (t *tokenManager) marshalInputToJSONString(ctx context.Context, input inter
 }
 
 func (t *tokenManager) getIdentityProviderAccessToken(ctx context.Context) (string, error) {
-	var auth0Jwt string
+	var superblocksJwt string
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if jwt, ok := md["authorization"]; ok {
-			auth0Jwt = jwt[0]
+		if jwt, ok := md[constants.HeaderSuperblocksJwt]; ok {
+			superblocksJwt = jwt[0]
 		}
 	}
 	// just need the jwt itself
-	auth0Jwt = strings.TrimPrefix(auth0Jwt, "Bearer ")
+	superblocksJwt = strings.TrimPrefix(superblocksJwt, "Bearer ")
 
-	if auth0Jwt == "" {
+	if superblocksJwt == "" {
 		return "", sberrors.IntegrationOAuthError(oauth.ErrNoAuthorizationJwtFound)
 	}
 
-	claims, err := getClaimsFromJwt(auth0Jwt)
+	claims, err := getClaimsFromJwt(superblocksJwt)
 	if err != nil {
 		return "", sberrors.IntegrationOAuthError(oauth.ErrNoIdentityProviderJwtFound)
 	}
