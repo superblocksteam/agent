@@ -14,6 +14,11 @@ func TestNewScopedTokenClaims(t *testing.T) {
 		expectedClaims jwt.Claims
 	}{
 		{
+			name:           "AllScopedTokenClaims",
+			claimsFactory:  NewAllScopedTokenClaims,
+			expectedClaims: &AllScopedClaims{},
+		},
+		{
 			name:           "BuildScopedTokenClaims",
 			claimsFactory:  NewBuildScopedTokenClaims,
 			expectedClaims: &BuildScopedClaims{},

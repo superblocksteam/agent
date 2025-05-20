@@ -6,6 +6,10 @@ import (
 
 type ClaimsFactory func() jwt.Claims
 
+func NewAllScopedTokenClaims() jwt.Claims {
+	return &AllScopedClaims{}
+}
+
 func NewBuildScopedTokenClaims() jwt.Claims {
 	return &BuildScopedClaims{}
 }
