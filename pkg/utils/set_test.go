@@ -17,24 +17,10 @@ type args struct {
 func validArgs() *args {
 	var nilSet *Set[int]
 
-	set1 := NewSet[int]()
-	set1.Add(1)
-	set1.Add(2)
-	set1.Add(3)
-
-	set2 := NewSet[int]()
-	set2.Add(1)
-	set2.Add(2)
-	set2.Add(3)
-
-	set3 := NewSet[int]()
-	set3.Add(1)
-	set3.Add(2)
-	set3.Add(4)
-
-	set4 := NewSet[int]()
-	set4.Add(1)
-	set4.Add(2)
+	set1 := NewSet(1, 2, 3)
+	set2 := NewSet(1, 2, 3)
+	set3 := NewSet(1, 2, 4)
+	set4 := NewSet(1, 2)
 
 	return &args{
 		nilSet:             nilSet,
@@ -120,27 +106,26 @@ func TestOk(t *testing.T) {
 
 func TestAddRemove(t *testing.T) {
 	set := NewSet[int]()
-	set.Add(1)
-	set.Add(2)
-	assert.Equal(t, set.Size(), 2)
+	set.Add(1, 2, 3, 4)
+
+	assert.Equal(t, set.Size(), 4)
 	assert.True(t, set.Contains(1))
 	assert.True(t, set.Contains(2))
+	assert.True(t, set.Contains(3))
+	assert.True(t, set.Contains(4))
 
-	set.Remove(1)
+	set.Remove(2, 3)
 
-	assert.Equal(t, set.Size(), 1)
-	assert.False(t, set.Contains(1))
-	assert.True(t, set.Contains(2))
+	assert.Equal(t, set.Size(), 2)
+	assert.True(t, set.Contains(1))
+	assert.False(t, set.Contains(2))
+	assert.False(t, set.Contains(3))
+	assert.True(t, set.Contains(4))
 }
 
 func TestUnion(t *testing.T) {
-	set1 := NewSet[int]()
-	set1.Add(1)
-	set1.Add(2)
-
-	set2 := NewSet[int]()
-	set2.Add(3)
-	set2.Add(4)
+	set1 := NewSet(1, 2)
+	set2 := NewSet(3, 4)
 
 	set3 := set1.Union(set2)
 
@@ -161,15 +146,8 @@ func TestUnion(t *testing.T) {
 }
 
 func TestIntersection(t *testing.T) {
-	set1 := NewSet[int]()
-	set1.Add(1)
-	set1.Add(2)
-	set1.Add(3)
-
-	set2 := NewSet[int]()
-	set2.Add(2)
-	set2.Add(3)
-	set2.Add(4)
+	set1 := NewSet(1, 2, 3)
+	set2 := NewSet(2, 3, 4)
 
 	set3 := set1.Intersection(set2)
 
@@ -190,15 +168,8 @@ func TestIntersection(t *testing.T) {
 }
 
 func TestDifference(t *testing.T) {
-	set1 := NewSet[int]()
-	set1.Add(1)
-	set1.Add(2)
-	set1.Add(3)
-
-	set2 := NewSet[int]()
-	set2.Add(2)
-	set2.Add(3)
-	set2.Add(4)
+	set1 := NewSet(1, 2, 3)
+	set2 := NewSet(2, 3, 4)
 
 	set3 := set1.Difference(set2)
 
@@ -218,17 +189,9 @@ func TestDifference(t *testing.T) {
 }
 
 func TestIsDisjoint(t *testing.T) {
-	set1 := NewSet[int]()
-	set1.Add(1)
-	set1.Add(2)
-
-	set2 := NewSet[int]()
-	set2.Add(3)
-	set2.Add(4)
-
-	set3 := NewSet[int]()
-	set3.Add(4)
-	set3.Add(5)
+	set1 := NewSet(1, 2)
+	set2 := NewSet(3, 4)
+	set3 := NewSet(4, 5)
 
 	assert.True(t, set1.IsDisjoint(set2))
 	assert.False(t, set2.IsDisjoint(set3))

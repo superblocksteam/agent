@@ -4,18 +4,24 @@ type Set[T comparable] struct {
 	items map[T]bool
 }
 
-func NewSet[T comparable]() *Set[T] {
-	return &Set[T]{
+func NewSet[T comparable](items ...T) *Set[T] {
+	set := &Set[T]{
 		items: make(map[T]bool),
+	}
+	set.Add(items...)
+	return set
+}
+
+func (s *Set[T]) Add(items ...T) {
+	for _, item := range items {
+		s.items[item] = true
 	}
 }
 
-func (s *Set[T]) Add(item T) {
-	s.items[item] = true
-}
-
-func (s *Set[T]) Remove(item T) {
-	delete(s.items, item)
+func (s *Set[T]) Remove(items ...T) {
+	for _, item := range items {
+		delete(s.items, item)
+	}
 }
 
 func (s *Set[T]) Contains(item T) bool {
