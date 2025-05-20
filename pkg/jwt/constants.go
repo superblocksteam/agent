@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 
+	"github.com/superblocksteam/agent/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -29,12 +30,12 @@ func GetRawJwt(ctx context.Context) (string, bool) {
 	return val, ok
 }
 
-func WithTokenScope(ctx context.Context, scope TokenScopes) context.Context {
-	return context.WithValue(ctx, ContextKeyScope, scope)
+func WithTokenScopes(ctx context.Context, scopes *utils.Set[TokenScopes]) context.Context {
+	return context.WithValue(ctx, ContextKeyScope, scopes)
 }
 
-func GetTokenScope(ctx context.Context) (TokenScopes, bool) {
-	val, ok := ctx.Value(ContextKeyScope).(TokenScopes)
+func GetTokenScopes(ctx context.Context) (*utils.Set[TokenScopes], bool) {
+	val, ok := ctx.Value(ContextKeyScope).(*utils.Set[TokenScopes])
 	return val, ok
 }
 

@@ -10,34 +10,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type options struct {
+type testOptions struct {
 	clock clockwork.Clock
 }
 
-type option func(*options)
+type testOption func(*testOptions)
 
-func WithClock(clock clockwork.Clock) option {
-	return func(o *options) {
+func WithClock(clock clockwork.Clock) testOption {
+	return func(o *testOptions) {
 		o.clock = clock
 	}
 }
 
-type args struct {
+type scopedTokenArgs struct {
 	registeredClaims jwt.RegisteredClaims
 
+	allScopeClaims   *AllScopedClaims
 	buildScopeClaims *BuildScopedClaims
 	viewScopeClaims  *ViewScopedClaims
 	editScopeClaims  *EditScopedClaims
 
+	allScopesValidationErr  error
 	buildScopeValidationErr error
 	viewScopeValidationErr  error
 	editScopeValidationErr  error
 }
 
-func validArgs(t *testing.T, opts ...option) *args {
+func validArgs(t *testing.T, opts ...testOption) *scopedTokenArgs {
 	t.Helper()
 
-	options := &options{
+	options := &testOptions{
 		clock: clockwork.NewFakeClock(),
 	}
 	for _, opt := range opts {
@@ -51,84 +53,122 @@ func validArgs(t *testing.T, opts ...option) *args {
 		ExpiresAt: jwt.NewNumericDate(expiration),
 	}
 
-	return &args{
+	return &scopedTokenArgs{
 		registeredClaims: validRegisteredClaims,
-		buildScopeClaims: &BuildScopedClaims{
-			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
-				RegisteredClaims: validRegisteredClaims,
-				Scope:            TokenScopesBuildApplication,
-			},
-			ApplicationId:  "app1",
-			OrganizationId: "org1",
-			DirectoryHash:  "dir1",
-			CommitId:       "commit1",
-		},
-		viewScopeClaims: &ViewScopedClaims{
-			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
-				RegisteredClaims: validRegisteredClaims,
-				Scope:            TokenScopesViewApplication,
-			},
-			ApplicationId:  "app1",
-			OrganizationId: "org1",
-			DirectoryHash:  "dir1",
-			CommitId:       "commit1",
-			UserEmail:      "user1@example.com",
-			UserType:       UserTypeSuperblocks,
-			Name:           "User 1",
-		},
-		editScopeClaims: &EditScopedClaims{
-			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
-				RegisteredClaims: validRegisteredClaims,
-				Scope:            TokenScopesEditApplication,
-			},
-			ApplicationId:  "app1",
-			OrganizationId: "org1",
-			UserEmail:      "user1@example.com",
-			UserType:       UserTypeSuperblocks,
-			Name:           "User 1",
-		},
+		allScopeClaims: NewAllScopedClaims(
+			JwtWithRegisteredClaims(validRegisteredClaims),
+			JwtWithScopes("apps:build apps:view apps:update"),
+			JwtWithApplicationId("app"),
+			JwtWithOrganizationId("org"),
+			JwtWithDirectoryHash("dir"),
+			JwtWithCommitId("commit"),
+			JwtWithUserEmail("admin@example.com"),
+			JwtWithUserType(UserTypeExternal),
+			JwtWithName("External Admin"),
+		),
+		buildScopeClaims: NewBuildScopedClaims(
+			JwtWithRegisteredClaims(validRegisteredClaims),
+			JwtWithApplicationId("app1"),
+			JwtWithOrganizationId("org1"),
+			JwtWithDirectoryHash("dir1"),
+			JwtWithCommitId("commit1"),
+		),
+		viewScopeClaims: NewViewScopedClaims(
+			JwtWithRegisteredClaims(validRegisteredClaims),
+			JwtWithApplicationId("app1"),
+			JwtWithOrganizationId("org1"),
+			JwtWithDirectoryHash("dir1"),
+			JwtWithCommitId("commit1"),
+			JwtWithUserEmail("user1@example.com"),
+			JwtWithUserType(UserTypeSuperblocks),
+			JwtWithName("User 1"),
+		),
+		editScopeClaims: NewEditScopedClaims(
+			JwtWithRegisteredClaims(validRegisteredClaims),
+			JwtWithApplicationId("app1"),
+			JwtWithOrganizationId("org1"),
+			JwtWithUserEmail("user1@example.com"),
+			JwtWithUserType(UserTypeSuperblocks),
+			JwtWithName("User 1"),
+		),
 	}
 }
 
-func verify(t *testing.T, a *args) {
-	if a.buildScopeValidationErr != nil {
-		assert.ErrorContains(t, a.buildScopeClaims.Valid(), a.buildScopeValidationErr.Error())
+func verifyClaims(t *testing.T, a *scopedTokenArgs) {
+	verifyScopedClaims(t, a, false)
+}
+
+func verifyScopedClaims(t *testing.T, a *scopedTokenArgs, useScopedValidationFunc bool) {
+	validatorFunc := func(c jwt.ClaimsValidator) error {
+		if useScopedValidationFunc {
+			return c.Validate()
+		}
+
+		return jwt.NewValidator().Validate(c)
+	}
+
+	if a.allScopesValidationErr != nil {
+		assert.ErrorContains(t, validatorFunc(a.allScopeClaims), a.allScopesValidationErr.Error())
 	} else {
-		assert.NoError(t, a.buildScopeClaims.Valid())
+		assert.NoError(t, a.allScopeClaims.Validate())
+	}
+
+	if a.buildScopeValidationErr != nil {
+		assert.ErrorContains(t, validatorFunc(a.buildScopeClaims), a.buildScopeValidationErr.Error())
+	} else {
+		assert.NoError(t, a.buildScopeClaims.Validate())
 	}
 
 	if a.viewScopeValidationErr != nil {
-		assert.ErrorContains(t, a.viewScopeClaims.Valid(), a.viewScopeValidationErr.Error())
+		assert.ErrorContains(t, validatorFunc(a.viewScopeClaims), a.viewScopeValidationErr.Error())
 	} else {
-		assert.NoError(t, a.viewScopeClaims.Valid())
+		assert.NoError(t, a.viewScopeClaims.Validate())
 	}
 
 	if a.editScopeValidationErr != nil {
-		assert.ErrorContains(t, a.editScopeClaims.Valid(), a.editScopeValidationErr.Error())
+		assert.ErrorContains(t, validatorFunc(a.editScopeClaims), a.editScopeValidationErr.Error())
 	} else {
-		assert.NoError(t, a.editScopeClaims.Valid())
+		assert.NoError(t, a.editScopeClaims.Validate())
 	}
 }
 
 func TestScopedTokenClaims_Ok(t *testing.T) {
 	args := validArgs(t)
-	verify(t, args)
+	verifyClaims(t, args)
 }
 
 func TestScopedTokenClaims_InvalidTokenScopes(t *testing.T) {
-	invalidScopeErr := errors.New("invalid scope")
-
 	args := validArgs(t)
-	args.buildScopeClaims.Scope = TokenScopesEditApplication
-	args.buildScopeValidationErr = invalidScopeErr
+	args.allScopeClaims.Scopes = "jobs:deploy"
+	args.allScopesValidationErr = ErrInvalidScope
 
-	args.viewScopeClaims.Scope = TokenScopesBuildApplication
-	args.viewScopeValidationErr = invalidScopeErr
+	args.buildScopeClaims.Scopes = TokenScopesEditApplication
+	args.buildScopeValidationErr = ErrInvalidScope
 
-	args.editScopeClaims.Scope = TokenScopesViewApplication
-	args.editScopeValidationErr = invalidScopeErr
+	args.viewScopeClaims.Scopes = TokenScopesBuildApplication
+	args.viewScopeValidationErr = ErrInvalidScope
 
-	verify(t, args)
+	args.editScopeClaims.Scopes = TokenScopesViewApplication
+	args.editScopeValidationErr = ErrInvalidScope
+
+	verifyClaims(t, args)
+}
+
+func TestNilScopedTokenClaims_InvalidTokenScopes(t *testing.T) {
+	args := validArgs(t)
+	args.allScopeClaims = nil
+	args.allScopesValidationErr = ErrInvalidScope
+
+	args.buildScopeClaims = nil
+	args.buildScopeValidationErr = ErrInvalidScope
+
+	args.viewScopeClaims = nil
+	args.viewScopeValidationErr = ErrInvalidScope
+
+	args.editScopeClaims = nil
+	args.editScopeValidationErr = ErrInvalidScope
+
+	verifyScopedClaims(t, args, true)
 }
 
 func TestScopedTokenClaims_ExpiredScopedToken(t *testing.T) {
@@ -139,11 +179,77 @@ func TestScopedTokenClaims_ExpiredScopedToken(t *testing.T) {
 	expirationErr := errors.New("token is expired")
 
 	args := validArgs(t, WithClock(clock))
+	args.allScopesValidationErr = expirationErr
 	args.buildScopeValidationErr = expirationErr
 	args.viewScopeValidationErr = expirationErr
 	args.editScopeValidationErr = expirationErr
 
-	verify(t, args)
+	verifyClaims(t, args)
+}
+
+func TestNilScopedClaims_Transformers(t *testing.T) {
+	args := validArgs(t)
+	args.allScopeClaims = nil
+
+	assert.Nil(t, args.allScopeClaims.AsBuildScopedClaims())
+	assert.Nil(t, args.allScopeClaims.AsViewScopedClaims())
+	assert.Nil(t, args.allScopeClaims.AsEditScopedClaims())
+
+}
+
+func TestGetScopes(t *testing.T) {
+	args := validArgs(t)
+
+	scopes := args.allScopeClaims.GetScopes()
+	assert.Equal(t, 3, scopes.Size())
+	assert.True(t, scopes.Contains(TokenScopesBuildApplication))
+	assert.True(t, scopes.Contains(TokenScopesViewApplication))
+	assert.True(t, scopes.Contains(TokenScopesEditApplication))
+
+	args.allScopeClaims = nil
+	assert.Nil(t, args.allScopeClaims.GetScopes())
+
+	buildScopes := args.buildScopeClaims.GetScopes()
+	assert.Equal(t, 1, buildScopes.Size())
+	assert.True(t, buildScopes.Contains(TokenScopesBuildApplication))
+
+	args.buildScopeClaims = nil
+	assert.Nil(t, args.buildScopeClaims.GetScopes())
+
+	viewScopes := args.viewScopeClaims.GetScopes()
+	assert.Equal(t, 1, viewScopes.Size())
+	assert.True(t, viewScopes.Contains(TokenScopesViewApplication))
+
+	args.viewScopeClaims = nil
+	assert.Nil(t, args.viewScopeClaims.GetScopes())
+
+	editScopes := args.editScopeClaims.GetScopes()
+	assert.Equal(t, 1, editScopes.Size())
+	assert.True(t, editScopes.Contains(TokenScopesEditApplication))
+
+	args.editScopeClaims = nil
+	assert.Nil(t, args.editScopeClaims.GetScopes())
+}
+
+func TestGetRawScopes(t *testing.T) {
+	args := validArgs(t)
+
+	assert.Equal(t, TokenScopes("apps:build apps:view apps:update"), args.allScopeClaims.GetRawScopes())
+	assert.Equal(t, TokenScopes("apps:build"), args.buildScopeClaims.GetRawScopes())
+	assert.Equal(t, TokenScopes("apps:view"), args.viewScopeClaims.GetRawScopes())
+	assert.Equal(t, TokenScopes("apps:update"), args.editScopeClaims.GetRawScopes())
+
+	args.allScopeClaims = nil
+	assert.Empty(t, args.allScopeClaims.GetRawScopes())
+
+	args.buildScopeClaims = nil
+	assert.Empty(t, args.buildScopeClaims.GetRawScopes())
+
+	args.viewScopeClaims = nil
+	assert.Empty(t, args.viewScopeClaims.GetRawScopes())
+
+	args.editScopeClaims = nil
+	assert.Empty(t, args.editScopeClaims.GetRawScopes())
 }
 
 func TestTokenScopesString(t *testing.T) {
@@ -155,17 +261,17 @@ func TestTokenScopesString(t *testing.T) {
 		{
 			name:     "BuildScopedTokenClaims",
 			scope:    TokenScopesBuildApplication,
-			expected: "build:app",
+			expected: "apps:build",
 		},
 		{
 			name:     "ViewScopedTokenClaims",
 			scope:    TokenScopesViewApplication,
-			expected: "view:app",
+			expected: "apps:view",
 		},
 		{
 			name:     "EditScopedTokenClaims",
 			scope:    TokenScopesEditApplication,
-			expected: "edit:app",
+			expected: "apps:update",
 		},
 	}
 	for _, tc := range testCases {

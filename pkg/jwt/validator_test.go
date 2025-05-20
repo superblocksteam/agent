@@ -16,19 +16,21 @@ type validatorArgs struct {
 	registeredClaims jwt.RegisteredClaims
 	parsedJwt        *jwt.Token
 
-	buildScopeClaims *BuildScopedClaims
-	viewScopeClaims  *ViewScopedClaims
-	editScopeClaims  *EditScopedClaims
+	allScopeClaims   *AllScopedClaims
+	buildScopeClaims *AllScopedClaims
+	viewScopeClaims  *AllScopedClaims
+	editScopeClaims  *AllScopedClaims
 
+	allScopesValidationErr  error
 	buildScopeValidationErr error
 	viewScopeValidationErr  error
 	editScopeValidationErr  error
 }
 
-func validValidatorArgs(t *testing.T, opts ...option) *validatorArgs {
+func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 	t.Helper()
 
-	options := &options{
+	options := &testOptions{
 		clock: clockwork.NewFakeClock(),
 	}
 	for _, opt := range opts {
@@ -53,20 +55,33 @@ func validValidatorArgs(t *testing.T, opts ...option) *validatorArgs {
 			},
 			Valid: true,
 		},
-		buildScopeClaims: &BuildScopedClaims{
-			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
+		allScopeClaims: &AllScopedClaims{
+			scopedTokenBaseClaims: scopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
-				Scope:            TokenScopesBuildApplication,
+				Scopes:           "apps:build apps:view apps:update",
+			},
+			ApplicationId:  "app",
+			OrganizationId: "org",
+			DirectoryHash:  "dir",
+			CommitId:       "commit",
+			UserEmail:      "admin@example.com",
+			UserType:       UserTypeExternal,
+			Name:           "External Admin",
+		},
+		buildScopeClaims: &AllScopedClaims{
+			scopedTokenBaseClaims: scopedTokenBaseClaims{
+				RegisteredClaims: validRegisteredClaims,
+				Scopes:           TokenScopesBuildApplication,
 			},
 			ApplicationId:  "app1",
 			OrganizationId: "org1",
 			DirectoryHash:  "dir1",
 			CommitId:       "commit1",
 		},
-		viewScopeClaims: &ViewScopedClaims{
-			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
+		viewScopeClaims: &AllScopedClaims{
+			scopedTokenBaseClaims: scopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
-				Scope:            TokenScopesViewApplication,
+				Scopes:           TokenScopesViewApplication,
 			},
 			ApplicationId:  "app1",
 			OrganizationId: "org1",
@@ -76,10 +91,10 @@ func validValidatorArgs(t *testing.T, opts ...option) *validatorArgs {
 			UserType:       UserTypeSuperblocks,
 			Name:           "User 1",
 		},
-		editScopeClaims: &EditScopedClaims{
-			ScopedTokenBaseClaims: ScopedTokenBaseClaims{
+		editScopeClaims: &AllScopedClaims{
+			scopedTokenBaseClaims: scopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
-				Scope:            TokenScopesEditApplication,
+				Scopes:           TokenScopesEditApplication,
 			},
 			ApplicationId:  "app1",
 			OrganizationId: "org1",
@@ -91,13 +106,71 @@ func validValidatorArgs(t *testing.T, opts ...option) *validatorArgs {
 }
 
 func verifyValidators(t *testing.T, a *validatorArgs) {
-	verifyScopedClaims(t, a, false)
+	verifyScopedValidators(t, a, false)
 }
 
-func verifyScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationFunc bool) {
+func verifyScopedValidators(t *testing.T, a *validatorArgs, useScopedValidationFunc bool) {
+	verifyAllScopedClaims(t, a)
 	verifyBuildScopedClaims(t, a, useScopedValidationFunc)
 	verifyViewScopedClaims(t, a, useScopedValidationFunc)
 	verifyEditScopedClaims(t, a, useScopedValidationFunc)
+}
+
+func verifyAllScopedClaims(t *testing.T, a *validatorArgs) {
+	var allCtx context.Context
+	var err error
+
+	allCtx, err = ValidateScopedClaims(a.ctx, a.parsedJwt, a.allScopeClaims)
+
+	if a.allScopesValidationErr != nil {
+		assert.ErrorContains(t, err, a.allScopesValidationErr.Error())
+		return
+	}
+
+	assert.NoError(t, err)
+	assert.NotNil(t, allCtx)
+
+	rawJwt, exists := GetRawJwt(allCtx)
+	if a.parsedJwt != nil {
+		assert.True(t, exists)
+		assert.Equal(t, a.parsedJwt.Raw, rawJwt)
+	} else {
+		assert.False(t, exists)
+	}
+
+	scopes, exists := GetTokenScopes(allCtx)
+	assert.True(t, exists)
+	assert.True(t, scopes.Contains(TokenScopesBuildApplication))
+	assert.True(t, scopes.Contains(TokenScopesViewApplication))
+	assert.True(t, scopes.Contains(TokenScopesEditApplication))
+
+	appId, exists := GetApplicationID(allCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.allScopeClaims.ApplicationId, appId)
+
+	orgId, exists := GetOrganizationID(allCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.allScopeClaims.OrganizationId, orgId)
+
+	dirHash, exists := GetDirectoryHash(allCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.allScopeClaims.DirectoryHash, dirHash)
+
+	commitId, exists := GetCommitID(allCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.allScopeClaims.CommitId, commitId)
+
+	userEmail, exists := GetUserEmail(allCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.allScopeClaims.UserEmail, userEmail)
+
+	userType, exists := GetUserType(allCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.allScopeClaims.UserType, userType)
+
+	name, exists := GetName(allCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.allScopeClaims.Name, name)
 }
 
 func verifyBuildScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationFunc bool) {
@@ -105,7 +178,7 @@ func verifyBuildScopedClaims(t *testing.T, a *validatorArgs, useScopedValidation
 	var err error
 
 	if useScopedValidationFunc {
-		buildCtx, err = ValidateBuildScopedClaims(a.ctx, a.parsedJwt, a.buildScopeClaims)
+		buildCtx, err = ValidateBuildScopedClaims(a.ctx, a.parsedJwt, a.buildScopeClaims.AsBuildScopedClaims())
 	} else {
 		buildCtx, err = ValidateScopedClaims(a.ctx, a.parsedJwt, a.buildScopeClaims)
 	}
@@ -126,9 +199,9 @@ func verifyBuildScopedClaims(t *testing.T, a *validatorArgs, useScopedValidation
 		assert.False(t, exists)
 	}
 
-	scope, exists := GetTokenScope(buildCtx)
+	scopes, exists := GetTokenScopes(buildCtx)
 	assert.True(t, exists)
-	assert.Equal(t, TokenScopesBuildApplication, scope)
+	assert.True(t, scopes.Contains(TokenScopesBuildApplication))
 
 	appId, exists := GetApplicationID(buildCtx)
 	assert.True(t, exists)
@@ -152,7 +225,7 @@ func verifyViewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 	var err error
 
 	if useScopedValidationFunc {
-		viewCtx, err = ValidateViewScopedClaims(a.ctx, a.parsedJwt, a.viewScopeClaims)
+		viewCtx, err = ValidateViewScopedClaims(a.ctx, a.parsedJwt, a.viewScopeClaims.AsViewScopedClaims())
 	} else {
 		viewCtx, err = ValidateScopedClaims(a.ctx, a.parsedJwt, a.viewScopeClaims)
 	}
@@ -173,9 +246,9 @@ func verifyViewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 		assert.False(t, exists)
 	}
 
-	scope, exists := GetTokenScope(viewCtx)
+	scopes, exists := GetTokenScopes(viewCtx)
 	assert.True(t, exists)
-	assert.Equal(t, TokenScopesViewApplication, scope)
+	assert.True(t, scopes.Contains(TokenScopesViewApplication))
 
 	appId, exists := GetApplicationID(viewCtx)
 	assert.True(t, exists)
@@ -223,7 +296,7 @@ func verifyEditScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 	var err error
 
 	if useScopedValidationFunc {
-		editCtx, err = ValidateEditScopedClaims(a.ctx, a.parsedJwt, a.editScopeClaims)
+		editCtx, err = ValidateEditScopedClaims(a.ctx, a.parsedJwt, a.editScopeClaims.AsEditScopedClaims())
 	} else {
 		editCtx, err = ValidateScopedClaims(a.ctx, a.parsedJwt, a.editScopeClaims)
 	}
@@ -244,9 +317,9 @@ func verifyEditScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 		assert.False(t, exists)
 	}
 
-	scope, exists := GetTokenScope(editCtx)
+	scopes, exists := GetTokenScopes(editCtx)
 	assert.True(t, exists)
-	assert.Equal(t, TokenScopesEditApplication, scope)
+	assert.True(t, scopes.Contains(TokenScopesEditApplication))
 
 	appId, exists := GetApplicationID(editCtx)
 	assert.True(t, exists)
@@ -311,12 +384,21 @@ func TestErr_ClaimsNotValid(t *testing.T) {
 	expirationErr := errors.New("invalid jwt claims: token is expired")
 
 	args := validValidatorArgs(t, WithClock(clock))
+	args.allScopesValidationErr = expirationErr
 	args.buildScopeValidationErr = expirationErr
 	args.viewScopeValidationErr = expirationErr
 	args.editScopeValidationErr = expirationErr
 
 	verifyValidators(t, args)
-	verifyScopedClaims(t, args, true)
+	verifyScopedValidators(t, args, true)
+}
+
+func TestErr_UnknownTokenScope(t *testing.T) {
+	args := validValidatorArgs(t)
+	args.allScopeClaims.Scopes = "jobs:deploy"
+	args.allScopesValidationErr = errors.New("invalid jwt claims: invalid scope: jobs:deploy")
+
+	verifyValidators(t, args)
 }
 
 func TestErr_BuildScopedClaims_MissingClaims(t *testing.T) {

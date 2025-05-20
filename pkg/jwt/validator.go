@@ -11,26 +11,40 @@ import (
 type JwtValidator func(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (context.Context, error)
 
 func ValidateScopedClaims(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
-	c, err := getScopedClaims[ScopedTokenClaims](jwtClaims)
+	c, err := getScopedClaims[*AllScopedClaims](jwtClaims)
 	if err != nil {
 		return nil, err
 	}
 
-	ctxWithJwt := ctx
+	ctxWithClaims := ctx
 	if parsed != nil {
-		ctxWithJwt = WithRawJwt(ctx, parsed.Raw)
+		ctxWithClaims = WithRawJwt(ctx, parsed.Raw)
 	}
 
-	switch c.GetScope() {
-	case TokenScopesBuildApplication:
-		return ValidateBuildScopedClaims(WithTokenScope(ctxWithJwt, TokenScopesBuildApplication), parsed, c)
-	case TokenScopesViewApplication:
-		return ValidateViewScopedClaims(WithTokenScope(ctxWithJwt, TokenScopesViewApplication), parsed, c)
-	case TokenScopesEditApplication:
-		return ValidateEditScopedClaims(WithTokenScope(ctxWithJwt, TokenScopesEditApplication), parsed, c)
-	default:
-		return nil, fmt.Errorf("unexpected scope: %s", c.GetScope())
+	ctxWithClaims = WithTokenScopes(ctxWithClaims, c.GetScopes())
+	for _, scope := range c.GetScopes().ToSlice() {
+		switch scope {
+		case TokenScopesBuildApplication:
+			ctxWithClaims, err = ValidateBuildScopedClaims(ctxWithClaims, parsed, c.AsBuildScopedClaims())
+			if err != nil {
+				return nil, err
+			}
+		case TokenScopesViewApplication:
+			ctxWithClaims, err = ValidateViewScopedClaims(ctxWithClaims, parsed, c.AsViewScopedClaims())
+			if err != nil {
+				return nil, err
+			}
+		case TokenScopesEditApplication:
+			ctxWithClaims, err = ValidateEditScopedClaims(ctxWithClaims, parsed, c.AsEditScopedClaims())
+			if err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("unexpected scope: %s", scope)
+		}
 	}
+
+	return ctxWithClaims, nil
 }
 
 func ValidateBuildScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
