@@ -46,6 +46,32 @@ import { Plugin as Plugin$34 } from "../../plugins/custom/v1/plugin_pb";
 import { Plugin as Plugin$35 } from "../../plugins/kinesis/v1/plugin_pb";
 
 /**
+ * @generated from enum api.v1.AuthorizationType
+ */
+export enum AuthorizationType {
+  /**
+   * @generated from enum value: AUTHORIZATION_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: AUTHORIZATION_TYPE_ALL_USERS = 1;
+   */
+  ALL_USERS = 1,
+
+  /**
+   * @generated from enum value: AUTHORIZATION_TYPE_JS_EXPRESSION = 2;
+   */
+  JS_EXPRESSION = 2,
+}
+// Retrieve enum metadata with: proto3.getEnumType(AuthorizationType)
+proto3.util.setEnumType(AuthorizationType, "api.v1.AuthorizationType", [
+  { no: 0, name: "AUTHORIZATION_TYPE_UNSPECIFIED" },
+  { no: 1, name: "AUTHORIZATION_TYPE_ALL_USERS" },
+  { no: 2, name: "AUTHORIZATION_TYPE_JS_EXPRESSION" },
+]);
+
+/**
  * @generated from message api.v1.Api
  */
 export class Api extends Message<Api> {
@@ -69,6 +95,11 @@ export class Api extends Message<Api> {
    */
   signature?: Signature;
 
+  /**
+   * @generated from field: optional api.v1.Authorization authorization = 5;
+   */
+  authorization?: Authorization;
+
   constructor(data?: PartialMessage<Api>) {
     super();
     proto3.util.initPartial(data, this);
@@ -81,6 +112,7 @@ export class Api extends Message<Api> {
     { no: 2, name: "blocks", kind: "message", T: Block, repeated: true },
     { no: 3, name: "trigger", kind: "message", T: Trigger },
     { no: 4, name: "signature", kind: "message", T: Signature, opt: true },
+    { no: 5, name: "authorization", kind: "message", T: Authorization, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Api {
@@ -2413,6 +2445,49 @@ export class Step extends Message<Step> {
 
   static equals(a: Step | PlainMessage<Step> | undefined, b: Step | PlainMessage<Step> | undefined): boolean {
     return proto3.util.equals(Step, a, b);
+  }
+}
+
+/**
+ * @generated from message api.v1.Authorization
+ */
+export class Authorization extends Message<Authorization> {
+  /**
+   * @generated from field: api.v1.AuthorizationType type = 1;
+   */
+  type = AuthorizationType.UNSPECIFIED;
+
+  /**
+   * @generated from field: optional string expression = 2;
+   */
+  expression?: string;
+
+  constructor(data?: PartialMessage<Authorization>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.Authorization";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "type", kind: "enum", T: proto3.getEnumType(AuthorizationType) },
+    { no: 2, name: "expression", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Authorization {
+    return new Authorization().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Authorization {
+    return new Authorization().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Authorization {
+    return new Authorization().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Authorization | PlainMessage<Authorization> | undefined, b: Authorization | PlainMessage<Authorization> | undefined): boolean {
+    return proto3.util.equals(Authorization, a, b);
   }
 }
 

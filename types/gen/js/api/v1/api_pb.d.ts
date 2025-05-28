@@ -71,6 +71,11 @@ export class Api extends jspb.Message {
     getSignature(): utils_v1_utils_pb.Signature | undefined;
     setSignature(value?: utils_v1_utils_pb.Signature): Api;
 
+    hasAuthorization(): boolean;
+    clearAuthorization(): void;
+    getAuthorization(): Authorization | undefined;
+    setAuthorization(value?: Authorization): Api;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Api.AsObject;
     static toObject(includeInstance: boolean, msg: Api): Api.AsObject;
@@ -87,6 +92,7 @@ export namespace Api {
         blocksList: Array<Block.AsObject>,
         trigger?: Trigger.AsObject,
         signature?: utils_v1_utils_pb.Signature.AsObject,
+        authorization?: Authorization.AsObject,
     }
 }
 
@@ -1737,4 +1743,36 @@ export namespace Step {
         KINESIS = 76,
     }
 
+}
+
+export class Authorization extends jspb.Message { 
+    getType(): AuthorizationType;
+    setType(value: AuthorizationType): Authorization;
+
+    hasExpression(): boolean;
+    clearExpression(): void;
+    getExpression(): string | undefined;
+    setExpression(value: string): Authorization;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Authorization.AsObject;
+    static toObject(includeInstance: boolean, msg: Authorization): Authorization.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: Authorization, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): Authorization;
+    static deserializeBinaryFromReader(message: Authorization, reader: jspb.BinaryReader): Authorization;
+}
+
+export namespace Authorization {
+    export type AsObject = {
+        type: AuthorizationType,
+        expression?: string,
+    }
+}
+
+export enum AuthorizationType {
+    AUTHORIZATION_TYPE_UNSPECIFIED = 0,
+    AUTHORIZATION_TYPE_ALL_USERS = 1,
+    AUTHORIZATION_TYPE_JS_EXPRESSION = 2,
 }

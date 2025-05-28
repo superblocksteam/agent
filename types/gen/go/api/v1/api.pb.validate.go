@@ -192,6 +192,39 @@ func (m *Api) validate(all bool) error {
 
 	}
 
+	if m.Authorization != nil {
+
+		if all {
+			switch v := interface{}(m.GetAuthorization()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ApiValidationError{
+						field:  "Authorization",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ApiValidationError{
+						field:  "Authorization",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAuthorization()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ApiValidationError{
+					field:  "Authorization",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return ApiMultiError(errors)
 	}
@@ -4649,6 +4682,112 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StepValidationError{}
+
+// Validate checks the field values on Authorization with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Authorization) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Authorization with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in AuthorizationMultiError, or
+// nil if none found.
+func (m *Authorization) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Authorization) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Type
+
+	if m.Expression != nil {
+		// no validation rules for Expression
+	}
+
+	if len(errors) > 0 {
+		return AuthorizationMultiError(errors)
+	}
+
+	return nil
+}
+
+// AuthorizationMultiError is an error wrapping multiple validation errors
+// returned by Authorization.ValidateAll() if the designated constraints
+// aren't met.
+type AuthorizationMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AuthorizationMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AuthorizationMultiError) AllErrors() []error { return m }
+
+// AuthorizationValidationError is the validation error returned by
+// Authorization.Validate if the designated constraints aren't met.
+type AuthorizationValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AuthorizationValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AuthorizationValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AuthorizationValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AuthorizationValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AuthorizationValidationError) ErrorName() string { return "AuthorizationValidationError" }
+
+// Error satisfies the builtin error interface
+func (e AuthorizationValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAuthorization.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AuthorizationValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AuthorizationValidationError{}
 
 // Validate checks the field values on Profiles_Modes with the rules defined in
 // the proto definition for this message. If any rules are violated, the first

@@ -57,6 +57,7 @@ message Api {
   repeated Block blocks = 2;
   Trigger trigger = 3;
   optional utils.v1.Signature signature = 4;
+  optional Authorization authorization = 5;
 }
 
 message Profiles {
@@ -497,4 +498,15 @@ message Step {
     plugins.restapiintegration.v1.Plugin gemini = 75 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
     plugins.kinesis.v1.Plugin kinesis = 76;
   }
+}
+
+enum AuthorizationType {
+  AUTHORIZATION_TYPE_UNSPECIFIED = 0;
+  AUTHORIZATION_TYPE_ALL_USERS = 1;
+  AUTHORIZATION_TYPE_JS_EXPRESSION = 2;
+}
+
+message Authorization {
+  AuthorizationType type = 1;
+  optional string expression = 2;
 }
