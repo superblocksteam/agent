@@ -5183,6 +5183,9 @@
         },
         "signature": {
           "$ref": "#/definitions/v1Signature"
+        },
+        "authorization": {
+          "$ref": "#/definitions/v1Authorization"
         }
       }
     },
@@ -5197,6 +5200,26 @@
           "$ref": "#/definitions/v1Error"
         }
       }
+    },
+    "v1Authorization": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/v1AuthorizationType"
+        },
+        "expression": {
+          "type": "string"
+        }
+      }
+    },
+    "v1AuthorizationType": {
+      "type": "string",
+      "enum": [
+        "AUTHORIZATION_TYPE_UNSPECIFIED",
+        "AUTHORIZATION_TYPE_ALL_USERS",
+        "AUTHORIZATION_TYPE_JS_EXPRESSION"
+      ],
+      "default": "AUTHORIZATION_TYPE_UNSPECIFIED"
     },
     "v1AwaitResponse": {
       "type": "object",

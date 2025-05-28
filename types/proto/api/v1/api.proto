@@ -57,6 +57,18 @@ message Api {
   repeated Block blocks = 2;
   Trigger trigger = 3;
   optional utils.v1.Signature signature = 4;
+  optional Authorization authorization = 5;
+}
+
+enum AuthorizationType {
+  AUTHORIZATION_TYPE_UNSPECIFIED = 0;
+  AUTHORIZATION_TYPE_ALL_USERS = 1;
+  AUTHORIZATION_TYPE_JS_EXPRESSION = 2;
+}
+
+message Authorization {
+  AuthorizationType type = 1;
+  optional string expression = 2;
 }
 
 message Profiles {
