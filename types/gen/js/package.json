@@ -3,9 +3,6 @@
   "version": "0.0.1",
   "description": "Superblocks Types for Javacript",
   "repository": "https://github.com/superblocksteam/types",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "license": "Superblocks Community Software License",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
