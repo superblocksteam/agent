@@ -101,6 +101,11 @@ export enum BlockType {
    * @generated from enum value: BLOCK_TYPE_STREAM = 12;
    */
   STREAM = 12,
+
+  /**
+   * @generated from enum value: BLOCK_TYPE_AUTHORIZATION_CHECK = 13;
+   */
+  AUTHORIZATION_CHECK = 13,
 }
 // Retrieve enum metadata with: proto3.getEnumType(BlockType)
 proto3.util.setEnumType(BlockType, "api.v1.BlockType", [
@@ -117,6 +122,7 @@ proto3.util.setEnumType(BlockType, "api.v1.BlockType", [
   { no: 10, name: "BLOCK_TYPE_THROW" },
   { no: 11, name: "BLOCK_TYPE_SEND" },
   { no: 12, name: "BLOCK_TYPE_STREAM" },
+  { no: 13, name: "BLOCK_TYPE_AUTHORIZATION_CHECK" },
 ]);
 
 /**

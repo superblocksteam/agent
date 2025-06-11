@@ -12908,7 +12908,7 @@ proto.api.v1.Step.prototype.hasKinesis = function() {
  */
 proto.api.v1.AuthorizationType = {
   AUTHORIZATION_TYPE_UNSPECIFIED: 0,
-  AUTHORIZATION_TYPE_ALL_USERS: 1,
+  AUTHORIZATION_TYPE_APP_USERS: 1,
   AUTHORIZATION_TYPE_JS_EXPRESSION: 2
 };
 

@@ -201,7 +201,7 @@ func NewResolver(
 // NOTE(frank): We may not need to return an error here.
 // last: name of last block to execute (may not always be the last one if there's a return, throw, etc)
 // ref: kvstore key of last block
-func (r *resolver) Blocks(ctx *apictx.Context, blocks []*apiv1.Block, settings ...options.Option) (last string, ref string, err error) {
+func (r *resolver) blocks(ctx *apictx.Context, blocks []*apiv1.Block, settings ...options.Option) (last string, ref string, err error) {
 	// NOTE(frank): Careful, I spent 2 whole days debugging an issue because were weren't copying the options.
 	settings = options.Copy(settings...)
 	ctx = ctx.WithOptions(options.Apply(settings...))
@@ -323,6 +323,102 @@ func (r *resolver) Blocks(ctx *apictx.Context, blocks []*apiv1.Block, settings .
 	}
 
 	return
+}
+
+func (r *resolver) AuthorizedBlocks(ctx *apictx.Context, blocks []*apiv1.Block, authorization *apiv1.Authorization, ops ...options.Option) (last string, ref string, err error) {
+	if authorization != nil {
+		authCtx := ctx.Advance("ApiAuthorizationCheck")
+		authCtx.Type = apiv1.BlockType_BLOCK_TYPE_AUTHORIZATION_CHECK
+		authorized := true // Default to authorized if no authorization config
+		r.Start(authCtx)
+		if authorization.GetType() == apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION {
+			// create a new context for the authorization check
+			sandbox := r.createSandboxFunc()
+			defer sandbox.Close()
+
+			expression := authorization.GetExpression()
+
+			// evaluate the authorization expression
+			authorizedPtr, err := ResolveTemplate[bool](authCtx, sandbox, r.logger, expression, false, engine.WithJSONEncodeArrayItems())
+			if err != nil {
+				authorized = false
+				// Write authorization result to store
+				if authKey, authErr := r.store.Key("AUTHORIZATION", r.execution); authErr == nil {
+					authPayload := (&apiv1.Output{
+						Result: structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"authorized": structpb.NewBoolValue(authorized),
+							},
+						}),
+					}).ToOld()
+					if authData, authMarshalErr := json.Marshal(authPayload); authMarshalErr == nil {
+						if writeErr := r.store.Write(ctx.Context, store.Pair(authKey, string(authData))); writeErr != nil {
+							r.logger.Error("failed to write authorization result to store", zap.Error(writeErr))
+						} else {
+							// Add authorization key to refs so it can be retrieved later
+							r.key.Put(authCtx.Name, authKey)
+							// Record for garbage collection
+							r.variables.Record(authKey)
+						}
+					}
+				}
+				r.Finish(authCtx, nil, err)
+				return "", "", sberrors.ApiAuthorizationError(err)
+			}
+
+			// if the expression evaluates to false, return an error
+			if !utils.PointerDeref(authorizedPtr) {
+				authorized = false
+				authorizationError := sberrors.ApiAuthorizationError(errors.New("you don't have permission to execute this API"))
+				// Write authorization result to store
+				if authKey, authErr := r.store.Key("AUTHORIZATION", r.execution); authErr == nil {
+					authPayload := (&apiv1.Output{
+						Result: structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"authorized": structpb.NewBoolValue(authorized),
+							},
+						}),
+					}).ToOld()
+					if authData, authMarshalErr := json.Marshal(authPayload); authMarshalErr == nil {
+						if writeErr := r.store.Write(ctx.Context, store.Pair(authKey, string(authData))); writeErr != nil {
+							r.logger.Error("failed to write authorization result to store", zap.Error(writeErr))
+						} else {
+							// Add authorization key to refs so it can be retrieved later
+							r.key.Put(authCtx.Name, authKey)
+							// Record for garbage collection
+							r.variables.Record(authKey)
+						}
+					}
+				}
+				r.Finish(authCtx, nil, authorizationError)
+				return "", "", authorizationError
+			}
+		}
+		// Write successful authorization result to store
+		if authKey, authErr := r.store.Key("AUTHORIZATION", r.execution); authErr == nil {
+			authPayload := (&apiv1.Output{
+				Result: structpb.NewStructValue(&structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"authorized": structpb.NewBoolValue(authorized),
+					},
+				}),
+			}).ToOld()
+			if authData, authMarshalErr := json.Marshal(authPayload); authMarshalErr == nil {
+				if writeErr := r.store.Write(ctx.Context, store.Pair(authKey, string(authData))); writeErr != nil {
+					r.logger.Error("failed to write authorization result to store", zap.Error(writeErr))
+				} else {
+					// Add authorization key to refs so it can be retrieved later
+					r.key.Put(authCtx.Name, authKey)
+					// Record for garbage collection
+					r.variables.Record(authKey)
+				}
+			}
+		}
+		r.Finish(authCtx, nil, nil)
+		ctx.Merge(authCtx)
+	}
+
+	return r.blocks(ctx, blocks, ops...)
 }
 
 func (r *resolver) Block(ctx *apictx.Context, block *apiv1.Block, ops ...options.Option) (newCtx *apictx.Context, ref string, err error) {
@@ -826,7 +922,7 @@ func (r *resolver) Stream(ctx *apictx.Context, block *apiv1.Block_Stream, ops ..
 
 			processCtx := newCtx.Sink(tokenProcess)
 
-			last, _, processErr := r.Blocks(processCtx, block.Process.Blocks, append(ops, options.Breaker(cancel), options.IgnoreError())...)
+			last, _, processErr := r.blocks(processCtx, block.Process.Blocks, append(ops, options.Breaker(cancel), options.IgnoreError())...)
 			if processErr != nil {
 				r.logger.Error("could not process message", zap.Error(processErr))
 				continue
@@ -848,7 +944,7 @@ func (r *resolver) Stream(ctx *apictx.Context, block *apiv1.Block_Stream, ops ..
 
 	// We shouldn't call `r.Step()` directly because we want all of the orchestration that
 	// the `Blocks()` method provides (i.e. start/end events, signal propogation, etc).
-	_, _, err := r.Blocks(ctx.Sink(tokenTrigger), []*apiv1.Block{
+	_, _, err := r.blocks(ctx.Sink(tokenTrigger), []*apiv1.Block{
 		{
 			Name: block.Trigger.Name,
 			Config: &apiv1.Block_Step{
@@ -1031,7 +1127,7 @@ func (r *resolver) TryCatch(ctx *apictx.Context, step *apiv1.Block_TryCatch, ops
 		ops = append(ops, options.IgnoreError())
 	}
 
-	_, ref, err = r.Blocks(ctx.Sink(tokenTry), step.Try.Blocks, ops...)
+	_, ref, err = r.blocks(ctx.Sink(tokenTry), step.Try.Blocks, ops...)
 
 	if err != nil && step.Catch != nil {
 		if len(step.Catch.Blocks) > 0 {
@@ -1057,7 +1153,7 @@ func (r *resolver) TryCatch(ctx *apictx.Context, step *apiv1.Block_TryCatch, ops
 			}
 
 			// if catch throws an error, bubble it up
-			_, ref, err = r.Blocks(newCtx.ClearOptions().Sink(tokenCatch), step.Catch.Blocks)
+			_, ref, err = r.blocks(newCtx.ClearOptions().Sink(tokenCatch), step.Catch.Blocks)
 		} else {
 			// Swallow the error if no catch blocks, but catch still defined
 			err = nil
@@ -1067,7 +1163,7 @@ func (r *resolver) TryCatch(ctx *apictx.Context, step *apiv1.Block_TryCatch, ops
 	// run the finally regardless of the error
 	var finallyErr error
 	if step.Finally != nil && len(step.Finally.Blocks) > 0 {
-		_, ref, finallyErr = r.Blocks(ctx.ClearOptions().Sink(tokenFinally), step.Finally.Blocks)
+		_, ref, finallyErr = r.blocks(ctx.ClearOptions().Sink(tokenFinally), step.Finally.Blocks)
 	}
 
 	// Override the error only if finally throws an error. Otherwise, we should retain the original error from try or catch instead of overriding
@@ -1100,7 +1196,7 @@ func (r *resolver) Conditional(ctx *apictx.Context, step *apiv1.Block_Conditiona
 
 		if *shouldRunBranch {
 			matched = true
-			if _, ref, err = r.Blocks(ctx.Sink(strings.Join(path, "_")), branch.Blocks, ops...); err != nil {
+			if _, ref, err = r.blocks(ctx.Sink(strings.Join(path, "_")), branch.Blocks, ops...); err != nil {
 				return err
 			}
 		}
@@ -1125,7 +1221,7 @@ func (r *resolver) Conditional(ctx *apictx.Context, step *apiv1.Block_Conditiona
 	}
 
 	if step.Else != nil && len(step.Else.Blocks) > 0 && !matched {
-		_, ref, err = r.Blocks(ctx.Sink(tokenElse), step.Else.Blocks)
+		_, ref, err = r.blocks(ctx.Sink(tokenElse), step.Else.Blocks)
 		if err != nil {
 			return
 		}
@@ -1271,7 +1367,7 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 			}
 
 			metrics.BlocksLoopIterationsTotal.WithLabelValues(step.Type.String()).Inc()
-			_, r, e := r.Blocks(iterationCtx.Sink(tokenNone), step.Blocks, ops...)
+			_, r, e := r.blocks(iterationCtx.Sink(tokenNone), step.Blocks, ops...)
 			if e != nil {
 				return "", e
 			}
@@ -1462,7 +1558,7 @@ func (r *resolver) Parallel(ctx *apictx.Context, step *apiv1.Block_Parallel, ops
 
 			metrics.BlocksParallelPathsTotal.WithLabelValues(variation, step.GetWait().String()).Inc()
 
-			_, ref, err := r.Blocks(ctx, blocks, ops...)
+			_, ref, err := r.blocks(ctx, blocks, ops...)
 			if err != nil {
 				errCh <- err
 				return

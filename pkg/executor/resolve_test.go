@@ -3,6 +3,7 @@ package executor
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -20,6 +21,7 @@ import (
 	apictx "github.com/superblocksteam/agent/pkg/context"
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
+	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	mocker "github.com/superblocksteam/agent/pkg/mocker/mocks"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/gc"
@@ -220,7 +222,7 @@ func TestVariables(t *testing.T) {
 					Options: &Options{
 						Mocker: mocker,
 					},
-				}).Blocks(apictx.New(&apictx.Context{
+				}).blocks(apictx.New(&apictx.Context{
 					Execution: "ABCD-1234",
 					Name:      "ROOT",
 					Context:   ctx,
@@ -1681,7 +1683,7 @@ func TestBlocks(t *testing.T) {
 					Options: &Options{
 						Mocker: mocker,
 					},
-				}).Blocks(apictx.New(&apictx.Context{
+				}).blocks(apictx.New(&apictx.Context{
 					Execution:           "ABCD-1234",
 					Name:                "ROOT",
 					Context:             context.Background(),
@@ -1724,6 +1726,309 @@ func TestBlocks(t *testing.T) {
 				assert.Equal(t, 1, len(values), test.name)
 				assert.Equal(t, v, values[0])
 			}
+		})
+	}
+}
+
+func TestAuthorizedBlocks(t *testing.T) {
+	t.Parallel()
+
+	blocks := []*apiv1.Block{
+		{
+			Name: "BlockOne",
+			Config: &apiv1.Block_Step{
+				Step: &apiv1.Step{
+					Config: &apiv1.Step_Javascript{
+						Javascript: &javascriptv1.Plugin{
+							Body: "console.log('Hello, world!');",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range []struct {
+		name          string
+		blocks        []*apiv1.Block
+		authorization *apiv1.Authorization
+		variables     map[string]any
+		last          string
+		err           error
+		events        []string
+		executed      []string
+		authorized    bool
+	}{
+		{
+			name:   "Authorization type: JS Expression, expression is a boolean true literal, should be authorized",
+			blocks: blocks,
+			last:   "BlockOne",
+			authorization: &apiv1.Authorization{
+				Type:       apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION,
+				Expression: utils.Pointer("true"),
+			},
+			events: []string{
+				"[START] ApiAuthorizationCheck",
+				"[FINISH] ApiAuthorizationCheck",
+				"[START] BlockOne",
+				"[FINISH] BlockOne",
+			},
+			executed: []string{
+				"BlockOne",
+			},
+			authorized: true,
+		},
+		{
+			name:   "Authorization type: JS Expression, expression is a boolean false literal, should be unauthorized",
+			blocks: blocks,
+			authorization: &apiv1.Authorization{
+				Type:       apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION,
+				Expression: utils.Pointer("false"),
+			},
+			err: sberrors.ApiAuthorizationError(errors.New("you don't have permission to execute this API")),
+			events: []string{
+				"[START] ApiAuthorizationCheck",
+				"[FINISH] ApiAuthorizationCheck",
+			},
+			executed:   []string{},
+			authorized: false,
+		},
+		{
+			name:   "Authorization type: JS Expression, expression is a number literal, should throw a binding error",
+			blocks: blocks,
+			authorization: &apiv1.Authorization{
+				Type:       apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION,
+				Expression: utils.Pointer("42"),
+			},
+			err: sberrors.ApiAuthorizationError(sberrors.BindingError(fmt.Errorf("binding expression resolved to the wrong type (42)"))),
+			events: []string{
+				"[START] ApiAuthorizationCheck",
+				"[FINISH] ApiAuthorizationCheck",
+			},
+			executed:   []string{},
+			authorized: false,
+		},
+		{
+			name:   "Authorization type: JS Expression, expression is not provided, should throw a binding error",
+			blocks: blocks,
+			authorization: &apiv1.Authorization{
+				Type: apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION,
+			},
+			err: sberrors.ApiAuthorizationError(sberrors.BindingError(fmt.Errorf("binding expression resolved to the wrong type (<nil>)"))),
+			events: []string{
+				"[START] ApiAuthorizationCheck",
+				"[FINISH] ApiAuthorizationCheck",
+			},
+			executed:   []string{},
+			authorized: false,
+		},
+		{
+			name:   "Authorization type: JS Expression, expression references a field within an object and values are equal, should be authorized",
+			blocks: blocks,
+			last:   "BlockOne",
+			authorization: &apiv1.Authorization{
+				Type:       apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION,
+				Expression: utils.Pointer("role.name === \"Admin\""),
+			},
+			variables: map[string]any{
+				"role": map[string]any{
+					"name": "Admin",
+				},
+			},
+			events: []string{
+				"[START] ApiAuthorizationCheck",
+				"[FINISH] ApiAuthorizationCheck",
+				"[START] BlockOne",
+				"[FINISH] BlockOne",
+			},
+			executed: []string{
+				"BlockOne",
+			},
+			authorized: true,
+		},
+		{
+			name:   "Authorization type: JS Expression, expression references a field within an object and values are not equal, should be unauthorized",
+			blocks: blocks,
+			err:    sberrors.ApiAuthorizationError(errors.New("you don't have permission to execute this API")),
+			authorization: &apiv1.Authorization{
+				Type:       apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION,
+				Expression: utils.Pointer("role.name === \"Admin\""),
+			},
+			variables: map[string]any{
+				"role": map[string]any{
+					"name": "Users",
+				},
+			},
+			events: []string{
+				"[START] ApiAuthorizationCheck",
+				"[FINISH] ApiAuthorizationCheck",
+			},
+			executed:   []string{},
+			authorized: false,
+		},
+		{
+			name:   "Authorization type: app users, should be authorized",
+			blocks: blocks,
+			last:   "BlockOne",
+			authorization: &apiv1.Authorization{
+				Type: apiv1.AuthorizationType_AUTHORIZATION_TYPE_APP_USERS,
+			},
+			events: []string{
+				"[START] ApiAuthorizationCheck",
+				"[FINISH] ApiAuthorizationCheck",
+				"[START] BlockOne",
+				"[FINISH] BlockOne",
+			},
+			executed: []string{
+				"BlockOne",
+			},
+			authorized: true,
+		},
+		{
+			name:          "Authorization is nil, should be authorized",
+			blocks:        blocks,
+			last:          "BlockOne",
+			authorization: nil,
+			events: []string{
+				"[START] BlockOne",
+				"[FINISH] BlockOne",
+			},
+			executed: []string{
+				"BlockOne",
+			},
+			authorized: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+
+			wg := &sync.WaitGroup{}
+			events, dump := _events()
+			mockWorker, executed := client()
+
+			var memoryStore store.Store
+			{
+				memoryStore = store.Memory()
+				for k, v := range test.variables {
+					// marshal the value to json
+					jsonValue, err := json.Marshal(v)
+					if err != nil {
+						t.Fatalf("failed to marshal value for key %s: %s", k, err)
+					}
+					jsonString := string(jsonValue)
+					pair := store.Pair(k, jsonString)
+					memoryStore.Write(context.Background(), pair)
+				}
+			}
+
+			var variablesToGarbageCollect gc.GC
+			{
+				variablesToGarbageCollect = gc.New(&gc.Options{Store: memoryStore})
+			}
+
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				ctx, cancel := context.WithCancelCause(context.Background())
+
+				createSandboxFunc := func() engine.Sandbox {
+					return javascript.Sandbox(ctx, &javascript.Options{
+						Logger: zap.NewNop(),
+						Store:  memoryStore,
+					})
+				}
+
+				sandbox := createSandboxFunc()
+				defer sandbox.Close()
+
+				flags := new(mockflags.Flags)
+				flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
+				flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
+				flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+
+				mocker := new(mocker.Mocker)
+				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
+
+				variablesMap := utils.NewMap[*transportv1.Variable]()
+				for k := range test.variables {
+					variablesMap.Put(k, &transportv1.Variable{
+						Key:  k,
+						Type: apiv1.Variables_TYPE_NATIVE,
+					})
+				}
+
+				apiCtx := apictx.New(&apictx.Context{
+					Execution:           "ABCD-1234",
+					Name:                "ROOT",
+					Context:             context.Background(),
+					MaxStreamSendSize:   math.MaxInt,
+					MaxParellelPoolSize: math.MaxInt,
+				})
+
+				apiCtx.Variables = variablesMap
+
+				last, ref, err := (&resolver{
+					wg:                wg,
+					ctx:               ctx,
+					cancel:            cancel,
+					flags:             flags,
+					logger:            zap.NewNop(),
+					worker:            mockWorker,
+					key:               utils.NewMap[string](),
+					variables:         variablesToGarbageCollect,
+					parallels:         utils.NewList[chan struct{}](),
+					store:             memoryStore,
+					execution:         "ABCD-1234",
+					rootStartTime:     time.Now(),
+					timeout:           time.Second * 10,
+					createSandboxFunc: createSandboxFunc,
+					manager: &manager{
+						mutex:   sync.RWMutex{},
+						exiters: map[string](chan *exit){},
+					},
+					Events: events,
+					Options: &Options{
+						Mocker: mocker,
+					},
+				}).AuthorizedBlocks(apiCtx, test.blocks, test.authorization)
+
+				if test.err != nil {
+					assert.EqualError(t, err, test.err.Error())
+				} else {
+					assert.NoError(t, err, test.name)
+					assert.Equal(t, test.last, last, test.name)
+					if test.last != "" {
+						assert.NotEmpty(t, ref, test.name)
+					}
+				}
+				if test.authorization != nil {
+					keys, err := memoryStore.Scan(context.Background(), "AUTHORIZATION")
+					assert.NoError(t, err)
+					assert.Equal(t, 1, len(keys))
+					key := keys[0]
+					value, err := memoryStore.Read(context.Background(), key)
+					assert.NotNil(t, value)
+					assert.NoError(t, err)
+					var output apiv1.Output
+					err = json.Unmarshal([]byte(value[0].(string)), &output)
+					assert.NoError(t, err)
+					assert.Equal(t, test.authorized, output.Result.GetStructValue().Fields["authorized"].GetBoolValue())
+					allVariablesForGarbageCollection := variablesToGarbageCollect.Contents()
+					var foundKey string
+					for _, v := range allVariablesForGarbageCollection {
+						if v == key {
+							foundKey = v
+							break
+						}
+					}
+					assert.Equal(t, key, foundKey)
+				}
+				assert.Equal(t, test.events, dump())
+				assert.Equal(t, test.executed, executed())
+			}()
+
+			wg.Wait()
 		})
 	}
 }
@@ -1832,7 +2137,7 @@ func TestQuota(t *testing.T) {
 					Mocker: mocker,
 				},
 			}
-			resolver.Blocks(apictx.New(&apictx.Context{
+			resolver.blocks(apictx.New(&apictx.Context{
 				Execution: "ABCD-1234",
 				Name:      "ROOT",
 				Context:   context.Background(),
@@ -1963,7 +2268,7 @@ func TestStream(t *testing.T) {
 					Options: &Options{
 						Mocker: mocker,
 					},
-				}).Blocks(
+				}).blocks(
 					apiCtx,
 					test.blocks,
 				)

@@ -3053,7 +3053,8 @@ proto.api.v1.BlockType = {
   BLOCK_TYPE_VARIABLES: 9,
   BLOCK_TYPE_THROW: 10,
   BLOCK_TYPE_SEND: 11,
-  BLOCK_TYPE_STREAM: 12
+  BLOCK_TYPE_STREAM: 12,
+  BLOCK_TYPE_AUTHORIZATION_CHECK: 13
 };
 
 goog.object.extend(exports, proto.api.v1);

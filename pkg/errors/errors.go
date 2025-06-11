@@ -209,8 +209,41 @@ type authorizationError struct {
 	err error
 }
 
+type apiAuthorizationError struct {
+	err error
+}
+
+// Error implements error.
+func (a *apiAuthorizationError) Error() string {
+	if a.err == nil {
+		return "ApiAuthorizationError"
+	}
+
+	return "ApiAuthorizationError: " + a.err.Error()
+}
+
+func (a *apiAuthorizationError) ToCommonV1() *commonv1.Error {
+	return &commonv1.Error{
+		Name:    "ApiAuthorizationError",
+		Message: a.err.Error(),
+	}
+}
+
 func AuthorizationError(err ...error) error {
 	return &authorizationError{errors.Join(err...)}
+}
+
+func ApiAuthorizationError(err ...error) error {
+	return &apiAuthorizationError{errors.Join(err...)}
+}
+
+func IsApiAuthorizationError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	var typed *apiAuthorizationError
+	return errors.As(err, &typed)
 }
 
 func (e *authorizationError) Error() string {

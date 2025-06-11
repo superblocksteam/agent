@@ -240,7 +240,7 @@ func New(ctx context.Context, options *Options) (Executor, error) {
 	// NOTE(frank): I don't think I hate that this is here. I haven't given it that much though either.
 	trace.SpanFromContext(ctx).SetAttributes(ex.resolver.attributes...)
 
-	if _, err := tracer.Observe[any](ctx, "fetch.secrets", nil, func(ctx context.Context, _ trace.Span) (any, error) {
+	if _, err := tracer.Observe(ctx, "fetch.secrets", nil, func(ctx context.Context, _ trace.Span) (any, error) {
 		return nil, secrets.RetrieveAndUnmarshalIfNeeded(
 			constants.WithOrganizationID(ctx, orgId),
 			options.Secrets,
@@ -487,7 +487,7 @@ func (e *execution) Run(ctx context.Context) {
 	}
 
 	event.LogApiStart(e.Logger, e.id, e.Api, e.Api.GetMetadata().GetOrganization(), e.IsDeployed)
-	last, _, err := e.resolver.Blocks(sbctx, e.Api.GetBlocks(), e.DefaultResolveOptions...)
+	last, _, err := e.resolver.AuthorizedBlocks(sbctx, e.Api.GetBlocks(), e.Api.GetAuthorization(), e.DefaultResolveOptions...)
 	if err != nil {
 		if sbctx.Context.Err() == context.Canceled {
 			err = context.Canceled
