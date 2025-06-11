@@ -111,6 +111,13 @@ func parse(err error) error {
 		return status.New(codes.Unavailable, err.Error()).Err()
 	}
 
+	if err, ok := err.(*commonv1.Error); ok {
+		if err.Name == "ApiAuthorizationError" {
+			metrics.TransportErrorsTotal.WithLabelValues(codes.PermissionDenied.String()).Inc()
+			return status.New(codes.PermissionDenied, err.Error()).Err()
+		}
+	}
+
 	metrics.TransportErrorsTotal.WithLabelValues(codes.Unknown.String()).Inc()
 	return status.New(codes.Unknown, err.Error()).Err()
 }

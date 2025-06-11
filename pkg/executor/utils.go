@@ -1003,7 +1003,7 @@ func propogate(err error, block apiv1.BlockType) bool {
 	switch v := err.(type) {
 	case *commonv1.Error:
 		// NOTE(frank): Add more types here that we want to propoate.
-		if slices.Index([]string{"BindingError", "QuotaError"}, v.Name) != -1 {
+		if slices.Index([]string{"BindingError", "QuotaError", "ApiAuthorizationError"}, v.Name) != -1 {
 			return true
 		}
 	}

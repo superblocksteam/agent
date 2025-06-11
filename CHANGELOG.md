@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the "oauth on behalf of token exchange" flow to use the identity provider access token from the Superblocks JWT instead of from the Auth0 JWT 
 - Changed token scopes to match existing RBAC permissions
 - Added support for scoped (JWT) tokens with multiple scopes
+- Added support for API-level authorization
 
 ## v1.22.0
 

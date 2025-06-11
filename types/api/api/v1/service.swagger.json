@@ -5216,7 +5216,7 @@
       "type": "string",
       "enum": [
         "AUTHORIZATION_TYPE_UNSPECIFIED",
-        "AUTHORIZATION_TYPE_ALL_USERS",
+        "AUTHORIZATION_TYPE_APP_USERS",
         "AUTHORIZATION_TYPE_JS_EXPRESSION"
       ],
       "default": "AUTHORIZATION_TYPE_UNSPECIFIED"
@@ -5434,7 +5434,8 @@
         "BLOCK_TYPE_VARIABLES",
         "BLOCK_TYPE_THROW",
         "BLOCK_TYPE_SEND",
-        "BLOCK_TYPE_STREAM"
+        "BLOCK_TYPE_STREAM",
+        "BLOCK_TYPE_AUTHORIZATION_CHECK"
       ],
       "default": "BLOCK_TYPE_UNSPECIFIED"
     },

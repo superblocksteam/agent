@@ -55,9 +55,9 @@ export enum AuthorizationType {
   UNSPECIFIED = 0,
 
   /**
-   * @generated from enum value: AUTHORIZATION_TYPE_ALL_USERS = 1;
+   * @generated from enum value: AUTHORIZATION_TYPE_APP_USERS = 1;
    */
-  ALL_USERS = 1,
+  APP_USERS = 1,
 
   /**
    * @generated from enum value: AUTHORIZATION_TYPE_JS_EXPRESSION = 2;
@@ -67,7 +67,7 @@ export enum AuthorizationType {
 // Retrieve enum metadata with: proto3.getEnumType(AuthorizationType)
 proto3.util.setEnumType(AuthorizationType, "api.v1.AuthorizationType", [
   { no: 0, name: "AUTHORIZATION_TYPE_UNSPECIFIED" },
-  { no: 1, name: "AUTHORIZATION_TYPE_ALL_USERS" },
+  { no: 1, name: "AUTHORIZATION_TYPE_APP_USERS" },
   { no: 2, name: "AUTHORIZATION_TYPE_JS_EXPRESSION" },
 ]);
 
