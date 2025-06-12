@@ -1794,13 +1794,13 @@ func TestAuthorizedBlocks(t *testing.T) {
 			authorized: false,
 		},
 		{
-			name:   "Authorization type: JS Expression, expression is a number literal, should throw a binding error",
+			name:   "Authorization type: JS Expression, expression is a number literal, should be unauthorized and throw an error with a user message",
 			blocks: blocks,
 			authorization: &apiv1.Authorization{
 				Type:       apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION,
 				Expression: utils.Pointer("42"),
 			},
-			err: sberrors.ApiAuthorizationError(sberrors.BindingError(fmt.Errorf("binding expression resolved to the wrong type (42)"))),
+			err: sberrors.ApiAuthorizationError(errors.New("invalid authorization condition. Response must be a boolean")),
 			events: []string{
 				"[START] ApiAuthorizationCheck",
 				"[FINISH] ApiAuthorizationCheck",
@@ -1809,12 +1809,12 @@ func TestAuthorizedBlocks(t *testing.T) {
 			authorized: false,
 		},
 		{
-			name:   "Authorization type: JS Expression, expression is not provided, should throw a binding error",
+			name:   "Authorization type: JS Expression, expression is not provided, should be unauthorized and throw an error with a user message",
 			blocks: blocks,
 			authorization: &apiv1.Authorization{
 				Type: apiv1.AuthorizationType_AUTHORIZATION_TYPE_JS_EXPRESSION,
 			},
-			err: sberrors.ApiAuthorizationError(sberrors.BindingError(fmt.Errorf("binding expression resolved to the wrong type (<nil>)"))),
+			err: sberrors.ApiAuthorizationError(errors.New("invalid authorization condition. Response must be a boolean")),
 			events: []string{
 				"[START] ApiAuthorizationCheck",
 				"[FINISH] ApiAuthorizationCheck",
