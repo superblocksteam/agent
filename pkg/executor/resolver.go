@@ -362,6 +362,11 @@ func (r *resolver) AuthorizedBlocks(ctx *apictx.Context, blocks []*apiv1.Block, 
 						}
 					}
 				}
+				if sberrors.IsBindingError(err) {
+					message := "invalid authorization condition. Response must be a boolean"
+					r.Finish(authCtx, nil, sberrors.ApiAuthorizationError(errors.New(message)))
+					return "", "", sberrors.ApiAuthorizationError(errors.New(message))
+				}
 				r.Finish(authCtx, nil, err)
 				return "", "", sberrors.ApiAuthorizationError(err)
 			}
