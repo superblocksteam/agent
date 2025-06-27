@@ -44,16 +44,7 @@ message Variables {
   }
 
   message Config {
-    string value = 1 [
-      (validate.rules).string = {
-        prefix: "{{"
-        suffix: "}}"
-      },
-      (buf.validate.field).string = {
-        prefix: "{{"
-        suffix: "}}"
-      }
-    ];
+    string value = 1;
 
     Type type = 2 [
       (validate.rules).enum = {
