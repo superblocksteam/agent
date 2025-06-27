@@ -34,7 +34,7 @@ func New[T string](plugin func(string) plugins.Plugin, resolver func(context.Con
 }
 
 func (t *template[T]) Render(ctx context.Context, template string) (*T, error) {
-	// We start with a template `This should be 5 -> {{ 2 + 2 }}`.
+	// We start with a template `This should be 4 -> {{ 2 + 2 }}`.
 
 	// First, we create a scanner for the input.
 	plugin := t.plugin(template)

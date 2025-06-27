@@ -43,6 +43,8 @@ import (
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/gc"
 	"github.com/superblocksteam/agent/pkg/template"
+	"github.com/superblocksteam/agent/pkg/template/plugins"
+	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
@@ -99,6 +101,7 @@ type Options struct {
 	Api                          *apiv1.Api
 	RawApi                       *structpb.Value
 	Renderer                     template.RenderFunc
+	TemplatePlugin               func(string) plugins.Plugin
 	RootStartTime                time.Time
 	Timeout                      time.Duration
 	Requester                    string
@@ -195,6 +198,10 @@ func New(ctx context.Context, options *Options) (Executor, error) {
 
 	if options.Timeout == 0 {
 		options.Timeout = time.Duration(options.Flags.GetApiTimeoutV2(options.Api, options.DefinitionMetadata.OrganizationPlan)) * time.Millisecond
+	}
+
+	if options.TemplatePlugin == nil {
+		options.TemplatePlugin = mustache.Instance
 	}
 
 	// TODO(frank): I might need to merge this context with the gRPC context.
