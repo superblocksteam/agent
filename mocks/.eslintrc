@@ -7,13 +7,5 @@
     "strict": "off",
     "no-console": "off",
     "max-len": "off"
-  },
-  "overrides": [
-    {
-      "files": ["fixtures/integration-test-apis.js"],
-      "rules": {
-        "no-template-curly-in-string": "off"
-      }
-    }
-  ]
+  }
 }
