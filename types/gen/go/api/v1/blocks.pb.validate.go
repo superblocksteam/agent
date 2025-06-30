@@ -190,7 +190,27 @@ func (m *Variables_Config) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Value
+	if !strings.HasPrefix(m.GetValue(), "{{") {
+		err := Variables_ConfigValidationError{
+			field:  "Value",
+			reason: "value does not have prefix \"{{\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !strings.HasSuffix(m.GetValue(), "}}") {
+		err := Variables_ConfigValidationError{
+			field:  "Value",
+			reason: "value does not have suffix \"}}\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if _, ok := _Variables_Config_Type_NotInLookup[m.GetType()]; ok {
 		err := Variables_ConfigValidationError{

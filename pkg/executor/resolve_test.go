@@ -25,7 +25,6 @@ import (
 	mocker "github.com/superblocksteam/agent/pkg/mocker/mocks"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/gc"
-	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	wops "github.com/superblocksteam/agent/pkg/worker/options"
@@ -217,10 +216,9 @@ func TestVariables(t *testing.T) {
 						mutex:   sync.RWMutex{},
 						exiters: map[string](chan *exit){},
 					},
-					rootStartTime:  time.Now(),
-					timeout:        time.Second * 10,
-					templatePlugin: mustache.Instance,
-					Events:         events,
+					rootStartTime: time.Now(),
+					timeout:       time.Second * 10,
+					Events:        events,
 					Options: &Options{
 						Mocker: mocker,
 					},
@@ -1681,8 +1679,7 @@ func TestBlocks(t *testing.T) {
 						mutex:   sync.RWMutex{},
 						exiters: map[string](chan *exit){},
 					},
-					templatePlugin: mustache.Instance,
-					Events:         events,
+					Events: events,
 					Options: &Options{
 						Mocker: mocker,
 					},
@@ -1990,8 +1987,7 @@ func TestAuthorizedBlocks(t *testing.T) {
 						mutex:   sync.RWMutex{},
 						exiters: map[string](chan *exit){},
 					},
-					templatePlugin: mustache.Instance,
-					Events:         events,
+					Events: events,
 					Options: &Options{
 						Mocker: mocker,
 					},
@@ -2136,8 +2132,7 @@ func TestQuota(t *testing.T) {
 					mutex:   sync.RWMutex{},
 					exiters: map[string](chan *exit){},
 				},
-				templatePlugin: mustache.Instance,
-				Events:         events,
+				Events: events,
 				Options: &Options{
 					Mocker: mocker,
 				},
@@ -2269,8 +2264,7 @@ func TestStream(t *testing.T) {
 						mutex:   sync.RWMutex{},
 						exiters: map[string](chan *exit){},
 					},
-					templatePlugin: mustache.Instance,
-					Events:         events,
+					Events: events,
 					Options: &Options{
 						Mocker: mocker,
 					},

@@ -6816,7 +6816,27 @@ func (m *Block_Loop) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Range
+	if !strings.HasPrefix(m.GetRange(), "{{") {
+		err := Block_LoopValidationError{
+			field:  "Range",
+			reason: "value does not have prefix \"{{\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !strings.HasSuffix(m.GetRange(), "}}") {
+		err := Block_LoopValidationError{
+			field:  "Range",
+			reason: "value does not have suffix \"}}\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Type
 
@@ -7198,7 +7218,27 @@ func (m *Block_Break) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Condition
+	if !strings.HasPrefix(m.GetCondition(), "{{") {
+		err := Block_BreakValidationError{
+			field:  "Condition",
+			reason: "value does not have prefix \"{{\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !strings.HasSuffix(m.GetCondition(), "}}") {
+		err := Block_BreakValidationError{
+			field:  "Condition",
+			reason: "value does not have suffix \"}}\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return Block_BreakMultiError(errors)
@@ -7299,7 +7339,27 @@ func (m *Block_Return) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Data
+	if !strings.HasPrefix(m.GetData(), "{{") {
+		err := Block_ReturnValidationError{
+			field:  "Data",
+			reason: "value does not have prefix \"{{\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !strings.HasSuffix(m.GetData(), "}}") {
+		err := Block_ReturnValidationError{
+			field:  "Data",
+			reason: "value does not have suffix \"}}\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return Block_ReturnMultiError(errors)
@@ -7400,7 +7460,27 @@ func (m *Block_Throw) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Error
+	if !strings.HasPrefix(m.GetError(), "{{") {
+		err := Block_ThrowValidationError{
+			field:  "Error",
+			reason: "value does not have prefix \"{{\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !strings.HasSuffix(m.GetError(), "}}") {
+		err := Block_ThrowValidationError{
+			field:  "Error",
+			reason: "value does not have suffix \"}}\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return Block_ThrowMultiError(errors)
@@ -7501,7 +7581,27 @@ func (m *Block_Wait) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Condition
+	if !strings.HasPrefix(m.GetCondition(), "{{") {
+		err := Block_WaitValidationError{
+			field:  "Condition",
+			reason: "value does not have prefix \"{{\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !strings.HasSuffix(m.GetCondition(), "}}") {
+		err := Block_WaitValidationError{
+			field:  "Condition",
+			reason: "value does not have suffix \"}}\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return Block_WaitMultiError(errors)
@@ -8380,7 +8480,27 @@ func (m *Block_Conditional_Condition) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Condition
+	if !strings.HasPrefix(m.GetCondition(), "{{") {
+		err := Block_Conditional_ConditionValidationError{
+			field:  "Condition",
+			reason: "value does not have prefix \"{{\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !strings.HasSuffix(m.GetCondition(), "}}") {
+		err := Block_Conditional_ConditionValidationError{
+			field:  "Condition",
+			reason: "value does not have suffix \"}}\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	for idx, item := range m.GetBlocks() {
 		_, _ = idx, item

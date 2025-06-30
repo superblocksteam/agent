@@ -31,7 +31,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/gc"
 	"github.com/superblocksteam/agent/pkg/template"
-	"github.com/superblocksteam/agent/pkg/template/plugins"
+	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	wops "github.com/superblocksteam/agent/pkg/worker/options"
@@ -114,7 +114,6 @@ type resolver struct {
 	// This should only be true in the case of a scheduled job
 	useAgentKey        bool
 	v8SupportedModules map[string]bool
-	templatePlugin     func(string) plugins.Plugin
 
 	Events
 	*Options
@@ -196,7 +195,6 @@ func NewResolver(
 		secrets:            options.Secrets,
 		Options:            options,
 		v8SupportedModules: make(map[string]bool),
-		templatePlugin:     options.TemplatePlugin,
 	}
 }
 
@@ -696,7 +694,7 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 			if shouldRender = shouldRenderActionConfig(action, p.Type(), wops.Apply(opts.Worker...).Stream != nil); shouldRender {
 				sandbox := r.createSandboxFunc()
 				defer sandbox.Close()
-				rendered, err := template.RenderProtoValue(ctx, structpb.NewStructValue(action), r.templatePlugin, sandbox, r.logger)
+				rendered, err := template.RenderProtoValue(ctx, structpb.NewStructValue(action), mustache.Instance, sandbox, r.logger)
 				if err != nil {
 					return nil, "", err
 				}
