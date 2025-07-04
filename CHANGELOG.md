@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed token scopes to match existing RBAC permissions
 - Added support for scoped (JWT) tokens with multiple scopes
 - Added support for API-level authorization
+- Added support for resolving integration configurations using the new (JavaScript template literals) bindings syntax
 
 ## v1.22.0
 

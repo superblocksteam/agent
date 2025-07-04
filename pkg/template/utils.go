@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -17,14 +18,14 @@ import (
 
 // RenderProtoValue is a helper function that uses the provided RenderFunc
 // to recurse through a *structpb.Value and render every nested string.
-func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(string) plugins.Plugin, sandbox engine.Sandbox, logger *zap.Logger) (*structpb.Value, error) {
+func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(*plugins.Input) plugins.Plugin, sandbox engine.Sandbox, logger *zap.Logger) (*structpb.Value, error) {
 
 	// NOTE(frank): When you're looking at this 6 months from now asking
 	// yourself, "Why isn't Frank doing `do := func() {...}`??", you can't
 	// recurse on a function defined that way :scream:
-	var do func(context.Context, func(context.Context, string) engine.Value, *structpb.Value) (*structpb.Value, error)
+	var do func(context.Context, func(context.Context, string) engine.Value, string, *structpb.Value) (*structpb.Value, error)
 	{
-		do = func(ctx context.Context, resolver func(context.Context, string) engine.Value, x *structpb.Value) (*structpb.Value, error) {
+		do = func(ctx context.Context, resolver func(context.Context, string) engine.Value, fieldName string, x *structpb.Value) (*structpb.Value, error) {
 			// Fail fast if the provided struct is nil
 			if x == nil {
 				return x, nil
@@ -54,8 +55,12 @@ func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(string
 					if value == nil {
 						continue
 					}
+					newFieldName := key
+					if fieldName != "" {
+						newFieldName = strings.Join([]string{fieldName, key}, ".")
+					}
 
-					rendered, err := do(ctx, resolver, value)
+					rendered, err := do(ctx, resolver, newFieldName, value)
 					if err != nil {
 						return nil, err
 					}
@@ -69,7 +74,7 @@ func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(string
 						continue
 					}
 
-					rendered, err := do(ctx, resolver, value)
+					rendered, err := do(ctx, resolver, fieldName, value)
 					if err != nil {
 						return nil, err
 					}
@@ -80,7 +85,11 @@ func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(string
 					return &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: x.Kind.(*structpb.Value_StringValue).StringValue}}, nil
 				}
 
-				resolved, err := New(plugin, resolver, logger).Render(ctx, v.StringValue)
+				input := &plugins.Input{
+					Meta: &plugins.InputMetadata{FieldName: fieldName},
+					Data: v.StringValue,
+				}
+				resolved, err := New(plugin, resolver, logger).Render(ctx, input)
 				if err != nil {
 					return nil, err
 				}
@@ -113,6 +122,6 @@ func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(string
 			return e.Resolve(ctx, template, cloned.Variables)
 		}
 
-		return do(cloned.Context, resolver, x)
+		return do(cloned.Context, resolver, "", x)
 	}, nil)
 }

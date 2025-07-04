@@ -226,16 +226,7 @@ message Block {
 
   message Conditional {
     message Condition {
-      string condition = 1 [
-        (validate.rules).string = {
-          prefix: "{{"
-          suffix: "}}"
-        },
-        (buf.validate.field).string = {
-          prefix: "{{"
-          suffix: "}}"
-        }
-      ];
+      string condition = 1;
       repeated Block blocks = 2;
     }
 
@@ -271,16 +262,7 @@ message Block {
      *  2. A JSON encoded list  IF type is TYPE_FOREACH.
      *  3. A boolean            IF type is TYPE_WHILE. NOTE that this expressition will be re-evaluated on each iteration.
      */
-    string range = 1 [
-      (validate.rules).string = {
-        prefix: "{{"
-        suffix: "}}"
-      },
-      (buf.validate.field).string = {
-        prefix: "{{"
-        suffix: "}}"
-      }
-    ];
+    string range = 1;
 
     Type type = 2;
     Variables variables = 3;
@@ -303,55 +285,19 @@ message Block {
   }
 
   message Break {
-    string condition = 1 [
-      (validate.rules).string = {
-        prefix: "{{"
-        suffix: "}}"
-      },
-      (buf.validate.field).string = {
-        prefix: "{{"
-        suffix: "}}"
-      }
-    ];
+    string condition = 1;
   }
 
   message Return {
-    string data = 1 [
-      (validate.rules).string = {
-        prefix: "{{"
-        suffix: "}}"
-      },
-      (buf.validate.field).string = {
-        prefix: "{{"
-        suffix: "}}"
-      }
-    ];
+    string data = 1;
   }
 
   message Throw {
-    string error = 1 [
-      (validate.rules).string = {
-        prefix: "{{"
-        suffix: "}}"
-      },
-      (buf.validate.field).string = {
-        prefix: "{{"
-        suffix: "}}"
-      }
-    ];
+    string error = 1;
   }
 
   message Wait {
-    string condition = 1 [
-      (validate.rules).string = {
-        prefix: "{{"
-        suffix: "}}"
-      },
-      (buf.validate.field).string = {
-        prefix: "{{"
-        suffix: "}}"
-      }
-    ];
+    string condition = 1;
   }
 
   message Stream {

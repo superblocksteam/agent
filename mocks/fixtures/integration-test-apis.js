@@ -1818,6 +1818,68 @@ const integrationTestApis = [
       javascript: {},
     },
   },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000037',
+        organization: '00000000-0000-0000-0000-000000000001',
+        name: 'TestApi2',
+        path: '/pages/Page 2/apis/TestApi2/api.yaml',
+        commitId: 'b4ab11cd51d1435b7d4d19de1c3084c30dae5b5e',
+      },
+      signature: {
+        data: 'JxlkAGF+IQEND5oqfl/lZU9sfzAF8kNpReaGanNdnCRnFu795LfsKc+YnAEmqyGzi3stQppO+V/zlSr/xaHfAw==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'VARS_BLOCK',
+          variables: {
+            items: [
+              {
+                key: 'VAR_ONE',
+                value: '`var_${2 - 1}`',
+                type: 'TYPE_ADVANCED',
+              },
+            ],
+          },
+        },
+        {
+          name: 'Step1',
+          step: {
+            javascript: {
+              body: 'return `VAR_ONE: ${await VAR_ONE.get()}`;',
+            },
+          },
+        },
+        {
+          name: 'BLOCK_CONDITIONAL',
+          conditional: {
+            if: {
+              condition: "await VAR_ONE.get() == 'var_1'",
+              blocks: [
+                {
+                  name: 'BLOCK_CONDITIONAL_IF_STEP',
+                  step: {
+                    javascript: {
+                      body: "return 'hello path based api world!!! (from a commit)';",
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+  },
 ];
 
 module.exports = integrationTestApis;
