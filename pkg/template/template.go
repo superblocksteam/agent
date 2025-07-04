@@ -16,16 +16,16 @@ import (
 type RenderFunc func(string) (*string, error)
 
 type Template[T string] interface {
-	Render(context.Context, string) (*T, error)
+	Render(context.Context, *plugins.Input) (*T, error)
 }
 
 type template[T string] struct {
-	plugin   func(string) plugins.Plugin
+	plugin   func(*plugins.Input) plugins.Plugin
 	resolver func(context.Context, string) engine.Value
 	logger   *zap.Logger
 }
 
-func New[T string](plugin func(string) plugins.Plugin, resolver func(context.Context, string) engine.Value, logger *zap.Logger) Template[T] {
+func New[T string](plugin func(*plugins.Input) plugins.Plugin, resolver func(context.Context, string) engine.Value, logger *zap.Logger) Template[T] {
 	return &template[T]{
 		plugin:   plugin,
 		resolver: resolver,
@@ -33,8 +33,8 @@ func New[T string](plugin func(string) plugins.Plugin, resolver func(context.Con
 	}
 }
 
-func (t *template[T]) Render(ctx context.Context, template string) (*T, error) {
-	// We start with a template `This should be 5 -> {{ 2 + 2 }}`.
+func (t *template[T]) Render(ctx context.Context, template *plugins.Input) (*T, error) {
+	// We start with a template `This should be 4 -> {{ 2 + 2 }}`.
 
 	// First, we create a scanner for the input.
 	plugin := t.plugin(template)
@@ -48,7 +48,7 @@ func (t *template[T]) Render(ctx context.Context, template string) (*T, error) {
 
 		// There is nothing to render so no need to proceed.
 		if len(tokens) == 0 {
-			return utils.Pointer(T(template)), nil
+			return utils.Pointer(T(template.GetData())), nil
 		}
 	}
 

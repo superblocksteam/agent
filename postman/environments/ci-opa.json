@@ -1,5 +1,5 @@
 {
-	"id": "7be9cf7e-25af-43f4-bb1b-11eead8509bf",
+	"id": "3931059a-6c90-4898-a93e-a3df4e086157",
 	"name": "ci-opa",
 	"values": [
 		{
@@ -61,9 +61,15 @@
 			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsIm5hbWUiOiJKb2V5IERvZSIsImlhdCI6MTY4MDAwMDAwMH0.dummysignature1234567890",
 			"type": "secret",
 			"enabled": true
+		},
+		{
+			"key": "RUN_DISABLED_TESTS",
+			"value": "false",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2025-05-06T14:30:48.292Z",
-	"_postman_exported_using": "Postman/11.43.2"
+	"_postman_exported_at": "2025-07-01T22:20:32.876Z",
+	"_postman_exported_using": "Postman/11.51.3"
 }

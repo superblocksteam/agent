@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	fetchmocks "github.com/superblocksteam/agent/internal/fetch/mocks"
 	mocks "github.com/superblocksteam/agent/internal/flags/mock"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
@@ -746,6 +747,243 @@ func TestConstructAuth(t *testing.T) {
 			} else {
 				assert.EqualError(t, err, test.expectedErr)
 			}
+		})
+	}
+}
+
+func TestRenderDatasourceConfig(t *testing.T) {
+	t.Parallel()
+	metrics.RegisterMetrics()
+
+	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{
+		Logger: zap.NewNop(),
+	})
+	defer sandbox.Close()
+
+	tests := []struct {
+		name           string
+		datasource     map[string]any
+		expectedOutput map[string]any
+	}{
+		{
+			name:           "empty datasource",
+			datasource:     map[string]any{},
+			expectedOutput: map[string]any{},
+		},
+		{
+			name: "simple datasource without binding fields",
+			datasource: map[string]any{
+				"host":     `{{ "localhost" }}`,
+				"port":     5432,
+				"database": "mydb",
+			},
+			expectedOutput: map[string]any{
+				"host":     "localhost",
+				"port":     float64(5432),
+				"database": "mydb",
+			},
+		},
+		{
+			name: "datasource with empty binding fields",
+			datasource: map[string]any{
+				"host":          `{{ "localhost" }}`,
+				"port":          5432,
+				"bindingFields": []any{},
+			},
+			expectedOutput: map[string]any{
+				"host":          "localhost",
+				"port":          float64(5432),
+				"bindingFields": []any{},
+			},
+		},
+		{
+			name: "datasource with no matching binding fields",
+			datasource: map[string]any{
+				"host": `{{ "localhost" }}`,
+				"port": `{{ 5432 }}`,
+				"bindingFields": []any{
+					"not_a_binding_field",
+				},
+			},
+			expectedOutput: map[string]any{
+				"host": "localhost",
+				"port": "5432",
+				"bindingFields": []any{
+					"not_a_binding_field",
+				},
+			},
+		},
+		{
+			name: "datasource with binding fields",
+			datasource: map[string]any{
+				"host":     `{{ "local" + "host" }}`,
+				"password": `"secrets.db_password"`,
+				"bindingFields": []any{
+					"password",
+				},
+			},
+			expectedOutput: map[string]any{
+				"host":     "localhost",
+				"password": "secrets.db_password",
+				"bindingFields": []any{
+					"password",
+				},
+			},
+		},
+		{
+			name: "nested datasource with binding fields",
+			datasource: map[string]any{
+				"connection": map[string]any{
+					"host":        "localhost",
+					"port":        5432,
+					"password":    `"password: ${secrets.db_password}"`,
+					"ssl_enabled": true,
+				},
+				"settings": map[string]any{
+					"timeout": `{{ 10 * 3 }}`,
+					"apiKey":  `"secrets.api_key"`,
+				},
+				"bindingFields": []any{
+					"connection.password",
+					"settings.apiKey",
+				},
+			},
+			expectedOutput: map[string]any{
+				"connection": map[string]any{
+					"host":        "localhost",
+					"port":        float64(5432),
+					"password":    "password: ${secrets.db_password}",
+					"ssl_enabled": true,
+				},
+				"settings": map[string]any{
+					"timeout": "30",
+					"apiKey":  "secrets.api_key",
+				},
+				"bindingFields": []any{
+					"connection.password",
+					"settings.apiKey",
+				},
+			},
+		},
+		{
+			name: "datasource with no templates",
+			datasource: map[string]any{
+				"host":     "localhost",
+				"port":     5432,
+				"database": "mydb",
+			},
+			expectedOutput: map[string]any{
+				"host":     "localhost",
+				"port":     float64(5432),
+				"database": "mydb",
+			},
+		},
+		{
+			name: "datasource with arrays and binding fields",
+			datasource: map[string]any{
+				"servers": []any{
+					`"server1.com"`,
+					`"server2.com"`,
+				},
+				"credentials": []any{
+					map[string]any{
+						"username": `{{ "user1" }}`,
+						"password": `{{ "secrets.pass1" }}`,
+					},
+					map[string]any{
+						"username": `{{ "user2" }}`,
+						"password": `{{ "secrets.pass2" }}`,
+					},
+				},
+				"bindingFields": []any{
+					"servers",
+				},
+			},
+			expectedOutput: map[string]any{
+				"servers": []any{
+					"server1.com",
+					"server2.com",
+				},
+				"credentials": []any{
+					map[string]any{
+						"username": "user1",
+						"password": "secrets.pass1",
+					},
+					map[string]any{
+						"username": "user2",
+						"password": "secrets.pass2",
+					},
+				},
+				"bindingFields": []any{
+					"servers",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := apictx.New(&apictx.Context{
+				Context: context.Background(),
+			})
+
+			// Convert test input to structpb.Value
+			datasourceValue, err := structpb.NewValue(tt.datasource)
+			require.NoError(t, err)
+
+			// Call renderDatasourceConfig
+			result, err := renderDatasourceConfig(ctx, datasourceValue, sandbox, zap.NewNop())
+
+			assert.NoError(t, err)
+			assert.NotNil(t, result)
+
+			// Convert result back to map for comparison
+			resultMap := result.GetStructValue().AsMap()
+			assert.Equal(t, tt.expectedOutput, resultMap)
+		})
+	}
+}
+
+func TestRenderDatasourceConfig_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{
+		Logger: zap.NewNop(),
+	})
+	defer sandbox.Close()
+
+	tests := []struct {
+		name       string
+		datasource *structpb.Value
+	}{
+		{
+			name:       "nil datasource",
+			datasource: nil,
+		},
+		{
+			name:       "non-struct datasource",
+			datasource: structpb.NewStringValue("not a struct"),
+		},
+		{
+			name:       "number datasource",
+			datasource: structpb.NewNumberValue(42),
+		},
+		{
+			name:       "boolean datasource",
+			datasource: structpb.NewBoolValue(true),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := apictx.New(&apictx.Context{
+				Context: context.Background(),
+			})
+
+			result, err := renderDatasourceConfig(ctx, tt.datasource, sandbox, zap.NewNop())
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.datasource, result)
 		})
 	}
 }

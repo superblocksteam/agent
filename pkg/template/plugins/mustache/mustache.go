@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	Instance = func(input string) plugins.Plugin {
+	Instance = func(input *plugins.Input) plugins.Plugin {
 		return Plugin(input)
 	}
 )
@@ -26,9 +26,9 @@ const (
 	close = "}}"
 )
 
-func Plugin(input string) plugins.Plugin {
+func Plugin(input *plugins.Input) plugins.Plugin {
 	return &mustache{
-		input: input,
+		input: input.GetData(),
 	}
 }
 

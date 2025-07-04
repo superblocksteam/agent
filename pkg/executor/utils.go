@@ -27,6 +27,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/template"
 	"github.com/superblocksteam/agent/pkg/template/plugins"
 	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
+	"github.com/superblocksteam/agent/pkg/template/plugins/noop"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/validation"
 	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
@@ -404,22 +405,26 @@ func HandleWorkflow(
 	{
 		// NOTE(frank): I wrote this before I wrote RenderProtoValue. I think we
 		// can throw away some of the following code in favor of it.
+		renderFunc := template.New(
+			func(input *plugins.Input) plugins.Plugin {
+				return mustache.Plugin(input)
+			},
+			func(c context.Context, template string) engine.Value {
+				e, err := sandbox.Engine(c)
+				if err != nil {
+					return e.Failed(err)
+				}
+
+				return e.Resolve(c, template, ctx.Variables)
+			},
+			executeOpts.Logger,
+		).Render
+
 		rendered, err := parameters.WithSuperblocksInjected(executeOpts.DefinitionMetadata.Profile).AsInputs(
 			ctx.Context,
-			template.New(
-				func(input string) plugins.Plugin {
-					return mustache.Plugin(input)
-				},
-				func(c context.Context, template string) engine.Value {
-					e, err := sandbox.Engine(c)
-					if err != nil {
-						return e.Failed(err)
-					}
-
-					return e.Resolve(c, template, ctx.Variables)
-				},
-				executeOpts.Logger,
-			).Render,
+			func(c context.Context, input string) (*string, error) {
+				return renderFunc(c, &plugins.Input{Data: input})
+			},
 		)
 
 		if err != nil {
@@ -699,17 +704,41 @@ func EvaluateDatasource(
 	}
 
 	// TODO: can we figure out how to render proto value without variables? That way we don't need to write to the store with Variables()
-	datasourceConfig, err := template.RenderProtoValue(newCtx, cloned, mustache.Instance, sandbox, executeOpts.Logger)
+	datasourceConfig, err := renderDatasourceConfig(newCtx, cloned, sandbox, executeOpts.Logger)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	redactedDatasourceConfig, err := template.RenderProtoValue(newCtxRedacted, unrenderedRedactedDatasourceConfig, mustache.Instance, sandbox, executeOpts.Logger)
+	redactedDatasourceConfig, err := renderDatasourceConfig(newCtxRedacted, unrenderedRedactedDatasourceConfig, sandbox, executeOpts.Logger)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return datasourceConfig, redactedDatasourceConfig, nil
+}
+
+func renderDatasourceConfig(ctx *apictx.Context, datasource *structpb.Value, sandbox engine.Sandbox, logger *zap.Logger) (*structpb.Value, error) {
+	bindingsSet := utils.NewSet[string]()
+	if bindingFields, err := utils.GetStructField(datasource.GetStructValue(), "bindingFields"); err == nil {
+		utils.FindStringsInStruct(bindingFields, func(s string) {
+			bindingsSet.Add(s)
+		})
+	}
+
+	pluginSelector := func(s *plugins.Input) plugins.Plugin {
+		if field := s.GetMeta().GetFieldName(); field != "" && bindingsSet.Contains(field) {
+			return noop.Instance(s)
+		}
+
+		return mustache.Instance(s)
+	}
+
+	datasourceConfig, err := template.RenderProtoValue(ctx, datasource, pluginSelector, sandbox, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	return datasourceConfig, nil
 }
 
 func maybeError[T any](ctx *apictx.Context, fn func() (*T, string, error)) (*T, string, error, error) {
@@ -878,7 +907,7 @@ func executeDynamicWorkflow(
 func getRenderedConfig(
 	ctx *apictx.Context,
 	config *structpb.Value,
-	plugin func(string) plugins.Plugin,
+	plugin func(*plugins.Input) plugins.Plugin,
 	sandbox engine.Sandbox,
 	logger *zap.Logger,
 ) (*structpb.Value, error) {

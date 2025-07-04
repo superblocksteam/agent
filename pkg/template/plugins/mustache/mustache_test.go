@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/superblocksteam/agent/pkg/template/plugins"
 )
 
 func TestMustacheScanner(t *testing.T) {
@@ -65,7 +66,7 @@ func TestMustacheScanner(t *testing.T) {
 			expectedValue: []string{" 2 + 2 "},
 		},
 	} {
-		plugin := Plugin(test.input)
+		plugin := Plugin(&plugins.Input{Data: test.input})
 
 		var text []string
 		var value []string

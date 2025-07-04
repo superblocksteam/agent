@@ -1,5 +1,5 @@
 {
-	"id": "d713ce45-9e70-46ab-9f39-1cf4f493d4dc",
+	"id": "fd3599d8-5faa-4919-962c-e985a30ad0d6",
 	"name": "staging",
 	"values": [
 		{
@@ -49,9 +49,15 @@
 			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsIm5hbWUiOiJKb2V5IERvZSIsImlhdCI6MTY4MDAwMDAwMH0.dummysignature1234567890",
 			"type": "secret",
 			"enabled": true
+		},
+		{
+			"key": "RUN_DISABLED_TESTS",
+			"value": "false",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2025-05-06T14:31:17.946Z",
-	"_postman_exported_using": "Postman/11.43.2"
+	"_postman_exported_at": "2025-07-01T22:21:05.291Z",
+	"_postman_exported_using": "Postman/11.51.3"
 }

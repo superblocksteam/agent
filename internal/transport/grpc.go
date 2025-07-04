@@ -33,6 +33,7 @@ import (
 	secretsoptions "github.com/superblocksteam/agent/pkg/secrets/options"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/gc"
+	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/validation"
 	"github.com/superblocksteam/agent/pkg/worker"
@@ -516,6 +517,11 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		}
 	}
 
+	// Always use mustache template plugin for now
+	// This will be updated to support the noop plugin once all string fields in
+	// APIs are correctly wrapped (with IIFE (() => ...)(), or backticks ``)
+	templatePlugin := mustache.Instance
+
 	var failures []*commonv1.Error
 	var mutex sync.Mutex
 
@@ -549,6 +555,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		DisableSignatureVerification: disableSignatureVerification,
 		BranchName:                   req.GetFetch().GetBranchName(),
 		Mocker:                       mocker.New(req.GetMocks(), bus),
+		TemplatePlugin:               templatePlugin,
 	}, func(resp *apiv1.StreamResponse) error {
 		if err := executor.ExtractErrorFromEvent(resp.GetEvent()); err != nil {
 			mutex.Lock()

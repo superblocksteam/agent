@@ -16,7 +16,7 @@ import (
 
 func TestRender(t *testing.T) {
 	metrics.RegisterMetrics()
-	mustache := func(input string) plugins.Plugin {
+	mustache := func(input *plugins.Input) plugins.Plugin {
 		return mustache.Plugin(input)
 	}
 
@@ -27,7 +27,7 @@ func TestRender(t *testing.T) {
 
 	for _, test := range []struct {
 		name     string
-		scanner  func(string) plugins.Plugin
+		scanner  func(*plugins.Input) plugins.Plugin
 		template string
 		expected string
 	}{
@@ -86,7 +86,7 @@ func TestRender(t *testing.T) {
 				assert.NoError(t, err, test.name)
 
 				return e.Resolve(ctx, template, nil)
-			}, zap.NewExample()).Render(context.Background(), test.template)
+			}, zap.NewExample()).Render(context.Background(), &plugins.Input{Data: test.template})
 
 			assert.NoError(t, err, test.name)
 			assert.Equal(t, test.expected, *result, test.template)
