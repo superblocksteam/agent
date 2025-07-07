@@ -1880,6 +1880,78 @@ const integrationTestApis = [
       profile: 'production',
     },
   },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000038',
+        organization: '00000000-0000-0000-0000-000000000001',
+        name: 'TestApi3',
+        path: '/pages/Page 2/apis/TestApi3/api.yaml',
+        commitId: '0136102ea4d6a7ad2d112063e88955843ca9efe2',
+      },
+      signature: {
+        data: 'NqhHqcQhQXu+SwA8IvGjaAUkBRlhFnOuKdImb4rWszAdYmOnxU78uObaVOsuxsFFqCNM4FWVKlNoklHK1NcXBw==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'VARS_BLOCK',
+          variables: {
+            items: [
+              {
+                key: 'MAX_AGE',
+                value: '(() => 2 * 10 + 9)()',
+                type: 'TYPE_ADVANCED',
+              },
+            ],
+          },
+        },
+        {
+          name: 'GetUsers',
+          step: {
+            integration: 'postgres',
+            postgres: {
+              body: '`\nSELECT\n\tname,\n\tage\nFROM mytable\nWHERE age < ${await MAX_AGE.get()}\nLIMIT 1\n`',
+              usePreparedSql: false,
+              operation: 'run_sql',
+            },
+          },
+        },
+      ],
+    },
+    integrations: {
+      postgres: {
+        endpoint: {
+          host: 'postgres',
+          port: 5432,
+        },
+        connection: {
+          useSsl: false,
+          useSelfSignedSsl: false,
+        },
+        authentication: {
+          username: '`post${"gres"}`',
+          password: 'password',
+          custom: {
+            databaseName: {
+              value: 'postgres',
+            },
+          },
+        },
+        bindingFields: [
+          'authentication.username',
+          'custom.databaseName.value',
+        ],
+      },
+    },
+    metadata: {
+      profile: 'production',
+    },
+  },
 ];
 
 module.exports = integrationTestApis;
