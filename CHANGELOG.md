@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for scoped (JWT) tokens with multiple scopes
 - Added support for API-level authorization
 - Added support for resolving integration configurations using the new (JavaScript template literals) bindings syntax
-- Updated binding resolution to treat entire fields in APIs as bindings for APIs fetched by path
 
 ## v1.22.0
 
