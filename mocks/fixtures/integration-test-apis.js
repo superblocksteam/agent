@@ -1952,6 +1952,106 @@ const integrationTestApis = [
       profile: 'production',
     },
   },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000039',
+        organization: '00000000-0000-0000-0000-000000000001',
+        name: 'TestApi4',
+        path: '/pages/Page 2/apis/TestApi4/api.yaml',
+        commitId: 'a5071fd465bd98175b14ed01f9069dc7ab79b0ec',
+      },
+      signature: {
+        data: 'Dy7a/ZK5Mx1/gwVPYAmEi5V5FBZj4vGADCOtzCadqajuIX607V6wp3lTGHlKKR8rSaIl4GzeFHCdTNbyBol0Bg==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'VARS_BLOCK',
+          variables: {
+            items: [
+              {
+                key: 'MAX_AGE',
+                value: '(() => 2 * 10 + 9)()',
+                type: 'TYPE_ADVANCED',
+              },
+            ],
+          },
+        },
+        {
+          name: 'PostmanEchoGet',
+          step: {
+            restapi: {
+              body: '',
+              path: 'https://postman-echo.com/get',
+              params: [
+                {
+                  key: 'max_age',
+                  value: '`${await MAX_AGE.get()}`',
+                  valueOptions: [],
+                },
+              ],
+              headers: [
+                {
+                  key: 'Content-Type',
+                  value: 'application/json',
+                  valueOptions: [],
+                },
+                {
+                  key: '',
+                  value: '',
+                  valueOptions: [],
+                },
+              ],
+              bodyType: 'jsonBody',
+              jsonBody: '',
+              httpMethod: 'GET',
+              responseType: 'auto',
+            },
+          },
+        },
+        {
+          name: 'GetUsers',
+          step: {
+            integration: 'postgres',
+            postgres: {
+              body: '`\nSELECT\n\tname,\n\tage\nFROM mytable\nWHERE age < ${await MAX_AGE.get()}\nLIMIT 1\n`',
+              usePreparedSql: true,
+              operation: 'run_sql',
+            },
+          },
+        },
+      ],
+    },
+    integrations: {
+      postgres: {
+        endpoint: {
+          host: 'postgres',
+          port: 5432,
+        },
+        connection: {
+          useSsl: false,
+          useSelfSignedSsl: false,
+        },
+        authentication: {
+          username: 'postgres',
+          password: 'password',
+          custom: {
+            databaseName: {
+              value: 'postgres',
+            },
+          },
+        },
+      },
+    },
+    metadata: {
+      profile: 'production',
+    },
+  },
 ];
 
 module.exports = integrationTestApis;

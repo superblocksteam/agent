@@ -112,9 +112,11 @@ type resolver struct {
 	// This is used to determine whether or not we should
 	// be sending the agent key as part of the workflow fetch.
 	// This should only be true in the case of a scheduled job
-	useAgentKey        bool
-	v8SupportedModules map[string]bool
-	templatePlugin     func(*plugins.Input) plugins.Plugin
+	useAgentKey            bool
+	v8SupportedModules     map[string]bool
+	templatePlugin         func(*plugins.Input) plugins.Plugin
+	legacyTemplatePlugin   func(*plugins.Input) plugins.Plugin
+	legacyTemplateResolver func(context.Context, string) engine.Value
 
 	Events
 	*Options
@@ -183,20 +185,22 @@ func NewResolver(
 			mutex:   sync.RWMutex{},
 			exiters: map[string](chan *exit){},
 		},
-		apiName:            options.Api.GetMetadata().GetName(),
-		rootStartTime:      options.RootStartTime,
-		timeout:            options.Timeout,
-		fetcher:            options.Fetcher,
-		tokenManager:       options.TokenManager,
-		fetchToken:         options.FetchToken,
-		definitionMetadata: options.DefinitionMetadata,
-		integrations:       options.Integrations,
-		isDeployed:         options.IsDeployed,
-		SecretManager:      options.SecretManager,
-		secrets:            options.Secrets,
-		Options:            options,
-		v8SupportedModules: make(map[string]bool),
-		templatePlugin:     options.TemplatePlugin,
+		apiName:                options.Api.GetMetadata().GetName(),
+		rootStartTime:          options.RootStartTime,
+		timeout:                options.Timeout,
+		fetcher:                options.Fetcher,
+		tokenManager:           options.TokenManager,
+		fetchToken:             options.FetchToken,
+		definitionMetadata:     options.DefinitionMetadata,
+		integrations:           options.Integrations,
+		isDeployed:             options.IsDeployed,
+		SecretManager:          options.SecretManager,
+		secrets:                options.Secrets,
+		Options:                options,
+		v8SupportedModules:     make(map[string]bool),
+		templatePlugin:         options.TemplatePlugin,
+		legacyTemplatePlugin:   options.LegacyTemplatePlugin,
+		legacyTemplateResolver: options.LegacyTemplateResolver,
 	}
 }
 
@@ -693,13 +697,28 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 		var resolvedActionCfg *structpb.Struct
 		var shouldRender bool
 		{
-			if shouldRender = shouldRenderActionConfig(action, p.Type(), wops.Apply(opts.Worker...).Stream != nil); shouldRender {
+			isStreamingExecution := wops.Apply(opts.Worker...).Stream != nil
+
+			if shouldRender = shouldRenderActionConfig(action, p.Type(), isStreamingExecution); shouldRender {
 				sandbox := r.createSandboxFunc()
 				defer sandbox.Close()
 				rendered, err := template.RenderProtoValue(ctx, structpb.NewStructValue(action), r.templatePlugin, sandbox, r.logger)
 				if err != nil {
 					return nil, "", err
 				}
+				resolvedActionCfg = rendered.GetStructValue()
+			} else if r.shouldConvertToLegacyBindings(action, p.Type(), isStreamingExecution) {
+				rendered, err := template.RenderProtoValueWithResolver(
+					ctx,
+					structpb.NewStructValue(action),
+					r.legacyTemplatePlugin,
+					r.legacyTemplateResolver,
+					r.logger,
+				)
+				if err != nil {
+					return nil, "", err
+				}
+
 				resolvedActionCfg = rendered.GetStructValue()
 			} else {
 				resolvedActionCfg = action
@@ -1665,6 +1684,27 @@ func (r *resolver) collectAndFlush(ctx *apictx.Context, refs utils.List[string],
 	r.variables.Record(ref)
 
 	return ref, nil
+}
+
+func (r *resolver) shouldConvertToLegacyBindings(action *structpb.Struct, pluginType string, stream bool) bool {
+	// If the legacy template plugin or resolver is not set, we should not convert to legacy bindings
+	if r.legacyTemplatePlugin == nil || r.legacyTemplateResolver == nil {
+		return false
+	}
+
+	// If the action config should be rendered, there is no need to convert to legacy bindings
+	if shouldRenderActionConfig(action, pluginType, stream) {
+		return false
+	}
+
+	// We should not convert python or javascript plugins to legacy bindings since the
+	// body of their steps should already be valid python/javascript and thus does not
+	// need to be wrapped in mustache templates
+	if pluginType == "python" || pluginType == "javascript" || pluginType == "v8" {
+		return false
+	}
+
+	return true
 }
 
 func shouldRenderActionConfig(action *structpb.Struct, pluginType string, stream bool) bool {
