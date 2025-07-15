@@ -33,6 +33,9 @@ import (
 	secretsoptions "github.com/superblocksteam/agent/pkg/secrets/options"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/gc"
+	"github.com/superblocksteam/agent/pkg/template/plugins"
+	"github.com/superblocksteam/agent/pkg/template/plugins/expression"
+	"github.com/superblocksteam/agent/pkg/template/plugins/legacyexpression"
 	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/validation"
@@ -517,10 +520,19 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		}
 	}
 
-	// Always use mustache template plugin for now
-	// This will be updated to support the expression plugin once the workers
-	// are updated to support the expression plugin as well.
-	templatePlugin := mustache.Instance
+	var legacyTemplatePlugin func(*plugins.Input) plugins.Plugin
+	var legacyTemplateResolver func(context.Context, string) engine.Value
+	var templatePlugin func(*plugins.Input) plugins.Plugin
+	{
+		if req.GetFetchByPath() != nil {
+			templatePlugin = expression.Instance
+
+			legacyTemplatePlugin = legacyexpression.Instance
+			legacyTemplateResolver = legacyexpression.Resolver
+		} else {
+			templatePlugin = mustache.Instance
+		}
+	}
 
 	var failures []*commonv1.Error
 	var mutex sync.Mutex
@@ -556,6 +568,8 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		BranchName:                   req.GetFetch().GetBranchName(),
 		Mocker:                       mocker.New(req.GetMocks(), bus),
 		TemplatePlugin:               templatePlugin,
+		LegacyTemplatePlugin:         legacyTemplatePlugin,
+		LegacyTemplateResolver:       legacyTemplateResolver,
 	}, func(resp *apiv1.StreamResponse) error {
 		if err := executor.ExtractErrorFromEvent(resp.GetEvent()); err != nil {
 			mutex.Lock()

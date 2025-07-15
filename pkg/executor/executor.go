@@ -102,6 +102,8 @@ type Options struct {
 	RawApi                       *structpb.Value
 	Renderer                     template.RenderFunc
 	TemplatePlugin               func(*plugins.Input) plugins.Plugin
+	LegacyTemplatePlugin         func(*plugins.Input) plugins.Plugin
+	LegacyTemplateResolver       func(context.Context, string) engine.Value
 	RootStartTime                time.Time
 	Timeout                      time.Duration
 	Requester                    string

@@ -14,11 +14,28 @@ import (
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	"github.com/superblocksteam/agent/pkg/template/plugins"
+	"github.com/superblocksteam/agent/pkg/utils"
+	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 )
 
 // RenderProtoValue is a helper function that uses the provided RenderFunc
 // to recurse through a *structpb.Value and render every nested string.
 func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(*plugins.Input) plugins.Plugin, sandbox engine.Sandbox, logger *zap.Logger) (*structpb.Value, error) {
+	// We cannot do anything if the proper parameters weren't specified.
+	if plugin == nil || sandbox == nil {
+		return nil, errors.New("both a plugin and sandbox must be provided")
+	}
+
+	return RenderProtoValueWithResolver(ctx, x, plugin, defaultEngineResolver(sandbox, ctx.Variables), logger)
+}
+
+func RenderProtoValueWithResolver(
+	ctx *apictx.Context,
+	x *structpb.Value,
+	plugin func(*plugins.Input) plugins.Plugin,
+	resolver func(context.Context, string) engine.Value,
+	logger *zap.Logger,
+) (*structpb.Value, error) {
 
 	// NOTE(frank): When you're looking at this 6 months from now asking
 	// yourself, "Why isn't Frank doing `do := func() {...}`??", you can't
@@ -32,8 +49,8 @@ func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(*plugi
 			}
 
 			// We cannot do anything if the proper parameters weren't specified.
-			if plugin == nil || sandbox == nil {
-				return nil, errors.New("both a plugin and sandbox must be provided")
+			if plugin == nil || resolver == nil {
+				return nil, errors.New("both a plugin and resolver must be provided")
 			}
 
 			if logger == nil {
@@ -111,17 +128,19 @@ func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(*plugi
 			cloned = &newCtx
 		}
 
-		// NOTE(frank): There's an optimization here where we can init once
-		// and share on future calls. However, I was running into some issues.
-		resolver := func(ctx context.Context, template string) engine.Value {
-			e, err := sandbox.Engine(ctx)
-			if err != nil {
-				return e.Failed(err)
-			}
-
-			return e.Resolve(ctx, template, cloned.Variables)
-		}
-
 		return do(cloned.Context, resolver, "", x)
 	}, nil)
+}
+
+func defaultEngineResolver(sandbox engine.Sandbox, variables utils.Map[*transportv1.Variable]) func(context.Context, string) engine.Value {
+	// NOTE(frank): There's an optimization here where we can init once
+	// and share on future calls. However, I was running into some issues.
+	return func(ctx context.Context, template string) engine.Value {
+		e, err := sandbox.Engine(ctx)
+		if err != nil {
+			return e.Failed(err)
+		}
+
+		return e.Resolve(ctx, template, variables)
+	}
 }

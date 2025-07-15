@@ -1,12 +1,15 @@
 package executor
 
 import (
+	"context"
 	"testing"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/stretchr/testify/assert"
 	mocks "github.com/superblocksteam/agent/internal/flags/mock"
+	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/plugin"
+	"github.com/superblocksteam/agent/pkg/template/plugins"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 )
 
@@ -249,4 +252,131 @@ func TestShouldRenderActionConfig(t *testing.T) {
 		t.Parallel()
 		assert.True(t, shouldRenderActionConfig(nil, "somePlugin", true))
 	})
+}
+
+func TestShouldConvertToLegacyBindings(t *testing.T) {
+	t.Parallel()
+
+	mockTemplatePlugin := func(*plugins.Input) plugins.Plugin { return nil }
+	mockTemplateResolver := func(context.Context, string) engine.Value { return nil }
+
+	tests := []struct {
+		name                   string
+		legacyTemplatePlugin   func(*plugins.Input) plugins.Plugin
+		legacyTemplateResolver func(context.Context, string) engine.Value
+		action                 *structpb.Struct
+		pluginType             string
+		stream                 bool
+		expected               bool
+		description            string
+	}{
+		{
+			name:                   "Should return false when legacy template plugin is nil",
+			legacyTemplatePlugin:   nil,
+			legacyTemplateResolver: mockTemplateResolver,
+			action:                 &structpb.Struct{},
+			pluginType:             "somePlugin",
+			stream:                 false,
+			expected:               false,
+			description:            "Legacy template plugin is nil",
+		},
+		{
+			name:                   "Should return false when legacy template resolver is nil",
+			legacyTemplatePlugin:   mockTemplatePlugin,
+			legacyTemplateResolver: nil,
+			action:                 &structpb.Struct{},
+			pluginType:             "somePlugin",
+			stream:                 false,
+			expected:               false,
+			description:            "Legacy template resolver is nil",
+		},
+		{
+			name:                   "Should return false when shouldRenderActionConfig returns true",
+			legacyTemplatePlugin:   mockTemplatePlugin,
+			legacyTemplateResolver: mockTemplateResolver,
+			action:                 &structpb.Struct{},
+			pluginType:             "somePlugin",
+			stream:                 true,
+			expected:               false,
+			description:            "shouldRenderActionConfig returns true",
+		},
+		{
+			name:                   "Should return false for python plugin type",
+			legacyTemplatePlugin:   mockTemplatePlugin,
+			legacyTemplateResolver: mockTemplateResolver,
+			action:                 &structpb.Struct{},
+			pluginType:             "python",
+			stream:                 false,
+			expected:               false,
+			description:            "Python plugin type should not convert to legacy bindings",
+		},
+		{
+			name:                   "Should return false for javascript plugin type",
+			legacyTemplatePlugin:   mockTemplatePlugin,
+			legacyTemplateResolver: mockTemplateResolver,
+			action:                 &structpb.Struct{},
+			pluginType:             "javascript",
+			stream:                 false,
+			expected:               false,
+			description:            "JavaScript plugin type should not convert to legacy bindings",
+		},
+		{
+			name:                   "Should return false for v8 plugin type",
+			legacyTemplatePlugin:   mockTemplatePlugin,
+			legacyTemplateResolver: mockTemplateResolver,
+			action:                 &structpb.Struct{},
+			pluginType:             "v8",
+			stream:                 false,
+			expected:               false,
+			description:            "V8 plugin type should not convert to legacy bindings",
+		},
+		{
+			name:                   "Should return true for restapi plugin type",
+			legacyTemplatePlugin:   mockTemplatePlugin,
+			legacyTemplateResolver: mockTemplateResolver,
+			action:                 &structpb.Struct{},
+			pluginType:             "restapi",
+			stream:                 false,
+			expected:               true,
+			description:            "REST API plugin type should convert to legacy bindings",
+		},
+		{
+			name:                   "Should return true for restapiintegration plugin type",
+			legacyTemplatePlugin:   mockTemplatePlugin,
+			legacyTemplateResolver: mockTemplateResolver,
+			action:                 &structpb.Struct{},
+			pluginType:             "restapiintegration",
+			stream:                 false,
+			expected:               true,
+			description:            "REST API integration plugin type should convert to legacy bindings",
+		},
+		{
+			name:                   "Should return true for plugins that use readContents",
+			legacyTemplatePlugin:   mockTemplatePlugin,
+			legacyTemplateResolver: mockTemplateResolver,
+			action: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"someField": {Kind: &structpb.Value_StringValue{StringValue: "readContents"}},
+				},
+			},
+			pluginType:  "somePlugin",
+			stream:      false,
+			expected:    true,
+			description: "returns true for plugins that use readContents",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r := &resolver{
+				legacyTemplatePlugin:   tt.legacyTemplatePlugin,
+				legacyTemplateResolver: tt.legacyTemplateResolver,
+			}
+
+			result := r.shouldConvertToLegacyBindings(tt.action, tt.pluginType, tt.stream)
+			assert.Equal(t, tt.expected, result, tt.description)
+		})
+	}
 }
