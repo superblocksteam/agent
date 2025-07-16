@@ -2,7 +2,7 @@
   "name": "worker.js",
   "version": "0.0.1",
   "engines": {
-    "node": "20.16.0",
+    "node": "20.19.4",
     "npm": "^10.8.1",
     "pnpm": "9.7.1"
   },

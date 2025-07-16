@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.9.0
 
-ARG NODE_VERSION=20.16.0
+ARG NODE_VERSION=20.19.4
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION} AS builder
 
 ARG DEASYNC_VERSION=0.1.29
@@ -12,7 +12,7 @@ COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock.yaml ./
 RUN npm install -g clean-modules && \
     npm install                  && \
     npx pnpm fetch
-    
+
 COPY ./workers/javascript/ ./
 
 RUN npx pnpm install -r --offline                     && \
@@ -41,7 +41,7 @@ COPY --from=builder /workers/javascript/node_modules ./node_modules
 COPY --from=builder /workers/javascript/packages     ./packages
 
 RUN id -u node &>/dev/null || useradd node                                             && \
-    groupadd --force --gid 1000 node                                                   && \ 
+    groupadd --force --gid 1000 node                                                   && \
     usermod --uid 1000 --gid node --shell /bin/bash --move-home --home /home/node node
 
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA=dev-private-rsa
