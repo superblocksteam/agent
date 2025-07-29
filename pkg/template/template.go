@@ -45,16 +45,11 @@ func (t *template[T]) Render(ctx context.Context, template *plugins.Input) (*T, 
 		for plugin.Scan() {
 			tokens = append(tokens, plugin.Value())
 		}
-
-		// There is nothing to render so no need to proceed.
-		if len(tokens) == 0 {
-			return utils.Pointer(T(template.GetData())), nil
-		}
 	}
 
-	// Third, we pass our tokens `[]string{" 2 + 2 "}` to our processing engine.
+	// Third, if we found tokens, we pass them `[]string{" 2 + 2 "}` to our processing engine.
 	var processed []string
-	{
+	if len(tokens) > 0 {
 		in := fmt.Sprintf("{{ [ %s ] }}", strings.Join(tokens, ", "))
 
 		resolved, err := t.resolver(ctx, in).Result()
@@ -72,7 +67,7 @@ func (t *template[T]) Render(ctx context.Context, template *plugins.Input) (*T, 
 		processed = typed
 	}
 
-	// Fourth, we take our proccessed values `[]string{" 4 "}` and render the template.
+	// Fourth, we take our processed values (if any) `[]string{" 4 "}` and render the template.
 	rendered, err := plugin.Render(processed)
 	if err != nil {
 		t.logger.Error("could not render template", zap.Error(err))

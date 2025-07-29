@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 
 - Updated binding resolution to treat entire fields in APIs as bindings for APIs fetched by path
+- Fix binding resolution of template literals for plugins requiring legacy binding resolution (i.e. JavaScript worker performs binding resolution)
 
 ## v1.23.0
 
