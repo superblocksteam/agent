@@ -21,6 +21,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
+	"github.com/superblocksteam/agent/pkg/testutils"
 	"github.com/superblocksteam/agent/pkg/utils"
 	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
@@ -984,6 +985,120 @@ func TestRenderDatasourceConfig_EdgeCases(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Equal(t, tt.datasource, result)
+		})
+	}
+}
+
+func TestFilterParameters(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		parameters *commonv1.HttpParameters
+		trigger    *apiv1.Trigger_Workflow
+		expected   *commonv1.HttpParameters
+	}{
+		{
+			name: "happy path",
+			parameters: &commonv1.HttpParameters{
+				Query: map[string]*structpb.Value{
+					"query1": structpb.NewStringValue("value1"),
+					"query2": structpb.NewStringValue("value2"),
+				},
+				Body: map[string]*structpb.Value{
+					"body1": structpb.NewStringValue("value1"),
+					"body2": structpb.NewStringValue("value2"),
+				},
+			},
+			trigger: &apiv1.Trigger_Workflow{
+				Parameters: &apiv1.Trigger_Workflow_Parameters{
+					Query: map[string]*apiv1.Trigger_Workflow_Parameters_QueryParam{
+						"query1": {
+							Values: []string{"value1"},
+						},
+					},
+					Body: map[string]*structpb.Value{
+						"body1": structpb.NewStringValue("value1"),
+					},
+				},
+			},
+			expected: &commonv1.HttpParameters{
+				Query: map[string]*structpb.Value{
+					"query1": structpb.NewStringValue("value1"),
+				},
+				Body: map[string]*structpb.Value{
+					"body1": structpb.NewStringValue("value1"),
+				},
+			},
+		},
+		{
+			name: "no parameters",
+			parameters: &commonv1.HttpParameters{
+				Query: map[string]*structpb.Value{},
+				Body:  map[string]*structpb.Value{},
+			},
+			trigger: &apiv1.Trigger_Workflow{
+				Parameters: &apiv1.Trigger_Workflow_Parameters{
+					Query: map[string]*apiv1.Trigger_Workflow_Parameters_QueryParam{
+						"query1": {
+							Values: []string{"value1"},
+						},
+					},
+					Body: map[string]*structpb.Value{
+						"body1": structpb.NewStringValue("value1"),
+					},
+				},
+			},
+			expected: &commonv1.HttpParameters{
+				Query: map[string]*structpb.Value{},
+				Body:  map[string]*structpb.Value{},
+			},
+		},
+		{
+			name: "handles nil trigger parameters",
+			parameters: &commonv1.HttpParameters{
+				Query: map[string]*structpb.Value{
+					"query1": structpb.NewStringValue("value1"),
+				},
+				Body: map[string]*structpb.Value{
+					"body1": structpb.NewStringValue("value1"),
+				},
+			},
+			trigger: &apiv1.Trigger_Workflow{
+				Parameters: nil,
+			},
+			expected: &commonv1.HttpParameters{
+				Query: map[string]*structpb.Value{},
+				Body:  map[string]*structpb.Value{},
+			},
+		},
+		{
+			name: "handles nil body and query",
+			parameters: &commonv1.HttpParameters{
+				Query: map[string]*structpb.Value{
+					"query1": structpb.NewStringValue("value1"),
+				},
+				Body: map[string]*structpb.Value{
+					"body1": structpb.NewStringValue("value1"),
+				},
+			},
+			trigger: &apiv1.Trigger_Workflow{
+				Parameters: &apiv1.Trigger_Workflow_Parameters{
+					Query: nil,
+					Body:  nil,
+				},
+			},
+			expected: &commonv1.HttpParameters{
+				Query: map[string]*structpb.Value{},
+				Body:  map[string]*structpb.Value{},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filterParameters(tt.parameters, tt.trigger)
+			testutils.ProtoEquals(t, tt.expected, tt.parameters)
 		})
 	}
 }
