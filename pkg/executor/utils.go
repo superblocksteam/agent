@@ -334,6 +334,23 @@ func FetchSecretStores(ctx context.Context, fetcher fetch.Fetcher, profile strin
 	return stores, nil
 }
 
+// Filters out parameters that are not present in the V2 API trigger parameters
+func filterParameters(parameters *commonv1.HttpParameters, trigger *apiv1.Trigger_Workflow) {
+	for k := range parameters.Query {
+		_, exists := trigger.GetParameters().GetQuery()[k]
+		if !exists {
+			delete(parameters.Query, k)
+		}
+	}
+
+	for k := range parameters.Body {
+		_, exists := trigger.GetParameters().GetBody()[k]
+		if !exists {
+			delete(parameters.Body, k)
+		}
+	}
+}
+
 func HandleWorkflow(
 	ctx *apictx.Context,
 	sandbox engine.Sandbox,
@@ -378,21 +395,7 @@ func HandleWorkflow(
 	{
 		if trigger := def.GetApi().GetTrigger().GetWorkflow(); trigger != nil {
 			parameters = workflowv2.Parameters
-			for k := range parameters.Query {
-				_, exists := trigger.GetParameters().Query[k]
-				if !exists {
-					delete(parameters.Query, k)
-				}
-			}
-
-			for k := range parameters.Body {
-				if trigger != nil {
-					_, exists := trigger.GetParameters().Body[k]
-					if !exists {
-						delete(parameters.Body, k)
-					}
-				}
-			}
+			filterParameters(parameters, trigger)
 		} else {
 			parameters = &commonv1.HttpParameters{
 				Query: map[string]*structpb.Value{},
