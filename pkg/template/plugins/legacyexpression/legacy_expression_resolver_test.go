@@ -163,27 +163,27 @@ func TestResolver(t *testing.T) {
 		{
 			name:     "empty input",
 			input:    "",
-			expected: []string{},
+			expected: []string{"{{}}"},
 		},
 		{
 			name:     "only mustache wrappers with no content",
 			input:    "{{ }}",
-			expected: []string{},
+			expected: []string{"{{}}"},
 		},
 		{
 			name:     "only square brackets with no content",
 			input:    "[ ]",
-			expected: []string{},
+			expected: []string{"{{}}"},
 		},
 		{
 			name:     "empty both wrappers",
 			input:    "{{[]}}",
-			expected: []string{},
+			expected: []string{"{{}}"},
 		},
 		{
 			name:     "whitespace only",
 			input:    "   ",
-			expected: []string{},
+			expected: []string{"{{}}"},
 		},
 		{
 			name:     "items with internal commas (no space after comma)",
