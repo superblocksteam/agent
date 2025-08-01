@@ -65,13 +65,13 @@ func TestRender(t *testing.T) {
 		name             string
 		input            *plugins.Input
 		processed        []string
-		expected         string
 		expectedErrorStr string
 	}{
 		{
-			name:     "empty processed values returns input",
-			input:    &plugins.Input{Data: "`foo, ${'b' + 'a' + 'r'}`"},
-			expected: "`foo, ${'b' + 'a' + 'r'}`",
+			name:             "empty processed values returns error",
+			input:            &plugins.Input{},
+			processed:        []string{},
+			expectedErrorStr: "expression plugin does not support empty processed values",
 		},
 		{
 			name: "multiple processed values returns error",
@@ -87,12 +87,10 @@ func TestRender(t *testing.T) {
 				Data: "(() => [foo, bar, baz].join(','))()",
 			},
 			processed: []string{"foo,bar,baz"},
-			expected:  "foo,bar,baz",
 		},
 		{
 			name:      "single processed value is always returned (nil input)",
 			processed: []string{"foo,bar,baz"},
-			expected:  "foo,bar,baz",
 		},
 	}
 	for _, tc := range testCases {
@@ -104,7 +102,7 @@ func TestRender(t *testing.T) {
 				assert.EqualError(t, err, tc.expectedErrorStr)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.expected, rendered)
+				assert.Equal(t, tc.processed[0], rendered)
 			}
 		})
 	}

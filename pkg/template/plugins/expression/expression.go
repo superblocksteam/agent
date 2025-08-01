@@ -83,7 +83,7 @@ func (e *expression) Value() string {
 
 func (e *expression) Render(processed []string) (string, error) {
 	if len(processed) == 0 {
-		return e.input, nil
+		return "", errors.New("expression plugin does not support empty processed values")
 	}
 
 	if len(processed) > 1 {

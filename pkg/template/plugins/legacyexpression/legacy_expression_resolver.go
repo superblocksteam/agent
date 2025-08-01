@@ -45,7 +45,7 @@ func Resolver(ctx context.Context, input string) engine.Value {
 		trimmed = trimmed[1 : len(trimmed)-1]
 	}
 
-	content := splitOrEmpty(strings.TrimSpace(trimmed), ", ")
+	content := strings.Split(strings.TrimSpace(trimmed), ", ")
 	processed := make([]string, 0, len(content))
 
 	for _, c := range content {
@@ -61,12 +61,4 @@ func Resolver(ctx context.Context, input string) engine.Value {
 	return &legacyExpressionValue{
 		value: processed,
 	}
-}
-
-func splitOrEmpty(input string, sep string) []string {
-	if input == "" {
-		return nil
-	}
-
-	return strings.Split(input, sep)
 }
