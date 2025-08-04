@@ -11,10 +11,11 @@ import (
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
 	"github.com/superblocksteam/agent/pkg/template/plugins"
+	"github.com/superblocksteam/agent/pkg/template/plugins/legacyexpression"
 	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
 )
 
-func TestRender(t *testing.T) {
+func TestRender_Mustache(t *testing.T) {
 	metrics.RegisterMetrics()
 	mustache := func(input *plugins.Input) plugins.Plugin {
 		return mustache.Plugin(input)
@@ -25,9 +26,15 @@ func TestRender(t *testing.T) {
 	})
 	defer s.Close()
 
+	v8Resolver := func(ctx context.Context, template string) engine.Value {
+		e, err := s.Engine(context.Background())
+		assert.NoError(t, err, t.Name())
+
+		return e.Resolve(ctx, template, nil)
+	}
+
 	for _, test := range []struct {
 		name     string
-		scanner  func(*plugins.Input) plugins.Plugin
 		template string
 		expected string
 	}{
@@ -35,58 +42,108 @@ func TestRender(t *testing.T) {
 			name:     "basic",
 			template: "Hello {{ 'Wor' + 'ld' }}",
 			expected: "Hello World",
-			scanner:  mustache,
 		},
 		{
 			name:     "whitespace variations",
 			template: "Hello {{ 'Wor' + 'ld'}}",
 			expected: "Hello World",
-			scanner:  mustache,
 		},
 		{
 			name:     "other types",
 			template: "2 + 2 = {{ 2 + 2 }}",
 			expected: "2 + 2 = 4",
-			scanner:  mustache,
 		},
 		{
 			name:     "basic object",
 			template: `[Object] {{ (() => ({hello: "world"}))() }}`,
 			expected: `[Object] {"hello":"world"}`,
-			scanner:  mustache,
 		},
 		{
 			name:     "no template",
 			template: "Hello World",
 			expected: "Hello World",
-			scanner:  mustache,
 		},
 		{
 			name:     "ends without a template",
 			template: "{{ 'Hello' }} World",
 			expected: "Hello World",
-			scanner:  mustache,
 		},
 		{
 			name:     "multiple templates",
 			template: "{{ 'Hello' }} {{ 'World' }}",
 			expected: "Hello World",
-			scanner:  mustache,
 		},
 		{
 			name:     "json encoded string",
 			template: `{{ "{\"hello\":\"world\"}" }}`,
 			expected: "{\"hello\":\"world\"}",
-			scanner:  mustache,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := New(test.scanner, func(ctx context.Context, template string) engine.Value {
-				e, err := s.Engine(context.Background())
-				assert.NoError(t, err, test.name)
+			template := New(mustache, v8Resolver, zap.NewNop())
+			result, err := template.Render(context.Background(), &plugins.Input{Data: test.template})
 
-				return e.Resolve(ctx, template, nil)
-			}, zap.NewExample()).Render(context.Background(), &plugins.Input{Data: test.template})
+			assert.NoError(t, err, test.name)
+			assert.Equal(t, test.expected, *result, test.template)
+		})
+	}
+}
+
+func TestRender_LegacyExpression(t *testing.T) {
+	metrics.RegisterMetrics()
+	legacyExpressionTemplate := func(input *plugins.Input) plugins.Plugin {
+		return legacyexpression.Plugin(input)
+	}
+
+	for _, test := range []struct {
+		name     string
+		template string
+		expected string
+	}{
+		{
+			name:     "empty template",
+			template: "",
+			expected: "",
+		},
+		{
+			name:     "no template",
+			template: "Hello World",
+			expected: "Hello World",
+		},
+		{
+			name:     "no expressions in string literal",
+			template: "`Hello World`",
+			expected: "Hello World",
+		},
+		{
+			name:     "basic string literal with expression",
+			template: "`Hello ${'Wor' + 'ld'}`",
+			expected: "Hello {{'Wor' + 'ld'}}",
+		},
+		{
+			name:     "string literal with expression and whitespace",
+			template: "`Hello ${ 'Wor' + 'ld'}`",
+			expected: "Hello {{ 'Wor' + 'ld'}}",
+		},
+		{
+			name:     "string literal with multiple expressions",
+			template: "`$2 + $${1 + 1} = $${ 4 * 1 } (as expected)`",
+			expected: "$2 + ${{1 + 1}} = ${{ 4 * 1 }} (as expected)",
+		},
+		{
+			name:     "iife",
+			template: "(() => ({hello: 'world'}))()",
+			expected: "{{(() => ({hello: 'world'}))()}}",
+		},
+		{
+			name:     "iife in string literal is not parsed",
+			template: "`(() => ({hello: 'world'}))()`",
+			expected: "(() => ({hello: 'world'}))()",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			template := New(legacyExpressionTemplate, legacyexpression.Resolver, zap.NewNop())
+			result, err := template.Render(context.Background(), &plugins.Input{Data: test.template})
 
 			assert.NoError(t, err, test.name)
 			assert.Equal(t, test.expected, *result, test.template)
