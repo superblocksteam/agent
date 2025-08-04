@@ -1926,7 +1926,7 @@ const integrationTestApis = [
     integrations: {
       postgres: {
         endpoint: {
-          host: 'postgres',
+          host: '`postgres`',
           port: 5432,
         },
         connection: {
@@ -1945,6 +1945,7 @@ const integrationTestApis = [
         bindingFields: [
           'authentication.username',
           'custom.databaseName.value',
+          'endpoint.host',
         ],
       },
     },
@@ -1962,7 +1963,7 @@ const integrationTestApis = [
         commitId: 'a5071fd465bd98175b14ed01f9069dc7ab79b0ec',
       },
       signature: {
-        data: 'Dy7a/ZK5Mx1/gwVPYAmEi5V5FBZj4vGADCOtzCadqajuIX607V6wp3lTGHlKKR8rSaIl4GzeFHCdTNbyBol0Bg==',
+        data: 'DAuiDDbCVBXuW6OoOyS55rPVliRcABS62cxKu980XDhyoK+Y+WoV9GfMEhXwQiX9rA6w85GD/+jJe9GrmNeVAw==',
       },
       trigger: {
         application: {
@@ -1987,7 +1988,7 @@ const integrationTestApis = [
           step: {
             restapi: {
               body: '',
-              path: 'https://postman-echo.com/get',
+              path: '`https://postman-echo.com/get`',
               params: [
                 {
                   key: 'max_age',
