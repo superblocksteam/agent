@@ -7,18 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+## v1.24.0
+
 - Updated binding resolution to treat entire fields in APIs as bindings for APIs fetched by path
 - Fix binding resolution of template literals for plugins requiring legacy binding resolution (i.e. JavaScript worker performs binding resolution)
+- Fix an issue where workflow parameters could be referenced unsafely causing a panic
 
 ## v1.23.0
 
 - Fail silently when trying to delete a GSheets integration that has already been revoked
 - Switch to using pointers for custom JWT claims in JWT middleware and scoped token permissions JWTs
 - Add raw JWT to Go context when using the scoped permissions JWT validators
-- Updated the flow for detecting if JWT middleware should be used 
+- Updated the flow for detecting if JWT middleware should be used
 - Updated execution inputs to use `Global.user` derived from Superblocks JWT
 - Updated claims required to be present in a JWT for agent authorization
-- Updated the "oauth on behalf of token exchange" flow to use the identity provider access token from the Superblocks JWT instead of from the Auth0 JWT 
+- Updated the "oauth on behalf of token exchange" flow to use the identity provider access token from the Superblocks JWT instead of from the Auth0 JWT
 - Changed token scopes to match existing RBAC permissions
 - Added support for scoped (JWT) tokens with multiple scopes
 - Added support for API-level authorization
