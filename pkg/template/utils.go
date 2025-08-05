@@ -26,7 +26,7 @@ func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(*plugi
 		return nil, errors.New("both a plugin and sandbox must be provided")
 	}
 
-	return RenderProtoValueWithResolver(ctx, x, plugin, defaultEngineResolver(sandbox, ctx.Variables), logger)
+	return RenderProtoValueWithResolver(ctx, x, plugin, DefaultEngineResolver(sandbox, ctx.Variables), logger)
 }
 
 func RenderProtoValueWithResolver(
@@ -132,7 +132,7 @@ func RenderProtoValueWithResolver(
 	}, nil)
 }
 
-func defaultEngineResolver(sandbox engine.Sandbox, variables utils.Map[*transportv1.Variable]) func(context.Context, string) engine.Value {
+func DefaultEngineResolver(sandbox engine.Sandbox, variables utils.Map[*transportv1.Variable]) func(context.Context, string) engine.Value {
 	// NOTE(frank): There's an optimization here where we can init once
 	// and share on future calls. However, I was running into some issues.
 	return func(ctx context.Context, template string) engine.Value {

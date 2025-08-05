@@ -664,7 +664,18 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 	if workflowv1 := step.GetWorkflow(); workflowv1 != nil {
 		sandbox := r.createSandboxFunc()
 		defer sandbox.Close()
-		_, ref, _, err := HandleWorkflow(ctx, sandbox, workflowv1, func(_ *apiv1.Definition) string { return ctx.Name }, true, r.Options, ops...)
+
+		_, ref, _, err := HandleWorkflow(
+			ctx,
+			sandbox,
+			workflowv1,
+			func(_ *apiv1.Definition) string { return ctx.Name },
+			r.templatePlugin,
+			true,
+			r.Options,
+			ops...,
+		)
+
 		return nil, ref, err
 	}
 
