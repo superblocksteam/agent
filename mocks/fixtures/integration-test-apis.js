@@ -2053,6 +2053,88 @@ const integrationTestApis = [
       profile: 'production',
     },
   },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000040',
+        organization: '00000000-0000-0000-0000-000000000001',
+        name: 'TestApi5',
+        path: '/pages/Page 2/apis/TestApi5/api.yaml',
+        commitId: '00d48f0552542af85c45d43648fc951d22c3e53f',
+      },
+      signature: {
+        data: 'WTuWlDQ19gkRofhFEPfrMxxBZaWLWNi5LCtaoWM45bONSYcXUu48cARWo+eTzBXdzONBEiBcQO34QRXtsqGNAg==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            integration: 'workflow',
+            workflow: {
+              custom: {
+                email: {
+                  value: '`status-test-${2 * 100}@superblockshq.com`',
+                },
+              },
+              queryParams: {
+                level: {
+                  value: '`warn_over_${90 * 100}`',
+                },
+              },
+              workflow: '`00000000-0000-0000-0000-000000000041`',
+            },
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+  },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000041',
+        name: 'TestWorkflowWithQueryParamsAndBodyParams',
+        organization: '00000000-0000-0000-0000-000000000001',
+      },
+      signature: {
+        data: 'Fa8Ae/q3F/vACX5CCDthXyMiUi+Y4ecYd6nEoz+trD6ZfVsDEJ416qneVhG7hF/p3h/XcoyuNdHMrcwCHg8PBw==',
+      },
+      blocks: [
+        {
+          name: 'Step1',
+          step: {
+            javascript: {
+              body: 'const obj = {\n  level: params.level,\n  email: body.email,\n};\n\nconsole.log(`Log level: ${obj.level}`);\nconsole.log(`Execution request initiated by: ${obj.email}`);\nreturn obj;\n',
+            },
+            integration: 'javascript',
+          },
+        },
+      ],
+      trigger: {
+        workflow: {
+          parameters: {
+            body: {
+              email: 'test@superblockshq.com',
+            },
+            query: {
+              level: {
+                values: [
+                  'debug',
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 ];
 
 module.exports = integrationTestApis;

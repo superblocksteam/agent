@@ -16,7 +16,7 @@ module.exports = [
         options: {
           middleware: (req, res) => {
             const data = apiDefinitions.find((definition) => definition.api.metadata.id === req.params.id);
-            if (!checkAuth(req, data.api)) {
+            if (!checkAuth(req, data?.api)) {
               return res.sendStatus(401);
             }
 

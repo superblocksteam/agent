@@ -356,13 +356,21 @@ func HandleWorkflow(
 	sandbox engine.Sandbox,
 	workflowv1 *workflowv1pkg.Plugin,
 	getName func(*apiv1.Definition) string,
+	templatePlugin func(*plugins.Input) plugins.Plugin,
 	isStep bool,
 	executeOpts *Options,
 	options ...options.Option,
 ) (string, string, *Done, error) {
+
 	workflowv2, err := ToV2(workflowv1, executeOpts.Logger)
 	if err != nil {
 		return "", "", nil, err
+	}
+
+	// We resolve the workflow parameters after fetching the workflow definition, but we want to resolve the workflow ID
+	// now so that we can ensure it's a valid ID before making the fetch request.
+	if resolvedId, err := template.RenderProtoValue(ctx, structpb.NewStringValue(workflowv2.GetId()), templatePlugin, sandbox, executeOpts.Logger); err == nil {
+		workflowv2.Id = resolvedId.GetStringValue()
 	}
 
 	request := constructHandleWorkflowFetchRequest(workflowv2, executeOpts, isStep)
@@ -409,17 +417,8 @@ func HandleWorkflow(
 		// NOTE(frank): I wrote this before I wrote RenderProtoValue. I think we
 		// can throw away some of the following code in favor of it.
 		renderFunc := template.New(
-			func(input *plugins.Input) plugins.Plugin {
-				return mustache.Plugin(input)
-			},
-			func(c context.Context, template string) engine.Value {
-				e, err := sandbox.Engine(c)
-				if err != nil {
-					return e.Failed(err)
-				}
-
-				return e.Resolve(c, template, ctx.Variables)
-			},
+			templatePlugin,
+			template.DefaultEngineResolver(sandbox, ctx.Variables),
 			executeOpts.Logger,
 		).Render
 
@@ -593,7 +592,7 @@ func EvaluateDatasource(
 
 	executeOpts.Logger.Debug("evaluating datasource", zap.String("plugin", pluginName))
 
-	ctxWithDynWfOutput, err := executeDynamicWorkflow(ctx, unrendered, sandbox, garbage, executeOpts, options...)
+	ctxWithDynWfOutput, err := executeDynamicWorkflow(ctx, unrendered, sandbox, garbage, mustache.Instance, executeOpts, options...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -803,6 +802,7 @@ func executeDynamicWorkflow(
 	datasource *structpb.Struct,
 	sandbox engine.Sandbox,
 	garbage gc.GC,
+	templatePlugin func(*plugins.Input) plugins.Plugin,
 	executeOpts *Options,
 	options ...options.Option,
 ) (*apictx.Context, error) {
@@ -833,6 +833,7 @@ func executeDynamicWorkflow(
 		func(f *apiv1.Definition) string {
 			return f.GetApi().GetMetadata().GetName()
 		},
+		templatePlugin,
 		false,
 		executeOpts,
 		options...,
