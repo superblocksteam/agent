@@ -85,6 +85,10 @@ func (flags *noopFlags) GetWorkflowPluginInheritanceEnabled(string) bool {
 	return flags.options.DefaultWorkflowPluginInheritanceEnabled
 }
 
+func (flags *noopFlags) GetBindingsExpressionSyntaxEnabled(string) bool {
+	return flags.options.DefaultBindingsExpressionSyntaxEnabled
+}
+
 func (flags *noopFlags) GetFlagSource() int {
 	return SourceNoop
 }

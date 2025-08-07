@@ -524,7 +524,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	var legacyTemplateResolver func(context.Context, string) engine.Value
 	var templatePlugin func(*plugins.Input) plugins.Plugin
 	{
-		if req.GetFetchByPath() != nil {
+		if req.GetFetchByPath() != nil && s.Flags.GetBindingsExpressionSyntaxEnabled(result.Api.GetMetadata().GetOrganization()) {
 			templatePlugin = expression.Instance
 
 			legacyTemplatePlugin = legacyexpression.Instance

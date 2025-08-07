@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix workflow steps in path based apis to execute the desired workflow as expected (previously failed with `NotFoundError`)
 - Add support for new JavaScript template literals bindings syntax in arguments for workflows
+- Add feature flag around usage of new bindings resolution logic (i.e. whether to resolve JavaScript expression syntax or mustache syntax)
 
 ## v1.24.0
 
