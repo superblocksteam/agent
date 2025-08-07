@@ -20,6 +20,7 @@ type Options struct {
 	DefaultApiTimeout                       float64
 	DefaultGoWorkerEnabled                  bool
 	DefaultWorkflowPluginInheritanceEnabled bool
+	DefaultBindingsExpressionSyntaxEnabled  bool
 	Logger                                  *zap.Logger
 	Config                                  *string
 }
@@ -104,6 +105,12 @@ func WithDefaultWorkflowPluginInheritanceEnabled(workflowPluginInheritanceEnable
 	}
 }
 
+func WithDefaultBindingsLegacyConversionShimDisabled(bindingsLegacyConversionShimDisabled bool) Option {
+	return func(d *Options) {
+		d.DefaultBindingsExpressionSyntaxEnabled = bindingsLegacyConversionShimDisabled
+	}
+}
+
 func WithLogger(logger *zap.Logger) Option {
 	return func(d *Options) {
 		d.Logger = logger
@@ -124,6 +131,7 @@ func Apply(opts ...Option) Options {
 		DefaultApiTimeout:                       float64(time.Duration(1 * time.Hour).Milliseconds()), // NOTE(frank): This is arbitrary.
 		DefaultGoWorkerEnabled:                  false,
 		DefaultWorkflowPluginInheritanceEnabled: false,
+		DefaultBindingsExpressionSyntaxEnabled:  false,
 		Logger:                                  zap.NewNop(),
 		Config:                                  nil,
 	}

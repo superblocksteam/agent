@@ -30,6 +30,24 @@ func (_m *Flags) GetApiTimeoutV2(api *v1.Api, tier string) float64 {
 	return r0
 }
 
+// GetBindingsExpressionSyntaxEnabled provides a mock function with given fields: orgId
+func (_m *Flags) GetBindingsExpressionSyntaxEnabled(orgId string) bool {
+	ret := _m.Called(orgId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBindingsExpressionSyntaxEnabled")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string) bool); ok {
+		r0 = rf(orgId)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // GetComputeMinutesPerWeekV2 provides a mock function with given fields: tier, orgId
 func (_m *Flags) GetComputeMinutesPerWeekV2(tier string, orgId string) float64 {
 	ret := _m.Called(tier, orgId)
