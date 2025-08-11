@@ -14,7 +14,6 @@ type options struct {
 	CommitId       string
 	UserEmail      string
 	UserType       UserType
-	Name           string
 }
 
 type Option func(*options)
@@ -64,12 +63,6 @@ func JwtWithUserEmail(userEmail string) Option {
 func JwtWithUserType(userType UserType) Option {
 	return func(o *options) {
 		o.UserType = userType
-	}
-}
-
-func JwtWithName(name string) Option {
-	return func(o *options) {
-		o.Name = name
 	}
 }
 

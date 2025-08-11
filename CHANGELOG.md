@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support for new JavaScript template literals bindings syntax in arguments for workflows
 - Add feature flag around usage of new bindings resolution logic (i.e. whether to resolve JavaScript expression syntax or mustache syntax)
 - Fix `return`, `send` and `wait` blocks functionality when using new bindings syntax (JavaScript template literal or IIFE)
+- Added preview scoped token type
+- Updated scoped token claims to match the claims provided by the server (where the JWTs are generated)
 
 ## v1.24.0
 

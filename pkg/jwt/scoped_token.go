@@ -23,9 +23,10 @@ const (
 type TokenScopes string
 
 const (
-	TokenScopesBuildApplication TokenScopes = "apps:build"
-	TokenScopesViewApplication  TokenScopes = "apps:view"
-	TokenScopesEditApplication  TokenScopes = "apps:update"
+	TokenScopesBuildApplication   TokenScopes = "apps:build"
+	TokenScopesViewApplication    TokenScopes = "apps:view"
+	TokenScopesPreviewApplication TokenScopes = "apps:preview"
+	TokenScopesEditApplication    TokenScopes = "apps:update"
 )
 
 func (s TokenScopes) String() string {
@@ -64,11 +65,11 @@ type AllScopedClaims struct {
 
 	ApplicationId  string   `json:"app_id"`
 	OrganizationId string   `json:"org_id"`
-	DirectoryHash  string   `json:"dir_hash"`
-	CommitId       string   `json:"commit_id"`
-	UserEmail      string   `json:"user_email,omitempty"`
-	UserType       UserType `json:"user_type,omitempty"`
-	Name           string   `json:"name,omitempty"`
+	UserEmail      string   `json:"user_email"`
+	UserType       UserType `json:"user_type"`
+
+	DirectoryHash string `json:"dir_hash,omitempty"`
+	CommitId      string `json:"commit_id,omitempty"`
 }
 
 func NewAllScopedClaims(opts ...Option) *AllScopedClaims {
@@ -85,7 +86,6 @@ func NewAllScopedClaims(opts ...Option) *AllScopedClaims {
 		CommitId:       o.CommitId,
 		UserEmail:      o.UserEmail,
 		UserType:       o.UserType,
-		Name:           o.Name,
 	}
 }
 
@@ -103,6 +103,8 @@ func (c *AllScopedClaims) AsBuildScopedClaims() *BuildScopedClaims {
 		OrganizationId: c.OrganizationId,
 		DirectoryHash:  c.DirectoryHash,
 		CommitId:       c.CommitId,
+		UserEmail:      c.UserEmail,
+		UserType:       c.UserType,
 	}
 }
 
@@ -119,10 +121,26 @@ func (c *AllScopedClaims) AsViewScopedClaims() *ViewScopedClaims {
 		ApplicationId:  c.ApplicationId,
 		OrganizationId: c.OrganizationId,
 		DirectoryHash:  c.DirectoryHash,
-		CommitId:       c.CommitId,
 		UserEmail:      c.UserEmail,
 		UserType:       c.UserType,
-		Name:           c.Name,
+	}
+}
+
+func (c *AllScopedClaims) AsPreviewScopedClaims() *PreviewScopedClaims {
+	if !c.GetScopes().Contains(TokenScopesPreviewApplication) {
+		return nil
+	}
+
+	return &PreviewScopedClaims{
+		scopedTokenBaseClaims: scopedTokenBaseClaims{
+			RegisteredClaims: c.RegisteredClaims,
+			Scopes:           TokenScopesPreviewApplication,
+		},
+		ApplicationId:  c.ApplicationId,
+		OrganizationId: c.OrganizationId,
+		DirectoryHash:  c.DirectoryHash,
+		UserEmail:      c.UserEmail,
+		UserType:       c.UserType,
 	}
 }
 
@@ -140,7 +158,6 @@ func (c *AllScopedClaims) AsEditScopedClaims() *EditScopedClaims {
 		OrganizationId: c.OrganizationId,
 		UserEmail:      c.UserEmail,
 		UserType:       c.UserType,
-		Name:           c.Name,
 	}
 }
 
@@ -176,6 +193,10 @@ func (c *AllScopedClaims) Validate() error {
 			if err := c.AsViewScopedClaims().Validate(); err != nil {
 				return err
 			}
+		case TokenScopesPreviewApplication:
+			if err := c.AsPreviewScopedClaims().Validate(); err != nil {
+				return err
+			}
 		case TokenScopesEditApplication:
 			if err := c.AsEditScopedClaims().Validate(); err != nil {
 				return err
@@ -191,10 +212,12 @@ func (c *AllScopedClaims) Validate() error {
 type BuildScopedClaims struct {
 	scopedTokenBaseClaims
 
-	ApplicationId  string `json:"app_id"`
-	OrganizationId string `json:"org_id"`
-	DirectoryHash  string `json:"dir_hash"`
-	CommitId       string `json:"commit_id"`
+	ApplicationId  string   `json:"app_id"`
+	OrganizationId string   `json:"org_id"`
+	DirectoryHash  string   `json:"dir_hash"`
+	CommitId       string   `json:"commit_id"`
+	UserEmail      string   `json:"user_email"`
+	UserType       UserType `json:"user_type"`
 }
 
 func NewBuildScopedClaims(opts ...Option) *BuildScopedClaims {
@@ -209,6 +232,8 @@ func NewBuildScopedClaims(opts ...Option) *BuildScopedClaims {
 		OrganizationId: o.OrganizationId,
 		DirectoryHash:  o.DirectoryHash,
 		CommitId:       o.CommitId,
+		UserEmail:      o.UserEmail,
+		UserType:       o.UserType,
 	}
 }
 
@@ -242,10 +267,8 @@ type ViewScopedClaims struct {
 	ApplicationId  string   `json:"app_id"`
 	OrganizationId string   `json:"org_id"`
 	DirectoryHash  string   `json:"dir_hash"`
-	CommitId       string   `json:"commit_id"`
-	UserEmail      string   `json:"user_email,omitempty"`
-	UserType       UserType `json:"user_type,omitempty"`
-	Name           string   `json:"name,omitempty"`
+	UserEmail      string   `json:"user_email"`
+	UserType       UserType `json:"user_type"`
 }
 
 func NewViewScopedClaims(opts ...Option) *ViewScopedClaims {
@@ -259,10 +282,8 @@ func NewViewScopedClaims(opts ...Option) *ViewScopedClaims {
 		ApplicationId:  o.ApplicationId,
 		OrganizationId: o.OrganizationId,
 		DirectoryHash:  o.DirectoryHash,
-		CommitId:       o.CommitId,
 		UserEmail:      o.UserEmail,
 		UserType:       o.UserType,
-		Name:           o.Name,
 	}
 }
 
@@ -290,6 +311,56 @@ func (c *ViewScopedClaims) Validate() error {
 	return nil
 }
 
+type PreviewScopedClaims struct {
+	scopedTokenBaseClaims
+
+	ApplicationId  string   `json:"app_id"`
+	OrganizationId string   `json:"org_id"`
+	DirectoryHash  string   `json:"dir_hash"`
+	UserEmail      string   `json:"user_email"`
+	UserType       UserType `json:"user_type"`
+}
+
+func NewPreviewScopedClaims(opts ...Option) *PreviewScopedClaims {
+	o := NewOptions(opts...)
+
+	return &PreviewScopedClaims{
+		scopedTokenBaseClaims: scopedTokenBaseClaims{
+			RegisteredClaims: o.RegisteredClaims,
+			Scopes:           TokenScopesPreviewApplication,
+		},
+		ApplicationId:  o.ApplicationId,
+		OrganizationId: o.OrganizationId,
+		DirectoryHash:  o.DirectoryHash,
+		UserEmail:      o.UserEmail,
+		UserType:       o.UserType,
+	}
+}
+
+func (c *PreviewScopedClaims) GetRawScopes() TokenScopes {
+	if c == nil {
+		return ""
+	}
+
+	return c.scopedTokenBaseClaims.GetRawScopes()
+}
+
+func (c *PreviewScopedClaims) GetScopes() *utils.Set[TokenScopes] {
+	if c == nil {
+		return nil
+	}
+
+	return c.scopedTokenBaseClaims.GetScopes()
+}
+
+func (c *PreviewScopedClaims) Validate() error {
+	if !c.GetScopes().Contains(TokenScopesPreviewApplication) {
+		return ErrInvalidScope
+	}
+
+	return nil
+}
+
 type EditScopedClaims struct {
 	scopedTokenBaseClaims
 
@@ -297,7 +368,6 @@ type EditScopedClaims struct {
 	OrganizationId string   `json:"org_id"`
 	UserEmail      string   `json:"user_email"`
 	UserType       UserType `json:"user_type"`
-	Name           string   `json:"name"`
 }
 
 func NewEditScopedClaims(opts ...Option) *EditScopedClaims {
@@ -312,7 +382,6 @@ func NewEditScopedClaims(opts ...Option) *EditScopedClaims {
 		OrganizationId: o.OrganizationId,
 		UserEmail:      o.UserEmail,
 		UserType:       o.UserType,
-		Name:           o.Name,
 	}
 }
 
