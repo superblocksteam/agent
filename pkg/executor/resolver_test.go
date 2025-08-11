@@ -380,3 +380,83 @@ func TestShouldConvertToLegacyBindings(t *testing.T) {
 		})
 	}
 }
+
+func TestIsJavaScriptExpression(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "Should return true if the input is a JavaScript template literal",
+			input:    "`JavaScript template literal ${Step1.url} string`",
+			expected: true,
+		},
+		{
+			name:     "Should return true if the input is a JavaScript IIFE",
+			input:    "(() => { return Step1.url })()",
+			expected: true,
+		},
+		{
+			name:     "Should return false if the input is a legacy binding",
+			input:    "{{Step1.url}}",
+			expected: false,
+		},
+		{
+			name:     "Should return false if the input is not a JavaScript expression",
+			input:    "Step1.url",
+			expected: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, isJavaScriptExpression(test.input))
+		})
+	}
+}
+
+func TestGetExpressionFromInput(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+		errStr   string
+	}{
+		{
+			name:     "Should return the input if it is a JavaScript template literal",
+			input:    "`JavaScript template literal ${Step1.url} string`",
+			expected: "`JavaScript template literal ${Step1.url} string`",
+		},
+		{
+			name:     "Should return the input if it is a JavaScript IIFE",
+			input:    "(() => { return Step1.url })()",
+			expected: "(() => { return Step1.url })()",
+		},
+		{
+			name:     "Should return the input if it is a legacy binding",
+			input:    "{{Step1.url}}",
+			expected: "Step1.url",
+		},
+		{
+			name:   "Should return an error if the input is not a JavaScript expression or legacy binding",
+			input:  "Step1.url",
+			errStr: "binding (Step1.url) must be wrapped with {{ <expression> }}",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := getExpressionFromInput(test.input)
+
+			if test.errStr != "" {
+				assert.EqualError(t, err, test.errStr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expected, result)
+			}
+		})
+	}
+}

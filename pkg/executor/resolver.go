@@ -32,6 +32,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/store/gc"
 	"github.com/superblocksteam/agent/pkg/template"
 	"github.com/superblocksteam/agent/pkg/template/plugins"
+	"github.com/superblocksteam/agent/pkg/template/plugins/expression"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	wops "github.com/superblocksteam/agent/pkg/worker/options"
@@ -1002,7 +1003,7 @@ func (r *resolver) Stream(ctx *apictx.Context, block *apiv1.Block_Stream, ops ..
 func (r *resolver) Send(ctx *apictx.Context, block *apiv1.Block_Send, ops ...options.Option) (err error) {
 	var serialized []byte
 	{
-		if _, err := utils.Unwrap(block.Message); err != nil {
+		if _, err := getExpressionFromInput(block.Message); err != nil {
 			// CASE: We were passed a literal string; not a binding. It may or may not be JSON.
 			//		 We're going to give better performance to values already JSON encoded. This
 			//		 approach is also required so that we don't double encode values.
@@ -1053,7 +1054,7 @@ func (r *resolver) Send(ctx *apictx.Context, block *apiv1.Block_Send, ops ...opt
 func (r *resolver) Wait(ctx *apictx.Context, step *apiv1.Block_Wait, ops ...options.Option) (string, string, error) {
 	var condition string
 	{
-		if utils.IsTemplate(step.Condition) {
+		if utils.IsTemplate(step.Condition) || isJavaScriptExpression(step.Condition) {
 			sandbox := r.createSandboxFunc()
 			defer sandbox.Close()
 			cond, err := ResolveTemplate[string](ctx, sandbox, r.logger, step.Condition, false, engine.WithResolved("condition"))
@@ -1088,17 +1089,17 @@ func (r *resolver) Wait(ctx *apictx.Context, step *apiv1.Block_Wait, ops ...opti
 }
 
 func (r *resolver) Return(ctx *apictx.Context, block *apiv1.Block_Return, ops ...options.Option) (ref string, err error) {
-	unwrapped, err := utils.Unwrap(block.Data)
+	expr, err := getExpressionFromInput(block.Data)
 	if err != nil {
 		return "", err
 	}
 
-	// NOTE(frank): This is not performant but is the easiest to do and fits will with the flow of the code.
+	// NOTE(frank): This is not performant but is the easiest to do and fits well with the flow of the code.
 	//				We can be better and actually never leave the orchestrator for this block type.
 	_, ref, err = r.Step(ctx, &apiv1.Step{
 		Config: &apiv1.Step_Javascript{
 			Javascript: &javascriptv1.Plugin{
-				Body: fmt.Sprintf("return %s;", unwrapped),
+				Body: fmt.Sprintf("return %s;", expr),
 			},
 		},
 	})
@@ -1778,6 +1779,30 @@ func shouldRenderActionConfig(action *structpb.Struct, pluginType string, stream
 	}
 
 	return !referencesFilePicker(structpb.NewStructValue(action))
+}
+
+func isJavaScriptExpression(input string) bool {
+	return expression.Instance(&plugins.Input{Data: input}).Scan()
+}
+
+// Input can either be a JavaScript expression, or it must be a legacy style binding (i.e. expression
+// wrapped in mustache tags {{ }}).
+//
+// The expression template's scan will detect if the data is a JavaScript template literal or an IIFE. If it is neither
+// of these, we will treat the data as a legacy style binding.
+func getExpressionFromInput(input string) (string, error) {
+	expressionTemplate := expression.Instance(&plugins.Input{Data: input})
+
+	if expressionTemplate.Scan() {
+		return expressionTemplate.Value(), nil
+	}
+
+	result, err := utils.Unwrap(input)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 }
 
 func (r *resolver) timeLeftOnApi() time.Duration {

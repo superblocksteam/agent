@@ -2135,6 +2135,85 @@ const integrationTestApis = [
       },
     },
   },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000042',
+        organization: '00000000-0000-0000-0000-000000000001',
+        name: 'TestApi6',
+        path: '/pages/Page 2/apis/TestApi6/api.yaml',
+        commitId: 'de04206f30bcaa6fa82cfd03df73b000fd2078ee',
+      },
+      signature: {
+        data: 'cDzX8DqvFOB443P+ZsYPbOmcVjaNeCxpPTVizgBy9p2oKa0Hk1qQnRzRmXEJtMgnx2RlKex/tPmaikXpYFFIAA==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'Parallel1',
+          parallel: {
+            poolSize: 20,
+            static: {
+              paths: {
+                Factorial: {
+                  blocks: [
+                    {
+                      name: 'Factorial',
+                      step: {
+                        integration: 'javascript',
+                        javascript: {
+                          body: 'let result = 1;\nfor (let i = 1; i <= 5; i++) {\n  result *= i;\n}\n\nconsole.log(`5 factorial is: ${result}`);\nreturn result;',
+                        },
+                      },
+                    },
+                  ],
+                },
+                Fibonacci: {
+                  blocks: [
+                    {
+                      name: 'Fibonacci',
+                      step: {
+                        integration: 'javascript',
+                        javascript: {
+                          body: 'function fib(num) {\n  if (num === 0 || num === 1) {\n    return 1;\n  }\n\n  return fib(num - 1) + fib(num - 2);\n}\n\nconst fibNum = fib(5);\n\nconsole.log(`Fibonacci value for 5 is: ${fibNum}`);\nreturn fibNum;',
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            wait: 'WAIT_ALL',
+          },
+        },
+        {
+          name: 'Wait1',
+          wait: {
+            condition: '(() => "Parallel1")()',
+          },
+        },
+        {
+          name: 'Send1',
+          send: {
+            message: '(() => JSON.stringify(Parallel1.output, Object.keys(Parallel1.output).sort()))()',
+          },
+        },
+        {
+          name: 'Return1',
+          return: {
+            data: '(() => `Output of parallel block: ${JSON.stringify(Parallel1.output, Object.keys(Parallel1.output).sort())}`)()',
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+  },
 ];
 
 module.exports = integrationTestApis;
