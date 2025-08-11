@@ -85,7 +85,7 @@ func ResolveTemplate[T any](ctx *apictx.Context, sandbox engine.Sandbox, logger 
 			}
 		}
 
-		ctx.Resolve(*opts.Source, utils.IdempotentUnwrap(template), proto)
+		ctx.Resolve(*opts.Source, "", proto)
 	}
 
 	typed, ok := resolved.(T)

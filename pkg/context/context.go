@@ -112,7 +112,7 @@ func (c *Context) Options() *options.Options {
 	return new(options.Options)
 }
 
-func (c *Context) Resolve(path, binding string, value *structpb.Value, individual ...*structpb.Value) {
+func (c *Context) Resolve(path, _ string, value *structpb.Value, individual ...*structpb.Value) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
