@@ -16,15 +16,17 @@ type validatorArgs struct {
 	registeredClaims jwt.RegisteredClaims
 	parsedJwt        *jwt.Token
 
-	allScopeClaims   *AllScopedClaims
-	buildScopeClaims *AllScopedClaims
-	viewScopeClaims  *AllScopedClaims
-	editScopeClaims  *AllScopedClaims
+	allScopeClaims     *AllScopedClaims
+	buildScopeClaims   *AllScopedClaims
+	viewScopeClaims    *AllScopedClaims
+	previewScopeClaims *AllScopedClaims
+	editScopeClaims    *AllScopedClaims
 
-	allScopesValidationErr  error
-	buildScopeValidationErr error
-	viewScopeValidationErr  error
-	editScopeValidationErr  error
+	allScopesValidationErr    error
+	buildScopeValidationErr   error
+	viewScopeValidationErr    error
+	previewScopeValidationErr error
+	editScopeValidationErr    error
 }
 
 func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
@@ -58,7 +60,7 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 		allScopeClaims: &AllScopedClaims{
 			scopedTokenBaseClaims: scopedTokenBaseClaims{
 				RegisteredClaims: validRegisteredClaims,
-				Scopes:           "apps:build apps:view apps:update",
+				Scopes:           "apps:build apps:view apps:preview apps:update",
 			},
 			ApplicationId:  "app",
 			OrganizationId: "org",
@@ -66,7 +68,6 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			CommitId:       "commit",
 			UserEmail:      "admin@example.com",
 			UserType:       UserTypeExternal,
-			Name:           "External Admin",
 		},
 		buildScopeClaims: &AllScopedClaims{
 			scopedTokenBaseClaims: scopedTokenBaseClaims{
@@ -77,6 +78,8 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			OrganizationId: "org1",
 			DirectoryHash:  "dir1",
 			CommitId:       "commit1",
+			UserEmail:      "user1@example.com",
+			UserType:       UserTypeSuperblocks,
 		},
 		viewScopeClaims: &AllScopedClaims{
 			scopedTokenBaseClaims: scopedTokenBaseClaims{
@@ -86,10 +89,19 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			ApplicationId:  "app1",
 			OrganizationId: "org1",
 			DirectoryHash:  "dir1",
-			CommitId:       "commit1",
 			UserEmail:      "user1@example.com",
 			UserType:       UserTypeSuperblocks,
-			Name:           "User 1",
+		},
+		previewScopeClaims: &AllScopedClaims{
+			scopedTokenBaseClaims: scopedTokenBaseClaims{
+				RegisteredClaims: validRegisteredClaims,
+				Scopes:           TokenScopesPreviewApplication,
+			},
+			ApplicationId:  "app1",
+			OrganizationId: "org1",
+			DirectoryHash:  "dir1",
+			UserEmail:      "user1@example.com",
+			UserType:       UserTypeSuperblocks,
 		},
 		editScopeClaims: &AllScopedClaims{
 			scopedTokenBaseClaims: scopedTokenBaseClaims{
@@ -100,7 +112,6 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			OrganizationId: "org1",
 			UserEmail:      "user1@example.com",
 			UserType:       UserTypeSuperblocks,
-			Name:           "User 1",
 		},
 	}
 }
@@ -113,6 +124,7 @@ func verifyScopedValidators(t *testing.T, a *validatorArgs, useScopedValidationF
 	verifyAllScopedClaims(t, a)
 	verifyBuildScopedClaims(t, a, useScopedValidationFunc)
 	verifyViewScopedClaims(t, a, useScopedValidationFunc)
+	verifyPreviewScopedClaims(t, a, useScopedValidationFunc)
 	verifyEditScopedClaims(t, a, useScopedValidationFunc)
 }
 
@@ -142,6 +154,7 @@ func verifyAllScopedClaims(t *testing.T, a *validatorArgs) {
 	assert.True(t, exists)
 	assert.True(t, scopes.Contains(TokenScopesBuildApplication))
 	assert.True(t, scopes.Contains(TokenScopesViewApplication))
+	assert.True(t, scopes.Contains(TokenScopesPreviewApplication))
 	assert.True(t, scopes.Contains(TokenScopesEditApplication))
 
 	appId, exists := GetApplicationID(allCtx)
@@ -152,14 +165,6 @@ func verifyAllScopedClaims(t *testing.T, a *validatorArgs) {
 	assert.True(t, exists)
 	assert.Equal(t, a.allScopeClaims.OrganizationId, orgId)
 
-	dirHash, exists := GetDirectoryHash(allCtx)
-	assert.True(t, exists)
-	assert.Equal(t, a.allScopeClaims.DirectoryHash, dirHash)
-
-	commitId, exists := GetCommitID(allCtx)
-	assert.True(t, exists)
-	assert.Equal(t, a.allScopeClaims.CommitId, commitId)
-
 	userEmail, exists := GetUserEmail(allCtx)
 	assert.True(t, exists)
 	assert.Equal(t, a.allScopeClaims.UserEmail, userEmail)
@@ -168,9 +173,21 @@ func verifyAllScopedClaims(t *testing.T, a *validatorArgs) {
 	assert.True(t, exists)
 	assert.Equal(t, a.allScopeClaims.UserType, userType)
 
-	name, exists := GetName(allCtx)
-	assert.True(t, exists)
-	assert.Equal(t, a.allScopeClaims.Name, name)
+	dirHash, exists := GetDirectoryHash(allCtx)
+	if a.allScopeClaims.DirectoryHash != "" {
+		assert.True(t, exists)
+		assert.Equal(t, a.allScopeClaims.DirectoryHash, dirHash)
+	} else {
+		assert.False(t, exists)
+	}
+
+	commitId, exists := GetCommitID(allCtx)
+	if a.allScopeClaims.CommitId != "" {
+		assert.True(t, exists)
+		assert.Equal(t, a.allScopeClaims.CommitId, commitId)
+	} else {
+		assert.False(t, exists)
+	}
 }
 
 func verifyBuildScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationFunc bool) {
@@ -218,6 +235,14 @@ func verifyBuildScopedClaims(t *testing.T, a *validatorArgs, useScopedValidation
 	commitId, exists := GetCommitID(buildCtx)
 	assert.True(t, exists)
 	assert.Equal(t, a.buildScopeClaims.CommitId, commitId)
+
+	userEmail, exists := GetUserEmail(buildCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.buildScopeClaims.UserEmail, userEmail)
+
+	userType, exists := GetUserType(buildCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.buildScopeClaims.UserType, userType)
 }
 
 func verifyViewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationFunc bool) {
@@ -262,33 +287,64 @@ func verifyViewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 	assert.True(t, exists)
 	assert.Equal(t, a.viewScopeClaims.DirectoryHash, dirHash)
 
-	commitId, exists := GetCommitID(viewCtx)
-	assert.True(t, exists)
-	assert.Equal(t, a.viewScopeClaims.CommitId, commitId)
-
 	userEmail, exists := GetUserEmail(viewCtx)
-	if a.viewScopeClaims.UserEmail != "" {
-		assert.True(t, exists)
-		assert.Equal(t, a.viewScopeClaims.UserEmail, userEmail)
-	} else {
-		assert.False(t, exists)
-	}
+	assert.True(t, exists)
+	assert.Equal(t, a.viewScopeClaims.UserEmail, userEmail)
 
 	userType, exists := GetUserType(viewCtx)
-	if a.viewScopeClaims.UserType != "" {
+	assert.True(t, exists)
+	assert.Equal(t, a.viewScopeClaims.UserType, userType)
+}
+
+func verifyPreviewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationFunc bool) {
+	var previewCtx context.Context
+	var err error
+
+	if useScopedValidationFunc {
+		previewCtx, err = ValidatePreviewScopedClaims(a.ctx, a.parsedJwt, a.previewScopeClaims.AsPreviewScopedClaims())
+	} else {
+		previewCtx, err = ValidateScopedClaims(a.ctx, a.parsedJwt, a.previewScopeClaims)
+	}
+
+	if a.previewScopeValidationErr != nil {
+		assert.ErrorContains(t, err, a.previewScopeValidationErr.Error())
+		return
+	}
+
+	assert.NoError(t, err)
+	assert.NotNil(t, previewCtx)
+
+	rawJwt, exists := GetRawJwt(previewCtx)
+	if !useScopedValidationFunc && a.parsedJwt != nil {
 		assert.True(t, exists)
-		assert.Equal(t, a.viewScopeClaims.UserType, userType)
+		assert.Equal(t, a.parsedJwt.Raw, rawJwt)
 	} else {
 		assert.False(t, exists)
 	}
 
-	name, exists := GetName(viewCtx)
-	if a.viewScopeClaims.Name != "" {
-		assert.True(t, exists)
-		assert.Equal(t, a.viewScopeClaims.Name, name)
-	} else {
-		assert.False(t, exists)
-	}
+	scopes, exists := GetTokenScopes(previewCtx)
+	assert.True(t, exists)
+	assert.True(t, scopes.Contains(TokenScopesPreviewApplication))
+
+	appId, exists := GetApplicationID(previewCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.previewScopeClaims.ApplicationId, appId)
+
+	orgId, exists := GetOrganizationID(previewCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.previewScopeClaims.OrganizationId, orgId)
+
+	dirHash, exists := GetDirectoryHash(previewCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.previewScopeClaims.DirectoryHash, dirHash)
+
+	userEmail, exists := GetUserEmail(previewCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.previewScopeClaims.UserEmail, userEmail)
+
+	userType, exists := GetUserType(previewCtx)
+	assert.True(t, exists)
+	assert.Equal(t, a.previewScopeClaims.UserType, userType)
 }
 
 func verifyEditScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationFunc bool) {
@@ -336,10 +392,6 @@ func verifyEditScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 	userType, exists := GetUserType(editCtx)
 	assert.True(t, exists)
 	assert.Equal(t, a.editScopeClaims.UserType, userType)
-
-	name, exists := GetName(editCtx)
-	assert.True(t, exists)
-	assert.Equal(t, a.editScopeClaims.Name, name)
 }
 
 func TestOk(t *testing.T) {
@@ -353,15 +405,6 @@ func TestOk_NoParsedJwt(t *testing.T) {
 	verifyValidators(t, args)
 }
 
-func TestOk_ViewScopedClaims_MissingOptionalClaims(t *testing.T) {
-	args := validValidatorArgs(t)
-	args.viewScopeClaims.UserEmail = ""
-	args.viewScopeClaims.UserType = ""
-	args.viewScopeClaims.Name = ""
-
-	verifyValidators(t, args)
-}
-
 func TestErr_ClaimsNotScopedTokenClaims(t *testing.T) {
 	_, err := ValidateScopedClaims(context.Background(), nil, jwt.MapClaims{})
 	assert.EqualError(t, err, "could not parse jwt claims")
@@ -370,6 +413,9 @@ func TestErr_ClaimsNotScopedTokenClaims(t *testing.T) {
 	assert.EqualError(t, err, "could not parse jwt claims")
 
 	_, err = ValidateViewScopedClaims(context.Background(), nil, jwt.MapClaims{})
+	assert.EqualError(t, err, "could not parse jwt claims")
+
+	_, err = ValidatePreviewScopedClaims(context.Background(), nil, jwt.MapClaims{})
 	assert.EqualError(t, err, "could not parse jwt claims")
 
 	_, err = ValidateEditScopedClaims(context.Background(), nil, jwt.MapClaims{})
@@ -387,6 +433,7 @@ func TestErr_ClaimsNotValid(t *testing.T) {
 	args.allScopesValidationErr = expirationErr
 	args.buildScopeValidationErr = expirationErr
 	args.viewScopeValidationErr = expirationErr
+	args.previewScopeValidationErr = expirationErr
 	args.editScopeValidationErr = expirationErr
 
 	verifyValidators(t, args)
@@ -421,6 +468,16 @@ func TestErr_BuildScopedClaims_MissingClaims(t *testing.T) {
 	args.buildScopeClaims.CommitId = ""
 	args.buildScopeValidationErr = errors.New("could not get commit id")
 	verifyValidators(t, args)
+
+	args = validValidatorArgs(t)
+	args.buildScopeClaims.UserEmail = ""
+	args.buildScopeValidationErr = errors.New("could not get user email")
+	verifyValidators(t, args)
+
+	args = validValidatorArgs(t)
+	args.buildScopeClaims.UserType = ""
+	args.buildScopeValidationErr = errors.New("could not get user type")
+	verifyValidators(t, args)
 }
 
 func TestErr_ViewScopedClaims_MissingRequiredClaims(t *testing.T) {
@@ -440,8 +497,40 @@ func TestErr_ViewScopedClaims_MissingRequiredClaims(t *testing.T) {
 	verifyValidators(t, args)
 
 	args = validValidatorArgs(t)
-	args.viewScopeClaims.CommitId = ""
-	args.viewScopeValidationErr = errors.New("could not get commit id")
+	args.viewScopeClaims.UserEmail = ""
+	args.viewScopeValidationErr = errors.New("could not get user email")
+	verifyValidators(t, args)
+
+	args = validValidatorArgs(t)
+	args.viewScopeClaims.UserType = ""
+	args.viewScopeValidationErr = errors.New("could not get user type")
+	verifyValidators(t, args)
+}
+
+func TestErr_PreviewScopedClaims_MissingRequiredClaims(t *testing.T) {
+	args := validValidatorArgs(t)
+	args.previewScopeClaims.ApplicationId = ""
+	args.previewScopeValidationErr = errors.New("could not get application id")
+	verifyValidators(t, args)
+
+	args = validValidatorArgs(t)
+	args.previewScopeClaims.OrganizationId = ""
+	args.previewScopeValidationErr = errors.New("could not get organization id")
+	verifyValidators(t, args)
+
+	args = validValidatorArgs(t)
+	args.previewScopeClaims.DirectoryHash = ""
+	args.previewScopeValidationErr = errors.New("could not get directory hash")
+	verifyValidators(t, args)
+
+	args = validValidatorArgs(t)
+	args.previewScopeClaims.UserEmail = ""
+	args.previewScopeValidationErr = errors.New("could not get user email")
+	verifyValidators(t, args)
+
+	args = validValidatorArgs(t)
+	args.previewScopeClaims.UserType = ""
+	args.previewScopeValidationErr = errors.New("could not get user type")
 	verifyValidators(t, args)
 }
 
@@ -464,10 +553,5 @@ func TestErr_EditScopedClaims_MissingClaims(t *testing.T) {
 	args = validValidatorArgs(t)
 	args.editScopeClaims.UserType = ""
 	args.editScopeValidationErr = errors.New("could not get user type")
-	verifyValidators(t, args)
-
-	args = validValidatorArgs(t)
-	args.editScopeClaims.Name = ""
-	args.editScopeValidationErr = errors.New("could not get name")
 	verifyValidators(t, args)
 }

@@ -34,6 +34,11 @@ func ValidateScopedClaims(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.
 			if err != nil {
 				return nil, err
 			}
+		case TokenScopesPreviewApplication:
+			ctxWithClaims, err = ValidatePreviewScopedClaims(ctxWithClaims, parsed, c.AsPreviewScopedClaims())
+			if err != nil {
+				return nil, err
+			}
 		case TokenScopesEditApplication:
 			ctxWithClaims, err = ValidateEditScopedClaims(ctxWithClaims, parsed, c.AsEditScopedClaims())
 			if err != nil {
@@ -77,6 +82,18 @@ func ValidateBuildScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.
 	}
 	ctx = WithCommitID(ctx, commitId)
 
+	userEmail := c.UserEmail
+	if userEmail == "" {
+		return nil, errors.New("could not get user email")
+	}
+	ctx = WithUserEmail(ctx, userEmail)
+
+	userType := c.UserType
+	if userType == "" {
+		return nil, errors.New("could not get user type")
+	}
+	ctx = WithUserType(ctx, userType)
+
 	return ctx, nil
 }
 
@@ -104,26 +121,56 @@ func ValidateViewScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.C
 	}
 	ctx = WithDirectoryHash(ctx, dirHash)
 
-	commitId := c.CommitId
-	if commitId == "" {
-		return nil, errors.New("could not get commit id")
-	}
-	ctx = WithCommitID(ctx, commitId)
-
 	userEmail := c.UserEmail
-	if userEmail != "" {
-		ctx = WithUserEmail(ctx, userEmail)
+	if userEmail == "" {
+		return nil, errors.New("could not get user email")
 	}
+	ctx = WithUserEmail(ctx, userEmail)
 
 	userType := c.UserType
-	if userType != "" {
-		ctx = WithUserType(ctx, userType)
+	if userType == "" {
+		return nil, errors.New("could not get user type")
+	}
+	ctx = WithUserType(ctx, userType)
+
+	return ctx, nil
+}
+
+func ValidatePreviewScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.Claims) (context.Context, error) {
+	c, err := getScopedClaims[*PreviewScopedClaims](jwtClaims)
+	if err != nil {
+		return nil, err
 	}
 
-	name := c.Name
-	if name != "" {
-		ctx = WithName(ctx, name)
+	appId := c.ApplicationId
+	if appId == "" {
+		return nil, errors.New("could not get application id")
 	}
+	ctx = WithApplicationID(ctx, appId)
+
+	orgId := c.OrganizationId
+	if orgId == "" {
+		return nil, errors.New("could not get organization id")
+	}
+	ctx = WithOrganizationID(ctx, orgId)
+
+	dirHash := c.DirectoryHash
+	if dirHash == "" {
+		return nil, errors.New("could not get directory hash")
+	}
+	ctx = WithDirectoryHash(ctx, dirHash)
+
+	userEmail := c.UserEmail
+	if userEmail == "" {
+		return nil, errors.New("could not get user email")
+	}
+	ctx = WithUserEmail(ctx, userEmail)
+
+	userType := c.UserType
+	if userType == "" {
+		return nil, errors.New("could not get user type")
+	}
+	ctx = WithUserType(ctx, userType)
 
 	return ctx, nil
 }
@@ -157,12 +204,6 @@ func ValidateEditScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.C
 		return nil, errors.New("could not get user type")
 	}
 	ctx = WithUserType(ctx, userType)
-
-	name := c.Name
-	if name == "" {
-		return nil, errors.New("could not get name")
-	}
-	ctx = WithName(ctx, name)
 
 	return ctx, nil
 }

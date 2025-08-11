@@ -25,15 +25,17 @@ func WithClock(clock clockwork.Clock) testOption {
 type scopedTokenArgs struct {
 	registeredClaims jwt.RegisteredClaims
 
-	allScopeClaims   *AllScopedClaims
-	buildScopeClaims *BuildScopedClaims
-	viewScopeClaims  *ViewScopedClaims
-	editScopeClaims  *EditScopedClaims
+	allScopeClaims     *AllScopedClaims
+	buildScopeClaims   *BuildScopedClaims
+	viewScopeClaims    *ViewScopedClaims
+	previewScopeClaims *PreviewScopedClaims
+	editScopeClaims    *EditScopedClaims
 
-	allScopesValidationErr  error
-	buildScopeValidationErr error
-	viewScopeValidationErr  error
-	editScopeValidationErr  error
+	allScopesValidationErr    error
+	buildScopeValidationErr   error
+	viewScopeValidationErr    error
+	previewScopeValidationErr error
+	editScopeValidationErr    error
 }
 
 func validArgs(t *testing.T, opts ...testOption) *scopedTokenArgs {
@@ -57,14 +59,13 @@ func validArgs(t *testing.T, opts ...testOption) *scopedTokenArgs {
 		registeredClaims: validRegisteredClaims,
 		allScopeClaims: NewAllScopedClaims(
 			JwtWithRegisteredClaims(validRegisteredClaims),
-			JwtWithScopes("apps:build apps:view apps:update"),
+			JwtWithScopes("apps:build apps:view apps:preview apps:update"),
 			JwtWithApplicationId("app"),
 			JwtWithOrganizationId("org"),
 			JwtWithDirectoryHash("dir"),
 			JwtWithCommitId("commit"),
 			JwtWithUserEmail("admin@example.com"),
 			JwtWithUserType(UserTypeExternal),
-			JwtWithName("External Admin"),
 		),
 		buildScopeClaims: NewBuildScopedClaims(
 			JwtWithRegisteredClaims(validRegisteredClaims),
@@ -72,16 +73,24 @@ func validArgs(t *testing.T, opts ...testOption) *scopedTokenArgs {
 			JwtWithOrganizationId("org1"),
 			JwtWithDirectoryHash("dir1"),
 			JwtWithCommitId("commit1"),
+			JwtWithUserEmail("user1@example.com"),
+			JwtWithUserType(UserTypeSuperblocks),
 		),
 		viewScopeClaims: NewViewScopedClaims(
 			JwtWithRegisteredClaims(validRegisteredClaims),
 			JwtWithApplicationId("app1"),
 			JwtWithOrganizationId("org1"),
 			JwtWithDirectoryHash("dir1"),
-			JwtWithCommitId("commit1"),
 			JwtWithUserEmail("user1@example.com"),
 			JwtWithUserType(UserTypeSuperblocks),
-			JwtWithName("User 1"),
+		),
+		previewScopeClaims: NewPreviewScopedClaims(
+			JwtWithRegisteredClaims(validRegisteredClaims),
+			JwtWithApplicationId("app1"),
+			JwtWithOrganizationId("org1"),
+			JwtWithDirectoryHash("dir1"),
+			JwtWithUserEmail("user1@example.com"),
+			JwtWithUserType(UserTypeSuperblocks),
 		),
 		editScopeClaims: NewEditScopedClaims(
 			JwtWithRegisteredClaims(validRegisteredClaims),
@@ -89,7 +98,6 @@ func validArgs(t *testing.T, opts ...testOption) *scopedTokenArgs {
 			JwtWithOrganizationId("org1"),
 			JwtWithUserEmail("user1@example.com"),
 			JwtWithUserType(UserTypeSuperblocks),
-			JwtWithName("User 1"),
 		),
 	}
 }
@@ -125,6 +133,12 @@ func verifyScopedClaims(t *testing.T, a *scopedTokenArgs, useScopedValidationFun
 		assert.NoError(t, a.viewScopeClaims.Validate())
 	}
 
+	if a.previewScopeValidationErr != nil {
+		assert.ErrorContains(t, validatorFunc(a.previewScopeClaims), a.previewScopeValidationErr.Error())
+	} else {
+		assert.NoError(t, a.previewScopeClaims.Validate())
+	}
+
 	if a.editScopeValidationErr != nil {
 		assert.ErrorContains(t, validatorFunc(a.editScopeClaims), a.editScopeValidationErr.Error())
 	} else {
@@ -148,7 +162,10 @@ func TestScopedTokenClaims_InvalidTokenScopes(t *testing.T) {
 	args.viewScopeClaims.Scopes = TokenScopesBuildApplication
 	args.viewScopeValidationErr = ErrInvalidScope
 
-	args.editScopeClaims.Scopes = TokenScopesViewApplication
+	args.previewScopeClaims.Scopes = TokenScopesViewApplication
+	args.previewScopeValidationErr = ErrInvalidScope
+
+	args.editScopeClaims.Scopes = TokenScopesPreviewApplication
 	args.editScopeValidationErr = ErrInvalidScope
 
 	verifyClaims(t, args)
@@ -164,6 +181,9 @@ func TestNilScopedTokenClaims_InvalidTokenScopes(t *testing.T) {
 
 	args.viewScopeClaims = nil
 	args.viewScopeValidationErr = ErrInvalidScope
+
+	args.previewScopeClaims = nil
+	args.previewScopeValidationErr = ErrInvalidScope
 
 	args.editScopeClaims = nil
 	args.editScopeValidationErr = ErrInvalidScope
@@ -182,6 +202,7 @@ func TestScopedTokenClaims_ExpiredScopedToken(t *testing.T) {
 	args.allScopesValidationErr = expirationErr
 	args.buildScopeValidationErr = expirationErr
 	args.viewScopeValidationErr = expirationErr
+	args.previewScopeValidationErr = expirationErr
 	args.editScopeValidationErr = expirationErr
 
 	verifyClaims(t, args)
@@ -193,6 +214,7 @@ func TestNilScopedClaims_Transformers(t *testing.T) {
 
 	assert.Nil(t, args.allScopeClaims.AsBuildScopedClaims())
 	assert.Nil(t, args.allScopeClaims.AsViewScopedClaims())
+	assert.Nil(t, args.allScopeClaims.AsPreviewScopedClaims())
 	assert.Nil(t, args.allScopeClaims.AsEditScopedClaims())
 
 }
@@ -201,9 +223,10 @@ func TestGetScopes(t *testing.T) {
 	args := validArgs(t)
 
 	scopes := args.allScopeClaims.GetScopes()
-	assert.Equal(t, 3, scopes.Size())
+	assert.Equal(t, 4, scopes.Size())
 	assert.True(t, scopes.Contains(TokenScopesBuildApplication))
 	assert.True(t, scopes.Contains(TokenScopesViewApplication))
+	assert.True(t, scopes.Contains(TokenScopesPreviewApplication))
 	assert.True(t, scopes.Contains(TokenScopesEditApplication))
 
 	args.allScopeClaims = nil
@@ -223,6 +246,13 @@ func TestGetScopes(t *testing.T) {
 	args.viewScopeClaims = nil
 	assert.Nil(t, args.viewScopeClaims.GetScopes())
 
+	previewScopes := args.previewScopeClaims.GetScopes()
+	assert.Equal(t, 1, previewScopes.Size())
+	assert.True(t, previewScopes.Contains(TokenScopesPreviewApplication))
+
+	args.previewScopeClaims = nil
+	assert.Nil(t, args.previewScopeClaims.GetScopes())
+
 	editScopes := args.editScopeClaims.GetScopes()
 	assert.Equal(t, 1, editScopes.Size())
 	assert.True(t, editScopes.Contains(TokenScopesEditApplication))
@@ -234,9 +264,10 @@ func TestGetScopes(t *testing.T) {
 func TestGetRawScopes(t *testing.T) {
 	args := validArgs(t)
 
-	assert.Equal(t, TokenScopes("apps:build apps:view apps:update"), args.allScopeClaims.GetRawScopes())
+	assert.Equal(t, TokenScopes("apps:build apps:view apps:preview apps:update"), args.allScopeClaims.GetRawScopes())
 	assert.Equal(t, TokenScopes("apps:build"), args.buildScopeClaims.GetRawScopes())
 	assert.Equal(t, TokenScopes("apps:view"), args.viewScopeClaims.GetRawScopes())
+	assert.Equal(t, TokenScopes("apps:preview"), args.previewScopeClaims.GetRawScopes())
 	assert.Equal(t, TokenScopes("apps:update"), args.editScopeClaims.GetRawScopes())
 
 	args.allScopeClaims = nil
@@ -247,6 +278,9 @@ func TestGetRawScopes(t *testing.T) {
 
 	args.viewScopeClaims = nil
 	assert.Empty(t, args.viewScopeClaims.GetRawScopes())
+
+	args.previewScopeClaims = nil
+	assert.Empty(t, args.previewScopeClaims.GetRawScopes())
 
 	args.editScopeClaims = nil
 	assert.Empty(t, args.editScopeClaims.GetRawScopes())
@@ -267,6 +301,11 @@ func TestTokenScopesString(t *testing.T) {
 			name:     "ViewScopedTokenClaims",
 			scope:    TokenScopesViewApplication,
 			expected: "apps:view",
+		},
+		{
+			name:     "PreviewScopedTokenClaims",
+			scope:    TokenScopesPreviewApplication,
+			expected: "apps:preview",
 		},
 		{
 			name:     "EditScopedTokenClaims",
