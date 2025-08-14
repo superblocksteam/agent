@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+-
+
+## v1.25.0
+
 - Fix workflow steps in path based apis to execute the desired workflow as expected (previously failed with `NotFoundError`)
 - Add support for new JavaScript template literals bindings syntax in arguments for workflows
 - Fix `return`, `send` and `wait` blocks functionality when using new bindings syntax (JavaScript template literal or IIFE)
