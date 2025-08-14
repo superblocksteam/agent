@@ -102,10 +102,6 @@ func (flags *launchdarkly) GetWorkflowPluginInheritanceEnabled(orgId string) boo
 	return flags.GetBoolVariationByOrg("agent.plugins.workflow.inherit_parameters.enabled", orgId, flags.options.DefaultWorkflowPluginInheritanceEnabled)
 }
 
-func (flags *launchdarkly) GetBindingsExpressionSyntaxEnabled(orgId string) bool {
-	return flags.GetBoolVariationByOrg("server.code-mode.bindings.legacy-conversion-shim.disabled", orgId, flags.options.DefaultBindingsExpressionSyntaxEnabled)
-}
-
 func (flags *launchdarkly) GetApiTimeoutV2(api *apiv1.Api, tier string) float64 {
 	fallback := flags.options.DefaultApiTimeout
 	orgId := api.GetMetadata().GetOrganization()
