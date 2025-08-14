@@ -37,8 +37,6 @@ type Flags interface {
 	GetGoWorkerEnabled(tier string, orgId string) bool
 
 	GetWorkflowPluginInheritanceEnabled(orgId string) bool
-
-	GetBindingsExpressionSyntaxEnabled(orgId string) bool
 }
 
 type Client interface {
