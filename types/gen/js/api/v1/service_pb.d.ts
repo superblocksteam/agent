@@ -15,9 +15,9 @@ import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty
 import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/struct_pb";
 import * as plugins_adls_v1_plugin_pb from "../../plugins/adls/v1/plugin_pb";
 import * as plugins_cosmosdb_v1_plugin_pb from "../../plugins/cosmosdb/v1/plugin_pb";
+import * as plugins_couchbase_v1_plugin_pb from "../../plugins/couchbase/v1/plugin_pb";
 import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
 import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
-import * as plugins_couchbase_v1_plugin_pb from "../../plugins/couchbase/v1/plugin_pb";
 import * as protoc_gen_openapiv2_options_annotations_pb from "../../protoc-gen-openapiv2/options/annotations_pb";
 import * as store_v1_store_pb from "../../store/v1/store_pb";
 import * as validate_validate_pb from "../../validate/validate_pb";
@@ -1114,6 +1114,11 @@ export class MetadataResponse extends jspb.Message {
     clearAdls(): void;
     getAdls(): plugins_adls_v1_plugin_pb.Plugin.Metadata | undefined;
     setAdls(value?: plugins_adls_v1_plugin_pb.Plugin.Metadata): MetadataResponse;
+
+    hasGraphql(): boolean;
+    clearGraphql(): void;
+    getGraphql(): google_protobuf_struct_pb.Struct | undefined;
+    setGraphql(value?: google_protobuf_struct_pb.Struct): MetadataResponse;
     getGSheetsNextPageToken(): string;
     setGSheetsNextPageToken(value: string): MetadataResponse;
 
@@ -1138,6 +1143,7 @@ export namespace MetadataResponse {
         kinesis?: plugins_kinesis_v1_plugin_pb.Metadata.AsObject,
         cosmosdb?: plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.AsObject,
         adls?: plugins_adls_v1_plugin_pb.Plugin.Metadata.AsObject,
+        graphql?: google_protobuf_struct_pb.Struct.AsObject,
         gSheetsNextPageToken: string,
     }
 
@@ -1367,6 +1373,7 @@ export namespace MetadataResponse {
         KINESIS = 5,
         COSMOSDB = 6,
         ADLS = 7,
+        GRAPHQL = 9,
     }
 
 }

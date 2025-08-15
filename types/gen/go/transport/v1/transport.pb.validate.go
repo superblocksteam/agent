@@ -2969,6 +2969,39 @@ func (m *Response_Data_Data) validate(all bool) error {
 		// no validation rules for GSheetsNextPageToken
 	}
 
+	if m.Graphql != nil {
+
+		if all {
+			switch v := interface{}(m.GetGraphql()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, Response_Data_DataValidationError{
+						field:  "Graphql",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, Response_Data_DataValidationError{
+						field:  "Graphql",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetGraphql()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return Response_Data_DataValidationError{
+					field:  "Graphql",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return Response_Data_DataMultiError(errors)
 	}

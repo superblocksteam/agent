@@ -1,8 +1,10 @@
 import {
   ActionResponseType,
+  AgentCredentials,
   ApiPlugin,
   DatasourceMetadataDto,
   ErrorCode,
+  ExecutionContext,
   ExecutionOutput,
   GraphQLActionConfiguration,
   GraphQLDatasourceConfiguration,
@@ -10,9 +12,11 @@ import {
   IntegrationError,
   makeCurlString,
   PluginExecutionProps,
-  RawRequest
+  RawRequest,
+  RelayDelegate
 } from '@superblocks/shared';
 import _, { isString } from 'lodash';
+import { INTROSPECTION_QUERY } from './introspectionQuery';
 
 export interface RequestConfig {
   query: string;
@@ -130,7 +134,40 @@ export default class GraphQLPlugin extends ApiPlugin {
   }
 
   async metadata(datasourceConfiguration: GraphQLDatasourceConfiguration): Promise<DatasourceMetadataDto> {
-    return {};
+    try {
+      const actionConfiguration: GraphQLActionConfiguration = {
+        path: datasourceConfiguration.path,
+        body: INTROSPECTION_QUERY,
+        headers: datasourceConfiguration.headers || []
+      };
+
+      const execOutput = await this.execute({
+        mutableOutput: new ExecutionOutput(),
+        context: new ExecutionContext(),
+        datasourceConfiguration,
+        actionConfiguration,
+        files: undefined,
+        agentCredentials: new AgentCredentials({}),
+        recursionContext: { executedWorkflowsPath: [], isEvaluatingDatasource: false },
+        relayDelegate: new RelayDelegate({
+          body: {
+            relays: {
+              headers: {},
+              query: {},
+              body: {}
+            }
+          }
+        }),
+        forwardedCookies: {}
+      });
+
+      return {
+        graphql: execOutput.output
+      };
+    } catch (error) {
+      console.error('GraphQL metadata introspection failed:', error);
+      return {};
+    }
   }
 
   async test(datasourceConfiguration: GraphQLDatasourceConfiguration): Promise<void> {

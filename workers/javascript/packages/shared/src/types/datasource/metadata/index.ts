@@ -19,6 +19,8 @@ export interface DatasourceMetadataDto {
   dbSchema?: DatabaseSchemaMetadata;
   buckets?: BucketMetadata[];
   couchbase?: CouchbasePluginV1.Metadata;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  graphql?: any;
   kafka?: KafkaV1.Metadata; // NOTE(frank): Why do we use a much different pattern here than we do for action and datasource configurations?
   kinesis?: KinesisPluginV1.Metadata;
   integrationId?: string;

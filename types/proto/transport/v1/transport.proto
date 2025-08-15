@@ -11,8 +11,8 @@ import "google/protobuf/any.proto";
 import "google/protobuf/struct.proto";
 import "plugins/adls/v1/plugin.proto";
 import "plugins/cosmosdb/v1/plugin.proto";
-import "plugins/kafka/v1/plugin.proto";
 import "plugins/couchbase/v1/plugin.proto";
+import "plugins/kafka/v1/plugin.proto";
 import "plugins/kinesis/v1/plugin.proto";
 import "store/v1/store.proto";
 import "validate/validate.proto";
@@ -147,6 +147,7 @@ message Response {
       optional plugins.adls.v1.Plugin.Metadata adls = 9;
       optional google.protobuf.Any dynamodb = 10;
       optional string g_sheets_next_page_token = 11;
+      optional google.protobuf.Struct graphql = 12;
     }
     Performance pinned = 1;
     Data data = 2;
