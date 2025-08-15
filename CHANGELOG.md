@@ -11,11 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.25.0
 
-- Fix workflow steps in path based apis to execute the desired workflow as expected (previously failed with `NotFoundError`)
-- Add support for new JavaScript template literals bindings syntax in arguments for workflows
-- Fix `return`, `send` and `wait` blocks functionality when using new bindings syntax (JavaScript template literal or IIFE)
+- Fixed workflow steps in path based apis to execute the desired workflow as expected (previously failed with `NotFoundError`)
+- Added support for new JavaScript template literals bindings syntax in arguments for workflows
+- Fixed `return`, `send` and `wait` blocks functionality when using new bindings syntax (JavaScript template literal or IIFE)
 - Added preview scoped token type
 - Updated scoped token claims to match the claims provided by the server (where the JWTs are generated)
+- Added support for the `metadata` endpoint in the GraphQL integration
 
 ## v1.24.0
 

@@ -6139,6 +6139,9 @@
         "adls": {
           "$ref": "#/definitions/pluginsadlsv1PluginMetadata"
         },
+        "graphql": {
+          "type": "object"
+        },
         "gSheetsNextPageToken": {
           "type": "string"
         }

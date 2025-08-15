@@ -39,10 +39,10 @@ var plugins_adls_v1_plugin_pb = require('../../plugins/adls/v1/plugin_pb');
 goog.object.extend(proto, plugins_adls_v1_plugin_pb);
 var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb');
 goog.object.extend(proto, plugins_cosmosdb_v1_plugin_pb);
-var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
-goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
 var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb');
 goog.object.extend(proto, plugins_couchbase_v1_plugin_pb);
+var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
+goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
 var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
 goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
 var store_v1_store_pb = require('../../store/v1/store_pb');
@@ -4191,7 +4191,8 @@ kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Metadata.toObjec
 cosmosdb: (f = msg.getCosmosdb()) && plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
 adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
 dynamodb: (f = msg.getDynamodb()) && google_protobuf_any_pb.Any.toObject(includeInstance, f),
-gSheetsNextPageToken: (f = jspb.Message.getField(msg, 11)) == null ? undefined : f
+gSheetsNextPageToken: (f = jspb.Message.getField(msg, 11)) == null ? undefined : f,
+graphql: (f = msg.getGraphql()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -4280,6 +4281,11 @@ proto.transport.v1.Response.Data.Data.deserializeBinaryFromReader = function(msg
     case 11:
       var value = /** @type {string} */ (reader.readString());
       msg.setGSheetsNextPageToken(value);
+      break;
+    case 12:
+      var value = new google_protobuf_struct_pb.Struct;
+      reader.readMessage(value,google_protobuf_struct_pb.Struct.deserializeBinaryFromReader);
+      msg.setGraphql(value);
       break;
     default:
       reader.skipField();
@@ -4394,6 +4400,14 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
     writer.writeString(
       11,
       f
+    );
+  }
+  f = message.getGraphql();
+  if (f != null) {
+    writer.writeMessage(
+      12,
+      f,
+      google_protobuf_struct_pb.Struct.serializeBinaryToWriter
     );
   }
 };
@@ -4784,6 +4798,43 @@ proto.transport.v1.Response.Data.Data.prototype.clearGSheetsNextPageToken = func
  */
 proto.transport.v1.Response.Data.Data.prototype.hasGSheetsNextPageToken = function() {
   return jspb.Message.getField(this, 11) != null;
+};
+
+
+/**
+ * optional google.protobuf.Struct graphql = 12;
+ * @return {?proto.google.protobuf.Struct}
+ */
+proto.transport.v1.Response.Data.Data.prototype.getGraphql = function() {
+  return /** @type{?proto.google.protobuf.Struct} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_struct_pb.Struct, 12));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Struct|undefined} value
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+*/
+proto.transport.v1.Response.Data.Data.prototype.setGraphql = function(value) {
+  return jspb.Message.setWrapperField(this, 12, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+ */
+proto.transport.v1.Response.Data.Data.prototype.clearGraphql = function() {
+  return this.setGraphql(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Response.Data.Data.prototype.hasGraphql = function() {
+  return jspb.Message.getField(this, 12) != null;
 };
 
 

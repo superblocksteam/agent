@@ -662,6 +662,9 @@
         },
         "gSheetsNextPageToken": {
           "type": "string"
+        },
+        "graphql": {
+          "type": "object"
         }
       }
     },

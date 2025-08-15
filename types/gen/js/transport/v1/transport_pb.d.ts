@@ -14,8 +14,8 @@ import * as google_protobuf_any_pb from "google-protobuf/google/protobuf/any_pb"
 import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/struct_pb";
 import * as plugins_adls_v1_plugin_pb from "../../plugins/adls/v1/plugin_pb";
 import * as plugins_cosmosdb_v1_plugin_pb from "../../plugins/cosmosdb/v1/plugin_pb";
-import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
 import * as plugins_couchbase_v1_plugin_pb from "../../plugins/couchbase/v1/plugin_pb";
+import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
 import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
 import * as store_v1_store_pb from "../../store/v1/store_pb";
 import * as validate_validate_pb from "../../validate/validate_pb";
@@ -587,6 +587,11 @@ export namespace Response {
             getGSheetsNextPageToken(): string | undefined;
             setGSheetsNextPageToken(value: string): Data;
 
+            hasGraphql(): boolean;
+            clearGraphql(): void;
+            getGraphql(): google_protobuf_struct_pb.Struct | undefined;
+            setGraphql(value?: google_protobuf_struct_pb.Struct): Data;
+
             serializeBinary(): Uint8Array;
             toObject(includeInstance?: boolean): Data.AsObject;
             static toObject(includeInstance: boolean, msg: Data): Data.AsObject;
@@ -610,6 +615,7 @@ export namespace Response {
                 adls?: plugins_adls_v1_plugin_pb.Plugin.Metadata.AsObject,
                 dynamodb?: google_protobuf_any_pb.Any.AsObject,
                 gSheetsNextPageToken?: string,
+                graphql?: google_protobuf_struct_pb.Struct.AsObject,
             }
         }
 

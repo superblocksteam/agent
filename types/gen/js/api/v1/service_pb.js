@@ -43,12 +43,12 @@ var plugins_adls_v1_plugin_pb = require('../../plugins/adls/v1/plugin_pb');
 goog.object.extend(proto, plugins_adls_v1_plugin_pb);
 var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb');
 goog.object.extend(proto, plugins_cosmosdb_v1_plugin_pb);
+var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb');
+goog.object.extend(proto, plugins_couchbase_v1_plugin_pb);
 var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
 var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
 goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
-var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb');
-goog.object.extend(proto, plugins_couchbase_v1_plugin_pb);
 var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
 goog.object.extend(proto, protoc$gen$openapiv2_options_annotations_pb);
 var store_v1_store_pb = require('../../store/v1/store_pb');
@@ -8497,7 +8497,7 @@ proto.api.v1.MetadataRequest.prototype.hasStepConfiguration = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.MetadataResponse.oneofGroups_ = [[1,2,3,4,5,6,7]];
+proto.api.v1.MetadataResponse.oneofGroups_ = [[1,2,3,4,5,6,7,9]];
 
 /**
  * @enum {number}
@@ -8510,7 +8510,8 @@ proto.api.v1.MetadataResponse.MetadataCase = {
   KAFKA: 4,
   KINESIS: 5,
   COSMOSDB: 6,
-  ADLS: 7
+  ADLS: 7,
+  GRAPHQL: 9
 };
 
 /**
@@ -8558,6 +8559,7 @@ kafka: (f = msg.getKafka()) && plugins_kafka_v1_plugin_pb.Metadata.toObject(incl
 kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Metadata.toObject(includeInstance, f),
 cosmosdb: (f = msg.getCosmosdb()) && plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
 adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
+graphql: (f = msg.getGraphql()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
 gSheetsNextPageToken: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
@@ -8629,6 +8631,11 @@ proto.api.v1.MetadataResponse.deserializeBinaryFromReader = function(msg, reader
       var value = new plugins_adls_v1_plugin_pb.Plugin.Metadata;
       reader.readMessage(value,plugins_adls_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
       msg.setAdls(value);
+      break;
+    case 9:
+      var value = new google_protobuf_struct_pb.Struct;
+      reader.readMessage(value,google_protobuf_struct_pb.Struct.deserializeBinaryFromReader);
+      msg.setGraphql(value);
       break;
     case 8:
       var value = /** @type {string} */ (reader.readString());
@@ -8717,6 +8724,14 @@ proto.api.v1.MetadataResponse.serializeBinaryToWriter = function(message, writer
       7,
       f,
       plugins_adls_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getGraphql();
+  if (f != null) {
+    writer.writeMessage(
+      9,
+      f,
+      google_protobuf_struct_pb.Struct.serializeBinaryToWriter
     );
   }
   f = message.getGSheetsNextPageToken();
@@ -10600,6 +10615,43 @@ proto.api.v1.MetadataResponse.prototype.clearAdls = function() {
  */
 proto.api.v1.MetadataResponse.prototype.hasAdls = function() {
   return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * optional google.protobuf.Struct graphql = 9;
+ * @return {?proto.google.protobuf.Struct}
+ */
+proto.api.v1.MetadataResponse.prototype.getGraphql = function() {
+  return /** @type{?proto.google.protobuf.Struct} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_struct_pb.Struct, 9));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Struct|undefined} value
+ * @return {!proto.api.v1.MetadataResponse} returns this
+*/
+proto.api.v1.MetadataResponse.prototype.setGraphql = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 9, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.MetadataResponse} returns this
+ */
+proto.api.v1.MetadataResponse.prototype.clearGraphql = function() {
+  return this.setGraphql(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.MetadataResponse.prototype.hasGraphql = function() {
+  return jspb.Message.getField(this, 9) != null;
 };
 
 

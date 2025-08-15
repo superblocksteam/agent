@@ -912,6 +912,11 @@ export class Response_Data_Data extends Message<Response_Data_Data> {
    */
   gSheetsNextPageToken?: string;
 
+  /**
+   * @generated from field: optional google.protobuf.Struct graphql = 12;
+   */
+  graphql?: Struct;
+
   constructor(data?: PartialMessage<Response_Data_Data>) {
     super();
     proto3.util.initPartial(data, this);
@@ -931,6 +936,7 @@ export class Response_Data_Data extends Message<Response_Data_Data> {
     { no: 9, name: "adls", kind: "message", T: Plugin_Metadata$1, opt: true },
     { no: 10, name: "dynamodb", kind: "message", T: Any, opt: true },
     { no: 11, name: "g_sheets_next_page_token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 12, name: "graphql", kind: "message", T: Struct, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Response_Data_Data {

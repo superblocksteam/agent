@@ -115,7 +115,7 @@ describe('GraphQLPlugin', () => {
     it.each([
       { name: 'empty errors', verboseOutput: true, queryErrors: [] },
       { name: 'single error', verboseOutput: false, queryErrors: [{ message: 'SyntaxError' }] },
-      { name: 'multiple errors', verboseOutput: undefined, queryErrors: [{ message: 'SyntaxError' }, { message: 'ValidationError' }] },
+      { name: 'multiple errors', verboseOutput: undefined, queryErrors: [{ message: 'SyntaxError' }, { message: 'ValidationError' }] }
     ])('$name', async ({ verboseOutput, queryErrors }) => {
       const spy = jest.spyOn(plugin, 'executeRequest').mockImplementation(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,8 +157,16 @@ describe('GraphQLPlugin', () => {
       { name: 'empty errors, fail on errors undefined', setFailOnErrors: false, queryErrors: [] },
       { name: 'single error, fail on errors set', setFailOnErrors: true, queryErrors: [{ message: 'SyntaxError' }] },
       { name: 'single error, fail on errors undefined', setFailOnErrors: false, queryErrors: [{ message: 'SyntaxError' }] },
-      { name: 'multiple errors, fail on errors set', setFailOnErrors: true, queryErrors: [{ message: 'SyntaxError' }, { message: 'ValidationError' }] },
-      { name: 'multiple errors, fail on errors undefined', setFailOnErrors: false, queryErrors: [{ message: 'SyntaxError' }, { message: 'ValidationError' }] },
+      {
+        name: 'multiple errors, fail on errors set',
+        setFailOnErrors: true,
+        queryErrors: [{ message: 'SyntaxError' }, { message: 'ValidationError' }]
+      },
+      {
+        name: 'multiple errors, fail on errors undefined',
+        setFailOnErrors: false,
+        queryErrors: [{ message: 'SyntaxError' }, { message: 'ValidationError' }]
+      }
     ])('$name', async ({ setFailOnErrors, queryErrors }) => {
       const spy = jest.spyOn(plugin, 'executeRequest').mockImplementation(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -196,6 +204,58 @@ describe('GraphQLPlugin', () => {
       expect(output.output).toBeDefined();
       expect(output.error).toBeUndefined();
       expect(spy).toHaveBeenCalled();
+    });
+  });
+
+  describe('metadata', () => {
+    it('should return graphql schema introspection data', async () => {
+      const mockIntrospectionResult = {
+        data: {
+          __schema: {
+            queryType: { name: 'Query' },
+            types: [{ name: 'User', kind: 'OBJECT' }]
+          }
+        }
+      };
+
+      const spy = jest.spyOn(plugin, 'execute').mockResolvedValue({
+        output: mockIntrospectionResult
+      } as ExecutionOutput);
+
+      const result = await plugin.metadata(datasourceConfiguration);
+
+      expect(spy).toHaveBeenCalledWith({
+        mutableOutput: expect.any(ExecutionOutput),
+        context: expect.any(Object),
+        datasourceConfiguration,
+        actionConfiguration: {
+          path: datasourceConfiguration.path,
+          body: expect.stringContaining('query IntrospectionQuery'),
+          headers: datasourceConfiguration.headers || []
+        },
+        files: undefined,
+        agentCredentials: expect.any(Object),
+        recursionContext: { executedWorkflowsPath: [], isEvaluatingDatasource: false },
+        relayDelegate: expect.any(Object),
+        forwardedCookies: {}
+      });
+
+      expect(result).toEqual({
+        graphql: mockIntrospectionResult
+      });
+    });
+
+    it('should return empty object when introspection fails', async () => {
+      const spy = jest.spyOn(plugin, 'execute').mockRejectedValue(new Error('GraphQL server error'));
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const result = await plugin.metadata(datasourceConfiguration);
+
+      expect(spy).toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalledWith('GraphQL metadata introspection failed:', expect.any(Error));
+      expect(result).toEqual({});
+
+      consoleSpy.mockRestore();
     });
   });
 });

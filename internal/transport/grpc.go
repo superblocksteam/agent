@@ -678,6 +678,9 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 
 	metaRes := &apiv1.MetadataResponse{}
 
+	// NOTE: @joeyagreco - the code below is an abomination to the lord
+	// NOTE: @joeyagreco - im sorry
+
 	if dbSchema := resp.GetData().GetData().GetDbSchema(); dbSchema != nil {
 		metaRes.Metadata = &apiv1.MetadataResponse_DatabaseSchemaMetadata_{
 			DatabaseSchemaMetadata: dbSchema,
@@ -719,6 +722,12 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 	if adls := resp.GetData().GetData().GetAdls(); adls != nil {
 		metaRes.Metadata = &apiv1.MetadataResponse_Adls{
 			Adls: adls,
+		}
+	}
+
+	if graphql := resp.GetData().GetData().GetGraphql(); graphql != nil {
+		metaRes.Metadata = &apiv1.MetadataResponse_Graphql{
+			Graphql: graphql,
 		}
 	}
 
@@ -838,6 +847,12 @@ func (s *server) MetadataDeprecated(ctx context.Context, req *apiv1.MetadataRequ
 	if adls := resp.GetData().GetData().GetAdls(); adls != nil {
 		metaRes.Metadata = &apiv1.MetadataResponse_Adls{
 			Adls: adls,
+		}
+	}
+
+	if graphql := resp.GetData().GetData().GetGraphql(); graphql != nil {
+		metaRes.Metadata = &apiv1.MetadataResponse_Graphql{
+			Graphql: graphql,
 		}
 	}
 

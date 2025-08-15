@@ -1871,6 +1871,12 @@ export class MetadataResponse extends Message<MetadataResponse> {
      */
     value: Plugin_Metadata$1;
     case: "adls";
+  } | {
+    /**
+     * @generated from field: google.protobuf.Struct graphql = 9;
+     */
+    value: Struct;
+    case: "graphql";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
@@ -1893,6 +1899,7 @@ export class MetadataResponse extends Message<MetadataResponse> {
     { no: 5, name: "kinesis", kind: "message", T: Metadata$3, oneof: "metadata" },
     { no: 6, name: "cosmosdb", kind: "message", T: Plugin_Metadata, oneof: "metadata" },
     { no: 7, name: "adls", kind: "message", T: Plugin_Metadata$1, oneof: "metadata" },
+    { no: 9, name: "graphql", kind: "message", T: Struct, oneof: "metadata" },
     { no: 8, name: "g_sheets_next_page_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
