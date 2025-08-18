@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
--
+- Added support for the `metadata` endpoint in the GraphQL integration
 
 ## v1.25.0
 
@@ -16,7 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `return`, `send` and `wait` blocks functionality when using new bindings syntax (JavaScript template literal or IIFE)
 - Added preview scoped token type
 - Updated scoped token claims to match the claims provided by the server (where the JWTs are generated)
-- Added support for the `metadata` endpoint in the GraphQL integration
 
 ## v1.24.0
 
