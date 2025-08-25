@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.event.v1.IngestEventRequest', null, global);
 goog.exportSymbol('proto.event.v1.IngestEventResponse', null, global);
@@ -472,11 +466,11 @@ proto.event.v1.IngestEventResponse.ErrorWrapper.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setError(value);
       break;
     default:

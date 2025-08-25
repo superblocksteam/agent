@@ -148,6 +148,8 @@ export namespace OAuth {
         setSubjectTokenSource(value: OAuth.AuthorizationCodeFlow.SubjectTokenSource): AuthorizationCodeFlow;
         getSubjectTokenSourceStaticToken(): string;
         setSubjectTokenSourceStaticToken(value: string): AuthorizationCodeFlow;
+        getSubjectTokenType(): string;
+        setSubjectTokenType(value: string): AuthorizationCodeFlow;
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): AuthorizationCodeFlow.AsObject;
@@ -172,6 +174,7 @@ export namespace OAuth {
             clientAuthMethod: string,
             subjectTokenSource: OAuth.AuthorizationCodeFlow.SubjectTokenSource,
             subjectTokenSourceStaticToken: string,
+            subjectTokenType: string,
         }
 
         export enum SubjectTokenSource {

@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var common_v1_plugin_pb = require('../../../common/v1/plugin_pb');
 goog.object.extend(proto, common_v1_plugin_pb);
@@ -138,11 +132,11 @@ proto.plugins.workflow.v1.Tuple.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setValue(value);
       break;
     default:
@@ -300,19 +294,19 @@ proto.plugins.workflow.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setWorkflow(value);
       break;
     case 2:
       var value = msg.getCustomMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Property.deserializeBinaryFromReader, "", new proto.common.v1.Property());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Property.deserializeBinaryFromReader, "", new proto.common.v1.Property());
          });
       break;
     case 3:
       var value = msg.getQueryparamsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Property.deserializeBinaryFromReader, "", new proto.common.v1.Property());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Property.deserializeBinaryFromReader, "", new proto.common.v1.Property());
          });
       break;
     case 12:
@@ -358,11 +352,23 @@ proto.plugins.workflow.v1.Plugin.serializeBinaryToWriter = function(message, wri
   }
   f = message.getCustomMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Property.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getCustomMap(true),
+    2,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.common.v1.Property.serializeBinaryToWriter);
   }
   f = message.getQueryparamsMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(3, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Property.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getQueryparamsMap(true),
+    3,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.common.v1.Property.serializeBinaryToWriter);
   }
   f = message.getSuperblocksmetadata();
   if (f != null) {

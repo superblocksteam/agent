@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb');
 goog.object.extend(proto, google_protobuf_any_pb);
@@ -175,25 +169,25 @@ proto.event.v2.CloudEvent.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSource(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSpecVersion(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setType(value);
       break;
     case 5:
       var value = msg.getAttributesMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.event.v2.CloudEventAttributeValue.deserializeBinaryFromReader, "", new proto.event.v2.CloudEventAttributeValue());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.event.v2.CloudEventAttributeValue.deserializeBinaryFromReader, "", new proto.event.v2.CloudEventAttributeValue());
          });
       break;
     case 6:
@@ -201,7 +195,7 @@ proto.event.v2.CloudEvent.deserializeBinaryFromReader = function(msg, reader) {
       msg.setBinaryData(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTextData(value);
       break;
     case 8:
@@ -268,7 +262,13 @@ proto.event.v2.CloudEvent.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getAttributesMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(5, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.event.v2.CloudEventAttributeValue.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getAttributesMap(true),
+    5,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.event.v2.CloudEventAttributeValue.serializeBinaryToWriter);
   }
   f = /** @type {!(string|Uint8Array)} */ (jspb.Message.getField(message, 6));
   if (f != null) {
@@ -638,7 +638,7 @@ proto.event.v2.CloudEventAttributeValue.deserializeBinaryFromReader = function(m
       msg.setCeInteger(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCeString(value);
       break;
     case 4:
@@ -646,11 +646,11 @@ proto.event.v2.CloudEventAttributeValue.deserializeBinaryFromReader = function(m
       msg.setCeBytes(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCeUri(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCeUriRef(value);
       break;
     case 7:

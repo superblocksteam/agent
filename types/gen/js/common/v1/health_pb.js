@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.common.v1.HealthResponse', null, global);
 goog.exportSymbol('proto.common.v1.Pool', null, global);
@@ -528,7 +522,7 @@ proto.common.v1.HealthResponse.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     case 2:
@@ -536,7 +530,7 @@ proto.common.v1.HealthResponse.deserializeBinaryFromReader = function(msg, reade
       msg.setUptime(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setVersion(value);
       break;
     case 4:
@@ -550,7 +544,7 @@ proto.common.v1.HealthResponse.deserializeBinaryFromReader = function(msg, reade
       msg.setStream(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setId(value);
       break;
     default:

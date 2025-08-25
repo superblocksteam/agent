@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var plugins_common_v1_auth_pb = require('../../../plugins/common/v1/auth_pb');
 goog.object.extend(proto, plugins_common_v1_auth_pb);
@@ -380,7 +374,7 @@ proto.plugins.adls.v1.Plugin.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -624,11 +618,11 @@ proto.plugins.adls.v1.Plugin.AdlsConnection.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAccountName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTenant(value);
       break;
     case 3:
@@ -833,7 +827,7 @@ proto.plugins.adls.v1.Plugin.CreateContainer.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileSystem(value);
       break;
     default:
@@ -964,11 +958,11 @@ proto.plugins.adls.v1.Plugin.CreateDirectory.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     default:
@@ -1125,15 +1119,15 @@ proto.plugins.adls.v1.Plugin.RenameDirectory.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setNewPath(value);
       break;
     default:
@@ -1314,11 +1308,11 @@ proto.plugins.adls.v1.Plugin.DeleteDirectory.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     default:
@@ -1474,11 +1468,11 @@ proto.plugins.adls.v1.Plugin.ListDirectoryContents.deserializeBinaryFromReader =
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     default:
@@ -1635,15 +1629,15 @@ proto.plugins.adls.v1.Plugin.UploadFile.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setContent(value);
       break;
     default:
@@ -1824,11 +1818,11 @@ proto.plugins.adls.v1.Plugin.DownloadFile.deserializeBinaryFromReader = function
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     default:
@@ -1984,11 +1978,11 @@ proto.plugins.adls.v1.Plugin.DeleteFile.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     default:
@@ -2150,7 +2144,7 @@ proto.plugins.adls.v1.Plugin.Metadata.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addFileSystems(value);
       break;
     default:

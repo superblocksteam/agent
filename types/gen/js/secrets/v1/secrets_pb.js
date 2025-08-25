@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -348,7 +342,7 @@ proto.secrets.v1.AwsSecretsManager.deserializeBinaryFromReader = function(msg, r
       msg.setAuth(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPrefix(value);
       break;
     default:
@@ -547,7 +541,7 @@ proto.secrets.v1.GcpSecretManager.deserializeBinaryFromReader = function(msg, re
       msg.setAuth(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setProjectId(value);
       break;
     default:
@@ -729,11 +723,11 @@ proto.secrets.v1.AkeylessSecretsManager.deserializeBinaryFromReader = function(m
       msg.setAuth(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setHost(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPrefix(value);
       break;
     default:
@@ -979,15 +973,15 @@ proto.secrets.v1.HashicorpVault.deserializeBinaryFromReader = function(msg, read
       msg.setAuth(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAddress(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setNamespace(value);
       break;
     case 5:
@@ -995,7 +989,7 @@ proto.secrets.v1.HashicorpVault.deserializeBinaryFromReader = function(msg, read
       msg.setVersion(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSecretsPath(value);
       break;
     default:
@@ -1179,7 +1173,7 @@ proto.secrets.v1.HashicorpVault.Auth.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setToken(value);
       break;
     case 2:
@@ -1305,11 +1299,11 @@ proto.secrets.v1.HashicorpVault.Auth.AppRole.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRoleId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSecretId(value);
       break;
     default:
@@ -1720,7 +1714,7 @@ proto.secrets.v1.MockStore.deserializeBinaryFromReader = function(msg, reader) {
     case 1:
       var value = msg.getDataMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readStringRequireUtf8, null, "", "");
          });
       break;
     default:
@@ -1754,7 +1748,12 @@ proto.secrets.v1.MockStore.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getDataMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getDataMap(true),
+    1,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -2254,7 +2253,7 @@ proto.secrets.v1.Store.deserializeBinaryFromReader = function(msg, reader) {
       msg.setTtl(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setConfigurationId(value);
       break;
     case 5:
@@ -2547,11 +2546,11 @@ proto.secrets.v1.Details.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAlias(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     default:
@@ -2708,15 +2707,15 @@ proto.secrets.v1.Invalidation.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAlias(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setConfigurationId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setStore(value);
       break;
     default:

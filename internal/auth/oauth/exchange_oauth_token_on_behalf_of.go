@@ -55,7 +55,11 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 	data := url.Values{}
 	data.Set("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
 	data.Set("subject_token", subjectToken)
+	// NOTE: @joeyagreco - if we are given a subject token type from the user, we use that instead of the default "urn:ietf:params:oauth:token-type:access_token"
 	data.Set("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
+	if authConfig.SubjectTokenType != "" {
+		data.Set("subject_token_type", authConfig.SubjectTokenType)
+	}
 	data.Set("audience", authConfig.Audience)
 	data.Set("scope", authConfig.Scope)
 	data.Set("client_id", authConfig.ClientId)

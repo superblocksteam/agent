@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb');
 goog.object.extend(proto, google_protobuf_any_pb);
@@ -182,11 +176,11 @@ proto.plugins.snowflake.v1.MappedColumns.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setJson(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSql(value);
       break;
     default:
@@ -342,7 +336,7 @@ proto.plugins.snowflake.v1.Tuple.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setKey(value);
       break;
     case 2:
@@ -522,7 +516,7 @@ proto.plugins.snowflake.v1.SuperblocksMetadata.deserializeBinaryFromReader = fun
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPluginversion(value);
       break;
     default:
@@ -672,7 +666,7 @@ proto.plugins.snowflake.v1.Plugin.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBody(value);
       break;
     case 2:
@@ -680,15 +674,15 @@ proto.plugins.snowflake.v1.Plugin.deserializeBinaryFromReader = function(msg, re
       msg.setUsepreparedsql(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setOperation(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUseadvancedmatching(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTable(value);
       break;
     case 6:
@@ -702,11 +696,11 @@ proto.plugins.snowflake.v1.Plugin.deserializeBinaryFromReader = function(msg, re
       msg.addOldvalues(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addFilterby(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMappingmode(value);
       break;
     case 10:

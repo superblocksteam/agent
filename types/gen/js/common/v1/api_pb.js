@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.common.v1.CombinedLinks', null, global);
 goog.exportSymbol('proto.common.v1.Link', null, global);
@@ -181,7 +175,7 @@ proto.common.v1.Links.deserializeBinaryFromReader = function(msg, reader) {
     case 1:
       var value = msg.getLinksMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
     default:
@@ -215,7 +209,13 @@ proto.common.v1.Links.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getLinksMap(true),
+    1,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.common.v1.Link.serializeBinaryToWriter);
   }
 };
 
@@ -473,7 +473,7 @@ proto.common.v1.Link.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUrl(value);
       break;
     default:
@@ -614,7 +614,7 @@ proto.common.v1.CombinedLinks.deserializeBinaryFromReader = function(msg, reader
     case 1:
       var value = msg.getLinksMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
     case 2:
@@ -653,7 +653,13 @@ proto.common.v1.CombinedLinks.serializeBinaryToWriter = function(message, writer
   var f = undefined;
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getLinksMap(true),
+    1,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.common.v1.Link.serializeBinaryToWriter);
   }
   f = message.getLinksV2List();
   if (f.length > 0) {

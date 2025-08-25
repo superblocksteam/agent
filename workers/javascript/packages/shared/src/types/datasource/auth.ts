@@ -510,6 +510,7 @@ type PublicOAuthTokenExchangeConfig = {
   audience?: string;
   scope?: string;
   subjectTokenSource?: string;
+  subjectTokenType?: string;
   subjectTokenSourceStaticToken?: string;
   clientId?: string;
 };

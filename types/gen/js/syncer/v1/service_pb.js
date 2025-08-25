@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -305,7 +299,7 @@ proto.syncer.v1.GetConfigurationMetadataRequest.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setIntegrationId(value);
       break;
     default:
@@ -447,21 +441,21 @@ proto.syncer.v1.GetConfigurationMetadataResponse.deserializeBinaryFromReader = f
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setIntegrationId(value);
       break;
     case 2:
       var value = msg.getConfigurationsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Struct.deserializeBinaryFromReader, "", new proto.google.protobuf.Struct());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Struct.deserializeBinaryFromReader, "", new proto.google.protobuf.Struct());
          });
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setIntegrationType(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setOrganizationId(value);
       break;
     case 5:
@@ -507,7 +501,13 @@ proto.syncer.v1.GetConfigurationMetadataResponse.serializeBinaryToWriter = funct
   }
   f = message.getConfigurationsMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Struct.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getConfigurationsMap(true),
+    2,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.google.protobuf.Struct.serializeBinaryToWriter);
   }
   f = message.getIntegrationType();
   if (f.length > 0) {
@@ -726,7 +726,7 @@ proto.syncer.v1.SyncRequest.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addIntegrationIds(value);
       break;
     default:
@@ -886,7 +886,7 @@ proto.syncer.v1.SyncResponse.deserializeBinaryFromReader = function(msg, reader)
     case 1:
       var value = msg.getIntegrationsSyncedMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.syncer.v1.SyncResponse.Integration.deserializeBinaryFromReader, "", new proto.syncer.v1.SyncResponse.Integration());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.syncer.v1.SyncResponse.Integration.deserializeBinaryFromReader, "", new proto.syncer.v1.SyncResponse.Integration());
          });
       break;
     case 2:
@@ -925,7 +925,13 @@ proto.syncer.v1.SyncResponse.serializeBinaryToWriter = function(message, writer)
   var f = undefined;
   f = message.getIntegrationsSyncedMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.syncer.v1.SyncResponse.Integration.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getIntegrationsSyncedMap(true),
+    1,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.syncer.v1.SyncResponse.Integration.serializeBinaryToWriter);
   }
   f = message.getErrorsList();
   if (f.length > 0) {
@@ -1015,7 +1021,7 @@ proto.syncer.v1.SyncResponse.Integration.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addConfigurationids(value);
       break;
     default:
@@ -1553,11 +1559,11 @@ proto.syncer.v1.DeleteMetadataRequest.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setIntegrationId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addConfigurationIds(value);
       break;
     default:

@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.plugins.s3.v1.Custom', null, global);
 goog.exportSymbol('proto.plugins.s3.v1.ListFilesConfig', null, global);
@@ -201,7 +195,7 @@ proto.plugins.s3.v1.SuperblocksMetadata.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPluginversion(value);
       break;
     default:
@@ -348,7 +342,7 @@ proto.plugins.s3.v1.Property.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setKey(value);
       break;
     case 2:
@@ -364,7 +358,7 @@ proto.plugins.s3.v1.Property.deserializeBinaryFromReader = function(msg, reader)
       msg.setInternal(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDescription(value);
       break;
     case 6:
@@ -372,23 +366,23 @@ proto.plugins.s3.v1.Property.deserializeBinaryFromReader = function(msg, reader)
       msg.setMandatory(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setType(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDefaultvalue(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMinrange(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMaxrange(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addValueoptions(value);
       break;
     default:
@@ -939,11 +933,11 @@ proto.plugins.s3.v1.ListFilesConfig.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPrefix(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDelimiter(value);
       break;
     default:
@@ -1142,27 +1136,27 @@ proto.plugins.s3.v1.Plugin.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResource(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAction(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPath(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBody(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFileobjects(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResponsetype(value);
       break;
     case 7:

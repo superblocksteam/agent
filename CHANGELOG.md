@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 
 - Added support for the `metadata` endpoint in the GraphQL integration
+- Added support for custom SubjectTokenType on "oauth on behalf of token exchange" flows
 
 ## v1.25.0
 

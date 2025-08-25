@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -143,7 +137,7 @@ proto.plugins.athena.v1.Connection.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setWorkgroupName(value);
       break;
     case 2:
@@ -151,7 +145,7 @@ proto.plugins.athena.v1.Connection.deserializeBinaryFromReader = function(msg, r
       msg.setOverrideS3OutputLocation(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setS3OutputLocation(value);
       break;
     case 4:
@@ -159,7 +153,7 @@ proto.plugins.athena.v1.Connection.deserializeBinaryFromReader = function(msg, r
       msg.setS3OutputLocationSuffix(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDatabaseName(value);
       break;
     case 6:
@@ -506,7 +500,7 @@ proto.plugins.athena.v1.Plugin.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:

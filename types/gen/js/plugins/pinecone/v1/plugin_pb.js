@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -261,7 +255,7 @@ proto.plugins.pinecone.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -452,11 +446,11 @@ proto.plugins.pinecone.v1.Plugin.Connection.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setEnvironment(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setApiKey(value);
       break;
     default:
@@ -712,7 +706,7 @@ proto.plugins.pinecone.v1.Plugin.CreateIndex.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     default:
@@ -867,7 +861,7 @@ proto.plugins.pinecone.v1.Plugin.UpsertVector.deserializeBinaryFromReader = func
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRaw(value);
       break;
     default:
@@ -1016,11 +1010,11 @@ proto.plugins.pinecone.v1.Plugin.Query.deserializeBinaryFromReader = function(ms
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setVector(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTopK(value);
       break;
     default:

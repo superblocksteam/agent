@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.plugins.gsheets.v1.Plugin', null, global);
 goog.exportSymbol('proto.plugins.gsheets.v1.Plugin.AddSheet', null, global);
@@ -157,7 +151,7 @@ proto.plugins.gsheets.v1.SuperblocksMetadata.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPluginversion(value);
       break;
     default:
@@ -301,19 +295,19 @@ proto.plugins.gsheets.v1.Plugin.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSpreadsheetid(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSheettitle(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRange(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRownumber(value);
       break;
     case 5:
@@ -321,15 +315,15 @@ proto.plugins.gsheets.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       msg.setExtractfirstrowheader(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setHeaderrownumber(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setFormat(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setData(value);
       break;
     case 9:
@@ -341,15 +335,15 @@ proto.plugins.gsheets.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       msg.setIncludeheaderrow(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAction(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setWritetodestinationtype(value);
       break;
     case 13:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBody(value);
       break;
     case 14:
@@ -573,15 +567,15 @@ proto.plugins.gsheets.v1.Plugin.AddSheet.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSheettitle(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRowcount(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setColumncount(value);
       break;
     default:

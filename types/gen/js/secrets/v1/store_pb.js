@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -191,15 +185,15 @@ proto.secrets.v1.InvalidateRequest.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setStore(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSecret(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setConfigurationId(value);
       break;
     default:
@@ -400,7 +394,7 @@ proto.secrets.v1.InvalidateResponse.deserializeBinaryFromReader = function(msg, 
       msg.addInvalidations(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     default:
@@ -624,7 +618,7 @@ proto.secrets.v1.ListSecretsRequest.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setStore(value);
       break;
     case 2:

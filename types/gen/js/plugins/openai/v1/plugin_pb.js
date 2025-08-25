@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.plugins.openai.v1.Custom', null, global);
 goog.exportSymbol('proto.plugins.openai.v1.Plugin', null, global);
@@ -179,7 +173,7 @@ proto.plugins.openai.v1.SuperblocksMetadata.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPluginversion(value);
       break;
     default:
@@ -326,7 +320,7 @@ proto.plugins.openai.v1.Property.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setKey(value);
       break;
     case 2:
@@ -342,7 +336,7 @@ proto.plugins.openai.v1.Property.deserializeBinaryFromReader = function(msg, rea
       msg.setInternal(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDescription(value);
       break;
     case 6:
@@ -350,23 +344,23 @@ proto.plugins.openai.v1.Property.deserializeBinaryFromReader = function(msg, rea
       msg.setMandatory(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setType(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDefaultvalue(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMinrange(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMaxrange(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addValueoptions(value);
       break;
     default:
@@ -953,103 +947,103 @@ proto.plugins.openai.v1.Plugin.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAction(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratechatgptresponseprompt(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratechatgptresponsemessagehistory(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratechatgptresponsesysteminstruction(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratetexttype(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratetextnewtextprompt(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratetextedittexttexttoedit(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratetextedittextprompt(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratecodetype(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratecodenewcodeprompt(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratecodeeditcodecodetoedit(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratecodeeditcodeprompt(value);
       break;
     case 13:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCheckmoderationtext(value);
       break;
     case 14:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setEmbeddingtext(value);
       break;
     case 15:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimagemethod(value);
       break;
     case 16:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimagegeneratefrompromptprompt(value);
       break;
     case 17:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimagegeneratefrompromptimageimagesize(value);
       break;
     case 18:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimageeditimageprompt(value);
       break;
     case 19:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimageeditimageimagefiletoedit(value);
       break;
     case 20:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimageeditimageimagemask(value);
       break;
     case 21:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimageeditimageimagesizes(value);
       break;
     case 22:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimagevaryimageimagefile(value);
       break;
     case 23:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGenerateimagevaryimageimagesize(value);
       break;
     case 24:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTranscribeaudiototextaudiofile(value);
       break;
     case 25:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTranscribeaudiototextinputlanguage(value);
       break;
     case 26:
@@ -1057,47 +1051,47 @@ proto.plugins.openai.v1.Plugin.deserializeBinaryFromReader = function(msg, reade
       msg.setTranscribeaudiototexttranslatetoenglish(value);
       break;
     case 27:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratechatgptresponseaimodel(value);
       break;
     case 28:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratetextnewtextaimodel(value);
       break;
     case 29:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratetextedittextaimodel(value);
       break;
     case 30:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratecodenewcodeaimodel(value);
       break;
     case 31:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratecodeeditcodeaimodel(value);
       break;
     case 32:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCheckmoderationaimodel(value);
       break;
     case 33:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratetextembeddingaimodel(value);
       break;
     case 34:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTranscribeaudiototextaimodel(value);
       break;
     case 35:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratechatgptresponsemaxtokens(value);
       break;
     case 36:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGeneratetextnewtextmaxtokens(value);
       break;
     case 37:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAimodel(value);
       break;
     case 38:

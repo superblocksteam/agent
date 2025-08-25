@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.plugins.common.v1.BucketsMetadata', null, global);
 goog.exportSymbol('proto.plugins.common.v1.BucketsMetadata.Minified', null, global);
@@ -304,7 +298,7 @@ proto.plugins.common.v1.SQLMetadata.Minified.deserializeBinaryFromReader = funct
     case 1:
       var value = msg.getTablesMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.plugins.common.v1.SQLMetadata.Minified.Table.deserializeBinaryFromReader, "", new proto.plugins.common.v1.SQLMetadata.Minified.Table());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.plugins.common.v1.SQLMetadata.Minified.Table.deserializeBinaryFromReader, "", new proto.plugins.common.v1.SQLMetadata.Minified.Table());
          });
       break;
     default:
@@ -338,7 +332,13 @@ proto.plugins.common.v1.SQLMetadata.Minified.serializeBinaryToWriter = function(
   var f = undefined;
   f = message.getTablesMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.plugins.common.v1.SQLMetadata.Minified.Table.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getTablesMap(true),
+    1,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.plugins.common.v1.SQLMetadata.Minified.Table.serializeBinaryToWriter);
   }
 };
 
@@ -415,7 +415,7 @@ proto.plugins.common.v1.SQLMetadata.Minified.Table.deserializeBinaryFromReader =
     case 1:
       var value = msg.getColumnsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readStringRequireUtf8, null, "", "");
          });
       break;
     default:
@@ -449,7 +449,12 @@ proto.plugins.common.v1.SQLMetadata.Minified.Table.serializeBinaryToWriter = fun
   var f = undefined;
   f = message.getColumnsMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getColumnsMap(true),
+    1,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -678,7 +683,7 @@ proto.plugins.common.v1.BucketsMetadata.Minified.deserializeBinaryFromReader = f
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addNames(value);
       break;
     default:

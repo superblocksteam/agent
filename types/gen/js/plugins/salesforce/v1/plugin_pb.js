@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var plugins_common_v1_auth_pb = require('../../../plugins/common/v1/auth_pb');
 goog.object.extend(proto, plugins_common_v1_auth_pb);
@@ -307,7 +301,7 @@ proto.plugins.salesforce.v1.Plugin.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -485,7 +479,7 @@ proto.plugins.salesforce.v1.Plugin.SalesforceConnection.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setInstanceUrl(value);
       break;
     case 2:
@@ -911,15 +905,15 @@ proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field.deserializeBinaryFromRe
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setLabel(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setType(value);
       break;
     default:
@@ -1176,7 +1170,7 @@ proto.plugins.salesforce.v1.Plugin.Soql.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSqlBody(value);
       break;
     case 2:
@@ -1346,7 +1340,7 @@ proto.plugins.salesforce.v1.Plugin.Crud.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResourceType(value);
       break;
     case 2:
@@ -1354,11 +1348,11 @@ proto.plugins.salesforce.v1.Plugin.Crud.deserializeBinaryFromReader = function(m
       msg.setAction(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResourceBody(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResourceId(value);
       break;
     default:
@@ -1577,7 +1571,7 @@ proto.plugins.salesforce.v1.Plugin.Bulk.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResourceType(value);
       break;
     case 2:
@@ -1585,11 +1579,11 @@ proto.plugins.salesforce.v1.Plugin.Bulk.deserializeBinaryFromReader = function(m
       msg.setAction(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResourceBody(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setExternalId(value);
       break;
     default:
