@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -595,7 +589,7 @@ proto.api.v1.Event.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -633,11 +627,11 @@ proto.api.v1.Event.deserializeBinaryFromReader = function(msg, reader) {
       msg.setResponse(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setParent(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setExecutionIndex(value);
       break;
     default:
@@ -1079,7 +1073,7 @@ proto.api.v1.Event.Response.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setLast(value);
       break;
     case 3:
@@ -1386,7 +1380,7 @@ proto.api.v1.Event.End.deserializeBinaryFromReader = function(msg, reader) {
     case 5:
       var value = msg.getResolvedMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Resolved.deserializeBinaryFromReader, "", new proto.api.v1.Resolved());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Resolved.deserializeBinaryFromReader, "", new proto.api.v1.Resolved());
          });
       break;
     default:
@@ -1451,7 +1445,13 @@ proto.api.v1.Event.End.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getResolvedMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(5, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api.v1.Resolved.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getResolvedMap(true),
+    5,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.api.v1.Resolved.serializeBinaryToWriter);
   }
 };
 
@@ -2035,7 +2035,7 @@ proto.api.v1.Performance.deserializeBinaryFromReader = function(msg, reader) {
     case 6:
       var value = msg.getCustomMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readInt64, null, "", 0);
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readInt64, null, "", 0);
          });
       break;
     default:
@@ -2104,7 +2104,12 @@ proto.api.v1.Performance.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getCustomMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(6, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeInt64);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getCustomMap(true),
+    6,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeInt64);
   }
 };
 
@@ -2308,15 +2313,15 @@ proto.api.v1.Output.deserializeBinaryFromReader = function(msg, reader) {
       msg.setResult(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRequest(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addStdout(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addStderr(value);
       break;
     case 5:
@@ -2464,7 +2469,7 @@ proto.api.v1.Output.Request.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSummary(value);
       break;
     case 5:
@@ -2825,11 +2830,11 @@ proto.api.v1.OutputOld.deserializeBinaryFromReader = function(msg, reader) {
       msg.setOutput(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addLog(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRequest(value);
       break;
     case 4:

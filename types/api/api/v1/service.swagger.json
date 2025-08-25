@@ -1489,6 +1489,9 @@
         },
         "subjectTokenSourceStaticToken": {
           "type": "string"
+        },
+        "subjectTokenType": {
+          "type": "string"
         }
       }
     },

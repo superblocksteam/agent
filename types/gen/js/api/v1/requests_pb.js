@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var api_v1_api_pb = require('../../api/v1/api_pb');
 goog.object.extend(proto, api_v1_api_pb);
@@ -519,11 +513,11 @@ proto.api.v1.PatchApi.deserializeBinaryFromReader = function(msg, reader) {
       msg.setApi(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCommitId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBranchName(value);
       break;
     default:
@@ -937,7 +931,7 @@ proto.api.v1.PatchApisResponse.deserializeBinaryFromReader = function(msg, reade
     case 2:
       var value = msg.getLinksMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
     case 3:
@@ -984,7 +978,13 @@ proto.api.v1.PatchApisResponse.serializeBinaryToWriter = function(message, write
   }
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getLinksMap(true),
+    2,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.common.v1.Link.serializeBinaryToWriter);
   }
   f = message.getLinksV2List();
   if (f.length > 0) {
@@ -1070,7 +1070,7 @@ proto.api.v1.PatchApisResponse.Status.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setApiId(value);
       break;
     case 2:
@@ -1078,7 +1078,7 @@ proto.api.v1.PatchApisResponse.Status.deserializeBinaryFromReader = function(msg
       msg.setCode(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     case 4:
@@ -1454,15 +1454,15 @@ proto.api.v1.UpdateApiSignature.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setApiId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCommitId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBranchName(value);
       break;
     case 4:
@@ -1876,15 +1876,15 @@ proto.api.v1.UpdateApplicationSignature.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setApplicationId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCommitId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBranchName(value);
       break;
     case 4:
@@ -2295,7 +2295,7 @@ proto.api.v1.SignatureRotationErrors.deserializeBinaryFromReader = function(msg,
       msg.addErrors(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setKeyId(value);
       break;
     case 3:
@@ -2553,7 +2553,7 @@ proto.api.v1.SignatureRotationError.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     default:
@@ -3021,7 +3021,7 @@ proto.api.v1.UpdateApplicationSignaturesResponse.deserializeBinaryFromReader = f
     case 2:
       var value = msg.getLinksMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
     case 3:
@@ -3068,7 +3068,13 @@ proto.api.v1.UpdateApplicationSignaturesResponse.serializeBinaryToWriter = funct
   }
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getLinksMap(true),
+    2,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.common.v1.Link.serializeBinaryToWriter);
   }
   f = message.getLinksV2List();
   if (f.length > 0) {
@@ -3182,15 +3188,15 @@ proto.api.v1.UpdateApplicationSignaturesResponse.Status.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setApplicationId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCommitId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBranchName(value);
       break;
     case 4:
@@ -3198,7 +3204,7 @@ proto.api.v1.UpdateApplicationSignaturesResponse.Status.deserializeBinaryFromRea
       msg.setCode(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     case 6:
@@ -3631,7 +3637,7 @@ proto.api.v1.UpdateApiSignaturesResponse.deserializeBinaryFromReader = function(
     case 2:
       var value = msg.getLinksMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
     case 3:
@@ -3678,7 +3684,13 @@ proto.api.v1.UpdateApiSignaturesResponse.serializeBinaryToWriter = function(mess
   }
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getLinksMap(true),
+    2,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.common.v1.Link.serializeBinaryToWriter);
   }
   f = message.getLinksV2List();
   if (f.length > 0) {
@@ -3792,15 +3804,15 @@ proto.api.v1.UpdateApiSignaturesResponse.Status.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setApiId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCommitId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBranchName(value);
       break;
     case 4:
@@ -3808,7 +3820,7 @@ proto.api.v1.UpdateApiSignaturesResponse.Status.deserializeBinaryFromReader = fu
       msg.setCode(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     case 6:

@@ -291,6 +291,11 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
    */
   subjectTokenSourceStaticToken = "";
 
+  /**
+   * @generated from field: string subject_token_type = 12;
+   */
+  subjectTokenType = "";
+
   constructor(data?: PartialMessage<OAuth_AuthorizationCodeFlow>) {
     super();
     proto3.util.initPartial(data, this);
@@ -310,6 +315,7 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
     { no: 9, name: "client_auth_method", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 10, name: "subject_token_source", kind: "enum", T: proto3.getEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource) },
     { no: 11, name: "subject_token_source_static_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 12, name: "subject_token_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OAuth_AuthorizationCodeFlow {

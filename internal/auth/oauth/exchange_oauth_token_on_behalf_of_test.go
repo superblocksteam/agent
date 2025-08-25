@@ -27,6 +27,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 		accessToken               string
 		accessExpiresAt           int64
 		origin                    string
+		expectedSubjectTokenType  string
 		expectedErr               string
 		exchangeRequestErr        error
 		exchangeRequestStatusCode int
@@ -45,6 +46,40 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			accessToken:               "access-token",
 			accessExpiresAt:           clock.Now().Add(time.Hour).Unix(),
 			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
+			exchangeRequestStatusCode: http.StatusOK,
+			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "user"}`,
+		},
+		{
+			name: "success, default subject token type used if none given",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience:     "https://example.com/userinfo",
+				ClientId:     "client-id",
+				ClientSecret: "client-secret",
+				Scope:        "user",
+				TokenUrl:     "https://example.com/token",
+			},
+			accessToken:               "access-token",
+			accessExpiresAt:           clock.Now().Add(time.Hour).Unix(),
+			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
+			exchangeRequestStatusCode: http.StatusOK,
+			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "user"}`,
+		},
+		{
+			name: "success, subject token type used if provided",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience:         "https://example.com/userinfo",
+				ClientId:         "client-id",
+				ClientSecret:     "client-secret",
+				Scope:            "user",
+				TokenUrl:         "https://example.com/token",
+				SubjectTokenType: "custom-subject-token-type",
+			},
+			accessToken:               "access-token",
+			accessExpiresAt:           clock.Now().Add(time.Hour).Unix(),
+			origin:                    "origin",
+			expectedSubjectTokenType:  "custom-subject-token-type",
 			exchangeRequestStatusCode: http.StatusOK,
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "user"}`,
 		},
@@ -60,6 +95,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			accessToken:               "access-token",
 			accessExpiresAt:           clock.Now().Add(time.Hour).Unix(),
 			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
 			exchangeRequestStatusCode: http.StatusOK,
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "organization"}`,
 		},
@@ -85,9 +121,10 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				Scope:        "user",
 				TokenUrl:     "https://example.com/token",
 			},
-			origin:             "origin",
-			expectedErr:        "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nupstream disconnect",
-			exchangeRequestErr: errors.New("upstream disconnect"),
+			origin:                   "origin",
+			expectedSubjectTokenType: "urn:ietf:params:oauth:token-type:access_token",
+			expectedErr:              "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nupstream disconnect",
+			exchangeRequestErr:       errors.New("upstream disconnect"),
 		},
 		{
 			name: "token exchange request fails",
@@ -99,6 +136,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				TokenUrl:     "https://example.com/token",
 			},
 			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
 			expectedErr:               "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nUnexpected status code: 400: {\"error\": \"invalid_grant\"}",
 			exchangeRequestStatusCode: http.StatusBadRequest,
 			exchangeResponseBody:      `{"error": "invalid_grant"}`,
@@ -113,6 +151,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				TokenUrl:     "https://example.com/token",
 			},
 			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
 			expectedErr:               "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nunexpected end of JSON input",
 			exchangeRequestStatusCode: http.StatusOK,
 			exchangeResponseBody:      `{"access_token": "access-token", "token...`,
@@ -127,6 +166,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				TokenUrl:     "https://example.com/token",
 			},
 			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
 			exchangeRequestStatusCode: http.StatusOK,
 			exchangeResponseBody:      `{"refresh_token": "refresh-token", "expires_in": 86400, "scope": "user"}`,
 			expectedErr:               "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nNo access token returned in Token URI response",
@@ -143,6 +183,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			accessToken:               "access-token",
 			accessExpiresAt:           clock.Now().Add(time.Hour).Unix(),
 			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
 			exchangeRequestStatusCode: http.StatusOK,
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "user"}`,
 			cacheErr:                  errors.New("error caching user access token"),
@@ -159,6 +200,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			accessToken:               "access-token",
 			accessExpiresAt:           clock.Now().Add(time.Hour).Unix(),
 			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
 			exchangeRequestStatusCode: http.StatusOK,
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "organization"}`,
 			cacheErr:                  errors.New("error caching shared access token"),
@@ -184,6 +226,8 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			httpMock.On(
 				"Do",
 				mock.MatchedBy(func(req *http.Request) bool {
+					actualSubjectTokenType := req.FormValue("subject_token_type")
+					assert.Equal(t, actualSubjectTokenType, tc.expectedSubjectTokenType)
 					return req.Method == http.MethodPost &&
 						req.URL.String() == tc.authConfig.TokenUrl &&
 						req.Header.Get("Content-Type") == "application/x-www-form-urlencoded" &&

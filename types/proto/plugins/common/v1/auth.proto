@@ -53,6 +53,7 @@ message OAuth {
     string client_auth_method = 9;
     SubjectTokenSource subject_token_source = 10;
     string subject_token_source_static_token = 11;
+    string subject_token_type = 12;
   }
 }
 

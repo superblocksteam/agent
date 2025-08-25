@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var api_v1_event_pb = require('../../api/v1/event_pb');
 goog.object.extend(proto, api_v1_event_pb);
@@ -138,15 +132,15 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setExecutionId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResourceId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setResourceName(value);
       break;
     case 4:
@@ -166,11 +160,11 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
       msg.setStatus(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setIntegrationId(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setIntegrationType(value);
       break;
     case 10:
@@ -178,11 +172,11 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
       msg.setMode(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setOrganizationId(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUserId(value);
       break;
     case 13:
@@ -190,11 +184,11 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
       msg.setTrigger(value);
       break;
     case 14:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setParentId(value);
       break;
     case 15:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setParentName(value);
       break;
     case 16:
@@ -206,7 +200,7 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
       msg.setIsDescendantOfStream(value);
       break;
     case 18:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setApiId(value);
       break;
     default:

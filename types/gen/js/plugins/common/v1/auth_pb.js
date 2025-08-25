@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.plugins.common.v1.AkeylessAuth', null, global);
 goog.exportSymbol('proto.plugins.common.v1.AkeylessAuth.ApiKey', null, global);
@@ -475,23 +469,23 @@ proto.plugins.common.v1.OAuthCommon.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientSecret(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTokenUrl(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAudience(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setScope(value);
       break;
     default:
@@ -828,31 +822,31 @@ proto.plugins.common.v1.OAuth.PasswordGrantFlow.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientSecret(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTokenUrl(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUsername(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPassword(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAudience(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setScope(value);
       break;
     default:
@@ -1136,23 +1130,23 @@ proto.plugins.common.v1.OAuth.ClientCredentialsFlow.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientSecret(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTokenUrl(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAudience(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setScope(value);
       break;
     default:
@@ -1354,7 +1348,8 @@ tokenScope: jspb.Message.getFieldWithDefault(msg, 7, ""),
 refreshTokenFromServer: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
 clientAuthMethod: jspb.Message.getFieldWithDefault(msg, 9, ""),
 subjectTokenSource: jspb.Message.getFieldWithDefault(msg, 10, 0),
-subjectTokenSourceStaticToken: jspb.Message.getFieldWithDefault(msg, 11, "")
+subjectTokenSourceStaticToken: jspb.Message.getFieldWithDefault(msg, 11, ""),
+subjectTokenType: jspb.Message.getFieldWithDefault(msg, 12, "")
   };
 
   if (includeInstance) {
@@ -1392,31 +1387,31 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientSecret(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTokenUrl(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAuthUrl(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAudience(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setScope(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTokenScope(value);
       break;
     case 8:
@@ -1424,7 +1419,7 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.deserializeBinaryFromReader 
       msg.setRefreshTokenFromServer(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientAuthMethod(value);
       break;
     case 10:
@@ -1432,8 +1427,12 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.deserializeBinaryFromReader 
       msg.setSubjectTokenSource(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSubjectTokenSourceStaticToken(value);
+      break;
+    case 12:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setSubjectTokenType(value);
       break;
     default:
       reader.skipField();
@@ -1538,6 +1537,13 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.serializeBinaryToWriter = fu
   if (f.length > 0) {
     writer.writeString(
       11,
+      f
+    );
+  }
+  f = message.getSubjectTokenType();
+  if (f.length > 0) {
+    writer.writeString(
+      12,
       f
     );
   }
@@ -1751,6 +1757,24 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setSubjectTokenSou
 };
 
 
+/**
+ * optional string subject_token_type = 12;
+ * @return {string}
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getSubjectTokenType = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 12, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow} returns this
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setSubjectTokenType = function(value) {
+  return jspb.Message.setProto3StringField(this, 12, value);
+};
+
+
 
 
 
@@ -1822,11 +1846,11 @@ proto.plugins.common.v1.Basic.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUsername(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPassword(value);
       break;
     default:
@@ -2135,7 +2159,7 @@ proto.plugins.common.v1.Azure.Key.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMasterKey(value);
       break;
     default:
@@ -2266,11 +2290,11 @@ proto.plugins.common.v1.Azure.ClientCredentials.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientSecret(value);
       break;
     default:
@@ -2537,7 +2561,7 @@ proto.plugins.common.v1.AwsAuth.deserializeBinaryFromReader = function(msg, read
       msg.setAssumeRole(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRegion(value);
       break;
     default:
@@ -2666,11 +2690,11 @@ proto.plugins.common.v1.AwsAuth.Static.deserializeBinaryFromReader = function(ms
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAccessKeyId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSecretAccessKey(value);
       break;
     default:
@@ -2825,7 +2849,7 @@ proto.plugins.common.v1.AwsAuth.AssumeRole.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRoleArn(value);
       break;
     default:
@@ -3399,11 +3423,11 @@ proto.plugins.common.v1.AkeylessAuth.ApiKey.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAccessId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAccessKey(value);
       break;
     default:
@@ -3559,11 +3583,11 @@ proto.plugins.common.v1.AkeylessAuth.Email.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setEmail(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPassword(value);
       break;
     default:

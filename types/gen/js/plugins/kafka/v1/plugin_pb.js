@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var buf_validate_validate_pb = require('../../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -534,7 +528,7 @@ proto.plugins.kafka.v1.Metadata.Minified.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addTopics(value);
       break;
     default:
@@ -764,7 +758,7 @@ proto.plugins.kafka.v1.Broker.deserializeBinaryFromReader = function(msg, reader
       msg.setNodeId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAddress(value);
       break;
     default:
@@ -919,7 +913,7 @@ proto.plugins.kafka.v1.Topic.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     default:
@@ -1217,7 +1211,7 @@ proto.plugins.kafka.v1.Message.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTopic(value);
       break;
     case 2:
@@ -1229,7 +1223,7 @@ proto.plugins.kafka.v1.Message.deserializeBinaryFromReader = function(msg, reade
       msg.setOffset(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTimestamp(value);
       break;
     case 5:
@@ -1253,7 +1247,7 @@ proto.plugins.kafka.v1.Message.deserializeBinaryFromReader = function(msg, reade
     case 9:
       var value = msg.getHeadersMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readStringRequireUtf8, null, "", "");
          });
       break;
     default:
@@ -1345,7 +1339,12 @@ proto.plugins.kafka.v1.Message.serializeBinaryToWriter = function(message, write
   }
   f = message.getHeadersMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getHeadersMap(true),
+    9,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -1653,27 +1652,27 @@ proto.plugins.kafka.v1.SASL.deserializeBinaryFromReader = function(msg, reader) 
       msg.setMechanism(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUsername(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPassword(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAccessKeyId(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSecretKey(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSessionToken(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setAuthorizationIdentity(value);
       break;
     default:
@@ -2074,7 +2073,7 @@ proto.plugins.kafka.v1.Cluster.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBrokers(value);
       break;
     case 2:
@@ -2289,7 +2288,7 @@ proto.plugins.kafka.v1.Plugin.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -2486,15 +2485,15 @@ proto.plugins.kafka.v1.Plugin.Consume.deserializeBinaryFromReader = function(msg
       msg.setFrom(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTopic(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setGroupId(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientId(value);
       break;
     case 5:
@@ -2663,7 +2662,7 @@ proto.plugins.kafka.v1.Plugin.Consume.Seek.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTopic(value);
       break;
     case 2:
@@ -3026,7 +3025,7 @@ proto.plugins.kafka.v1.Plugin.Produce.deserializeBinaryFromReader = function(msg
       msg.setAcks(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setClientId(value);
       break;
     case 3:
@@ -3038,7 +3037,7 @@ proto.plugins.kafka.v1.Plugin.Produce.deserializeBinaryFromReader = function(msg
       msg.setCompression(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTransactionId(value);
       break;
     case 6:
@@ -3054,7 +3053,7 @@ proto.plugins.kafka.v1.Plugin.Produce.deserializeBinaryFromReader = function(msg
       msg.setTransaction(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessages(value);
       break;
     default:
@@ -3696,11 +3695,11 @@ proto.plugins.kafka.v1.SuperblocksMetadata.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPluginVersion(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setSyncedFromProfileId(value);
       break;
     default:

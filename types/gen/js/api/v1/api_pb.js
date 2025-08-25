@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var api_v1_blocks_pb = require('../../api/v1/blocks_pb');
 goog.object.extend(proto, api_v1_blocks_pb);
@@ -1370,7 +1364,7 @@ proto.api.v1.Authorization.deserializeBinaryFromReader = function(msg, reader) {
       msg.setType(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setExpression(value);
       break;
     default:
@@ -1807,11 +1801,11 @@ proto.api.v1.Profiles.Modes.Settings.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDefault(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addAvailable(value);
       break;
     default:
@@ -2309,11 +2303,11 @@ proto.api.v1.Trigger.Application.deserializeBinaryFromReader = function(msg, rea
       msg.setOptions(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPageId(value);
       break;
     default:
@@ -2813,7 +2807,7 @@ proto.api.v1.Trigger.Workflow.Options.deserializeBinaryFromReader = function(msg
       msg.setProfiles(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDeployedcommitid(value);
       break;
     default:
@@ -3009,13 +3003,13 @@ proto.api.v1.Trigger.Workflow.Parameters.deserializeBinaryFromReader = function(
     case 1:
       var value = msg.getQueryMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Trigger.Workflow.Parameters.QueryParam.deserializeBinaryFromReader, "", new proto.api.v1.Trigger.Workflow.Parameters.QueryParam());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Trigger.Workflow.Parameters.QueryParam.deserializeBinaryFromReader, "", new proto.api.v1.Trigger.Workflow.Parameters.QueryParam());
          });
       break;
     case 2:
       var value = msg.getBodyMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -3049,11 +3043,23 @@ proto.api.v1.Trigger.Workflow.Parameters.serializeBinaryToWriter = function(mess
   var f = undefined;
   f = message.getQueryMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api.v1.Trigger.Workflow.Parameters.QueryParam.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getQueryMap(true),
+    1,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.api.v1.Trigger.Workflow.Parameters.QueryParam.serializeBinaryToWriter);
   }
   f = message.getBodyMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getBodyMap(true),
+    2,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -3135,7 +3141,7 @@ proto.api.v1.Trigger.Workflow.Parameters.QueryParam.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addValues(value);
       break;
     default:
@@ -3437,7 +3443,7 @@ proto.api.v1.Trigger.Job.deserializeBinaryFromReader = function(msg, reader) {
       msg.setTime(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTimezoneLocale(value);
       break;
     default:
@@ -3617,7 +3623,7 @@ proto.api.v1.Trigger.Job.Options.deserializeBinaryFromReader = function(msg, rea
       msg.setSendEmailOnFailure(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDeployedcommitid(value);
       break;
     default:
@@ -4647,7 +4653,7 @@ proto.api.v1.Block.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -5104,7 +5110,7 @@ proto.api.v1.Block.Parallel.Static.deserializeBinaryFromReader = function(msg, r
     case 1:
       var value = msg.getPathsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Blocks.deserializeBinaryFromReader, "", new proto.api.v1.Blocks());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Blocks.deserializeBinaryFromReader, "", new proto.api.v1.Blocks());
          });
       break;
     default:
@@ -5138,7 +5144,13 @@ proto.api.v1.Block.Parallel.Static.serializeBinaryToWriter = function(message, w
   var f = undefined;
   f = message.getPathsMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api.v1.Blocks.serializeBinaryToWriter);
+jspb.internal.public_for_gencode.serializeMapToBinary(
+    message.getPathsMap(true),
+    1,
+    writer,
+    jspb.BinaryWriter.prototype.writeString,
+    jspb.BinaryWriter.prototype.writeMessage,
+    proto.api.v1.Blocks.serializeBinaryToWriter);
   }
 };
 
@@ -5246,7 +5258,7 @@ proto.api.v1.Block.Parallel.Dynamic.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPaths(value);
       break;
     case 2:
@@ -5384,7 +5396,7 @@ proto.api.v1.Block.Parallel.Dynamic.Variables.deserializeBinaryFromReader = func
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setItem(value);
       break;
     default:
@@ -5894,7 +5906,7 @@ proto.api.v1.Block.Conditional.Condition.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCondition(value);
       break;
     case 2:
@@ -6198,7 +6210,7 @@ proto.api.v1.Block.Loop.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setRange(value);
       break;
     case 2:
@@ -6358,11 +6370,11 @@ proto.api.v1.Block.Loop.Variables.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setIndex(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setItem(value);
       break;
     default:
@@ -6784,7 +6796,7 @@ proto.api.v1.Block.TryCatch.Variables.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setError(value);
       break;
     default:
@@ -7062,7 +7074,7 @@ proto.api.v1.Block.Break.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCondition(value);
       break;
     default:
@@ -7192,7 +7204,7 @@ proto.api.v1.Block.Return.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setData(value);
       break;
     default:
@@ -7322,7 +7334,7 @@ proto.api.v1.Block.Throw.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setError(value);
       break;
     default:
@@ -7452,7 +7464,7 @@ proto.api.v1.Block.Wait.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setCondition(value);
       break;
     default:
@@ -7738,7 +7750,7 @@ proto.api.v1.Block.Stream.Variables.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setItem(value);
       break;
     default:
@@ -7999,7 +8011,7 @@ proto.api.v1.Block.Stream.Trigger.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -8327,7 +8339,7 @@ proto.api.v1.Block.Send.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     default:
@@ -9093,7 +9105,7 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setIntegration(value);
       break;
     case 2:

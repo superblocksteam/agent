@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var plugins_common_v1_auth_pb = require('../../../plugins/common/v1/auth_pb');
 goog.object.extend(proto, plugins_common_v1_auth_pb);
@@ -414,7 +408,7 @@ proto.plugins.cosmosdb.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -581,7 +575,7 @@ proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setHost(value);
       break;
     case 2:
@@ -589,7 +583,7 @@ proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.deserializeBinaryFromReader 
       msg.setPort(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setDatabaseId(value);
       break;
     case 4:
@@ -942,7 +936,7 @@ proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setId(value);
       break;
     case 2:
@@ -1076,11 +1070,11 @@ proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey.deserializeBina
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addPaths(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setKind(value);
       break;
     case 3:
@@ -1536,11 +1530,11 @@ proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.deserializeBinaryFromReader = fun
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setContainerId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setQuery(value);
       break;
     case 3:
@@ -1548,7 +1542,7 @@ proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.deserializeBinaryFromReader = fun
       msg.setCrossPartition(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPartitionKey(value);
       break;
     default:
@@ -1842,7 +1836,7 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setContainerId(value);
       break;
     case 2:
@@ -2020,11 +2014,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read.deserializeBinaryFromReader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPartitionKey(value);
       break;
     default:
@@ -2198,11 +2192,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete.deserializeBinaryFromRead
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPartitionKey(value);
       break;
     default:
@@ -2376,11 +2370,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBody(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPartitionKey(value);
       break;
     default:
@@ -2554,11 +2548,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert.deserializeBinaryFromRead
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBody(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPartitionKey(value);
       break;
     default:
@@ -2732,11 +2726,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create.deserializeBinaryFromRead
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setBody(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setPartitionKey(value);
       break;
     default:
