@@ -3,8 +3,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
-import { Message, proto3 } from "@bufbuild/protobuf";
+import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from '@bufbuild/protobuf';
+import { Message, proto3 } from '@bufbuild/protobuf';
 
 /**
  * @generated from message plugins.common.v1.OAuthCommon
@@ -13,27 +13,27 @@ export class OAuthCommon extends Message<OAuthCommon> {
   /**
    * @generated from field: string client_id = 1;
    */
-  clientId = "";
+  clientId = '';
 
   /**
    * @generated from field: string client_secret = 2;
    */
-  clientSecret = "";
+  clientSecret = '';
 
   /**
    * @generated from field: string token_url = 3;
    */
-  tokenUrl = "";
+  tokenUrl = '';
 
   /**
    * @generated from field: string audience = 4;
    */
-  audience = "";
+  audience = '';
 
   /**
    * @generated from field: string scope = 5;
    */
-  scope = "";
+  scope = '';
 
   constructor(data?: PartialMessage<OAuthCommon>) {
     super();
@@ -41,13 +41,13 @@ export class OAuthCommon extends Message<OAuthCommon> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.OAuthCommon";
+  static readonly typeName = 'plugins.common.v1.OAuthCommon';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "client_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "client_secret", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "token_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "audience", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "scope", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'client_id', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'client_secret', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: 'token_url', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: 'audience', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: 'scope', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OAuthCommon {
@@ -77,9 +77,8 @@ export class OAuth extends Message<OAuth> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.OAuth";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-  ]);
+  static readonly typeName = 'plugins.common.v1.OAuth';
+  static readonly fields: FieldList = proto3.util.newFieldList(() => []);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OAuth {
     return new OAuth().fromBinary(bytes, options);
@@ -105,37 +104,37 @@ export class OAuth_PasswordGrantFlow extends Message<OAuth_PasswordGrantFlow> {
   /**
    * @generated from field: string client_id = 1;
    */
-  clientId = "";
+  clientId = '';
 
   /**
    * @generated from field: string client_secret = 2;
    */
-  clientSecret = "";
+  clientSecret = '';
 
   /**
    * @generated from field: string token_url = 3;
    */
-  tokenUrl = "";
+  tokenUrl = '';
 
   /**
    * @generated from field: string username = 4;
    */
-  username = "";
+  username = '';
 
   /**
    * @generated from field: string password = 5;
    */
-  password = "";
+  password = '';
 
   /**
    * @generated from field: string audience = 6;
    */
-  audience = "";
+  audience = '';
 
   /**
    * @generated from field: string scope = 7;
    */
-  scope = "";
+  scope = '';
 
   constructor(data?: PartialMessage<OAuth_PasswordGrantFlow>) {
     super();
@@ -143,15 +142,15 @@ export class OAuth_PasswordGrantFlow extends Message<OAuth_PasswordGrantFlow> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.OAuth.PasswordGrantFlow";
+  static readonly typeName = 'plugins.common.v1.OAuth.PasswordGrantFlow';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "client_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "client_secret", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "token_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "username", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "password", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 6, name: "audience", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 7, name: "scope", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'client_id', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'client_secret', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: 'token_url', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: 'username', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: 'password', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: 'audience', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: 'scope', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OAuth_PasswordGrantFlow {
@@ -166,7 +165,10 @@ export class OAuth_PasswordGrantFlow extends Message<OAuth_PasswordGrantFlow> {
     return new OAuth_PasswordGrantFlow().fromJsonString(jsonString, options);
   }
 
-  static equals(a: OAuth_PasswordGrantFlow | PlainMessage<OAuth_PasswordGrantFlow> | undefined, b: OAuth_PasswordGrantFlow | PlainMessage<OAuth_PasswordGrantFlow> | undefined): boolean {
+  static equals(
+    a: OAuth_PasswordGrantFlow | PlainMessage<OAuth_PasswordGrantFlow> | undefined,
+    b: OAuth_PasswordGrantFlow | PlainMessage<OAuth_PasswordGrantFlow> | undefined
+  ): boolean {
     return proto3.util.equals(OAuth_PasswordGrantFlow, a, b);
   }
 }
@@ -178,27 +180,27 @@ export class OAuth_ClientCredentialsFlow extends Message<OAuth_ClientCredentials
   /**
    * @generated from field: string client_id = 1;
    */
-  clientId = "";
+  clientId = '';
 
   /**
    * @generated from field: string client_secret = 2;
    */
-  clientSecret = "";
+  clientSecret = '';
 
   /**
    * @generated from field: string token_url = 3;
    */
-  tokenUrl = "";
+  tokenUrl = '';
 
   /**
    * @generated from field: string audience = 4;
    */
-  audience = "";
+  audience = '';
 
   /**
    * @generated from field: string scope = 5;
    */
-  scope = "";
+  scope = '';
 
   constructor(data?: PartialMessage<OAuth_ClientCredentialsFlow>) {
     super();
@@ -206,13 +208,13 @@ export class OAuth_ClientCredentialsFlow extends Message<OAuth_ClientCredentials
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.OAuth.ClientCredentialsFlow";
+  static readonly typeName = 'plugins.common.v1.OAuth.ClientCredentialsFlow';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "client_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "client_secret", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "token_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "audience", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "scope", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'client_id', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'client_secret', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: 'token_url', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: 'audience', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: 'scope', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OAuth_ClientCredentialsFlow {
@@ -227,7 +229,10 @@ export class OAuth_ClientCredentialsFlow extends Message<OAuth_ClientCredentials
     return new OAuth_ClientCredentialsFlow().fromJsonString(jsonString, options);
   }
 
-  static equals(a: OAuth_ClientCredentialsFlow | PlainMessage<OAuth_ClientCredentialsFlow> | undefined, b: OAuth_ClientCredentialsFlow | PlainMessage<OAuth_ClientCredentialsFlow> | undefined): boolean {
+  static equals(
+    a: OAuth_ClientCredentialsFlow | PlainMessage<OAuth_ClientCredentialsFlow> | undefined,
+    b: OAuth_ClientCredentialsFlow | PlainMessage<OAuth_ClientCredentialsFlow> | undefined
+  ): boolean {
     return proto3.util.equals(OAuth_ClientCredentialsFlow, a, b);
   }
 }
@@ -239,37 +244,37 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
   /**
    * @generated from field: string client_id = 1;
    */
-  clientId = "";
+  clientId = '';
 
   /**
    * @generated from field: string client_secret = 2;
    */
-  clientSecret = "";
+  clientSecret = '';
 
   /**
    * @generated from field: string token_url = 3;
    */
-  tokenUrl = "";
+  tokenUrl = '';
 
   /**
    * @generated from field: string auth_url = 4;
    */
-  authUrl = "";
+  authUrl = '';
 
   /**
    * @generated from field: string audience = 5;
    */
-  audience = "";
+  audience = '';
 
   /**
    * @generated from field: string scope = 6;
    */
-  scope = "";
+  scope = '';
 
   /**
    * @generated from field: string token_scope = 7;
    */
-  tokenScope = "";
+  tokenScope = '';
 
   /**
    * @generated from field: bool refresh_token_from_server = 8;
@@ -279,7 +284,7 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
   /**
    * @generated from field: string client_auth_method = 9;
    */
-  clientAuthMethod = "";
+  clientAuthMethod = '';
 
   /**
    * @generated from field: plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource subject_token_source = 10;
@@ -289,12 +294,12 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
   /**
    * @generated from field: string subject_token_source_static_token = 11;
    */
-  subjectTokenSourceStaticToken = "";
+  subjectTokenSourceStaticToken = '';
 
   /**
    * @generated from field: string subject_token_type = 12;
    */
-  subjectTokenType = "";
+  subjectTokenType = '';
 
   constructor(data?: PartialMessage<OAuth_AuthorizationCodeFlow>) {
     super();
@@ -302,20 +307,20 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.OAuth.AuthorizationCodeFlow";
+  static readonly typeName = 'plugins.common.v1.OAuth.AuthorizationCodeFlow';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "client_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "client_secret", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "token_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "auth_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "audience", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 6, name: "scope", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 7, name: "token_scope", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 8, name: "refresh_token_from_server", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 9, name: "client_auth_method", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 10, name: "subject_token_source", kind: "enum", T: proto3.getEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource) },
-    { no: 11, name: "subject_token_source_static_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 12, name: "subject_token_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'client_id', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'client_secret', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: 'token_url', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: 'auth_url', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: 'audience', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: 'scope', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: 'token_scope', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 8, name: 'refresh_token_from_server', kind: 'scalar', T: 8 /* ScalarType.BOOL */ },
+    { no: 9, name: 'client_auth_method', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 10, name: 'subject_token_source', kind: 'enum', T: proto3.getEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource) },
+    { no: 11, name: 'subject_token_source_static_token', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 12, name: 'subject_token_type', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OAuth_AuthorizationCodeFlow {
@@ -330,7 +335,10 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
     return new OAuth_AuthorizationCodeFlow().fromJsonString(jsonString, options);
   }
 
-  static equals(a: OAuth_AuthorizationCodeFlow | PlainMessage<OAuth_AuthorizationCodeFlow> | undefined, b: OAuth_AuthorizationCodeFlow | PlainMessage<OAuth_AuthorizationCodeFlow> | undefined): boolean {
+  static equals(
+    a: OAuth_AuthorizationCodeFlow | PlainMessage<OAuth_AuthorizationCodeFlow> | undefined,
+    b: OAuth_AuthorizationCodeFlow | PlainMessage<OAuth_AuthorizationCodeFlow> | undefined
+  ): boolean {
     return proto3.util.equals(OAuth_AuthorizationCodeFlow, a, b);
   }
 }
@@ -352,14 +360,18 @@ export enum OAuth_AuthorizationCodeFlow_SubjectTokenSource {
   /**
    * @generated from enum value: SUBJECT_TOKEN_SOURCE_STATIC_TOKEN = 2;
    */
-  STATIC_TOKEN = 2,
+  STATIC_TOKEN = 2
 }
 // Retrieve enum metadata with: proto3.getEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource)
-proto3.util.setEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource, "plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource", [
-  { no: 0, name: "SUBJECT_TOKEN_SOURCE_UNSPECIFIED" },
-  { no: 1, name: "SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER" },
-  { no: 2, name: "SUBJECT_TOKEN_SOURCE_STATIC_TOKEN" },
-]);
+proto3.util.setEnumType(
+  OAuth_AuthorizationCodeFlow_SubjectTokenSource,
+  'plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource',
+  [
+    { no: 0, name: 'SUBJECT_TOKEN_SOURCE_UNSPECIFIED' },
+    { no: 1, name: 'SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER' },
+    { no: 2, name: 'SUBJECT_TOKEN_SOURCE_STATIC_TOKEN' }
+  ]
+);
 
 /**
  * @generated from message plugins.common.v1.Basic
@@ -368,12 +380,12 @@ export class Basic extends Message<Basic> {
   /**
    * @generated from field: string username = 1;
    */
-  username = "";
+  username = '';
 
   /**
    * @generated from field: string password = 2;
    */
-  password = "";
+  password = '';
 
   constructor(data?: PartialMessage<Basic>) {
     super();
@@ -381,10 +393,10 @@ export class Basic extends Message<Basic> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.Basic";
+  static readonly typeName = 'plugins.common.v1.Basic';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "username", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "password", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'username', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'password', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Basic {
@@ -411,19 +423,22 @@ export class Azure extends Message<Azure> {
   /**
    * @generated from oneof plugins.common.v1.Azure.config
    */
-  config: {
-    /**
-     * @generated from field: plugins.common.v1.Azure.Key key = 1;
-     */
-    value: Azure_Key;
-    case: "key";
-  } | {
-    /**
-     * @generated from field: plugins.common.v1.Azure.ClientCredentials client_credentials = 2;
-     */
-    value: Azure_ClientCredentials;
-    case: "clientCredentials";
-  } | { case: undefined; value?: undefined } = { case: undefined };
+  config:
+    | {
+        /**
+         * @generated from field: plugins.common.v1.Azure.Key key = 1;
+         */
+        value: Azure_Key;
+        case: 'key';
+      }
+    | {
+        /**
+         * @generated from field: plugins.common.v1.Azure.ClientCredentials client_credentials = 2;
+         */
+        value: Azure_ClientCredentials;
+        case: 'clientCredentials';
+      }
+    | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Azure>) {
     super();
@@ -431,10 +446,10 @@ export class Azure extends Message<Azure> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.Azure";
+  static readonly typeName = 'plugins.common.v1.Azure';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "key", kind: "message", T: Azure_Key, oneof: "config" },
-    { no: 2, name: "client_credentials", kind: "message", T: Azure_ClientCredentials, oneof: "config" },
+    { no: 1, name: 'key', kind: 'message', T: Azure_Key, oneof: 'config' },
+    { no: 2, name: 'client_credentials', kind: 'message', T: Azure_ClientCredentials, oneof: 'config' }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Azure {
@@ -461,7 +476,7 @@ export class Azure_Key extends Message<Azure_Key> {
   /**
    * @generated from field: string master_key = 1;
    */
-  masterKey = "";
+  masterKey = '';
 
   constructor(data?: PartialMessage<Azure_Key>) {
     super();
@@ -469,9 +484,9 @@ export class Azure_Key extends Message<Azure_Key> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.Azure.Key";
+  static readonly typeName = 'plugins.common.v1.Azure.Key';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "master_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'master_key', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Azure_Key {
@@ -498,12 +513,12 @@ export class Azure_ClientCredentials extends Message<Azure_ClientCredentials> {
   /**
    * @generated from field: string client_id = 1;
    */
-  clientId = "";
+  clientId = '';
 
   /**
    * @generated from field: string client_secret = 2;
    */
-  clientSecret = "";
+  clientSecret = '';
 
   constructor(data?: PartialMessage<Azure_ClientCredentials>) {
     super();
@@ -511,10 +526,10 @@ export class Azure_ClientCredentials extends Message<Azure_ClientCredentials> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.Azure.ClientCredentials";
+  static readonly typeName = 'plugins.common.v1.Azure.ClientCredentials';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "client_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "client_secret", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'client_id', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'client_secret', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Azure_ClientCredentials {
@@ -529,7 +544,10 @@ export class Azure_ClientCredentials extends Message<Azure_ClientCredentials> {
     return new Azure_ClientCredentials().fromJsonString(jsonString, options);
   }
 
-  static equals(a: Azure_ClientCredentials | PlainMessage<Azure_ClientCredentials> | undefined, b: Azure_ClientCredentials | PlainMessage<Azure_ClientCredentials> | undefined): boolean {
+  static equals(
+    a: Azure_ClientCredentials | PlainMessage<Azure_ClientCredentials> | undefined,
+    b: Azure_ClientCredentials | PlainMessage<Azure_ClientCredentials> | undefined
+  ): boolean {
     return proto3.util.equals(Azure_ClientCredentials, a, b);
   }
 }
@@ -541,24 +559,27 @@ export class AwsAuth extends Message<AwsAuth> {
   /**
    * @generated from oneof plugins.common.v1.AwsAuth.config
    */
-  config: {
-    /**
-     * @generated from field: plugins.common.v1.AwsAuth.Static static = 1;
-     */
-    value: AwsAuth_Static;
-    case: "static";
-  } | {
-    /**
-     * @generated from field: plugins.common.v1.AwsAuth.AssumeRole assume_role = 2;
-     */
-    value: AwsAuth_AssumeRole;
-    case: "assumeRole";
-  } | { case: undefined; value?: undefined } = { case: undefined };
+  config:
+    | {
+        /**
+         * @generated from field: plugins.common.v1.AwsAuth.Static static = 1;
+         */
+        value: AwsAuth_Static;
+        case: 'static';
+      }
+    | {
+        /**
+         * @generated from field: plugins.common.v1.AwsAuth.AssumeRole assume_role = 2;
+         */
+        value: AwsAuth_AssumeRole;
+        case: 'assumeRole';
+      }
+    | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
    * @generated from field: string region = 3;
    */
-  region = "";
+  region = '';
 
   constructor(data?: PartialMessage<AwsAuth>) {
     super();
@@ -566,11 +587,11 @@ export class AwsAuth extends Message<AwsAuth> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.AwsAuth";
+  static readonly typeName = 'plugins.common.v1.AwsAuth';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "static", kind: "message", T: AwsAuth_Static, oneof: "config" },
-    { no: 2, name: "assume_role", kind: "message", T: AwsAuth_AssumeRole, oneof: "config" },
-    { no: 3, name: "region", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'static', kind: 'message', T: AwsAuth_Static, oneof: 'config' },
+    { no: 2, name: 'assume_role', kind: 'message', T: AwsAuth_AssumeRole, oneof: 'config' },
+    { no: 3, name: 'region', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AwsAuth {
@@ -597,12 +618,12 @@ export class AwsAuth_Static extends Message<AwsAuth_Static> {
   /**
    * @generated from field: string access_key_id = 1;
    */
-  accessKeyId = "";
+  accessKeyId = '';
 
   /**
    * @generated from field: string secret_access_key = 2;
    */
-  secretAccessKey = "";
+  secretAccessKey = '';
 
   constructor(data?: PartialMessage<AwsAuth_Static>) {
     super();
@@ -610,10 +631,10 @@ export class AwsAuth_Static extends Message<AwsAuth_Static> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.AwsAuth.Static";
+  static readonly typeName = 'plugins.common.v1.AwsAuth.Static';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "access_key_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "secret_access_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'access_key_id', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'secret_access_key', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AwsAuth_Static {
@@ -628,7 +649,10 @@ export class AwsAuth_Static extends Message<AwsAuth_Static> {
     return new AwsAuth_Static().fromJsonString(jsonString, options);
   }
 
-  static equals(a: AwsAuth_Static | PlainMessage<AwsAuth_Static> | undefined, b: AwsAuth_Static | PlainMessage<AwsAuth_Static> | undefined): boolean {
+  static equals(
+    a: AwsAuth_Static | PlainMessage<AwsAuth_Static> | undefined,
+    b: AwsAuth_Static | PlainMessage<AwsAuth_Static> | undefined
+  ): boolean {
     return proto3.util.equals(AwsAuth_Static, a, b);
   }
 }
@@ -640,7 +664,7 @@ export class AwsAuth_AssumeRole extends Message<AwsAuth_AssumeRole> {
   /**
    * @generated from field: string role_arn = 3;
    */
-  roleArn = "";
+  roleArn = '';
 
   constructor(data?: PartialMessage<AwsAuth_AssumeRole>) {
     super();
@@ -648,9 +672,9 @@ export class AwsAuth_AssumeRole extends Message<AwsAuth_AssumeRole> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.AwsAuth.AssumeRole";
+  static readonly typeName = 'plugins.common.v1.AwsAuth.AssumeRole';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 3, name: "role_arn", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: 'role_arn', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AwsAuth_AssumeRole {
@@ -665,7 +689,10 @@ export class AwsAuth_AssumeRole extends Message<AwsAuth_AssumeRole> {
     return new AwsAuth_AssumeRole().fromJsonString(jsonString, options);
   }
 
-  static equals(a: AwsAuth_AssumeRole | PlainMessage<AwsAuth_AssumeRole> | undefined, b: AwsAuth_AssumeRole | PlainMessage<AwsAuth_AssumeRole> | undefined): boolean {
+  static equals(
+    a: AwsAuth_AssumeRole | PlainMessage<AwsAuth_AssumeRole> | undefined,
+    b: AwsAuth_AssumeRole | PlainMessage<AwsAuth_AssumeRole> | undefined
+  ): boolean {
     return proto3.util.equals(AwsAuth_AssumeRole, a, b);
   }
 }
@@ -677,13 +704,15 @@ export class GcpAuth extends Message<GcpAuth> {
   /**
    * @generated from oneof plugins.common.v1.GcpAuth.config
    */
-  config: {
-    /**
-     * @generated from field: bytes service_account = 1;
-     */
-    value: Uint8Array;
-    case: "serviceAccount";
-  } | { case: undefined; value?: undefined } = { case: undefined };
+  config:
+    | {
+        /**
+         * @generated from field: bytes service_account = 1;
+         */
+        value: Uint8Array;
+        case: 'serviceAccount';
+      }
+    | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<GcpAuth>) {
     super();
@@ -691,9 +720,9 @@ export class GcpAuth extends Message<GcpAuth> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.GcpAuth";
+  static readonly typeName = 'plugins.common.v1.GcpAuth';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "service_account", kind: "scalar", T: 12 /* ScalarType.BYTES */, oneof: "config" },
+    { no: 1, name: 'service_account', kind: 'scalar', T: 12 /* ScalarType.BYTES */, oneof: 'config' }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GcpAuth {
@@ -720,19 +749,22 @@ export class AkeylessAuth extends Message<AkeylessAuth> {
   /**
    * @generated from oneof plugins.common.v1.AkeylessAuth.config
    */
-  config: {
-    /**
-     * @generated from field: plugins.common.v1.AkeylessAuth.ApiKey api_key = 1;
-     */
-    value: AkeylessAuth_ApiKey;
-    case: "apiKey";
-  } | {
-    /**
-     * @generated from field: plugins.common.v1.AkeylessAuth.Email email = 2;
-     */
-    value: AkeylessAuth_Email;
-    case: "email";
-  } | { case: undefined; value?: undefined } = { case: undefined };
+  config:
+    | {
+        /**
+         * @generated from field: plugins.common.v1.AkeylessAuth.ApiKey api_key = 1;
+         */
+        value: AkeylessAuth_ApiKey;
+        case: 'apiKey';
+      }
+    | {
+        /**
+         * @generated from field: plugins.common.v1.AkeylessAuth.Email email = 2;
+         */
+        value: AkeylessAuth_Email;
+        case: 'email';
+      }
+    | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<AkeylessAuth>) {
     super();
@@ -740,10 +772,10 @@ export class AkeylessAuth extends Message<AkeylessAuth> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.AkeylessAuth";
+  static readonly typeName = 'plugins.common.v1.AkeylessAuth';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "api_key", kind: "message", T: AkeylessAuth_ApiKey, oneof: "config" },
-    { no: 2, name: "email", kind: "message", T: AkeylessAuth_Email, oneof: "config" },
+    { no: 1, name: 'api_key', kind: 'message', T: AkeylessAuth_ApiKey, oneof: 'config' },
+    { no: 2, name: 'email', kind: 'message', T: AkeylessAuth_Email, oneof: 'config' }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AkeylessAuth {
@@ -758,7 +790,10 @@ export class AkeylessAuth extends Message<AkeylessAuth> {
     return new AkeylessAuth().fromJsonString(jsonString, options);
   }
 
-  static equals(a: AkeylessAuth | PlainMessage<AkeylessAuth> | undefined, b: AkeylessAuth | PlainMessage<AkeylessAuth> | undefined): boolean {
+  static equals(
+    a: AkeylessAuth | PlainMessage<AkeylessAuth> | undefined,
+    b: AkeylessAuth | PlainMessage<AkeylessAuth> | undefined
+  ): boolean {
     return proto3.util.equals(AkeylessAuth, a, b);
   }
 }
@@ -770,12 +805,12 @@ export class AkeylessAuth_ApiKey extends Message<AkeylessAuth_ApiKey> {
   /**
    * @generated from field: string access_id = 1;
    */
-  accessId = "";
+  accessId = '';
 
   /**
    * @generated from field: string access_key = 2;
    */
-  accessKey = "";
+  accessKey = '';
 
   constructor(data?: PartialMessage<AkeylessAuth_ApiKey>) {
     super();
@@ -783,10 +818,10 @@ export class AkeylessAuth_ApiKey extends Message<AkeylessAuth_ApiKey> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.AkeylessAuth.ApiKey";
+  static readonly typeName = 'plugins.common.v1.AkeylessAuth.ApiKey';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "access_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "access_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'access_id', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'access_key', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AkeylessAuth_ApiKey {
@@ -801,7 +836,10 @@ export class AkeylessAuth_ApiKey extends Message<AkeylessAuth_ApiKey> {
     return new AkeylessAuth_ApiKey().fromJsonString(jsonString, options);
   }
 
-  static equals(a: AkeylessAuth_ApiKey | PlainMessage<AkeylessAuth_ApiKey> | undefined, b: AkeylessAuth_ApiKey | PlainMessage<AkeylessAuth_ApiKey> | undefined): boolean {
+  static equals(
+    a: AkeylessAuth_ApiKey | PlainMessage<AkeylessAuth_ApiKey> | undefined,
+    b: AkeylessAuth_ApiKey | PlainMessage<AkeylessAuth_ApiKey> | undefined
+  ): boolean {
     return proto3.util.equals(AkeylessAuth_ApiKey, a, b);
   }
 }
@@ -813,12 +851,12 @@ export class AkeylessAuth_Email extends Message<AkeylessAuth_Email> {
   /**
    * @generated from field: string email = 1;
    */
-  email = "";
+  email = '';
 
   /**
    * @generated from field: string password = 2;
    */
-  password = "";
+  password = '';
 
   constructor(data?: PartialMessage<AkeylessAuth_Email>) {
     super();
@@ -826,10 +864,10 @@ export class AkeylessAuth_Email extends Message<AkeylessAuth_Email> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.AkeylessAuth.Email";
+  static readonly typeName = 'plugins.common.v1.AkeylessAuth.Email';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "email", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "password", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: 'email', kind: 'scalar', T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: 'password', kind: 'scalar', T: 9 /* ScalarType.STRING */ }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AkeylessAuth_Email {
@@ -844,7 +882,10 @@ export class AkeylessAuth_Email extends Message<AkeylessAuth_Email> {
     return new AkeylessAuth_Email().fromJsonString(jsonString, options);
   }
 
-  static equals(a: AkeylessAuth_Email | PlainMessage<AkeylessAuth_Email> | undefined, b: AkeylessAuth_Email | PlainMessage<AkeylessAuth_Email> | undefined): boolean {
+  static equals(
+    a: AkeylessAuth_Email | PlainMessage<AkeylessAuth_Email> | undefined,
+    b: AkeylessAuth_Email | PlainMessage<AkeylessAuth_Email> | undefined
+  ): boolean {
     return proto3.util.equals(AkeylessAuth_Email, a, b);
   }
 }
@@ -856,39 +897,57 @@ export class Auth extends Message<Auth> {
   /**
    * @generated from oneof plugins.common.v1.Auth.method
    */
-  method: {
-    /**
-     * @generated from field: plugins.common.v1.OAuth.PasswordGrantFlow password_grant_flow = 1;
-     */
-    value: OAuth_PasswordGrantFlow;
-    case: "passwordGrantFlow";
-  } | {
-    /**
-     * @generated from field: plugins.common.v1.OAuth.AuthorizationCodeFlow authorization_code_flow = 2;
-     */
-    value: OAuth_AuthorizationCodeFlow;
-    case: "authorizationCodeFlow";
-  } | {
-    /**
-     * @generated from field: plugins.common.v1.Basic basic = 3;
-     */
-    value: Basic;
-    case: "basic";
-  } | {
-    /**
-     * @generated from field: plugins.common.v1.OAuth.ClientCredentialsFlow client_credentials_flow = 4;
-     */
-    value: OAuth_ClientCredentialsFlow;
-    case: "clientCredentialsFlow";
-  } | {
-    /**
-     * todo: remove me when cosmos updates
-     *
-     * @generated from field: plugins.common.v1.Azure.Key key = 5;
-     */
-    value: Azure_Key;
-    case: "key";
-  } | { case: undefined; value?: undefined } = { case: undefined };
+  method:
+    | {
+        /**
+         * @generated from field: plugins.common.v1.OAuth.PasswordGrantFlow password_grant_flow = 1;
+         */
+        value: OAuth_PasswordGrantFlow;
+        case: 'passwordGrantFlow';
+      }
+    | {
+        /**
+         * @generated from field: plugins.common.v1.OAuth.AuthorizationCodeFlow authorization_code_flow = 2;
+         */
+        value: OAuth_AuthorizationCodeFlow;
+        case: 'authorizationCodeFlow';
+      }
+    | {
+        /**
+         * @generated from field: plugins.common.v1.Basic basic = 3;
+         */
+        value: Basic;
+        case: 'basic';
+      }
+    | {
+        /**
+         * @generated from field: plugins.common.v1.OAuth.ClientCredentialsFlow client_credentials_flow = 4;
+         */
+        value: OAuth_ClientCredentialsFlow;
+        case: 'clientCredentialsFlow';
+      }
+    | {
+        /**
+         * todo: remove me when cosmos updates
+         *
+         * @generated from field: plugins.common.v1.Azure.Key key = 5;
+         */
+        value: Azure_Key;
+        case: 'key';
+      }
+    | {
+        /**
+         * NOTE: @joeyagreco - look. don't try to make this type work here
+         * NOTE: @joeyagreco - just use this type in typescript: AuthenticatedDatasourceConfig instead
+         * NOTE: @joeyagreco - it already works and i really don't wanna maintain this super complex type in multiple places
+         * NOTE: @joeyagreco - so the expectation here is that there is NOTHING inside this oneof value, we just switch on the case
+         *
+         * @generated from field: plugins.common.v1.Auth.Nothing oauth_token_exchange = 6 [json_name = "oauth-token-exchange"];
+         */
+        value: Auth_Nothing;
+        case: 'oauthTokenExchange';
+      }
+    | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Auth>) {
     super();
@@ -896,13 +955,14 @@ export class Auth extends Message<Auth> {
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "plugins.common.v1.Auth";
+  static readonly typeName = 'plugins.common.v1.Auth';
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "password_grant_flow", kind: "message", T: OAuth_PasswordGrantFlow, oneof: "method" },
-    { no: 2, name: "authorization_code_flow", kind: "message", T: OAuth_AuthorizationCodeFlow, oneof: "method" },
-    { no: 3, name: "basic", kind: "message", T: Basic, oneof: "method" },
-    { no: 4, name: "client_credentials_flow", kind: "message", T: OAuth_ClientCredentialsFlow, oneof: "method" },
-    { no: 5, name: "key", kind: "message", T: Azure_Key, oneof: "method" },
+    { no: 1, name: 'password_grant_flow', kind: 'message', T: OAuth_PasswordGrantFlow, oneof: 'method' },
+    { no: 2, name: 'authorization_code_flow', kind: 'message', T: OAuth_AuthorizationCodeFlow, oneof: 'method' },
+    { no: 3, name: 'basic', kind: 'message', T: Basic, oneof: 'method' },
+    { no: 4, name: 'client_credentials_flow', kind: 'message', T: OAuth_ClientCredentialsFlow, oneof: 'method' },
+    { no: 5, name: 'key', kind: 'message', T: Azure_Key, oneof: 'method' },
+    { no: 6, name: 'oauth_token_exchange', jsonName: 'oauth-token-exchange', kind: 'message', T: Auth_Nothing, oneof: 'method' }
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Auth {
@@ -922,3 +982,35 @@ export class Auth extends Message<Auth> {
   }
 }
 
+/**
+ * @generated from message plugins.common.v1.Auth.Nothing
+ */
+export class Auth_Nothing extends Message<Auth_Nothing> {
+  constructor(data?: PartialMessage<Auth_Nothing>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = 'plugins.common.v1.Auth.Nothing';
+  static readonly fields: FieldList = proto3.util.newFieldList(() => []);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Auth_Nothing {
+    return new Auth_Nothing().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Auth_Nothing {
+    return new Auth_Nothing().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Auth_Nothing {
+    return new Auth_Nothing().fromJsonString(jsonString, options);
+  }
+
+  static equals(
+    a: Auth_Nothing | PlainMessage<Auth_Nothing> | undefined,
+    b: Auth_Nothing | PlainMessage<Auth_Nothing> | undefined
+  ): boolean {
+    return proto3.util.equals(Auth_Nothing, a, b);
+  }
+}

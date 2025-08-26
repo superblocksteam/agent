@@ -571,6 +571,7 @@ type Auth struct {
 	//	*Auth_Basic
 	//	*Auth_ClientCredentialsFlow
 	//	*Auth_Key
+	//	*Auth_OauthTokenExchange
 	Method isAuth_Method `protobuf_oneof:"method"`
 }
 
@@ -648,6 +649,13 @@ func (x *Auth) GetKey() *Azure_Key {
 	return nil
 }
 
+func (x *Auth) GetOauthTokenExchange() *Auth_Nothing {
+	if x, ok := x.GetMethod().(*Auth_OauthTokenExchange); ok {
+		return x.OauthTokenExchange
+	}
+	return nil
+}
+
 type isAuth_Method interface {
 	isAuth_Method()
 }
@@ -672,6 +680,14 @@ type Auth_Key struct {
 	Key *Azure_Key `protobuf:"bytes,5,opt,name=key,proto3,oneof"` // todo: remove me when cosmos updates
 }
 
+type Auth_OauthTokenExchange struct {
+	// NOTE: @joeyagreco - look. don't try to make this type work here
+	// NOTE: @joeyagreco - just use this type in typescript: AuthenticatedDatasourceConfig instead
+	// NOTE: @joeyagreco - it already works and i really don't wanna maintain this super complex type in multiple places
+	// NOTE: @joeyagreco - so the expectation here is that there is NOTHING inside this oneof value, we just switch on the case
+	OauthTokenExchange *Auth_Nothing `protobuf:"bytes,6,opt,name=oauth_token_exchange,json=oauth-token-exchange,proto3,oneof"`
+}
+
 func (*Auth_PasswordGrantFlow) isAuth_Method() {}
 
 func (*Auth_AuthorizationCodeFlow) isAuth_Method() {}
@@ -681,6 +697,8 @@ func (*Auth_Basic) isAuth_Method() {}
 func (*Auth_ClientCredentialsFlow) isAuth_Method() {}
 
 func (*Auth_Key) isAuth_Method() {}
+
+func (*Auth_OauthTokenExchange) isAuth_Method() {}
 
 type OAuth_PasswordGrantFlow struct {
 	state         protoimpl.MessageState
@@ -1305,6 +1323,44 @@ func (x *AkeylessAuth_Email) GetPassword() string {
 	return ""
 }
 
+type Auth_Nothing struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *Auth_Nothing) Reset() {
+	*x = Auth_Nothing{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_plugins_common_v1_auth_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Auth_Nothing) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Auth_Nothing) ProtoMessage() {}
+
+func (x *Auth_Nothing) ProtoReflect() protoreflect.Message {
+	mi := &file_plugins_common_v1_auth_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Auth_Nothing.ProtoReflect.Descriptor instead.
+func (*Auth_Nothing) Descriptor() ([]byte, []int) {
+	return file_plugins_common_v1_auth_proto_rawDescGZIP(), []int{7, 0}
+}
+
 var File_plugins_common_v1_auth_proto protoreflect.FileDescriptor
 
 var file_plugins_common_v1_auth_proto_rawDesc = []byte{
@@ -1455,7 +1511,7 @@ var file_plugins_common_v1_auth_proto_rawDesc = []byte{
 	0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x6d, 0x61, 0x69, 0x6c, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x61,
 	0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x61,
 	0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x42, 0x08, 0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x22, 0xa6, 0x03, 0x0a, 0x04, 0x41, 0x75, 0x74, 0x68, 0x12, 0x5c, 0x0a, 0x13, 0x70, 0x61, 0x73,
+	0x22, 0x88, 0x04, 0x0a, 0x04, 0x41, 0x75, 0x74, 0x68, 0x12, 0x5c, 0x0a, 0x13, 0x70, 0x61, 0x73,
 	0x73, 0x77, 0x6f, 0x72, 0x64, 0x5f, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x66, 0x6c, 0x6f, 0x77,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x73,
 	0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x41, 0x75, 0x74, 0x68,
@@ -1480,13 +1536,19 @@ var file_plugins_common_v1_auth_proto_rawDesc = []byte{
 	0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x46, 0x6c, 0x6f, 0x77, 0x12, 0x30, 0x0a,
 	0x03, 0x6b, 0x65, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x70, 0x6c, 0x75,
 	0x67, 0x69, 0x6e, 0x73, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41,
-	0x7a, 0x75, 0x72, 0x65, 0x2e, 0x4b, 0x65, 0x79, 0x48, 0x00, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x42,
-	0x08, 0x0a, 0x06, 0x6d, 0x65, 0x74, 0x68, 0x6f, 0x64, 0x42, 0x41, 0x5a, 0x3f, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x75, 0x70, 0x65, 0x72, 0x62, 0x6c, 0x6f,
-	0x63, 0x6b, 0x73, 0x74, 0x65, 0x61, 0x6d, 0x2f, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x2f, 0x74, 0x79,
-	0x70, 0x65, 0x73, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x67, 0x6f, 0x2f, 0x70, 0x6c, 0x75, 0x67, 0x69,
-	0x6e, 0x73, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x7a, 0x75, 0x72, 0x65, 0x2e, 0x4b, 0x65, 0x79, 0x48, 0x00, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12,
+	0x55, 0x0a, 0x14, 0x6f, 0x61, 0x75, 0x74, 0x68, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x65,
+	0x78, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e,
+	0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x73, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x2e, 0x4e, 0x6f, 0x74, 0x68, 0x69, 0x6e, 0x67, 0x48, 0x00,
+	0x52, 0x14, 0x6f, 0x61, 0x75, 0x74, 0x68, 0x2d, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x2d, 0x65, 0x78,
+	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x1a, 0x09, 0x0a, 0x07, 0x4e, 0x6f, 0x74, 0x68, 0x69, 0x6e,
+	0x67, 0x42, 0x08, 0x0a, 0x06, 0x6d, 0x65, 0x74, 0x68, 0x6f, 0x64, 0x42, 0x41, 0x5a, 0x3f, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x75, 0x70, 0x65, 0x72, 0x62,
+	0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x74, 0x65, 0x61, 0x6d, 0x2f, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x2f,
+	0x74, 0x79, 0x70, 0x65, 0x73, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x67, 0x6f, 0x2f, 0x70, 0x6c, 0x75,
+	0x67, 0x69, 0x6e, 0x73, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x76, 0x31, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1502,7 +1564,7 @@ func file_plugins_common_v1_auth_proto_rawDescGZIP() []byte {
 }
 
 var file_plugins_common_v1_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_plugins_common_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_plugins_common_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_plugins_common_v1_auth_proto_goTypes = []interface{}{
 	(OAuth_AuthorizationCodeFlow_SubjectTokenSource)(0), // 0: plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource
 	(*OAuthCommon)(nil),                 // 1: plugins.common.v1.OAuthCommon
@@ -1522,6 +1584,7 @@ var file_plugins_common_v1_auth_proto_goTypes = []interface{}{
 	(*AwsAuth_AssumeRole)(nil),          // 15: plugins.common.v1.AwsAuth.AssumeRole
 	(*AkeylessAuth_ApiKey)(nil),         // 16: plugins.common.v1.AkeylessAuth.ApiKey
 	(*AkeylessAuth_Email)(nil),          // 17: plugins.common.v1.AkeylessAuth.Email
+	(*Auth_Nothing)(nil),                // 18: plugins.common.v1.Auth.Nothing
 }
 var file_plugins_common_v1_auth_proto_depIdxs = []int32{
 	12, // 0: plugins.common.v1.Azure.key:type_name -> plugins.common.v1.Azure.Key
@@ -1535,12 +1598,13 @@ var file_plugins_common_v1_auth_proto_depIdxs = []int32{
 	3,  // 8: plugins.common.v1.Auth.basic:type_name -> plugins.common.v1.Basic
 	10, // 9: plugins.common.v1.Auth.client_credentials_flow:type_name -> plugins.common.v1.OAuth.ClientCredentialsFlow
 	12, // 10: plugins.common.v1.Auth.key:type_name -> plugins.common.v1.Azure.Key
-	0,  // 11: plugins.common.v1.OAuth.AuthorizationCodeFlow.subject_token_source:type_name -> plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	18, // 11: plugins.common.v1.Auth.oauth_token_exchange:type_name -> plugins.common.v1.Auth.Nothing
+	0,  // 12: plugins.common.v1.OAuth.AuthorizationCodeFlow.subject_token_source:type_name -> plugins.common.v1.OAuth.AuthorizationCodeFlow.SubjectTokenSource
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_plugins_common_v1_auth_proto_init() }
@@ -1753,6 +1817,18 @@ func file_plugins_common_v1_auth_proto_init() {
 				return nil
 			}
 		}
+		file_plugins_common_v1_auth_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Auth_Nothing); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_plugins_common_v1_auth_proto_msgTypes[3].OneofWrappers = []interface{}{
 		(*Azure_Key_)(nil),
@@ -1775,6 +1851,7 @@ func file_plugins_common_v1_auth_proto_init() {
 		(*Auth_Basic)(nil),
 		(*Auth_ClientCredentialsFlow)(nil),
 		(*Auth_Key)(nil),
+		(*Auth_OauthTokenExchange)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1782,7 +1859,7 @@ func file_plugins_common_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_plugins_common_v1_auth_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

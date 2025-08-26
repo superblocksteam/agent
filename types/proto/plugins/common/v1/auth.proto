@@ -119,11 +119,17 @@ message AkeylessAuth {
 }
 
 message Auth {
+  message Nothing {}
   oneof method {
     OAuth.PasswordGrantFlow password_grant_flow = 1;
     OAuth.AuthorizationCodeFlow authorization_code_flow = 2;
     Basic basic = 3;
     OAuth.ClientCredentialsFlow client_credentials_flow = 4;
     Azure.Key key = 5; // todo: remove me when cosmos updates
+    // NOTE: @joeyagreco - look. don't try to make this type work here
+    // NOTE: @joeyagreco - just use this type in typescript: AuthenticatedDatasourceConfig instead
+    // NOTE: @joeyagreco - it already works and i really don't wanna maintain this super complex type in multiple places
+    // NOTE: @joeyagreco - so the expectation here is that there is NOTHING inside this oneof value, we just switch on the case
+    Nothing oauth_token_exchange = 6 [json_name = "oauth-token-exchange"];
   }
 }
