@@ -62,6 +62,16 @@ var (
 	}
 )
 
+func normalizeAuthType(s string) string {
+	switch s {
+	case "oauthTokenExchange":
+		// salesforce integration will send this because it's proto based and proto does not support hyphens
+		return authTypeOauthTokenExchange
+	default:
+		return s
+	}
+}
+
 // AddTokenIfNeeded adds the token to the datasource config if needed,
 // and returns the token and type
 // Values are pulled from cookies, datasource config, or generated dynamically (oauth)
@@ -137,7 +147,7 @@ func (t *tokenManager) AddTokenIfNeeded(
 
 	authId, authIdExtra := GetAuthId(authType, authConfig, datasourceId)
 
-	switch authType {
+	switch normalizeAuthType(authType) {
 	case authTypeOauthClientCreds:
 		tokenPayload.Token, cookieName = FirstMatchingCookie(cookies, authId+"-token", authIdExtra+"-token")
 
