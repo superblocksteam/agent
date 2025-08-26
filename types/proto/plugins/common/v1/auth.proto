@@ -130,6 +130,8 @@ message Auth {
     // NOTE: @joeyagreco - just use this type in typescript: AuthenticatedDatasourceConfig instead
     // NOTE: @joeyagreco - it already works and i really don't wanna maintain this super complex type in multiple places
     // NOTE: @joeyagreco - so the expectation here is that there is NOTHING inside this oneof value, we just switch on the case
-    Nothing oauth_token_exchange = 6 [json_name = "oauth-token-exchange"];
+
+    // NOTE: @joeyagreco - we tried json_name here and sadly it does not work because the schema generator/convertor in the monorepo uses the ts type
+    Nothing oauth_token_exchange = 6;
   }
 }

@@ -3024,9 +3024,9 @@
           "$ref": "#/definitions/v1AzureKey",
           "title": "todo: remove me when cosmos updates"
         },
-        "oauth-token-exchange": {
+        "oauthTokenExchange": {
           "$ref": "#/definitions/AuthNothing",
-          "title": "NOTE: @joeyagreco - look. don't try to make this type work here\nNOTE: @joeyagreco - just use this type in typescript: AuthenticatedDatasourceConfig instead\nNOTE: @joeyagreco - it already works and i really don't wanna maintain this super complex type in multiple places\nNOTE: @joeyagreco - so the expectation here is that there is NOTHING inside this oneof value, we just switch on the case"
+          "title": "NOTE: @joeyagreco - we tried json_name here and sadly it does not work because the schema generator/convertor in the monorepo uses the ts type"
         }
       }
     },

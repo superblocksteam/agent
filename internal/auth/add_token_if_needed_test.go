@@ -80,6 +80,32 @@ func TestGetAuthTypeFromDatasourceConfiguration(t *testing.T) {
 
 }
 
+func TestNormalizeAuthType(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "converts oauthTokenExchange to oauth-token-exchange",
+			input:    "oauthTokenExchange",
+			expected: "oauth-token-exchange",
+		},
+		{
+			name:     "does not convert anything else",
+			input:    "foo",
+			expected: "foo",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := normalizeAuthType(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestAddTokenIfNeeded_OauthClientCreds(t *testing.T) {
 	tests := []struct {
 		name          string
