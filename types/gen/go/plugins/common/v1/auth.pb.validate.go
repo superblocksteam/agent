@@ -1244,6 +1244,47 @@ func (m *Auth) validate(all bool) error {
 			}
 		}
 
+	case *Auth_OauthTokenExchange:
+		if v == nil {
+			err := AuthValidationError{
+				field:  "Method",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetOauthTokenExchange()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, AuthValidationError{
+						field:  "OauthTokenExchange",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, AuthValidationError{
+						field:  "OauthTokenExchange",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetOauthTokenExchange()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return AuthValidationError{
+					field:  "OauthTokenExchange",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -2307,3 +2348,102 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = AkeylessAuth_EmailValidationError{}
+
+// Validate checks the field values on Auth_Nothing with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Auth_Nothing) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Auth_Nothing with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in Auth_NothingMultiError, or
+// nil if none found.
+func (m *Auth_Nothing) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Auth_Nothing) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return Auth_NothingMultiError(errors)
+	}
+
+	return nil
+}
+
+// Auth_NothingMultiError is an error wrapping multiple validation errors
+// returned by Auth_Nothing.ValidateAll() if the designated constraints aren't met.
+type Auth_NothingMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m Auth_NothingMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m Auth_NothingMultiError) AllErrors() []error { return m }
+
+// Auth_NothingValidationError is the validation error returned by
+// Auth_Nothing.Validate if the designated constraints aren't met.
+type Auth_NothingValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e Auth_NothingValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e Auth_NothingValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e Auth_NothingValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e Auth_NothingValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e Auth_NothingValidationError) ErrorName() string { return "Auth_NothingValidationError" }
+
+// Error satisfies the builtin error interface
+func (e Auth_NothingValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAuth_Nothing.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = Auth_NothingValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = Auth_NothingValidationError{}

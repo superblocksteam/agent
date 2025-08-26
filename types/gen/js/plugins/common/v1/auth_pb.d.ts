@@ -525,6 +525,11 @@ export class Auth extends jspb.Message {
     getKey(): Azure.Key | undefined;
     setKey(value?: Azure.Key): Auth;
 
+    hasOauthTokenExchange(): boolean;
+    clearOauthTokenExchange(): void;
+    getOauthTokenExchange(): Auth.Nothing | undefined;
+    setOauthTokenExchange(value?: Auth.Nothing): Auth;
+
     getMethodCase(): Auth.MethodCase;
 
     serializeBinary(): Uint8Array;
@@ -544,7 +549,27 @@ export namespace Auth {
         basic?: Basic.AsObject,
         clientCredentialsFlow?: OAuth.ClientCredentialsFlow.AsObject,
         key?: Azure.Key.AsObject,
+        oauthTokenExchange?: Auth.Nothing.AsObject,
     }
+
+
+    export class Nothing extends jspb.Message { 
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): Nothing.AsObject;
+        static toObject(includeInstance: boolean, msg: Nothing): Nothing.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: Nothing, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): Nothing;
+        static deserializeBinaryFromReader(message: Nothing, reader: jspb.BinaryReader): Nothing;
+    }
+
+    export namespace Nothing {
+        export type AsObject = {
+        }
+    }
+
 
     export enum MethodCase {
         METHOD_NOT_SET = 0,
@@ -553,6 +578,7 @@ export namespace Auth {
         BASIC = 3,
         CLIENT_CREDENTIALS_FLOW = 4,
         KEY = 5,
+        OAUTH_TOKEN_EXCHANGE = 6,
     }
 
 }

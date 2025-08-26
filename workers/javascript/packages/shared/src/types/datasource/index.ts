@@ -451,12 +451,9 @@ export type OracleDbDatasourceConfiguration = Pick<OracleDbPlugin.Plugin, 'name'
 // this will be populated by orchestrator, and it will be used by plugin.execute | metadata | test
 // so the plugin will get ready-to-use oauth token. This is needed until we figure out a way to pass token
 // to plugin.metadata and plugin.test
-export type SalesforceDatasourceConfiguration = {
-  authType?: AuthType;
-  authConfig?: {
-    authToken?: string;
-    useFixedPasswordCreds?: boolean;
-  };
+export type SalesforceDatasourceConfiguration = AuthenticatedDatasourceConfig & {
+  // if set, will be set to 'connection.auth.method.case'
+  authTypeField?: string;
 } & Pick<SalesforcePlugin.Plugin, 'name' | 'connection'>;
 
 export type DatasourceConfiguration =

@@ -594,7 +594,6 @@ export default class SalesforcePlugin extends BasePlugin {
         API_VERSION
       );
     } else if (datasourceConfiguration.authConfig?.authToken !== undefined) {
-      // TODO remove this if we verify token is never passed in context globals
       this.logger.info('Salesforce token found in datasourceConfiguration');
       return new SalesforceSession(
         datasourceConfiguration.authConfig?.authToken,
