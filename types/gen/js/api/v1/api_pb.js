@@ -8870,7 +8870,7 @@ proto.api.v1.Block.prototype.hasSend = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76]];
+proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77]];
 
 /**
  * @enum {number}
@@ -8951,7 +8951,8 @@ proto.api.v1.Step.ConfigCase = {
   PERPLEXITY: 73,
   STABILITYAI: 74,
   GEMINI: 75,
-  KINESIS: 76
+  KINESIS: 76,
+  CONFLUENCE: 77
 };
 
 /**
@@ -9067,7 +9068,8 @@ groq: (f = msg.getGroq()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toOb
 perplexity: (f = msg.getPerplexity()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
 stabilityai: (f = msg.getStabilityai()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
 gemini: (f = msg.getGemini()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f)
+kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9482,6 +9484,11 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
       var value = new plugins_kinesis_v1_plugin_pb.Plugin;
       reader.readMessage(value,plugins_kinesis_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
       msg.setKinesis(value);
+      break;
+    case 77:
+      var value = new plugins_restapiintegration_v1_plugin_pb.Plugin;
+      reader.readMessage(value,plugins_restapiintegration_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
+      msg.setConfluence(value);
       break;
     default:
       reader.skipField();
@@ -10117,6 +10124,14 @@ proto.api.v1.Step.serializeBinaryToWriter = function(message, writer) {
       76,
       f,
       plugins_kinesis_v1_plugin_pb.Plugin.serializeBinaryToWriter
+    );
+  }
+  f = message.getConfluence();
+  if (f != null) {
+    writer.writeMessage(
+      77,
+      f,
+      plugins_restapiintegration_v1_plugin_pb.Plugin.serializeBinaryToWriter
     );
   }
 };
@@ -12912,6 +12927,43 @@ proto.api.v1.Step.prototype.clearKinesis = function() {
  */
 proto.api.v1.Step.prototype.hasKinesis = function() {
   return jspb.Message.getField(this, 76) != null;
+};
+
+
+/**
+ * optional plugins.restapiintegration.v1.Plugin confluence = 77;
+ * @return {?proto.plugins.restapiintegration.v1.Plugin}
+ */
+proto.api.v1.Step.prototype.getConfluence = function() {
+  return /** @type{?proto.plugins.restapiintegration.v1.Plugin} */ (
+    jspb.Message.getWrapperField(this, plugins_restapiintegration_v1_plugin_pb.Plugin, 77));
+};
+
+
+/**
+ * @param {?proto.plugins.restapiintegration.v1.Plugin|undefined} value
+ * @return {!proto.api.v1.Step} returns this
+*/
+proto.api.v1.Step.prototype.setConfluence = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 77, proto.api.v1.Step.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.Step} returns this
+ */
+proto.api.v1.Step.prototype.clearConfluence = function() {
+  return this.setConfluence(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.Step.prototype.hasConfluence = function() {
+  return jspb.Message.getField(this, 77) != null;
 };
 
 
