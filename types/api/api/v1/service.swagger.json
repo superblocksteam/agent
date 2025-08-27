@@ -6715,6 +6715,9 @@
         },
         "kinesis": {
           "$ref": "#/definitions/pluginskinesisv1Plugin"
+        },
+        "confluence": {
+          "$ref": "#/definitions/pluginsrestapiintegrationv1Plugin"
         }
       }
     },

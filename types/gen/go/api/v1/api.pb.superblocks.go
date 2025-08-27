@@ -1211,3 +1211,19 @@ func (plugin *Step_Kinesis) Build() (map[string]any, error) {
 	}
 	return obj, nil
 }
+
+func (*Step_Confluence) Name() string { return "confluence" }
+
+func (*Step_Confluence) Type() string { return "restapiintegration" }
+
+func (plugin *Step_Confluence) Build() (map[string]any, error) {
+	var buf bytes.Buffer
+	if err := marshaler.Marshal(&buf, plugin.Confluence); err != nil {
+		return nil, err
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
+}

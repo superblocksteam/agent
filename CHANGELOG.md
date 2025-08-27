@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the `metadata` endpoint in the GraphQL integration
 - Added support for custom SubjectTokenType on "oauth on behalf of token exchange" flows
 - Updated types for Salesforce integration to support "oauth on behalf of token exchange"
+- Added types support for new Confluence integration
 
 ## v1.25.0
 
