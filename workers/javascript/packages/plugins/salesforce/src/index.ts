@@ -22,19 +22,6 @@ import { SalesforcePluginV1 } from '@superblocksteam/types';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 export const API_VERSION = 'v58.0';
-export const COMMON_OBJECTS = [
-  'Account',
-  'Contact',
-  'Lead',
-  'Opportunity',
-  'Case',
-  'Campaign',
-  'CampaignMember',
-  'Quote',
-  'Order',
-  'Contract',
-  'User'
-];
 
 const JOB_STATE_OPEN = 'Open';
 const JOB_STATE_ABORTED = 'Aborted';
@@ -56,6 +43,13 @@ type BulkJobResult = {
   numberRecordsFailed: number;
   errorMessage: string;
 };
+
+interface SalesforceObject {
+  name: string;
+  queryable: boolean;
+  deprecatedAndHidden: boolean;
+  associateEntityType: string | null;
+}
 
 class SalesforceBulkJob {
   private pluginName = 'Salesforce Bulk Job';
@@ -182,6 +176,44 @@ class SalesforceSession {
       throw _handleError(
         this.pluginName,
         `Error fetching metadata for object object=${object}${e.response?.data ? ', error=' + JSON.stringify(e.response?.data) : ''}`,
+        {
+          error: e,
+          errorCode: e.response?.status,
+          errorStack: e.stack
+        }
+      );
+    }
+  }
+
+  /*
+  Get objects for instance 
+  /services/data/vXX.X/sobjects
+  */
+  public async getAvailableObjects(): Promise<string[]> {
+    const url = `${this.instanceUrl}/services/data/${this.apiVersion}/sobjects/`;
+
+    try {
+      const resp = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`
+        }
+      });
+      // Filter sobjects array: queryable: true, deprecatedAndHidden: false, associateEntityType: null
+      // 
+      // associateEntityType are relation objects -- for now we are filtering them out 
+      // to not have so many objects. We might want to revisit this later if Clark 
+      // needs to do more complex queries.
+      return resp.data.sobjects
+        ?.filter((obj: SalesforceObject) => 
+          obj.queryable === true && 
+          obj.deprecatedAndHidden === false && 
+          obj.associateEntityType === null
+        )
+        ?.map((obj: SalesforceObject) => obj.name) || [];
+    } catch (e) {
+      throw _handleError(
+        this.pluginName,
+        `Error fetching available objects${e.response?.data ? ', error=' + JSON.stringify(e.response?.data) : ''}`,
         {
           error: e,
           errorCode: e.response?.status,
@@ -645,8 +677,11 @@ export default class SalesforcePlugin extends BasePlugin {
     const session = await this._getSession(datasourceConfiguration);
 
     const tables: Table[] = [];
+    
+    const availableObjects = await session.getAvailableObjects();
+    
     await Promise.all(
-      COMMON_OBJECTS.map(async (objectName) => {
+      availableObjects.map(async (objectName) => {
         await this.fetchFieldsForObject(session, objectName, tables);
       })
     );
