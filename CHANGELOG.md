@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for custom SubjectTokenType on "oauth on behalf of token exchange" flows
 - Updated types for Salesforce integration to support "oauth on behalf of token exchange"
 - Added types support for new Confluence integration
+- Added support for custom object schemas in Salesforce
 
 ## v1.25.0
 
