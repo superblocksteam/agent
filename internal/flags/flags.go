@@ -37,6 +37,7 @@ type Flags interface {
 	GetGoWorkerEnabled(tier string, orgId string) bool
 
 	GetWorkflowPluginInheritanceEnabled(orgId string) bool
+	GetValidateSubjectTokenDuringOboFlowEnabled(orgId string) bool
 }
 
 type Client interface {

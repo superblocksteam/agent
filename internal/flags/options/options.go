@@ -8,20 +8,21 @@ import (
 )
 
 type Options struct {
-	DefaultStepSizeByOrg                    int
-	DefaultStepRateByOrg                    int
-	DefaultStepRatePerApiByOrg              int
-	DefaultStepRatePerPluginByOrg           int
-	DefaultStepRatePerUserByOrg             int
-	DefaultStepDurationByOrg                int
-	DefaultMaxParallelPoolSizeByAPI         int
-	DefaultMaxStreamSendSizeByOrg           int
-	DefaultMaxComputeMinutesPerWeek         float64
-	DefaultApiTimeout                       float64
-	DefaultGoWorkerEnabled                  bool
-	DefaultWorkflowPluginInheritanceEnabled bool
-	Logger                                  *zap.Logger
-	Config                                  *string
+	DefaultStepSizeByOrg                            int
+	DefaultStepRateByOrg                            int
+	DefaultStepRatePerApiByOrg                      int
+	DefaultStepRatePerPluginByOrg                   int
+	DefaultStepRatePerUserByOrg                     int
+	DefaultStepDurationByOrg                        int
+	DefaultMaxParallelPoolSizeByAPI                 int
+	DefaultMaxStreamSendSizeByOrg                   int
+	DefaultMaxComputeMinutesPerWeek                 float64
+	DefaultApiTimeout                               float64
+	DefaultGoWorkerEnabled                          bool
+	DefaultWorkflowPluginInheritanceEnabled         bool
+	DefaultValidateSubjectTokenDuringOboFlowEnabled bool
+	Logger                                          *zap.Logger
+	Config                                          *string
 }
 
 type Option func(*Options)
@@ -101,6 +102,12 @@ func WithDefaultGoWorkerEnabled(goWorkerEnabled bool) Option {
 func WithDefaultWorkflowPluginInheritanceEnabled(workflowPluginInheritanceEnabled bool) Option {
 	return func(d *Options) {
 		d.DefaultWorkflowPluginInheritanceEnabled = workflowPluginInheritanceEnabled
+	}
+}
+
+func WithDefaultValidateSubjectTokenDuringOboFlowEnabled(validationEnabled bool) Option {
+	return func(d *Options) {
+		d.DefaultValidateSubjectTokenDuringOboFlowEnabled = validationEnabled
 	}
 }
 

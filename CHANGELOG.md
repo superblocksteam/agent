@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated types for Salesforce integration to support "oauth on behalf of token exchange"
 - Added types support for new Confluence integration
 - Added support for custom object schemas in Salesforce
+- Added flag `agent.plugins.auth.validate_subject_token_during_obo_flow.enabled` to determine whether we should validate the subject token during "oauth on behalf of token exchange" flows
 
 ## v1.25.0
 

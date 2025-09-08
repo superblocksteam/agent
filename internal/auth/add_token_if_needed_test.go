@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
+	flagsmocks "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/constants"
 	pluginscommon "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
@@ -869,7 +870,11 @@ func validArgs(t *testing.T) *args {
 	}
 }
 
-func verify(t *testing.T, args *args) {
+func verify(t *testing.T, args *args, enableValidation ...bool) {
+	validation := false
+	if len(enableValidation) > 0 {
+		validation = enableValidation[0]
+	}
 	t.Helper()
 
 	datasourceConfig, err := structpb.NewStruct(
@@ -889,11 +894,15 @@ func verify(t *testing.T, args *args) {
 		Logger:        zap.NewNop(),
 	}
 
+	mockFlags := flagsmocks.NewFlags(t)
+	mockFlags.On("GetValidateSubjectTokenDuringOboFlowEnabled", mock.Anything).Return(validation).Maybe()
+
 	tm := &tokenManager{
 		OAuthClient:           oauthClient,
 		OAuthCodeTokenFetcher: args.mockOAuthCodeTokenFetcher,
 		clock:                 args.clock,
 		logger:                zap.NewNop(),
+		flags:                 mockFlags,
 	}
 
 	claims := jwt.MapClaims{
@@ -1014,14 +1023,23 @@ func TestAddTokenIfNeeded_OauthTokenExchange_MissingIdpAccessToken(t *testing.T)
 	verify(t, validArgs)
 }
 
-func TestAddTokenIfNeeded_OauthTokenExchange_EmptyStaticToken(t *testing.T) {
+func TestAddTokenIfNeeded_OauthTokenExchange_EmptyStaticToken_TokenValidationEnabled(t *testing.T) {
 	validArgs := validArgs(t)
 	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN)
 	validArgs.authConfig["subjectTokenSourceStaticToken"] = ""
 	validArgs.staticToken = ""
 	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" invalid static token provided\n\nPlease check the static token provided in the integration and try again."
 
-	verify(t, validArgs)
+	verify(t, validArgs, true)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_EmptyStaticToken_TokenValidationDisabled(t *testing.T) {
+	validArgs := validArgs(t)
+	validArgs.authConfig["subjectTokenSource"] = int32(pluginscommon.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN)
+	validArgs.authConfig["subjectTokenSourceStaticToken"] = ""
+	validArgs.staticToken = ""
+
+	verify(t, validArgs, false)
 }
 
 func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredIdentityProviderToken(t *testing.T) {
@@ -1031,7 +1049,7 @@ func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredIdentityProviderToken(t *tes
 	validArgs.clock.Advance(time.Hour)
 	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" identity provider token expired\n\nRefresh your browser and follow prompts to reauthenticate with SSO."
 
-	verify(t, validArgs)
+	verify(t, validArgs, true)
 }
 
 func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredStaticToken(t *testing.T) {
@@ -1042,7 +1060,7 @@ func TestAddTokenIfNeeded_OauthTokenExchange_ExpiredStaticToken(t *testing.T) {
 	validArgs.clock.Advance(time.Hour)
 	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" static token expired\n\nPlease check the static token provided in the integration and try again."
 
-	verify(t, validArgs)
+	verify(t, validArgs, true)
 }
 
 func TestAddTokenIfNeeded_OauthTokenExchange_IdentityProviderTokenNotJwt(t *testing.T) {
@@ -1051,7 +1069,7 @@ func TestAddTokenIfNeeded_OauthTokenExchange_IdentityProviderTokenNotJwt(t *test
 	validArgs.identityProviderToken = "not-a-jwt"
 	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" invalid identity provider token provided\n\nPlease log in using a valid OIDC-based SSO provider. To configure or update your orgs SSO, or for assistance troubleshooting, please reach out to support."
 
-	verify(t, validArgs)
+	verify(t, validArgs, true)
 }
 
 func TestAddTokenIfNeeded_OauthTokenExchange_StaticTokenNotJwt(t *testing.T) {
@@ -1060,7 +1078,7 @@ func TestAddTokenIfNeeded_OauthTokenExchange_StaticTokenNotJwt(t *testing.T) {
 	validArgs.authConfig["subjectTokenSourceStaticToken"] = "not-a-jwt"
 	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" invalid static token provided\n\nPlease check the static token provided in the integration and try again."
 
-	verify(t, validArgs)
+	verify(t, validArgs, true)
 }
 
 func TestAddTokenIfNeeded_OauthTokenExchange_OnBehalfOfExchangeFails(t *testing.T) {
