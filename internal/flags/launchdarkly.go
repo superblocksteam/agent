@@ -102,6 +102,10 @@ func (flags *launchdarkly) GetWorkflowPluginInheritanceEnabled(orgId string) boo
 	return flags.GetBoolVariationByOrg("agent.plugins.workflow.inherit_parameters.enabled", orgId, flags.options.DefaultWorkflowPluginInheritanceEnabled)
 }
 
+func (flags *launchdarkly) GetValidateSubjectTokenDuringOboFlowEnabled(orgId string) bool {
+	return flags.GetBoolVariationByOrg("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled", orgId, flags.options.DefaultValidateSubjectTokenDuringOboFlowEnabled)
+}
+
 func (flags *launchdarkly) GetApiTimeoutV2(api *apiv1.Api, tier string) float64 {
 	fallback := flags.options.DefaultApiTimeout
 	orgId := api.GetMetadata().GetOrganization()

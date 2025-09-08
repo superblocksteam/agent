@@ -106,6 +106,37 @@ func TestGetWorkflowPluginInheritanceEnabled_ReturnsValueFromOptions(t *testing.
 	}
 }
 
+func TestGetValidateSubjectTokenDuringOboFlowEnabled_ReturnsValueFromOptions(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name     string
+		expected bool
+	}{
+		{
+			name:     "disabled",
+			expected: false,
+		},
+		{
+			name:     "enabled",
+			expected: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			flags := &noopFlags{
+				options: options.Options{
+					DefaultValidateSubjectTokenDuringOboFlowEnabled: test.expected,
+				},
+			}
+
+			var anyStr string
+			actual := flags.GetValidateSubjectTokenDuringOboFlowEnabled(anyStr)
+
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
 func TestNoopFlagsConstructor(t *testing.T) {
 	t.Parallel()
 

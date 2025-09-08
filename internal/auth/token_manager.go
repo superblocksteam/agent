@@ -7,6 +7,7 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/auth/types"
+	"github.com/superblocksteam/agent/internal/flags"
 	"github.com/superblocksteam/agent/pkg/clients"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	v1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
@@ -67,6 +68,7 @@ type tokenManager struct {
 	oauth.OAuthCodeTokenFetcher
 	clock  clockwork.Clock
 	logger *zap.Logger
+	flags  flags.Flags
 }
 
 func NewTokenManager(
@@ -74,6 +76,7 @@ func NewTokenManager(
 	clock clockwork.Clock,
 	logger *zap.Logger,
 	eagerRefreshThresholdMs int64,
+	flags flags.Flags,
 ) TokenManager {
 	fetcherCacher := oauth.NewApiFetcherCacher(serverClient, eagerRefreshThresholdMs)
 	oauthClient := oauth.NewOAuthClient(fetcherCacher, clock, logger)
@@ -88,6 +91,7 @@ func NewTokenManager(
 		OAuthCodeTokenFetcher: oauthCodeTokenFetcher,
 		clock:                 clock,
 		logger:                logger.Named("TokenManager"),
+		flags:                 flags,
 	}
 }
 

@@ -85,6 +85,10 @@ func (flags *noopFlags) GetWorkflowPluginInheritanceEnabled(string) bool {
 	return flags.options.DefaultWorkflowPluginInheritanceEnabled
 }
 
+func (flags *noopFlags) GetValidateSubjectTokenDuringOboFlowEnabled(orgId string) bool {
+	return flags.options.DefaultValidateSubjectTokenDuringOboFlowEnabled
+}
+
 func (flags *noopFlags) GetFlagSource() int {
 	return SourceNoop
 }

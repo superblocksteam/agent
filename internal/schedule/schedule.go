@@ -136,7 +136,7 @@ func (r *ScheduleJobRunner) executeScheduleJob(def *apiv1.Definition, rawDef *st
 			Inputs:                inputs,
 			Fetcher:               r.Fetcher,
 			Flags:                 r.Flags,
-			TokenManager:          auth.NewTokenManager(r.ServerClient, r.Clock, logger, r.EagerRefreshThresholdMs),
+			TokenManager:          auth.NewTokenManager(r.ServerClient, r.Clock, logger, r.EagerRefreshThresholdMs, r.Flags),
 			IsDeployed:            true,
 			Requester:             "Schedule",
 			RootStartTime:         time.Now(),

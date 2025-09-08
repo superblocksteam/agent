@@ -490,8 +490,11 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 		return "", sberrors.IntegrationOAuthError(oauth.ErrInvalidSubjectTokenSource)
 	}
 
-	if valid, err := t.isValidJwt(subjectToken, authConfigProto.GetSubjectTokenSource(), log); !valid {
-		return "", err
+	// validate subject token if feature flag is enabled
+	if t.flags.GetValidateSubjectTokenDuringOboFlowEnabled(constants.OrganizationID(ctx)) {
+		if valid, err := t.isValidJwt(subjectToken, authConfigProto.GetSubjectTokenSource(), log); !valid {
+			return "", err
+		}
 	}
 
 	// Attempt token exchange using token from identity provider

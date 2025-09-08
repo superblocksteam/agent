@@ -220,6 +220,7 @@ func init() {
 	pflag.Int("signature.batch.size", 200, "number of resources to fetch per signature reconcile loop")
 	pflag.Bool("worker.go.enabled", false, "Whether or not to enable routing requests to the Go worker in the OPA.")
 	pflag.Bool("agent.plugins.workflow.inherit_parameters.enabled", false, "Whether or not to use the API's mode and branch for workflow plugin step execution.")
+	pflag.Bool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled", true, "Whether or not to validate subject tokens during OBO flow.")
 
 	// This pflag setup allows the stdlib flag package to be used with viper.
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -486,6 +487,7 @@ func main() {
 			flagoptions.WithDefaultApiTimeout(viper.GetFloat64("quotas.default.api_timeout")),
 			flagoptions.WithDefaultGoWorkerEnabled(viper.GetBool("worker.go.enabled")),
 			flagoptions.WithDefaultWorkflowPluginInheritanceEnabled(viper.GetBool("agent.plugins.workflow.inherit_parameters.enabled")),
+			flagoptions.WithDefaultValidateSubjectTokenDuringOboFlowEnabled(viper.GetBool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled")),
 		}
 		internalOptions := []internalflagsclient.Option{
 			internalflagsclient.WithLogger(logger),
@@ -737,7 +739,7 @@ func main() {
 			Flags:                 flagsClient,
 			DefaultResolveOptions: defaultResolveOptions,
 			Fetcher:               fetcher,
-			TokenManager:          auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms")),
+			TokenManager:          auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms"), flagsClient),
 			AgentId:               id,
 			AgentVersion:          version,
 			SecretManager:         secretManager,
