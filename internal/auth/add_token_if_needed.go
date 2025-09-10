@@ -294,6 +294,8 @@ func (t *tokenManager) AddTokenIfNeeded(
 			apiKey := apiKeyValue.GetStructValue()
 			keyName := apiKey.Fields["header"].GetStringValue()
 			token := apiKey.Fields["token"].GetStringValue()
+			prefix := apiKey.Fields["prefix"].GetStringValue()
+			token = prefix + token
 
 			if method == apiKeyMethodQueryParam {
 				t.addParam(ctx, datasourceConfig, keyName, token)

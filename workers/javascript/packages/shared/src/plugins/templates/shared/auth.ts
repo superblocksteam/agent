@@ -27,6 +27,8 @@ type ApiKeyFormItem = {
   label: string; // The label for the form
   header: string; // The HTTP header key
   key: string; // Unique key for the form
+  required?: boolean; // Whether the field is required
+  valuePrefix?: string; // A string that should be prefixed to the value
 };
 
 type BasicAuthConfig = {
@@ -340,6 +342,26 @@ export const authSections = ({
             startVersion: RestApiIntegrationPluginVersions.V13,
             componentType: FormComponentType.INPUT_TEXT,
             initialValue: apiKey.header,
+            display: {
+              show: {
+                authType: [IntegrationAuthType.API_KEY_FORM]
+              }
+            },
+            hidden: true,
+            disabled: true
+          }
+        ],
+        fieldNamesToHide
+      );
+      addField(
+        authFields,
+        [
+          {
+            label: '',
+            name: `authConfig.apiKeys.${apiKey.key}.prefix`,
+            startVersion: RestApiIntegrationPluginVersions.V13,
+            componentType: FormComponentType.INPUT_TEXT,
+            initialValue: apiKey.valuePrefix || '',
             display: {
               show: {
                 authType: [IntegrationAuthType.API_KEY_FORM]
