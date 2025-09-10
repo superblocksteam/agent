@@ -1544,6 +1544,87 @@ func TestAddTokenIfNeeded_Tokens(t *testing.T) {
 			expectedParams: []interface{}{},
 		},
 		{
+			name:     "api key form single header with prefix",
+			authType: authTypeApiKeyForm,
+			authConfig: map[string]any{
+				"method": "header",
+				"apiKeys": map[string]any{
+					"first-token": any(map[string]any{
+						"header": "My-Token-Value",
+						"token":  "123123token123123",
+						"prefix": "Bearer ",
+					}),
+				},
+			},
+			expectedHeaders: []any{
+				map[string]any{
+					"key":   "My-Token-Value",
+					"value": "Bearer 123123token123123",
+				},
+			},
+			expectedHeadersRedacted: []any{
+				map[string]any{
+					"key":   "My-Token-Value",
+					"value": "<redacted>",
+				},
+			},
+			expectedParams: []any{},
+		},
+		{
+			name:     "api key form single header with empty prefix",
+			authType: authTypeApiKeyForm,
+			authConfig: map[string]any{
+				"method": "header",
+				"apiKeys": map[string]any{
+					"first-token": any(map[string]any{
+						"header": "My-Token-Value",
+						"token":  "123123token123123",
+						"prefix": "",
+					}),
+				},
+			},
+			expectedHeaders: []any{
+				map[string]any{
+					"key":   "My-Token-Value",
+					"value": "123123token123123",
+				},
+			},
+			expectedHeadersRedacted: []any{
+				map[string]any{
+					"key":   "My-Token-Value",
+					"value": "<redacted>",
+				},
+			},
+			expectedParams: []any{},
+		},
+		{
+			name:     "api key form single header with prefix not given",
+			authType: authTypeApiKeyForm,
+			authConfig: map[string]any{
+				"method": "header",
+				"apiKeys": map[string]any{
+					"first-token": any(map[string]any{
+						"header": "My-Token-Value",
+						"token":  "123123token123123",
+						// no prefix field
+					}),
+				},
+			},
+			expectedHeaders: []any{
+				map[string]any{
+					"key":   "My-Token-Value",
+					"value": "123123token123123",
+				},
+			},
+			expectedHeadersRedacted: []any{
+				map[string]any{
+					"key":   "My-Token-Value",
+					"value": "<redacted>",
+				},
+			},
+			expectedParams: []any{},
+		},
+		{
 			name:     "api key - header",
 			authType: authTypeApiKey,
 			authConfig: map[string]interface{}{
@@ -1603,6 +1684,33 @@ func TestAddTokenIfNeeded_Tokens(t *testing.T) {
 			},
 			expectedParamsRedacted: []interface{}{
 				map[string]interface{}{
+					"key":   "api-key-id",
+					"value": "<redacted>",
+				},
+			},
+		},
+		{
+			name:     "api key form query param with prefix",
+			authType: authTypeApiKeyForm,
+			authConfig: map[string]any{
+				"method": "query-param",
+				"apiKeys": map[string]any{
+					"first-token": any(map[string]any{
+						"header": "api-key-id",
+						"token":  "tokenvalue",
+						"prefix": "key_",
+					}),
+				},
+			},
+			expectedHeaders: []any{},
+			expectedParams: []any{
+				map[string]any{
+					"key":   "api-key-id",
+					"value": "key_tokenvalue",
+				},
+			},
+			expectedParamsRedacted: []any{
+				map[string]any{
 					"key":   "api-key-id",
 					"value": "<redacted>",
 				},
