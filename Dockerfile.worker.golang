@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.9.0
 
-FROM ghcr.io/superblocksteam/golang:1.23.7-bookworm AS builder
+FROM ghcr.io/superblocksteam/golang:1.25.1-trixie AS builder
 
 ARG GO_ARCH=amd64
 
@@ -23,7 +23,7 @@ RUN GOOS=linux GOARCH=${GO_ARCH} make build-go SERVICE_NAME="worker.go"         
                                                EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"
 
 # Build the final image
-FROM debian:bookworm-slim
+FROM ghcr.io/superblocksteam/debian:trixie-20250811-slim
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \

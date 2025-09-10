@@ -3,7 +3,7 @@
 
 # If you update the python version or base image, ensure that the site-packages
 # path in scripts/add-lib.sh is correct.
-FROM ghcr.io/superblocksteam/python-mirror:3.10.13-slim-bookworm
+FROM ghcr.io/superblocksteam/python-mirror:3.10.18-slim-trixie
 
 # NOTE(frank): We do not want this message printed to STDOUT
 #   UserWarning: slack package is deprecated. Please use slack_sdk.web/webhook/rtm package instead. For more info, go to https://slack.dev/python-slack-sdk/v3-migration/

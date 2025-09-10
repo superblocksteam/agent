@@ -5,7 +5,7 @@ ARG GO_VERSION
 ARG SB_GIT_COMMIT_SHA
 
 # Builder base image
-FROM ghcr.io/superblocksteam/golang:${GO_VERSION}-bookworm AS builder
+FROM ghcr.io/superblocksteam/golang:${GO_VERSION}-trixie AS builder
 
 LABEL org.opencontainers.image.description "The Superblocks Orchestrator"
 
