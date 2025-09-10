@@ -3,8 +3,8 @@
 # List all build-time variables with their default values
 # They need to be redefined in each stage to be used in that stage
 ARG DEBIAN_TRIXIE_VERSION=20250811
-ARG GO_VERSION=1.23.7
-ARG PYTHON_VERSION=3.10.14
+ARG GO_VERSION=1.25.1
+ARG PYTHON_VERSION=3.10.18
 ARG NODE_VERSION_MAJOR=20
 ARG NODE_VERSION=20.19.4
 ARG PNPM_VERSION=9.7.1
@@ -25,7 +25,7 @@ ARG EXTERNAL_TAG
 ## ORCHESTRATOR ##
 ##################
 
-FROM ghcr.io/superblocksteam/golang:${GO_VERSION}-bookworm AS orchestrator_and_golang_worker
+FROM ghcr.io/superblocksteam/golang:${GO_VERSION}-trixie AS orchestrator_and_golang_worker
 
 ARG SERVICE_VERSION
 ARG EXTRA_GO_OPTIONS
@@ -121,7 +121,7 @@ RUN git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblo
 ## PARENT ##
 ############
 
-FROM ghcr.io/superblocksteam/python:${PYTHON_VERSION}-slim-bookworm
+FROM ghcr.io/superblocksteam/python:${PYTHON_VERSION}-slim-trixie
 
 ARG NOW
 ARG VERSION
@@ -172,7 +172,7 @@ RUN cd /app/worker.py                                                           
     apt-get install -yqq --no-install-recommends lsb-release curl gpg                                                                            && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION_MAJOR}.x | bash -                                                                 && \
     curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg                                    && \
-    echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" |                    \
+    echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb bookworm main" |                    \
     tee /etc/apt/sources.list.d/redis.list                                                                                                       && \
     apt-get update                                                                                                                               && \
     # Installing redis also creates a user and group called redis with id 101 and an user called redis with id 100
