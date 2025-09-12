@@ -60,10 +60,16 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 	if authConfig.SubjectTokenType != "" {
 		data.Set("subject_token_type", authConfig.SubjectTokenType)
 	}
-	data.Set("audience", authConfig.Audience)
+	if authConfig.Audience != "" {
+		data.Set("audience", authConfig.Audience)
+	}
 	data.Set("scope", authConfig.Scope)
-	data.Set("client_id", authConfig.ClientId)
-	data.Set("client_secret", authConfig.ClientSecret)
+	if authConfig.ClientId != "" {
+		data.Set("client_id", authConfig.ClientId)
+	}
+	if authConfig.ClientSecret != "" {
+		data.Set("client_secret", authConfig.ClientSecret)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", authConfig.TokenUrl, strings.NewReader(data.Encode()))
 	if err != nil {
