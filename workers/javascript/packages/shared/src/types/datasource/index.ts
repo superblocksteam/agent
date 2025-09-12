@@ -440,7 +440,12 @@ export type CouchbaseDatasourceConfiguration = Pick<
   'name' | 'connection' | 'tunnel' | 'dynamicWorkflowConfiguration'
 >;
 
-export type DatabricksDatasourceConfiguration = Pick<DatabricksPlugin.Plugin, 'name' | 'connection' | 'dynamicWorkflowConfiguration'>;
+export type DatabricksDatasourceConfiguration = 
+  Pick<DatabricksPlugin.Plugin, 'name' | 'connection' | 'dynamicWorkflowConfiguration'> & 
+  AuthenticatedDatasourceConfig & {
+    authTypeField?: string;
+    oauthType?: IntegrationAuthType.OAUTH2_TOKEN_EXCHANGE;
+  };
 
 export type OracleDbDatasourceConfiguration = Pick<OracleDbPlugin.Plugin, 'name' | 'connection' | 'dynamicWorkflowConfiguration'> & {
   connectionType?: 'fields' | 'url';

@@ -98,12 +98,21 @@ export enum Plugin_ConnectionType {
    * @generated from enum value: CONNECTION_TYPE_M2M = 2;
    */
   M2M = 2,
+
+  /**
+   * OAUTH TOKEN EXCHANGE (ON-BEHALF-OF)
+   * OAuth Token Federation flow where an identity provider token is exchanged for a Databricks access token
+   *
+   * @generated from enum value: CONNECTION_TYPE_OAUTH_EXCHANGE = 3;
+   */
+  OAUTH_EXCHANGE = 3,
 }
 // Retrieve enum metadata with: proto3.getEnumType(Plugin_ConnectionType)
 proto3.util.setEnumType(Plugin_ConnectionType, "plugins.databricks.v1.Plugin.ConnectionType", [
   { no: 0, name: "CONNECTION_TYPE_UNSPECIFIED" },
   { no: 1, name: "CONNECTION_TYPE_PAT" },
   { no: 2, name: "CONNECTION_TYPE_M2M" },
+  { no: 3, name: "CONNECTION_TYPE_OAUTH_EXCHANGE" },
 ]);
 
 /**

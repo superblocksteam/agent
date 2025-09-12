@@ -248,7 +248,8 @@ proto.plugins.databricks.v1.Plugin.serializeBinaryToWriter = function(message, w
 proto.plugins.databricks.v1.Plugin.ConnectionType = {
   CONNECTION_TYPE_UNSPECIFIED: 0,
   CONNECTION_TYPE_PAT: 1,
-  CONNECTION_TYPE_M2M: 2
+  CONNECTION_TYPE_M2M: 2,
+  CONNECTION_TYPE_OAUTH_EXCHANGE: 3
 };
 
 

@@ -1635,10 +1635,11 @@
       "enum": [
         "CONNECTION_TYPE_UNSPECIFIED",
         "CONNECTION_TYPE_PAT",
-        "CONNECTION_TYPE_M2M"
+        "CONNECTION_TYPE_M2M",
+        "CONNECTION_TYPE_OAUTH_EXCHANGE"
       ],
       "default": "CONNECTION_TYPE_UNSPECIFIED",
-      "title": "- CONNECTION_TYPE_PAT: PERSONAL ACCESS TOKEN\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#databricks-personal-access-token-authentication\n - CONNECTION_TYPE_M2M: MACHINE TO MACHINE\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#oauth-machine-to-machine-m2m-authentication"
+      "title": "- CONNECTION_TYPE_PAT: PERSONAL ACCESS TOKEN\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#databricks-personal-access-token-authentication\n - CONNECTION_TYPE_M2M: MACHINE TO MACHINE\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#oauth-machine-to-machine-m2m-authentication\n - CONNECTION_TYPE_OAUTH_EXCHANGE: OAUTH TOKEN EXCHANGE (ON-BEHALF-OF)\nOAuth Token Federation flow where an identity provider token is exchanged for a Databricks access token"
     },
     "PluginConsume": {
       "type": "object",

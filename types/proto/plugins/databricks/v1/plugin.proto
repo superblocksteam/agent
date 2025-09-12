@@ -36,5 +36,8 @@ message Plugin {
     // MACHINE TO MACHINE
     // https://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#oauth-machine-to-machine-m2m-authentication
     CONNECTION_TYPE_M2M = 2;
+    // OAUTH TOKEN EXCHANGE (ON-BEHALF-OF)
+    // OAuth Token Federation flow where an identity provider token is exchanged for a Databricks access token
+    CONNECTION_TYPE_OAUTH_EXCHANGE = 3;
   }
 }
