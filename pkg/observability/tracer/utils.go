@@ -87,6 +87,7 @@ func Observe[T any](
 
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
+		span.RecordError(err)
 	} else {
 		span.SetStatus(codes.Ok, "")
 	}
