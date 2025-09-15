@@ -8,11 +8,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
 	"github.com/superblocksteam/agent/pkg/template/plugins"
 	"github.com/superblocksteam/agent/pkg/template/plugins/legacyexpression"
 	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
+	"github.com/superblocksteam/agent/pkg/utils"
 )
 
 func TestRender_Mustache(t *testing.T) {
@@ -26,7 +28,7 @@ func TestRender_Mustache(t *testing.T) {
 	})
 	defer s.Close()
 
-	v8Resolver := func(ctx context.Context, template string) engine.Value {
+	v8Resolver := func(ctx context.Context, _ *utils.TokenJoiner, template string) engine.Value {
 		e, err := s.Engine(context.Background())
 		assert.NoError(t, err, t.Name())
 
@@ -80,7 +82,7 @@ func TestRender_Mustache(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			template := New(mustache, v8Resolver, zap.NewNop())
+			template := New(mustache, v8Resolver, utils.NoOpTokenJoiner, zap.NewNop())
 			result, err := template.Render(context.Background(), &plugins.Input{Data: test.template})
 
 			assert.NoError(t, err, test.name)
@@ -94,6 +96,9 @@ func TestRender_LegacyExpression(t *testing.T) {
 	legacyExpressionTemplate := func(input *plugins.Input) plugins.Plugin {
 		return legacyexpression.Plugin(input)
 	}
+
+	commaEscapeTokenJoiner, err := utils.NewTokenJoiner()
+	require.NoError(t, err)
 
 	for _, test := range []struct {
 		name     string
@@ -131,6 +136,11 @@ func TestRender_LegacyExpression(t *testing.T) {
 			expected: "$2 + ${{1 + 1}} = ${{ 4 * 1 }} (as expected)",
 		},
 		{
+			name:     "string literal with comma space sequence in expression",
+			template: "`${JSON.stringify({ channel: \"operations\", text: \"Monitor1.value\" })}`",
+			expected: "{{JSON.stringify({ channel: \"operations\", text: \"Monitor1.value\" })}}",
+		},
+		{
 			name:     "iife",
 			template: "(() => ({hello: 'world'}))()",
 			expected: "{{(() => ({hello: 'world'}))()}}",
@@ -142,7 +152,7 @@ func TestRender_LegacyExpression(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			template := New(legacyExpressionTemplate, legacyexpression.Resolver, zap.NewNop())
+			template := New(legacyExpressionTemplate, legacyexpression.Resolver, commaEscapeTokenJoiner, zap.NewNop())
 			result, err := template.Render(context.Background(), &plugins.Input{Data: test.template})
 
 			assert.NoError(t, err, test.name)

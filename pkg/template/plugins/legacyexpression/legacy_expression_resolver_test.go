@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/pkg/engine"
+	"github.com/superblocksteam/agent/pkg/utils"
 )
 
 func TestLegacyExpressionValue_Result(t *testing.T) {
@@ -205,12 +207,20 @@ func TestResolver(t *testing.T) {
 			input:    "{{object.{key}}}",
 			expected: []string{"{{object.{key}}}"},
 		},
+		{
+			name:     "comma-space escape sequence in input",
+			input:    "{{ [ ${JSON.stringify(['apple'__SEPARATOR_ESCAPE__'banana'__SEPARATOR_ESCAPE__'orange'])} ] }}",
+			expected: []string{"{{JSON.stringify(['apple', 'banana', 'orange'])}}"},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			result := Resolver(ctx, tt.input)
+			tokenJoiner, err := utils.NewTokenJoiner()
+			require.NoError(t, err)
+
+			result := Resolver(ctx, tokenJoiner, tt.input)
 
 			// Cast to legacyExpressionValue to access the value
 			lev, ok := result.(*legacyExpressionValue)
@@ -227,7 +237,10 @@ func TestResolver(t *testing.T) {
 
 func TestResolver_EngineValueInterface(t *testing.T) {
 	ctx := context.Background()
-	result := Resolver(ctx, "test")
+	tokenJoiner, err := utils.NewTokenJoiner()
+	require.NoError(t, err)
+
+	result := Resolver(ctx, tokenJoiner, "test")
 
 	// Verify that the result implements the engine.Value interface
 	_, ok := result.(engine.Value)

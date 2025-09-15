@@ -2214,6 +2214,49 @@ const integrationTestApis = [
       profile: 'production',
     },
   },
+  {
+    api: {
+      metadata: {
+        id: '00000000-0000-0000-0000-000000000043',
+        organization: '00000000-0000-0000-0000-000000000001',
+        name: 'TestApi7',
+        path: '/pages/Page 2/apis/TestApi7/api.yaml',
+        commitId: '68a1d22faa2c108b88f6229cf0e44669859dbda1',
+      },
+      signature: {
+        data: 'QRIG6c/WGVgHE7gjxoR2EVFM/rGuX7d0Wi/33Jchm+FVycgQlydmOMTar89lHed9bma4J6f/7dkAjjRh/zf2Bw==',
+      },
+      trigger: {
+        application: {
+          id: '00000000-0000-0000-0000-000000000002',
+        },
+      },
+      blocks: [
+        {
+          name: 'PostToSlack - Postman Echo',
+          step: {
+            restapi: {
+              body: "`${JSON.stringify({ channel: '#operations', text: 'Monitor1.value' })}`",
+              headers: [
+                {
+                  key: '`Content-Type`',
+                  value: '`application/json`',
+                },
+              ],
+              path: '`https://postman-echo.com/post`',
+              bodyType: 'jsonBody',
+              httpMethod: 'POST',
+              responseType: 'auto',
+            },
+            integration: 'restapi',
+          },
+        },
+      ],
+    },
+    metadata: {
+      profile: 'production',
+    },
+  },
 ];
 
 module.exports = integrationTestApis;

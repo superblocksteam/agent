@@ -103,7 +103,8 @@ type Options struct {
 	Renderer                     template.RenderFunc
 	TemplatePlugin               func(*plugins.Input) plugins.Plugin
 	LegacyTemplatePlugin         func(*plugins.Input) plugins.Plugin
-	LegacyTemplateResolver       func(context.Context, string) engine.Value
+	LegacyTemplateResolver       func(context.Context, *utils.TokenJoiner, string) engine.Value
+	LegacyTemplateTokenJoiner    *utils.TokenJoiner
 	RootStartTime                time.Time
 	Timeout                      time.Duration
 	Requester                    string

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/superblocksteam/agent/pkg/engine"
+	"github.com/superblocksteam/agent/pkg/utils"
 )
 
 type legacyExpressionValue struct {
@@ -34,7 +35,7 @@ func (l *legacyExpressionValue) Console() *engine.Console {
 	return nil
 }
 
-func Resolver(ctx context.Context, input string) engine.Value {
+func Resolver(ctx context.Context, tokenJoiner *utils.TokenJoiner, input string) engine.Value {
 	trimmed := strings.TrimSpace(input)
 	if strings.HasPrefix(trimmed, "{{") && strings.HasSuffix(trimmed, "}}") {
 		trimmed = trimmed[2 : len(trimmed)-2]
@@ -45,7 +46,7 @@ func Resolver(ctx context.Context, input string) engine.Value {
 		trimmed = trimmed[1 : len(trimmed)-1]
 	}
 
-	content := splitOrEmpty(strings.TrimSpace(trimmed), ", ")
+	content := splitOrEmpty(tokenJoiner, strings.TrimSpace(trimmed))
 	processed := make([]string, 0, len(content))
 
 	for _, c := range content {
@@ -63,10 +64,10 @@ func Resolver(ctx context.Context, input string) engine.Value {
 	}
 }
 
-func splitOrEmpty(input string, sep string) []string {
+func splitOrEmpty(tokenJoiner *utils.TokenJoiner, input string) []string {
 	if input == "" {
 		return nil
 	}
 
-	return strings.Split(input, sep)
+	return tokenJoiner.Split(input)
 }

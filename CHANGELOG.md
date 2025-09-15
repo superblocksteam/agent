@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 - Added support for header value prefix in auth injection flow
 - Added support of Oauth Token Federation auth for Databricks
+- Fixed new bindings syntax support for bindings that require legacy resolution and an expression in the template literal contains the token separator string (i.e. `", "`)
+   - e.g. `${JSON.stringify({ name: "test", enabled: true })}`
 
 ## v1.26.0
 - Added support for the `metadata` endpoint in the GraphQL integration
