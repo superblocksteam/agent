@@ -113,11 +113,12 @@ type resolver struct {
 	// This is used to determine whether or not we should
 	// be sending the agent key as part of the workflow fetch.
 	// This should only be true in the case of a scheduled job
-	useAgentKey            bool
-	v8SupportedModules     map[string]bool
-	templatePlugin         func(*plugins.Input) plugins.Plugin
-	legacyTemplatePlugin   func(*plugins.Input) plugins.Plugin
-	legacyTemplateResolver func(context.Context, string) engine.Value
+	useAgentKey               bool
+	v8SupportedModules        map[string]bool
+	templatePlugin            func(*plugins.Input) plugins.Plugin
+	legacyTemplatePlugin      func(*plugins.Input) plugins.Plugin
+	legacyTemplateResolver    func(context.Context, *utils.TokenJoiner, string) engine.Value
+	legacyTemplateTokenJoiner *utils.TokenJoiner
 
 	Events
 	*Options
@@ -186,22 +187,23 @@ func NewResolver(
 			mutex:   sync.RWMutex{},
 			exiters: map[string](chan *exit){},
 		},
-		apiName:                options.Api.GetMetadata().GetName(),
-		rootStartTime:          options.RootStartTime,
-		timeout:                options.Timeout,
-		fetcher:                options.Fetcher,
-		tokenManager:           options.TokenManager,
-		fetchToken:             options.FetchToken,
-		definitionMetadata:     options.DefinitionMetadata,
-		integrations:           options.Integrations,
-		isDeployed:             options.IsDeployed,
-		SecretManager:          options.SecretManager,
-		secrets:                options.Secrets,
-		Options:                options,
-		v8SupportedModules:     make(map[string]bool),
-		templatePlugin:         options.TemplatePlugin,
-		legacyTemplatePlugin:   options.LegacyTemplatePlugin,
-		legacyTemplateResolver: options.LegacyTemplateResolver,
+		apiName:                   options.Api.GetMetadata().GetName(),
+		rootStartTime:             options.RootStartTime,
+		timeout:                   options.Timeout,
+		fetcher:                   options.Fetcher,
+		tokenManager:              options.TokenManager,
+		fetchToken:                options.FetchToken,
+		definitionMetadata:        options.DefinitionMetadata,
+		integrations:              options.Integrations,
+		isDeployed:                options.IsDeployed,
+		SecretManager:             options.SecretManager,
+		secrets:                   options.Secrets,
+		Options:                   options,
+		v8SupportedModules:        make(map[string]bool),
+		templatePlugin:            options.TemplatePlugin,
+		legacyTemplatePlugin:      options.LegacyTemplatePlugin,
+		legacyTemplateResolver:    options.LegacyTemplateResolver,
+		legacyTemplateTokenJoiner: options.LegacyTemplateTokenJoiner,
 	}
 }
 
@@ -725,6 +727,7 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 					structpb.NewStructValue(action),
 					r.legacyTemplatePlugin,
 					r.legacyTemplateResolver,
+					r.legacyTemplateTokenJoiner,
 					r.logger,
 				)
 				if err != nil {
@@ -1700,7 +1703,7 @@ func (r *resolver) collectAndFlush(ctx *apictx.Context, refs utils.List[string],
 
 func (r *resolver) shouldConvertToLegacyBindings(action *structpb.Struct, pluginType string, stream bool) bool {
 	// If the legacy template plugin or resolver is not set, we should not convert to legacy bindings
-	if r.legacyTemplatePlugin == nil || r.legacyTemplateResolver == nil {
+	if r.legacyTemplatePlugin == nil || r.legacyTemplateResolver == nil || r.legacyTemplateTokenJoiner == nil {
 		return false
 	}
 

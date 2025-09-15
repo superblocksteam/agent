@@ -3,7 +3,6 @@ package template
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"go.uber.org/zap"
 
@@ -20,16 +19,23 @@ type Template[T string] interface {
 }
 
 type template[T string] struct {
-	plugin   func(*plugins.Input) plugins.Plugin
-	resolver func(context.Context, string) engine.Value
-	logger   *zap.Logger
+	plugin      func(*plugins.Input) plugins.Plugin
+	resolver    func(context.Context, *utils.TokenJoiner, string) engine.Value
+	tokenJoiner *utils.TokenJoiner
+	logger      *zap.Logger
 }
 
-func New[T string](plugin func(*plugins.Input) plugins.Plugin, resolver func(context.Context, string) engine.Value, logger *zap.Logger) Template[T] {
+func New[T string](
+	plugin func(*plugins.Input) plugins.Plugin,
+	resolver func(context.Context, *utils.TokenJoiner, string) engine.Value,
+	tokenJoiner *utils.TokenJoiner,
+	logger *zap.Logger,
+) Template[T] {
 	return &template[T]{
-		plugin:   plugin,
-		resolver: resolver,
-		logger:   logger,
+		plugin:      plugin,
+		resolver:    resolver,
+		tokenJoiner: tokenJoiner,
+		logger:      logger,
 	}
 }
 
@@ -50,9 +56,9 @@ func (t *template[T]) Render(ctx context.Context, template *plugins.Input) (*T, 
 	// Third, if we found tokens, we pass them `[]string{" 2 + 2 "}` to our processing engine.
 	var processed []string
 	if len(tokens) > 0 {
-		in := fmt.Sprintf("{{ [ %s ] }}", strings.Join(tokens, ", "))
+		in := fmt.Sprintf("{{ [ %s ] }}", t.tokenJoiner.Join(tokens))
 
-		resolved, err := t.resolver(ctx, in).Result()
+		resolved, err := t.resolver(ctx, t.tokenJoiner, in).Result()
 		if err != nil {
 			errors.Logger(t.logger, err)("could not resolve tokens", zap.Error(err), zap.String("input", in))
 			return nil, err

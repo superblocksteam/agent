@@ -521,7 +521,8 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	}
 
 	var legacyTemplatePlugin func(*plugins.Input) plugins.Plugin
-	var legacyTemplateResolver func(context.Context, string) engine.Value
+	var legacyTemplateResolver func(context.Context, *utils.TokenJoiner, string) engine.Value
+	var legacyTemplateTokenJoiner *utils.TokenJoiner
 	var templatePlugin func(*plugins.Input) plugins.Plugin
 	{
 		if req.GetFetchByPath() != nil {
@@ -529,6 +530,11 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 
 			legacyTemplatePlugin = legacyexpression.Instance
 			legacyTemplateResolver = legacyexpression.Resolver
+			legacyTemplateTokenJoiner, err = utils.NewTokenJoiner()
+			if err != nil {
+				s.Logger.Error("error creating legacy template token joiner", zap.Error(err))
+				return nil, sberror.ErrInternal
+			}
 		} else {
 			templatePlugin = mustache.Instance
 		}
@@ -570,6 +576,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		TemplatePlugin:               templatePlugin,
 		LegacyTemplatePlugin:         legacyTemplatePlugin,
 		LegacyTemplateResolver:       legacyTemplateResolver,
+		LegacyTemplateTokenJoiner:    legacyTemplateTokenJoiner,
 	}, func(resp *apiv1.StreamResponse) error {
 		if err := executor.ExtractErrorFromEvent(resp.GetEvent()); err != nil {
 			mutex.Lock()

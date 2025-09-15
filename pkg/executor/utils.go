@@ -419,6 +419,7 @@ func HandleWorkflow(
 		renderFunc := template.New(
 			templatePlugin,
 			template.DefaultEngineResolver(sandbox, ctx.Variables),
+			utils.NoOpTokenJoiner,
 			executeOpts.Logger,
 		).Render
 

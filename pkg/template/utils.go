@@ -26,23 +26,24 @@ func RenderProtoValue(ctx *apictx.Context, x *structpb.Value, plugin func(*plugi
 		return nil, errors.New("both a plugin and sandbox must be provided")
 	}
 
-	return RenderProtoValueWithResolver(ctx, x, plugin, DefaultEngineResolver(sandbox, ctx.Variables), logger)
+	return RenderProtoValueWithResolver(ctx, x, plugin, DefaultEngineResolver(sandbox, ctx.Variables), utils.NoOpTokenJoiner, logger)
 }
 
 func RenderProtoValueWithResolver(
 	ctx *apictx.Context,
 	x *structpb.Value,
 	plugin func(*plugins.Input) plugins.Plugin,
-	resolver func(context.Context, string) engine.Value,
+	resolver func(context.Context, *utils.TokenJoiner, string) engine.Value,
+	tokenJoiner *utils.TokenJoiner,
 	logger *zap.Logger,
 ) (*structpb.Value, error) {
 
 	// NOTE(frank): When you're looking at this 6 months from now asking
 	// yourself, "Why isn't Frank doing `do := func() {...}`??", you can't
 	// recurse on a function defined that way :scream:
-	var do func(context.Context, func(context.Context, string) engine.Value, string, *structpb.Value) (*structpb.Value, error)
+	var do func(context.Context, func(context.Context, *utils.TokenJoiner, string) engine.Value, *utils.TokenJoiner, string, *structpb.Value) (*structpb.Value, error)
 	{
-		do = func(ctx context.Context, resolver func(context.Context, string) engine.Value, fieldName string, x *structpb.Value) (*structpb.Value, error) {
+		do = func(ctx context.Context, resolver func(context.Context, *utils.TokenJoiner, string) engine.Value, tokenJoiner *utils.TokenJoiner, fieldName string, x *structpb.Value) (*structpb.Value, error) {
 			// Fail fast if the provided struct is nil
 			if x == nil {
 				return x, nil
@@ -77,7 +78,7 @@ func RenderProtoValueWithResolver(
 						newFieldName = strings.Join([]string{fieldName, key}, ".")
 					}
 
-					rendered, err := do(ctx, resolver, newFieldName, value)
+					rendered, err := do(ctx, resolver, tokenJoiner, newFieldName, value)
 					if err != nil {
 						return nil, err
 					}
@@ -91,7 +92,7 @@ func RenderProtoValueWithResolver(
 						continue
 					}
 
-					rendered, err := do(ctx, resolver, fieldName, value)
+					rendered, err := do(ctx, resolver, tokenJoiner, fieldName, value)
 					if err != nil {
 						return nil, err
 					}
@@ -106,7 +107,7 @@ func RenderProtoValueWithResolver(
 					Meta: &plugins.InputMetadata{FieldName: fieldName},
 					Data: v.StringValue,
 				}
-				resolved, err := New(plugin, resolver, logger).Render(ctx, input)
+				resolved, err := New(plugin, resolver, tokenJoiner, logger).Render(ctx, input)
 				if err != nil {
 					return nil, err
 				}
@@ -128,14 +129,14 @@ func RenderProtoValueWithResolver(
 			cloned = &newCtx
 		}
 
-		return do(cloned.Context, resolver, "", x)
+		return do(cloned.Context, resolver, tokenJoiner, "", x)
 	}, nil)
 }
 
-func DefaultEngineResolver(sandbox engine.Sandbox, variables utils.Map[*transportv1.Variable]) func(context.Context, string) engine.Value {
+func DefaultEngineResolver(sandbox engine.Sandbox, variables utils.Map[*transportv1.Variable]) func(context.Context, *utils.TokenJoiner, string) engine.Value {
 	// NOTE(frank): There's an optimization here where we can init once
 	// and share on future calls. However, I was running into some issues.
-	return func(ctx context.Context, template string) engine.Value {
+	return func(ctx context.Context, _ *utils.TokenJoiner, template string) engine.Value {
 		e, err := sandbox.Engine(ctx)
 		if err != nil {
 			return e.Failed(err)
