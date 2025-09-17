@@ -2,6 +2,23 @@
 
 This guide illustrates how to bootstrap the agent locally.
 
+## Install dependencies
+
+You need to have gmake 4.4.1+ installed:
+```
+$ brew install make
+```
+
+This will install gnu make, but with the binary name of `gmake`, so alias `make` to be `gmake`:
+```
+$ echo 'alias make=gmake' >> ~/.zshrc
+```
+
+As well as some other tools:
+```
+$ npm install -g protoc-gen-ts grpc-tools
+```
+
 ## Running the agent locally
 
 The agent is comprised of 5 components. Run each of them separately. Each of the following instructions sets assumes that you are in the root of the repository. Here are some tips as you get started 👇
