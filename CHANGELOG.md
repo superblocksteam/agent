@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+
+## v1.27.0
 - Added support for header value prefix in auth injection flow
 - Added support of Oauth Token Federation auth for Databricks
 - Fixed new bindings syntax support for bindings that require legacy resolution and an expression in the template literal contains the token separator string (i.e. `", "`)
