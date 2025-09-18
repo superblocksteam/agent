@@ -75,7 +75,6 @@ test:
 
 .PHONY: deploy-helm
 deploy-helm:
-	helm repo add bitnami https://charts.bitnami.com/bitnami
 	helm dependency build ./helm
 	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) worker-python helm \
 		--create-namespace \

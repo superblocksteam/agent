@@ -203,7 +203,6 @@ clean:
 .PHONY: deploy-helm
 deploy-helm:
 
-	helm repo add bitnami https://charts.bitnami.com/bitnami
 	helm dependency build ./helm/orchestrator
 
 	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) orchestrator helm/orchestrator \
@@ -269,7 +268,6 @@ helm-template:
 	# curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
 	# chmod 700 get_helm.sh
 	# ./get_helm.sh
-	# helm repo add bitnami https://charts.bitnami.com/bitnami
 	cd helm/orchestrator \
 		&& helm dependency build \
 		&& helm template .

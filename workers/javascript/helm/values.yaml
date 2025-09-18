@@ -77,6 +77,9 @@ tolerations: {}
 nodeSelector: {}
 # to be used for local testing only
 redis:
+  image:
+    repository: bitnamilegacy/redis
+    tag: 8.2.1-debian-12-r0
   auth:
     enabled: true
     password: koala
