@@ -145,7 +145,6 @@ deploy-kind:
 .PHONY: deploy-helm
 deploy-helm:
 
-	helm repo add bitnami https://charts.bitnami.com/bitnami
 	helm dependency build ./helm
 
 	helm upgrade -i --wait --timeout 3m -n $(K8S_NAMESPACE) worker helm \
