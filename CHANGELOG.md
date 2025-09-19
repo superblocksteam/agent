@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+
+## v1.28.0
 - Updated Databricks integration `test` to timeout after 5000ms
 
 ## v1.27.0
