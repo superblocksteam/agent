@@ -7,6 +7,8 @@ describe('gcs plugin tests', () => {
   const plugin: GCSPlugin = new GCSPlugin();
   dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
+  const BUCKET_NAME = 'integration-test-38945783947589';
+
   const GCS_TEST_CONFIG = {
     authentication: {
       custom: {
@@ -14,15 +16,17 @@ describe('gcs plugin tests', () => {
           key: 'googleServiceAccount',
           value: JSON.stringify({
             type: 'service_account',
-            project_id: 'superblocks-dev',
-            private_key_id: '44a09671b5e0bdb59079e3a7397a611ea84e832a',
+            project_id: 'gcs-integration-test-472417',
+            private_key_id: '25ee51babb62594715473a581e27d6b827c48c73',
             private_key: process.env.GCS_SERVICE_ACCOUNT_KEY,
-            client_email: 'ro-test-gcs@superblocks-dev.iam.gserviceaccount.com',
-            client_id: '116659580821017175336',
+            client_email: 'gcs-integration-service-accoun@gcs-integration-test-472417.iam.gserviceaccount.com',
+            client_id: '118238744384787335497',
             auth_uri: 'https://accounts.google.com/o/oauth2/auth',
             token_uri: 'https://oauth2.googleapis.com/token',
             auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-            client_x509_cert_url: 'https://www.googleapis.com/robot/v1/metadata/x509/ro-test-gcs%40superblocks-dev.iam.gserviceaccount.com'
+            client_x509_cert_url:
+              'https://www.googleapis.com/robot/v1/metadata/x509/gcs-integration-service-accoun%40gcs-integration-test-472417.iam.gserviceaccount.com',
+            universe_domain: 'googleapis.com'
           })
         }
       }
@@ -58,7 +62,7 @@ describe('gcs plugin tests', () => {
       datasourceConfiguration: GCS_TEST_CONFIG,
       actionConfiguration: {
         action: GCSActionType.GET_OBJECT,
-        resource: 'ro-test-gcs', // bucket name
+        resource: BUCKET_NAME,
         path: 'gcs.png',
         responseType: ActionResponseType.TEXT
       }
@@ -71,12 +75,12 @@ describe('gcs plugin tests', () => {
       datasourceConfiguration: GCS_TEST_CONFIG,
       actionConfiguration: {
         action: GCSActionType.GET_OBJECT,
-        resource: 'ro-test-gcs', // bucket name
-        path: 'ro-test.csv',
+        resource: BUCKET_NAME,
+        path: 'tableConvert.com_59mhw7.csv',
         responseType: ActionResponseType.AUTO
       }
     });
-    expect(JSON.stringify(dataPlain)).toContain('1,2,3');
+    expect(JSON.stringify(dataPlain)).toContain('"\\"1\\",\\"2\\",\\"3\\"');
   });
 
   test('test list objects', async () => {
@@ -86,11 +90,11 @@ describe('gcs plugin tests', () => {
       datasourceConfiguration: GCS_TEST_CONFIG,
       actionConfiguration: {
         action: GCSActionType.LIST_OBJECTS,
-        resource: 'ro-test-gcs'
+        resource: BUCKET_NAME
       }
     });
 
-    expect(JSON.stringify(data)).toContain('ro-test-gcs');
+    expect(JSON.stringify(data)).toContain(BUCKET_NAME);
   });
 
   test('test list objects with prefix', async () => {
@@ -100,7 +104,7 @@ describe('gcs plugin tests', () => {
       datasourceConfiguration: GCS_TEST_CONFIG,
       actionConfiguration: {
         action: GCSActionType.LIST_OBJECTS,
-        resource: 'ro-test-gcs',
+        resource: BUCKET_NAME,
         prefix: 'blahblah' // no objects with this prefix
       }
     });
@@ -118,7 +122,7 @@ describe('gcs plugin tests', () => {
       }
     });
 
-    expect(JSON.stringify(data)).toContain('ro-test-gcs');
+    expect(JSON.stringify(data)).toContain(BUCKET_NAME);
   });
 
   test('test list buckets with prefix', async () => {
@@ -128,12 +132,12 @@ describe('gcs plugin tests', () => {
       datasourceConfiguration: GCS_TEST_CONFIG,
       actionConfiguration: {
         action: GCSActionType.LIST_BUCKETS,
-        resource: 'ro-test-gcs',
+        resource: BUCKET_NAME,
         prefix: 'blahblah' // no objects with this prefix
       }
     });
 
-    expect(JSON.stringify(data)).not.toContain('ro-test-gcs');
+    expect(JSON.stringify(data)).not.toContain(BUCKET_NAME);
   });
 
   test('test pre signed url', async () => {
@@ -143,7 +147,7 @@ describe('gcs plugin tests', () => {
       datasourceConfiguration: GCS_TEST_CONFIG,
       actionConfiguration: {
         action: GCSActionType.GENERATE_PRESIGNED_URL,
-        resource: 'ro-test-gcs',
+        resource: BUCKET_NAME,
         path: 'gcs.png',
         // @ts-ignore
         custom: {
@@ -186,7 +190,7 @@ describe('gcs plugin tests', () => {
         datasourceConfiguration: GCS_TEST_CONFIG,
         actionConfiguration: {
           action: GCSActionType.GENERATE_PRESIGNED_URL,
-          resource: 'ro-test-gcs',
+          resource: BUCKET_NAME,
           path: 'gcs.png.does.not.exist',
           // @ts-ignore
           custom: {
@@ -209,12 +213,12 @@ describe('gcs plugin tests', () => {
       datasourceConfiguration: GCS_TEST_CONFIG,
       actionConfiguration: {
         action: GCSActionType.UPLOAD_OBJECT,
-        resource: 'ro-test-gcs',
+        resource: BUCKET_NAME,
         path: 'integration-test-uploaded-will-delete.txt',
         body: '123'
       }
     });
-    expect(JSON.stringify(data)).toContain('ro-test-gcs');
+    expect(JSON.stringify(data)).toContain(BUCKET_NAME);
 
     await plugin.execute({
       ...DUMMY_EXECUTE_COMMON_PARAMETERS,
@@ -222,7 +226,7 @@ describe('gcs plugin tests', () => {
       datasourceConfiguration: GCS_TEST_CONFIG,
       actionConfiguration: {
         action: GCSActionType.DELETE_OBJECT,
-        resource: 'ro-test-gcs',
+        resource: BUCKET_NAME,
         path: 'integration-test-uploaded-will-delete.txt'
       }
     });
