@@ -28,7 +28,7 @@ import { isEmpty, merge } from 'lodash';
 import { KEYS_QUERY, SQL_SINGLE_TABLE_METADATA, TABLE_QUERY } from './queries';
 import { getConnectionOptionsFromDatasourceConfiguration } from './utils';
 
-const TEST_CONNECTION_TIMEOUT = 5000;
+const TEST_CONNECTION_TIMEOUT_MS = 5000;
 
 interface KeyQueryEntity {
   column_name: string;
@@ -63,7 +63,7 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
   };
   protected readonly caseSensitivityWrapCharacter = '`';
 
-  private connectionTimeoutMillis = TEST_CONNECTION_TIMEOUT;
+  private connectionTimeoutMillis = TEST_CONNECTION_TIMEOUT_MS;
 
   public async executePooled(
     props: PluginExecutionProps<DatabricksDatasourceConfiguration, DatabricksActionConfiguration>,
@@ -238,16 +238,35 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
   }
 
   public async test(datasourceConfiguration: DatabricksDatasourceConfiguration): Promise<void> {
-    let client: DBSQLClient | null = null;
-    try {
-      client = await this.createConnection(datasourceConfiguration, TEST_CONNECTION_TIMEOUT);
-      await this.executeQuery(() => {
-        return this._executeStatement(client as DBSQLClient, datasourceConfiguration, 'SELECT 1;');
-      });
-    } catch (err) {
-      throw this._handleError(err, `Test ${this.pluginName} connection failed`);
-    }
-    await client.close();
+    // wrap the entire test in a timeout
+    const testTimeout = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(
+          new Error(`IntegrationTimeoutError: Failed to connect to warehouse. Connection timeout after ${TEST_CONNECTION_TIMEOUT_MS}ms`)
+        );
+      }, TEST_CONNECTION_TIMEOUT_MS);
+    });
+
+    const testExecution = async () => {
+      let client: DBSQLClient | null = null;
+      try {
+        client = await this.createConnection(datasourceConfiguration, TEST_CONNECTION_TIMEOUT_MS);
+
+        await this.executeQuery(() => {
+          return this._executeStatement(client as DBSQLClient, datasourceConfiguration, 'SELECT 1;', {
+            queryTimeout: TEST_CONNECTION_TIMEOUT_MS
+          });
+        });
+      } catch (err) {
+        throw this._handleError(err, `Test ${this.pluginName} connection failed`);
+      } finally {
+        if (client) {
+          await client.close();
+        }
+      }
+    };
+
+    await Promise.race([testExecution(), testTimeout]);
   }
 
   private async _executeStatement(
