@@ -1,0 +1,25 @@
+---
+environment: demo
+agentAppEnvTestValue: ok
+auth:
+  jwt:
+    jwks_url: "https://staging-cdn.superblocks.com/.well-known/jwks.json"
+autoscaling:
+  disable: false
+  min: 2
+  max: 10
+kvstore:
+  servername: master.kvstore.77qkqg.usw2.cache.amazonaws.com
+queue:
+  servername: master.execution.77qkqg.usw2.cache.amazonaws.com
+ingress:
+  dns: true
+  certificate:
+    disable: true
+tolerations:
+  - effect: NoSchedule
+    key: dedicated
+    value: on-demand
+    operator: Equal
+nodeSelector:
+  superblocks.com/node-type: on-demand
