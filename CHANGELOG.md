@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 
+## v1.28.1
+- Upgraded Redis to ^v8.2.2, with patch for [CVE-2025-49844](https://github.com/redis/redis/security/advisories/GHSA-4789-qfc9-5f9q)
+
 ## v1.28.0
 - Updated Databricks integration `test` to timeout after 5000ms
 
