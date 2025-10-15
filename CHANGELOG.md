@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+-
+
+## v1.29.0
 - Use Databricks Unity Catalog to fetch metadata via REST
 - Disable script and function execution in the agent's redis server
 - Add support for setting a password for the default user in the agent's redis server
