@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Use Databricks Unity Catalog to fetch metadata via REST
+- Disable script and function execution in the agent's redis server
+- Add support for setting a password for the default user in the agent's redis server
 
 ## v1.28.1
 - Upgraded Redis to ^v8.2.2, with patch for [CVE-2025-49844](https://github.com/redis/redis/security/advisories/GHSA-4789-qfc9-5f9q)

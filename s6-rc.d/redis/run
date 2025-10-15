@@ -1,4 +1,14 @@
 #!/command/with-contenv sh
 
+export SUPERBLOCKS_AGENT_REDIS_PASSWORD="${SB_AGENT_REDIS_PASSWORD:-${SUPERBLOCKS_AGENT_REDIS_PASSWORD}}"
+if [ -z "${SUPERBLOCKS_AGENT_REDIS_PASSWORD}" ]; then
+  export DEFAULT_USER_PASSWORD="nopass"
+else
+  export DEFAULT_USER_PASSWORD=">${SUPERBLOCKS_AGENT_REDIS_PASSWORD}"
+fi
+
+envsubst < /etc/redis/users.acl.tmpl > /app/redis/users.acl
+envsubst < /etc/redis/redis.conf.tmpl > /app/redis/redis.conf
+
 echo "{\"level\":\"info\",\"ts\":$(date +%s%3N),\"msg\":\"starting component redis\",\"component\":\"s6\"}"
-s6-notifyoncheck -d -w 2000 -n 60 s6-setuidgid 100:101 redis-server --dir /app/redis
+s6-notifyoncheck -d -w 2000 -n 60 s6-setuidgid 100:101 redis-server /app/redis/redis.conf --dir /app/redis

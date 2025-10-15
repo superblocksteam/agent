@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-if redis-cli -h 127.0.0.1 -p 6379 ping | grep -q PONG; then
+SUPERBLOCKS_AGENT_REDIS_PASSWORD="${SB_AGENT_REDIS_PASSWORD:-${SUPERBLOCKS_AGENT_REDIS_PASSWORD}}"
+
+REDIS_AUTH_ARGS=()
+if [ -n "${SUPERBLOCKS_AGENT_REDIS_PASSWORD}" ]; then
+  REDIS_AUTH_ARGS=(-a "${SUPERBLOCKS_AGENT_REDIS_PASSWORD}")
+fi
+
+if redis-cli -h 127.0.0.1 -p 6379 "${REDIS_AUTH_ARGS[@]}" ping | grep -q PONG; then
   echo "{\"level\":\"info\",\"ts\":$(date +%s%3N),\"msg\":\"redis is ready\",\"component\":\"s6\"}"
   exit 0
 else
