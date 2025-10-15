@@ -155,6 +155,7 @@ COPY              --from=workers                        /workers/javascript/pack
 COPY              --from=workers                        /s6/                                                              /
 COPY              --chmod=755                           /workers/python                                                   /app/worker.py
 COPY                                                    s6-rc.d/                                                          /etc/s6-overlay/s6-rc.d/
+COPY                                                    redis-opa/config/                                                 /etc/redis/
 
 # Overwrite default requirements.txt file with the contents of the desired requirements file
 RUN src="/app/worker.py/${REQUIREMENTS_FILE}" && \
@@ -172,12 +173,12 @@ RUN cd /app/worker.py                                                           
     apt-get install -yqq --no-install-recommends lsb-release curl gpg                                                                            && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION_MAJOR}.x | bash -                                                                 && \
     curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg                                    && \
-    echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb bookworm main" |                    \
+    echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb bookworm main" |                              \
     tee /etc/apt/sources.list.d/redis.list                                                                                                       && \
     apt-get update                                                                                                                               && \
     # Installing redis also creates a user and group called redis with id 101 and an user called redis with id 100
     apt-get install -yqq --no-install-recommends gcc gnupg libc6-dev libpq-dev dnsutils iputils-ping nodejs=${NODE_VERSION}-1nodesource1            \
-    ca-certificates curl build-essential cmake redis libblas-dev liblapack-dev                      && \
+    ca-certificates curl build-essential cmake redis libblas-dev liblapack-dev gettext-base                                                      && \
     mkdir -p /app/redis                                                                                                                          && \
     chown -R redis:redis /app/redis                                                                                                              && \
     curl https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/trusted.gpg.d/microsoft.asc                                            && \
@@ -212,6 +213,7 @@ RUN apt-get clean                                                               
 
 ENV SB_GIT_REPOSITORY_URL="https://github.com/superblocksteam/agent"
 ENV SB_GIT_COMMIT_SHA=${SB_GIT_COMMIT_SHA}
+ENV SUPERBLOCKS_AGENT_REDIS_PASSWORD=
 ENV SUPERBLOCKS_AGENT_REDIS_TOKEN=
 ENV SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN=
 ENV SUPERBLOCKS_ORCHESTRATOR_TRANSPORT_REDIS_PASSWORD=

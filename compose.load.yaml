@@ -49,7 +49,9 @@ services:
       - --test
       - --log.level=error
       - --transport.redis.host=redis
+      - --transport.redis.password=koala
       - --store.redis.host=redis
+      - --store.redis.password=koala
       - --signature.verification.enabled=false
       - --emitter.audit.enabled=false
       - --emitter.remote.enabled=false
