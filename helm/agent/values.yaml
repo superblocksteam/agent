@@ -12,6 +12,10 @@ superblocks:
   # Existing agentKey secret must contain the value:
   # SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_KEY: <my-superblocks-agent-key>
   # agentKeyExistingSecret: "<my-superblocks-agent-key-secret>", optional. Secret is created for you if not specified.
+  agentRedisPassword: "koala"
+  # Existing agentRedisPassword secret must contain the value:
+  # SUPERBLOCKS_AGENT_REDIS_PASSWORD: <my-redis-password>
+  # agentRedisPasswordExistingSecret: "my-redis-password-secret", optional. Secret is created for you if not specified.
 
   # Tags can be used to specify which profile-specific workloads can be executed on this agent.
   # This is a more flexible alternative to (and eventual replacement of) 'agentEnvironment'.
