@@ -79,6 +79,7 @@ spec:
           {{- toYaml .Values.resources | nindent 10 }}
         envFrom:
         {{- include "superblocks-agent.key" . | indent 8 }}
+        {{- include "superblocks-agent.redis-password" . | indent 8 }}
         {{- with (concat .Values.envFrom .Values.envFrom) }}
           {{- toYaml . | nindent 8 }}
         {{- end }}

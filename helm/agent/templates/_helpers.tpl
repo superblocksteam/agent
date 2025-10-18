@@ -50,6 +50,13 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Redis password secret name
+*/}}
+{{- define "superblocks-agent.redis-password-name" -}}
+{{ printf "%s-redis-password" (include "superblocks-agent.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end -}}
+
+{{/*
 Parse multiple extraEnvs
 */}}
 {{- define "extra-env" -}}
@@ -74,6 +81,19 @@ Agent key
 {{- else }}
 - secretRef:
     name: {{ .Values.superblocks.agentKeyExistingSecret }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Agent's internal redis password
+*/}}
+{{- define "superblocks-agent.redis-password" -}}
+{{- if not .Values.superblocks.agentRedisPasswordExistingSecret }}
+- secretRef:
+    name: {{ include "superblocks-agent.redis-password-name" . }}
+{{- else }}
+- secretRef:
+    name: {{ .Values.superblocks.agentRedisPasswordExistingSecret }}
 {{- end }}
 {{- end -}}
 
