@@ -79,8 +79,7 @@ spec:
         - "--intake.metadata.url={{ .Values.observability.metadata.intake.url }}"
         - "--intake.event.url={{ .Values.observability.event.intake.url }}"
         - "--launchdarkly.local=false"
-        # Disabling temporarily due to LD incident on 2025-10-20
-        - "--quotas.enabled=false"
+        - "--quotas.enabled=true"
         - "--registration.enabled=false"
         - "--signature.verification.enabled=false"
         - "--auth.jwt.enabled=true"
