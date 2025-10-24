@@ -8870,7 +8870,7 @@ proto.api.v1.Block.prototype.hasSend = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77]];
+proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78]];
 
 /**
  * @enum {number}
@@ -8952,7 +8952,8 @@ proto.api.v1.Step.ConfigCase = {
   STABILITYAI: 74,
   GEMINI: 75,
   KINESIS: 76,
-  CONFLUENCE: 77
+  CONFLUENCE: 77,
+  OPENAI_V2: 78
 };
 
 /**
@@ -9069,7 +9070,8 @@ perplexity: (f = msg.getPerplexity()) && plugins_restapiintegration_v1_plugin_pb
 stabilityai: (f = msg.getStabilityai()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
 gemini: (f = msg.getGemini()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
 kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f)
+confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9489,6 +9491,11 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
       var value = new plugins_restapiintegration_v1_plugin_pb.Plugin;
       reader.readMessage(value,plugins_restapiintegration_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
       msg.setConfluence(value);
+      break;
+    case 78:
+      var value = new plugins_restapiintegration_v1_plugin_pb.Plugin;
+      reader.readMessage(value,plugins_restapiintegration_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
+      msg.setOpenaiV2(value);
       break;
     default:
       reader.skipField();
@@ -10130,6 +10137,14 @@ proto.api.v1.Step.serializeBinaryToWriter = function(message, writer) {
   if (f != null) {
     writer.writeMessage(
       77,
+      f,
+      plugins_restapiintegration_v1_plugin_pb.Plugin.serializeBinaryToWriter
+    );
+  }
+  f = message.getOpenaiV2();
+  if (f != null) {
+    writer.writeMessage(
+      78,
       f,
       plugins_restapiintegration_v1_plugin_pb.Plugin.serializeBinaryToWriter
     );
@@ -12964,6 +12979,43 @@ proto.api.v1.Step.prototype.clearConfluence = function() {
  */
 proto.api.v1.Step.prototype.hasConfluence = function() {
   return jspb.Message.getField(this, 77) != null;
+};
+
+
+/**
+ * optional plugins.restapiintegration.v1.Plugin openai_v2 = 78;
+ * @return {?proto.plugins.restapiintegration.v1.Plugin}
+ */
+proto.api.v1.Step.prototype.getOpenaiV2 = function() {
+  return /** @type{?proto.plugins.restapiintegration.v1.Plugin} */ (
+    jspb.Message.getWrapperField(this, plugins_restapiintegration_v1_plugin_pb.Plugin, 78));
+};
+
+
+/**
+ * @param {?proto.plugins.restapiintegration.v1.Plugin|undefined} value
+ * @return {!proto.api.v1.Step} returns this
+*/
+proto.api.v1.Step.prototype.setOpenaiV2 = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 78, proto.api.v1.Step.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.Step} returns this
+ */
+proto.api.v1.Step.prototype.clearOpenaiV2 = function() {
+  return this.setOpenaiV2(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.Step.prototype.hasOpenaiV2 = function() {
+  return jspb.Message.getField(this, 78) != null;
 };
 
 

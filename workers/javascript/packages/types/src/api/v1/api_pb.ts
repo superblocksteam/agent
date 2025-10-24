@@ -2392,6 +2392,12 @@ export class Step extends Message<Step> {
      */
     value: Plugin$12;
     case: "confluence";
+  } | {
+    /**
+     * @generated from field: plugins.restapiintegration.v1.Plugin openai_v2 = 78;
+     */
+    value: Plugin$12;
+    case: "openaiV2";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Step>) {
@@ -2479,6 +2485,7 @@ export class Step extends Message<Step> {
     { no: 75, name: "gemini", kind: "message", T: Plugin$12, oneof: "config" },
     { no: 76, name: "kinesis", kind: "message", T: Plugin$35, oneof: "config" },
     { no: 77, name: "confluence", kind: "message", T: Plugin$12, oneof: "config" },
+    { no: 78, name: "openai_v2", kind: "message", T: Plugin$12, oneof: "config" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Step {
