@@ -1603,6 +1603,11 @@ export class Step extends jspb.Message {
     getConfluence(): plugins_restapiintegration_v1_plugin_pb.Plugin | undefined;
     setConfluence(value?: plugins_restapiintegration_v1_plugin_pb.Plugin): Step;
 
+    hasOpenaiV2(): boolean;
+    clearOpenaiV2(): void;
+    getOpenaiV2(): plugins_restapiintegration_v1_plugin_pb.Plugin | undefined;
+    setOpenaiV2(value?: plugins_restapiintegration_v1_plugin_pb.Plugin): Step;
+
     getConfigCase(): Step.ConfigCase;
 
     serializeBinary(): Uint8Array;
@@ -1694,6 +1699,7 @@ export namespace Step {
         gemini?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
         kinesis?: plugins_kinesis_v1_plugin_pb.Plugin.AsObject,
         confluence?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
+        openaiV2?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
     }
 
     export enum ConfigCase {
@@ -1774,6 +1780,7 @@ export namespace Step {
         GEMINI = 75,
         KINESIS = 76,
         CONFLUENCE = 77,
+        OPENAI_V2 = 78,
     }
 
 }

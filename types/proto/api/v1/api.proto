@@ -455,5 +455,6 @@ message Step {
     plugins.restapiintegration.v1.Plugin gemini = 75 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
     plugins.kinesis.v1.Plugin kinesis = 76;
     plugins.restapiintegration.v1.Plugin confluence = 77 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.restapiintegration.v1.Plugin openai_v2 = 78 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
   }
 }

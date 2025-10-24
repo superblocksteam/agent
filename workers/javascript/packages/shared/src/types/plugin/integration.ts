@@ -43,8 +43,10 @@ export enum ExtendedIntegrationPluginId {
   STABILITYAI = 'stabilityai',
   COHERE = 'cohere',
   GEMINI = 'gemini',
+  OPENAI_V2 = 'openai_v2',
   // Not native OpenAPI-backed integrations, but leveraging the same auth system
-  GOOGLE_SHEETS_PLUGIN_ID = 'gsheets'
+  GOOGLE_SHEETS_PLUGIN_ID = 'gsheets',
+  SNOWFLAKE = 'snowflake'
 }
 
 // Note that we cannot import the plugins themselves to reference the id as
@@ -87,7 +89,8 @@ export const ExtendedIntegrationPluginMap: Record<string, string> = {
   [ExtendedIntegrationPluginId.FIREWORKS]: ExtendedIntegrationPluginId.REST_API,
   [ExtendedIntegrationPluginId.STABILITYAI]: ExtendedIntegrationPluginId.REST_API,
   [ExtendedIntegrationPluginId.COHERE]: ExtendedIntegrationPluginId.REST_API,
-  [ExtendedIntegrationPluginId.GEMINI]: ExtendedIntegrationPluginId.REST_API
+  [ExtendedIntegrationPluginId.GEMINI]: ExtendedIntegrationPluginId.REST_API,
+  [ExtendedIntegrationPluginId.OPENAI_V2]: ExtendedIntegrationPluginId.REST_API
 };
 
 export const EXTENDED_INTEGRATION_PLUGIN_IDS = Object.values(ExtendedIntegrationPluginId).map((val) => val as string);
@@ -115,7 +118,11 @@ export const extendsRestApiIntegrationPlugin = (pluginId = ''): boolean => {
 };
 
 export const extendsAnyApiIntegrationPlugin = (pluginId = ''): boolean => {
-  return getBasePluginId(pluginId) === ExtendedIntegrationPluginId.REST_API || pluginId === ExtendedIntegrationPluginId.GRAPHQL;
+  return (
+    getBasePluginId(pluginId) === ExtendedIntegrationPluginId.REST_API ||
+    pluginId === ExtendedIntegrationPluginId.GRAPHQL ||
+    pluginId === ExtendedIntegrationPluginId.SNOWFLAKE
+  );
 };
 
 export const shouldInjectAuthHeaders = (pluginId = ''): boolean => {
