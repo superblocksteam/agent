@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Set a default password for the agent's internal redis instance
+- Update VM2 to patch vulnerability
 
 ## v1.29.0
 - Use Databricks Unity Catalog to fetch metadata via REST
