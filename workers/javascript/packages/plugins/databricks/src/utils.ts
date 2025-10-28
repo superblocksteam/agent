@@ -7,7 +7,7 @@ export function getConnectionOptionsFromDatasourceConfiguration(
   datasourceConfiguration: DatabricksDatasourceConfiguration
 ): ConnectionOptions {
   let connectionOptions: ConnectionOptions;
-  
+
   switch (datasourceConfiguration.connection?.connectionType) {
     case DatabricksPluginV1.Plugin_ConnectionType.M2M:
       connectionOptions = {
@@ -22,7 +22,7 @@ export function getConnectionOptionsFromDatasourceConfiguration(
       if (!datasourceConfiguration.authConfig?.authToken) {
         throw new IntegrationError('OAuth Token Exchange token expected but not present', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD);
       }
-      
+
       connectionOptions = {
         host: datasourceConfiguration.connection?.hostUrl as string,
         path: datasourceConfiguration.connection?.path as string,
@@ -44,6 +44,6 @@ export function getConnectionOptionsFromDatasourceConfiguration(
     connectionOptions.port = datasourceConfiguration.connection?.port;
   }
   // add the partner client id
-  connectionOptions.clientId = DATABRICKS_PARTNER_CLIENT_ID;
+  connectionOptions.userAgentEntry = DATABRICKS_PARTNER_CLIENT_ID;
   return connectionOptions;
 }

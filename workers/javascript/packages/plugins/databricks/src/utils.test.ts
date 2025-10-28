@@ -7,19 +7,19 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
     {
       description: 'no connection type',
       datasourceConfiguration: { connection: { port: 1234, hostUrl: 'hostUrl', path: 'path', token: 'token' } },
-      expectedConnectionOptions: { host: 'hostUrl', path: 'path', port: 1234, token: 'token', clientId: 'Superblocks' }
+      expectedConnectionOptions: { host: 'hostUrl', path: 'path', port: 1234, token: 'token', userAgentEntry: 'Superblocks' }
     },
     {
       description: 'port not given',
       datasourceConfiguration: { connection: { hostUrl: 'hostUrl', path: 'path', token: 'token' } },
-      expectedConnectionOptions: { host: 'hostUrl', path: 'path', token: 'token', clientId: 'Superblocks' }
+      expectedConnectionOptions: { host: 'hostUrl', path: 'path', token: 'token', userAgentEntry: 'Superblocks' }
     },
     {
       description: 'connection type PAT',
       datasourceConfiguration: {
         connection: { connectionType: 'CONNECTION_TYPE_PAT', port: 1234, hostUrl: 'hostUrl', path: 'path', token: 'token' }
       },
-      expectedConnectionOptions: { host: 'hostUrl', path: 'path', port: 1234, token: 'token', clientId: 'Superblocks' }
+      expectedConnectionOptions: { host: 'hostUrl', path: 'path', port: 1234, token: 'token', userAgentEntry: 'Superblocks' }
     },
     {
       description: 'connection type M2M',
@@ -40,7 +40,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         port: 1234,
         oauthClientId: 'oauthClientId',
         oauthClientSecret: 'oauthClientSecret',
-        clientId: 'Superblocks'
+        userAgentEntry: 'Superblocks'
       }
     },
     {
@@ -61,7 +61,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         path: '/sql/1.0/warehouses/abc123',
         port: 443,
         token: 'oauth-exchanged-token-abc123',
-        clientId: 'Superblocks'
+        userAgentEntry: 'Superblocks'
       }
     },
     {
@@ -78,7 +78,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         host: 'hostUrl',
         path: 'path',
         token: 'pat-token',
-        clientId: 'Superblocks'
+        userAgentEntry: 'Superblocks'
       }
     },
     {
@@ -98,7 +98,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         path: 'path',
         oauthClientId: 'm2m-client-id',
         oauthClientSecret: 'm2m-client-secret',
-        clientId: 'Superblocks'
+        userAgentEntry: 'Superblocks'
       }
     },
     {
@@ -117,7 +117,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         host: 'hostUrl',
         path: 'path',
         token: 'exchanged-token',
-        clientId: 'Superblocks'
+        userAgentEntry: 'Superblocks'
       }
     }
   ])('$description', async ({ datasourceConfiguration, expectedConnectionOptions }) => {
@@ -139,7 +139,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         // authConfig missing
       };
 
-      expect(() => 
+      expect(() =>
         getConnectionOptionsFromDatasourceConfiguration(datasourceConfiguration as DatabricksDatasourceConfiguration)
       ).toThrow(new IntegrationError(
         'OAuth Token Exchange token expected but not present',
@@ -159,7 +159,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         }
       };
 
-      expect(() => 
+      expect(() =>
         getConnectionOptionsFromDatasourceConfiguration(datasourceConfiguration as DatabricksDatasourceConfiguration)
       ).toThrow(new IntegrationError(
         'OAuth Token Exchange token expected but not present',
@@ -187,7 +187,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
           host: 'hostUrl',
           path: 'path',
           token: 'oauth-token',
-          clientId: 'Superblocks'
+          userAgentEntry: 'Superblocks'
         }
       }
     ])('$description', async ({ datasourceConfiguration, expectedConnectionOptions }) => {
@@ -196,12 +196,12 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
       const actualConnectionOptions = getConnectionOptionsFromDatasourceConfiguration(
         datasourceConfiguration as any // bypassing type check for string
       );
-      
+
       // This will currently fall through to default (PAT) case
       // If we add string support, this should match expectedConnectionOptions
       expect(actualConnectionOptions.host).toBe(expectedConnectionOptions.host);
       expect(actualConnectionOptions.path).toBe(expectedConnectionOptions.path);
-      expect(actualConnectionOptions.clientId).toBe(expectedConnectionOptions.clientId);
+      expect(actualConnectionOptions.userAgentEntry).toBe(expectedConnectionOptions.userAgentEntry);
     });
   });
 });

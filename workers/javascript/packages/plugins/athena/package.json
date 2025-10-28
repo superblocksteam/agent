@@ -5,8 +5,7 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "engines": {
-    "node": "20.19.4",
-    "npm": "^10.2.4"
+    "node": "20.19.5"
   },
   "scripts": {
     "start": "chokidar '**/*.ts' '../../shared-backend/**/*' -c 'npm run build'",
@@ -25,7 +24,7 @@
     "@aws-sdk/client-glue": "3.758.0",
     "@bufbuild/protobuf": "1.2.0",
     "@superblocks/shared": "workspace:*",
-        "@superblocksteam/types": "workspace:*",
+    "@superblocksteam/types": "workspace:*",
     "lodash": "4.17.21"
   },
   "devDependencies": {

@@ -4,16 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  foreground-child>cross-spawn: 7.0.6
-
 importers:
 
-  .:
-    devDependencies:
-      pnpm:
-        specifier: 9.7.1
-        version: 9.7.1
+  .: {}
 
   packages/fleets/all:
     dependencies:
@@ -904,8 +897,8 @@ importers:
   packages/plugins/databricks:
     dependencies:
       '@databricks/sql':
-        specifier: 1.8.4
-        version: 1.8.4
+        specifier: 1.10.0
+        version: 1.10.0
       '@superblocks/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -3934,8 +3927,8 @@ packages:
   '@dabh/diagnostics@2.0.3':
     resolution: {integrity: sha512-hrlQOIi7hAfzsMqlGSFyVucrx38O+j6wiGOf//H2ecvIEqYN4ADBSS2iLMh5UFyDunCNniUIPk/q3riFv45xRA==}
 
-  '@databricks/sql@1.8.4':
-    resolution: {integrity: sha512-FB8JfRMTANMdzVnXjdeRK+FF8FWgoq8goXzAQIikz2Q1QYET77WJrCsbLaQLX3EfWy6HabNHVv0C2xlcFmHITg==}
+  '@databricks/sql@1.10.0':
+    resolution: {integrity: sha512-oK4T7+dVRi31PuGTUHWu4cDS0Yi1uu5Ei7ELLhFMBymJiJfww1PkY+QezkTPWakdMbfH/+D8kew9dXQiQxjgLQ==}
     engines: {node: '>=14.0.0'}
 
   '@eslint-community/eslint-utils@4.4.0':
@@ -7702,11 +7695,6 @@ packages:
   please-upgrade-node@3.2.0:
     resolution: {integrity: sha512-gQR3WpIgNIKwBMVLkpMUeR3e1/E1y42bqDQZfql+kDeXd8COYfM8PQA4X6y7a8u9Ua9FHmsrrmirW2vHs45hWg==}
 
-  pnpm@9.7.1:
-    resolution: {integrity: sha512-+vNEry1splxMXIwiJOp3qBpeiFnLxOBrFRHdzi8BUVEkMd0Z5q/zHyxqj18qztm9InPh/tfdTeGGiYQFnSxCRw==}
-    engines: {node: '>=18.12'}
-    hasBin: true
-
   possible-typed-array-names@1.0.0:
     resolution: {integrity: sha512-d7Uw+eZoloe0EHDIYoe+bQ5WXnGMOpmiZFTuMWCwpjzzkL2nTjcKiAk4hh8TjnGye2TwWOk3UXucZ+3rbmBa8Q==}
     engines: {node: '>= 0.4'}
@@ -10383,7 +10371,7 @@ snapshots:
       enabled: 2.0.0
       kuler: 2.0.0
 
-  '@databricks/sql@1.8.4':
+  '@databricks/sql@1.10.0':
     dependencies:
       apache-arrow: 13.0.0
       commander: 9.5.0
@@ -12999,7 +12987,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.8.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@2.5.0(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0):
+  eslint-module-utils@2.8.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@2.5.0)(eslint@8.57.0):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -13020,7 +13008,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.8.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@2.5.0(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0)
+      eslint-module-utils: 2.8.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@2.5.0)(eslint@8.57.0)
       hasown: 2.0.2
       is-core-module: 2.15.0
       is-glob: 4.0.3
@@ -15117,8 +15105,6 @@ snapshots:
   please-upgrade-node@3.2.0:
     dependencies:
       semver-compare: 1.0.0
-
-  pnpm@9.7.1: {}
 
   possible-typed-array-names@1.0.0: {}
 

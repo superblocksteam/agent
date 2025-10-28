@@ -15,8 +15,7 @@
     "prettier:check": "prettier --check 'src/**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
   },
   "engines": {
-    "node": "^20.19.4",
-    "pnpm": "^8.15.5"
+    "node": "^20.19.5"
   },
   "keywords": [],
   "author": "",
