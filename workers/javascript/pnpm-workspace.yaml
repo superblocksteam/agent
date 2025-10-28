@@ -1,3 +1,16 @@
 ---
 packages:
   - 'packages/**'
+onlyBuiltDependencies:
+  - "@swc/core"
+  - couchbase
+  - cpu-features
+  - lz4
+  - nice-napi
+  - oracledb
+  - protobufjs
+  - ssh2
+  - aws-sdk
+  - bcrypt
+  - deasync
+  - node-expat

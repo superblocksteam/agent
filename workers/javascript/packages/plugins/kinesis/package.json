@@ -5,8 +5,7 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "engines": {
-    "node": "20.19.4",
-    "npm": "^10.2.4"
+    "node": "20.19.5"
   },
   "scripts": {
     "start": "chokidar '**/*.ts' '../../shared-backend/**/*' -c 'npm run build'",

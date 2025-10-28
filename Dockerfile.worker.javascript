@@ -1,12 +1,13 @@
 # syntax=docker/dockerfile:1.9.0
 
-ARG NODE_VERSION=20.19.4
+ARG NODE_VERSION=20.19.5
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION} AS builder
 
 ARG DEASYNC_VERSION=0.1.29
 
 WORKDIR /workers/javascript/
 
+COPY ./workers/javascript/pnpm-workspace.yaml ./
 COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock.yaml ./
 
 RUN npm install -g clean-modules && \

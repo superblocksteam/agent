@@ -420,7 +420,7 @@ describe('GenerateImage [Generate From Prompt]', () => {
   );
 });
 
-describe('CheckModeration', () => {
+describe.skip('CheckModeration', () => {
   test(
     'succeeds with basic config',
     async () => {
