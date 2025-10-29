@@ -91,6 +91,10 @@ export namespace Plugin {
         clearOauthClientSecret(): void;
         getOauthClientSecret(): string | undefined;
         setOauthClientSecret(value: string): DatabricksConnection;
+        clearScopedCatalogSchemasList(): void;
+        getScopedCatalogSchemasList(): Array<Plugin.ScopedCatalogSchemas>;
+        setScopedCatalogSchemasList(value: Array<Plugin.ScopedCatalogSchemas>): DatabricksConnection;
+        addScopedCatalogSchemas(value?: Plugin.ScopedCatalogSchemas, index?: number): Plugin.ScopedCatalogSchemas;
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): DatabricksConnection.AsObject;
@@ -113,6 +117,32 @@ export namespace Plugin {
             token?: string,
             oauthClientId?: string,
             oauthClientSecret?: string,
+            scopedCatalogSchemasList: Array<Plugin.ScopedCatalogSchemas.AsObject>,
+        }
+    }
+
+    export class ScopedCatalogSchemas extends jspb.Message { 
+        getCatalog(): string;
+        setCatalog(value: string): ScopedCatalogSchemas;
+        clearSchemasList(): void;
+        getSchemasList(): Array<string>;
+        setSchemasList(value: Array<string>): ScopedCatalogSchemas;
+        addSchemas(value: string, index?: number): string;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): ScopedCatalogSchemas.AsObject;
+        static toObject(includeInstance: boolean, msg: ScopedCatalogSchemas): ScopedCatalogSchemas.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: ScopedCatalogSchemas, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): ScopedCatalogSchemas;
+        static deserializeBinaryFromReader(message: ScopedCatalogSchemas, reader: jspb.BinaryReader): ScopedCatalogSchemas;
+    }
+
+    export namespace ScopedCatalogSchemas {
+        export type AsObject = {
+            catalog: string,
+            schemasList: Array<string>,
         }
     }
 

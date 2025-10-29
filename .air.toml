@@ -56,6 +56,8 @@ full_bin = """ \
         --events.cloud.enabled=${SUPERBLOCKS_ORCHESTRATOR_EVENTS_CLOUD_ENABLED-false} \
         --worker.go.enabled=true \
         --file.server.url=http://host.docker.internal:18080/v2/files \
+        --transport.redis.password=koala \
+        --store.redis.password=koala
     """
 include_dir = [  ]
 include_ext = [ "go", "tpl", "tmpl", "json", "mod", "sum", "toml" ]

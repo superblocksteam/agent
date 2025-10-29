@@ -137,6 +137,7 @@ func init() {
 	pflag.Duration("transport.redis.timeout.pool", 5*time.Minute, "")
 	pflag.Duration("transport.redis.ack.timeout", 10*time.Second, "")
 	pflag.Duration("transport.redis.response.timeout", 5*time.Minute, "")
+	pflag.Duration("transport.redis.metadata.timeout", 30*time.Second, "Timeout for metadata operations")
 	pflag.String("store.redis.host", "127.0.0.1", "")
 	pflag.Int("store.redis.port", 6379, "")
 	pflag.String("store.redis.password", "", "The password for the redis server being used for KV store.")
@@ -542,6 +543,7 @@ func main() {
 			redistransport.WithRedisClient(transportRedisClient),
 			redistransport.WithHeartbeatInterval(viper.GetDuration("transport.redis.ack.timeout")),
 			redistransport.WithTimeout(viper.GetDuration("transport.redis.response.timeout")),
+			redistransport.WithMetadataTimeout(viper.GetDuration("transport.redis.metadata.timeout")),
 		)
 	}
 

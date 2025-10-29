@@ -96,7 +96,11 @@ func parse(err error) error {
 		return status.New(codes.ResourceExhausted, err.Error()).Err()
 	}
 
-	if _, ok := sberrors.IsIntegrationError(err); ok {
+	if ie, ok := sberrors.IsIntegrationError(err); ok {
+		if ie.Code() == commonv1.Code_CODE_INTEGRATION_QUERY_TIMEOUT {
+			metrics.TransportErrorsTotal.WithLabelValues(codes.DeadlineExceeded.String()).Inc()
+			return status.New(codes.DeadlineExceeded, err.Error()).Err()
+		}
 		metrics.TransportErrorsTotal.WithLabelValues(codes.InvalidArgument.String()).Inc()
 		return status.New(codes.InvalidArgument, err.Error()).Err()
 	}

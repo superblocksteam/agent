@@ -15,9 +15,9 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var plugins_common_v1_auth_pb = require('../../../plugins/common/v1/auth_pb');
+var plugins_common_v1_auth_pb = require('../../../plugins/common/v1/auth_pb.js');
 goog.object.extend(proto, plugins_common_v1_auth_pb);
-var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
+var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
 goog.exportSymbol('proto.plugins.cosmosdb.v1.Plugin', null, global);
 goog.exportSymbol('proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection', null, global);

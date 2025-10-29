@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb";
+import { DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb.js";
 
 /**
  * @generated from message plugins.redis.v1.Plugin

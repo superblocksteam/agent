@@ -15,13 +15,13 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
+var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
 goog.object.extend(proto, buf_validate_validate_pb);
-var plugins_common_v1_metadata_pb = require('../../plugins/common/v1/metadata_pb');
+var plugins_common_v1_metadata_pb = require('../../plugins/common/v1/metadata_pb.js');
 goog.object.extend(proto, plugins_common_v1_metadata_pb);
-var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
+var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
-var validate_validate_pb = require('../../validate/validate_pb');
+var validate_validate_pb = require('../../validate/validate_pb.js');
 goog.object.extend(proto, validate_validate_pb);
 goog.exportSymbol('proto.ai.v1.Metadata', null, global);
 goog.exportSymbol('proto.ai.v1.Metadata.ConfigCase', null, global);

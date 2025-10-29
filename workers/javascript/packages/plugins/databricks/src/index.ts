@@ -74,6 +74,7 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
   protected readonly caseSensitivityWrapCharacter = '`';
 
   private connectionTimeoutMillis = TEST_CONNECTION_TIMEOUT_MS;
+  private metadataConcurrency = parseInt(process.env.DATABRICKS_METADATA_CONCURRENCY || '4', 10);
 
   public async executePooled(
     props: PluginExecutionProps<DatabricksDatasourceConfiguration, DatabricksActionConfiguration>,
@@ -181,6 +182,7 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
   public async metadata(datasourceConfiguration: DatabricksDatasourceConfiguration): Promise<DatasourceMetadataDto> {
     const startTime = Date.now();
     this.logger.debug(`[Databricks Metadata] Starting metadata fetch at ${startTime.toString()}`);
+    this.logger.info(`[Databricks Metadata] Using concurrency=${this.metadataConcurrency}`);
 
     try {
       // Get connection config for API authentication
@@ -207,10 +209,58 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
         'Content-Type': 'application/json'
       };
 
-      // Get all catalogs, schemas, and tables
-      const catalogs = await this.fetchAllCatalogs(baseUrl, headers);
-      const allSchemas = await this.fetchAllSchemas(baseUrl, headers, catalogs);
-      const tablesWithColumns = await this.fetchAllTablesWithColumns(baseUrl, headers, allSchemas);
+      // Get scoped catalog-schemas pairs from configuration
+      const scopedCatalogSchemas = datasourceConfiguration.connection?.scopedCatalogSchemas || [];
+
+      let catalogs: CatalogResponse[];
+      let schemasToFetch: SchemaResponse[];
+
+      // If scoped catalog-schemas pairs are provided, only fetch those specific catalogs/schemas
+      if (scopedCatalogSchemas.length > 0) {
+        this.logger.info(`[Databricks Metadata] Using ${scopedCatalogSchemas.length} scoped catalog-schema pair(s)`);
+
+        catalogs = [];
+        schemasToFetch = [];
+
+        for (const entry of scopedCatalogSchemas) {
+          const catalog = entry.catalog;
+          const schemas = entry.schemas || [];
+
+          if (!catalog) continue;
+
+          catalogs.push({ name: catalog });
+
+          this.logger.info(`[Databricks Metadata] Fetching schemas from catalog: ${catalog}...`);
+          const allSchemasInCatalog = await this.fetchAllSchemas(baseUrl, headers, [{ name: catalog }]);
+
+          // If specific schemas are provided for this catalog, filter to only those
+          if (schemas.length > 0) {
+            this.logger.info(`[Databricks Metadata] Filtering to schemas in ${catalog}: ${schemas.join(', ')}`);
+            const filtered = allSchemasInCatalog.filter(schema => schemas.includes(schema.name));
+            schemasToFetch.push(...filtered);
+            this.logger.info(`[Databricks Metadata] Added ${filtered.length} schemas from catalog ${catalog}`);
+          } else {
+            // If no specific schemas provided, include all schemas from this catalog
+            schemasToFetch.push(...allSchemasInCatalog);
+            this.logger.info(`[Databricks Metadata] Added all ${allSchemasInCatalog.length} schemas from catalog ${catalog}`);
+          }
+        }
+
+        this.logger.info(`[Databricks Metadata] Total: ${schemasToFetch.length} schemas across ${catalogs.length} catalog(s)`);
+      } else {
+        // Default behavior: fetch all catalogs and their schemas
+        this.logger.info(`[Databricks Metadata] Fetching catalogs...`);
+        catalogs = await this.fetchAllCatalogs(baseUrl, headers);
+        this.logger.info(`[Databricks Metadata] Found ${catalogs.length} catalogs`);
+
+        this.logger.info(`[Databricks Metadata] Fetching schemas from ${catalogs.length} catalogs...`);
+        schemasToFetch = await this.fetchAllSchemas(baseUrl, headers, catalogs);
+        this.logger.info(`[Databricks Metadata] Found ${schemasToFetch.length} schemas`);
+      }
+
+      this.logger.info(`[Databricks Metadata] Fetching tables from ${schemasToFetch.length} schemas...`);
+      const tablesWithColumns = await this.fetchAllTablesWithColumns(baseUrl, headers, schemasToFetch);
+      this.logger.info(`[Databricks Metadata] Found ${tablesWithColumns.length} tables`);
 
       // Only include schemas that have tables after filtering
       const schemasWithTables = new Set(tablesWithColumns.map(table => table.schema));
@@ -219,7 +269,7 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
       const totalTime = Date.now() - startTime;
       this.logger.debug(`[Databricks Metadata] SUCCESS: Total metadata fetch completed in ${totalTime}ms`);
       this.logger.debug(
-        `[Databricks Metadata] Final counts: ${catalogs.length} catalogs, ${schemas.length} schemas (${allSchemas.length} total), ${tablesWithColumns.length} tables`
+        `[Databricks Metadata] Final counts: ${catalogs.length} catalogs, ${schemas.length} schemas (${schemasToFetch.length} total), ${tablesWithColumns.length} tables`
       );
 
       return {
@@ -228,17 +278,95 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
     } catch (err) {
       const totalTime = Date.now() - startTime;
       this.logger.error(`[Databricks Metadata] ERROR after ${totalTime}ms: ${err.message}`);
+      
       throw new IntegrationError(`Failed to connect to ${this.pluginName}, ${err.message}`, ErrorCode.INTEGRATION_NETWORK, {
         pluginName: this.pluginName
       });
     }
   }
 
+  private async fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+    let lastError: Error | null = null;
+    let retryDelay = 1000; // Start with 1 second
+    // Use 15 minutes to prevent requests from hanging forever
+    const REQUEST_TIMEOUT_MS = 15 * 60 * 1000;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        // If we get a 429, retry with exponential backoff + jitter
+        if (response.status === 429) {
+          if (attempt < maxRetries) {
+            const retryAfter = response.headers.get('Retry-After');
+            let waitTime: number;
+            if (retryAfter) {
+              waitTime = parseInt(retryAfter, 10) * 1000;
+            } else {
+              // Add jitter: random value between 0.5x and 1.5x the base delay
+              const jitter = 0.5 + Math.random();
+              waitTime = Math.floor(retryDelay * jitter);
+            }
+            
+            this.logger.warn(`[Databricks] Rate limited (429), retrying in ${waitTime}ms (attempt ${attempt + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            retryDelay *= 2; // Exponential backoff
+            continue;
+          }
+          throw new IntegrationError(
+            `Rate limit exceeded after ${maxRetries} retries`,
+            ErrorCode.INTEGRATION_RATE_LIMIT,
+            { pluginName: this.pluginName }
+          );
+        }
+        
+        return response;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        lastError = err;
+        
+        // Check if it was a timeout
+        if (err.name === 'AbortError') {
+          this.logger.error(`[Databricks] Request timeout after ${REQUEST_TIMEOUT_MS}ms (attempt ${attempt + 1}/${maxRetries})`);
+          if (attempt < maxRetries) {
+            this.logger.warn(`[Databricks] Retrying after timeout in ${retryDelay}ms`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            retryDelay *= 2;
+            continue;
+          }
+          throw new IntegrationError(
+            `Request timed out after ${REQUEST_TIMEOUT_MS}ms`,
+            ErrorCode.INTEGRATION_NETWORK,
+            { pluginName: this.pluginName }
+          );
+        }
+        
+        if (attempt < maxRetries && err.message?.includes('fetch')) {
+          this.logger.warn(`[Databricks] Fetch error, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${maxRetries}): ${err.message}`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          retryDelay *= 2;
+          continue;
+        }
+        throw err;
+      }
+    }
+    
+    throw lastError || new Error('Max retries exceeded');
+  }
+
   private async fetchAllCatalogs(baseUrl: string, headers: Record<string, string>): Promise<CatalogResponse[]> {
-    const response = await fetch(`${baseUrl}/api/2.1/unity-catalog/catalogs`, {
-      method: 'GET',
-      headers
-    });
+    const response = await this.fetchWithRetry(
+      `${baseUrl}/api/2.1/unity-catalog/catalogs`,
+      { method: 'GET', headers }
+    );
 
     if (!response.ok) {
       throw new IntegrationError(`Failed to fetch catalogs: ${response.statusText}`);
@@ -249,17 +377,21 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
   }
 
   private async fetchAllSchemas(baseUrl: string, headers: Record<string, string>, catalogs: CatalogResponse[]): Promise<SchemaResponse[]> {
-    const CONCURRENCY = 10;
     const allSchemas: SchemaResponse[] = [];
 
-    // Process catalogs in batches of 10
-    const catalogBatches = chunk(catalogs, CONCURRENCY);
-    for (const catalogBatch of catalogBatches) {
+    // Process catalogs in batches
+    const catalogBatches = chunk(catalogs, this.metadataConcurrency);
+    const totalBatches = catalogBatches.length;
+    
+    for (let i = 0; i < catalogBatches.length; i++) {
+      const catalogBatch = catalogBatches[i];
+      this.logger.info(`[Databricks Metadata] Fetching schemas batch ${i + 1}/${totalBatches} (${catalogBatch.map(c => c.name).join(', ')})`);
+      
       const schemaBatchPromises = catalogBatch.map(async (catalog) => {
-        const response = await fetch(`${baseUrl}/api/2.1/unity-catalog/schemas?catalog_name=${encodeURIComponent(catalog.name)}`, {
-          method: 'GET',
-          headers
-        });
+        const response = await this.fetchWithRetry(
+          `${baseUrl}/api/2.1/unity-catalog/schemas?catalog_name=${encodeURIComponent(catalog.name)}`,
+          { method: 'GET', headers }
+        );
 
         if (!response.ok) {
           throw new IntegrationError(`Failed to fetch schemas for catalog ${catalog.name}: ${response.statusText}`);
@@ -273,7 +405,9 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
       });
 
       const schemaBatches = await Promise.all(schemaBatchPromises);
+      const batchSchemaCount = schemaBatches.flat().length;
       allSchemas.push(...schemaBatches.flat());
+      this.logger.info(`[Databricks Metadata] Completed schemas batch ${i + 1}/${totalBatches}, found ${batchSchemaCount} schemas`);
     }
 
     // Filter out information_schema to avoid system tables
@@ -283,12 +417,16 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
   }
 
   private async fetchAllTablesWithColumns(baseUrl: string, headers: Record<string, string>, schemas: SchemaResponse[]): Promise<Table[]> {
-    const CONCURRENCY = 10;
     const allTables: Table[] = [];
 
-    // Process schemas in batches of 10
-    const schemaBatches = chunk(schemas, CONCURRENCY);
-    for (const schemaBatch of schemaBatches) {
+    // Process schemas in batches
+    const schemaBatches = chunk(schemas, this.metadataConcurrency);
+    const totalBatches = schemaBatches.length;
+    
+    for (let i = 0; i < schemaBatches.length; i++) {
+      const schemaBatch = schemaBatches[i];
+      this.logger.info(`[Databricks Metadata] Fetching tables batch ${i + 1}/${totalBatches} (${schemaBatch.map(s => `${s.catalog_name}.${s.name}`).join(', ')})`);
+      
       const tableBatchPromises = schemaBatch.map(async (schema) => {
         try {
           const allTablesForSchema: TableResponse[] = [];
@@ -303,7 +441,7 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
               url.searchParams.set('page_token', nextPageToken);
             }
 
-            const response = await fetch(url.toString(), { method: 'GET', headers });
+            const response = await this.fetchWithRetry(url.toString(), { method: 'GET', headers });
 
             if (!response.ok) {
               throw new IntegrationError(`Failed to fetch tables for schema ${schema.catalog_name}.${schema.name}: ${response.statusText}`);
@@ -348,7 +486,9 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
       });
 
       const tableBatches = await Promise.all(tableBatchPromises);
+      const batchTableCount = tableBatches.flat().length;
       allTables.push(...tableBatches.flat());
+      this.logger.info(`[Databricks Metadata] Completed tables batch ${i + 1}/${totalBatches}, found ${batchTableCount} tables`);
     }
 
     return allTables;

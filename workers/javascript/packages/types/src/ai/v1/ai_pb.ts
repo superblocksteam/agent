@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message as Message$1, proto3, Struct } from "@bufbuild/protobuf";
-import { StringList } from "../../common/v1/utils_pb";
-import { Language } from "../../common/v1/language_pb";
+import { StringList } from "../../common/v1/utils_pb.js";
+import { Language } from "../../common/v1/language_pb.js";
 
 /**
  * @generated from enum ai.v1.LLM

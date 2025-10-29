@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Value } from "@bufbuild/protobuf";
-import { Error } from "../../common/v1/errors_pb";
-import { Pair } from "./store_pb";
+import { Error } from "../../common/v1/errors_pb.js";
+import { Pair } from "./store_pb.js";
 
 /**
  * @generated from message store.v1.ReadRequest

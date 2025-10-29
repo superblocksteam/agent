@@ -15,7 +15,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
+var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
 goog.exportSymbol('proto.plugins.athena.v1.Connection', null, global);
 goog.exportSymbol('proto.plugins.athena.v1.Connection.DateFolderType', null, global);

@@ -2,24 +2,24 @@
 
 'use strict';
 var grpc = require('@grpc/grpc-js');
-var api_v1_service_pb = require('../../api/v1/service_pb');
-var api_v1_api_pb = require('../../api/v1/api_pb');
-var api_v1_event_pb = require('../../api/v1/event_pb');
-var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
-var common_v1_common_pb = require('../../common/v1/common_pb');
-var common_v1_errors_pb = require('../../common/v1/errors_pb');
-var common_v1_health_pb = require('../../common/v1/health_pb');
-var google_api_annotations_pb = require('../../google/api/annotations_pb');
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb');
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
-var plugins_adls_v1_plugin_pb = require('../../plugins/adls/v1/plugin_pb');
-var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb');
-var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb');
-var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
-var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
-var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
-var store_v1_store_pb = require('../../store/v1/store_pb');
-var validate_validate_pb = require('../../validate/validate_pb');
+var api_v1_service_pb = require('../../api/v1/service_pb.js');
+var api_v1_api_pb = require('../../api/v1/api_pb.js');
+var api_v1_event_pb = require('../../api/v1/event_pb.js');
+var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
+var common_v1_common_pb = require('../../common/v1/common_pb.js');
+var common_v1_errors_pb = require('../../common/v1/errors_pb.js');
+var common_v1_health_pb = require('../../common/v1/health_pb.js');
+var google_api_annotations_pb = require('../../google/api/annotations_pb.js');
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+var plugins_adls_v1_plugin_pb = require('../../plugins/adls/v1/plugin_pb.js');
+var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb.js');
+var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb.js');
+var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb.js');
+var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb.js');
+var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb.js');
+var store_v1_store_pb = require('../../store/v1/store_pb.js');
+var validate_validate_pb = require('../../validate/validate_pb.js');
 
 function serialize_api_v1_AsyncResponse(arg) {
   if (!(arg instanceof api_v1_service_pb.AsyncResponse)) {

@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { Property, SuperblocksMetadata } from "../../../common/v1/plugin_pb";
+import { Property, SuperblocksMetadata } from "../../../common/v1/plugin_pb.js";
 
 /**
  * @generated from message plugins.workflow.v1.Tuple

@@ -2,8 +2,8 @@
 
 'use strict';
 var grpc = require('@grpc/grpc-js');
-var worker_v1_step_executor_pb = require('../../worker/v1/step_executor_pb');
-var transport_v1_transport_pb = require('../../transport/v1/transport_pb');
+var worker_v1_step_executor_pb = require('../../worker/v1/step_executor_pb.js');
+var transport_v1_transport_pb = require('../../transport/v1/transport_pb.js');
 
 function serialize_transport_v1_Request(arg) {
   if (!(arg instanceof transport_v1_transport_pb.Request)) {

@@ -15,7 +15,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var google_protobuf_descriptor_pb = require('google-protobuf/google/protobuf/descriptor_pb');
+var google_protobuf_descriptor_pb = require('google-protobuf/google/protobuf/descriptor_pb.js');
 goog.object.extend(proto, google_protobuf_descriptor_pb);
 goog.exportSymbol('proto.buf.validate.priv.Constraint', null, global);
 goog.exportSymbol('proto.buf.validate.priv.FieldConstraints', null, global);

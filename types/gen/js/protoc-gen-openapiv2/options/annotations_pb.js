@@ -15,9 +15,9 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var google_protobuf_descriptor_pb = require('google-protobuf/google/protobuf/descriptor_pb');
+var google_protobuf_descriptor_pb = require('google-protobuf/google/protobuf/descriptor_pb.js');
 goog.object.extend(proto, google_protobuf_descriptor_pb);
-var protoc$gen$openapiv2_options_openapiv2_pb = require('../../protoc-gen-openapiv2/options/openapiv2_pb');
+var protoc$gen$openapiv2_options_openapiv2_pb = require('../../protoc-gen-openapiv2/options/openapiv2_pb.js');
 goog.object.extend(proto, protoc$gen$openapiv2_options_openapiv2_pb);
 goog.exportSymbol('proto.grpc.gateway.protoc_gen_openapiv2.options.openapiv2Field', null, global);
 goog.exportSymbol('proto.grpc.gateway.protoc_gen_openapiv2.options.openapiv2Operation', null, global);

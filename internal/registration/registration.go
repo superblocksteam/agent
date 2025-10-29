@@ -57,7 +57,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"confluent":          {"0.0.1"},
 	"redpanda":           {"0.0.1"},
 	"couchbase":          {"0.0.1"},
-	"databricks":         {"0.0.3"},
+	"databricks":         {"0.0.4"},
 	"oracledb":           {"0.0.1"},
 }
 

@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Timestamp } from "@bufbuild/protobuf";
-import { Resource } from "./service_pb";
+import { Resource } from "./service_pb.js";
 
 /**
  * GET api/v1/keyrotations

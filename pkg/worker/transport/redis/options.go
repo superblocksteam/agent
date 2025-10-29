@@ -14,6 +14,7 @@ type Options struct {
 	heartbeatInterval time.Duration
 	heartbeatMisses   int
 	timeout           time.Duration
+	metadataTimeout   time.Duration
 }
 
 func WithHeartbeatInterval(interval time.Duration) func(*Options) error {
@@ -33,6 +34,13 @@ func WithLogger(logger *zap.Logger) func(*Options) error {
 func WithTimeout(timeout time.Duration) func(*Options) error {
 	return func(o *Options) error {
 		o.timeout = timeout
+		return nil
+	}
+}
+
+func WithMetadataTimeout(timeout time.Duration) func(*Options) error {
+	return func(o *Options) error {
+		o.metadataTimeout = timeout
 		return nil
 	}
 }
