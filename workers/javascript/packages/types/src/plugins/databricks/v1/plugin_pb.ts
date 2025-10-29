@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { DynamicWorkflowConfiguration, SQLBulkEdit, SQLExecution, SQLOperation } from "../../common/v1/plugin_pb";
+import { DynamicWorkflowConfiguration, SQLBulkEdit, SQLExecution, SQLOperation } from "../../common/v1/plugin_pb.js";
 
 /**
  * @generated from message plugins.databricks.v1.Plugin
@@ -168,6 +168,13 @@ export class Plugin_DatabricksConnection extends Message<Plugin_DatabricksConnec
    */
   oauthClientSecret?: string;
 
+  /**
+   * Scoped catalog and schemas for metadata filtering
+   *
+   * @generated from field: repeated plugins.databricks.v1.Plugin.ScopedCatalogSchemas scoped_catalog_schemas = 10;
+   */
+  scopedCatalogSchemas: Plugin_ScopedCatalogSchemas[] = [];
+
   constructor(data?: PartialMessage<Plugin_DatabricksConnection>) {
     super();
     proto3.util.initPartial(data, this);
@@ -185,6 +192,7 @@ export class Plugin_DatabricksConnection extends Message<Plugin_DatabricksConnec
     { no: 6, name: "token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 8, name: "oauth_client_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 9, name: "oauth_client_secret", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 10, name: "scoped_catalog_schemas", kind: "message", T: Plugin_ScopedCatalogSchemas, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_DatabricksConnection {
@@ -201,6 +209,49 @@ export class Plugin_DatabricksConnection extends Message<Plugin_DatabricksConnec
 
   static equals(a: Plugin_DatabricksConnection | PlainMessage<Plugin_DatabricksConnection> | undefined, b: Plugin_DatabricksConnection | PlainMessage<Plugin_DatabricksConnection> | undefined): boolean {
     return proto3.util.equals(Plugin_DatabricksConnection, a, b);
+  }
+}
+
+/**
+ * @generated from message plugins.databricks.v1.Plugin.ScopedCatalogSchemas
+ */
+export class Plugin_ScopedCatalogSchemas extends Message<Plugin_ScopedCatalogSchemas> {
+  /**
+   * @generated from field: string catalog = 1;
+   */
+  catalog = "";
+
+  /**
+   * @generated from field: repeated string schemas = 2;
+   */
+  schemas: string[] = [];
+
+  constructor(data?: PartialMessage<Plugin_ScopedCatalogSchemas>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "plugins.databricks.v1.Plugin.ScopedCatalogSchemas";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "catalog", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "schemas", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin_ScopedCatalogSchemas {
+    return new Plugin_ScopedCatalogSchemas().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Plugin_ScopedCatalogSchemas {
+    return new Plugin_ScopedCatalogSchemas().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Plugin_ScopedCatalogSchemas {
+    return new Plugin_ScopedCatalogSchemas().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Plugin_ScopedCatalogSchemas | PlainMessage<Plugin_ScopedCatalogSchemas> | undefined, b: Plugin_ScopedCatalogSchemas | PlainMessage<Plugin_ScopedCatalogSchemas> | undefined): boolean {
+    return proto3.util.equals(Plugin_ScopedCatalogSchemas, a, b);
   }
 }
 

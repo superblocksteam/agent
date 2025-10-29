@@ -2,12 +2,12 @@
 
 'use strict';
 var grpc = require('@grpc/grpc-js');
-var secrets_v1_store_pb = require('../../secrets/v1/store_pb');
-var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
-var common_v1_common_pb = require('../../common/v1/common_pb');
-var common_v1_errors_pb = require('../../common/v1/errors_pb');
-var google_api_annotations_pb = require('../../google/api/annotations_pb');
-var secrets_v1_secrets_pb = require('../../secrets/v1/secrets_pb');
+var secrets_v1_store_pb = require('../../secrets/v1/store_pb.js');
+var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
+var common_v1_common_pb = require('../../common/v1/common_pb.js');
+var common_v1_errors_pb = require('../../common/v1/errors_pb.js');
+var google_api_annotations_pb = require('../../google/api/annotations_pb.js');
+var secrets_v1_secrets_pb = require('../../secrets/v1/secrets_pb.js');
 
 function serialize_secrets_v1_InvalidateRequest(arg) {
   if (!(arg instanceof secrets_v1_store_pb.InvalidateRequest)) {

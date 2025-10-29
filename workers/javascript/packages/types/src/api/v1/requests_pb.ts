@@ -5,10 +5,10 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Struct, Timestamp } from "@bufbuild/protobuf";
-import { Api } from "./api_pb";
-import { Link, Links } from "../../common/v1/api_pb";
-import { Error } from "../../common/v1/errors_pb";
-import { Signature, Signature_Algorithm } from "../../utils/v1/utils_pb";
+import { Api } from "./api_pb.js";
+import { Link, Links } from "../../common/v1/api_pb.js";
+import { Error } from "../../common/v1/errors_pb.js";
+import { Signature, Signature_Algorithm } from "../../utils/v1/utils_pb.js";
 
 /**
  * @generated from message api.v1.PatchApi

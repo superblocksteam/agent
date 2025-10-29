@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Value } from "@bufbuild/protobuf";
-import { Store } from "../../secrets/v1/secrets_pb";
+import { Store } from "../../secrets/v1/secrets_pb.js";
 
 /**
  * @generated from message store.v1.Pair

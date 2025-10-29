@@ -313,6 +313,10 @@ func (m *Plugin_DatabricksConnection) validate(all bool) error {
 		// no validation rules for OauthClientSecret
 	}
 
+	if m.ScopedCatalog != nil {
+		// no validation rules for ScopedCatalog
+	}
+
 	if len(errors) > 0 {
 		return Plugin_DatabricksConnectionMultiError(errors)
 	}

@@ -112,7 +112,10 @@ describe('DatabricksPlugin', () => {
 
         expect(mockFetch).toHaveBeenCalledWith(
           `${baseUrl}/api/2.1/unity-catalog/catalogs`,
-          { method: 'GET', headers }
+          expect.objectContaining({
+            method: 'GET',
+            headers
+          })
         );
         expect(result).toEqual(mockCatalogsResponse.catalogs);
       });
@@ -819,6 +822,238 @@ describe('DatabricksPlugin', () => {
 
       // Should make 25 API calls (one per schema)
       expect(mockFetch).toHaveBeenCalledTimes(25);
+    });
+  });
+
+  describe('fetchWithRetry', () => {
+    const testUrl = 'https://test.databricks.com/api/2.1/unity-catalog/test';
+    const testOptions = { method: 'GET', headers: { 'Authorization': 'Bearer test' } };
+
+    test('should succeed on first attempt without retry', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: 'test' })
+      } as Response;
+      
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      const result = await (plugin as any).fetchWithRetry(testUrl, testOptions);
+
+      expect(result).toBe(mockResponse);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(plugin.logger.warn).not.toHaveBeenCalled();
+    });
+
+    test('should retry on 429 rate limit and succeed', async () => {
+      const mock429Response = {
+        ok: false,
+        status: 429,
+        headers: new Map()
+      } as any;
+      mock429Response.headers.get = jest.fn().mockReturnValue(null);
+      
+      const mockSuccessResponse = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: 'test' })
+      } as Response;
+
+      mockFetch
+        .mockResolvedValueOnce(mock429Response)
+        .mockResolvedValueOnce(mockSuccessResponse);
+
+      const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
+      
+      // Advance timers to handle the retry delay
+      await jest.advanceTimersByTimeAsync(2000);
+      
+      const result = await fetchPromise;
+
+      expect(result).toBe(mockSuccessResponse);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(plugin.logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Rate limited (429), retrying in')
+      );
+    });
+
+    test('should respect Retry-After header on 429', async () => {
+      const mock429Response = {
+        ok: false,
+        status: 429,
+        headers: new Map()
+      } as any;
+      mock429Response.headers.get = jest.fn().mockReturnValue('5'); // 5 seconds
+      
+      const mockSuccessResponse = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: 'test' })
+      } as Response;
+
+      mockFetch
+        .mockResolvedValueOnce(mock429Response)
+        .mockResolvedValueOnce(mockSuccessResponse);
+
+      const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
+      
+      // Advance by the exact Retry-After time
+      await jest.advanceTimersByTimeAsync(5000);
+      
+      const result = await fetchPromise;
+
+      expect(result).toBe(mockSuccessResponse);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mock429Response.headers.get).toHaveBeenCalledWith('Retry-After');
+      expect(plugin.logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('retrying in 5000ms')
+      );
+    });
+
+    test('should throw after max retries on 429', async () => {
+      const mock429Response = {
+        ok: false,
+        status: 429,
+        headers: new Map()
+      } as any;
+      mock429Response.headers.get = jest.fn().mockReturnValue(null);
+
+      mockFetch.mockResolvedValue(mock429Response);
+
+      // Start the fetch
+      const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions, 2);
+      
+      // Advance all timers and wait for promise resolution
+      const result = Promise.all([
+        expect(fetchPromise).rejects.toMatchObject({
+          message: expect.stringContaining('Rate limit exceeded')
+        }),
+        jest.runAllTimersAsync()
+      ]);
+      
+      await result;
+      expect(mockFetch).toHaveBeenCalledTimes(3); // initial + 2 retries
+    });
+
+    test('should retry on network error and succeed', async () => {
+      const networkError = new Error('fetch failed');
+      const mockSuccessResponse = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: 'test' })
+      } as Response;
+
+      mockFetch
+        .mockRejectedValueOnce(networkError)
+        .mockResolvedValueOnce(mockSuccessResponse);
+
+      const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
+      
+      // Advance timers for retry delay
+      await jest.advanceTimersByTimeAsync(1000);
+      
+      const result = await fetchPromise;
+
+      expect(result).toBe(mockSuccessResponse);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(plugin.logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Fetch error, retrying in 1000ms')
+      );
+    });
+
+    test('should handle timeout with AbortError', async () => {
+      const abortError = new Error('This operation was aborted');
+      abortError.name = 'AbortError';
+      
+      const mockSuccessResponse = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: 'test' })
+      } as Response;
+
+      mockFetch
+        .mockRejectedValueOnce(abortError)
+        .mockResolvedValueOnce(mockSuccessResponse);
+
+      const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
+      
+      // Advance timers for retry delay
+      await jest.advanceTimersByTimeAsync(1000);
+      
+      const result = await fetchPromise;
+
+      expect(result).toBe(mockSuccessResponse);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(plugin.logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Request timeout after')
+      );
+      expect(plugin.logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Retrying after timeout')
+      );
+    });
+
+    test('should throw after max retries on timeout', async () => {
+      const abortError = new Error('This operation was aborted');
+      abortError.name = 'AbortError';
+
+      mockFetch.mockRejectedValue(abortError);
+
+      // Start the fetch
+      const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions, 2);
+      
+      // Advance all timers and wait for promise resolution
+      const result = Promise.all([
+        expect(fetchPromise).rejects.toMatchObject({
+          message: expect.stringContaining('Request timed out')
+        }),
+        jest.runAllTimersAsync()
+      ]);
+      
+      await result;
+      expect(mockFetch).toHaveBeenCalledTimes(3); // initial + 2 retries
+      expect(plugin.logger.error).toHaveBeenCalledTimes(3);
+    });
+
+    test('should apply exponential backoff on retries', async () => {
+      const networkError = new Error('fetch failed');
+      const mockSuccessResponse = {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: 'test' })
+      } as Response;
+
+      mockFetch
+        .mockRejectedValueOnce(networkError)
+        .mockRejectedValueOnce(networkError)
+        .mockResolvedValueOnce(mockSuccessResponse);
+
+      const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
+      
+      // First retry: 1000ms
+      await jest.advanceTimersByTimeAsync(1000);
+      // Second retry: 2000ms (exponential backoff)
+      await jest.advanceTimersByTimeAsync(2000);
+      
+      const result = await fetchPromise;
+
+      expect(result).toBe(mockSuccessResponse);
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      
+      // Check that retry delays increased
+      const warnCalls = (plugin.logger.warn as jest.Mock).mock.calls;
+      expect(warnCalls[0][0]).toContain('retrying in 1000ms');
+      expect(warnCalls[1][0]).toContain('retrying in 2000ms');
+    });
+
+    test('should not retry on non-fetch errors', async () => {
+      const otherError = new Error('some other error');
+
+      mockFetch.mockRejectedValueOnce(otherError);
+
+      await expect((plugin as any).fetchWithRetry(testUrl, testOptions)).rejects.toThrow('some other error');
+      
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(plugin.logger.warn).not.toHaveBeenCalled();
     });
   });
 });

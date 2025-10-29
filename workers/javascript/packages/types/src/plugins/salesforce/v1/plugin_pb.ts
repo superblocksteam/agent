@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb";
-import { Auth } from "../../common/v1/auth_pb";
+import { DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb.js";
+import { Auth } from "../../common/v1/auth_pb.js";
 
 /**
  * @generated from message plugins.salesforce.v1.Plugin

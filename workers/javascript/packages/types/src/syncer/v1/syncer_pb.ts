@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Timestamp } from "@bufbuild/protobuf";
-import { Metadata as Metadata$1 } from "../../ai/v1/metadata_pb";
+import { Metadata as Metadata$1 } from "../../ai/v1/metadata_pb.js";
 
 /**
  * @generated from message syncer.v1.Metadata

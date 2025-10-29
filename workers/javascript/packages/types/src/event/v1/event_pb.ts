@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { BlockStatus, BlockType } from "../../api/v1/event_pb";
+import { BlockStatus, BlockType } from "../../api/v1/event_pb.js";
 
 /**
  * @generated from enum event.v1.Mode

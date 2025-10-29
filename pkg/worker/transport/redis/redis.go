@@ -291,6 +291,8 @@ func (t *transport) handleEvent(
 				//              worker to send the reponse.
 				timeout = *value + (time.Second * 10)
 			}
+		case worker.EventMetadata:
+			timeout = t.options.metadataTimeout
 		default:
 			timeout = 30 * time.Second
 		}
@@ -305,6 +307,11 @@ func (t *transport) handleEvent(
 	if err != nil {
 		if err == redis.Nil {
 			logger.Error("timeout occurred while waiting for a worker to send a response", zap.Error(err), zap.Duration("timeout", timeout))
+			// Return a proper timeout error instead of generic internal error
+			return nil, nil, "", errors.IntegrationError(
+				fmt.Errorf("Timed out after %v", timeout),
+				commonv1.Code_CODE_INTEGRATION_QUERY_TIMEOUT,
+			)
 		} else {
 			logger.Error("there was an issue waiting for a worker to send a response", zap.Error(err))
 		}

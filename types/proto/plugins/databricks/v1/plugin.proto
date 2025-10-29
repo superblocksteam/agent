@@ -26,6 +26,13 @@ message Plugin {
     // M2M
     optional string oauth_client_id = 8;
     optional string oauth_client_secret = 9;
+    // Scoped catalog and schemas for metadata filtering
+    repeated ScopedCatalogSchemas scoped_catalog_schemas = 10;
+  }
+
+  message ScopedCatalogSchemas {
+    string catalog = 1;
+    repeated string schemas = 2;
   }
 
   enum ConnectionType {

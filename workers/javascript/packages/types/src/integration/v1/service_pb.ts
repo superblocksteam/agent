@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Struct } from "@bufbuild/protobuf";
-import { Profile } from "../../common/v1/common_pb";
+import { Profile } from "../../common/v1/common_pb.js";
 
 /**
  * @generated from enum integration.v1.Kind

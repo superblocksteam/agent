@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { LLM, MODEL, Task } from "./ai_pb";
+import { LLM, MODEL, Task } from "./ai_pb.js";
 
 /**
  * @generated from message ai.v1.Overrides

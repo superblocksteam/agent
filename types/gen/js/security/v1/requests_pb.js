@@ -15,9 +15,9 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb');
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
-var security_v1_service_pb = require('../../security/v1/service_pb');
+var security_v1_service_pb = require('../../security/v1/service_pb.js');
 goog.object.extend(proto, security_v1_service_pb);
 goog.exportSymbol('proto.security.v1.KeyRotation', null, global);
 goog.exportSymbol('proto.security.v1.KeyRotationStatus', null, global);

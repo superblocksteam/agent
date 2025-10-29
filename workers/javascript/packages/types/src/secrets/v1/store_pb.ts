@@ -5,9 +5,9 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { Error } from "../../common/v1/errors_pb";
-import { Details, Invalidation, Provider } from "./secrets_pb";
-import { Profile } from "../../common/v1/common_pb";
+import { Error } from "../../common/v1/errors_pb.js";
+import { Details, Invalidation, Provider } from "./secrets_pb.js";
+import { Profile } from "../../common/v1/common_pb.js";
 
 /**
  * @generated from message secrets.v1.InvalidateRequest

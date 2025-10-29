@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message as Message$1, proto3, Value } from "@bufbuild/protobuf";
-import { DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb";
+import { DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb.js";
 
 /**
  * @generated from enum plugins.kafka.v1.Operation
