@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Update VM2 to patch vulnerability
+- Upgraded Python OTel libraries to v1.16.0
 
 ## v1.29.1
 - Set a default password for the agent's internal redis instance
