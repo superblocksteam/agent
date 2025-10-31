@@ -910,6 +910,7 @@ type Step struct {
 	//	*Step_Gemini
 	//	*Step_Kinesis
 	//	*Step_Confluence
+	//	*Step_OpenaiV2
 	Config isStep_Config `protobuf_oneof:"config"`
 }
 
@@ -1491,6 +1492,13 @@ func (x *Step) GetConfluence() *v114.Plugin {
 	return nil
 }
 
+func (x *Step) GetOpenaiV2() *v114.Plugin {
+	if x, ok := x.GetConfig().(*Step_OpenaiV2); ok {
+		return x.OpenaiV2
+	}
+	return nil
+}
+
 type isStep_Config interface {
 	isStep_Config()
 }
@@ -1800,6 +1808,10 @@ type Step_Confluence struct {
 	Confluence *v114.Plugin `protobuf:"bytes,77,opt,name=confluence,proto3,oneof"`
 }
 
+type Step_OpenaiV2 struct {
+	OpenaiV2 *v114.Plugin `protobuf:"bytes,78,opt,name=openai_v2,json=openaiV2,proto3,oneof"`
+}
+
 func (*Step_Python) isStep_Config() {}
 
 func (*Step_Bigquery) isStep_Config() {}
@@ -1951,6 +1963,8 @@ func (*Step_Gemini) isStep_Config() {}
 func (*Step_Kinesis) isStep_Config() {}
 
 func (*Step_Confluence) isStep_Config() {}
+
+func (*Step_OpenaiV2) isStep_Config() {}
 
 type Profiles_Modes struct {
 	state         protoimpl.MessageState
@@ -4163,7 +4177,7 @@ var file_api_v1_api_proto_rawDesc = []byte{
 	0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x0e, 0xfa, 0x42, 0x04, 0x72,
 	0x02, 0x10, 0x01, 0xba, 0x48, 0x04, 0x72, 0x02, 0x10, 0x01, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73,
 	0x61, 0x67, 0x65, 0x42, 0x12, 0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x08, 0xf8,
-	0x42, 0x01, 0xba, 0x48, 0x02, 0x08, 0x01, 0x22, 0xd8, 0x2c, 0x0a, 0x04, 0x53, 0x74, 0x65, 0x70,
+	0x42, 0x01, 0xba, 0x48, 0x02, 0x08, 0x01, 0x22, 0xb8, 0x2d, 0x0a, 0x04, 0x53, 0x74, 0x65, 0x70,
 	0x12, 0x20, 0x0a, 0x0b, 0x69, 0x6e, 0x74, 0x65, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x69, 0x6e, 0x74, 0x65, 0x67, 0x72, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x12, 0x33, 0x0a, 0x06, 0x70, 0x79, 0x74, 0x68, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01,
@@ -4519,7 +4533,13 @@ var file_api_v1_api_proto_rawDesc = []byte{
 	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x42, 0x18,
 	0x82, 0xa6, 0x1d, 0x14, 0x12, 0x12, 0x72, 0x65, 0x73, 0x74, 0x61, 0x70, 0x69, 0x69, 0x6e, 0x74,
 	0x65, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x00, 0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x66,
-	0x6c, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x3a, 0x06, 0x82, 0xb5, 0x18, 0x02, 0x08, 0x01, 0x42, 0x12,
+	0x6c, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x12, 0x5e, 0x0a, 0x09, 0x6f, 0x70, 0x65, 0x6e, 0x61, 0x69,
+	0x5f, 0x76, 0x32, 0x18, 0x4e, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x70, 0x6c, 0x75, 0x67,
+	0x69, 0x6e, 0x73, 0x2e, 0x72, 0x65, 0x73, 0x74, 0x61, 0x70, 0x69, 0x69, 0x6e, 0x74, 0x65, 0x67,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e,
+	0x42, 0x18, 0x82, 0xa6, 0x1d, 0x14, 0x12, 0x12, 0x72, 0x65, 0x73, 0x74, 0x61, 0x70, 0x69, 0x69,
+	0x6e, 0x74, 0x65, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x00, 0x52, 0x08, 0x6f, 0x70,
+	0x65, 0x6e, 0x61, 0x69, 0x56, 0x32, 0x3a, 0x06, 0x82, 0xb5, 0x18, 0x02, 0x08, 0x01, 0x42, 0x12,
 	0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x08, 0xf8, 0x42, 0x01, 0xba, 0x48, 0x02,
 	0x08, 0x01, 0x2a, 0x7f, 0x0a, 0x11, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74,
 	0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x12, 0x22, 0x0a, 0x1e, 0x41, 0x55, 0x54, 0x48, 0x4f,
@@ -4737,50 +4757,51 @@ var file_api_v1_api_proto_depIdxs = []int32{
 	59,  // 96: api.v1.Step.gemini:type_name -> plugins.restapiintegration.v1.Plugin
 	82,  // 97: api.v1.Step.kinesis:type_name -> plugins.kinesis.v1.Plugin
 	59,  // 98: api.v1.Step.confluence:type_name -> plugins.restapiintegration.v1.Plugin
-	12,  // 99: api.v1.Profiles.Modes.editor:type_name -> api.v1.Profiles.Modes.Settings
-	12,  // 100: api.v1.Profiles.Modes.preview:type_name -> api.v1.Profiles.Modes.Settings
-	12,  // 101: api.v1.Profiles.Modes.deployed:type_name -> api.v1.Profiles.Modes.Settings
-	16,  // 102: api.v1.Trigger.Application.options:type_name -> api.v1.Trigger.Application.Options
-	17,  // 103: api.v1.Trigger.Workflow.options:type_name -> api.v1.Trigger.Workflow.Options
-	18,  // 104: api.v1.Trigger.Workflow.parameters:type_name -> api.v1.Trigger.Workflow.Parameters
-	22,  // 105: api.v1.Trigger.Job.options:type_name -> api.v1.Trigger.Job.Options
-	1,   // 106: api.v1.Trigger.Job.interval:type_name -> api.v1.Trigger.Job.Interval
-	23,  // 107: api.v1.Trigger.Job.days:type_name -> api.v1.Trigger.Job.Days
-	83,  // 108: api.v1.Trigger.Job.time:type_name -> google.protobuf.Timestamp
-	6,   // 109: api.v1.Trigger.Workflow.Options.profiles:type_name -> api.v1.Profiles
-	20,  // 110: api.v1.Trigger.Workflow.Parameters.query:type_name -> api.v1.Trigger.Workflow.Parameters.QueryEntry
-	21,  // 111: api.v1.Trigger.Workflow.Parameters.body:type_name -> api.v1.Trigger.Workflow.Parameters.BodyEntry
-	19,  // 112: api.v1.Trigger.Workflow.Parameters.QueryEntry.value:type_name -> api.v1.Trigger.Workflow.Parameters.QueryParam
-	84,  // 113: api.v1.Trigger.Workflow.Parameters.BodyEntry.value:type_name -> google.protobuf.Value
-	6,   // 114: api.v1.Trigger.Job.Options.profiles:type_name -> api.v1.Profiles
-	34,  // 115: api.v1.Block.Parallel.static:type_name -> api.v1.Block.Parallel.Static
-	35,  // 116: api.v1.Block.Parallel.dynamic:type_name -> api.v1.Block.Parallel.Dynamic
-	2,   // 117: api.v1.Block.Parallel.wait:type_name -> api.v1.Block.Parallel.Wait
-	38,  // 118: api.v1.Block.Conditional.if:type_name -> api.v1.Block.Conditional.Condition
-	38,  // 119: api.v1.Block.Conditional.else_if:type_name -> api.v1.Block.Conditional.Condition
-	8,   // 120: api.v1.Block.Conditional.else:type_name -> api.v1.Blocks
-	3,   // 121: api.v1.Block.Loop.type:type_name -> api.v1.Block.Loop.Type
-	39,  // 122: api.v1.Block.Loop.variables:type_name -> api.v1.Block.Loop.Variables
-	9,   // 123: api.v1.Block.Loop.blocks:type_name -> api.v1.Block
-	8,   // 124: api.v1.Block.TryCatch.try:type_name -> api.v1.Blocks
-	8,   // 125: api.v1.Block.TryCatch.catch:type_name -> api.v1.Blocks
-	8,   // 126: api.v1.Block.TryCatch.finally:type_name -> api.v1.Blocks
-	40,  // 127: api.v1.Block.TryCatch.variables:type_name -> api.v1.Block.TryCatch.Variables
-	43,  // 128: api.v1.Block.Stream.trigger:type_name -> api.v1.Block.Stream.Trigger
-	8,   // 129: api.v1.Block.Stream.process:type_name -> api.v1.Blocks
-	41,  // 130: api.v1.Block.Stream.variables:type_name -> api.v1.Block.Stream.Variables
-	42,  // 131: api.v1.Block.Stream.options:type_name -> api.v1.Block.Stream.Options
-	36,  // 132: api.v1.Block.Parallel.Static.paths:type_name -> api.v1.Block.Parallel.Static.PathsEntry
-	37,  // 133: api.v1.Block.Parallel.Dynamic.variables:type_name -> api.v1.Block.Parallel.Dynamic.Variables
-	9,   // 134: api.v1.Block.Parallel.Dynamic.blocks:type_name -> api.v1.Block
-	8,   // 135: api.v1.Block.Parallel.Static.PathsEntry.value:type_name -> api.v1.Blocks
-	9,   // 136: api.v1.Block.Conditional.Condition.blocks:type_name -> api.v1.Block
-	10,  // 137: api.v1.Block.Stream.Trigger.step:type_name -> api.v1.Step
-	138, // [138:138] is the sub-list for method output_type
-	138, // [138:138] is the sub-list for method input_type
-	138, // [138:138] is the sub-list for extension type_name
-	138, // [138:138] is the sub-list for extension extendee
-	0,   // [0:138] is the sub-list for field type_name
+	59,  // 99: api.v1.Step.openai_v2:type_name -> plugins.restapiintegration.v1.Plugin
+	12,  // 100: api.v1.Profiles.Modes.editor:type_name -> api.v1.Profiles.Modes.Settings
+	12,  // 101: api.v1.Profiles.Modes.preview:type_name -> api.v1.Profiles.Modes.Settings
+	12,  // 102: api.v1.Profiles.Modes.deployed:type_name -> api.v1.Profiles.Modes.Settings
+	16,  // 103: api.v1.Trigger.Application.options:type_name -> api.v1.Trigger.Application.Options
+	17,  // 104: api.v1.Trigger.Workflow.options:type_name -> api.v1.Trigger.Workflow.Options
+	18,  // 105: api.v1.Trigger.Workflow.parameters:type_name -> api.v1.Trigger.Workflow.Parameters
+	22,  // 106: api.v1.Trigger.Job.options:type_name -> api.v1.Trigger.Job.Options
+	1,   // 107: api.v1.Trigger.Job.interval:type_name -> api.v1.Trigger.Job.Interval
+	23,  // 108: api.v1.Trigger.Job.days:type_name -> api.v1.Trigger.Job.Days
+	83,  // 109: api.v1.Trigger.Job.time:type_name -> google.protobuf.Timestamp
+	6,   // 110: api.v1.Trigger.Workflow.Options.profiles:type_name -> api.v1.Profiles
+	20,  // 111: api.v1.Trigger.Workflow.Parameters.query:type_name -> api.v1.Trigger.Workflow.Parameters.QueryEntry
+	21,  // 112: api.v1.Trigger.Workflow.Parameters.body:type_name -> api.v1.Trigger.Workflow.Parameters.BodyEntry
+	19,  // 113: api.v1.Trigger.Workflow.Parameters.QueryEntry.value:type_name -> api.v1.Trigger.Workflow.Parameters.QueryParam
+	84,  // 114: api.v1.Trigger.Workflow.Parameters.BodyEntry.value:type_name -> google.protobuf.Value
+	6,   // 115: api.v1.Trigger.Job.Options.profiles:type_name -> api.v1.Profiles
+	34,  // 116: api.v1.Block.Parallel.static:type_name -> api.v1.Block.Parallel.Static
+	35,  // 117: api.v1.Block.Parallel.dynamic:type_name -> api.v1.Block.Parallel.Dynamic
+	2,   // 118: api.v1.Block.Parallel.wait:type_name -> api.v1.Block.Parallel.Wait
+	38,  // 119: api.v1.Block.Conditional.if:type_name -> api.v1.Block.Conditional.Condition
+	38,  // 120: api.v1.Block.Conditional.else_if:type_name -> api.v1.Block.Conditional.Condition
+	8,   // 121: api.v1.Block.Conditional.else:type_name -> api.v1.Blocks
+	3,   // 122: api.v1.Block.Loop.type:type_name -> api.v1.Block.Loop.Type
+	39,  // 123: api.v1.Block.Loop.variables:type_name -> api.v1.Block.Loop.Variables
+	9,   // 124: api.v1.Block.Loop.blocks:type_name -> api.v1.Block
+	8,   // 125: api.v1.Block.TryCatch.try:type_name -> api.v1.Blocks
+	8,   // 126: api.v1.Block.TryCatch.catch:type_name -> api.v1.Blocks
+	8,   // 127: api.v1.Block.TryCatch.finally:type_name -> api.v1.Blocks
+	40,  // 128: api.v1.Block.TryCatch.variables:type_name -> api.v1.Block.TryCatch.Variables
+	43,  // 129: api.v1.Block.Stream.trigger:type_name -> api.v1.Block.Stream.Trigger
+	8,   // 130: api.v1.Block.Stream.process:type_name -> api.v1.Blocks
+	41,  // 131: api.v1.Block.Stream.variables:type_name -> api.v1.Block.Stream.Variables
+	42,  // 132: api.v1.Block.Stream.options:type_name -> api.v1.Block.Stream.Options
+	36,  // 133: api.v1.Block.Parallel.Static.paths:type_name -> api.v1.Block.Parallel.Static.PathsEntry
+	37,  // 134: api.v1.Block.Parallel.Dynamic.variables:type_name -> api.v1.Block.Parallel.Dynamic.Variables
+	9,   // 135: api.v1.Block.Parallel.Dynamic.blocks:type_name -> api.v1.Block
+	8,   // 136: api.v1.Block.Parallel.Static.PathsEntry.value:type_name -> api.v1.Blocks
+	9,   // 137: api.v1.Block.Conditional.Condition.blocks:type_name -> api.v1.Block
+	10,  // 138: api.v1.Block.Stream.Trigger.step:type_name -> api.v1.Step
+	139, // [139:139] is the sub-list for method output_type
+	139, // [139:139] is the sub-list for method input_type
+	139, // [139:139] is the sub-list for extension type_name
+	139, // [139:139] is the sub-list for extension extendee
+	0,   // [0:139] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_api_proto_init() }
@@ -5333,6 +5354,7 @@ func file_api_v1_api_proto_init() {
 		(*Step_Gemini)(nil),
 		(*Step_Kinesis)(nil),
 		(*Step_Confluence)(nil),
+		(*Step_OpenaiV2)(nil),
 	}
 	file_api_v1_api_proto_msgTypes[9].OneofWrappers = []interface{}{}
 	file_api_v1_api_proto_msgTypes[12].OneofWrappers = []interface{}{}

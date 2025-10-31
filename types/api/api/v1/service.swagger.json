@@ -1824,6 +1824,14 @@
         },
         "oauthClientSecret": {
           "type": "string"
+        },
+        "scopedCatalogSchemas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PluginScopedCatalogSchemas"
+          },
+          "title": "Scoped catalog and schemas for metadata filtering"
         }
       }
     },
@@ -2356,6 +2364,20 @@
       "properties": {
         "key": {
           "type": "string"
+        }
+      }
+    },
+    "PluginScopedCatalogSchemas": {
+      "type": "object",
+      "properties": {
+        "catalog": {
+          "type": "string"
+        },
+        "schemas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -6718,6 +6740,9 @@
           "$ref": "#/definitions/pluginskinesisv1Plugin"
         },
         "confluence": {
+          "$ref": "#/definitions/pluginsrestapiintegrationv1Plugin"
+        },
+        "openaiV2": {
           "$ref": "#/definitions/pluginsrestapiintegrationv1Plugin"
         }
       }

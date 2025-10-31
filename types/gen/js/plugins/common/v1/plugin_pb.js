@@ -15,7 +15,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var buf_validate_validate_pb = require('../../../buf/validate/validate_pb.js');
+var buf_validate_validate_pb = require('../../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
 goog.exportSymbol('proto.plugins.common.v1.AWSConfig', null, global);
 goog.exportSymbol('proto.plugins.common.v1.AWSConfig.Auth', null, global);

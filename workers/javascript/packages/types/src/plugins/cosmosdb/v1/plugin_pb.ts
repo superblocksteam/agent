@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb.js";
-import { Azure } from "../../common/v1/auth_pb.js";
+import { DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb";
+import { Azure } from "../../common/v1/auth_pb";
 
 /**
  * @generated from message plugins.cosmosdb.v1.Plugin

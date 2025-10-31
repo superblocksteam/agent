@@ -15,7 +15,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb.js');
+var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb');
 goog.object.extend(proto, google_protobuf_any_pb);
 goog.exportSymbol('proto.plugins.mysql.v1.MappedColumns', null, global);
 goog.exportSymbol('proto.plugins.mysql.v1.Plugin', null, global);

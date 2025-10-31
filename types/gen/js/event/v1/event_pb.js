@@ -15,9 +15,9 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var api_v1_event_pb = require('../../api/v1/event_pb.js');
+var api_v1_event_pb = require('../../api/v1/event_pb');
 goog.object.extend(proto, api_v1_event_pb);
-var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
+var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
 goog.exportSymbol('proto.event.v1.ExecutionEvent', null, global);
 goog.exportSymbol('proto.event.v1.Mode', null, global);

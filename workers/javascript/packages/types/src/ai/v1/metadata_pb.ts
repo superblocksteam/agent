@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { SQLMetadata_Minified } from "../../plugins/common/v1/metadata_pb.js";
-import { Metadata_Minified } from "../../plugins/kafka/v1/plugin_pb.js";
+import { SQLMetadata_Minified } from "../../plugins/common/v1/metadata_pb";
+import { Metadata_Minified } from "../../plugins/kafka/v1/plugin_pb";
 
 /**
  * This represents the metadata that the "AI stack" cares about. It is

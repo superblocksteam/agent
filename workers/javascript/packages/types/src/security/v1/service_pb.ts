@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Timestamp, Value } from "@bufbuild/protobuf";
-import { Signature } from "../../utils/v1/utils_pb.js";
+import { Signature } from "../../utils/v1/utils_pb";
 
 /**
  * @generated from message security.v1.Resource

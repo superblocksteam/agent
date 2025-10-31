@@ -15,13 +15,13 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var buf_validate_validate_pb = require('../../../buf/validate/validate_pb.js');
+var buf_validate_validate_pb = require('../../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
 goog.object.extend(proto, google_protobuf_struct_pb);
-var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb.js');
+var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
-var validate_validate_pb = require('../../../validate/validate_pb.js');
+var validate_validate_pb = require('../../../validate/validate_pb');
 goog.object.extend(proto, validate_validate_pb);
 goog.exportSymbol('proto.plugins.kafka.v1.Acks', null, global);
 goog.exportSymbol('proto.plugins.kafka.v1.Broker', null, global);

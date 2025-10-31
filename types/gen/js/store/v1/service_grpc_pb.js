@@ -2,12 +2,12 @@
 
 'use strict';
 var grpc = require('@grpc/grpc-js');
-var store_v1_service_pb = require('../../store/v1/service_pb.js');
-var common_v1_errors_pb = require('../../common/v1/errors_pb.js');
-var google_api_annotations_pb = require('../../google/api/annotations_pb.js');
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
-var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb.js');
-var store_v1_store_pb = require('../../store/v1/store_pb.js');
+var store_v1_service_pb = require('../../store/v1/service_pb');
+var common_v1_errors_pb = require('../../common/v1/errors_pb');
+var google_api_annotations_pb = require('../../google/api/annotations_pb');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
+var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
+var store_v1_store_pb = require('../../store/v1/store_pb');
 
 function serialize_store_v1_ReadRequest(arg) {
   if (!(arg instanceof store_v1_service_pb.ReadRequest)) {

@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Struct } from "@bufbuild/protobuf";
-import { Error } from "../../common/v1/errors_pb.js";
-import { Metadata } from "./syncer_pb.js";
+import { Error } from "../../common/v1/errors_pb";
+import { Metadata } from "./syncer_pb";
 
 /**
  * @generated from message syncer.v1.GetConfigurationMetadataRequest

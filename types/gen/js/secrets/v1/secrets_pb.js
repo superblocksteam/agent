@@ -15,11 +15,11 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
+var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
-var common_v1_common_pb = require('../../common/v1/common_pb.js');
+var common_v1_common_pb = require('../../common/v1/common_pb');
 goog.object.extend(proto, common_v1_common_pb);
-var plugins_common_v1_auth_pb = require('../../plugins/common/v1/auth_pb.js');
+var plugins_common_v1_auth_pb = require('../../plugins/common/v1/auth_pb');
 goog.object.extend(proto, plugins_common_v1_auth_pb);
 goog.exportSymbol('proto.secrets.v1.AkeylessSecretsManager', null, global);
 goog.exportSymbol('proto.secrets.v1.AwsSecretsManager', null, global);

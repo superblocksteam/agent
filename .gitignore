@@ -18,6 +18,7 @@ coverage/
 charts/
 .air
 *.env*
+**/mise.toml
 
 /regsync
 
