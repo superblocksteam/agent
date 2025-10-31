@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, protoInt64, Struct, Timestamp, Value } from "@bufbuild/protobuf";
-import { Error } from "../../common/v1/errors_pb.js";
+import { Error } from "../../common/v1/errors_pb";
 
 /**
  * @generated from enum api.v1.BlockStatus

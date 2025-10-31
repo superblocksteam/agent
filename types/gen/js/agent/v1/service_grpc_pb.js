@@ -2,14 +2,14 @@
 
 'use strict';
 var grpc = require('@grpc/grpc-js');
-var agent_v1_service_pb = require('../../agent/v1/service_pb.js');
-var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
-var common_v1_common_pb = require('../../common/v1/common_pb.js');
-var google_api_annotations_pb = require('../../google/api/annotations_pb.js');
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
-var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb.js');
-var validate_validate_pb = require('../../validate/validate_pb.js');
+var agent_v1_service_pb = require('../../agent/v1/service_pb');
+var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
+var common_v1_common_pb = require('../../common/v1/common_pb');
+var google_api_annotations_pb = require('../../google/api/annotations_pb');
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb');
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb');
+var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
+var validate_validate_pb = require('../../validate/validate_pb');
 
 function serialize_agent_v1_AuditLogRequest(arg) {
   if (!(arg instanceof agent_v1_service_pb.AuditLogRequest)) {

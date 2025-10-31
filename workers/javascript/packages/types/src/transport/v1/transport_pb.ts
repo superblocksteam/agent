@@ -5,16 +5,16 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Any, Message, proto3, protoInt64, Struct } from "@bufbuild/protobuf";
-import { Variables_Mode, Variables_Type } from "../../api/v1/blocks_pb.js";
-import { Error } from "../../common/v1/errors_pb.js";
-import { Definition, MetadataResponse_BucketMetadata, MetadataResponse_DatabaseSchemaMetadata } from "../../api/v1/service_pb.js";
-import { Metadata } from "../../plugins/couchbase/v1/plugin_pb.js";
-import { Metadata as Metadata$1 } from "../../plugins/kafka/v1/plugin_pb.js";
-import { Metadata as Metadata$2 } from "../../plugins/kinesis/v1/plugin_pb.js";
-import { Plugin_Metadata } from "../../plugins/cosmosdb/v1/plugin_pb.js";
-import { Plugin_Metadata as Plugin_Metadata$1 } from "../../plugins/adls/v1/plugin_pb.js";
-import { Api } from "../../api/v1/api_pb.js";
-import { Stores } from "../../store/v1/store_pb.js";
+import { Variables_Mode, Variables_Type } from "../../api/v1/blocks_pb";
+import { Error } from "../../common/v1/errors_pb";
+import { Definition, MetadataResponse_BucketMetadata, MetadataResponse_DatabaseSchemaMetadata } from "../../api/v1/service_pb";
+import { Metadata } from "../../plugins/couchbase/v1/plugin_pb";
+import { Metadata as Metadata$1 } from "../../plugins/kafka/v1/plugin_pb";
+import { Metadata as Metadata$2 } from "../../plugins/kinesis/v1/plugin_pb";
+import { Plugin_Metadata } from "../../plugins/cosmosdb/v1/plugin_pb";
+import { Plugin_Metadata as Plugin_Metadata$1 } from "../../plugins/adls/v1/plugin_pb";
+import { Api } from "../../api/v1/api_pb";
+import { Stores } from "../../store/v1/store_pb";
 
 /**
  * @generated from message transport.v1.Performance

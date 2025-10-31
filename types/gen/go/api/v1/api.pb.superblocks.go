@@ -1227,3 +1227,19 @@ func (plugin *Step_Confluence) Build() (map[string]any, error) {
 	}
 	return obj, nil
 }
+
+func (*Step_OpenaiV2) Name() string { return "openaiv2" }
+
+func (*Step_OpenaiV2) Type() string { return "restapiintegration" }
+
+func (plugin *Step_OpenaiV2) Build() (map[string]any, error) {
+	var buf bytes.Buffer
+	if err := marshaler.Marshal(&buf, plugin.OpenaiV2); err != nil {
+		return nil, err
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
+}

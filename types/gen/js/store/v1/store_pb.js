@@ -15,9 +15,9 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
 goog.object.extend(proto, google_protobuf_struct_pb);
-var secrets_v1_secrets_pb = require('../../secrets/v1/secrets_pb.js');
+var secrets_v1_secrets_pb = require('../../secrets/v1/secrets_pb');
 goog.object.extend(proto, secrets_v1_secrets_pb);
 goog.exportSymbol('proto.store.v1.Pair', null, global);
 goog.exportSymbol('proto.store.v1.Stores', null, global);

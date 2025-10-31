@@ -15,7 +15,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var transport_v1_transport_pb = require('../../transport/v1/transport_pb.js');
+var transport_v1_transport_pb = require('../../transport/v1/transport_pb');
 goog.object.extend(proto, transport_v1_transport_pb);
 goog.exportSymbol('proto.worker.v1.StringValue', null, global);
 /**

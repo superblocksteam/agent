@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, protoInt64 } from "@bufbuild/protobuf";
-import { Profile } from "../../common/v1/common_pb.js";
-import { OAuth_AuthorizationCodeFlow } from "../../plugins/common/v1/auth_pb.js";
+import { Profile } from "../../common/v1/common_pb";
+import { OAuth_AuthorizationCodeFlow } from "../../plugins/common/v1/auth_pb";
 
 /**
  * @generated from message api.v1.CheckAuthRequest

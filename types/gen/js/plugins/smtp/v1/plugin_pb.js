@@ -15,7 +15,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb.js');
+var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
 goog.exportSymbol('proto.plugins.smtp.v1.Plugin', null, global);
 goog.exportSymbol('proto.plugins.smtp.v1.Plugin.SmtpConnection', null, global);

@@ -15,7 +15,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var common_v1_plugin_pb = require('../../../common/v1/plugin_pb.js');
+var common_v1_plugin_pb = require('../../../common/v1/plugin_pb');
 goog.object.extend(proto, common_v1_plugin_pb);
 goog.exportSymbol('proto.plugins.workflow.v2.Plugin', null, global);
 /**

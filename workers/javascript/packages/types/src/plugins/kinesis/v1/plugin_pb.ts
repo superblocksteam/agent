@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { AWSConfig, DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb.js";
+import { AWSConfig, DynamicWorkflowConfiguration } from "../../common/v1/plugin_pb";
 
 /**
  * @generated from message plugins.kinesis.v1.Plugin

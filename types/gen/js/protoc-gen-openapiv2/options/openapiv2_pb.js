@@ -15,7 +15,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
 goog.object.extend(proto, google_protobuf_struct_pb);
 goog.exportSymbol('proto.grpc.gateway.protoc_gen_openapiv2.options.Contact', null, global);
 goog.exportSymbol('proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation', null, global);

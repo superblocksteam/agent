@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { AkeylessAuth, AwsAuth, GcpAuth } from "../../plugins/common/v1/auth_pb.js";
-import { Metadata } from "../../common/v1/common_pb.js";
+import { AkeylessAuth, AwsAuth, GcpAuth } from "../../plugins/common/v1/auth_pb";
+import { Metadata } from "../../common/v1/common_pb";
 
 /**
  * @generated from message secrets.v1.AwsSecretsManager

@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, protoInt64, Timestamp } from "@bufbuild/protobuf";
-import { UserType } from "../../common/v1/common_pb.js";
+import { UserType } from "../../common/v1/common_pb";
 
 /**
  * @generated from message agent.v1.RegistrationRequest

@@ -289,6 +289,40 @@ func (m *Plugin_DatabricksConnection) validate(all bool) error {
 
 	// no validation rules for Port
 
+	for idx, item := range m.GetScopedCatalogSchemas() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, Plugin_DatabricksConnectionValidationError{
+						field:  fmt.Sprintf("ScopedCatalogSchemas[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, Plugin_DatabricksConnectionValidationError{
+						field:  fmt.Sprintf("ScopedCatalogSchemas[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return Plugin_DatabricksConnectionValidationError{
+					field:  fmt.Sprintf("ScopedCatalogSchemas[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if m.DefaultCatalog != nil {
 		// no validation rules for DefaultCatalog
 	}
@@ -311,10 +345,6 @@ func (m *Plugin_DatabricksConnection) validate(all bool) error {
 
 	if m.OauthClientSecret != nil {
 		// no validation rules for OauthClientSecret
-	}
-
-	if m.ScopedCatalog != nil {
-		// no validation rules for ScopedCatalog
 	}
 
 	if len(errors) > 0 {
@@ -397,3 +427,108 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = Plugin_DatabricksConnectionValidationError{}
+
+// Validate checks the field values on Plugin_ScopedCatalogSchemas with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *Plugin_ScopedCatalogSchemas) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Plugin_ScopedCatalogSchemas with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// Plugin_ScopedCatalogSchemasMultiError, or nil if none found.
+func (m *Plugin_ScopedCatalogSchemas) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Plugin_ScopedCatalogSchemas) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Catalog
+
+	if len(errors) > 0 {
+		return Plugin_ScopedCatalogSchemasMultiError(errors)
+	}
+
+	return nil
+}
+
+// Plugin_ScopedCatalogSchemasMultiError is an error wrapping multiple
+// validation errors returned by Plugin_ScopedCatalogSchemas.ValidateAll() if
+// the designated constraints aren't met.
+type Plugin_ScopedCatalogSchemasMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m Plugin_ScopedCatalogSchemasMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m Plugin_ScopedCatalogSchemasMultiError) AllErrors() []error { return m }
+
+// Plugin_ScopedCatalogSchemasValidationError is the validation error returned
+// by Plugin_ScopedCatalogSchemas.Validate if the designated constraints
+// aren't met.
+type Plugin_ScopedCatalogSchemasValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e Plugin_ScopedCatalogSchemasValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e Plugin_ScopedCatalogSchemasValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e Plugin_ScopedCatalogSchemasValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e Plugin_ScopedCatalogSchemasValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e Plugin_ScopedCatalogSchemasValidationError) ErrorName() string {
+	return "Plugin_ScopedCatalogSchemasValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e Plugin_ScopedCatalogSchemasValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPlugin_ScopedCatalogSchemas.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = Plugin_ScopedCatalogSchemasValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = Plugin_ScopedCatalogSchemasValidationError{}
