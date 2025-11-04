@@ -122,6 +122,12 @@ spec:
         - name: SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX
           value: {{.Values.grpc.maxRecvMsgSize | int64 | quote}}
         {{- end }}
+        - name: SUPERBLOCKS_PYTHON_EXECUTION_IMPORT_ALLOW_LIST
+          value: {{ .Values.superblocks.workers.python.execution.importAllowList | join "," | quote }}
+        - name: SUPERBLOCKS_PYTHON_EXECUTION_IMPORT_DENY_LIST
+          value: {{ .Values.superblocks.workers.python.execution.importDenyList | join "," | quote }}
+        - name: SUPERBLOCKS_PYTHON_EXECUTION_BUILTINS_DENY_LIST
+          value: {{ .Values.superblocks.workers.python.execution.builtinsDenyList | join "," | quote }}
         {{- if .Values.extraEnv }}
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
         {{- end }}

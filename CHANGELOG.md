@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update VM2 to patch vulnerability
 - Upgraded Python OTel libraries to v1.16.0
 - Add (plugin) support for `openai_v2` based integrations
+- Add support for restricting imports and built in functions in Python language execution steps
 
 ## v1.29.1
 - Set a default password for the agent's internal redis instance

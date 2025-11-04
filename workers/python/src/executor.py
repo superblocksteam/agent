@@ -30,6 +30,7 @@ from constants import (
 from exceptions import BusyError
 from kvstore.kvstore import KVStore
 from pipe import publish, receiveAll
+from restricted import ALLOW_BUILTINS
 from superblocks import Object, Reader
 from superblocks_json import encode_bytestring_as_json
 from transport.signal import remove_signal_handlers
@@ -274,7 +275,6 @@ class RealExecutor(Executor):
 
         myModule = module_from_spec(spec)
         # Copy the context variables into the scope
-        # TODO: Modify the __builtins__ to restrict calling open(), exec(), eval()
         for k in context.keys():
             myModule.__dict__[k] = context[k]
 
@@ -286,6 +286,8 @@ class RealExecutor(Executor):
             for k, v in built.items():
                 if myModule.__dict__.get(k) is None:
                     myModule.__dict__[k] = v
+
+        myModule.__dict__["__builtins__"] = ALLOW_BUILTINS
 
         with redirect_stdout(StringIO()) as std_out:
             with redirect_stderr(StringIO()) as std_err:
