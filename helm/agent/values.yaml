@@ -31,6 +31,19 @@ superblocks:
   # Enables the agent to handle CORS requests. This is required if you want to use the agent
   # without a reverse proxy.
   handleCors: true
+  workers:
+    python:
+      execution:
+        # This is a list of strings, each string is a package name
+        # A single value of "*" allows all imports
+        # By default, allow all imports
+        importAllowList: ["*"]
+        # This is a list of strings, each string is a package name
+        # By default, do not deny any imports
+        importDenyList: []
+        # This is a list of strings, each string is a builtin name
+        # By default, do not deny any builtins
+        builtinsDenyList: []
 imagePullSecrets: []
 commonPodAnnotations: {}
 commonPodLabels: {}
