@@ -24,7 +24,7 @@ opentelemetry_semantic_conventions==0.36b0
 packaging==24.0
 plotly==5.19.0
 prometheus_client==0.21.1
-protobuf==4.25.3
+protobuf==4.25.8
 psutil==5.9.8
 pydantic==1.10.14
 pydash==6.0.2
