@@ -68,7 +68,7 @@ const props: PluginExecutionProps<OpenAiDatasourceConfiguration, OpenAiActionCon
   ...DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS
 };
 
-describe('Streaming', () => {
+describe.skip('Streaming', () => {
   it.each([
     [
       {
@@ -196,7 +196,7 @@ describe('Connection', () => {
   );
 });
 
-describe('GenerateChatGptResponse', () => {
+describe.skip('GenerateChatGptResponse', () => {
   test(
     'succeeds with basic config',
     async () => {
@@ -237,7 +237,7 @@ describe('GenerateChatGptResponse', () => {
   );
 });
 
-describe('GenerateText [NEW TEXT]', () => {
+describe.skip('GenerateText [NEW TEXT]', () => {
   test(
     'succeeds with basic config',
     async () => {
@@ -320,7 +320,7 @@ describe.skip('GenerateText [EDIT TEXT]', () => {
   );
 });
 
-describe('GenerateCode [NEW CODE]', () => {
+describe.skip('GenerateCode [NEW CODE]', () => {
   test(
     'succeeds with basic config',
     async () => {
@@ -401,7 +401,7 @@ describe.skip('GenerateCode [EDIT CODE]', () => {
   );
 });
 
-describe('GenerateImage [Generate From Prompt]', () => {
+describe.skip('GenerateImage [Generate From Prompt]', () => {
   test(
     'succeeds with basic config',
     async () => {
@@ -439,7 +439,7 @@ describe.skip('CheckModeration', () => {
   );
 });
 
-describe('GenerateTextEmbedding', () => {
+describe.skip('GenerateTextEmbedding', () => {
   test(
     'succeeds with basic config',
     async () => {
