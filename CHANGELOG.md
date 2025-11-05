@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Add support for restricting imports and built in functions in Python language execution steps
+- Properly clear the environment of Python execution step sandboxes
 
 ## v1.30.0
 - Add retry logic to Databricks metadata requests in case of rate-limiting

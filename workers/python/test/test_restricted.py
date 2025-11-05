@@ -1,4 +1,5 @@
 import builtins
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,8 +7,114 @@ import pytest
 from restricted import (
     ALLOW_BUILTINS,
     build_allowed_builtins,
+    restricted_environment,
     restricted_import_wrapper,
 )
+
+
+class TestRestrictedEnvironment:
+    @pytest.mark.parametrize(
+        "env_vars,expected_env_during,original_env_vars",
+        [
+            (None, {}, {"ORIGINAL_VAR": "original_value", "PATH": "/usr/bin"}),
+            ({}, {}, {"ORIGINAL_VAR": "original_value", "PATH": "/usr/bin"}),
+            ({}, {}, {}),
+            ({"TEST_VAR": "test_value"}, {"TEST_VAR": "test_value"}, {}),
+            (
+                {"TEST_VAR": "test_value"},
+                {"TEST_VAR": "test_value"},
+                {"ORIGINAL_VAR": "original_value"},
+            ),
+            (
+                {"VAR1": "value1", "PATH": "/usr/bin", "VAR2": "value2"},
+                {"VAR1": "value1", "PATH": "/usr/bin", "VAR2": "value2"},
+                {"ORIGINAL_VAR": "original_value", "PATH": "/usr/bin"},
+            ),
+            (
+                {"VAR1": "new1", "VAR2": "new2", "NEW_VAR": "new_value"},
+                {"VAR1": "new1", "VAR2": "new2", "NEW_VAR": "new_value"},
+                {"VAR1": "original1", "VAR2": "original2", "VAR3": "original3"},
+            ),
+            (
+                {
+                    "SPECIAL_VAR": "value with spaces",
+                    "EMPTY_VAR": "",
+                    "UNICODE_VAR": "🚀",
+                },
+                {
+                    "SPECIAL_VAR": "value with spaces",
+                    "EMPTY_VAR": "",
+                    "UNICODE_VAR": "🚀",
+                },
+                {"ORIGINAL_VAR": "original_value"},
+            ),
+        ],
+    )
+    def test_restricted_environment_scenarios(
+        self, env_vars, expected_env_during, original_env_vars
+    ):
+        os.environ.clear()
+        os.environ.update(original_env_vars)
+        original_env_copy = os.environ.copy()
+
+        with restricted_environment(env_vars):
+            # Assert that the environment matches expected state during context
+            assert dict(os.environ) == expected_env_during
+
+        # Assert that the original environment is restored
+        assert dict(os.environ) == original_env_copy
+
+    def test_restricted_environment_restores_on_exception(self):
+        original_env = {"ORIGINAL_VAR": "original_value", "PATH": "/usr/bin"}
+        os.environ.clear()
+        os.environ.update(original_env)
+
+        with pytest.raises(ValueError, match="Test exception"):
+            with restricted_environment({"TEST_VAR": "test_value"}):
+                # Assert that the environment is restricted during context
+                assert dict(os.environ) == {"TEST_VAR": "test_value"}
+                raise ValueError("Test exception")
+
+        # Assert that the original environment is restored despite exception
+        assert dict(os.environ) == original_env
+
+    def test_restricted_environment_nested_contexts(self):
+        original_env = {"ORIGINAL_VAR": "original_value"}
+        os.environ.clear()
+        os.environ.update(original_env)
+
+        with restricted_environment({"OUTER_VAR": "outer_value"}):
+            assert dict(os.environ) == {"OUTER_VAR": "outer_value"}
+
+            with restricted_environment({"INNER_VAR": "inner_value"}):
+                assert dict(os.environ) == {"INNER_VAR": "inner_value"}
+
+            assert dict(os.environ) == {"OUTER_VAR": "outer_value"}
+
+        assert dict(os.environ) == original_env
+
+    def test_restricted_environment_modifying_env_during_context(self):
+        # Set up original environment
+        original_env = {"ORIGINAL_VAR": "original_value"}
+        os.environ.clear()
+        os.environ.update(original_env)
+
+        with restricted_environment({"INITIAL_VAR": "initial_value"}):
+            # Verify initial state
+            assert dict(os.environ) == {"INITIAL_VAR": "initial_value"}
+
+            # Modify environment during context
+            os.environ["ADDED_VAR"] = "added_value"
+            os.environ["INITIAL_VAR"] = "modified_value"
+
+            # Assert that the modifications are present
+            assert dict(os.environ) == {
+                "INITIAL_VAR": "modified_value",
+                "ADDED_VAR": "added_value",
+            }
+
+        # Assert that the original environment is restored
+        assert dict(os.environ) == {"ORIGINAL_VAR": "original_value"}
 
 
 class TestRestrictedImportWrapper:

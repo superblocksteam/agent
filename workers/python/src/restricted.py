@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import builtins
+import os
+from contextlib import contextmanager
+from typing import Any, Callable
 
 from constants import (
     SUPERBLOCKS_PYTHON_EXECUTION_BUILTINS_DENY_LIST,
@@ -9,6 +12,26 @@ from constants import (
 )
 
 _real_import = builtins.__import__
+
+
+@contextmanager
+def restricted_environment(env_vars: dict | None = None):
+    """
+    Restricts the environment to the given variables.
+    If no environment variables are provided, the environment will be cleared.
+
+    Args:
+        env_vars: A dictionary of the environment variables to include in the restricted environment.
+    """
+    existing_env = os.environ.copy()
+    try:
+        os.environ.clear()
+        if env_vars is not None:
+            os.environ.update(env_vars)
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(existing_env)
 
 
 def restricted_import_wrapper(

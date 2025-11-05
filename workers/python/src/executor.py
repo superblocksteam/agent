@@ -10,7 +10,7 @@ from importlib.util import module_from_spec, spec_from_loader
 from inspect import getsource
 from io import StringIO
 from multiprocessing import Process
-from os import _Environ, _exit, close, pipe
+from os import _exit, close, pipe
 from re import search
 from sys import exc_info
 from textwrap import indent
@@ -30,7 +30,7 @@ from constants import (
 from exceptions import BusyError
 from kvstore.kvstore import KVStore
 from pipe import publish, receiveAll
-from restricted import ALLOW_BUILTINS
+from restricted import ALLOW_BUILTINS, restricted_environment
 from superblocks import Object, Reader
 from superblocks_json import encode_bytestring_as_json
 from transport.signal import remove_signal_handlers
@@ -271,8 +271,6 @@ class RealExecutor(Executor):
             # TODO(frank): fix me
             raise Exception()
 
-        self.__unset_environ()
-
         myModule = module_from_spec(spec)
         # Copy the context variables into the scope
         for k in context.keys():
@@ -291,35 +289,36 @@ class RealExecutor(Executor):
 
         with redirect_stdout(StringIO()) as std_out:
             with redirect_stderr(StringIO()) as std_err:
-                try:
-                    exec(
-                        f'{wrapper}{indent(code, "    ")}',
-                        myModule.__dict__,
-                    )
-                    publish(
-                        result_writer,
-                        self.__marshal(myModule.wrapper()),
-                    )
-                    await variable_client.flush()
-                except SystemExit as e:
-                    _exit(int(str(e.code)))
-                except Exception as e:
-                    publish(
-                        result_writer,
-                        "",
-                    )
+                with restricted_environment(self.__build_sandbox_environment()):
                     try:
-                        std_err.write(
-                            self.__retrieve_line_number(
-                                str(e), len(wrapper.splitlines())
-                            )
+                        exec(
+                            f'{wrapper}{indent(code, "    ")}',
+                            myModule.__dict__,
                         )
+                        publish(
+                            result_writer,
+                            self.__marshal(myModule.wrapper()),
+                        )
+                        await variable_client.flush()
+                    except SystemExit as e:
+                        _exit(int(str(e.code)))
                     except Exception as e:
-                        std_err.write(
-                            f"__EXCEPTION__Unable to parse error line number {str(e)}\n"
+                        publish(
+                            result_writer,
+                            "",
                         )
-                finally:
-                    variable_client.close()
+                        try:
+                            std_err.write(
+                                self.__retrieve_line_number(
+                                    str(e), len(wrapper.splitlines())
+                                )
+                            )
+                        except Exception as e:
+                            std_err.write(
+                                f"__EXCEPTION__Unable to parse error line number {str(e)}\n"
+                            )
+                    finally:
+                        variable_client.close()
 
         publish(stdout_writer, std_out.getvalue())
         publish(stderr_writer, std_err.getvalue())
@@ -369,18 +368,11 @@ class RealExecutor(Executor):
         else:
             return f"__EXCEPTION__Error: {error} "
 
-    def __unset_environ(self):
-        def noop_encoder(value: str) -> str:
-            return value
-
-        # Looks like forking will repopulate this
-        existing_env = os.environ
-        os.environ = _Environ(
-            {}, noop_encoder, noop_encoder, noop_encoder, noop_encoder
-        )
-
-        # Populate the forked process environment with the variables that
+    def __build_sandbox_environment(self) -> dict[str, str]:
+        # Build the forked process environment with the variables that
         # are allowed to be passed to the execution environment.
-        for env_var in SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST:
-            if env_var in existing_env:
-                os.environ[env_var] = existing_env[env_var]
+        return {
+            env_var: os.environ.get(env_var)
+            for env_var in SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST
+            if env_var in os.environ
+        }
