@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
--
+- Do not fail when primitive values are used as inputs to Python APIs, similar to JavaScript APIs
 
 ## v1.31.0
 - Add support for restricting imports and built in functions in Python language execution steps
