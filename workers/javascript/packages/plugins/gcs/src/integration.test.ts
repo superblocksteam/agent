@@ -3,7 +3,7 @@ import { ActionResponseType, DUMMY_EXECUTE_COMMON_PARAMETERS, ErrorCode, Executi
 import dotenv from 'dotenv';
 import GCSPlugin from '.';
 
-describe.skip('gcs plugin tests', () => {
+describe('gcs plugin tests', () => {
   const plugin: GCSPlugin = new GCSPlugin();
   dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
