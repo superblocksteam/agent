@@ -56,8 +56,10 @@ class PluginPropsReader:
                 varName = nativeVars[i][0]
                 varVal = vals[i]
 
-                if varVal.get("files") is not None and isinstance(
-                    varVal["files"], list
+                if (
+                    isinstance(varVal, dict)
+                    and varVal.get("files") is not None
+                    and isinstance(varVal["files"], list)
                 ):
                     if len(varVal["files"]) == 0 or any(
                         file_entry and "$superblocksId" in file_entry
