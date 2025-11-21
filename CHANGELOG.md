@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Do not fail when primitive values are used as inputs to Python APIs, similar to JavaScript APIs
+- Restrict access to blocked packages in JavaScript steps via: dynamic import, `eval`, and Function constructors
 
 ## v1.31.0
 - Add support for restricting imports and built in functions in Python language execution steps

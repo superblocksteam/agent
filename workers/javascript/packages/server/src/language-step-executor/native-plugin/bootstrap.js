@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { EventEmitter } = require('events');
+const { Parser } = require('acorn');
+const walk = require('acorn-walk');
+const MagicString = require('magic-string');
 const { decodeBytestringsExecutionContext } = require('./bytestring');
 const { ExecutionOutput } = require('./executionOutput');
 const { buildVariables } = require('./variable');
@@ -59,6 +62,62 @@ function addLogListenersToUserScript(output) {
   const outputLogError = (...data) => output.logError(data.join(' '));
   eventEmitter.on('error', outputLogError);
 }
+
+function rewriteDynamicImports(source, ecmaVersion) {
+  const ast = Parser.parse(source, {
+    ecmaVersion,
+    sourceType: 'script',
+    allowReturnOutsideFunction: true,
+    allowAwaitOutsideFunction: true,
+    locations: false,
+    ranges: true
+  });
+
+  const ms = new MagicString(source);
+  walk.simple(ast, {
+    ImportExpression(node) {
+      // node.start => beginning of "import"
+      // node.source.start => beginning of the argument expression (right after "(" and any spaces)
+      ms.overwrite(node.start, node.source.start, '__dynamicImport__(');
+    }
+  });
+
+  return {
+    code: ms.toString()
+  };
+}
+
+const patchedDynamicImport = function (restrictedProcess, restrictedModules) {
+  return async function (specifier) {
+    if (typeof specifier !== 'string') {
+      return Promise.reject(new TypeError('import specifier must be a string'));
+    }
+
+    if (specifier === 'process' || specifier === 'node:process') {
+      return Promise.resolve(restrictedProcess);
+    }
+
+    if (restrictedModules.includes(specifier)) {
+      return Promise.reject(new Error(`Cannot find module '${specifier}'`));
+    }
+
+    return import(specifier);
+  };
+};
+
+const patchedRequire = function (req, restrictedProcess, restrictedModules) {
+  return function (module) {
+    if (module === 'process' || module === 'node:process') {
+      return restrictedProcess;
+    }
+
+    if (restrictedModules.includes(module)) {
+      throw new Error(`Cannot find module '${module}'`);
+    }
+
+    return req(module);
+  };
+};
 
 const sharedCode = `
   function serialize(buffer, mode) {
@@ -139,21 +198,6 @@ const sharedCode = `
     localVariables = undefined;
   }
 
-  var $augmentedRequire = (function(req) {
-    return function(module) {
-      if (module === 'process' || module === 'node:process') {
-        return process;
-      }
-
-      if (module === 'child_process' || module === 'node:child_process') {
-        throw new Error(\`Cannot find module '\${module}'\`);
-      }
-
-      return req(module);
-    }
-  }(require));
-  require = $augmentedRequire;
-
   var $augmentedConsole = (function(cons, eventEmitter) {
     const util = require('util');
 
@@ -182,6 +226,31 @@ const sharedCode = `
     };
   }(console, this.eventEmitter));
   console = $augmentedConsole;
+
+  // Prevent access to the Function objects' constructor
+  Object.getPrototypeOf(function () {}).constructor = {};
+
+  {
+    // Prevent access to the AsyncFunction objects' constructor, by explicitly defining it as an empty object
+    const AsyncFunctionConstructor = Object.getPrototypeOf(async function(){}).constructor;
+
+    if (
+      AsyncFunctionConstructor &&
+      AsyncFunctionConstructor.prototype &&
+      Object.prototype.hasOwnProperty.call(AsyncFunctionConstructor.prototype, "constructor")
+    ) {
+
+      const ctrDesc = Object.getOwnPropertyDescriptor(AsyncFunctionConstructor.prototype, "constructor");
+      if (ctrDesc && ctrDesc.configurable) {
+        Object.defineProperty(AsyncFunctionConstructor.prototype, "constructor", {
+          value: {},
+          writable: false,
+          enumerable: false,
+          configurable: true
+        });
+      }
+    }
+  }
 `;
 
 module.exports.executeCode = async (workerData) => {
@@ -223,38 +292,119 @@ module.exports.executeCode = async (workerData) => {
       ...process,
       abort: () => {},
       allowedNodeEnvironmentFlags: new Set(),
+      availableMemory: () => 0,
       channel: undefined,
       chdir: (diretory) => {
         throw new Error('Unable to change directory in a sandboxed environment');
       },
       config: {},
       connected: false,
+      constrainedMemory: () => 0,
+      cpuUsage: () => {
+        return {
+          user: 0,
+          system: 0
+        };
+      },
       disconnect: () => {},
       dlopen: (module, filename, flags) => {},
       emitWarning: (...args) => {},
       env: userProcessEnv,
+      execArgv: [],
+      execPath: '',
       exit: (code) => {},
       getActiveResourcesInfo: () => {
         return [];
       },
+      getegid: () => -1,
+      geteuid: () => -1,
+      getgid: () => -1,
+      getgroups: () => [],
+      getuid: () => -1,
+      setegid: (gid) => {},
+      seteuid: (uid) => {},
+      setgid: (gid) => {},
+      setgroups: (groups) => {},
+      setuid: (uid) => {},
       kill: (pid, signal) => {},
+      loadEnvFile: (path) => {},
+      mainModule: undefined,
+      memoryUsage: Object.assign(
+        () => {
+          return {
+            rss: 0,
+            heapTotal: 0,
+            heapUsed: 0,
+            external: 0,
+            arrayBuffers: 0
+          };
+        },
+        { rss: () => 0 }
+      ),
+      permission: {
+        has: (scope, reference) => {
+          return false;
+        }
+      },
       ppid: process.pid,
       send: undefined
+    };
+
+    let rewrittenCode = code;
+    try {
+      const { code: updatedCode } = rewriteDynamicImports(code, 'latest');
+      rewrittenCode = updatedCode;
+    } catch (err) {
+      // Ignore error rewriting dynamic imports
+      // Syntax errors will be caught and handled when building the AsyncFunction
+    }
+
+    const blockedBuiltIn = (builtIn) => {
+      const refErr = () => new ReferenceError(`${builtIn} is not defined`);
+
+      const stubbedCallable = (...args) => {
+        throw refErr();
+      };
+
+      return new Proxy(stubbedCallable, {
+        get() {
+          throw refErr();
+        },
+        apply() {
+          throw refErr();
+        },
+        construct() {
+          throw refErr();
+        },
+        has() {
+          throw refErr();
+        },
+        set() {
+          throw refErr();
+        },
+        getPrototypeOf() {
+          throw refErr();
+        }
+      });
     };
 
     let userScript;
     try {
       userScript = AsyncFunction(
+        '__dynamicImport__',
         'exports',
         'require',
         'module',
+        'eval',
+        'AsyncFunction',
+        'Function',
         '__dirname',
         '__filename',
         'process',
         'localVariables',
         ...execGlobalContextKeys,
         `${sharedCode}
-    ${code}`
+    ${rewrittenCode}`
       ).bind({ eventEmitter: eventEmitter });
     } catch (err) {
       eventEmitter.removeAllListeners();
@@ -267,10 +417,26 @@ module.exports.executeCode = async (workerData) => {
       throwSyntaxErrorWithLineNum(code, err, codeLineNumberOffset);
     }
 
+    const restrictedPackages = ['child_process', 'node:child_process'];
+    const restrictedDynamicImport = patchedDynamicImport(userProcess, restrictedPackages);
+    const restrictedRequire = patchedRequire(require, userProcess, restrictedPackages);
+    const restrictedModule = {
+      ...module,
+      parent: {
+        ...module.parent,
+        require: restrictedRequire
+      },
+      require: restrictedRequire
+    };
+
     ret.output = await userScript(
+      restrictedDynamicImport,
       exports,
-      require,
-      module,
+      restrictedRequire,
+      restrictedModule,
+      blockedBuiltIn('eval'),
+      blockedBuiltIn('AsyncFunction'),
+      blockedBuiltIn('Function'),
       __dirname,
       __dirname,
       userProcess,
