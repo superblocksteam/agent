@@ -163,7 +163,6 @@ export class Worker implements Closer {
     } catch (err) {
       this._logger.error({ err }, 'could not process message');
     }
-
   }
 
   /**
