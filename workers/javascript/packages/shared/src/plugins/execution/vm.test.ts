@@ -5,34 +5,74 @@ import { nodeVMWithContext } from './vm';
 
 describe('vm', () => {
   describe('nodeVMWithContext', () => {
-    it('should fail when attempting to import process', async () => {
-      const context: ExecutionContext = new ExecutionContext();
-      const code = `var proc = require('process');
-        console.log(JSON.stringify(proc.env));
-            `;
-      const filePaths: Record<string, string> = {};
-      const sandbox: NodeVM = nodeVMWithContext(context, filePaths);
+    describe('importing modules via require', () => {
+      const forbiddenBuiltinModules = ['process', 'child_process', 'os', 'fs', 'http'];
+      // We are not explicitly allowing any external modules in the instanciation of the sandbox below,
+      // so importing any external module should fail.
+      const forbiddenExternalModules = ['lodash'];
+      const modulesToTest = [
+        ...forbiddenBuiltinModules,
+        ...forbiddenBuiltinModules.map((moduleName) => `node:${moduleName}`),
+        ...forbiddenExternalModules,
+      ];
 
-      const executeCode = () => {
-        sandbox.run(code, __dirname);
-      };
-
-      expect(executeCode).toThrowError("Cannot find module 'process'");
+      modulesToTest.forEach((moduleName) => {
+        it(`should fail when attempting to import ${moduleName}`, async () => {
+          const context: ExecutionContext = new ExecutionContext();
+          const code = `require('${moduleName}')`;
+          const filePaths: Record<string, string> = {};
+          const sandbox: NodeVM = nodeVMWithContext(context, filePaths, undefined, []);
+          const executeCode = () => {
+            sandbox.run(code, __dirname);
+          };
+          expect(executeCode).toThrowError(`Cannot find module '${moduleName}'`);
+        });
+      });
     });
 
-    it('should fail when attempting to import child_process', async () => {
+    it('importing of allowed modules via require', async () => {
       const context: ExecutionContext = new ExecutionContext();
-      const code = `var proc = require('child_process');
-        console.log(proc.execSync('ls -la').toString());
-            `;
+      const moduleName = 'lodash';
+      const code = `require('${moduleName}')`;
       const filePaths: Record<string, string> = {};
-      const sandbox: NodeVM = nodeVMWithContext(context, filePaths);
-
+      const sandbox: NodeVM = nodeVMWithContext(context, filePaths, undefined, [moduleName]);
       const executeCode = () => {
         sandbox.run(code, __dirname);
       };
+      expect(executeCode).not.toThrow();
+    });
 
-      expect(executeCode).toThrowError("Cannot find module 'child_process'");
+    describe('importing modules via dynamic import', () => {
+      const moduleName = 'lodash';
+
+      it(`dynamic imports should fail`, async () => {
+        // Even though we are explicitly allowing the module in the sandbox,
+        // dynamic imports should still fail.
+        const context: ExecutionContext = new ExecutionContext();
+        const code = `import('${moduleName}')`;
+        const filePaths: Record<string, string> = {};
+        const sandbox: NodeVM = nodeVMWithContext(context, filePaths, undefined, [moduleName]);
+        const executeCode = () => {
+          sandbox.run(code, __dirname);
+        };
+        expect(executeCode).toThrowError("Dynamic Import not supported");
+      });
+
+      it(`obfuscated dynamic imports should fail`, async () => {
+        const context: ExecutionContext = new ExecutionContext();
+        const code = `
+          const obfuscatedImportCode = "im" + "port" + "('" + ${JSON.stringify(moduleName)} + "')";
+          // recover the Function constructor in case it has been overridden by the sandbox
+          const Function = (() => {}).constructor;
+          new Function('return ' + obfuscatedImportCode)();
+        `;
+        const filePaths: Record<string, string> = {};
+        const sandbox: NodeVM = nodeVMWithContext(context, filePaths, undefined, [moduleName]);
+        const executeCode = () => {
+          sandbox.run(code, __dirname);
+        };
+        expect(executeCode).toThrowError("Dynamic Import not supported");
+      });
     });
   });
 });
