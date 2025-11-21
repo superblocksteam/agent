@@ -16,6 +16,9 @@ import { extractMustacheStrings, FlatContext } from './mustache';
 import { ProcessInput } from './types';
 import { buildVariables } from './variable';
 import { nodeVMWithContext } from './vm';
+import * as http from 'node:http';
+import { promisify } from 'node:util';
+import deasync from 'deasync';
 
 const DATA_TAG = 'SUPERBLOCKSDATA';
 const completeDataRegex = new RegExp(`^${DATA_TAG}(.*?)${DATA_TAG}$`);
@@ -89,6 +92,109 @@ export async function spawnStdioProcess(cmd: string, args: string[], input: Proc
   });
 }
 
+export function serialize(buffer: Buffer, mode?: 'raw' | 'binary' | 'text' | unknown) {
+  if (mode === 'raw') {
+    return buffer;
+  }
+  if (mode === 'binary' || mode === 'text') {
+    // utf8 encoding is lossy for truly binary data, but not an error in JS
+    return buffer.toString(mode === 'binary' ? 'base64' : 'utf8');
+  }
+  // Otherwise, detect mode from first 1024 chars
+  const chunk = buffer.slice(0, 1024).toString('utf8');
+  if (chunk.indexOf('\u{FFFD}') > -1) {
+    return buffer.toString('base64');
+  }
+  return buffer.toString('utf8');
+}
+
+function fetchFromController(
+  fileServerUrl: string,
+  agentKey: string,
+  location: string,
+  callback: (err: Error | null, result: Buffer | null) => void,
+) {
+  const url = new URL(fileServerUrl);
+  url.searchParams.set('location', location);
+  http.get(url.toString(), {
+    headers: { 'x-superblocks-agent-key': agentKey }
+  }, (response) => {
+    if (response.statusCode != 200) {
+      return callback(new Error('Internal Server Error'), null);
+    }
+    const chunks = [];
+    let chunkStrings = '';
+    response.on('data', (chunk) => {
+      if (fileServerUrl.includes('v2')) {
+        const serialized = serialize(chunk)
+        chunkStrings += serialized
+      } else {
+        chunks.push(Buffer.from(chunk))
+      }
+    });
+    response.on('error', (err) => callback(err, null));
+    response.on('end', () => {
+      if (fileServerUrl.includes('v2')) {
+        const processed = chunkStrings
+        .split('\\n')
+        .filter((str) => str.length > 0)
+        .map((str) => {
+          const json = JSON.parse(str);
+          return Buffer.from(json.result.data, 'base64');
+        });
+        callback(null, Buffer.concat(processed as unknown as readonly Uint8Array[]))
+      } else {
+        callback(null, Buffer.concat(chunks))
+      }
+    });
+  })
+}
+
+/**
+ * This function creates a function that has to be called inside the VM. The returned function finds all
+ * variables corresponding to file pickers (e.g. `FilePicker1`) and modifies them by adding some additional
+ * methods to them based on our public API for file pickers.
+ * TODO(george): A better approach would be to modify the `context.globals` object directly, in the host,
+ * before we pass it to the VM. Unfortunately, this will not work today, because we have some `vm.setGlobal`
+ * calls below, which take higher precedence over `context.globals`. This is why we need to pass the
+ * `globalObject` to the function.
+ * Note: we are only exporting this function for testing purposes.
+ */
+export function createFunctionForPreparingGlobalObjectForFiles(
+  fileServerUrl: string,
+  agentKey: string,
+  filePaths: Record<string, string>,
+) {
+  return (globalObject: Record<string, unknown>) => {
+    Object.entries(filePaths).forEach(([treePath, diskPath]) => {
+      const readContentsAsync = async (mode: unknown) => {
+        const contents = await promisify(fetchFromController)(fileServerUrl, agentKey, diskPath);
+        const response = serialize(contents, mode);
+        return response;
+      };
+      // hide the implementation of the function
+      readContentsAsync.toString = () => 'function readContentsAsync() { [native code] }';
+
+      const readContents = (mode: unknown) => {
+        const contents = deasync(fetchFromController)(fileServerUrl, agentKey, diskPath);
+        const response = serialize(contents, mode);
+        return response;
+      };
+      // hide the implementation of the function
+      readContents.toString = () => 'function readContents() { [native code] }';
+
+      const file = _.get(globalObject, treePath) as object;
+      // Leaving $superblocksId set because it's required by our S3.
+      _.set(globalObject, treePath, {
+        ...file,
+        previewUrl: undefined,
+        readContentsAsync,
+        readContents,
+      });
+    });
+  };
+}
+
 export const resolveAllBindings = async (
   unresolvedValue: string,
   context: ExecutionContext,
@@ -143,6 +249,13 @@ export const resolveAllBindings = async (
     }
   }
 
+  const prepareGlobalObjectForFiles = createFunctionForPreparingGlobalObjectForFiles(
+    context.globals['$fileServerUrl'] as string,
+    context.globals['$agentKey'] as string,
+    filePaths
+  );
+  vm.setGlobal('$prepareGlobalObjectForFiles', prepareGlobalObjectForFiles);
+
   const ret = {};
   for (const toEval of extractMustacheStrings(unresolvedValue)) {
     // TODO may need to create a new VM each time to not pollute scope
@@ -151,78 +264,7 @@ export const resolveAllBindings = async (
         `
 module.exports = async function() {
   ${generateJSLibrariesImportString()}
-
-  function serialize(buffer, mode) {
-    if (mode === 'raw') {
-      return buffer;
-    }
-    if (mode === 'binary' || mode === 'text') {
-      // utf8 encoding is lossy for truly binary data, but not an error in JS
-      return buffer.toString(mode === 'binary' ? 'base64' : 'utf8');
-    }
-    // Otherwise, detect mode from first 1024 chars
-    const chunk = buffer.slice(0, 1024).toString('utf8');
-    if (chunk.indexOf('\u{FFFD}') > -1) {
-      return buffer.toString('base64');
-    }
-    return buffer.toString('utf8');
-  }
-
-  function fetchFromController(location, callback) {
-    require('http').get($fileServerUrl + '?location=' + location, {
-      headers: { 'x-superblocks-agent-key': $agentKey }
-    }, (response) => {
-      if (response.statusCode != 200) {
-        return callback(new Error('Internal Server Error'), null);
-      }
-
-      const chunks = [];
-      let chunkStrings = '';
-      response.on('data', (chunk) => {
-        if ($fileServerUrl.includes('v2')) {
-          const serialized = serialize(chunk)
-          chunkStrings += serialized
-        } else {
-          chunks.push(Buffer.from(chunk))
-        }
-      });
-      response.on('error', (err) => callback(err, null));
-      response.on('end', () => {
-        if ($fileServerUrl.includes('v2')) {
-          const processed = chunkStrings
-          .split('\\n')
-          .filter((str) => str.length > 0)
-          .map((str) => {
-            const json = JSON.parse(str);
-            return Buffer.from(json.result.data, 'base64');
-          });
-          callback(null, Buffer.concat(processed))
-        } else {
-          callback(null, Buffer.concat(chunks))
-        }
-      });
-    })
-  }
-
-  Object.entries($superblocksFiles).forEach(([treePath, diskPath]) => {
-    const file = _.get(global, treePath);
-    // Leaving $superblocksId set because it's required by our S3.
-    _.set(global, treePath, {
-      ...file,
-      previewUrl: undefined,
-      readContentsAsync: async (mode) => {
-        const contents = await require('util').promisify(fetchFromController)(diskPath);
-        const response = await serialize(contents, mode);
-        return response;
-      },
-      readContents: (mode) => {
-        const contents = require('deasync')(fetchFromController)(diskPath);
-        const response = serialize(contents, mode);
-        return response;
-      }
-    });
-  });
-
+  $prepareGlobalObjectForFiles(globalThis);
   return ${toEval};
 }()`,
         __dirname
@@ -419,7 +461,6 @@ export function generateJSLibrariesImportString(): string {
     var _ = require('lodash');
     var moment = require('moment');
     var axios = require('axios');
-    var fs = require('fs');
     var xmlbuilder2 = require('xmlbuilder2');
     var base64url = require('base64url');
     var deasync = require('deasync');

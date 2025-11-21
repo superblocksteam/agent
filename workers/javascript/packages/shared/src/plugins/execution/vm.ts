@@ -13,32 +13,18 @@ export function nodeVMWithContext(
   // Keys are the path in the data tree, values are the path on disk
   fileTreeToDisk?: Record<string, string>,
   timeout = 5000,
-  extLibs: string[] = [
-    'lodash',
-    'moment',
-    'axios',
-    'aws-sdk',
-    'xmlbuilder2',
-    'base64url',
-    'jsonwebtoken',
-    'deasync',
-    'amazon-qldb-driver-nodejs',
-    'webflow-api',
-    'bcrypt',
-    '@notionhq/client',
-    'notion-to-md',
-    '@paralleldrive/cuid2',
-    'xml2json',
-    'jmespath',
-    'date-fns'
-  ]
+  extLibs: string[] = [],
+  builtinLibs: string[] = []
 ): NodeVM {
   const vm = new NodeVM({
     console: 'redirect',
     timeout: timeout,
+    // TODO(george): our wrapper code that runs in the sandbox doesn't use `$superblocksFiles` anymore,
+    // so we can remove it from the sandbox so as to not pollute the sandbox's global object. Similarly,
+    // it doesn't use `$fileServerUrl` and `$agentKey` anymore, so we can remove them as well.
     sandbox: { ...context.globals, ...context.outputs, $superblocksFiles: fileTreeToDisk },
     require: {
-      builtin: ['*', '-child_process', '-process'],
+      builtin: builtinLibs,
       external: extLibs
     },
     env: {
