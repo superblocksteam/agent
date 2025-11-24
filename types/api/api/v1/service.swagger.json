@@ -1214,6 +1214,10 @@
             "type": "object",
             "$ref": "#/definitions/apiv1Mock"
           }
+        },
+        "viewMode": {
+          "$ref": "#/definitions/v1ViewMode",
+          "description": "The view mode for this execution. Used for inline definitions.\nFor fetch/fetchByPath, the nested view_mode takes precedence."
         }
       }
     },
@@ -5684,6 +5688,10 @@
             "type": "object",
             "$ref": "#/definitions/apiv1Mock"
           }
+        },
+        "viewMode": {
+          "$ref": "#/definitions/v1ViewMode",
+          "description": "The view mode for this execution. Used for inline definitions.\nFor fetch/fetchByPath, the nested view_mode takes precedence."
         }
       }
     },
@@ -5837,6 +5845,10 @@
             "type": "object",
             "$ref": "#/definitions/apiv1Mock"
           }
+        },
+        "viewMode": {
+          "$ref": "#/definitions/v1ViewMode",
+          "description": "The view mode for this execution. Used for inline definitions.\nFor fetch/fetchByPath, the nested view_mode takes precedence."
         }
       }
     },
@@ -5999,6 +6011,10 @@
             "type": "object",
             "$ref": "#/definitions/apiv1Mock"
           }
+        },
+        "viewMode": {
+          "$ref": "#/definitions/v1ViewMode",
+          "description": "The view mode for this execution. Used for inline definitions.\nFor fetch/fetchByPath, the nested view_mode takes precedence."
         }
       }
     },

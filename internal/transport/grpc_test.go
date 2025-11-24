@@ -483,6 +483,72 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 // 	}
 // }
 
+func TestGetViewMode(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      *apiv1.ExecuteRequest
+		expected apiv1.ViewMode
+	}{
+		{
+			name: "fetch with view mode",
+			req: &apiv1.ExecuteRequest{
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{
+						ViewMode: apiv1.ViewMode_VIEW_MODE_EDIT,
+					},
+				},
+			},
+			expected: apiv1.ViewMode_VIEW_MODE_EDIT,
+		},
+		{
+			name: "fetch by path with view mode",
+			req: &apiv1.ExecuteRequest{
+				Request: &apiv1.ExecuteRequest_FetchByPath_{
+					FetchByPath: &apiv1.ExecuteRequest_FetchByPath{
+						ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+					},
+				},
+			},
+			expected: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+		},
+		{
+			name: "inline definition with top-level view mode",
+			req: &apiv1.ExecuteRequest{
+				ViewMode: apiv1.ViewMode_VIEW_MODE_PREVIEW,
+				Request: &apiv1.ExecuteRequest_Definition{
+					Definition: &apiv1.Definition{},
+				},
+			},
+			expected: apiv1.ViewMode_VIEW_MODE_PREVIEW,
+		},
+		{
+			name: "no fetch returns top-level view mode",
+			req: &apiv1.ExecuteRequest{
+				ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+			},
+			expected: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+		},
+		{
+			name: "unspecified view mode",
+			req: &apiv1.ExecuteRequest{
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{
+						ViewMode: apiv1.ViewMode_VIEW_MODE_UNSPECIFIED,
+					},
+				},
+			},
+			expected: apiv1.ViewMode_VIEW_MODE_UNSPECIFIED,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getViewMode(tt.req)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestMetadata(t *testing.T) {
 	testToken := "test-token"
 	profileName := "test-profile"

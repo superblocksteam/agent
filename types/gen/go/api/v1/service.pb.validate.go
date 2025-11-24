@@ -467,6 +467,8 @@ func (m *ExecuteRequest) validate(all bool) error {
 
 	}
 
+	// no validation rules for ViewMode
+
 	oneofRequestPresent := false
 	switch v := m.Request.(type) {
 	case *ExecuteRequest_Definition:

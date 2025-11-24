@@ -36,6 +36,7 @@ const (
 	QueryParamAuth        = "sb-auth"
 	QueryParamRawResults  = "raw"
 	QueryParamAsync       = "async"
+	QueryParamViewMode    = "viewMode"
 )
 
 type fetcher struct {
@@ -62,6 +63,7 @@ type Fetcher interface {
 	FetchIntegrationMetadata(context.Context, string) (*integrationv1.GetIntegrationResponse, error)
 	FetchIntegration(context context.Context, integrationId string, profile *commonv1.Profile) (*Integration, error)
 	FetchIntegrations(context.Context, *integrationv1.GetIntegrationsRequest, bool) (*integrationv1.GetIntegrationsResponse, error)
+	ValidateProfile(context.Context, *integrationv1.ValidateProfileRequest) error
 	DeleteSpecificUserTokens(context.Context) error
 	UpsertMetadata(context.Context, *syncerv1.UpsertMetadataRequest) error
 }
@@ -435,6 +437,81 @@ func (f *fetcher) UpsertMetadata(ctx context.Context, req *syncerv1.UpsertMetada
 	return nil
 }
 
+// viewModeEnumToString converts a ViewMode enum to its string representation.
+func viewModeEnumToString(vm apiv1.ViewMode) string {
+	switch vm {
+	case apiv1.ViewMode_VIEW_MODE_EDIT:
+		return "editor"
+	case apiv1.ViewMode_VIEW_MODE_PREVIEW:
+		return "preview"
+	case apiv1.ViewMode_VIEW_MODE_DEPLOYED:
+		return "deployed"
+	default:
+		return ""
+	}
+}
+
+func (f *fetcher) ValidateProfile(ctx context.Context, req *integrationv1.ValidateProfileRequest) error {
+	query := url.Values{}
+	{
+		if req.Profile != nil {
+			if req.Profile.Name != nil {
+				query.Set(QueryParamProfileName, *req.Profile.Name)
+			}
+			if req.Profile.Id != nil {
+				query.Set(QueryParamProfileID, *req.Profile.Id)
+			}
+		}
+
+		if req.ViewMode != "" {
+			query.Set(QueryParamViewMode, req.ViewMode)
+		}
+
+		for _, id := range req.IntegrationIds {
+			query.Add("integrationId", id)
+		}
+	}
+
+	headers := map[string][]string{}
+	{
+		if metadata, ok := metadata.FromIncomingContext(ctx); ok {
+			headers["Authorization"] = metadata.Get("authorization")
+			headers["X-Superblocks-Authorization"] = metadata.Get("x-superblocks-authorization")
+		}
+	}
+
+	f.logger.Debug(
+		"validating profile",
+		zap.String("profile", req.Profile.GetName()),
+		zap.String("viewMode", req.ViewMode),
+		zap.Strings("integrationIds", req.IntegrationIds),
+	)
+
+	// Make validation request to server
+	resp, err := tracer.Observe(ctx, "validate.profile", nil, func(context.Context, trace.Span) (*http.Response, error) {
+		return f.serverClient.ValidateProfile(ctx, nil, headers, query)
+	}, nil)
+
+	// Handle HTTP 204 (No Content) as success - server returns this when validation passes
+	if resp != nil && resp.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
+	if i, e := clients.Check(err, resp); e != nil {
+		f.logger.Warn(
+			"profile validation failed",
+			zap.NamedError("details", i),
+			zap.NamedError("externalError", e),
+			zap.String("profile", req.Profile.GetName()),
+			zap.String("viewMode", req.ViewMode),
+			zap.Error(e),
+		)
+		return e
+	}
+
+	return nil
+}
+
 // NOTE(frank): We're not going to try to fail fast with authorization.
 func (f *fetcher) sendFetchApiRequest(ctx context.Context, options *apiv1.ExecuteRequest_Fetch, useAgentKey bool) (*http.Response, error) {
 	headers := map[string][]string{}
@@ -472,13 +549,8 @@ func (f *fetcher) sendFetchApiRequest(ctx context.Context, options *apiv1.Execut
 	}
 
 	// https://github.com/superblocksteam/superblocks/blob/master/packages/shared/src/types/event/index.ts#L24-L28
-	switch options.ViewMode {
-	case apiv1.ViewMode_VIEW_MODE_EDIT:
-		query.Set("viewMode", "editor")
-	case apiv1.ViewMode_VIEW_MODE_PREVIEW:
-		query.Set("viewMode", "preview")
-	case apiv1.ViewMode_VIEW_MODE_DEPLOYED:
-		query.Set("viewMode", "deployed")
+	if viewModeStr := viewModeEnumToString(options.ViewMode); viewModeStr != "" {
+		query.Set("viewMode", viewModeStr)
 	}
 
 	if options.CommitId != nil {
@@ -518,13 +590,8 @@ func (f *fetcher) sendFetchApiByPathRequest(ctx context.Context, options *apiv1.
 	}
 
 	// https://github.com/superblocksteam/superblocks/blob/master/packages/shared/src/types/event/index.ts#L24-L28
-	switch options.ViewMode {
-	case apiv1.ViewMode_VIEW_MODE_EDIT:
-		query.Set("viewMode", "editor")
-	case apiv1.ViewMode_VIEW_MODE_PREVIEW:
-		query.Set("viewMode", "preview")
-	case apiv1.ViewMode_VIEW_MODE_DEPLOYED:
-		query.Set("viewMode", "deployed")
+	if viewModeStr := viewModeEnumToString(options.ViewMode); viewModeStr != "" {
+		query.Set("viewMode", viewModeStr)
 	}
 
 	return f.serverClient.GetApiByPath(

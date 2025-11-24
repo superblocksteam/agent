@@ -2,8 +2,10 @@ package fetch
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -1457,6 +1459,145 @@ func TestUpsertMetadata(t *testing.T) {
 			req := intakeClient.Calls[0].Arguments[2].(*syncerv1.UpsertMetadataRequest)
 
 			assert.Equal(t, test.request, req)
+		})
+	}
+}
+
+func TestValidateProfile(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name            string
+		request         *integrationv1.ValidateProfileRequest
+		metadata        metadata.MD
+		response        *http.Response
+		err             error
+		expectError     bool
+		expectedQuery   url.Values
+		expectedHeaders map[string][]string
+	}{
+		{
+			name: "successful validation with HTTP 204",
+			request: &integrationv1.ValidateProfileRequest{
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("production"),
+					Id:   utils.Pointer("profile-id"),
+				},
+				ViewMode:       "editor",
+				IntegrationIds: []string{"integration-1", "integration-2"},
+			},
+			metadata: metadata.MD{
+				"authorization":               []string{"Bearer user-token"},
+				"x-superblocks-authorization": []string{"Bearer sb-token"},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusNoContent,
+				Body:       io.NopCloser(strings.NewReader("")),
+			},
+			expectError: false,
+			expectedQuery: url.Values{
+				"profile":       []string{"production"},
+				"profileId":     []string{"profile-id"},
+				"viewMode":      []string{"editor"},
+				"integrationId": []string{"integration-1", "integration-2"},
+			},
+			expectedHeaders: map[string][]string{
+				"Authorization":               {"Bearer user-token"},
+				"X-Superblocks-Authorization": {"Bearer sb-token"},
+			},
+		},
+		{
+			name: "successful validation without profile ID",
+			request: &integrationv1.ValidateProfileRequest{
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("staging"),
+				},
+				ViewMode:       "preview",
+				IntegrationIds: []string{"integration-1"},
+			},
+			metadata: metadata.MD{
+				"authorization": []string{"Bearer user-token"},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusNoContent,
+				Body:       io.NopCloser(strings.NewReader("")),
+			},
+			expectError: false,
+			expectedQuery: url.Values{
+				"profile":       []string{"staging"},
+				"viewMode":      []string{"preview"},
+				"integrationId": []string{"integration-1"},
+			},
+			expectedHeaders: map[string][]string{
+				"Authorization":               {"Bearer user-token"},
+				"X-Superblocks-Authorization": nil,
+			},
+		},
+		{
+			name: "validation failure - 403 forbidden",
+			request: &integrationv1.ValidateProfileRequest{
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("production"),
+				},
+				ViewMode:       "deployed",
+				IntegrationIds: []string{"integration-1"},
+			},
+			metadata: metadata.MD{
+				"authorization": []string{"Bearer user-token"},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusForbidden,
+				Body:       io.NopCloser(strings.NewReader(`{"message": "profile validation failed"}`)),
+			},
+			expectError: true,
+		},
+		{
+			name: "validation failure - network error",
+			request: &integrationv1.ValidateProfileRequest{
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("production"),
+				},
+				ViewMode:       "editor",
+				IntegrationIds: []string{"integration-1"},
+			},
+			metadata: metadata.MD{
+				"authorization": []string{"Bearer user-token"},
+			},
+			err:         &errors.InternalError{Err: fmt.Errorf("network error")},
+			expectError: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			mockServerClient := mocks.NewServerClient(t)
+
+			// Set up mock expectation
+			mockServerClient.On("ValidateProfile",
+				mock.Anything, // ctx
+				mock.Anything, // timeout
+				mock.Anything, // headers
+				mock.Anything, // query
+			).Return(test.response, test.err)
+
+			fetcher := &fetcher{
+				serverClient: mockServerClient,
+				logger:       zap.NewNop(),
+			}
+
+			ctx := context.Background()
+			if test.metadata != nil {
+				ctx = metadata.NewIncomingContext(ctx, test.metadata)
+			}
+
+			err := fetcher.ValidateProfile(ctx, test.request)
+
+			if test.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			// Verify the mock was called
+			mockServerClient.AssertExpectations(t)
 		})
 	}
 }

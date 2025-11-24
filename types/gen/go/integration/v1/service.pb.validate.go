@@ -309,6 +309,241 @@ var _ interface {
 	ErrorName() string
 } = GetIntegrationsRequestValidationError{}
 
+// Validate checks the field values on ValidateProfileRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ValidateProfileRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ValidateProfileRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ValidateProfileRequestMultiError, or nil if none found.
+func (m *ValidateProfileRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ValidateProfileRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetProfile()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ValidateProfileRequestValidationError{
+					field:  "Profile",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ValidateProfileRequestValidationError{
+					field:  "Profile",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetProfile()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ValidateProfileRequestValidationError{
+				field:  "Profile",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for ViewMode
+
+	if len(errors) > 0 {
+		return ValidateProfileRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ValidateProfileRequestMultiError is an error wrapping multiple validation
+// errors returned by ValidateProfileRequest.ValidateAll() if the designated
+// constraints aren't met.
+type ValidateProfileRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ValidateProfileRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ValidateProfileRequestMultiError) AllErrors() []error { return m }
+
+// ValidateProfileRequestValidationError is the validation error returned by
+// ValidateProfileRequest.Validate if the designated constraints aren't met.
+type ValidateProfileRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ValidateProfileRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ValidateProfileRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ValidateProfileRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ValidateProfileRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ValidateProfileRequestValidationError) ErrorName() string {
+	return "ValidateProfileRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ValidateProfileRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sValidateProfileRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ValidateProfileRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ValidateProfileRequestValidationError{}
+
+// Validate checks the field values on ValidateProfileResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ValidateProfileResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ValidateProfileResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ValidateProfileResponseMultiError, or nil if none found.
+func (m *ValidateProfileResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ValidateProfileResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ValidateProfileResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ValidateProfileResponseMultiError is an error wrapping multiple validation
+// errors returned by ValidateProfileResponse.ValidateAll() if the designated
+// constraints aren't met.
+type ValidateProfileResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ValidateProfileResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ValidateProfileResponseMultiError) AllErrors() []error { return m }
+
+// ValidateProfileResponseValidationError is the validation error returned by
+// ValidateProfileResponse.Validate if the designated constraints aren't met.
+type ValidateProfileResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ValidateProfileResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ValidateProfileResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ValidateProfileResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ValidateProfileResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ValidateProfileResponseValidationError) ErrorName() string {
+	return "ValidateProfileResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ValidateProfileResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sValidateProfileResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ValidateProfileResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ValidateProfileResponseValidationError{}
+
 // Validate checks the field values on GetIntegrationsResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.

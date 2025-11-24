@@ -21,6 +21,9 @@ import (
 const (
 	TransformedTokenQueryParam                 = "fetch.token"
 	TransformedTestQueryParam                  = "fetch.test"
+	TransformedViewModeQueryParam              = "fetch.view_mode"
+	TransformedFetchByPathViewModeQueryParam   = "fetch_by_path.view_mode"
+	TransformedTopLevelViewModeQueryParam      = "view_mode" // For inline definitions
 	TransformedEnvironmentQueryParam           = "fetch.profile.environment"
 	TransformedProfileNameQueryParam           = "fetch.profile.name"
 	TransformedProfileIdQueryParam             = "fetch.profile.id"
@@ -33,6 +36,9 @@ var (
 	knownQueryParams = map[string]bool{
 		TransformedTokenQueryParam:                 true,
 		TransformedTestQueryParam:                  true,
+		TransformedViewModeQueryParam:              true,
+		TransformedFetchByPathViewModeQueryParam:   true,
+		TransformedTopLevelViewModeQueryParam:      true,
 		TransformedEnvironmentQueryParam:           true,
 		TransformedOptionsAsync:                    true,
 		TransformedProfileNameQueryParam:           true,
@@ -52,6 +58,49 @@ var (
 		"application/x-www-form-urlencoded",
 	}
 )
+
+// injectViewModeIntoBody injects the view_mode query parameter into the request body for inline definitions.
+// This is necessary because gRPC-Gateway's "body: *" annotation ignores query parameters for top-level fields.
+func injectViewModeIntoBody(r *http.Request) error {
+	viewModeParam := r.URL.Query().Get("view_mode")
+	if viewModeParam == "" {
+		return nil
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read request body: %w", err)
+	}
+	r.Body.Close()
+
+	var bodyMap map[string]interface{}
+	if len(bodyBytes) > 0 {
+		if err := json.Unmarshal(bodyBytes, &bodyMap); err != nil {
+			return fmt.Errorf("failed to parse request body as JSON: %w", err)
+		}
+	} else {
+		bodyMap = make(map[string]interface{})
+	}
+
+	// Only inject for inline definition requests
+	if def, hasDefinition := bodyMap["definition"]; hasDefinition && def != nil {
+		viewModeInt, err := strconv.Atoi(viewModeParam)
+		if err != nil {
+			return fmt.Errorf("invalid view_mode value: %s", viewModeParam)
+		}
+		bodyMap["view_mode"] = viewModeInt
+	}
+
+	newBodyBytes, err := json.Marshal(bodyMap)
+	if err != nil {
+		return fmt.Errorf("failed to re-encode request body: %w", err)
+	}
+
+	r.Body = io.NopCloser(bytes.NewReader(newBodyBytes))
+	r.ContentLength = int64(len(newBodyBytes))
+
+	return nil
+}
 
 // NOTE: This is only used by workflows. It's confusing, but the proto annotation for grpc gateway
 // only backfills the query parameters into the request body if the request is for Workflows. We don't whitelist
@@ -75,6 +124,23 @@ func HackUntilWeHaveGoKit(h http.Handler) http.Handler {
 		if test := r.URL.Query().Get(fetch.QueryParamTest); test != "" {
 			values.Del(fetch.QueryParamTest)
 			values.Set(TransformedTestQueryParam, test)
+		}
+		if viewMode := r.URL.Query().Get(fetch.QueryParamViewMode); viewMode != "" {
+			values.Del(fetch.QueryParamViewMode)
+			var enumValue string
+			switch viewMode {
+			case "editor":
+				enumValue = "1" // VIEW_MODE_EDIT
+			case "preview":
+				enumValue = "2" // VIEW_MODE_PREVIEW
+			case "deployed":
+				enumValue = "3" // VIEW_MODE_DEPLOYED
+			default:
+				enumValue = viewMode
+			}
+			values.Set(TransformedViewModeQueryParam, enumValue)
+			values.Set(TransformedFetchByPathViewModeQueryParam, enumValue)
+			values.Set(TransformedTopLevelViewModeQueryParam, enumValue)
 		}
 		if environment := r.URL.Query().Get(fetch.QueryParamEnvironment); environment != "" {
 			values.Del(fetch.QueryParamEnvironment)
@@ -121,6 +187,11 @@ func HackUntilWeHaveGoKit(h http.Handler) http.Handler {
 
 			if version == "v1" && rawResultsBool {
 				h.ServeHTTP(&rawResponseWriter{w}, r)
+				return
+			}
+		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/v2/execute") {
+			if err := injectViewModeIntoBody(r); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 		}
