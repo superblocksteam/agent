@@ -1102,3 +1102,246 @@ func TestFilterParameters(t *testing.T) {
 		})
 	}
 }
+
+func TestViewModeEnumToString(t *testing.T) {
+	tests := []struct {
+		name     string
+		viewMode apiv1.ViewMode
+		expected string
+	}{
+		{
+			name:     "edit mode",
+			viewMode: apiv1.ViewMode_VIEW_MODE_EDIT,
+			expected: "editor",
+		},
+		{
+			name:     "preview mode",
+			viewMode: apiv1.ViewMode_VIEW_MODE_PREVIEW,
+			expected: "preview",
+		},
+		{
+			name:     "deployed mode",
+			viewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+			expected: "deployed",
+		},
+		{
+			name:     "unspecified mode",
+			viewMode: apiv1.ViewMode_VIEW_MODE_UNSPECIFIED,
+			expected: "",
+		},
+		{
+			name:     "invalid mode",
+			viewMode: apiv1.ViewMode(999),
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := viewModeEnumToString(tt.viewMode)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFetchDefinitionFromRequestWithValidation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		request        *apiv1.ExecuteRequest
+		mockValidation func(*fetchmocks.Fetcher)
+		expectError    bool
+		errorContains  string
+	}{
+		{
+			name: "inline definition with profile validation success",
+			request: &apiv1.ExecuteRequest{
+				ViewMode: apiv1.ViewMode_VIEW_MODE_EDIT,
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("production"),
+					Id:   utils.Pointer("profile-id"),
+				},
+				Request: &apiv1.ExecuteRequest_Definition{
+					Definition: &apiv1.Definition{
+						Api: &apiv1.Api{
+							Metadata: &commonv1.Metadata{
+								Id:   "api-id",
+								Name: "Test API",
+							},
+							Blocks: []*apiv1.Block{
+								{
+									Name: "Step1",
+									Config: &apiv1.Block_Step{
+										Step: &apiv1.Step{
+											Integration: "integration-1",
+										},
+									},
+								},
+							},
+						},
+						Integrations: map[string]*structpb.Struct{
+							"integration-1": func() *structpb.Struct {
+								s, _ := structpb.NewStruct(map[string]interface{}{
+									"id": "integration-1",
+								})
+								return s
+							}(),
+						},
+					},
+				},
+			},
+			mockValidation: func(f *fetchmocks.Fetcher) {
+				f.On("ValidateProfile", mock.Anything, mock.MatchedBy(func(req *integrationv1.ValidateProfileRequest) bool {
+					return req.ViewMode == "editor" &&
+						req.Profile.GetName() == "production" &&
+						len(req.IntegrationIds) == 1 &&
+						req.IntegrationIds[0] == "integration-1"
+				})).Return(nil)
+			},
+			expectError: false,
+		},
+		{
+			name: "inline definition with profile validation failure",
+			request: &apiv1.ExecuteRequest{
+				ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("production"),
+				},
+				Request: &apiv1.ExecuteRequest_Definition{
+					Definition: &apiv1.Definition{
+						Api: &apiv1.Api{
+							Metadata: &commonv1.Metadata{
+								Id:   "api-id",
+								Name: "Test API",
+							},
+							Blocks: []*apiv1.Block{
+								{
+									Name: "Step1",
+									Config: &apiv1.Block_Step{
+										Step: &apiv1.Step{
+											Integration: "integration-1",
+										},
+									},
+								},
+							},
+						},
+						Integrations: map[string]*structpb.Struct{},
+					},
+				},
+			},
+			mockValidation: func(f *fetchmocks.Fetcher) {
+				f.On("ValidateProfile", mock.Anything, mock.Anything).Return(sberrors.ErrAuthorization)
+			},
+			expectError:   true,
+			errorContains: "Authorization",
+		},
+		{
+			name: "inline definition without profile - no validation",
+			request: &apiv1.ExecuteRequest{
+				ViewMode: apiv1.ViewMode_VIEW_MODE_EDIT,
+				Request: &apiv1.ExecuteRequest_Definition{
+					Definition: &apiv1.Definition{
+						Api: &apiv1.Api{
+							Metadata: &commonv1.Metadata{
+								Id:   "api-id",
+								Name: "Test API",
+							},
+							Blocks: []*apiv1.Block{
+								{
+									Name: "Step1",
+									Config: &apiv1.Block_Step{
+										Step: &apiv1.Step{
+											Integration: "integration-1",
+										},
+									},
+								},
+							},
+						},
+						Integrations: map[string]*structpb.Struct{
+							"integration-1": func() *structpb.Struct {
+								s, _ := structpb.NewStruct(map[string]interface{}{
+									"id": "integration-1",
+								})
+								return s
+							}(),
+						},
+					},
+				},
+			},
+			mockValidation: func(f *fetchmocks.Fetcher) {
+				// Should not be called
+			},
+			expectError: false,
+		},
+		{
+			name: "inline definition with unspecified view mode - no validation",
+			request: &apiv1.ExecuteRequest{
+				ViewMode: apiv1.ViewMode_VIEW_MODE_UNSPECIFIED,
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("production"),
+				},
+				Request: &apiv1.ExecuteRequest_Definition{
+					Definition: &apiv1.Definition{
+						Api: &apiv1.Api{
+							Metadata: &commonv1.Metadata{
+								Id:   "api-id",
+								Name: "Test API",
+							},
+							Blocks: []*apiv1.Block{
+								{
+									Name: "Step1",
+									Config: &apiv1.Block_Step{
+										Step: &apiv1.Step{
+											Integration: "integration-1",
+										},
+									},
+								},
+							},
+						},
+						Integrations: map[string]*structpb.Struct{
+							"integration-1": func() *structpb.Struct {
+								s, _ := structpb.NewStruct(map[string]interface{}{
+									"id": "integration-1",
+								})
+								return s
+							}(),
+						},
+					},
+				},
+			},
+			mockValidation: func(f *fetchmocks.Fetcher) {
+				// Should not be called
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockFetcher := fetchmocks.NewFetcher(t)
+			if tt.mockValidation != nil {
+				tt.mockValidation(mockFetcher)
+			}
+
+			_, _, err := fetchDefinitionFromRequest(
+				context.Background(),
+				tt.request,
+				mockFetcher,
+				false,
+				zap.NewNop(),
+			)
+
+			if tt.expectError {
+				require.Error(t, err)
+				if tt.errorContains != "" {
+					assert.Contains(t, err.Error(), tt.errorContains)
+				}
+			} else {
+				require.NoError(t, err)
+			}
+
+			mockFetcher.AssertExpectations(t)
+		})
+	}
+}

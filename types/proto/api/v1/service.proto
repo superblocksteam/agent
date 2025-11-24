@@ -337,6 +337,12 @@ message ExecuteRequest {
   common.v1.Profile profile = 6;
 
   repeated Mock mocks = 7;
+
+  /*
+   * The view mode for this execution. Used for inline definitions.
+   * For fetch/fetchByPath, the nested view_mode takes precedence.
+   */
+  ViewMode view_mode = 9;
 }
 
 message Definition {

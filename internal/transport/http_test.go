@@ -319,6 +319,50 @@ func TestHackUntilWeHaveGoKit(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "viewMode query param transformation - editor",
+			method:    http.MethodPost,
+			beforeURL: "https://api.superblocks.com/v2/execute?viewMode=editor",
+			afterURL:  "https://api.superblocks.com/v2/execute?fetch.view_mode=1&fetch_by_path.view_mode=1&view_mode=1",
+			headers: map[string][]string{
+				"Content-Type": {"application/json"},
+			},
+			body:         "",
+			expectedBody: nil, // grpc-gateway handles this, not our middleware
+		},
+		{
+			name:      "viewMode query param transformation - preview",
+			method:    http.MethodPost,
+			beforeURL: "https://api.superblocks.com/v2/execute?viewMode=preview",
+			afterURL:  "https://api.superblocks.com/v2/execute?fetch.view_mode=2&fetch_by_path.view_mode=2&view_mode=2",
+			headers: map[string][]string{
+				"Content-Type": {"application/json"},
+			},
+			body:         "",
+			expectedBody: nil,
+		},
+		{
+			name:      "viewMode query param transformation - deployed",
+			method:    http.MethodPost,
+			beforeURL: "https://api.superblocks.com/v2/execute?viewMode=deployed",
+			afterURL:  "https://api.superblocks.com/v2/execute?fetch.view_mode=3&fetch_by_path.view_mode=3&view_mode=3",
+			headers: map[string][]string{
+				"Content-Type": {"application/json"},
+			},
+			body:         "",
+			expectedBody: nil,
+		},
+		{
+			name:      "viewMode with integrationId query params",
+			method:    http.MethodPost,
+			beforeURL: "https://api.superblocks.com/v2/execute?viewMode=editor&integrationId=int-1&integrationId=int-2",
+			afterURL:  "https://api.superblocks.com/v2/execute?fetch.view_mode=1&fetch_by_path.view_mode=1&integrationId=int-1&integrationId=int-2&view_mode=1",
+			headers: map[string][]string{
+				"Content-Type": {"application/json"},
+			},
+			body:         "",
+			expectedBody: nil,
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			request, err := http.NewRequest(test.method, test.beforeURL, strings.NewReader(test.body))
@@ -341,6 +385,110 @@ func TestHackUntilWeHaveGoKit(t *testing.T) {
 
 			if test.expectedErr != "" {
 				assert.Equal(t, test.expectedErr, string(body))
+			}
+		})
+	}
+}
+
+func TestInjectViewModeIntoBody(t *testing.T) {
+	tests := []struct {
+		name          string
+		url           string
+		body          string
+		expectedBody  map[string]interface{}
+		expectedError string
+	}{
+		{
+			name: "no view_mode query param - no injection",
+			url:  "/v2/execute",
+			body: `{"definition": {"api": {"metadata": {"id": "test"}}}}`,
+			expectedBody: map[string]interface{}{
+				"definition": map[string]interface{}{
+					"api": map[string]interface{}{
+						"metadata": map[string]interface{}{
+							"id": "test",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "view_mode with inline definition - inject",
+			url:  "/v2/execute?view_mode=1",
+			body: `{"definition": {"api": {"metadata": {"id": "test"}}}}`,
+			expectedBody: map[string]interface{}{
+				"definition": map[string]interface{}{
+					"api": map[string]interface{}{
+						"metadata": map[string]interface{}{
+							"id": "test",
+						},
+					},
+				},
+				"view_mode": float64(1),
+			},
+		},
+		{
+			name: "view_mode without definition - no injection",
+			url:  "/v2/execute?view_mode=1",
+			body: `{"fetch": {"id": "test"}}`,
+			expectedBody: map[string]interface{}{
+				"fetch": map[string]interface{}{
+					"id": "test",
+				},
+			},
+		},
+		{
+			name: "view_mode with null definition - no injection",
+			url:  "/v2/execute?view_mode=1",
+			body: `{"definition": null}`,
+			expectedBody: map[string]interface{}{
+				"definition": nil,
+			},
+		},
+		{
+			name:         "view_mode with empty body",
+			url:          "/v2/execute?view_mode=1",
+			body:         "",
+			expectedBody: map[string]interface{}{},
+		},
+		{
+			name:          "invalid view_mode value",
+			url:           "/v2/execute?view_mode=invalid",
+			body:          `{"definition": {"api": {"metadata": {"id": "test"}}}}`,
+			expectedError: "invalid view_mode value",
+		},
+		{
+			name:          "invalid JSON body",
+			url:           "/v2/execute?view_mode=1",
+			body:          `{invalid json}`,
+			expectedError: "failed to parse request body as JSON",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest(http.MethodPost, tt.url, strings.NewReader(tt.body))
+			require.NoError(t, err)
+
+			err = injectViewModeIntoBody(req)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				return
+			}
+
+			require.NoError(t, err)
+
+			if tt.expectedBody != nil {
+				bodyBytes, err := io.ReadAll(req.Body)
+				require.NoError(t, err)
+
+				var actualBody map[string]interface{}
+				err = json.Unmarshal(bodyBytes, &actualBody)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedBody, actualBody)
 			}
 		})
 	}

@@ -227,36 +227,72 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 	return def, rawDef, nil
 }
 
+func viewModeEnumToString(vm apiv1.ViewMode) string {
+	switch vm {
+	case apiv1.ViewMode_VIEW_MODE_EDIT:
+		return "editor"
+	case apiv1.ViewMode_VIEW_MODE_PREVIEW:
+		return "preview"
+	case apiv1.ViewMode_VIEW_MODE_DEPLOYED:
+		return "deployed"
+	default:
+		return ""
+	}
+}
+
 func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fetcher, useAgentKey bool, logger *zap.Logger) (*apiv1.Definition, *structpb.Struct, error) {
 	def := request.GetDefinition()
-	var integrations []string
-	{
-		utils.ForEachBlockInAPI(def.GetApi(), func(block *apiv1.Block) {
-			if step := block.GetStep(); step != nil && step.Integration != "" {
-				if _, ok := def.Integrations[step.Integration]; !ok {
-					integrations = append(integrations, step.Integration)
-				}
+
+	// Security: For inline definitions, validate profile restrictions before execution
+	// Collect all integration IDs and determine which ones need to be fetched
+	allIntegrationIds := make([]string, 0)
+	integrationsToFetch := make([]string, 0)
+
+	utils.ForEachBlockInAPI(def.GetApi(), func(block *apiv1.Block) {
+		if step := block.GetStep(); step != nil && step.Integration != "" {
+			allIntegrationIds = append(allIntegrationIds, step.Integration)
+			// Check if we need to fetch this integration
+			if _, ok := def.Integrations[step.Integration]; !ok {
+				integrationsToFetch = append(integrationsToFetch, step.Integration)
 			}
+		}
+	})
+
+	// Validate profile restrictions if viewMode is explicitly provided
+	if len(allIntegrationIds) > 0 && request.GetProfile() != nil && request.ViewMode != apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
+		viewModeStr := viewModeEnumToString(request.ViewMode)
+
+		err := fetcher.ValidateProfile(ctx, &integrationv1.ValidateProfileRequest{
+			Profile:        request.GetProfile(),
+			ViewMode:       viewModeStr,
+			IntegrationIds: allIntegrationIds,
 		})
+		if err != nil {
+			logger.Warn("profile validation failed for inline definition", zap.Error(err))
+			return nil, nil, err
+		}
 	}
 
-	if len(integrations) > 0 {
+	// Fetch missing integration configurations
+	if len(integrationsToFetch) > 0 {
 		resp, err := fetcher.FetchIntegrations(ctx, &integrationv1.GetIntegrationsRequest{
-			Ids:     integrations,
+			Ids:     integrationsToFetch,
 			Profile: request.GetProfile(),
 		}, useAgentKey)
 		if err != nil {
+			logger.Warn("integration fetch failed for inline definition", zap.Error(err))
 			return nil, nil, err
 		}
 
-		def.Integrations = map[string]*structpb.Struct{}
+		if def.Integrations == nil {
+			def.Integrations = map[string]*structpb.Struct{}
+		}
 
 		for _, integration := range resp.Data {
 			if integration == nil || len(integration.Configurations) == 0 {
-				logger.Warn("integration is nil or has no configurations")
+				logger.Warn("integration has no configurations", zap.String("id", integration.GetId()))
 				continue
 			}
-
 			def.Integrations[integration.Id] = integration.Configurations[0].Configuration
 		}
 	}

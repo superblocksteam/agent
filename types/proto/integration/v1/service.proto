@@ -24,6 +24,16 @@ message GetIntegrationsRequest {
   optional string slug = 4;
 }
 
+message ValidateProfileRequest {
+  common.v1.Profile profile = 1;
+  string view_mode = 2;  // e.g. "editor", "preview", "deployed"
+  repeated string integration_ids = 3;
+}
+
+message ValidateProfileResponse {
+  // Empty response on success, error on validation failure
+}
+
 message GetIntegrationsResponse {
   repeated Integration data = 1;
 }

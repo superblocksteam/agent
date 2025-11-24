@@ -56,6 +56,7 @@ type ServerClient interface {
 	GetApi(context.Context, *time.Duration, http.Header, url.Values, string, bool, string) (*http.Response, error)                       // Fetches an api
 	GetApiByPath(context.Context, *time.Duration, http.Header, url.Values, string, string, string, string, bool) (*http.Response, error) // Fetches an api by path
 	PostDatasource(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                             // Fetches an integration
+	ValidateProfile(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                    // Validates profile restrictions
 	PostSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                         // Create user specific auth token
 	DeleteSpecificUserTokens(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                           // Delete user specific auth token
 	GetSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                          // Fetch user specific auth token
@@ -126,6 +127,11 @@ func (s *serverClient) GetApiByPath(
 // This is actually fetching the datasource, not creating one
 func (s *serverClient) PostDatasource(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, integrationId string) (*http.Response, error) {
 	path := fmt.Sprintf("%s/%s", "api/v1/agents/datasource", integrationId)
+	return s.sendRequest(ctx, timeout, http.MethodPost, path, headers, query, nil, true)
+}
+
+func (s *serverClient) ValidateProfile(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values) (*http.Response, error) {
+	path := "api/v3/profiles/validate"
 	return s.sendRequest(ctx, timeout, http.MethodPost, path, headers, query, nil, true)
 }
 

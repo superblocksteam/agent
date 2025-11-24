@@ -437,6 +437,19 @@ func injectGlobalUserIntoInputs(ctx context.Context, inputs map[string]*structpb
 	return outputs, nil
 }
 
+// getViewMode returns the view mode for the request.
+// For fetch/fetchByPath, it uses the nested view_mode.
+// For inline definitions, it uses the top-level view_mode.
+func getViewMode(req *apiv1.ExecuteRequest) apiv1.ViewMode {
+	if fetch := req.GetFetch(); fetch != nil {
+		return fetch.GetViewMode()
+	}
+	if fetchByPath := req.GetFetchByPath(); fetchByPath != nil {
+		return fetchByPath.GetViewMode()
+	}
+	return req.GetViewMode()
+}
+
 func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send func(*apiv1.StreamResponse) error, bus functions.Bus) (done *executor.Done, err error) {
 	ctx = constants.WithAgentId(
 		constants.WithAgentVersion(
@@ -468,11 +481,13 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		return nil, err
 	}
 
+	viewMode := getViewMode(req)
+
 	var inputs map[string]*structpb.Value
 	{
 		var params *commonv1.HttpParameters
 		{
-			if trigger := result.Api.GetTrigger(); trigger != nil && trigger.GetWorkflow() != nil && (req.GetFetch() == nil || req.GetFetch().ViewMode != apiv1.ViewMode_VIEW_MODE_DEPLOYED) {
+			if trigger := result.Api.GetTrigger(); trigger != nil && trigger.GetWorkflow() != nil && viewMode != apiv1.ViewMode_VIEW_MODE_DEPLOYED {
 				params = executor.ToHttpParameters(trigger.GetWorkflow().GetParameters())
 			} else {
 				params = &commonv1.HttpParameters{}
@@ -543,8 +558,17 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	var failures []*commonv1.Error
 	var mutex sync.Mutex
 
+	var fetchToken string
+	var branchName string
+	if fetch := req.GetFetch(); fetch != nil {
+		fetchToken = fetch.GetToken()
+		branchName = fetch.GetBranchName()
+	} else if fetchByPath := req.GetFetchByPath(); fetchByPath != nil {
+		branchName = fetchByPath.GetBranchName()
+	}
+
 	done, err, _ = executor.Execute(ctx, &executor.Options{
-		Logger:                       s.Logger.With(observability.Enrich(result.Api, req.GetFetch().GetViewMode().Enum())...).With(observability.EnrichUserInfo(ctx, result.Metadata)...),
+		Logger:                       s.Logger.With(observability.Enrich(result.Api, viewMode.Enum())...).With(observability.EnrichUserInfo(ctx, result.Metadata)...),
 		Store:                        s.Store,
 		Worker:                       s.Worker,
 		Integrations:                 result.Integrations,
@@ -560,9 +584,9 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		Fetcher:                      s.Fetcher,
 		Flags:                        s.Flags,
 		TokenManager:                 s.TokenManager,
-		IsDeployed:                   req.GetFetch().GetViewMode() == apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+		IsDeployed:                   viewMode == apiv1.ViewMode_VIEW_MODE_DEPLOYED,
 		DefaultResolveOptions:        s.DefaultResolveOptions,
-		FetchToken:                   req.GetFetch().GetToken(),
+		FetchToken:                   fetchToken,
 		RootStartTime:                time.Now(),
 		SecretManager:                s.SecretManager,
 		GarbageCollect:               true,
@@ -571,7 +595,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		Secrets:                      s.Secrets,
 		Signature:                    s.Signature,
 		DisableSignatureVerification: disableSignatureVerification,
-		BranchName:                   req.GetFetch().GetBranchName(),
+		BranchName:                   branchName,
 		Mocker:                       mocker.New(req.GetMocks(), bus),
 		TemplatePlugin:               templatePlugin,
 		LegacyTemplatePlugin:         legacyTemplatePlugin,
