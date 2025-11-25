@@ -2997,12 +2997,6 @@ importers:
       '@superblocksteam/javascript':
         specifier: workspace:*
         version: link:../plugins/javascript
-      acorn:
-        specifier: 8.12.1
-        version: 8.12.1
-      acorn-walk:
-        specifier: 8.3.4
-        version: 8.3.4
       dotenv:
         specifier: 16.4.5
         version: 16.4.5
@@ -3021,9 +3015,6 @@ importers:
       lodash:
         specifier: 4.17.21
         version: 4.17.21
-      magic-string:
-        specifier: 0.30.21
-        version: 0.30.21
       moment:
         specifier: 2.30.1
         version: 2.30.1
@@ -3036,6 +3027,9 @@ importers:
       prom-client:
         specifier: 15.1.3
         version: 15.1.3
+      vm2:
+        specifier: 3.10.0
+        version: 3.10.0
     devDependencies:
       '@jest/globals':
         specifier: 29.7.0
@@ -4124,9 +4118,6 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.0':
     resolution: {integrity: sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==}
-
-  '@jridgewell/sourcemap-codec@1.5.5':
-    resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
@@ -7153,9 +7144,6 @@ packages:
   lz4@0.6.5:
     resolution: {integrity: sha512-KSZcJU49QZOlJSItaeIU3p8WoAvkTmD9fJqeahQXNu1iQ/kR0/mQLdbrK8JY9MY8f6AhJoMrihp1nu1xDbscSQ==}
     engines: {node: '>= 0.10'}
-
-  magic-string@0.30.21:
-    resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
   make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
@@ -10748,8 +10736,6 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.0': {}
 
-  '@jridgewell/sourcemap-codec@1.5.5': {}
-
   '@jridgewell/trace-mapping@0.3.25':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
@@ -12060,7 +12046,7 @@ snapshots:
 
   acorn-walk@8.3.4:
     dependencies:
-      acorn: 8.12.1
+      acorn: 8.15.0
 
   acorn@8.12.1: {}
 
@@ -14589,10 +14575,6 @@ snapshots:
       nan: 2.20.0
       xxhashjs: 0.2.2
     optional: true
-
-  magic-string@0.30.21:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
 
   make-dir@4.0.0:
     dependencies:
