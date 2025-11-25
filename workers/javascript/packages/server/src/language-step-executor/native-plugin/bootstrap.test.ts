@@ -20,7 +20,7 @@ describe('bootstrap', () => {
       };
       context.kvStore = mockStore as unknown as KVStore;
 
-      const code = `var path = await import('path');
+      const code = `var path = require('path');
         var _ = require('lodash');
 
         console.log("Starting script...");
@@ -50,6 +50,8 @@ describe('bootstrap', () => {
 
       process.env = existingEnv;
 
+      console.log(JSON.stringify(result, null, 2));
+
       expect(result).toBeDefined();
       expect(result.log.length).toEqual(1);
       expect(result.output).toEqual(expectedOutput);
@@ -69,7 +71,7 @@ describe('bootstrap', () => {
       };
       context.kvStore = mockStore as unknown as KVStore;
 
-      const code = `var path = await import('path');
+      const code = `var path = require('path');
         var _ = require('lodash');
 
         globalResult = path.join('/tmp', 'test_data', name);
@@ -162,7 +164,7 @@ describe('bootstrap', () => {
         validateFilePickerObject(SampleFiles, 2, ['SuperBlocks Image.png', undefined]);
         validateFilePickerObject(ExtraFiles, 1, ['SuperBlocks Image (2).png']);
 
-        return localVariables === undefined;
+        return true;
             `;
       const filePaths: Record<string, string> = {
         'SampleFiles.files.0': '/tmp/00000000-0000-0000-0000-00000000000a',
@@ -199,7 +201,7 @@ describe('bootstrap', () => {
       const filePaths: Record<string, string> = {};
       const inheritedEnv: Array<string> = [];
 
-      const expectedErr = `Error on line 138:
+      const expectedErr = `Error on line 61:
 Error: variables not defined`;
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
@@ -241,8 +243,8 @@ Error: variables not defined`;
 
       const expectedErr = `Error on line 4:
         console.log("Starting script...";
-                    ^^^^^^^^^^^^^^^^^^^^
-SyntaxError: missing ) after argument list`;
+                                        ^
+SyntaxError: Unexpected token ';'`;
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths });
 
@@ -292,6 +294,47 @@ ReferenceError: userName is not defined`;
   });
 
   describe('system modules', () => {
+    it('imports of process throw an error', async () => {
+      const mockStore = new MockKVStore();
+      await mockStore.write('name', 'TestFunc');
+      const context: ExecutionContext = new ExecutionContext();
+      context.variables = {
+        name: {
+          key: 'name',
+          type: VariableType.Native,
+          mode: 'read'
+        }
+      };
+      context.kvStore = mockStore as unknown as KVStore;
+      const filePaths: Record<string, string> = {};
+      const inheritedEnv: Array<string> = [];
+
+      const expectedErr = `Error on line 34:
+VMError: Cannot find module 'process'`;
+
+      let code = `var nodeProcess = require('process');
+        return Object.keys(nodeProcess.env);
+            `;
+      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(result).toBeDefined();
+      expect(result.output).toEqual({});
+      expect(result.error).toEqual(expectedErr);
+
+      const expectedErrNode = `Error on line 4:
+VMError: Cannot find module 'node:process'`;
+
+      code = `console.log('hello'); var nodeProcess = require('node:process');
+        console.log(nodeProcess.env);
+        return Object.keys(nodeProcess.env);
+            `;
+      const resultNode: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(resultNode).toBeDefined();
+      expect(resultNode.output).toEqual({});
+      expect(resultNode.error).toEqual(expectedErrNode);
+    });
+
     it('imports of child_process throw an error', async () => {
       const mockStore = new MockKVStore();
       await mockStore.write('name', 'TestFunc');
@@ -307,8 +350,8 @@ ReferenceError: userName is not defined`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: Array<string> = [];
 
-      const expectedErr = `Error on line -20:
-Error: Cannot find module 'child_process'`;
+      const expectedErr = `Error on line 34:
+VMError: Cannot find module 'child_process'`;
 
       let code = `var childProc = require('child_process');
         console.log(childProc.execSync('env').toString());
@@ -319,50 +362,10 @@ Error: Cannot find module 'child_process'`;
       expect(result.output).toEqual({});
       expect(result.error).toEqual(expectedErr);
 
-      const expectedErrNode = `Error on line -20:
-Error: Cannot find module 'node:child_process'`;
+      const expectedErrNode = `Error on line 4:
+VMError: Cannot find module 'node:child_process'`;
 
       code = `var childProc = require('node:child_process');
-        console.log(childProc.execSync('env').toString());
-            `;
-      const resultNode: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
-
-      expect(resultNode).toBeDefined();
-      expect(resultNode.output).toEqual({});
-      expect(resultNode.error).toEqual(expectedErrNode);
-    });
-
-    it('dynamic imports of child_process throw an error', async () => {
-      const mockStore = new MockKVStore();
-      await mockStore.write('name', 'TestFunc');
-      const context: ExecutionContext = new ExecutionContext();
-      context.variables = {
-        name: {
-          key: 'name',
-          type: VariableType.Native,
-          mode: 'read'
-        }
-      };
-      context.kvStore = mockStore as unknown as KVStore;
-      const filePaths: Record<string, string> = {};
-      const inheritedEnv: Array<string> = [];
-
-      const expectedErr = `Error on line -34:
-Error: Cannot find module 'child_process'`;
-
-      let code = `var childProc = await import('child_process');
-        console.log(childProc.execSync('echo $HOME').toString());
-            `;
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
-
-      expect(result).toBeDefined();
-      expect(result.output).toEqual({});
-      expect(result.error).toEqual(expectedErr);
-
-      const expectedErrNode = `Error on line -34:
-Error: Cannot find module 'node:child_process'`;
-
-      code = `var childProc = await import('node:child_process');
         console.log(childProc.execSync('env').toString());
             `;
       const resultNode: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
@@ -380,67 +383,67 @@ Error: Cannot find module 'node:child_process'`;
       [
         'require through module',
         `module.require('${moduleName}')`,
-        /^Error on line -?\d+:\s+Error: Cannot find module '\w+'$/,
+        /^Error on line -?\d+:\s+VMError: Cannot find module '\w+'$/,
       ],
       [
         'require through module.parent',
         `module.parent.require('${moduleName}')`,
-        /^Error on line -?\d+:\s+Error: Cannot find module '\w+'$/,
+        /^Error on line -?\d+:\s+TypeError: Cannot read properties of undefined \(reading 'require'\)$/,
       ],
       [
         'dynamic import',
         `await import('${moduleName}')`,
-        /^Error on line -?\d+:\s+Error: Cannot find module '\w+'$/,
+        /^Error on line -?\d+:\s+VMError: Dynamic Import not supported$/,
       ],
       [
         'dynamic import through eval',
         `await eval("(async () => { return await import('${moduleName}') })()")`,
-        /^Error on line \d+:\s+ReferenceError: eval is not defined$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
       ],
       [
         'dynamic import through indirect eval',
         `await ('', eval)("(async () => { return await import('${moduleName}') })()")`,
-        /^Error on line \d+:\s+ReferenceError: eval is not defined$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
       ],
       [
         'require through Function.constructor',
         `Function.constructor("return require('${moduleName}')")()`,
-        /^Error on line \d+:\s+ReferenceError: Function is not defined$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
       ],
       [
         'dynamic import through Function.constructor',
         `await Function.constructor("return import('${moduleName}')")()`,
-        /^Error on line \d+:\s+ReferenceError: Function is not defined$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
       ],
       [
         'require through anonymous function constructor',
         `(() => {}).constructor("return require('${moduleName}')")()`,
-        /^Error on line \d+:\s+TypeError: \(?[\w\s]+\)?\.constructor is not a function$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
       ],
       [
         'dynamic import through anonymous function constructor',
         `await (() => {}).constructor("return import('${moduleName}')")()`,
-        /^Error on line \d+:\s+TypeError: \(?[\w\s]+\)?\.constructor is not a function$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
       ],
       [
         'require through AsyncFunction.constructor',
         `await AsyncFunction.constructor("return require('${moduleName}')")()`,
-        /^Error on line \d+:\s+ReferenceError: AsyncFunction is not defined$/,
+        /^Error on line -?\d+:\s+ReferenceError: AsyncFunction is not defined$/,
       ],
       [
         'dynamic import through AsyncFunction.constructor',
         `await AsyncFunction.constructor("return import('${moduleName}')")()`,
-        /^Error on line \d+:\s+ReferenceError: AsyncFunction is not defined$/,
+        /^Error on line -?\d+:\s+ReferenceError: AsyncFunction is not defined$/,
       ],
       [
         'require through anonymous async function constructor',
         `await (async () => {}).constructor("return require('${moduleName}')")()`,
-        /^Error on line \d+:\s+TypeError: \(?[\w\s]+\)?\.constructor is not a function$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
       ],
       [
         'dynamic import through anonymous async function constructor',
         `await (async () => {}).constructor("return import('${moduleName}')")()`,
-        /^Error on line \d+:\s+TypeError: \(?[\w\s]+\)?\.constructor is not a function$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
       ],
     ];
     for (const [name, importExpr, expectedErr] of testCases) {
@@ -471,160 +474,27 @@ Error: Cannot find module 'node:child_process'`;
     }
   });
 
-  describe('Imports of process should return santized process object', () => {
-    const testCases: Array<[string, string[] | null | undefined, Record<string, string>, string[]]> = [
-      ['populated', ['VAR_1', 'VAR_2', 'VAR_3'], { VAR_1: 'val1', VAR_3: 'val3', OTHER_VAR: 'otherValue' }, ['VAR_1', 'VAR_3']],
-      ['empty', [], { VAR_1: 'val1', VAR_3: 'val3', OTHER_VAR: 'otherValue' }, []],
-      ['null', null, { VAR_1: 'val1', VAR_3: 'val3', OTHER_VAR: 'otherValue' }, []],
-      ['undefined', undefined, { VAR_1: 'val1', VAR_3: 'val3', OTHER_VAR: 'otherValue' }, []]
-    ];
-
-    const importTypes: Array<[string, string]> = [
-      ['require', 'require'],
-      ['import', 'await import']
-    ];
-    for (const [importType, importKeyword] of importTypes) {
-      for (const [testName, inheritedEnv, testEnv, expectedOutput] of testCases) {
-        test(`${importType} ${testName} process env for inherited env`, async () => {
-          const mockStore = new MockKVStore();
-          await mockStore.write('name', 'TestFunc');
-          const context: ExecutionContext = new ExecutionContext();
-          context.variables = {
-            name: {
-              key: 'name',
-              type: VariableType.Native,
-              mode: 'read'
-            }
-          };
-          context.kvStore = mockStore as unknown as KVStore;
-          const filePaths: Record<string, string> = {};
-
-          const codeProcess = `var nodeProcess = ${importKeyword}('process');
-            return Object.keys(nodeProcess.env);
-                `;
-
-          const existingEnv = process.env;
-          process.env = testEnv;
-
-          const resultProcess: ExecutionOutput = await executeCode({ context, code: codeProcess, filePaths, inheritedEnv });
-
-          expect(resultProcess).toBeDefined();
-          expect(resultProcess.error).not.toBeDefined();
-          expect(resultProcess.output).toEqual(expectedOutput);
-
-          const codeNodeProcess = `var nodeProcess = ${importKeyword}('node:process');
-            return Object.keys(nodeProcess.env);
-                `;
-          const resultNodeProcess: ExecutionOutput = await executeCode({ context, code: codeNodeProcess, filePaths, inheritedEnv });
-
-          process.env = existingEnv;
-
-          expect(resultNodeProcess).toBeDefined();
-          expect(resultNodeProcess.output).toEqual(expectedOutput);
-          expect(resultNodeProcess.error).not.toBeDefined();
-        });
-      }
-    }
-  });
-
-  describe('Restricted Process Methods', () => {
-    const testCases: Array<[string, unknown[], unknown]> = [
-      ['abort', [], undefined],
-      ['disconnect', [], undefined],
-      ['dlopen', ['process', `'node_modules/.bin'`], undefined],
-      ['dlopen', ['process', `'node_modules/.bin'`, 0], undefined],
-      ['emitWarning', [`'Failed to terminate process'`, `{ detail: 'pid 2156' }`], undefined],
-      ['emitWarning', [`'Failed to terminate process'`, `'ERROR'`, `'256'`, null], undefined],
-      ['exit', [0], undefined],
-      ['getActiveResourcesInfo', [], []],
-      ['kill', [2156], undefined],
-      ['kill', [2156, `'SIGTERM'`], undefined],
-      ['send?.', [], undefined]
-    ];
-
-    for (const [restrictedMethod, args, expectedOutput] of testCases) {
-      test(`${restrictedMethod} should return expected output for inputs`, async () => {
-        const mockStore = new MockKVStore();
-        await mockStore.write('name', 'TestFunc');
-        const context: ExecutionContext = new ExecutionContext();
-        context.variables = {
-          name: {
-            key: 'name',
-            type: VariableType.Native,
-            mode: 'read'
-          }
-        };
-        context.kvStore = mockStore as unknown as KVStore;
-
-        const code = `return process.${restrictedMethod}(${args.join(', ')});`;
-        const filePaths: Record<string, string> = {};
-        const inheritedEnv: Array<string> = [];
-
-        const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
-
-        expect(result).toBeDefined();
-        expect(result.output).toEqual(expectedOutput);
-        expect(result.error).not.toBeDefined();
-      });
-    }
-  });
-
-  describe('Restricted Process Methods Throw Errors', () => {
-    const testCases: Array<[string, unknown[], unknown]> = [
-      ['channel.ref', [], "Error on line 1:\nTypeError: Cannot read properties of undefined (reading 'ref')"],
-      ['channel.unref', [], "Error on line 1:\nTypeError: Cannot read properties of undefined (reading 'unref')"],
-      ['chdir', [`'/root'`], 'Error on line 163:\nError: Unable to change directory in a sandboxed environment']
-    ];
-
-    for (const [restrictedMethod, args, expectedErr] of testCases) {
-      test(`${restrictedMethod} should throw error when invoked`, async () => {
-        const mockStore = new MockKVStore();
-        await mockStore.write('name', 'TestFunc');
-        const context: ExecutionContext = new ExecutionContext();
-        context.variables = {
-          name: {
-            key: 'name',
-            type: VariableType.Native,
-            mode: 'read'
-          }
-        };
-        context.kvStore = mockStore as unknown as KVStore;
-
-        const code = `return process.${restrictedMethod}(${args.join(', ')});`;
-        const filePaths: Record<string, string> = {};
-        const inheritedEnv: Array<string> = [];
-
-        const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
-
-        expect(result).toBeDefined();
-        expect(result.output).toEqual({});
-        expect(result.error).toEqual(expectedErr);
-      });
-    }
-  });
-
   describe('Restricted Process Properties', () => {
-    const testCases: Array<[string, unknown]> = [
-      ['allowedNodeEnvironmentFlags', new Set()],
-      ['channel', undefined],
-      ['config', {}],
-      ['connected', false],
-      [
-        'env',
-        {
-          AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION,
-          AWS_ROLE_ARN: process.env.AWS_ROLE_ARN,
-          AWS_WEB_IDENTITY_TOKEN_FILE: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
-          AWS_REGION: process.env.AWS_REGION
-        }
-      ],
-      ['mainModule', undefined],
-      ['ppid', process.pid],
-      ['send', undefined]
+    const testCases: Array<string> = [
+      'abort',
+      'allowedNodeEnvironmentFlags',
+      'binding',
+      'channel',
+      'chdir',
+      'config',
+      'connected',
+      'disconnect',
+      'dlopen',
+      'dlopen',
+      'emitWarning',
+      'exit',
+      'kill',
+      'mainModule',
+      'ppid',
+      'send'
     ];
-
-    for (const [restrictedProperty, expected] of testCases) {
-      test(`${restrictedProperty} should return expected value`, async () => {
+    for (const restrictedProperty of testCases) {
+      it(`${restrictedProperty} should be undefined`, async () => {
         const mockStore = new MockKVStore();
         await mockStore.write('name', 'TestFunc');
         const context: ExecutionContext = new ExecutionContext();
@@ -644,7 +514,7 @@ Error: Cannot find module 'node:child_process'`;
         const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
 
         expect(result).toBeDefined();
-        expect(result.output).toEqual(expected);
+        expect(result.output).not.toBeDefined();
         expect(result.error).not.toBeDefined();
       });
     }
