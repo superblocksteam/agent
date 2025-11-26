@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Do not fail when primitive values are used as inputs to Python APIs, similar to JavaScript APIs
 - Validate view mode against profiles for API execution with provided definition
 - Restrict access to blocked packages in JavaScript steps via: dynamic import, `eval`, and Function constructors
-- Block importing Node.js builtin modules in legacy bindings
 - Update JavaScript worker to execute language steps within `vm2`
 
 ## v1.31.0

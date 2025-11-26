@@ -149,19 +149,8 @@ module.exports = async (workerData) => {
   const codeLineNumberOffset = sharedCode.split('\n').length;
   let variableClient;
 
-  const extLibs = [
-    'lodash',
-    'moment',
-    'aws-sdk',
-    'axios',
-    'xmlbuilder2',
-    'base64url',
-    'deasync',
-  ];
-  const builtinLibs = ['*', '-child_process', '-process'];
-
   try {
-    const vm = nodeVMWithContext(context, filePaths, executionTimeout, extLibs, builtinLibs);
+    const vm = nodeVMWithContext(context, filePaths, executionTimeout);
     if (context.variables && typeof context.variables === 'object') {
       variableClient = new VariableClient(port);
       const builtVariables = await buildVariables(context.variables, variableClient);

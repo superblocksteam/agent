@@ -3227,9 +3227,6 @@ importers:
       '@swc/jest':
         specifier: 0.2.36
         version: 0.2.36(@swc/core@1.7.26)
-      '@types/deasync':
-        specifier: 0.1.5
-        version: 0.1.5
       '@types/jest':
         specifier: 29.5.12
         version: 29.5.12
@@ -4866,9 +4863,6 @@ packages:
 
   '@types/command-line-usage@5.0.2':
     resolution: {integrity: sha512-n7RlEEJ+4x4TS7ZQddTmNSxP+zziEG0TNsMfiRIxcIVXt71ENJ9ojeXmGO3wPoTdn7pJcU2xc3CJYMktNT6DPg==}
-
-  '@types/deasync@0.1.5':
-    resolution: {integrity: sha512-mLov/tw+fOX4ZsrT9xuHOJv8xToOpNsp6W4gp8VDHy2qniJ58izyOzHlisnz5r8HdZ+WItDHtANWZy/W0JEJwg==}
 
   '@types/esprima@4.0.6':
     resolution: {integrity: sha512-lIk+kSt9lGv5hxK6aZNjiUEGZqKmOTpmg0tKiJQI+Ow98fLillxsiZNik5+RcP7mXL929KiTH/D9jGtpDlMbVw==}
@@ -11734,8 +11728,6 @@ snapshots:
   '@types/command-line-args@5.2.0': {}
 
   '@types/command-line-usage@5.0.2': {}
-
-  '@types/deasync@0.1.5': {}
 
   '@types/esprima@4.0.6':
     dependencies:

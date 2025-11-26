@@ -24,7 +24,6 @@
     "@swc/cli": "0.6.0",
     "@swc/core": "1.7.26",
     "@swc/jest": "0.2.36",
-    "@types/deasync": "0.1.5",
     "@types/jest": "29.5.12",
     "@types/lodash": "^4.17.0",
     "@types/node": "20.14.8",
