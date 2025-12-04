@@ -27,7 +27,7 @@ import (
 )
 
 func TestExchangeOauthCodeForToken(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 	testCases := []struct {
 		name                    string
 		integrationId           string
@@ -167,7 +167,7 @@ func TestExchangeOauthCodeForToken(t *testing.T) {
 }
 
 func TestRequestOauthPasswordToken(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 	testCases := []struct {
 		name                      string
 		username                  string

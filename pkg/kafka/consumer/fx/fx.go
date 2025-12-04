@@ -46,8 +46,6 @@ func init() {
 }
 
 func ProvideOptions(logger *zap.Logger, config Config, handler Handler) *consumer.Options {
-	metrics.RegisterMetrics() // binary/package global, basically sync.Once executed
-
 	options := &consumer.Options{
 		Handler:        handler,
 		Logger:         logger,

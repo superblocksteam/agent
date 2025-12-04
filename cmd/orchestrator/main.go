@@ -247,8 +247,26 @@ func main() {
 
 	pflag.Parse()
 
-	metrics.RegisterMetrics()
-	metrics.StreamBufferCapacityTotal.WithLabelValues().Add(float64(viper.GetFloat64("block.stream.setting.buffer_size")))
+	// Initialize metrics provider with OTEL support
+	metricsCtx := context.Background()
+	metricsProvider, err := metrics.NewProvider(metricsCtx, metrics.ProviderOptions{
+		OTELCollectorURL: viper.GetString("otel.collector.http.url"),
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "could not create metrics provider: %s", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if err := metricsProvider.Shutdown(metricsCtx); err != nil {
+			fmt.Fprintf(os.Stderr, "error shutting down metrics provider: %s", err)
+		}
+	}()
+
+	if err := metrics.RegisterMetrics(metricsProvider.Meter()); err != nil {
+		fmt.Fprintf(os.Stderr, "could not register metrics: %s", err)
+		os.Exit(1)
+	}
+	metrics.AddUpDownCounter(metricsCtx, metrics.StreamBufferCapacityTotal, int64(viper.GetFloat64("block.stream.setting.buffer_size")))
 
 	ctx := context.Background()
 	wg := &sync.WaitGroup{}

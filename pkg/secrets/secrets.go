@@ -168,7 +168,7 @@ func (m *manager) Retrieve(ctx context.Context, stores []*secretsv1.Store) (map[
 		}, func(ctx context.Context, span trace.Span) (map[string]*string, error) {
 			secrets, err := provider.ListSecrets(ctx)
 			if err != nil {
-				metrics.TrackedErrorsTotal.WithLabelValues(strconv.Itoa(sberrors.CodeSecretsList)).Inc()
+				metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(sberrors.CodeSecretsList)))
 				m.logger.Error("could not list secrets", zap.Error(err))
 				return nil, sberrors.IgnorableError(err)
 			}
@@ -188,7 +188,7 @@ func (m *manager) Retrieve(ctx context.Context, stores []*secretsv1.Store) (map[
 			// Ask the cache if it has the secrets we're looking for.
 			results, err := m.cache.Read(ctx, keys...)
 			if err != nil || len(results) != len(keys) {
-				metrics.TrackedErrorsTotal.WithLabelValues(strconv.Itoa(sberrors.CodeSecretsCacheRead)).Inc()
+				metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(sberrors.CodeSecretsCacheRead)))
 				m.logger.Error("failed to read from cache", zap.Error(err))
 				results = make([]any, len(keys)) // This simulates a cache miss
 			}
@@ -222,7 +222,7 @@ func (m *manager) Retrieve(ctx context.Context, stores []*secretsv1.Store) (map[
 
 					plaintext, err := m.cipher.Decrypt(ciphertext)
 					if err != nil {
-						metrics.TrackedErrorsTotal.WithLabelValues(strconv.Itoa(sberrors.CodeSecretsCipherDecrypt)).Inc()
+						metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(sberrors.CodeSecretsCipherDecrypt)))
 						m.logger.Error("failed to decrypt secret", zap.Error(err))
 						continue
 					}
@@ -232,13 +232,13 @@ func (m *manager) Retrieve(ctx context.Context, stores []*secretsv1.Store) (map[
 				}
 			}
 
-			metrics.SecretsCacheLookupsTotal.WithLabelValues("miss").Add(float64(len(fetch)))
-			metrics.SecretsCacheLookupsTotal.WithLabelValues("hit").Add(float64(len(cached)))
+			metrics.AddCounterN(ctx, metrics.SecretsCacheLookupsTotal, int64(len(fetch)), attribute.String("result", "miss"))
+			metrics.AddCounterN(ctx, metrics.SecretsCacheLookupsTotal, int64(len(cached)), attribute.String("result", "hit"))
 
 			fetched, _ := utils.SprayAndCollect[*string, *secretsv1.Details](fetch, func(secret *secretsv1.Details) (string, *string, error) {
 				alias, value, err := provider.GetSecret(ctx, secret)
 				if err != nil {
-					metrics.TrackedErrorsTotal.WithLabelValues(strconv.Itoa(sberrors.CodeSecretsGet)).Inc()
+					metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(sberrors.CodeSecretsGet)))
 					return secret.GetAlias(), nil, nil
 				}
 
@@ -261,7 +261,7 @@ func (m *manager) Retrieve(ctx context.Context, stores []*secretsv1.Store) (map[
 
 						ciphertext, err := m.cipher.Encrypt([]byte(*value))
 						if err != nil {
-							metrics.TrackedErrorsTotal.WithLabelValues(strconv.Itoa(sberrors.CodeSecretsCipherEncrypt)).Inc()
+							metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(sberrors.CodeSecretsCipherEncrypt)))
 							m.logger.Error("failed to encrypt secret", zap.Error(err))
 							return nil, errors.ErrCipherEncrypt
 						}

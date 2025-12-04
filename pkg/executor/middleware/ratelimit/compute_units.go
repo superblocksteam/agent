@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 
 	"github.com/superblocksteam/agent/internal/flags"
@@ -125,8 +126,14 @@ func (mw *computeUnitsRatelimit) middleware(next middleware.StepFunc) middleware
 		keysWritten = append(keysWritten, allocKeyCompute(mw.orgID))
 		mw.store.Write(storeCtx, store.Pair(allocKeyCompute(mw.orgID), int64ToString(nextOrgAlloc)))
 
-		imetrics.ComputeUnitsPerWeekMillisTotal.WithLabelValues(mw.orgID, mw.orgTier).Set(float64(computeMillisecondsPerWeek))
-		imetrics.ComputeUnitsRemainingMillisTotal.WithLabelValues(mw.orgID, mw.orgTier).Set(float64(nextOrgAlloc))
+		imetrics.RecordGauge(storeCtx, imetrics.ComputeUnitsPerWeekMillisTotal, computeMillisecondsPerWeek,
+			attribute.String("organization_id", mw.orgID),
+			attribute.String("tier", mw.orgTier),
+		)
+		imetrics.RecordGauge(storeCtx, imetrics.ComputeUnitsRemainingMillisTotal, nextOrgAlloc,
+			attribute.String("organization_id", mw.orgID),
+			attribute.String("tier", mw.orgTier),
+		)
 
 		if nextOrgAlloc <= 0 {
 			logger.Info("organization has run out of step compute units quota")

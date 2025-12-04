@@ -38,7 +38,7 @@ import (
 
 func TestResolve(t *testing.T) {
 	t.Parallel()
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 
 	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{
 		Logger: zap.NewNop(),
@@ -754,7 +754,7 @@ func TestConstructAuth(t *testing.T) {
 
 func TestRenderDatasourceConfig(t *testing.T) {
 	t.Parallel()
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 
 	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{
 		Logger: zap.NewNop(),

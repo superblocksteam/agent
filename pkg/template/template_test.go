@@ -18,7 +18,7 @@ import (
 )
 
 func TestRender_Mustache(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 	mustache := func(input *plugins.Input) plugins.Plugin {
 		return mustache.Plugin(input)
 	}
@@ -92,7 +92,7 @@ func TestRender_Mustache(t *testing.T) {
 }
 
 func TestRender_LegacyExpression(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 	legacyExpressionTemplate := func(input *plugins.Input) plugins.Plugin {
 		return legacyexpression.Plugin(input)
 	}

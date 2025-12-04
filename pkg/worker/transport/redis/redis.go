@@ -8,6 +8,7 @@ import (
 	"time"
 
 	redis "github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -184,7 +185,7 @@ func (t *transport) consume(ctx context.Context, topic string, stream chan<- str
 				}
 
 				stream <- msg.Payload
-				metrics.StreamBufferItemsTotal.WithLabelValues().Add(1)
+				metrics.AddUpDownCounter(ctx, metrics.StreamBufferItemsTotal, 1)
 			case <-ctx.Done():
 
 				t.options.logger.Debug("unsubscribing from topic", zap.String("topic", topic))
@@ -270,7 +271,7 @@ func (t *transport) handleEvent(
 		Block:   t.options.heartbeatInterval,
 	}).Result(); err != nil {
 		logger.Error("did not receive ack from worker", zap.Error(err), zap.Duration("timeout", t.options.heartbeatInterval))
-		metrics.TrackedErrorsTotal.WithLabelValues(strconv.Itoa(errors.CodeTransportWorkerNoAck)).Inc()
+		metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(errors.CodeTransportWorkerNoAck)))
 		return nil, nil, "", &errors.InternalError{}
 	}
 
@@ -337,7 +338,7 @@ func (t *transport) handleEvent(
 		perf.Error = err != nil
 
 		// NOTE(frank): This needs to be in the caller of worker.Client.
-		metricsPkg.Observe(perf,
+		metricsPkg.Observe(ctx, perf,
 			reqStartMicro,
 			estimate,
 			&metrics.StepMetricLabels{

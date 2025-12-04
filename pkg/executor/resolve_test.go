@@ -36,7 +36,7 @@ import (
 )
 
 func init() {
-	metrics.RegisterMetrics()
+	_ = metrics.SetupForTesting()
 }
 
 func TestVariables(t *testing.T) {
@@ -254,7 +254,7 @@ func TestVariables(t *testing.T) {
 
 func TestBlocks(t *testing.T) {
 	t.Parallel()
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 
 	code := "return 5;"
 	step := &apiv1.Block_Step{
@@ -2039,7 +2039,7 @@ func TestAuthorizedBlocks(t *testing.T) {
 
 func TestQuota(t *testing.T) {
 	t.Parallel()
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 
 	for _, test := range []struct {
 		name          string

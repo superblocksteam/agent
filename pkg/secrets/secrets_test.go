@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	metrics.RegisterMetrics()
+	_ = metrics.SetupForTesting()
 }
 
 func TestInvalidate(t *testing.T) {

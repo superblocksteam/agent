@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func TestExportMetrics(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 
 	mockServerClient := mocks.NewServerClient(t)
 
@@ -29,10 +30,18 @@ func TestExportMetrics(t *testing.T) {
 		Body:       http.NoBody,
 	}, nil, nil)
 
-	metrics.ApiExecutionEventsTotal.WithLabelValues("failed", "api").Add(1)
-	metrics.ApiExecutionEventsTotal.WithLabelValues("succeeded", "api").Add(2)
-	metrics.ApiExecutionEventsTotal.WithLabelValues("failed", "workflow").Add(3)
-	metrics.ApiExecutionEventsTotal.WithLabelValues("succeeded", "workflow").Add(4)
+	// Use the new OTEL API
+	ctx := context.Background()
+	metrics.AddApiExecutionEvent(ctx, "failed", "api")
+	metrics.AddApiExecutionEvent(ctx, "succeeded", "api")
+	metrics.AddApiExecutionEvent(ctx, "succeeded", "api")
+	metrics.AddApiExecutionEvent(ctx, "failed", "workflow")
+	metrics.AddApiExecutionEvent(ctx, "failed", "workflow")
+	metrics.AddApiExecutionEvent(ctx, "failed", "workflow")
+	metrics.AddApiExecutionEvent(ctx, "succeeded", "workflow")
+	metrics.AddApiExecutionEvent(ctx, "succeeded", "workflow")
+	metrics.AddApiExecutionEvent(ctx, "succeeded", "workflow")
+	metrics.AddApiExecutionEvent(ctx, "succeeded", "workflow")
 	err := metricsExporter.sendHealthCheckMetrics()
 
 	assert.Nil(t, err)

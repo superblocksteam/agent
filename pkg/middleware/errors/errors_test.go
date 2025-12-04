@@ -12,7 +12,7 @@ import (
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 
 	for _, test := range []struct {
 		name        string

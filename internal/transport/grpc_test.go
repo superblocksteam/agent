@@ -459,7 +459,7 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 // 			fetcher.On("FetchIntegrationMetadata", ctx, tc.integrationId).Return(nil, errors.New("not found error"))
 // 			fetcher.On("FetchIntegrations", mock.Anything, mock.Anything, mock.Anything).Return(new(integrationv1.GetIntegrationsResponse), nil)
 
-// 			metrics.RegisterMetrics()
+// 			defer metrics.SetupForTesting()()
 // 			os.Setenv("SUPERBLOCKS_AGENT_APP_ENV_HELLO", "Elon Musk")
 // 			secretManager := secrets.NewSecretManager()
 
@@ -699,7 +699,7 @@ func TestMetadata(t *testing.T) {
 			}, nil)
 			fetcher.On("FetchIntegrations", mock.Anything, mock.Anything, mock.Anything).Return(new(integrationv1.GetIntegrationsResponse), nil)
 
-			metrics.RegisterMetrics()
+			defer metrics.SetupForTesting()()
 			server := NewServer(&Config{
 				TokenManager:  tm,
 				Logger:        zap.NewNop(),

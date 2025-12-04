@@ -24,6 +24,7 @@ import (
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	"github.com/superblocksteam/run"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -69,14 +70,16 @@ func New(config *Config) *ScheduleJobRunner {
 func (r *ScheduleJobRunner) pollOnce() {
 	r.Logger.Debug("asking if there are jobs to run")
 
+	ctx := context.Background()
+
 	// TODO(frank): This is where we'd pass in a timeout override.
-	resp, rawResp, err := r.Fetcher.FetchScheduledJobs(context.Background())
+	resp, rawResp, err := r.Fetcher.FetchScheduledJobs(ctx)
 	if err != nil {
-		metrics.ApiFetchRequestsTotal.WithLabelValues("failed").Inc()
+		metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))
 		r.Logger.Error("failed to fetch schedule jobs", zap.Error(err))
 		return
 	}
-	metrics.ApiFetchRequestsTotal.WithLabelValues("succeeded").Inc()
+	metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "succeeded"))
 
 	if len(resp.Apis) == 0 {
 		r.Logger.Debug("there were no jobs to execute")
