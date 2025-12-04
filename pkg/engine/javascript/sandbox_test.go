@@ -32,7 +32,7 @@ type args struct {
 }
 
 func init() {
-	metrics.RegisterMetrics()
+	_ = metrics.SetupForTesting()
 }
 
 func validArgs(t *testing.T) *args {

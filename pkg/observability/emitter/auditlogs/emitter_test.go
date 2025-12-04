@@ -213,7 +213,7 @@ func TestAuditLogFlush(t *testing.T) {
 }
 
 func TestAuditFlushBufferSizeThreshold(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 	t.Parallel()
 	mockHttpClient := mocks.NewServerClient(t)
 	mockHttpClient.On("PostAuditLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&http.Response{

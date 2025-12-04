@@ -19,7 +19,7 @@ import (
 )
 
 func TestExecute(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 	buckets, _ := load([]byte(`{"analysis":"ba","error":"be","custom":[{"label":"b1","integrations":["javascript","python"],"bound":100},{"label":"b2","integrations":["javascript","python"],"bound":500},{"label":"b3","integrations":["javascript","python"],"bound":3000},{"label":"b4","integrations":["javascript","python"],"bound":4294967295}]}`))
 	dConfig, _ := structpb.NewStruct(map[string]any{"foo": "fighters"})
 	aConfig, _ := structpb.NewStruct(map[string]any{"nirv": "ana"})

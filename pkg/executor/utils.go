@@ -40,6 +40,7 @@ import (
 	secretsv1 "github.com/superblocksteam/agent/types/gen/go/secrets/v1"
 	storev1 "github.com/superblocksteam/agent/types/gen/go/store/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -112,7 +113,7 @@ func Execute(ctx context.Context, options *Options, send func(*apiv1.StreamRespo
 
 	go execution.Run(ctx)
 
-	metrics.ApiExecutionEventsTotal.WithLabelValues("started", utils.ApiType(options.Api)).Inc()
+	metrics.AddApiExecutionEvent(ctx, "started", utils.ApiType(options.Api))
 
 	defer func() {
 		var status string
@@ -124,7 +125,7 @@ func Execute(ctx context.Context, options *Options, send func(*apiv1.StreamRespo
 			}
 		}
 
-		metrics.ApiExecutionEventsTotal.WithLabelValues(status, utils.ApiType(options.Api)).Inc()
+		metrics.AddApiExecutionEvent(ctx, status, utils.ApiType(options.Api))
 	}()
 
 	var internalError error
@@ -137,7 +138,7 @@ func Execute(ctx context.Context, options *Options, send func(*apiv1.StreamRespo
 			}
 
 			if err := resp.err; err != nil {
-				handleQuotaError(resp.err, options, resp.GetEvent().Type)
+				handleQuotaError(ctx, resp.err, options, resp.GetEvent().Type)
 				internalError = err
 			}
 
@@ -173,7 +174,7 @@ func Execute(ctx context.Context, options *Options, send func(*apiv1.StreamRespo
 				options.Logger.Info("completed execution", zap.String("id", execution.ID()))
 			}
 
-			handleTerminalQuotaError(internalError, options)
+			handleTerminalQuotaError(ctx, internalError, options)
 			return done, nil, userError
 		}
 	}
@@ -190,18 +191,18 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 		}
 	} else if f := request.GetFetch(); f != nil {
 		if def, rawDef, err = fetcher.FetchApi(ctx, f, useAgentKey); err != nil {
-			metrics.ApiFetchRequestsTotal.WithLabelValues("failed").Inc()
+			metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))
 			return nil, nil, err
 		}
 
-		metrics.ApiFetchRequestsTotal.WithLabelValues("succeeded").Inc()
+		metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "succeeded"))
 	} else if f := request.GetFetchByPath(); f != nil {
 		if def, rawDef, err = fetcher.FetchApiByPath(ctx, f, useAgentKey); err != nil {
-			metrics.ApiFetchRequestsTotal.WithLabelValues("failed").Inc()
+			metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))
 			return nil, nil, err
 		}
 
-		metrics.ApiFetchRequestsTotal.WithLabelValues("succeeded").Inc()
+		metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "succeeded"))
 	}
 
 	if def == nil {
@@ -1114,19 +1115,29 @@ func ConstructAuth(authField *structpb.Value) (*pluginscommon.Auth, error) {
 	return &auth, nil
 }
 
-func handleQuotaError(err error, options *Options, t apiv1.BlockType) {
+func handleQuotaError(ctx context.Context, err error, options *Options, t apiv1.BlockType) {
 	var quotaErr *sberrors.QuotaError
 	if errors.As(err, &quotaErr) && IsLeaf(t) && !quotaErr.IsTerminal {
 		options.Logger.Info("quota error", zap.String("error", quotaErr.Error()), zap.String("kind", quotaErr.Kind))
-		metrics.QuotaErrorsTotal.WithLabelValues(quotaErr.Kind, options.Api.GetMetadata().GetOrganization(), options.DefinitionMetadata.OrganizationName, options.DefinitionMetadata.OrganizationPlan).Inc()
+		metrics.AddCounter(ctx, metrics.QuotaErrorsTotal,
+			attribute.String("quota", quotaErr.Kind),
+			attribute.String("organization_id", options.Api.GetMetadata().GetOrganization()),
+			attribute.String("organization_name", options.DefinitionMetadata.OrganizationName),
+			attribute.String("tier", options.DefinitionMetadata.OrganizationPlan),
+		)
 	}
 }
 
-func handleTerminalQuotaError(err error, options *Options) {
+func handleTerminalQuotaError(ctx context.Context, err error, options *Options) {
 	var quotaErr *sberrors.QuotaError
 	if errors.As(err, &quotaErr) && quotaErr.IsTerminal {
 		options.Logger.Info("quota error", zap.String("error", quotaErr.Error()), zap.String("kind", quotaErr.Kind))
-		metrics.QuotaErrorsTotal.WithLabelValues(quotaErr.Kind, options.Api.GetMetadata().GetOrganization(), options.DefinitionMetadata.OrganizationName, options.DefinitionMetadata.OrganizationPlan).Inc()
+		metrics.AddCounter(ctx, metrics.QuotaErrorsTotal,
+			attribute.String("quota", quotaErr.Kind),
+			attribute.String("organization_id", options.Api.GetMetadata().GetOrganization()),
+			attribute.String("organization_name", options.DefinitionMetadata.OrganizationName),
+			attribute.String("tier", options.DefinitionMetadata.OrganizationPlan),
+		)
 	}
 }
 

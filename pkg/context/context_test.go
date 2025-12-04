@@ -13,7 +13,7 @@ import (
 )
 
 func TestScoping(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 	t.Parallel()
 
 	for _, test := range []struct {

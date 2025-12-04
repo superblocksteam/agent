@@ -20,7 +20,7 @@ import (
 )
 
 func TestComputeUnitsRateLimit(t *testing.T) {
-	metrics.RegisterMetrics()
+	defer metrics.SetupForTesting()()
 
 	for _, test := range []struct {
 		name                  string

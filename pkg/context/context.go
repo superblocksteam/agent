@@ -11,6 +11,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/utils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -146,7 +147,7 @@ func (old *Context) WithVariables(variables map[string]*transportv1.Variable) *C
 	new.Variables = old.Variables.Clone()
 
 	for k, v := range variables {
-		metrics.VariablesTotal.WithLabelValues(v.Type.String()).Inc()
+		metrics.AddCounter(old.Context, metrics.VariablesTotal, attribute.String("type", v.Type.String()))
 		new.Variables.Put(k, v)
 	}
 

@@ -103,10 +103,10 @@ func (m *MetricsExporter) sendHealthCheckMetrics() error {
 		Version:              m.version,
 		VersionExternal:      m.versionExternal,
 		DesiredState:         m.desiredState,
-		ApiSuccessCount:      metrics.GetCounterValue(metrics.ApiExecutionEventsTotal, []string{"succeeded", "api"}),
-		ApiFailureCount:      metrics.GetCounterValue(metrics.ApiExecutionEventsTotal, []string{"failed", "api"}),
-		WorkflowSuccessCount: metrics.GetCounterValue(metrics.ApiExecutionEventsTotal, []string{"succeeded", "workflow"}),
-		WorkflowFailureCount: metrics.GetCounterValue(metrics.ApiExecutionEventsTotal, []string{"failed", "workflow"}),
+		ApiSuccessCount:      metrics.GetApiExecutionEventCount("succeeded", "api"),
+		ApiFailureCount:      metrics.GetApiExecutionEventCount("failed", "api"),
+		WorkflowSuccessCount: metrics.GetApiExecutionEventCount("succeeded", "workflow"),
+		WorkflowFailureCount: metrics.GetApiExecutionEventCount("failed", "workflow"),
 	}
 
 	_, err := m.serverHttpClient.PostHealthcheck(context.Background(), nil, nil, nil, healthCheckRequest)

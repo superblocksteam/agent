@@ -1,16 +1,19 @@
 package metrics
 
 import (
+	"context"
 	"math"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/superblocksteam/agent/internal/metrics"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	"go.opentelemetry.io/otel/metric"
 )
 
+// Observe records performance metrics for a step execution.
 // TODO(frank): Both `queueRequestStartMicro` and `pluginExecutionEstimateMicro` need to be pulled from `perf`.
 func Observe(
+	ctx context.Context,
 	perf *transportv1.Performance,
 	queueRequestStartMicro int64,
 	pluginExecutionEstimateMicro int64,
@@ -25,8 +28,10 @@ func Observe(
 	queueResponseEndMicro := time.Now().UnixNano() / 1000
 
 	observations := observe(perf, queueRequestStartMicro, queueResponseEndMicro, pluginExecutionEstimateMicro)
+	attrs := labels.ToAttributes()
+
 	for hist, val := range observations {
-		pushHist(hist, val, labels)
+		metrics.RecordHistogram(ctx, hist, val, attrs...)
 	}
 }
 
@@ -35,7 +40,7 @@ func observe(
 	queueRequestStartMicro int64,
 	queueResponseEndMicro int64,
 	pluginExecutionEstimateMicro int64,
-) map[*prometheus.HistogramVec]float64 {
+) map[metric.Float64Histogram]float64 {
 	if perf.GetQueueRequest() != nil {
 		perf.GetQueueRequest().Start = float64(queueRequestStartMicro)
 	}
@@ -64,7 +69,7 @@ func observe(
 		estimateErrorPercentage = (math.Abs(pluginExecutionMicro-float64(pluginExecutionEstimateMicro)) / pluginExecutionMicro) * 100
 	}
 
-	return map[*prometheus.HistogramVec]float64{
+	return map[metric.Float64Histogram]float64{
 		metrics.PluginExecutionDuration:     pluginExecutionMicro,
 		metrics.QueueRequestDuration:        queueRequestMicro,
 		metrics.QueueResponseDuration:       queueResponseMicro,
@@ -74,22 +79,6 @@ func observe(
 		metrics.TotalDuration:               totalMicro,
 		metrics.StepOverhead:                overheadMicro,
 		metrics.StepEstimateErrorPercentage: estimateErrorPercentage,
-	}
-}
-
-func pushHist(hist *prometheus.HistogramVec, val float64, labels *metrics.StepMetricLabels) {
-	values := []string{
-		labels.PluginName,
-		labels.Bucket,
-		labels.PluginEvent,
-		labels.Result,
-		labels.ApiType,
-	}
-
-	if obs, err := hist.GetMetricWithLabelValues(values...); err == nil {
-		if val > 0 {
-			obs.Observe(val)
-		}
 	}
 }
 

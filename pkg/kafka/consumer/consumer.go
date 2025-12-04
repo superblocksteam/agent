@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/superblocksteam/run"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 )
 
@@ -34,7 +35,7 @@ type Options struct {
 	Handler        func(msg *kafka.Message) error
 	Workers        int
 	Topics         []string
-	MetricsCounter *prometheus.CounterVec
+	MetricsCounter metric.Int64Counter
 	Config         map[string]interface{}
 }
 
@@ -188,10 +189,11 @@ func (s *service) Close(context.Context) error {
 
 func (s *service) executeMetric(topic, label string) {
 	if s.MetricsCounter != nil {
-		counter, err := s.MetricsCounter.GetMetricWithLabelValues(label, topic)
-		if err != nil {
-			s.Logger.Error("failed to get metric", zap.Error(err))
-		}
-		counter.Add(1)
+		s.MetricsCounter.Add(context.Background(), 1,
+			metric.WithAttributes(
+				attribute.String("result", label),
+				attribute.String("topic", topic),
+			),
+		)
 	}
 }

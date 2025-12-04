@@ -450,7 +450,10 @@ func (r *resolver) Block(ctx *apictx.Context, block *apiv1.Block, ops ...options
 	// NOTE(frank): Need to think through Wait some more.
 	persist := true
 
-	metrics.BlocksTotal.WithLabelValues(apiv1.BlockType_name[int32(block.Type())], r.orgId).Inc()
+	metrics.AddCounter(ctx.Context, metrics.BlocksTotal,
+		attribute.String("block_type", apiv1.BlockType_name[int32(block.Type())]),
+		attribute.String("organization_id", r.orgId),
+	)
 
 	if step := block.GetStep(); step != nil {
 		span := trace.SpanFromContext(ctx.Context)
@@ -877,7 +880,10 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 
 	// add integration error logic handling
 	if typedError, ok := sberrors.IsIntegrationError(err); ok {
-		metrics.IntegrationErrorsTotal.WithLabelValues(p.Name(), typedError.Code().String()).Inc()
+		metrics.AddCounter(ctx.Context, metrics.IntegrationErrorsTotal,
+			attribute.String("plugin_name", p.Name()),
+			attribute.String("code", typedError.Code().String()),
+		)
 	}
 
 	return perf, key, err
@@ -922,8 +928,8 @@ func (r *resolver) Stream(ctx *apictx.Context, block *apiv1.Block_Stream, ops ..
 	go func() {
 		// NOTE(frank): It is the job of the transport to close this channel.
 		for msg := range msgCh {
-			metrics.StreamBufferItemsTotal.WithLabelValues().Dec()
-			metrics.BlocksStreamEventsTotal.WithLabelValues().Inc()
+			metrics.AddUpDownCounter(ctx.Context, metrics.StreamBufferItemsTotal, -1)
+			metrics.AddCounter(ctx.Context, metrics.BlocksStreamEventsTotal)
 
 			if len(block.GetProcess().GetBlocks()) == 0 && autoSend {
 				if err := r.Send(ctx, &apiv1.Block_Send{
@@ -1307,7 +1313,7 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 
 		items = *vals
 	case apiv1.Block_Loop_TYPE_WHILE:
-		metrics.BlocksLoopForeverTotal.WithLabelValues().Inc()
+		metrics.AddCounter(ctx.Context, metrics.BlocksLoopForeverTotal)
 		r.logger.Debug("executing a while loop, could potentially forever loop :scary:")
 	default:
 		return "", fmt.Errorf("invalid loop type: %s", step.Type)
@@ -1407,7 +1413,7 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 				iterationCtx = ctx
 			}
 
-			metrics.BlocksLoopIterationsTotal.WithLabelValues(step.Type.String()).Inc()
+			metrics.AddCounter(ctx.Context, metrics.BlocksLoopIterationsTotal, attribute.String("type", step.Type.String()))
 			_, r, e := r.blocks(iterationCtx.Sink(tokenNone), step.Blocks, ops...)
 			if e != nil {
 				return "", e
@@ -1597,7 +1603,10 @@ func (r *resolver) Parallel(ctx *apictx.Context, step *apiv1.Block_Parallel, ops
 				return
 			}
 
-			metrics.BlocksParallelPathsTotal.WithLabelValues(variation, step.GetWait().String()).Inc()
+			metrics.AddCounter(ctx.Context, metrics.BlocksParallelPathsTotal,
+				attribute.String("type", variation),
+				attribute.String("wait", step.GetWait().String()),
+			)
 
 			_, ref, err := r.blocks(ctx, blocks, ops...)
 			if err != nil {
