@@ -24,6 +24,9 @@ spec:
       annotations:
         {{- toYaml $podAnnotations | nindent 8 }}
     spec:
+      {{- if $.Values.runtimeClassName }}
+      runtimeClassName: {{ $.Values.runtimeClassName }}
+      {{- end }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       serviceAccountName: default
       {{- if $.Values.image.credentials }}

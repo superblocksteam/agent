@@ -55,11 +55,11 @@ message Metadata {
   }
   message Scope {
     string name = 1;
-    repeated Collection collections = 2; 
+    repeated Collection collections = 2;
   }
   message Bucket {
     string name = 1;
-    repeated Scope scopes = 2; 
+    repeated Scope scopes = 2;
   }
   repeated Bucket buckets = 1;
 }
