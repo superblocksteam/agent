@@ -76,6 +76,10 @@ image:
 tolerations: {}
 nodeSelector: {}
 runtimeClassName: null
+# Set to true to disable nodeSelector (useful when using runtimeClassName for scheduling)
+disableNodeSelector: false
+# Set to true to disable tolerations (useful when using runtimeClassName for scheduling)
+disableTolerations: false
 # to be used for local testing only
 redis:
   image:

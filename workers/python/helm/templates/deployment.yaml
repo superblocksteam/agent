@@ -130,16 +130,20 @@ spec:
             - cat
             - /tmp/worker_healthy
         # TODO(frank): DD_AGENT_ "stuff"
+      {{- if not $.Values.disableNodeSelector }}
       {{- with $.Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
       {{- with $.Values.affinity }}
       affinity:
         {{- toYaml . | nindent 6 }}
       {{- end }}
+      {{- if not $.Values.disableTolerations }}
       {{- with $.Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 6 }}
+      {{- end }}
       {{- end }}
 {{- end }}
