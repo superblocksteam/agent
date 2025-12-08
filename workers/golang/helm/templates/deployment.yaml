@@ -143,16 +143,20 @@ spec:
         #     port: {{ $.Values.service.ports.health }}
         #   initialDelaySeconds: 15
         #   periodSeconds: 10
+      {{- if not $.Values.disableNodeSelector }}
       {{- with $v.nodeSelector | default $.Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
       {{- with $v.affinity | default $.Values.affinity }}
       affinity:
         {{- toYaml . | nindent 6 }}
       {{- end }}
+      {{- if not $.Values.disableTolerations }}
       {{- with $v.tolerations | default $.Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 6 }}
+      {{- end }}
       {{- end }}
 {{- end }}
