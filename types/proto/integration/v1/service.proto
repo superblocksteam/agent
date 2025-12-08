@@ -26,7 +26,7 @@ message GetIntegrationsRequest {
 
 message ValidateProfileRequest {
   common.v1.Profile profile = 1;
-  string view_mode = 2;  // e.g. "editor", "preview", "deployed"
+  string view_mode = 2; // e.g. "editor", "preview", "deployed"
   repeated string integration_ids = 3;
 }
 

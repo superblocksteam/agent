@@ -75,6 +75,7 @@ image:
     password: '<override>'
 tolerations: {}
 nodeSelector: {}
+runtimeClassName: null
 # to be used for local testing only
 redis:
   image:

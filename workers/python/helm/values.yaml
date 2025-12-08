@@ -61,6 +61,7 @@ tolerations:
     operator: Equal
 nodeSelector:
   superblocks.com/node-type: lang-exec-worker
+runtimeClassName: null
 # to be used for local testing only
 redis:
   image:
