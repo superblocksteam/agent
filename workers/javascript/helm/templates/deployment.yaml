@@ -141,6 +141,12 @@ spec:
         - name: health
           containerPort: {{ $.Values.service.ports.health }}
           protocol: TCP
+        startupProbe:
+          httpGet:
+            path: /
+            port: health
+          failureThreshold: 30
+          periodSeconds: 2
         livenessProbe:
           httpGet:
             path: /

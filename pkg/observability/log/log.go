@@ -4,6 +4,8 @@ import (
 	"os"
 	"time"
 
+	"go.opentelemetry.io/contrib/bridges/otelzap"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -11,10 +13,11 @@ import (
 )
 
 type Options struct {
-	Level         string
-	InitialFields map[string]any
-	Emitters      []emitter.Emitter
-	Zen           bool
+	Level          string
+	InitialFields  map[string]any
+	Emitters       []emitter.Emitter
+	Zen            bool
+	LoggerProvider *sdklog.LoggerProvider
 }
 
 func Logger(options *Options) (*zap.Logger, error) {
@@ -56,6 +59,12 @@ func Logger(options *Options) (*zap.Logger, error) {
 		for _, emitter := range options.Emitters {
 			emitter.Logger(l)
 			cores = append(cores, (NewCore(emitter)).With(initial))
+		}
+
+		// Add OTEL log exporter core if LoggerProvider is configured
+		if options.LoggerProvider != nil {
+			otelCore := otelzap.NewCore("orchestrator", otelzap.WithLoggerProvider(options.LoggerProvider))
+			cores = append(cores, otelCore.With(initial))
 		}
 	}
 
