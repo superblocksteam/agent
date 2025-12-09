@@ -18,15 +18,17 @@ AUTH0_CLIENT_ID = os.environ["AUTH0_CLIENT_ID"]
 SUPERBLOCKS_EMAIL = os.environ["AUTH0_USERNAME"]
 AUTH0_PASSWORD = os.environ["AUTH0_PASSWORD"]
 AUTH0_AUDIENCE = "https://superblocks/api"
+AUTH0_REALM = os.environ["AUTH0_REALM"]
 
 response = requests.post(
     AUTH0_URL,
     data={
-        "grant_type": "password",
+        "grant_type": "http://auth0.com/oauth/grant-type/password-realm",
         "client_id": AUTH0_CLIENT_ID,
         "username": SUPERBLOCKS_EMAIL,
         "password": AUTH0_PASSWORD,
         "audience": AUTH0_AUDIENCE,
+        "realm": AUTH0_REALM,
     },
     headers={"Content-Type": "application/x-www-form-urlencoded"},
 )
