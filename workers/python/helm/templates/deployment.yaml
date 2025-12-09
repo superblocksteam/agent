@@ -118,12 +118,18 @@ spec:
         - name: metrics
           containerPort: {{ $.Values.service.ports.metrics }}
           protocol: TCP
+        startupProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/worker_healthy
+          failureThreshold: 30
+          periodSeconds: 2
         livenessProbe:
           exec:
             command:
             - cat
             - /tmp/worker_healthy
-          initialDelaySeconds: 30
         readinessProbe:
           exec:
             command:

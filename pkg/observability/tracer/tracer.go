@@ -6,6 +6,7 @@ import (
 
 	"github.com/superblocksteam/agent/pkg/observability/obsup"
 	"github.com/superblocksteam/run"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 
 	"go.uber.org/zap"
 )
@@ -18,8 +19,14 @@ type tracer struct {
 	run.ForwardCompatibility
 }
 
-func Prepare(logger *zap.Logger, options obsup.Options) (run.Runnable, error) {
-	_, shutdown, err := obsup.Setup(logger, options)
+// PrepareResult contains the result of Prepare, including the LoggerProvider for OTEL logs.
+type PrepareResult struct {
+	Runnable       run.Runnable
+	LoggerProvider *sdklog.LoggerProvider
+}
+
+func Prepare(logger *zap.Logger, options obsup.Options) (*PrepareResult, error) {
+	result, shutdown, err := obsup.Setup(logger, options)
 	if err != nil {
 		return nil, fmt.Errorf("obsup.Setup error : %w", err)
 	}
@@ -29,7 +36,10 @@ func Prepare(logger *zap.Logger, options obsup.Options) (run.Runnable, error) {
 	}
 	tracer.ctx, tracer.cancel = context.WithCancel(context.Background())
 
-	return tracer, nil
+	return &PrepareResult{
+		Runnable:       tracer,
+		LoggerProvider: result.LoggerProvider,
+	}, nil
 }
 
 func (t *tracer) Run(context.Context) error {

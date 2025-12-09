@@ -91,7 +91,6 @@ import (
 	"github.com/superblocksteam/run/contrib/waitgroup"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -400,6 +399,17 @@ func main() {
 		)
 	}
 
+	// Set up OTEL tracer/logs before creating the main logger so we can include OTEL log export
+	var tracerResult *tracer.PrepareResult
+	{
+		var err error
+		tracerResult, err = tracer.Prepare(intakeLogger, obsup.OptionsFromConfig(viper.GetViper(), "orchestrator", version))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "could not create tracer: %s", err)
+			os.Exit(1)
+		}
+	}
+
 	var logger *zap.Logger
 	{
 		fields := map[string]any{}
@@ -418,7 +428,8 @@ func main() {
 				eventEmitter,
 				remoteEmitter,
 			},
-			Zen: viper.GetBool("zen"),
+			Zen:            viper.GetBool("zen"),
+			LoggerProvider: tracerResult.LoggerProvider,
 		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not create logger: %s", err)
@@ -444,31 +455,6 @@ func main() {
 			InsecurePort: viper.GetInt("metrics.port"),
 			Logger:       logger,
 		})
-	}
-
-	var tracerRunnable run.Runnable
-	{
-		var err error
-		tracerRunnable, err = tracer.Prepare(logger, obsup.Options{
-			ServiceName:    "orchestrator",
-			ServiceVersion: version,
-			OtlpUrl:        viper.GetString("otel.collector.http.url"),
-
-			Headers: map[string]string{
-				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
-			},
-
-			BatchOptions: []trace.BatchSpanProcessorOption{
-				trace.WithMaxQueueSize(viper.GetInt("otel.batcher.max_queue_size")),
-				trace.WithMaxExportBatchSize(viper.GetInt("otel.batcher.max_export_batch_size")),
-				trace.WithExportTimeout(viper.GetDuration("otel.batcher.export_timeout")),
-				trace.WithBatchTimeout(viper.GetDuration("otel.batcher.batch_timeout")),
-			},
-		})
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "could not create tracer: %s", err)
-			os.Exit(1)
-		}
 	}
 
 	var storeRedisClient *redis.Client
@@ -1113,7 +1099,7 @@ func main() {
 	g.Add(viper.GetBool("emitter.remote.enabled"), remoteEmitter)
 
 	g.Always(metricsRunnable)
-	g.Always(tracerRunnable)
+	g.Always(tracerResult.Runnable)
 	g.Always(auditEmitter)
 	g.Always(eventEmitter)
 	g.Always(workerClient)

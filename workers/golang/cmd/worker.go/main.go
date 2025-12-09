@@ -237,12 +237,12 @@ func main() {
 			},
 		})
 
-		tracerRunnable = t
-
 		if err != nil {
 			logger.Error("could not create tracer", zap.Error(err))
 			os.Exit(1)
 		}
+
+		tracerRunnable = t.Runnable
 	}
 
 	var storeClient store.Store
