@@ -1,0 +1,9 @@
+# Trivy ignore file for orchestrator
+# Guidelines:
+# - Always document reason and approval
+# - Link to tracking issue if applicable
+
+# CVE-XXXX-XXXXX - Description
+# Not applicable: Reason why this doesn't apply
+# Affected packages: list packages
+# CVE-XXXX-XXXXX
