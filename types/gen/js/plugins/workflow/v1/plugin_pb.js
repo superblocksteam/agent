@@ -107,7 +107,7 @@ value: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.workflow.v1.Tuple}
  */
 proto.plugins.workflow.v1.Tuple.deserializeBinary = function(bytes) {
@@ -269,7 +269,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.S
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.workflow.v1.Plugin}
  */
 proto.plugins.workflow.v1.Plugin.deserializeBinary = function(bytes) {

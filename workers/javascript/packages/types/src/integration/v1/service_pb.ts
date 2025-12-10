@@ -126,6 +126,90 @@ export class GetIntegrationsRequest extends Message<GetIntegrationsRequest> {
 }
 
 /**
+ * @generated from message integration.v1.ValidateProfileRequest
+ */
+export class ValidateProfileRequest extends Message<ValidateProfileRequest> {
+  /**
+   * @generated from field: common.v1.Profile profile = 1;
+   */
+  profile?: Profile;
+
+  /**
+   * e.g. "editor", "preview", "deployed"
+   *
+   * @generated from field: string view_mode = 2;
+   */
+  viewMode = "";
+
+  /**
+   * @generated from field: repeated string integration_ids = 3;
+   */
+  integrationIds: string[] = [];
+
+  constructor(data?: PartialMessage<ValidateProfileRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "integration.v1.ValidateProfileRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "profile", kind: "message", T: Profile },
+    { no: 2, name: "view_mode", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "integration_ids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ValidateProfileRequest {
+    return new ValidateProfileRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ValidateProfileRequest {
+    return new ValidateProfileRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ValidateProfileRequest {
+    return new ValidateProfileRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ValidateProfileRequest | PlainMessage<ValidateProfileRequest> | undefined, b: ValidateProfileRequest | PlainMessage<ValidateProfileRequest> | undefined): boolean {
+    return proto3.util.equals(ValidateProfileRequest, a, b);
+  }
+}
+
+/**
+ * Empty response on success, error on validation failure
+ *
+ * @generated from message integration.v1.ValidateProfileResponse
+ */
+export class ValidateProfileResponse extends Message<ValidateProfileResponse> {
+  constructor(data?: PartialMessage<ValidateProfileResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "integration.v1.ValidateProfileResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ValidateProfileResponse {
+    return new ValidateProfileResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ValidateProfileResponse {
+    return new ValidateProfileResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ValidateProfileResponse {
+    return new ValidateProfileResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ValidateProfileResponse | PlainMessage<ValidateProfileResponse> | undefined, b: ValidateProfileResponse | PlainMessage<ValidateProfileResponse> | undefined): boolean {
+    return proto3.util.equals(ValidateProfileResponse, a, b);
+  }
+}
+
+/**
  * @generated from message integration.v1.GetIntegrationsResponse
  */
 export class GetIntegrationsResponse extends Message<GetIntegrationsResponse> {

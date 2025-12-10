@@ -88,7 +88,7 @@ code: jspb.Message.getFieldWithDefault(msg, 6, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Error}
  */
 proto.common.v1.Error.deserializeBinary = function(bytes) {

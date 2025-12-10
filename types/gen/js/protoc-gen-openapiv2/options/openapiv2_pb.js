@@ -507,7 +507,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger.deserializeBinary = function(bytes) {
@@ -1188,7 +1188,7 @@ parameters: (f = msg.getParameters()) && proto.grpc.gateway.protoc_gen_openapiv2
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Operation}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Operation.deserializeBinary = function(bytes) {
@@ -1833,7 +1833,7 @@ headersList: jspb.Message.toObjectList(msg.getHeadersList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Parameters}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Parameters.deserializeBinary = function(bytes) {
@@ -1989,7 +1989,7 @@ required: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter.deserializeBinary = function(bytes) {
@@ -2250,7 +2250,7 @@ pattern: jspb.Message.getFieldWithDefault(msg, 13, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Header}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Header.deserializeBinary = function(bytes) {
@@ -2500,7 +2500,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Response}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Response.deserializeBinary = function(bytes) {
@@ -2802,7 +2802,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Info}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Info.deserializeBinary = function(bytes) {
@@ -3160,7 +3160,7 @@ email: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Contact}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Contact.deserializeBinary = function(bytes) {
@@ -3349,7 +3349,7 @@ url: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.License}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.License.deserializeBinary = function(bytes) {
@@ -3509,7 +3509,7 @@ url: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.deserializeBinary = function(bytes) {
@@ -3672,7 +3672,7 @@ example: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Schema}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Schema.deserializeBinary = function(bytes) {
@@ -3992,7 +3992,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.deserializeBinary = function(bytes) {
@@ -4399,7 +4399,7 @@ pathParamName: jspb.Message.getFieldWithDefault(msg, 47, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration.deserializeBinary = function(bytes) {
@@ -5100,7 +5100,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Tag}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Tag.deserializeBinary = function(bytes) {
@@ -5348,7 +5348,7 @@ securityMap: (f = msg.getSecurityMap()) ? f.toObject(includeInstance, proto.grpc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions.deserializeBinary = function(bytes) {
@@ -5496,7 +5496,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.deserializeBinary = function(bytes) {
@@ -5919,7 +5919,7 @@ securityRequirementMap: (f = msg.getSecurityRequirementMap()) ? f.toObject(inclu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.deserializeBinary = function(bytes) {
@@ -6043,7 +6043,7 @@ scopeList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.deserializeBinary = function(bytes) {
@@ -6215,7 +6215,7 @@ scopeMap: (f = msg.getScopeMap()) ? f.toObject(includeInstance, undefined) : []
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes.deserializeBinary = function(bytes) {

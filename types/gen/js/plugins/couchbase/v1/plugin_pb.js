@@ -319,7 +319,7 @@ remove: (f = msg.getRemove()) && proto.plugins.couchbase.v1.Plugin.CouchbaseRemo
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin}
  */
 proto.plugins.couchbase.v1.Plugin.deserializeBinary = function(bytes) {
@@ -534,7 +534,7 @@ collection: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.deserializeBinary = function(bytes) {
@@ -695,7 +695,7 @@ url: jspb.Message.getFieldWithDefault(msg, 5, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseConnection}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseConnection.deserializeBinary = function(bytes) {
@@ -885,7 +885,7 @@ identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.Couch
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseInsert}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseInsert.deserializeBinary = function(bytes) {
@@ -1095,7 +1095,7 @@ identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.Couch
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseGet}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseGet.deserializeBinary = function(bytes) {
@@ -1276,7 +1276,7 @@ identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.Couch
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseRemove}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseRemove.deserializeBinary = function(bytes) {
@@ -1759,7 +1759,7 @@ bucketsList: jspb.Message.toObjectList(msg.getBucketsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Metadata}
  */
 proto.plugins.couchbase.v1.Metadata.deserializeBinary = function(bytes) {
@@ -1873,7 +1873,7 @@ name: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Metadata.Collection}
  */
 proto.plugins.couchbase.v1.Metadata.Collection.deserializeBinary = function(bytes) {
@@ -2012,7 +2012,7 @@ collectionsList: jspb.Message.toObjectList(msg.getCollectionsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Metadata.Scope}
  */
 proto.plugins.couchbase.v1.Metadata.Scope.deserializeBinary = function(bytes) {
@@ -2202,7 +2202,7 @@ scopesList: jspb.Message.toObjectList(msg.getScopesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Metadata.Bucket}
  */
 proto.plugins.couchbase.v1.Metadata.Bucket.deserializeBinary = function(bytes) {

@@ -94,7 +94,7 @@ score: (f = jspb.Message.getOptionalFloatingPointField(msg, 4)) == null ? undefi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Vector}
  */
 proto.ai.v1.Vector.deserializeBinary = function(bytes) {

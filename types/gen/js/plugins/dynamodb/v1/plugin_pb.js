@@ -218,7 +218,7 @@ sortkey: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Index}
  */
 proto.plugins.dynamodb.v1.Index.deserializeBinary = function(bytes) {
@@ -417,7 +417,7 @@ indexesList: jspb.Message.toObjectList(msg.getIndexesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Table}
  */
 proto.plugins.dynamodb.v1.Table.deserializeBinary = function(bytes) {
@@ -664,7 +664,7 @@ tablesList: jspb.Message.toObjectList(msg.getTablesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Metadata}
  */
 proto.plugins.dynamodb.v1.Metadata.deserializeBinary = function(bytes) {
@@ -817,7 +817,7 @@ sql: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.MappedColumns}
  */
 proto.plugins.dynamodb.v1.MappedColumns.deserializeBinary = function(bytes) {
@@ -977,7 +977,7 @@ value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Tuple}
  */
 proto.plugins.dynamodb.v1.Tuple.deserializeBinary = function(bytes) {
@@ -1157,7 +1157,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.SuperblocksMetadata}
  */
 proto.plugins.dynamodb.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -1308,7 +1308,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.dynamod
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Plugin}
  */
 proto.plugins.dynamodb.v1.Plugin.deserializeBinary = function(bytes) {

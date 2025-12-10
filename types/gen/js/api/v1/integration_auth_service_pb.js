@@ -229,7 +229,7 @@ profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.CheckAuthRequest}
  */
 proto.api.v1.CheckAuthRequest.deserializeBinary = function(bytes) {
@@ -409,7 +409,7 @@ authenticated: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.CheckAuthResponse}
  */
 proto.api.v1.CheckAuthResponse.deserializeBinary = function(bytes) {
@@ -544,7 +544,7 @@ expirytimestamp: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.LoginRequest}
  */
 proto.api.v1.LoginRequest.deserializeBinary = function(bytes) {
@@ -912,7 +912,7 @@ success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.LoginResponse}
  */
 proto.api.v1.LoginResponse.deserializeBinary = function(bytes) {
@@ -1047,7 +1047,7 @@ configurationId: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.ExchangeOauthCodeForTokenRequest}
  */
 proto.api.v1.ExchangeOauthCodeForTokenRequest.deserializeBinary = function(bytes) {
@@ -1367,7 +1367,7 @@ password: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.RequestOauthPasswordTokenRequest}
  */
 proto.api.v1.RequestOauthPasswordTokenRequest.deserializeBinary = function(bytes) {
@@ -1607,7 +1607,7 @@ expiryTimestamp: jspb.Message.getFieldWithDefault(msg, 3, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.RequestOauthPasswordTokenResponse}
  */
 proto.api.v1.RequestOauthPasswordTokenResponse.deserializeBinary = function(bytes) {

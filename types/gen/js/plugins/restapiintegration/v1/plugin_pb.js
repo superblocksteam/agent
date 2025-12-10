@@ -112,7 +112,7 @@ openapitenantname: (f = jspb.Message.getField(msg, 17)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.restapiintegration.v1.Plugin}
  */
 proto.plugins.restapiintegration.v1.Plugin.deserializeBinary = function(bytes) {

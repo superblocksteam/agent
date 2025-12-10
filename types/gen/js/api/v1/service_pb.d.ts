@@ -102,6 +102,8 @@ export class ExecuteRequest extends jspb.Message {
     getMocksList(): Array<Mock>;
     setMocksList(value: Array<Mock>): ExecuteRequest;
     addMocks(value?: Mock, index?: number): Mock;
+    getViewMode(): ViewMode;
+    setViewMode(value: ViewMode): ExecuteRequest;
 
     getRequestCase(): ExecuteRequest.RequestCase;
 
@@ -126,6 +128,7 @@ export namespace ExecuteRequest {
         filesList: Array<ExecuteRequest.File.AsObject>,
         profile?: common_v1_common_pb.Profile.AsObject,
         mocksList: Array<Mock.AsObject>,
+        viewMode: ViewMode,
     }
 
 

@@ -369,7 +369,7 @@ brokersList: jspb.Message.toObjectList(msg.getBrokersList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Metadata}
  */
 proto.plugins.kafka.v1.Metadata.deserializeBinary = function(bytes) {
@@ -503,7 +503,7 @@ topicsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Metadata.Minified}
  */
 proto.plugins.kafka.v1.Metadata.Minified.deserializeBinary = function(bytes) {
@@ -729,7 +729,7 @@ address: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Broker}
  */
 proto.plugins.kafka.v1.Broker.deserializeBinary = function(bytes) {
@@ -888,7 +888,7 @@ name: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Topic}
  */
 proto.plugins.kafka.v1.Topic.deserializeBinary = function(bytes) {
@@ -1026,7 +1026,7 @@ messagesList: jspb.Message.toObjectList(msg.getMessagesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Messages}
  */
 proto.plugins.kafka.v1.Messages.deserializeBinary = function(bytes) {
@@ -1186,7 +1186,7 @@ headersMap: (f = msg.getHeadersMap()) ? f.toObject(includeInstance, undefined) :
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Message}
  */
 proto.plugins.kafka.v1.Message.deserializeBinary = function(bytes) {
@@ -1623,7 +1623,7 @@ authorizationIdentity: (f = jspb.Message.getField(msg, 7)) == null ? undefined :
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.SASL}
  */
 proto.plugins.kafka.v1.SASL.deserializeBinary = function(bytes) {
@@ -2048,7 +2048,7 @@ sasl: (f = msg.getSasl()) && proto.plugins.kafka.v1.SASL.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Cluster}
  */
 proto.plugins.kafka.v1.Cluster.deserializeBinary = function(bytes) {
@@ -2263,7 +2263,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Plugin}
  */
 proto.plugins.kafka.v1.Plugin.deserializeBinary = function(bytes) {
@@ -2456,7 +2456,7 @@ readUncommitted: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Plugin.Consume}
  */
 proto.plugins.kafka.v1.Plugin.Consume.deserializeBinary = function(bytes) {
@@ -2637,7 +2637,7 @@ partition: jspb.Message.getFieldWithDefault(msg, 3, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Plugin.Consume.Seek}
  */
 proto.plugins.kafka.v1.Plugin.Consume.Seek.deserializeBinary = function(bytes) {
@@ -2996,7 +2996,7 @@ messages: jspb.Message.getFieldWithDefault(msg, 9, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Plugin.Produce}
  */
 proto.plugins.kafka.v1.Plugin.Produce.deserializeBinary = function(bytes) {
@@ -3670,7 +3670,7 @@ syncedFromProfileId: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.SuperblocksMetadata}
  */
 proto.plugins.kafka.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {

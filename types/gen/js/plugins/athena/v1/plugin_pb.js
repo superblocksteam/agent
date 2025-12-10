@@ -112,7 +112,7 @@ awsConfig: (f = msg.getAwsConfig()) && plugins_common_v1_plugin_pb.AWSConfig.toO
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.athena.v1.Connection}
  */
 proto.plugins.athena.v1.Connection.deserializeBinary = function(bytes) {
@@ -475,7 +475,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.athena.v1.Plugin}
  */
 proto.plugins.athena.v1.Plugin.deserializeBinary = function(bytes) {

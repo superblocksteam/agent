@@ -71,6 +71,54 @@ export namespace GetIntegrationsRequest {
     }
 }
 
+export class ValidateProfileRequest extends jspb.Message { 
+
+    hasProfile(): boolean;
+    clearProfile(): void;
+    getProfile(): common_v1_common_pb.Profile | undefined;
+    setProfile(value?: common_v1_common_pb.Profile): ValidateProfileRequest;
+    getViewMode(): string;
+    setViewMode(value: string): ValidateProfileRequest;
+    clearIntegrationIdsList(): void;
+    getIntegrationIdsList(): Array<string>;
+    setIntegrationIdsList(value: Array<string>): ValidateProfileRequest;
+    addIntegrationIds(value: string, index?: number): string;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ValidateProfileRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: ValidateProfileRequest): ValidateProfileRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ValidateProfileRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ValidateProfileRequest;
+    static deserializeBinaryFromReader(message: ValidateProfileRequest, reader: jspb.BinaryReader): ValidateProfileRequest;
+}
+
+export namespace ValidateProfileRequest {
+    export type AsObject = {
+        profile?: common_v1_common_pb.Profile.AsObject,
+        viewMode: string,
+        integrationIdsList: Array<string>,
+    }
+}
+
+export class ValidateProfileResponse extends jspb.Message { 
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ValidateProfileResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: ValidateProfileResponse): ValidateProfileResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ValidateProfileResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ValidateProfileResponse;
+    static deserializeBinaryFromReader(message: ValidateProfileResponse, reader: jspb.BinaryReader): ValidateProfileResponse;
+}
+
+export namespace ValidateProfileResponse {
+    export type AsObject = {
+    }
+}
+
 export class GetIntegrationsResponse extends jspb.Message { 
     clearDataList(): void;
     getDataList(): Array<Integration>;

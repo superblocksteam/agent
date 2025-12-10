@@ -92,7 +92,7 @@ logsList: jspb.Message.toObjectList(msg.getLogsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.intake.v1.Logs}
  */
 proto.intake.v1.Logs.deserializeBinary = function(bytes) {

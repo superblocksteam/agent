@@ -226,7 +226,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1ExecuteRequest"
+              "$ref": "#/definitions/apiv1ExecuteRequest"
             }
           }
         ],
@@ -258,7 +258,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1ExecuteRequest"
+              "$ref": "#/definitions/apiv1ExecuteRequest"
             }
           }
         ],
@@ -299,7 +299,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1ExecuteRequest"
+              "$ref": "#/definitions/apiv1ExecuteRequest"
             }
           }
         ],
@@ -2910,6 +2910,53 @@
         },
         "key": {
           "type": "string"
+        }
+      }
+    },
+    "apiv1ExecuteRequest": {
+      "type": "object",
+      "properties": {
+        "options": {
+          "$ref": "#/definitions/v1ExecuteRequestOptions",
+          "description": "Request options."
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Inputs that can be access in steps."
+        },
+        "definition": {
+          "$ref": "#/definitions/v1Definition",
+          "description": "The literal API specification."
+        },
+        "fetch": {
+          "$ref": "#/definitions/v1ExecuteRequestFetch",
+          "description": "Details on how to fetch the API specification."
+        },
+        "fetchByPath": {
+          "$ref": "#/definitions/ExecuteRequestFetchByPath",
+          "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ExecuteRequestFile"
+          }
+        },
+        "profile": {
+          "$ref": "#/definitions/v1Profile"
+        },
+        "mocks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/apiv1Mock"
+          }
+        },
+        "viewMode": {
+          "$ref": "#/definitions/v1ViewMode",
+          "description": "The view mode for this execution. Used for inline definitions.\nFor fetch/fetchByPath, the nested view_mode takes precedence."
         }
       }
     },
@@ -5805,53 +5852,6 @@
       },
       "description": "Represents the completion of an Api."
     },
-    "v1ExecuteRequest": {
-      "type": "object",
-      "properties": {
-        "options": {
-          "$ref": "#/definitions/v1ExecuteRequestOptions",
-          "description": "Request options."
-        },
-        "inputs": {
-          "type": "object",
-          "additionalProperties": {},
-          "description": "Inputs that can be access in steps."
-        },
-        "definition": {
-          "$ref": "#/definitions/v1Definition",
-          "description": "The literal API specification."
-        },
-        "fetch": {
-          "$ref": "#/definitions/v1ExecuteRequestFetch",
-          "description": "Details on how to fetch the API specification."
-        },
-        "fetchByPath": {
-          "$ref": "#/definitions/ExecuteRequestFetchByPath",
-          "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
-        },
-        "files": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1ExecuteRequestFile"
-          }
-        },
-        "profile": {
-          "$ref": "#/definitions/v1Profile"
-        },
-        "mocks": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/apiv1Mock"
-          }
-        },
-        "viewMode": {
-          "$ref": "#/definitions/v1ViewMode",
-          "description": "The view mode for this execution. Used for inline definitions.\nFor fetch/fetchByPath, the nested view_mode takes precedence."
-        }
-      }
-    },
     "v1ExecuteRequestFetch": {
       "type": "object",
       "properties": {
@@ -6871,7 +6871,7 @@
       "type": "object",
       "properties": {
         "execute": {
-          "$ref": "#/definitions/v1ExecuteRequest"
+          "$ref": "#/definitions/apiv1ExecuteRequest"
         },
         "function": {
           "$ref": "#/definitions/v1FunctionResponse"

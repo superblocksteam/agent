@@ -169,7 +169,7 @@ file: (f = msg.getFile()) && proto.common.v1.FileMetadata.toObject(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Property}
  */
 proto.common.v1.Property.deserializeBinary = function(bytes) {
@@ -885,7 +885,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.SuperblocksMetadata}
  */
 proto.common.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -1016,7 +1016,7 @@ bodyMap: (f = msg.getBodyMap()) ? f.toObject(includeInstance, proto.google.proto
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.HttpParameters}
  */
 proto.common.v1.HttpParameters.deserializeBinary = function(bytes) {
@@ -1195,7 +1195,7 @@ filename: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.FileMetadata}
  */
 proto.common.v1.FileMetadata.deserializeBinary = function(bytes) {

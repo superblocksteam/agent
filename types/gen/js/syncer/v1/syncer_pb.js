@@ -95,7 +95,7 @@ organizationId: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.Metadata}
  */
 proto.syncer.v1.Metadata.deserializeBinary = function(bytes) {

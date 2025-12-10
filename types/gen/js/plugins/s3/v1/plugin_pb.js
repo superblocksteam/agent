@@ -170,7 +170,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.SuperblocksMetadata}
  */
 proto.plugins.s3.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -317,7 +317,7 @@ valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefin
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.Property}
  */
 proto.plugins.s3.v1.Property.deserializeBinary = function(bytes) {
@@ -756,7 +756,7 @@ presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.s3.v1.P
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.Custom}
  */
 proto.plugins.s3.v1.Custom.deserializeBinary = function(bytes) {
@@ -908,7 +908,7 @@ delimiter: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.ListFilesConfig}
  */
 proto.plugins.s3.v1.ListFilesConfig.deserializeBinary = function(bytes) {
@@ -1111,7 +1111,7 @@ listFilesConfig: (f = msg.getListFilesConfig()) && proto.plugins.s3.v1.ListFiles
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.Plugin}
  */
 proto.plugins.s3.v1.Plugin.deserializeBinary = function(bytes) {

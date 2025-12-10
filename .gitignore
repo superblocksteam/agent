@@ -36,3 +36,4 @@ charts/
 /workers/javascript/packages/**/dist
 
 /workers/python/coverage.json
+**/__pycache__/

@@ -107,7 +107,7 @@ donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 14, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.restapi.v1.Plugin}
  */
 proto.plugins.restapi.v1.Plugin.deserializeBinary = function(bytes) {

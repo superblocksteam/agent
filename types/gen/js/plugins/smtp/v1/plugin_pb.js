@@ -116,7 +116,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.smtp.v1.Plugin}
  */
 proto.plugins.smtp.v1.Plugin.deserializeBinary = function(bytes) {
@@ -346,7 +346,7 @@ secure: (f = jspb.Message.getBooleanField(msg, 5)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.smtp.v1.Plugin.SmtpConnection}
  */
 proto.plugins.smtp.v1.Plugin.SmtpConnection.deserializeBinary = function(bytes) {

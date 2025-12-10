@@ -151,7 +151,7 @@ sql: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.snowflake.v1.MappedColumns}
  */
 proto.plugins.snowflake.v1.MappedColumns.deserializeBinary = function(bytes) {
@@ -311,7 +311,7 @@ value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.snowflake.v1.Tuple}
  */
 proto.plugins.snowflake.v1.Tuple.deserializeBinary = function(bytes) {
@@ -491,7 +491,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.snowflake.v1.SuperblocksMetadata}
  */
 proto.plugins.snowflake.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -641,7 +641,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.snowfla
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.snowflake.v1.Plugin}
  */
 proto.plugins.snowflake.v1.Plugin.deserializeBinary = function(bytes) {

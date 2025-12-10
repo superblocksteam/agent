@@ -642,7 +642,7 @@ celList: jspb.Message.toObjectList(msg.getCelList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.MessageConstraints}
  */
 proto.buf.validate.MessageConstraints.deserializeBinary = function(bytes) {
@@ -841,7 +841,7 @@ required: (f = jspb.Message.getBooleanField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.OneofConstraints}
  */
 proto.buf.validate.OneofConstraints.deserializeBinary = function(bytes) {
@@ -1066,7 +1066,7 @@ timestamp: (f = msg.getTimestamp()) && proto.buf.validate.TimestampRules.toObjec
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.FieldConstraints}
  */
 proto.buf.validate.FieldConstraints.deserializeBinary = function(bytes) {
@@ -2411,7 +2411,7 @@ finite: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.FloatRules}
  */
 proto.buf.validate.FloatRules.deserializeBinary = function(bytes) {
@@ -2926,7 +2926,7 @@ finite: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.DoubleRules}
  */
 proto.buf.validate.DoubleRules.deserializeBinary = function(bytes) {
@@ -3440,7 +3440,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Int32Rules}
  */
 proto.buf.validate.Int32Rules.deserializeBinary = function(bytes) {
@@ -3925,7 +3925,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Int64Rules}
  */
 proto.buf.validate.Int64Rules.deserializeBinary = function(bytes) {
@@ -4410,7 +4410,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.UInt32Rules}
  */
 proto.buf.validate.UInt32Rules.deserializeBinary = function(bytes) {
@@ -4895,7 +4895,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.UInt64Rules}
  */
 proto.buf.validate.UInt64Rules.deserializeBinary = function(bytes) {
@@ -5380,7 +5380,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.SInt32Rules}
  */
 proto.buf.validate.SInt32Rules.deserializeBinary = function(bytes) {
@@ -5865,7 +5865,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.SInt64Rules}
  */
 proto.buf.validate.SInt64Rules.deserializeBinary = function(bytes) {
@@ -6350,7 +6350,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Fixed32Rules}
  */
 proto.buf.validate.Fixed32Rules.deserializeBinary = function(bytes) {
@@ -6835,7 +6835,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Fixed64Rules}
  */
 proto.buf.validate.Fixed64Rules.deserializeBinary = function(bytes) {
@@ -7320,7 +7320,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.SFixed32Rules}
  */
 proto.buf.validate.SFixed32Rules.deserializeBinary = function(bytes) {
@@ -7805,7 +7805,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.SFixed64Rules}
  */
 proto.buf.validate.SFixed64Rules.deserializeBinary = function(bytes) {
@@ -8235,7 +8235,7 @@ pb_const: (f = jspb.Message.getBooleanField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.BoolRules}
  */
 proto.buf.validate.BoolRules.deserializeBinary = function(bytes) {
@@ -8460,7 +8460,7 @@ strict: (f = jspb.Message.getBooleanField(msg, 25)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.StringRules}
  */
 proto.buf.validate.StringRules.deserializeBinary = function(bytes) {
@@ -10066,7 +10066,7 @@ ipv6: (f = jspb.Message.getBooleanField(msg, 12)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.BytesRules}
  */
 proto.buf.validate.BytesRules.deserializeBinary = function(bytes) {
@@ -10934,7 +10934,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.EnumRules}
  */
 proto.buf.validate.EnumRules.deserializeBinary = function(bytes) {
@@ -11226,7 +11226,7 @@ items: (f = msg.getItems()) && proto.buf.validate.FieldConstraints.toObject(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.RepeatedRules}
  */
 proto.buf.validate.RepeatedRules.deserializeBinary = function(bytes) {
@@ -11521,7 +11521,7 @@ values: (f = msg.getValues()) && proto.buf.validate.FieldConstraints.toObject(in
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.MapRules}
  */
 proto.buf.validate.MapRules.deserializeBinary = function(bytes) {
@@ -11824,7 +11824,7 @@ notInList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.AnyRules}
  */
 proto.buf.validate.AnyRules.deserializeBinary = function(bytes) {
@@ -12078,7 +12078,7 @@ notInList: jspb.Message.toObjectList(msg.getNotInList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.DurationRules}
  */
 proto.buf.validate.DurationRules.deserializeBinary = function(bytes) {
@@ -12582,7 +12582,7 @@ within: (f = msg.getWithin()) && google_protobuf_duration_pb.Duration.toObject(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.TimestampRules}
  */
 proto.buf.validate.TimestampRules.deserializeBinary = function(bytes) {

@@ -165,7 +165,7 @@ keysList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.ReadRequest}
  */
 proto.store.v1.ReadRequest.deserializeBinary = function(bytes) {
@@ -323,7 +323,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.ReadResponse}
  */
 proto.store.v1.ReadResponse.deserializeBinary = function(bytes) {
@@ -533,7 +533,7 @@ pairsList: jspb.Message.toObjectList(msg.getPairsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.WriteRequest}
  */
 proto.store.v1.WriteRequest.deserializeBinary = function(bytes) {
@@ -694,7 +694,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.WriteResponse}
  */
 proto.store.v1.WriteResponse.deserializeBinary = function(bytes) {

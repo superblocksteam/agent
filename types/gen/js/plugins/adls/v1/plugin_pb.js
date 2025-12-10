@@ -349,7 +349,7 @@ deleteFile: (f = msg.getDeleteFile()) && proto.plugins.adls.v1.Plugin.DeleteFile
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin}
  */
 proto.plugins.adls.v1.Plugin.deserializeBinary = function(bytes) {
@@ -593,7 +593,7 @@ auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Azure.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.AdlsConnection}
  */
 proto.plugins.adls.v1.Plugin.AdlsConnection.deserializeBinary = function(bytes) {
@@ -802,7 +802,7 @@ fileSystem: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.CreateContainer}
  */
 proto.plugins.adls.v1.Plugin.CreateContainer.deserializeBinary = function(bytes) {
@@ -933,7 +933,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.CreateDirectory}
  */
 proto.plugins.adls.v1.Plugin.CreateDirectory.deserializeBinary = function(bytes) {
@@ -1094,7 +1094,7 @@ newPath: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.RenameDirectory}
  */
 proto.plugins.adls.v1.Plugin.RenameDirectory.deserializeBinary = function(bytes) {
@@ -1283,7 +1283,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.DeleteDirectory}
  */
 proto.plugins.adls.v1.Plugin.DeleteDirectory.deserializeBinary = function(bytes) {
@@ -1443,7 +1443,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.ListDirectoryContents}
  */
 proto.plugins.adls.v1.Plugin.ListDirectoryContents.deserializeBinary = function(bytes) {
@@ -1604,7 +1604,7 @@ content: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.UploadFile}
  */
 proto.plugins.adls.v1.Plugin.UploadFile.deserializeBinary = function(bytes) {
@@ -1793,7 +1793,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.DownloadFile}
  */
 proto.plugins.adls.v1.Plugin.DownloadFile.deserializeBinary = function(bytes) {
@@ -1953,7 +1953,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.DeleteFile}
  */
 proto.plugins.adls.v1.Plugin.DeleteFile.deserializeBinary = function(bytes) {
@@ -2119,7 +2119,7 @@ fileSystemsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.Metadata}
  */
 proto.plugins.adls.v1.Plugin.Metadata.deserializeBinary = function(bytes) {

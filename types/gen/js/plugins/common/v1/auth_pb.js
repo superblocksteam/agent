@@ -466,7 +466,7 @@ scope: jspb.Message.getFieldWithDefault(msg, 5, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.OAuthCommon}
  */
 proto.plugins.common.v1.OAuthCommon.deserializeBinary = function(bytes) {
@@ -712,7 +712,7 @@ proto.plugins.common.v1.OAuth.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.OAuth}
  */
 proto.plugins.common.v1.OAuth.deserializeBinary = function(bytes) {
@@ -819,7 +819,7 @@ scope: jspb.Message.getFieldWithDefault(msg, 7, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.OAuth.PasswordGrantFlow}
  */
 proto.plugins.common.v1.OAuth.PasswordGrantFlow.deserializeBinary = function(bytes) {
@@ -1127,7 +1127,7 @@ scope: jspb.Message.getFieldWithDefault(msg, 5, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.OAuth.ClientCredentialsFlow}
  */
 proto.plugins.common.v1.OAuth.ClientCredentialsFlow.deserializeBinary = function(bytes) {
@@ -1384,7 +1384,7 @@ subjectTokenType: jspb.Message.getFieldWithDefault(msg, 12, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow}
  */
 proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.deserializeBinary = function(bytes) {
@@ -1843,7 +1843,7 @@ password: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.Basic}
  */
 proto.plugins.common.v1.Basic.deserializeBinary = function(bytes) {
@@ -2029,7 +2029,7 @@ clientCredentials: (f = msg.getClientCredentials()) && proto.plugins.common.v1.A
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.Azure}
  */
 proto.plugins.common.v1.Azure.deserializeBinary = function(bytes) {
@@ -2156,7 +2156,7 @@ masterKey: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.Azure.Key}
  */
 proto.plugins.common.v1.Azure.Key.deserializeBinary = function(bytes) {
@@ -2287,7 +2287,7 @@ clientSecret: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.Azure.ClientCredentials}
  */
 proto.plugins.common.v1.Azure.ClientCredentials.deserializeBinary = function(bytes) {
@@ -2548,7 +2548,7 @@ region: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AwsAuth}
  */
 proto.plugins.common.v1.AwsAuth.deserializeBinary = function(bytes) {
@@ -2687,7 +2687,7 @@ secretAccessKey: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AwsAuth.Static}
  */
 proto.plugins.common.v1.AwsAuth.Static.deserializeBinary = function(bytes) {
@@ -2846,7 +2846,7 @@ roleArn: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AwsAuth.AssumeRole}
  */
 proto.plugins.common.v1.AwsAuth.AssumeRole.deserializeBinary = function(bytes) {
@@ -3093,7 +3093,7 @@ serviceAccount: msg.getServiceAccount_asB64()
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.GcpAuth}
  */
 proto.plugins.common.v1.GcpAuth.deserializeBinary = function(bytes) {
@@ -3292,7 +3292,7 @@ email: (f = msg.getEmail()) && proto.plugins.common.v1.AkeylessAuth.Email.toObje
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AkeylessAuth}
  */
 proto.plugins.common.v1.AkeylessAuth.deserializeBinary = function(bytes) {
@@ -3420,7 +3420,7 @@ accessKey: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AkeylessAuth.ApiKey}
  */
 proto.plugins.common.v1.AkeylessAuth.ApiKey.deserializeBinary = function(bytes) {
@@ -3580,7 +3580,7 @@ password: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AkeylessAuth.Email}
  */
 proto.plugins.common.v1.AkeylessAuth.Email.deserializeBinary = function(bytes) {
@@ -3848,7 +3848,7 @@ oauthTokenExchange: (f = msg.getOauthTokenExchange()) && proto.plugins.common.v1
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.Auth}
  */
 proto.plugins.common.v1.Auth.deserializeBinary = function(bytes) {
@@ -4027,7 +4027,7 @@ proto.plugins.common.v1.Auth.Nothing.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.Auth.Nothing}
  */
 proto.plugins.common.v1.Auth.Nothing.deserializeBinary = function(bytes) {

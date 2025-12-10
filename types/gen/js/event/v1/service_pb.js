@@ -133,7 +133,7 @@ eventsList: msg.getEventsList_asB64()
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.IngestEventRequest}
  */
 proto.event.v1.IngestEventRequest.deserializeBinary = function(bytes) {
@@ -315,7 +315,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.IngestEventResponse}
  */
 proto.event.v1.IngestEventResponse.deserializeBinary = function(bytes) {
@@ -441,7 +441,7 @@ error: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.IngestEventResponse.ErrorWrapper}
  */
 proto.event.v1.IngestEventResponse.ErrorWrapper.deserializeBinary = function(bytes) {

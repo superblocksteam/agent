@@ -118,7 +118,7 @@ itemsList: jspb.Message.toObjectList(msg.getItemsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Variables}
  */
 proto.api.v1.Variables.deserializeBinary = function(bytes) {
@@ -255,7 +255,7 @@ key: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Variables.Config}
  */
 proto.api.v1.Variables.Config.deserializeBinary = function(bytes) {

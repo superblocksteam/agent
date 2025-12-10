@@ -274,7 +274,7 @@ integrationId: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.GetConfigurationMetadataRequest}
  */
 proto.syncer.v1.GetConfigurationMetadataRequest.deserializeBinary = function(bytes) {
@@ -416,7 +416,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.GetConfigurationMetadataResponse}
  */
 proto.syncer.v1.GetConfigurationMetadataResponse.deserializeBinary = function(bytes) {
@@ -701,7 +701,7 @@ integrationIdsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.SyncRequest}
  */
 proto.syncer.v1.SyncRequest.deserializeBinary = function(bytes) {
@@ -859,7 +859,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.SyncResponse}
  */
 proto.syncer.v1.SyncResponse.deserializeBinary = function(bytes) {
@@ -996,7 +996,7 @@ configurationidsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? unde
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.SyncResponse.Integration}
  */
 proto.syncer.v1.SyncResponse.Integration.deserializeBinary = function(bytes) {
@@ -1214,7 +1214,7 @@ metadataList: jspb.Message.toObjectList(msg.getMetadataList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.UpsertMetadataRequest}
  */
 proto.syncer.v1.UpsertMetadataRequest.deserializeBinary = function(bytes) {
@@ -1374,7 +1374,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.UpsertMetadataResponse}
  */
 proto.syncer.v1.UpsertMetadataResponse.deserializeBinary = function(bytes) {
@@ -1534,7 +1534,7 @@ configurationIdsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? unde
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.DeleteMetadataRequest}
  */
 proto.syncer.v1.DeleteMetadataRequest.deserializeBinary = function(bytes) {
@@ -1720,7 +1720,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.DeleteMetadataResponse}
  */
 proto.syncer.v1.DeleteMetadataResponse.deserializeBinary = function(bytes) {

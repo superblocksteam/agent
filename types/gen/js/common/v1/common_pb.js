@@ -135,7 +135,7 @@ deactivated: (f = msg.getDeactivated()) && google_protobuf_timestamp_pb.Timestam
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Timestamps}
  */
 proto.common.v1.Timestamps.deserializeBinary = function(bytes) {
@@ -394,7 +394,7 @@ type: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Metadata}
  */
 proto.common.v1.Metadata.deserializeBinary = function(bytes) {
@@ -860,7 +860,7 @@ environment: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Profile}
  */
 proto.common.v1.Profile.deserializeBinary = function(bytes) {

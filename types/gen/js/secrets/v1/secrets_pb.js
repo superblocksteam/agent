@@ -312,7 +312,7 @@ prefix: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.AwsSecretsManager}
  */
 proto.secrets.v1.AwsSecretsManager.deserializeBinary = function(bytes) {
@@ -511,7 +511,7 @@ projectId: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.GcpSecretManager}
  */
 proto.secrets.v1.GcpSecretManager.deserializeBinary = function(bytes) {
@@ -693,7 +693,7 @@ prefix: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.AkeylessSecretsManager}
  */
 proto.secrets.v1.AkeylessSecretsManager.deserializeBinary = function(bytes) {
@@ -943,7 +943,7 @@ secretsPath: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.HashicorpVault}
  */
 proto.secrets.v1.HashicorpVault.deserializeBinary = function(bytes) {
@@ -1148,7 +1148,7 @@ appRole: (f = msg.getAppRole()) && proto.secrets.v1.HashicorpVault.Auth.AppRole.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.HashicorpVault.Auth}
  */
 proto.secrets.v1.HashicorpVault.Auth.deserializeBinary = function(bytes) {
@@ -1274,7 +1274,7 @@ secretId: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.HashicorpVault.Auth.AppRole}
  */
 proto.secrets.v1.HashicorpVault.Auth.AppRole.deserializeBinary = function(bytes) {
@@ -1687,7 +1687,7 @@ dataMap: (f = msg.getDataMap()) ? f.toObject(includeInstance, undefined) : []
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.MockStore}
  */
 proto.secrets.v1.MockStore.deserializeBinary = function(bytes) {
@@ -1859,7 +1859,7 @@ hashicorpVault: (f = msg.getHashicorpVault()) && proto.secrets.v1.HashicorpVault
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.Provider}
  */
 proto.secrets.v1.Provider.deserializeBinary = function(bytes) {
@@ -2214,7 +2214,7 @@ cache: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.Store}
  */
 proto.secrets.v1.Store.deserializeBinary = function(bytes) {
@@ -2521,7 +2521,7 @@ name: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.Details}
  */
 proto.secrets.v1.Details.deserializeBinary = function(bytes) {
@@ -2682,7 +2682,7 @@ store: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.Invalidation}
  */
 proto.secrets.v1.Invalidation.deserializeBinary = function(bytes) {

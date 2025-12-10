@@ -154,7 +154,7 @@ limit: jspb.Message.getFieldWithDefault(msg, 2, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.ResourcesToResignRequest}
  */
 proto.security.v1.ResourcesToResignRequest.deserializeBinary = function(bytes) {
@@ -321,7 +321,7 @@ resourcesList: jspb.Message.toObjectList(msg.getResourcesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.ResourcesToResignResponse}
  */
 proto.security.v1.ResourcesToResignResponse.deserializeBinary = function(bytes) {
@@ -480,7 +480,7 @@ completed: (f = msg.getCompleted()) && google_protobuf_timestamp_pb.Timestamp.to
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.KeyRotation}
  */
 proto.security.v1.KeyRotation.deserializeBinary = function(bytes) {
@@ -884,7 +884,7 @@ keyRotationsList: jspb.Message.toObjectList(msg.getKeyRotationsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.KeyRotationsResponse}
  */
 proto.security.v1.KeyRotationsResponse.deserializeBinary = function(bytes) {

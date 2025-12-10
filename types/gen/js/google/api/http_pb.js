@@ -136,7 +136,7 @@ fullyDecodeReservedExpansion: jspb.Message.getBooleanFieldWithDefault(msg, 2, fa
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.google.api.Http}
  */
 proto.google.api.Http.deserializeBinary = function(bytes) {
@@ -364,7 +364,7 @@ additionalBindingsList: jspb.Message.toObjectList(msg.getAdditionalBindingsList(
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.google.api.HttpRule}
  */
 proto.google.api.HttpRule.deserializeBinary = function(bytes) {
@@ -889,7 +889,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.google.api.CustomHttpPattern}
  */
 proto.google.api.CustomHttpPattern.deserializeBinary = function(bytes) {
