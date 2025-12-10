@@ -324,7 +324,7 @@ bindingsList: jspb.Message.toObjectList(msg.getBindingsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Resolved}
  */
 proto.api.v1.Resolved.deserializeBinary = function(bytes) {
@@ -564,7 +564,7 @@ executionIndex: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event}
  */
 proto.api.v1.Event.deserializeBinary = function(bytes) {
@@ -787,7 +787,7 @@ value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.Data}
  */
 proto.api.v1.Event.Data.deserializeBinary = function(bytes) {
@@ -938,7 +938,7 @@ proto.api.v1.Event.Request.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.Request}
  */
 proto.api.v1.Event.Request.deserializeBinary = function(bytes) {
@@ -1048,7 +1048,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.Response}
  */
 proto.api.v1.Event.Response.deserializeBinary = function(bytes) {
@@ -1229,7 +1229,7 @@ proto.api.v1.Event.Start.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.Start}
  */
 proto.api.v1.Event.Start.deserializeBinary = function(bytes) {
@@ -1334,7 +1334,7 @@ resolvedMap: (f = msg.getResolvedMap()) ? f.toObject(includeInstance, proto.api.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.End}
  */
 proto.api.v1.Event.End.deserializeBinary = function(bytes) {
@@ -1988,7 +1988,7 @@ customMap: (f = msg.getCustomMap()) ? f.toObject(includeInstance, undefined) : [
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Performance}
  */
 proto.api.v1.Performance.deserializeBinary = function(bytes) {
@@ -2283,7 +2283,7 @@ requestV2: (f = msg.getRequestV2()) && proto.api.v1.Output.Request.toObject(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Output}
  */
 proto.api.v1.Output.deserializeBinary = function(bytes) {
@@ -2444,7 +2444,7 @@ metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Output.Request}
  */
 proto.api.v1.Output.Request.deserializeBinary = function(bytes) {
@@ -2800,7 +2800,7 @@ placeHoldersInfo: (f = msg.getPlaceHoldersInfo()) && google_protobuf_struct_pb.V
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.OutputOld}
  */
 proto.api.v1.OutputOld.deserializeBinary = function(bytes) {

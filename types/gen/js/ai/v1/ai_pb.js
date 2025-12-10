@@ -321,7 +321,7 @@ content: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Message}
  */
 proto.ai.v1.Message.deserializeBinary = function(bytes) {
@@ -526,7 +526,7 @@ historyList: jspb.Message.toObjectList(msg.getHistoryList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task}
  */
 proto.ai.v1.Task.deserializeBinary = function(bytes) {
@@ -731,7 +731,7 @@ proto.ai.v1.Task.Optimize.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Optimize}
  */
 proto.ai.v1.Task.Optimize.deserializeBinary = function(bytes) {
@@ -832,7 +832,7 @@ proto.ai.v1.Task.Debug.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Debug}
  */
 proto.ai.v1.Task.Debug.deserializeBinary = function(bytes) {
@@ -933,7 +933,7 @@ proto.ai.v1.Task.Transpile.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Transpile}
  */
 proto.ai.v1.Task.Transpile.deserializeBinary = function(bytes) {
@@ -1037,7 +1037,7 @@ context: (f = msg.getContext()) && proto.ai.v1.Task.Edit.Context.toObject(includ
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Edit}
  */
 proto.ai.v1.Task.Edit.deserializeBinary = function(bytes) {
@@ -1211,7 +1211,7 @@ configurationIds: (f = msg.getConfigurationIds()) && common_v1_utils_pb.StringLi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Edit.Context}
  */
 proto.ai.v1.Task.Edit.Context.deserializeBinary = function(bytes) {
@@ -1505,7 +1505,7 @@ context: (f = msg.getContext()) && proto.ai.v1.Task.Create.Context.toObject(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Create}
  */
 proto.ai.v1.Task.Create.deserializeBinary = function(bytes) {
@@ -1668,7 +1668,7 @@ configurationIds: (f = msg.getConfigurationIds()) && common_v1_utils_pb.StringLi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Create.Context}
  */
 proto.ai.v1.Task.Create.Context.deserializeBinary = function(bytes) {
@@ -1945,7 +1945,7 @@ language: jspb.Message.getFieldWithDefault(msg, 4, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Explain}
  */
 proto.ai.v1.Task.Explain.deserializeBinary = function(bytes) {
@@ -2164,7 +2164,7 @@ prompt: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Mock}
  */
 proto.ai.v1.Task.Mock.deserializeBinary = function(bytes) {

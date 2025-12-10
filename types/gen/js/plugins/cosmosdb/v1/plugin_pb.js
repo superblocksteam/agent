@@ -383,7 +383,7 @@ pointOperation: (f = msg.getPointOperation()) && proto.plugins.cosmosdb.v1.Plugi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin}
  */
 proto.plugins.cosmosdb.v1.Plugin.deserializeBinary = function(bytes) {
@@ -550,7 +550,7 @@ auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Azure.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection}
  */
 proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.deserializeBinary = function(bytes) {
@@ -796,7 +796,7 @@ containersList: jspb.Message.toObjectList(msg.getContainersList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Metadata}
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.deserializeBinary = function(bytes) {
@@ -911,7 +911,7 @@ partitionKey: (f = msg.getPartitionKey()) && proto.plugins.cosmosdb.v1.Plugin.Me
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Metadata.Container}
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.deserializeBinary = function(bytes) {
@@ -1045,7 +1045,7 @@ version: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey}
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey.deserializeBinary = function(bytes) {
@@ -1388,7 +1388,7 @@ singleton: (f = msg.getSingleton()) && proto.plugins.cosmosdb.v1.Plugin.Sql.Sing
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Sql}
  */
 proto.plugins.cosmosdb.v1.Plugin.Sql.deserializeBinary = function(bytes) {
@@ -1505,7 +1505,7 @@ partitionKey: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton}
  */
 proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.deserializeBinary = function(bytes) {
@@ -1811,7 +1811,7 @@ create: (f = msg.getCreate()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.deserializeBinary = function(bytes) {
@@ -1989,7 +1989,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read.deserializeBinary = function(bytes) {
@@ -2167,7 +2167,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete.deserializeBinary = function(bytes) {
@@ -2345,7 +2345,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace.deserializeBinary = function(bytes) {
@@ -2523,7 +2523,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert.deserializeBinary = function(bytes) {
@@ -2701,7 +2701,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create.deserializeBinary = function(bytes) {

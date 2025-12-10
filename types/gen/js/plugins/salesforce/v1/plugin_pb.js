@@ -276,7 +276,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin}
  */
 proto.plugins.salesforce.v1.Plugin.deserializeBinary = function(bytes) {
@@ -454,7 +454,7 @@ auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Auth.toObject(includeInst
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.SalesforceConnection}
  */
 proto.plugins.salesforce.v1.Plugin.SalesforceConnection.deserializeBinary = function(bytes) {
@@ -642,7 +642,7 @@ objectsList: jspb.Message.toObjectList(msg.getObjectsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Metadata}
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.deserializeBinary = function(bytes) {
@@ -764,7 +764,7 @@ fieldsList: jspb.Message.toObjectList(msg.getFieldsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Metadata.Object}
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.Object.deserializeBinary = function(bytes) {
@@ -880,7 +880,7 @@ type: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field}
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field.deserializeBinary = function(bytes) {
@@ -1145,7 +1145,7 @@ action: jspb.Message.getFieldWithDefault(msg, 2, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Soql}
  */
 proto.plugins.salesforce.v1.Plugin.Soql.deserializeBinary = function(bytes) {
@@ -1315,7 +1315,7 @@ resourceId: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Crud}
  */
 proto.plugins.salesforce.v1.Plugin.Crud.deserializeBinary = function(bytes) {
@@ -1546,7 +1546,7 @@ externalId: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Bulk}
  */
 proto.plugins.salesforce.v1.Plugin.Bulk.deserializeBinary = function(bytes) {

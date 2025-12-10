@@ -144,7 +144,7 @@ protoData: (f = msg.getProtoData()) && google_protobuf_any_pb.Any.toObject(inclu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.CloudEvent}
  */
 proto.event.v1.CloudEvent.deserializeBinary = function(bytes) {
@@ -605,7 +605,7 @@ ceTimestamp: (f = msg.getCeTimestamp()) && google_protobuf_timestamp_pb.Timestam
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.CloudEventAttributeValue}
  */
 proto.event.v1.CloudEventAttributeValue.deserializeBinary = function(bytes) {

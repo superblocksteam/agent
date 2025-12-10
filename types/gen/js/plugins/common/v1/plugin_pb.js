@@ -221,7 +221,7 @@ workflowId: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.DynamicWorkflowConfiguration}
  */
 proto.plugins.common.v1.DynamicWorkflowConfiguration.deserializeBinary = function(bytes) {
@@ -418,7 +418,7 @@ endpoint: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AWSConfig}
  */
 proto.plugins.common.v1.AWSConfig.deserializeBinary = function(bytes) {
@@ -556,7 +556,7 @@ iamRoleArn: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AWSConfig.Auth}
  */
 proto.plugins.common.v1.AWSConfig.Auth.deserializeBinary = function(bytes) {
@@ -908,7 +908,7 @@ useParameterized: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLExecution}
  */
 proto.plugins.common.v1.SQLExecution.deserializeBinary = function(bytes) {
@@ -1068,7 +1068,7 @@ sql: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLMappedColumns}
  */
 proto.plugins.common.v1.SQLMappedColumns.deserializeBinary = function(bytes) {
@@ -1235,7 +1235,7 @@ username: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SSHConfiguration}
  */
 proto.plugins.common.v1.SSHConfiguration.deserializeBinary = function(bytes) {
@@ -1776,7 +1776,7 @@ deletedRows: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLBulkEdit}
  */
 proto.plugins.common.v1.SQLBulkEdit.deserializeBinary = function(bytes) {

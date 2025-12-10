@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package worker.v1;
+
+import "worker/v1/sandbox_executor_transport.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/worker/v1";
+
+service SandboxVariableStoreService {
+  rpc GetVariable(GetVariableRequest) returns (GetVariableResponse);
+  rpc SetVariable(SetVariableRequest) returns (SetVariableResponse);
+  rpc GetVariables(GetVariablesRequest) returns (GetVariablesResponse);
+  rpc SetVariables(SetVariablesRequest) returns (SetVariablesResponse);
+}
+
+// Variable operations
+message GetVariableRequest {
+  string execution_id = 1;
+  string key = 2;
+}
+
+message GetVariableResponse {
+  string value = 1;  // JSON-encoded value
+  bool found = 2;
+}
+
+message SetVariableRequest {
+  string execution_id = 1;
+  string key = 2;
+  string value = 3;  // JSON-encoded value
+}
+
+message SetVariableResponse {
+  bool success = 1;
+}
+
+message GetVariablesRequest {
+  string execution_id = 1;
+  repeated string keys = 2;
+}
+
+message GetVariablesResponse {
+  repeated string values = 1;  // JSON-encoded values (same order as keys)
+}
+
+message SetVariablesRequest {
+  string execution_id = 1;
+  repeated KeyValue kvs = 2;
+}
+
+message KeyValue {
+  string key = 1;
+  string value = 2;  // JSON-encoded value
+}
+
+message SetVariablesResponse {
+  bool success = 1;
+}

@@ -170,7 +170,7 @@ proto.plugins.common.v1.SQLMetadata.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLMetadata}
  */
 proto.plugins.common.v1.SQLMetadata.deserializeBinary = function(bytes) {
@@ -271,7 +271,7 @@ tablesMap: (f = msg.getTablesMap()) ? f.toObject(includeInstance, proto.plugins.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLMetadata.Minified}
  */
 proto.plugins.common.v1.SQLMetadata.Minified.deserializeBinary = function(bytes) {
@@ -388,7 +388,7 @@ columnsMap: (f = msg.getColumnsMap()) ? f.toObject(includeInstance, undefined) :
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLMetadata.Minified.Table}
  */
 proto.plugins.common.v1.SQLMetadata.Minified.Table.deserializeBinary = function(bytes) {
@@ -550,7 +550,7 @@ proto.plugins.common.v1.BucketsMetadata.toObject = function(includeInstance, msg
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.BucketsMetadata}
  */
 proto.plugins.common.v1.BucketsMetadata.deserializeBinary = function(bytes) {
@@ -658,7 +658,7 @@ namesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.BucketsMetadata.Minified}
  */
 proto.plugins.common.v1.BucketsMetadata.Minified.deserializeBinary = function(bytes) {

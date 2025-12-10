@@ -148,7 +148,7 @@ linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Links}
  */
 proto.common.v1.Links.deserializeBinary = function(bytes) {
@@ -296,7 +296,7 @@ linksList: jspb.Message.toObjectList(msg.getLinksList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.LinksV2}
  */
 proto.common.v1.LinksV2.deserializeBinary = function(bytes) {
@@ -448,7 +448,7 @@ url: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Link}
  */
 proto.common.v1.Link.deserializeBinary = function(bytes) {
@@ -587,7 +587,7 @@ linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.CombinedLinks}
  */
 proto.common.v1.CombinedLinks.deserializeBinary = function(bytes) {

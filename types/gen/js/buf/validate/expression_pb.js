@@ -128,7 +128,7 @@ expression: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Constraint}
  */
 proto.buf.validate.Constraint.deserializeBinary = function(bytes) {
@@ -324,7 +324,7 @@ violationsList: jspb.Message.toObjectList(msg.getViolationsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Violations}
  */
 proto.buf.validate.Violations.deserializeBinary = function(bytes) {
@@ -479,7 +479,7 @@ forKey: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Violation}
  */
 proto.buf.validate.Violation.deserializeBinary = function(bytes) {

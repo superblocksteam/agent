@@ -330,7 +330,7 @@ verificationKeyIdsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? un
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationRequest}
  */
 proto.agent.v1.RegistrationRequest.deserializeBinary = function(bytes) {
@@ -616,7 +616,7 @@ data: (f = msg.getData()) && proto.agent.v1.RegistrationResponse.ResponseBody.to
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationResponse}
  */
 proto.agent.v1.RegistrationResponse.deserializeBinary = function(bytes) {
@@ -745,7 +745,7 @@ success: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationResponse.ResponseMeta}
  */
 proto.agent.v1.RegistrationResponse.ResponseMeta.deserializeBinary = function(bytes) {
@@ -936,7 +936,7 @@ organizationName: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationResponse.ResponseBody}
  */
 proto.agent.v1.RegistrationResponse.ResponseBody.deserializeBinary = function(bytes) {
@@ -1094,7 +1094,7 @@ tagsMap: (f = msg.getTagsMap()) ? f.toObject(includeInstance, proto.agent.v1.Tag
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationResponse.ResponseBody.Agent}
  */
 proto.agent.v1.RegistrationResponse.ResponseBody.Agent.deserializeBinary = function(bytes) {
@@ -1777,7 +1777,7 @@ versionsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : 
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.VersionList}
  */
 proto.agent.v1.VersionList.deserializeBinary = function(bytes) {
@@ -1933,7 +1933,7 @@ tagsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.TagList}
  */
 proto.agent.v1.TagList.deserializeBinary = function(bytes) {
@@ -2090,7 +2090,7 @@ auditLogsList: jspb.Message.toObjectList(msg.getAuditLogsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.AuditLogRequest}
  */
 proto.agent.v1.AuditLogRequest.deserializeBinary = function(bytes) {
@@ -2218,7 +2218,7 @@ targetname: (f = jspb.Message.getField(msg, 15)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.AuditLogRequest.AuditLog}
  */
 proto.agent.v1.AuditLogRequest.AuditLog.deserializeBinary = function(bytes) {
@@ -2516,7 +2516,7 @@ applicationId: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext}
  */
 proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext.deserializeBinary = function(bytes) {
@@ -2647,7 +2647,7 @@ end: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.AuditLogRequest.AuditLog.ApiTiming}
  */
 proto.agent.v1.AuditLogRequest.AuditLog.ApiTiming.deserializeBinary = function(bytes) {

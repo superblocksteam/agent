@@ -115,7 +115,7 @@ celList: jspb.Message.toObjectList(msg.getCelList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.priv.FieldConstraints}
  */
 proto.buf.validate.priv.FieldConstraints.deserializeBinary = function(bytes) {
@@ -269,7 +269,7 @@ expression: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.priv.Constraint}
  */
 proto.buf.validate.priv.Constraint.deserializeBinary = function(bytes) {

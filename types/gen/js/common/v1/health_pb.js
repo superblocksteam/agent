@@ -109,7 +109,7 @@ stale: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Pool}
  */
 proto.common.v1.Pool.deserializeBinary = function(bytes) {
@@ -497,7 +497,7 @@ id: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.HealthResponse}
  */
 proto.common.v1.HealthResponse.deserializeBinary = function(bytes) {

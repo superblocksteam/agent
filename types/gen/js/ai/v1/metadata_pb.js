@@ -138,7 +138,7 @@ aivenkafka: (f = msg.getAivenkafka()) && plugins_kafka_v1_plugin_pb.Metadata.Min
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Metadata}
  */
 proto.ai.v1.Metadata.deserializeBinary = function(bytes) {

@@ -483,7 +483,7 @@ branchName: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.PatchApi}
  */
 proto.api.v1.PatchApi.deserializeBinary = function(bytes) {
@@ -736,7 +736,7 @@ patchesList: jspb.Message.toObjectList(msg.getPatchesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.PatchApisRequest}
  */
 proto.api.v1.PatchApisRequest.deserializeBinary = function(bytes) {
@@ -899,7 +899,7 @@ linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.PatchApisResponse}
  */
 proto.api.v1.PatchApisResponse.deserializeBinary = function(bytes) {
@@ -1045,7 +1045,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.PatchApisResponse.Status}
  */
 proto.api.v1.PatchApisResponse.Status.deserializeBinary = function(bytes) {
@@ -1429,7 +1429,7 @@ updated: (f = msg.getUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObje
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.UpdateApiSignature}
  */
 proto.api.v1.UpdateApiSignature.deserializeBinary = function(bytes) {
@@ -1851,7 +1851,7 @@ pageVersion: jspb.Message.getFieldWithDefault(msg, 6, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.UpdateApplicationSignature}
  */
 proto.api.v1.UpdateApplicationSignature.deserializeBinary = function(bytes) {
@@ -2265,7 +2265,7 @@ algorithm: jspb.Message.getFieldWithDefault(msg, 4, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.SignatureRotationErrors}
  */
 proto.api.v1.SignatureRotationErrors.deserializeBinary = function(bytes) {
@@ -2528,7 +2528,7 @@ message: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.SignatureRotationError}
  */
 proto.api.v1.SignatureRotationError.deserializeBinary = function(bytes) {
@@ -2666,7 +2666,7 @@ updatesList: jspb.Message.toObjectList(msg.getUpdatesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.UpdateApiSignaturesRequest}
  */
 proto.api.v1.UpdateApiSignaturesRequest.deserializeBinary = function(bytes) {
@@ -2826,7 +2826,7 @@ updatesList: jspb.Message.toObjectList(msg.getUpdatesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.UpdateApplicationSignaturesRequest}
  */
 proto.api.v1.UpdateApplicationSignaturesRequest.deserializeBinary = function(bytes) {
@@ -2989,7 +2989,7 @@ linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.UpdateApplicationSignaturesResponse}
  */
 proto.api.v1.UpdateApplicationSignaturesResponse.deserializeBinary = function(bytes) {
@@ -3163,7 +3163,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.UpdateApplicationSignaturesResponse.Status}
  */
 proto.api.v1.UpdateApplicationSignaturesResponse.Status.deserializeBinary = function(bytes) {
@@ -3605,7 +3605,7 @@ linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.UpdateApiSignaturesResponse}
  */
 proto.api.v1.UpdateApiSignaturesResponse.deserializeBinary = function(bytes) {
@@ -3779,7 +3779,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.UpdateApiSignaturesResponse.Status}
  */
 proto.api.v1.UpdateApiSignaturesResponse.Status.deserializeBinary = function(bytes) {
@@ -4210,7 +4210,7 @@ data: (f = msg.getData()) && proto.api.v1.GenericBatch.Items.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.GenericBatch}
  */
 proto.api.v1.GenericBatch.deserializeBinary = function(bytes) {
@@ -4332,7 +4332,7 @@ itemsList: jspb.Message.toObjectList(msg.getItemsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.GenericBatch.Items}
  */
 proto.api.v1.GenericBatch.Items.deserializeBinary = function(bytes) {
@@ -4521,7 +4521,7 @@ data: (f = msg.getData()) && proto.api.v1.GenericBatch.toObject(includeInstance,
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.GenericBatchResponse}
  */
 proto.api.v1.GenericBatchResponse.deserializeBinary = function(bytes) {

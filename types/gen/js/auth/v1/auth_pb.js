@@ -122,7 +122,7 @@ metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.auth.v1.Claims}
  */
 proto.auth.v1.Claims.deserializeBinary = function(bytes) {
@@ -327,7 +327,7 @@ name: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.auth.v1.Claims.RbacGroupObject}
  */
 proto.auth.v1.Claims.RbacGroupObject.deserializeBinary = function(bytes) {

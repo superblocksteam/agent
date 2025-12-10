@@ -85,7 +85,7 @@ parameters: (f = msg.getParameters()) && common_v1_plugin_pb.HttpParameters.toOb
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.workflow.v2.Plugin}
  */
 proto.plugins.workflow.v2.Plugin.deserializeBinary = function(bytes) {

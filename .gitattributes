@@ -1,0 +1,8 @@
+# Mark generated protobuf files as generated
+*_pb.ts linguist-generated=true
+*_pb.js linguist-generated=true
+*.pb.go linguist-generated=true
+*_pb2.py linguist-generated=true
+*_pb2_grpc.py linguist-generated=true
+*_pb.d.ts linguist-generated=true
+*swagger.json linguist-generated=true

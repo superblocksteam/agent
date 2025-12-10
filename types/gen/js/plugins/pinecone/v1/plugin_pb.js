@@ -230,7 +230,7 @@ query: (f = msg.getQuery()) && proto.plugins.pinecone.v1.Plugin.Query.toObject(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin}
  */
 proto.plugins.pinecone.v1.Plugin.deserializeBinary = function(bytes) {
@@ -421,7 +421,7 @@ apiKey: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.Connection}
  */
 proto.plugins.pinecone.v1.Plugin.Connection.deserializeBinary = function(bytes) {
@@ -580,7 +580,7 @@ proto.plugins.pinecone.v1.Plugin.ListIndexes.toObject = function(includeInstance
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.ListIndexes}
  */
 proto.plugins.pinecone.v1.Plugin.ListIndexes.deserializeBinary = function(bytes) {
@@ -681,7 +681,7 @@ name: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.CreateIndex}
  */
 proto.plugins.pinecone.v1.Plugin.CreateIndex.deserializeBinary = function(bytes) {
@@ -836,7 +836,7 @@ raw: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.UpsertVector}
  */
 proto.plugins.pinecone.v1.Plugin.UpsertVector.deserializeBinary = function(bytes) {
@@ -985,7 +985,7 @@ topK: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.Query}
  */
 proto.plugins.pinecone.v1.Plugin.Query.deserializeBinary = function(bytes) {

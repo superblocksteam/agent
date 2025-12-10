@@ -999,7 +999,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin}
  */
 proto.plugins.redis.v1.Plugin.deserializeBinary = function(bytes) {
@@ -1188,7 +1188,7 @@ singleton: (f = msg.getSingleton()) && proto.plugins.redis.v1.Plugin.Raw.Singlet
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Raw}
  */
 proto.plugins.redis.v1.Plugin.Raw.deserializeBinary = function(bytes) {
@@ -1302,7 +1302,7 @@ query: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Raw.Singleton}
  */
 proto.plugins.redis.v1.Plugin.Raw.Singleton.deserializeBinary = function(bytes) {
@@ -1560,7 +1560,7 @@ ttl: (f = msg.getTtl()) && proto.plugins.redis.v1.Plugin.Ttl.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Structured}
  */
 proto.plugins.redis.v1.Plugin.Structured.deserializeBinary = function(bytes) {
@@ -3388,7 +3388,7 @@ fields: (f = msg.getFields()) && proto.plugins.redis.v1.Plugin.Connection.Fields
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Connection}
  */
 proto.plugins.redis.v1.Plugin.Connection.deserializeBinary = function(bytes) {
@@ -3515,7 +3515,7 @@ urlString: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Connection.Url}
  */
 proto.plugins.redis.v1.Plugin.Connection.Url.deserializeBinary = function(bytes) {
@@ -3650,7 +3650,7 @@ enableSsl: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Connection.Fields}
  */
 proto.plugins.redis.v1.Plugin.Connection.Fields.deserializeBinary = function(bytes) {
@@ -4053,7 +4053,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Get}
  */
 proto.plugins.redis.v1.Plugin.Get.deserializeBinary = function(bytes) {
@@ -4185,7 +4185,7 @@ expirationMs: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Set}
  */
 proto.plugins.redis.v1.Plugin.Set.deserializeBinary = function(bytes) {
@@ -4391,7 +4391,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Del}
  */
 proto.plugins.redis.v1.Plugin.Del.deserializeBinary = function(bytes) {
@@ -4521,7 +4521,7 @@ pattern: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Keys}
  */
 proto.plugins.redis.v1.Plugin.Keys.deserializeBinary = function(bytes) {
@@ -4651,7 +4651,7 @@ keys: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Mget}
  */
 proto.plugins.redis.v1.Plugin.Mget.deserializeBinary = function(bytes) {
@@ -4782,7 +4782,7 @@ field: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hget}
  */
 proto.plugins.redis.v1.Plugin.Hget.deserializeBinary = function(bytes) {
@@ -4942,7 +4942,7 @@ fields: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hmget}
  */
 proto.plugins.redis.v1.Plugin.Hmget.deserializeBinary = function(bytes) {
@@ -5101,7 +5101,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hgetall}
  */
 proto.plugins.redis.v1.Plugin.Hgetall.deserializeBinary = function(bytes) {
@@ -5233,7 +5233,7 @@ value: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hset}
  */
 proto.plugins.redis.v1.Plugin.Hset.deserializeBinary = function(bytes) {
@@ -5423,7 +5423,7 @@ value: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hsetnx}
  */
 proto.plugins.redis.v1.Plugin.Hsetnx.deserializeBinary = function(bytes) {
@@ -5611,7 +5611,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hlen}
  */
 proto.plugins.redis.v1.Plugin.Hlen.deserializeBinary = function(bytes) {
@@ -5742,7 +5742,7 @@ field: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hdel}
  */
 proto.plugins.redis.v1.Plugin.Hdel.deserializeBinary = function(bytes) {
@@ -5901,7 +5901,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hkeys}
  */
 proto.plugins.redis.v1.Plugin.Hkeys.deserializeBinary = function(bytes) {
@@ -6031,7 +6031,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hvals}
  */
 proto.plugins.redis.v1.Plugin.Hvals.deserializeBinary = function(bytes) {
@@ -6162,7 +6162,7 @@ index: jspb.Message.getFieldWithDefault(msg, 2, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Lindex}
  */
 proto.plugins.redis.v1.Plugin.Lindex.deserializeBinary = function(bytes) {
@@ -6321,7 +6321,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Llen}
  */
 proto.plugins.redis.v1.Plugin.Llen.deserializeBinary = function(bytes) {
@@ -6452,7 +6452,7 @@ value: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Lpush}
  */
 proto.plugins.redis.v1.Plugin.Lpush.deserializeBinary = function(bytes) {
@@ -6613,7 +6613,7 @@ value: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Lrem}
  */
 proto.plugins.redis.v1.Plugin.Lrem.deserializeBinary = function(bytes) {
@@ -6803,7 +6803,7 @@ stop: jspb.Message.getFieldWithDefault(msg, 3, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Lrange}
  */
 proto.plugins.redis.v1.Plugin.Lrange.deserializeBinary = function(bytes) {
@@ -6992,7 +6992,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Sadd}
  */
 proto.plugins.redis.v1.Plugin.Sadd.deserializeBinary = function(bytes) {
@@ -7151,7 +7151,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Scard}
  */
 proto.plugins.redis.v1.Plugin.Scard.deserializeBinary = function(bytes) {
@@ -7281,7 +7281,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Smembers}
  */
 proto.plugins.redis.v1.Plugin.Smembers.deserializeBinary = function(bytes) {
@@ -7412,7 +7412,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Sismember}
  */
 proto.plugins.redis.v1.Plugin.Sismember.deserializeBinary = function(bytes) {
@@ -7572,7 +7572,7 @@ count: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Srandmember}
  */
 proto.plugins.redis.v1.Plugin.Srandmember.deserializeBinary = function(bytes) {
@@ -7750,7 +7750,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Srem}
  */
 proto.plugins.redis.v1.Plugin.Srem.deserializeBinary = function(bytes) {
@@ -7911,7 +7911,7 @@ member: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zadd}
  */
 proto.plugins.redis.v1.Plugin.Zadd.deserializeBinary = function(bytes) {
@@ -8099,7 +8099,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zcard}
  */
 proto.plugins.redis.v1.Plugin.Zcard.deserializeBinary = function(bytes) {
@@ -8231,7 +8231,7 @@ max: jspb.Message.getFloatingPointFieldWithDefault(msg, 3, 0.0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zcount}
  */
 proto.plugins.redis.v1.Plugin.Zcount.deserializeBinary = function(bytes) {
@@ -8421,7 +8421,7 @@ stop: jspb.Message.getFieldWithDefault(msg, 3, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zrange}
  */
 proto.plugins.redis.v1.Plugin.Zrange.deserializeBinary = function(bytes) {
@@ -8610,7 +8610,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zrank}
  */
 proto.plugins.redis.v1.Plugin.Zrank.deserializeBinary = function(bytes) {
@@ -8770,7 +8770,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zrem}
  */
 proto.plugins.redis.v1.Plugin.Zrem.deserializeBinary = function(bytes) {
@@ -8930,7 +8930,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zscore}
  */
 proto.plugins.redis.v1.Plugin.Zscore.deserializeBinary = function(bytes) {
@@ -9091,7 +9091,7 @@ option: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Expire}
  */
 proto.plugins.redis.v1.Plugin.Expire.deserializeBinary = function(bytes) {
@@ -9308,7 +9308,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Ttl}
  */
 proto.plugins.redis.v1.Plugin.Ttl.deserializeBinary = function(bytes) {

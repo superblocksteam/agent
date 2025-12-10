@@ -107,7 +107,7 @@ apiId: (f = jspb.Message.getField(msg, 18)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.ExecutionEvent}
  */
 proto.event.v1.ExecutionEvent.deserializeBinary = function(bytes) {

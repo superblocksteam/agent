@@ -126,7 +126,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gsheets.v1.SuperblocksMetadata}
  */
 proto.plugins.gsheets.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -270,7 +270,7 @@ addsheet: (f = msg.getAddsheet()) && proto.plugins.gsheets.v1.Plugin.AddSheet.to
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gsheets.v1.Plugin}
  */
 proto.plugins.gsheets.v1.Plugin.deserializeBinary = function(bytes) {
@@ -542,7 +542,7 @@ columncount: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gsheets.v1.Plugin.AddSheet}
  */
 proto.plugins.gsheets.v1.Plugin.AddSheet.deserializeBinary = function(bytes) {

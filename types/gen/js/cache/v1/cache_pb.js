@@ -112,7 +112,7 @@ rbacRole: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.cache.v1.Mutation}
  */
 proto.cache.v1.Mutation.deserializeBinary = function(bytes) {
@@ -417,7 +417,7 @@ batchList: jspb.Message.toObjectList(msg.getBatchList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.cache.v1.MutationBatch}
  */
 proto.cache.v1.MutationBatch.deserializeBinary = function(bytes) {

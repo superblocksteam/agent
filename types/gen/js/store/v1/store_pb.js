@@ -109,7 +109,7 @@ value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.Pair}
  */
 proto.store.v1.Pair.deserializeBinary = function(bytes) {
@@ -297,7 +297,7 @@ secretsList: jspb.Message.toObjectList(msg.getSecretsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.Stores}
  */
 proto.store.v1.Stores.deserializeBinary = function(bytes) {

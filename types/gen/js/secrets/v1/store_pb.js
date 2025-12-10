@@ -160,7 +160,7 @@ configurationId: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.InvalidateRequest}
  */
 proto.secrets.v1.InvalidateRequest.deserializeBinary = function(bytes) {
@@ -359,7 +359,7 @@ message: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.InvalidateResponse}
  */
 proto.secrets.v1.InvalidateResponse.deserializeBinary = function(bytes) {
@@ -593,7 +593,7 @@ provider: (f = msg.getProvider()) && secrets_v1_secrets_pb.Provider.toObject(inc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.ListSecretsRequest}
  */
 proto.secrets.v1.ListSecretsRequest.deserializeBinary = function(bytes) {
@@ -831,7 +831,7 @@ secretsList: jspb.Message.toObjectList(msg.getSecretsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.ListSecretsResponse}
  */
 proto.secrets.v1.ListSecretsResponse.deserializeBinary = function(bytes) {

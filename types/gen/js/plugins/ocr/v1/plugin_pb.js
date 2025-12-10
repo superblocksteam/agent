@@ -84,7 +84,7 @@ fileurl: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.ocr.v1.Plugin}
  */
 proto.plugins.ocr.v1.Plugin.deserializeBinary = function(bytes) {

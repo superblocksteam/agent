@@ -148,7 +148,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gcs.v1.SuperblocksMetadata}
  */
 proto.plugins.gcs.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -295,7 +295,7 @@ valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefin
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gcs.v1.Property}
  */
 proto.plugins.gcs.v1.Property.deserializeBinary = function(bytes) {
@@ -734,7 +734,7 @@ presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.gcs.v1.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gcs.v1.Custom}
  */
 proto.plugins.gcs.v1.Custom.deserializeBinary = function(bytes) {
@@ -894,7 +894,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.gcs.v1.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gcs.v1.Plugin}
  */
 proto.plugins.gcs.v1.Plugin.deserializeBinary = function(bytes) {

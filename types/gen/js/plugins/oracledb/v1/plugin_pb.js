@@ -111,7 +111,7 @@ operation: jspb.Message.getFieldWithDefault(msg, 6, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.oracledb.v1.Plugin}
  */
 proto.plugins.oracledb.v1.Plugin.deserializeBinary = function(bytes) {
@@ -293,7 +293,7 @@ connectionUrl: jspb.Message.getFieldWithDefault(msg, 8, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.oracledb.v1.Plugin.OracleDbConnection}
  */
 proto.plugins.oracledb.v1.Plugin.OracleDbConnection.deserializeBinary = function(bytes) {

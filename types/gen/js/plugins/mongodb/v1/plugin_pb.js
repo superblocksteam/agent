@@ -104,7 +104,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.mongodb.v1.SuperblocksMetadata}
  */
 proto.plugins.mongodb.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -249,7 +249,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.mongodb
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.mongodb.v1.Plugin}
  */
 proto.plugins.mongodb.v1.Plugin.deserializeBinary = function(bytes) {

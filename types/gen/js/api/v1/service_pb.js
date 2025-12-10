@@ -1091,7 +1091,7 @@ detailed: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.HealthRequest}
  */
 proto.api.v1.HealthRequest.deserializeBinary = function(bytes) {
@@ -1221,7 +1221,7 @@ api: (f = msg.getApi()) && api_v1_api_pb.Api.toObject(includeInstance, f)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.ValidateRequest}
  */
 proto.api.v1.ValidateRequest.deserializeBinary = function(bytes) {
@@ -1402,7 +1402,8 @@ filesList: jspb.Message.toObjectList(msg.getFilesList(),
     proto.api.v1.ExecuteRequest.File.toObject, includeInstance),
 profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
 mocksList: jspb.Message.toObjectList(msg.getMocksList(),
-    proto.api.v1.Mock.toObject, includeInstance)
+    proto.api.v1.Mock.toObject, includeInstance),
+viewMode: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
 
   if (includeInstance) {
@@ -1415,7 +1416,7 @@ mocksList: jspb.Message.toObjectList(msg.getMocksList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.ExecuteRequest}
  */
 proto.api.v1.ExecuteRequest.deserializeBinary = function(bytes) {
@@ -1479,6 +1480,10 @@ proto.api.v1.ExecuteRequest.deserializeBinaryFromReader = function(msg, reader) 
       var value = new proto.api.v1.Mock;
       reader.readMessage(value,proto.api.v1.Mock.deserializeBinaryFromReader);
       msg.addMocks(value);
+      break;
+    case 9:
+      var value = /** @type {!proto.api.v1.ViewMode} */ (reader.readEnum());
+      msg.setViewMode(value);
       break;
     default:
       reader.skipField();
@@ -1575,6 +1580,13 @@ jspb.internal.public_for_gencode.serializeMapToBinary(
       proto.api.v1.Mock.serializeBinaryToWriter
     );
   }
+  f = message.getViewMode();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      9,
+      f
+    );
+  }
 };
 
 
@@ -1630,7 +1642,7 @@ includeApiEvents: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.ExecuteRequest.Options}
  */
 proto.api.v1.ExecuteRequest.Options.deserializeBinary = function(bytes) {
@@ -1969,7 +1981,7 @@ branchName: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.ExecuteRequest.Fetch}
  */
 proto.api.v1.ExecuteRequest.Fetch.deserializeBinary = function(bytes) {
@@ -2372,7 +2384,7 @@ branchName: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.ExecuteRequest.FetchByPath}
  */
 proto.api.v1.ExecuteRequest.FetchByPath.deserializeBinary = function(bytes) {
@@ -2773,7 +2785,7 @@ size: jspb.Message.getFieldWithDefault(msg, 5, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.ExecuteRequest.File}
  */
 proto.api.v1.ExecuteRequest.File.deserializeBinary = function(bytes) {
@@ -3282,6 +3294,24 @@ proto.api.v1.ExecuteRequest.prototype.clearMocksList = function() {
 };
 
 
+/**
+ * optional ViewMode view_mode = 9;
+ * @return {!proto.api.v1.ViewMode}
+ */
+proto.api.v1.ExecuteRequest.prototype.getViewMode = function() {
+  return /** @type {!proto.api.v1.ViewMode} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/**
+ * @param {!proto.api.v1.ViewMode} value
+ * @return {!proto.api.v1.ExecuteRequest} returns this
+ */
+proto.api.v1.ExecuteRequest.prototype.setViewMode = function(value) {
+  return jspb.Message.setProto3EnumField(this, 9, value);
+};
+
+
 
 
 
@@ -3330,7 +3360,7 @@ stores: (f = msg.getStores()) && store_v1_store_pb.Stores.toObject(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Definition}
  */
 proto.api.v1.Definition.deserializeBinary = function(bytes) {
@@ -3490,7 +3520,7 @@ requesterType: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Definition.Metadata}
  */
 proto.api.v1.Definition.Metadata.deserializeBinary = function(bytes) {
@@ -3888,7 +3918,7 @@ execution: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.StatusRequest}
  */
 proto.api.v1.StatusRequest.deserializeBinary = function(bytes) {
@@ -4032,7 +4062,7 @@ eventsList: jspb.Message.toObjectList(msg.getEventsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.AwaitResponse}
  */
 proto.api.v1.AwaitResponse.deserializeBinary = function(bytes) {
@@ -4403,7 +4433,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.AsyncResponse}
  */
 proto.api.v1.AsyncResponse.deserializeBinary = function(bytes) {
@@ -4584,7 +4614,7 @@ event: (f = msg.getEvent()) && api_v1_event_pb.Event.toObject(includeInstance, f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.StreamResponse}
  */
 proto.api.v1.StreamResponse.deserializeBinary = function(bytes) {
@@ -4765,7 +4795,7 @@ block: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.OutputRequest}
  */
 proto.api.v1.OutputRequest.deserializeBinary = function(bytes) {
@@ -4926,7 +4956,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.OutputResponse}
  */
 proto.api.v1.OutputResponse.deserializeBinary = function(bytes) {
@@ -5177,7 +5207,7 @@ execution: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.CancelRequest}
  */
 proto.api.v1.CancelRequest.deserializeBinary = function(bytes) {
@@ -5307,7 +5337,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.CancelResponse}
  */
 proto.api.v1.CancelResponse.deserializeBinary = function(bytes) {
@@ -5462,7 +5492,7 @@ actionConfig: (f = msg.getActionConfig()) && google_protobuf_struct_pb.Struct.to
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.TestRequest}
  */
 proto.api.v1.TestRequest.deserializeBinary = function(bytes) {
@@ -5771,7 +5801,7 @@ proto.api.v1.TestResponse.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.TestResponse}
  */
 proto.api.v1.TestResponse.deserializeBinary = function(bytes) {
@@ -5875,7 +5905,7 @@ pluginName: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.DeleteRequest}
  */
 proto.api.v1.DeleteRequest.deserializeBinary = function(bytes) {
@@ -6113,7 +6143,7 @@ proto.api.v1.DeleteResponse.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.DeleteResponse}
  */
 proto.api.v1.DeleteResponse.deserializeBinary = function(bytes) {
@@ -6214,7 +6244,7 @@ proto.api.v1.Function.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Function}
  */
 proto.api.v1.Function.deserializeBinary = function(bytes) {
@@ -6325,7 +6355,7 @@ parametersList: jspb.Message.toObjectList(msg.getParametersList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Function.Request}
  */
 proto.api.v1.Function.Request.deserializeBinary = function(bytes) {
@@ -6537,7 +6567,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Function.Response}
  */
 proto.api.v1.Function.Response.deserializeBinary = function(bytes) {
@@ -6794,7 +6824,7 @@ pb_function: (f = msg.getFunction()) && proto.api.v1.Function.Response.toObject(
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.TwoWayRequest}
  */
 proto.api.v1.TwoWayRequest.deserializeBinary = function(bytes) {
@@ -7022,7 +7052,7 @@ pb_function: (f = msg.getFunction()) && proto.api.v1.Function.Request.toObject(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.TwoWayResponse}
  */
 proto.api.v1.TwoWayResponse.deserializeBinary = function(bytes) {
@@ -7224,7 +7254,7 @@ pb_return: (f = msg.getReturn()) && proto.api.v1.Mock.Return.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Mock}
  */
 proto.api.v1.Mock.deserializeBinary = function(bytes) {
@@ -7353,7 +7383,7 @@ inputs: (f = msg.getInputs()) && google_protobuf_struct_pb.Value.toObject(includ
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Mock.Params}
  */
 proto.api.v1.Mock.Params.deserializeBinary = function(bytes) {
@@ -7599,7 +7629,7 @@ dynamic: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Mock.On}
  */
 proto.api.v1.Mock.On.deserializeBinary = function(bytes) {
@@ -7824,7 +7854,7 @@ dynamic: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Mock.Return}
  */
 proto.api.v1.Mock.Return.deserializeBinary = function(bytes) {
@@ -8098,7 +8128,7 @@ profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataRequestDeprecated}
  */
 proto.api.v1.MetadataRequestDeprecated.deserializeBinary = function(bytes) {
@@ -8309,7 +8339,7 @@ stepConfiguration: (f = msg.getStepConfiguration()) && google_protobuf_struct_pb
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataRequest}
  */
 proto.api.v1.MetadataRequest.deserializeBinary = function(bytes) {
@@ -8579,7 +8609,7 @@ gSheetsNextPageToken: jspb.Message.getFieldWithDefault(msg, 8, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse}
  */
 proto.api.v1.MetadataResponse.deserializeBinary = function(bytes) {
@@ -8805,7 +8835,7 @@ schemasList: jspb.Message.toObjectList(msg.getSchemasList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse.DatabaseSchemaMetadata}
  */
 proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.deserializeBinary = function(bytes) {
@@ -8934,7 +8964,7 @@ escapedName: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Column}
  */
 proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Column.deserializeBinary = function(bytes) {
@@ -9131,7 +9161,7 @@ columnsList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Key}
  */
 proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Key.deserializeBinary = function(bytes) {
@@ -9339,7 +9369,7 @@ body: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Template}
  */
 proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Template.deserializeBinary = function(bytes) {
@@ -9514,7 +9544,7 @@ schema: jspb.Message.getFieldWithDefault(msg, 7, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Table}
  */
 proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Table.deserializeBinary = function(bytes) {
@@ -9885,7 +9915,7 @@ name: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Schema}
  */
 proto.api.v1.MetadataResponse.DatabaseSchemaMetadata.Schema.deserializeBinary = function(bytes) {
@@ -10120,7 +10150,7 @@ name: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse.BucketMetadata}
  */
 proto.api.v1.MetadataResponse.BucketMetadata.deserializeBinary = function(bytes) {
@@ -10258,7 +10288,7 @@ bucketsList: jspb.Message.toObjectList(msg.getBucketsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.MetadataResponse.BucketsMetadata}
  */
 proto.api.v1.MetadataResponse.BucketsMetadata.deserializeBinary = function(bytes) {
@@ -10724,7 +10754,7 @@ location: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.DownloadRequest}
  */
 proto.api.v1.DownloadRequest.deserializeBinary = function(bytes) {
@@ -10854,7 +10884,7 @@ data: msg.getData_asB64()
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.DownloadResponse}
  */
 proto.api.v1.DownloadResponse.deserializeBinary = function(bytes) {
@@ -11009,7 +11039,7 @@ responseMeta: (f = msg.getResponseMeta()) && proto.api.v1.WorkflowResponse.Respo
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.WorkflowResponse}
  */
 proto.api.v1.WorkflowResponse.deserializeBinary = function(bytes) {
@@ -11138,7 +11168,7 @@ success: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.WorkflowResponse.ResponseMeta}
  */
 proto.api.v1.WorkflowResponse.ResponseMeta.deserializeBinary = function(bytes) {

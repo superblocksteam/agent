@@ -107,7 +107,7 @@ requestformat: (f = msg.getRequestformat()) && common_v1_plugin_pb.Property.toOb
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.graphql.v1.Custom}
  */
 proto.plugins.graphql.v1.Custom.deserializeBinary = function(bytes) {
@@ -322,7 +322,7 @@ failongraphqlerrors: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.graphql.v1.Plugin}
  */
 proto.plugins.graphql.v1.Plugin.deserializeBinary = function(bytes) {

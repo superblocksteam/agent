@@ -132,7 +132,7 @@ upsert: (f = msg.getUpsert()) && proto.kafka.v1.IntegrationMetadataEvent.Upsert.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.kafka.v1.IntegrationMetadataEvent}
  */
 proto.kafka.v1.IntegrationMetadataEvent.deserializeBinary = function(bytes) {
@@ -251,7 +251,7 @@ schemaVersion: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.kafka.v1.IntegrationMetadataEvent.Upsert}
  */
 proto.kafka.v1.IntegrationMetadataEvent.Upsert.deserializeBinary = function(bytes) {

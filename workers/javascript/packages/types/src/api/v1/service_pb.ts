@@ -189,6 +189,15 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
    */
   mocks: Mock[] = [];
 
+  /**
+   *
+   * The view mode for this execution. Used for inline definitions.
+   * For fetch/fetchByPath, the nested view_mode takes precedence.
+   *
+   * @generated from field: api.v1.ViewMode view_mode = 9;
+   */
+  viewMode = ViewMode.UNSPECIFIED;
+
   constructor(data?: PartialMessage<ExecuteRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -205,6 +214,7 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
     { no: 5, name: "files", kind: "message", T: ExecuteRequest_File, repeated: true },
     { no: 6, name: "profile", kind: "message", T: Profile },
     { no: 7, name: "mocks", kind: "message", T: Mock, repeated: true },
+    { no: 9, name: "view_mode", kind: "enum", T: proto3.getEnumType(ViewMode) },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteRequest {

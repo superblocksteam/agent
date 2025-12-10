@@ -127,7 +127,7 @@ sql: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cockroachdb.v1.MappedColumns}
  */
 proto.plugins.cockroachdb.v1.MappedColumns.deserializeBinary = function(bytes) {
@@ -286,7 +286,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cockroachdb.v1.SuperblocksMetadata}
  */
 proto.plugins.cockroachdb.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -437,7 +437,7 @@ schema: (f = jspb.Message.getField(msg, 14)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cockroachdb.v1.Plugin}
  */
 proto.plugins.cockroachdb.v1.Plugin.deserializeBinary = function(bytes) {

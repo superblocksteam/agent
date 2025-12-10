@@ -150,7 +150,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.rockset.v1.SuperblocksMetadata}
  */
 proto.plugins.rockset.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -281,7 +281,7 @@ sql: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.rockset.v1.MappedColumns}
  */
 proto.plugins.rockset.v1.MappedColumns.deserializeBinary = function(bytes) {
@@ -441,7 +441,7 @@ value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.rockset.v1.Tuple}
  */
 proto.plugins.rockset.v1.Tuple.deserializeBinary = function(bytes) {
@@ -642,7 +642,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.rockset
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.rockset.v1.Plugin}
  */
 proto.plugins.rockset.v1.Plugin.deserializeBinary = function(bytes) {

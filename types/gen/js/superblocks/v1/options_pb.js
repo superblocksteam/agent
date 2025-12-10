@@ -108,7 +108,7 @@ registry: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.superblocks.v1.Integrations}
  */
 proto.superblocks.v1.Integrations.deserializeBinary = function(bytes) {
@@ -238,7 +238,7 @@ plugintype: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.superblocks.v1.IntegrationOptions}
  */
 proto.superblocks.v1.IntegrationOptions.deserializeBinary = function(bytes) {

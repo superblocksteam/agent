@@ -274,7 +274,7 @@ lastUpdated: (f = msg.getLastUpdated()) && google_protobuf_timestamp_pb.Timestam
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.Resource}
  */
 proto.security.v1.Resource.deserializeBinary = function(bytes) {
@@ -455,7 +455,7 @@ pageVersion: jspb.Message.getFieldWithDefault(msg, 7, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.Resource.Literal}
  */
 proto.security.v1.Resource.Literal.deserializeBinary = function(bytes) {
@@ -822,7 +822,7 @@ data: (f = msg.getData()) && google_protobuf_struct_pb.Value.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.Resource.ApiLiteral}
  */
 proto.security.v1.Resource.ApiLiteral.deserializeBinary = function(bytes) {
@@ -1193,7 +1193,7 @@ resource: (f = msg.getResource()) && proto.security.v1.Resource.toObject(include
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.SignRequest}
  */
 proto.security.v1.SignRequest.deserializeBinary = function(bytes) {
@@ -1344,7 +1344,7 @@ signature: (f = msg.getSignature()) && utils_v1_utils_pb.Signature.toObject(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.SignResponse}
  */
 proto.security.v1.SignResponse.deserializeBinary = function(bytes) {
@@ -1503,7 +1503,7 @@ resourcesList: jspb.Message.toObjectList(msg.getResourcesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.VerifyRequest}
  */
 proto.security.v1.VerifyRequest.deserializeBinary = function(bytes) {
@@ -1655,7 +1655,7 @@ keyId: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.VerifyResponse}
  */
 proto.security.v1.VerifyResponse.deserializeBinary = function(bytes) {

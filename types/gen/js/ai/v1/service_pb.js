@@ -141,7 +141,7 @@ model: jspb.Message.getFieldWithDefault(msg, 2, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Overrides}
  */
 proto.ai.v1.Overrides.deserializeBinary = function(bytes) {
@@ -301,7 +301,7 @@ overrides: (f = msg.getOverrides()) && proto.ai.v1.Overrides.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.CreateTaskRequest}
  */
 proto.ai.v1.CreateTaskRequest.deserializeBinary = function(bytes) {
@@ -505,7 +505,7 @@ id: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.TaskEvent}
  */
 proto.ai.v1.TaskEvent.deserializeBinary = function(bytes) {

@@ -134,7 +134,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.databricks.v1.Plugin}
  */
 proto.plugins.databricks.v1.Plugin.deserializeBinary = function(bytes) {
@@ -336,7 +336,7 @@ scopedCatalogSchemasList: jspb.Message.toObjectList(msg.getScopedCatalogSchemasL
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.databricks.v1.Plugin.DatabricksConnection}
  */
 proto.plugins.databricks.v1.Plugin.DatabricksConnection.deserializeBinary = function(bytes) {
@@ -865,7 +865,7 @@ schemasList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.databricks.v1.Plugin.ScopedCatalogSchemas}
  */
 proto.plugins.databricks.v1.Plugin.ScopedCatalogSchemas.deserializeBinary = function(bytes) {

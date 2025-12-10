@@ -89,7 +89,7 @@ itemsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.StringList}
  */
 proto.common.v1.StringList.deserializeBinary = function(bytes) {

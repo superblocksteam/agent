@@ -180,7 +180,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Plugin}
  */
 proto.plugins.kinesis.v1.Plugin.deserializeBinary = function(bytes) {
@@ -385,7 +385,7 @@ awsConfig: (f = msg.getAwsConfig()) && plugins_common_v1_plugin_pb.AWSConfig.toO
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Plugin.KinesisConnection}
  */
 proto.plugins.kinesis.v1.Plugin.KinesisConnection.deserializeBinary = function(bytes) {
@@ -540,7 +540,7 @@ streamArn: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Plugin.KinesisPut}
  */
 proto.plugins.kinesis.v1.Plugin.KinesisPut.deserializeBinary = function(bytes) {
@@ -830,7 +830,7 @@ streamArn: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Plugin.KinesisGet}
  */
 proto.plugins.kinesis.v1.Plugin.KinesisGet.deserializeBinary = function(bytes) {
@@ -1473,7 +1473,7 @@ streamsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Metadata}
  */
 proto.plugins.kinesis.v1.Metadata.deserializeBinary = function(bytes) {
