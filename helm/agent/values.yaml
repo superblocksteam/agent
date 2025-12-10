@@ -83,8 +83,8 @@ extraContainers: []
 #   - /cloud_sql_proxy
 #   - -instances=10.0.0.1:5432
 #   - -credential_file=/secrets/cloudsql/credentials.json
-#   image: 
-#   name: 
+#   image:
+#   name:
 #   volumeMounts:
 #   - mountPath: /secrets/cloudsql
 #     name: cloudsql-sa-volume
@@ -141,6 +141,39 @@ ingress:
   #     pathType: ImplementationSpecific
   #   - path: "/api.v1.ExecutorService"
   #     pathType: ImplementationSpecific
+# Gateway API configuration (recommended over ingress)
+# Requires a Gateway API controller to be installed in the cluster
+# Docs: https://gateway-api.sigs.k8s.io/
+gateway:
+  enabled: false
+  # The GatewayClass to use (must match an installed Gateway API controller)
+  # Examples: istio, cilium, gke-l7-global-external-managed, etc.
+  # See: https://gateway-api.sigs.k8s.io/implementations/
+  # For GCP see: https://docs.cloud.google.com/kubernetes-engine/docs/how-to/gatewayclass-capabilities
+  className: ""
+  annotations: {}
+  # Configure the Gateway listeners
+  listeners:
+    http:
+      port: 80
+      # hostname: "*.example.com"
+    grpc:
+      port: 443
+      # hostname: "*.example.com"
+  # Optional: specify Gateway addresses
+  # addresses:
+  #   - type: IPAddress
+  #     value: "1.2.3.4"
+  hosts: []
+  # - host: chart-example.local
+  #   paths:
+  #     - /
+  #     - path: /api
+  #       pathType: PathPrefix  # PathPrefix, Exact
+  # grpcServices:
+  #   - path: "/grpc.reflection.v1.ServerReflection"
+  #   - path: "/grpc.reflection.v1alpha.ServerReflection"
+  #   - path: "/api.v1.ExecutorService"
 # Upon termination, there may be inflight requests and scheduled jobs.
 # If you want to force kill the agent after a certain point, this value
 # is what you're looking for. Defaults to 30 minutes (1800 seconds).
