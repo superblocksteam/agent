@@ -1,9 +1,6 @@
 {{- if .Values.gateway.enabled -}}
 {{- $fullName := include "superblocks-agent.fullname" . -}}
 {{- $httpPort := .Values.service.ports.http -}}
-{{- $grpcPort := .Values.service.ports.grpc -}}
-{{- $services := .Values.gateway.grpcServices | default (list "/grpc.reflection.v1.ServerReflection" "/grpc.reflection.v1alpha.ServerReflection" "/api.v1.ExecutorService") }}
----
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -18,19 +15,23 @@ spec:
   gatewayClassName: {{ .Values.gateway.className }}
   listeners:
     - name: http
-      protocol: HTTP
-      port: {{ .Values.gateway.listeners.http.port | default 80 }}
+      protocol: {{ if .Values.gateway.tls }}HTTPS{{ else }}HTTP{{ end }}
+      port: {{ .Values.gateway.listeners.http.port }}
+      {{- if .Values.gateway.tls }}
       {{- if .Values.gateway.listeners.http.hostname }}
       hostname: {{ .Values.gateway.listeners.http.hostname | quote }}
       {{- end }}
-      allowedRoutes:
-        namespaces:
-          from: Same
-    - name: grpc
-      protocol: HTTP
-      port: {{ .Values.gateway.listeners.grpc.port | default 443 }}
-      {{- if .Values.gateway.listeners.grpc.hostname }}
-      hostname: {{ .Values.gateway.listeners.grpc.hostname | quote }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          {{- range .Values.gateway.tls }}
+          - kind: Secret
+            name: {{ .secretName }}
+          {{- end }}
+      {{- else }}
+      {{- if .Values.gateway.listeners.http.hostname }}
+      hostname: {{ .Values.gateway.listeners.http.hostname | quote }}
+      {{- end }}
       {{- end }}
       allowedRoutes:
         namespaces:
@@ -40,7 +41,6 @@ spec:
     {{- toYaml .Values.gateway.addresses | nindent 4 }}
   {{- end }}
 ---
-# HTTPRoute for HTTP traffic
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -51,32 +51,67 @@ spec:
   parentRefs:
     - name: {{ $fullName }}
       sectionName: http
-  {{- if .Values.gateway.hosts }}
-  hostnames:
-    {{- range .Values.gateway.hosts }}
-    - {{ .host | quote }}
-    {{- end }}
-  {{- end }}
   rules:
-    {{- if .Values.gateway.hosts }}
     {{- range .Values.gateway.hosts }}
-    {{- range .paths }}
     - matches:
+        {{- range .paths }}
+        {{- if and . (kindIs "map" .) }}
         - path:
-            type: {{ if and . (kindIs "map" .) }}{{ default "PathPrefix" .pathType }}{{ else }}PathPrefix{{ end }}
-            value: {{ if and . (kindIs "map" .) }}{{ required "gateway.hosts.paths[].path is required" .path | quote }}{{ else }}{{ . | quote }}{{ end }}
+            type: {{ default "PathPrefix" .pathType }}
+            value: {{ required "gateway.hosts.paths[].path is required" .path | quote }}
+        {{- else }}
+        - path:
+            type: PathPrefix
+            value: {{ . | quote }}
+        {{- end }}
+        {{- end }}
       backendRefs:
         - name: {{ $fullName }}
           port: {{ $httpPort }}
     {{- end }}
-    {{- end }}
-    {{- else }}
-    - backendRefs:
-        - name: {{ $fullName }}
-          port: {{ $httpPort }}
-    {{- end }}
 ---
-# GRPCRoute for gRPC traffic
+{{- $grpcPort := .Values.service.ports.grpc -}}
+{{- $services := .Values.gateway.grpcServices | default (list "/grpc.reflection.v1.ServerReflection" "/grpc.reflection.v1alpha.ServerReflection" "/api.v1.ExecutorService") }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ $fullName }}-grpc
+  labels:
+    {{- include "superblocks-agent.labels" . | nindent 4 }}
+  {{- with .Values.gateway.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ .Values.gateway.className }}
+  listeners:
+    - name: grpc
+      protocol: {{ if .Values.gateway.tls }}HTTPS{{ else }}HTTP{{ end }}
+      port: {{ .Values.gateway.listeners.grpc.port }}
+      {{- if .Values.gateway.tls }}
+      {{- if .Values.gateway.listeners.grpc.hostname }}
+      hostname: {{ .Values.gateway.listeners.grpc.hostname | quote }}
+      {{- end }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          {{- range .Values.gateway.tls }}
+          - kind: Secret
+            name: {{ .secretName }}
+          {{- end }}
+      {{- else }}
+      {{- if .Values.gateway.listeners.grpc.hostname }}
+      hostname: {{ .Values.gateway.listeners.grpc.hostname | quote }}
+      {{- end }}
+      {{- end }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+  {{- if .Values.gateway.addresses }}
+  addresses:
+    {{- toYaml .Values.gateway.addresses | nindent 4 }}
+  {{- end }}
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
@@ -85,25 +120,20 @@ metadata:
     {{- include "superblocks-agent.labels" . | nindent 4 }}
 spec:
   parentRefs:
-    - name: {{ $fullName }}
+    - name: {{ $fullName }}-grpc
       sectionName: grpc
-  {{- if .Values.gateway.hosts }}
-  hostnames:
-    {{- range .Values.gateway.hosts }}
-    - {{ .host | quote }}
-    {{- end }}
-  {{- end }}
   rules:
-    {{- range $services }}
-    {{- $servicePath := . }}
-    {{- if and . (kindIs "map" .) }}
-    {{- $servicePath = .path }}
-    {{- end }}
-    {{- $parts := splitList "/" $servicePath }}
-    {{- $serviceName := index $parts 1 }}
+    {{- range .Values.gateway.hosts }}
     - matches:
+        {{- range $services }}
+          {{- if and . (kindIs "map" .) }}
         - method:
-            service: {{ $serviceName }}
+            service: {{ splitList "/" .path | last }}
+          {{- else }}
+        - method:
+            service: {{ splitList "/" . | last }}
+          {{- end }}
+        {{- end }}
       backendRefs:
         - name: {{ $fullName }}
           port: {{ $grpcPort }}
