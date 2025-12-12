@@ -1,0 +1,11 @@
+# Python bytecode
+__pycache__/
+
+# Build artifacts
+*.egg-info/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/

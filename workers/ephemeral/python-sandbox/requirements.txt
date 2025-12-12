@@ -1,0 +1,9 @@
+grpcio>=1.59.0
+protobuf>=4.24.4
+python-dotenv>=1.0.0
+superblocks-types>=0.0.1
+requests>=2.31.0
+psutil>=5.9.8
+backoff>=2.2.1
+plotly>=5.19.0
+simplejson>=3.17.6
