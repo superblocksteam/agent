@@ -6,3 +6,4 @@
 *_pb2_grpc.py linguist-generated=true
 *_pb.d.ts linguist-generated=true
 *swagger.json linguist-generated=true
+workers/ephemeral/python-sandbox/gen/* linguist-generated=true

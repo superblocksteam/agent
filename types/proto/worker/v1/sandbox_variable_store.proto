@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package worker.v1;
 
-import "worker/v1/sandbox_executor_transport.proto";
-
 option go_package = "github.com/superblocksteam/agent/types/gen/go/worker/v1";
 
 service SandboxVariableStoreService {

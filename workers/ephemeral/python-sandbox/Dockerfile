@@ -1,0 +1,30 @@
+# Python sandbox for ephemeral worker
+# Executes Python scripts in a sandboxed gRPC server
+
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies (gcc, python-dev, linux-headers for psutil)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    linux-libc-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY workers/ephemeral/python-sandbox/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy sandbox-specific source files
+COPY workers/ephemeral/python-sandbox/main.py ./
+COPY workers/ephemeral/python-sandbox/src ./src
+
+# Copy generated protobuf types
+COPY workers/ephemeral/python-sandbox/gen ./gen
+
+ENV SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT=50051
+
+EXPOSE 50051
+
+CMD ["python", "main.py"]
