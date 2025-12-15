@@ -29,11 +29,15 @@ charts/
 **/**/.pnpm-store
 
 
-
 /workers/javascript/packages/**/node_modules
 /workers/javascript/node_modules/
 /workers/javascript/.pnpm-store/
 /workers/javascript/packages/**/dist
+
+/workers/ephemeral/javascript-sandbox/.pnpm-store/
+/workers/ephemeral/javascript-sandbox/**/node_modules/
+/workers/ephemeral/javascript-sandbox/**/dist
+/workers/ephemeral/javascript-sandbox/**/*.tsbuildinfo
 
 /workers/python/coverage.json
 **/__pycache__/
