@@ -1,0 +1,247 @@
+package redis
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"workers/ephemeral/task-manager/internal/plugin"
+	"workers/ephemeral/task-manager/internal/plugin_executor"
+
+	r "github.com/redis/go-redis/v9"
+	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
+	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/structpb"
+)
+
+func TestNewOptionsDefaults(t *testing.T) {
+	opts := NewOptions()
+
+	if opts.ExecutionPool != 50 {
+		t.Errorf("ExecutionPool = %v, want 50", opts.ExecutionPool)
+	}
+	if opts.BlockDuration != 5*time.Second {
+		t.Errorf("BlockDuration = %v, want 5s", opts.BlockDuration)
+	}
+	if opts.MessageCount != 10 {
+		t.Errorf("MessageCount = %v, want 10", opts.MessageCount)
+	}
+	if opts.GRPCPort != 50050 {
+		t.Errorf("GRPCPort = %v, want 50050", opts.GRPCPort)
+	}
+}
+
+func TestWithRedisClient(t *testing.T) {
+	client := r.NewClient(&r.Options{
+		Addr: "localhost:6379",
+	})
+	defer client.Close()
+
+	opts := NewOptions(WithRedisClient(client))
+
+	if opts.RedisClient != client {
+		t.Error("RedisClient was not set correctly")
+	}
+}
+
+func TestWithStreamKeys(t *testing.T) {
+	keys := []string{"stream1", "stream2", "stream3"}
+	opts := NewOptions(WithStreamKeys(keys))
+
+	if len(opts.StreamKeys) != 3 {
+		t.Errorf("StreamKeys length = %v, want 3", len(opts.StreamKeys))
+	}
+	for i, key := range keys {
+		if opts.StreamKeys[i] != key {
+			t.Errorf("StreamKeys[%d] = %v, want %v", i, opts.StreamKeys[i], key)
+		}
+	}
+}
+
+func TestWithLogger(t *testing.T) {
+	logger := zap.NewNop()
+	opts := NewOptions(WithLogger(logger))
+
+	if opts.Logger != logger {
+		t.Error("Logger was not set correctly")
+	}
+}
+
+func TestWithBlockDuration(t *testing.T) {
+	duration := 10 * time.Second
+	opts := NewOptions(WithBlockDuration(duration))
+
+	if opts.BlockDuration != duration {
+		t.Errorf("BlockDuration = %v, want %v", opts.BlockDuration, duration)
+	}
+}
+
+func TestWithMessageCount(t *testing.T) {
+	count := int64(100)
+	opts := NewOptions(WithMessageCount(count))
+
+	if opts.MessageCount != count {
+		t.Errorf("MessageCount = %v, want %v", opts.MessageCount, count)
+	}
+}
+
+func TestWithWorkerId(t *testing.T) {
+	workerId := "worker-123"
+	opts := NewOptions(WithWorkerId(workerId))
+
+	if opts.WorkerId != workerId {
+		t.Errorf("WorkerId = %v, want %v", opts.WorkerId, workerId)
+	}
+}
+
+func TestWithConsumerGroup(t *testing.T) {
+	group := "test-group"
+	opts := NewOptions(WithConsumerGroup(group))
+
+	if opts.ConsumerGroup != group {
+		t.Errorf("ConsumerGroup = %v, want %v", opts.ConsumerGroup, group)
+	}
+}
+
+func TestWithExecutionPool(t *testing.T) {
+	pool := int64(100)
+	opts := NewOptions(WithExecutionPool(pool))
+
+	if opts.ExecutionPool != pool {
+		t.Errorf("ExecutionPool = %v, want %v", opts.ExecutionPool, pool)
+	}
+}
+
+func TestWithGRPCAddress(t *testing.T) {
+	address := "localhost:50051"
+	opts := NewOptions(WithGRPCAddress(address))
+
+	if opts.GRPCAddress != address {
+		t.Errorf("GRPCAddress = %v, want %v", opts.GRPCAddress, address)
+	}
+}
+
+func TestWithGRPCPort(t *testing.T) {
+	port := 50051
+	opts := NewOptions(WithGRPCPort(port))
+
+	if opts.GRPCPort != port {
+		t.Errorf("GRPCPort = %v, want %v", opts.GRPCPort, port)
+	}
+}
+
+func TestWithEphemeral(t *testing.T) {
+	opts := NewOptions(WithEphemeral(true))
+
+	if opts.Ephemeral != true {
+		t.Errorf("Ephemeral = %v, want true", opts.Ephemeral)
+	}
+
+	opts = NewOptions(WithEphemeral(false))
+	if opts.Ephemeral != false {
+		t.Errorf("Ephemeral = %v, want false", opts.Ephemeral)
+	}
+}
+
+func TestWithEphemeralTimeout(t *testing.T) {
+	timeout := 30 * time.Second
+	opts := NewOptions(WithEphemeralTimeout(timeout))
+
+	if opts.EphemeralTimeout != timeout {
+		t.Errorf("EphemeralTimeout = %v, want %v", opts.EphemeralTimeout, timeout)
+	}
+
+	// Test with zero (no timeout)
+	opts = NewOptions(WithEphemeralTimeout(0))
+	if opts.EphemeralTimeout != 0 {
+		t.Errorf("EphemeralTimeout = %v, want 0", opts.EphemeralTimeout)
+	}
+}
+
+func TestOptionsChaining(t *testing.T) {
+	logger := zap.NewNop()
+
+	opts := NewOptions(
+		WithWorkerId("worker-1"),
+		WithConsumerGroup("group-1"),
+		WithExecutionPool(25),
+		WithBlockDuration(3*time.Second),
+		WithMessageCount(5),
+		WithGRPCPort(50060),
+		WithEphemeral(true),
+		WithLogger(logger),
+	)
+
+	if opts.WorkerId != "worker-1" {
+		t.Errorf("WorkerId = %v, want worker-1", opts.WorkerId)
+	}
+	if opts.ConsumerGroup != "group-1" {
+		t.Errorf("ConsumerGroup = %v, want group-1", opts.ConsumerGroup)
+	}
+	if opts.ExecutionPool != 25 {
+		t.Errorf("ExecutionPool = %v, want 25", opts.ExecutionPool)
+	}
+	if opts.BlockDuration != 3*time.Second {
+		t.Errorf("BlockDuration = %v, want 3s", opts.BlockDuration)
+	}
+	if opts.MessageCount != 5 {
+		t.Errorf("MessageCount = %v, want 5", opts.MessageCount)
+	}
+	if opts.GRPCPort != 50060 {
+		t.Errorf("GRPCPort = %v, want 50060", opts.GRPCPort)
+	}
+	if opts.Ephemeral != true {
+		t.Errorf("Ephemeral = %v, want true", opts.Ephemeral)
+	}
+	if opts.Logger != logger {
+		t.Error("Logger was not set correctly")
+	}
+}
+
+func TestOptionsOverride(t *testing.T) {
+	opts := NewOptions(
+		WithExecutionPool(10),
+		WithExecutionPool(20), // Should override
+		WithExecutionPool(30), // Should override again
+	)
+
+	if opts.ExecutionPool != 30 {
+		t.Errorf("ExecutionPool = %v, want 30 (last value should win)", opts.ExecutionPool)
+	}
+}
+
+func TestWithPluginExecutor(t *testing.T) {
+	// Create a real plugin executor (the interface is from the plugin_executor package)
+	logger := zap.NewNop()
+	executor := plugin_executor.NewPluginExecutor(&plugin_executor.Options{Logger: logger, Language: "python"})
+	opts := NewOptions(WithPluginExecutor(executor))
+
+	if opts.PluginExecutor == nil {
+		t.Error("PluginExecutor should be set")
+	}
+}
+
+// mockPlugin implements the plugin.Plugin interface for testing
+type mockPlugin struct {
+	name string
+}
+
+func (m *mockPlugin) Name() string { return m.name }
+func (m *mockPlugin) Execute(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
+	return &apiv1.Output{}, nil
+}
+func (m *mockPlugin) Stream(ctx context.Context, props *transportv1.Request_Data_Data_Props, send func(message any), until func()) error {
+	return nil
+}
+func (m *mockPlugin) Metadata(ctx context.Context, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
+	return nil, nil
+}
+func (m *mockPlugin) Test(ctx context.Context, datasourceConfig *structpb.Struct) error {
+	return nil
+}
+func (m *mockPlugin) PreDelete(ctx context.Context, datasourceConfig *structpb.Struct) error {
+	return nil
+}
+
+var _ plugin.Plugin = (*mockPlugin)(nil)

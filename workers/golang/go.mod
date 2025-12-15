@@ -64,6 +64,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.38.0
 	go.opentelemetry.io/otel/trace v1.38.0
 	google.golang.org/protobuf v1.36.9
+	workers/shared v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -110,3 +111,5 @@ require (
 )
 
 replace github.com/superblocksteam/agent => ../..
+
+replace workers/shared => ../shared
