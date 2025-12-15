@@ -1,0 +1,262 @@
+import { fixupConfigRules, fixupPluginRules } from '@eslint/compat';
+import { FlatCompat } from '@eslint/eslintrc';
+import js from '@eslint/js';
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import _import from 'eslint-plugin-import';
+import prettier from 'eslint-plugin-prettier';
+import globals from 'globals';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+  allConfig: js.configs.all
+});
+
+export default [
+  {
+    // Ignore Jest configuration file (it's excluded from tsconfig.json, so it's problematic!)
+    ignores: [
+      'coverage/*',
+      'dist/*',
+      'eslint.config.mjs',
+      '**/jest.config.js',
+      'src/types/*',
+    ]
+  },
+  ...fixupConfigRules(
+    compat.extends(
+      'eslint:recommended',
+      'plugin:@typescript-eslint/eslint-recommended',
+      'plugin:@typescript-eslint/recommended',
+      'plugin:@typescript-eslint/recommended-requiring-type-checking',
+      'plugin:import/typescript',
+      'prettier',
+      'plugin:prettier/recommended'
+    )
+  ),
+  {
+    plugins: {
+      '@typescript-eslint': fixupPluginRules(typescriptEslint),
+      import: fixupPluginRules(_import),
+      prettier: fixupPluginRules(prettier)
+    },
+
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+        ...globals.node
+      },
+
+      parser: tsParser,
+      ecmaVersion: 2020,
+      sourceType: 'commonjs',
+
+      parserOptions: {
+        impliedStrict: true,
+        project: './**/tsconfig.json'
+      }
+    },
+
+    settings: {
+      'import/parsers': {
+        '@typescript-eslint/parser': ['.ts', '.tsx']
+      },
+
+      'import/resolver': {
+        node: {},
+
+        typescript: {
+          project: './**/tsconfig.json'
+        }
+      }
+    },
+
+    // Custom Configurations
+    rules: {
+      'prettier/prettier': ['error'],
+
+      '@typescript-eslint/array-type': [
+        'error',
+        {
+          default: 'array-simple',
+          readonly: 'array-simple'
+        }
+      ],
+
+      '@typescript-eslint/await-thenable': ['error'],
+      '@typescript-eslint/explicit-module-boundary-types': ['off'],
+      '@typescript-eslint/explicit-member-accessibility': ['error'],
+
+      '@typescript-eslint/member-ordering': [
+        'error',
+        {
+          default: ['static-field', 'static-method', 'instance-field', 'constructor', 'instance-method']
+        }
+      ],
+
+      '@typescript-eslint/no-empty-function': [
+        'error',
+        {
+          allow: ['constructors']
+        }
+      ],
+
+      '@typescript-eslint/no-floating-promises': ['error'],
+      '@typescript-eslint/no-for-in-array': ['error'],
+      '@typescript-eslint/no-misused-promises': ['error'],
+      '@typescript-eslint/no-require-imports': ['error'],
+      '@typescript-eslint/no-unsafe-assignment': ['off'],
+      '@typescript-eslint/no-unsafe-call': ['off'],
+      '@typescript-eslint/no-unsafe-member-access': ['off'],
+      '@typescript-eslint/no-unsafe-return': ['off'],
+
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          caughtErrors: 'all',
+          vars: 'all',
+          varsIgnorePattern: '^_'
+        }
+      ],
+
+      '@typescript-eslint/no-useless-constructor': ['error'],
+      '@typescript-eslint/prefer-for-of': ['error'],
+
+      '@typescript-eslint/prefer-nullish-coalescing': [
+        'error',
+        {
+          ignoreMixedLogicalExpressions: true
+        }
+      ],
+
+      '@typescript-eslint/prefer-readonly': ['error'],
+
+      '@typescript-eslint/promise-function-async': [
+        'error',
+        {
+          checkArrowFunctions: false
+        }
+      ],
+
+      '@typescript-eslint/restrict-template-expressions': [
+        'error',
+        {
+          allowNumber: true,
+          allowBoolean: true,
+          allowAny: true,
+          allowNullish: true
+        }
+      ],
+
+      '@typescript-eslint/require-await': ['error'],
+      '@typescript-eslint/return-await': ['error', 'in-try-catch'],
+      '@typescript-eslint/switch-exhaustiveness-check': ['error'],
+      complexity: ['off'],
+      'dot-notation': ['error'],
+
+      eqeqeq: [
+        'error',
+        'always',
+        {
+          null: 'ignore'
+        }
+      ],
+
+      'import/no-duplicates': ['error'],
+
+      'import/no-extraneous-dependencies': [
+        'error',
+        {
+          devDependencies: ['**/test/**', '**/*.test.ts'], // Only allow importing devDependencies from tests
+          optionalDependencies: false, // Disallow importing optional dependencies (those shouldn't be used here)
+          peerDependencies: false // Disallow importing peer dependencies (those shouldn't be used here)
+        }
+      ],
+
+      'import/no-unresolved': [
+        'error',
+        {
+          ignore: [
+            '@jsii/check-node/run', // @jsii/check-node uses an export map, which import/resolver does not (yet) support (https://github.com/import-js/eslint-plugin-import/issues/1868)
+            'worker_threads' // This isn't supported in all node versions (import is always guarded)
+          ]
+        }
+      ],
+
+      'import/order': [
+        'error',
+        {
+          alphabetize: {
+            order: 'asc',
+            caseInsensitive: true
+          },
+
+          groups: [
+            ['builtin', 'external'],
+            ['parent', 'sibling'],
+            ['index', 'unknown']
+          ],
+          'newlines-between': 'always'
+        }
+      ],
+
+      'no-alert': ['error'],
+      'no-await-in-loop': ['error'],
+      'no-caller': ['error'],
+
+      'no-else-return': [
+        'error',
+        {
+          allowElseIf: true
+        }
+      ],
+
+      'no-eval': ['error'],
+      'no-extra-bind': ['error'],
+      'no-implied-eval': ['error'],
+      'no-lone-blocks': ['error'],
+      'no-new-symbol': ['error'],
+      'no-proto': ['error'],
+
+      'no-restricted-properties': [
+        'error',
+        {
+          property: 'substr',
+          message: 'Use .slice instead of .substr.'
+        }
+      ],
+
+      'no-return-await': ['error'],
+      'no-unused-expressions': ['error'],
+      'no-useless-call': ['error'],
+      'no-var': ['error'],
+      'prefer-const': ['error'],
+      'prefer-template': ['error'],
+      'eol-last': ['error', 'always'],
+      // Disabled rules
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/interface-name-prefix': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-use-before-define': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      'no-case-declarations': 'off',
+      'require-atomic-updates': 'off',
+      // This is not a bad rule but it got sprung on us and our code loudly fails it
+      // Disable to get the eslint upgrade to pass.
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      // 'consistent-return' actually decreases safety. Its use will enforce useless `throws`
+      // statements, forcing a runtime error that occlude cases where the TypeScript type
+      // checker would actually have caught something like a non-exhaustive `switch` statement
+      // at compile time.
+      'consistent-return': 'off'
+    }
+  }
+];

@@ -16,3 +16,4 @@ ignore:
   - "**/*.test.ts"
   - "**/*_test.ts"
   - "**/gen/**"
+  - "**/javascript-sandbox/src/types/"

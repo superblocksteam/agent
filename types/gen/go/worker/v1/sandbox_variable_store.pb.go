@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -19,67 +20,598 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Variable operations
+type GetVariableRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ExecutionId string `protobuf:"bytes,1,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
+	Key         string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+}
+
+func (x *GetVariableRequest) Reset() {
+	*x = GetVariableRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetVariableRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVariableRequest) ProtoMessage() {}
+
+func (x *GetVariableRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVariableRequest.ProtoReflect.Descriptor instead.
+func (*GetVariableRequest) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GetVariableRequest) GetExecutionId() string {
+	if x != nil {
+		return x.ExecutionId
+	}
+	return ""
+}
+
+func (x *GetVariableRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type GetVariableResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Value string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"` // JSON-encoded value
+	Found bool   `protobuf:"varint,2,opt,name=found,proto3" json:"found,omitempty"`
+}
+
+func (x *GetVariableResponse) Reset() {
+	*x = GetVariableResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetVariableResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVariableResponse) ProtoMessage() {}
+
+func (x *GetVariableResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVariableResponse.ProtoReflect.Descriptor instead.
+func (*GetVariableResponse) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetVariableResponse) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *GetVariableResponse) GetFound() bool {
+	if x != nil {
+		return x.Found
+	}
+	return false
+}
+
+type SetVariableRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ExecutionId string `protobuf:"bytes,1,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
+	Key         string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	Value       string `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"` // JSON-encoded value
+}
+
+func (x *SetVariableRequest) Reset() {
+	*x = SetVariableRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SetVariableRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetVariableRequest) ProtoMessage() {}
+
+func (x *SetVariableRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetVariableRequest.ProtoReflect.Descriptor instead.
+func (*SetVariableRequest) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SetVariableRequest) GetExecutionId() string {
+	if x != nil {
+		return x.ExecutionId
+	}
+	return ""
+}
+
+func (x *SetVariableRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *SetVariableRequest) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type SetVariableResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+}
+
+func (x *SetVariableResponse) Reset() {
+	*x = SetVariableResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SetVariableResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetVariableResponse) ProtoMessage() {}
+
+func (x *SetVariableResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetVariableResponse.ProtoReflect.Descriptor instead.
+func (*SetVariableResponse) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *SetVariableResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type GetVariablesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ExecutionId string   `protobuf:"bytes,1,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
+	Keys        []string `protobuf:"bytes,2,rep,name=keys,proto3" json:"keys,omitempty"`
+}
+
+func (x *GetVariablesRequest) Reset() {
+	*x = GetVariablesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetVariablesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVariablesRequest) ProtoMessage() {}
+
+func (x *GetVariablesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVariablesRequest.ProtoReflect.Descriptor instead.
+func (*GetVariablesRequest) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetVariablesRequest) GetExecutionId() string {
+	if x != nil {
+		return x.ExecutionId
+	}
+	return ""
+}
+
+func (x *GetVariablesRequest) GetKeys() []string {
+	if x != nil {
+		return x.Keys
+	}
+	return nil
+}
+
+type GetVariablesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Values []string `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"` // JSON-encoded values (same order as keys)
+}
+
+func (x *GetVariablesResponse) Reset() {
+	*x = GetVariablesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetVariablesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVariablesResponse) ProtoMessage() {}
+
+func (x *GetVariablesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVariablesResponse.ProtoReflect.Descriptor instead.
+func (*GetVariablesResponse) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetVariablesResponse) GetValues() []string {
+	if x != nil {
+		return x.Values
+	}
+	return nil
+}
+
+type SetVariablesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ExecutionId string      `protobuf:"bytes,1,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
+	Kvs         []*KeyValue `protobuf:"bytes,2,rep,name=kvs,proto3" json:"kvs,omitempty"`
+}
+
+func (x *SetVariablesRequest) Reset() {
+	*x = SetVariablesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SetVariablesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetVariablesRequest) ProtoMessage() {}
+
+func (x *SetVariablesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetVariablesRequest.ProtoReflect.Descriptor instead.
+func (*SetVariablesRequest) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SetVariablesRequest) GetExecutionId() string {
+	if x != nil {
+		return x.ExecutionId
+	}
+	return ""
+}
+
+func (x *SetVariablesRequest) GetKvs() []*KeyValue {
+	if x != nil {
+		return x.Kvs
+	}
+	return nil
+}
+
+type KeyValue struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"` // JSON-encoded value
+}
+
+func (x *KeyValue) Reset() {
+	*x = KeyValue{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *KeyValue) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KeyValue) ProtoMessage() {}
+
+func (x *KeyValue) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KeyValue.ProtoReflect.Descriptor instead.
+func (*KeyValue) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *KeyValue) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *KeyValue) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type SetVariablesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+}
+
+func (x *SetVariablesResponse) Reset() {
+	*x = SetVariablesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SetVariablesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetVariablesResponse) ProtoMessage() {}
+
+func (x *SetVariablesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_worker_v1_sandbox_variable_store_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetVariablesResponse.ProtoReflect.Descriptor instead.
+func (*SetVariablesResponse) Descriptor() ([]byte, []int) {
+	return file_worker_v1_sandbox_variable_store_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *SetVariablesResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 var File_worker_v1_sandbox_variable_store_proto protoreflect.FileDescriptor
 
 var file_worker_v1_sandbox_variable_store_proto_rawDesc = []byte{
 	0x0a, 0x26, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x2f, 0x73, 0x61, 0x6e, 0x64,
 	0x62, 0x6f, 0x78, 0x5f, 0x76, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x73, 0x74, 0x6f,
 	0x72, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72,
-	0x2e, 0x76, 0x31, 0x1a, 0x2a, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x2f, 0x73,
-	0x61, 0x6e, 0x64, 0x62, 0x6f, 0x78, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x6f, 0x72, 0x5f,
-	0x74, 0x72, 0x61, 0x6e, 0x73, 0x70, 0x6f, 0x72, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32,
-	0xdb, 0x02, 0x0a, 0x1b, 0x53, 0x61, 0x6e, 0x64, 0x62, 0x6f, 0x78, 0x56, 0x61, 0x72, 0x69, 0x61,
-	0x62, 0x6c, 0x65, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
-	0x4c, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1d,
-	0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61,
-	0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e,
-	0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72,
-	0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4c, 0x0a,
-	0x0b, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1d, 0x2e, 0x77,
-	0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69,
-	0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x77, 0x6f,
-	0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
-	0x62, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4f, 0x0a, 0x0c, 0x47,
-	0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x12, 0x1e, 0x2e, 0x77, 0x6f,
-	0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
-	0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x77, 0x6f,
-	0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
-	0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4f, 0x0a, 0x0c,
-	0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x12, 0x1e, 0x2e, 0x77,
-	0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69,
-	0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x77,
-	0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69,
-	0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x39, 0x5a,
-	0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x75, 0x70, 0x65,
-	0x72, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x74, 0x65, 0x61, 0x6d, 0x2f, 0x61, 0x67, 0x65, 0x6e,
-	0x74, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x67, 0x6f, 0x2f, 0x77,
-	0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2e, 0x76, 0x31, 0x22, 0x49, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62,
+	0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x65, 0x78, 0x65,
+	0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0b, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x10, 0x0a, 0x03,
+	0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x22, 0x41,
+	0x0a, 0x13, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x66,
+	0x6f, 0x75, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x66, 0x6f, 0x75, 0x6e,
+	0x64, 0x22, 0x5f, 0x0a, 0x12, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x65, 0x78, 0x65, 0x63, 0x75,
+	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x65,
+	0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65,
+	0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05,
+	0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c,
+	0x75, 0x65, 0x22, 0x2f, 0x0a, 0x13, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63,
+	0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63,
+	0x65, 0x73, 0x73, 0x22, 0x4c, 0x0a, 0x13, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62,
+	0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x65, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0b, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x12, 0x0a,
+	0x04, 0x6b, 0x65, 0x79, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x6b, 0x65, 0x79,
+	0x73, 0x22, 0x2e, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x76, 0x61, 0x6c,
+	0x75, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x76, 0x61, 0x6c, 0x75, 0x65,
+	0x73, 0x22, 0x5f, 0x0a, 0x13, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x65, 0x78, 0x65, 0x63,
+	0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
+	0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x25, 0x0a, 0x03, 0x6b,
+	0x76, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65,
+	0x72, 0x2e, 0x76, 0x31, 0x2e, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x03, 0x6b,
+	0x76, 0x73, 0x22, 0x32, 0x0a, 0x08, 0x4b, 0x65, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x10,
+	0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79,
+	0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x30, 0x0a, 0x14, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18,
+	0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52,
+	0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x32, 0xdb, 0x02, 0x0a, 0x1b, 0x53, 0x61, 0x6e,
+	0x64, 0x62, 0x6f, 0x78, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x53, 0x74, 0x6f, 0x72,
+	0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x4c, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x56,
+	0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1d, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e,
+	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4c, 0x0a, 0x0b, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1d, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31,
+	0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4f, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
+	0x62, 0x6c, 0x65, 0x73, 0x12, 0x1e, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31,
+	0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31,
+	0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4f, 0x0a, 0x0c, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69,
+	0x61, 0x62, 0x6c, 0x65, 0x73, 0x12, 0x1e, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x39, 0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x75, 0x70, 0x65, 0x72, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73,
+	0x74, 0x65, 0x61, 0x6d, 0x2f, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73,
+	0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x67, 0x6f, 0x2f, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2f, 0x76,
+	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
+var (
+	file_worker_v1_sandbox_variable_store_proto_rawDescOnce sync.Once
+	file_worker_v1_sandbox_variable_store_proto_rawDescData = file_worker_v1_sandbox_variable_store_proto_rawDesc
+)
+
+func file_worker_v1_sandbox_variable_store_proto_rawDescGZIP() []byte {
+	file_worker_v1_sandbox_variable_store_proto_rawDescOnce.Do(func() {
+		file_worker_v1_sandbox_variable_store_proto_rawDescData = protoimpl.X.CompressGZIP(file_worker_v1_sandbox_variable_store_proto_rawDescData)
+	})
+	return file_worker_v1_sandbox_variable_store_proto_rawDescData
+}
+
+var file_worker_v1_sandbox_variable_store_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_worker_v1_sandbox_variable_store_proto_goTypes = []interface{}{
 	(*GetVariableRequest)(nil),   // 0: worker.v1.GetVariableRequest
-	(*SetVariableRequest)(nil),   // 1: worker.v1.SetVariableRequest
-	(*GetVariablesRequest)(nil),  // 2: worker.v1.GetVariablesRequest
-	(*SetVariablesRequest)(nil),  // 3: worker.v1.SetVariablesRequest
-	(*GetVariableResponse)(nil),  // 4: worker.v1.GetVariableResponse
-	(*SetVariableResponse)(nil),  // 5: worker.v1.SetVariableResponse
-	(*GetVariablesResponse)(nil), // 6: worker.v1.GetVariablesResponse
-	(*SetVariablesResponse)(nil), // 7: worker.v1.SetVariablesResponse
+	(*GetVariableResponse)(nil),  // 1: worker.v1.GetVariableResponse
+	(*SetVariableRequest)(nil),   // 2: worker.v1.SetVariableRequest
+	(*SetVariableResponse)(nil),  // 3: worker.v1.SetVariableResponse
+	(*GetVariablesRequest)(nil),  // 4: worker.v1.GetVariablesRequest
+	(*GetVariablesResponse)(nil), // 5: worker.v1.GetVariablesResponse
+	(*SetVariablesRequest)(nil),  // 6: worker.v1.SetVariablesRequest
+	(*KeyValue)(nil),             // 7: worker.v1.KeyValue
+	(*SetVariablesResponse)(nil), // 8: worker.v1.SetVariablesResponse
 }
 var file_worker_v1_sandbox_variable_store_proto_depIdxs = []int32{
-	0, // 0: worker.v1.SandboxVariableStoreService.GetVariable:input_type -> worker.v1.GetVariableRequest
-	1, // 1: worker.v1.SandboxVariableStoreService.SetVariable:input_type -> worker.v1.SetVariableRequest
-	2, // 2: worker.v1.SandboxVariableStoreService.GetVariables:input_type -> worker.v1.GetVariablesRequest
-	3, // 3: worker.v1.SandboxVariableStoreService.SetVariables:input_type -> worker.v1.SetVariablesRequest
-	4, // 4: worker.v1.SandboxVariableStoreService.GetVariable:output_type -> worker.v1.GetVariableResponse
-	5, // 5: worker.v1.SandboxVariableStoreService.SetVariable:output_type -> worker.v1.SetVariableResponse
-	6, // 6: worker.v1.SandboxVariableStoreService.GetVariables:output_type -> worker.v1.GetVariablesResponse
-	7, // 7: worker.v1.SandboxVariableStoreService.SetVariables:output_type -> worker.v1.SetVariablesResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	7, // 0: worker.v1.SetVariablesRequest.kvs:type_name -> worker.v1.KeyValue
+	0, // 1: worker.v1.SandboxVariableStoreService.GetVariable:input_type -> worker.v1.GetVariableRequest
+	2, // 2: worker.v1.SandboxVariableStoreService.SetVariable:input_type -> worker.v1.SetVariableRequest
+	4, // 3: worker.v1.SandboxVariableStoreService.GetVariables:input_type -> worker.v1.GetVariablesRequest
+	6, // 4: worker.v1.SandboxVariableStoreService.SetVariables:input_type -> worker.v1.SetVariablesRequest
+	1, // 5: worker.v1.SandboxVariableStoreService.GetVariable:output_type -> worker.v1.GetVariableResponse
+	3, // 6: worker.v1.SandboxVariableStoreService.SetVariable:output_type -> worker.v1.SetVariableResponse
+	5, // 7: worker.v1.SandboxVariableStoreService.GetVariables:output_type -> worker.v1.GetVariablesResponse
+	8, // 8: worker.v1.SandboxVariableStoreService.SetVariables:output_type -> worker.v1.SetVariablesResponse
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_worker_v1_sandbox_variable_store_proto_init() }
@@ -87,19 +619,129 @@ func file_worker_v1_sandbox_variable_store_proto_init() {
 	if File_worker_v1_sandbox_variable_store_proto != nil {
 		return
 	}
-	file_worker_v1_sandbox_executor_transport_proto_init()
+	if !protoimpl.UnsafeEnabled {
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetVariableRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetVariableResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SetVariableRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SetVariableResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetVariablesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetVariablesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SetVariablesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*KeyValue); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_worker_v1_sandbox_variable_store_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SetVariablesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_worker_v1_sandbox_variable_store_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   0,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_worker_v1_sandbox_variable_store_proto_goTypes,
 		DependencyIndexes: file_worker_v1_sandbox_variable_store_proto_depIdxs,
+		MessageInfos:      file_worker_v1_sandbox_variable_store_proto_msgTypes,
 	}.Build()
 	File_worker_v1_sandbox_variable_store_proto = out.File
 	file_worker_v1_sandbox_variable_store_proto_rawDesc = nil

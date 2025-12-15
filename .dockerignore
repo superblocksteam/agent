@@ -9,6 +9,9 @@ tmp/
 
 **/node_modules
 **/dist
+# But allow specific dist folders needed for javascript-sandbox build
+!workers/javascript/packages/shared/dist
+!workers/javascript/packages/types/dist
 
 Dockerfile.worker.python
 ./workers/python/helm

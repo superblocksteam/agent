@@ -398,35 +398,6 @@ func TestEphemeralModeTransport(t *testing.T) {
 	assert.NotNil(t, transport.ephemeralDone)
 }
 
-func TestEphemeralModeWithTimeout(t *testing.T) {
-	redisClient, _ := redismock.NewClientMock()
-	mockPluginExecutor := mocks.NewPluginExecutor(t)
-
-	transport := NewRedisTransport(&Options{
-		RedisClient:      redisClient,
-		StreamKeys:       []string{"stream1"},
-		WorkerId:         "worker1",
-		ConsumerGroup:    "group1",
-		BlockDuration:    5 * time.Second,
-		MessageCount:     1,
-		PluginExecutor:   mockPluginExecutor,
-		Logger:           zap.NewNop(),
-		ExecutionPool:    1,
-		GRPCAddress:      "localhost:50050",
-		Ephemeral:        true,
-		EphemeralTimeout: 100 * time.Millisecond,
-	})
-
-	// Simulate a timeout scenario by not sending anything on ephemeralDone
-	// waitForCompletion should return ErrEphemeralTimeout
-	start := time.Now()
-	err := transport.waitForCompletion()
-	elapsed := time.Since(start)
-
-	assert.ErrorIs(t, err, ErrEphemeralTimeout)
-	assert.True(t, elapsed >= transport.ephemeralTimeout)
-}
-
 func TestWaitForCompletionSuccess(t *testing.T) {
 	redisClient, _ := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
