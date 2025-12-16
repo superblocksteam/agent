@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/superblocksteam/agent/internal/flags"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/errors"
@@ -34,13 +35,14 @@ var (
 
 type transport struct {
 	options *Options
+	flags   flags.Flags
 	err     error
 	inbox   func() (string, error)
 
 	run.ForwardCompatibility
 }
 
-func New(options ...func(*Options) error) worker.Client {
+func New(flags flags.Flags, options ...func(*Options) error) worker.Client {
 	applied, err := utils.ApplyOptions[Options](append([]func(*Options) error{
 		WithHeartbeatInterval(5 * time.Second),
 		WithLogger(zap.NewNop()),
@@ -48,6 +50,7 @@ func New(options ...func(*Options) error) worker.Client {
 
 	transport := &transport{
 		err:     err,
+		flags:   flags,
 		inbox:   utils.UUID,
 		options: applied,
 	}
@@ -80,7 +83,7 @@ func (t *transport) Alive() bool {
 	return t.options.redis.Ping(context.Background()).Err() == nil
 }
 
-func (t *transport) Remote(ctx context.Context, pluginName string) (string, string) {
+func (t *transport) Remote(ctx context.Context, pluginName string, organizationPlan string, orgId string) (string, string) {
 	var estimate *uint32
 	{
 		value := ctx.Value(worker.ContextKeyEstimate)
@@ -108,7 +111,15 @@ func (t *transport) Remote(ctx context.Context, pluginName string) (string, stri
 
 	bucket := t.options.buckets.Assign(pluginName, estimate)
 
-	return bucket, fmt.Sprintf("agent.main.bucket.%s.plugin.%s.event.%s", bucket, pluginName, event)
+	enabledPlugins := utils.NewSet(t.flags.GetEphemeralEnabledPlugins(organizationPlan, orgId)...)
+	supportedEvents := utils.NewSet(t.flags.GetEphemeralSupportedEvents(organizationPlan, orgId)...)
+
+	streamFmtStr := "agent.main.bucket.%s.plugin.%s.event.%s"
+	if enabledPlugins.Contains(pluginName) && supportedEvents.Contains(string(event)) {
+		streamFmtStr = "agent.main.bucket.%s.ephemeral.plugin.%s.event.%s"
+	}
+
+	return bucket, fmt.Sprintf(streamFmtStr, bucket, pluginName, event)
 }
 
 func (t *transport) Execute(ctx context.Context, plugin string, data *transportv1.Request_Data_Data, opts ...options.Option) (*transportv1.Performance, string, error) {
@@ -220,7 +231,7 @@ func (t *transport) handleEvent(
 	error,
 ) {
 	settings := options.Apply(opts...)
-	bucket, stream := t.Remote(ctx, pluginName)
+	bucket, stream := t.Remote(ctx, pluginName, settings.OrganizationPlan, settings.OrgId)
 
 	logger := t.options.logger.With(
 		zap.String("stream", stream),

@@ -23,4 +23,8 @@ type FlagsClient interface {
 	GetStringVariation(flag string, tier string, orgId string, fallback string) string
 	GetStringVariationByOrg(flag string, orgId string, fallback string) string
 	GetStringVariationCustomDims(flag string, orgId string, dims map[string]string, fallback string) string
+
+	GetStringSliceVariation(flag string, tier string, orgId string, fallback []string) []string
+	GetStringSliceVariationByOrg(flag string, orgId string, fallback []string) []string
+	GetStringSliceVariationCustomDims(flag string, orgId string, dims map[string]string, fallback []string) []string
 }

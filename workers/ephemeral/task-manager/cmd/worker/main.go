@@ -202,6 +202,7 @@ func main() {
 			viper.GetString("worker.group"),
 			viper.GetString("worker.bucket"),
 			viper.GetStringSlice("worker.events"),
+			viper.GetBool("worker.ephemeral"),
 		)
 	}
 

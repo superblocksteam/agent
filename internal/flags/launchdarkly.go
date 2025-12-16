@@ -98,6 +98,14 @@ func (flags *launchdarkly) GetGoWorkerEnabled(tier string, orgId string) bool {
 	return flags.GetBoolVariation("worker.go.enabled", tier, orgId, flags.options.DefaultGoWorkerEnabled)
 }
 
+func (flags *launchdarkly) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
+	return flags.GetStringSliceVariation("agent.worker.ephemeral.plugins.enabled", tier, orgId, flags.options.DefaultEphemeralEnabledPlugins)
+}
+
+func (flags *launchdarkly) GetEphemeralSupportedEvents(tier string, orgId string) []string {
+	return flags.GetStringSliceVariation("agent.worker.ephemeral.supported.events", tier, orgId, flags.options.DefaultEphemeralSupportedEvents)
+}
+
 func (flags *launchdarkly) GetWorkflowPluginInheritanceEnabled(orgId string) bool {
 	return flags.GetBoolVariationByOrg("agent.plugins.workflow.inherit_parameters.enabled", orgId, flags.options.DefaultWorkflowPluginInheritanceEnabled)
 }

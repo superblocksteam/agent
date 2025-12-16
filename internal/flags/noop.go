@@ -81,6 +81,14 @@ func (flags *noopFlags) GetGoWorkerEnabled(string, string) bool {
 	return flags.options.DefaultGoWorkerEnabled
 }
 
+func (flags *noopFlags) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
+	return flags.options.DefaultEphemeralEnabledPlugins
+}
+
+func (flags *noopFlags) GetEphemeralSupportedEvents(tier string, orgId string) []string {
+	return flags.options.DefaultEphemeralSupportedEvents
+}
+
 func (flags *noopFlags) GetWorkflowPluginInheritanceEnabled(string) bool {
 	return flags.options.DefaultWorkflowPluginInheritanceEnabled
 }

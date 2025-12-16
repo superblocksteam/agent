@@ -233,6 +233,66 @@ func (_m *MockFlagsClient) GetIntVariationCustomDims(flag string, orgId string, 
 	return r0
 }
 
+// GetStringSliceVariation provides a mock function with given fields: flag, tier, orgId, fallback
+func (_m *MockFlagsClient) GetStringSliceVariation(flag string, tier string, orgId string, fallback []string) []string {
+	ret := _m.Called(flag, tier, orgId, fallback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStringSliceVariation")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, string, string, []string) []string); ok {
+		r0 = rf(flag, tier, orgId, fallback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// GetStringSliceVariationByOrg provides a mock function with given fields: flag, orgId, fallback
+func (_m *MockFlagsClient) GetStringSliceVariationByOrg(flag string, orgId string, fallback []string) []string {
+	ret := _m.Called(flag, orgId, fallback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStringSliceVariationByOrg")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, string, []string) []string); ok {
+		r0 = rf(flag, orgId, fallback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// GetStringSliceVariationCustomDims provides a mock function with given fields: flag, orgId, dims, fallback
+func (_m *MockFlagsClient) GetStringSliceVariationCustomDims(flag string, orgId string, dims map[string]string, fallback []string) []string {
+	ret := _m.Called(flag, orgId, dims, fallback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStringSliceVariationCustomDims")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, string, map[string]string, []string) []string); ok {
+		r0 = rf(flag, orgId, dims, fallback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
 // GetStringVariation provides a mock function with given fields: flag, tier, orgId, fallback
 func (_m *MockFlagsClient) GetStringVariation(flag string, tier string, orgId string, fallback string) string {
 	ret := _m.Called(flag, tier, orgId, fallback)

@@ -849,6 +849,7 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 	}
 
 	apiTimeoutErrorPrecedence := r.timeLeftOnApi().Milliseconds() < int64(r.flags.GetStepDurationV2(r.organizationPlan, r.orgId))
+	workerOpts := append(opts.Worker, wops.OrganizationPlan(r.organizationPlan), wops.OrgId(r.orgId))
 
 	req := &worker.ExecuteRequest{
 		Context: context.WithValue(ctx.Context, worker.ContextKeyEstimate, estimate),
@@ -857,7 +858,7 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 			Quotas: r.constructQuotaProps(),
 		},
 		Plugin:  r.getPluginNameForExecution(p, props.GetActionConfiguration()),
-		Options: opts.Worker,
+		Options: workerOpts,
 	}
 
 	var perf *transportv1.Performance

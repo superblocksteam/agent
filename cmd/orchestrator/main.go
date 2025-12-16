@@ -219,6 +219,8 @@ func init() {
 	pflag.Bool("signature.reconciler.enabled", true, "enable the agent signature reconciler")
 	pflag.Int("signature.batch.size", 200, "number of resources to fetch per signature reconcile loop")
 	pflag.Bool("worker.go.enabled", false, "Whether or not to enable routing requests to the Go worker in the OPA.")
+	pflag.StringSlice("worker.ephemeral.plugins.enabled", []string{}, "A list of plugins that are enabled for ephemeral execution.")
+	pflag.StringSlice("worker.ephemeral.supported.events", []string{"execute"}, "A list of events that are supported for ephemeral execution.")
 	pflag.Bool("agent.plugins.workflow.inherit_parameters.enabled", false, "Whether or not to use the API's mode and branch for workflow plugin step execution.")
 	pflag.Bool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled", true, "Whether or not to validate subject tokens during OBO flow.")
 
@@ -491,6 +493,8 @@ func main() {
 			flagoptions.WithLogger(logger),
 			flagoptions.WithDefaultApiTimeout(viper.GetFloat64("quotas.default.api_timeout")),
 			flagoptions.WithDefaultGoWorkerEnabled(viper.GetBool("worker.go.enabled")),
+			flagoptions.WithDefaultEphemeralEnabledPlugins(viper.GetStringSlice("worker.ephemeral.plugins.enabled")...),
+			flagoptions.WithDefaultEphemeralSupportedEvents(viper.GetStringSlice("worker.ephemeral.supported.events")...),
 			flagoptions.WithDefaultWorkflowPluginInheritanceEnabled(viper.GetBool("agent.plugins.workflow.inherit_parameters.enabled")),
 			flagoptions.WithDefaultValidateSubjectTokenDuringOboFlowEnabled(viper.GetBool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled")),
 		}
@@ -509,6 +513,12 @@ func main() {
 		} else {
 			flagsClient = flags.NoopFlags(options...)
 		}
+
+		logger.Info(
+			"Initialized flags client with default values",
+			zap.Strings("ephemeral_enabled_plugins", viper.GetStringSlice("worker.ephemeral.plugins.enabled")),
+			zap.Strings("ephemeral_supported_events", viper.GetStringSlice("worker.ephemeral.supported.events")),
+		)
 	}
 
 	var transportRedisClient *redis.Client
@@ -542,6 +552,7 @@ func main() {
 		}
 
 		workerClient = redistransport.New(
+			flagsClient,
 			redistransport.WithBuckets(buckets),
 			redistransport.WithLogger(logger),
 			redistransport.WithRedisClient(transportRedisClient),

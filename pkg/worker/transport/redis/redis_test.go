@@ -8,15 +8,109 @@ import (
 	"github.com/go-redis/redismock/v9"
 	redis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	mocks "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	"github.com/superblocksteam/agent/pkg/worker"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+func TestRemote(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name            string
+		testCtx         context.Context
+		plugin          string
+		supportedEvents []string
+		enabledPlugins  []string
+		expectedStream  string
+	}{
+		{
+			name:           "happy path - empty context",
+			testCtx:        context.Background(),
+			plugin:         "javascript",
+			expectedStream: "agent.main.bucket.ba.plugin.javascript.event.execute",
+		},
+		{
+			name:           "happy path - context with defined event",
+			testCtx:        worker.WithEvent(context.Background(), worker.Event("metadata")),
+			plugin:         "javascript",
+			expectedStream: "agent.main.bucket.ba.plugin.javascript.event.metadata",
+		},
+		{
+			name:           "happy path - stream event becomes execute",
+			testCtx:        worker.WithEvent(context.Background(), worker.Event("stream")),
+			plugin:         "javascript",
+			expectedStream: "agent.main.bucket.ba.plugin.javascript.event.execute",
+		},
+		{
+			name:            "happy path ephemeral - empty context",
+			testCtx:         context.Background(),
+			plugin:          "javascript",
+			supportedEvents: []string{"execute", "metadata"},
+			enabledPlugins:  []string{"javascript", "python"},
+			expectedStream:  "agent.main.bucket.ba.ephemeral.plugin.javascript.event.execute",
+		},
+		{
+			name:            "happy path ephemeral - context with event",
+			testCtx:         worker.WithEvent(context.Background(), worker.Event("test")),
+			plugin:          "python",
+			supportedEvents: []string{"metadata", "test"},
+			enabledPlugins:  []string{"javascript", "python"},
+			expectedStream:  "agent.main.bucket.ba.ephemeral.plugin.python.event.test",
+		},
+		{
+			name:            "ephemeral unsupported event - returns non-ephemeral stream",
+			testCtx:         worker.WithEvent(context.Background(), worker.Event("execute")),
+			plugin:          "python",
+			supportedEvents: []string{"metadata", "test"},
+			enabledPlugins:  []string{"javascript", "python"},
+			expectedStream:  "agent.main.bucket.ba.plugin.python.event.execute",
+		},
+		{
+			name:            "ephemeral unsupported plugin - returns non-ephemeral stream",
+			testCtx:         worker.WithEvent(context.Background(), worker.Event("execute")),
+			plugin:          "python",
+			supportedEvents: []string{"execute", "metadata", "test"},
+			enabledPlugins:  []string{"javascript"},
+			expectedStream:  "agent.main.bucket.ba.plugin.python.event.execute",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			buckets, err := NewBuckets(&Config{
+				Analysis: "ba",
+				Error:    "be",
+			})
+			require.NoError(t, err)
+
+			anyOrgPlan := "anyOrgPlan"
+			anyOrgId := "anyOrgId"
+
+			mockFlags := mocks.NewFlags(t)
+			mockFlags.On("GetEphemeralEnabledPlugins", anyOrgPlan, anyOrgId).Return(tc.enabledPlugins).Once()
+			mockFlags.On("GetEphemeralSupportedEvents", anyOrgPlan, anyOrgId).Return(tc.supportedEvents).Once()
+
+			tnspt := &transport{
+				flags: mockFlags,
+				options: &Options{
+					buckets: buckets,
+					logger:  zap.NewNop(),
+				},
+			}
+
+			_, stream := tnspt.Remote(tc.testCtx, tc.plugin, anyOrgPlan, anyOrgId)
+			assert.Equal(t, tc.expectedStream, stream)
+		})
+	}
+}
 
 func TestExecute(t *testing.T) {
 	defer metrics.SetupForTesting()()
@@ -50,9 +144,14 @@ func TestExecute(t *testing.T) {
 			},
 		},
 	} {
-		client, mock := redismock.NewClientMock()
+		client, clientMock := redismock.NewClientMock()
+
+		mockFlags := &mocks.Flags{}
+		mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+		mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
 
 		tnspt := &transport{
+			flags: mockFlags,
 			options: &Options{
 				buckets: buckets,
 				redis:   client,
@@ -65,7 +164,7 @@ func TestExecute(t *testing.T) {
 
 		ctx := context.Background()
 
-		mock.ExpectXAdd(&redis.XAddArgs{
+		clientMock.ExpectXAdd(&redis.XAddArgs{
 			Stream:     test.stream,
 			NoMkStream: true,
 			Values: map[string]any{
@@ -92,7 +191,7 @@ func TestExecute(t *testing.T) {
 			tnspt.Metadata(ctx, "javascript", test.data.DConfig, test.data.AConfig)
 		}
 
-		assert.NoError(t, mock.ExpectationsWereMet(), test.name)
+		assert.NoError(t, clientMock.ExpectationsWereMet(), test.name)
 	}
 }
 
@@ -383,7 +482,12 @@ func TestProcess(t *testing.T) {
 			err:   errors.IntegrationError(e.New("\\n"), commonv1.Code_CODE_UNSPECIFIED),
 		},
 	} {
+		mockFlags := &mocks.Flags{}
+		mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+		mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+
 		tnspt := &transport{
+			flags: mockFlags,
 			options: &Options{
 				redis:  nil,
 				logger: zap.NewNop(),
