@@ -338,6 +338,11 @@ func (s *server) Download(req *apiv1.DownloadRequest, stream apiv1.ExecutorServi
 		return sberror.ErrNotFound
 	}
 
+	if !s.isFile(location) {
+		s.Logger.Error("Requested download path is not a file", zap.String("location", location))
+		return sberror.ErrNotFound
+	}
+
 	file, err := os.Open(location)
 	if err != nil {
 		return sberror.ErrNotFound
@@ -394,6 +399,15 @@ func (*server) isPathUnderTempDir(path string) bool {
 	}
 
 	return !strings.HasPrefix(relPath, "..")
+}
+
+func (*server) isFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	return info.Mode().IsRegular()
 }
 
 // returns a copy of the given inputs with 'Global.user' populated with values from the upstream JWT
