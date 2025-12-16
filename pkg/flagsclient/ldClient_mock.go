@@ -4,6 +4,8 @@ package flagsclient
 
 import (
 	ldcontext "github.com/launchdarkly/go-sdk-common/v3/ldcontext"
+	ldvalue "github.com/launchdarkly/go-sdk-common/v3/ldvalue"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -106,6 +108,34 @@ func (_m *mockLdClient) IntVariation(key string, context ldcontext.Context, defa
 	}
 
 	if rf, ok := ret.Get(1).(func(string, ldcontext.Context, int) error); ok {
+		r1 = rf(key, context, defaultVal)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// JSONVariation provides a mock function with given fields: key, context, defaultVal
+func (_m *mockLdClient) JSONVariation(key string, context ldcontext.Context, defaultVal ldvalue.Value) (ldvalue.Value, error) {
+	ret := _m.Called(key, context, defaultVal)
+
+	if len(ret) == 0 {
+		panic("no return value specified for JSONVariation")
+	}
+
+	var r0 ldvalue.Value
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, ldcontext.Context, ldvalue.Value) (ldvalue.Value, error)); ok {
+		return rf(key, context, defaultVal)
+	}
+	if rf, ok := ret.Get(0).(func(string, ldcontext.Context, ldvalue.Value) ldvalue.Value); ok {
+		r0 = rf(key, context, defaultVal)
+	} else {
+		r0 = ret.Get(0).(ldvalue.Value)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, ldcontext.Context, ldvalue.Value) error); ok {
 		r1 = rf(key, context, defaultVal)
 	} else {
 		r1 = ret.Error(1)

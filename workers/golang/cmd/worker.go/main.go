@@ -328,7 +328,7 @@ func main() {
 			redis.WithMaxBytes(viper.GetInt64("transport.redis.max.bytes")),
 			redis.WithMessageCount(viper.GetInt64("transport.redis.max.messages")),
 			redis.WithPluginExecutor(pluginExecutor),
-			redis.WithStreamKeys(redis.StreamKeys(pluginExecutor.ListPlugins(), viper.GetString("worker.group"), viper.GetString("worker.bucket"), viper.GetStringSlice("worker.events"))),
+			redis.WithStreamKeys(redis.StreamKeys(pluginExecutor.ListPlugins(), viper.GetString("worker.group"), viper.GetString("worker.bucket"), viper.GetStringSlice("worker.events"), false)),
 			redis.WithWorkerId(id),
 		))
 	}

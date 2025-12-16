@@ -75,6 +75,67 @@ func TestGetGoWorkerEnabled_ReturnsValueFromOptions(t *testing.T) {
 	}
 }
 
+func TestGetEphemeralEnabledPlugins_ReturnsValueFromOptions(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name     string
+		expected []string
+	}{
+		{
+			name:     "empty",
+			expected: []string{},
+		},
+		{
+			name:     "non-empty",
+			expected: []string{"plugin1", "plugin2"},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			flags := &noopFlags{
+				options: options.Options{
+					DefaultEphemeralEnabledPlugins: test.expected,
+				},
+			}
+
+			var anyStr, anyOtherStr string
+			actual := flags.GetEphemeralEnabledPlugins(anyStr, anyOtherStr)
+
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestGetEphemeralSupportedEvents_ReturnsValueFromOptions(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name     string
+		expected []string
+	}{
+		{
+			name:     "empty",
+			expected: []string{},
+		},
+		{
+			name:     "non-empty",
+			expected: []string{"event1", "event2"},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			flags := &noopFlags{
+				options: options.Options{
+					DefaultEphemeralSupportedEvents: test.expected,
+				},
+			}
+			var anyStr, anyOtherStr string
+			actual := flags.GetEphemeralSupportedEvents(anyStr, anyOtherStr)
+
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
 func TestGetWorkflowPluginInheritanceEnabled_ReturnsValueFromOptions(t *testing.T) {
 	t.Parallel()
 
@@ -160,6 +221,8 @@ func TestNoopFlagsConstructor(t *testing.T) {
 				DefaultMaxComputeMinutesPerWeek: float64(math.MaxInt32),
 				DefaultApiTimeout:               float64(time.Duration(1 * time.Hour).Milliseconds()),
 				DefaultGoWorkerEnabled:          false,
+				DefaultEphemeralEnabledPlugins:  []string{},
+				DefaultEphemeralSupportedEvents: []string{},
 				Logger:                          zap.NewNop(),
 				Config:                          nil,
 			},
@@ -183,6 +246,8 @@ func TestNoopFlagsConstructor(t *testing.T) {
 				DefaultMaxComputeMinutesPerWeek: float64(math.MaxInt32),
 				DefaultApiTimeout:               float64(time.Duration(1 * time.Hour).Milliseconds()),
 				DefaultGoWorkerEnabled:          true,
+				DefaultEphemeralEnabledPlugins:  []string{},
+				DefaultEphemeralSupportedEvents: []string{},
 				Logger:                          zap.NewNop(),
 				Config:                          nil,
 			},

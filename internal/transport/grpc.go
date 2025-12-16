@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -331,6 +332,12 @@ func (s *server) Stream(req *apiv1.ExecuteRequest, stream apiv1.ExecutorService_
 func (s *server) Download(req *apiv1.DownloadRequest, stream apiv1.ExecutorService_DownloadServer) error {
 	s.Logger.Info("Received file download request", zap.String("location", req.GetLocation()))
 	location := req.GetLocation()
+
+	if !s.isPathUnderTempDir(location) {
+		s.Logger.Error("Requested download path is not under the temp directory", zap.String("location", location))
+		return sberror.ErrNotFound
+	}
+
 	file, err := os.Open(location)
 	if err != nil {
 		return sberror.ErrNotFound
@@ -357,6 +364,36 @@ func (s *server) Download(req *apiv1.DownloadRequest, stream apiv1.ExecutorServi
 	}
 
 	return nil
+}
+
+func (*server) isPathUnderTempDir(path string) bool {
+	tempDir, err := filepath.Abs(os.TempDir())
+	if err != nil {
+		return false
+	}
+
+	resolvedTempDir, err := filepath.EvalSymlinks(tempDir)
+	if err != nil {
+		return false
+	}
+
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+
+	// Resolve symlinks to get the real path
+	resolvedPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		return false
+	}
+
+	relPath, err := filepath.Rel(resolvedTempDir, resolvedPath)
+	if err != nil {
+		return false
+	}
+
+	return !strings.HasPrefix(relPath, "..")
 }
 
 // returns a copy of the given inputs with 'Global.user' populated with values from the upstream JWT

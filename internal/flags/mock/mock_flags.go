@@ -48,6 +48,46 @@ func (_m *Flags) GetComputeMinutesPerWeekV2(tier string, orgId string) float64 {
 	return r0
 }
 
+// GetEphemeralEnabledPlugins provides a mock function with given fields: tier, orgId
+func (_m *Flags) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
+	ret := _m.Called(tier, orgId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEphemeralEnabledPlugins")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, string) []string); ok {
+		r0 = rf(tier, orgId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// GetEphemeralSupportedEvents provides a mock function with given fields: tier, orgId
+func (_m *Flags) GetEphemeralSupportedEvents(tier string, orgId string) []string {
+	ret := _m.Called(tier, orgId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEphemeralSupportedEvents")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, string) []string); ok {
+		r0 = rf(tier, orgId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
 // GetFlagSource provides a mock function with no fields
 func (_m *Flags) GetFlagSource() int {
 	ret := _m.Called()

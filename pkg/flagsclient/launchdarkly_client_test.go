@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/launchdarkly/go-sdk-common/v3/ldcontext"
+	"github.com/launchdarkly/go-sdk-common/v3/ldvalue"
 	"github.com/stretchr/testify/assert"
 	mock "github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
@@ -135,7 +136,21 @@ func TestGetVariation(t *testing.T) {
 			variation:    "string",
 			defaultVal:   "default",
 			variationErr: errors.New("key does not exist"),
-			expected:     "success",
+			expected:     "default",
+		},
+		{
+			name:         "string slice variation success",
+			variation:    "string slice",
+			defaultVal:   []string{"default", "value"},
+			variationErr: nil,
+			expected:     []string{"success", "value"},
+		},
+		{
+			name:         "string variation error logs and returns default",
+			variation:    "string slice",
+			defaultVal:   []string{"default", "value"},
+			variationErr: errors.New("key does not exist"),
+			expected:     []string{"default", "value"},
 		},
 		{
 			name:         "unsupported variation type returns default",
@@ -162,6 +177,19 @@ func TestGetVariation(t *testing.T) {
 				mockLdClient.On("IntVariation", anyKey, mock.Anything, test.defaultVal).Return(test.expected.(int), test.variationErr)
 			case "string":
 				mockLdClient.On("StringVariation", anyKey, mock.Anything, test.defaultVal).Return(test.expected.(string), test.variationErr)
+			case "string slice":
+				toLdValue := func(values []string) ldvalue.Value {
+					arrayBuilder := ldvalue.ValueArrayBuilder{}
+					for _, v := range values {
+						arrayBuilder.Add(ldvalue.String(v))
+					}
+					return arrayBuilder.Build().AsValue()
+				}
+
+				defaultValAsValue := toLdValue(test.defaultVal.([]string))
+				expectedAsValue := toLdValue(test.expected.([]string))
+
+				mockLdClient.On("JSONVariation", anyKey, mock.Anything, defaultValAsValue).Return(expectedAsValue, test.variationErr)
 			}
 
 			actual := getVariation(mockLdClient, anyKey, ldcontext.Context{}, test.defaultVal, observedLogger)

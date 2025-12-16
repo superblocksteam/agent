@@ -2077,7 +2077,7 @@ func TestQuota(t *testing.T) {
 			events, _ := _events()
 			mockWorker := &worker.MockClient{}
 
-			mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, _ string, props *transportv1.Request_Data_Data, _ ...wops.Option) *transportv1.Performance {
+			mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, _ string, props *transportv1.Request_Data_Data, _ ...wops.Option) *transportv1.Performance {
 				return nil
 			}, func(ctx context.Context, _ string, data *transportv1.Request_Data_Data, _ ...wops.Option) string {
 				return ""
@@ -2300,7 +2300,7 @@ func client() (worker.Client, func() []string) {
 	visited := []string{}
 	mockWorker := &worker.MockClient{}
 
-	mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, _ string, props *transportv1.Request_Data_Data, _ ...wops.Option) *transportv1.Performance {
+	mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, _ string, props *transportv1.Request_Data_Data, _ ...wops.Option) *transportv1.Performance {
 		return nil
 	}, func(ctx context.Context, _ string, data *transportv1.Request_Data_Data, _ ...wops.Option) string {
 		return "outputkey"
@@ -2344,7 +2344,7 @@ func streamClient() (worker.Client, func() []string) {
 	mockWorker := &worker.MockClient{}
 
 	// 5 args, variadic for streaming options
-	mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, _ string, props *transportv1.Request_Data_Data, ops ...wops.Option) *transportv1.Performance {
+	mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, _ string, props *transportv1.Request_Data_Data, ops ...wops.Option) *transportv1.Performance {
 		settings := wops.Apply(ops...)
 		if stream := settings.Stream; stream != nil {
 			stream <- "5"

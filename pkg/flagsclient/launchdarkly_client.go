@@ -8,6 +8,7 @@ import (
 
 	"github.com/launchdarkly/go-sdk-common/v3/ldcontext"
 	"github.com/launchdarkly/go-sdk-common/v3/ldlog"
+	"github.com/launchdarkly/go-sdk-common/v3/ldvalue"
 	ld "github.com/launchdarkly/go-server-sdk/v7"
 	"github.com/launchdarkly/go-server-sdk/v7/ldcomponents"
 	"github.com/launchdarkly/go-server-sdk/v7/ldfiledata"
@@ -22,6 +23,7 @@ type ldClient interface {
 	Float64Variation(key string, context ldcontext.Context, defaultVal float64) (float64, error)
 	BoolVariation(key string, context ldcontext.Context, defaultVal bool) (bool, error)
 	StringVariation(key string, context ldcontext.Context, defaultVal string) (string, error)
+	JSONVariation(key string, context ldcontext.Context, defaultVal ldvalue.Value) (ldvalue.Value, error)
 	Close() error
 }
 
@@ -177,6 +179,18 @@ func (ldc *launchdarklyClient) GetStringVariationCustomDims(flag string, orgId s
 	return getVariationCustomDims(ldc.client, flag, orgId, dims, fallback, ldc.logger)
 }
 
+func (ldc *launchdarklyClient) GetStringSliceVariation(flag, tier string, orgId string, fallback []string) []string {
+	return getVariationCustomDims(ldc.client, flag, orgId, map[string]string{"tier": tier}, fallback, ldc.logger)
+}
+
+func (ldc *launchdarklyClient) GetStringSliceVariationByOrg(flag, orgId string, fallback []string) []string {
+	return getVariationCustomDims(ldc.client, flag, orgId, nil, fallback, ldc.logger)
+}
+
+func (ldc *launchdarklyClient) GetStringSliceVariationCustomDims(flag string, orgId string, dims map[string]string, fallback []string) []string {
+	return getVariationCustomDims(ldc.client, flag, orgId, dims, fallback, ldc.logger)
+}
+
 func getVariationCustomDims[T any](client ldClient, flag string, orgId string, dims map[string]string, fallback T, logger *zap.Logger) T {
 	ctxBldr := (&ldcontext.Builder{}).Kind("user").Key(orgId)
 	for k, v := range dims {
@@ -218,6 +232,23 @@ func getVariation[T any](client ldClient, key string, context ldcontext.Context,
 			logger.Warn("could not retrieve flag value; returning default value", zap.String("flag", key), zap.Error(err))
 		}
 		return any(value).(T)
+	case []string:
+		arrayBuilder := ldvalue.ValueArrayBuilder{}
+		for _, v := range defaultVal {
+			arrayBuilder.Add(ldvalue.String(v))
+		}
+		defaultValAsValue := arrayBuilder.Build().AsValue()
+
+		value, err := client.JSONVariation(key, context, defaultValAsValue)
+		if err != nil {
+			logger.Warn("could not retrieve flag value; returning default value", zap.String("flag", key), zap.Error(err))
+		}
+
+		var result []string
+		for _, v := range value.AsValueArray().AsSlice() {
+			result = append(result, v.StringValue())
+		}
+		return any(result).(T)
 	}
 
 	logger.Warn(fmt.Sprintf("unsupported variation type: %T; returning default value", defaultVal), zap.String("flag", key))

@@ -36,6 +36,9 @@ type Flags interface {
 	GetComputeMinutesPerWeekV2(tier string, orgId string) float64
 	GetGoWorkerEnabled(tier string, orgId string) bool
 
+	GetEphemeralEnabledPlugins(tier string, orgId string) []string
+	GetEphemeralSupportedEvents(tier string, orgId string) []string
+
 	GetWorkflowPluginInheritanceEnabled(orgId string) bool
 	GetValidateSubjectTokenDuringOboFlowEnabled(orgId string) bool
 }

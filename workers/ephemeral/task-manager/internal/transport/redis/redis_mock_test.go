@@ -317,12 +317,13 @@ func TestClosingProperlyDrainsRequests(t *testing.T) {
 
 func TestStreamKeysGeneration(t *testing.T) {
 	testCases := []struct {
-		name     string
-		plugins  []string
-		group    string
-		bucket   string
-		events   []string
-		expected []string
+		name      string
+		plugins   []string
+		group     string
+		bucket    string
+		events    []string
+		ephemeral bool
+		expected  []string
 	}{
 		{
 			name:    "single plugin single event",
@@ -332,6 +333,17 @@ func TestStreamKeysGeneration(t *testing.T) {
 			events:  []string{"execute"},
 			expected: []string{
 				"agent.main.bucket.BA.plugin.python.event.execute",
+			},
+		},
+		{
+			name:      "single plugin single event ephemeral",
+			plugins:   []string{"python"},
+			group:     "main",
+			bucket:    "BA",
+			events:    []string{"execute"},
+			ephemeral: true,
+			expected: []string{
+				"agent.main.bucket.BA.ephemeral.plugin.python.event.execute",
 			},
 		},
 		{
@@ -357,6 +369,20 @@ func TestStreamKeysGeneration(t *testing.T) {
 			},
 		},
 		{
+			name:      "multiple plugins and events ephemeral",
+			plugins:   []string{"python", "javascript"},
+			group:     "main",
+			bucket:    "BA",
+			events:    []string{"execute", "test"},
+			ephemeral: true,
+			expected: []string{
+				"agent.main.bucket.BA.ephemeral.plugin.python.event.execute",
+				"agent.main.bucket.BA.ephemeral.plugin.python.event.test",
+				"agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute",
+				"agent.main.bucket.BA.ephemeral.plugin.javascript.event.test",
+			},
+		},
+		{
 			name:     "empty plugins",
 			plugins:  []string{},
 			group:    "main",
@@ -364,11 +390,20 @@ func TestStreamKeysGeneration(t *testing.T) {
 			events:   []string{"execute"},
 			expected: []string{},
 		},
+		{
+			name:      "empty plugins ephemeral",
+			plugins:   []string{},
+			group:     "main",
+			bucket:    "BA",
+			events:    []string{"execute"},
+			ephemeral: true,
+			expected:  []string{},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := StreamKeys(tc.plugins, tc.group, tc.bucket, tc.events)
+			result := StreamKeys(tc.plugins, tc.group, tc.bucket, tc.events, tc.ephemeral)
 			assert.ElementsMatch(t, tc.expected, result)
 		})
 	}

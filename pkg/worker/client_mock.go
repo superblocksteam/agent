@@ -198,9 +198,9 @@ func (_m *MockClient) PreDelete(ctx context.Context, pluginName string, datasour
 	return r0, r1
 }
 
-// Remote provides a mock function with given fields: _a0, _a1
-func (_m *MockClient) Remote(_a0 context.Context, _a1 string) (string, string) {
-	ret := _m.Called(_a0, _a1)
+// Remote provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *MockClient) Remote(_a0 context.Context, _a1 string, _a2 string, _a3 string) (string, string) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Remote")
@@ -208,17 +208,17 @@ func (_m *MockClient) Remote(_a0 context.Context, _a1 string) (string, string) {
 
 	var r0 string
 	var r1 string
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, string)); ok {
-		return rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (string, string)); ok {
+		return rf(_a0, _a1, _a2, _a3)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) string); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) string); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) string); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
 	} else {
 		r1 = ret.Get(1).(string)
 	}

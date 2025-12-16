@@ -17,7 +17,7 @@ type Selector interface {
 	//	HTTP  -> http://opa_container_interface_hosting_this_plugin:80
 	//
 	// This approach allows us to keep all selector business logic separate.
-	Remote(context.Context, string) (string, string)
+	Remote(context.Context, string, string, string) (string, string)
 	// todo: use generics here to make the input and output dynamic
 }
 
