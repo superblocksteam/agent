@@ -16,6 +16,7 @@ exclude:
 - workers/golang/helm/templates/
 - workers/python/helm/templates/
 - workers/javascript/helm/templates/
+- workers/ephemeral/helm/templates/
 - workers/javascript/pnpm-lock.yaml
 - workers/javascript/pnpm-lock-slim.yaml
 - helm/cloud-opa/templates/

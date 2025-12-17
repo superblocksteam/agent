@@ -1,0 +1,127 @@
+---
+# Fleets configuration - each fleet is a ScaledJob
+# Example:
+# fleets:
+#   python-ba:
+#     language: python
+#     bucket: BA
+#     consumerGroup: ephemeral-python
+#   javascript-ba:
+#     language: javascript
+#     bucket: BA
+#     consumerGroup: ephemeral-javascript
+fleets: {}
+# Task Manager configuration
+taskManager:
+  image:
+    repository: ghcr.io/superblocksteam/task-manager
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  # Additional args to pass to the task-manager
+  extraArgs: []
+# Sandbox configurations (per language)
+sandbox:
+  python:
+    image:
+      repository: ghcr.io/superblocksteam/sandbox.python
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    port: 50051
+    # Additional args/env for the python sandbox
+    extraEnv: []
+  javascript:
+    image:
+      repository: ghcr.io/superblocksteam/javascript-sandbox
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    port: 50052
+    # Additional args/env for the javascript sandbox
+    extraEnv: []
+# KEDA ScaledJob configuration
+keda:
+  pollingInterval: 5
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  ttlSecondsAfterFinished: 30 # Auto-cleanup completed pods after 30 seconds
+  maxReplicaCount: 100
+  minReplicaCount: 0
+  # Scaling strategy: "default", "custom", or "accurate"
+  # "accurate" provides more precise scaling based on pending jobs
+  scalingStrategy:
+    strategy: accurate
+  # Scaling triggers - typically Redis stream length
+  triggers: []
+  # Example:
+  # triggers:
+  #   - type: redis-streams
+  #     metadata:
+  #       address: redis:6379
+  #       stream: sandbox:work:python
+  #       consumerGroup: ephemeral-python
+  #       lagCount: "5"
+# Redis transport configuration
+queue:
+  deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)
+  tls: false
+  host: redis
+  servername: ""
+  port: 6379
+  password: ""
+  blockDuration: 5s
+  batchSize: 10
+  executionPool: 100
+  pool:
+    min: 5
+    max: 10
+  timeout:
+    dial: 5s
+    read: 5m
+    write: 10s
+    pool: 5m
+# gRPC configuration
+grpc:
+  port: 50050
+# Worker configuration
+worker:
+  group: main
+  events:
+    - execute
+# Observability
+observability:
+  logging:
+    level: info
+  tracing:
+    url: ""
+    batchTimeout: 1s
+    exportTimeout: 15s
+    maxExportBatchSize: 1000
+    maxQueueSize: 5000
+# Superblocks configuration
+superblocks:
+  key: <override>
+# Pod configuration
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+# Image pull secrets
+imagePullSecrets:
+  - name: worker-docker
