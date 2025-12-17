@@ -1,0 +1,170 @@
+{{- range $k, $v := .Values.fleets }}
+{{- $language := $v.language | required "language is required (python or javascript)" }}
+{{- $sandboxConfig := index $.Values.sandbox $language }}
+{{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: {{ $k }}
+  labels:
+    {{- include "worker.labels" $v | nindent 4 }}
+spec:
+  pollingInterval: {{ $v.keda.pollingInterval | default $.Values.keda.pollingInterval }}
+  successfulJobsHistoryLimit: {{ $v.keda.successfulJobsHistoryLimit | default $.Values.keda.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ $v.keda.failedJobsHistoryLimit | default $.Values.keda.failedJobsHistoryLimit }}
+  maxReplicaCount: {{ $v.keda.maxReplicaCount | default $.Values.keda.maxReplicaCount }}
+  minReplicaCount: {{ $v.keda.minReplicaCount | default $.Values.keda.minReplicaCount }}
+  {{- if or $v.keda.triggers $.Values.keda.triggers }}
+  triggers:
+    {{- toYaml ($v.keda.triggers | default $.Values.keda.triggers) | nindent 4 }}
+  {{- end }}
+  {{- with $v.keda.scalingStrategy | default $.Values.keda.scalingStrategy }}
+  scalingStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  jobTargetRef:
+    parallelism: 1
+    completions: 1
+    backoffLimit: 0
+    ttlSecondsAfterFinished: {{ $v.keda.ttlSecondsAfterFinished | default $.Values.keda.ttlSecondsAfterFinished }}
+    template:
+      metadata:
+        labels:
+          {{- include "worker.labels" $v | nindent 10 }}
+        {{- with $podAnnotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      spec:
+        restartPolicy: Never
+        {{- with $.Values.imagePullSecrets }}
+        imagePullSecrets:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        # Sandbox runs as a sidecar (initContainer with restartPolicy: Always)
+        initContainers:
+        - name: {{ $language }}-sandbox
+          image: "{{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
+          imagePullPolicy: {{ (($v.sandbox).image).pullPolicy | default $sandboxConfig.image.pullPolicy }}
+          restartPolicy: Always
+          resources:
+            {{- toYaml (deepCopy ($sandboxConfig.resources | default dict) | merge (($v.sandbox).resources | default dict)) | nindent 12 }}
+          env:
+          - name: GRPC_PORT
+            value: "{{ $sandboxConfig.port }}"
+          {{- with $sandboxConfig.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with ($v.sandbox).extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          ports:
+          - name: grpc
+            containerPort: {{ $sandboxConfig.port }}
+            protocol: TCP
+
+        # Task Manager is the main container
+        containers:
+        - name: task-manager
+          image: "{{ (($v.taskManager).image).repository | default $.Values.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.taskManager.image.tag }}"
+          imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
+          resources:
+            {{- toYaml (deepCopy ($.Values.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
+          command: ["./worker"]
+          args:
+          # Ephemeral mode - process one job and exit
+          - "--ephemeral=true"
+          # Logging
+          - "--log.level={{ $.Values.observability.logging.level }}"
+          # Language
+          - "--worker.language={{ $language }}"
+          # Sandbox address (localhost since it's a sidecar)
+          - "--sandbox.address=localhost:{{ $sandboxConfig.port }}"
+          # gRPC configuration
+          - "--grpc.port={{ $.Values.grpc.port }}"
+          # Worker configuration
+          - "--worker.group={{ $.Values.worker.group }}"
+          - "--worker.consumer.group={{ $v.consumerGroup }}"
+          - "--worker.bucket={{ $v.bucket }}"
+          {{- if $v.events }}
+          - "--worker.events={{ join "," ($v.events | default $.Values.worker.events) }}"
+          {{- else if $.Values.worker.events }}
+          - "--worker.events={{ join "," $.Values.worker.events }}"
+          {{- end }}
+          # Redis transport
+          - "--transport.redis.host={{ $.Values.queue.host }}"
+          - "--transport.redis.port={{ $.Values.queue.port }}"
+          - "--transport.redis.tls={{ $.Values.queue.tls }}"
+          {{- if $.Values.queue.servername }}
+          - "--transport.redis.servername={{ $.Values.queue.servername }}"
+          {{- end }}
+          - "--transport.redis.block.duration={{ $.Values.queue.blockDuration }}"
+          - "--transport.redis.max.messages={{ $.Values.queue.batchSize }}"
+          - "--transport.redis.execution.pool={{ $.Values.queue.executionPool }}"
+          - "--transport.redis.pool.max={{ $.Values.queue.pool.max }}"
+          - "--transport.redis.pool.min={{ $.Values.queue.pool.min }}"
+          {{- if $.Values.queue.timeout.dial }}
+          - "--transport.redis.timeout.dial={{ $.Values.queue.timeout.dial }}"
+          {{- end }}
+          {{- if $.Values.queue.timeout.read }}
+          - "--transport.redis.timeout.read={{ $.Values.queue.timeout.read }}"
+          {{- end }}
+          {{- if $.Values.queue.timeout.write }}
+          - "--transport.redis.timeout.write={{ $.Values.queue.timeout.write }}"
+          {{- end }}
+          {{- if $.Values.queue.timeout.pool }}
+          - "--transport.redis.timeout.pool={{ $.Values.queue.timeout.pool }}"
+          {{- end }}
+          # Observability
+          {{- if $.Values.observability.tracing.url }}
+          - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"
+          {{- end }}
+          {{- if $.Values.observability.tracing.batchTimeout }}
+          - "--otel.batcher.batch.timeout={{ $.Values.observability.tracing.batchTimeout }}"
+          {{- end }}
+          {{- if $.Values.observability.tracing.exportTimeout }}
+          - "--otel.batcher.export.timeout={{ $.Values.observability.tracing.exportTimeout }}"
+          {{- end }}
+          {{- if $.Values.observability.tracing.maxExportBatchSize }}
+          - "--otel.batcher.export.batch.max={{ $.Values.observability.tracing.maxExportBatchSize }}"
+          {{- end }}
+          {{- if $.Values.observability.tracing.maxQueueSize }}
+          - "--otel.batcher.export.queue.max={{ $.Values.observability.tracing.maxQueueSize }}"
+          {{- end }}
+          # Extra args from values
+          {{- with $.Values.taskManager.extraArgs }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with ($v.taskManager).extraArgs }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          env:
+          - name: SUPERBLOCKS_WORKER_EPHEMERAL_TRANSPORT_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: worker-redis-token
+                key: token
+          - name: SUPERBLOCKS_WORKER_EPHEMERAL_SUPERBLOCKS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: worker-agent-key
+                key: key
+          {{- with ($v.taskManager).extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+
+        {{- with $v.nodeSelector | default $.Values.nodeSelector }}
+        nodeSelector:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with $v.affinity | default $.Values.affinity }}
+        affinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with $v.tolerations | default $.Values.tolerations }}
+        tolerations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+{{- end }}
