@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update JavaScript worker to execute language steps within `vm2`
 - Add support for Kubernetes Gateway API as an alternative to Ingress for routing traffic to the agent
 - Update FilePicker download endpoint to ensure requested download paths are under the temp directory
+- Add WASM-based sandbox using QuickJS for more secure JavaScript binding resolution
 
 ## v1.31.0
 - Add support for restricting imports and built in functions in Python language execution steps

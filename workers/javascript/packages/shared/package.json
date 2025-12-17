@@ -16,7 +16,7 @@
     "lint:precommit": "eslint --ext ts --fix --cache --cache-strategy content --cache-location ~/.cache/eslint/",
     "typecheck": "npx tsc",
     "check": "npm run typecheck && npm run lint",
-    "test": "jest --coverage",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "pre-commit": "tsc && lint-staged"
   },
   "devDependencies": {
@@ -24,6 +24,7 @@
     "@swc/cli": "0.6.0",
     "@swc/core": "1.7.26",
     "@swc/jest": "0.2.36",
+    "@types/deasync": "0.1.5",
     "@types/jest": "29.5.12",
     "@types/lodash": "^4.17.0",
     "@types/node": "20.14.8",
@@ -70,6 +71,7 @@
     "@lezer/lr": "0.16.3",
     "@opentelemetry/semantic-conventions": "^1.6.0",
     "@rockset/client": "0.8.32",
+    "@superblocks/wasm-sandbox-js": "workspace:*",
     "@superblocksteam/types": "workspace:*",
     "@types/esprima": "4.0.6",
     "@types/estree": "^1.0.5",

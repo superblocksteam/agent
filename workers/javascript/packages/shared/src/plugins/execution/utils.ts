@@ -16,6 +16,17 @@ import { extractMustacheStrings, FlatContext } from './mustache';
 import { ProcessInput } from './types';
 import { buildVariables } from './variable';
 import { nodeVMWithContext } from './vm';
+import * as http from 'node:http';
+import { promisify } from 'node:util';
+import deasync from 'deasync';
+import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
+
+/**
+ * Environment variable to opt into the WASM-based sandbox implementation.
+ * Set to 'true' to use the WASM sandbox.
+ * Default is to use the legacy VM2-based sandbox.
+ */
+export const USE_WASM_SANDBOX = (process.env.SUPERBLOCKS_USE_WASM_SANDBOX ?? 'false') === 'true';
 
 const DATA_TAG = 'SUPERBLOCKSDATA';
 const completeDataRegex = new RegExp(`^${DATA_TAG}(.*?)${DATA_TAG}$`);
@@ -89,7 +100,234 @@ export async function spawnStdioProcess(cmd: string, args: string[], input: Proc
   });
 }
 
+export function serialize(buffer: Buffer, mode?: 'raw' | 'binary' | 'text' | unknown) {
+  if (mode === 'raw') {
+    return buffer;
+  }
+  if (mode === 'binary' || mode === 'text') {
+    // utf8 encoding is lossy for truly binary data, but not an error in JS
+    return buffer.toString(mode === 'binary' ? 'base64' : 'utf8');
+  }
+  // Otherwise, detect mode from first 1024 chars
+  const chunk = buffer.slice(0, 1024).toString('utf8');
+  if (chunk.indexOf('\u{FFFD}') > -1) {
+    return buffer.toString('base64');
+  }
+  return buffer.toString('utf8');
+}
+
+function fetchFromController(
+  fileServerUrl: string,
+  agentKey: string,
+  location: string,
+  callback: (err: Error | null, result: Buffer | null) => void,
+) {
+  const url = new URL(fileServerUrl);
+  url.searchParams.set('location', location);
+  http.get(url.toString(), {
+    headers: { 'x-superblocks-agent-key': agentKey }
+  }, (response) => {
+    if (response.statusCode != 200) {
+      return callback(new Error('Internal Server Error'), null);
+    }
+    const chunks = [];
+    let chunkStrings = '';
+    response.on('data', (chunk) => {
+      if (fileServerUrl.includes('v2')) {
+        const serialized = serialize(chunk)
+        chunkStrings += serialized
+      } else {
+        chunks.push(Buffer.from(chunk))
+      }
+    });
+    response.on('error', (err) => callback(err, null));
+    response.on('end', () => {
+      if (fileServerUrl.includes('v2')) {
+        const processed = chunkStrings
+        .split('\\n')
+        .filter((str) => str.length > 0)
+        .map((str) => {
+          const json = JSON.parse(str);
+          return Buffer.from(json.result.data, 'base64');
+        });
+        callback(null, Buffer.concat(processed as unknown as readonly Uint8Array[]))
+      } else {
+        callback(null, Buffer.concat(chunks))
+      }
+    });
+  })
+}
+
+/**
+ * Router function that delegates to either the WASM-based or VM2-based implementation
+ * based on the SUPERBLOCKS_USE_WASM_SANDBOX environment variable.
+ */
 export const resolveAllBindings = async (
+  unresolvedValue: string,
+  context: ExecutionContext,
+  filePaths: Record<string, string>,
+  escapeStrings: boolean
+): Promise<Record<string, unknown>> => {
+  if (USE_WASM_SANDBOX) {
+    return resolveAllBindingsWasm(unresolvedValue, context, filePaths, escapeStrings);
+  }
+  return resolveAllBindingsVm2(unresolvedValue, context, filePaths, escapeStrings);
+};
+
+/**
+ * WASM-based implementation using QuickJS via quickjs-emscripten.
+ * This is the new, more secure sandboxing implementation.
+ */
+const resolveAllBindingsWasm = async (
+  unresolvedValue: string,
+  context: ExecutionContext,
+  filePaths: Record<string, string>,
+  escapeStrings: boolean
+): Promise<Record<string, unknown>> => {
+  // Build globals object with context.globals and context.outputs
+  const globals: Record<string, unknown> = {
+    ...context.globals,
+    ...context.outputs
+  };
+
+  // Handle variables from KVStore
+  if (context.variables && typeof context.variables === 'object') {
+    const toRead: Array<[string, string]> = [];
+    for (const [variableName, variableProperty] of Object.entries(context.variables)) {
+      if (!isObject(variableProperty)) {
+        throw new Error(`Failed to build the variable: ${variableName}`);
+      }
+
+      // Currently we only support native variables in bindings
+      const { key } = variableProperty;
+      toRead.push([variableName, key]);
+    }
+
+    const results = await context.kvStore?.read(toRead.map((t) => t[1]));
+
+    if (results === undefined) {
+      throw new IntegrationError('Failed to read variables in bindings.');
+    }
+    for (let i = 0; i < toRead.length; i++) {
+      globals[toRead[i][0]] = results.data[i];
+    }
+  }
+
+  let variableClient: VariableClient | undefined;
+  if (context.variables && typeof context.variables === 'object') {
+    variableClient = new VariableClient(context.kvStore as KVStore);
+    const builtVariables = await buildVariables(context.variables, variableClient);
+    for (const [k, v] of Object.entries(builtVariables)) {
+      globals[k] = v;
+    }
+  }
+
+  // Prepare file picker objects with readContentsAsync/readContents methods
+  // This is done in the host (here) before passing to the VM, unlike the VM2
+  // implementation which did this inside the VM via $prepareGlobalObjectForFiles.
+  const fileServerUrl = context.globals['$fileServerUrl'] as string;
+  const agentKey = context.globals['$agentKey'] as string;
+  prepareGlobalsWithFileMethods(globals, filePaths, fileServerUrl, agentKey);
+
+  const expressions = extractMustacheStrings(unresolvedValue);
+
+  const bindingResults = await wasmSandbox.evaluateExpressions(expressions, {
+    globals,
+    libraries: ['lodash', 'moment'],
+    enableBuffer: true,
+    limits: {
+      // TODO: pass in the timeout from the caller side
+      timeMs: 500 * 1000
+    }
+  });
+
+  // Process results to match the expected format
+  const ret: Record<string, unknown> = {};
+  for (const toEval of expressions) {
+    try {
+      const val = bindingResults[toEval];
+
+      // Handle Buffer values returned from the sandbox
+      if (isBuffer(val)) {
+        ret[toEval] = val;
+        continue;
+      } else if (val && (val as { type?: string }).type === 'Buffer') {
+        // JSON-serialized Buffer format: { type: 'Buffer', data: number[] }
+        ret[toEval] = Buffer.from((val as { type: 'Buffer'; data: number[] }).data);
+        continue;
+      }
+
+      if (isObject(val)) {
+        ret[toEval] = JSON.stringify(val);
+        continue;
+      }
+      try {
+        if (isString(val) && isObject(JSON.parse(val as string))) {
+          ret[toEval] = val;
+          continue;
+        }
+      } catch (_) {
+        // let it fallthrough
+      }
+      if (isString(val) && escapeStrings) {
+        // escape strings and remove extra quotes added by stringify
+        ret[toEval] = JSON.stringify(val).slice(1, -1);
+        continue;
+      }
+      ret[toEval] = val;
+    } catch (err) {
+      throw new Error(`error evaluating '${toEval}': ${err.message}`);
+    }
+  }
+
+  if (variableClient !== undefined) {
+    await variableClient.flush();
+  }
+  return ret;
+};
+
+/**
+ * Prepares globals object by adding file picker methods (readContentsAsync, readContents)
+ * to file objects at the paths specified in filePaths.
+ *
+ * This replaces the VM2 approach of using $prepareGlobalObjectForFiles inside the VM.
+ * Instead, we prepare the file objects in the host before passing them to the WASM sandbox.
+ */
+function prepareGlobalsWithFileMethods(
+  globals: Record<string, unknown>,
+  filePaths: Record<string, string>,
+  fileServerUrl: string,
+  agentKey: string
+): void {
+  Object.entries(filePaths).forEach(([treePath, diskPath]) => {
+    if (!diskPath) return;
+
+    const readContentsAsync = async (mode?: 'raw' | 'binary' | 'text' | unknown): Promise<string | Buffer> => {
+      const contents = await promisify(fetchFromController)(fileServerUrl, agentKey, diskPath);
+      return serialize(contents, mode);
+    };
+
+    const readContents = (mode?: 'raw' | 'binary' | 'text' | unknown): string | Buffer => {
+      const contents = deasync(fetchFromController)(fileServerUrl, agentKey, diskPath);
+      return serialize(contents, mode);
+    };
+
+    const file = _.get(globals, treePath) as object | undefined;
+    // Leaving $superblocksId set because it's required by our S3.
+    _.set(globals, treePath, {
+      ...file,
+      previewUrl: undefined,
+      readContentsAsync: wasmSandbox.hostFunction(readContentsAsync),
+      readContents: wasmSandbox.hostFunction(readContents)
+    });
+  });
+}
+
+/**
+ * Legacy VM2-based implementation.
+ * This remains the default when SUPERBLOCKS_USE_WASM_SANDBOX is not set or false.
+ */
+export const resolveAllBindingsVm2 = async (
   unresolvedValue: string,
   context: ExecutionContext,
   filePaths: Record<string, string>,

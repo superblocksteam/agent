@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "incremental": true,
+    "declaration": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "composite": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "declarationMap": true
+  },
+  "exclude": ["**/*.test.ts", "**/lib"]
+}

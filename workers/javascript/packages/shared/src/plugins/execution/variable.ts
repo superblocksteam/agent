@@ -1,3 +1,4 @@
+import { toVmValue, hostFunction } from '@superblocks/wasm-sandbox-js';
 import { decodeBytestrings } from '../../utils';
 import { VariableClient } from './utils';
 
@@ -86,6 +87,14 @@ export class SimpleVariable {
     this.value = value;
     this.variableClient.writeBuffer(this.key, this.value);
   }
+
+  [toVmValue]() {
+    return {
+      key: this.key,
+      value: this.value,
+      set: hostFunction(this.set.bind(this))
+    };
+  }
 }
 
 export class AdvancedVariable {
@@ -122,5 +131,13 @@ export class AdvancedVariable {
     } catch (e) {
       throw new Error(`failed to write to variable store: ${e}`);
     }
+  }
+
+  [toVmValue]() {
+    return {
+      key: this.key,
+      get: hostFunction(this.get.bind(this)),
+      set: hostFunction(this.set.bind(this))
+    };
   }
 }
