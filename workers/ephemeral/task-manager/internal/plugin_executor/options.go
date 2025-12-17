@@ -1,13 +1,15 @@
 package plugin_executor
 
 import (
+	"github.com/superblocksteam/agent/pkg/store"
 	"go.uber.org/zap"
 )
 
 // Options for creating a PluginExecutor
 type Options struct {
 	Logger   *zap.Logger
-	Language string // Required: the language this executor handles (e.g., "python", "javascript")
+	Language string      // Required: the language this executor handles (e.g., "python", "javascript")
+	Store    store.Store // Required: KV store for output storage
 }
 
 // Option is a function that modifies Options
@@ -24,6 +26,13 @@ func WithLogger(logger *zap.Logger) Option {
 func WithLanguage(language string) Option {
 	return func(o *Options) {
 		o.Language = language
+	}
+}
+
+// WithStore sets the KV store
+func WithStore(store store.Store) Option {
+	return func(o *Options) {
+		o.Store = store
 	}
 }
 

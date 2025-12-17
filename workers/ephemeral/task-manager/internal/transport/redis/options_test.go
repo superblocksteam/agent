@@ -9,11 +9,26 @@ import (
 	"workers/ephemeral/task-manager/internal/plugin_executor"
 
 	r "github.com/redis/go-redis/v9"
+	"github.com/superblocksteam/agent/pkg/store"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+// mockStore implements store.Store for testing
+type mockStore struct{}
+
+func (m *mockStore) Read(ctx context.Context, keys ...string) ([]any, error)             { return nil, nil }
+func (m *mockStore) Write(ctx context.Context, kvs ...*store.KV) error                   { return nil }
+func (m *mockStore) Delete(ctx context.Context, keys ...string) error                    { return nil }
+func (m *mockStore) Expire(ctx context.Context, ttl time.Duration, keys ...string) error { return nil }
+func (m *mockStore) Decr(ctx context.Context, key string) error                          { return nil }
+func (m *mockStore) Copy(ctx context.Context, src, dst string) error                     { return nil }
+func (m *mockStore) Scan(ctx context.Context, pattern string) ([]string, error)          { return nil, nil }
+func (m *mockStore) Key(prefix, suffix string) (string, error)                           { return prefix + suffix, nil }
+
+var _ store.Store = (*mockStore)(nil)
 
 func TestNewOptionsDefaults(t *testing.T) {
 	opts := NewOptions()
@@ -213,8 +228,11 @@ func TestOptionsOverride(t *testing.T) {
 
 func TestWithPluginExecutor(t *testing.T) {
 	// Create a real plugin executor (the interface is from the plugin_executor package)
-	logger := zap.NewNop()
-	executor := plugin_executor.NewPluginExecutor(&plugin_executor.Options{Logger: logger, Language: "python"})
+	executor := plugin_executor.NewPluginExecutor(&plugin_executor.Options{
+		Logger:   zap.NewNop(),
+		Language: "python",
+		Store:    &mockStore{},
+	})
 	opts := NewOptions(WithPluginExecutor(executor))
 
 	if opts.PluginExecutor == nil {

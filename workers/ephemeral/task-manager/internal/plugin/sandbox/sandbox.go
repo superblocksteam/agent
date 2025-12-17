@@ -2,13 +2,16 @@ package sandbox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"workers/ephemeral/task-manager/internal/plugin"
 
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/utils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
@@ -32,9 +35,14 @@ type SandboxPlugin struct {
 
 	// Variable store address to pass to sandbox
 	variableStoreAddress string
+
+	// Store for reading context bindings from Redis
+	store store.Store
 }
 
 var _ plugin.Plugin = &SandboxPlugin{}
+
+const emptyContextJSON = `{"globals": {}, "outputs": {}}`
 
 // NewSandboxPlugin creates a new sandbox plugin
 func NewSandboxPlugin(opts *Options) (*SandboxPlugin, error) {
@@ -65,6 +73,7 @@ func NewSandboxPlugin(opts *Options) (*SandboxPlugin, error) {
 		address:              opts.Address,
 		logger:               opts.Logger,
 		variableStoreAddress: opts.VariableStoreAddress,
+		store:                opts.Store,
 	}, nil
 }
 
@@ -73,11 +82,11 @@ func (p *SandboxPlugin) Execute(ctx context.Context, props *transportv1.Request_
 	// Extract code from action configuration
 	code := p.getCodeFromProps(props)
 
-	// Build context JSON from variables
-	contextJSON, err := p.buildContextJSON(props)
+	// Build context JSON by reading bindings from Redis
+	contextJSON, err := p.buildContextJSON(ctx, props)
 	if err != nil {
 		p.logger.Error("failed to build context JSON", zap.Error(err))
-		contextJSON = "{}"
+		contextJSON = emptyContextJSON
 	}
 
 	// Build variables JSON
@@ -124,8 +133,16 @@ func (p *SandboxPlugin) Execute(ctx context.Context, props *transportv1.Request_
 	}
 
 	// Convert sandbox response to apiv1.Output
-	output.Stdout = resp.GetStdout()
 	output.Stderr = resp.GetStderr()
+	output.Stdout = resp.GetStdout()
+
+	// Extract __EXCEPTION__ error from stderr (like Python worker does)
+	var execError string
+	for _, errLog := range resp.GetStderr() {
+		if strings.HasPrefix(errLog, "__EXCEPTION__") {
+			execError = strings.TrimPrefix(errLog, "__EXCEPTION__")
+		}
+	}
 
 	// Parse result as JSON
 	if resp.GetResult() != "" && resp.GetResult() != "null" {
@@ -136,15 +153,23 @@ func (p *SandboxPlugin) Execute(ctx context.Context, props *transportv1.Request_
 		}
 	}
 
-	// Check for errors in response
+	// Check for errors in response - prioritize explicit error from response
 	if resp.GetError() != "" {
 		return output, errors.New(resp.GetError())
+	}
+
+	// Then check for __EXCEPTION__ errors from stderr (extracted above)
+	if execError != "" {
+		return output, errors.New(execError)
 	}
 
 	if resp.GetExitCode() != 0 {
 		errMsg := fmt.Sprintf("sandbox exited with code %d", resp.GetExitCode())
 		if len(output.Stderr) > 0 {
-			errMsg = output.Stderr[len(output.Stderr)-1]
+			// Get last stderr line as error, stripping __EXCEPTION__ prefix if present
+			lastErr := output.Stderr[len(output.Stderr)-1]
+			lastErr = strings.TrimPrefix(lastErr, "__EXCEPTION__")
+			errMsg = lastErr
 		}
 		return output, errors.New(errMsg)
 	}
@@ -196,20 +221,171 @@ func (p *SandboxPlugin) getCodeFromProps(props *transportv1.Request_Data_Data_Pr
 	return code.GetStringValue()
 }
 
-// TODO(perf): Consider using native protobuf serialization instead of JSON to increase performance.
-// buildContextJSON builds the context JSON from props.
-func (p *SandboxPlugin) buildContextJSON(props *transportv1.Request_Data_Data_Props) (string, error) {
-	// Build context from action configuration
-	actionConfig := props.GetActionConfiguration()
-	if actionConfig == nil {
-		return "{}", nil
+// loadBindingValues reads binding values from Redis, filtering to only those referenced in actionConfig.
+// Returns globals and outputs maps, or nil if there's nothing to load.
+func (p *SandboxPlugin) loadBindingValues(
+	ctx context.Context,
+	executionID string,
+	bindingKeys []*transportv1.Request_Data_Data_Props_Binding,
+	actionConfig *structpb.Struct,
+) (map[string]interface{}, map[string]interface{}) {
+	if p.store == nil || len(bindingKeys) == 0 {
+		return nil, nil
 	}
 
-	jsonBytes, err := protojson.Marshal(actionConfig)
+	actionConfigJSON, err := protojson.Marshal(actionConfig)
 	if err != nil {
-		return "{}", err
+		return nil, nil
 	}
-	return string(jsonBytes), nil
+	actionConfigStr := string(actionConfigJSON)
+
+	// Filter binding keys to only those referenced in action configuration
+	var requiredKeys []*transportv1.Request_Data_Data_Props_Binding
+	for _, key := range bindingKeys {
+		if strings.Contains(actionConfigStr, key.GetKey()) {
+			requiredKeys = append(requiredKeys, key)
+		}
+	}
+
+	if len(requiredKeys) == 0 {
+		return nil, nil
+	}
+
+	// Build Redis keys
+	var redisKeys []string
+	for _, key := range requiredKeys {
+		keyType := key.GetType()
+		keyValue := key.GetKey()
+		var redisKey string
+		switch keyType {
+		case "global":
+			redisKey = fmt.Sprintf("%s.context.global.%s", executionID, keyValue)
+		case "output":
+			redisKey = fmt.Sprintf("%s.context.output.%s", executionID, keyValue)
+		default:
+			p.logger.Warn("unsupported binding key type", zap.String("type", keyType), zap.String("key", keyValue))
+			continue
+		}
+		redisKeys = append(redisKeys, redisKey)
+	}
+
+	// Read from Redis
+	values, err := p.store.Read(ctx, redisKeys...)
+	if err != nil {
+		p.logger.Error("failed to read context from store", zap.Error(err))
+		return nil, nil
+	}
+
+	globals := make(map[string]interface{})
+	outputs := make(map[string]interface{})
+
+	for i, key := range requiredKeys {
+		if i >= len(values) || values[i] == nil {
+			continue
+		}
+
+		valueStr, ok := values[i].(string)
+		if !ok {
+			continue
+		}
+
+		var value interface{}
+		if err := json.Unmarshal([]byte(valueStr), &value); err != nil {
+			p.logger.Warn("failed to unmarshal binding value", zap.String("key", key.GetKey()), zap.Error(err))
+			continue
+		}
+
+		switch key.GetType() {
+		case "global":
+			globals[key.GetKey()] = value
+		case "output":
+			outputs[key.GetKey()] = value
+		}
+	}
+
+	return globals, outputs
+}
+
+// buildContextJSON builds the context JSON by reading bindings and native variables from Redis.
+// This mimics the behavior of workers/python/src/plugin/props_reader.py
+func (p *SandboxPlugin) buildContextJSON(ctx context.Context, props *transportv1.Request_Data_Data_Props) (string, error) {
+	executionID := props.GetExecutionId()
+	bindingKeys := props.GetBindingKeys()
+	actionConfig := props.GetActionConfiguration()
+	variables := props.GetVariables()
+
+	globals := make(map[string]interface{})
+	outputs := make(map[string]interface{})
+
+	// Read binding keys from Redis (for outputs from previous steps)
+	if bindingGlobals, bindingOutputs := p.loadBindingValues(ctx, executionID, bindingKeys, actionConfig); bindingGlobals != nil {
+		for k, v := range bindingGlobals {
+			globals[k] = v
+		}
+		for k, v := range bindingOutputs {
+			outputs[k] = v
+		}
+	}
+
+	// Read native variables from Redis (for inputs like FilePicker1, Table1, etc.)
+	// TODO actually add filepicker support  https://linear.app/superblocks/issue/AGENT-772/support-filepicker-in-task-manager
+	// This mimics workers/python/src/plugin/props_reader.py _load_from_store native variable handling
+	if p.store != nil && len(variables) > 0 {
+		// Collect native and filepicker variables
+		var nativeVarNames []string
+		var nativeVarKeys []string
+		for name, variable := range variables {
+			if variable == nil {
+				continue
+			}
+			// TYPE_NATIVE = 3, TYPE_FILEPICKER = 4 (from apiv1.Variables_Type)
+			varType := variable.GetType()
+			if varType == 3 || varType == 4 {
+				nativeVarNames = append(nativeVarNames, name)
+				nativeVarKeys = append(nativeVarKeys, variable.GetKey())
+			}
+		}
+
+		if len(nativeVarKeys) > 0 {
+			values, err := p.store.Read(ctx, nativeVarKeys...)
+			if err != nil {
+				p.logger.Error("failed to read native variables from store", zap.Error(err))
+			} else {
+				for i, name := range nativeVarNames {
+					if i >= len(values) || values[i] == nil {
+						continue
+					}
+
+					valueStr, ok := values[i].(string)
+					if !ok {
+						continue
+					}
+
+					var value interface{}
+					if err := json.Unmarshal([]byte(valueStr), &value); err != nil {
+						p.logger.Warn("failed to unmarshal native variable", zap.String("name", name), zap.Error(err))
+						continue
+					}
+
+					// Native variables go into globals
+					globals[name] = value
+				}
+			}
+		}
+	}
+
+	// Build the context structure that python expects
+	context := map[string]interface{}{
+		"globals": globals,
+		"outputs": outputs,
+	}
+
+	contextJSON, err := json.Marshal(context)
+	if err != nil {
+		return emptyContextJSON, err
+	}
+
+	return string(contextJSON), nil
 }
 
 // buildVariablesJSON builds the variables JSON for the sandbox

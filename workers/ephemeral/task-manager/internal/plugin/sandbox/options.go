@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"github.com/superblocksteam/agent/pkg/store"
 	"go.uber.org/zap"
 )
 
@@ -10,6 +11,7 @@ type Options struct {
 	Language             string
 	Logger               *zap.Logger
 	VariableStoreAddress string
+	Store                store.Store // Redis store for reading context bindings
 }
 
 // Option is a function that modifies Options
@@ -40,6 +42,13 @@ func WithLogger(logger *zap.Logger) Option {
 func WithVariableStoreAddress(address string) Option {
 	return func(o *Options) {
 		o.VariableStoreAddress = address
+	}
+}
+
+// WithStore sets the Redis store for reading context bindings
+func WithStore(s store.Store) Option {
+	return func(o *Options) {
+		o.Store = s
 	}
 }
 
