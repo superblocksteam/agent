@@ -15,8 +15,7 @@ ROOT_DIRECTORY = $(shell pwd)
 .PHONY: deps
 deps:
 	@cd $(ROOT_DIRECTORY)/../../javascript && make deps
-	@cd $(ROOT_DIRECTORY)/../../javascript/packages/types && npm run build
-	@cd $(ROOT_DIRECTORY)/../../javascript/packages/shared && npm run build
+	@cd $(ROOT_DIRECTORY)/../../javascript && npx pnpm --filter @superblocks/shared... run build
 
 .PHONY: build
 build: clean deps
