@@ -9,12 +9,14 @@ WORKDIR /workers/javascript/
 
 COPY ./workers/javascript/pnpm-workspace.yaml ./
 COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock.yaml ./
+COPY ./workers/ephemeral/javascript-sandbox/package.json ../ephemeral/javascript-sandbox/
 
 RUN npm install -g clean-modules && \
     npm install                  && \
     npx pnpm fetch
 
 COPY ./workers/javascript/ ./
+COPY ./workers/ephemeral/javascript-sandbox/ ../ephemeral/javascript-sandbox/
 
 RUN npx pnpm install -r --offline                     && \
     npx pnpm --filter "*" build                       && \

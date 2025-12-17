@@ -97,19 +97,7 @@ export const resolveAllBindings = async (
 ): Promise<Record<string, unknown>> => {
   // TODO: pass in the timeout from the caller side
   // const vm = nodeVMWithContext(context, filePaths, Number(envs.get('SUPERBLOCKS_AGENT_EXECUTION_JS_TIMEOUT_MS')));
-  const vm = nodeVMWithContext(
-    context,
-    filePaths,
-    500 * 1000,
-    [
-      'lodash',
-      'moment',
-      'axios',
-      'xmlbuilder2',
-      'base64url',
-      'deasync',
-    ]
-  );
+  const vm = nodeVMWithContext(context, filePaths, 500 * 1000, ['lodash', 'moment', 'axios', 'xmlbuilder2', 'base64url', 'deasync']);
   if (context.variables && typeof context.variables === 'object') {
     const toRead: Array<[string, string]> = [];
     for (const [variableName, variableProperty] of Object.entries(context.variables)) {
