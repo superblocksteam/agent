@@ -20,6 +20,8 @@ import (
 	"github.com/superblocksteam/agent/pkg/observability/log"
 	"github.com/superblocksteam/agent/pkg/observability/obsup"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	"github.com/superblocksteam/agent/pkg/store"
+	redisstore "github.com/superblocksteam/agent/pkg/store/redis"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/run"
 	"github.com/superblocksteam/run/contrib/process"
@@ -53,6 +55,20 @@ func init() {
 	pflag.String("transport.redis.servername", "", "The server name used to verify the hostname returned by the TLS handshake.")
 	pflag.Duration("transport.redis.block.duration", 5*time.Second, "The maximum duration to block for a message.")
 	pflag.Int("transport.redis.max.messages", 10, "The maximum number of messages to process at once.")
+
+	// Store Redis settings (uses same Redis as transport by default)
+	pflag.String("store.redis.host", "", "The store redis host (defaults to transport.redis.host).")
+	pflag.Int("store.redis.port", 0, "The store redis port (defaults to transport.redis.port).")
+	pflag.String("store.redis.password", "", "The store redis password (defaults to transport.redis.password).")
+	pflag.Bool("store.redis.tls", false, "Whether to connect via SSL to the redis store.")
+	pflag.String("store.redis.servername", "", "The server name used for TLS verification for the store.")
+	pflag.Duration("store.redis.default.ttl", 5*time.Minute, "Default TTL for stored output.")
+	pflag.Int("store.redis.pool.max", 10, "The maximum number of connections in the store connection pool.")
+	pflag.Int("store.redis.pool.min", 5, "The minimum number of connections in the store connection pool.")
+	pflag.Duration("store.redis.timeout.dial", 5*time.Second, "The maximum duration for dialing a store redis connection.")
+	pflag.Duration("store.redis.timeout.read", 5*time.Second, "Timeout for store socket reads.")
+	pflag.Duration("store.redis.timeout.write", 5*time.Second, "Timeout for store socket writes.")
+	pflag.Duration("store.redis.timeout.pool", 5*time.Second, "Amount of time client waits for store connection if all connections are busy.")
 
 	// Worker settings
 	pflag.String("worker.group", "main", "The worker group.")
@@ -165,11 +181,53 @@ func main() {
 		grpcAddress = fmt.Sprintf("localhost:%d", viper.GetInt("grpc.port"))
 	}
 
+	// Create Redis store client (uses same Redis as transport by default)
+	var storeClient store.Store
+	{
+		storeHost := viper.GetString("store.redis.host")
+		if storeHost == "" {
+			storeHost = viper.GetString("transport.redis.host")
+		}
+		storePort := viper.GetInt("store.redis.port")
+		if storePort == 0 {
+			storePort = viper.GetInt("transport.redis.port")
+		}
+		storePassword := viper.GetString("store.redis.password")
+		if storePassword == "" {
+			storePassword = viper.GetString("transport.redis.password")
+		}
+
+		options := &r.Options{
+			Addr:         fmt.Sprintf("%s:%d", storeHost, storePort),
+			Username:     "default",
+			Password:     storePassword,
+			DB:           0,
+			PoolSize:     viper.GetInt("store.redis.pool.max"),
+			MinIdleConns: viper.GetInt("store.redis.pool.min"),
+			DialTimeout:  viper.GetDuration("store.redis.timeout.dial"),
+			ReadTimeout:  viper.GetDuration("store.redis.timeout.read"),
+			WriteTimeout: viper.GetDuration("store.redis.timeout.write"),
+			PoolTimeout:  viper.GetDuration("store.redis.timeout.pool"),
+		}
+
+		if viper.GetBool("store.redis.tls") {
+			options.TLSConfig = &tls.Config{
+				ServerName: viper.GetString("store.redis.servername"),
+			}
+		}
+
+		redisClient := r.NewClient(options)
+		storeClient = redisstore.New(redisClient,
+			redisstore.WithDefaultTtl(viper.GetDuration("store.redis.default.ttl")),
+		)
+	}
+
 	// Create plugin executor
 	pluginExec := plugin_executor.NewPluginExecutor(
 		plugin_executor.NewOptions(
 			plugin_executor.WithLogger(logger),
 			plugin_executor.WithLanguage(language),
+			plugin_executor.WithStore(storeClient),
 		),
 	)
 
@@ -179,6 +237,7 @@ func main() {
 		Language:             language,
 		Logger:               logger,
 		VariableStoreAddress: grpcAddress,
+		Store:                storeClient, // Pass store for reading context bindings
 	})
 	if err != nil {
 		logger.Error("could not create sandbox plugin", zap.Error(err))

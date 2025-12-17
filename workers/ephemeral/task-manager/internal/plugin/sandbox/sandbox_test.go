@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -310,25 +311,28 @@ func TestBuildContextJSON(t *testing.T) {
 	logger := zap.NewNop()
 	plugin := &SandboxPlugin{logger: logger}
 
+	emptyContext := `{"globals":{},"outputs":{}}`
+
 	tests := []struct {
-		name        string
-		props       *transportv1.Request_Data_Data_Props
-		expectEmpty bool
+		name           string
+		props          *transportv1.Request_Data_Data_Props
+		expectedResult string
 	}{
 		{
-			name:        "nil props",
-			props:       nil,
-			expectEmpty: true,
+			name:           "nil props",
+			props:          nil,
+			expectedResult: emptyContext,
 		},
 		{
 			name: "nil action configuration",
 			props: &transportv1.Request_Data_Data_Props{
 				ActionConfiguration: nil,
 			},
-			expectEmpty: true,
+			expectedResult: emptyContext,
 		},
 		{
-			name: "with action configuration",
+			// Without a store or binding keys, even with action config, returns empty context
+			name: "with action configuration but no store",
 			props: &transportv1.Request_Data_Data_Props{
 				ActionConfiguration: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -336,22 +340,19 @@ func TestBuildContextJSON(t *testing.T) {
 					},
 				},
 			},
-			expectEmpty: false,
+			expectedResult: emptyContext,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := plugin.buildContextJSON(tt.props)
+			result, err := plugin.buildContextJSON(context.Background(), tt.props)
 			if err != nil {
 				t.Errorf("buildContextJSON() error = %v", err)
 				return
 			}
-			if tt.expectEmpty && result != "{}" {
-				t.Errorf("buildContextJSON() = %v, want {}", result)
-			}
-			if !tt.expectEmpty && result == "{}" {
-				t.Errorf("buildContextJSON() = {}, want non-empty")
+			if result != tt.expectedResult {
+				t.Errorf("buildContextJSON() = %v, want %v", result, tt.expectedResult)
 			}
 		})
 	}

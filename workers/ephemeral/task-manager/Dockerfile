@@ -20,7 +20,7 @@ COPY workers/ephemeral/task-manager/go.mod workers/ephemeral/task-manager/go.sum
 WORKDIR /app/workers/ephemeral/task-manager
 RUN go mod download
 
-# Copy source code
+# Copy source code and pre-generated protobuf files
 COPY workers/ephemeral/task-manager/internal/ ./internal/
 COPY workers/ephemeral/task-manager/cmd/ ./cmd/
 
