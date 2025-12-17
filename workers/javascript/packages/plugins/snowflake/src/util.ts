@@ -44,7 +44,7 @@ export function connectionOptionsFromDatasourceConfiguration(datasourceConfigura
       handleMissingFields(missingFields);
       // remove leading and trailing whitespace, as snowflake will not accept private keys with that
       let privateKey = datasourceConfiguration.keyPair.privateKey.trim();
-      let password = datasourceConfiguration?.keyPair?.password;
+      const password = datasourceConfiguration?.keyPair?.password;
       if (password) {
         privateKey = getPrivateKeyValue({ privateKey, password });
       }

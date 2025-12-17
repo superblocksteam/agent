@@ -349,7 +349,8 @@ export abstract class SQLDatabasePlugin extends BasePlugin {
         // if this binding has been handled already, keep the value assigned to it the first time
         if (!Object.prototype.hasOwnProperty.call(bindingResolution, toEval)) {
           // TODO: Include MSSQL
-          bindingResolution[toEval] = this.parameterType === '{{' ? `{{PARAM_${bindingCount++}}}` : `${this.parameterType}${bindingCount++}`;
+          bindingResolution[toEval] =
+            this.parameterType === '{{' ? `{{PARAM_${bindingCount++}}}` : `${this.parameterType}${bindingCount++}`;
           resolutionContext.context.preparedStatementContext.push(bindingResolutions[toEval]);
         }
       } else {

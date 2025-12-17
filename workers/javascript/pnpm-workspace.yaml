@@ -1,6 +1,7 @@
 ---
 packages:
   - 'packages/**'
+  - '../ephemeral/javascript-sandbox'
 onlyBuiltDependencies:
   - "@swc/core"
   - couchbase

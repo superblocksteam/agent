@@ -199,17 +199,17 @@ class SalesforceSession {
         }
       });
       // Filter sobjects array: queryable: true, deprecatedAndHidden: false, associateEntityType: null
-      // 
-      // associateEntityType are relation objects -- for now we are filtering them out 
-      // to not have so many objects. We might want to revisit this later if Clark 
+      //
+      // associateEntityType are relation objects -- for now we are filtering them out
+      // to not have so many objects. We might want to revisit this later if Clark
       // needs to do more complex queries.
-      return resp.data.sobjects
-        ?.filter((obj: SalesforceObject) => 
-          obj.queryable === true && 
-          obj.deprecatedAndHidden === false && 
-          obj.associateEntityType === null
-        )
-        ?.map((obj: SalesforceObject) => obj.name) || [];
+      return (
+        resp.data.sobjects
+          ?.filter(
+            (obj: SalesforceObject) => obj.queryable === true && obj.deprecatedAndHidden === false && obj.associateEntityType === null
+          )
+          ?.map((obj: SalesforceObject) => obj.name) || []
+      );
     } catch (e) {
       throw _handleError(
         this.pluginName,
@@ -677,9 +677,9 @@ export default class SalesforcePlugin extends BasePlugin {
     const session = await this._getSession(datasourceConfiguration);
 
     const tables: Table[] = [];
-    
+
     const availableObjects = await session.getAvailableObjects();
-    
+
     await Promise.all(
       availableObjects.map(async (objectName) => {
         await this.fetchFieldsForObject(session, objectName, tables);

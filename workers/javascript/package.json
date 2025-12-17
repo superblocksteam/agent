@@ -3,5 +3,10 @@
   "version": "0.0.1",
   "engines": {
     "node": "20.19.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "prettier": "3.3.3"
+    }
   }
 }
