@@ -20,6 +20,7 @@ import (
 	"github.com/superblocksteam/agent/internal/fetch"
 	fetchmocks "github.com/superblocksteam/agent/internal/fetch/mocks"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
+	"github.com/superblocksteam/agent/pkg/constants"
 	sberror "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/worker"
@@ -372,6 +373,93 @@ func TestInjectGlobalUserIntoInputs(t *testing.T) {
 			protoMapEqual(t, tc.expectedInputsAfterInjection, newInputs)
 			// make sure original inputs was not mutated
 			protoMapEqual(t, givenInputs, tc.inputs)
+		})
+	}
+}
+
+// This test ensures /v2/test requires the X-Superblocks-Authorization header.
+//
+// Without this check, attackers could use bindings like {{Env.SECRET}} in datasource_config
+// to fish for environment variables on the agent, even without valid credentials.
+//
+// Note: We only check the header is present, not that the JWT is valid.
+func TestTestAuthorizationRequired(t *testing.T) {
+	testCases := []struct {
+		name            string
+		contextWithAuth bool
+		expectError     bool
+		expectAuthError bool
+	}{
+		{
+			name:            "rejects request without authorization header",
+			contextWithAuth: false,
+			expectError:     true,
+			expectAuthError: true,
+		},
+		{
+			name:            "allows request with authorization header",
+			contextWithAuth: true,
+			expectError:     false,
+			expectAuthError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tm := &mocks.TokenManager{}
+			ctx := context.Background()
+
+			// Auth middleware sets this flag based on whether X-Superblocks-Authorization header exists
+			if tc.contextWithAuth {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, true)
+			} else {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, false)
+			}
+
+			mockWorker := &worker.MockClient{}
+			fetcher := &fetchmocks.Fetcher{}
+
+			// Mock FetchIntegrations to avoid unexpected call errors
+			fetcher.On("FetchIntegrations", mock.Anything, mock.Anything, mock.Anything).Return(new(integrationv1.GetIntegrationsResponse), nil).Maybe()
+
+			// Mock TokenManager AddTokenIfNeeded
+			tm.On("AddTokenIfNeeded", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(types.TokenPayload{}, nil).Maybe()
+
+			// Mock Worker TestConnection
+			mockWorker.On("TestConnection", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+
+			defer metrics.SetupForTesting()()
+			server := NewServer(&Config{
+				TokenManager:  tm,
+				Logger:        zap.NewNop(),
+				Store:         store.Memory(),
+				Worker:        mockWorker,
+				Fetcher:       fetcher,
+				SecretManager: secrets.NewSecretManager(),
+			})
+
+			req := &apiv1.TestRequest{
+				IntegrationType: "gsheets",
+				DatasourceConfig: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"spreadsheetId": structpb.NewStringValue("test-id"),
+					},
+				},
+			}
+
+			_, err := server.Test(ctx, req)
+
+			if tc.expectError {
+				require.Error(t, err)
+				if tc.expectAuthError {
+					assert.True(t, sberror.IsAuthorizationError(err), "expected AuthorizationError")
+				}
+			} else {
+				// May fail for other reasons, but shouldn't be an auth error
+				if err != nil {
+					assert.False(t, sberror.IsAuthorizationError(err), "should not get AuthorizationError when auth header is present")
+				}
+			}
 		})
 	}
 }

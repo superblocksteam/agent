@@ -942,6 +942,12 @@ func (s *server) MetadataDeprecated(ctx context.Context, req *apiv1.MetadataRequ
 }
 
 func (s *server) Test(ctx context.Context, req *apiv1.TestRequest) (*apiv1.TestResponse, error) {
+	// Require authorization header to prevent unauthenticated code execution
+	requestUsesJwtAuth, err := constants.GetRequestUsesJwtAuth(ctx)
+	if err != nil || !requestUsesJwtAuth {
+		return nil, sberror.AuthorizationError(errors.New("Authorization header required"))
+	}
+
 	var integration string
 	{
 		if req != nil && req.GetDatasourceConfig() != nil && req.GetDatasourceConfig().Fields != nil {
