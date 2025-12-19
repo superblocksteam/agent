@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -309,8 +315,8 @@ proto.api.v1.Resolved.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Resolved.toObject = function(includeInstance, msg) {
   var f, obj = {
-value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
-bindingsList: jspb.Message.toObjectList(msg.getBindingsList(),
+    value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+    bindingsList: jspb.Message.toObjectList(msg.getBindingsList(),
     google_protobuf_struct_pb.Value.toObject, includeInstance)
   };
 
@@ -324,7 +330,7 @@ bindingsList: jspb.Message.toObjectList(msg.getBindingsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Resolved}
  */
 proto.api.v1.Resolved.deserializeBinary = function(bytes) {
@@ -542,16 +548,16 @@ proto.api.v1.Event.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Event.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-type: jspb.Message.getFieldWithDefault(msg, 2, 0),
-timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-start: (f = msg.getStart()) && proto.api.v1.Event.Start.toObject(includeInstance, f),
-end: (f = msg.getEnd()) && proto.api.v1.Event.End.toObject(includeInstance, f),
-data: (f = msg.getData()) && proto.api.v1.Event.Data.toObject(includeInstance, f),
-request: (f = msg.getRequest()) && proto.api.v1.Event.Request.toObject(includeInstance, f),
-response: (f = msg.getResponse()) && proto.api.v1.Event.Response.toObject(includeInstance, f),
-parent: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-executionIndex: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    start: (f = msg.getStart()) && proto.api.v1.Event.Start.toObject(includeInstance, f),
+    end: (f = msg.getEnd()) && proto.api.v1.Event.End.toObject(includeInstance, f),
+    data: (f = msg.getData()) && proto.api.v1.Event.Data.toObject(includeInstance, f),
+    request: (f = msg.getRequest()) && proto.api.v1.Event.Request.toObject(includeInstance, f),
+    response: (f = msg.getResponse()) && proto.api.v1.Event.Response.toObject(includeInstance, f),
+    parent: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    executionIndex: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -564,7 +570,7 @@ executionIndex: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event}
  */
 proto.api.v1.Event.deserializeBinary = function(bytes) {
@@ -589,7 +595,7 @@ proto.api.v1.Event.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -627,11 +633,11 @@ proto.api.v1.Event.deserializeBinaryFromReader = function(msg, reader) {
       msg.setResponse(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setParent(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExecutionIndex(value);
       break;
     default:
@@ -774,7 +780,7 @@ proto.api.v1.Event.Data.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Event.Data.toObject = function(includeInstance, msg) {
   var f, obj = {
-value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f)
+    value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -787,7 +793,7 @@ value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.Data}
  */
 proto.api.v1.Event.Data.deserializeBinary = function(bytes) {
@@ -938,7 +944,7 @@ proto.api.v1.Event.Request.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.Request}
  */
 proto.api.v1.Event.Request.deserializeBinary = function(bytes) {
@@ -1033,8 +1039,8 @@ proto.api.v1.Event.Response.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Event.Response.toObject = function(includeInstance, msg) {
   var f, obj = {
-last: jspb.Message.getFieldWithDefault(msg, 1, ""),
-errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
+    last: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
     common_v1_errors_pb.Error.toObject, includeInstance)
   };
 
@@ -1048,7 +1054,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.Response}
  */
 proto.api.v1.Event.Response.deserializeBinary = function(bytes) {
@@ -1073,7 +1079,7 @@ proto.api.v1.Event.Response.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setLast(value);
       break;
     case 3:
@@ -1229,7 +1235,7 @@ proto.api.v1.Event.Start.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.Start}
  */
 proto.api.v1.Event.Start.deserializeBinary = function(bytes) {
@@ -1317,11 +1323,11 @@ proto.api.v1.Event.End.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Event.End.toObject = function(includeInstance, msg) {
   var f, obj = {
-performance: (f = msg.getPerformance()) && proto.api.v1.Performance.toObject(includeInstance, f),
-output: (f = msg.getOutput()) && proto.api.v1.Output.toObject(includeInstance, f),
-error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstance, f),
-status: jspb.Message.getFieldWithDefault(msg, 4, 0),
-resolvedMap: (f = msg.getResolvedMap()) ? f.toObject(includeInstance, proto.api.v1.Resolved.toObject) : []
+    performance: (f = msg.getPerformance()) && proto.api.v1.Performance.toObject(includeInstance, f),
+    output: (f = msg.getOutput()) && proto.api.v1.Output.toObject(includeInstance, f),
+    error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstance, f),
+    status: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    resolvedMap: (f = msg.getResolvedMap()) ? f.toObject(includeInstance, proto.api.v1.Resolved.toObject) : []
   };
 
   if (includeInstance) {
@@ -1334,7 +1340,7 @@ resolvedMap: (f = msg.getResolvedMap()) ? f.toObject(includeInstance, proto.api.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Event.End}
  */
 proto.api.v1.Event.End.deserializeBinary = function(bytes) {
@@ -1380,7 +1386,7 @@ proto.api.v1.Event.End.deserializeBinaryFromReader = function(msg, reader) {
     case 5:
       var value = msg.getResolvedMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Resolved.deserializeBinaryFromReader, "", new proto.api.v1.Resolved());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Resolved.deserializeBinaryFromReader, "", new proto.api.v1.Resolved());
          });
       break;
     default:
@@ -1445,13 +1451,7 @@ proto.api.v1.Event.End.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getResolvedMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getResolvedMap(true),
-    5,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.api.v1.Resolved.serializeBinaryToWriter);
+    f.serializeBinary(5, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api.v1.Resolved.serializeBinaryToWriter);
   }
 };
 
@@ -1970,12 +1970,12 @@ proto.api.v1.Performance.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Performance.toObject = function(includeInstance, msg) {
   var f, obj = {
-start: jspb.Message.getFieldWithDefault(msg, 1, 0),
-finish: jspb.Message.getFieldWithDefault(msg, 2, 0),
-total: jspb.Message.getFieldWithDefault(msg, 3, 0),
-execution: jspb.Message.getFieldWithDefault(msg, 4, 0),
-overhead: jspb.Message.getFieldWithDefault(msg, 5, 0),
-customMap: (f = msg.getCustomMap()) ? f.toObject(includeInstance, undefined) : []
+    start: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    finish: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    total: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    execution: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    overhead: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    customMap: (f = msg.getCustomMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -1988,7 +1988,7 @@ customMap: (f = msg.getCustomMap()) ? f.toObject(includeInstance, undefined) : [
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Performance}
  */
 proto.api.v1.Performance.deserializeBinary = function(bytes) {
@@ -2035,7 +2035,7 @@ proto.api.v1.Performance.deserializeBinaryFromReader = function(msg, reader) {
     case 6:
       var value = msg.getCustomMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readInt64, null, "", 0);
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readInt64, null, "", 0);
          });
       break;
     default:
@@ -2104,12 +2104,7 @@ proto.api.v1.Performance.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getCustomMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getCustomMap(true),
-    6,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeInt64);
+    f.serializeBinary(6, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeInt64);
   }
 };
 
@@ -2266,11 +2261,11 @@ proto.api.v1.Output.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Output.toObject = function(includeInstance, msg) {
   var f, obj = {
-result: (f = msg.getResult()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
-request: jspb.Message.getFieldWithDefault(msg, 2, ""),
-stdoutList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f,
-stderrList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
-requestV2: (f = msg.getRequestV2()) && proto.api.v1.Output.Request.toObject(includeInstance, f)
+    result: (f = msg.getResult()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+    request: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    stdoutList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f,
+    stderrList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
+    requestV2: (f = msg.getRequestV2()) && proto.api.v1.Output.Request.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2283,7 +2278,7 @@ requestV2: (f = msg.getRequestV2()) && proto.api.v1.Output.Request.toObject(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Output}
  */
 proto.api.v1.Output.deserializeBinary = function(bytes) {
@@ -2313,15 +2308,15 @@ proto.api.v1.Output.deserializeBinaryFromReader = function(msg, reader) {
       msg.setResult(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRequest(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addStdout(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addStderr(value);
       break;
     case 5:
@@ -2430,8 +2425,8 @@ proto.api.v1.Output.Request.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Output.Request.toObject = function(includeInstance, msg) {
   var f, obj = {
-summary: jspb.Message.getFieldWithDefault(msg, 1, ""),
-metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f)
+    summary: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2444,7 +2439,7 @@ metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Output.Request}
  */
 proto.api.v1.Output.Request.deserializeBinary = function(bytes) {
@@ -2469,7 +2464,7 @@ proto.api.v1.Output.Request.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSummary(value);
       break;
     case 5:
@@ -2784,10 +2779,10 @@ proto.api.v1.OutputOld.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.OutputOld.toObject = function(includeInstance, msg) {
   var f, obj = {
-output: (f = msg.getOutput()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
-logList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
-request: jspb.Message.getFieldWithDefault(msg, 3, ""),
-placeHoldersInfo: (f = msg.getPlaceHoldersInfo()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f)
+    output: (f = msg.getOutput()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+    logList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
+    request: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    placeHoldersInfo: (f = msg.getPlaceHoldersInfo()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2800,7 +2795,7 @@ placeHoldersInfo: (f = msg.getPlaceHoldersInfo()) && google_protobuf_struct_pb.V
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.OutputOld}
  */
 proto.api.v1.OutputOld.deserializeBinary = function(bytes) {
@@ -2830,11 +2825,11 @@ proto.api.v1.OutputOld.deserializeBinaryFromReader = function(msg, reader) {
       msg.setOutput(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addLog(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRequest(value);
       break;
     case 4:

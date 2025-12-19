@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
 goog.object.extend(proto, google_protobuf_struct_pb);
@@ -480,21 +486,21 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger.prototype.toObject = fun
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger.toObject = function(includeInstance, msg) {
   var f, obj = {
-swagger: jspb.Message.getFieldWithDefault(msg, 1, ""),
-info: (f = msg.getInfo()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Info.toObject(includeInstance, f),
-host: jspb.Message.getFieldWithDefault(msg, 3, ""),
-basePath: jspb.Message.getFieldWithDefault(msg, 4, ""),
-schemesList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
-consumesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
-producesList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
-responsesMap: (f = msg.getResponsesMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.toObject) : [],
-securityDefinitions: (f = msg.getSecurityDefinitions()) && proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions.toObject(includeInstance, f),
-securityList: jspb.Message.toObjectList(msg.getSecurityList(),
+    swagger: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    info: (f = msg.getInfo()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Info.toObject(includeInstance, f),
+    host: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    basePath: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    schemesList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
+    consumesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
+    producesList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
+    responsesMap: (f = msg.getResponsesMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.toObject) : [],
+    securityDefinitions: (f = msg.getSecurityDefinitions()) && proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions.toObject(includeInstance, f),
+    securityList: jspb.Message.toObjectList(msg.getSecurityList(),
     proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.toObject, includeInstance),
-tagsList: jspb.Message.toObjectList(msg.getTagsList(),
+    tagsList: jspb.Message.toObjectList(msg.getTagsList(),
     proto.grpc.gateway.protoc_gen_openapiv2.options.Tag.toObject, includeInstance),
-externalDocs: (f = msg.getExternalDocs()) && proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject(includeInstance, f),
-extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
+    externalDocs: (f = msg.getExternalDocs()) && proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject(includeInstance, f),
+    extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
   };
 
   if (includeInstance) {
@@ -507,7 +513,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger.deserializeBinary = function(bytes) {
@@ -532,7 +538,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSwagger(value);
       break;
     case 2:
@@ -541,28 +547,31 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger.deserializeBinaryFromRea
       msg.setInfo(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHost(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBasePath(value);
       break;
     case 5:
-      reader.readPackableEnumInto(msg.getSchemesList());
+      var values = /** @type {!Array<!proto.grpc.gateway.protoc_gen_openapiv2.options.Scheme>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
+      for (var i = 0; i < values.length; i++) {
+        msg.addSchemes(values[i]);
+      }
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addConsumes(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addProduces(value);
       break;
     case 10:
       var value = msg.getResponsesMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.Response());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.Response());
          });
       break;
     case 11:
@@ -588,7 +597,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger.deserializeBinaryFromRea
     case 15:
       var value = msg.getExtensionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -672,13 +681,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Swagger.serializeBinaryToWriter 
   }
   f = message.getResponsesMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getResponsesMap(true),
-    10,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.grpc.gateway.protoc_gen_openapiv2.options.Response.serializeBinaryToWriter);
+    f.serializeBinary(10, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.serializeBinaryToWriter);
   }
   f = message.getSecurityDefinitions();
   if (f != null) {
@@ -714,13 +717,7 @@ jspb.internal.public_for_gencode.serializeMapToBinary(
   }
   f = message.getExtensionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getExtensionsMap(true),
-    15,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(15, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -1162,20 +1159,20 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Operation.prototype.toObject = f
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Operation.toObject = function(includeInstance, msg) {
   var f, obj = {
-tagsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
-summary: jspb.Message.getFieldWithDefault(msg, 2, ""),
-description: jspb.Message.getFieldWithDefault(msg, 3, ""),
-externalDocs: (f = msg.getExternalDocs()) && proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject(includeInstance, f),
-operationId: jspb.Message.getFieldWithDefault(msg, 5, ""),
-consumesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
-producesList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
-responsesMap: (f = msg.getResponsesMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.toObject) : [],
-schemesList: (f = jspb.Message.getRepeatedField(msg, 10)) == null ? undefined : f,
-deprecated: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
-securityList: jspb.Message.toObjectList(msg.getSecurityList(),
+    tagsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
+    summary: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    description: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    externalDocs: (f = msg.getExternalDocs()) && proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject(includeInstance, f),
+    operationId: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    consumesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
+    producesList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
+    responsesMap: (f = msg.getResponsesMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.toObject) : [],
+    schemesList: (f = jspb.Message.getRepeatedField(msg, 10)) == null ? undefined : f,
+    deprecated: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
+    securityList: jspb.Message.toObjectList(msg.getSecurityList(),
     proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.toObject, includeInstance),
-extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : [],
-parameters: (f = msg.getParameters()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Parameters.toObject(includeInstance, f)
+    extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : [],
+    parameters: (f = msg.getParameters()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Parameters.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1188,7 +1185,7 @@ parameters: (f = msg.getParameters()) && proto.grpc.gateway.protoc_gen_openapiv2
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Operation}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Operation.deserializeBinary = function(bytes) {
@@ -1213,15 +1210,15 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Operation.deserializeBinaryFromR
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addTags(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSummary(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 4:
@@ -1230,25 +1227,28 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Operation.deserializeBinaryFromR
       msg.setExternalDocs(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOperationId(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addConsumes(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addProduces(value);
       break;
     case 9:
       var value = msg.getResponsesMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.Response());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.Response());
          });
       break;
     case 10:
-      reader.readPackableEnumInto(msg.getSchemesList());
+      var values = /** @type {!Array<!proto.grpc.gateway.protoc_gen_openapiv2.options.Scheme>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
+      for (var i = 0; i < values.length; i++) {
+        msg.addSchemes(values[i]);
+      }
       break;
     case 11:
       var value = /** @type {boolean} */ (reader.readBool());
@@ -1262,7 +1262,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Operation.deserializeBinaryFromR
     case 13:
       var value = msg.getExtensionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     case 14:
@@ -1351,13 +1351,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Operation.serializeBinaryToWrite
   }
   f = message.getResponsesMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getResponsesMap(true),
-    9,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.grpc.gateway.protoc_gen_openapiv2.options.Response.serializeBinaryToWriter);
+    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Response.serializeBinaryToWriter);
   }
   f = message.getSchemesList();
   if (f.length > 0) {
@@ -1383,13 +1377,7 @@ jspb.internal.public_for_gencode.serializeMapToBinary(
   }
   f = message.getExtensionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getExtensionsMap(true),
-    13,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(13, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
   f = message.getParameters();
   if (f != null) {
@@ -1819,7 +1807,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Parameters.prototype.toObject = 
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Parameters.toObject = function(includeInstance, msg) {
   var f, obj = {
-headersList: jspb.Message.toObjectList(msg.getHeadersList(),
+    headersList: jspb.Message.toObjectList(msg.getHeadersList(),
     proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter.toObject, includeInstance)
   };
 
@@ -1833,7 +1821,7 @@ headersList: jspb.Message.toObjectList(msg.getHeadersList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Parameters}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Parameters.deserializeBinary = function(bytes) {
@@ -1972,11 +1960,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter.prototype.toObje
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-description: jspb.Message.getFieldWithDefault(msg, 2, ""),
-type: jspb.Message.getFieldWithDefault(msg, 3, 0),
-format: jspb.Message.getFieldWithDefault(msg, 4, ""),
-required: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    description: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    format: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    required: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
   };
 
   if (includeInstance) {
@@ -1989,7 +1977,7 @@ required: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter.deserializeBinary = function(bytes) {
@@ -2014,11 +2002,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter.deserializeBinar
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 3:
@@ -2026,7 +2014,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.HeaderParameter.deserializeBinar
       msg.setType(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFormat(value);
       break;
     case 5:
@@ -2233,11 +2221,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Header.prototype.toObject = func
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Header.toObject = function(includeInstance, msg) {
   var f, obj = {
-description: jspb.Message.getFieldWithDefault(msg, 1, ""),
-type: jspb.Message.getFieldWithDefault(msg, 2, ""),
-format: jspb.Message.getFieldWithDefault(msg, 3, ""),
-pb_default: jspb.Message.getFieldWithDefault(msg, 6, ""),
-pattern: jspb.Message.getFieldWithDefault(msg, 13, "")
+    description: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    format: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    pb_default: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    pattern: jspb.Message.getFieldWithDefault(msg, 13, "")
   };
 
   if (includeInstance) {
@@ -2250,7 +2238,7 @@ pattern: jspb.Message.getFieldWithDefault(msg, 13, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Header}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Header.deserializeBinary = function(bytes) {
@@ -2275,23 +2263,23 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Header.deserializeBinaryFromRead
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setType(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFormat(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDefault(value);
       break;
     case 13:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPattern(value);
       break;
     default:
@@ -2483,11 +2471,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Response.prototype.toObject = fu
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Response.toObject = function(includeInstance, msg) {
   var f, obj = {
-description: jspb.Message.getFieldWithDefault(msg, 1, ""),
-schema: (f = msg.getSchema()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Schema.toObject(includeInstance, f),
-headersMap: (f = msg.getHeadersMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.Header.toObject) : [],
-examplesMap: (f = msg.getExamplesMap()) ? f.toObject(includeInstance, undefined) : [],
-extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
+    description: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    schema: (f = msg.getSchema()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Schema.toObject(includeInstance, f),
+    headersMap: (f = msg.getHeadersMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.Header.toObject) : [],
+    examplesMap: (f = msg.getExamplesMap()) ? f.toObject(includeInstance, undefined) : [],
+    extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
   };
 
   if (includeInstance) {
@@ -2500,7 +2488,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Response}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Response.deserializeBinary = function(bytes) {
@@ -2525,7 +2513,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Response.deserializeBinaryFromRe
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 2:
@@ -2536,19 +2524,19 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Response.deserializeBinaryFromRe
     case 3:
       var value = msg.getHeadersMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Header.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.Header());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Header.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.Header());
          });
       break;
     case 4:
       var value = msg.getExamplesMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readStringRequireUtf8, null, "", "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
     case 5:
       var value = msg.getExtensionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -2597,32 +2585,15 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Response.serializeBinaryToWriter
   }
   f = message.getHeadersMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getHeadersMap(true),
-    3,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.grpc.gateway.protoc_gen_openapiv2.options.Header.serializeBinaryToWriter);
+    f.serializeBinary(3, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.Header.serializeBinaryToWriter);
   }
   f = message.getExamplesMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getExamplesMap(true),
-    4,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeString);
+    f.serializeBinary(4, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
   f = message.getExtensionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getExtensionsMap(true),
-    5,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(5, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -2783,13 +2754,13 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Info.prototype.toObject = functi
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Info.toObject = function(includeInstance, msg) {
   var f, obj = {
-title: jspb.Message.getFieldWithDefault(msg, 1, ""),
-description: jspb.Message.getFieldWithDefault(msg, 2, ""),
-termsOfService: jspb.Message.getFieldWithDefault(msg, 3, ""),
-contact: (f = msg.getContact()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Contact.toObject(includeInstance, f),
-license: (f = msg.getLicense()) && proto.grpc.gateway.protoc_gen_openapiv2.options.License.toObject(includeInstance, f),
-version: jspb.Message.getFieldWithDefault(msg, 6, ""),
-extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
+    title: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    description: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    termsOfService: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    contact: (f = msg.getContact()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Contact.toObject(includeInstance, f),
+    license: (f = msg.getLicense()) && proto.grpc.gateway.protoc_gen_openapiv2.options.License.toObject(includeInstance, f),
+    version: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
   };
 
   if (includeInstance) {
@@ -2802,7 +2773,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Info}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Info.deserializeBinary = function(bytes) {
@@ -2827,15 +2798,15 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Info.deserializeBinaryFromReader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTitle(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTermsOfService(value);
       break;
     case 4:
@@ -2849,13 +2820,13 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Info.deserializeBinaryFromReader
       msg.setLicense(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setVersion(value);
       break;
     case 7:
       var value = msg.getExtensionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -2933,13 +2904,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Info.serializeBinaryToWriter = f
   }
   f = message.getExtensionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getExtensionsMap(true),
-    7,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(7, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -3145,9 +3110,9 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Contact.prototype.toObject = fun
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Contact.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-url: jspb.Message.getFieldWithDefault(msg, 2, ""),
-email: jspb.Message.getFieldWithDefault(msg, 3, "")
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    url: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    email: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -3160,7 +3125,7 @@ email: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Contact}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Contact.deserializeBinary = function(bytes) {
@@ -3185,15 +3150,15 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Contact.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrl(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmail(value);
       break;
     default:
@@ -3335,8 +3300,8 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.License.prototype.toObject = fun
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.License.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-url: jspb.Message.getFieldWithDefault(msg, 2, "")
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    url: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -3349,7 +3314,7 @@ url: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.License}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.License.deserializeBinary = function(bytes) {
@@ -3374,11 +3339,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.License.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrl(value);
       break;
     default:
@@ -3495,8 +3460,8 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.prototype.
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject = function(includeInstance, msg) {
   var f, obj = {
-description: jspb.Message.getFieldWithDefault(msg, 1, ""),
-url: jspb.Message.getFieldWithDefault(msg, 2, "")
+    description: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    url: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -3509,7 +3474,7 @@ url: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.deserializeBinary = function(bytes) {
@@ -3534,11 +3499,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.deserializ
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrl(value);
       break;
     default:
@@ -3655,11 +3620,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Schema.prototype.toObject = func
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Schema.toObject = function(includeInstance, msg) {
   var f, obj = {
-jsonSchema: (f = msg.getJsonSchema()) && proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.toObject(includeInstance, f),
-discriminator: jspb.Message.getFieldWithDefault(msg, 2, ""),
-readOnly: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-externalDocs: (f = msg.getExternalDocs()) && proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject(includeInstance, f),
-example: jspb.Message.getFieldWithDefault(msg, 6, "")
+    jsonSchema: (f = msg.getJsonSchema()) && proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.toObject(includeInstance, f),
+    discriminator: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    readOnly: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
+    externalDocs: (f = msg.getExternalDocs()) && proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject(includeInstance, f),
+    example: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -3672,7 +3637,7 @@ example: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Schema}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Schema.deserializeBinary = function(bytes) {
@@ -3702,7 +3667,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Schema.deserializeBinaryFromRead
       msg.setJsonSchema(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDiscriminator(value);
       break;
     case 3:
@@ -3715,7 +3680,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Schema.deserializeBinaryFromRead
       msg.setExternalDocs(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExample(value);
       break;
     default:
@@ -3954,32 +3919,32 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.prototype.toObject = 
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.toObject = function(includeInstance, msg) {
   var f, obj = {
-ref: jspb.Message.getFieldWithDefault(msg, 3, ""),
-title: jspb.Message.getFieldWithDefault(msg, 5, ""),
-description: jspb.Message.getFieldWithDefault(msg, 6, ""),
-pb_default: jspb.Message.getFieldWithDefault(msg, 7, ""),
-readOnly: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
-example: jspb.Message.getFieldWithDefault(msg, 9, ""),
-multipleOf: jspb.Message.getFloatingPointFieldWithDefault(msg, 10, 0.0),
-maximum: jspb.Message.getFloatingPointFieldWithDefault(msg, 11, 0.0),
-exclusiveMaximum: jspb.Message.getBooleanFieldWithDefault(msg, 12, false),
-minimum: jspb.Message.getFloatingPointFieldWithDefault(msg, 13, 0.0),
-exclusiveMinimum: jspb.Message.getBooleanFieldWithDefault(msg, 14, false),
-maxLength: jspb.Message.getFieldWithDefault(msg, 15, 0),
-minLength: jspb.Message.getFieldWithDefault(msg, 16, 0),
-pattern: jspb.Message.getFieldWithDefault(msg, 17, ""),
-maxItems: jspb.Message.getFieldWithDefault(msg, 20, 0),
-minItems: jspb.Message.getFieldWithDefault(msg, 21, 0),
-uniqueItems: jspb.Message.getBooleanFieldWithDefault(msg, 22, false),
-maxProperties: jspb.Message.getFieldWithDefault(msg, 24, 0),
-minProperties: jspb.Message.getFieldWithDefault(msg, 25, 0),
-requiredList: (f = jspb.Message.getRepeatedField(msg, 26)) == null ? undefined : f,
-arrayList: (f = jspb.Message.getRepeatedField(msg, 34)) == null ? undefined : f,
-typeList: (f = jspb.Message.getRepeatedField(msg, 35)) == null ? undefined : f,
-format: jspb.Message.getFieldWithDefault(msg, 36, ""),
-enumList: (f = jspb.Message.getRepeatedField(msg, 46)) == null ? undefined : f,
-fieldConfiguration: (f = msg.getFieldConfiguration()) && proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration.toObject(includeInstance, f),
-extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
+    ref: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    title: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    description: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    pb_default: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    readOnly: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
+    example: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    multipleOf: jspb.Message.getFloatingPointFieldWithDefault(msg, 10, 0.0),
+    maximum: jspb.Message.getFloatingPointFieldWithDefault(msg, 11, 0.0),
+    exclusiveMaximum: jspb.Message.getBooleanFieldWithDefault(msg, 12, false),
+    minimum: jspb.Message.getFloatingPointFieldWithDefault(msg, 13, 0.0),
+    exclusiveMinimum: jspb.Message.getBooleanFieldWithDefault(msg, 14, false),
+    maxLength: jspb.Message.getFieldWithDefault(msg, 15, 0),
+    minLength: jspb.Message.getFieldWithDefault(msg, 16, 0),
+    pattern: jspb.Message.getFieldWithDefault(msg, 17, ""),
+    maxItems: jspb.Message.getFieldWithDefault(msg, 20, 0),
+    minItems: jspb.Message.getFieldWithDefault(msg, 21, 0),
+    uniqueItems: jspb.Message.getBooleanFieldWithDefault(msg, 22, false),
+    maxProperties: jspb.Message.getFieldWithDefault(msg, 24, 0),
+    minProperties: jspb.Message.getFieldWithDefault(msg, 25, 0),
+    requiredList: (f = jspb.Message.getRepeatedField(msg, 26)) == null ? undefined : f,
+    arrayList: (f = jspb.Message.getRepeatedField(msg, 34)) == null ? undefined : f,
+    typeList: (f = jspb.Message.getRepeatedField(msg, 35)) == null ? undefined : f,
+    format: jspb.Message.getFieldWithDefault(msg, 36, ""),
+    enumList: (f = jspb.Message.getRepeatedField(msg, 46)) == null ? undefined : f,
+    fieldConfiguration: (f = msg.getFieldConfiguration()) && proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration.toObject(includeInstance, f),
+    extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
   };
 
   if (includeInstance) {
@@ -3992,7 +3957,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.deserializeBinary = function(bytes) {
@@ -4017,19 +3982,19 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.deserializeBinaryFrom
     var field = reader.getFieldNumber();
     switch (field) {
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRef(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTitle(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDefault(value);
       break;
     case 8:
@@ -4037,7 +4002,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.deserializeBinaryFrom
       msg.setReadOnly(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExample(value);
       break;
     case 10:
@@ -4069,7 +4034,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.deserializeBinaryFrom
       msg.setMinLength(value);
       break;
     case 17:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPattern(value);
       break;
     case 20:
@@ -4093,22 +4058,25 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.deserializeBinaryFrom
       msg.setMinProperties(value);
       break;
     case 26:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addRequired(value);
       break;
     case 34:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addArray(value);
       break;
     case 35:
-      reader.readPackableEnumInto(msg.getTypeList());
+      var values = /** @type {!Array<!proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.JSONSchemaSimpleTypes>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
+      for (var i = 0; i < values.length; i++) {
+        msg.addType(values[i]);
+      }
       break;
     case 36:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFormat(value);
       break;
     case 46:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addEnum(value);
       break;
     case 1001:
@@ -4119,7 +4087,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.deserializeBinaryFrom
     case 48:
       var value = msg.getExtensionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -4329,13 +4297,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.serializeBinaryToWrit
   }
   f = message.getExtensionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getExtensionsMap(true),
-    48,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(48, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -4386,7 +4348,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration.pr
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration.toObject = function(includeInstance, msg) {
   var f, obj = {
-pathParamName: jspb.Message.getFieldWithDefault(msg, 47, "")
+    pathParamName: jspb.Message.getFieldWithDefault(msg, 47, "")
   };
 
   if (includeInstance) {
@@ -4399,7 +4361,7 @@ pathParamName: jspb.Message.getFieldWithDefault(msg, 47, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration.deserializeBinary = function(bytes) {
@@ -4424,7 +4386,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.JSONSchema.FieldConfiguration.de
     var field = reader.getFieldNumber();
     switch (field) {
     case 47:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPathParamName(value);
       break;
     default:
@@ -5084,10 +5046,10 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Tag.prototype.toObject = functio
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Tag.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-description: jspb.Message.getFieldWithDefault(msg, 2, ""),
-externalDocs: (f = msg.getExternalDocs()) && proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject(includeInstance, f),
-extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    description: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    externalDocs: (f = msg.getExternalDocs()) && proto.grpc.gateway.protoc_gen_openapiv2.options.ExternalDocumentation.toObject(includeInstance, f),
+    extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
   };
 
   if (includeInstance) {
@@ -5100,7 +5062,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Tag}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Tag.deserializeBinary = function(bytes) {
@@ -5125,11 +5087,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Tag.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 3:
@@ -5140,7 +5102,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Tag.deserializeBinaryFromReader 
     case 4:
       var value = msg.getExtensionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -5196,13 +5158,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Tag.serializeBinaryToWriter = fu
   }
   f = message.getExtensionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getExtensionsMap(true),
-    4,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(4, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -5335,7 +5291,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions.prototype.to
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions.toObject = function(includeInstance, msg) {
   var f, obj = {
-securityMap: (f = msg.getSecurityMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.toObject) : []
+    securityMap: (f = msg.getSecurityMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.toObject) : []
   };
 
   if (includeInstance) {
@@ -5348,7 +5304,7 @@ securityMap: (f = msg.getSecurityMap()) ? f.toObject(includeInstance, proto.grpc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions.deserializeBinary = function(bytes) {
@@ -5375,7 +5331,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions.deserializeB
     case 1:
       var value = msg.getSecurityMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme());
          });
       break;
     default:
@@ -5409,13 +5365,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityDefinitions.serializeBin
   var f = undefined;
   f = message.getSecurityMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getSecurityMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.serializeBinaryToWriter);
   }
 };
 
@@ -5475,15 +5425,15 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.prototype.toObjec
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.toObject = function(includeInstance, msg) {
   var f, obj = {
-type: jspb.Message.getFieldWithDefault(msg, 1, 0),
-description: jspb.Message.getFieldWithDefault(msg, 2, ""),
-name: jspb.Message.getFieldWithDefault(msg, 3, ""),
-pb_in: jspb.Message.getFieldWithDefault(msg, 4, 0),
-flow: jspb.Message.getFieldWithDefault(msg, 5, 0),
-authorizationUrl: jspb.Message.getFieldWithDefault(msg, 6, ""),
-tokenUrl: jspb.Message.getFieldWithDefault(msg, 7, ""),
-scopes: (f = msg.getScopes()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes.toObject(includeInstance, f),
-extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
+    type: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    description: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    name: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    pb_in: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    flow: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    authorizationUrl: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    tokenUrl: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    scopes: (f = msg.getScopes()) && proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes.toObject(includeInstance, f),
+    extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
   };
 
   if (includeInstance) {
@@ -5496,7 +5446,7 @@ extensionsMap: (f = msg.getExtensionsMap()) ? f.toObject(includeInstance, proto.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.deserializeBinary = function(bytes) {
@@ -5525,11 +5475,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.deserializeBinary
       msg.setType(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 4:
@@ -5541,11 +5491,11 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.deserializeBinary
       msg.setFlow(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAuthorizationUrl(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTokenUrl(value);
       break;
     case 8:
@@ -5556,7 +5506,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.deserializeBinary
     case 9:
       var value = msg.getExtensionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -5647,13 +5597,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityScheme.serializeBinaryTo
   }
   f = message.getExtensionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getExtensionsMap(true),
-    9,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -5906,7 +5850,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.prototype.to
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.toObject = function(includeInstance, msg) {
   var f, obj = {
-securityRequirementMap: (f = msg.getSecurityRequirementMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.toObject) : []
+    securityRequirementMap: (f = msg.getSecurityRequirementMap()) ? f.toObject(includeInstance, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.toObject) : []
   };
 
   if (includeInstance) {
@@ -5919,7 +5863,7 @@ securityRequirementMap: (f = msg.getSecurityRequirementMap()) ? f.toObject(inclu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.deserializeBinary = function(bytes) {
@@ -5946,7 +5890,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.deserializeB
     case 1:
       var value = msg.getSecurityRequirementMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.deserializeBinaryFromReader, "", new proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue());
          });
       break;
     default:
@@ -5980,13 +5924,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.serializeBin
   var f = undefined;
   f = message.getSecurityRequirementMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getSecurityRequirementMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.serializeBinaryToWriter);
   }
 };
 
@@ -6030,7 +5968,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequ
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.toObject = function(includeInstance, msg) {
   var f, obj = {
-scopeList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    scopeList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -6043,7 +5981,7 @@ scopeList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequirementValue.deserializeBinary = function(bytes) {
@@ -6068,7 +6006,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.SecurityRequirement.SecurityRequ
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addScope(value);
       break;
     default:
@@ -6202,7 +6140,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes.prototype.toObject = func
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes.toObject = function(includeInstance, msg) {
   var f, obj = {
-scopeMap: (f = msg.getScopeMap()) ? f.toObject(includeInstance, undefined) : []
+    scopeMap: (f = msg.getScopeMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -6215,7 +6153,7 @@ scopeMap: (f = msg.getScopeMap()) ? f.toObject(includeInstance, undefined) : []
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes}
  */
 proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes.deserializeBinary = function(bytes) {
@@ -6242,7 +6180,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes.deserializeBinaryFromRead
     case 1:
       var value = msg.getScopeMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readStringRequireUtf8, null, "", "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
     default:
@@ -6276,12 +6214,7 @@ proto.grpc.gateway.protoc_gen_openapiv2.options.Scopes.serializeBinaryToWriter =
   var f = undefined;
   f = message.getScopeMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getScopeMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeString);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 

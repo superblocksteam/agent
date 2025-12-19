@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.plugins.openai.v1.Custom', null, global);
 goog.exportSymbol('proto.plugins.openai.v1.Plugin', null, global);
@@ -135,7 +141,7 @@ proto.plugins.openai.v1.SuperblocksMetadata.prototype.toObject = function(opt_in
  */
 proto.plugins.openai.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -148,7 +154,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.openai.v1.SuperblocksMetadata}
  */
 proto.plugins.openai.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -173,7 +179,7 @@ proto.plugins.openai.v1.SuperblocksMetadata.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -272,17 +278,17 @@ proto.plugins.openai.v1.Property.prototype.toObject = function(opt_includeInstan
  */
 proto.plugins.openai.v1.Property.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: jspb.Message.getFieldWithDefault(msg, 2, 0),
-editable: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-internal: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
-description: jspb.Message.getFieldWithDefault(msg, 5, ""),
-mandatory: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-type: jspb.Message.getFieldWithDefault(msg, 7, ""),
-defaultvalue: jspb.Message.getFieldWithDefault(msg, 8, ""),
-minrange: jspb.Message.getFieldWithDefault(msg, 9, ""),
-maxrange: jspb.Message.getFieldWithDefault(msg, 10, ""),
-valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    editable: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
+    internal: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
+    description: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    mandatory: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+    type: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    defaultvalue: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    minrange: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    maxrange: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -295,7 +301,7 @@ valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefin
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.openai.v1.Property}
  */
 proto.plugins.openai.v1.Property.deserializeBinary = function(bytes) {
@@ -320,7 +326,7 @@ proto.plugins.openai.v1.Property.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -336,7 +342,7 @@ proto.plugins.openai.v1.Property.deserializeBinaryFromReader = function(msg, rea
       msg.setInternal(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 6:
@@ -344,23 +350,23 @@ proto.plugins.openai.v1.Property.deserializeBinaryFromReader = function(msg, rea
       msg.setMandatory(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setType(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDefaultvalue(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMinrange(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMaxrange(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addValueoptions(value);
       break;
     default:
@@ -721,7 +727,7 @@ proto.plugins.openai.v1.Custom.prototype.toObject = function(opt_includeInstance
  */
 proto.plugins.openai.v1.Custom.toObject = function(includeInstance, msg) {
   var f, obj = {
-presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.openai.v1.Property.toObject(includeInstance, f)
+    presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.openai.v1.Property.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -734,7 +740,7 @@ presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.openai.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.openai.v1.Custom}
  */
 proto.plugins.openai.v1.Custom.deserializeBinary = function(bytes) {
@@ -872,44 +878,44 @@ proto.plugins.openai.v1.Plugin.prototype.toObject = function(opt_includeInstance
  */
 proto.plugins.openai.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-action: jspb.Message.getFieldWithDefault(msg, 1, ""),
-generatechatgptresponseprompt: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-generatechatgptresponsemessagehistory: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-generatechatgptresponsesysteminstruction: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-generatetexttype: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-generatetextnewtextprompt: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-generatetextedittexttexttoedit: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-generatetextedittextprompt: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f,
-generatecodetype: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-generatecodenewcodeprompt: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f,
-generatecodeeditcodecodetoedit: (f = jspb.Message.getField(msg, 11)) == null ? undefined : f,
-generatecodeeditcodeprompt: (f = jspb.Message.getField(msg, 12)) == null ? undefined : f,
-checkmoderationtext: (f = jspb.Message.getField(msg, 13)) == null ? undefined : f,
-embeddingtext: (f = jspb.Message.getField(msg, 14)) == null ? undefined : f,
-generateimagemethod: (f = jspb.Message.getField(msg, 15)) == null ? undefined : f,
-generateimagegeneratefrompromptprompt: (f = jspb.Message.getField(msg, 16)) == null ? undefined : f,
-generateimagegeneratefrompromptimageimagesize: (f = jspb.Message.getField(msg, 17)) == null ? undefined : f,
-generateimageeditimageprompt: (f = jspb.Message.getField(msg, 18)) == null ? undefined : f,
-generateimageeditimageimagefiletoedit: (f = jspb.Message.getField(msg, 19)) == null ? undefined : f,
-generateimageeditimageimagemask: (f = jspb.Message.getField(msg, 20)) == null ? undefined : f,
-generateimageeditimageimagesizes: (f = jspb.Message.getField(msg, 21)) == null ? undefined : f,
-generateimagevaryimageimagefile: (f = jspb.Message.getField(msg, 22)) == null ? undefined : f,
-generateimagevaryimageimagesize: (f = jspb.Message.getField(msg, 23)) == null ? undefined : f,
-transcribeaudiototextaudiofile: (f = jspb.Message.getField(msg, 24)) == null ? undefined : f,
-transcribeaudiototextinputlanguage: (f = jspb.Message.getField(msg, 25)) == null ? undefined : f,
-transcribeaudiototexttranslatetoenglish: jspb.Message.getBooleanFieldWithDefault(msg, 26, false),
-generatechatgptresponseaimodel: (f = jspb.Message.getField(msg, 27)) == null ? undefined : f,
-generatetextnewtextaimodel: (f = jspb.Message.getField(msg, 28)) == null ? undefined : f,
-generatetextedittextaimodel: (f = jspb.Message.getField(msg, 29)) == null ? undefined : f,
-generatecodenewcodeaimodel: (f = jspb.Message.getField(msg, 30)) == null ? undefined : f,
-generatecodeeditcodeaimodel: (f = jspb.Message.getField(msg, 31)) == null ? undefined : f,
-checkmoderationaimodel: (f = jspb.Message.getField(msg, 32)) == null ? undefined : f,
-generatetextembeddingaimodel: (f = jspb.Message.getField(msg, 33)) == null ? undefined : f,
-transcribeaudiototextaimodel: (f = jspb.Message.getField(msg, 34)) == null ? undefined : f,
-generatechatgptresponsemaxtokens: (f = jspb.Message.getField(msg, 35)) == null ? undefined : f,
-generatetextnewtextmaxtokens: (f = jspb.Message.getField(msg, 36)) == null ? undefined : f,
-aimodel: (f = jspb.Message.getField(msg, 37)) == null ? undefined : f,
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.openai.v1.SuperblocksMetadata.toObject(includeInstance, f)
+    action: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    generatechatgptresponseprompt: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    generatechatgptresponsemessagehistory: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    generatechatgptresponsesysteminstruction: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    generatetexttype: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    generatetextnewtextprompt: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    generatetextedittexttexttoedit: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    generatetextedittextprompt: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    generatecodetype: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    generatecodenewcodeprompt: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    generatecodeeditcodecodetoedit: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    generatecodeeditcodeprompt: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    checkmoderationtext: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    embeddingtext: jspb.Message.getFieldWithDefault(msg, 14, ""),
+    generateimagemethod: jspb.Message.getFieldWithDefault(msg, 15, ""),
+    generateimagegeneratefrompromptprompt: jspb.Message.getFieldWithDefault(msg, 16, ""),
+    generateimagegeneratefrompromptimageimagesize: jspb.Message.getFieldWithDefault(msg, 17, ""),
+    generateimageeditimageprompt: jspb.Message.getFieldWithDefault(msg, 18, ""),
+    generateimageeditimageimagefiletoedit: jspb.Message.getFieldWithDefault(msg, 19, ""),
+    generateimageeditimageimagemask: jspb.Message.getFieldWithDefault(msg, 20, ""),
+    generateimageeditimageimagesizes: jspb.Message.getFieldWithDefault(msg, 21, ""),
+    generateimagevaryimageimagefile: jspb.Message.getFieldWithDefault(msg, 22, ""),
+    generateimagevaryimageimagesize: jspb.Message.getFieldWithDefault(msg, 23, ""),
+    transcribeaudiototextaudiofile: jspb.Message.getFieldWithDefault(msg, 24, ""),
+    transcribeaudiototextinputlanguage: jspb.Message.getFieldWithDefault(msg, 25, ""),
+    transcribeaudiototexttranslatetoenglish: jspb.Message.getBooleanFieldWithDefault(msg, 26, false),
+    generatechatgptresponseaimodel: jspb.Message.getFieldWithDefault(msg, 27, ""),
+    generatetextnewtextaimodel: jspb.Message.getFieldWithDefault(msg, 28, ""),
+    generatetextedittextaimodel: jspb.Message.getFieldWithDefault(msg, 29, ""),
+    generatecodenewcodeaimodel: jspb.Message.getFieldWithDefault(msg, 30, ""),
+    generatecodeeditcodeaimodel: jspb.Message.getFieldWithDefault(msg, 31, ""),
+    checkmoderationaimodel: jspb.Message.getFieldWithDefault(msg, 32, ""),
+    generatetextembeddingaimodel: jspb.Message.getFieldWithDefault(msg, 33, ""),
+    transcribeaudiototextaimodel: jspb.Message.getFieldWithDefault(msg, 34, ""),
+    generatechatgptresponsemaxtokens: jspb.Message.getFieldWithDefault(msg, 35, ""),
+    generatetextnewtextmaxtokens: jspb.Message.getFieldWithDefault(msg, 36, ""),
+    aimodel: jspb.Message.getFieldWithDefault(msg, 37, ""),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.openai.v1.SuperblocksMetadata.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -922,7 +928,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.openai.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.openai.v1.Plugin}
  */
 proto.plugins.openai.v1.Plugin.deserializeBinary = function(bytes) {
@@ -947,103 +953,103 @@ proto.plugins.openai.v1.Plugin.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAction(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratechatgptresponseprompt(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratechatgptresponsemessagehistory(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratechatgptresponsesysteminstruction(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratetexttype(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratetextnewtextprompt(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratetextedittexttexttoedit(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratetextedittextprompt(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratecodetype(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratecodenewcodeprompt(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratecodeeditcodecodetoedit(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratecodeeditcodeprompt(value);
       break;
     case 13:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCheckmoderationtext(value);
       break;
     case 14:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmbeddingtext(value);
       break;
     case 15:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimagemethod(value);
       break;
     case 16:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimagegeneratefrompromptprompt(value);
       break;
     case 17:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimagegeneratefrompromptimageimagesize(value);
       break;
     case 18:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimageeditimageprompt(value);
       break;
     case 19:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimageeditimageimagefiletoedit(value);
       break;
     case 20:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimageeditimageimagemask(value);
       break;
     case 21:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimageeditimageimagesizes(value);
       break;
     case 22:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimagevaryimageimagefile(value);
       break;
     case 23:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGenerateimagevaryimageimagesize(value);
       break;
     case 24:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTranscribeaudiototextaudiofile(value);
       break;
     case 25:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTranscribeaudiototextinputlanguage(value);
       break;
     case 26:
@@ -1051,47 +1057,47 @@ proto.plugins.openai.v1.Plugin.deserializeBinaryFromReader = function(msg, reade
       msg.setTranscribeaudiototexttranslatetoenglish(value);
       break;
     case 27:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratechatgptresponseaimodel(value);
       break;
     case 28:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratetextnewtextaimodel(value);
       break;
     case 29:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratetextedittextaimodel(value);
       break;
     case 30:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratecodenewcodeaimodel(value);
       break;
     case 31:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratecodeeditcodeaimodel(value);
       break;
     case 32:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCheckmoderationaimodel(value);
       break;
     case 33:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratetextembeddingaimodel(value);
       break;
     case 34:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTranscribeaudiototextaimodel(value);
       break;
     case 35:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratechatgptresponsemaxtokens(value);
       break;
     case 36:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGeneratetextnewtextmaxtokens(value);
       break;
     case 37:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAimodel(value);
       break;
     case 38:

@@ -30,7 +30,7 @@ const SandboxExecutorTransportServiceImpl: ISandboxExecutorTransportServiceServe
       },
       code: request.getScript(),
       filePaths: [],
-      inheritedEnv: {}
+      inheritedEnv: []
     })
       .then((execOutput) => {
         const response = new ExecuteResponse();

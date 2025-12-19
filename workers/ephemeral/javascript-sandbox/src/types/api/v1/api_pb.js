@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var api_v1_blocks_pb = require('../../api/v1/blocks_pb.js');
 goog.object.extend(proto, api_v1_blocks_pb);
@@ -964,12 +970,12 @@ proto.api.v1.Api.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Api.toObject = function(includeInstance, msg) {
   var f, obj = {
-metadata: (f = msg.getMetadata()) && common_v1_common_pb.Metadata.toObject(includeInstance, f),
-blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
+    metadata: (f = msg.getMetadata()) && common_v1_common_pb.Metadata.toObject(includeInstance, f),
+    blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
     proto.api.v1.Block.toObject, includeInstance),
-trigger: (f = msg.getTrigger()) && proto.api.v1.Trigger.toObject(includeInstance, f),
-signature: (f = msg.getSignature()) && utils_v1_utils_pb.Signature.toObject(includeInstance, f),
-authorization: (f = msg.getAuthorization()) && proto.api.v1.Authorization.toObject(includeInstance, f)
+    trigger: (f = msg.getTrigger()) && proto.api.v1.Trigger.toObject(includeInstance, f),
+    signature: (f = msg.getSignature()) && utils_v1_utils_pb.Signature.toObject(includeInstance, f),
+    authorization: (f = msg.getAuthorization()) && proto.api.v1.Authorization.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -982,7 +988,7 @@ authorization: (f = msg.getAuthorization()) && proto.api.v1.Authorization.toObje
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Api}
  */
 proto.api.v1.Api.deserializeBinary = function(bytes) {
@@ -1321,8 +1327,8 @@ proto.api.v1.Authorization.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Authorization.toObject = function(includeInstance, msg) {
   var f, obj = {
-type: jspb.Message.getFieldWithDefault(msg, 1, 0),
-expression: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    type: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    expression: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1335,7 +1341,7 @@ expression: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Authorization}
  */
 proto.api.v1.Authorization.deserializeBinary = function(bytes) {
@@ -1364,7 +1370,7 @@ proto.api.v1.Authorization.deserializeBinaryFromReader = function(msg, reader) {
       msg.setType(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExpression(value);
       break;
     default:
@@ -1499,7 +1505,7 @@ proto.api.v1.Profiles.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Profiles.toObject = function(includeInstance, msg) {
   var f, obj = {
-modes: (f = msg.getModes()) && proto.api.v1.Profiles.Modes.toObject(includeInstance, f)
+    modes: (f = msg.getModes()) && proto.api.v1.Profiles.Modes.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1512,7 +1518,7 @@ modes: (f = msg.getModes()) && proto.api.v1.Profiles.Modes.toObject(includeInsta
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Profiles}
  */
 proto.api.v1.Profiles.deserializeBinary = function(bytes) {
@@ -1613,9 +1619,9 @@ proto.api.v1.Profiles.Modes.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Profiles.Modes.toObject = function(includeInstance, msg) {
   var f, obj = {
-editor: (f = msg.getEditor()) && proto.api.v1.Profiles.Modes.Settings.toObject(includeInstance, f),
-preview: (f = msg.getPreview()) && proto.api.v1.Profiles.Modes.Settings.toObject(includeInstance, f),
-deployed: (f = msg.getDeployed()) && proto.api.v1.Profiles.Modes.Settings.toObject(includeInstance, f)
+    editor: (f = msg.getEditor()) && proto.api.v1.Profiles.Modes.Settings.toObject(includeInstance, f),
+    preview: (f = msg.getPreview()) && proto.api.v1.Profiles.Modes.Settings.toObject(includeInstance, f),
+    deployed: (f = msg.getDeployed()) && proto.api.v1.Profiles.Modes.Settings.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1628,7 +1634,7 @@ deployed: (f = msg.getDeployed()) && proto.api.v1.Profiles.Modes.Settings.toObje
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Profiles.Modes}
  */
 proto.api.v1.Profiles.Modes.deserializeBinary = function(bytes) {
@@ -1762,8 +1768,8 @@ proto.api.v1.Profiles.Modes.Settings.prototype.toObject = function(opt_includeIn
  */
 proto.api.v1.Profiles.Modes.Settings.toObject = function(includeInstance, msg) {
   var f, obj = {
-pb_default: jspb.Message.getFieldWithDefault(msg, 1, ""),
-availableList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
+    pb_default: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    availableList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1776,7 +1782,7 @@ availableList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined :
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Profiles.Modes.Settings}
  */
 proto.api.v1.Profiles.Modes.Settings.deserializeBinary = function(bytes) {
@@ -1801,11 +1807,11 @@ proto.api.v1.Profiles.Modes.Settings.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDefault(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addAvailable(value);
       break;
     default:
@@ -2116,9 +2122,9 @@ proto.api.v1.Trigger.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Trigger.toObject = function(includeInstance, msg) {
   var f, obj = {
-application: (f = msg.getApplication()) && proto.api.v1.Trigger.Application.toObject(includeInstance, f),
-workflow: (f = msg.getWorkflow()) && proto.api.v1.Trigger.Workflow.toObject(includeInstance, f),
-job: (f = msg.getJob()) && proto.api.v1.Trigger.Job.toObject(includeInstance, f)
+    application: (f = msg.getApplication()) && proto.api.v1.Trigger.Application.toObject(includeInstance, f),
+    workflow: (f = msg.getWorkflow()) && proto.api.v1.Trigger.Workflow.toObject(includeInstance, f),
+    job: (f = msg.getJob()) && proto.api.v1.Trigger.Job.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2131,7 +2137,7 @@ job: (f = msg.getJob()) && proto.api.v1.Trigger.Job.toObject(includeInstance, f)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger}
  */
 proto.api.v1.Trigger.deserializeBinary = function(bytes) {
@@ -2258,9 +2264,9 @@ proto.api.v1.Trigger.Application.prototype.toObject = function(opt_includeInstan
  */
 proto.api.v1.Trigger.Application.toObject = function(includeInstance, msg) {
   var f, obj = {
-options: (f = msg.getOptions()) && proto.api.v1.Trigger.Application.Options.toObject(includeInstance, f),
-id: jspb.Message.getFieldWithDefault(msg, 2, ""),
-pageId: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    options: (f = msg.getOptions()) && proto.api.v1.Trigger.Application.Options.toObject(includeInstance, f),
+    id: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    pageId: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -2273,7 +2279,7 @@ pageId: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Application}
  */
 proto.api.v1.Trigger.Application.deserializeBinary = function(bytes) {
@@ -2303,11 +2309,11 @@ proto.api.v1.Trigger.Application.deserializeBinaryFromReader = function(msg, rea
       msg.setOptions(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPageId(value);
       break;
     default:
@@ -2396,7 +2402,7 @@ proto.api.v1.Trigger.Application.Options.prototype.toObject = function(opt_inclu
  */
 proto.api.v1.Trigger.Application.Options.toObject = function(includeInstance, msg) {
   var f, obj = {
-executeOnPageLoad: (f = jspb.Message.getBooleanField(msg, 1)) == null ? undefined : f
+    executeOnPageLoad: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -2409,7 +2415,7 @@ executeOnPageLoad: (f = jspb.Message.getBooleanField(msg, 1)) == null ? undefine
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Application.Options}
  */
 proto.api.v1.Trigger.Application.Options.deserializeBinary = function(bytes) {
@@ -2635,8 +2641,8 @@ proto.api.v1.Trigger.Workflow.prototype.toObject = function(opt_includeInstance)
  */
 proto.api.v1.Trigger.Workflow.toObject = function(includeInstance, msg) {
   var f, obj = {
-options: (f = msg.getOptions()) && proto.api.v1.Trigger.Workflow.Options.toObject(includeInstance, f),
-parameters: (f = msg.getParameters()) && proto.api.v1.Trigger.Workflow.Parameters.toObject(includeInstance, f)
+    options: (f = msg.getOptions()) && proto.api.v1.Trigger.Workflow.Options.toObject(includeInstance, f),
+    parameters: (f = msg.getParameters()) && proto.api.v1.Trigger.Workflow.Parameters.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2649,7 +2655,7 @@ parameters: (f = msg.getParameters()) && proto.api.v1.Trigger.Workflow.Parameter
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Workflow}
  */
 proto.api.v1.Trigger.Workflow.deserializeBinary = function(bytes) {
@@ -2763,8 +2769,8 @@ proto.api.v1.Trigger.Workflow.Options.prototype.toObject = function(opt_includeI
  */
 proto.api.v1.Trigger.Workflow.Options.toObject = function(includeInstance, msg) {
   var f, obj = {
-profiles: (f = msg.getProfiles()) && proto.api.v1.Profiles.toObject(includeInstance, f),
-deployedcommitid: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    profiles: (f = msg.getProfiles()) && proto.api.v1.Profiles.toObject(includeInstance, f),
+    deployedcommitid: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -2777,7 +2783,7 @@ deployedcommitid: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Workflow.Options}
  */
 proto.api.v1.Trigger.Workflow.Options.deserializeBinary = function(bytes) {
@@ -2807,7 +2813,7 @@ proto.api.v1.Trigger.Workflow.Options.deserializeBinaryFromReader = function(msg
       msg.setProfiles(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDeployedcommitid(value);
       break;
     default:
@@ -2962,8 +2968,8 @@ proto.api.v1.Trigger.Workflow.Parameters.prototype.toObject = function(opt_inclu
  */
 proto.api.v1.Trigger.Workflow.Parameters.toObject = function(includeInstance, msg) {
   var f, obj = {
-queryMap: (f = msg.getQueryMap()) ? f.toObject(includeInstance, proto.api.v1.Trigger.Workflow.Parameters.QueryParam.toObject) : [],
-bodyMap: (f = msg.getBodyMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
+    queryMap: (f = msg.getQueryMap()) ? f.toObject(includeInstance, proto.api.v1.Trigger.Workflow.Parameters.QueryParam.toObject) : [],
+    bodyMap: (f = msg.getBodyMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
   };
 
   if (includeInstance) {
@@ -2976,7 +2982,7 @@ bodyMap: (f = msg.getBodyMap()) ? f.toObject(includeInstance, proto.google.proto
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Workflow.Parameters}
  */
 proto.api.v1.Trigger.Workflow.Parameters.deserializeBinary = function(bytes) {
@@ -3003,13 +3009,13 @@ proto.api.v1.Trigger.Workflow.Parameters.deserializeBinaryFromReader = function(
     case 1:
       var value = msg.getQueryMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Trigger.Workflow.Parameters.QueryParam.deserializeBinaryFromReader, "", new proto.api.v1.Trigger.Workflow.Parameters.QueryParam());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Trigger.Workflow.Parameters.QueryParam.deserializeBinaryFromReader, "", new proto.api.v1.Trigger.Workflow.Parameters.QueryParam());
          });
       break;
     case 2:
       var value = msg.getBodyMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -3043,23 +3049,11 @@ proto.api.v1.Trigger.Workflow.Parameters.serializeBinaryToWriter = function(mess
   var f = undefined;
   f = message.getQueryMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getQueryMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.api.v1.Trigger.Workflow.Parameters.QueryParam.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api.v1.Trigger.Workflow.Parameters.QueryParam.serializeBinaryToWriter);
   }
   f = message.getBodyMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getBodyMap(true),
-    2,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -3103,7 +3097,7 @@ proto.api.v1.Trigger.Workflow.Parameters.QueryParam.prototype.toObject = functio
  */
 proto.api.v1.Trigger.Workflow.Parameters.QueryParam.toObject = function(includeInstance, msg) {
   var f, obj = {
-valuesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    valuesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -3116,7 +3110,7 @@ valuesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Workflow.Parameters.QueryParam}
  */
 proto.api.v1.Trigger.Workflow.Parameters.QueryParam.deserializeBinary = function(bytes) {
@@ -3141,7 +3135,7 @@ proto.api.v1.Trigger.Workflow.Parameters.QueryParam.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addValues(value);
       break;
     default:
@@ -3372,13 +3366,13 @@ proto.api.v1.Trigger.Job.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Trigger.Job.toObject = function(includeInstance, msg) {
   var f, obj = {
-options: (f = msg.getOptions()) && proto.api.v1.Trigger.Job.Options.toObject(includeInstance, f),
-frequency: jspb.Message.getFieldWithDefault(msg, 2, 0),
-interval: jspb.Message.getFieldWithDefault(msg, 3, 0),
-dayOfMonth: jspb.Message.getFieldWithDefault(msg, 4, 0),
-days: (f = msg.getDays()) && proto.api.v1.Trigger.Job.Days.toObject(includeInstance, f),
-time: (f = msg.getTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-timezoneLocale: jspb.Message.getFieldWithDefault(msg, 8, "")
+    options: (f = msg.getOptions()) && proto.api.v1.Trigger.Job.Options.toObject(includeInstance, f),
+    frequency: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    interval: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    dayOfMonth: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    days: (f = msg.getDays()) && proto.api.v1.Trigger.Job.Days.toObject(includeInstance, f),
+    time: (f = msg.getTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    timezoneLocale: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -3391,7 +3385,7 @@ timezoneLocale: jspb.Message.getFieldWithDefault(msg, 8, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Job}
  */
 proto.api.v1.Trigger.Job.deserializeBinary = function(bytes) {
@@ -3443,7 +3437,7 @@ proto.api.v1.Trigger.Job.deserializeBinaryFromReader = function(msg, reader) {
       msg.setTime(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTimezoneLocale(value);
       break;
     default:
@@ -3574,9 +3568,9 @@ proto.api.v1.Trigger.Job.Options.prototype.toObject = function(opt_includeInstan
  */
 proto.api.v1.Trigger.Job.Options.toObject = function(includeInstance, msg) {
   var f, obj = {
-profiles: (f = msg.getProfiles()) && proto.api.v1.Profiles.toObject(includeInstance, f),
-sendEmailOnFailure: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
-deployedcommitid: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    profiles: (f = msg.getProfiles()) && proto.api.v1.Profiles.toObject(includeInstance, f),
+    sendEmailOnFailure: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    deployedcommitid: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -3589,7 +3583,7 @@ deployedcommitid: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Job.Options}
  */
 proto.api.v1.Trigger.Job.Options.deserializeBinary = function(bytes) {
@@ -3623,7 +3617,7 @@ proto.api.v1.Trigger.Job.Options.deserializeBinaryFromReader = function(msg, rea
       msg.setSendEmailOnFailure(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDeployedcommitid(value);
       break;
     default:
@@ -3803,13 +3797,13 @@ proto.api.v1.Trigger.Job.Days.prototype.toObject = function(opt_includeInstance)
  */
 proto.api.v1.Trigger.Job.Days.toObject = function(includeInstance, msg) {
   var f, obj = {
-sunday: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
-monday: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
-tuesday: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-wednesday: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
-thursday: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
-friday: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-saturday: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
+    sunday: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
+    monday: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    tuesday: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
+    wednesday: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
+    thursday: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    friday: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+    saturday: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
   };
 
   if (includeInstance) {
@@ -3822,7 +3816,7 @@ saturday: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Trigger.Job.Days}
  */
 proto.api.v1.Trigger.Job.Days.deserializeBinary = function(bytes) {
@@ -4414,7 +4408,7 @@ proto.api.v1.Blocks.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Blocks.toObject = function(includeInstance, msg) {
   var f, obj = {
-blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
+    blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
     proto.api.v1.Block.toObject, includeInstance)
   };
 
@@ -4428,7 +4422,7 @@ blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Blocks}
  */
 proto.api.v1.Blocks.deserializeBinary = function(bytes) {
@@ -4603,19 +4597,19 @@ proto.api.v1.Block.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-pb_break: (f = msg.getBreak()) && proto.api.v1.Block.Break.toObject(includeInstance, f),
-pb_return: (f = msg.getReturn()) && proto.api.v1.Block.Return.toObject(includeInstance, f),
-wait: (f = msg.getWait()) && proto.api.v1.Block.Wait.toObject(includeInstance, f),
-parallel: (f = msg.getParallel()) && proto.api.v1.Block.Parallel.toObject(includeInstance, f),
-conditional: (f = msg.getConditional()) && proto.api.v1.Block.Conditional.toObject(includeInstance, f),
-loop: (f = msg.getLoop()) && proto.api.v1.Block.Loop.toObject(includeInstance, f),
-tryCatch: (f = msg.getTryCatch()) && proto.api.v1.Block.TryCatch.toObject(includeInstance, f),
-step: (f = msg.getStep()) && proto.api.v1.Step.toObject(includeInstance, f),
-variables: (f = msg.getVariables()) && api_v1_blocks_pb.Variables.toObject(includeInstance, f),
-pb_throw: (f = msg.getThrow()) && proto.api.v1.Block.Throw.toObject(includeInstance, f),
-stream: (f = msg.getStream()) && proto.api.v1.Block.Stream.toObject(includeInstance, f),
-send: (f = msg.getSend()) && proto.api.v1.Block.Send.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    pb_break: (f = msg.getBreak()) && proto.api.v1.Block.Break.toObject(includeInstance, f),
+    pb_return: (f = msg.getReturn()) && proto.api.v1.Block.Return.toObject(includeInstance, f),
+    wait: (f = msg.getWait()) && proto.api.v1.Block.Wait.toObject(includeInstance, f),
+    parallel: (f = msg.getParallel()) && proto.api.v1.Block.Parallel.toObject(includeInstance, f),
+    conditional: (f = msg.getConditional()) && proto.api.v1.Block.Conditional.toObject(includeInstance, f),
+    loop: (f = msg.getLoop()) && proto.api.v1.Block.Loop.toObject(includeInstance, f),
+    tryCatch: (f = msg.getTryCatch()) && proto.api.v1.Block.TryCatch.toObject(includeInstance, f),
+    step: (f = msg.getStep()) && proto.api.v1.Step.toObject(includeInstance, f),
+    variables: (f = msg.getVariables()) && api_v1_blocks_pb.Variables.toObject(includeInstance, f),
+    pb_throw: (f = msg.getThrow()) && proto.api.v1.Block.Throw.toObject(includeInstance, f),
+    stream: (f = msg.getStream()) && proto.api.v1.Block.Stream.toObject(includeInstance, f),
+    send: (f = msg.getSend()) && proto.api.v1.Block.Send.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -4628,7 +4622,7 @@ send: (f = msg.getSend()) && proto.api.v1.Block.Send.toObject(includeInstance, f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block}
  */
 proto.api.v1.Block.deserializeBinary = function(bytes) {
@@ -4653,7 +4647,7 @@ proto.api.v1.Block.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -4909,10 +4903,10 @@ proto.api.v1.Block.Parallel.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.Parallel.toObject = function(includeInstance, msg) {
   var f, obj = {
-pb_static: (f = msg.getStatic()) && proto.api.v1.Block.Parallel.Static.toObject(includeInstance, f),
-dynamic: (f = msg.getDynamic()) && proto.api.v1.Block.Parallel.Dynamic.toObject(includeInstance, f),
-wait: jspb.Message.getFieldWithDefault(msg, 3, 0),
-poolSize: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
+    pb_static: (f = msg.getStatic()) && proto.api.v1.Block.Parallel.Static.toObject(includeInstance, f),
+    dynamic: (f = msg.getDynamic()) && proto.api.v1.Block.Parallel.Dynamic.toObject(includeInstance, f),
+    wait: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    poolSize: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -4925,7 +4919,7 @@ poolSize: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Parallel}
  */
 proto.api.v1.Block.Parallel.deserializeBinary = function(bytes) {
@@ -5070,7 +5064,7 @@ proto.api.v1.Block.Parallel.Static.prototype.toObject = function(opt_includeInst
  */
 proto.api.v1.Block.Parallel.Static.toObject = function(includeInstance, msg) {
   var f, obj = {
-pathsMap: (f = msg.getPathsMap()) ? f.toObject(includeInstance, proto.api.v1.Blocks.toObject) : []
+    pathsMap: (f = msg.getPathsMap()) ? f.toObject(includeInstance, proto.api.v1.Blocks.toObject) : []
   };
 
   if (includeInstance) {
@@ -5083,7 +5077,7 @@ pathsMap: (f = msg.getPathsMap()) ? f.toObject(includeInstance, proto.api.v1.Blo
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Parallel.Static}
  */
 proto.api.v1.Block.Parallel.Static.deserializeBinary = function(bytes) {
@@ -5110,7 +5104,7 @@ proto.api.v1.Block.Parallel.Static.deserializeBinaryFromReader = function(msg, r
     case 1:
       var value = msg.getPathsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Blocks.deserializeBinaryFromReader, "", new proto.api.v1.Blocks());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.api.v1.Blocks.deserializeBinaryFromReader, "", new proto.api.v1.Blocks());
          });
       break;
     default:
@@ -5144,13 +5138,7 @@ proto.api.v1.Block.Parallel.Static.serializeBinaryToWriter = function(message, w
   var f = undefined;
   f = message.getPathsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getPathsMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.api.v1.Blocks.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.api.v1.Blocks.serializeBinaryToWriter);
   }
 };
 
@@ -5217,9 +5205,9 @@ proto.api.v1.Block.Parallel.Dynamic.prototype.toObject = function(opt_includeIns
  */
 proto.api.v1.Block.Parallel.Dynamic.toObject = function(includeInstance, msg) {
   var f, obj = {
-paths: jspb.Message.getFieldWithDefault(msg, 1, ""),
-variables: (f = msg.getVariables()) && proto.api.v1.Block.Parallel.Dynamic.Variables.toObject(includeInstance, f),
-blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
+    paths: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    variables: (f = msg.getVariables()) && proto.api.v1.Block.Parallel.Dynamic.Variables.toObject(includeInstance, f),
+    blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
     proto.api.v1.Block.toObject, includeInstance)
   };
 
@@ -5233,7 +5221,7 @@ blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Parallel.Dynamic}
  */
 proto.api.v1.Block.Parallel.Dynamic.deserializeBinary = function(bytes) {
@@ -5258,7 +5246,7 @@ proto.api.v1.Block.Parallel.Dynamic.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPaths(value);
       break;
     case 2:
@@ -5358,7 +5346,7 @@ proto.api.v1.Block.Parallel.Dynamic.Variables.prototype.toObject = function(opt_
  */
 proto.api.v1.Block.Parallel.Dynamic.Variables.toObject = function(includeInstance, msg) {
   var f, obj = {
-item: jspb.Message.getFieldWithDefault(msg, 1, "")
+    item: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5371,7 +5359,7 @@ item: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Parallel.Dynamic.Variables}
  */
 proto.api.v1.Block.Parallel.Dynamic.Variables.deserializeBinary = function(bytes) {
@@ -5396,7 +5384,7 @@ proto.api.v1.Block.Parallel.Dynamic.Variables.deserializeBinaryFromReader = func
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setItem(value);
       break;
     default:
@@ -5716,10 +5704,10 @@ proto.api.v1.Block.Conditional.prototype.toObject = function(opt_includeInstance
  */
 proto.api.v1.Block.Conditional.toObject = function(includeInstance, msg) {
   var f, obj = {
-pb_if: (f = msg.getIf()) && proto.api.v1.Block.Conditional.Condition.toObject(includeInstance, f),
-elseIfList: jspb.Message.toObjectList(msg.getElseIfList(),
+    pb_if: (f = msg.getIf()) && proto.api.v1.Block.Conditional.Condition.toObject(includeInstance, f),
+    elseIfList: jspb.Message.toObjectList(msg.getElseIfList(),
     proto.api.v1.Block.Conditional.Condition.toObject, includeInstance),
-pb_else: (f = msg.getElse()) && proto.api.v1.Blocks.toObject(includeInstance, f)
+    pb_else: (f = msg.getElse()) && proto.api.v1.Blocks.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -5732,7 +5720,7 @@ pb_else: (f = msg.getElse()) && proto.api.v1.Blocks.toObject(includeInstance, f)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Conditional}
  */
 proto.api.v1.Block.Conditional.deserializeBinary = function(bytes) {
@@ -5866,8 +5854,8 @@ proto.api.v1.Block.Conditional.Condition.prototype.toObject = function(opt_inclu
  */
 proto.api.v1.Block.Conditional.Condition.toObject = function(includeInstance, msg) {
   var f, obj = {
-condition: jspb.Message.getFieldWithDefault(msg, 1, ""),
-blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
+    condition: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
     proto.api.v1.Block.toObject, includeInstance)
   };
 
@@ -5881,7 +5869,7 @@ blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Conditional.Condition}
  */
 proto.api.v1.Block.Conditional.Condition.deserializeBinary = function(bytes) {
@@ -5906,7 +5894,7 @@ proto.api.v1.Block.Conditional.Condition.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCondition(value);
       break;
     case 2:
@@ -6168,10 +6156,10 @@ proto.api.v1.Block.Loop.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.Loop.toObject = function(includeInstance, msg) {
   var f, obj = {
-range: jspb.Message.getFieldWithDefault(msg, 1, ""),
-type: jspb.Message.getFieldWithDefault(msg, 2, 0),
-variables: (f = msg.getVariables()) && proto.api.v1.Block.Loop.Variables.toObject(includeInstance, f),
-blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
+    range: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    variables: (f = msg.getVariables()) && proto.api.v1.Block.Loop.Variables.toObject(includeInstance, f),
+    blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
     proto.api.v1.Block.toObject, includeInstance)
   };
 
@@ -6185,7 +6173,7 @@ blocksList: jspb.Message.toObjectList(msg.getBlocksList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Loop}
  */
 proto.api.v1.Block.Loop.deserializeBinary = function(bytes) {
@@ -6210,7 +6198,7 @@ proto.api.v1.Block.Loop.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRange(value);
       break;
     case 2:
@@ -6331,8 +6319,8 @@ proto.api.v1.Block.Loop.Variables.prototype.toObject = function(opt_includeInsta
  */
 proto.api.v1.Block.Loop.Variables.toObject = function(includeInstance, msg) {
   var f, obj = {
-index: jspb.Message.getFieldWithDefault(msg, 1, ""),
-item: jspb.Message.getFieldWithDefault(msg, 2, "")
+    index: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    item: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -6345,7 +6333,7 @@ item: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Loop.Variables}
  */
 proto.api.v1.Block.Loop.Variables.deserializeBinary = function(bytes) {
@@ -6370,11 +6358,11 @@ proto.api.v1.Block.Loop.Variables.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIndex(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setItem(value);
       break;
     default:
@@ -6602,10 +6590,10 @@ proto.api.v1.Block.TryCatch.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.TryCatch.toObject = function(includeInstance, msg) {
   var f, obj = {
-pb_try: (f = msg.getTry()) && proto.api.v1.Blocks.toObject(includeInstance, f),
-pb_catch: (f = msg.getCatch()) && proto.api.v1.Blocks.toObject(includeInstance, f),
-pb_finally: (f = msg.getFinally()) && proto.api.v1.Blocks.toObject(includeInstance, f),
-variables: (f = msg.getVariables()) && proto.api.v1.Block.TryCatch.Variables.toObject(includeInstance, f)
+    pb_try: (f = msg.getTry()) && proto.api.v1.Blocks.toObject(includeInstance, f),
+    pb_catch: (f = msg.getCatch()) && proto.api.v1.Blocks.toObject(includeInstance, f),
+    pb_finally: (f = msg.getFinally()) && proto.api.v1.Blocks.toObject(includeInstance, f),
+    variables: (f = msg.getVariables()) && proto.api.v1.Block.TryCatch.Variables.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -6618,7 +6606,7 @@ variables: (f = msg.getVariables()) && proto.api.v1.Block.TryCatch.Variables.toO
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.TryCatch}
  */
 proto.api.v1.Block.TryCatch.deserializeBinary = function(bytes) {
@@ -6758,7 +6746,7 @@ proto.api.v1.Block.TryCatch.Variables.prototype.toObject = function(opt_includeI
  */
 proto.api.v1.Block.TryCatch.Variables.toObject = function(includeInstance, msg) {
   var f, obj = {
-error: jspb.Message.getFieldWithDefault(msg, 1, "")
+    error: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -6771,7 +6759,7 @@ error: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.TryCatch.Variables}
  */
 proto.api.v1.Block.TryCatch.Variables.deserializeBinary = function(bytes) {
@@ -6796,7 +6784,7 @@ proto.api.v1.Block.TryCatch.Variables.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setError(value);
       break;
     default:
@@ -7036,7 +7024,7 @@ proto.api.v1.Block.Break.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.Break.toObject = function(includeInstance, msg) {
   var f, obj = {
-condition: jspb.Message.getFieldWithDefault(msg, 1, "")
+    condition: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7049,7 +7037,7 @@ condition: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Break}
  */
 proto.api.v1.Block.Break.deserializeBinary = function(bytes) {
@@ -7074,7 +7062,7 @@ proto.api.v1.Block.Break.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCondition(value);
       break;
     default:
@@ -7166,7 +7154,7 @@ proto.api.v1.Block.Return.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.Return.toObject = function(includeInstance, msg) {
   var f, obj = {
-data: jspb.Message.getFieldWithDefault(msg, 1, "")
+    data: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7179,7 +7167,7 @@ data: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Return}
  */
 proto.api.v1.Block.Return.deserializeBinary = function(bytes) {
@@ -7204,7 +7192,7 @@ proto.api.v1.Block.Return.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setData(value);
       break;
     default:
@@ -7296,7 +7284,7 @@ proto.api.v1.Block.Throw.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.Throw.toObject = function(includeInstance, msg) {
   var f, obj = {
-error: jspb.Message.getFieldWithDefault(msg, 1, "")
+    error: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7309,7 +7297,7 @@ error: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Throw}
  */
 proto.api.v1.Block.Throw.deserializeBinary = function(bytes) {
@@ -7334,7 +7322,7 @@ proto.api.v1.Block.Throw.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setError(value);
       break;
     default:
@@ -7426,7 +7414,7 @@ proto.api.v1.Block.Wait.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.Wait.toObject = function(includeInstance, msg) {
   var f, obj = {
-condition: jspb.Message.getFieldWithDefault(msg, 1, "")
+    condition: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7439,7 +7427,7 @@ condition: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Wait}
  */
 proto.api.v1.Block.Wait.deserializeBinary = function(bytes) {
@@ -7464,7 +7452,7 @@ proto.api.v1.Block.Wait.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCondition(value);
       break;
     default:
@@ -7556,10 +7544,10 @@ proto.api.v1.Block.Stream.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.Stream.toObject = function(includeInstance, msg) {
   var f, obj = {
-trigger: (f = msg.getTrigger()) && proto.api.v1.Block.Stream.Trigger.toObject(includeInstance, f),
-process: (f = msg.getProcess()) && proto.api.v1.Blocks.toObject(includeInstance, f),
-variables: (f = msg.getVariables()) && proto.api.v1.Block.Stream.Variables.toObject(includeInstance, f),
-options: (f = msg.getOptions()) && proto.api.v1.Block.Stream.Options.toObject(includeInstance, f)
+    trigger: (f = msg.getTrigger()) && proto.api.v1.Block.Stream.Trigger.toObject(includeInstance, f),
+    process: (f = msg.getProcess()) && proto.api.v1.Blocks.toObject(includeInstance, f),
+    variables: (f = msg.getVariables()) && proto.api.v1.Block.Stream.Variables.toObject(includeInstance, f),
+    options: (f = msg.getOptions()) && proto.api.v1.Block.Stream.Options.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -7572,7 +7560,7 @@ options: (f = msg.getOptions()) && proto.api.v1.Block.Stream.Options.toObject(in
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Stream}
  */
 proto.api.v1.Block.Stream.deserializeBinary = function(bytes) {
@@ -7712,7 +7700,7 @@ proto.api.v1.Block.Stream.Variables.prototype.toObject = function(opt_includeIns
  */
 proto.api.v1.Block.Stream.Variables.toObject = function(includeInstance, msg) {
   var f, obj = {
-item: jspb.Message.getFieldWithDefault(msg, 1, "")
+    item: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7725,7 +7713,7 @@ item: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Stream.Variables}
  */
 proto.api.v1.Block.Stream.Variables.deserializeBinary = function(bytes) {
@@ -7750,7 +7738,7 @@ proto.api.v1.Block.Stream.Variables.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setItem(value);
       break;
     default:
@@ -7842,7 +7830,7 @@ proto.api.v1.Block.Stream.Options.prototype.toObject = function(opt_includeInsta
  */
 proto.api.v1.Block.Stream.Options.toObject = function(includeInstance, msg) {
   var f, obj = {
-disableAutoSend: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
+    disableAutoSend: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -7855,7 +7843,7 @@ disableAutoSend: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Stream.Options}
  */
 proto.api.v1.Block.Stream.Options.deserializeBinary = function(bytes) {
@@ -7972,8 +7960,8 @@ proto.api.v1.Block.Stream.Trigger.prototype.toObject = function(opt_includeInsta
  */
 proto.api.v1.Block.Stream.Trigger.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-step: (f = msg.getStep()) && proto.api.v1.Step.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    step: (f = msg.getStep()) && proto.api.v1.Step.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -7986,7 +7974,7 @@ step: (f = msg.getStep()) && proto.api.v1.Step.toObject(includeInstance, f)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Stream.Trigger}
  */
 proto.api.v1.Block.Stream.Trigger.deserializeBinary = function(bytes) {
@@ -8011,7 +7999,7 @@ proto.api.v1.Block.Stream.Trigger.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -8301,7 +8289,7 @@ proto.api.v1.Block.Send.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Block.Send.toObject = function(includeInstance, msg) {
   var f, obj = {
-message: jspb.Message.getFieldWithDefault(msg, 1, "")
+    message: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -8314,7 +8302,7 @@ message: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Block.Send}
  */
 proto.api.v1.Block.Send.deserializeBinary = function(bytes) {
@@ -8339,7 +8327,7 @@ proto.api.v1.Block.Send.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessage(value);
       break;
     default:
@@ -8994,84 +8982,84 @@ proto.api.v1.Step.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Step.toObject = function(includeInstance, msg) {
   var f, obj = {
-integration: jspb.Message.getFieldWithDefault(msg, 1, ""),
-python: (f = msg.getPython()) && plugins_python_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-bigquery: (f = msg.getBigquery()) && plugins_bigquery_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-dynamodb: (f = msg.getDynamodb()) && plugins_dynamodb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-email: (f = msg.getEmail()) && plugins_email_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-graphql: (f = msg.getGraphql()) && plugins_graphql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-graphqlintegration: (f = msg.getGraphqlintegration()) && plugins_graphql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-gsheets: (f = msg.getGsheets()) && plugins_gsheets_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-mariadb: (f = msg.getMariadb()) && plugins_mariadb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-mssql: (f = msg.getMssql()) && plugins_mssql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-mysql: (f = msg.getMysql()) && plugins_mysql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-postgres: (f = msg.getPostgres()) && plugins_postgresql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-redshift: (f = msg.getRedshift()) && plugins_redshift_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-restapi: (f = msg.getRestapi()) && plugins_restapi_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-restapiintegration: (f = msg.getRestapiintegration()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-rockset: (f = msg.getRockset()) && plugins_rockset_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-s3: (f = msg.getS3()) && plugins_s3_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-snowflake: (f = msg.getSnowflake()) && plugins_snowflake_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-workflow: (f = msg.getWorkflow()) && plugins_workflow_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-javascript: (f = msg.getJavascript()) && plugins_javascript_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-mongodb: (f = msg.getMongodb()) && plugins_mongodb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-gcs: (f = msg.getGcs()) && plugins_gcs_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-openai: (f = msg.getOpenai()) && plugins_openai_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-ocr: (f = msg.getOcr()) && plugins_ocr_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-kafka: (f = msg.getKafka()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-confluent: (f = msg.getConfluent()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-msk: (f = msg.getMsk()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-redpanda: (f = msg.getRedpanda()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-aivenkafka: (f = msg.getAivenkafka()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-cockroachdb: (f = msg.getCockroachdb()) && plugins_cockroachdb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-airtable: (f = msg.getAirtable()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-notion: (f = msg.getNotion()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-pagerduty: (f = msg.getPagerduty()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-sendgrid: (f = msg.getSendgrid()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-slack: (f = msg.getSlack()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-athena: (f = msg.getAthena()) && plugins_athena_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-redis: (f = msg.getRedis()) && plugins_redis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-asana: (f = msg.getAsana()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-github: (f = msg.getGithub()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-smtp: (f = msg.getSmtp()) && plugins_smtp_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-salesforce: (f = msg.getSalesforce()) && plugins_salesforce_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-bitbucket: (f = msg.getBitbucket()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-circleci: (f = msg.getCircleci()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-front: (f = msg.getFront()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-intercom: (f = msg.getIntercom()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-segment: (f = msg.getSegment()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-launchdarkly: (f = msg.getLaunchdarkly()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-dropbox: (f = msg.getDropbox()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-twilio: (f = msg.getTwilio()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-googledrive: (f = msg.getGoogledrive()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-googleanalytics: (f = msg.getGoogleanalytics()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-box: (f = msg.getBox()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-hubspot: (f = msg.getHubspot()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-stripe: (f = msg.getStripe()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-zoom: (f = msg.getZoom()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-jira: (f = msg.getJira()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-zendesk: (f = msg.getZendesk()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-pinecone: (f = msg.getPinecone()) && plugins_pinecone_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-cosmosdb: (f = msg.getCosmosdb()) && plugins_cosmosdb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-datadog: (f = msg.getDatadog()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-xero: (f = msg.getXero()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-oracledb: (f = msg.getOracledb()) && plugins_oracledb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-elasticsearch: (f = msg.getElasticsearch()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-databricks: (f = msg.getDatabricks()) && plugins_databricks_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-couchbase: (f = msg.getCouchbase()) && plugins_couchbase_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-custom: (f = msg.getCustom()) && plugins_custom_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-anthropic: (f = msg.getAnthropic()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-cohere: (f = msg.getCohere()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-fireworks: (f = msg.getFireworks()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-mistral: (f = msg.getMistral()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-groq: (f = msg.getGroq()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-perplexity: (f = msg.getPerplexity()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-stabilityai: (f = msg.getStabilityai()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-gemini: (f = msg.getGemini()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f)
+    integration: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    python: (f = msg.getPython()) && plugins_python_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    bigquery: (f = msg.getBigquery()) && plugins_bigquery_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    dynamodb: (f = msg.getDynamodb()) && plugins_dynamodb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    email: (f = msg.getEmail()) && plugins_email_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    graphql: (f = msg.getGraphql()) && plugins_graphql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    graphqlintegration: (f = msg.getGraphqlintegration()) && plugins_graphql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    gsheets: (f = msg.getGsheets()) && plugins_gsheets_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    mariadb: (f = msg.getMariadb()) && plugins_mariadb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    mssql: (f = msg.getMssql()) && plugins_mssql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    mysql: (f = msg.getMysql()) && plugins_mysql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    postgres: (f = msg.getPostgres()) && plugins_postgresql_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    redshift: (f = msg.getRedshift()) && plugins_redshift_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    restapi: (f = msg.getRestapi()) && plugins_restapi_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    restapiintegration: (f = msg.getRestapiintegration()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    rockset: (f = msg.getRockset()) && plugins_rockset_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    s3: (f = msg.getS3()) && plugins_s3_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    snowflake: (f = msg.getSnowflake()) && plugins_snowflake_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    workflow: (f = msg.getWorkflow()) && plugins_workflow_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    javascript: (f = msg.getJavascript()) && plugins_javascript_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    mongodb: (f = msg.getMongodb()) && plugins_mongodb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    gcs: (f = msg.getGcs()) && plugins_gcs_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    openai: (f = msg.getOpenai()) && plugins_openai_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    ocr: (f = msg.getOcr()) && plugins_ocr_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    kafka: (f = msg.getKafka()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    confluent: (f = msg.getConfluent()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    msk: (f = msg.getMsk()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    redpanda: (f = msg.getRedpanda()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    aivenkafka: (f = msg.getAivenkafka()) && plugins_kafka_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    cockroachdb: (f = msg.getCockroachdb()) && plugins_cockroachdb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    airtable: (f = msg.getAirtable()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    notion: (f = msg.getNotion()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    pagerduty: (f = msg.getPagerduty()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    sendgrid: (f = msg.getSendgrid()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    slack: (f = msg.getSlack()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    athena: (f = msg.getAthena()) && plugins_athena_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    redis: (f = msg.getRedis()) && plugins_redis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    asana: (f = msg.getAsana()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    github: (f = msg.getGithub()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    smtp: (f = msg.getSmtp()) && plugins_smtp_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    salesforce: (f = msg.getSalesforce()) && plugins_salesforce_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    bitbucket: (f = msg.getBitbucket()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    circleci: (f = msg.getCircleci()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    front: (f = msg.getFront()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    intercom: (f = msg.getIntercom()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    segment: (f = msg.getSegment()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    launchdarkly: (f = msg.getLaunchdarkly()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    dropbox: (f = msg.getDropbox()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    twilio: (f = msg.getTwilio()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    googledrive: (f = msg.getGoogledrive()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    googleanalytics: (f = msg.getGoogleanalytics()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    box: (f = msg.getBox()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    hubspot: (f = msg.getHubspot()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    stripe: (f = msg.getStripe()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    zoom: (f = msg.getZoom()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    jira: (f = msg.getJira()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    zendesk: (f = msg.getZendesk()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    pinecone: (f = msg.getPinecone()) && plugins_pinecone_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    cosmosdb: (f = msg.getCosmosdb()) && plugins_cosmosdb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    datadog: (f = msg.getDatadog()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    xero: (f = msg.getXero()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    oracledb: (f = msg.getOracledb()) && plugins_oracledb_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    elasticsearch: (f = msg.getElasticsearch()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    databricks: (f = msg.getDatabricks()) && plugins_databricks_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    couchbase: (f = msg.getCouchbase()) && plugins_couchbase_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    custom: (f = msg.getCustom()) && plugins_custom_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    anthropic: (f = msg.getAnthropic()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    cohere: (f = msg.getCohere()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    fireworks: (f = msg.getFireworks()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    mistral: (f = msg.getMistral()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    groq: (f = msg.getGroq()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    perplexity: (f = msg.getPerplexity()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    stabilityai: (f = msg.getStabilityai()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    gemini: (f = msg.getGemini()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9084,7 +9072,7 @@ openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Step}
  */
 proto.api.v1.Step.deserializeBinary = function(bytes) {
@@ -9109,7 +9097,7 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegration(value);
       break;
     case 2:

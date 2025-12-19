@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
@@ -78,7 +84,7 @@ proto.intake.v1.Logs.prototype.toObject = function(opt_includeInstance) {
  */
 proto.intake.v1.Logs.toObject = function(includeInstance, msg) {
   var f, obj = {
-logsList: jspb.Message.toObjectList(msg.getLogsList(),
+    logsList: jspb.Message.toObjectList(msg.getLogsList(),
     google_protobuf_struct_pb.Struct.toObject, includeInstance)
   };
 
@@ -92,7 +98,7 @@ logsList: jspb.Message.toObjectList(msg.getLogsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.intake.v1.Logs}
  */
 proto.intake.v1.Logs.deserializeBinary = function(bytes) {

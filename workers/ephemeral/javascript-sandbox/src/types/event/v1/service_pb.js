@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.event.v1.IngestEventRequest', null, global);
 goog.exportSymbol('proto.event.v1.IngestEventResponse', null, global);
@@ -120,7 +126,7 @@ proto.event.v1.IngestEventRequest.prototype.toObject = function(opt_includeInsta
  */
 proto.event.v1.IngestEventRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-eventsList: msg.getEventsList_asB64()
+    eventsList: msg.getEventsList_asB64()
   };
 
   if (includeInstance) {
@@ -133,7 +139,7 @@ eventsList: msg.getEventsList_asB64()
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.IngestEventRequest}
  */
 proto.event.v1.IngestEventRequest.deserializeBinary = function(bytes) {
@@ -300,8 +306,8 @@ proto.event.v1.IngestEventResponse.prototype.toObject = function(opt_includeInst
  */
 proto.event.v1.IngestEventResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-success: jspb.Message.getFieldWithDefault(msg, 1, 0),
-errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
+    success: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
     proto.event.v1.IngestEventResponse.ErrorWrapper.toObject, includeInstance)
   };
 
@@ -315,7 +321,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.IngestEventResponse}
  */
 proto.event.v1.IngestEventResponse.deserializeBinary = function(bytes) {
@@ -427,8 +433,8 @@ proto.event.v1.IngestEventResponse.ErrorWrapper.prototype.toObject = function(op
  */
 proto.event.v1.IngestEventResponse.ErrorWrapper.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-error: jspb.Message.getFieldWithDefault(msg, 2, "")
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    error: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -441,7 +447,7 @@ error: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.IngestEventResponse.ErrorWrapper}
  */
 proto.event.v1.IngestEventResponse.ErrorWrapper.deserializeBinary = function(bytes) {
@@ -466,11 +472,11 @@ proto.event.v1.IngestEventResponse.ErrorWrapper.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setError(value);
       break;
     default:

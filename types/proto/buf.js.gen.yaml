@@ -5,12 +5,12 @@ plugins:
   - plugin: buf.build/bufbuild/es:v1.2.0
     opt: target=ts
     out: ../../workers/javascript/packages/types/src
-  # ??
-  - plugin: buf.build/protocolbuffers/js
+  # generates js message files (pinned to v3.21.2 for google-protobuf compatibility)
+  - plugin: buf.build/protocolbuffers/js:v3.21.2
     out: ../gen/js
     opt: import_style=commonjs
   # generates js message files for javascript-sandbox
-  - plugin: buf.build/protocolbuffers/js
+  - plugin: buf.build/protocolbuffers/js:v3.21.2
     out: ../../workers/ephemeral/javascript-sandbox/src/types
     opt: import_style=commonjs
   # generates js server / client stubs files

@@ -11,5 +11,8 @@ dependencies:
 - name: worker_js
   repository: file://../../workers/javascript/helm
   version: 0.0.1
-digest: sha256:d11a5b7ab1777dbbae659fc8f395928a4276ec00bafcac271b881db2e91e3109
-generated: "2025-09-18T11:21:07.601016-04:00"
+- name: ephemeral_worker
+  repository: file://../../workers/ephemeral/helm
+  version: 0.0.1
+digest: sha256:1c2b30837dcd4431fd88cb1cb22fa19de644e806e3c7a8529f0c04b5a5d33e75
+generated: "2025-12-18T03:24:35.149165-05:00"

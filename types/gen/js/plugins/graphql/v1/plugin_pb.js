@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var common_v1_plugin_pb = require('../../../common/v1/plugin_pb');
 goog.object.extend(proto, common_v1_plugin_pb);
@@ -93,8 +99,8 @@ proto.plugins.graphql.v1.Custom.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.graphql.v1.Custom.toObject = function(includeInstance, msg) {
   var f, obj = {
-variables: (f = msg.getVariables()) && common_v1_plugin_pb.Property.toObject(includeInstance, f),
-requestformat: (f = msg.getRequestformat()) && common_v1_plugin_pb.Property.toObject(includeInstance, f)
+    variables: (f = msg.getVariables()) && common_v1_plugin_pb.Property.toObject(includeInstance, f),
+    requestformat: (f = msg.getRequestformat()) && common_v1_plugin_pb.Property.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -107,7 +113,7 @@ requestformat: (f = msg.getRequestformat()) && common_v1_plugin_pb.Property.toOb
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.graphql.v1.Custom}
  */
 proto.plugins.graphql.v1.Custom.deserializeBinary = function(bytes) {
@@ -302,14 +308,14 @@ proto.plugins.graphql.v1.Plugin.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.graphql.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-path: jspb.Message.getFieldWithDefault(msg, 1, ""),
-headersList: jspb.Message.toObjectList(msg.getHeadersList(),
+    path: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    headersList: jspb.Message.toObjectList(msg.getHeadersList(),
     common_v1_plugin_pb.Property.toObject, includeInstance),
-body: jspb.Message.getFieldWithDefault(msg, 3, ""),
-custom: (f = msg.getCustom()) && proto.plugins.graphql.v1.Custom.toObject(includeInstance, f),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
-verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-failongraphqlerrors: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
+    body: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    custom: (f = msg.getCustom()) && proto.plugins.graphql.v1.Custom.toObject(includeInstance, f),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
+    verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+    failongraphqlerrors: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
   };
 
   if (includeInstance) {
@@ -322,7 +328,7 @@ failongraphqlerrors: jspb.Message.getBooleanFieldWithDefault(msg, 7, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.graphql.v1.Plugin}
  */
 proto.plugins.graphql.v1.Plugin.deserializeBinary = function(bytes) {
@@ -347,7 +353,7 @@ proto.plugins.graphql.v1.Plugin.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     case 2:
@@ -356,7 +362,7 @@ proto.plugins.graphql.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       msg.addHeaders(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 4:

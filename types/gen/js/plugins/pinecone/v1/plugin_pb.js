@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -211,13 +217,13 @@ proto.plugins.pinecone.v1.Plugin.prototype.toObject = function(opt_includeInstan
  */
 proto.plugins.pinecone.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
-connection: (f = msg.getConnection()) && proto.plugins.pinecone.v1.Plugin.Connection.toObject(includeInstance, f),
-listIndexes: (f = msg.getListIndexes()) && proto.plugins.pinecone.v1.Plugin.ListIndexes.toObject(includeInstance, f),
-createIndex: (f = msg.getCreateIndex()) && proto.plugins.pinecone.v1.Plugin.CreateIndex.toObject(includeInstance, f),
-upsertVector: (f = msg.getUpsertVector()) && proto.plugins.pinecone.v1.Plugin.UpsertVector.toObject(includeInstance, f),
-query: (f = msg.getQuery()) && proto.plugins.pinecone.v1.Plugin.Query.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
+    connection: (f = msg.getConnection()) && proto.plugins.pinecone.v1.Plugin.Connection.toObject(includeInstance, f),
+    listIndexes: (f = msg.getListIndexes()) && proto.plugins.pinecone.v1.Plugin.ListIndexes.toObject(includeInstance, f),
+    createIndex: (f = msg.getCreateIndex()) && proto.plugins.pinecone.v1.Plugin.CreateIndex.toObject(includeInstance, f),
+    upsertVector: (f = msg.getUpsertVector()) && proto.plugins.pinecone.v1.Plugin.UpsertVector.toObject(includeInstance, f),
+    query: (f = msg.getQuery()) && proto.plugins.pinecone.v1.Plugin.Query.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -230,7 +236,7 @@ query: (f = msg.getQuery()) && proto.plugins.pinecone.v1.Plugin.Query.toObject(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin}
  */
 proto.plugins.pinecone.v1.Plugin.deserializeBinary = function(bytes) {
@@ -255,7 +261,7 @@ proto.plugins.pinecone.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -407,8 +413,8 @@ proto.plugins.pinecone.v1.Plugin.Connection.prototype.toObject = function(opt_in
  */
 proto.plugins.pinecone.v1.Plugin.Connection.toObject = function(includeInstance, msg) {
   var f, obj = {
-environment: jspb.Message.getFieldWithDefault(msg, 1, ""),
-apiKey: jspb.Message.getFieldWithDefault(msg, 2, "")
+    environment: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    apiKey: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -421,7 +427,7 @@ apiKey: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.Connection}
  */
 proto.plugins.pinecone.v1.Plugin.Connection.deserializeBinary = function(bytes) {
@@ -446,11 +452,11 @@ proto.plugins.pinecone.v1.Plugin.Connection.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEnvironment(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setApiKey(value);
       break;
     default:
@@ -580,7 +586,7 @@ proto.plugins.pinecone.v1.Plugin.ListIndexes.toObject = function(includeInstance
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.ListIndexes}
  */
 proto.plugins.pinecone.v1.Plugin.ListIndexes.deserializeBinary = function(bytes) {
@@ -668,7 +674,7 @@ proto.plugins.pinecone.v1.Plugin.CreateIndex.prototype.toObject = function(opt_i
  */
 proto.plugins.pinecone.v1.Plugin.CreateIndex.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, "")
+    name: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -681,7 +687,7 @@ name: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.CreateIndex}
  */
 proto.plugins.pinecone.v1.Plugin.CreateIndex.deserializeBinary = function(bytes) {
@@ -706,7 +712,7 @@ proto.plugins.pinecone.v1.Plugin.CreateIndex.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     default:
@@ -823,7 +829,7 @@ proto.plugins.pinecone.v1.Plugin.UpsertVector.prototype.toObject = function(opt_
  */
 proto.plugins.pinecone.v1.Plugin.UpsertVector.toObject = function(includeInstance, msg) {
   var f, obj = {
-raw: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f
+    raw: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -836,7 +842,7 @@ raw: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.UpsertVector}
  */
 proto.plugins.pinecone.v1.Plugin.UpsertVector.deserializeBinary = function(bytes) {
@@ -861,7 +867,7 @@ proto.plugins.pinecone.v1.Plugin.UpsertVector.deserializeBinaryFromReader = func
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRaw(value);
       break;
     default:
@@ -971,8 +977,8 @@ proto.plugins.pinecone.v1.Plugin.Query.prototype.toObject = function(opt_include
  */
 proto.plugins.pinecone.v1.Plugin.Query.toObject = function(includeInstance, msg) {
   var f, obj = {
-vector: jspb.Message.getFieldWithDefault(msg, 1, ""),
-topK: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    vector: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    topK: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -985,7 +991,7 @@ topK: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.pinecone.v1.Plugin.Query}
  */
 proto.plugins.pinecone.v1.Plugin.Query.deserializeBinary = function(bytes) {
@@ -1010,11 +1016,11 @@ proto.plugins.pinecone.v1.Plugin.Query.deserializeBinaryFromReader = function(ms
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setVector(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTopK(value);
       break;
     default:

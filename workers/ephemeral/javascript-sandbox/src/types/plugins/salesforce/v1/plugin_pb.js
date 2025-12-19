@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_auth_pb = require('../../../plugins/common/v1/auth_pb.js');
 goog.object.extend(proto, plugins_common_v1_auth_pb);
@@ -258,12 +264,12 @@ proto.plugins.salesforce.v1.Plugin.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.salesforce.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-connection: (f = msg.getConnection()) && proto.plugins.salesforce.v1.Plugin.SalesforceConnection.toObject(includeInstance, f),
-soql: (f = msg.getSoql()) && proto.plugins.salesforce.v1.Plugin.Soql.toObject(includeInstance, f),
-crud: (f = msg.getCrud()) && proto.plugins.salesforce.v1.Plugin.Crud.toObject(includeInstance, f),
-bulk: (f = msg.getBulk()) && proto.plugins.salesforce.v1.Plugin.Bulk.toObject(includeInstance, f),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    connection: (f = msg.getConnection()) && proto.plugins.salesforce.v1.Plugin.SalesforceConnection.toObject(includeInstance, f),
+    soql: (f = msg.getSoql()) && proto.plugins.salesforce.v1.Plugin.Soql.toObject(includeInstance, f),
+    crud: (f = msg.getCrud()) && proto.plugins.salesforce.v1.Plugin.Crud.toObject(includeInstance, f),
+    bulk: (f = msg.getBulk()) && proto.plugins.salesforce.v1.Plugin.Bulk.toObject(includeInstance, f),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -276,7 +282,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin}
  */
 proto.plugins.salesforce.v1.Plugin.deserializeBinary = function(bytes) {
@@ -301,7 +307,7 @@ proto.plugins.salesforce.v1.Plugin.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -440,8 +446,8 @@ proto.plugins.salesforce.v1.Plugin.SalesforceConnection.prototype.toObject = fun
  */
 proto.plugins.salesforce.v1.Plugin.SalesforceConnection.toObject = function(includeInstance, msg) {
   var f, obj = {
-instanceUrl: jspb.Message.getFieldWithDefault(msg, 1, ""),
-auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Auth.toObject(includeInstance, f)
+    instanceUrl: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Auth.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -454,7 +460,7 @@ auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Auth.toObject(includeInst
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.SalesforceConnection}
  */
 proto.plugins.salesforce.v1.Plugin.SalesforceConnection.deserializeBinary = function(bytes) {
@@ -479,7 +485,7 @@ proto.plugins.salesforce.v1.Plugin.SalesforceConnection.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setInstanceUrl(value);
       break;
     case 2:
@@ -628,7 +634,7 @@ proto.plugins.salesforce.v1.Plugin.Metadata.prototype.toObject = function(opt_in
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-objectsList: jspb.Message.toObjectList(msg.getObjectsList(),
+    objectsList: jspb.Message.toObjectList(msg.getObjectsList(),
     proto.plugins.salesforce.v1.Plugin.Metadata.Object.toObject, includeInstance)
   };
 
@@ -642,7 +648,7 @@ objectsList: jspb.Message.toObjectList(msg.getObjectsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Metadata}
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.deserializeBinary = function(bytes) {
@@ -750,7 +756,7 @@ proto.plugins.salesforce.v1.Plugin.Metadata.Object.prototype.toObject = function
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.Object.toObject = function(includeInstance, msg) {
   var f, obj = {
-fieldsList: jspb.Message.toObjectList(msg.getFieldsList(),
+    fieldsList: jspb.Message.toObjectList(msg.getFieldsList(),
     proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field.toObject, includeInstance)
   };
 
@@ -764,7 +770,7 @@ fieldsList: jspb.Message.toObjectList(msg.getFieldsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Metadata.Object}
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.Object.deserializeBinary = function(bytes) {
@@ -865,9 +871,9 @@ proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field.prototype.toObject = fu
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-label: jspb.Message.getFieldWithDefault(msg, 2, ""),
-type: jspb.Message.getFieldWithDefault(msg, 3, "")
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    label: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -880,7 +886,7 @@ type: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field}
  */
 proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field.deserializeBinary = function(bytes) {
@@ -905,15 +911,15 @@ proto.plugins.salesforce.v1.Plugin.Metadata.Object.Field.deserializeBinaryFromRe
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setLabel(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setType(value);
       break;
     default:
@@ -1131,8 +1137,8 @@ proto.plugins.salesforce.v1.Plugin.Soql.prototype.toObject = function(opt_includ
  */
 proto.plugins.salesforce.v1.Plugin.Soql.toObject = function(includeInstance, msg) {
   var f, obj = {
-sqlBody: jspb.Message.getFieldWithDefault(msg, 1, ""),
-action: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    sqlBody: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    action: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -1145,7 +1151,7 @@ action: jspb.Message.getFieldWithDefault(msg, 2, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Soql}
  */
 proto.plugins.salesforce.v1.Plugin.Soql.deserializeBinary = function(bytes) {
@@ -1170,7 +1176,7 @@ proto.plugins.salesforce.v1.Plugin.Soql.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSqlBody(value);
       break;
     case 2:
@@ -1299,10 +1305,10 @@ proto.plugins.salesforce.v1.Plugin.Crud.prototype.toObject = function(opt_includ
  */
 proto.plugins.salesforce.v1.Plugin.Crud.toObject = function(includeInstance, msg) {
   var f, obj = {
-resourceType: jspb.Message.getFieldWithDefault(msg, 1, ""),
-action: jspb.Message.getFieldWithDefault(msg, 2, 0),
-resourceBody: jspb.Message.getFieldWithDefault(msg, 3, ""),
-resourceId: jspb.Message.getFieldWithDefault(msg, 4, "")
+    resourceType: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    action: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    resourceBody: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    resourceId: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -1315,7 +1321,7 @@ resourceId: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Crud}
  */
 proto.plugins.salesforce.v1.Plugin.Crud.deserializeBinary = function(bytes) {
@@ -1340,7 +1346,7 @@ proto.plugins.salesforce.v1.Plugin.Crud.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResourceType(value);
       break;
     case 2:
@@ -1348,11 +1354,11 @@ proto.plugins.salesforce.v1.Plugin.Crud.deserializeBinaryFromReader = function(m
       msg.setAction(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResourceBody(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResourceId(value);
       break;
     default:
@@ -1530,10 +1536,10 @@ proto.plugins.salesforce.v1.Plugin.Bulk.prototype.toObject = function(opt_includ
  */
 proto.plugins.salesforce.v1.Plugin.Bulk.toObject = function(includeInstance, msg) {
   var f, obj = {
-resourceType: jspb.Message.getFieldWithDefault(msg, 1, ""),
-action: jspb.Message.getFieldWithDefault(msg, 2, 0),
-resourceBody: jspb.Message.getFieldWithDefault(msg, 3, ""),
-externalId: jspb.Message.getFieldWithDefault(msg, 4, "")
+    resourceType: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    action: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    resourceBody: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    externalId: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -1546,7 +1552,7 @@ externalId: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.salesforce.v1.Plugin.Bulk}
  */
 proto.plugins.salesforce.v1.Plugin.Bulk.deserializeBinary = function(bytes) {
@@ -1571,7 +1577,7 @@ proto.plugins.salesforce.v1.Plugin.Bulk.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResourceType(value);
       break;
     case 2:
@@ -1579,11 +1585,11 @@ proto.plugins.salesforce.v1.Plugin.Bulk.deserializeBinaryFromReader = function(m
       msg.setAction(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResourceBody(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExternalId(value);
       break;
     default:

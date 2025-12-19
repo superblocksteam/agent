@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_descriptor_pb = require('google-protobuf/google/protobuf/descriptor_pb.js');
 goog.object.extend(proto, google_protobuf_descriptor_pb);
@@ -95,7 +101,7 @@ proto.superblocks.v1.Integrations.prototype.toObject = function(opt_includeInsta
  */
 proto.superblocks.v1.Integrations.toObject = function(includeInstance, msg) {
   var f, obj = {
-registry: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
+    registry: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -108,7 +114,7 @@ registry: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.superblocks.v1.Integrations}
  */
 proto.superblocks.v1.Integrations.deserializeBinary = function(bytes) {
@@ -225,7 +231,7 @@ proto.superblocks.v1.IntegrationOptions.prototype.toObject = function(opt_includ
  */
 proto.superblocks.v1.IntegrationOptions.toObject = function(includeInstance, msg) {
   var f, obj = {
-plugintype: jspb.Message.getFieldWithDefault(msg, 2, "")
+    plugintype: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -238,7 +244,7 @@ plugintype: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.superblocks.v1.IntegrationOptions}
  */
 proto.superblocks.v1.IntegrationOptions.deserializeBinary = function(bytes) {
@@ -263,7 +269,7 @@ proto.superblocks.v1.IntegrationOptions.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPlugintype(value);
       break;
     default:

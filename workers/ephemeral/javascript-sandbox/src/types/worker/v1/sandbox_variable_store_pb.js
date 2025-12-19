@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.worker.v1.GetVariableRequest', null, global);
 goog.exportSymbol('proto.worker.v1.GetVariableResponse', null, global);
@@ -245,8 +251,8 @@ proto.worker.v1.GetVariableRequest.prototype.toObject = function(opt_includeInst
  */
 proto.worker.v1.GetVariableRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-key: jspb.Message.getFieldWithDefault(msg, 2, "")
+    executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    key: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -259,7 +265,7 @@ key: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.GetVariableRequest}
  */
 proto.worker.v1.GetVariableRequest.deserializeBinary = function(bytes) {
@@ -284,11 +290,11 @@ proto.worker.v1.GetVariableRequest.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExecutionId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -405,8 +411,8 @@ proto.worker.v1.GetVariableResponse.prototype.toObject = function(opt_includeIns
  */
 proto.worker.v1.GetVariableResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-value: jspb.Message.getFieldWithDefault(msg, 1, ""),
-found: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
+    value: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    found: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
   };
 
   if (includeInstance) {
@@ -419,7 +425,7 @@ found: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.GetVariableResponse}
  */
 proto.worker.v1.GetVariableResponse.deserializeBinary = function(bytes) {
@@ -444,7 +450,7 @@ proto.worker.v1.GetVariableResponse.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     case 2:
@@ -565,9 +571,9 @@ proto.worker.v1.SetVariableRequest.prototype.toObject = function(opt_includeInst
  */
 proto.worker.v1.SetVariableRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-key: jspb.Message.getFieldWithDefault(msg, 2, ""),
-value: jspb.Message.getFieldWithDefault(msg, 3, "")
+    executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    key: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -580,7 +586,7 @@ value: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.SetVariableRequest}
  */
 proto.worker.v1.SetVariableRequest.deserializeBinary = function(bytes) {
@@ -605,15 +611,15 @@ proto.worker.v1.SetVariableRequest.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExecutionId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     default:
@@ -755,7 +761,7 @@ proto.worker.v1.SetVariableResponse.prototype.toObject = function(opt_includeIns
  */
 proto.worker.v1.SetVariableResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
+    success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -768,7 +774,7 @@ success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.SetVariableResponse}
  */
 proto.worker.v1.SetVariableResponse.deserializeBinary = function(bytes) {
@@ -892,8 +898,8 @@ proto.worker.v1.GetVariablesRequest.prototype.toObject = function(opt_includeIns
  */
 proto.worker.v1.GetVariablesRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-keysList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
+    executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    keysList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -906,7 +912,7 @@ keysList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.GetVariablesRequest}
  */
 proto.worker.v1.GetVariablesRequest.deserializeBinary = function(bytes) {
@@ -931,11 +937,11 @@ proto.worker.v1.GetVariablesRequest.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExecutionId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addKeys(value);
       break;
     default:
@@ -1078,7 +1084,7 @@ proto.worker.v1.GetVariablesResponse.prototype.toObject = function(opt_includeIn
  */
 proto.worker.v1.GetVariablesResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-valuesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    valuesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1091,7 +1097,7 @@ valuesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.GetVariablesResponse}
  */
 proto.worker.v1.GetVariablesResponse.deserializeBinary = function(bytes) {
@@ -1116,7 +1122,7 @@ proto.worker.v1.GetVariablesResponse.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addValues(value);
       break;
     default:
@@ -1234,8 +1240,8 @@ proto.worker.v1.SetVariablesRequest.prototype.toObject = function(opt_includeIns
  */
 proto.worker.v1.SetVariablesRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-kvsList: jspb.Message.toObjectList(msg.getKvsList(),
+    executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    kvsList: jspb.Message.toObjectList(msg.getKvsList(),
     proto.worker.v1.KeyValue.toObject, includeInstance)
   };
 
@@ -1249,7 +1255,7 @@ kvsList: jspb.Message.toObjectList(msg.getKvsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.SetVariablesRequest}
  */
 proto.worker.v1.SetVariablesRequest.deserializeBinary = function(bytes) {
@@ -1274,7 +1280,7 @@ proto.worker.v1.SetVariablesRequest.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExecutionId(value);
       break;
     case 2:
@@ -1417,8 +1423,8 @@ proto.worker.v1.KeyValue.prototype.toObject = function(opt_includeInstance) {
  */
 proto.worker.v1.KeyValue.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1431,7 +1437,7 @@ value: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.KeyValue}
  */
 proto.worker.v1.KeyValue.deserializeBinary = function(bytes) {
@@ -1456,11 +1462,11 @@ proto.worker.v1.KeyValue.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     default:
@@ -1577,7 +1583,7 @@ proto.worker.v1.SetVariablesResponse.prototype.toObject = function(opt_includeIn
  */
 proto.worker.v1.SetVariablesResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
+    success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -1590,7 +1596,7 @@ success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.SetVariablesResponse}
  */
 proto.worker.v1.SetVariablesResponse.deserializeBinary = function(bytes) {

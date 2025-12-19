@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -93,12 +99,12 @@ proto.plugins.oracledb.v1.Plugin.prototype.toObject = function(opt_includeInstan
  */
 proto.plugins.oracledb.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-connection: (f = msg.getConnection()) && proto.plugins.oracledb.v1.Plugin.OracleDbConnection.toObject(includeInstance, f),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
-runSql: (f = msg.getRunSql()) && plugins_common_v1_plugin_pb.SQLExecution.toObject(includeInstance, f),
-bulkEdit: (f = msg.getBulkEdit()) && plugins_common_v1_plugin_pb.SQLBulkEdit.toObject(includeInstance, f),
-operation: jspb.Message.getFieldWithDefault(msg, 6, 0)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    connection: (f = msg.getConnection()) && proto.plugins.oracledb.v1.Plugin.OracleDbConnection.toObject(includeInstance, f),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
+    runSql: (f = msg.getRunSql()) && plugins_common_v1_plugin_pb.SQLExecution.toObject(includeInstance, f),
+    bulkEdit: (f = msg.getBulkEdit()) && plugins_common_v1_plugin_pb.SQLBulkEdit.toObject(includeInstance, f),
+    operation: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -111,7 +117,7 @@ operation: jspb.Message.getFieldWithDefault(msg, 6, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.oracledb.v1.Plugin}
  */
 proto.plugins.oracledb.v1.Plugin.deserializeBinary = function(bytes) {
@@ -136,7 +142,7 @@ proto.plugins.oracledb.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -273,14 +279,14 @@ proto.plugins.oracledb.v1.Plugin.OracleDbConnection.prototype.toObject = functio
  */
 proto.plugins.oracledb.v1.Plugin.OracleDbConnection.toObject = function(includeInstance, msg) {
   var f, obj = {
-hostUrl: jspb.Message.getFieldWithDefault(msg, 1, ""),
-port: jspb.Message.getFieldWithDefault(msg, 2, 0),
-user: jspb.Message.getFieldWithDefault(msg, 3, ""),
-password: jspb.Message.getFieldWithDefault(msg, 4, ""),
-databaseService: jspb.Message.getFieldWithDefault(msg, 5, ""),
-useTcps: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-connectionType: jspb.Message.getFieldWithDefault(msg, 7, ""),
-connectionUrl: jspb.Message.getFieldWithDefault(msg, 8, "")
+    hostUrl: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    port: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    user: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    password: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    databaseService: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    useTcps: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+    connectionType: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    connectionUrl: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -293,7 +299,7 @@ connectionUrl: jspb.Message.getFieldWithDefault(msg, 8, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.oracledb.v1.Plugin.OracleDbConnection}
  */
 proto.plugins.oracledb.v1.Plugin.OracleDbConnection.deserializeBinary = function(bytes) {
@@ -318,7 +324,7 @@ proto.plugins.oracledb.v1.Plugin.OracleDbConnection.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHostUrl(value);
       break;
     case 2:
@@ -326,15 +332,15 @@ proto.plugins.oracledb.v1.Plugin.OracleDbConnection.deserializeBinaryFromReader 
       msg.setPort(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUser(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPassword(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDatabaseService(value);
       break;
     case 6:
@@ -342,11 +348,11 @@ proto.plugins.oracledb.v1.Plugin.OracleDbConnection.deserializeBinaryFromReader 
       msg.setUseTcps(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConnectionType(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConnectionUrl(value);
       break;
     default:

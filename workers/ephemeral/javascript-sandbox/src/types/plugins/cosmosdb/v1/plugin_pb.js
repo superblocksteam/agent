@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_auth_pb = require('../../../plugins/common/v1/auth_pb.js');
 goog.object.extend(proto, plugins_common_v1_auth_pb);
@@ -366,11 +372,11 @@ proto.plugins.cosmosdb.v1.Plugin.prototype.toObject = function(opt_includeInstan
  */
 proto.plugins.cosmosdb.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
-connection: (f = msg.getConnection()) && proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.toObject(includeInstance, f),
-sql: (f = msg.getSql()) && proto.plugins.cosmosdb.v1.Plugin.Sql.toObject(includeInstance, f),
-pointOperation: (f = msg.getPointOperation()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
+    connection: (f = msg.getConnection()) && proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.toObject(includeInstance, f),
+    sql: (f = msg.getSql()) && proto.plugins.cosmosdb.v1.Plugin.Sql.toObject(includeInstance, f),
+    pointOperation: (f = msg.getPointOperation()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -383,7 +389,7 @@ pointOperation: (f = msg.getPointOperation()) && proto.plugins.cosmosdb.v1.Plugi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin}
  */
 proto.plugins.cosmosdb.v1.Plugin.deserializeBinary = function(bytes) {
@@ -408,7 +414,7 @@ proto.plugins.cosmosdb.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -534,10 +540,10 @@ proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.prototype.toObject = functio
  */
 proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.toObject = function(includeInstance, msg) {
   var f, obj = {
-host: jspb.Message.getFieldWithDefault(msg, 1, ""),
-port: jspb.Message.getFieldWithDefault(msg, 2, 0),
-databaseId: jspb.Message.getFieldWithDefault(msg, 3, ""),
-auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Azure.toObject(includeInstance, f)
+    host: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    port: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    databaseId: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Azure.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -550,7 +556,7 @@ auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Azure.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection}
  */
 proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.deserializeBinary = function(bytes) {
@@ -575,7 +581,7 @@ proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHost(value);
       break;
     case 2:
@@ -583,7 +589,7 @@ proto.plugins.cosmosdb.v1.Plugin.CosmosDbConnection.deserializeBinaryFromReader 
       msg.setPort(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDatabaseId(value);
       break;
     case 4:
@@ -782,7 +788,7 @@ proto.plugins.cosmosdb.v1.Plugin.Metadata.prototype.toObject = function(opt_incl
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-containersList: jspb.Message.toObjectList(msg.getContainersList(),
+    containersList: jspb.Message.toObjectList(msg.getContainersList(),
     proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.toObject, includeInstance)
   };
 
@@ -796,7 +802,7 @@ containersList: jspb.Message.toObjectList(msg.getContainersList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Metadata}
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.deserializeBinary = function(bytes) {
@@ -897,8 +903,8 @@ proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.prototype.toObject = functio
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionKey: (f = msg.getPartitionKey()) && proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey.toObject(includeInstance, f)
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionKey: (f = msg.getPartitionKey()) && proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -911,7 +917,7 @@ partitionKey: (f = msg.getPartitionKey()) && proto.plugins.cosmosdb.v1.Plugin.Me
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Metadata.Container}
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.deserializeBinary = function(bytes) {
@@ -936,7 +942,7 @@ proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
@@ -1030,9 +1036,9 @@ proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey.prototype.toObj
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey.toObject = function(includeInstance, msg) {
   var f, obj = {
-pathsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
-kind: jspb.Message.getFieldWithDefault(msg, 2, ""),
-version: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    pathsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
+    kind: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    version: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
   if (includeInstance) {
@@ -1045,7 +1051,7 @@ version: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey}
  */
 proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey.deserializeBinary = function(bytes) {
@@ -1070,11 +1076,11 @@ proto.plugins.cosmosdb.v1.Plugin.Metadata.Container.PartitionKey.deserializeBina
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addPaths(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKind(value);
       break;
     case 3:
@@ -1375,7 +1381,7 @@ proto.plugins.cosmosdb.v1.Plugin.Sql.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.cosmosdb.v1.Plugin.Sql.toObject = function(includeInstance, msg) {
   var f, obj = {
-singleton: (f = msg.getSingleton()) && proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.toObject(includeInstance, f)
+    singleton: (f = msg.getSingleton()) && proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1388,7 +1394,7 @@ singleton: (f = msg.getSingleton()) && proto.plugins.cosmosdb.v1.Plugin.Sql.Sing
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Sql}
  */
 proto.plugins.cosmosdb.v1.Plugin.Sql.deserializeBinary = function(bytes) {
@@ -1489,10 +1495,10 @@ proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.prototype.toObject = function(opt
  */
 proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.toObject = function(includeInstance, msg) {
   var f, obj = {
-containerId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-query: jspb.Message.getFieldWithDefault(msg, 2, ""),
-crossPartition: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-partitionKey: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
+    containerId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    query: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    crossPartition: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
+    partitionKey: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -1505,7 +1511,7 @@ partitionKey: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton}
  */
 proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.deserializeBinary = function(bytes) {
@@ -1530,11 +1536,11 @@ proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.deserializeBinaryFromReader = fun
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setContainerId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setQuery(value);
       break;
     case 3:
@@ -1542,7 +1548,7 @@ proto.plugins.cosmosdb.v1.Plugin.Sql.Singleton.deserializeBinaryFromReader = fun
       msg.setCrossPartition(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionKey(value);
       break;
     default:
@@ -1793,12 +1799,12 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.prototype.toObject = function(op
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.toObject = function(includeInstance, msg) {
   var f, obj = {
-containerId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-read: (f = msg.getRead()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read.toObject(includeInstance, f),
-replace: (f = msg.getReplace()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace.toObject(includeInstance, f),
-upsert: (f = msg.getUpsert()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert.toObject(includeInstance, f),
-pb_delete: (f = msg.getDelete()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete.toObject(includeInstance, f),
-create: (f = msg.getCreate()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create.toObject(includeInstance, f)
+    containerId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    read: (f = msg.getRead()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read.toObject(includeInstance, f),
+    replace: (f = msg.getReplace()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace.toObject(includeInstance, f),
+    upsert: (f = msg.getUpsert()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert.toObject(includeInstance, f),
+    pb_delete: (f = msg.getDelete()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete.toObject(includeInstance, f),
+    create: (f = msg.getCreate()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1811,7 +1817,7 @@ create: (f = msg.getCreate()) && proto.plugins.cosmosdb.v1.Plugin.PointOperation
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.deserializeBinary = function(bytes) {
@@ -1836,7 +1842,7 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setContainerId(value);
       break;
     case 2:
@@ -1975,8 +1981,8 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read.prototype.toObject = functi
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionKey: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -1989,7 +1995,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read.deserializeBinary = function(bytes) {
@@ -2014,11 +2020,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Read.deserializeBinaryFromReader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionKey(value);
       break;
     default:
@@ -2153,8 +2159,8 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete.prototype.toObject = func
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionKey: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -2167,7 +2173,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete.deserializeBinary = function(bytes) {
@@ -2192,11 +2198,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Delete.deserializeBinaryFromRead
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionKey(value);
       break;
     default:
@@ -2331,8 +2337,8 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace.prototype.toObject = fun
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace.toObject = function(includeInstance, msg) {
   var f, obj = {
-body: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    body: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionKey: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -2345,7 +2351,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace.deserializeBinary = function(bytes) {
@@ -2370,11 +2376,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Replace.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionKey(value);
       break;
     default:
@@ -2509,8 +2515,8 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert.prototype.toObject = func
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert.toObject = function(includeInstance, msg) {
   var f, obj = {
-body: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    body: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionKey: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -2523,7 +2529,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert.deserializeBinary = function(bytes) {
@@ -2548,11 +2554,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Upsert.deserializeBinaryFromRead
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionKey(value);
       break;
     default:
@@ -2687,8 +2693,8 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create.prototype.toObject = func
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create.toObject = function(includeInstance, msg) {
   var f, obj = {
-body: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    body: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionKey: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -2701,7 +2707,7 @@ partitionKey: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create}
  */
 proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create.deserializeBinary = function(bytes) {
@@ -2726,11 +2732,11 @@ proto.plugins.cosmosdb.v1.Plugin.PointOperation.Create.deserializeBinaryFromRead
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionKey(value);
       break;
     default:

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.plugins.gsheets.v1.Plugin', null, global);
 goog.exportSymbol('proto.plugins.gsheets.v1.Plugin.AddSheet', null, global);
@@ -113,7 +119,7 @@ proto.plugins.gsheets.v1.SuperblocksMetadata.prototype.toObject = function(opt_i
  */
 proto.plugins.gsheets.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -126,7 +132,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gsheets.v1.SuperblocksMetadata}
  */
 proto.plugins.gsheets.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -151,7 +157,7 @@ proto.plugins.gsheets.v1.SuperblocksMetadata.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -243,21 +249,21 @@ proto.plugins.gsheets.v1.Plugin.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.gsheets.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-spreadsheetid: jspb.Message.getFieldWithDefault(msg, 1, ""),
-sheettitle: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-range: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-rownumber: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-extractfirstrowheader: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
-headerrownumber: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-format: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-data: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f,
-preserveheaderrow: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
-includeheaderrow: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
-action: (f = jspb.Message.getField(msg, 11)) == null ? undefined : f,
-writetodestinationtype: (f = jspb.Message.getField(msg, 12)) == null ? undefined : f,
-body: (f = jspb.Message.getField(msg, 13)) == null ? undefined : f,
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.gsheets.v1.SuperblocksMetadata.toObject(includeInstance, f),
-addsheet: (f = msg.getAddsheet()) && proto.plugins.gsheets.v1.Plugin.AddSheet.toObject(includeInstance, f)
+    spreadsheetid: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    sheettitle: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    range: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    rownumber: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    extractfirstrowheader: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    headerrownumber: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    format: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    data: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    preserveheaderrow: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
+    includeheaderrow: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
+    action: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    writetodestinationtype: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    body: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.gsheets.v1.SuperblocksMetadata.toObject(includeInstance, f),
+    addsheet: (f = msg.getAddsheet()) && proto.plugins.gsheets.v1.Plugin.AddSheet.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -270,7 +276,7 @@ addsheet: (f = msg.getAddsheet()) && proto.plugins.gsheets.v1.Plugin.AddSheet.to
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gsheets.v1.Plugin}
  */
 proto.plugins.gsheets.v1.Plugin.deserializeBinary = function(bytes) {
@@ -295,19 +301,19 @@ proto.plugins.gsheets.v1.Plugin.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSpreadsheetid(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSheettitle(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRange(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRownumber(value);
       break;
     case 5:
@@ -315,15 +321,15 @@ proto.plugins.gsheets.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       msg.setExtractfirstrowheader(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHeaderrownumber(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFormat(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setData(value);
       break;
     case 9:
@@ -335,15 +341,15 @@ proto.plugins.gsheets.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       msg.setIncludeheaderrow(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAction(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setWritetodestinationtype(value);
       break;
     case 13:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 14:
@@ -527,9 +533,9 @@ proto.plugins.gsheets.v1.Plugin.AddSheet.prototype.toObject = function(opt_inclu
  */
 proto.plugins.gsheets.v1.Plugin.AddSheet.toObject = function(includeInstance, msg) {
   var f, obj = {
-sheettitle: jspb.Message.getFieldWithDefault(msg, 1, ""),
-rowcount: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-columncount: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    sheettitle: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    rowcount: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    columncount: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -542,7 +548,7 @@ columncount: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.gsheets.v1.Plugin.AddSheet}
  */
 proto.plugins.gsheets.v1.Plugin.AddSheet.deserializeBinary = function(bytes) {
@@ -567,15 +573,15 @@ proto.plugins.gsheets.v1.Plugin.AddSheet.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSheettitle(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRowcount(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setColumncount(value);
       break;
     default:

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -215,8 +221,8 @@ proto.api.v1.CheckAuthRequest.prototype.toObject = function(opt_includeInstance)
  */
 proto.api.v1.CheckAuthRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f)
+    integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -229,7 +235,7 @@ profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.CheckAuthRequest}
  */
 proto.api.v1.CheckAuthRequest.deserializeBinary = function(bytes) {
@@ -254,7 +260,7 @@ proto.api.v1.CheckAuthRequest.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 2:
@@ -396,7 +402,7 @@ proto.api.v1.CheckAuthResponse.prototype.toObject = function(opt_includeInstance
  */
 proto.api.v1.CheckAuthResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-authenticated: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
+    authenticated: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -409,7 +415,7 @@ authenticated: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.CheckAuthResponse}
  */
 proto.api.v1.CheckAuthResponse.deserializeBinary = function(bytes) {
@@ -526,12 +532,12 @@ proto.api.v1.LoginRequest.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.LoginRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
-token: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-refreshtoken: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-idtoken: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-expirytimestamp: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
+    integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
+    token: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    refreshtoken: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    idtoken: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    expirytimestamp: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -544,7 +550,7 @@ expirytimestamp: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.LoginRequest}
  */
 proto.api.v1.LoginRequest.deserializeBinary = function(bytes) {
@@ -569,7 +575,7 @@ proto.api.v1.LoginRequest.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 2:
@@ -578,15 +584,15 @@ proto.api.v1.LoginRequest.deserializeBinaryFromReader = function(msg, reader) {
       msg.setProfile(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setToken(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRefreshtoken(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIdtoken(value);
       break;
     case 6:
@@ -899,7 +905,7 @@ proto.api.v1.LoginResponse.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.LoginResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
+    success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -912,7 +918,7 @@ success: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.LoginResponse}
  */
 proto.api.v1.LoginResponse.deserializeBinary = function(bytes) {
@@ -1029,12 +1035,12 @@ proto.api.v1.ExchangeOauthCodeForTokenRequest.prototype.toObject = function(opt_
  */
 proto.api.v1.ExchangeOauthCodeForTokenRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
-accessCode: jspb.Message.getFieldWithDefault(msg, 3, ""),
-authType: jspb.Message.getFieldWithDefault(msg, 4, ""),
-authConfig: (f = msg.getAuthConfig()) && plugins_common_v1_auth_pb.OAuth.AuthorizationCodeFlow.toObject(includeInstance, f),
-configurationId: jspb.Message.getFieldWithDefault(msg, 6, "")
+    integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
+    accessCode: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    authType: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    authConfig: (f = msg.getAuthConfig()) && plugins_common_v1_auth_pb.OAuth.AuthorizationCodeFlow.toObject(includeInstance, f),
+    configurationId: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -1047,7 +1053,7 @@ configurationId: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.ExchangeOauthCodeForTokenRequest}
  */
 proto.api.v1.ExchangeOauthCodeForTokenRequest.deserializeBinary = function(bytes) {
@@ -1072,7 +1078,7 @@ proto.api.v1.ExchangeOauthCodeForTokenRequest.deserializeBinaryFromReader = func
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 2:
@@ -1081,11 +1087,11 @@ proto.api.v1.ExchangeOauthCodeForTokenRequest.deserializeBinaryFromReader = func
       msg.setProfile(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAccessCode(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAuthType(value);
       break;
     case 5:
@@ -1094,7 +1100,7 @@ proto.api.v1.ExchangeOauthCodeForTokenRequest.deserializeBinaryFromReader = func
       msg.setAuthConfig(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConfigurationId(value);
       break;
     default:
@@ -1351,10 +1357,10 @@ proto.api.v1.RequestOauthPasswordTokenRequest.prototype.toObject = function(opt_
  */
 proto.api.v1.RequestOauthPasswordTokenRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
-username: jspb.Message.getFieldWithDefault(msg, 3, ""),
-password: jspb.Message.getFieldWithDefault(msg, 4, "")
+    integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
+    username: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    password: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -1367,7 +1373,7 @@ password: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.RequestOauthPasswordTokenRequest}
  */
 proto.api.v1.RequestOauthPasswordTokenRequest.deserializeBinary = function(bytes) {
@@ -1392,7 +1398,7 @@ proto.api.v1.RequestOauthPasswordTokenRequest.deserializeBinaryFromReader = func
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 2:
@@ -1401,11 +1407,11 @@ proto.api.v1.RequestOauthPasswordTokenRequest.deserializeBinaryFromReader = func
       msg.setProfile(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUsername(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPassword(value);
       break;
     default:
@@ -1592,9 +1598,9 @@ proto.api.v1.RequestOauthPasswordTokenResponse.prototype.toObject = function(opt
  */
 proto.api.v1.RequestOauthPasswordTokenResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-accessToken: jspb.Message.getFieldWithDefault(msg, 1, ""),
-refreshToken: jspb.Message.getFieldWithDefault(msg, 2, ""),
-expiryTimestamp: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    accessToken: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    refreshToken: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    expiryTimestamp: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
   if (includeInstance) {
@@ -1607,7 +1613,7 @@ expiryTimestamp: jspb.Message.getFieldWithDefault(msg, 3, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.RequestOauthPasswordTokenResponse}
  */
 proto.api.v1.RequestOauthPasswordTokenResponse.deserializeBinary = function(bytes) {
@@ -1632,11 +1638,11 @@ proto.api.v1.RequestOauthPasswordTokenResponse.deserializeBinaryFromReader = fun
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAccessToken(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRefreshToken(value);
       break;
     case 3:

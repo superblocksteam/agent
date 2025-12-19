@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.common.v1.StringList', null, global);
 /**
@@ -76,7 +82,7 @@ proto.common.v1.StringList.prototype.toObject = function(opt_includeInstance) {
  */
 proto.common.v1.StringList.toObject = function(includeInstance, msg) {
   var f, obj = {
-itemsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    itemsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -89,7 +95,7 @@ itemsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.StringList}
  */
 proto.common.v1.StringList.deserializeBinary = function(bytes) {
@@ -114,7 +120,7 @@ proto.common.v1.StringList.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addItems(value);
       break;
     default:

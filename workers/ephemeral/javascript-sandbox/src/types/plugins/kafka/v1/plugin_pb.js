@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../../buf/validate/validate_pb.js');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -353,9 +359,9 @@ proto.plugins.kafka.v1.Metadata.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.kafka.v1.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-topicsList: jspb.Message.toObjectList(msg.getTopicsList(),
+    topicsList: jspb.Message.toObjectList(msg.getTopicsList(),
     proto.plugins.kafka.v1.Topic.toObject, includeInstance),
-brokersList: jspb.Message.toObjectList(msg.getBrokersList(),
+    brokersList: jspb.Message.toObjectList(msg.getBrokersList(),
     proto.plugins.kafka.v1.Broker.toObject, includeInstance)
   };
 
@@ -369,7 +375,7 @@ brokersList: jspb.Message.toObjectList(msg.getBrokersList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Metadata}
  */
 proto.plugins.kafka.v1.Metadata.deserializeBinary = function(bytes) {
@@ -490,7 +496,7 @@ proto.plugins.kafka.v1.Metadata.Minified.prototype.toObject = function(opt_inclu
  */
 proto.plugins.kafka.v1.Metadata.Minified.toObject = function(includeInstance, msg) {
   var f, obj = {
-topicsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    topicsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -503,7 +509,7 @@ topicsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Metadata.Minified}
  */
 proto.plugins.kafka.v1.Metadata.Minified.deserializeBinary = function(bytes) {
@@ -528,7 +534,7 @@ proto.plugins.kafka.v1.Metadata.Minified.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addTopics(value);
       break;
     default:
@@ -715,8 +721,8 @@ proto.plugins.kafka.v1.Broker.prototype.toObject = function(opt_includeInstance)
  */
 proto.plugins.kafka.v1.Broker.toObject = function(includeInstance, msg) {
   var f, obj = {
-nodeId: jspb.Message.getFieldWithDefault(msg, 1, 0),
-address: jspb.Message.getFieldWithDefault(msg, 2, "")
+    nodeId: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    address: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -729,7 +735,7 @@ address: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Broker}
  */
 proto.plugins.kafka.v1.Broker.deserializeBinary = function(bytes) {
@@ -758,7 +764,7 @@ proto.plugins.kafka.v1.Broker.deserializeBinaryFromReader = function(msg, reader
       msg.setNodeId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAddress(value);
       break;
     default:
@@ -875,7 +881,7 @@ proto.plugins.kafka.v1.Topic.prototype.toObject = function(opt_includeInstance) 
  */
 proto.plugins.kafka.v1.Topic.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, "")
+    name: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -888,7 +894,7 @@ name: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Topic}
  */
 proto.plugins.kafka.v1.Topic.deserializeBinary = function(bytes) {
@@ -913,7 +919,7 @@ proto.plugins.kafka.v1.Topic.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     default:
@@ -1012,7 +1018,7 @@ proto.plugins.kafka.v1.Messages.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.kafka.v1.Messages.toObject = function(includeInstance, msg) {
   var f, obj = {
-messagesList: jspb.Message.toObjectList(msg.getMessagesList(),
+    messagesList: jspb.Message.toObjectList(msg.getMessagesList(),
     proto.plugins.kafka.v1.Message.toObject, includeInstance)
   };
 
@@ -1026,7 +1032,7 @@ messagesList: jspb.Message.toObjectList(msg.getMessagesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Messages}
  */
 proto.plugins.kafka.v1.Messages.deserializeBinary = function(bytes) {
@@ -1165,15 +1171,15 @@ proto.plugins.kafka.v1.Message.prototype.toObject = function(opt_includeInstance
  */
 proto.plugins.kafka.v1.Message.toObject = function(includeInstance, msg) {
   var f, obj = {
-topic: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partition: jspb.Message.getFieldWithDefault(msg, 2, 0),
-offset: jspb.Message.getFieldWithDefault(msg, 4, 0),
-timestamp: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-key: (f = msg.getKey()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
-value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
-length: jspb.Message.getFieldWithDefault(msg, 7, 0),
-attributes: jspb.Message.getFieldWithDefault(msg, 8, 0),
-headersMap: (f = msg.getHeadersMap()) ? f.toObject(includeInstance, undefined) : []
+    topic: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partition: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    offset: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    timestamp: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    key: (f = msg.getKey()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+    value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+    length: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    attributes: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    headersMap: (f = msg.getHeadersMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -1186,7 +1192,7 @@ headersMap: (f = msg.getHeadersMap()) ? f.toObject(includeInstance, undefined) :
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Message}
  */
 proto.plugins.kafka.v1.Message.deserializeBinary = function(bytes) {
@@ -1211,7 +1217,7 @@ proto.plugins.kafka.v1.Message.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTopic(value);
       break;
     case 2:
@@ -1223,7 +1229,7 @@ proto.plugins.kafka.v1.Message.deserializeBinaryFromReader = function(msg, reade
       msg.setOffset(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTimestamp(value);
       break;
     case 5:
@@ -1247,7 +1253,7 @@ proto.plugins.kafka.v1.Message.deserializeBinaryFromReader = function(msg, reade
     case 9:
       var value = msg.getHeadersMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readStringRequireUtf8, null, "", "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
     default:
@@ -1339,12 +1345,7 @@ proto.plugins.kafka.v1.Message.serializeBinaryToWriter = function(message, write
   }
   f = message.getHeadersMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getHeadersMap(true),
-    9,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeString);
+    f.serializeBinary(9, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -1604,13 +1605,13 @@ proto.plugins.kafka.v1.SASL.prototype.toObject = function(opt_includeInstance) {
  */
 proto.plugins.kafka.v1.SASL.toObject = function(includeInstance, msg) {
   var f, obj = {
-mechanism: jspb.Message.getFieldWithDefault(msg, 1, 0),
-username: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-password: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-accessKeyId: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-secretKey: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-sessionToken: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-authorizationIdentity: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f
+    mechanism: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    username: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    password: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    accessKeyId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    secretKey: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    sessionToken: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    authorizationIdentity: jspb.Message.getFieldWithDefault(msg, 7, "")
   };
 
   if (includeInstance) {
@@ -1623,7 +1624,7 @@ authorizationIdentity: (f = jspb.Message.getField(msg, 7)) == null ? undefined :
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.SASL}
  */
 proto.plugins.kafka.v1.SASL.deserializeBinary = function(bytes) {
@@ -1652,27 +1653,27 @@ proto.plugins.kafka.v1.SASL.deserializeBinaryFromReader = function(msg, reader) 
       msg.setMechanism(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUsername(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPassword(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAccessKeyId(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSecretKey(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSessionToken(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAuthorizationIdentity(value);
       break;
     default:
@@ -2033,9 +2034,9 @@ proto.plugins.kafka.v1.Cluster.prototype.toObject = function(opt_includeInstance
  */
 proto.plugins.kafka.v1.Cluster.toObject = function(includeInstance, msg) {
   var f, obj = {
-brokers: jspb.Message.getFieldWithDefault(msg, 1, ""),
-ssl: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
-sasl: (f = msg.getSasl()) && proto.plugins.kafka.v1.SASL.toObject(includeInstance, f)
+    brokers: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    ssl: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    sasl: (f = msg.getSasl()) && proto.plugins.kafka.v1.SASL.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2048,7 +2049,7 @@ sasl: (f = msg.getSasl()) && proto.plugins.kafka.v1.SASL.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Cluster}
  */
 proto.plugins.kafka.v1.Cluster.deserializeBinary = function(bytes) {
@@ -2073,7 +2074,7 @@ proto.plugins.kafka.v1.Cluster.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBrokers(value);
       break;
     case 2:
@@ -2244,13 +2245,13 @@ proto.plugins.kafka.v1.Plugin.prototype.toObject = function(opt_includeInstance)
  */
 proto.plugins.kafka.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-operation: jspb.Message.getFieldWithDefault(msg, 2, 0),
-produce: (f = msg.getProduce()) && proto.plugins.kafka.v1.Plugin.Produce.toObject(includeInstance, f),
-consume: (f = msg.getConsume()) && proto.plugins.kafka.v1.Plugin.Consume.toObject(includeInstance, f),
-cluster: (f = msg.getCluster()) && proto.plugins.kafka.v1.Cluster.toObject(includeInstance, f),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.kafka.v1.SuperblocksMetadata.toObject(includeInstance, f),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    operation: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    produce: (f = msg.getProduce()) && proto.plugins.kafka.v1.Plugin.Produce.toObject(includeInstance, f),
+    consume: (f = msg.getConsume()) && proto.plugins.kafka.v1.Plugin.Consume.toObject(includeInstance, f),
+    cluster: (f = msg.getCluster()) && proto.plugins.kafka.v1.Cluster.toObject(includeInstance, f),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.kafka.v1.SuperblocksMetadata.toObject(includeInstance, f),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2263,7 +2264,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Plugin}
  */
 proto.plugins.kafka.v1.Plugin.deserializeBinary = function(bytes) {
@@ -2288,7 +2289,7 @@ proto.plugins.kafka.v1.Plugin.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -2438,12 +2439,12 @@ proto.plugins.kafka.v1.Plugin.Consume.prototype.toObject = function(opt_includeI
  */
 proto.plugins.kafka.v1.Plugin.Consume.toObject = function(includeInstance, msg) {
   var f, obj = {
-from: jspb.Message.getFieldWithDefault(msg, 1, 0),
-topic: jspb.Message.getFieldWithDefault(msg, 2, ""),
-groupId: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-clientId: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-seek: (f = msg.getSeek()) && proto.plugins.kafka.v1.Plugin.Consume.Seek.toObject(includeInstance, f),
-readUncommitted: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
+    from: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    topic: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    groupId: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    clientId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    seek: (f = msg.getSeek()) && proto.plugins.kafka.v1.Plugin.Consume.Seek.toObject(includeInstance, f),
+    readUncommitted: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
   };
 
   if (includeInstance) {
@@ -2456,7 +2457,7 @@ readUncommitted: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Plugin.Consume}
  */
 proto.plugins.kafka.v1.Plugin.Consume.deserializeBinary = function(bytes) {
@@ -2485,15 +2486,15 @@ proto.plugins.kafka.v1.Plugin.Consume.deserializeBinaryFromReader = function(msg
       msg.setFrom(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTopic(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setGroupId(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setClientId(value);
       break;
     case 5:
@@ -2622,9 +2623,9 @@ proto.plugins.kafka.v1.Plugin.Consume.Seek.prototype.toObject = function(opt_inc
  */
 proto.plugins.kafka.v1.Plugin.Consume.Seek.toObject = function(includeInstance, msg) {
   var f, obj = {
-topic: jspb.Message.getFieldWithDefault(msg, 1, ""),
-offset: jspb.Message.getFieldWithDefault(msg, 2, 0),
-partition: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    topic: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    offset: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    partition: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
   if (includeInstance) {
@@ -2637,7 +2638,7 @@ partition: jspb.Message.getFieldWithDefault(msg, 3, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Plugin.Consume.Seek}
  */
 proto.plugins.kafka.v1.Plugin.Consume.Seek.deserializeBinary = function(bytes) {
@@ -2662,7 +2663,7 @@ proto.plugins.kafka.v1.Plugin.Consume.Seek.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTopic(value);
       break;
     case 2:
@@ -2975,15 +2976,15 @@ proto.plugins.kafka.v1.Plugin.Produce.prototype.toObject = function(opt_includeI
  */
 proto.plugins.kafka.v1.Plugin.Produce.toObject = function(includeInstance, msg) {
   var f, obj = {
-acks: jspb.Message.getFieldWithDefault(msg, 1, 0),
-clientId: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-timeout: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-compression: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-transactionId: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-autoCreateTopic: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-idempotent: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
-transaction: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
-messages: jspb.Message.getFieldWithDefault(msg, 9, "")
+    acks: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    clientId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    timeout: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    compression: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    transactionId: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    autoCreateTopic: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+    idempotent: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
+    transaction: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
+    messages: jspb.Message.getFieldWithDefault(msg, 9, "")
   };
 
   if (includeInstance) {
@@ -2996,7 +2997,7 @@ messages: jspb.Message.getFieldWithDefault(msg, 9, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.Plugin.Produce}
  */
 proto.plugins.kafka.v1.Plugin.Produce.deserializeBinary = function(bytes) {
@@ -3025,7 +3026,7 @@ proto.plugins.kafka.v1.Plugin.Produce.deserializeBinaryFromReader = function(msg
       msg.setAcks(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setClientId(value);
       break;
     case 3:
@@ -3037,7 +3038,7 @@ proto.plugins.kafka.v1.Plugin.Produce.deserializeBinaryFromReader = function(msg
       msg.setCompression(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTransactionId(value);
       break;
     case 6:
@@ -3053,7 +3054,7 @@ proto.plugins.kafka.v1.Plugin.Produce.deserializeBinaryFromReader = function(msg
       msg.setTransaction(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessages(value);
       break;
     default:
@@ -3656,8 +3657,8 @@ proto.plugins.kafka.v1.SuperblocksMetadata.prototype.toObject = function(opt_inc
  */
 proto.plugins.kafka.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginVersion: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-syncedFromProfileId: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    pluginVersion: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    syncedFromProfileId: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -3670,7 +3671,7 @@ syncedFromProfileId: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kafka.v1.SuperblocksMetadata}
  */
 proto.plugins.kafka.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -3695,11 +3696,11 @@ proto.plugins.kafka.v1.SuperblocksMetadata.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginVersion(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSyncedFromProfileId(value);
       break;
     default:

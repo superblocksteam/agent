@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -298,8 +304,8 @@ proto.secrets.v1.AwsSecretsManager.prototype.toObject = function(opt_includeInst
  */
 proto.secrets.v1.AwsSecretsManager.toObject = function(includeInstance, msg) {
   var f, obj = {
-auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.AwsAuth.toObject(includeInstance, f),
-prefix: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.AwsAuth.toObject(includeInstance, f),
+    prefix: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -312,7 +318,7 @@ prefix: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.AwsSecretsManager}
  */
 proto.secrets.v1.AwsSecretsManager.deserializeBinary = function(bytes) {
@@ -342,7 +348,7 @@ proto.secrets.v1.AwsSecretsManager.deserializeBinaryFromReader = function(msg, r
       msg.setAuth(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPrefix(value);
       break;
     default:
@@ -497,8 +503,8 @@ proto.secrets.v1.GcpSecretManager.prototype.toObject = function(opt_includeInsta
  */
 proto.secrets.v1.GcpSecretManager.toObject = function(includeInstance, msg) {
   var f, obj = {
-auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.GcpAuth.toObject(includeInstance, f),
-projectId: jspb.Message.getFieldWithDefault(msg, 2, "")
+    auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.GcpAuth.toObject(includeInstance, f),
+    projectId: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -511,7 +517,7 @@ projectId: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.GcpSecretManager}
  */
 proto.secrets.v1.GcpSecretManager.deserializeBinary = function(bytes) {
@@ -541,7 +547,7 @@ proto.secrets.v1.GcpSecretManager.deserializeBinaryFromReader = function(msg, re
       msg.setAuth(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setProjectId(value);
       break;
     default:
@@ -678,9 +684,9 @@ proto.secrets.v1.AkeylessSecretsManager.prototype.toObject = function(opt_includ
  */
 proto.secrets.v1.AkeylessSecretsManager.toObject = function(includeInstance, msg) {
   var f, obj = {
-auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.AkeylessAuth.toObject(includeInstance, f),
-host: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-prefix: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.AkeylessAuth.toObject(includeInstance, f),
+    host: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    prefix: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -693,7 +699,7 @@ prefix: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.AkeylessSecretsManager}
  */
 proto.secrets.v1.AkeylessSecretsManager.deserializeBinary = function(bytes) {
@@ -723,11 +729,11 @@ proto.secrets.v1.AkeylessSecretsManager.deserializeBinaryFromReader = function(m
       msg.setAuth(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHost(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPrefix(value);
       break;
     default:
@@ -925,12 +931,12 @@ proto.secrets.v1.HashicorpVault.prototype.toObject = function(opt_includeInstanc
  */
 proto.secrets.v1.HashicorpVault.toObject = function(includeInstance, msg) {
   var f, obj = {
-auth: (f = msg.getAuth()) && proto.secrets.v1.HashicorpVault.Auth.toObject(includeInstance, f),
-address: jspb.Message.getFieldWithDefault(msg, 2, ""),
-path: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-namespace: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-version: jspb.Message.getFieldWithDefault(msg, 5, 0),
-secretsPath: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
+    auth: (f = msg.getAuth()) && proto.secrets.v1.HashicorpVault.Auth.toObject(includeInstance, f),
+    address: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    namespace: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    version: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    secretsPath: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -943,7 +949,7 @@ secretsPath: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.HashicorpVault}
  */
 proto.secrets.v1.HashicorpVault.deserializeBinary = function(bytes) {
@@ -973,15 +979,15 @@ proto.secrets.v1.HashicorpVault.deserializeBinaryFromReader = function(msg, read
       msg.setAuth(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAddress(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setNamespace(value);
       break;
     case 5:
@@ -989,7 +995,7 @@ proto.secrets.v1.HashicorpVault.deserializeBinaryFromReader = function(msg, read
       msg.setVersion(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSecretsPath(value);
       break;
     default:
@@ -1134,8 +1140,8 @@ proto.secrets.v1.HashicorpVault.Auth.prototype.toObject = function(opt_includeIn
  */
 proto.secrets.v1.HashicorpVault.Auth.toObject = function(includeInstance, msg) {
   var f, obj = {
-token: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-appRole: (f = msg.getAppRole()) && proto.secrets.v1.HashicorpVault.Auth.AppRole.toObject(includeInstance, f)
+    token: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    appRole: (f = msg.getAppRole()) && proto.secrets.v1.HashicorpVault.Auth.AppRole.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1148,7 +1154,7 @@ appRole: (f = msg.getAppRole()) && proto.secrets.v1.HashicorpVault.Auth.AppRole.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.HashicorpVault.Auth}
  */
 proto.secrets.v1.HashicorpVault.Auth.deserializeBinary = function(bytes) {
@@ -1173,7 +1179,7 @@ proto.secrets.v1.HashicorpVault.Auth.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setToken(value);
       break;
     case 2:
@@ -1260,8 +1266,8 @@ proto.secrets.v1.HashicorpVault.Auth.AppRole.prototype.toObject = function(opt_i
  */
 proto.secrets.v1.HashicorpVault.Auth.AppRole.toObject = function(includeInstance, msg) {
   var f, obj = {
-roleId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-secretId: jspb.Message.getFieldWithDefault(msg, 2, "")
+    roleId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    secretId: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1274,7 +1280,7 @@ secretId: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.HashicorpVault.Auth.AppRole}
  */
 proto.secrets.v1.HashicorpVault.Auth.AppRole.deserializeBinary = function(bytes) {
@@ -1299,11 +1305,11 @@ proto.secrets.v1.HashicorpVault.Auth.AppRole.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRoleId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSecretId(value);
       break;
     default:
@@ -1674,7 +1680,7 @@ proto.secrets.v1.MockStore.prototype.toObject = function(opt_includeInstance) {
  */
 proto.secrets.v1.MockStore.toObject = function(includeInstance, msg) {
   var f, obj = {
-dataMap: (f = msg.getDataMap()) ? f.toObject(includeInstance, undefined) : []
+    dataMap: (f = msg.getDataMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -1687,7 +1693,7 @@ dataMap: (f = msg.getDataMap()) ? f.toObject(includeInstance, undefined) : []
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.MockStore}
  */
 proto.secrets.v1.MockStore.deserializeBinary = function(bytes) {
@@ -1714,7 +1720,7 @@ proto.secrets.v1.MockStore.deserializeBinaryFromReader = function(msg, reader) {
     case 1:
       var value = msg.getDataMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readStringRequireUtf8, null, "", "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
     default:
@@ -1748,12 +1754,7 @@ proto.secrets.v1.MockStore.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getDataMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getDataMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeString);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -1842,11 +1843,11 @@ proto.secrets.v1.Provider.prototype.toObject = function(opt_includeInstance) {
  */
 proto.secrets.v1.Provider.toObject = function(includeInstance, msg) {
   var f, obj = {
-mock: (f = msg.getMock()) && proto.secrets.v1.MockStore.toObject(includeInstance, f),
-akeylessSecretsManager: (f = msg.getAkeylessSecretsManager()) && proto.secrets.v1.AkeylessSecretsManager.toObject(includeInstance, f),
-awsSecretsManager: (f = msg.getAwsSecretsManager()) && proto.secrets.v1.AwsSecretsManager.toObject(includeInstance, f),
-gcpSecretManager: (f = msg.getGcpSecretManager()) && proto.secrets.v1.GcpSecretManager.toObject(includeInstance, f),
-hashicorpVault: (f = msg.getHashicorpVault()) && proto.secrets.v1.HashicorpVault.toObject(includeInstance, f)
+    mock: (f = msg.getMock()) && proto.secrets.v1.MockStore.toObject(includeInstance, f),
+    akeylessSecretsManager: (f = msg.getAkeylessSecretsManager()) && proto.secrets.v1.AkeylessSecretsManager.toObject(includeInstance, f),
+    awsSecretsManager: (f = msg.getAwsSecretsManager()) && proto.secrets.v1.AwsSecretsManager.toObject(includeInstance, f),
+    gcpSecretManager: (f = msg.getGcpSecretManager()) && proto.secrets.v1.GcpSecretManager.toObject(includeInstance, f),
+    hashicorpVault: (f = msg.getHashicorpVault()) && proto.secrets.v1.HashicorpVault.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1859,7 +1860,7 @@ hashicorpVault: (f = msg.getHashicorpVault()) && proto.secrets.v1.HashicorpVault
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.Provider}
  */
 proto.secrets.v1.Provider.deserializeBinary = function(bytes) {
@@ -2197,11 +2198,11 @@ proto.secrets.v1.Store.prototype.toObject = function(opt_includeInstance) {
  */
 proto.secrets.v1.Store.toObject = function(includeInstance, msg) {
   var f, obj = {
-metadata: (f = msg.getMetadata()) && common_v1_common_pb.Metadata.toObject(includeInstance, f),
-provider: (f = msg.getProvider()) && proto.secrets.v1.Provider.toObject(includeInstance, f),
-ttl: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-configurationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-cache: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
+    metadata: (f = msg.getMetadata()) && common_v1_common_pb.Metadata.toObject(includeInstance, f),
+    provider: (f = msg.getProvider()) && proto.secrets.v1.Provider.toObject(includeInstance, f),
+    ttl: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    configurationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    cache: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
   };
 
   if (includeInstance) {
@@ -2214,7 +2215,7 @@ cache: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.Store}
  */
 proto.secrets.v1.Store.deserializeBinary = function(bytes) {
@@ -2253,7 +2254,7 @@ proto.secrets.v1.Store.deserializeBinaryFromReader = function(msg, reader) {
       msg.setTtl(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConfigurationId(value);
       break;
     case 5:
@@ -2507,8 +2508,8 @@ proto.secrets.v1.Details.prototype.toObject = function(opt_includeInstance) {
  */
 proto.secrets.v1.Details.toObject = function(includeInstance, msg) {
   var f, obj = {
-alias: jspb.Message.getFieldWithDefault(msg, 1, ""),
-name: jspb.Message.getFieldWithDefault(msg, 2, "")
+    alias: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    name: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -2521,7 +2522,7 @@ name: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.Details}
  */
 proto.secrets.v1.Details.deserializeBinary = function(bytes) {
@@ -2546,11 +2547,11 @@ proto.secrets.v1.Details.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAlias(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     default:
@@ -2667,9 +2668,9 @@ proto.secrets.v1.Invalidation.prototype.toObject = function(opt_includeInstance)
  */
 proto.secrets.v1.Invalidation.toObject = function(includeInstance, msg) {
   var f, obj = {
-alias: jspb.Message.getFieldWithDefault(msg, 1, ""),
-configurationId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-store: jspb.Message.getFieldWithDefault(msg, 3, "")
+    alias: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    configurationId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    store: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -2682,7 +2683,7 @@ store: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.Invalidation}
  */
 proto.secrets.v1.Invalidation.deserializeBinary = function(bytes) {
@@ -2707,15 +2708,15 @@ proto.secrets.v1.Invalidation.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAlias(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConfigurationId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStore(value);
       break;
     default:

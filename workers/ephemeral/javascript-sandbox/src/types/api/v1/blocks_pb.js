@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -104,7 +110,7 @@ proto.api.v1.Variables.prototype.toObject = function(opt_includeInstance) {
  */
 proto.api.v1.Variables.toObject = function(includeInstance, msg) {
   var f, obj = {
-itemsList: jspb.Message.toObjectList(msg.getItemsList(),
+    itemsList: jspb.Message.toObjectList(msg.getItemsList(),
     proto.api.v1.Variables.Config.toObject, includeInstance)
   };
 
@@ -118,7 +124,7 @@ itemsList: jspb.Message.toObjectList(msg.getItemsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Variables}
  */
 proto.api.v1.Variables.deserializeBinary = function(bytes) {
@@ -239,10 +245,10 @@ proto.api.v1.Variables.Config.prototype.toObject = function(opt_includeInstance)
  */
 proto.api.v1.Variables.Config.toObject = function(includeInstance, msg) {
   var f, obj = {
-value: jspb.Message.getFieldWithDefault(msg, 1, ""),
-type: jspb.Message.getFieldWithDefault(msg, 2, 0),
-mode: jspb.Message.getFieldWithDefault(msg, 3, 0),
-key: jspb.Message.getFieldWithDefault(msg, 4, "")
+    value: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    mode: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    key: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -255,7 +261,7 @@ key: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.api.v1.Variables.Config}
  */
 proto.api.v1.Variables.Config.deserializeBinary = function(bytes) {
@@ -280,7 +286,7 @@ proto.api.v1.Variables.Config.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     case 2:
@@ -292,7 +298,7 @@ proto.api.v1.Variables.Config.deserializeBinaryFromReader = function(msg, reader
       msg.setMode(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:

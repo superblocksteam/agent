@@ -144,14 +144,8 @@ func (p *SandboxPlugin) Execute(ctx context.Context, props *transportv1.Request_
 		}
 	}
 
-	// Parse result as JSON
-	if resp.GetResult() != "" && resp.GetResult() != "null" {
-		output.Result = &structpb.Value{}
-		if err := protojson.Unmarshal([]byte(resp.GetResult()), output.Result); err != nil {
-			// If not valid JSON, wrap as string value
-			output.Result = structpb.NewStringValue(resp.GetResult())
-		}
-	}
+	// Parse result as JSON - the sandbox returns raw JSON, not protobuf JSON format
+	output.Result = parseResultJSON(resp.GetResult())
 
 	// Check for errors in response - prioritize explicit error from response
 	if resp.GetError() != "" {
@@ -208,6 +202,31 @@ func (p *SandboxPlugin) Close() error {
 		return p.conn.Close()
 	}
 	return nil
+}
+
+// parseResultJSON parses raw JSON from sandbox into a structpb.Value.
+// Returns nil for empty strings or "null".
+// Falls back to wrapping raw string if JSON parsing fails.
+func parseResultJSON(jsonResult string) *structpb.Value {
+	if jsonResult == "" || jsonResult == "null" {
+		return nil
+	}
+
+	// First unmarshal the raw JSON into a Go value
+	var rawResult any
+	if err := json.Unmarshal([]byte(jsonResult), &rawResult); err != nil {
+		// If JSON parsing fails, wrap as string value
+		return structpb.NewStringValue(jsonResult)
+	}
+
+	// Convert the Go value to structpb.Value
+	result, err := structpb.NewValue(rawResult)
+	if err != nil {
+		// If conversion fails, wrap as string value
+		return structpb.NewStringValue(jsonResult)
+	}
+
+	return result
 }
 
 // getCodeFromProps extracts the code/script from action configuration

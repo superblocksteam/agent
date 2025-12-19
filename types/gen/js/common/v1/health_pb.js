@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.common.v1.HealthResponse', null, global);
 goog.exportSymbol('proto.common.v1.Pool', null, global);
@@ -91,12 +97,12 @@ proto.common.v1.Pool.prototype.toObject = function(opt_includeInstance) {
  */
 proto.common.v1.Pool.toObject = function(includeInstance, msg) {
   var f, obj = {
-hits: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-misses: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-timeouts: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-total: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-idle: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-stale: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
+    hits: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    misses: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    timeouts: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    total: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    idle: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    stale: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -109,7 +115,7 @@ stale: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Pool}
  */
 proto.common.v1.Pool.deserializeBinary = function(bytes) {
@@ -479,12 +485,12 @@ proto.common.v1.HealthResponse.prototype.toObject = function(opt_includeInstance
  */
 proto.common.v1.HealthResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-message: jspb.Message.getFieldWithDefault(msg, 1, ""),
-uptime: jspb.Message.getFieldWithDefault(msg, 2, 0),
-version: jspb.Message.getFieldWithDefault(msg, 3, ""),
-store: (f = msg.getStore()) && proto.common.v1.Pool.toObject(includeInstance, f),
-stream: (f = msg.getStream()) && proto.common.v1.Pool.toObject(includeInstance, f),
-id: jspb.Message.getFieldWithDefault(msg, 6, "")
+    message: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    uptime: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    version: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    store: (f = msg.getStore()) && proto.common.v1.Pool.toObject(includeInstance, f),
+    stream: (f = msg.getStream()) && proto.common.v1.Pool.toObject(includeInstance, f),
+    id: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -497,7 +503,7 @@ id: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.HealthResponse}
  */
 proto.common.v1.HealthResponse.deserializeBinary = function(bytes) {
@@ -522,7 +528,7 @@ proto.common.v1.HealthResponse.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessage(value);
       break;
     case 2:
@@ -530,7 +536,7 @@ proto.common.v1.HealthResponse.deserializeBinaryFromReader = function(msg, reade
       msg.setUptime(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setVersion(value);
       break;
     case 4:
@@ -544,7 +550,7 @@ proto.common.v1.HealthResponse.deserializeBinaryFromReader = function(msg, reade
       msg.setStream(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     default:

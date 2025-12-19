@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var api_v1_event_pb = require('../../api/v1/event_pb');
 goog.object.extend(proto, api_v1_event_pb);
@@ -77,24 +83,24 @@ proto.event.v1.ExecutionEvent.prototype.toObject = function(opt_includeInstance)
  */
 proto.event.v1.ExecutionEvent.toObject = function(includeInstance, msg) {
   var f, obj = {
-executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-resourceId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-resourceName: jspb.Message.getFieldWithDefault(msg, 3, ""),
-resourceType: jspb.Message.getFieldWithDefault(msg, 4, 0),
-resourceSubtype: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-result: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-status: jspb.Message.getFieldWithDefault(msg, 7, 0),
-integrationId: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f,
-integrationType: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-mode: jspb.Message.getFieldWithDefault(msg, 10, 0),
-organizationId: jspb.Message.getFieldWithDefault(msg, 11, ""),
-userId: (f = jspb.Message.getField(msg, 12)) == null ? undefined : f,
-trigger: jspb.Message.getFieldWithDefault(msg, 13, 0),
-parentId: (f = jspb.Message.getField(msg, 14)) == null ? undefined : f,
-parentName: (f = jspb.Message.getField(msg, 15)) == null ? undefined : f,
-parentType: (f = jspb.Message.getField(msg, 16)) == null ? undefined : f,
-isDescendantOfStream: jspb.Message.getBooleanFieldWithDefault(msg, 17, false),
-apiId: (f = jspb.Message.getField(msg, 18)) == null ? undefined : f
+    executionId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    resourceId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    resourceName: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    resourceType: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    resourceSubtype: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    result: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    status: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    integrationId: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    integrationType: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    mode: jspb.Message.getFieldWithDefault(msg, 10, 0),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    userId: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    trigger: jspb.Message.getFieldWithDefault(msg, 13, 0),
+    parentId: jspb.Message.getFieldWithDefault(msg, 14, ""),
+    parentName: jspb.Message.getFieldWithDefault(msg, 15, ""),
+    parentType: jspb.Message.getFieldWithDefault(msg, 16, 0),
+    isDescendantOfStream: jspb.Message.getBooleanFieldWithDefault(msg, 17, false),
+    apiId: jspb.Message.getFieldWithDefault(msg, 18, "")
   };
 
   if (includeInstance) {
@@ -107,7 +113,7 @@ apiId: (f = jspb.Message.getField(msg, 18)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v1.ExecutionEvent}
  */
 proto.event.v1.ExecutionEvent.deserializeBinary = function(bytes) {
@@ -132,15 +138,15 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExecutionId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResourceId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResourceName(value);
       break;
     case 4:
@@ -160,11 +166,11 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
       msg.setStatus(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationType(value);
       break;
     case 10:
@@ -172,11 +178,11 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
       msg.setMode(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUserId(value);
       break;
     case 13:
@@ -184,11 +190,11 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
       msg.setTrigger(value);
       break;
     case 14:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setParentId(value);
       break;
     case 15:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setParentName(value);
       break;
     case 16:
@@ -200,7 +206,7 @@ proto.event.v1.ExecutionEvent.deserializeBinaryFromReader = function(msg, reader
       msg.setIsDescendantOfStream(value);
       break;
     case 18:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setApiId(value);
       break;
     default:

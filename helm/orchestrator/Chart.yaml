@@ -22,3 +22,7 @@ dependencies:
     version: 0.0.1
     repository: "file://../../workers/javascript/helm"
     condition: worker_js.deploy
+  - name: ephemeral_worker
+    version: 0.0.1
+    repository: "file://../../workers/ephemeral/helm"
+    condition: ephemeral_worker.deploy

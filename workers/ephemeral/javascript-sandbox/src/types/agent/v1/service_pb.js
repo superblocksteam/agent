@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -313,11 +319,11 @@ proto.agent.v1.RegistrationRequest.prototype.toObject = function(opt_includeInst
  */
 proto.agent.v1.RegistrationRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginVersionsMap: (f = msg.getPluginVersionsMap()) ? f.toObject(includeInstance, proto.agent.v1.VersionList.toObject) : [],
-type: jspb.Message.getFieldWithDefault(msg, 2, 0),
-tagsMap: (f = msg.getTagsMap()) ? f.toObject(includeInstance, proto.agent.v1.TagList.toObject) : [],
-signingKeyId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-verificationKeyIdsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f
+    pluginVersionsMap: (f = msg.getPluginVersionsMap()) ? f.toObject(includeInstance, proto.agent.v1.VersionList.toObject) : [],
+    type: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    tagsMap: (f = msg.getTagsMap()) ? f.toObject(includeInstance, proto.agent.v1.TagList.toObject) : [],
+    signingKeyId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    verificationKeyIdsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -330,7 +336,7 @@ verificationKeyIdsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? un
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationRequest}
  */
 proto.agent.v1.RegistrationRequest.deserializeBinary = function(bytes) {
@@ -357,7 +363,7 @@ proto.agent.v1.RegistrationRequest.deserializeBinaryFromReader = function(msg, r
     case 1:
       var value = msg.getPluginVersionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.agent.v1.VersionList.deserializeBinaryFromReader, "", new proto.agent.v1.VersionList());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.agent.v1.VersionList.deserializeBinaryFromReader, "", new proto.agent.v1.VersionList());
          });
       break;
     case 2:
@@ -367,15 +373,15 @@ proto.agent.v1.RegistrationRequest.deserializeBinaryFromReader = function(msg, r
     case 3:
       var value = msg.getTagsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.agent.v1.TagList.deserializeBinaryFromReader, "", new proto.agent.v1.TagList());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.agent.v1.TagList.deserializeBinaryFromReader, "", new proto.agent.v1.TagList());
          });
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSigningKeyId(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addVerificationKeyIds(value);
       break;
     default:
@@ -409,13 +415,7 @@ proto.agent.v1.RegistrationRequest.serializeBinaryToWriter = function(message, w
   var f = undefined;
   f = message.getPluginVersionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getPluginVersionsMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.agent.v1.VersionList.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.agent.v1.VersionList.serializeBinaryToWriter);
   }
   f = message.getType();
   if (f !== 0) {
@@ -426,13 +426,7 @@ jspb.internal.public_for_gencode.serializeMapToBinary(
   }
   f = message.getTagsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getTagsMap(true),
-    3,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.agent.v1.TagList.serializeBinaryToWriter);
+    f.serializeBinary(3, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.agent.v1.TagList.serializeBinaryToWriter);
   }
   f = message.getSigningKeyId();
   if (f.length > 0) {
@@ -602,8 +596,8 @@ proto.agent.v1.RegistrationResponse.prototype.toObject = function(opt_includeIns
  */
 proto.agent.v1.RegistrationResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-responseMeta: (f = msg.getResponseMeta()) && proto.agent.v1.RegistrationResponse.ResponseMeta.toObject(includeInstance, f),
-data: (f = msg.getData()) && proto.agent.v1.RegistrationResponse.ResponseBody.toObject(includeInstance, f)
+    responseMeta: (f = msg.getResponseMeta()) && proto.agent.v1.RegistrationResponse.ResponseMeta.toObject(includeInstance, f),
+    data: (f = msg.getData()) && proto.agent.v1.RegistrationResponse.ResponseBody.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -616,7 +610,7 @@ data: (f = msg.getData()) && proto.agent.v1.RegistrationResponse.ResponseBody.to
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationResponse}
  */
 proto.agent.v1.RegistrationResponse.deserializeBinary = function(bytes) {
@@ -730,9 +724,9 @@ proto.agent.v1.RegistrationResponse.ResponseMeta.prototype.toObject = function(o
  */
 proto.agent.v1.RegistrationResponse.ResponseMeta.toObject = function(includeInstance, msg) {
   var f, obj = {
-status: jspb.Message.getFieldWithDefault(msg, 1, 0),
-message: jspb.Message.getFieldWithDefault(msg, 2, ""),
-success: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
+    status: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    message: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    success: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
   };
 
   if (includeInstance) {
@@ -745,7 +739,7 @@ success: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationResponse.ResponseMeta}
  */
 proto.agent.v1.RegistrationResponse.ResponseMeta.deserializeBinary = function(bytes) {
@@ -774,7 +768,7 @@ proto.agent.v1.RegistrationResponse.ResponseMeta.deserializeBinaryFromReader = f
       msg.setStatus(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessage(value);
       break;
     case 3:
@@ -920,10 +914,10 @@ proto.agent.v1.RegistrationResponse.ResponseBody.prototype.toObject = function(o
  */
 proto.agent.v1.RegistrationResponse.ResponseBody.toObject = function(includeInstance, msg) {
   var f, obj = {
-agent: (f = msg.getAgent()) && proto.agent.v1.RegistrationResponse.ResponseBody.Agent.toObject(includeInstance, f),
-billingPlan: jspb.Message.getFieldWithDefault(msg, 2, ""),
-organizationId: jspb.Message.getFieldWithDefault(msg, 3, ""),
-organizationName: jspb.Message.getFieldWithDefault(msg, 4, "")
+    agent: (f = msg.getAgent()) && proto.agent.v1.RegistrationResponse.ResponseBody.Agent.toObject(includeInstance, f),
+    billingPlan: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    organizationName: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -936,7 +930,7 @@ organizationName: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationResponse.ResponseBody}
  */
 proto.agent.v1.RegistrationResponse.ResponseBody.deserializeBinary = function(bytes) {
@@ -966,15 +960,15 @@ proto.agent.v1.RegistrationResponse.ResponseBody.deserializeBinaryFromReader = f
       msg.setAgent(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBillingPlan(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationName(value);
       break;
     default:
@@ -1070,18 +1064,18 @@ proto.agent.v1.RegistrationResponse.ResponseBody.Agent.prototype.toObject = func
  */
 proto.agent.v1.RegistrationResponse.ResponseBody.Agent.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-key: jspb.Message.getFieldWithDefault(msg, 2, ""),
-environment: jspb.Message.getFieldWithDefault(msg, 3, ""),
-status: jspb.Message.getFieldWithDefault(msg, 4, ""),
-version: jspb.Message.getFieldWithDefault(msg, 5, ""),
-versionExternal: jspb.Message.getFieldWithDefault(msg, 6, ""),
-supportedPluginVersionsMap: (f = msg.getSupportedPluginVersionsMap()) ? f.toObject(includeInstance, proto.agent.v1.VersionList.toObject) : [],
-url: jspb.Message.getFieldWithDefault(msg, 8, ""),
-type: jspb.Message.getFieldWithDefault(msg, 9, 0),
-updated: (f = msg.getUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-created: (f = msg.getCreated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-tagsMap: (f = msg.getTagsMap()) ? f.toObject(includeInstance, proto.agent.v1.TagList.toObject) : []
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    key: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    environment: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    status: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    version: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    versionExternal: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    supportedPluginVersionsMap: (f = msg.getSupportedPluginVersionsMap()) ? f.toObject(includeInstance, proto.agent.v1.VersionList.toObject) : [],
+    url: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    updated: (f = msg.getUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    created: (f = msg.getCreated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    tagsMap: (f = msg.getTagsMap()) ? f.toObject(includeInstance, proto.agent.v1.TagList.toObject) : []
   };
 
   if (includeInstance) {
@@ -1094,7 +1088,7 @@ tagsMap: (f = msg.getTagsMap()) ? f.toObject(includeInstance, proto.agent.v1.Tag
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.RegistrationResponse.ResponseBody.Agent}
  */
 proto.agent.v1.RegistrationResponse.ResponseBody.Agent.deserializeBinary = function(bytes) {
@@ -1119,37 +1113,37 @@ proto.agent.v1.RegistrationResponse.ResponseBody.Agent.deserializeBinaryFromRead
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEnvironment(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStatus(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setVersion(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setVersionExternal(value);
       break;
     case 7:
       var value = msg.getSupportedPluginVersionsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.agent.v1.VersionList.deserializeBinaryFromReader, "", new proto.agent.v1.VersionList());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.agent.v1.VersionList.deserializeBinaryFromReader, "", new proto.agent.v1.VersionList());
          });
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrl(value);
       break;
     case 9:
@@ -1169,7 +1163,7 @@ proto.agent.v1.RegistrationResponse.ResponseBody.Agent.deserializeBinaryFromRead
     case 12:
       var value = msg.getTagsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.agent.v1.TagList.deserializeBinaryFromReader, "", new proto.agent.v1.TagList());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.agent.v1.TagList.deserializeBinaryFromReader, "", new proto.agent.v1.TagList());
          });
       break;
     default:
@@ -1245,13 +1239,7 @@ proto.agent.v1.RegistrationResponse.ResponseBody.Agent.serializeBinaryToWriter =
   }
   f = message.getSupportedPluginVersionsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getSupportedPluginVersionsMap(true),
-    7,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.agent.v1.VersionList.serializeBinaryToWriter);
+    f.serializeBinary(7, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.agent.v1.VersionList.serializeBinaryToWriter);
   }
   f = message.getUrl();
   if (f.length > 0) {
@@ -1285,13 +1273,7 @@ jspb.internal.public_for_gencode.serializeMapToBinary(
   }
   f = message.getTagsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getTagsMap(true),
-    12,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.agent.v1.TagList.serializeBinaryToWriter);
+    f.serializeBinary(12, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.agent.v1.TagList.serializeBinaryToWriter);
   }
 };
 
@@ -1764,7 +1746,7 @@ proto.agent.v1.VersionList.prototype.toObject = function(opt_includeInstance) {
  */
 proto.agent.v1.VersionList.toObject = function(includeInstance, msg) {
   var f, obj = {
-versionsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    versionsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1777,7 +1759,7 @@ versionsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : 
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.VersionList}
  */
 proto.agent.v1.VersionList.deserializeBinary = function(bytes) {
@@ -1802,7 +1784,7 @@ proto.agent.v1.VersionList.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addVersions(value);
       break;
     default:
@@ -1920,7 +1902,7 @@ proto.agent.v1.TagList.prototype.toObject = function(opt_includeInstance) {
  */
 proto.agent.v1.TagList.toObject = function(includeInstance, msg) {
   var f, obj = {
-tagsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    tagsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1933,7 +1915,7 @@ tagsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.TagList}
  */
 proto.agent.v1.TagList.deserializeBinary = function(bytes) {
@@ -1958,7 +1940,7 @@ proto.agent.v1.TagList.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addTags(value);
       break;
     default:
@@ -2076,7 +2058,7 @@ proto.agent.v1.AuditLogRequest.prototype.toObject = function(opt_includeInstance
  */
 proto.agent.v1.AuditLogRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-auditLogsList: jspb.Message.toObjectList(msg.getAuditLogsList(),
+    auditLogsList: jspb.Message.toObjectList(msg.getAuditLogsList(),
     proto.agent.v1.AuditLogRequest.AuditLog.toObject, includeInstance)
   };
 
@@ -2090,7 +2072,7 @@ auditLogsList: jspb.Message.toObjectList(msg.getAuditLogsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.AuditLogRequest}
  */
 proto.agent.v1.AuditLogRequest.deserializeBinary = function(bytes) {
@@ -2191,21 +2173,21 @@ proto.agent.v1.AuditLogRequest.AuditLog.prototype.toObject = function(opt_includ
  */
 proto.agent.v1.AuditLogRequest.AuditLog.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-entityId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-entityType: jspb.Message.getFieldWithDefault(msg, 3, 0),
-organizationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-isDeployed: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
-source: jspb.Message.getFieldWithDefault(msg, 6, ""),
-target: jspb.Message.getFieldWithDefault(msg, 7, ""),
-type: jspb.Message.getFieldWithDefault(msg, 8, 0),
-agentId: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-status: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f,
-error: (f = jspb.Message.getField(msg, 11)) == null ? undefined : f,
-apiLocationContext: (f = msg.getApiLocationContext()) && proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext.toObject(includeInstance, f),
-apiTiming: (f = msg.getApiTiming()) && proto.agent.v1.AuditLogRequest.AuditLog.ApiTiming.toObject(includeInstance, f),
-userType: (f = jspb.Message.getField(msg, 14)) == null ? undefined : f,
-targetname: (f = jspb.Message.getField(msg, 15)) == null ? undefined : f
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    entityId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    entityType: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    isDeployed: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    source: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    target: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    agentId: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    status: jspb.Message.getFieldWithDefault(msg, 10, 0),
+    error: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    apiLocationContext: (f = msg.getApiLocationContext()) && proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext.toObject(includeInstance, f),
+    apiTiming: (f = msg.getApiTiming()) && proto.agent.v1.AuditLogRequest.AuditLog.ApiTiming.toObject(includeInstance, f),
+    userType: jspb.Message.getFieldWithDefault(msg, 14, 0),
+    targetname: jspb.Message.getFieldWithDefault(msg, 15, "")
   };
 
   if (includeInstance) {
@@ -2218,7 +2200,7 @@ targetname: (f = jspb.Message.getField(msg, 15)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.AuditLogRequest.AuditLog}
  */
 proto.agent.v1.AuditLogRequest.AuditLog.deserializeBinary = function(bytes) {
@@ -2243,11 +2225,11 @@ proto.agent.v1.AuditLogRequest.AuditLog.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEntityId(value);
       break;
     case 3:
@@ -2255,7 +2237,7 @@ proto.agent.v1.AuditLogRequest.AuditLog.deserializeBinaryFromReader = function(m
       msg.setEntityType(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     case 5:
@@ -2263,11 +2245,11 @@ proto.agent.v1.AuditLogRequest.AuditLog.deserializeBinaryFromReader = function(m
       msg.setIsDeployed(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSource(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTarget(value);
       break;
     case 8:
@@ -2275,7 +2257,7 @@ proto.agent.v1.AuditLogRequest.AuditLog.deserializeBinaryFromReader = function(m
       msg.setType(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAgentId(value);
       break;
     case 10:
@@ -2283,7 +2265,7 @@ proto.agent.v1.AuditLogRequest.AuditLog.deserializeBinaryFromReader = function(m
       msg.setStatus(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setError(value);
       break;
     case 12:
@@ -2301,7 +2283,7 @@ proto.agent.v1.AuditLogRequest.AuditLog.deserializeBinaryFromReader = function(m
       msg.setUserType(value);
       break;
     case 15:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTargetname(value);
       break;
     default:
@@ -2503,7 +2485,7 @@ proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext.prototype.toObject = 
  */
 proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext.toObject = function(includeInstance, msg) {
   var f, obj = {
-applicationId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    applicationId: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -2516,7 +2498,7 @@ applicationId: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext}
  */
 proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext.deserializeBinary = function(bytes) {
@@ -2541,7 +2523,7 @@ proto.agent.v1.AuditLogRequest.AuditLog.ApiLocationContext.deserializeBinaryFrom
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setApplicationId(value);
       break;
     default:
@@ -2633,8 +2615,8 @@ proto.agent.v1.AuditLogRequest.AuditLog.ApiTiming.prototype.toObject = function(
  */
 proto.agent.v1.AuditLogRequest.AuditLog.ApiTiming.toObject = function(includeInstance, msg) {
   var f, obj = {
-start: jspb.Message.getFieldWithDefault(msg, 1, 0),
-end: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    start: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    end: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -2647,7 +2629,7 @@ end: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.agent.v1.AuditLogRequest.AuditLog.ApiTiming}
  */
 proto.agent.v1.AuditLogRequest.AuditLog.ApiTiming.deserializeBinary = function(bytes) {

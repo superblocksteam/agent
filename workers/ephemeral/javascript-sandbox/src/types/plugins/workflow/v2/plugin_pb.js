@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var common_v1_plugin_pb = require('../../../common/v1/plugin_pb.js');
 goog.object.extend(proto, common_v1_plugin_pb);
@@ -71,8 +77,8 @@ proto.plugins.workflow.v2.Plugin.prototype.toObject = function(opt_includeInstan
  */
 proto.plugins.workflow.v2.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-parameters: (f = msg.getParameters()) && common_v1_plugin_pb.HttpParameters.toObject(includeInstance, f)
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    parameters: (f = msg.getParameters()) && common_v1_plugin_pb.HttpParameters.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -85,7 +91,7 @@ parameters: (f = msg.getParameters()) && common_v1_plugin_pb.HttpParameters.toOb
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.workflow.v2.Plugin}
  */
 proto.plugins.workflow.v2.Plugin.deserializeBinary = function(bytes) {
@@ -110,7 +116,7 @@ proto.plugins.workflow.v2.Plugin.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:

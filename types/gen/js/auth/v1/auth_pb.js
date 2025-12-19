@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
 goog.object.extend(proto, google_protobuf_struct_pb);
@@ -100,16 +106,16 @@ proto.auth.v1.Claims.prototype.toObject = function(opt_includeInstance) {
  */
 proto.auth.v1.Claims.toObject = function(includeInstance, msg) {
   var f, obj = {
-userEmail: jspb.Message.getFieldWithDefault(msg, 1, ""),
-orgId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-orgType: jspb.Message.getFieldWithDefault(msg, 3, ""),
-rbacRole: jspb.Message.getFieldWithDefault(msg, 4, ""),
-rbacGroupObjectsList: jspb.Message.toObjectList(msg.getRbacGroupObjectsList(),
+    userEmail: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    orgId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    orgType: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    rbacRole: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    rbacGroupObjectsList: jspb.Message.toObjectList(msg.getRbacGroupObjectsList(),
     proto.auth.v1.Claims.RbacGroupObject.toObject, includeInstance),
-userType: jspb.Message.getFieldWithDefault(msg, 6, ""),
-userId: jspb.Message.getFieldWithDefault(msg, 7, ""),
-userName: jspb.Message.getFieldWithDefault(msg, 8, ""),
-metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f)
+    userType: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    userId: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    userName: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -122,7 +128,7 @@ metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.auth.v1.Claims}
  */
 proto.auth.v1.Claims.deserializeBinary = function(bytes) {
@@ -147,19 +153,19 @@ proto.auth.v1.Claims.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUserEmail(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrgId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrgType(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRbacRole(value);
       break;
     case 5:
@@ -168,15 +174,15 @@ proto.auth.v1.Claims.deserializeBinaryFromReader = function(msg, reader) {
       msg.addRbacGroupObjects(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUserType(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUserId(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUserName(value);
       break;
     case 9:
@@ -313,8 +319,8 @@ proto.auth.v1.Claims.RbacGroupObject.prototype.toObject = function(opt_includeIn
  */
 proto.auth.v1.Claims.RbacGroupObject.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-name: jspb.Message.getFieldWithDefault(msg, 2, "")
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    name: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -327,7 +333,7 @@ name: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.auth.v1.Claims.RbacGroupObject}
  */
 proto.auth.v1.Claims.RbacGroupObject.deserializeBinary = function(bytes) {
@@ -352,11 +358,11 @@ proto.auth.v1.Claims.RbacGroupObject.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     default:

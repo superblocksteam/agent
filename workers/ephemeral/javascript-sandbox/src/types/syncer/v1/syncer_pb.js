@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var ai_v1_metadata_pb = require('../../ai/v1/metadata_pb.js');
 goog.object.extend(proto, ai_v1_metadata_pb);
@@ -77,12 +83,12 @@ proto.syncer.v1.Metadata.prototype.toObject = function(opt_includeInstance) {
  */
 proto.syncer.v1.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-configurationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-integrationId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-rawMetadata: (f = msg.getRawMetadata()) && ai_v1_metadata_pb.Metadata.toObject(includeInstance, f),
-updatedDatetimeUtc: (f = msg.getUpdatedDatetimeUtc()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-integrationType: jspb.Message.getFieldWithDefault(msg, 5, ""),
-organizationId: jspb.Message.getFieldWithDefault(msg, 6, "")
+    configurationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    integrationId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    rawMetadata: (f = msg.getRawMetadata()) && ai_v1_metadata_pb.Metadata.toObject(includeInstance, f),
+    updatedDatetimeUtc: (f = msg.getUpdatedDatetimeUtc()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    integrationType: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -95,7 +101,7 @@ organizationId: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.Metadata}
  */
 proto.syncer.v1.Metadata.deserializeBinary = function(bytes) {
@@ -120,11 +126,11 @@ proto.syncer.v1.Metadata.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConfigurationId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 3:
@@ -138,11 +144,11 @@ proto.syncer.v1.Metadata.deserializeBinaryFromReader = function(msg, reader) {
       msg.setUpdatedDatetimeUtc(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationType(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     default:
