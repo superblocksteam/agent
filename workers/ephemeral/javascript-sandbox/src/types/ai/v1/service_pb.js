@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var ai_v1_ai_pb = require('../../ai/v1/ai_pb.js');
 goog.object.extend(proto, ai_v1_ai_pb);
@@ -127,8 +133,8 @@ proto.ai.v1.Overrides.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.Overrides.toObject = function(includeInstance, msg) {
   var f, obj = {
-llm: jspb.Message.getFieldWithDefault(msg, 1, 0),
-model: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    llm: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    model: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -141,7 +147,7 @@ model: jspb.Message.getFieldWithDefault(msg, 2, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Overrides}
  */
 proto.ai.v1.Overrides.deserializeBinary = function(bytes) {
@@ -287,8 +293,8 @@ proto.ai.v1.CreateTaskRequest.prototype.toObject = function(opt_includeInstance)
  */
 proto.ai.v1.CreateTaskRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-task: (f = msg.getTask()) && ai_v1_ai_pb.Task.toObject(includeInstance, f),
-overrides: (f = msg.getOverrides()) && proto.ai.v1.Overrides.toObject(includeInstance, f)
+    task: (f = msg.getTask()) && ai_v1_ai_pb.Task.toObject(includeInstance, f),
+    overrides: (f = msg.getOverrides()) && proto.ai.v1.Overrides.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -301,7 +307,7 @@ overrides: (f = msg.getOverrides()) && proto.ai.v1.Overrides.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.CreateTaskRequest}
  */
 proto.ai.v1.CreateTaskRequest.deserializeBinary = function(bytes) {
@@ -489,10 +495,10 @@ proto.ai.v1.TaskEvent.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.TaskEvent.toObject = function(includeInstance, msg) {
   var f, obj = {
-chunk: jspb.Message.getFieldWithDefault(msg, 1, ""),
-llm: jspb.Message.getFieldWithDefault(msg, 2, 0),
-model: jspb.Message.getFieldWithDefault(msg, 3, 0),
-id: jspb.Message.getFieldWithDefault(msg, 4, "")
+    chunk: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    llm: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    model: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    id: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -505,7 +511,7 @@ id: jspb.Message.getFieldWithDefault(msg, 4, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.TaskEvent}
  */
 proto.ai.v1.TaskEvent.deserializeBinary = function(bytes) {
@@ -530,7 +536,7 @@ proto.ai.v1.TaskEvent.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setChunk(value);
       break;
     case 2:
@@ -542,7 +548,7 @@ proto.ai.v1.TaskEvent.deserializeBinaryFromReader = function(msg, reader) {
       msg.setModel(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     default:

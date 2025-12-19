@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.plugins.ocr.v1.Plugin', null, global);
 /**
@@ -69,9 +75,9 @@ proto.plugins.ocr.v1.Plugin.prototype.toObject = function(opt_includeInstance) {
  */
 proto.plugins.ocr.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-action: jspb.Message.getFieldWithDefault(msg, 1, ""),
-file: jspb.Message.getFieldWithDefault(msg, 2, ""),
-fileurl: jspb.Message.getFieldWithDefault(msg, 3, "")
+    action: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    file: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    fileurl: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -84,7 +90,7 @@ fileurl: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.ocr.v1.Plugin}
  */
 proto.plugins.ocr.v1.Plugin.deserializeBinary = function(bytes) {
@@ -109,15 +115,15 @@ proto.plugins.ocr.v1.Plugin.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAction(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFile(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileurl(value);
       break;
     default:

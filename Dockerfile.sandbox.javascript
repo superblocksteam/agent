@@ -38,6 +38,7 @@ WORKDIR /app
 COPY --from=builder /app/workers/javascript/node_modules ./workers/javascript/node_modules
 COPY --from=builder /app/workers/javascript/packages/types ./workers/javascript/packages/types
 COPY --from=builder /app/workers/javascript/packages/shared ./workers/javascript/packages/shared
+COPY --from=builder /app/workers/javascript/packages/wasm-sandbox-js ./workers/javascript/packages/wasm-sandbox-js
 COPY --from=builder /app/workers/ephemeral/javascript-sandbox/dist ./workers/ephemeral/javascript-sandbox/dist
 COPY --from=builder /app/workers/ephemeral/javascript-sandbox/node_modules ./workers/ephemeral/javascript-sandbox/node_modules
 COPY --from=builder /app/workers/ephemeral/javascript-sandbox/package.json ./workers/ephemeral/javascript-sandbox/

@@ -7,7 +7,7 @@
 {{/*
 Worker labels
 */}}
-{{- define "worker.labels" -}}
+{{- define "ephemeral.worker.labels" -}}
 component: worker.ephemeral
 language: {{ .language }}
 bucket: {{ .bucket }}

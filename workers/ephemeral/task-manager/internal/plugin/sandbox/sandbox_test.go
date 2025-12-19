@@ -415,3 +415,230 @@ func TestBuildVariablesJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestParseResultJSON(t *testing.T) {
+	tests := []struct {
+		name           string
+		jsonResult     string
+		expectNil      bool
+		expectedKind   string // "string", "number", "bool", "null", "struct", "list"
+		expectedString string // for string values
+		expectedNumber float64
+		expectedBool   bool
+	}{
+		{
+			name:       "empty string returns nil",
+			jsonResult: "",
+			expectNil:  true,
+		},
+		{
+			name:       "null string returns nil",
+			jsonResult: "null",
+			expectNil:  true,
+		},
+		{
+			name:           "string value",
+			jsonResult:     `"hello"`,
+			expectedKind:   "string",
+			expectedString: "hello",
+		},
+		{
+			name:           "string with spaces",
+			jsonResult:     `"hello world"`,
+			expectedKind:   "string",
+			expectedString: "hello world",
+		},
+		{
+			name:           "integer value",
+			jsonResult:     `42`,
+			expectedKind:   "number",
+			expectedNumber: 42,
+		},
+		{
+			name:           "float value",
+			jsonResult:     `3.14`,
+			expectedKind:   "number",
+			expectedNumber: 3.14,
+		},
+		{
+			name:         "boolean true",
+			jsonResult:   `true`,
+			expectedKind: "bool",
+			expectedBool: true,
+		},
+		{
+			name:         "boolean false",
+			jsonResult:   `false`,
+			expectedKind: "bool",
+			expectedBool: false,
+		},
+		{
+			name:         "object/struct",
+			jsonResult:   `{"key": "value", "num": 123}`,
+			expectedKind: "struct",
+		},
+		{
+			name:         "array/list",
+			jsonResult:   `[1, 2, 3]`,
+			expectedKind: "list",
+		},
+		{
+			name:         "nested object",
+			jsonResult:   `{"outer": {"inner": "value"}}`,
+			expectedKind: "struct",
+		},
+		{
+			name:         "array of objects",
+			jsonResult:   `[{"a": 1}, {"b": 2}]`,
+			expectedKind: "list",
+		},
+		{
+			name:           "invalid json falls back to string",
+			jsonResult:     `not valid json`,
+			expectedKind:   "string",
+			expectedString: "not valid json",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseResultJSON(tt.jsonResult)
+
+			if tt.expectNil {
+				if result != nil {
+					t.Errorf("parseResultJSON(%q) = %v, want nil", tt.jsonResult, result)
+				}
+				return
+			}
+
+			if result == nil {
+				t.Fatalf("parseResultJSON(%q) = nil, want non-nil", tt.jsonResult)
+			}
+
+			switch tt.expectedKind {
+			case "string":
+				if result.GetStringValue() != tt.expectedString {
+					t.Errorf("parseResultJSON(%q) string = %q, want %q", tt.jsonResult, result.GetStringValue(), tt.expectedString)
+				}
+			case "number":
+				if result.GetNumberValue() != tt.expectedNumber {
+					t.Errorf("parseResultJSON(%q) number = %v, want %v", tt.jsonResult, result.GetNumberValue(), tt.expectedNumber)
+				}
+			case "bool":
+				if result.GetBoolValue() != tt.expectedBool {
+					t.Errorf("parseResultJSON(%q) bool = %v, want %v", tt.jsonResult, result.GetBoolValue(), tt.expectedBool)
+				}
+			case "struct":
+				if result.GetStructValue() == nil {
+					t.Errorf("parseResultJSON(%q) expected struct, got %v", tt.jsonResult, result.GetKind())
+				}
+			case "list":
+				if result.GetListValue() == nil {
+					t.Errorf("parseResultJSON(%q) expected list, got %v", tt.jsonResult, result.GetKind())
+				}
+			}
+		})
+	}
+}
+
+func TestParseResultJSONStructContents(t *testing.T) {
+	jsonResult := `{"name": "test", "count": 42, "active": true}`
+	result := parseResultJSON(jsonResult)
+
+	if result == nil {
+		t.Fatal("parseResultJSON returned nil")
+	}
+
+	structVal := result.GetStructValue()
+	if structVal == nil {
+		t.Fatal("expected struct value")
+	}
+
+	fields := structVal.GetFields()
+
+	// Check name field
+	if nameVal, ok := fields["name"]; !ok {
+		t.Error("missing 'name' field")
+	} else if nameVal.GetStringValue() != "test" {
+		t.Errorf("name = %q, want %q", nameVal.GetStringValue(), "test")
+	}
+
+	// Check count field
+	if countVal, ok := fields["count"]; !ok {
+		t.Error("missing 'count' field")
+	} else if countVal.GetNumberValue() != 42 {
+		t.Errorf("count = %v, want %v", countVal.GetNumberValue(), 42)
+	}
+
+	// Check active field
+	if activeVal, ok := fields["active"]; !ok {
+		t.Error("missing 'active' field")
+	} else if activeVal.GetBoolValue() != true {
+		t.Errorf("active = %v, want %v", activeVal.GetBoolValue(), true)
+	}
+}
+
+func TestParseResultJSONListContents(t *testing.T) {
+	jsonResult := `["a", "b", "c"]`
+	result := parseResultJSON(jsonResult)
+
+	if result == nil {
+		t.Fatal("parseResultJSON returned nil")
+	}
+
+	listVal := result.GetListValue()
+	if listVal == nil {
+		t.Fatal("expected list value")
+	}
+
+	values := listVal.GetValues()
+	if len(values) != 3 {
+		t.Fatalf("expected 3 values, got %d", len(values))
+	}
+
+	expected := []string{"a", "b", "c"}
+	for i, val := range values {
+		if val.GetStringValue() != expected[i] {
+			t.Errorf("values[%d] = %q, want %q", i, val.GetStringValue(), expected[i])
+		}
+	}
+}
+
+func TestParseResultJSONMixedList(t *testing.T) {
+	jsonResult := `[1, "two", true, null]`
+	result := parseResultJSON(jsonResult)
+
+	if result == nil {
+		t.Fatal("parseResultJSON returned nil")
+	}
+
+	listVal := result.GetListValue()
+	if listVal == nil {
+		t.Fatal("expected list value")
+	}
+
+	values := listVal.GetValues()
+	if len(values) != 4 {
+		t.Fatalf("expected 4 values, got %d", len(values))
+	}
+
+	// Check number
+	if values[0].GetNumberValue() != 1 {
+		t.Errorf("values[0] = %v, want 1", values[0].GetNumberValue())
+	}
+
+	// Check string
+	if values[1].GetStringValue() != "two" {
+		t.Errorf("values[1] = %q, want %q", values[1].GetStringValue(), "two")
+	}
+
+	// Check bool
+	if values[2].GetBoolValue() != true {
+		t.Errorf("values[2] = %v, want true", values[2].GetBoolValue())
+	}
+
+	// Check null
+	if values[3].GetNullValue() != structpb.NullValue_NULL_VALUE {
+		t.Errorf("values[3] expected null value")
+	}
+}

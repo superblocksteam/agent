@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -207,8 +213,8 @@ proto.plugins.common.v1.DynamicWorkflowConfiguration.prototype.toObject = functi
  */
 proto.plugins.common.v1.DynamicWorkflowConfiguration.toObject = function(includeInstance, msg) {
   var f, obj = {
-enabled: (f = jspb.Message.getBooleanField(msg, 1)) == null ? undefined : f,
-workflowId: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    enabled: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
+    workflowId: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -221,7 +227,7 @@ workflowId: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.DynamicWorkflowConfiguration}
  */
 proto.plugins.common.v1.DynamicWorkflowConfiguration.deserializeBinary = function(bytes) {
@@ -250,7 +256,7 @@ proto.plugins.common.v1.DynamicWorkflowConfiguration.deserializeBinaryFromReader
       msg.setEnabled(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setWorkflowId(value);
       break;
     default:
@@ -403,9 +409,9 @@ proto.plugins.common.v1.AWSConfig.prototype.toObject = function(opt_includeInsta
  */
 proto.plugins.common.v1.AWSConfig.toObject = function(includeInstance, msg) {
   var f, obj = {
-region: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-auth: (f = msg.getAuth()) && proto.plugins.common.v1.AWSConfig.Auth.toObject(includeInstance, f),
-endpoint: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    region: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    auth: (f = msg.getAuth()) && proto.plugins.common.v1.AWSConfig.Auth.toObject(includeInstance, f),
+    endpoint: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -418,7 +424,7 @@ endpoint: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AWSConfig}
  */
 proto.plugins.common.v1.AWSConfig.deserializeBinary = function(bytes) {
@@ -443,7 +449,7 @@ proto.plugins.common.v1.AWSConfig.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRegion(value);
       break;
     case 2:
@@ -452,7 +458,7 @@ proto.plugins.common.v1.AWSConfig.deserializeBinaryFromReader = function(msg, re
       msg.setAuth(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEndpoint(value);
       break;
     default:
@@ -541,9 +547,9 @@ proto.plugins.common.v1.AWSConfig.Auth.prototype.toObject = function(opt_include
  */
 proto.plugins.common.v1.AWSConfig.Auth.toObject = function(includeInstance, msg) {
   var f, obj = {
-accessKeyId: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-secretKey: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-iamRoleArn: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    accessKeyId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    secretKey: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    iamRoleArn: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -556,7 +562,7 @@ iamRoleArn: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.AWSConfig.Auth}
  */
 proto.plugins.common.v1.AWSConfig.Auth.deserializeBinary = function(bytes) {
@@ -581,15 +587,15 @@ proto.plugins.common.v1.AWSConfig.Auth.deserializeBinaryFromReader = function(ms
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAccessKeyId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSecretKey(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIamRoleArn(value);
       break;
     default:
@@ -894,8 +900,8 @@ proto.plugins.common.v1.SQLExecution.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.common.v1.SQLExecution.toObject = function(includeInstance, msg) {
   var f, obj = {
-sqlBody: jspb.Message.getFieldWithDefault(msg, 1, ""),
-useParameterized: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
+    sqlBody: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    useParameterized: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
   };
 
   if (includeInstance) {
@@ -908,7 +914,7 @@ useParameterized: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLExecution}
  */
 proto.plugins.common.v1.SQLExecution.deserializeBinary = function(bytes) {
@@ -933,7 +939,7 @@ proto.plugins.common.v1.SQLExecution.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSqlBody(value);
       break;
     case 2:
@@ -1054,8 +1060,8 @@ proto.plugins.common.v1.SQLMappedColumns.prototype.toObject = function(opt_inclu
  */
 proto.plugins.common.v1.SQLMappedColumns.toObject = function(includeInstance, msg) {
   var f, obj = {
-json: jspb.Message.getFieldWithDefault(msg, 1, ""),
-sql: jspb.Message.getFieldWithDefault(msg, 2, "")
+    json: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    sql: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1068,7 +1074,7 @@ sql: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLMappedColumns}
  */
 proto.plugins.common.v1.SQLMappedColumns.deserializeBinary = function(bytes) {
@@ -1093,11 +1099,11 @@ proto.plugins.common.v1.SQLMappedColumns.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setJson(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSql(value);
       break;
     default:
@@ -1214,15 +1220,15 @@ proto.plugins.common.v1.SSHConfiguration.prototype.toObject = function(opt_inclu
  */
 proto.plugins.common.v1.SSHConfiguration.toObject = function(includeInstance, msg) {
   var f, obj = {
-authenticationMethod: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-enabled: (f = jspb.Message.getBooleanField(msg, 2)) == null ? undefined : f,
-host: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-passphrase: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-password: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-port: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-privateKey: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-publicKey: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f,
-username: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f
+    authenticationMethod: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    enabled: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    host: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    passphrase: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    password: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    port: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    privateKey: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    publicKey: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    username: jspb.Message.getFieldWithDefault(msg, 9, "")
   };
 
   if (includeInstance) {
@@ -1235,7 +1241,7 @@ username: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SSHConfiguration}
  */
 proto.plugins.common.v1.SSHConfiguration.deserializeBinary = function(bytes) {
@@ -1268,15 +1274,15 @@ proto.plugins.common.v1.SSHConfiguration.deserializeBinaryFromReader = function(
       msg.setEnabled(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHost(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPassphrase(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPassword(value);
       break;
     case 6:
@@ -1284,15 +1290,15 @@ proto.plugins.common.v1.SSHConfiguration.deserializeBinaryFromReader = function(
       msg.setPort(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPrivateKey(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPublicKey(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUsername(value);
       break;
     default:
@@ -1753,17 +1759,17 @@ proto.plugins.common.v1.SQLBulkEdit.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.common.v1.SQLBulkEdit.toObject = function(includeInstance, msg) {
   var f, obj = {
-matchingMode: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-schema: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-table: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-updatedRows: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-oldRows: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-filterByList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
-mappingMode: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-mappedColumnsList: jspb.Message.toObjectList(msg.getMappedColumnsList(),
+    matchingMode: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    schema: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    table: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    updatedRows: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    oldRows: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    filterByList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
+    mappingMode: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    mappedColumnsList: jspb.Message.toObjectList(msg.getMappedColumnsList(),
     proto.plugins.common.v1.SQLMappedColumns.toObject, includeInstance),
-insertedRows: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-deletedRows: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f
+    insertedRows: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    deletedRows: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
 
   if (includeInstance) {
@@ -1776,7 +1782,7 @@ deletedRows: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLBulkEdit}
  */
 proto.plugins.common.v1.SQLBulkEdit.deserializeBinary = function(bytes) {
@@ -1805,23 +1811,23 @@ proto.plugins.common.v1.SQLBulkEdit.deserializeBinaryFromReader = function(msg, 
       msg.setMatchingMode(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSchema(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTable(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUpdatedRows(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOldRows(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addFilterBy(value);
       break;
     case 7:
@@ -1834,11 +1840,11 @@ proto.plugins.common.v1.SQLBulkEdit.deserializeBinaryFromReader = function(msg, 
       msg.addMappedColumns(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setInsertedRows(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDeletedRows(value);
       break;
     default:

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -261,7 +267,7 @@ proto.syncer.v1.GetConfigurationMetadataRequest.prototype.toObject = function(op
  */
 proto.syncer.v1.GetConfigurationMetadataRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    integrationId: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -274,7 +280,7 @@ integrationId: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.GetConfigurationMetadataRequest}
  */
 proto.syncer.v1.GetConfigurationMetadataRequest.deserializeBinary = function(bytes) {
@@ -299,7 +305,7 @@ proto.syncer.v1.GetConfigurationMetadataRequest.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     default:
@@ -398,11 +404,11 @@ proto.syncer.v1.GetConfigurationMetadataResponse.prototype.toObject = function(o
  */
 proto.syncer.v1.GetConfigurationMetadataResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-configurationsMap: (f = msg.getConfigurationsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Struct.toObject) : [],
-integrationType: jspb.Message.getFieldWithDefault(msg, 3, ""),
-organizationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
+    integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    configurationsMap: (f = msg.getConfigurationsMap()) ? f.toObject(includeInstance, proto.google.protobuf.Struct.toObject) : [],
+    integrationType: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
     common_v1_errors_pb.Error.toObject, includeInstance)
   };
 
@@ -416,7 +422,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.GetConfigurationMetadataResponse}
  */
 proto.syncer.v1.GetConfigurationMetadataResponse.deserializeBinary = function(bytes) {
@@ -441,21 +447,21 @@ proto.syncer.v1.GetConfigurationMetadataResponse.deserializeBinaryFromReader = f
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 2:
       var value = msg.getConfigurationsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Struct.deserializeBinaryFromReader, "", new proto.google.protobuf.Struct());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Struct.deserializeBinaryFromReader, "", new proto.google.protobuf.Struct());
          });
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationType(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     case 5:
@@ -501,13 +507,7 @@ proto.syncer.v1.GetConfigurationMetadataResponse.serializeBinaryToWriter = funct
   }
   f = message.getConfigurationsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getConfigurationsMap(true),
-    2,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Struct.serializeBinaryToWriter);
+    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Struct.serializeBinaryToWriter);
   }
   f = message.getIntegrationType();
   if (f.length > 0) {
@@ -688,7 +688,7 @@ proto.syncer.v1.SyncRequest.prototype.toObject = function(opt_includeInstance) {
  */
 proto.syncer.v1.SyncRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationIdsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    integrationIdsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -701,7 +701,7 @@ integrationIdsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.SyncRequest}
  */
 proto.syncer.v1.SyncRequest.deserializeBinary = function(bytes) {
@@ -726,7 +726,7 @@ proto.syncer.v1.SyncRequest.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addIntegrationIds(value);
       break;
     default:
@@ -844,8 +844,8 @@ proto.syncer.v1.SyncResponse.prototype.toObject = function(opt_includeInstance) 
  */
 proto.syncer.v1.SyncResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationsSyncedMap: (f = msg.getIntegrationsSyncedMap()) ? f.toObject(includeInstance, proto.syncer.v1.SyncResponse.Integration.toObject) : [],
-errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
+    integrationsSyncedMap: (f = msg.getIntegrationsSyncedMap()) ? f.toObject(includeInstance, proto.syncer.v1.SyncResponse.Integration.toObject) : [],
+    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
     common_v1_errors_pb.Error.toObject, includeInstance)
   };
 
@@ -859,7 +859,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.SyncResponse}
  */
 proto.syncer.v1.SyncResponse.deserializeBinary = function(bytes) {
@@ -886,7 +886,7 @@ proto.syncer.v1.SyncResponse.deserializeBinaryFromReader = function(msg, reader)
     case 1:
       var value = msg.getIntegrationsSyncedMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.syncer.v1.SyncResponse.Integration.deserializeBinaryFromReader, "", new proto.syncer.v1.SyncResponse.Integration());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.syncer.v1.SyncResponse.Integration.deserializeBinaryFromReader, "", new proto.syncer.v1.SyncResponse.Integration());
          });
       break;
     case 2:
@@ -925,13 +925,7 @@ proto.syncer.v1.SyncResponse.serializeBinaryToWriter = function(message, writer)
   var f = undefined;
   f = message.getIntegrationsSyncedMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getIntegrationsSyncedMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.syncer.v1.SyncResponse.Integration.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.syncer.v1.SyncResponse.Integration.serializeBinaryToWriter);
   }
   f = message.getErrorsList();
   if (f.length > 0) {
@@ -983,7 +977,7 @@ proto.syncer.v1.SyncResponse.Integration.prototype.toObject = function(opt_inclu
  */
 proto.syncer.v1.SyncResponse.Integration.toObject = function(includeInstance, msg) {
   var f, obj = {
-configurationidsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    configurationidsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -996,7 +990,7 @@ configurationidsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? unde
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.SyncResponse.Integration}
  */
 proto.syncer.v1.SyncResponse.Integration.deserializeBinary = function(bytes) {
@@ -1021,7 +1015,7 @@ proto.syncer.v1.SyncResponse.Integration.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addConfigurationids(value);
       break;
     default:
@@ -1200,7 +1194,7 @@ proto.syncer.v1.UpsertMetadataRequest.prototype.toObject = function(opt_includeI
  */
 proto.syncer.v1.UpsertMetadataRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-metadataList: jspb.Message.toObjectList(msg.getMetadataList(),
+    metadataList: jspb.Message.toObjectList(msg.getMetadataList(),
     syncer_v1_syncer_pb.Metadata.toObject, includeInstance)
   };
 
@@ -1214,7 +1208,7 @@ metadataList: jspb.Message.toObjectList(msg.getMetadataList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.UpsertMetadataRequest}
  */
 proto.syncer.v1.UpsertMetadataRequest.deserializeBinary = function(bytes) {
@@ -1360,7 +1354,7 @@ proto.syncer.v1.UpsertMetadataResponse.prototype.toObject = function(opt_include
  */
 proto.syncer.v1.UpsertMetadataResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
+    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
     common_v1_errors_pb.Error.toObject, includeInstance)
   };
 
@@ -1374,7 +1368,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.UpsertMetadataResponse}
  */
 proto.syncer.v1.UpsertMetadataResponse.deserializeBinary = function(bytes) {
@@ -1520,8 +1514,8 @@ proto.syncer.v1.DeleteMetadataRequest.prototype.toObject = function(opt_includeI
  */
 proto.syncer.v1.DeleteMetadataRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-configurationIdsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
+    integrationId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    configurationIdsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1534,7 +1528,7 @@ configurationIdsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? unde
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.DeleteMetadataRequest}
  */
 proto.syncer.v1.DeleteMetadataRequest.deserializeBinary = function(bytes) {
@@ -1559,11 +1553,11 @@ proto.syncer.v1.DeleteMetadataRequest.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addConfigurationIds(value);
       break;
     default:
@@ -1706,7 +1700,7 @@ proto.syncer.v1.DeleteMetadataResponse.prototype.toObject = function(opt_include
  */
 proto.syncer.v1.DeleteMetadataResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
+    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
     common_v1_errors_pb.Error.toObject, includeInstance)
   };
 
@@ -1720,7 +1714,7 @@ errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.syncer.v1.DeleteMetadataResponse}
  */
 proto.syncer.v1.DeleteMetadataResponse.deserializeBinary = function(bytes) {

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.common.v1.CombinedLinks', null, global);
 goog.exportSymbol('proto.common.v1.Link', null, global);
@@ -135,7 +141,7 @@ proto.common.v1.Links.prototype.toObject = function(opt_includeInstance) {
  */
 proto.common.v1.Links.toObject = function(includeInstance, msg) {
   var f, obj = {
-linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : []
+    linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : []
   };
 
   if (includeInstance) {
@@ -148,7 +154,7 @@ linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Links}
  */
 proto.common.v1.Links.deserializeBinary = function(bytes) {
@@ -175,7 +181,7 @@ proto.common.v1.Links.deserializeBinaryFromReader = function(msg, reader) {
     case 1:
       var value = msg.getLinksMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
     default:
@@ -209,13 +215,7 @@ proto.common.v1.Links.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getLinksMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.common.v1.Link.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
   }
 };
 
@@ -282,7 +282,7 @@ proto.common.v1.LinksV2.prototype.toObject = function(opt_includeInstance) {
  */
 proto.common.v1.LinksV2.toObject = function(includeInstance, msg) {
   var f, obj = {
-linksList: jspb.Message.toObjectList(msg.getLinksList(),
+    linksList: jspb.Message.toObjectList(msg.getLinksList(),
     proto.common.v1.Links.toObject, includeInstance)
   };
 
@@ -296,7 +296,7 @@ linksList: jspb.Message.toObjectList(msg.getLinksList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.LinksV2}
  */
 proto.common.v1.LinksV2.deserializeBinary = function(bytes) {
@@ -435,7 +435,7 @@ proto.common.v1.Link.prototype.toObject = function(opt_includeInstance) {
  */
 proto.common.v1.Link.toObject = function(includeInstance, msg) {
   var f, obj = {
-url: jspb.Message.getFieldWithDefault(msg, 1, "")
+    url: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -448,7 +448,7 @@ url: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Link}
  */
 proto.common.v1.Link.deserializeBinary = function(bytes) {
@@ -473,7 +473,7 @@ proto.common.v1.Link.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrl(value);
       break;
     default:
@@ -572,8 +572,8 @@ proto.common.v1.CombinedLinks.prototype.toObject = function(opt_includeInstance)
  */
 proto.common.v1.CombinedLinks.toObject = function(includeInstance, msg) {
   var f, obj = {
-linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : [],
-linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
+    linksMap: (f = msg.getLinksMap()) ? f.toObject(includeInstance, proto.common.v1.Link.toObject) : [],
+    linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
     proto.common.v1.Links.toObject, includeInstance)
   };
 
@@ -587,7 +587,7 @@ linksV2List: jspb.Message.toObjectList(msg.getLinksV2List(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.CombinedLinks}
  */
 proto.common.v1.CombinedLinks.deserializeBinary = function(bytes) {
@@ -614,7 +614,7 @@ proto.common.v1.CombinedLinks.deserializeBinaryFromReader = function(msg, reader
     case 1:
       var value = msg.getLinksMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.common.v1.Link.deserializeBinaryFromReader, "", new proto.common.v1.Link());
          });
       break;
     case 2:
@@ -653,13 +653,7 @@ proto.common.v1.CombinedLinks.serializeBinaryToWriter = function(message, writer
   var f = undefined;
   f = message.getLinksMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getLinksMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.common.v1.Link.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.common.v1.Link.serializeBinaryToWriter);
   }
   f = message.getLinksV2List();
   if (f.length > 0) {

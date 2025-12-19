@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -145,9 +151,9 @@ proto.secrets.v1.InvalidateRequest.prototype.toObject = function(opt_includeInst
  */
 proto.secrets.v1.InvalidateRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-store: jspb.Message.getFieldWithDefault(msg, 1, ""),
-secret: jspb.Message.getFieldWithDefault(msg, 2, ""),
-configurationId: jspb.Message.getFieldWithDefault(msg, 3, "")
+    store: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    secret: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    configurationId: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -160,7 +166,7 @@ configurationId: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.InvalidateRequest}
  */
 proto.secrets.v1.InvalidateRequest.deserializeBinary = function(bytes) {
@@ -185,15 +191,15 @@ proto.secrets.v1.InvalidateRequest.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStore(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSecret(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConfigurationId(value);
       break;
     default:
@@ -342,11 +348,11 @@ proto.secrets.v1.InvalidateResponse.prototype.toObject = function(opt_includeIns
  */
 proto.secrets.v1.InvalidateResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
+    errorsList: jspb.Message.toObjectList(msg.getErrorsList(),
     common_v1_errors_pb.Error.toObject, includeInstance),
-invalidationsList: jspb.Message.toObjectList(msg.getInvalidationsList(),
+    invalidationsList: jspb.Message.toObjectList(msg.getInvalidationsList(),
     secrets_v1_secrets_pb.Invalidation.toObject, includeInstance),
-message: jspb.Message.getFieldWithDefault(msg, 3, "")
+    message: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -359,7 +365,7 @@ message: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.InvalidateResponse}
  */
 proto.secrets.v1.InvalidateResponse.deserializeBinary = function(bytes) {
@@ -394,7 +400,7 @@ proto.secrets.v1.InvalidateResponse.deserializeBinaryFromReader = function(msg, 
       msg.addInvalidations(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessage(value);
       break;
     default:
@@ -578,9 +584,9 @@ proto.secrets.v1.ListSecretsRequest.prototype.toObject = function(opt_includeIns
  */
 proto.secrets.v1.ListSecretsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-store: jspb.Message.getFieldWithDefault(msg, 1, ""),
-profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
-provider: (f = msg.getProvider()) && secrets_v1_secrets_pb.Provider.toObject(includeInstance, f)
+    store: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
+    provider: (f = msg.getProvider()) && secrets_v1_secrets_pb.Provider.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -593,7 +599,7 @@ provider: (f = msg.getProvider()) && secrets_v1_secrets_pb.Provider.toObject(inc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.ListSecretsRequest}
  */
 proto.secrets.v1.ListSecretsRequest.deserializeBinary = function(bytes) {
@@ -618,7 +624,7 @@ proto.secrets.v1.ListSecretsRequest.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStore(value);
       break;
     case 2:
@@ -817,7 +823,7 @@ proto.secrets.v1.ListSecretsResponse.prototype.toObject = function(opt_includeIn
  */
 proto.secrets.v1.ListSecretsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-secretsList: jspb.Message.toObjectList(msg.getSecretsList(),
+    secretsList: jspb.Message.toObjectList(msg.getSecretsList(),
     secrets_v1_secrets_pb.Details.toObject, includeInstance)
   };
 
@@ -831,7 +837,7 @@ secretsList: jspb.Message.toObjectList(msg.getSecretsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.secrets.v1.ListSecretsResponse}
  */
 proto.secrets.v1.ListSecretsResponse.deserializeBinary = function(bytes) {

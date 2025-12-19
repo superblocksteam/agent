@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -298,15 +304,15 @@ proto.plugins.couchbase.v1.Plugin.prototype.toObject = function(opt_includeInsta
  */
 proto.plugins.couchbase.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-connection: (f = msg.getConnection()) && proto.plugins.couchbase.v1.Plugin.CouchbaseConnection.toObject(includeInstance, f),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
-tunnel: (f = msg.getTunnel()) && plugins_common_v1_plugin_pb.SSHConfiguration.toObject(includeInstance, f),
-bucketName: jspb.Message.getFieldWithDefault(msg, 5, ""),
-runSql: (f = msg.getRunSql()) && plugins_common_v1_plugin_pb.SQLExecution.toObject(includeInstance, f),
-insert: (f = msg.getInsert()) && proto.plugins.couchbase.v1.Plugin.CouchbaseInsert.toObject(includeInstance, f),
-get: (f = msg.getGet()) && proto.plugins.couchbase.v1.Plugin.CouchbaseGet.toObject(includeInstance, f),
-remove: (f = msg.getRemove()) && proto.plugins.couchbase.v1.Plugin.CouchbaseRemove.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    connection: (f = msg.getConnection()) && proto.plugins.couchbase.v1.Plugin.CouchbaseConnection.toObject(includeInstance, f),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
+    tunnel: (f = msg.getTunnel()) && plugins_common_v1_plugin_pb.SSHConfiguration.toObject(includeInstance, f),
+    bucketName: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    runSql: (f = msg.getRunSql()) && plugins_common_v1_plugin_pb.SQLExecution.toObject(includeInstance, f),
+    insert: (f = msg.getInsert()) && proto.plugins.couchbase.v1.Plugin.CouchbaseInsert.toObject(includeInstance, f),
+    get: (f = msg.getGet()) && proto.plugins.couchbase.v1.Plugin.CouchbaseGet.toObject(includeInstance, f),
+    remove: (f = msg.getRemove()) && proto.plugins.couchbase.v1.Plugin.CouchbaseRemove.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -319,7 +325,7 @@ remove: (f = msg.getRemove()) && proto.plugins.couchbase.v1.Plugin.CouchbaseRemo
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin}
  */
 proto.plugins.couchbase.v1.Plugin.deserializeBinary = function(bytes) {
@@ -344,7 +350,7 @@ proto.plugins.couchbase.v1.Plugin.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -363,7 +369,7 @@ proto.plugins.couchbase.v1.Plugin.deserializeBinaryFromReader = function(msg, re
       msg.setTunnel(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBucketName(value);
       break;
     case 6:
@@ -520,8 +526,8 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.prototype.toObject = funct
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.toObject = function(includeInstance, msg) {
   var f, obj = {
-scope: jspb.Message.getFieldWithDefault(msg, 1, ""),
-collection: jspb.Message.getFieldWithDefault(msg, 2, "")
+    scope: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    collection: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -534,7 +540,7 @@ collection: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.deserializeBinary = function(bytes) {
@@ -559,11 +565,11 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.deserializeBinaryFromReade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setScope(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCollection(value);
       break;
     default:
@@ -680,9 +686,9 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseConnection.prototype.toObject = funct
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseConnection.toObject = function(includeInstance, msg) {
   var f, obj = {
-user: jspb.Message.getFieldWithDefault(msg, 2, ""),
-password: jspb.Message.getFieldWithDefault(msg, 3, ""),
-url: jspb.Message.getFieldWithDefault(msg, 5, "")
+    user: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    password: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    url: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -695,7 +701,7 @@ url: jspb.Message.getFieldWithDefault(msg, 5, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseConnection}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseConnection.deserializeBinary = function(bytes) {
@@ -720,15 +726,15 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseConnection.deserializeBinaryFromReade
     var field = reader.getFieldNumber();
     switch (field) {
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUser(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPassword(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrl(value);
       break;
     default:
@@ -870,9 +876,9 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseInsert.prototype.toObject = function(
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseInsert.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: jspb.Message.getFieldWithDefault(msg, 2, ""),
-identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.toObject(includeInstance, f)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -885,7 +891,7 @@ identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.Couch
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseInsert}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseInsert.deserializeBinary = function(bytes) {
@@ -910,11 +916,11 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseInsert.deserializeBinaryFromReader = 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     case 3:
@@ -1081,8 +1087,8 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseGet.prototype.toObject = function(opt
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseGet.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.toObject(includeInstance, f)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1095,7 +1101,7 @@ identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.Couch
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseGet}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseGet.deserializeBinary = function(bytes) {
@@ -1120,7 +1126,7 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseGet.deserializeBinaryFromReader = fun
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -1262,8 +1268,8 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseRemove.prototype.toObject = function(
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseRemove.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.toObject(includeInstance, f)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.CouchbaseIdentifier.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1276,7 +1282,7 @@ identifier: (f = msg.getIdentifier()) && proto.plugins.couchbase.v1.Plugin.Couch
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Plugin.CouchbaseRemove}
  */
 proto.plugins.couchbase.v1.Plugin.CouchbaseRemove.deserializeBinary = function(bytes) {
@@ -1301,7 +1307,7 @@ proto.plugins.couchbase.v1.Plugin.CouchbaseRemove.deserializeBinaryFromReader = 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -1745,7 +1751,7 @@ proto.plugins.couchbase.v1.Metadata.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.couchbase.v1.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-bucketsList: jspb.Message.toObjectList(msg.getBucketsList(),
+    bucketsList: jspb.Message.toObjectList(msg.getBucketsList(),
     proto.plugins.couchbase.v1.Metadata.Bucket.toObject, includeInstance)
   };
 
@@ -1759,7 +1765,7 @@ bucketsList: jspb.Message.toObjectList(msg.getBucketsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Metadata}
  */
 proto.plugins.couchbase.v1.Metadata.deserializeBinary = function(bytes) {
@@ -1860,7 +1866,7 @@ proto.plugins.couchbase.v1.Metadata.Collection.prototype.toObject = function(opt
  */
 proto.plugins.couchbase.v1.Metadata.Collection.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, "")
+    name: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -1873,7 +1879,7 @@ name: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Metadata.Collection}
  */
 proto.plugins.couchbase.v1.Metadata.Collection.deserializeBinary = function(bytes) {
@@ -1898,7 +1904,7 @@ proto.plugins.couchbase.v1.Metadata.Collection.deserializeBinaryFromReader = fun
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     default:
@@ -1997,8 +2003,8 @@ proto.plugins.couchbase.v1.Metadata.Scope.prototype.toObject = function(opt_incl
  */
 proto.plugins.couchbase.v1.Metadata.Scope.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-collectionsList: jspb.Message.toObjectList(msg.getCollectionsList(),
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    collectionsList: jspb.Message.toObjectList(msg.getCollectionsList(),
     proto.plugins.couchbase.v1.Metadata.Collection.toObject, includeInstance)
   };
 
@@ -2012,7 +2018,7 @@ collectionsList: jspb.Message.toObjectList(msg.getCollectionsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Metadata.Scope}
  */
 proto.plugins.couchbase.v1.Metadata.Scope.deserializeBinary = function(bytes) {
@@ -2037,7 +2043,7 @@ proto.plugins.couchbase.v1.Metadata.Scope.deserializeBinaryFromReader = function
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -2187,8 +2193,8 @@ proto.plugins.couchbase.v1.Metadata.Bucket.prototype.toObject = function(opt_inc
  */
 proto.plugins.couchbase.v1.Metadata.Bucket.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-scopesList: jspb.Message.toObjectList(msg.getScopesList(),
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    scopesList: jspb.Message.toObjectList(msg.getScopesList(),
     proto.plugins.couchbase.v1.Metadata.Scope.toObject, includeInstance)
   };
 
@@ -2202,7 +2208,7 @@ scopesList: jspb.Message.toObjectList(msg.getScopesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.couchbase.v1.Metadata.Bucket}
  */
 proto.plugins.couchbase.v1.Metadata.Bucket.deserializeBinary = function(bytes) {
@@ -2227,7 +2233,7 @@ proto.plugins.couchbase.v1.Metadata.Bucket.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -93,17 +99,17 @@ proto.plugins.smtp.v1.Plugin.prototype.toObject = function(opt_includeInstance) 
  */
 proto.plugins.smtp.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-connection: (f = msg.getConnection()) && proto.plugins.smtp.v1.Plugin.SmtpConnection.toObject(includeInstance, f),
-from: jspb.Message.getFieldWithDefault(msg, 3, ""),
-replyTo: jspb.Message.getFieldWithDefault(msg, 4, ""),
-to: jspb.Message.getFieldWithDefault(msg, 5, ""),
-cc: jspb.Message.getFieldWithDefault(msg, 6, ""),
-bcc: jspb.Message.getFieldWithDefault(msg, 7, ""),
-subject: jspb.Message.getFieldWithDefault(msg, 8, ""),
-body: jspb.Message.getFieldWithDefault(msg, 9, ""),
-attachments: jspb.Message.getFieldWithDefault(msg, 10, ""),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    connection: (f = msg.getConnection()) && proto.plugins.smtp.v1.Plugin.SmtpConnection.toObject(includeInstance, f),
+    from: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    replyTo: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    to: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    cc: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    bcc: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    subject: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    body: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    attachments: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -116,7 +122,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.smtp.v1.Plugin}
  */
 proto.plugins.smtp.v1.Plugin.deserializeBinary = function(bytes) {
@@ -141,7 +147,7 @@ proto.plugins.smtp.v1.Plugin.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -150,35 +156,35 @@ proto.plugins.smtp.v1.Plugin.deserializeBinaryFromReader = function(msg, reader)
       msg.setConnection(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFrom(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setReplyTo(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTo(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCc(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBcc(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSubject(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAttachments(value);
       break;
     case 11:
@@ -329,11 +335,11 @@ proto.plugins.smtp.v1.Plugin.SmtpConnection.prototype.toObject = function(opt_in
  */
 proto.plugins.smtp.v1.Plugin.SmtpConnection.toObject = function(includeInstance, msg) {
   var f, obj = {
-host: jspb.Message.getFieldWithDefault(msg, 1, ""),
-port: jspb.Message.getFieldWithDefault(msg, 2, 0),
-username: jspb.Message.getFieldWithDefault(msg, 3, ""),
-password: jspb.Message.getFieldWithDefault(msg, 4, ""),
-secure: (f = jspb.Message.getBooleanField(msg, 5)) == null ? undefined : f
+    host: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    port: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    username: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    password: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    secure: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
   };
 
   if (includeInstance) {
@@ -346,7 +352,7 @@ secure: (f = jspb.Message.getBooleanField(msg, 5)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.smtp.v1.Plugin.SmtpConnection}
  */
 proto.plugins.smtp.v1.Plugin.SmtpConnection.deserializeBinary = function(bytes) {
@@ -371,7 +377,7 @@ proto.plugins.smtp.v1.Plugin.SmtpConnection.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHost(value);
       break;
     case 2:
@@ -379,11 +385,11 @@ proto.plugins.smtp.v1.Plugin.SmtpConnection.deserializeBinaryFromReader = functi
       msg.setPort(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUsername(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPassword(value);
       break;
     case 5:

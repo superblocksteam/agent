@@ -25,7 +25,7 @@ COPY workers/ephemeral/task-manager/internal/ ./internal/
 COPY workers/ephemeral/task-manager/cmd/ ./cmd/
 
 # Build the binary (CGO needed for v8go dependency in pkg/errors)
-RUN CGO_ENABLED=1 GOOS=linux go build -o worker ./cmd/worker
+RUN CGO_ENABLED=1 GOOS=linux go build -o task-manager ./cmd/worker
 
 # Runtime stage (using Debian trixie-slim to match builder glibc version)
 FROM debian:trixie-slim
@@ -37,17 +37,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary
-COPY --from=builder /app/workers/ephemeral/task-manager/worker .
+COPY --from=builder /app/workers/ephemeral/task-manager/task-manager .
 
-# Default environment variables for Python worker
+# Default environment variables for Task Manager
 ENV SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_HOST=redis \
     SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PORT=6379 \
-    SUPERBLOCKS_WORKER_SANDBOX_WORKER_LANGUAGE=python \
-    SUPERBLOCKS_WORKER_SANDBOX_WORKER_CONSUMER_GROUP=sandbox-python-workers \
-    SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS=python-sandbox:50051 \
+    SUPERBLOCKS_WORKER_SANDBOX_WORKER_LANGUAGE=javascript \
+    SUPERBLOCKS_WORKER_SANDBOX_WORKER_CONSUMER_GROUP=sandbox-javascript-workers \
+    SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS=javascript-sandbox:50051 \
     SUPERBLOCKS_WORKER_SANDBOX_GRPC_PORT=50050 \
     SUPERBLOCKS_WORKER_SANDBOX_OTEL_COLLECTOR_HTTP_URL=http://otel-desktop-viewer:4318
 
 EXPOSE 50050
 
-CMD ["./worker"]
+CMD ["./task-manager"]

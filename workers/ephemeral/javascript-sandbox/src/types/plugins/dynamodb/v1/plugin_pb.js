@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb.js');
 goog.object.extend(proto, google_protobuf_any_pb);
@@ -203,9 +209,9 @@ proto.plugins.dynamodb.v1.Index.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.dynamodb.v1.Index.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionkey: jspb.Message.getFieldWithDefault(msg, 2, ""),
-sortkey: jspb.Message.getFieldWithDefault(msg, 3, "")
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionkey: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    sortkey: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -218,7 +224,7 @@ sortkey: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Index}
  */
 proto.plugins.dynamodb.v1.Index.deserializeBinary = function(bytes) {
@@ -243,15 +249,15 @@ proto.plugins.dynamodb.v1.Index.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionkey(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSortkey(value);
       break;
     default:
@@ -400,10 +406,10 @@ proto.plugins.dynamodb.v1.Table.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.dynamodb.v1.Table.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionkey: jspb.Message.getFieldWithDefault(msg, 2, ""),
-sortkey: jspb.Message.getFieldWithDefault(msg, 3, ""),
-indexesList: jspb.Message.toObjectList(msg.getIndexesList(),
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionkey: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    sortkey: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    indexesList: jspb.Message.toObjectList(msg.getIndexesList(),
     proto.plugins.dynamodb.v1.Index.toObject, includeInstance)
   };
 
@@ -417,7 +423,7 @@ indexesList: jspb.Message.toObjectList(msg.getIndexesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Table}
  */
 proto.plugins.dynamodb.v1.Table.deserializeBinary = function(bytes) {
@@ -442,15 +448,15 @@ proto.plugins.dynamodb.v1.Table.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionkey(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSortkey(value);
       break;
     case 4:
@@ -650,7 +656,7 @@ proto.plugins.dynamodb.v1.Metadata.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.dynamodb.v1.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-tablesList: jspb.Message.toObjectList(msg.getTablesList(),
+    tablesList: jspb.Message.toObjectList(msg.getTablesList(),
     proto.plugins.dynamodb.v1.Table.toObject, includeInstance)
   };
 
@@ -664,7 +670,7 @@ tablesList: jspb.Message.toObjectList(msg.getTablesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Metadata}
  */
 proto.plugins.dynamodb.v1.Metadata.deserializeBinary = function(bytes) {
@@ -803,8 +809,8 @@ proto.plugins.dynamodb.v1.MappedColumns.prototype.toObject = function(opt_includ
  */
 proto.plugins.dynamodb.v1.MappedColumns.toObject = function(includeInstance, msg) {
   var f, obj = {
-json: jspb.Message.getFieldWithDefault(msg, 1, ""),
-sql: jspb.Message.getFieldWithDefault(msg, 2, "")
+    json: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    sql: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -817,7 +823,7 @@ sql: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.MappedColumns}
  */
 proto.plugins.dynamodb.v1.MappedColumns.deserializeBinary = function(bytes) {
@@ -842,11 +848,11 @@ proto.plugins.dynamodb.v1.MappedColumns.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setJson(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSql(value);
       break;
     default:
@@ -963,8 +969,8 @@ proto.plugins.dynamodb.v1.Tuple.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.dynamodb.v1.Tuple.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstance, f)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -977,7 +983,7 @@ value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Tuple}
  */
 proto.plugins.dynamodb.v1.Tuple.deserializeBinary = function(bytes) {
@@ -1002,7 +1008,7 @@ proto.plugins.dynamodb.v1.Tuple.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -1144,7 +1150,7 @@ proto.plugins.dynamodb.v1.SuperblocksMetadata.prototype.toObject = function(opt_
  */
 proto.plugins.dynamodb.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -1157,7 +1163,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.SuperblocksMetadata}
  */
 proto.plugins.dynamodb.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -1182,7 +1188,7 @@ proto.plugins.dynamodb.v1.SuperblocksMetadata.deserializeBinaryFromReader = func
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -1281,21 +1287,21 @@ proto.plugins.dynamodb.v1.Plugin.prototype.toObject = function(opt_includeInstan
  */
 proto.plugins.dynamodb.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-body: jspb.Message.getFieldWithDefault(msg, 1, ""),
-usepreparedsql: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
-operation: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-useadvancedmatching: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-table: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-newvaluesList: jspb.Message.toObjectList(msg.getNewvaluesList(),
+    body: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    usepreparedsql: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    operation: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    useadvancedmatching: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    table: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    newvaluesList: jspb.Message.toObjectList(msg.getNewvaluesList(),
     proto.plugins.dynamodb.v1.Tuple.toObject, includeInstance),
-oldvaluesList: jspb.Message.toObjectList(msg.getOldvaluesList(),
+    oldvaluesList: jspb.Message.toObjectList(msg.getOldvaluesList(),
     proto.plugins.dynamodb.v1.Tuple.toObject, includeInstance),
-filterbyList: (f = jspb.Message.getRepeatedField(msg, 8)) == null ? undefined : f,
-mappingmode: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-mappedcolumnsList: jspb.Message.toObjectList(msg.getMappedcolumnsList(),
+    filterbyList: (f = jspb.Message.getRepeatedField(msg, 8)) == null ? undefined : f,
+    mappingmode: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    mappedcolumnsList: jspb.Message.toObjectList(msg.getMappedcolumnsList(),
     proto.plugins.dynamodb.v1.MappedColumns.toObject, includeInstance),
-action: (f = jspb.Message.getField(msg, 11)) == null ? undefined : f,
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.dynamodb.v1.SuperblocksMetadata.toObject(includeInstance, f)
+    action: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.dynamodb.v1.SuperblocksMetadata.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1308,7 +1314,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.dynamod
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.dynamodb.v1.Plugin}
  */
 proto.plugins.dynamodb.v1.Plugin.deserializeBinary = function(bytes) {
@@ -1333,7 +1339,7 @@ proto.plugins.dynamodb.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 2:
@@ -1341,15 +1347,15 @@ proto.plugins.dynamodb.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
       msg.setUsepreparedsql(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOperation(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUseadvancedmatching(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTable(value);
       break;
     case 6:
@@ -1363,11 +1369,11 @@ proto.plugins.dynamodb.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
       msg.addOldvalues(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addFilterby(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMappingmode(value);
       break;
     case 10:
@@ -1376,7 +1382,7 @@ proto.plugins.dynamodb.v1.Plugin.deserializeBinaryFromReader = function(msg, rea
       msg.addMappedcolumns(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAction(value);
       break;
     case 12:

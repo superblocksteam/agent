@@ -111,17 +111,17 @@ spec:
         - name: SUPERBLOCKS_WORKER_GO_TRANSPORT_REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: worker-redis-token
+              name: workers-redis-token
               key: token
         - name: SUPERBLOCKS_WORKER_GO_STORE_REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: worker-kvstore-token
+              name: workers-kvstore-token
               key: token
         - name: SUPERBLOCKS_WORKER_GO_SUPERBLOCKS_KEY
           valueFrom:
             secretKeyRef:
-              name: worker-agent-key
+              name: workers-agent-key
               key: key
         - name: DD_ENV
           value: {{ $.Values.environment }}

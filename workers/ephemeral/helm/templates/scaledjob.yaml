@@ -8,7 +8,7 @@ kind: ScaledJob
 metadata:
   name: {{ $k }}
   labels:
-    {{- include "worker.labels" $v | nindent 4 }}
+    {{- include "ephemeral.worker.labels" $v | nindent 4 }}
 spec:
   pollingInterval: {{ $v.keda.pollingInterval | default $.Values.keda.pollingInterval }}
   successfulJobsHistoryLimit: {{ $v.keda.successfulJobsHistoryLimit | default $.Values.keda.successfulJobsHistoryLimit }}
@@ -18,6 +18,19 @@ spec:
   {{- if or $v.keda.triggers $.Values.keda.triggers }}
   triggers:
     {{- toYaml ($v.keda.triggers | default $.Values.keda.triggers) | nindent 4 }}
+  {{- else }}
+  triggers:
+    - type: redis-streams
+      metadata:
+        host: {{ $.Values.queue.host }}
+        port: {{ $.Values.queue.port | quote }}
+        enableTLS: {{ $.Values.queue.tls | quote }}
+        stream: {{ $v.triggerStream }}
+        consumerGroup: {{ $v.consumerGroup }}
+        lagCount: "1"
+        activationLagCount: "1"
+      authenticationRef:
+        name: redis-trigger-auth
   {{- end }}
   {{- with $v.keda.scalingStrategy | default $.Values.keda.scalingStrategy }}
   scalingStrategy:
@@ -31,16 +44,19 @@ spec:
     template:
       metadata:
         labels:
-          {{- include "worker.labels" $v | nindent 10 }}
+          {{- include "ephemeral.worker.labels" $v | nindent 10 }}
         {{- with $podAnnotations }}
         annotations:
           {{- toYaml . | nindent 10 }}
         {{- end }}
       spec:
         restartPolicy: Never
-        {{- with $.Values.imagePullSecrets }}
+        {{- if $.Values.runtimeClassName }}
+        runtimeClassName: {{ $.Values.runtimeClassName }}
+        {{- end }}
+        {{- if $.Values.image.credentials }}
         imagePullSecrets:
-          {{- toYaml . | nindent 10 }}
+        - name: ephemeral-worker-docker
         {{- end }}
 
         # Sandbox runs as a sidecar (initContainer with restartPolicy: Always)
@@ -72,10 +88,10 @@ spec:
           imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
           resources:
             {{- toYaml (deepCopy ($.Values.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
-          command: ["./worker"]
+          command: ["./task-manager"]
           args:
           # Ephemeral mode - process one job and exit
-          - "--ephemeral=true"
+          - "--worker.ephemeral=true"
           # Logging
           - "--log.level={{ $.Values.observability.logging.level }}"
           # Language
@@ -117,6 +133,27 @@ spec:
           {{- if $.Values.queue.timeout.pool }}
           - "--transport.redis.timeout.pool={{ $.Values.queue.timeout.pool }}"
           {{- end }}
+          # Redis store
+          - "--store.redis.host={{ $.Values.kvstore.host }}"
+          - "--store.redis.port={{ $.Values.kvstore.port }}"
+          - "--store.redis.tls={{ $.Values.kvstore.tls }}"
+          {{- if $.Values.kvstore.servername }}
+          - "--store.redis.servername={{ $.Values.kvstore.servername }}"
+          {{- end }}
+          - "--store.redis.pool.max={{ $.Values.kvstore.pool.max }}"
+          - "--store.redis.pool.min={{ $.Values.kvstore.pool.min }}"
+          {{- if $.Values.kvstore.timeout.dial }}
+          - "--store.redis.timeout.dial={{ $.Values.kvstore.timeout.dial }}"
+          {{- end }}
+          {{- if $.Values.kvstore.timeout.read }}
+          - "--store.redis.timeout.read={{ $.Values.kvstore.timeout.read }}"
+          {{- end }}
+          {{- if $.Values.kvstore.timeout.write }}
+          - "--store.redis.timeout.write={{ $.Values.kvstore.timeout.write }}"
+          {{- end }}
+          {{- if $.Values.kvstore.timeout.pool }}
+          - "--store.redis.timeout.pool={{ $.Values.kvstore.timeout.pool }}"
+          {{- end }}
           # Observability
           {{- if $.Values.observability.tracing.url }}
           - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"
@@ -141,12 +178,17 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           env:
-          - name: SUPERBLOCKS_WORKER_EPHEMERAL_TRANSPORT_REDIS_PASSWORD
+          - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: worker-redis-token
+                name: worker-queue-redis-token
                 key: token
-          - name: SUPERBLOCKS_WORKER_EPHEMERAL_SUPERBLOCKS_KEY
+          - name: SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: worker-kvstore-redis-token
+                key: token
+          - name: SUPERBLOCKS_WORKER_SANDBOX_SUPERBLOCKS_KEY
             valueFrom:
               secretKeyRef:
                 name: worker-agent-key

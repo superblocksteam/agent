@@ -29,7 +29,7 @@ taskManager:
 sandbox:
   python:
     image:
-      repository: ghcr.io/superblocksteam/sandbox.python
+      repository: ghcr.io/superblocksteam/python-sandbox
       tag: latest
       pullPolicy: IfNotPresent
     resources:
@@ -52,7 +52,7 @@ sandbox:
       requests:
         cpu: 100m
         memory: 256Mi
-    port: 50052
+    port: 50051
     # Additional args/env for the javascript sandbox
     extraEnv: []
 # KEDA ScaledJob configuration
@@ -77,6 +77,7 @@ keda:
   #       stream: sandbox:work:python
   #       consumerGroup: ephemeral-python
   #       lagCount: "5"
+  #       activationLagCount: "3"
 # Redis transport configuration
 queue:
   deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)
@@ -88,6 +89,22 @@ queue:
   blockDuration: 5s
   batchSize: 10
   executionPool: 100
+  pool:
+    min: 5
+    max: 10
+  timeout:
+    dial: 5s
+    read: 5m
+    write: 10s
+    pool: 5m
+# Redis kvstore configuration
+kvstore:
+  deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)
+  tls: false
+  host: redis
+  servername: ""
+  port: 6379
+  password: ""
   pool:
     min: 5
     max: 10
@@ -123,5 +140,8 @@ tolerations: []
 affinity: {}
 podAnnotations: {}
 # Image pull secrets
-imagePullSecrets:
-  - name: worker-docker
+image:
+  credentials:
+    registry: ghcr.io
+    username: '<override>'
+    password: '<override>'

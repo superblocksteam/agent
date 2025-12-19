@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var transport_v1_transport_pb = require('../../transport/v1/transport_pb');
 goog.object.extend(proto, transport_v1_transport_pb);
@@ -71,7 +77,7 @@ proto.worker.v1.StringValue.prototype.toObject = function(opt_includeInstance) {
  */
 proto.worker.v1.StringValue.toObject = function(includeInstance, msg) {
   var f, obj = {
-value: jspb.Message.getFieldWithDefault(msg, 1, "")
+    value: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -84,7 +90,7 @@ value: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.StringValue}
  */
 proto.worker.v1.StringValue.deserializeBinary = function(bytes) {
@@ -109,7 +115,7 @@ proto.worker.v1.StringValue.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     default:

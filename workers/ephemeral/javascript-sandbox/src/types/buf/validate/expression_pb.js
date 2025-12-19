@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.buf.validate.Constraint', null, global);
 goog.exportSymbol('proto.buf.validate.Violation', null, global);
@@ -113,9 +119,9 @@ proto.buf.validate.Constraint.prototype.toObject = function(opt_includeInstance)
  */
 proto.buf.validate.Constraint.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-message: jspb.Message.getFieldWithDefault(msg, 2, ""),
-expression: jspb.Message.getFieldWithDefault(msg, 3, "")
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    message: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    expression: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -128,7 +134,7 @@ expression: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Constraint}
  */
 proto.buf.validate.Constraint.deserializeBinary = function(bytes) {
@@ -153,15 +159,15 @@ proto.buf.validate.Constraint.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessage(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExpression(value);
       break;
     default:
@@ -310,7 +316,7 @@ proto.buf.validate.Violations.prototype.toObject = function(opt_includeInstance)
  */
 proto.buf.validate.Violations.toObject = function(includeInstance, msg) {
   var f, obj = {
-violationsList: jspb.Message.toObjectList(msg.getViolationsList(),
+    violationsList: jspb.Message.toObjectList(msg.getViolationsList(),
     proto.buf.validate.Violation.toObject, includeInstance)
   };
 
@@ -324,7 +330,7 @@ violationsList: jspb.Message.toObjectList(msg.getViolationsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Violations}
  */
 proto.buf.validate.Violations.deserializeBinary = function(bytes) {
@@ -463,10 +469,10 @@ proto.buf.validate.Violation.prototype.toObject = function(opt_includeInstance) 
  */
 proto.buf.validate.Violation.toObject = function(includeInstance, msg) {
   var f, obj = {
-fieldPath: jspb.Message.getFieldWithDefault(msg, 1, ""),
-constraintId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-message: jspb.Message.getFieldWithDefault(msg, 3, ""),
-forKey: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
+    fieldPath: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    constraintId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    message: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    forKey: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
   };
 
   if (includeInstance) {
@@ -479,7 +485,7 @@ forKey: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.Violation}
  */
 proto.buf.validate.Violation.deserializeBinary = function(bytes) {
@@ -504,15 +510,15 @@ proto.buf.validate.Violation.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFieldPath(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConstraintId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessage(value);
       break;
     case 4:

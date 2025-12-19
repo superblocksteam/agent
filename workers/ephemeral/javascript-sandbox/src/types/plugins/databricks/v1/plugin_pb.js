@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -116,12 +122,12 @@ proto.plugins.databricks.v1.Plugin.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.databricks.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-connection: (f = msg.getConnection()) && proto.plugins.databricks.v1.Plugin.DatabricksConnection.toObject(includeInstance, f),
-operation: jspb.Message.getFieldWithDefault(msg, 3, 0),
-runSql: (f = msg.getRunSql()) && plugins_common_v1_plugin_pb.SQLExecution.toObject(includeInstance, f),
-bulkEdit: (f = msg.getBulkEdit()) && plugins_common_v1_plugin_pb.SQLBulkEdit.toObject(includeInstance, f),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    connection: (f = msg.getConnection()) && proto.plugins.databricks.v1.Plugin.DatabricksConnection.toObject(includeInstance, f),
+    operation: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    runSql: (f = msg.getRunSql()) && plugins_common_v1_plugin_pb.SQLExecution.toObject(includeInstance, f),
+    bulkEdit: (f = msg.getBulkEdit()) && plugins_common_v1_plugin_pb.SQLBulkEdit.toObject(includeInstance, f),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -134,7 +140,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.databricks.v1.Plugin}
  */
 proto.plugins.databricks.v1.Plugin.deserializeBinary = function(bytes) {
@@ -159,7 +165,7 @@ proto.plugins.databricks.v1.Plugin.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -313,16 +319,16 @@ proto.plugins.databricks.v1.Plugin.DatabricksConnection.prototype.toObject = fun
  */
 proto.plugins.databricks.v1.Plugin.DatabricksConnection.toObject = function(includeInstance, msg) {
   var f, obj = {
-defaultCatalog: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-defaultSchema: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-hostUrl: jspb.Message.getFieldWithDefault(msg, 3, ""),
-path: jspb.Message.getFieldWithDefault(msg, 4, ""),
-port: jspb.Message.getFieldWithDefault(msg, 5, 0),
-connectionType: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-token: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-oauthClientId: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f,
-oauthClientSecret: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-scopedCatalogSchemasList: jspb.Message.toObjectList(msg.getScopedCatalogSchemasList(),
+    defaultCatalog: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    defaultSchema: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    hostUrl: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    port: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    connectionType: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    token: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    oauthClientId: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    oauthClientSecret: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    scopedCatalogSchemasList: jspb.Message.toObjectList(msg.getScopedCatalogSchemasList(),
     proto.plugins.databricks.v1.Plugin.ScopedCatalogSchemas.toObject, includeInstance)
   };
 
@@ -336,7 +342,7 @@ scopedCatalogSchemasList: jspb.Message.toObjectList(msg.getScopedCatalogSchemasL
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.databricks.v1.Plugin.DatabricksConnection}
  */
 proto.plugins.databricks.v1.Plugin.DatabricksConnection.deserializeBinary = function(bytes) {
@@ -361,19 +367,19 @@ proto.plugins.databricks.v1.Plugin.DatabricksConnection.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDefaultCatalog(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDefaultSchema(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHostUrl(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     case 5:
@@ -385,15 +391,15 @@ proto.plugins.databricks.v1.Plugin.DatabricksConnection.deserializeBinaryFromRea
       msg.setConnectionType(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setToken(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOauthClientId(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOauthClientSecret(value);
       break;
     case 10:
@@ -851,8 +857,8 @@ proto.plugins.databricks.v1.Plugin.ScopedCatalogSchemas.prototype.toObject = fun
  */
 proto.plugins.databricks.v1.Plugin.ScopedCatalogSchemas.toObject = function(includeInstance, msg) {
   var f, obj = {
-catalog: jspb.Message.getFieldWithDefault(msg, 1, ""),
-schemasList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
+    catalog: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    schemasList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -865,7 +871,7 @@ schemasList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.databricks.v1.Plugin.ScopedCatalogSchemas}
  */
 proto.plugins.databricks.v1.Plugin.ScopedCatalogSchemas.deserializeBinary = function(bytes) {
@@ -890,11 +896,11 @@ proto.plugins.databricks.v1.Plugin.ScopedCatalogSchemas.deserializeBinaryFromRea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCatalog(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addSchemas(value);
       break;
     default:

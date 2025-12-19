@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -307,8 +313,8 @@ proto.ai.v1.Message.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.Message.toObject = function(includeInstance, msg) {
   var f, obj = {
-role: jspb.Message.getFieldWithDefault(msg, 1, 0),
-content: jspb.Message.getFieldWithDefault(msg, 2, "")
+    role: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    content: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -321,7 +327,7 @@ content: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Message}
  */
 proto.ai.v1.Message.deserializeBinary = function(bytes) {
@@ -350,7 +356,7 @@ proto.ai.v1.Message.deserializeBinaryFromReader = function(msg, reader) {
       msg.setRole(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setContent(value);
       break;
     default:
@@ -505,14 +511,14 @@ proto.ai.v1.Task.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.Task.toObject = function(includeInstance, msg) {
   var f, obj = {
-optimize: (f = msg.getOptimize()) && proto.ai.v1.Task.Optimize.toObject(includeInstance, f),
-edit: (f = msg.getEdit()) && proto.ai.v1.Task.Edit.toObject(includeInstance, f),
-explain: (f = msg.getExplain()) && proto.ai.v1.Task.Explain.toObject(includeInstance, f),
-create: (f = msg.getCreate()) && proto.ai.v1.Task.Create.toObject(includeInstance, f),
-debug: (f = msg.getDebug()) && proto.ai.v1.Task.Debug.toObject(includeInstance, f),
-transpile: (f = msg.getTranspile()) && proto.ai.v1.Task.Transpile.toObject(includeInstance, f),
-mock: (f = msg.getMock()) && proto.ai.v1.Task.Mock.toObject(includeInstance, f),
-historyList: jspb.Message.toObjectList(msg.getHistoryList(),
+    optimize: (f = msg.getOptimize()) && proto.ai.v1.Task.Optimize.toObject(includeInstance, f),
+    edit: (f = msg.getEdit()) && proto.ai.v1.Task.Edit.toObject(includeInstance, f),
+    explain: (f = msg.getExplain()) && proto.ai.v1.Task.Explain.toObject(includeInstance, f),
+    create: (f = msg.getCreate()) && proto.ai.v1.Task.Create.toObject(includeInstance, f),
+    debug: (f = msg.getDebug()) && proto.ai.v1.Task.Debug.toObject(includeInstance, f),
+    transpile: (f = msg.getTranspile()) && proto.ai.v1.Task.Transpile.toObject(includeInstance, f),
+    mock: (f = msg.getMock()) && proto.ai.v1.Task.Mock.toObject(includeInstance, f),
+    historyList: jspb.Message.toObjectList(msg.getHistoryList(),
     proto.ai.v1.Message.toObject, includeInstance)
   };
 
@@ -526,7 +532,7 @@ historyList: jspb.Message.toObjectList(msg.getHistoryList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task}
  */
 proto.ai.v1.Task.deserializeBinary = function(bytes) {
@@ -731,7 +737,7 @@ proto.ai.v1.Task.Optimize.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Optimize}
  */
 proto.ai.v1.Task.Optimize.deserializeBinary = function(bytes) {
@@ -832,7 +838,7 @@ proto.ai.v1.Task.Debug.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Debug}
  */
 proto.ai.v1.Task.Debug.deserializeBinary = function(bytes) {
@@ -933,7 +939,7 @@ proto.ai.v1.Task.Transpile.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Transpile}
  */
 proto.ai.v1.Task.Transpile.deserializeBinary = function(bytes) {
@@ -1021,10 +1027,10 @@ proto.ai.v1.Task.Edit.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.Task.Edit.toObject = function(includeInstance, msg) {
   var f, obj = {
-prompt: jspb.Message.getFieldWithDefault(msg, 1, ""),
-syntax: jspb.Message.getFieldWithDefault(msg, 2, 0),
-snippet: jspb.Message.getFieldWithDefault(msg, 3, ""),
-context: (f = msg.getContext()) && proto.ai.v1.Task.Edit.Context.toObject(includeInstance, f)
+    prompt: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    syntax: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    snippet: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    context: (f = msg.getContext()) && proto.ai.v1.Task.Edit.Context.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1037,7 +1043,7 @@ context: (f = msg.getContext()) && proto.ai.v1.Task.Edit.Context.toObject(includ
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Edit}
  */
 proto.ai.v1.Task.Edit.deserializeBinary = function(bytes) {
@@ -1062,7 +1068,7 @@ proto.ai.v1.Task.Edit.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPrompt(value);
       break;
     case 2:
@@ -1070,7 +1076,7 @@ proto.ai.v1.Task.Edit.deserializeBinaryFromReader = function(msg, reader) {
       msg.setSyntax(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSnippet(value);
       break;
     case 4:
@@ -1197,8 +1203,8 @@ proto.ai.v1.Task.Edit.Context.prototype.toObject = function(opt_includeInstance)
  */
 proto.ai.v1.Task.Edit.Context.toObject = function(includeInstance, msg) {
   var f, obj = {
-metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
-configurationIds: (f = msg.getConfigurationIds()) && common_v1_utils_pb.StringList.toObject(includeInstance, f)
+    metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
+    configurationIds: (f = msg.getConfigurationIds()) && common_v1_utils_pb.StringList.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1211,7 +1217,7 @@ configurationIds: (f = msg.getConfigurationIds()) && common_v1_utils_pb.StringLi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Edit.Context}
  */
 proto.ai.v1.Task.Edit.Context.deserializeBinary = function(bytes) {
@@ -1490,9 +1496,9 @@ proto.ai.v1.Task.Create.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.Task.Create.toObject = function(includeInstance, msg) {
   var f, obj = {
-prompt: jspb.Message.getFieldWithDefault(msg, 1, ""),
-syntax: jspb.Message.getFieldWithDefault(msg, 2, 0),
-context: (f = msg.getContext()) && proto.ai.v1.Task.Create.Context.toObject(includeInstance, f)
+    prompt: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    syntax: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    context: (f = msg.getContext()) && proto.ai.v1.Task.Create.Context.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1505,7 +1511,7 @@ context: (f = msg.getContext()) && proto.ai.v1.Task.Create.Context.toObject(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Create}
  */
 proto.ai.v1.Task.Create.deserializeBinary = function(bytes) {
@@ -1530,7 +1536,7 @@ proto.ai.v1.Task.Create.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPrompt(value);
       break;
     case 2:
@@ -1654,8 +1660,8 @@ proto.ai.v1.Task.Create.Context.prototype.toObject = function(opt_includeInstanc
  */
 proto.ai.v1.Task.Create.Context.toObject = function(includeInstance, msg) {
   var f, obj = {
-metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
-configurationIds: (f = msg.getConfigurationIds()) && common_v1_utils_pb.StringList.toObject(includeInstance, f)
+    metadata: (f = msg.getMetadata()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
+    configurationIds: (f = msg.getConfigurationIds()) && common_v1_utils_pb.StringList.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1668,7 +1674,7 @@ configurationIds: (f = msg.getConfigurationIds()) && common_v1_utils_pb.StringLi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Create.Context}
  */
 proto.ai.v1.Task.Create.Context.deserializeBinary = function(bytes) {
@@ -1929,10 +1935,10 @@ proto.ai.v1.Task.Explain.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.Task.Explain.toObject = function(includeInstance, msg) {
   var f, obj = {
-syntax: jspb.Message.getFieldWithDefault(msg, 1, 0),
-snippet: jspb.Message.getFieldWithDefault(msg, 2, ""),
-contents: jspb.Message.getFieldWithDefault(msg, 3, ""),
-language: jspb.Message.getFieldWithDefault(msg, 4, 0)
+    syntax: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    snippet: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    contents: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    language: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -1945,7 +1951,7 @@ language: jspb.Message.getFieldWithDefault(msg, 4, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Explain}
  */
 proto.ai.v1.Task.Explain.deserializeBinary = function(bytes) {
@@ -1974,11 +1980,11 @@ proto.ai.v1.Task.Explain.deserializeBinaryFromReader = function(msg, reader) {
       msg.setSyntax(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSnippet(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setContents(value);
       break;
     case 4:
@@ -2149,9 +2155,9 @@ proto.ai.v1.Task.Mock.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.Task.Mock.toObject = function(includeInstance, msg) {
   var f, obj = {
-syntax: jspb.Message.getFieldWithDefault(msg, 1, 0),
-shape: jspb.Message.getFieldWithDefault(msg, 2, ""),
-prompt: jspb.Message.getFieldWithDefault(msg, 3, "")
+    syntax: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    shape: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    prompt: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -2164,7 +2170,7 @@ prompt: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Task.Mock}
  */
 proto.ai.v1.Task.Mock.deserializeBinary = function(bytes) {
@@ -2193,11 +2199,11 @@ proto.ai.v1.Task.Mock.deserializeBinaryFromReader = function(msg, reader) {
       msg.setSyntax(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setShape(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPrompt(value);
       break;
     default:

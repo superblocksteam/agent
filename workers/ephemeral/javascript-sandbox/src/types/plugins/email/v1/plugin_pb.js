@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.plugins.email.v1.Plugin', null, global);
 goog.exportSymbol('proto.plugins.email.v1.SuperblocksMetadata', null, global);
@@ -91,7 +97,7 @@ proto.plugins.email.v1.SuperblocksMetadata.prototype.toObject = function(opt_inc
  */
 proto.plugins.email.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -104,7 +110,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.email.v1.SuperblocksMetadata}
  */
 proto.plugins.email.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -129,7 +135,7 @@ proto.plugins.email.v1.SuperblocksMetadata.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -221,14 +227,14 @@ proto.plugins.email.v1.Plugin.prototype.toObject = function(opt_includeInstance)
  */
 proto.plugins.email.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-emailfrom: jspb.Message.getFieldWithDefault(msg, 1, ""),
-emailto: jspb.Message.getFieldWithDefault(msg, 2, ""),
-emailcc: jspb.Message.getFieldWithDefault(msg, 3, ""),
-emailbcc: jspb.Message.getFieldWithDefault(msg, 4, ""),
-emailsubject: jspb.Message.getFieldWithDefault(msg, 5, ""),
-emailbody: jspb.Message.getFieldWithDefault(msg, 6, ""),
-emailattachments: jspb.Message.getFieldWithDefault(msg, 7, ""),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.email.v1.SuperblocksMetadata.toObject(includeInstance, f)
+    emailfrom: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    emailto: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    emailcc: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    emailbcc: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    emailsubject: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    emailbody: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    emailattachments: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.email.v1.SuperblocksMetadata.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -241,7 +247,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.email.v
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.email.v1.Plugin}
  */
 proto.plugins.email.v1.Plugin.deserializeBinary = function(bytes) {
@@ -266,31 +272,31 @@ proto.plugins.email.v1.Plugin.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmailfrom(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmailto(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmailcc(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmailbcc(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmailsubject(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmailbody(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setEmailattachments(value);
       break;
     case 8:

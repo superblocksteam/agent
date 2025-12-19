@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.common.v1.Code', null, global);
 goog.exportSymbol('proto.common.v1.Error', null, global);
@@ -70,12 +76,12 @@ proto.common.v1.Error.prototype.toObject = function(opt_includeInstance) {
  */
 proto.common.v1.Error.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-message: jspb.Message.getFieldWithDefault(msg, 2, ""),
-handled: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-blockPath: jspb.Message.getFieldWithDefault(msg, 4, ""),
-formPath: jspb.Message.getFieldWithDefault(msg, 5, ""),
-code: jspb.Message.getFieldWithDefault(msg, 6, 0)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    message: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    handled: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
+    blockPath: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    formPath: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    code: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -88,7 +94,7 @@ code: jspb.Message.getFieldWithDefault(msg, 6, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Error}
  */
 proto.common.v1.Error.deserializeBinary = function(bytes) {
@@ -113,11 +119,11 @@ proto.common.v1.Error.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessage(value);
       break;
     case 3:
@@ -125,11 +131,11 @@ proto.common.v1.Error.deserializeBinaryFromReader = function(msg, reader) {
       msg.setHandled(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBlockPath(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFormPath(value);
       break;
     case 6:

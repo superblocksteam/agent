@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_descriptor_pb = require('google-protobuf/google/protobuf/descriptor_pb.js');
 goog.object.extend(proto, google_protobuf_descriptor_pb);
@@ -101,7 +107,7 @@ proto.buf.validate.priv.FieldConstraints.prototype.toObject = function(opt_inclu
  */
 proto.buf.validate.priv.FieldConstraints.toObject = function(includeInstance, msg) {
   var f, obj = {
-celList: jspb.Message.toObjectList(msg.getCelList(),
+    celList: jspb.Message.toObjectList(msg.getCelList(),
     proto.buf.validate.priv.Constraint.toObject, includeInstance)
   };
 
@@ -115,7 +121,7 @@ celList: jspb.Message.toObjectList(msg.getCelList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.priv.FieldConstraints}
  */
 proto.buf.validate.priv.FieldConstraints.deserializeBinary = function(bytes) {
@@ -254,9 +260,9 @@ proto.buf.validate.priv.Constraint.prototype.toObject = function(opt_includeInst
  */
 proto.buf.validate.priv.Constraint.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-message: jspb.Message.getFieldWithDefault(msg, 2, ""),
-expression: jspb.Message.getFieldWithDefault(msg, 3, "")
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    message: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    expression: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -269,7 +275,7 @@ expression: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.buf.validate.priv.Constraint}
  */
 proto.buf.validate.priv.Constraint.deserializeBinary = function(bytes) {
@@ -294,15 +300,15 @@ proto.buf.validate.priv.Constraint.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMessage(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExpression(value);
       break;
     default:

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
@@ -140,8 +146,8 @@ proto.security.v1.ResourcesToResignRequest.prototype.toObject = function(opt_inc
  */
 proto.security.v1.ResourcesToResignRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-claimedBy: jspb.Message.getFieldWithDefault(msg, 1, ""),
-limit: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    claimedBy: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    limit: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -154,7 +160,7 @@ limit: jspb.Message.getFieldWithDefault(msg, 2, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.ResourcesToResignRequest}
  */
 proto.security.v1.ResourcesToResignRequest.deserializeBinary = function(bytes) {
@@ -179,7 +185,7 @@ proto.security.v1.ResourcesToResignRequest.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setClaimedBy(value);
       break;
     case 2:
@@ -307,7 +313,7 @@ proto.security.v1.ResourcesToResignResponse.prototype.toObject = function(opt_in
  */
 proto.security.v1.ResourcesToResignResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-resourcesList: jspb.Message.toObjectList(msg.getResourcesList(),
+    resourcesList: jspb.Message.toObjectList(msg.getResourcesList(),
     security_v1_service_pb.Resource.toObject, includeInstance)
   };
 
@@ -321,7 +327,7 @@ resourcesList: jspb.Message.toObjectList(msg.getResourcesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.ResourcesToResignResponse}
  */
 proto.security.v1.ResourcesToResignResponse.deserializeBinary = function(bytes) {
@@ -460,14 +466,14 @@ proto.security.v1.KeyRotation.prototype.toObject = function(opt_includeInstance)
  */
 proto.security.v1.KeyRotation.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-status: jspb.Message.getFieldWithDefault(msg, 2, 0),
-resourcesCompleted: jspb.Message.getFieldWithDefault(msg, 3, 0),
-resourcesTotal: jspb.Message.getFieldWithDefault(msg, 4, 0),
-signingKeyId: jspb.Message.getFieldWithDefault(msg, 5, ""),
-created: (f = msg.getCreated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-updated: (f = msg.getUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-completed: (f = msg.getCompleted()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    status: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    resourcesCompleted: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    resourcesTotal: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    signingKeyId: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    created: (f = msg.getCreated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    updated: (f = msg.getUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    completed: (f = msg.getCompleted()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -480,7 +486,7 @@ completed: (f = msg.getCompleted()) && google_protobuf_timestamp_pb.Timestamp.to
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.KeyRotation}
  */
 proto.security.v1.KeyRotation.deserializeBinary = function(bytes) {
@@ -505,7 +511,7 @@ proto.security.v1.KeyRotation.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
@@ -521,7 +527,7 @@ proto.security.v1.KeyRotation.deserializeBinaryFromReader = function(msg, reader
       msg.setResourcesTotal(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSigningKeyId(value);
       break;
     case 6:
@@ -870,7 +876,7 @@ proto.security.v1.KeyRotationsResponse.prototype.toObject = function(opt_include
  */
 proto.security.v1.KeyRotationsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-keyRotationsList: jspb.Message.toObjectList(msg.getKeyRotationsList(),
+    keyRotationsList: jspb.Message.toObjectList(msg.getKeyRotationsList(),
     proto.security.v1.KeyRotation.toObject, includeInstance)
   };
 
@@ -884,7 +890,7 @@ keyRotationsList: jspb.Message.toObjectList(msg.getKeyRotationsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.KeyRotationsResponse}
  */
 proto.security.v1.KeyRotationsResponse.deserializeBinary = function(bytes) {

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
 goog.object.extend(proto, google_protobuf_struct_pb);
@@ -95,8 +101,8 @@ proto.store.v1.Pair.prototype.toObject = function(opt_includeInstance) {
  */
 proto.store.v1.Pair.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -109,7 +115,7 @@ value: (f = msg.getValue()) && google_protobuf_struct_pb.Value.toObject(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.Pair}
  */
 proto.store.v1.Pair.deserializeBinary = function(bytes) {
@@ -134,7 +140,7 @@ proto.store.v1.Pair.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -283,7 +289,7 @@ proto.store.v1.Stores.prototype.toObject = function(opt_includeInstance) {
  */
 proto.store.v1.Stores.toObject = function(includeInstance, msg) {
   var f, obj = {
-secretsList: jspb.Message.toObjectList(msg.getSecretsList(),
+    secretsList: jspb.Message.toObjectList(msg.getSecretsList(),
     secrets_v1_secrets_pb.Store.toObject, includeInstance)
   };
 
@@ -297,7 +303,7 @@ secretsList: jspb.Message.toObjectList(msg.getSecretsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.Stores}
  */
 proto.store.v1.Stores.deserializeBinary = function(bytes) {

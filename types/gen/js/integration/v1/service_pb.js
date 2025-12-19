@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var common_v1_common_pb = require('../../common/v1/common_pb');
 goog.object.extend(proto, common_v1_common_pb);
@@ -206,7 +212,7 @@ proto.integration.v1.GetIntegrationResponse.prototype.toObject = function(opt_in
  */
 proto.integration.v1.GetIntegrationResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-data: (f = msg.getData()) && proto.integration.v1.Integration.toObject(includeInstance, f)
+    data: (f = msg.getData()) && proto.integration.v1.Integration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -219,7 +225,7 @@ data: (f = msg.getData()) && proto.integration.v1.Integration.toObject(includeIn
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.integration.v1.GetIntegrationResponse}
  */
 proto.integration.v1.GetIntegrationResponse.deserializeBinary = function(bytes) {
@@ -364,10 +370,10 @@ proto.integration.v1.GetIntegrationsRequest.prototype.toObject = function(opt_in
  */
 proto.integration.v1.GetIntegrationsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
-idsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
-kind: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-slug: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
+    idsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
+    kind: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    slug: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -380,7 +386,7 @@ slug: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.integration.v1.GetIntegrationsRequest}
  */
 proto.integration.v1.GetIntegrationsRequest.deserializeBinary = function(bytes) {
@@ -410,7 +416,7 @@ proto.integration.v1.GetIntegrationsRequest.deserializeBinaryFromReader = functi
       msg.setProfile(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addIds(value);
       break;
     case 3:
@@ -418,7 +424,7 @@ proto.integration.v1.GetIntegrationsRequest.deserializeBinaryFromReader = functi
       msg.setKind(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSlug(value);
       break;
     default:
@@ -667,9 +673,9 @@ proto.integration.v1.ValidateProfileRequest.prototype.toObject = function(opt_in
  */
 proto.integration.v1.ValidateProfileRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
-viewMode: jspb.Message.getFieldWithDefault(msg, 2, ""),
-integrationIdsList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
+    viewMode: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    integrationIdsList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -682,7 +688,7 @@ integrationIdsList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.integration.v1.ValidateProfileRequest}
  */
 proto.integration.v1.ValidateProfileRequest.deserializeBinary = function(bytes) {
@@ -712,11 +718,11 @@ proto.integration.v1.ValidateProfileRequest.deserializeBinaryFromReader = functi
       msg.setProfile(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setViewMode(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addIntegrationIds(value);
       break;
     default:
@@ -910,7 +916,7 @@ proto.integration.v1.ValidateProfileResponse.toObject = function(includeInstance
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.integration.v1.ValidateProfileResponse}
  */
 proto.integration.v1.ValidateProfileResponse.deserializeBinary = function(bytes) {
@@ -1005,7 +1011,7 @@ proto.integration.v1.GetIntegrationsResponse.prototype.toObject = function(opt_i
  */
 proto.integration.v1.GetIntegrationsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-dataList: jspb.Message.toObjectList(msg.getDataList(),
+    dataList: jspb.Message.toObjectList(msg.getDataList(),
     proto.integration.v1.Integration.toObject, includeInstance)
   };
 
@@ -1019,7 +1025,7 @@ dataList: jspb.Message.toObjectList(msg.getDataList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.integration.v1.GetIntegrationsResponse}
  */
 proto.integration.v1.GetIntegrationsResponse.deserializeBinary = function(bytes) {
@@ -1165,12 +1171,12 @@ proto.integration.v1.Configuration.prototype.toObject = function(opt_includeInst
  */
 proto.integration.v1.Configuration.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-created: jspb.Message.getFieldWithDefault(msg, 2, ""),
-integrationId: jspb.Message.getFieldWithDefault(msg, 3, ""),
-configuration: (f = msg.getConfiguration()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
-isDefault: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
-profileIdsList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    created: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    integrationId: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    configuration: (f = msg.getConfiguration()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
+    isDefault: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    profileIdsList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1183,7 +1189,7 @@ profileIdsList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined 
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.integration.v1.Configuration}
  */
 proto.integration.v1.Configuration.deserializeBinary = function(bytes) {
@@ -1208,15 +1214,15 @@ proto.integration.v1.Configuration.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCreated(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 4:
@@ -1229,7 +1235,7 @@ proto.integration.v1.Configuration.deserializeBinaryFromReader = function(msg, r
       msg.setIsDefault(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addProfileIds(value);
       break;
     default:
@@ -1492,17 +1498,17 @@ proto.integration.v1.Integration.prototype.toObject = function(opt_includeInstan
  */
 proto.integration.v1.Integration.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-created: jspb.Message.getFieldWithDefault(msg, 2, ""),
-updated: jspb.Message.getFieldWithDefault(msg, 3, ""),
-name: jspb.Message.getFieldWithDefault(msg, 4, ""),
-pluginId: jspb.Message.getFieldWithDefault(msg, 5, ""),
-organizationId: jspb.Message.getFieldWithDefault(msg, 6, ""),
-demoIntegrationId: jspb.Message.getFieldWithDefault(msg, 7, ""),
-configurationsList: jspb.Message.toObjectList(msg.getConfigurationsList(),
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    created: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    updated: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    name: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    pluginId: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    demoIntegrationId: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    configurationsList: jspb.Message.toObjectList(msg.getConfigurationsList(),
     proto.integration.v1.Configuration.toObject, includeInstance),
-isUserConfigured: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
-slug: jspb.Message.getFieldWithDefault(msg, 10, "")
+    isUserConfigured: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
+    slug: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
 
   if (includeInstance) {
@@ -1515,7 +1521,7 @@ slug: jspb.Message.getFieldWithDefault(msg, 10, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.integration.v1.Integration}
  */
 proto.integration.v1.Integration.deserializeBinary = function(bytes) {
@@ -1540,31 +1546,31 @@ proto.integration.v1.Integration.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCreated(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUpdated(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginId(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDemoIntegrationId(value);
       break;
     case 8:
@@ -1577,7 +1583,7 @@ proto.integration.v1.Integration.deserializeBinaryFromReader = function(msg, rea
       msg.setIsUserConfigured(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSlug(value);
       break;
     default:

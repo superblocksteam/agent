@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.plugins.mongodb.v1.Plugin', null, global);
 goog.exportSymbol('proto.plugins.mongodb.v1.SuperblocksMetadata', null, global);
@@ -91,7 +97,7 @@ proto.plugins.mongodb.v1.SuperblocksMetadata.prototype.toObject = function(opt_i
  */
 proto.plugins.mongodb.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -104,7 +110,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.mongodb.v1.SuperblocksMetadata}
  */
 proto.plugins.mongodb.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -129,7 +135,7 @@ proto.plugins.mongodb.v1.SuperblocksMetadata.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -221,22 +227,22 @@ proto.plugins.mongodb.v1.Plugin.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.mongodb.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-resource: jspb.Message.getFieldWithDefault(msg, 1, ""),
-action: jspb.Message.getFieldWithDefault(msg, 2, ""),
-pipeline: jspb.Message.getFieldWithDefault(msg, 3, ""),
-projection: jspb.Message.getFieldWithDefault(msg, 4, ""),
-query: jspb.Message.getFieldWithDefault(msg, 5, ""),
-field: jspb.Message.getFieldWithDefault(msg, 6, ""),
-sortby: jspb.Message.getFieldWithDefault(msg, 7, ""),
-limit: jspb.Message.getFieldWithDefault(msg, 8, ""),
-skip: jspb.Message.getFieldWithDefault(msg, 9, ""),
-document: jspb.Message.getFieldWithDefault(msg, 10, ""),
-replacement: jspb.Message.getFieldWithDefault(msg, 11, ""),
-filter: jspb.Message.getFieldWithDefault(msg, 12, ""),
-options: jspb.Message.getFieldWithDefault(msg, 13, ""),
-update: jspb.Message.getFieldWithDefault(msg, 14, ""),
-distinctkey: jspb.Message.getFieldWithDefault(msg, 15, ""),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.mongodb.v1.SuperblocksMetadata.toObject(includeInstance, f)
+    resource: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    action: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    pipeline: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    projection: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    query: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    field: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    sortby: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    limit: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    skip: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    document: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    replacement: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    filter: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    options: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    update: jspb.Message.getFieldWithDefault(msg, 14, ""),
+    distinctkey: jspb.Message.getFieldWithDefault(msg, 15, ""),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.mongodb.v1.SuperblocksMetadata.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -249,7 +255,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.mongodb
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.mongodb.v1.Plugin}
  */
 proto.plugins.mongodb.v1.Plugin.deserializeBinary = function(bytes) {
@@ -274,63 +280,63 @@ proto.plugins.mongodb.v1.Plugin.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResource(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAction(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPipeline(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setProjection(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setQuery(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setField(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSortby(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setLimit(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSkip(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDocument(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setReplacement(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFilter(value);
       break;
     case 13:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOptions(value);
       break;
     case 14:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUpdate(value);
       break;
     case 15:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDistinctkey(value);
       break;
     case 16:

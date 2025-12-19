@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.plugins.s3.v1.Custom', null, global);
 goog.exportSymbol('proto.plugins.s3.v1.ListFilesConfig', null, global);
@@ -157,7 +163,7 @@ proto.plugins.s3.v1.SuperblocksMetadata.prototype.toObject = function(opt_includ
  */
 proto.plugins.s3.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -170,7 +176,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.SuperblocksMetadata}
  */
 proto.plugins.s3.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -195,7 +201,7 @@ proto.plugins.s3.v1.SuperblocksMetadata.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -294,17 +300,17 @@ proto.plugins.s3.v1.Property.prototype.toObject = function(opt_includeInstance) 
  */
 proto.plugins.s3.v1.Property.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: jspb.Message.getFieldWithDefault(msg, 2, 0),
-editable: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-internal: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
-description: jspb.Message.getFieldWithDefault(msg, 5, ""),
-mandatory: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-type: jspb.Message.getFieldWithDefault(msg, 7, ""),
-defaultvalue: jspb.Message.getFieldWithDefault(msg, 8, ""),
-minrange: jspb.Message.getFieldWithDefault(msg, 9, ""),
-maxrange: jspb.Message.getFieldWithDefault(msg, 10, ""),
-valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    editable: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
+    internal: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
+    description: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    mandatory: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+    type: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    defaultvalue: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    minrange: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    maxrange: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -317,7 +323,7 @@ valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefin
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.Property}
  */
 proto.plugins.s3.v1.Property.deserializeBinary = function(bytes) {
@@ -342,7 +348,7 @@ proto.plugins.s3.v1.Property.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -358,7 +364,7 @@ proto.plugins.s3.v1.Property.deserializeBinaryFromReader = function(msg, reader)
       msg.setInternal(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 6:
@@ -366,23 +372,23 @@ proto.plugins.s3.v1.Property.deserializeBinaryFromReader = function(msg, reader)
       msg.setMandatory(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setType(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDefaultvalue(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMinrange(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMaxrange(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addValueoptions(value);
       break;
     default:
@@ -743,7 +749,7 @@ proto.plugins.s3.v1.Custom.prototype.toObject = function(opt_includeInstance) {
  */
 proto.plugins.s3.v1.Custom.toObject = function(includeInstance, msg) {
   var f, obj = {
-presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.s3.v1.Property.toObject(includeInstance, f)
+    presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.s3.v1.Property.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -756,7 +762,7 @@ presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.s3.v1.P
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.Custom}
  */
 proto.plugins.s3.v1.Custom.deserializeBinary = function(bytes) {
@@ -894,8 +900,8 @@ proto.plugins.s3.v1.ListFilesConfig.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.s3.v1.ListFilesConfig.toObject = function(includeInstance, msg) {
   var f, obj = {
-prefix: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-delimiter: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    prefix: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    delimiter: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -908,7 +914,7 @@ delimiter: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.ListFilesConfig}
  */
 proto.plugins.s3.v1.ListFilesConfig.deserializeBinary = function(bytes) {
@@ -933,11 +939,11 @@ proto.plugins.s3.v1.ListFilesConfig.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPrefix(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDelimiter(value);
       break;
     default:
@@ -1090,15 +1096,15 @@ proto.plugins.s3.v1.Plugin.prototype.toObject = function(opt_includeInstance) {
  */
 proto.plugins.s3.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-resource: jspb.Message.getFieldWithDefault(msg, 1, ""),
-action: jspb.Message.getFieldWithDefault(msg, 2, ""),
-path: jspb.Message.getFieldWithDefault(msg, 3, ""),
-body: jspb.Message.getFieldWithDefault(msg, 4, ""),
-fileobjects: jspb.Message.getFieldWithDefault(msg, 5, ""),
-responsetype: jspb.Message.getFieldWithDefault(msg, 6, ""),
-custom: (f = msg.getCustom()) && proto.plugins.s3.v1.Custom.toObject(includeInstance, f),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.s3.v1.SuperblocksMetadata.toObject(includeInstance, f),
-listFilesConfig: (f = msg.getListFilesConfig()) && proto.plugins.s3.v1.ListFilesConfig.toObject(includeInstance, f)
+    resource: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    action: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    body: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    fileobjects: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    responsetype: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    custom: (f = msg.getCustom()) && proto.plugins.s3.v1.Custom.toObject(includeInstance, f),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.s3.v1.SuperblocksMetadata.toObject(includeInstance, f),
+    listFilesConfig: (f = msg.getListFilesConfig()) && proto.plugins.s3.v1.ListFilesConfig.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1111,7 +1117,7 @@ listFilesConfig: (f = msg.getListFilesConfig()) && proto.plugins.s3.v1.ListFiles
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.s3.v1.Plugin}
  */
 proto.plugins.s3.v1.Plugin.deserializeBinary = function(bytes) {
@@ -1136,27 +1142,27 @@ proto.plugins.s3.v1.Plugin.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResource(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAction(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileobjects(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResponsetype(value);
       break;
     case 7:

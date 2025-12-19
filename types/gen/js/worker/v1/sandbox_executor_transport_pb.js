@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.worker.v1.ExecuteRequest', null, global);
 goog.exportSymbol('proto.worker.v1.ExecuteResponse', null, global);
@@ -91,12 +97,12 @@ proto.worker.v1.ExecuteRequest.prototype.toObject = function(opt_includeInstance
  */
 proto.worker.v1.ExecuteRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-script: jspb.Message.getFieldWithDefault(msg, 1, ""),
-contextJson: jspb.Message.getFieldWithDefault(msg, 2, ""),
-timeoutMs: jspb.Message.getFieldWithDefault(msg, 3, 0),
-executionId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 5, ""),
-variablesJson: jspb.Message.getFieldWithDefault(msg, 6, "")
+    script: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    contextJson: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    timeoutMs: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    executionId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    variablesJson: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -109,7 +115,7 @@ variablesJson: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.ExecuteRequest}
  */
 proto.worker.v1.ExecuteRequest.deserializeBinary = function(bytes) {
@@ -134,11 +140,11 @@ proto.worker.v1.ExecuteRequest.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setScript(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setContextJson(value);
       break;
     case 3:
@@ -146,15 +152,15 @@ proto.worker.v1.ExecuteRequest.deserializeBinaryFromReader = function(msg, reade
       msg.setTimeoutMs(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setExecutionId(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setVariableStoreAddress(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setVariablesJson(value);
       break;
     default:
@@ -378,11 +384,11 @@ proto.worker.v1.ExecuteResponse.prototype.toObject = function(opt_includeInstanc
  */
 proto.worker.v1.ExecuteResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-result: jspb.Message.getFieldWithDefault(msg, 1, ""),
-stdoutList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
-stderrList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f,
-exitCode: jspb.Message.getFieldWithDefault(msg, 4, 0),
-error: jspb.Message.getFieldWithDefault(msg, 5, "")
+    result: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    stdoutList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
+    stderrList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f,
+    exitCode: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    error: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -395,7 +401,7 @@ error: jspb.Message.getFieldWithDefault(msg, 5, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.worker.v1.ExecuteResponse}
  */
 proto.worker.v1.ExecuteResponse.deserializeBinary = function(bytes) {
@@ -420,15 +426,15 @@ proto.worker.v1.ExecuteResponse.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResult(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addStdout(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addStderr(value);
       break;
     case 4:
@@ -436,7 +442,7 @@ proto.worker.v1.ExecuteResponse.deserializeBinaryFromReader = function(msg, read
       msg.setExitCode(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setError(value);
       break;
     default:

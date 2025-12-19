@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -256,12 +262,12 @@ proto.security.v1.Resource.prototype.toObject = function(opt_includeInstance) {
  */
 proto.security.v1.Resource.toObject = function(includeInstance, msg) {
   var f, obj = {
-api: (f = msg.getApi()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
-literal: (f = msg.getLiteral()) && proto.security.v1.Resource.Literal.toObject(includeInstance, f),
-apiLiteral: (f = msg.getApiLiteral()) && proto.security.v1.Resource.ApiLiteral.toObject(includeInstance, f),
-commitId: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-branchName: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-lastUpdated: (f = msg.getLastUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    api: (f = msg.getApi()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+    literal: (f = msg.getLiteral()) && proto.security.v1.Resource.Literal.toObject(includeInstance, f),
+    apiLiteral: (f = msg.getApiLiteral()) && proto.security.v1.Resource.ApiLiteral.toObject(includeInstance, f),
+    commitId: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    branchName: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    lastUpdated: (f = msg.getLastUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -274,7 +280,7 @@ lastUpdated: (f = msg.getLastUpdated()) && google_protobuf_timestamp_pb.Timestam
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.Resource}
  */
 proto.security.v1.Resource.deserializeBinary = function(bytes) {
@@ -314,11 +320,11 @@ proto.security.v1.Resource.deserializeBinaryFromReader = function(msg, reader) {
       msg.setApiLiteral(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCommitId(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBranchName(value);
       break;
     case 6:
@@ -436,13 +442,13 @@ proto.security.v1.Resource.Literal.prototype.toObject = function(opt_includeInst
  */
 proto.security.v1.Resource.Literal.toObject = function(includeInstance, msg) {
   var f, obj = {
-data: (f = msg.getData()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
-signature: (f = msg.getSignature()) && utils_v1_utils_pb.Signature.toObject(includeInstance, f),
-resourceId: jspb.Message.getFieldWithDefault(msg, 3, ""),
-organizationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-lastUpdated: (f = msg.getLastUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-type: jspb.Message.getFieldWithDefault(msg, 6, ""),
-pageVersion: jspb.Message.getFieldWithDefault(msg, 7, 0)
+    data: (f = msg.getData()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+    signature: (f = msg.getSignature()) && utils_v1_utils_pb.Signature.toObject(includeInstance, f),
+    resourceId: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    lastUpdated: (f = msg.getLastUpdated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    type: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    pageVersion: jspb.Message.getFieldWithDefault(msg, 7, 0)
   };
 
   if (includeInstance) {
@@ -455,7 +461,7 @@ pageVersion: jspb.Message.getFieldWithDefault(msg, 7, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.Resource.Literal}
  */
 proto.security.v1.Resource.Literal.deserializeBinary = function(bytes) {
@@ -490,11 +496,11 @@ proto.security.v1.Resource.Literal.deserializeBinaryFromReader = function(msg, r
       msg.setSignature(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResourceId(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     case 5:
@@ -503,7 +509,7 @@ proto.security.v1.Resource.Literal.deserializeBinaryFromReader = function(msg, r
       msg.setLastUpdated(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setType(value);
       break;
     case 7:
@@ -809,7 +815,7 @@ proto.security.v1.Resource.ApiLiteral.prototype.toObject = function(opt_includeI
  */
 proto.security.v1.Resource.ApiLiteral.toObject = function(includeInstance, msg) {
   var f, obj = {
-data: (f = msg.getData()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f)
+    data: (f = msg.getData()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -822,7 +828,7 @@ data: (f = msg.getData()) && google_protobuf_struct_pb.Value.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.Resource.ApiLiteral}
  */
 proto.security.v1.Resource.ApiLiteral.deserializeBinary = function(bytes) {
@@ -1180,7 +1186,7 @@ proto.security.v1.SignRequest.prototype.toObject = function(opt_includeInstance)
  */
 proto.security.v1.SignRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-resource: (f = msg.getResource()) && proto.security.v1.Resource.toObject(includeInstance, f)
+    resource: (f = msg.getResource()) && proto.security.v1.Resource.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1193,7 +1199,7 @@ resource: (f = msg.getResource()) && proto.security.v1.Resource.toObject(include
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.SignRequest}
  */
 proto.security.v1.SignRequest.deserializeBinary = function(bytes) {
@@ -1331,7 +1337,7 @@ proto.security.v1.SignResponse.prototype.toObject = function(opt_includeInstance
  */
 proto.security.v1.SignResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-signature: (f = msg.getSignature()) && utils_v1_utils_pb.Signature.toObject(includeInstance, f)
+    signature: (f = msg.getSignature()) && utils_v1_utils_pb.Signature.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1344,7 +1350,7 @@ signature: (f = msg.getSignature()) && utils_v1_utils_pb.Signature.toObject(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.SignResponse}
  */
 proto.security.v1.SignResponse.deserializeBinary = function(bytes) {
@@ -1489,7 +1495,7 @@ proto.security.v1.VerifyRequest.prototype.toObject = function(opt_includeInstanc
  */
 proto.security.v1.VerifyRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-resourcesList: jspb.Message.toObjectList(msg.getResourcesList(),
+    resourcesList: jspb.Message.toObjectList(msg.getResourcesList(),
     proto.security.v1.Resource.toObject, includeInstance)
   };
 
@@ -1503,7 +1509,7 @@ resourcesList: jspb.Message.toObjectList(msg.getResourcesList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.VerifyRequest}
  */
 proto.security.v1.VerifyRequest.deserializeBinary = function(bytes) {
@@ -1642,7 +1648,7 @@ proto.security.v1.VerifyResponse.prototype.toObject = function(opt_includeInstan
  */
 proto.security.v1.VerifyResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-keyId: jspb.Message.getFieldWithDefault(msg, 1, "")
+    keyId: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -1655,7 +1661,7 @@ keyId: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.security.v1.VerifyResponse}
  */
 proto.security.v1.VerifyResponse.deserializeBinary = function(bytes) {
@@ -1680,7 +1686,7 @@ proto.security.v1.VerifyResponse.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKeyId(value);
       break;
     default:

@@ -316,3 +316,20 @@ worker_js:
       serviceRate: 0.2
       autoscaling:
         min: 1
+ephemeral_worker:
+  deploy: false
+  disableNodeSelector: true
+  disableTolerations: true
+  superblocks:
+    key: <override>
+  queue:
+    host: '<override>'
+    password: '<override>'
+    tls: false
+    servername: ""
+  kvstore:
+    host: '<override>'
+    password: '<override>'
+    tls: false
+    servername: ""
+  fleets: {}

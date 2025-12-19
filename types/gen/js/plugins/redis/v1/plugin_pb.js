@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -982,11 +988,11 @@ proto.plugins.redis.v1.Plugin.prototype.toObject = function(opt_includeInstance)
  */
 proto.plugins.redis.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-connection: (f = msg.getConnection()) && proto.plugins.redis.v1.Plugin.Connection.toObject(includeInstance, f),
-raw: (f = msg.getRaw()) && proto.plugins.redis.v1.Plugin.Raw.toObject(includeInstance, f),
-structured: (f = msg.getStructured()) && proto.plugins.redis.v1.Plugin.Structured.toObject(includeInstance, f),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    connection: (f = msg.getConnection()) && proto.plugins.redis.v1.Plugin.Connection.toObject(includeInstance, f),
+    raw: (f = msg.getRaw()) && proto.plugins.redis.v1.Plugin.Raw.toObject(includeInstance, f),
+    structured: (f = msg.getStructured()) && proto.plugins.redis.v1.Plugin.Structured.toObject(includeInstance, f),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -999,7 +1005,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin}
  */
 proto.plugins.redis.v1.Plugin.deserializeBinary = function(bytes) {
@@ -1024,7 +1030,7 @@ proto.plugins.redis.v1.Plugin.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -1175,7 +1181,7 @@ proto.plugins.redis.v1.Plugin.Raw.prototype.toObject = function(opt_includeInsta
  */
 proto.plugins.redis.v1.Plugin.Raw.toObject = function(includeInstance, msg) {
   var f, obj = {
-singleton: (f = msg.getSingleton()) && proto.plugins.redis.v1.Plugin.Raw.Singleton.toObject(includeInstance, f)
+    singleton: (f = msg.getSingleton()) && proto.plugins.redis.v1.Plugin.Raw.Singleton.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1188,7 +1194,7 @@ singleton: (f = msg.getSingleton()) && proto.plugins.redis.v1.Plugin.Raw.Singlet
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Raw}
  */
 proto.plugins.redis.v1.Plugin.Raw.deserializeBinary = function(bytes) {
@@ -1289,7 +1295,7 @@ proto.plugins.redis.v1.Plugin.Raw.Singleton.prototype.toObject = function(opt_in
  */
 proto.plugins.redis.v1.Plugin.Raw.Singleton.toObject = function(includeInstance, msg) {
   var f, obj = {
-query: jspb.Message.getFieldWithDefault(msg, 1, "")
+    query: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -1302,7 +1308,7 @@ query: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Raw.Singleton}
  */
 proto.plugins.redis.v1.Plugin.Raw.Singleton.deserializeBinary = function(bytes) {
@@ -1327,7 +1333,7 @@ proto.plugins.redis.v1.Plugin.Raw.Singleton.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setQuery(value);
       break;
     default:
@@ -1514,40 +1520,40 @@ proto.plugins.redis.v1.Plugin.Structured.prototype.toObject = function(opt_inclu
  */
 proto.plugins.redis.v1.Plugin.Structured.toObject = function(includeInstance, msg) {
   var f, obj = {
-get: (f = msg.getGet()) && proto.plugins.redis.v1.Plugin.Get.toObject(includeInstance, f),
-set: (f = msg.getSet()) && proto.plugins.redis.v1.Plugin.Set.toObject(includeInstance, f),
-del: (f = msg.getDel()) && proto.plugins.redis.v1.Plugin.Del.toObject(includeInstance, f),
-keys: (f = msg.getKeys()) && proto.plugins.redis.v1.Plugin.Keys.toObject(includeInstance, f),
-mget: (f = msg.getMget()) && proto.plugins.redis.v1.Plugin.Mget.toObject(includeInstance, f),
-hget: (f = msg.getHget()) && proto.plugins.redis.v1.Plugin.Hget.toObject(includeInstance, f),
-hmget: (f = msg.getHmget()) && proto.plugins.redis.v1.Plugin.Hmget.toObject(includeInstance, f),
-hgetall: (f = msg.getHgetall()) && proto.plugins.redis.v1.Plugin.Hgetall.toObject(includeInstance, f),
-hset: (f = msg.getHset()) && proto.plugins.redis.v1.Plugin.Hset.toObject(includeInstance, f),
-hsetnx: (f = msg.getHsetnx()) && proto.plugins.redis.v1.Plugin.Hsetnx.toObject(includeInstance, f),
-hlen: (f = msg.getHlen()) && proto.plugins.redis.v1.Plugin.Hlen.toObject(includeInstance, f),
-hdel: (f = msg.getHdel()) && proto.plugins.redis.v1.Plugin.Hdel.toObject(includeInstance, f),
-hkeys: (f = msg.getHkeys()) && proto.plugins.redis.v1.Plugin.Hkeys.toObject(includeInstance, f),
-hvals: (f = msg.getHvals()) && proto.plugins.redis.v1.Plugin.Hvals.toObject(includeInstance, f),
-lindex: (f = msg.getLindex()) && proto.plugins.redis.v1.Plugin.Lindex.toObject(includeInstance, f),
-llen: (f = msg.getLlen()) && proto.plugins.redis.v1.Plugin.Llen.toObject(includeInstance, f),
-lpush: (f = msg.getLpush()) && proto.plugins.redis.v1.Plugin.Lpush.toObject(includeInstance, f),
-lrem: (f = msg.getLrem()) && proto.plugins.redis.v1.Plugin.Lrem.toObject(includeInstance, f),
-lrange: (f = msg.getLrange()) && proto.plugins.redis.v1.Plugin.Lrange.toObject(includeInstance, f),
-sadd: (f = msg.getSadd()) && proto.plugins.redis.v1.Plugin.Sadd.toObject(includeInstance, f),
-scard: (f = msg.getScard()) && proto.plugins.redis.v1.Plugin.Scard.toObject(includeInstance, f),
-smembers: (f = msg.getSmembers()) && proto.plugins.redis.v1.Plugin.Smembers.toObject(includeInstance, f),
-sismember: (f = msg.getSismember()) && proto.plugins.redis.v1.Plugin.Sismember.toObject(includeInstance, f),
-srandmember: (f = msg.getSrandmember()) && proto.plugins.redis.v1.Plugin.Srandmember.toObject(includeInstance, f),
-srem: (f = msg.getSrem()) && proto.plugins.redis.v1.Plugin.Srem.toObject(includeInstance, f),
-zadd: (f = msg.getZadd()) && proto.plugins.redis.v1.Plugin.Zadd.toObject(includeInstance, f),
-zcard: (f = msg.getZcard()) && proto.plugins.redis.v1.Plugin.Zcard.toObject(includeInstance, f),
-zcount: (f = msg.getZcount()) && proto.plugins.redis.v1.Plugin.Zcount.toObject(includeInstance, f),
-zrange: (f = msg.getZrange()) && proto.plugins.redis.v1.Plugin.Zrange.toObject(includeInstance, f),
-zrank: (f = msg.getZrank()) && proto.plugins.redis.v1.Plugin.Zrank.toObject(includeInstance, f),
-zrem: (f = msg.getZrem()) && proto.plugins.redis.v1.Plugin.Zrem.toObject(includeInstance, f),
-zscore: (f = msg.getZscore()) && proto.plugins.redis.v1.Plugin.Zscore.toObject(includeInstance, f),
-expire: (f = msg.getExpire()) && proto.plugins.redis.v1.Plugin.Expire.toObject(includeInstance, f),
-ttl: (f = msg.getTtl()) && proto.plugins.redis.v1.Plugin.Ttl.toObject(includeInstance, f)
+    get: (f = msg.getGet()) && proto.plugins.redis.v1.Plugin.Get.toObject(includeInstance, f),
+    set: (f = msg.getSet()) && proto.plugins.redis.v1.Plugin.Set.toObject(includeInstance, f),
+    del: (f = msg.getDel()) && proto.plugins.redis.v1.Plugin.Del.toObject(includeInstance, f),
+    keys: (f = msg.getKeys()) && proto.plugins.redis.v1.Plugin.Keys.toObject(includeInstance, f),
+    mget: (f = msg.getMget()) && proto.plugins.redis.v1.Plugin.Mget.toObject(includeInstance, f),
+    hget: (f = msg.getHget()) && proto.plugins.redis.v1.Plugin.Hget.toObject(includeInstance, f),
+    hmget: (f = msg.getHmget()) && proto.plugins.redis.v1.Plugin.Hmget.toObject(includeInstance, f),
+    hgetall: (f = msg.getHgetall()) && proto.plugins.redis.v1.Plugin.Hgetall.toObject(includeInstance, f),
+    hset: (f = msg.getHset()) && proto.plugins.redis.v1.Plugin.Hset.toObject(includeInstance, f),
+    hsetnx: (f = msg.getHsetnx()) && proto.plugins.redis.v1.Plugin.Hsetnx.toObject(includeInstance, f),
+    hlen: (f = msg.getHlen()) && proto.plugins.redis.v1.Plugin.Hlen.toObject(includeInstance, f),
+    hdel: (f = msg.getHdel()) && proto.plugins.redis.v1.Plugin.Hdel.toObject(includeInstance, f),
+    hkeys: (f = msg.getHkeys()) && proto.plugins.redis.v1.Plugin.Hkeys.toObject(includeInstance, f),
+    hvals: (f = msg.getHvals()) && proto.plugins.redis.v1.Plugin.Hvals.toObject(includeInstance, f),
+    lindex: (f = msg.getLindex()) && proto.plugins.redis.v1.Plugin.Lindex.toObject(includeInstance, f),
+    llen: (f = msg.getLlen()) && proto.plugins.redis.v1.Plugin.Llen.toObject(includeInstance, f),
+    lpush: (f = msg.getLpush()) && proto.plugins.redis.v1.Plugin.Lpush.toObject(includeInstance, f),
+    lrem: (f = msg.getLrem()) && proto.plugins.redis.v1.Plugin.Lrem.toObject(includeInstance, f),
+    lrange: (f = msg.getLrange()) && proto.plugins.redis.v1.Plugin.Lrange.toObject(includeInstance, f),
+    sadd: (f = msg.getSadd()) && proto.plugins.redis.v1.Plugin.Sadd.toObject(includeInstance, f),
+    scard: (f = msg.getScard()) && proto.plugins.redis.v1.Plugin.Scard.toObject(includeInstance, f),
+    smembers: (f = msg.getSmembers()) && proto.plugins.redis.v1.Plugin.Smembers.toObject(includeInstance, f),
+    sismember: (f = msg.getSismember()) && proto.plugins.redis.v1.Plugin.Sismember.toObject(includeInstance, f),
+    srandmember: (f = msg.getSrandmember()) && proto.plugins.redis.v1.Plugin.Srandmember.toObject(includeInstance, f),
+    srem: (f = msg.getSrem()) && proto.plugins.redis.v1.Plugin.Srem.toObject(includeInstance, f),
+    zadd: (f = msg.getZadd()) && proto.plugins.redis.v1.Plugin.Zadd.toObject(includeInstance, f),
+    zcard: (f = msg.getZcard()) && proto.plugins.redis.v1.Plugin.Zcard.toObject(includeInstance, f),
+    zcount: (f = msg.getZcount()) && proto.plugins.redis.v1.Plugin.Zcount.toObject(includeInstance, f),
+    zrange: (f = msg.getZrange()) && proto.plugins.redis.v1.Plugin.Zrange.toObject(includeInstance, f),
+    zrank: (f = msg.getZrank()) && proto.plugins.redis.v1.Plugin.Zrank.toObject(includeInstance, f),
+    zrem: (f = msg.getZrem()) && proto.plugins.redis.v1.Plugin.Zrem.toObject(includeInstance, f),
+    zscore: (f = msg.getZscore()) && proto.plugins.redis.v1.Plugin.Zscore.toObject(includeInstance, f),
+    expire: (f = msg.getExpire()) && proto.plugins.redis.v1.Plugin.Expire.toObject(includeInstance, f),
+    ttl: (f = msg.getTtl()) && proto.plugins.redis.v1.Plugin.Ttl.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1560,7 +1566,7 @@ ttl: (f = msg.getTtl()) && proto.plugins.redis.v1.Plugin.Ttl.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Structured}
  */
 proto.plugins.redis.v1.Plugin.Structured.deserializeBinary = function(bytes) {
@@ -3374,8 +3380,8 @@ proto.plugins.redis.v1.Plugin.Connection.prototype.toObject = function(opt_inclu
  */
 proto.plugins.redis.v1.Plugin.Connection.toObject = function(includeInstance, msg) {
   var f, obj = {
-url: (f = msg.getUrl()) && proto.plugins.redis.v1.Plugin.Connection.Url.toObject(includeInstance, f),
-fields: (f = msg.getFields()) && proto.plugins.redis.v1.Plugin.Connection.Fields.toObject(includeInstance, f)
+    url: (f = msg.getUrl()) && proto.plugins.redis.v1.Plugin.Connection.Url.toObject(includeInstance, f),
+    fields: (f = msg.getFields()) && proto.plugins.redis.v1.Plugin.Connection.Fields.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3388,7 +3394,7 @@ fields: (f = msg.getFields()) && proto.plugins.redis.v1.Plugin.Connection.Fields
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Connection}
  */
 proto.plugins.redis.v1.Plugin.Connection.deserializeBinary = function(bytes) {
@@ -3502,7 +3508,7 @@ proto.plugins.redis.v1.Plugin.Connection.Url.prototype.toObject = function(opt_i
  */
 proto.plugins.redis.v1.Plugin.Connection.Url.toObject = function(includeInstance, msg) {
   var f, obj = {
-urlString: jspb.Message.getFieldWithDefault(msg, 1, "")
+    urlString: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -3515,7 +3521,7 @@ urlString: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Connection.Url}
  */
 proto.plugins.redis.v1.Plugin.Connection.Url.deserializeBinary = function(bytes) {
@@ -3540,7 +3546,7 @@ proto.plugins.redis.v1.Plugin.Connection.Url.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrlString(value);
       break;
     default:
@@ -3632,12 +3638,12 @@ proto.plugins.redis.v1.Plugin.Connection.Fields.prototype.toObject = function(op
  */
 proto.plugins.redis.v1.Plugin.Connection.Fields.toObject = function(includeInstance, msg) {
   var f, obj = {
-host: jspb.Message.getFieldWithDefault(msg, 1, ""),
-port: jspb.Message.getFieldWithDefault(msg, 2, 0),
-databaseNumber: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-username: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-password: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-enableSsl: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
+    host: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    port: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    databaseNumber: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    username: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    password: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    enableSsl: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
   };
 
   if (includeInstance) {
@@ -3650,7 +3656,7 @@ enableSsl: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Connection.Fields}
  */
 proto.plugins.redis.v1.Plugin.Connection.Fields.deserializeBinary = function(bytes) {
@@ -3675,7 +3681,7 @@ proto.plugins.redis.v1.Plugin.Connection.Fields.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHost(value);
       break;
     case 2:
@@ -3687,11 +3693,11 @@ proto.plugins.redis.v1.Plugin.Connection.Fields.deserializeBinaryFromReader = fu
       msg.setDatabaseNumber(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUsername(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPassword(value);
       break;
     case 6:
@@ -4040,7 +4046,7 @@ proto.plugins.redis.v1.Plugin.Get.prototype.toObject = function(opt_includeInsta
  */
 proto.plugins.redis.v1.Plugin.Get.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -4053,7 +4059,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Get}
  */
 proto.plugins.redis.v1.Plugin.Get.deserializeBinary = function(bytes) {
@@ -4078,7 +4084,7 @@ proto.plugins.redis.v1.Plugin.Get.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -4170,9 +4176,9 @@ proto.plugins.redis.v1.Plugin.Set.prototype.toObject = function(opt_includeInsta
  */
 proto.plugins.redis.v1.Plugin.Set.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: jspb.Message.getFieldWithDefault(msg, 2, ""),
-expirationMs: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    expirationMs: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
   if (includeInstance) {
@@ -4185,7 +4191,7 @@ expirationMs: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Set}
  */
 proto.plugins.redis.v1.Plugin.Set.deserializeBinary = function(bytes) {
@@ -4210,11 +4216,11 @@ proto.plugins.redis.v1.Plugin.Set.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     case 3:
@@ -4378,7 +4384,7 @@ proto.plugins.redis.v1.Plugin.Del.prototype.toObject = function(opt_includeInsta
  */
 proto.plugins.redis.v1.Plugin.Del.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -4391,7 +4397,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Del}
  */
 proto.plugins.redis.v1.Plugin.Del.deserializeBinary = function(bytes) {
@@ -4416,7 +4422,7 @@ proto.plugins.redis.v1.Plugin.Del.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -4508,7 +4514,7 @@ proto.plugins.redis.v1.Plugin.Keys.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Keys.toObject = function(includeInstance, msg) {
   var f, obj = {
-pattern: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pattern: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -4521,7 +4527,7 @@ pattern: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Keys}
  */
 proto.plugins.redis.v1.Plugin.Keys.deserializeBinary = function(bytes) {
@@ -4546,7 +4552,7 @@ proto.plugins.redis.v1.Plugin.Keys.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPattern(value);
       break;
     default:
@@ -4638,7 +4644,7 @@ proto.plugins.redis.v1.Plugin.Mget.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Mget.toObject = function(includeInstance, msg) {
   var f, obj = {
-keys: jspb.Message.getFieldWithDefault(msg, 1, "")
+    keys: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -4651,7 +4657,7 @@ keys: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Mget}
  */
 proto.plugins.redis.v1.Plugin.Mget.deserializeBinary = function(bytes) {
@@ -4676,7 +4682,7 @@ proto.plugins.redis.v1.Plugin.Mget.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKeys(value);
       break;
     default:
@@ -4768,8 +4774,8 @@ proto.plugins.redis.v1.Plugin.Hget.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Hget.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-field: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    field: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -4782,7 +4788,7 @@ field: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hget}
  */
 proto.plugins.redis.v1.Plugin.Hget.deserializeBinary = function(bytes) {
@@ -4807,11 +4813,11 @@ proto.plugins.redis.v1.Plugin.Hget.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setField(value);
       break;
     default:
@@ -4928,8 +4934,8 @@ proto.plugins.redis.v1.Plugin.Hmget.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.redis.v1.Plugin.Hmget.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-fields: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    fields: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -4942,7 +4948,7 @@ fields: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hmget}
  */
 proto.plugins.redis.v1.Plugin.Hmget.deserializeBinary = function(bytes) {
@@ -4967,11 +4973,11 @@ proto.plugins.redis.v1.Plugin.Hmget.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFields(value);
       break;
     default:
@@ -5088,7 +5094,7 @@ proto.plugins.redis.v1.Plugin.Hgetall.prototype.toObject = function(opt_includeI
  */
 proto.plugins.redis.v1.Plugin.Hgetall.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5101,7 +5107,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hgetall}
  */
 proto.plugins.redis.v1.Plugin.Hgetall.deserializeBinary = function(bytes) {
@@ -5126,7 +5132,7 @@ proto.plugins.redis.v1.Plugin.Hgetall.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -5218,9 +5224,9 @@ proto.plugins.redis.v1.Plugin.Hset.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Hset.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-field: jspb.Message.getFieldWithDefault(msg, 2, ""),
-value: jspb.Message.getFieldWithDefault(msg, 3, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    field: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -5233,7 +5239,7 @@ value: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hset}
  */
 proto.plugins.redis.v1.Plugin.Hset.deserializeBinary = function(bytes) {
@@ -5258,15 +5264,15 @@ proto.plugins.redis.v1.Plugin.Hset.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setField(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     default:
@@ -5408,9 +5414,9 @@ proto.plugins.redis.v1.Plugin.Hsetnx.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.redis.v1.Plugin.Hsetnx.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-field: jspb.Message.getFieldWithDefault(msg, 2, ""),
-value: jspb.Message.getFieldWithDefault(msg, 3, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    field: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -5423,7 +5429,7 @@ value: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hsetnx}
  */
 proto.plugins.redis.v1.Plugin.Hsetnx.deserializeBinary = function(bytes) {
@@ -5448,15 +5454,15 @@ proto.plugins.redis.v1.Plugin.Hsetnx.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setField(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     default:
@@ -5598,7 +5604,7 @@ proto.plugins.redis.v1.Plugin.Hlen.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Hlen.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5611,7 +5617,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hlen}
  */
 proto.plugins.redis.v1.Plugin.Hlen.deserializeBinary = function(bytes) {
@@ -5636,7 +5642,7 @@ proto.plugins.redis.v1.Plugin.Hlen.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -5728,8 +5734,8 @@ proto.plugins.redis.v1.Plugin.Hdel.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Hdel.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-field: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    field: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -5742,7 +5748,7 @@ field: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hdel}
  */
 proto.plugins.redis.v1.Plugin.Hdel.deserializeBinary = function(bytes) {
@@ -5767,11 +5773,11 @@ proto.plugins.redis.v1.Plugin.Hdel.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setField(value);
       break;
     default:
@@ -5888,7 +5894,7 @@ proto.plugins.redis.v1.Plugin.Hkeys.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.redis.v1.Plugin.Hkeys.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5901,7 +5907,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hkeys}
  */
 proto.plugins.redis.v1.Plugin.Hkeys.deserializeBinary = function(bytes) {
@@ -5926,7 +5932,7 @@ proto.plugins.redis.v1.Plugin.Hkeys.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -6018,7 +6024,7 @@ proto.plugins.redis.v1.Plugin.Hvals.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.redis.v1.Plugin.Hvals.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -6031,7 +6037,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Hvals}
  */
 proto.plugins.redis.v1.Plugin.Hvals.deserializeBinary = function(bytes) {
@@ -6056,7 +6062,7 @@ proto.plugins.redis.v1.Plugin.Hvals.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -6148,8 +6154,8 @@ proto.plugins.redis.v1.Plugin.Lindex.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.redis.v1.Plugin.Lindex.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-index: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    index: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -6162,7 +6168,7 @@ index: jspb.Message.getFieldWithDefault(msg, 2, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Lindex}
  */
 proto.plugins.redis.v1.Plugin.Lindex.deserializeBinary = function(bytes) {
@@ -6187,7 +6193,7 @@ proto.plugins.redis.v1.Plugin.Lindex.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -6308,7 +6314,7 @@ proto.plugins.redis.v1.Plugin.Llen.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Llen.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -6321,7 +6327,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Llen}
  */
 proto.plugins.redis.v1.Plugin.Llen.deserializeBinary = function(bytes) {
@@ -6346,7 +6352,7 @@ proto.plugins.redis.v1.Plugin.Llen.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -6438,8 +6444,8 @@ proto.plugins.redis.v1.Plugin.Lpush.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.redis.v1.Plugin.Lpush.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -6452,7 +6458,7 @@ value: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Lpush}
  */
 proto.plugins.redis.v1.Plugin.Lpush.deserializeBinary = function(bytes) {
@@ -6477,11 +6483,11 @@ proto.plugins.redis.v1.Plugin.Lpush.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     default:
@@ -6598,9 +6604,9 @@ proto.plugins.redis.v1.Plugin.Lrem.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Lrem.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-count: jspb.Message.getFieldWithDefault(msg, 2, 0),
-value: jspb.Message.getFieldWithDefault(msg, 3, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    count: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    value: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -6613,7 +6619,7 @@ value: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Lrem}
  */
 proto.plugins.redis.v1.Plugin.Lrem.deserializeBinary = function(bytes) {
@@ -6638,7 +6644,7 @@ proto.plugins.redis.v1.Plugin.Lrem.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -6646,7 +6652,7 @@ proto.plugins.redis.v1.Plugin.Lrem.deserializeBinaryFromReader = function(msg, r
       msg.setCount(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     default:
@@ -6788,9 +6794,9 @@ proto.plugins.redis.v1.Plugin.Lrange.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.redis.v1.Plugin.Lrange.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-start: jspb.Message.getFieldWithDefault(msg, 2, 0),
-stop: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    start: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    stop: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
   if (includeInstance) {
@@ -6803,7 +6809,7 @@ stop: jspb.Message.getFieldWithDefault(msg, 3, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Lrange}
  */
 proto.plugins.redis.v1.Plugin.Lrange.deserializeBinary = function(bytes) {
@@ -6828,7 +6834,7 @@ proto.plugins.redis.v1.Plugin.Lrange.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -6978,8 +6984,8 @@ proto.plugins.redis.v1.Plugin.Sadd.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Sadd.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-member: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    member: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -6992,7 +6998,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Sadd}
  */
 proto.plugins.redis.v1.Plugin.Sadd.deserializeBinary = function(bytes) {
@@ -7017,11 +7023,11 @@ proto.plugins.redis.v1.Plugin.Sadd.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMember(value);
       break;
     default:
@@ -7138,7 +7144,7 @@ proto.plugins.redis.v1.Plugin.Scard.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.redis.v1.Plugin.Scard.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7151,7 +7157,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Scard}
  */
 proto.plugins.redis.v1.Plugin.Scard.deserializeBinary = function(bytes) {
@@ -7176,7 +7182,7 @@ proto.plugins.redis.v1.Plugin.Scard.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -7268,7 +7274,7 @@ proto.plugins.redis.v1.Plugin.Smembers.prototype.toObject = function(opt_include
  */
 proto.plugins.redis.v1.Plugin.Smembers.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -7281,7 +7287,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Smembers}
  */
 proto.plugins.redis.v1.Plugin.Smembers.deserializeBinary = function(bytes) {
@@ -7306,7 +7312,7 @@ proto.plugins.redis.v1.Plugin.Smembers.deserializeBinaryFromReader = function(ms
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -7398,8 +7404,8 @@ proto.plugins.redis.v1.Plugin.Sismember.prototype.toObject = function(opt_includ
  */
 proto.plugins.redis.v1.Plugin.Sismember.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-member: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    member: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -7412,7 +7418,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Sismember}
  */
 proto.plugins.redis.v1.Plugin.Sismember.deserializeBinary = function(bytes) {
@@ -7437,11 +7443,11 @@ proto.plugins.redis.v1.Plugin.Sismember.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMember(value);
       break;
     default:
@@ -7558,8 +7564,8 @@ proto.plugins.redis.v1.Plugin.Srandmember.prototype.toObject = function(opt_incl
  */
 proto.plugins.redis.v1.Plugin.Srandmember.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-count: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    count: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -7572,7 +7578,7 @@ count: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Srandmember}
  */
 proto.plugins.redis.v1.Plugin.Srandmember.deserializeBinary = function(bytes) {
@@ -7597,7 +7603,7 @@ proto.plugins.redis.v1.Plugin.Srandmember.deserializeBinaryFromReader = function
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -7736,8 +7742,8 @@ proto.plugins.redis.v1.Plugin.Srem.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Srem.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-member: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    member: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -7750,7 +7756,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Srem}
  */
 proto.plugins.redis.v1.Plugin.Srem.deserializeBinary = function(bytes) {
@@ -7775,11 +7781,11 @@ proto.plugins.redis.v1.Plugin.Srem.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMember(value);
       break;
     default:
@@ -7896,9 +7902,9 @@ proto.plugins.redis.v1.Plugin.Zadd.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Zadd.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-score: jspb.Message.getFloatingPointFieldWithDefault(msg, 2, 0.0),
-member: jspb.Message.getFieldWithDefault(msg, 3, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    score: jspb.Message.getFloatingPointFieldWithDefault(msg, 2, 0.0),
+    member: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -7911,7 +7917,7 @@ member: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zadd}
  */
 proto.plugins.redis.v1.Plugin.Zadd.deserializeBinary = function(bytes) {
@@ -7936,7 +7942,7 @@ proto.plugins.redis.v1.Plugin.Zadd.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -7944,7 +7950,7 @@ proto.plugins.redis.v1.Plugin.Zadd.deserializeBinaryFromReader = function(msg, r
       msg.setScore(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMember(value);
       break;
     default:
@@ -8086,7 +8092,7 @@ proto.plugins.redis.v1.Plugin.Zcard.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.redis.v1.Plugin.Zcard.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -8099,7 +8105,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zcard}
  */
 proto.plugins.redis.v1.Plugin.Zcard.deserializeBinary = function(bytes) {
@@ -8124,7 +8130,7 @@ proto.plugins.redis.v1.Plugin.Zcard.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:
@@ -8216,9 +8222,9 @@ proto.plugins.redis.v1.Plugin.Zcount.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.redis.v1.Plugin.Zcount.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-min: jspb.Message.getFloatingPointFieldWithDefault(msg, 2, 0.0),
-max: jspb.Message.getFloatingPointFieldWithDefault(msg, 3, 0.0)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    min: jspb.Message.getFloatingPointFieldWithDefault(msg, 2, 0.0),
+    max: jspb.Message.getFloatingPointFieldWithDefault(msg, 3, 0.0)
   };
 
   if (includeInstance) {
@@ -8231,7 +8237,7 @@ max: jspb.Message.getFloatingPointFieldWithDefault(msg, 3, 0.0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zcount}
  */
 proto.plugins.redis.v1.Plugin.Zcount.deserializeBinary = function(bytes) {
@@ -8256,7 +8262,7 @@ proto.plugins.redis.v1.Plugin.Zcount.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -8406,9 +8412,9 @@ proto.plugins.redis.v1.Plugin.Zrange.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.redis.v1.Plugin.Zrange.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-start: jspb.Message.getFieldWithDefault(msg, 2, 0),
-stop: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    start: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    stop: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
   if (includeInstance) {
@@ -8421,7 +8427,7 @@ stop: jspb.Message.getFieldWithDefault(msg, 3, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zrange}
  */
 proto.plugins.redis.v1.Plugin.Zrange.deserializeBinary = function(bytes) {
@@ -8446,7 +8452,7 @@ proto.plugins.redis.v1.Plugin.Zrange.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -8596,8 +8602,8 @@ proto.plugins.redis.v1.Plugin.Zrank.prototype.toObject = function(opt_includeIns
  */
 proto.plugins.redis.v1.Plugin.Zrank.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-member: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    member: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -8610,7 +8616,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zrank}
  */
 proto.plugins.redis.v1.Plugin.Zrank.deserializeBinary = function(bytes) {
@@ -8635,11 +8641,11 @@ proto.plugins.redis.v1.Plugin.Zrank.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMember(value);
       break;
     default:
@@ -8756,8 +8762,8 @@ proto.plugins.redis.v1.Plugin.Zrem.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.redis.v1.Plugin.Zrem.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-member: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    member: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -8770,7 +8776,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zrem}
  */
 proto.plugins.redis.v1.Plugin.Zrem.deserializeBinary = function(bytes) {
@@ -8795,11 +8801,11 @@ proto.plugins.redis.v1.Plugin.Zrem.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMember(value);
       break;
     default:
@@ -8916,8 +8922,8 @@ proto.plugins.redis.v1.Plugin.Zscore.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.redis.v1.Plugin.Zscore.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-member: jspb.Message.getFieldWithDefault(msg, 2, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    member: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -8930,7 +8936,7 @@ member: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Zscore}
  */
 proto.plugins.redis.v1.Plugin.Zscore.deserializeBinary = function(bytes) {
@@ -8955,11 +8961,11 @@ proto.plugins.redis.v1.Plugin.Zscore.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMember(value);
       break;
     default:
@@ -9076,9 +9082,9 @@ proto.plugins.redis.v1.Plugin.Expire.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.redis.v1.Plugin.Expire.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-seconds: jspb.Message.getFieldWithDefault(msg, 2, 0),
-option: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    seconds: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    option: jspb.Message.getFieldWithDefault(msg, 3, 0)
   };
 
   if (includeInstance) {
@@ -9091,7 +9097,7 @@ option: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Expire}
  */
 proto.plugins.redis.v1.Plugin.Expire.deserializeBinary = function(bytes) {
@@ -9116,7 +9122,7 @@ proto.plugins.redis.v1.Plugin.Expire.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -9295,7 +9301,7 @@ proto.plugins.redis.v1.Plugin.Ttl.prototype.toObject = function(opt_includeInsta
  */
 proto.plugins.redis.v1.Plugin.Ttl.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, "")
+    key: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -9308,7 +9314,7 @@ key: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.redis.v1.Plugin.Ttl}
  */
 proto.plugins.redis.v1.Plugin.Ttl.deserializeBinary = function(bytes) {
@@ -9333,7 +9339,7 @@ proto.plugins.redis.v1.Plugin.Ttl.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     default:

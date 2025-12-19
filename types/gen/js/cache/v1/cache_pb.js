@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
 goog.object.extend(proto, google_protobuf_struct_pb);
@@ -94,12 +100,12 @@ proto.cache.v1.Mutation.prototype.toObject = function(opt_includeInstance) {
  */
 proto.cache.v1.Mutation.toObject = function(includeInstance, msg) {
   var f, obj = {
-resource: jspb.Message.getFieldWithDefault(msg, 1, ""),
-id: jspb.Message.getFieldWithDefault(msg, 2, ""),
-data: (f = msg.getData()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
-organizationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-tombstone: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
-rbacRole: jspb.Message.getFieldWithDefault(msg, 6, "")
+    resource: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    id: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    data: (f = msg.getData()) && google_protobuf_struct_pb.Value.toObject(includeInstance, f),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    tombstone: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    rbacRole: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -112,7 +118,7 @@ rbacRole: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.cache.v1.Mutation}
  */
 proto.cache.v1.Mutation.deserializeBinary = function(bytes) {
@@ -137,11 +143,11 @@ proto.cache.v1.Mutation.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResource(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 3:
@@ -150,7 +156,7 @@ proto.cache.v1.Mutation.deserializeBinaryFromReader = function(msg, reader) {
       msg.setData(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     case 5:
@@ -158,7 +164,7 @@ proto.cache.v1.Mutation.deserializeBinaryFromReader = function(msg, reader) {
       msg.setTombstone(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setRbacRole(value);
       break;
     default:
@@ -402,8 +408,8 @@ proto.cache.v1.MutationBatch.prototype.toObject = function(opt_includeInstance) 
  */
 proto.cache.v1.MutationBatch.toObject = function(includeInstance, msg) {
   var f, obj = {
-operation: jspb.Message.getFieldWithDefault(msg, 1, 0),
-batchList: jspb.Message.toObjectList(msg.getBatchList(),
+    operation: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    batchList: jspb.Message.toObjectList(msg.getBatchList(),
     proto.cache.v1.Mutation.toObject, includeInstance)
   };
 
@@ -417,7 +423,7 @@ batchList: jspb.Message.toObjectList(msg.getBatchList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.cache.v1.MutationBatch}
  */
 proto.cache.v1.MutationBatch.deserializeBinary = function(bytes) {

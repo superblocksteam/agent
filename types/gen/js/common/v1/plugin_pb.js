@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
 goog.object.extend(proto, google_protobuf_struct_pb);
@@ -144,19 +150,19 @@ proto.common.v1.Property.prototype.toObject = function(opt_includeInstance) {
  */
 proto.common.v1.Property.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-value: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-editable: (f = jspb.Message.getBooleanField(msg, 3)) == null ? undefined : f,
-internal: (f = jspb.Message.getBooleanField(msg, 4)) == null ? undefined : f,
-description: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-mandatory: (f = jspb.Message.getBooleanField(msg, 6)) == null ? undefined : f,
-type: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-defaultvalue: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f,
-minrange: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-maxrange: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f,
-valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f,
-system: (f = jspb.Message.getBooleanField(msg, 12)) == null ? undefined : f,
-file: (f = msg.getFile()) && proto.common.v1.FileMetadata.toObject(includeInstance, f)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    editable: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
+    internal: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
+    description: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    mandatory: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
+    type: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    defaultvalue: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    minrange: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    maxrange: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    valueoptionsList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f,
+    system: jspb.Message.getBooleanFieldWithDefault(msg, 12, false),
+    file: (f = msg.getFile()) && proto.common.v1.FileMetadata.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -169,7 +175,7 @@ file: (f = msg.getFile()) && proto.common.v1.FileMetadata.toObject(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.Property}
  */
 proto.common.v1.Property.deserializeBinary = function(bytes) {
@@ -194,11 +200,11 @@ proto.common.v1.Property.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setValue(value);
       break;
     case 3:
@@ -210,7 +216,7 @@ proto.common.v1.Property.deserializeBinaryFromReader = function(msg, reader) {
       msg.setInternal(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
       break;
     case 6:
@@ -218,23 +224,23 @@ proto.common.v1.Property.deserializeBinaryFromReader = function(msg, reader) {
       msg.setMandatory(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setType(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDefaultvalue(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMinrange(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMaxrange(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addValueoptions(value);
       break;
     case 12:
@@ -872,7 +878,7 @@ proto.common.v1.SuperblocksMetadata.prototype.toObject = function(opt_includeIns
  */
 proto.common.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -885,7 +891,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.SuperblocksMetadata}
  */
 proto.common.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -910,7 +916,7 @@ proto.common.v1.SuperblocksMetadata.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -1002,8 +1008,8 @@ proto.common.v1.HttpParameters.prototype.toObject = function(opt_includeInstance
  */
 proto.common.v1.HttpParameters.toObject = function(includeInstance, msg) {
   var f, obj = {
-queryMap: (f = msg.getQueryMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : [],
-bodyMap: (f = msg.getBodyMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
+    queryMap: (f = msg.getQueryMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : [],
+    bodyMap: (f = msg.getBodyMap()) ? f.toObject(includeInstance, proto.google.protobuf.Value.toObject) : []
   };
 
   if (includeInstance) {
@@ -1016,7 +1022,7 @@ bodyMap: (f = msg.getBodyMap()) ? f.toObject(includeInstance, proto.google.proto
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.HttpParameters}
  */
 proto.common.v1.HttpParameters.deserializeBinary = function(bytes) {
@@ -1043,13 +1049,13 @@ proto.common.v1.HttpParameters.deserializeBinaryFromReader = function(msg, reade
     case 1:
       var value = msg.getQueryMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     case 2:
       var value = msg.getBodyMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.google.protobuf.Value.deserializeBinaryFromReader, "", new proto.google.protobuf.Value());
          });
       break;
     default:
@@ -1083,23 +1089,11 @@ proto.common.v1.HttpParameters.serializeBinaryToWriter = function(message, write
   var f = undefined;
   f = message.getQueryMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getQueryMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
   f = message.getBodyMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getBodyMap(true),
-    2,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.google.protobuf.Value.serializeBinaryToWriter);
+    f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.google.protobuf.Value.serializeBinaryToWriter);
   }
 };
 
@@ -1182,7 +1176,7 @@ proto.common.v1.FileMetadata.prototype.toObject = function(opt_includeInstance) 
  */
 proto.common.v1.FileMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-filename: jspb.Message.getFieldWithDefault(msg, 1, "")
+    filename: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -1195,7 +1189,7 @@ filename: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.common.v1.FileMetadata}
  */
 proto.common.v1.FileMetadata.deserializeBinary = function(bytes) {
@@ -1220,7 +1214,7 @@ proto.common.v1.FileMetadata.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFilename(value);
       break;
     default:

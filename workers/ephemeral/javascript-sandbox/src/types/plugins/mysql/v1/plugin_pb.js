@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb.js');
 goog.object.extend(proto, google_protobuf_any_pb);
@@ -137,8 +143,8 @@ proto.plugins.mysql.v1.MappedColumns.prototype.toObject = function(opt_includeIn
  */
 proto.plugins.mysql.v1.MappedColumns.toObject = function(includeInstance, msg) {
   var f, obj = {
-json: jspb.Message.getFieldWithDefault(msg, 1, ""),
-sql: jspb.Message.getFieldWithDefault(msg, 2, "")
+    json: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    sql: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -151,7 +157,7 @@ sql: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.mysql.v1.MappedColumns}
  */
 proto.plugins.mysql.v1.MappedColumns.deserializeBinary = function(bytes) {
@@ -176,11 +182,11 @@ proto.plugins.mysql.v1.MappedColumns.deserializeBinaryFromReader = function(msg,
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setJson(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSql(value);
       break;
     default:
@@ -297,8 +303,8 @@ proto.plugins.mysql.v1.Tuple.prototype.toObject = function(opt_includeInstance) 
  */
 proto.plugins.mysql.v1.Tuple.toObject = function(includeInstance, msg) {
   var f, obj = {
-key: jspb.Message.getFieldWithDefault(msg, 1, ""),
-value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstance, f)
+    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -311,7 +317,7 @@ value: (f = msg.getValue()) && google_protobuf_any_pb.Any.toObject(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.mysql.v1.Tuple}
  */
 proto.plugins.mysql.v1.Tuple.deserializeBinary = function(bytes) {
@@ -336,7 +342,7 @@ proto.plugins.mysql.v1.Tuple.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKey(value);
       break;
     case 2:
@@ -478,7 +484,7 @@ proto.plugins.mysql.v1.SuperblocksMetadata.prototype.toObject = function(opt_inc
  */
 proto.plugins.mysql.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -491,7 +497,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.mysql.v1.SuperblocksMetadata}
  */
 proto.plugins.mysql.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -516,7 +522,7 @@ proto.plugins.mysql.v1.SuperblocksMetadata.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -615,21 +621,21 @@ proto.plugins.mysql.v1.Plugin.prototype.toObject = function(opt_includeInstance)
  */
 proto.plugins.mysql.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-body: jspb.Message.getFieldWithDefault(msg, 1, ""),
-usepreparedsql: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
-operation: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-useadvancedmatching: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-table: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-newvalues: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-oldvalues: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-filterbyList: (f = jspb.Message.getRepeatedField(msg, 8)) == null ? undefined : f,
-mappingmode: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-mappedcolumnsList: jspb.Message.toObjectList(msg.getMappedcolumnsList(),
+    body: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    usepreparedsql: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    operation: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    useadvancedmatching: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    table: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    newvalues: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    oldvalues: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    filterbyList: (f = jspb.Message.getRepeatedField(msg, 8)) == null ? undefined : f,
+    mappingmode: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    mappedcolumnsList: jspb.Message.toObjectList(msg.getMappedcolumnsList(),
     proto.plugins.mysql.v1.MappedColumns.toObject, includeInstance),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.mysql.v1.SuperblocksMetadata.toObject(includeInstance, f),
-insertedrows: (f = jspb.Message.getField(msg, 12)) == null ? undefined : f,
-deletedrows: (f = jspb.Message.getField(msg, 13)) == null ? undefined : f,
-schema: (f = jspb.Message.getField(msg, 14)) == null ? undefined : f
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.mysql.v1.SuperblocksMetadata.toObject(includeInstance, f),
+    insertedrows: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    deletedrows: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    schema: jspb.Message.getFieldWithDefault(msg, 14, "")
   };
 
   if (includeInstance) {
@@ -642,7 +648,7 @@ schema: (f = jspb.Message.getField(msg, 14)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.mysql.v1.Plugin}
  */
 proto.plugins.mysql.v1.Plugin.deserializeBinary = function(bytes) {
@@ -667,7 +673,7 @@ proto.plugins.mysql.v1.Plugin.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 2:
@@ -675,31 +681,31 @@ proto.plugins.mysql.v1.Plugin.deserializeBinaryFromReader = function(msg, reader
       msg.setUsepreparedsql(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOperation(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUseadvancedmatching(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTable(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setNewvalues(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOldvalues(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addFilterby(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setMappingmode(value);
       break;
     case 10:
@@ -713,15 +719,15 @@ proto.plugins.mysql.v1.Plugin.deserializeBinaryFromReader = function(msg, reader
       msg.setSuperblocksmetadata(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setInsertedrows(value);
       break;
     case 13:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDeletedrows(value);
       break;
     case 14:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSchema(value);
       break;
     default:

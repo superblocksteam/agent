@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.plugins.python.v1.Plugin', null, global);
 goog.exportSymbol('proto.plugins.python.v1.SuperblocksMetadata', null, global);
@@ -91,7 +97,7 @@ proto.plugins.python.v1.SuperblocksMetadata.prototype.toObject = function(opt_in
  */
 proto.plugins.python.v1.SuperblocksMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
+    pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -104,7 +110,7 @@ pluginversion: jspb.Message.getFieldWithDefault(msg, 1, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.python.v1.SuperblocksMetadata}
  */
 proto.plugins.python.v1.SuperblocksMetadata.deserializeBinary = function(bytes) {
@@ -129,7 +135,7 @@ proto.plugins.python.v1.SuperblocksMetadata.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPluginversion(value);
       break;
     default:
@@ -221,8 +227,8 @@ proto.plugins.python.v1.Plugin.prototype.toObject = function(opt_includeInstance
  */
 proto.plugins.python.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-body: jspb.Message.getFieldWithDefault(msg, 1, ""),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.python.v1.SuperblocksMetadata.toObject(includeInstance, f)
+    body: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.python.v1.SuperblocksMetadata.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -235,7 +241,7 @@ superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.python.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.python.v1.Plugin}
  */
 proto.plugins.python.v1.Plugin.deserializeBinary = function(bytes) {
@@ -260,7 +266,7 @@ proto.plugins.python.v1.Plugin.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 2:

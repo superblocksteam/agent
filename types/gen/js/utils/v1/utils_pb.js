@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.utils.v1.Signature', null, global);
 goog.exportSymbol('proto.utils.v1.Signature.Algorithm', null, global);
@@ -70,10 +76,10 @@ proto.utils.v1.Signature.prototype.toObject = function(opt_includeInstance) {
  */
 proto.utils.v1.Signature.toObject = function(includeInstance, msg) {
   var f, obj = {
-keyId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-data: msg.getData_asB64(),
-publicKey: msg.getPublicKey_asB64(),
-algorithm: jspb.Message.getFieldWithDefault(msg, 4, 0)
+    keyId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    data: msg.getData_asB64(),
+    publicKey: msg.getPublicKey_asB64(),
+    algorithm: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -86,7 +92,7 @@ algorithm: jspb.Message.getFieldWithDefault(msg, 4, 0)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.utils.v1.Signature}
  */
 proto.utils.v1.Signature.deserializeBinary = function(bytes) {
@@ -111,7 +117,7 @@ proto.utils.v1.Signature.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setKeyId(value);
       break;
     case 2:

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
@@ -114,18 +120,18 @@ proto.ai.v1.Metadata.prototype.toObject = function(opt_includeInstance) {
  */
 proto.ai.v1.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-mariadb: (f = msg.getMariadb()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
-mssql: (f = msg.getMssql()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
-mysql: (f = msg.getMysql()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
-postgres: (f = msg.getPostgres()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
-rockset: (f = msg.getRockset()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
-snowflake: (f = msg.getSnowflake()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
-cockroachdb: (f = msg.getCockroachdb()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
-kafka: (f = msg.getKafka()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f),
-confluent: (f = msg.getConfluent()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f),
-msk: (f = msg.getMsk()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f),
-redpanda: (f = msg.getRedpanda()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f),
-aivenkafka: (f = msg.getAivenkafka()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f)
+    mariadb: (f = msg.getMariadb()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
+    mssql: (f = msg.getMssql()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
+    mysql: (f = msg.getMysql()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
+    postgres: (f = msg.getPostgres()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
+    rockset: (f = msg.getRockset()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
+    snowflake: (f = msg.getSnowflake()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
+    cockroachdb: (f = msg.getCockroachdb()) && plugins_common_v1_metadata_pb.SQLMetadata.Minified.toObject(includeInstance, f),
+    kafka: (f = msg.getKafka()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f),
+    confluent: (f = msg.getConfluent()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f),
+    msk: (f = msg.getMsk()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f),
+    redpanda: (f = msg.getRedpanda()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f),
+    aivenkafka: (f = msg.getAivenkafka()) && plugins_kafka_v1_plugin_pb.Metadata.Minified.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -138,7 +144,7 @@ aivenkafka: (f = msg.getAivenkafka()) && plugins_kafka_v1_plugin_pb.Metadata.Min
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.ai.v1.Metadata}
  */
 proto.ai.v1.Metadata.deserializeBinary = function(bytes) {

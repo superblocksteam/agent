@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var common_v1_errors_pb = require('../../common/v1/errors_pb');
 goog.object.extend(proto, common_v1_errors_pb);
@@ -152,7 +158,7 @@ proto.store.v1.ReadRequest.prototype.toObject = function(opt_includeInstance) {
  */
 proto.store.v1.ReadRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-keysList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    keysList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -165,7 +171,7 @@ keysList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.ReadRequest}
  */
 proto.store.v1.ReadRequest.deserializeBinary = function(bytes) {
@@ -190,7 +196,7 @@ proto.store.v1.ReadRequest.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addKeys(value);
       break;
     default:
@@ -308,9 +314,9 @@ proto.store.v1.ReadResponse.prototype.toObject = function(opt_includeInstance) {
  */
 proto.store.v1.ReadResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-resultsList: jspb.Message.toObjectList(msg.getResultsList(),
+    resultsList: jspb.Message.toObjectList(msg.getResultsList(),
     google_protobuf_struct_pb.Value.toObject, includeInstance),
-error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstance, f)
+    error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -323,7 +329,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.ReadResponse}
  */
 proto.store.v1.ReadResponse.deserializeBinary = function(bytes) {
@@ -519,7 +525,7 @@ proto.store.v1.WriteRequest.prototype.toObject = function(opt_includeInstance) {
  */
 proto.store.v1.WriteRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-pairsList: jspb.Message.toObjectList(msg.getPairsList(),
+    pairsList: jspb.Message.toObjectList(msg.getPairsList(),
     store_v1_store_pb.Pair.toObject, includeInstance)
   };
 
@@ -533,7 +539,7 @@ pairsList: jspb.Message.toObjectList(msg.getPairsList(),
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.WriteRequest}
  */
 proto.store.v1.WriteRequest.deserializeBinary = function(bytes) {
@@ -679,9 +685,9 @@ proto.store.v1.WriteResponse.prototype.toObject = function(opt_includeInstance) 
  */
 proto.store.v1.WriteResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-pairsList: jspb.Message.toObjectList(msg.getPairsList(),
+    pairsList: jspb.Message.toObjectList(msg.getPairsList(),
     store_v1_store_pb.Pair.toObject, includeInstance),
-error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstance, f)
+    error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -694,7 +700,7 @@ error: (f = msg.getError()) && common_v1_errors_pb.Error.toObject(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.store.v1.WriteResponse}
  */
 proto.store.v1.WriteResponse.deserializeBinary = function(bytes) {

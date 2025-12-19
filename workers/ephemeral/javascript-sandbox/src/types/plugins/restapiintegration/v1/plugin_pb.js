@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var common_v1_plugin_pb = require('../../../common/v1/plugin_pb.js');
 goog.object.extend(proto, common_v1_plugin_pb);
@@ -78,28 +84,28 @@ proto.plugins.restapiintegration.v1.Plugin.prototype.toObject = function(opt_inc
  */
 proto.plugins.restapiintegration.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-httpmethod: jspb.Message.getFieldWithDefault(msg, 1, ""),
-responsetype: jspb.Message.getFieldWithDefault(msg, 2, ""),
-headersList: jspb.Message.toObjectList(msg.getHeadersList(),
+    httpmethod: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    responsetype: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    headersList: jspb.Message.toObjectList(msg.getHeadersList(),
     common_v1_plugin_pb.Property.toObject, includeInstance),
-paramsList: jspb.Message.toObjectList(msg.getParamsList(),
+    paramsList: jspb.Message.toObjectList(msg.getParamsList(),
     common_v1_plugin_pb.Property.toObject, includeInstance),
-bodytype: jspb.Message.getFieldWithDefault(msg, 5, ""),
-body: jspb.Message.getFieldWithDefault(msg, 6, ""),
-jsonbody: jspb.Message.getFieldWithDefault(msg, 7, ""),
-formdataList: jspb.Message.toObjectList(msg.getFormdataList(),
+    bodytype: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    body: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    jsonbody: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    formdataList: jspb.Message.toObjectList(msg.getFormdataList(),
     common_v1_plugin_pb.Property.toObject, includeInstance),
-fileformkey: jspb.Message.getFieldWithDefault(msg, 9, ""),
-filename: jspb.Message.getFieldWithDefault(msg, 10, ""),
-urlbase: jspb.Message.getFieldWithDefault(msg, 11, ""),
-urlpath: jspb.Message.getFieldWithDefault(msg, 12, ""),
-authtype: jspb.Message.getFieldWithDefault(msg, 13, ""),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
-verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 18, false),
-donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 19, false),
-openapiaction: jspb.Message.getFieldWithDefault(msg, 15, ""),
-openapispecref: jspb.Message.getFieldWithDefault(msg, 16, ""),
-openapitenantname: (f = jspb.Message.getField(msg, 17)) == null ? undefined : f
+    fileformkey: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    filename: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    urlbase: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    urlpath: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    authtype: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
+    verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 18, false),
+    donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 19, false),
+    openapiaction: jspb.Message.getFieldWithDefault(msg, 15, ""),
+    openapispecref: jspb.Message.getFieldWithDefault(msg, 16, ""),
+    openapitenantname: jspb.Message.getFieldWithDefault(msg, 17, "")
   };
 
   if (includeInstance) {
@@ -112,7 +118,7 @@ openapitenantname: (f = jspb.Message.getField(msg, 17)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.restapiintegration.v1.Plugin}
  */
 proto.plugins.restapiintegration.v1.Plugin.deserializeBinary = function(bytes) {
@@ -137,11 +143,11 @@ proto.plugins.restapiintegration.v1.Plugin.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHttpmethod(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResponsetype(value);
       break;
     case 3:
@@ -155,15 +161,15 @@ proto.plugins.restapiintegration.v1.Plugin.deserializeBinaryFromReader = functio
       msg.addParams(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBodytype(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setJsonbody(value);
       break;
     case 8:
@@ -172,23 +178,23 @@ proto.plugins.restapiintegration.v1.Plugin.deserializeBinaryFromReader = functio
       msg.addFormdata(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileformkey(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFilename(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrlbase(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setUrlpath(value);
       break;
     case 13:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAuthtype(value);
       break;
     case 14:
@@ -205,15 +211,15 @@ proto.plugins.restapiintegration.v1.Plugin.deserializeBinaryFromReader = functio
       msg.setDonotfailonrequesterror(value);
       break;
     case 15:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOpenapiaction(value);
       break;
     case 16:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOpenapispecref(value);
       break;
     case 17:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOpenapitenantname(value);
       break;
     default:

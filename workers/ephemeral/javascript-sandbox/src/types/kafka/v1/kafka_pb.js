@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
@@ -119,7 +125,7 @@ proto.kafka.v1.IntegrationMetadataEvent.prototype.toObject = function(opt_includ
  */
 proto.kafka.v1.IntegrationMetadataEvent.toObject = function(includeInstance, msg) {
   var f, obj = {
-upsert: (f = msg.getUpsert()) && proto.kafka.v1.IntegrationMetadataEvent.Upsert.toObject(includeInstance, f)
+    upsert: (f = msg.getUpsert()) && proto.kafka.v1.IntegrationMetadataEvent.Upsert.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -132,7 +138,7 @@ upsert: (f = msg.getUpsert()) && proto.kafka.v1.IntegrationMetadataEvent.Upsert.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.kafka.v1.IntegrationMetadataEvent}
  */
 proto.kafka.v1.IntegrationMetadataEvent.deserializeBinary = function(bytes) {
@@ -233,12 +239,12 @@ proto.kafka.v1.IntegrationMetadataEvent.Upsert.prototype.toObject = function(opt
  */
 proto.kafka.v1.IntegrationMetadataEvent.Upsert.toObject = function(includeInstance, msg) {
   var f, obj = {
-datasourceConfiguration: (f = msg.getDatasourceConfiguration()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
-integrationId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-configurationId: jspb.Message.getFieldWithDefault(msg, 3, ""),
-integrationType: jspb.Message.getFieldWithDefault(msg, 4, ""),
-organizationId: jspb.Message.getFieldWithDefault(msg, 5, ""),
-schemaVersion: jspb.Message.getFieldWithDefault(msg, 6, "")
+    datasourceConfiguration: (f = msg.getDatasourceConfiguration()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
+    integrationId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    configurationId: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    integrationType: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    organizationId: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    schemaVersion: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -251,7 +257,7 @@ schemaVersion: jspb.Message.getFieldWithDefault(msg, 6, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.kafka.v1.IntegrationMetadataEvent.Upsert}
  */
 proto.kafka.v1.IntegrationMetadataEvent.Upsert.deserializeBinary = function(bytes) {
@@ -281,23 +287,23 @@ proto.kafka.v1.IntegrationMetadataEvent.Upsert.deserializeBinaryFromReader = fun
       msg.setDatasourceConfiguration(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationId(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setConfigurationId(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationType(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setOrganizationId(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSchemaVersion(value);
       break;
     default:

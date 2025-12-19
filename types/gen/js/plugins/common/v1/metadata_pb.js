@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 goog.exportSymbol('proto.plugins.common.v1.BucketsMetadata', null, global);
 goog.exportSymbol('proto.plugins.common.v1.BucketsMetadata.Minified', null, global);
@@ -170,7 +176,7 @@ proto.plugins.common.v1.SQLMetadata.toObject = function(includeInstance, msg) {
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLMetadata}
  */
 proto.plugins.common.v1.SQLMetadata.deserializeBinary = function(bytes) {
@@ -258,7 +264,7 @@ proto.plugins.common.v1.SQLMetadata.Minified.prototype.toObject = function(opt_i
  */
 proto.plugins.common.v1.SQLMetadata.Minified.toObject = function(includeInstance, msg) {
   var f, obj = {
-tablesMap: (f = msg.getTablesMap()) ? f.toObject(includeInstance, proto.plugins.common.v1.SQLMetadata.Minified.Table.toObject) : []
+    tablesMap: (f = msg.getTablesMap()) ? f.toObject(includeInstance, proto.plugins.common.v1.SQLMetadata.Minified.Table.toObject) : []
   };
 
   if (includeInstance) {
@@ -271,7 +277,7 @@ tablesMap: (f = msg.getTablesMap()) ? f.toObject(includeInstance, proto.plugins.
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLMetadata.Minified}
  */
 proto.plugins.common.v1.SQLMetadata.Minified.deserializeBinary = function(bytes) {
@@ -298,7 +304,7 @@ proto.plugins.common.v1.SQLMetadata.Minified.deserializeBinaryFromReader = funct
     case 1:
       var value = msg.getTablesMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.plugins.common.v1.SQLMetadata.Minified.Table.deserializeBinaryFromReader, "", new proto.plugins.common.v1.SQLMetadata.Minified.Table());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.plugins.common.v1.SQLMetadata.Minified.Table.deserializeBinaryFromReader, "", new proto.plugins.common.v1.SQLMetadata.Minified.Table());
          });
       break;
     default:
@@ -332,13 +338,7 @@ proto.plugins.common.v1.SQLMetadata.Minified.serializeBinaryToWriter = function(
   var f = undefined;
   f = message.getTablesMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getTablesMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.plugins.common.v1.SQLMetadata.Minified.Table.serializeBinaryToWriter);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.plugins.common.v1.SQLMetadata.Minified.Table.serializeBinaryToWriter);
   }
 };
 
@@ -375,7 +375,7 @@ proto.plugins.common.v1.SQLMetadata.Minified.Table.prototype.toObject = function
  */
 proto.plugins.common.v1.SQLMetadata.Minified.Table.toObject = function(includeInstance, msg) {
   var f, obj = {
-columnsMap: (f = msg.getColumnsMap()) ? f.toObject(includeInstance, undefined) : []
+    columnsMap: (f = msg.getColumnsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -388,7 +388,7 @@ columnsMap: (f = msg.getColumnsMap()) ? f.toObject(includeInstance, undefined) :
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.SQLMetadata.Minified.Table}
  */
 proto.plugins.common.v1.SQLMetadata.Minified.Table.deserializeBinary = function(bytes) {
@@ -415,7 +415,7 @@ proto.plugins.common.v1.SQLMetadata.Minified.Table.deserializeBinaryFromReader =
     case 1:
       var value = msg.getColumnsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readStringRequireUtf8, null, "", "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
          });
       break;
     default:
@@ -449,12 +449,7 @@ proto.plugins.common.v1.SQLMetadata.Minified.Table.serializeBinaryToWriter = fun
   var f = undefined;
   f = message.getColumnsMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getColumnsMap(true),
-    1,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeString);
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -550,7 +545,7 @@ proto.plugins.common.v1.BucketsMetadata.toObject = function(includeInstance, msg
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.BucketsMetadata}
  */
 proto.plugins.common.v1.BucketsMetadata.deserializeBinary = function(bytes) {
@@ -645,7 +640,7 @@ proto.plugins.common.v1.BucketsMetadata.Minified.prototype.toObject = function(o
  */
 proto.plugins.common.v1.BucketsMetadata.Minified.toObject = function(includeInstance, msg) {
   var f, obj = {
-namesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    namesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -658,7 +653,7 @@ namesList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.common.v1.BucketsMetadata.Minified}
  */
 proto.plugins.common.v1.BucketsMetadata.Minified.deserializeBinary = function(bytes) {
@@ -683,7 +678,7 @@ proto.plugins.common.v1.BucketsMetadata.Minified.deserializeBinaryFromReader = f
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addNames(value);
       break;
     default:

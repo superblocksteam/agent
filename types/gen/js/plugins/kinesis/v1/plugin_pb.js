@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -162,12 +168,12 @@ proto.plugins.kinesis.v1.Plugin.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.kinesis.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-connection: (f = msg.getConnection()) && proto.plugins.kinesis.v1.Plugin.KinesisConnection.toObject(includeInstance, f),
-operationType: jspb.Message.getFieldWithDefault(msg, 3, 0),
-put: (f = msg.getPut()) && proto.plugins.kinesis.v1.Plugin.KinesisPut.toObject(includeInstance, f),
-get: (f = msg.getGet()) && proto.plugins.kinesis.v1.Plugin.KinesisGet.toObject(includeInstance, f),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    connection: (f = msg.getConnection()) && proto.plugins.kinesis.v1.Plugin.KinesisConnection.toObject(includeInstance, f),
+    operationType: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    put: (f = msg.getPut()) && proto.plugins.kinesis.v1.Plugin.KinesisPut.toObject(includeInstance, f),
+    get: (f = msg.getGet()) && proto.plugins.kinesis.v1.Plugin.KinesisGet.toObject(includeInstance, f),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -180,7 +186,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Plugin}
  */
 proto.plugins.kinesis.v1.Plugin.deserializeBinary = function(bytes) {
@@ -205,7 +211,7 @@ proto.plugins.kinesis.v1.Plugin.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -372,7 +378,7 @@ proto.plugins.kinesis.v1.Plugin.KinesisConnection.prototype.toObject = function(
  */
 proto.plugins.kinesis.v1.Plugin.KinesisConnection.toObject = function(includeInstance, msg) {
   var f, obj = {
-awsConfig: (f = msg.getAwsConfig()) && plugins_common_v1_plugin_pb.AWSConfig.toObject(includeInstance, f)
+    awsConfig: (f = msg.getAwsConfig()) && plugins_common_v1_plugin_pb.AWSConfig.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -385,7 +391,7 @@ awsConfig: (f = msg.getAwsConfig()) && plugins_common_v1_plugin_pb.AWSConfig.toO
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Plugin.KinesisConnection}
  */
 proto.plugins.kinesis.v1.Plugin.KinesisConnection.deserializeBinary = function(bytes) {
@@ -523,11 +529,11 @@ proto.plugins.kinesis.v1.Plugin.KinesisPut.prototype.toObject = function(opt_inc
  */
 proto.plugins.kinesis.v1.Plugin.KinesisPut.toObject = function(includeInstance, msg) {
   var f, obj = {
-data: jspb.Message.getFieldWithDefault(msg, 1, ""),
-partitionKey: jspb.Message.getFieldWithDefault(msg, 2, ""),
-streamIdentifierType: jspb.Message.getFieldWithDefault(msg, 3, 0),
-streamName: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-streamArn: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f
+    data: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    partitionKey: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    streamIdentifierType: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    streamName: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    streamArn: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -540,7 +546,7 @@ streamArn: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Plugin.KinesisPut}
  */
 proto.plugins.kinesis.v1.Plugin.KinesisPut.deserializeBinary = function(bytes) {
@@ -565,11 +571,11 @@ proto.plugins.kinesis.v1.Plugin.KinesisPut.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setData(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPartitionKey(value);
       break;
     case 3:
@@ -577,11 +583,11 @@ proto.plugins.kinesis.v1.Plugin.KinesisPut.deserializeBinaryFromReader = functio
       msg.setStreamIdentifierType(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStreamName(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStreamArn(value);
       break;
     default:
@@ -809,15 +815,15 @@ proto.plugins.kinesis.v1.Plugin.KinesisGet.prototype.toObject = function(opt_inc
  */
 proto.plugins.kinesis.v1.Plugin.KinesisGet.toObject = function(includeInstance, msg) {
   var f, obj = {
-shardId: jspb.Message.getFieldWithDefault(msg, 2, ""),
-shardIteratorType: jspb.Message.getFieldWithDefault(msg, 3, 0),
-limit: jspb.Message.getFieldWithDefault(msg, 4, 0),
-pollingCooldownMs: jspb.Message.getFieldWithDefault(msg, 5, 0),
-startingSequenceNumber: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-timestamp: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-streamIdentifierType: jspb.Message.getFieldWithDefault(msg, 8, 0),
-streamName: (f = jspb.Message.getField(msg, 9)) == null ? undefined : f,
-streamArn: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f
+    shardId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    shardIteratorType: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    limit: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    pollingCooldownMs: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    startingSequenceNumber: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    timestamp: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    streamIdentifierType: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    streamName: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    streamArn: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
 
   if (includeInstance) {
@@ -830,7 +836,7 @@ streamArn: (f = jspb.Message.getField(msg, 10)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Plugin.KinesisGet}
  */
 proto.plugins.kinesis.v1.Plugin.KinesisGet.deserializeBinary = function(bytes) {
@@ -855,7 +861,7 @@ proto.plugins.kinesis.v1.Plugin.KinesisGet.deserializeBinaryFromReader = functio
     var field = reader.getFieldNumber();
     switch (field) {
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setShardId(value);
       break;
     case 3:
@@ -871,11 +877,11 @@ proto.plugins.kinesis.v1.Plugin.KinesisGet.deserializeBinaryFromReader = functio
       msg.setPollingCooldownMs(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStartingSequenceNumber(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTimestamp(value);
       break;
     case 8:
@@ -883,11 +889,11 @@ proto.plugins.kinesis.v1.Plugin.KinesisGet.deserializeBinaryFromReader = functio
       msg.setStreamIdentifierType(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStreamName(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setStreamArn(value);
       break;
     default:
@@ -1460,7 +1466,7 @@ proto.plugins.kinesis.v1.Metadata.prototype.toObject = function(opt_includeInsta
  */
 proto.plugins.kinesis.v1.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-streamsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    streamsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1473,7 +1479,7 @@ streamsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.kinesis.v1.Metadata}
  */
 proto.plugins.kinesis.v1.Metadata.deserializeBinary = function(bytes) {
@@ -1498,7 +1504,7 @@ proto.plugins.kinesis.v1.Metadata.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addStreams(value);
       break;
     default:

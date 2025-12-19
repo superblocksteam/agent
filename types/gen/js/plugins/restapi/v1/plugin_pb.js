@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var common_v1_plugin_pb = require('../../../common/v1/plugin_pb');
 goog.object.extend(proto, common_v1_plugin_pb);
@@ -78,23 +84,23 @@ proto.plugins.restapi.v1.Plugin.prototype.toObject = function(opt_includeInstanc
  */
 proto.plugins.restapi.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-httpmethod: jspb.Message.getFieldWithDefault(msg, 1, ""),
-responsetype: jspb.Message.getFieldWithDefault(msg, 2, ""),
-headersList: jspb.Message.toObjectList(msg.getHeadersList(),
+    httpmethod: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    responsetype: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    headersList: jspb.Message.toObjectList(msg.getHeadersList(),
     common_v1_plugin_pb.Property.toObject, includeInstance),
-paramsList: jspb.Message.toObjectList(msg.getParamsList(),
+    paramsList: jspb.Message.toObjectList(msg.getParamsList(),
     common_v1_plugin_pb.Property.toObject, includeInstance),
-bodytype: jspb.Message.getFieldWithDefault(msg, 5, ""),
-body: jspb.Message.getFieldWithDefault(msg, 6, ""),
-formdataList: jspb.Message.toObjectList(msg.getFormdataList(),
+    bodytype: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    body: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    formdataList: jspb.Message.toObjectList(msg.getFormdataList(),
     common_v1_plugin_pb.Property.toObject, includeInstance),
-fileformkey: jspb.Message.getFieldWithDefault(msg, 8, ""),
-filename: jspb.Message.getFieldWithDefault(msg, 9, ""),
-path: jspb.Message.getFieldWithDefault(msg, 10, ""),
-jsonbody: jspb.Message.getFieldWithDefault(msg, 11, ""),
-superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
-verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 13, false),
-donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 14, false)
+    fileformkey: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    filename: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    jsonbody: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && common_v1_plugin_pb.SuperblocksMetadata.toObject(includeInstance, f),
+    verbosehttpoutput: jspb.Message.getBooleanFieldWithDefault(msg, 13, false),
+    donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 14, false)
   };
 
   if (includeInstance) {
@@ -107,7 +113,7 @@ donotfailonrequesterror: jspb.Message.getBooleanFieldWithDefault(msg, 14, false)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.restapi.v1.Plugin}
  */
 proto.plugins.restapi.v1.Plugin.deserializeBinary = function(bytes) {
@@ -132,11 +138,11 @@ proto.plugins.restapi.v1.Plugin.deserializeBinaryFromReader = function(msg, read
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setHttpmethod(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setResponsetype(value);
       break;
     case 3:
@@ -150,11 +156,11 @@ proto.plugins.restapi.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       msg.addParams(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBodytype(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setBody(value);
       break;
     case 7:
@@ -163,19 +169,19 @@ proto.plugins.restapi.v1.Plugin.deserializeBinaryFromReader = function(msg, read
       msg.addFormdata(value);
       break;
     case 8:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileformkey(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFilename(value);
       break;
     case 10:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setJsonbody(value);
       break;
     case 12:

@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb');
 goog.object.extend(proto, google_protobuf_any_pb);
@@ -124,14 +130,14 @@ proto.event.v2.CloudEvent.prototype.toObject = function(opt_includeInstance) {
  */
 proto.event.v2.CloudEvent.toObject = function(includeInstance, msg) {
   var f, obj = {
-id: jspb.Message.getFieldWithDefault(msg, 1, ""),
-source: jspb.Message.getFieldWithDefault(msg, 2, ""),
-specVersion: jspb.Message.getFieldWithDefault(msg, 3, ""),
-type: jspb.Message.getFieldWithDefault(msg, 4, ""),
-attributesMap: (f = msg.getAttributesMap()) ? f.toObject(includeInstance, proto.event.v2.CloudEventAttributeValue.toObject) : [],
-binaryData: msg.getBinaryData_asB64(),
-textData: (f = jspb.Message.getField(msg, 7)) == null ? undefined : f,
-protoData: (f = msg.getProtoData()) && google_protobuf_any_pb.Any.toObject(includeInstance, f)
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    source: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    specVersion: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    type: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    attributesMap: (f = msg.getAttributesMap()) ? f.toObject(includeInstance, proto.event.v2.CloudEventAttributeValue.toObject) : [],
+    binaryData: msg.getBinaryData_asB64(),
+    textData: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    protoData: (f = msg.getProtoData()) && google_protobuf_any_pb.Any.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -144,7 +150,7 @@ protoData: (f = msg.getProtoData()) && google_protobuf_any_pb.Any.toObject(inclu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v2.CloudEvent}
  */
 proto.event.v2.CloudEvent.deserializeBinary = function(bytes) {
@@ -169,25 +175,25 @@ proto.event.v2.CloudEvent.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSource(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setSpecVersion(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setType(value);
       break;
     case 5:
       var value = msg.getAttributesMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readStringRequireUtf8, jspb.BinaryReader.prototype.readMessage, proto.event.v2.CloudEventAttributeValue.deserializeBinaryFromReader, "", new proto.event.v2.CloudEventAttributeValue());
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.event.v2.CloudEventAttributeValue.deserializeBinaryFromReader, "", new proto.event.v2.CloudEventAttributeValue());
          });
       break;
     case 6:
@@ -195,7 +201,7 @@ proto.event.v2.CloudEvent.deserializeBinaryFromReader = function(msg, reader) {
       msg.setBinaryData(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTextData(value);
       break;
     case 8:
@@ -262,13 +268,7 @@ proto.event.v2.CloudEvent.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getAttributesMap(true);
   if (f && f.getLength() > 0) {
-jspb.internal.public_for_gencode.serializeMapToBinary(
-    message.getAttributesMap(true),
-    5,
-    writer,
-    jspb.BinaryWriter.prototype.writeString,
-    jspb.BinaryWriter.prototype.writeMessage,
-    proto.event.v2.CloudEventAttributeValue.serializeBinaryToWriter);
+    f.serializeBinary(5, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.event.v2.CloudEventAttributeValue.serializeBinaryToWriter);
   }
   f = /** @type {!(string|Uint8Array)} */ (jspb.Message.getField(message, 6));
   if (f != null) {
@@ -586,13 +586,13 @@ proto.event.v2.CloudEventAttributeValue.prototype.toObject = function(opt_includ
  */
 proto.event.v2.CloudEventAttributeValue.toObject = function(includeInstance, msg) {
   var f, obj = {
-ceBoolean: (f = jspb.Message.getBooleanField(msg, 1)) == null ? undefined : f,
-ceInteger: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
-ceString: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-ceBytes: msg.getCeBytes_asB64(),
-ceUri: (f = jspb.Message.getField(msg, 5)) == null ? undefined : f,
-ceUriRef: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-ceTimestamp: (f = msg.getCeTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    ceBoolean: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
+    ceInteger: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    ceString: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    ceBytes: msg.getCeBytes_asB64(),
+    ceUri: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    ceUriRef: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    ceTimestamp: (f = msg.getCeTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -605,7 +605,7 @@ ceTimestamp: (f = msg.getCeTimestamp()) && google_protobuf_timestamp_pb.Timestam
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.event.v2.CloudEventAttributeValue}
  */
 proto.event.v2.CloudEventAttributeValue.deserializeBinary = function(bytes) {
@@ -638,7 +638,7 @@ proto.event.v2.CloudEventAttributeValue.deserializeBinaryFromReader = function(m
       msg.setCeInteger(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCeString(value);
       break;
     case 4:
@@ -646,11 +646,11 @@ proto.event.v2.CloudEventAttributeValue.deserializeBinaryFromReader = function(m
       msg.setCeBytes(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCeUri(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setCeUriRef(value);
       break;
     case 7:

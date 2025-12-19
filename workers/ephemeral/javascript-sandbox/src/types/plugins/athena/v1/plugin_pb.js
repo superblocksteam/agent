@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_plugin_pb = require('../../../plugins/common/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_common_v1_plugin_pb);
@@ -94,12 +100,12 @@ proto.plugins.athena.v1.Connection.prototype.toObject = function(opt_includeInst
  */
 proto.plugins.athena.v1.Connection.toObject = function(includeInstance, msg) {
   var f, obj = {
-workgroupName: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-overrideS3OutputLocation: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
-s3OutputLocation: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f,
-s3OutputLocationSuffix: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f,
-databaseName: jspb.Message.getFieldWithDefault(msg, 5, ""),
-awsConfig: (f = msg.getAwsConfig()) && plugins_common_v1_plugin_pb.AWSConfig.toObject(includeInstance, f)
+    workgroupName: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    overrideS3OutputLocation: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    s3OutputLocation: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    s3OutputLocationSuffix: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    databaseName: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    awsConfig: (f = msg.getAwsConfig()) && plugins_common_v1_plugin_pb.AWSConfig.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -112,7 +118,7 @@ awsConfig: (f = msg.getAwsConfig()) && plugins_common_v1_plugin_pb.AWSConfig.toO
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.athena.v1.Connection}
  */
 proto.plugins.athena.v1.Connection.deserializeBinary = function(bytes) {
@@ -137,7 +143,7 @@ proto.plugins.athena.v1.Connection.deserializeBinaryFromReader = function(msg, r
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setWorkgroupName(value);
       break;
     case 2:
@@ -145,7 +151,7 @@ proto.plugins.athena.v1.Connection.deserializeBinaryFromReader = function(msg, r
       msg.setOverrideS3OutputLocation(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setS3OutputLocation(value);
       break;
     case 4:
@@ -153,7 +159,7 @@ proto.plugins.athena.v1.Connection.deserializeBinaryFromReader = function(msg, r
       msg.setS3OutputLocationSuffix(value);
       break;
     case 5:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setDatabaseName(value);
       break;
     case 6:
@@ -459,10 +465,10 @@ proto.plugins.athena.v1.Plugin.prototype.toObject = function(opt_includeInstance
  */
 proto.plugins.athena.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-connection: (f = msg.getConnection()) && proto.plugins.athena.v1.Connection.toObject(includeInstance, f),
-runSql: (f = msg.getRunSql()) && plugins_common_v1_plugin_pb.SQLExecution.toObject(includeInstance, f),
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    connection: (f = msg.getConnection()) && proto.plugins.athena.v1.Connection.toObject(includeInstance, f),
+    runSql: (f = msg.getRunSql()) && plugins_common_v1_plugin_pb.SQLExecution.toObject(includeInstance, f),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -475,7 +481,7 @@ dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.athena.v1.Plugin}
  */
 proto.plugins.athena.v1.Plugin.deserializeBinary = function(bytes) {
@@ -500,7 +506,7 @@ proto.plugins.athena.v1.Plugin.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:

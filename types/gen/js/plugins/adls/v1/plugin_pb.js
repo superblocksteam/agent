@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = globalThis;
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var plugins_common_v1_auth_pb = require('../../../plugins/common/v1/auth_pb');
 goog.object.extend(proto, plugins_common_v1_auth_pb);
@@ -326,17 +332,17 @@ proto.plugins.adls.v1.Plugin.prototype.toObject = function(opt_includeInstance) 
  */
 proto.plugins.adls.v1.Plugin.toObject = function(includeInstance, msg) {
   var f, obj = {
-name: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f,
-dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
-connection: (f = msg.getConnection()) && proto.plugins.adls.v1.Plugin.AdlsConnection.toObject(includeInstance, f),
-createContainer: (f = msg.getCreateContainer()) && proto.plugins.adls.v1.Plugin.CreateContainer.toObject(includeInstance, f),
-createDirectory: (f = msg.getCreateDirectory()) && proto.plugins.adls.v1.Plugin.CreateDirectory.toObject(includeInstance, f),
-renameDirectory: (f = msg.getRenameDirectory()) && proto.plugins.adls.v1.Plugin.RenameDirectory.toObject(includeInstance, f),
-deleteDirectory: (f = msg.getDeleteDirectory()) && proto.plugins.adls.v1.Plugin.DeleteDirectory.toObject(includeInstance, f),
-listDirectoryContents: (f = msg.getListDirectoryContents()) && proto.plugins.adls.v1.Plugin.ListDirectoryContents.toObject(includeInstance, f),
-uploadFile: (f = msg.getUploadFile()) && proto.plugins.adls.v1.Plugin.UploadFile.toObject(includeInstance, f),
-downloadFile: (f = msg.getDownloadFile()) && proto.plugins.adls.v1.Plugin.DownloadFile.toObject(includeInstance, f),
-deleteFile: (f = msg.getDeleteFile()) && proto.plugins.adls.v1.Plugin.DeleteFile.toObject(includeInstance, f)
+    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    dynamicWorkflowConfiguration: (f = msg.getDynamicWorkflowConfiguration()) && plugins_common_v1_plugin_pb.DynamicWorkflowConfiguration.toObject(includeInstance, f),
+    connection: (f = msg.getConnection()) && proto.plugins.adls.v1.Plugin.AdlsConnection.toObject(includeInstance, f),
+    createContainer: (f = msg.getCreateContainer()) && proto.plugins.adls.v1.Plugin.CreateContainer.toObject(includeInstance, f),
+    createDirectory: (f = msg.getCreateDirectory()) && proto.plugins.adls.v1.Plugin.CreateDirectory.toObject(includeInstance, f),
+    renameDirectory: (f = msg.getRenameDirectory()) && proto.plugins.adls.v1.Plugin.RenameDirectory.toObject(includeInstance, f),
+    deleteDirectory: (f = msg.getDeleteDirectory()) && proto.plugins.adls.v1.Plugin.DeleteDirectory.toObject(includeInstance, f),
+    listDirectoryContents: (f = msg.getListDirectoryContents()) && proto.plugins.adls.v1.Plugin.ListDirectoryContents.toObject(includeInstance, f),
+    uploadFile: (f = msg.getUploadFile()) && proto.plugins.adls.v1.Plugin.UploadFile.toObject(includeInstance, f),
+    downloadFile: (f = msg.getDownloadFile()) && proto.plugins.adls.v1.Plugin.DownloadFile.toObject(includeInstance, f),
+    deleteFile: (f = msg.getDeleteFile()) && proto.plugins.adls.v1.Plugin.DeleteFile.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -349,7 +355,7 @@ deleteFile: (f = msg.getDeleteFile()) && proto.plugins.adls.v1.Plugin.DeleteFile
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin}
  */
 proto.plugins.adls.v1.Plugin.deserializeBinary = function(bytes) {
@@ -374,7 +380,7 @@ proto.plugins.adls.v1.Plugin.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setName(value);
       break;
     case 2:
@@ -578,9 +584,9 @@ proto.plugins.adls.v1.Plugin.AdlsConnection.prototype.toObject = function(opt_in
  */
 proto.plugins.adls.v1.Plugin.AdlsConnection.toObject = function(includeInstance, msg) {
   var f, obj = {
-accountName: jspb.Message.getFieldWithDefault(msg, 1, ""),
-tenant: jspb.Message.getFieldWithDefault(msg, 2, ""),
-auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Azure.toObject(includeInstance, f)
+    accountName: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    tenant: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Azure.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -593,7 +599,7 @@ auth: (f = msg.getAuth()) && plugins_common_v1_auth_pb.Azure.toObject(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.AdlsConnection}
  */
 proto.plugins.adls.v1.Plugin.AdlsConnection.deserializeBinary = function(bytes) {
@@ -618,11 +624,11 @@ proto.plugins.adls.v1.Plugin.AdlsConnection.deserializeBinaryFromReader = functi
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setAccountName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setTenant(value);
       break;
     case 3:
@@ -789,7 +795,7 @@ proto.plugins.adls.v1.Plugin.CreateContainer.prototype.toObject = function(opt_i
  */
 proto.plugins.adls.v1.Plugin.CreateContainer.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystem: jspb.Message.getFieldWithDefault(msg, 2, "")
+    fileSystem: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -802,7 +808,7 @@ fileSystem: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.CreateContainer}
  */
 proto.plugins.adls.v1.Plugin.CreateContainer.deserializeBinary = function(bytes) {
@@ -827,7 +833,7 @@ proto.plugins.adls.v1.Plugin.CreateContainer.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileSystem(value);
       break;
     default:
@@ -919,8 +925,8 @@ proto.plugins.adls.v1.Plugin.CreateDirectory.prototype.toObject = function(opt_i
  */
 proto.plugins.adls.v1.Plugin.CreateDirectory.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
-path: jspb.Message.getFieldWithDefault(msg, 2, "")
+    fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -933,7 +939,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.CreateDirectory}
  */
 proto.plugins.adls.v1.Plugin.CreateDirectory.deserializeBinary = function(bytes) {
@@ -958,11 +964,11 @@ proto.plugins.adls.v1.Plugin.CreateDirectory.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     default:
@@ -1079,9 +1085,9 @@ proto.plugins.adls.v1.Plugin.RenameDirectory.prototype.toObject = function(opt_i
  */
 proto.plugins.adls.v1.Plugin.RenameDirectory.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
-path: jspb.Message.getFieldWithDefault(msg, 2, ""),
-newPath: jspb.Message.getFieldWithDefault(msg, 3, "")
+    fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    newPath: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -1094,7 +1100,7 @@ newPath: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.RenameDirectory}
  */
 proto.plugins.adls.v1.Plugin.RenameDirectory.deserializeBinary = function(bytes) {
@@ -1119,15 +1125,15 @@ proto.plugins.adls.v1.Plugin.RenameDirectory.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setNewPath(value);
       break;
     default:
@@ -1269,8 +1275,8 @@ proto.plugins.adls.v1.Plugin.DeleteDirectory.prototype.toObject = function(opt_i
  */
 proto.plugins.adls.v1.Plugin.DeleteDirectory.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
-path: jspb.Message.getFieldWithDefault(msg, 2, "")
+    fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1283,7 +1289,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.DeleteDirectory}
  */
 proto.plugins.adls.v1.Plugin.DeleteDirectory.deserializeBinary = function(bytes) {
@@ -1308,11 +1314,11 @@ proto.plugins.adls.v1.Plugin.DeleteDirectory.deserializeBinaryFromReader = funct
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     default:
@@ -1429,8 +1435,8 @@ proto.plugins.adls.v1.Plugin.ListDirectoryContents.prototype.toObject = function
  */
 proto.plugins.adls.v1.Plugin.ListDirectoryContents.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
-path: jspb.Message.getFieldWithDefault(msg, 2, "")
+    fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1443,7 +1449,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.ListDirectoryContents}
  */
 proto.plugins.adls.v1.Plugin.ListDirectoryContents.deserializeBinary = function(bytes) {
@@ -1468,11 +1474,11 @@ proto.plugins.adls.v1.Plugin.ListDirectoryContents.deserializeBinaryFromReader =
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     default:
@@ -1589,9 +1595,9 @@ proto.plugins.adls.v1.Plugin.UploadFile.prototype.toObject = function(opt_includ
  */
 proto.plugins.adls.v1.Plugin.UploadFile.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
-path: jspb.Message.getFieldWithDefault(msg, 2, ""),
-content: jspb.Message.getFieldWithDefault(msg, 3, "")
+    fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    content: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -1604,7 +1610,7 @@ content: jspb.Message.getFieldWithDefault(msg, 3, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.UploadFile}
  */
 proto.plugins.adls.v1.Plugin.UploadFile.deserializeBinary = function(bytes) {
@@ -1629,15 +1635,15 @@ proto.plugins.adls.v1.Plugin.UploadFile.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setContent(value);
       break;
     default:
@@ -1779,8 +1785,8 @@ proto.plugins.adls.v1.Plugin.DownloadFile.prototype.toObject = function(opt_incl
  */
 proto.plugins.adls.v1.Plugin.DownloadFile.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
-path: jspb.Message.getFieldWithDefault(msg, 2, "")
+    fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1793,7 +1799,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.DownloadFile}
  */
 proto.plugins.adls.v1.Plugin.DownloadFile.deserializeBinary = function(bytes) {
@@ -1818,11 +1824,11 @@ proto.plugins.adls.v1.Plugin.DownloadFile.deserializeBinaryFromReader = function
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     default:
@@ -1939,8 +1945,8 @@ proto.plugins.adls.v1.Plugin.DeleteFile.prototype.toObject = function(opt_includ
  */
 proto.plugins.adls.v1.Plugin.DeleteFile.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
-path: jspb.Message.getFieldWithDefault(msg, 2, "")
+    fileSystem: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    path: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1953,7 +1959,7 @@ path: jspb.Message.getFieldWithDefault(msg, 2, "")
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.DeleteFile}
  */
 proto.plugins.adls.v1.Plugin.DeleteFile.deserializeBinary = function(bytes) {
@@ -1978,11 +1984,11 @@ proto.plugins.adls.v1.Plugin.DeleteFile.deserializeBinaryFromReader = function(m
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setFileSystem(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.setPath(value);
       break;
     default:
@@ -2106,7 +2112,7 @@ proto.plugins.adls.v1.Plugin.Metadata.prototype.toObject = function(opt_includeI
  */
 proto.plugins.adls.v1.Plugin.Metadata.toObject = function(includeInstance, msg) {
   var f, obj = {
-fileSystemsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    fileSystemsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -2119,7 +2125,7 @@ fileSystemsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.plugins.adls.v1.Plugin.Metadata}
  */
 proto.plugins.adls.v1.Plugin.Metadata.deserializeBinary = function(bytes) {
@@ -2144,7 +2150,7 @@ proto.plugins.adls.v1.Plugin.Metadata.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      var value = /** @type {string} */ (reader.readString());
       msg.addFileSystems(value);
       break;
     default:
