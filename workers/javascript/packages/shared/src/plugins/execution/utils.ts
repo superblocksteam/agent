@@ -144,7 +144,7 @@ function fetchFromController(
     response.on('end', () => {
       if (fileServerUrl.includes('v2')) {
         const processed = chunkStrings
-        .split('\\n')
+        .split('\n')
         .filter((str) => str.length > 0)
         .map((str) => {
           const json = JSON.parse(str);
