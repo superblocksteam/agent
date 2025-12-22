@@ -4,12 +4,26 @@
 # fleets:
 #   python-ba:
 #     language: python
-#     bucket: BA
 #     consumerGroup: ephemeral-python
+#     triggerStreams:
+#       - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
+#       - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
+#     streams:
+#       - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
+#       - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
 #   javascript-ba:
 #     language: javascript
 #     bucket: BA
 #     consumerGroup: ephemeral-javascript
+#     # Verbatim triggers configuration
+#     triggers:
+#       - type: redis-streams
+#         metadata:
+#           address: redis:6379
+#           stream: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute
+#           consumerGroup: ephemeral-javascript
+#           lagCount: "5"
+#           activationLagCount: "3"
 fleets: {}
 # Task Manager configuration
 taskManager:

@@ -20,17 +20,19 @@ spec:
     {{- toYaml ($v.keda.triggers | default $.Values.keda.triggers) | nindent 4 }}
   {{- else }}
   triggers:
+    {{- range $v.triggerStreams }}
     - type: redis-streams
       metadata:
         host: {{ $.Values.queue.host }}
         port: {{ $.Values.queue.port | quote }}
         enableTLS: {{ $.Values.queue.tls | quote }}
-        stream: {{ $v.triggerStream }}
+        stream: {{ . }}
         consumerGroup: {{ $v.consumerGroup }}
         lagCount: "1"
         activationLagCount: "1"
       authenticationRef:
         name: redis-trigger-auth
+    {{- end }}
   {{- end }}
   {{- with $v.keda.scalingStrategy | default $.Values.keda.scalingStrategy }}
   scalingStrategy:
