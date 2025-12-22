@@ -101,13 +101,19 @@ spec:
           # gRPC configuration
           - "--grpc.port={{ $.Values.grpc.port }}"
           # Worker configuration
-          - "--worker.group={{ $.Values.worker.group }}"
           - "--worker.consumer.group={{ $v.consumerGroup }}"
+          {{- if $v.streams }}
+          - "--worker.stream.keys={{ join "," $v.streams }}"
+          {{- else if $.Values.worker.streams }}
+          - "--worker.stream.keys={{ join "," $.Values.worker.streams }}"
+          {{- else }}
+          - "--worker.group={{ $.Values.worker.group }}"
           - "--worker.bucket={{ $v.bucket }}"
           {{- if $v.events }}
           - "--worker.events={{ join "," ($v.events | default $.Values.worker.events) }}"
           {{- else if $.Values.worker.events }}
           - "--worker.events={{ join "," $.Values.worker.events }}"
+          {{- end }}
           {{- end }}
           # Redis transport
           - "--transport.redis.host={{ $.Values.queue.host }}"
