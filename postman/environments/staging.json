@@ -39,6 +39,12 @@
 			"enabled": true
 		},
 		{
+			"key": "auth0_realm",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
 			"key": "superblocks_jwt",
 			"value": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImJ2cXBrNTZUQTA3NDBOMXdxTUUxV1lWOUJZNW1WYzFqcEtPMnJsWVAzaUkiLCJ0eXAiOiJKV1QifQ.eyJpYXQiOjE3NDYwMzc0MDEsIm9yZ19pZCI6ImY2ZWU1MTc4LWY0ODEtNDg5ZC1iZTVjLWRjYWY5Y2IxZTdiOCIsIm9yZ190eXBlIjoiZW50ZXJwcmlzZSIsInVzZXJfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ1c2VyX25hbWUiOiJtaXN0YSBzdXBhIGJsb2NrcyIsInVzZXJfZW1haWwiOiJ0ZXN0QHN1cGVyYmxvY2tzdGVzdC5jb20iLCJ1c2VyX3R5cGUiOiJzdXBlcmJsb2NrcyIsInJiYWNfZ3JvdXBfaWRzIjpbIjEiXSwicmJhY19ncm91cHMiOlsiZ3JvdXAtYWJjZCJdLCJyYmFjX2dyb3VwX29iamVjdHMiOlt7Im5hbWUiOiJncm91cC1hYmNkIiwiaWQiOiIxIn1dLCJyYmFjX3JvbGUiOiJhZG1pbiJ9.Z48QNRRb-0ApqVA186NF49UylWqaT90o58IAmuyZlODsMDu-SwuomtQCwPiTfYY23wsdklZgNYT27OtENKFeYA",
 			"type": "secret",
