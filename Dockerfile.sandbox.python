@@ -23,6 +23,7 @@ COPY workers/ephemeral/python-sandbox/src ./src
 # Copy generated protobuf types
 COPY workers/ephemeral/python-sandbox/gen ./gen
 
+ENV PYTHONPATH=/app/gen:/app
 ENV SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT=50051
 
 EXPOSE 50051

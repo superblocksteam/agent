@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from gen.superblocks_types.transport.v1 import transport_pb2 as transport_dot_v1_dot_transport__pb2
-from gen.superblocks_types.worker.v1 import step_executor_pb2 as worker_dot_v1_dot_step__executor__pb2
+from superblocks_types.transport.v1 import transport_pb2 as transport_dot_v1_dot_transport__pb2
+from superblocks_types.worker.v1 import step_executor_pb2 as worker_dot_v1_dot_step__executor__pb2
 
 
 class StepExecutorServiceStub(object):

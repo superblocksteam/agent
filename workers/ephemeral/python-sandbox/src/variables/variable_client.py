@@ -7,8 +7,8 @@ from typing import Any
 
 import grpc
 
-from gen.superblocks_types.worker.v1 import sandbox_variable_store_pb2 as variable_store_pb2
-from gen.superblocks_types.worker.v1 import sandbox_variable_store_pb2_grpc as variable_store_pb2_grpc
+from superblocks_types.worker.v1 import sandbox_variable_store_pb2 as variable_store_pb2
+from superblocks_types.worker.v1 import sandbox_variable_store_pb2_grpc as variable_store_pb2_grpc
 
 
 class VariableClient:

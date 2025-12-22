@@ -63,6 +63,9 @@ proto-py: proto-base
 	# Rewrite python imports to be part of the `superblocks_types` package. This changes imports from this `from api.v1` to this `from superblocks_types.api.v1`
 	@find ../gen/py -iname "*.py" | xargs sed -i'.bak' -E '/^from superblocks_types/!s/^from ([^ ]*.v1|validate|google\.api|protoc_gen_openapiv2|superblocks_types|buf)/from superblocks_types.\1/g'
 	@find ../gen -name "*.bak" -delete
+	# Rewrite python imports for ephemeral python-sandbox to use `superblocks_types` prefix (gen/ is added to PYTHONPATH)
+	@find ../../workers/ephemeral/python-sandbox/gen -iname "*.py" | xargs sed -i'.bak' -E '/^from superblocks_types/!s/^from ([^ ]*.v1|validate|google\.api|protoc_gen_openapiv2|superblocks_types|buf)/from superblocks_types.\1/g'
+	@find ../../workers/ephemeral/python-sandbox/gen -name "*.bak" -delete
 	# Prepare generated Python folder to be packaged for pypi
 	@$(PYTHON_CMD) ../scripts/setup_pypi.py
 

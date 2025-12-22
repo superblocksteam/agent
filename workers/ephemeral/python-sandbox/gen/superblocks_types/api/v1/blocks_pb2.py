@@ -22,8 +22,8 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from gen.superblocks_types.buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
-from gen.superblocks_types.validate import validate_pb2 as validate_dot_validate__pb2
+from superblocks_types.buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
+from superblocks_types.validate import validate_pb2 as validate_dot_validate__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13\x61pi/v1/blocks.proto\x12\x06\x61pi.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x17validate/validate.proto\"\x82\x03\n\tVariables\x12.\n\x05items\x18\x01 \x03(\x0b\x32\x18.api.v1.Variables.ConfigR\x05items\x1a\x9b\x01\n\x06\x43onfig\x12\x14\n\x05value\x18\x01 \x01(\tR\x05value\x12=\n\x04type\x18\x02 \x01(\x0e\x32\x16.api.v1.Variables.TypeB\x11\xfa\x42\x05\x82\x01\x02 \x00\xbaH\x06\x82\x01\x03\"\x01\x00R\x04type\x12*\n\x04mode\x18\x03 \x01(\x0e\x32\x16.api.v1.Variables.ModeR\x04mode\x12\x10\n\x03key\x18\x04 \x01(\tR\x03key\"f\n\x04Type\x12\x14\n\x10TYPE_UNSPECIFIED\x10\x00\x12\x0f\n\x0bTYPE_SIMPLE\x10\x01\x12\x11\n\rTYPE_ADVANCED\x10\x02\x12\x0f\n\x0bTYPE_NATIVE\x10\x03\x12\x13\n\x0fTYPE_FILEPICKER\x10\x04\"?\n\x04Mode\x12\x14\n\x10MODE_UNSPECIFIED\x10\x00\x12\r\n\tMODE_READ\x10\x01\x12\x12\n\x0eMODE_READWRITE\x10\x02\x42\x36Z4github.com/superblocksteam/agent/types/gen/go/api/v1b\x06proto3')

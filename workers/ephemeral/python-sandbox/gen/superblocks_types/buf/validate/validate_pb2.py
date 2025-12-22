@@ -22,8 +22,8 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from gen.superblocks_types.buf.validate import expression_pb2 as buf_dot_validate_dot_expression__pb2
-from gen.superblocks_types.buf.validate.priv import private_pb2 as buf_dot_validate_dot_priv_dot_private__pb2
+from superblocks_types.buf.validate import expression_pb2 as buf_dot_validate_dot_expression__pb2
+from superblocks_types.buf.validate.priv import private_pb2 as buf_dot_validate_dot_priv_dot_private__pb2
 from google.protobuf import descriptor_pb2 as google_dot_protobuf_dot_descriptor__pb2
 from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2

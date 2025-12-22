@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from gen.superblocks_types.worker.v1 import sandbox_executor_transport_pb2 as executor_pb2
-from gen.superblocks_types.worker.v1 import sandbox_executor_transport_pb2_grpc as executor_pb2_grpc
+from superblocks_types.worker.v1 import sandbox_executor_transport_pb2 as executor_pb2
+from superblocks_types.worker.v1 import sandbox_executor_transport_pb2_grpc as executor_pb2_grpc
 from src.executor import Executor
 from src.superblocks import Object, loads
 from src.variables.variable_client import VariableClient

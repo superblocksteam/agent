@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from gen.superblocks_types.secrets.v1 import store_pb2 as secrets_dot_v1_dot_store__pb2
+from superblocks_types.secrets.v1 import store_pb2 as secrets_dot_v1_dot_store__pb2
 
 
 class StoreServiceStub(object):

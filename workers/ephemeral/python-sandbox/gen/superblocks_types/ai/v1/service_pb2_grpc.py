@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from gen.superblocks_types.ai.v1 import service_pb2 as ai_dot_v1_dot_service__pb2
-from gen.superblocks_types.common.v1 import health_pb2 as common_dot_v1_dot_health__pb2
+from superblocks_types.ai.v1 import service_pb2 as ai_dot_v1_dot_service__pb2
+from superblocks_types.common.v1 import health_pb2 as common_dot_v1_dot_health__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 

@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from gen.superblocks_types.event.v1 import service_pb2 as event_dot_v1_dot_service__pb2
-from gen.superblocks_types.syncer.v1 import service_pb2 as syncer_dot_v1_dot_service__pb2
+from superblocks_types.event.v1 import service_pb2 as event_dot_v1_dot_service__pb2
+from superblocks_types.syncer.v1 import service_pb2 as syncer_dot_v1_dot_service__pb2
 
 
 class IntakeServiceStub(object):

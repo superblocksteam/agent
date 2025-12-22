@@ -23,7 +23,7 @@ _sym_db = _symbol_database.Default()
 
 
 from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
-from gen.superblocks_types.secrets.v1 import secrets_pb2 as secrets_dot_v1_dot_secrets__pb2
+from superblocks_types.secrets.v1 import secrets_pb2 as secrets_dot_v1_dot_secrets__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14store/v1/store.proto\x12\x08store.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x18secrets/v1/secrets.proto\"F\n\x04Pair\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12,\n\x05value\x18\x02 \x01(\x0b\x32\x16.google.protobuf.ValueR\x05value\"5\n\x06Stores\x12+\n\x07secrets\x18\x01 \x03(\x0b\x32\x11.secrets.v1.StoreR\x07secretsB8Z6github.com/superblocksteam/agent/types/gen/go/store/v1b\x06proto3')
