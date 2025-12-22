@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from gen.superblocks_types.worker.v1 import sandbox_variable_store_pb2 as worker_dot_v1_dot_sandbox__variable__store__pb2
+from superblocks_types.worker.v1 import sandbox_variable_store_pb2 as worker_dot_v1_dot_sandbox__variable__store__pb2
 
 
 class SandboxVariableStoreServiceStub(object):

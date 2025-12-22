@@ -5,7 +5,7 @@ from concurrent import futures
 
 import grpc
 
-from gen.superblocks_types.worker.v1 import sandbox_executor_transport_pb2_grpc as executor_pb2_grpc
+from superblocks_types.worker.v1 import sandbox_executor_transport_pb2_grpc as executor_pb2_grpc
 from src.constants import (
     SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_MAX_WORKERS,
     SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT,

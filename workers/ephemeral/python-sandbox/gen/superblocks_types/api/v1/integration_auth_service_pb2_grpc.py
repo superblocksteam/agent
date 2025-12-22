@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from gen.superblocks_types.api.v1 import integration_auth_service_pb2 as api_dot_v1_dot_integration__auth__service__pb2
+from superblocks_types.api.v1 import integration_auth_service_pb2 as api_dot_v1_dot_integration__auth__service__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 

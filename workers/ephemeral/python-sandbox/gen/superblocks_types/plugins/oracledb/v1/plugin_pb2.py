@@ -22,7 +22,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from gen.superblocks_types.plugins.common.v1 import plugin_pb2 as plugins_dot_common_dot_v1_dot_plugin__pb2
+from superblocks_types.plugins.common.v1 import plugin_pb2 as plugins_dot_common_dot_v1_dot_plugin__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n plugins/oracledb/v1/plugin.proto\x12\x13plugins.oracledb.v1\x1a\x1eplugins/common/v1/plugin.proto\"\xcd\x05\n\x06Plugin\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12N\n\nconnection\x18\x02 \x01(\x0b\x32..plugins.oracledb.v1.Plugin.OracleDbConnectionR\nconnection\x12z\n\x1e\x64ynamic_workflow_configuration\x18\x03 \x01(\x0b\x32/.plugins.common.v1.DynamicWorkflowConfigurationH\x00R\x1c\x64ynamicWorkflowConfiguration\x88\x01\x01\x12\x38\n\x07run_sql\x18\x04 \x01(\x0b\x32\x1f.plugins.common.v1.SQLExecutionR\x06runSql\x12;\n\tbulk_edit\x18\x05 \x01(\x0b\x32\x1e.plugins.common.v1.SQLBulkEditR\x08\x62ulkEdit\x12=\n\toperation\x18\x06 \x01(\x0e\x32\x1f.plugins.common.v1.SQLOperationR\toperation\x1a\x89\x02\n\x12OracleDbConnection\x12\x19\n\x08host_url\x18\x01 \x01(\tR\x07hostUrl\x12\x12\n\x04port\x18\x02 \x01(\x05R\x04port\x12\x12\n\x04user\x18\x03 \x01(\tR\x04user\x12\x1a\n\x08password\x18\x04 \x01(\tR\x08password\x12)\n\x10\x64\x61tabase_service\x18\x05 \x01(\tR\x0f\x64\x61tabaseService\x12\x19\n\x08use_tcps\x18\x06 \x01(\x08R\x07useTcps\x12\'\n\x0f\x63onnection_type\x18\x07 \x01(\tR\x0e\x63onnectionType\x12%\n\x0e\x63onnection_url\x18\x08 \x01(\tR\rconnectionUrlB!\n\x1f_dynamic_workflow_configurationBCZAgithub.com/superblocksteam/agent/types/gen/go/plugins/oracledb/v1b\x06proto3')

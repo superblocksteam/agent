@@ -22,10 +22,10 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from gen.superblocks_types.buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
-from gen.superblocks_types.plugins.common.v1 import metadata_pb2 as plugins_dot_common_dot_v1_dot_metadata__pb2
-from gen.superblocks_types.plugins.kafka.v1 import plugin_pb2 as plugins_dot_kafka_dot_v1_dot_plugin__pb2
-from gen.superblocks_types.validate import validate_pb2 as validate_dot_validate__pb2
+from superblocks_types.buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
+from superblocks_types.plugins.common.v1 import metadata_pb2 as plugins_dot_common_dot_v1_dot_metadata__pb2
+from superblocks_types.plugins.kafka.v1 import plugin_pb2 as plugins_dot_kafka_dot_v1_dot_plugin__pb2
+from superblocks_types.validate import validate_pb2 as validate_dot_validate__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14\x61i/v1/metadata.proto\x12\x05\x61i.v1\x1a\x1b\x62uf/validate/validate.proto\x1a plugins/common/v1/metadata.proto\x1a\x1dplugins/kafka/v1/plugin.proto\x1a\x17validate/validate.proto\"\xcc\x06\n\x08Metadata\x12\x43\n\x07mariadb\x18\x01 \x01(\x0b\x32\'.plugins.common.v1.SQLMetadata.MinifiedH\x00R\x07mariadb\x12?\n\x05mssql\x18\x02 \x01(\x0b\x32\'.plugins.common.v1.SQLMetadata.MinifiedH\x00R\x05mssql\x12?\n\x05mysql\x18\x03 \x01(\x0b\x32\'.plugins.common.v1.SQLMetadata.MinifiedH\x00R\x05mysql\x12\x45\n\x08postgres\x18\x04 \x01(\x0b\x32\'.plugins.common.v1.SQLMetadata.MinifiedH\x00R\x08postgres\x12\x43\n\x07rockset\x18\x05 \x01(\x0b\x32\'.plugins.common.v1.SQLMetadata.MinifiedH\x00R\x07rockset\x12G\n\tsnowflake\x18\x06 \x01(\x0b\x32\'.plugins.common.v1.SQLMetadata.MinifiedH\x00R\tsnowflake\x12K\n\x0b\x63ockroachdb\x18\x07 \x01(\x0b\x32\'.plugins.common.v1.SQLMetadata.MinifiedH\x00R\x0b\x63ockroachdb\x12;\n\x05kafka\x18\x08 \x01(\x0b\x32#.plugins.kafka.v1.Metadata.MinifiedH\x00R\x05kafka\x12\x43\n\tconfluent\x18\t \x01(\x0b\x32#.plugins.kafka.v1.Metadata.MinifiedH\x00R\tconfluent\x12\x37\n\x03msk\x18\n \x01(\x0b\x32#.plugins.kafka.v1.Metadata.MinifiedH\x00R\x03msk\x12\x41\n\x08redpanda\x18\x0b \x01(\x0b\x32#.plugins.kafka.v1.Metadata.MinifiedH\x00R\x08redpanda\x12\x45\n\naivenkafka\x18\x0c \x01(\x0b\x32#.plugins.kafka.v1.Metadata.MinifiedH\x00R\naivenkafkaB\x12\n\x06\x63onfig\x12\x08\xf8\x42\x01\xbaH\x02\x08\x01\x42\x35Z3github.com/superblocksteam/agent/types/gen/go/ai/v1b\x06proto3')

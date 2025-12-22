@@ -6,8 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-# Add the parent directory to the path so we can import from the sandbox modules
+# Add the parent directory and gen/ to the path so we can import from the sandbox modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "gen"))
 
 
 @pytest.fixture

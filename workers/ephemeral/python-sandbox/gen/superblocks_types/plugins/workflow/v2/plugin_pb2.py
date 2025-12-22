@@ -22,7 +22,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from gen.superblocks_types.common.v1 import plugin_pb2 as common_dot_v1_dot_plugin__pb2
+from superblocks_types.common.v1 import plugin_pb2 as common_dot_v1_dot_plugin__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n plugins/workflow/v2/plugin.proto\x12\x13plugins.workflow.v2\x1a\x16\x63ommon/v1/plugin.proto\"S\n\x06Plugin\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x39\n\nparameters\x18\x02 \x01(\x0b\x32\x19.common.v1.HttpParametersR\nparametersBCZAgithub.com/superblocksteam/agent/types/gen/go/plugins/workflow/v2b\x06proto3')

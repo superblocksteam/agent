@@ -22,7 +22,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from gen.superblocks_types.common.v1 import plugin_pb2 as common_dot_v1_dot_plugin__pb2
+from superblocks_types.common.v1 import plugin_pb2 as common_dot_v1_dot_plugin__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fplugins/graphql/v1/plugin.proto\x12\x12plugins.graphql.v1\x1a\x16\x63ommon/v1/plugin.proto\"v\n\x06\x43ustom\x12\x31\n\tvariables\x18\x01 \x01(\x0b\x32\x13.common.v1.PropertyR\tvariables\x12\x39\n\rrequestFormat\x18\x02 \x01(\x0b\x32\x13.common.v1.PropertyR\rrequestFormat\"\xd5\x02\n\x06Plugin\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12-\n\x07headers\x18\x02 \x03(\x0b\x32\x13.common.v1.PropertyR\x07headers\x12\x12\n\x04\x62ody\x18\x03 \x01(\tR\x04\x62ody\x12\x37\n\x06\x63ustom\x18\x04 \x01(\x0b\x32\x1a.plugins.graphql.v1.CustomH\x00R\x06\x63ustom\x88\x01\x01\x12P\n\x13superblocksMetadata\x18\x05 \x01(\x0b\x32\x1e.common.v1.SuperblocksMetadataR\x13superblocksMetadata\x12,\n\x11verboseHttpOutput\x18\x06 \x01(\x08R\x11verboseHttpOutput\x12\x30\n\x13\x66\x61ilOnGraphqlErrors\x18\x07 \x01(\x08R\x13\x66\x61ilOnGraphqlErrorsB\t\n\x07_customBBZ@github.com/superblocksteam/agent/types/gen/go/plugins/graphql/v1b\x06proto3')

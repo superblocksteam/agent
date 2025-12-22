@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from gen.superblocks_types.security.v1 import service_pb2 as security_dot_v1_dot_service__pb2
+from superblocks_types.security.v1 import service_pb2 as security_dot_v1_dot_service__pb2
 
 
 class SignatureServiceStub(object):
