@@ -102,7 +102,8 @@ proto.worker.v1.ExecuteRequest.toObject = function(includeInstance, msg) {
     timeoutMs: jspb.Message.getFieldWithDefault(msg, 3, 0),
     executionId: jspb.Message.getFieldWithDefault(msg, 4, ""),
     variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 5, ""),
-    variablesJson: jspb.Message.getFieldWithDefault(msg, 6, "")
+    variablesJson: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    filesMap: (f = msg.getFilesMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -162,6 +163,12 @@ proto.worker.v1.ExecuteRequest.deserializeBinaryFromReader = function(msg, reade
     case 6:
       var value = /** @type {string} */ (reader.readString());
       msg.setVariablesJson(value);
+      break;
+    case 7:
+      var value = msg.getFilesMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+         });
       break;
     default:
       reader.skipField();
@@ -233,6 +240,10 @@ proto.worker.v1.ExecuteRequest.serializeBinaryToWriter = function(message, write
       6,
       f
     );
+  }
+  f = message.getFilesMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(7, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -342,6 +353,29 @@ proto.worker.v1.ExecuteRequest.prototype.getVariablesJson = function() {
  */
 proto.worker.v1.ExecuteRequest.prototype.setVariablesJson = function(value) {
   return jspb.Message.setProto3StringField(this, 6, value);
+};
+
+
+/**
+ * map<string, string> files = 7;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,string>}
+ */
+proto.worker.v1.ExecuteRequest.prototype.getFilesMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,string>} */ (
+      jspb.Message.getMapField(this, 7, opt_noLazyCreate,
+      null));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.worker.v1.ExecuteRequest} returns this
+ */
+proto.worker.v1.ExecuteRequest.prototype.clearFilesMap = function() {
+  this.getFilesMap().clear();
+  return this;
 };
 
 

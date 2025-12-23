@@ -212,3 +212,51 @@ export namespace SetVariablesResponse {
         success: boolean,
     }
 }
+
+export class FetchFileRequest extends jspb.Message { 
+    getExecutionId(): string;
+    setExecutionId(value: string): FetchFileRequest;
+    getPath(): string;
+    setPath(value: string): FetchFileRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): FetchFileRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: FetchFileRequest): FetchFileRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: FetchFileRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): FetchFileRequest;
+    static deserializeBinaryFromReader(message: FetchFileRequest, reader: jspb.BinaryReader): FetchFileRequest;
+}
+
+export namespace FetchFileRequest {
+    export type AsObject = {
+        executionId: string,
+        path: string,
+    }
+}
+
+export class FetchFileResponse extends jspb.Message { 
+    getContents(): Uint8Array | string;
+    getContents_asU8(): Uint8Array;
+    getContents_asB64(): string;
+    setContents(value: Uint8Array | string): FetchFileResponse;
+    getError(): string;
+    setError(value: string): FetchFileResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): FetchFileResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: FetchFileResponse): FetchFileResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: FetchFileResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): FetchFileResponse;
+    static deserializeBinaryFromReader(message: FetchFileResponse, reader: jspb.BinaryReader): FetchFileResponse;
+}
+
+export namespace FetchFileResponse {
+    export type AsObject = {
+        contents: Uint8Array | string,
+        error: string,
+    }
+}

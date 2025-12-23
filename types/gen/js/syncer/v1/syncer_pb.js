@@ -25,7 +25,7 @@ var ai_v1_metadata_pb = require('../../ai/v1/metadata_pb');
 goog.object.extend(proto, ai_v1_metadata_pb);
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 goog.object.extend(proto, buf_validate_validate_pb);
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb');
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
 var validate_validate_pb = require('../../validate/validate_pb');
 goog.object.extend(proto, validate_validate_pb);

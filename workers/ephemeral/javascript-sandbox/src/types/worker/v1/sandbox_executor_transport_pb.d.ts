@@ -20,6 +20,9 @@ export class ExecuteRequest extends jspb.Message {
     getVariablesJson(): string;
     setVariablesJson(value: string): ExecuteRequest;
 
+    getFilesMap(): jspb.Map<string, string>;
+    clearFilesMap(): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ExecuteRequest.AsObject;
     static toObject(includeInstance: boolean, msg: ExecuteRequest): ExecuteRequest.AsObject;
@@ -38,6 +41,8 @@ export namespace ExecuteRequest {
         executionId: string,
         variableStoreAddress: string,
         variablesJson: string,
+
+        filesMap: Array<[string, string]>,
     }
 }
 

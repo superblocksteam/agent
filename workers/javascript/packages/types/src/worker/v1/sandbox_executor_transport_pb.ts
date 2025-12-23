@@ -54,6 +54,14 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
    */
   variablesJson = "";
 
+  /**
+   * Map of tree paths to remote file paths for filepicker support
+   * e.g. {"FilePicker1.files.0": "/path/to/file"} - computed by task-manager
+   *
+   * @generated from field: map<string, string> files = 7;
+   */
+  files: { [key: string]: string } = {};
+
   constructor(data?: PartialMessage<ExecuteRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -68,6 +76,7 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
     { no: 4, name: "execution_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "variable_store_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "variables_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "files", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteRequest {

@@ -23,5 +23,5 @@ var global =
 
 var event_v2_cloudevent_pb = require('../../event/v2/cloudevent_pb');
 goog.object.extend(proto, event_v2_cloudevent_pb);
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb');
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);

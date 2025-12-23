@@ -7,7 +7,7 @@ var ai_v1_ai_pb = require('../../ai/v1/ai_pb');
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 var common_v1_health_pb = require('../../common/v1/health_pb');
 var google_api_annotations_pb = require('../../google/api/annotations_pb');
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb');
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
 var validate_validate_pb = require('../../validate/validate_pb');
 

@@ -29,7 +29,7 @@ var event_v1_service_pb = require('../../event/v1/service_pb');
 goog.object.extend(proto, event_v1_service_pb);
 var google_api_annotations_pb = require('../../google/api/annotations_pb');
 goog.object.extend(proto, google_api_annotations_pb);
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
 var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
 goog.object.extend(proto, protoc$gen$openapiv2_options_annotations_pb);

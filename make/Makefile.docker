@@ -1,14 +1,15 @@
 DOCKER_LABELS    = --label org.opencontainers.image.version=$(SERVICE_VERSION) --label org.opencontainers.image.revision=$(shell git rev-parse HEAD) --label org.opencontainers.image.created=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 DOCKER_SECRETS   =
 DOCKERFILE       = Dockerfile
-DOCKER_OPTIONS   = 
+DOCKER_OPTIONS   =
+DOCKER_PLATFORM  ?= linux/x86_64
 IMAGE_REGISTRY   = ghcr.io/superblocksteam
 IMAGE_REPOSITORY = $(IMAGE_REGISTRY)/$(SERVICE_NAME)
 
 .PHONY: build-docker
 build-docker:
 	docker buildx build \
-		--platform linux/x86_64 \
+		--platform $(DOCKER_PLATFORM) \
 		$(DOCKER_SECRETS) \
 		$(DOCKER_LABELS) \
 		$(DOCKER_OPTIONS) \

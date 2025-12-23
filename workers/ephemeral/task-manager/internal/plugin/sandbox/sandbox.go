@@ -61,6 +61,10 @@ func NewSandboxPlugin(opts *Options) (*SandboxPlugin, error) {
 		grpc.WithConnectParams(grpc.ConnectParams{
 			MinConnectTimeout: 5 * time.Second, // Minimum timeout for connection attempts
 		}),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(100*1024*1024), // 100MB max response
+			grpc.MaxCallSendMsgSize(30*1024*1024),  // 30MB max request
+		),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to sandbox server: %w", err)
@@ -106,6 +110,17 @@ func (p *SandboxPlugin) Execute(ctx context.Context, props *transportv1.Request_
 		}
 	}
 
+	// Parse context JSON to build superblocksFiles map
+	var contextMap map[string]interface{}
+	if err := json.Unmarshal([]byte(contextJSON), &contextMap); err != nil {
+		p.logger.Error("failed to parse context JSON for file paths", zap.Error(err))
+		contextMap = make(map[string]interface{})
+	}
+
+	// Build superblocksFiles map (treePath -> remotePath)
+	// This does the tree traversal in Go instead of in the sandbox
+	superblocksFiles := p.buildSuperblocksFiles(contextMap, props)
+
 	output := &apiv1.Output{
 		Request:   code,
 		RequestV2: &apiv1.Output_Request{Summary: code},
@@ -123,6 +138,8 @@ func (p *SandboxPlugin) Execute(ctx context.Context, props *transportv1.Request_
 				ExecutionId:          props.GetExecutionId(),
 				VariableStoreAddress: p.variableStoreAddress,
 				VariablesJson:        variablesJSON,
+				// Pre-computed map of treePath -> remotePath for filepicker objects
+				Files: superblocksFiles,
 			})
 		},
 		nil,
@@ -410,7 +427,7 @@ func (p *SandboxPlugin) buildContextJSON(ctx context.Context, props *transportv1
 // buildVariablesJSON builds the variables JSON for the sandbox
 func (p *SandboxPlugin) buildVariablesJSON(props *transportv1.Request_Data_Data_Props) (string, error) {
 	variables := props.GetVariables()
-	if variables == nil || len(variables) == 0 {
+	if len(variables) == 0 {
 		return "{}", nil
 	}
 
@@ -419,8 +436,8 @@ func (p *SandboxPlugin) buildVariablesJSON(props *transportv1.Request_Data_Data_
 		if variable != nil {
 			result[key] = map[string]interface{}{
 				"key":  variable.GetKey(),
-				"type": int32(variable.GetType()),
-				"mode": int32(variable.GetMode()),
+				"type": variable.GetType().String(),
+				"mode": variable.GetMode().String(),
 			}
 		}
 	}
@@ -467,4 +484,144 @@ func convertToValue(v interface{}) *structpb.Value {
 	default:
 		return structpb.NewStringValue(fmt.Sprintf("%v", v))
 	}
+}
+
+// isReadableFile checks if an object is a filepicker file object.
+// A readable file has specific keys like name, extension, type, encoding, $superblocksId, size, previewUrl, path.
+func isReadableFile(obj map[string]interface{}) bool {
+	if len(obj) == 0 {
+		return false
+	}
+	for key, value := range obj {
+		switch key {
+		case "name", "extension", "type", "encoding", "$superblocksId":
+			if _, ok := value.(string); !ok {
+				return false
+			}
+		case "size":
+			// JSON unmarshals numbers as float64
+			if _, ok := value.(float64); !ok {
+				return false
+			}
+		case "previewUrl", "path":
+			// These can be string or nil/missing
+			if value != nil {
+				if _, ok := value.(string); !ok {
+					return false
+				}
+			}
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// getFilePaths recursively finds all filepicker objects in a tree and returns their paths.
+func getFilePaths(root interface{}, path []string) [][]string {
+	var paths [][]string
+
+	if root == nil {
+		return paths
+	}
+
+	switch v := root.(type) {
+	case []interface{}:
+		for i, item := range v {
+			childPath := append(append([]string{}, path...), fmt.Sprintf("%d", i))
+			paths = append(paths, getFilePaths(item, childPath)...)
+		}
+	case map[string]interface{}:
+		if isReadableFile(v) {
+			return [][]string{path}
+		}
+		for key, value := range v {
+			childPath := append(append([]string{}, path...), key)
+			if valueMap, ok := value.(map[string]interface{}); ok {
+				if isReadableFile(valueMap) {
+					paths = append(paths, childPath)
+				} else {
+					paths = append(paths, getFilePaths(value, childPath)...)
+				}
+			} else if valueArr, ok := value.([]interface{}); ok {
+				for i, item := range valueArr {
+					itemPath := append(append([]string{}, childPath...), fmt.Sprintf("%d", i))
+					paths = append(paths, getFilePaths(item, itemPath)...)
+				}
+			}
+		}
+	}
+
+	return paths
+}
+
+// getValueAtPath retrieves a value from a nested map/slice structure using a path.
+func getValueAtPath(root interface{}, path []string) interface{} {
+	current := root
+	for _, key := range path {
+		switch v := current.(type) {
+		case map[string]interface{}:
+			current = v[key]
+		case []interface{}:
+			var idx int
+			if _, err := fmt.Sscanf(key, "%d", &idx); err != nil || idx < 0 || idx >= len(v) {
+				return nil
+			}
+			current = v[idx]
+		default:
+			return nil
+		}
+	}
+	return current
+}
+
+// buildSuperblocksFiles builds a map of tree paths to remote file paths.
+// This is the $superblocksFiles map that the sandbox uses to set up readContents/readContentsAsync.
+func (p *SandboxPlugin) buildSuperblocksFiles(context map[string]interface{}, props *transportv1.Request_Data_Data_Props) map[string]string {
+	files := props.GetFiles()
+	if len(files) == 0 {
+		return nil
+	}
+
+	// Build a map of originalname ($superblocksId) -> remote path
+	filePathMap := make(map[string]string)
+	for _, file := range files {
+		if file.GetOriginalname() != "" && file.GetPath() != "" {
+			filePathMap[file.GetOriginalname()] = file.GetPath()
+		}
+	}
+
+	// Find all filepicker objects in globals and outputs
+	superblocksFiles := make(map[string]string)
+
+	globals, _ := context["globals"].(map[string]interface{})
+	outputs, _ := context["outputs"].(map[string]interface{})
+
+	// Traverse globals
+	for _, filePath := range getFilePaths(globals, nil) {
+		fileObj := getValueAtPath(globals, filePath)
+		if fileMap, ok := fileObj.(map[string]interface{}); ok {
+			if superblocksId, ok := fileMap["$superblocksId"].(string); ok {
+				if remotePath, exists := filePathMap[superblocksId]; exists {
+					treePath := strings.Join(filePath, ".")
+					superblocksFiles[treePath] = remotePath
+				}
+			}
+		}
+	}
+
+	// Traverse outputs
+	for _, filePath := range getFilePaths(outputs, nil) {
+		fileObj := getValueAtPath(outputs, filePath)
+		if fileMap, ok := fileObj.(map[string]interface{}); ok {
+			if superblocksId, ok := fileMap["$superblocksId"].(string); ok {
+				if remotePath, exists := filePathMap[superblocksId]; exists {
+					treePath := strings.Join(filePath, ".")
+					superblocksFiles[treePath] = remotePath
+				}
+			}
+		}
+	}
+
+	return superblocksFiles
 }

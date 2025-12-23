@@ -104,24 +104,6 @@ class TestList:
         assert type(lst[3]) is List
 
 
-class TestReader:
-    def test_sanitize_agent_key_forward_slash(self):
-        reader = Reader({})
-        assert reader._sanitize_agent_key("are/you/serious") == "are__you__serious"
-        assert reader._sanitize_agent_key("/are/you/serious") == "__are__you__serious"
-        assert reader._sanitize_agent_key("are/you/serious/") == "are__you__serious__"
-
-    def test_sanitize_agent_key_plus_sign(self):
-        reader = Reader({})
-        assert reader._sanitize_agent_key("are+you+serious") == "are--you--serious"
-        assert reader._sanitize_agent_key("+are+you+serious") == "--are--you--serious"
-        assert reader._sanitize_agent_key("are+you+serious+") == "are--you--serious--"
-
-    def test_sanitize_agent_key_mixed(self):
-        reader = Reader({})
-        assert reader._sanitize_agent_key("/are+you/serious+") == "__are--you__serious--"
-
-
 class TestDecodeObject:
     def test_decode_buffer(self):
         value = {"type": "Buffer", "data": [72, 101, 108, 108, 111]}

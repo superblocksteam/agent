@@ -16,5 +16,8 @@
         "skipLibCheck": true,
         "declarationMap": true,
     },
-    "exclude": ["**/*.test.ts", "**/lib"]
+    "exclude": [
+        "**/*.test.ts",
+        "**/lib"
+    ]
 }

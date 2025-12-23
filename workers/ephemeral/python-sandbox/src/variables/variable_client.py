@@ -95,3 +95,27 @@ class VariableClient:
             self.buffer.clear()
         except Exception as e:
             print(f"Error flushing variables: {e}")
+
+    def fetch_file(self, path: str) -> bytes:
+        """Fetch file contents from the task-manager.
+
+        The task-manager handles authentication with the orchestrator's file server.
+
+        Args:
+            path: The file path/location on the file server
+
+        Returns:
+            Raw file contents as bytes
+        """
+        if not self.stub:
+            raise Exception("Variable client not connected")
+        try:
+            resp = self.stub.FetchFile(variable_store_pb2.FetchFileRequest(
+                execution_id=self.execution_id,
+                path=path,
+            ))
+            if resp.error:
+                raise Exception(f"Failed to fetch file: {resp.error}")
+            return resp.contents
+        except Exception as e:
+            raise Exception(f"Error fetching file {path}: {e}")

@@ -320,26 +320,150 @@ func TestCleanupExecution(t *testing.T) {
 	transport.variableStore["exec-2"] = map[string]string{"key": "value"}
 	transport.variableStoreLock.Unlock()
 
+	// Add file contexts
+	transport.SetFileContext("exec-1", &ExecutionFileContext{
+		FileServerURL: "http://example.com",
+		AgentKey:      "test-key",
+	})
+	transport.SetFileContext("exec-2", &ExecutionFileContext{
+		FileServerURL: "http://example.com",
+		AgentKey:      "test-key",
+	})
+
 	// Verify data exists
 	if len(transport.variableStore) != 2 {
 		t.Fatalf("expected 2 executions in store, got %d", len(transport.variableStore))
+	}
+	if len(transport.fileContexts) != 2 {
+		t.Fatalf("expected 2 file contexts, got %d", len(transport.fileContexts))
 	}
 
 	// Cleanup one execution
 	transport.cleanupExecution("exec-1")
 
-	// Verify only exec-2 remains
+	// Verify only exec-2 remains in variable store
 	if len(transport.variableStore) != 1 {
 		t.Errorf("expected 1 execution in store after cleanup, got %d", len(transport.variableStore))
 	}
 
 	if _, ok := transport.variableStore["exec-1"]; ok {
-		t.Error("exec-1 should have been removed")
+		t.Error("exec-1 should have been removed from variable store")
 	}
 
 	if _, ok := transport.variableStore["exec-2"]; !ok {
-		t.Error("exec-2 should still exist")
+		t.Error("exec-2 should still exist in variable store")
 	}
+
+	// Verify only exec-2 remains in file contexts
+	if len(transport.fileContexts) != 1 {
+		t.Errorf("expected 1 file context after cleanup, got %d", len(transport.fileContexts))
+	}
+
+	if transport.GetFileContext("exec-1") != nil {
+		t.Error("exec-1 file context should have been removed")
+	}
+
+	if transport.GetFileContext("exec-2") == nil {
+		t.Error("exec-2 file context should still exist")
+	}
+}
+
+func TestGetSetFileContext(t *testing.T) {
+	logger := zap.NewNop()
+	client := r.NewClient(&r.Options{
+		Addr: "localhost:6379",
+	})
+	defer client.Close()
+
+	options := &Options{
+		RedisClient:   client,
+		StreamKeys:    []string{"test-stream"},
+		Logger:        logger,
+		ExecutionPool: 1,
+	}
+
+	transport := NewRedisTransport(options)
+
+	// Initially no file context
+	if transport.GetFileContext("exec-1") != nil {
+		t.Error("should return nil for non-existent execution")
+	}
+
+	// Set file context
+	ctx := &ExecutionFileContext{
+		FileServerURL: "http://localhost:8080/v2/files",
+		AgentKey:      "test-agent-key",
+	}
+	transport.SetFileContext("exec-1", ctx)
+
+	// Get file context
+	result := transport.GetFileContext("exec-1")
+	if result == nil {
+		t.Fatal("GetFileContext returned nil after SetFileContext")
+	}
+
+	if result.FileServerURL != "http://localhost:8080/v2/files" {
+		t.Errorf("FileServerURL = %v, want http://localhost:8080/v2/files", result.FileServerURL)
+	}
+
+	if result.AgentKey != "test-agent-key" {
+		t.Errorf("AgentKey = %v, want test-agent-key", result.AgentKey)
+	}
+
+	// Overwrite file context
+	ctx2 := &ExecutionFileContext{
+		FileServerURL: "http://new-url/v2/files",
+		AgentKey:      "new-key",
+	}
+	transport.SetFileContext("exec-1", ctx2)
+
+	result2 := transport.GetFileContext("exec-1")
+	if result2.FileServerURL != "http://new-url/v2/files" {
+		t.Errorf("FileServerURL after overwrite = %v, want http://new-url/v2/files", result2.FileServerURL)
+	}
+}
+
+func TestFileContextConcurrency(t *testing.T) {
+	logger := zap.NewNop()
+	client := r.NewClient(&r.Options{
+		Addr: "localhost:6379",
+	})
+	defer client.Close()
+
+	options := &Options{
+		RedisClient:   client,
+		StreamKeys:    []string{"test-stream"},
+		Logger:        logger,
+		ExecutionPool: 1,
+	}
+
+	transport := NewRedisTransport(options)
+
+	var wg sync.WaitGroup
+	iterations := 100
+
+	// Concurrent writes
+	for i := 0; i < iterations; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			transport.SetFileContext("exec", &ExecutionFileContext{
+				FileServerURL: "http://example.com",
+				AgentKey:      "key",
+			})
+		}(i)
+	}
+
+	// Concurrent reads
+	for i := 0; i < iterations; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			_ = transport.GetFileContext("exec")
+		}(i)
+	}
+
+	wg.Wait()
 }
 
 func TestSignalEphemeralDone(t *testing.T) {

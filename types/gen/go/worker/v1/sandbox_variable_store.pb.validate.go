@@ -1009,3 +1009,213 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = SetVariablesResponseValidationError{}
+
+// Validate checks the field values on FetchFileRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *FetchFileRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on FetchFileRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// FetchFileRequestMultiError, or nil if none found.
+func (m *FetchFileRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *FetchFileRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ExecutionId
+
+	// no validation rules for Path
+
+	if len(errors) > 0 {
+		return FetchFileRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// FetchFileRequestMultiError is an error wrapping multiple validation errors
+// returned by FetchFileRequest.ValidateAll() if the designated constraints
+// aren't met.
+type FetchFileRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FetchFileRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FetchFileRequestMultiError) AllErrors() []error { return m }
+
+// FetchFileRequestValidationError is the validation error returned by
+// FetchFileRequest.Validate if the designated constraints aren't met.
+type FetchFileRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FetchFileRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FetchFileRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FetchFileRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FetchFileRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FetchFileRequestValidationError) ErrorName() string { return "FetchFileRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e FetchFileRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFetchFileRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FetchFileRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FetchFileRequestValidationError{}
+
+// Validate checks the field values on FetchFileResponse with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *FetchFileResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on FetchFileResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// FetchFileResponseMultiError, or nil if none found.
+func (m *FetchFileResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *FetchFileResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Contents
+
+	// no validation rules for Error
+
+	if len(errors) > 0 {
+		return FetchFileResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// FetchFileResponseMultiError is an error wrapping multiple validation errors
+// returned by FetchFileResponse.ValidateAll() if the designated constraints
+// aren't met.
+type FetchFileResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FetchFileResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FetchFileResponseMultiError) AllErrors() []error { return m }
+
+// FetchFileResponseValidationError is the validation error returned by
+// FetchFileResponse.Validate if the designated constraints aren't met.
+type FetchFileResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FetchFileResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FetchFileResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FetchFileResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FetchFileResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FetchFileResponseValidationError) ErrorName() string {
+	return "FetchFileResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e FetchFileResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFetchFileResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FetchFileResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FetchFileResponseValidationError{}

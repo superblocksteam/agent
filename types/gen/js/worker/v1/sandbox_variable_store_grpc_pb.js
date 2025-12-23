@@ -4,6 +4,28 @@
 var grpc = require('@grpc/grpc-js');
 var worker_v1_sandbox_variable_store_pb = require('../../worker/v1/sandbox_variable_store_pb');
 
+function serialize_worker_v1_FetchFileRequest(arg) {
+  if (!(arg instanceof worker_v1_sandbox_variable_store_pb.FetchFileRequest)) {
+    throw new Error('Expected argument of type worker.v1.FetchFileRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_worker_v1_FetchFileRequest(buffer_arg) {
+  return worker_v1_sandbox_variable_store_pb.FetchFileRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_worker_v1_FetchFileResponse(arg) {
+  if (!(arg instanceof worker_v1_sandbox_variable_store_pb.FetchFileResponse)) {
+    throw new Error('Expected argument of type worker.v1.FetchFileResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_worker_v1_FetchFileResponse(buffer_arg) {
+  return worker_v1_sandbox_variable_store_pb.FetchFileResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_worker_v1_GetVariableRequest(arg) {
   if (!(arg instanceof worker_v1_sandbox_variable_store_pb.GetVariableRequest)) {
     throw new Error('Expected argument of type worker.v1.GetVariableRequest');
@@ -137,6 +159,19 @@ var SandboxVariableStoreServiceService = exports.SandboxVariableStoreServiceServ
     requestDeserialize: deserialize_worker_v1_SetVariablesRequest,
     responseSerialize: serialize_worker_v1_SetVariablesResponse,
     responseDeserialize: deserialize_worker_v1_SetVariablesResponse,
+  },
+  // FetchFile fetches file contents from the orchestrator's file server.
+// The task-manager handles authentication with the orchestrator.
+fetchFile: {
+    path: '/worker.v1.SandboxVariableStoreService/FetchFile',
+    requestStream: false,
+    responseStream: false,
+    requestType: worker_v1_sandbox_variable_store_pb.FetchFileRequest,
+    responseType: worker_v1_sandbox_variable_store_pb.FetchFileResponse,
+    requestSerialize: serialize_worker_v1_FetchFileRequest,
+    requestDeserialize: deserialize_worker_v1_FetchFileRequest,
+    responseSerialize: serialize_worker_v1_FetchFileResponse,
+    responseDeserialize: deserialize_worker_v1_FetchFileResponse,
   },
 };
 

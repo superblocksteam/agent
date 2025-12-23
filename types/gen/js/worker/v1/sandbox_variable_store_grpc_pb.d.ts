@@ -12,6 +12,7 @@ interface ISandboxVariableStoreServiceService extends grpc.ServiceDefinition<grp
     setVariable: ISandboxVariableStoreServiceService_ISetVariable;
     getVariables: ISandboxVariableStoreServiceService_IGetVariables;
     setVariables: ISandboxVariableStoreServiceService_ISetVariables;
+    fetchFile: ISandboxVariableStoreServiceService_IFetchFile;
 }
 
 interface ISandboxVariableStoreServiceService_IGetVariable extends grpc.MethodDefinition<worker_v1_sandbox_variable_store_pb.GetVariableRequest, worker_v1_sandbox_variable_store_pb.GetVariableResponse> {
@@ -50,6 +51,15 @@ interface ISandboxVariableStoreServiceService_ISetVariables extends grpc.MethodD
     responseSerialize: grpc.serialize<worker_v1_sandbox_variable_store_pb.SetVariablesResponse>;
     responseDeserialize: grpc.deserialize<worker_v1_sandbox_variable_store_pb.SetVariablesResponse>;
 }
+interface ISandboxVariableStoreServiceService_IFetchFile extends grpc.MethodDefinition<worker_v1_sandbox_variable_store_pb.FetchFileRequest, worker_v1_sandbox_variable_store_pb.FetchFileResponse> {
+    path: "/worker.v1.SandboxVariableStoreService/FetchFile";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<worker_v1_sandbox_variable_store_pb.FetchFileRequest>;
+    requestDeserialize: grpc.deserialize<worker_v1_sandbox_variable_store_pb.FetchFileRequest>;
+    responseSerialize: grpc.serialize<worker_v1_sandbox_variable_store_pb.FetchFileResponse>;
+    responseDeserialize: grpc.deserialize<worker_v1_sandbox_variable_store_pb.FetchFileResponse>;
+}
 
 export const SandboxVariableStoreServiceService: ISandboxVariableStoreServiceService;
 
@@ -58,6 +68,7 @@ export interface ISandboxVariableStoreServiceServer extends grpc.UntypedServiceI
     setVariable: grpc.handleUnaryCall<worker_v1_sandbox_variable_store_pb.SetVariableRequest, worker_v1_sandbox_variable_store_pb.SetVariableResponse>;
     getVariables: grpc.handleUnaryCall<worker_v1_sandbox_variable_store_pb.GetVariablesRequest, worker_v1_sandbox_variable_store_pb.GetVariablesResponse>;
     setVariables: grpc.handleUnaryCall<worker_v1_sandbox_variable_store_pb.SetVariablesRequest, worker_v1_sandbox_variable_store_pb.SetVariablesResponse>;
+    fetchFile: grpc.handleUnaryCall<worker_v1_sandbox_variable_store_pb.FetchFileRequest, worker_v1_sandbox_variable_store_pb.FetchFileResponse>;
 }
 
 export interface ISandboxVariableStoreServiceClient {
@@ -73,6 +84,9 @@ export interface ISandboxVariableStoreServiceClient {
     setVariables(request: worker_v1_sandbox_variable_store_pb.SetVariablesRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.SetVariablesResponse) => void): grpc.ClientUnaryCall;
     setVariables(request: worker_v1_sandbox_variable_store_pb.SetVariablesRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.SetVariablesResponse) => void): grpc.ClientUnaryCall;
     setVariables(request: worker_v1_sandbox_variable_store_pb.SetVariablesRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.SetVariablesResponse) => void): grpc.ClientUnaryCall;
+    fetchFile(request: worker_v1_sandbox_variable_store_pb.FetchFileRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.FetchFileResponse) => void): grpc.ClientUnaryCall;
+    fetchFile(request: worker_v1_sandbox_variable_store_pb.FetchFileRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.FetchFileResponse) => void): grpc.ClientUnaryCall;
+    fetchFile(request: worker_v1_sandbox_variable_store_pb.FetchFileRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.FetchFileResponse) => void): grpc.ClientUnaryCall;
 }
 
 export class SandboxVariableStoreServiceClient extends grpc.Client implements ISandboxVariableStoreServiceClient {
@@ -89,4 +103,7 @@ export class SandboxVariableStoreServiceClient extends grpc.Client implements IS
     public setVariables(request: worker_v1_sandbox_variable_store_pb.SetVariablesRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.SetVariablesResponse) => void): grpc.ClientUnaryCall;
     public setVariables(request: worker_v1_sandbox_variable_store_pb.SetVariablesRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.SetVariablesResponse) => void): grpc.ClientUnaryCall;
     public setVariables(request: worker_v1_sandbox_variable_store_pb.SetVariablesRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.SetVariablesResponse) => void): grpc.ClientUnaryCall;
+    public fetchFile(request: worker_v1_sandbox_variable_store_pb.FetchFileRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.FetchFileResponse) => void): grpc.ClientUnaryCall;
+    public fetchFile(request: worker_v1_sandbox_variable_store_pb.FetchFileRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.FetchFileResponse) => void): grpc.ClientUnaryCall;
+    public fetchFile(request: worker_v1_sandbox_variable_store_pb.FetchFileRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_variable_store_pb.FetchFileResponse) => void): grpc.ClientUnaryCall;
 }

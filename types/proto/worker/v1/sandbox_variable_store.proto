@@ -9,6 +9,9 @@ service SandboxVariableStoreService {
   rpc SetVariable(SetVariableRequest) returns (SetVariableResponse);
   rpc GetVariables(GetVariablesRequest) returns (GetVariablesResponse);
   rpc SetVariables(SetVariablesRequest) returns (SetVariablesResponse);
+  // FetchFile fetches file contents from the orchestrator's file server.
+  // The task-manager handles authentication with the orchestrator.
+  rpc FetchFile(FetchFileRequest) returns (FetchFileResponse);
 }
 
 // Variable operations
@@ -53,4 +56,15 @@ message KeyValue {
 
 message SetVariablesResponse {
   bool success = 1;
+}
+
+// File operations - sandbox requests files from task-manager
+message FetchFileRequest {
+  string execution_id = 1;
+  string path = 2;  // The file path/location on the orchestrator
+}
+
+message FetchFileResponse {
+  bytes contents = 1;  // Raw file contents
+  string error = 2;    // Error message if fetch failed
 }

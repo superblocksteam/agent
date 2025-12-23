@@ -44,12 +44,17 @@ class SandboxExecutorServicer(executor_pb2_grpc.SandboxExecutorTransportServiceS
                     request.execution_id
                 )
 
+            # Get pre-computed superblocksFiles map (treePath -> remotePath)
+            # This is a protobuf map field, convert to dict
+            superblocks_files = dict(request.files) if request.files else {}
+
             result, stdout, stderr, exit_code = self.executor.run(
                 script,
                 ctx,
                 timeout_ms,
                 var_client,
                 request.variables_json or "{}",
+                superblocks_files=superblocks_files,
             )
 
             return executor_pb2.ExecuteResponse(

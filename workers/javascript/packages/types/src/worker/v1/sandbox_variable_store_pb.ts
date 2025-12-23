@@ -391,3 +391,97 @@ export class SetVariablesResponse extends Message<SetVariablesResponse> {
   }
 }
 
+/**
+ * File operations - sandbox requests files from task-manager
+ *
+ * @generated from message worker.v1.FetchFileRequest
+ */
+export class FetchFileRequest extends Message<FetchFileRequest> {
+  /**
+   * @generated from field: string execution_id = 1;
+   */
+  executionId = "";
+
+  /**
+   * The file path/location on the orchestrator
+   *
+   * @generated from field: string path = 2;
+   */
+  path = "";
+
+  constructor(data?: PartialMessage<FetchFileRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "worker.v1.FetchFileRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "execution_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FetchFileRequest {
+    return new FetchFileRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FetchFileRequest {
+    return new FetchFileRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FetchFileRequest {
+    return new FetchFileRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: FetchFileRequest | PlainMessage<FetchFileRequest> | undefined, b: FetchFileRequest | PlainMessage<FetchFileRequest> | undefined): boolean {
+    return proto3.util.equals(FetchFileRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message worker.v1.FetchFileResponse
+ */
+export class FetchFileResponse extends Message<FetchFileResponse> {
+  /**
+   * Raw file contents
+   *
+   * @generated from field: bytes contents = 1;
+   */
+  contents = new Uint8Array(0);
+
+  /**
+   * Error message if fetch failed
+   *
+   * @generated from field: string error = 2;
+   */
+  error = "";
+
+  constructor(data?: PartialMessage<FetchFileResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "worker.v1.FetchFileResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "contents", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
+    { no: 2, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FetchFileResponse {
+    return new FetchFileResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FetchFileResponse {
+    return new FetchFileResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FetchFileResponse {
+    return new FetchFileResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: FetchFileResponse | PlainMessage<FetchFileResponse> | undefined, b: FetchFileResponse | PlainMessage<FetchFileResponse> | undefined): boolean {
+    return proto3.util.equals(FetchFileResponse, a, b);
+  }
+}
+
