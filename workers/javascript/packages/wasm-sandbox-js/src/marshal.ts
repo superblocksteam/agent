@@ -78,7 +78,7 @@ type ToVmHelpers = {
   extractValue: (handle: QuickJSHandle) => unknown;
   eventLoop: EventLoop;
   /** Only provided when Buffer support is enabled */
-  createBuffer?: (bytes: number[]) => QuickJSHandle;
+  createBuffer?: (bytes: Buffer) => QuickJSHandle;
 };
 
 type DeferredPromise = ReturnType<QuickJSContext['newPromise']>;
@@ -276,7 +276,7 @@ export function marshalToVm(
     if (!helpers.createBuffer) {
       throw new Error('Cannot marshal Buffer: Buffer support is not enabled');
     }
-    return helpers.createBuffer(Array.from(hostValue));
+    return helpers.createBuffer(hostValue);
   }
 
   // Arrays
@@ -409,18 +409,26 @@ export function marshalFromVm(ctx: QuickJSContext, handle: QuickJSHandle, helper
 
     // Check for Buffer first (before array, since Buffer extends Uint8Array)
     if (isBuffer?.(handle)) {
-      // Extract bytes from Buffer by iterating over its indices
-      const lengthHandle = ctx.getProp(handle, 'length');
-      const length = ctx.getNumber(lengthHandle);
-      lengthHandle.dispose();
+      // Bulk extract bytes: read Buffer's underlying ArrayBuffer once, then copy the view into a Node.js Buffer.
+      // We intentionally copy (not share) because the VM and its allocations are about to be disposed.
+      const bufferHandle = ctx.getProp(handle, 'buffer');
+      const byteOffsetHandle = ctx.getProp(handle, 'byteOffset');
+      const byteLengthHandle = ctx.getProp(handle, 'byteLength');
 
-      const bytes = new Array<number>(length);
-      for (let i = 0; i < length; i++) {
-        const byteHandle = ctx.getProp(handle, i);
-        bytes[i] = ctx.getNumber(byteHandle);
-        byteHandle.dispose();
+      const byteOffset = ctx.getNumber(byteOffsetHandle);
+      const byteLength = ctx.getNumber(byteLengthHandle);
+
+      byteOffsetHandle.dispose();
+      byteLengthHandle.dispose();
+
+      const arrayBufferView = ctx.getArrayBuffer(bufferHandle);
+      bufferHandle.dispose();
+      try {
+        const slice = arrayBufferView.value.subarray(byteOffset, byteOffset + byteLength);
+        return Buffer.from(slice);
+      } finally {
+        arrayBufferView.dispose();
       }
-      return Buffer.from(bytes);
     }
 
     // Check for array
@@ -565,16 +573,17 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
 
   // Helper to create a VM Buffer from host bytes
   const createBuffer = vmBufferFromFn
-    ? (bytes: number[]): QuickJSHandle => {
-        const arr = ctx.newArray();
-        for (let i = 0; i < bytes.length; i++) {
-          const numHandle = ctx.newNumber(bytes[i]);
-          ctx.setProp(arr, i, numHandle);
-          numHandle.dispose();
-        }
+    ? (bytes: Buffer): QuickJSHandle => {
+        // Copy the exact bytes into the VM as an ArrayBuffer and then call Buffer.from(ArrayBuffer).
+        // We avoid passing pooled Buffer backing stores because that would expose extra bytes to the sandbox.
+        const exactArrayBuffer =
+          bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength
+            ? bytes.buffer
+            : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 
-        const result = ctx.callFunction(vmBufferFromFn!, vmBufferHandle!, [arr]);
-        arr.dispose();
+        const arrayBufferHandle = ctx.newArrayBuffer(exactArrayBuffer);
+        const result = ctx.callFunction(vmBufferFromFn!, vmBufferHandle!, [arrayBufferHandle]);
+        arrayBufferHandle.dispose();
 
         if (result.error) {
           const errorDump = ctx.dump(result.error);
