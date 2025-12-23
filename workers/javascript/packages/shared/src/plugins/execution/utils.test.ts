@@ -79,6 +79,23 @@ describe('utils', () => {
       await expect(resolveAllBindings('{{ require("node:child_process") }}', context, {}, false)).rejects.toThrow();
     });
 
+    it('should not expose $agentKey or $fileServerUrl in the WASM sandbox', async () => {
+      const prevWasm = process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
+      try {
+        process.env.SUPERBLOCKS_USE_WASM_SANDBOX = 'true';
+
+        const context = new ExecutionContext();
+        context.addGlobalVariable('$agentKey', 'super-secret-agent-key');
+        context.addGlobalVariable('$fileServerUrl', 'http://example.invalid/v2/files');
+
+        await expect(resolveAllBindings('{{ $agentKey }}', context, {}, false)).rejects.toThrow(/\$agentKey.*not defined/i);
+        await expect(resolveAllBindings('{{ $fileServerUrl }}', context, {}, false)).rejects.toThrow(/\$fileServerUrl.*not defined/i);
+      } finally {
+        if (prevWasm === undefined) delete process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
+        else process.env.SUPERBLOCKS_USE_WASM_SANDBOX = prevWasm;
+      }
+    });
+
     it('should enforce the WASM sandbox memory limit', async () => {
       const prevWasm = process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
       const prevReqMax = process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX;

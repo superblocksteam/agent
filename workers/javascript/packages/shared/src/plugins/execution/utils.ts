@@ -224,11 +224,27 @@ const resolveAllBindingsWasm = async (
 ): Promise<Record<string, unknown>> => {
   const maxMemoryBytes = computeWasmSandboxMemoryLimitBytes();
 
+  // Host-only values needed to implement filepicker methods in the host.
+  // These must NOT be exposed to untrusted code running in the WASM sandbox.
+  //
+  // TODO(security): Stop putting these on `ExecutionContext.globals` entirely and make them
+  // dedicated fields on `ExecutionContext`.
+  // `globals` are, by definition, customer-visible inputs to binding evaluation; secrets
+  // should never live there. (VM2 still currently relies on these globals for in-sandbox
+  // file methods)
+  const fileServerUrl = context.globals['$fileServerUrl'] as string;
+  const agentKey = context.globals['$agentKey'] as string;
+
   // Build globals object with context.globals and context.outputs
   const globals: Record<string, unknown> = {
     ...context.globals,
     ...context.outputs
   };
+
+  // Ensure these are not available as globals inside the WASM sandbox.
+  // (VM2 still relies on them for in-sandbox file methods.)
+  delete globals['$agentKey'];
+  delete globals['$fileServerUrl'];
 
   // Handle variables from KVStore
   if (context.variables && typeof context.variables === 'object') {
@@ -265,8 +281,6 @@ const resolveAllBindingsWasm = async (
   // Prepare file picker objects with readContentsAsync/readContents methods
   // This is done in the host (here) before passing to the VM, unlike the VM2
   // implementation which did this inside the VM via $prepareGlobalObjectForFiles.
-  const fileServerUrl = context.globals['$fileServerUrl'] as string;
-  const agentKey = context.globals['$agentKey'] as string;
   prepareGlobalsWithFileMethods(globals, filePaths, fileServerUrl, agentKey);
 
   const expressions = extractMustacheStrings(unresolvedValue);
