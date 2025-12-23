@@ -78,6 +78,26 @@ describe('utils', () => {
       await expect(resolveAllBindings('{{ require("child_process") }}', context, {}, false)).rejects.toThrow();
       await expect(resolveAllBindings('{{ require("node:child_process") }}', context, {}, false)).rejects.toThrow();
     });
+
+    it('should enforce the WASM sandbox memory limit', async () => {
+      const prevWasm = process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
+      const prevReqMax = process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX;
+      try {
+        process.env.SUPERBLOCKS_USE_WASM_SANDBOX = 'true';
+        // Set an explicit heap cap (bytes) above the 16MiB floor.
+        const capBytes = 20 * 1024 ** 2; // 20MiB
+        process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX = String(capBytes);
+
+        // Try to allocate a very large string in the VM; this should fail under the WASM sandbox memory limit.
+        const expr = '{{ "x".repeat(30000000) }}';
+        await expect(resolveAllBindings(expr, new ExecutionContext(), {}, false)).rejects.toThrow(/out of memory|memory/i);
+      } finally {
+        if (prevWasm === undefined) delete process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
+        else process.env.SUPERBLOCKS_USE_WASM_SANDBOX = prevWasm;
+        if (prevReqMax === undefined) delete process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX;
+        else process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX = prevReqMax;
+      }
+    });
   });
 
   describe('serialize', () => {

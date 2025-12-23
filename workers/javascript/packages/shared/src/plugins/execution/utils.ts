@@ -22,14 +22,52 @@ import deasync from 'deasync';
 import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
 
 /**
- * Environment variable to opt into the WASM-based sandbox implementation.
- * Set to 'true' to use the WASM sandbox.
- * Default is to use the legacy VM2-based sandbox.
+ * Returns whether the WASM-based sandbox implementation is enabled.
+ *
+ * Controlled by the environment variable `SUPERBLOCKS_USE_WASM_SANDBOX`:
+ * - `'true'` enables the WASM sandbox
+ * - anything else (or unset) uses the legacy VM2 sandbox
+ *
+ * `env` is injectable as an argument for testability purposes.
  */
-export const USE_WASM_SANDBOX = (process.env.SUPERBLOCKS_USE_WASM_SANDBOX ?? 'false') === 'true';
+export function isWasmSandboxEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return (env.SUPERBLOCKS_USE_WASM_SANDBOX ?? 'false') === 'true';
+}
 
 const DATA_TAG = 'SUPERBLOCKSDATA';
 const completeDataRegex = new RegExp(`^${DATA_TAG}(.*?)${DATA_TAG}$`);
+
+// Lower bound for the WASM sandbox's QuickJS heap limit.
+//
+// Why a floor?
+// - If the limit is derived solely from deployment/env config, it might be unset or too small.
+// - A tiny heap can cause even simple bindings (and their marshaling) to fail with OOM.
+// - 16MiB is a conservative minimum that still meaningfully constrains runaway allocations.
+const WASM_SANDBOX_MEMORY_FLOOR_BYTES = 16 * 1024 ** 2; // 16 MiB
+
+export function computeWasmSandboxMemoryLimitBytes(env: NodeJS.ProcessEnv = process.env): number {
+  const candidates: number[] = [WASM_SANDBOX_MEMORY_FLOOR_BYTES];
+  // We derive the sandbox heap cap from the largest payload size the worker is expected to handle.
+  // All values are expected to be in bytes.
+  const envKeys = [
+    // gRPC max receive message size (request) configured on the orchestrator.
+    'SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX',
+    // gRPC max send message size (response) configured on the orchestrator.
+    'SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_RES_MAX',
+    // Maximum value size allowed in the agent Redis-backed KV store.
+    'SUPERBLOCKS_AGENT_REDIS_KVSTORE_MAX_SIZE_BYTES'
+  ] as const;
+
+  for (const key of envKeys) {
+    const raw = env[key];
+    if (raw === undefined) continue;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    candidates.push(Math.floor(n));
+  }
+
+  return Math.max(...candidates);
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function spawnStdioProcess(cmd: string, args: string[], input: ProcessInput, timeout: number): Promise<any> {
@@ -168,7 +206,7 @@ export const resolveAllBindings = async (
   filePaths: Record<string, string>,
   escapeStrings: boolean
 ): Promise<Record<string, unknown>> => {
-  if (USE_WASM_SANDBOX) {
+  if (isWasmSandboxEnabled()) {
     return resolveAllBindingsWasm(unresolvedValue, context, filePaths, escapeStrings);
   }
   return resolveAllBindingsVm2(unresolvedValue, context, filePaths, escapeStrings);
@@ -184,6 +222,8 @@ const resolveAllBindingsWasm = async (
   filePaths: Record<string, string>,
   escapeStrings: boolean
 ): Promise<Record<string, unknown>> => {
+  const maxMemoryBytes = computeWasmSandboxMemoryLimitBytes();
+
   // Build globals object with context.globals and context.outputs
   const globals: Record<string, unknown> = {
     ...context.globals,
@@ -237,7 +277,8 @@ const resolveAllBindingsWasm = async (
     enableBuffer: true,
     limits: {
       // TODO: pass in the timeout from the caller side
-      timeMs: 500 * 1000
+      timeMs: 500 * 1000,
+      memoryBytes: maxMemoryBytes
     }
   });
 
