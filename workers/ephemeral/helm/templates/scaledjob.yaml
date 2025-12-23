@@ -28,7 +28,6 @@ spec:
         enableTLS: {{ $.Values.queue.tls | quote }}
         stream: {{ . }}
         consumerGroup: {{ $v.consumerGroup }}
-        lagCount: "1"
         activationLagCount: "1"
       authenticationRef:
         name: redis-trigger-auth

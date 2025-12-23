@@ -22,7 +22,6 @@
 #           address: redis:6379
 #           stream: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute
 #           consumerGroup: ephemeral-javascript
-#           lagCount: "5"
 #           activationLagCount: "3"
 fleets: {}
 # Task Manager configuration
@@ -90,7 +89,6 @@ keda:
   #       address: redis:6379
   #       stream: sandbox:work:python
   #       consumerGroup: ephemeral-python
-  #       lagCount: "5"
   #       activationLagCount: "3"
 # Redis transport configuration
 queue:
