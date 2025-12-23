@@ -23,6 +23,9 @@ message ExecuteRequest {
   string variable_store_address = 5;
   // Variable specifications (JSON)
   string variables_json = 6;
+  // Map of tree paths to remote file paths for filepicker support
+  // e.g. {"FilePicker1.files.0": "/path/to/file"} - computed by task-manager
+  map<string, string> files = 7;
 }
 
 message ExecuteResponse {

@@ -61,58 +61,27 @@ module.exports = async function() {
     return buffer.toString('utf8');
   }
 
-  function fetchFromController(location, callback) {
-    require('http').get($fileServerUrl + '?location=' + location, {
-      headers: { 'x-superblocks-agent-key': $agentKey }
-    }, (response) => {
-      if (response.statusCode != 200) {
-        return callback(new Error('Internal Server Error'), null);
-      }
-
-      const chunks = [];
-      let chunkStrings = '';
-      response.on('data', (chunk) => {
-        if ($fileServerUrl.includes('v2')) {
-          const serialized = serialize(chunk)
-          chunkStrings += serialized
-        } else {
-          chunks.push(Buffer.from(chunk))
-        }
-      });
-      response.on('error', (err) => callback(err, null));
-      response.on('end', () => {
-        if ($fileServerUrl.includes('v2')) {
-          const processed = chunkStrings
-          .split('\\n')
-          .filter((str) => str.length > 0)
-          .map((str) => {
-            const json = JSON.parse(str);
-            return Buffer.from(json.result.data, 'base64');
-          });
-          callback(null, Buffer.concat(processed))
-        } else {
-          callback(null, Buffer.concat(chunks))
-        }
-      });
-    })
-  }
-
   {
     const _ = require('lodash');
 
-    Object.entries($superblocksFiles).forEach(([treePath, diskPath]) => {
+    // $superblocksFiles is a pre-computed map of treePath -> remotePath
+    // computed by the task-manager by traversing context to find filepicker objects
+    Object.entries($superblocksFiles ?? {}).forEach(([treePath, remotePath]) => {
+      if (!remotePath) return;
       const file = _.get(global, treePath);
       _.set(global, treePath, {
         ...file,
         $superblocksId: undefined,
         previewUrl: undefined,
         readContentsAsync: async (mode) => {
-          const contents = await require('util').promisify(fetchFromController)(diskPath);
+          // Use kvStore's fetchFile to get file contents from task-manager
+          const contents = await $fetchFile(remotePath);
           const response = await serialize(contents, mode);
           return response;
         },
         readContents: (mode) => {
-          const contents = require('deasync')(fetchFromController)(diskPath);
+          // Use synchronous fetchFile
+          const contents = $fetchFileSync(remotePath);
           const response = serialize(contents, mode);
           return response;
         }
@@ -144,7 +113,29 @@ module.exports.executeCode = async (workerData) => {
   let variableClient;
 
   try {
-    const execGlobalContext = { ...context.globals, ...context.outputs, $superblocksFiles: filePaths };
+    // Create file fetcher functions that use kvStore to fetch from task-manager
+    // The task-manager handles authentication with the orchestrator
+    const kvStore = context.kvStore;
+    const fetchFile = async (path) => {
+      if (kvStore && typeof kvStore.fetchFile === 'function') {
+        return await kvStore.fetchFile(path);
+      }
+      throw new Error('File fetching not available');
+    };
+    const fetchFileSync = (path) => {
+      if (kvStore && typeof kvStore.fetchFileSync === 'function') {
+        return kvStore.fetchFileSync(path);
+      }
+      throw new Error('File fetching not available');
+    };
+
+    const execGlobalContext = {
+      ...context.globals,
+      ...context.outputs,
+      $superblocksFiles: filePaths ?? {},
+      $fetchFile: fetchFile,
+      $fetchFileSync: fetchFileSync
+    };
 
     if (context.variables && typeof context.variables === 'object') {
       variableClient = new VariableClient(context.kvStore);
@@ -176,7 +167,13 @@ module.exports.executeCode = async (workerData) => {
         builtin: ['*', '-child_process', '-process'],
         external: true
       },
-      sandbox: { ...context.globals, ...context.outputs, $superblocksFiles: filePaths },
+      sandbox: {
+        ...context.globals,
+        ...context.outputs,
+        $superblocksFiles: filePaths ?? {},
+        $fetchFile: fetchFile,
+        $fetchFileSync: fetchFileSync
+      },
       wasm: false
     });
     addLogListenersToVM(vm, ret);

@@ -1,7 +1,13 @@
 import { KVStore } from '@superblocks/shared';
 
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
-import { GetVariablesRequest, SetVariableRequest, SetVariablesRequest, KeyValue } from './types/worker/v1/sandbox_variable_store_pb';
+import {
+  GetVariablesRequest,
+  SetVariableRequest,
+  SetVariablesRequest,
+  KeyValue,
+  FetchFileRequest
+} from './types/worker/v1/sandbox_variable_store_pb';
 
 export class GrpcKvStore implements KVStore {
   private readonly executionId: string;
@@ -67,5 +73,40 @@ export class GrpcKvStore implements KVStore {
         resolve();
       });
     });
+  }
+
+  /**
+   * Fetch file contents from the task-manager.
+   * The task-manager handles authentication with the orchestrator's file server.
+   */
+  public async fetchFile(path: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const request = new FetchFileRequest();
+      request.setExecutionId(this.executionId);
+      request.setPath(path);
+
+      this.client.fetchFile(request, (error, response) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        const errorMsg = response.getError();
+        if (errorMsg) {
+          reject(new Error(errorMsg));
+          return;
+        }
+        resolve(Buffer.from(response.getContents_asU8()));
+      });
+    });
+  }
+
+  /**
+   * Synchronous version of fetchFile using deasync.
+   * Used by readContents() in user scripts.
+   */
+  public fetchFileSync(path: string): Buffer {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    const deasync = require('deasync');
+    return deasync(this.fetchFile.bind(this))(path);
   }
 }

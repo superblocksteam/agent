@@ -25,6 +25,7 @@ type Options struct {
 	GRPCPort         int
 	Ephemeral        bool
 	EphemeralTimeout time.Duration // Timeout for ephemeral job execution (0 = no timeout)
+	AgentKey         string        // Agent key for file server authentication
 }
 
 // Option is a function that modifies Options
@@ -118,6 +119,13 @@ func WithEphemeral(value bool) Option {
 func WithEphemeralTimeout(value time.Duration) Option {
 	return func(o *Options) {
 		o.EphemeralTimeout = value
+	}
+}
+
+// WithAgentKey sets the agent key for file server authentication
+func WithAgentKey(value string) Option {
+	return func(o *Options) {
+		o.AgentKey = value
 	}
 }
 

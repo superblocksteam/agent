@@ -50,7 +50,8 @@ proto-js: proto-base
 	# Generate files for non-standard imports that get injected into the buf generate process
 	@buf generate --include-imports --template buf.js.gen.yaml
 	@buf build
-	@grep -rl '\.js' ../../workers/javascript/packages/types ../gen/js | grep -v node_modules | grep -E '.*(js|ts)$$' | xargs sed -i'.bak' -e 's/\.js//g'
+	# Remove .js from relative imports only (not from external packages like google-protobuf)
+	@grep -rl '\.js' ../../workers/javascript/packages/types ../gen/js | grep -v node_modules | grep -E '.*(js|ts)$$' | xargs sed -i'.bak' -E "s/(from ['\"]\.\.?\/[^'\"]*|require\\(['\"]\.\.?\/[^'\"]*)\\.js/\\1/g"
 	@find ../gen/js -name "*.bak" -delete
 	@find ../../workers/javascript/packages/types -name "*.bak" -delete
 

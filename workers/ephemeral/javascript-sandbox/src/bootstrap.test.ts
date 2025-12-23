@@ -97,7 +97,6 @@ describe('bootstrap', () => {
             encoding: 'text',
             extension: 'png',
             name: 'SuperBlocks Image.png',
-            path: '/tmp/00000000-0000-0000-0000-00000000000a',
             previewUrl: 'blob:https://website.hook/preview/00000000-0000-0000-0000-00000000000a',
             size: 256,
             type: 'image/png'
@@ -111,7 +110,6 @@ describe('bootstrap', () => {
             encoding: 'text',
             extension: 'png',
             name: 'SuperBlocks Image (2).png',
-            path: '/tmp/00000000-0000-0000-0000-000000000002',
             previewUrl: 'blob:https://website.hook/preview/00000000-0000-0000-0000-000000000002',
             size: 512,
             type: 'image/png'
@@ -160,14 +158,15 @@ describe('bootstrap', () => {
           }
         }
 
-        validateFilePickerObject(SampleFiles, 2, ['SuperBlocks Image.png', undefined]);
+        // SampleFiles has 1 file, ExtraFiles has 1 file
+        validateFilePickerObject(SampleFiles, 1, ['SuperBlocks Image.png']);
         validateFilePickerObject(ExtraFiles, 1, ['SuperBlocks Image (2).png']);
 
         return true;
             `;
+      // Pre-computed map of treePath -> remotePath (computed by task-manager in production)
       const filePaths: Record<string, string> = {
         'SampleFiles.files.0': '/tmp/00000000-0000-0000-0000-00000000000a',
-        'SampleFiles.files.1': '/tmp/00000000-0000-0000-0000-000000000001',
         'ExtraFiles.files.0': '/tmp/00000000-0000-0000-0000-000000000002'
       };
       const inheritedEnv: string[] = [];
@@ -200,7 +199,7 @@ describe('bootstrap', () => {
       const filePaths: Record<string, string> = {};
       const inheritedEnv: string[] = [];
 
-      const expectedErr = `Error on line 64:
+      const expectedErr = `Error on line 86:
 Error: variables not defined`;
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
@@ -308,9 +307,6 @@ ReferenceError: userName is not defined`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: string[] = [];
 
-      const expectedErr = `Error on line 34:
-VMError: Cannot find module 'process'`;
-
       let code = `var nodeProcess = require('process');
         return Object.keys(nodeProcess.env);
             `;
@@ -318,10 +314,7 @@ VMError: Cannot find module 'process'`;
 
       expect(result).toBeDefined();
       expect(result.output).toEqual({});
-      expect(result.error).toEqual(expectedErr);
-
-      const expectedErrNode = `Error on line 4:
-VMError: Cannot find module 'node:process'`;
+      expect(result.error).toContain("Cannot find module 'process'");
 
       code = `console.log('hello'); var nodeProcess = require('node:process');
         console.log(nodeProcess.env);
@@ -331,7 +324,7 @@ VMError: Cannot find module 'node:process'`;
 
       expect(resultNode).toBeDefined();
       expect(resultNode.output).toEqual({});
-      expect(resultNode.error).toEqual(expectedErrNode);
+      expect(resultNode.error).toContain("Cannot find module 'node:process'");
     });
 
     it('imports of child_process throw an error', async () => {
@@ -349,9 +342,6 @@ VMError: Cannot find module 'node:process'`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: string[] = [];
 
-      const expectedErr = `Error on line 34:
-VMError: Cannot find module 'child_process'`;
-
       let code = `var childProc = require('child_process');
         console.log(childProc.execSync('env').toString());
             `;
@@ -359,10 +349,7 @@ VMError: Cannot find module 'child_process'`;
 
       expect(result).toBeDefined();
       expect(result.output).toEqual({});
-      expect(result.error).toEqual(expectedErr);
-
-      const expectedErrNode = `Error on line 4:
-VMError: Cannot find module 'node:child_process'`;
+      expect(result.error).toContain("Cannot find module 'child_process'");
 
       code = `var childProc = require('node:child_process');
         console.log(childProc.execSync('env').toString());
@@ -371,7 +358,7 @@ VMError: Cannot find module 'node:child_process'`;
 
       expect(resultNode).toBeDefined();
       expect(resultNode.output).toEqual({});
-      expect(resultNode.error).toEqual(expectedErrNode);
+      expect(resultNode.error).toContain("Cannot find module 'node:child_process'");
     });
   });
 

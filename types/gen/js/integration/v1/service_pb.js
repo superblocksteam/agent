@@ -23,7 +23,7 @@ var global =
 
 var common_v1_common_pb = require('../../common/v1/common_pb');
 goog.object.extend(proto, common_v1_common_pb);
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
 goog.exportSymbol('proto.integration.v1.Configuration', null, global);
 goog.exportSymbol('proto.integration.v1.GetIntegrationResponse', null, global);

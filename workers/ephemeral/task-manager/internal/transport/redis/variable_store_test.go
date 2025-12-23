@@ -12,14 +12,17 @@ import (
 
 // mockVariableStoreProvider implements VariableStoreProvider for testing
 type mockVariableStoreProvider struct {
-	store      map[string]map[string]string
-	lock       sync.RWMutex
-	mockClient *r.Client
+	store        map[string]map[string]string
+	lock         sync.RWMutex
+	mockClient   *r.Client
+	fileContexts map[string]*ExecutionFileContext
+	fileLock     sync.RWMutex
 }
 
 func newMockProvider() *mockVariableStoreProvider {
 	return &mockVariableStoreProvider{
-		store: make(map[string]map[string]string),
+		store:        make(map[string]map[string]string),
+		fileContexts: make(map[string]*ExecutionFileContext),
 	}
 }
 
@@ -29,8 +32,9 @@ func newMockProviderWithRedis() *mockVariableStoreProvider {
 		Addr: "localhost:16379", // Non-existent port
 	})
 	return &mockVariableStoreProvider{
-		store:      make(map[string]map[string]string),
-		mockClient: client,
+		store:        make(map[string]map[string]string),
+		mockClient:   client,
+		fileContexts: make(map[string]*ExecutionFileContext),
 	}
 }
 
@@ -44,6 +48,18 @@ func (m *mockVariableStoreProvider) GetVariableStoreLock() *sync.RWMutex {
 
 func (m *mockVariableStoreProvider) GetRedisClient() *r.Client {
 	return m.mockClient
+}
+
+func (m *mockVariableStoreProvider) GetFileContext(executionID string) *ExecutionFileContext {
+	m.fileLock.RLock()
+	defer m.fileLock.RUnlock()
+	return m.fileContexts[executionID]
+}
+
+func (m *mockVariableStoreProvider) SetFileContext(executionID string, ctx *ExecutionFileContext) {
+	m.fileLock.Lock()
+	defer m.fileLock.Unlock()
+	m.fileContexts[executionID] = ctx
 }
 
 func TestNewVariableStoreGRPC(t *testing.T) {

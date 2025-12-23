@@ -1,0 +1,100 @@
+---
+# Docker Compose for ephemeral workers (task-manager + sandboxes)
+# Used for e2e testing ephemeral Python and JavaScript execution
+x-environment: &environment
+  SUPERBLOCKS_AGENT_KEY: dev-agent-key
+  SUPERBLOCKS_AGENT_REDIS_TOKEN: koala
+  SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: koala
+  SUPERBLOCKS_AGENT_TLS_INSECURE: 'true'
+  SUPERBLOCKS_AGENT_REDIS_HOST: redis
+  SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis
+x-task-manager-environment: &task-manager-environment
+  !!merge <<: *environment
+  # Task-manager uses SUPERBLOCKS_WORKER_SANDBOX prefix for viper
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_HOST: redis
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PORT: "6379"
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD: koala
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_TLS: "false"
+  SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_HOST: redis
+  SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PORT: "6379"
+  SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD: koala
+  SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_TLS: "false"
+  # Don't exit after one job (ephemeral=false) - allows task-manager to process multiple jobs
+  SUPERBLOCKS_WORKER_SANDBOX_WORKER_EPHEMERAL: "false"
+x-task-manager-base: &task-manager-base
+  image: ghcr.io/superblocksteam/task-manager:${EPHEMERAL_IMAGE_TAG:-latest}
+  build:
+    context: .
+    dockerfile: Dockerfile.worker.task-manager
+  depends_on:
+    - redis
+  environment:
+    !!merge <<: *task-manager-environment
+  networks:
+    - default
+x-python-sandbox-base: &python-sandbox-base
+  image: ghcr.io/superblocksteam/python-sandbox:${EPHEMERAL_IMAGE_TAG:-latest}
+  build:
+    context: .
+    dockerfile: Dockerfile.sandbox.python
+  networks:
+    - default
+x-javascript-sandbox-base: &javascript-sandbox-base
+  image: ghcr.io/superblocksteam/javascript-sandbox:${EPHEMERAL_IMAGE_TAG:-latest}
+  build:
+    context: .
+    dockerfile: Dockerfile.sandbox.javascript
+  networks:
+    - default
+services:
+  # Redis is shared with compose.full.yaml
+  redis:
+    image: ghcr.io/superblocksteam/redis:6
+    ports:
+      - 6379:6379
+    command: --requirepass koala
+    pull_policy: always
+  # ============================================================================
+  # Python Ephemeral Workers
+  # ============================================================================
+  python-sandbox:
+    !!merge <<: *python-sandbox-base
+    container_name: python-sandbox
+  python-ephemeral:
+    !!merge <<: *task-manager-base
+    container_name: python-ephemeral
+    environment:
+      !!merge <<: *task-manager-environment
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_LANGUAGE: python
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKET: BA
+      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: python-sandbox:50051
+      SUPERBLOCKS_WORKER_SANDBOX_GRPC_ADDRESS: python-ephemeral:50050
+      # Match orchestrator's ephemeral routing (--worker.ephemeral.plugins.enabled)
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_STREAM_KEYS: agent.main.bucket.BA.ephemeral.plugin.python.event.execute agent.main.bucket.BE.ephemeral.plugin.python.event.execute
+    depends_on:
+      - redis
+      - python-sandbox
+  # ============================================================================
+  # JavaScript Ephemeral Workers
+  # ============================================================================
+  javascript-sandbox:
+    !!merge <<: *javascript-sandbox-base
+    container_name: javascript-sandbox
+  javascript-ephemeral:
+    !!merge <<: *task-manager-base
+    container_name: javascript-ephemeral
+    environment:
+      !!merge <<: *task-manager-environment
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_LANGUAGE: javascript
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKET: BA
+      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-sandbox:50051
+      SUPERBLOCKS_WORKER_SANDBOX_GRPC_ADDRESS: javascript-ephemeral:50050
+      # Match orchestrator's ephemeral routing (--worker.ephemeral.plugins.enabled)
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_STREAM_KEYS: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute agent.main.bucket.BE.ephemeral.plugin.javascript.event.execute
+    depends_on:
+      - redis
+      - javascript-sandbox
+networks:
+  default:
+    name: orchestrator_default
+    external: true

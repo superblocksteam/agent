@@ -29,7 +29,7 @@ var common_v1_health_pb = require('../../common/v1/health_pb');
 goog.object.extend(proto, common_v1_health_pb);
 var google_api_annotations_pb = require('../../google/api/annotations_pb');
 goog.object.extend(proto, google_api_annotations_pb);
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb');
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
 var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
 goog.object.extend(proto, protoc$gen$openapiv2_options_annotations_pb);

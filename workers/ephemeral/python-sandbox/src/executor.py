@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 from contextlib import redirect_stderr, redirect_stdout
+from functools import partial
 from importlib.util import module_from_spec, spec_from_loader
 from inspect import getsource
 from io import StringIO
@@ -18,7 +19,7 @@ from typing import Any, Optional
 from src.constants import get_env_var
 from src.restricted import ALLOW_BUILTINS, restricted_environment
 from src.superblocks import Object, Reader, encode_bytestring_as_json
-from src.variables.variable import build_variables, SimpleVariable, AdvancedVariable
+from src.variables.variable import build_variables
 from src.variables.variable_client import VariableClient
 
 class Executor:
@@ -31,6 +32,7 @@ class Executor:
         timeout_ms: int,
         variable_client: Optional[VariableClient] = None,
         variables_json: str = "{}",
+        superblocks_files: Optional[dict] = None,
     ) -> tuple[str, list[str], list[str], int]:
         """
         Run Python code directly.
@@ -47,6 +49,7 @@ class Executor:
             variable_client.address if variable_client else "",
             variable_client.execution_id if variable_client else "",
             variables_json,
+            superblocks_files=superblocks_files or {},
         )
 
         stdout_lines = stdout_data.splitlines() if stdout_data else []
@@ -63,6 +66,7 @@ class Executor:
         var_store_address: str,
         execution_id: str,
         variables_json: str,
+        superblocks_files: Optional[dict] = None,
     ) -> tuple[str, str, str]:
         """Execute code and return result, stdout, stderr."""
         result = ""
@@ -85,6 +89,7 @@ class Executor:
                     var_store_address,
                     execution_id,
                     variables_json,
+                    superblocks_files=superblocks_files or {},
                 )
         except Exception as e:
             stderr_data = f"__EXCEPTION__{str(e)}"
@@ -104,6 +109,7 @@ class Executor:
         var_store_address: str,
         execution_id: str,
         variables_json: str,
+        superblocks_files: Optional[dict] = None,
     ) -> tuple[str, str, str]:
         """Inner execution logic."""
         spec = spec_from_loader("superblocks", loader=None)
@@ -133,6 +139,41 @@ class Executor:
                             my_module.__dict__[k] = v
             except Exception as e:
                 print(f"Error building variables: {e}")
+
+        # Get globals dict from context (this is where filepicker values live)
+        globals_dict = my_module.__dict__.get("globals", {})
+        if isinstance(globals_dict, dict) and var_client and superblocks_files:
+            # superblocks_files is a pre-computed map of treePath -> remotePath
+            # computed by the task-manager by traversing context to find filepicker objects
+
+            # Create a file fetcher that uses the variable client's FetchFile RPC
+            def make_file_fetcher(remote_path):
+                def fetcher(path):
+                    return var_client.fetch_file(remote_path)
+                return fetcher
+
+            # Create Reader with file fetcher and attach readContents to each file object
+            for key, remote_path in superblocks_files.items():
+                reader = Reader(make_file_fetcher(remote_path))
+                paths = key.split(".")
+                obj = globals_dict.get(paths[0])
+                if obj is None:
+                    continue
+                for path in paths[1:]:
+                    if path.isdigit():
+                        path = int(path)
+                    try:
+                        obj = obj[path]
+                    except (KeyError, IndexError, TypeError):
+                        obj = None
+                        break
+                if obj is not None and isinstance(obj, dict):
+                    obj["readContents"] = partial(reader.readContents, key, remote_path)
+
+            # Copy globals values to module dict for direct access
+            for k, v in globals_dict.items():
+                if not k.startswith("$"):
+                    my_module.__dict__[k] = v
 
         # Create wrapper function with Reader class
         wrapper = f"{getsource(Reader)}\ndef wrapper():\n"

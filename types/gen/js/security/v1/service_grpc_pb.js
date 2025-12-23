@@ -5,8 +5,8 @@ var grpc = require('@grpc/grpc-js');
 var security_v1_service_pb = require('../../security/v1/service_pb');
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
 var google_api_annotations_pb = require('../../google/api/annotations_pb');
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 var utils_v1_utils_pb = require('../../utils/v1/utils_pb');
 
 function serialize_security_v1_SignRequest(arg) {

@@ -57,7 +57,9 @@ full_bin = """ \
         --worker.go.enabled=true \
         --file.server.url=http://host.docker.internal:18080/v2/files \
         --transport.redis.password=koala \
-        --store.redis.password=koala
+        --store.redis.password=koala \
+        --worker.ephemeral.plugins.enabled=${SUPERBLOCKS_WORKER_EPHEMERAL_PLUGINS-}
+
     """
 include_dir = [  ]
 include_ext = [ "go", "tpl", "tmpl", "json", "mod", "sum", "toml" ]

@@ -21,7 +21,7 @@ var global =
     (function () { return this; }).call(null) ||
     Function('return this')();
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
 var secrets_v1_secrets_pb = require('../../secrets/v1/secrets_pb');
 goog.object.extend(proto, secrets_v1_secrets_pb);

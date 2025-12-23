@@ -1159,7 +1159,7 @@ export class Schema extends Message<Schema> {
  * See: https://github.com/OAI/OpenAPI-Specification/blob/3.0.0/versions/2.0.md#schemaObject
  *
  * See also: https://cswr.github.io/JsonSchema/spec/basic_types/,
- * https://github.com/json-schema-org/json-schema-spec/blob/master/schemaon
+ * https://github.com/json-schema-org/json-schema-spec/blob/master/schema.json
  *
  * Example:
  *
@@ -1221,7 +1221,7 @@ export class JSONSchema extends Message<JSONSchema> {
 
   /**
    * A free-form property to include a JSON example of this field. This is copied
-   * verbatim to the output swaggeron. Quotes must be escaped.
+   * verbatim to the output swagger.json. Quotes must be escaped.
    * This property is the same for 2.0 and 3.0.0 https://github.com/OAI/OpenAPI-Specification/blob/3.0.0/versions/3.0.0.md#schemaObject  https://github.com/OAI/OpenAPI-Specification/blob/3.0.0/versions/2.0.md#schemaObject
    *
    * @generated from field: string example = 9;

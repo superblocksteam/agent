@@ -27,7 +27,7 @@ var common_v1_language_pb = require('../../common/v1/language_pb');
 goog.object.extend(proto, common_v1_language_pb);
 var common_v1_utils_pb = require('../../common/v1/utils_pb');
 goog.object.extend(proto, common_v1_utils_pb);
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
 var validate_validate_pb = require('../../validate/validate_pb');
 goog.object.extend(proto, validate_validate_pb);

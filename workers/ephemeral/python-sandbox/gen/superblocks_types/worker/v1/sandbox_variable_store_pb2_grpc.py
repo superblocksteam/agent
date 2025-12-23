@@ -34,6 +34,11 @@ class SandboxVariableStoreServiceStub(object):
                 request_serializer=worker_dot_v1_dot_sandbox__variable__store__pb2.SetVariablesRequest.SerializeToString,
                 response_deserializer=worker_dot_v1_dot_sandbox__variable__store__pb2.SetVariablesResponse.FromString,
                 _registered_method=True)
+        self.FetchFile = channel.unary_unary(
+                '/worker.v1.SandboxVariableStoreService/FetchFile',
+                request_serializer=worker_dot_v1_dot_sandbox__variable__store__pb2.FetchFileRequest.SerializeToString,
+                response_deserializer=worker_dot_v1_dot_sandbox__variable__store__pb2.FetchFileResponse.FromString,
+                _registered_method=True)
 
 
 class SandboxVariableStoreServiceServicer(object):
@@ -63,6 +68,14 @@ class SandboxVariableStoreServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def FetchFile(self, request, context):
+        """FetchFile fetches file contents from the orchestrator's file server.
+        The task-manager handles authentication with the orchestrator.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SandboxVariableStoreServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -85,6 +98,11 @@ def add_SandboxVariableStoreServiceServicer_to_server(servicer, server):
                     servicer.SetVariables,
                     request_deserializer=worker_dot_v1_dot_sandbox__variable__store__pb2.SetVariablesRequest.FromString,
                     response_serializer=worker_dot_v1_dot_sandbox__variable__store__pb2.SetVariablesResponse.SerializeToString,
+            ),
+            'FetchFile': grpc.unary_unary_rpc_method_handler(
+                    servicer.FetchFile,
+                    request_deserializer=worker_dot_v1_dot_sandbox__variable__store__pb2.FetchFileRequest.FromString,
+                    response_serializer=worker_dot_v1_dot_sandbox__variable__store__pb2.FetchFileResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -195,6 +213,33 @@ class SandboxVariableStoreService(object):
             '/worker.v1.SandboxVariableStoreService/SetVariables',
             worker_dot_v1_dot_sandbox__variable__store__pb2.SetVariablesRequest.SerializeToString,
             worker_dot_v1_dot_sandbox__variable__store__pb2.SetVariablesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def FetchFile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/worker.v1.SandboxVariableStoreService/FetchFile',
+            worker_dot_v1_dot_sandbox__variable__store__pb2.FetchFileRequest.SerializeToString,
+            worker_dot_v1_dot_sandbox__variable__store__pb2.FetchFileResponse.FromString,
             options,
             channel_credentials,
             insecure,

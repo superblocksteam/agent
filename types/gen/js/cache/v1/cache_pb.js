@@ -21,7 +21,7 @@ var global =
     (function () { return this; }).call(null) ||
     Function('return this')();
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb');
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
 goog.exportSymbol('proto.cache.v1.Mutation', null, global);
 goog.exportSymbol('proto.cache.v1.MutationBatch', null, global);

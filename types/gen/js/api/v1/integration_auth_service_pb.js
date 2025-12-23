@@ -27,7 +27,7 @@ var common_v1_common_pb = require('../../common/v1/common_pb');
 goog.object.extend(proto, common_v1_common_pb);
 var google_api_annotations_pb = require('../../google/api/annotations_pb');
 goog.object.extend(proto, google_api_annotations_pb);
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb');
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
 var plugins_common_v1_auth_pb = require('../../plugins/common/v1/auth_pb');
 goog.object.extend(proto, plugins_common_v1_auth_pb);

@@ -21,7 +21,7 @@ var global =
     (function () { return this; }).call(null) ||
     Function('return this')();
 
-var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb');
+var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb.js');
 goog.object.extend(proto, google_protobuf_any_pb);
 goog.exportSymbol('proto.plugins.bigquery.v1.MappedColumns', null, global);
 goog.exportSymbol('proto.plugins.bigquery.v1.Plugin', null, global);

@@ -303,6 +303,7 @@ func main() {
 			redis.WithGRPCPort(viper.GetInt("grpc.port")),
 			redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
 			redis.WithEphemeralTimeout(viper.GetDuration("sandbox.timeout")),
+			redis.WithAgentKey(viper.GetString("superblocks.key")),
 		))
 
 		logger.Info("redis transport configured",

@@ -3,7 +3,7 @@
 'use strict';
 var grpc = require('@grpc/grpc-js');
 var event_v2_cloudevent_pb = require('../../event/v2/cloudevent_pb');
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb');
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 
 function serialize_event_v2_CloudEvent(arg) {
   if (!(arg instanceof event_v2_cloudevent_pb.CloudEvent)) {

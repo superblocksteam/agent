@@ -51,14 +51,24 @@ class List(list):
 
 
 class Reader:
-    """File reader for accessing files from the context."""
+    """File reader that fetches files via gRPC from task-manager."""
 
-    def __init__(self, _globals):
-        self._globals = _globals
+    def __init__(self, file_fetcher):
+        """
+        Initialize Reader with a file fetcher function.
+
+        Args:
+            file_fetcher: A callable that takes (path) and returns file contents as bytes
+        """
+        self._file_fetcher = file_fetcher
 
     def readContents(self, name, path, mode=None):
-        payload = self.__serialize(self.__fetchFromController(path), name, mode)
-        return payload
+        """Read file contents and serialize based on mode."""
+        from io import BytesIO
+
+        contents = self._file_fetcher(path)
+        buf = BytesIO(contents)
+        return self.__serialize(buf, name, mode)
 
     def __serialize(self, f, name, mode=None):
         f.seek(0)
@@ -68,8 +78,8 @@ class Reader:
             {7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F}
         )
 
-        def is_binary_string(bytes):
-            return bool(bytes.translate(None, textchars))
+        def is_binary_string(bytes_data):
+            return bool(bytes_data.translate(None, textchars))
 
         bytes_data = f.read(1024)
         f.seek(0)
@@ -85,47 +95,6 @@ class Reader:
                 "then apply your own encoding like .encode('latin1')"
             )
         return f.read().decode("utf8")
-
-    def __fetchFromController(self, path: str):
-        from io import BytesIO
-
-        from requests import get
-
-        response = get(
-            self._globals["$fileServerUrl"],
-            stream=True,
-            params={"location": path},
-            headers={
-                "x-superblocks-agent-key": self._sanitize_agent_key(
-                    self._globals["$agentKey"]
-                )
-            },
-        )
-        if response.status_code != 200:
-            raise Exception("Internal Server Error")
-
-        buf = BytesIO()
-        for chunk in response.iter_content(chunk_size=128):
-            buf.write(chunk)
-
-        if "v2" in self._globals["$fileServerUrl"]:
-            str_data = buf.getvalue().decode("utf-8")
-            splitted = str_data.split("\n")
-
-            newBuf = BytesIO()
-            for one in splitted:
-                if len(one) == 0:
-                    return newBuf
-                obj = json.loads(one)
-                data = base64.b64decode(obj.get("result").get("data"))
-                newBuf.write(data)
-
-            return newBuf
-        else:
-            return buf
-
-    def _sanitize_agent_key(self, agent_key: str) -> str:
-        return agent_key.replace(r"/", "__").replace(r"+", "--")
 
 
 def decode_object(value: dict) -> Any:

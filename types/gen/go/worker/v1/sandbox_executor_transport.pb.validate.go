@@ -69,6 +69,8 @@ func (m *ExecuteRequest) validate(all bool) error {
 
 	// no validation rules for VariablesJson
 
+	// no validation rules for Files
+
 	if len(errors) > 0 {
 		return ExecuteRequestMultiError(errors)
 	}

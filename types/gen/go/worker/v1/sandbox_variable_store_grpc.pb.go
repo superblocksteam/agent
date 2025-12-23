@@ -23,6 +23,7 @@ const (
 	SandboxVariableStoreService_SetVariable_FullMethodName  = "/worker.v1.SandboxVariableStoreService/SetVariable"
 	SandboxVariableStoreService_GetVariables_FullMethodName = "/worker.v1.SandboxVariableStoreService/GetVariables"
 	SandboxVariableStoreService_SetVariables_FullMethodName = "/worker.v1.SandboxVariableStoreService/SetVariables"
+	SandboxVariableStoreService_FetchFile_FullMethodName    = "/worker.v1.SandboxVariableStoreService/FetchFile"
 )
 
 // SandboxVariableStoreServiceClient is the client API for SandboxVariableStoreService service.
@@ -33,6 +34,9 @@ type SandboxVariableStoreServiceClient interface {
 	SetVariable(ctx context.Context, in *SetVariableRequest, opts ...grpc.CallOption) (*SetVariableResponse, error)
 	GetVariables(ctx context.Context, in *GetVariablesRequest, opts ...grpc.CallOption) (*GetVariablesResponse, error)
 	SetVariables(ctx context.Context, in *SetVariablesRequest, opts ...grpc.CallOption) (*SetVariablesResponse, error)
+	// FetchFile fetches file contents from the orchestrator's file server.
+	// The task-manager handles authentication with the orchestrator.
+	FetchFile(ctx context.Context, in *FetchFileRequest, opts ...grpc.CallOption) (*FetchFileResponse, error)
 }
 
 type sandboxVariableStoreServiceClient struct {
@@ -79,6 +83,15 @@ func (c *sandboxVariableStoreServiceClient) SetVariables(ctx context.Context, in
 	return out, nil
 }
 
+func (c *sandboxVariableStoreServiceClient) FetchFile(ctx context.Context, in *FetchFileRequest, opts ...grpc.CallOption) (*FetchFileResponse, error) {
+	out := new(FetchFileResponse)
+	err := c.cc.Invoke(ctx, SandboxVariableStoreService_FetchFile_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SandboxVariableStoreServiceServer is the server API for SandboxVariableStoreService service.
 // All implementations should embed UnimplementedSandboxVariableStoreServiceServer
 // for forward compatibility
@@ -87,6 +100,9 @@ type SandboxVariableStoreServiceServer interface {
 	SetVariable(context.Context, *SetVariableRequest) (*SetVariableResponse, error)
 	GetVariables(context.Context, *GetVariablesRequest) (*GetVariablesResponse, error)
 	SetVariables(context.Context, *SetVariablesRequest) (*SetVariablesResponse, error)
+	// FetchFile fetches file contents from the orchestrator's file server.
+	// The task-manager handles authentication with the orchestrator.
+	FetchFile(context.Context, *FetchFileRequest) (*FetchFileResponse, error)
 }
 
 // UnimplementedSandboxVariableStoreServiceServer should be embedded to have forward compatible implementations.
@@ -104,6 +120,9 @@ func (UnimplementedSandboxVariableStoreServiceServer) GetVariables(context.Conte
 }
 func (UnimplementedSandboxVariableStoreServiceServer) SetVariables(context.Context, *SetVariablesRequest) (*SetVariablesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetVariables not implemented")
+}
+func (UnimplementedSandboxVariableStoreServiceServer) FetchFile(context.Context, *FetchFileRequest) (*FetchFileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchFile not implemented")
 }
 
 // UnsafeSandboxVariableStoreServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -189,6 +208,24 @@ func _SandboxVariableStoreService_SetVariables_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SandboxVariableStoreService_FetchFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxVariableStoreServiceServer).FetchFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxVariableStoreService_FetchFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxVariableStoreServiceServer).FetchFile(ctx, req.(*FetchFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SandboxVariableStoreService_ServiceDesc is the grpc.ServiceDesc for SandboxVariableStoreService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -211,6 +248,10 @@ var SandboxVariableStoreService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetVariables",
 			Handler:    _SandboxVariableStoreService_SetVariables_Handler,
+		},
+		{
+			MethodName: "FetchFile",
+			Handler:    _SandboxVariableStoreService_FetchFile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

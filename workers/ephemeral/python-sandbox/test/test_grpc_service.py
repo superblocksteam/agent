@@ -27,6 +27,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -43,6 +44,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -58,6 +60,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -73,6 +76,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -88,6 +92,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -103,6 +108,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -118,6 +124,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -133,6 +140,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -150,6 +158,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -165,6 +174,7 @@ class TestSandboxExecutorServicer:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
@@ -192,6 +202,7 @@ class TestVariableClientIntegration:
         request.variable_store_address = ""
         request.execution_id = ""
         request.variables_json = "{}"
+        request.files = {}
 
         response = servicer.Execute(request, mock_context)
 
