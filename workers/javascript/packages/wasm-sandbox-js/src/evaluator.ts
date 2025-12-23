@@ -106,7 +106,7 @@ export async function evaluateExpressions(expressions: string[], options: Evalua
 
   // Register Buffer before creating marshaller (marshaller needs `Buffer` to be available in the VM)
   if (opts.enableBuffer) {
-    registerGlobalBuffer(ctx);
+    registerGlobalBuffer(ctx, { memoryLimitBytes: opts.limits.memoryBytes });
   }
 
   const eventLoop = createEventLoop(ctx, { deadlineMs });

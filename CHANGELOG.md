@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update FilePicker download endpoint to ensure requested download paths are under the temp directory
 - Add WASM-based sandbox using QuickJS for more secure JavaScript binding resolution
 - Require authorization header for `/v2/test` endpoint to prevent unauthenticated environment variable access
+- Enforce WASM sandbox memory limit for host-side allocations
 
 ## v1.31.0
 - Add support for restricting imports and built in functions in Python language execution steps

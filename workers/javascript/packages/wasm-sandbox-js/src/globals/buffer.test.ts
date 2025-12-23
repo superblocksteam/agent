@@ -49,6 +49,18 @@ describe('globals/buffer', () => {
 
       expect(results[expression]).toEqual([255, 254]);
     });
+
+    it('enforces memory limit during host string encoding', async () => {
+      // "中" is 3 bytes in UTF-8, but 2 bytes per code unit in JS strings. This lets the VM allocate the
+      // source string within the limit while UTF-8 conversion for host encoding exceeds it. We should throw (not silently
+      // return an empty Buffer).
+      await expect(
+        evaluateExpressions(['Buffer.from("中".repeat(90000))'], {
+          enableBuffer: true,
+          limits: { memoryBytes: 256 * 1024 }
+        })
+      ).rejects.toThrow(/Buffer\.from\(string\): (failed to read string from VM|encoded size)/);
+    });
   });
 
   describe('Buffer.from with arrays and TypedArrays', () => {
