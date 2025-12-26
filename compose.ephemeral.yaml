@@ -70,7 +70,7 @@ services:
       SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: python-sandbox:50051
       SUPERBLOCKS_WORKER_SANDBOX_GRPC_ADDRESS: python-ephemeral:50050
       # Match orchestrator's ephemeral routing (--worker.ephemeral.plugins.enabled)
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_STREAM_KEYS: agent.main.bucket.BA.ephemeral.plugin.python.event.execute agent.main.bucket.BE.ephemeral.plugin.python.event.execute
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_STREAM_KEYS: agent.main.bucket.BA.ephemeral.plugin.python.event.execute agent.main.bucket.BE.ephemeral.plugin.python.event.execute agent.main.bucket.B1.ephemeral.plugin.python.event.execute agent.main.bucket.B2.ephemeral.plugin.python.event.execute
     depends_on:
       - redis
       - python-sandbox
@@ -90,7 +90,7 @@ services:
       SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-sandbox:50051
       SUPERBLOCKS_WORKER_SANDBOX_GRPC_ADDRESS: javascript-ephemeral:50050
       # Match orchestrator's ephemeral routing (--worker.ephemeral.plugins.enabled)
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_STREAM_KEYS: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute agent.main.bucket.BE.ephemeral.plugin.javascript.event.execute
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_STREAM_KEYS: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute agent.main.bucket.BE.ephemeral.plugin.javascript.event.execute agent.main.bucket.B1.ephemeral.plugin.javascript.event.execute agent.main.bucket.B2.ephemeral.plugin.javascript.event.execute
     depends_on:
       - redis
       - javascript-sandbox

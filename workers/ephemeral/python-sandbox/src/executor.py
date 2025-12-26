@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import tempfile
 from contextlib import redirect_stderr, redirect_stdout
 from functools import partial
 from importlib.util import module_from_spec, spec_from_loader
@@ -73,32 +72,24 @@ class Executor:
         stdout_data = ""
         stderr_data = ""
 
-        # Save original directory
-        original_dir = os.getcwd()
+        # NOTE: We intentionally do NOT use os.chdir() here because:
+        # 1. os.chdir() is process-wide, not thread-local
+        # 2. The gRPC server uses ThreadPoolExecutor for concurrency
+        # 3. Multiple threads calling os.chdir() would race and cause
+        #    "[Errno 2] No such file or directory" errors
+        # User code should not depend on the current working directory.
 
         try:
-            with tempfile.TemporaryDirectory() as execution_dir:
-                try:
-                    os.chdir(execution_dir)
-                except Exception:
-                    pass
-
-                result, stdout_data, stderr_data = self._run_code(
-                    code,
-                    context,
-                    var_store_address,
-                    execution_id,
-                    variables_json,
-                    superblocks_files=superblocks_files or {},
-                )
+            result, stdout_data, stderr_data = self._run_code(
+                code,
+                context,
+                var_store_address,
+                execution_id,
+                variables_json,
+                superblocks_files=superblocks_files or {},
+            )
         except Exception as e:
             stderr_data = f"__EXCEPTION__{str(e)}"
-        finally:
-            # Restore original directory
-            try:
-                os.chdir(original_dir)
-            except Exception:
-                pass
 
         return result, stdout_data, stderr_data
 
@@ -140,40 +131,42 @@ class Executor:
             except Exception as e:
                 print(f"Error building variables: {e}")
 
-        # Get globals dict from context (this is where filepicker values live)
+        # Get globals dict from context (this is where native variables like Table1 live)
         globals_dict = my_module.__dict__.get("globals", {})
-        if isinstance(globals_dict, dict) and var_client and superblocks_files:
-            # superblocks_files is a pre-computed map of treePath -> remotePath
-            # computed by the task-manager by traversing context to find filepicker objects
+        if isinstance(globals_dict, dict):
+            # Handle filepicker files if present
+            if var_client and superblocks_files:
+                # superblocks_files is a pre-computed map of treePath -> remotePath
+                # computed by the task-manager by traversing context to find filepicker objects
 
-            # Create a file fetcher that uses the variable client's FetchFile RPC
-            def make_file_fetcher(remote_path):
-                def fetcher(path):
-                    return var_client.fetch_file(remote_path)
-                return fetcher
+                # Create a file fetcher that uses the variable client's FetchFile RPC
+                def make_file_fetcher(remote_path):
+                    def fetcher(path):
+                        return var_client.fetch_file(remote_path)
+                    return fetcher
 
-            # Create Reader with file fetcher and attach readContents to each file object
-            for key, remote_path in superblocks_files.items():
-                reader = Reader(make_file_fetcher(remote_path))
-                paths = key.split(".")
-                obj = globals_dict.get(paths[0])
-                if obj is None:
-                    continue
-                for path in paths[1:]:
-                    if path.isdigit():
-                        path = int(path)
-                    try:
-                        obj = obj[path]
-                    except (KeyError, IndexError, TypeError):
-                        obj = None
-                        break
-                if obj is not None and isinstance(obj, dict):
-                    obj["readContents"] = partial(reader.readContents, key, remote_path)
+                # Create Reader with file fetcher and attach readContents to each file object
+                for key, remote_path in superblocks_files.items():
+                    reader = Reader(make_file_fetcher(remote_path))
+                    paths = key.split(".")
+                    obj = globals_dict.get(paths[0])
+                    if obj is None:
+                        continue
+                    for path in paths[1:]:
+                        if path.isdigit():
+                            path = int(path)
+                        try:
+                            obj = obj[path]
+                        except (KeyError, IndexError, TypeError):
+                            obj = None
+                            break
+                    if obj is not None and isinstance(obj, dict):
+                        obj["readContents"] = partial(reader.readContents, key, remote_path)
 
-            # Copy globals values to module dict for direct access
-            for k, v in globals_dict.items():
+            # Copy globals values to module dict for direct access (always do this)
+            for k in globals_dict.keys():
                 if not k.startswith("$"):
-                    my_module.__dict__[k] = v
+                    my_module.__dict__[k] = globals_dict[k]
 
         # Create wrapper function with Reader class
         wrapper = f"{getsource(Reader)}\ndef wrapper():\n"
