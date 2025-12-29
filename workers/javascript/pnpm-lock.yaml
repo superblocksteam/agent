@@ -19,21 +19,48 @@ importers:
       '@grpc/proto-loader':
         specifier: ^0.7.10
         version: 0.7.15
+      '@notionhq/client':
+        specifier: 2.2.15
+        version: 2.2.15
+      '@paralleldrive/cuid2':
+        specifier: 2.2.2
+        version: 2.2.2
       '@superblocks/shared':
         specifier: workspace:*
         version: link:../../javascript/packages/shared
+      aws-sdk:
+        specifier: 2.1664.0
+        version: 2.1664.0
       axios:
         specifier: ^1.6.0
         version: 1.8.3(debug@4.4.3)
+      base64url:
+        specifier: 3.0.1
+        version: 3.0.1
+      bcrypt:
+        specifier: 5.1.1
+        version: 5.1.1
+      date-fns:
+        specifier: 3.6.0
+        version: 3.6.0
       deasync:
         specifier: ^0.1.30
         version: 0.1.30
       dotenv:
         specifier: 16.4.5
         version: 16.4.5
+      esprima:
+        specifier: 4.0.1
+        version: 4.0.1
       google-protobuf:
         specifier: ^3.21.2
         version: 3.21.4
+      jmespath:
+        specifier: 0.16.0
+        version: 0.16.0
+      jsonwebtoken:
+        specifier: 9.0.2
+        version: 9.0.2
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -43,9 +70,24 @@ importers:
       moment-timezone:
         specifier: ^0.5.46
         version: 0.5.46
+      notion-to-md:
+        specifier: 3.1.1
+        version: 3.1.1
       vm2:
         specifier: ^3.10.0
         version: 3.10.0
+      web3:
+        specifier: 4.11.1
+        version: 4.11.1(typescript@5.5.4)(zod@3.25.76)
+      webflow-api:
+        specifier: 1.3.1
+        version: 1.3.1
+      xml2json:
+        specifier: 0.12.0
+        version: 0.12.0
+      xmlbuilder2:
+        specifier: 3.1.1
+        version: 3.1.1
     devDependencies:
       '@jest/globals':
         specifier: ^29.7.0
@@ -12894,7 +12936,7 @@ snapshots:
   buffer@4.9.2:
     dependencies:
       base64-js: 1.5.1
-      ieee754: 1.1.13
+      ieee754: 1.2.1
       isarray: 1.0.0
 
   buffer@5.6.0:

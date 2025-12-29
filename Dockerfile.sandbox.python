@@ -5,11 +5,14 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies (gcc, python-dev, linux-headers for psutil)
+# Install system dependencies (gcc, python-dev, linux-headers for psutil, cmake for cvxpy/qdldl)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    cmake \
+    g++ \
     gcc \
-    python3-dev \
+    libopenblas-dev \
     linux-libc-dev \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
