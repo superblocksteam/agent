@@ -41,3 +41,5 @@ charts/
 
 /workers/python/coverage.json
 **/__pycache__/
+
+/workers/ephemeral/task-manager/task-manager

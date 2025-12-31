@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"workers/ephemeral/task-manager/internal/health"
 	"workers/ephemeral/task-manager/internal/plugin/sandbox"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
 	"workers/ephemeral/task-manager/internal/transport/redis"
@@ -86,6 +87,11 @@ func init() {
 	// gRPC settings for variable store
 	pflag.Int("grpc.port", 50050, "The port for the VariableStore gRPC server.")
 	pflag.String("grpc.address", "", "The address for sandbox to connect to VariableStore (defaults to localhost:grpc.port).")
+
+	// Health check settings
+	pflag.String("health.file", "/tmp/worker_healthy", "The path to the health file for file-based probes.")
+	pflag.Duration("health.ping.timeout", 5*time.Second, "Timeout for Redis ping health checks.")
+	pflag.Duration("health.check.interval", 5*time.Second, "The interval for health checks.")
 
 	// OpenTelemetry settings
 	pflag.String("otel.collector.http.url", "http://127.0.0.1:4318", "The OTLP HTTP collector URL.")
@@ -265,8 +271,8 @@ func main() {
 		)
 	}
 
-	// Create Redis transport
-	var transportRunnable run.Runnable
+	// Create Redis client (shared between transport and health server)
+	var redisClient *r.Client
 	{
 		options := &r.Options{
 			Addr:         fmt.Sprintf("%s:%d", viper.GetString("transport.redis.host"), viper.GetInt("transport.redis.port")),
@@ -287,38 +293,50 @@ func main() {
 			}
 		}
 
-		redisClient := r.NewClient(options)
-
-		transportRunnable = redis.NewRedisTransport(redis.NewOptions(
-			redis.WithLogger(logger),
-			redis.WithRedisClient(redisClient),
-			redis.WithExecutionPool(viper.GetInt64("transport.redis.execution.pool")),
-			redis.WithConsumerGroup(viper.GetString("worker.consumer.group")),
-			redis.WithBlockDuration(viper.GetDuration("transport.redis.block.duration")),
-			redis.WithMessageCount(viper.GetInt64("transport.redis.max.messages")),
-			redis.WithPluginExecutor(pluginExec),
-			redis.WithStreamKeys(streamKeys),
-			redis.WithWorkerId(id),
-			redis.WithGRPCAddress(grpcAddress),
-			redis.WithGRPCPort(viper.GetInt("grpc.port")),
-			redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
-			redis.WithEphemeralTimeout(viper.GetDuration("sandbox.timeout")),
-			redis.WithAgentKey(viper.GetString("superblocks.key")),
-		))
-
-		logger.Info("redis transport configured",
-			zap.String("host", viper.GetString("transport.redis.host")),
-			zap.Int("port", viper.GetInt("transport.redis.port")),
-			zap.Strings("streams", streamKeys),
-			zap.String("group", viper.GetString("worker.consumer.group")),
-			zap.Bool("worker_ephemeral", viper.GetBool("worker.ephemeral")),
-			zap.Duration("sandbox_timeout", viper.GetDuration("sandbox.timeout")),
-		)
+		redisClient = r.NewClient(options)
 	}
+
+	// Create health checker with file-based health checks
+	healthChecker := health.NewChecker(&health.Options{
+		Redis:          redisClient,
+		Sandbox:        sandboxPlugin,
+		Logger:         logger,
+		PingTimeout:    viper.GetDuration("health.ping.timeout"),
+		HealthFilePath: viper.GetString("health.file"),
+		CheckInterval:  viper.GetDuration("health.check.interval"),
+	})
+
+	// Create Redis transport
+	transportRunnable := redis.NewRedisTransport(redis.NewOptions(
+		redis.WithLogger(logger),
+		redis.WithRedisClient(redisClient),
+		redis.WithExecutionPool(viper.GetInt64("transport.redis.execution.pool")),
+		redis.WithConsumerGroup(viper.GetString("worker.consumer.group")),
+		redis.WithBlockDuration(viper.GetDuration("transport.redis.block.duration")),
+		redis.WithMessageCount(viper.GetInt64("transport.redis.max.messages")),
+		redis.WithPluginExecutor(pluginExec),
+		redis.WithStreamKeys(streamKeys),
+		redis.WithWorkerId(id),
+		redis.WithGRPCAddress(grpcAddress),
+		redis.WithGRPCPort(viper.GetInt("grpc.port")),
+		redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
+		redis.WithEphemeralTimeout(viper.GetDuration("sandbox.timeout")),
+		redis.WithAgentKey(viper.GetString("superblocks.key")),
+	))
+
+	logger.Info("redis transport configured",
+		zap.String("host", viper.GetString("transport.redis.host")),
+		zap.Int("port", viper.GetInt("transport.redis.port")),
+		zap.Strings("streams", streamKeys),
+		zap.String("group", viper.GetString("worker.consumer.group")),
+		zap.Bool("worker_ephemeral", viper.GetBool("worker.ephemeral")),
+		zap.Duration("sandbox_timeout", viper.GetDuration("sandbox.timeout")),
+	)
 
 	var g run.Group
 
 	g.Always(process.New())
+	g.Always(healthChecker)
 	g.Always(transportRunnable)
 	g.Always(tracerRunnable)
 
@@ -326,6 +344,7 @@ func main() {
 		zap.String("worker_id", id),
 		zap.String("language", language),
 		zap.String("version", version),
+		zap.String("health_file", viper.GetString("health.file")),
 	)
 
 	if err := g.Run(); err != nil {

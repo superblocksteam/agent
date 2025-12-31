@@ -88,10 +88,24 @@ spec:
           imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
           resources:
             {{- toYaml (deepCopy ($.Values.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
+          {{- with (($v.taskManager).startupProbe) | default $.Values.taskManager.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (($v.taskManager).readinessProbe) | default $.Values.taskManager.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (($v.taskManager).livenessProbe) | default $.Values.taskManager.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command: ["./task-manager"]
           args:
           # Ephemeral mode - process one job and exit
           - "--worker.ephemeral=true"
+          # Health check configuration
+          - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.taskManager.healthFilePath }}"
           # Logging
           - "--log.level={{ $.Values.observability.logging.level }}"
           # Language

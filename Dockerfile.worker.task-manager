@@ -25,7 +25,7 @@ COPY workers/ephemeral/task-manager/internal/ ./internal/
 COPY workers/ephemeral/task-manager/cmd/ ./cmd/
 
 # Build the binary (CGO needed for v8go dependency in pkg/errors)
-RUN CGO_ENABLED=1 GOOS=linux go build -o task-manager ./cmd/worker
+RUN CGO_ENABLED=1 GOOS=linux go build -o task-manager ./cmd/task-manager
 
 # Runtime stage (using Debian trixie-slim to match builder glibc version)
 FROM debian:trixie-slim
@@ -48,6 +48,6 @@ ENV SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_HOST=redis \
     SUPERBLOCKS_WORKER_SANDBOX_GRPC_PORT=50050 \
     SUPERBLOCKS_WORKER_SANDBOX_OTEL_COLLECTOR_HTTP_URL=http://otel-desktop-viewer:4318
 
-EXPOSE 50050
+EXPOSE 50050 8080
 
 CMD ["./task-manager"]
