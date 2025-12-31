@@ -199,7 +199,7 @@ describe('bootstrap', () => {
       const filePaths: Record<string, string> = {};
       const inheritedEnv: string[] = [];
 
-      const expectedErr = `Error on line 86:
+      const expectedErr = `Error on line 135:
 Error: variables not defined`;
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
@@ -239,7 +239,7 @@ Error: variables not defined`;
             `;
       const filePaths: Record<string, string> = {};
 
-      const expectedErr = `Error on line 4:
+      const expectedErr = `Error on line 7:
         console.log("Starting script...";
                                         ^
 SyntaxError: Unexpected token ';'`;
@@ -280,7 +280,7 @@ SyntaxError: Unexpected token ';'`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: string[] = [];
 
-      const expectedErr = `Error on line 6:
+      const expectedErr = `Error on line 9:
 ReferenceError: userName is not defined`;
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });

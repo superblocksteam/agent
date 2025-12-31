@@ -12,6 +12,7 @@ import {
 export class GrpcKvStore implements KVStore {
   private readonly executionId: string;
   private readonly client: SandboxVariableStoreServiceClient;
+  private readonly fileCache: Map<string, Buffer> = new Map();
 
   public constructor(executionId: string, client: SandboxVariableStoreServiceClient) {
     this.executionId = executionId;
@@ -81,32 +82,66 @@ export class GrpcKvStore implements KVStore {
    */
   public async fetchFile(path: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const request = new FetchFileRequest();
-      request.setExecutionId(this.executionId);
-      request.setPath(path);
-
-      this.client.fetchFile(request, (error, response) => {
+      this.fetchFileCallback(path, (error, result) => {
         if (error) {
           reject(error);
-          return;
+        } else {
+          resolve(result!);
         }
-        const errorMsg = response.getError();
-        if (errorMsg) {
-          reject(new Error(errorMsg));
-          return;
-        }
-        resolve(Buffer.from(response.getContents_asU8()));
       });
     });
   }
 
   /**
-   * Synchronous version of fetchFile using deasync.
-   * Used by readContents() in user scripts.
+   * Callback-style version of fetchFile
    */
-  public fetchFileSync(path: string): Buffer {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-    const deasync = require('deasync');
-    return deasync(this.fetchFile.bind(this))(path);
+  public fetchFileCallback(path: string, callback: (error: Error | null, result?: Buffer) => void): void {
+    const request = new FetchFileRequest();
+    request.setExecutionId(this.executionId);
+    request.setPath(path);
+
+    this.client.fetchFile(request, (error, response) => {
+      if (error) {
+        callback(error);
+        return;
+      }
+      const errorMsg = response.getError();
+      if (errorMsg) {
+        callback(new Error(errorMsg));
+        return;
+      }
+      callback(null, Buffer.from(response.getContents_asU8()));
+    });
+  }
+
+  /**
+   * Prefetch multiple files and store them in the cache.
+   * Should be called before VM execution when sync file reads are needed.
+   */
+  public async prefetchFiles(paths: string[]): Promise<void> {
+    const fetchPromises = paths.map(async (path) => {
+      try {
+        const contents = await this.fetchFile(path);
+        this.fileCache.set(path, contents);
+      } catch (error) {
+        console.error('failed to prefetch file:', path, error);
+        throw error;
+      }
+    });
+    await Promise.all(fetchPromises);
+  }
+
+  /**
+   * Get file contents from cache. Returns undefined if not cached.
+   */
+  public getFileFromCache(path: string): Buffer | undefined {
+    return this.fileCache.get(path);
+  }
+
+  /**
+   * Check if a file is in the cache.
+   */
+  public hasFileInCache(path: string): boolean {
+    return this.fileCache.has(path);
   }
 }

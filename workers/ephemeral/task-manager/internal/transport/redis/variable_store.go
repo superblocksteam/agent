@@ -54,12 +54,6 @@ func NewVariableStoreGRPC(provider VariableStoreProvider, logger *zap.Logger, po
 	}
 }
 
-// redisKey creates a namespaced Redis key to prevent collisions between executions.
-// Format matches workers/python and workers/javascript: {executionId}.variable.{key}
-func redisKey(executionId, key string) string {
-	return fmt.Sprintf("%s.variable.%s", executionId, key)
-}
-
 // Start starts the gRPC server
 func (s *VariableStoreGRPC) Start() error {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
@@ -103,7 +97,7 @@ func (s *VariableStoreGRPC) GetVariable(ctx context.Context, req *workerv1.GetVa
 			value, ok := execVars[req.Key]
 			if !ok {
 				// Try Redis if not in memory
-				val, err := redis.Get(ctx, redisKey(req.ExecutionId, req.Key)).Result()
+				val, err := redis.Get(ctx, req.Key).Result()
 				if err == r.Nil {
 					return &workerv1.GetVariableResponse{Found: false}, nil
 				} else if err != nil {
@@ -139,7 +133,7 @@ func (s *VariableStoreGRPC) SetVariable(ctx context.Context, req *workerv1.SetVa
 			store[req.ExecutionId][req.Key] = req.Value
 
 			// Also write to Redis for persistence
-			err := redis.Set(ctx, redisKey(req.ExecutionId, req.Key), req.Value, 24*time.Hour).Err()
+			err := redis.Set(ctx, req.Key, req.Value, 24*time.Hour).Err()
 			if err != nil {
 				s.logger.Warn("failed to write variable to Redis", zap.Error(err))
 			}
@@ -176,7 +170,7 @@ func (s *VariableStoreGRPC) GetVariables(ctx context.Context, req *workerv1.GetV
 					}
 				}
 				// Try Redis
-				val, err := redis.Get(ctx, redisKey(req.ExecutionId, key)).Result()
+				val, err := redis.Get(ctx, key).Result()
 				if err == nil {
 					values[i] = val
 				}
@@ -211,7 +205,7 @@ func (s *VariableStoreGRPC) SetVariables(ctx context.Context, req *workerv1.SetV
 			for _, kv := range req.Kvs {
 				store[req.ExecutionId][kv.Key] = kv.Value
 				// Use namespaced key to prevent collisions between executions
-				pipe.Set(ctx, redisKey(req.ExecutionId, kv.Key), kv.Value, 24*time.Hour)
+				pipe.Set(ctx, kv.Key, kv.Value, 24*time.Hour)
 			}
 			_, err := pipe.Exec(ctx)
 			if err != nil {
