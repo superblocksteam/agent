@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -244,6 +245,11 @@ func parseResultJSON(jsonResult string) *structpb.Value {
 	}
 
 	return result
+}
+
+// ConnectionState returns the underlying gRPC connection state for health checking
+func (p *SandboxPlugin) ConnectionState() connectivity.State {
+	return p.conn.GetState()
 }
 
 // getCodeFromProps extracts the code/script from action configuration

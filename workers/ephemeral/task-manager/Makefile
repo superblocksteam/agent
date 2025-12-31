@@ -5,7 +5,7 @@ SERVICE_NAME     = worker.ephemeral
 SERVICE_VERSION  = $(shell git rev-parse HEAD 2>/dev/null || echo "dev")
 
 # Go settings
-GO_BINARY_NAME   = worker
+GO_BINARY_NAME   = task-manager
 PACKAGES         = $(shell go list ./... | grep -v /mocks | grep -v /gen | grep -v /integration_test)
 
 # Docker settings
@@ -68,7 +68,7 @@ gen-mocks: deps-tools
 
 build: deps
 	@echo "==> Building $(GO_BINARY_NAME)..."
-	CGO_ENABLED=1 go build -ldflags="-s -w -X main.version=$(SERVICE_VERSION)" -o $(GO_BINARY_NAME) ./cmd/worker
+	CGO_ENABLED=1 go build -ldflags="-s -w -X main.version=$(SERVICE_VERSION)" -o $(GO_BINARY_NAME) ./cmd/task-manager
 
 build-docker:
 	@echo "==> Building task-manager Docker image..."

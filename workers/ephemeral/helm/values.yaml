@@ -38,6 +38,28 @@ taskManager:
       memory: 128Mi
   # Additional args to pass to the task-manager
   extraArgs: []
+  # Health file path for file-based probes
+  healthFilePath: /tmp/worker_healthy
+  # Startup probe - checks if health file exists (created when Redis and sandbox are ready)
+  startupProbe:
+    exec:
+      command:
+        - cat
+        - /tmp/worker_healthy
+    failureThreshold: 30 # Allow up to 60 seconds for startup (30 * 2s)
+    periodSeconds: 2
+  # Readiness probe - checks if Redis and sandbox are reachable
+  readinessProbe:
+    exec:
+      command:
+        - cat
+        - /tmp/worker_healthy
+  # Liveness probe - checks if task-manager and sandbox are alive
+  livenessProbe:
+    exec:
+      command:
+        - cat
+        - /tmp/worker_healthy
 # Sandbox configurations (per language)
 sandbox:
   python:
