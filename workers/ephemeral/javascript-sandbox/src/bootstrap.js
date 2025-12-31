@@ -8,6 +8,7 @@ const {
   VariableClient
 } = require('@superblocks/shared');
 const { EventEmitter } = require('events');
+const _ = require('lodash');
 const { NodeVM } = require('vm2');
 
 const eventEmitter = new EventEmitter();
@@ -43,52 +44,73 @@ function cleanStack(stack, lineOffset) {
   return isNaN(errorLineNumber) ? errorStack : `Error on line ${errorLineNumber - lineOffset}:\n${errorStack}`;
 }
 
-const sharedCode = `
-module.exports = async function() {
-  function serialize(buffer, mode) {
-    if (mode === 'raw') {
-      return buffer;
-    }
-    if (mode === 'binary' || mode === 'text') {
-      // utf8 encoding is lossy for truly binary data, but not an error in JS
-      return buffer.toString(mode === 'binary' ? 'base64' : 'utf8');
-    }
-    // Otherwise, detect mode from first 1024 chars
-    const chunk = buffer.slice(0, 1024).toString('utf8');
-    if (chunk.indexOf('\u{FFFD}') > -1) {
-      return buffer.toString('base64');
-    }
-    return buffer.toString('utf8');
+function serialize(buffer, mode) {
+  if (mode === 'raw') {
+    return buffer;
   }
+  if (mode === 'binary' || mode === 'text') {
+    // utf8 encoding is lossy for truly binary data, but not an error in JS
+    return buffer.toString(mode === 'binary' ? 'base64' : 'utf8');
+  }
+  // Otherwise, detect mode from first 1024 chars
+  const chunk = buffer.slice(0, 1024).toString('utf8');
+  if (chunk.indexOf('\u{FFFD}') > -1) {
+    return buffer.toString('base64');
+  }
+  return buffer.toString('utf8');
+}
 
-  {
-    const _ = require('lodash');
+function createFunctionForPreparingGlobalObjectForFiles(kvStore, filePaths, useCache) {
+  return (globalObject) => {
+    Object.entries(filePaths).forEach(([treePath, remotePath]) => {
+      const readContentsAsync = async (mode) => {
+        if (!kvStore || typeof kvStore.fetchFile !== 'function') {
+           throw new Error('File fetching not available');
+        }
 
-    // $superblocksFiles is a pre-computed map of treePath -> remotePath
-    // computed by the task-manager by traversing context to find filepicker objects
-    Object.entries($superblocksFiles ?? {}).forEach(([treePath, remotePath]) => {
-      if (!remotePath) return;
-      const file = _.get(global, treePath);
-      _.set(global, treePath, {
+        // Check cache first (if files were prefetched)
+        if (kvStore.hasFileInCache && kvStore.hasFileInCache(remotePath)) {
+          const contents = kvStore.getFileFromCache(remotePath);
+          return serialize(contents, mode);
+        }
+
+        const contents = await kvStore.fetchFile(remotePath);
+        return serialize(contents, mode);
+      };
+      // hide the implementation of the function
+      readContentsAsync.toString = () => 'function readContentsAsync() { [native code] }';
+
+      const readContents = (mode) => {
+        if (!useCache) {
+          throw new Error('Synchronous file reading not available');
+        }
+
+        if (!kvStore || typeof kvStore.getFileFromCache !== 'function') {
+          throw new Error('Synchronous file reading not available');
+        }
+        if (!kvStore.hasFileInCache(remotePath)) {
+          throw new Error('File not found');
+        }
+
+        const contents = kvStore.getFileFromCache(remotePath);
+        return serialize(contents, mode);
+      };
+      // hide the implementation of the function
+      readContents.toString = () => 'function readContents() { [native code] }';
+
+      const file = _.get(globalObject, treePath);
+      _.set(globalObject, treePath, {
         ...file,
         $superblocksId: undefined,
         previewUrl: undefined,
-        readContentsAsync: async (mode) => {
-          // Use kvStore's fetchFile to get file contents from task-manager
-          const contents = await $fetchFile(remotePath);
-          const response = await serialize(contents, mode);
-          return response;
-        },
-        readContents: (mode) => {
-          // Use synchronous fetchFile
-          const contents = $fetchFileSync(remotePath);
-          const response = serialize(contents, mode);
-          return response;
-        }
+        readContentsAsync,
+        readContents,
       });
     });
-  }
+  };
+}
 
+const sharedCode = `
   // Augment console object to support log and dir methods
   var $augmentedConsole = (function(cons) {
     const util = require('util');
@@ -113,28 +135,10 @@ module.exports.executeCode = async (workerData) => {
   let variableClient;
 
   try {
-    // Create file fetcher functions that use kvStore to fetch from task-manager
-    // The task-manager handles authentication with the orchestrator
-    const kvStore = context.kvStore;
-    const fetchFile = async (path) => {
-      if (kvStore && typeof kvStore.fetchFile === 'function') {
-        return await kvStore.fetchFile(path);
-      }
-      throw new Error('File fetching not available');
-    };
-    const fetchFileSync = (path) => {
-      if (kvStore && typeof kvStore.fetchFileSync === 'function') {
-        return kvStore.fetchFileSync(path);
-      }
-      throw new Error('File fetching not available');
-    };
-
     const execGlobalContext = {
       ...context.globals,
       ...context.outputs,
       $superblocksFiles: filePaths ?? {},
-      $fetchFile: fetchFile,
-      $fetchFileSync: fetchFileSync
     };
 
     if (context.variables && typeof context.variables === 'object') {
@@ -148,6 +152,18 @@ module.exports.executeCode = async (workerData) => {
     }
 
     decodeBytestringsExecutionContext(context, true);
+
+    // Check for .readContents( after removing all .readContentsAsync( occurrences
+    const codeWithoutAsync = code.replace(/\.readContentsAsync\s*\(/g, '');
+    const useCache = /\.readContents\s*\(/.test(codeWithoutAsync);
+
+    // Prefetch files if code uses sync readContents
+    if (useCache && filePaths && Object.keys(filePaths).length > 0) {
+      const remotePaths = Object.values(filePaths);
+      await context.kvStore.prefetchFiles(remotePaths);
+    }
+
+    const prepareGlobalObjectForFiles = createFunctionForPreparingGlobalObjectForFiles(context.kvStore, filePaths, useCache);
 
     // Build environment for user script
     const userProcessEnv = {};
@@ -171,15 +187,17 @@ module.exports.executeCode = async (workerData) => {
         ...context.globals,
         ...context.outputs,
         $superblocksFiles: filePaths ?? {},
-        $fetchFile: fetchFile,
-        $fetchFileSync: fetchFileSync
       },
       wasm: false
     });
     addLogListenersToVM(vm, ret);
     vm.setGlobals(execGlobalContext);
+    vm.setGlobal('$prepareGlobalObjectForFiles', prepareGlobalObjectForFiles);
 
-    const codeToExecute = `${sharedCode}
+    const codeToExecute = `
+module.exports = async function() {
+  $prepareGlobalObjectForFiles(globalThis);
+  ${sharedCode}
   ${code}
 }()`;
 

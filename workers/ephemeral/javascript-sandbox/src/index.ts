@@ -21,6 +21,7 @@ const SandboxExecutorTransportServiceImpl: ISandboxExecutorTransportServiceServe
     const kvStore = new GrpcKvStore(request.getExecutionId(), variableStoreClient);
 
     const ctx = JSON.parse(request.getContextJson());
+    const variables = JSON.parse(request.getVariablesJson());
 
     // Extract pre-computed superblocksFiles map (treePath -> remotePath)
     // This is computed in the task-manager by traversing context to find filepicker objects
@@ -34,7 +35,7 @@ const SandboxExecutorTransportServiceImpl: ISandboxExecutorTransportServiceServe
       context: {
         globals: ctx.globals ?? {},
         outputs: ctx.outputs ?? {},
-        variables: ctx.variables ?? {},
+        variables: variables ?? {},
         kvStore: kvStore
       },
       code: request.getScript(),
