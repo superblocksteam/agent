@@ -176,7 +176,7 @@ podAnnotations: {}
 # Smokescreen egress proxy configuration
 # When enabled, sandbox traffic is routed through smokescreen for filtering
 smokescreen:
-  enabled: false
+  enabled: true
   image:
     repository: ghcr.io/superblocksteam/smokescreen
     tag: latest
@@ -191,10 +191,10 @@ smokescreen:
       cpu: 50m
       memory: 64Mi
   # Allow list - these hosts override the deny list
-  # Task-managers must be allowed for VariableStore gRPC calls
+  # In Kubernetes, sandbox accesses task-manager via localhost (same pod sidecar)
   allowList:
-    - python-ephemeral
-    - javascript-ephemeral
+    - localhost
+    - "127.0.0.1"
   # Deny list - block access to internal infrastructure
   denyList:
     - python-sandbox
@@ -203,10 +203,11 @@ smokescreen:
     - orchestrator
     - redis
     - otel-collector
-    - agent
-    - orchestrator
-    - redis
-    - otel-collector
+    # Block Kubernetes API server (prevent SSRF to k8s control plane)
+    - kubernetes.default.svc.cluster.local
+    - kubernetes.default.svc
+    - kubernetes.default
+    - kubernetes
 # Image pull secrets
 image:
   credentials:
