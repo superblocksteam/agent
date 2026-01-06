@@ -17,11 +17,13 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand"
   },
   "dependencies": {
-    "quickjs-emscripten": "^0.31.0",
+    "quickjs-emscripten-core": "workspace:*",
+    "@jitl/quickjs-wasmfile-release-sync": "workspace:*",
     "lodash": "^4.17.21",
     "moment": "2.29.4"
   },
   "devDependencies": {
+    "@jitl/quickjs-wasmfile-debug-sync": "workspace:*",
     "@jest/globals": "^29.7.0",
     "@types/jest": "29.5.12",
     "@types/lodash": "^4.17.0",

@@ -308,6 +308,8 @@ func (m *Custom) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for PresignedMethod
+
 	if len(errors) > 0 {
 		return CustomMultiError(errors)
 	}

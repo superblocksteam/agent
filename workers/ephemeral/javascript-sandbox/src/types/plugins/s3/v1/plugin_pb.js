@@ -24,6 +24,7 @@ var global =
 goog.exportSymbol('proto.plugins.s3.v1.Custom', null, global);
 goog.exportSymbol('proto.plugins.s3.v1.ListFilesConfig', null, global);
 goog.exportSymbol('proto.plugins.s3.v1.Plugin', null, global);
+goog.exportSymbol('proto.plugins.s3.v1.PresignedMethod', null, global);
 goog.exportSymbol('proto.plugins.s3.v1.Property', null, global);
 goog.exportSymbol('proto.plugins.s3.v1.SuperblocksMetadata', null, global);
 /**
@@ -749,7 +750,8 @@ proto.plugins.s3.v1.Custom.prototype.toObject = function(opt_includeInstance) {
  */
 proto.plugins.s3.v1.Custom.toObject = function(includeInstance, msg) {
   var f, obj = {
-    presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.s3.v1.Property.toObject(includeInstance, f)
+    presignedexpiration: (f = msg.getPresignedexpiration()) && proto.plugins.s3.v1.Property.toObject(includeInstance, f),
+    presignedmethod: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -791,6 +793,10 @@ proto.plugins.s3.v1.Custom.deserializeBinaryFromReader = function(msg, reader) {
       reader.readMessage(value,proto.plugins.s3.v1.Property.deserializeBinaryFromReader);
       msg.setPresignedexpiration(value);
       break;
+    case 2:
+      var value = /** @type {!proto.plugins.s3.v1.PresignedMethod} */ (reader.readEnum());
+      msg.setPresignedmethod(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -826,6 +832,13 @@ proto.plugins.s3.v1.Custom.serializeBinaryToWriter = function(message, writer) {
       1,
       f,
       proto.plugins.s3.v1.Property.serializeBinaryToWriter
+    );
+  }
+  f = message.getPresignedmethod();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      2,
+      f
     );
   }
 };
@@ -865,6 +878,24 @@ proto.plugins.s3.v1.Custom.prototype.clearPresignedexpiration = function() {
  */
 proto.plugins.s3.v1.Custom.prototype.hasPresignedexpiration = function() {
   return jspb.Message.getField(this, 1) != null;
+};
+
+
+/**
+ * optional PresignedMethod presignedMethod = 2;
+ * @return {!proto.plugins.s3.v1.PresignedMethod}
+ */
+proto.plugins.s3.v1.Custom.prototype.getPresignedmethod = function() {
+  return /** @type {!proto.plugins.s3.v1.PresignedMethod} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/**
+ * @param {!proto.plugins.s3.v1.PresignedMethod} value
+ * @return {!proto.plugins.s3.v1.Custom} returns this
+ */
+proto.plugins.s3.v1.Custom.prototype.setPresignedmethod = function(value) {
+  return jspb.Message.setProto3EnumField(this, 2, value);
 };
 
 
@@ -1496,5 +1527,14 @@ proto.plugins.s3.v1.Plugin.prototype.hasListFilesConfig = function() {
   return jspb.Message.getField(this, 9) != null;
 };
 
+
+/**
+ * @enum {number}
+ */
+proto.plugins.s3.v1.PresignedMethod = {
+  PRESIGNED_METHOD_UNSPECIFIED: 0,
+  PRESIGNED_METHOD_GET: 1,
+  PRESIGNED_METHOD_PUT: 2
+};
 
 goog.object.extend(exports, proto.plugins.s3.v1);

@@ -1,4 +1,4 @@
-import type { QuickJSContext } from 'quickjs-emscripten';
+import type { QuickJSContext } from 'quickjs-emscripten-core';
 
 /**
  * Loads a library into the VM's global scope by evaluating its source code.

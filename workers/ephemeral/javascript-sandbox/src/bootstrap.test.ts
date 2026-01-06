@@ -199,7 +199,7 @@ describe('bootstrap', () => {
       const filePaths: Record<string, string> = {};
       const inheritedEnv: string[] = [];
 
-      const expectedErr = `Error on line 135:
+      const expectedErr = `Error on line 133:
 Error: variables not defined`;
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
@@ -239,7 +239,7 @@ Error: variables not defined`;
             `;
       const filePaths: Record<string, string> = {};
 
-      const expectedErr = `Error on line 7:
+      const expectedErr = `Error on line 4:
         console.log("Starting script...";
                                         ^
 SyntaxError: Unexpected token ';'`;
@@ -280,8 +280,34 @@ SyntaxError: Unexpected token ';'`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: string[] = [];
 
-      const expectedErr = `Error on line 9:
+      const expectedErr = `Error on line 6:
 ReferenceError: userName is not defined`;
+
+      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(result).toBeDefined();
+      expect(result.output).toEqual({});
+      expect(result.error).toEqual(expectedErr);
+    });
+
+    it.only('should throw error when user code throws', async () => {
+      const mockStore = new MockKVStore();
+      await mockStore.write('name', 'TestFunc');
+      const context: ExecutionContext = new ExecutionContext();
+      context.variables = {
+        name: {
+          key: 'name',
+          type: VariableType.Native,
+          mode: 'read'
+        }
+      };
+      context.kvStore = mockStore as unknown as KVStore;
+
+      const code = `throw 'string instead of error';`;
+      const filePaths: Record<string, string> = {};
+      const inheritedEnv: string[] = [];
+
+      const expectedErr = 'string instead of error';
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
 

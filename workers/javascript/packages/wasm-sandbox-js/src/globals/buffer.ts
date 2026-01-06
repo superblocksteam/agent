@@ -1,4 +1,4 @@
-import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten';
+import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten-core';
 
 /**
  * Factory function that receives the host's encodeString helper and installs

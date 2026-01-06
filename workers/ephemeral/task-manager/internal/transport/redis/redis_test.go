@@ -1,9 +1,9 @@
 package redis
 
 import (
-	"sync"
 	"testing"
 	"time"
+	mocks "workers/ephemeral/task-manager/mocks/internal_/store/redis"
 
 	r "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -62,17 +62,19 @@ func TestNewRedisTransport(t *testing.T) {
 	})
 	defer client.Close()
 
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
 	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		BlockDuration: 5 * time.Second,
-		MessageCount:  10,
-		WorkerId:      "test-worker",
-		ConsumerGroup: "test-group",
-		ExecutionPool: 50,
-		GRPCAddress:   "localhost:50050",
-		Ephemeral:     false,
+		RedisClient:         client,
+		StreamKeys:          []string{"test-stream"},
+		Logger:              logger,
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		WorkerId:            "test-worker",
+		ConsumerGroup:       "test-group",
+		ExecutionPool:       50,
+		Ephemeral:           false,
+		FileContextProvider: mockFileContextProvider,
 	}
 
 	transport := NewRedisTransport(options)
@@ -113,6 +115,10 @@ func TestNewRedisTransport(t *testing.T) {
 		t.Errorf("ephemeral = %v, want false", transport.ephemeral)
 	}
 
+	if transport.fileContextProvider == nil {
+		t.Error("fileContextProvider should not be nil")
+	}
+
 	if !transport.alive.Load() {
 		t.Error("transport should be alive initially")
 	}
@@ -125,16 +131,19 @@ func TestNewRedisTransportEphemeral(t *testing.T) {
 	})
 	defer client.Close()
 
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
 	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		BlockDuration: 5 * time.Second,
-		MessageCount:  10,
-		WorkerId:      "test-worker",
-		ConsumerGroup: "test-group",
-		ExecutionPool: 1,
-		Ephemeral:     true,
+		RedisClient:         client,
+		StreamKeys:          []string{"test-stream"},
+		Logger:              logger,
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		WorkerId:            "test-worker",
+		ConsumerGroup:       "test-group",
+		ExecutionPool:       1,
+		Ephemeral:           true,
+		FileContextProvider: mockFileContextProvider,
 	}
 
 	transport := NewRedisTransport(options)
@@ -151,11 +160,14 @@ func TestRedisTransportName(t *testing.T) {
 	})
 	defer client.Close()
 
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
 	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
+		RedisClient:         client,
+		StreamKeys:          []string{"test-stream"},
+		Logger:              logger,
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
 	}
 
 	transport := NewRedisTransport(options)
@@ -172,11 +184,14 @@ func TestRedisTransportAlive(t *testing.T) {
 	})
 	defer client.Close()
 
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
 	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
+		RedisClient:         client,
+		StreamKeys:          []string{"test-stream"},
+		Logger:              logger,
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
 	}
 
 	transport := NewRedisTransport(options)
@@ -199,11 +214,14 @@ func TestRedisTransportFields(t *testing.T) {
 	})
 	defer client.Close()
 
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
 	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
+		RedisClient:         client,
+		StreamKeys:          []string{"test-stream"},
+		Logger:              logger,
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
 	}
 
 	transport := NewRedisTransport(options)
@@ -219,62 +237,6 @@ func TestRedisTransportFields(t *testing.T) {
 	}
 }
 
-func TestRedisTransportGetVariableStore(t *testing.T) {
-	logger := zap.NewNop()
-	client := r.NewClient(&r.Options{
-		Addr: "localhost:6379",
-	})
-	defer client.Close()
-
-	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
-	}
-
-	transport := NewRedisTransport(options)
-
-	store := transport.GetVariableStore()
-
-	if store == nil {
-		t.Fatal("GetVariableStore() returned nil")
-	}
-
-	if len(store) != 0 {
-		t.Errorf("GetVariableStore() should be empty initially, got %d items", len(store))
-	}
-}
-
-func TestRedisTransportGetVariableStoreLock(t *testing.T) {
-	logger := zap.NewNop()
-	client := r.NewClient(&r.Options{
-		Addr: "localhost:6379",
-	})
-	defer client.Close()
-
-	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
-	}
-
-	transport := NewRedisTransport(options)
-
-	lock := transport.GetVariableStoreLock()
-
-	if lock == nil {
-		t.Fatal("GetVariableStoreLock() returned nil")
-	}
-
-	// Verify the lock works
-	lock.Lock()
-	lock.Unlock()
-	lock.RLock()
-	lock.RUnlock()
-}
-
 func TestRedisTransportGetRedisClient(t *testing.T) {
 	logger := zap.NewNop()
 	client := r.NewClient(&r.Options{
@@ -282,11 +244,14 @@ func TestRedisTransportGetRedisClient(t *testing.T) {
 	})
 	defer client.Close()
 
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
 	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
+		RedisClient:         client,
+		StreamKeys:          []string{"test-stream"},
+		Logger:              logger,
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
 	}
 
 	transport := NewRedisTransport(options)
@@ -298,174 +263,6 @@ func TestRedisTransportGetRedisClient(t *testing.T) {
 	}
 }
 
-func TestCleanupExecution(t *testing.T) {
-	logger := zap.NewNop()
-	client := r.NewClient(&r.Options{
-		Addr: "localhost:6379",
-	})
-	defer client.Close()
-
-	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
-	}
-
-	transport := NewRedisTransport(options)
-
-	// Add some data to the variable store
-	transport.variableStoreLock.Lock()
-	transport.variableStore["exec-1"] = map[string]string{"key": "value"}
-	transport.variableStore["exec-2"] = map[string]string{"key": "value"}
-	transport.variableStoreLock.Unlock()
-
-	// Add file contexts
-	transport.SetFileContext("exec-1", &ExecutionFileContext{
-		FileServerURL: "http://example.com",
-		AgentKey:      "test-key",
-	})
-	transport.SetFileContext("exec-2", &ExecutionFileContext{
-		FileServerURL: "http://example.com",
-		AgentKey:      "test-key",
-	})
-
-	// Verify data exists
-	if len(transport.variableStore) != 2 {
-		t.Fatalf("expected 2 executions in store, got %d", len(transport.variableStore))
-	}
-	if len(transport.fileContexts) != 2 {
-		t.Fatalf("expected 2 file contexts, got %d", len(transport.fileContexts))
-	}
-
-	// Cleanup one execution
-	transport.cleanupExecution("exec-1")
-
-	// Verify only exec-2 remains in variable store
-	if len(transport.variableStore) != 1 {
-		t.Errorf("expected 1 execution in store after cleanup, got %d", len(transport.variableStore))
-	}
-
-	if _, ok := transport.variableStore["exec-1"]; ok {
-		t.Error("exec-1 should have been removed from variable store")
-	}
-
-	if _, ok := transport.variableStore["exec-2"]; !ok {
-		t.Error("exec-2 should still exist in variable store")
-	}
-
-	// Verify only exec-2 remains in file contexts
-	if len(transport.fileContexts) != 1 {
-		t.Errorf("expected 1 file context after cleanup, got %d", len(transport.fileContexts))
-	}
-
-	if transport.GetFileContext("exec-1") != nil {
-		t.Error("exec-1 file context should have been removed")
-	}
-
-	if transport.GetFileContext("exec-2") == nil {
-		t.Error("exec-2 file context should still exist")
-	}
-}
-
-func TestGetSetFileContext(t *testing.T) {
-	logger := zap.NewNop()
-	client := r.NewClient(&r.Options{
-		Addr: "localhost:6379",
-	})
-	defer client.Close()
-
-	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
-	}
-
-	transport := NewRedisTransport(options)
-
-	// Initially no file context
-	if transport.GetFileContext("exec-1") != nil {
-		t.Error("should return nil for non-existent execution")
-	}
-
-	// Set file context
-	ctx := &ExecutionFileContext{
-		FileServerURL: "http://localhost:8080/v2/files",
-		AgentKey:      "test-agent-key",
-	}
-	transport.SetFileContext("exec-1", ctx)
-
-	// Get file context
-	result := transport.GetFileContext("exec-1")
-	if result == nil {
-		t.Fatal("GetFileContext returned nil after SetFileContext")
-	}
-
-	if result.FileServerURL != "http://localhost:8080/v2/files" {
-		t.Errorf("FileServerURL = %v, want http://localhost:8080/v2/files", result.FileServerURL)
-	}
-
-	if result.AgentKey != "test-agent-key" {
-		t.Errorf("AgentKey = %v, want test-agent-key", result.AgentKey)
-	}
-
-	// Overwrite file context
-	ctx2 := &ExecutionFileContext{
-		FileServerURL: "http://new-url/v2/files",
-		AgentKey:      "new-key",
-	}
-	transport.SetFileContext("exec-1", ctx2)
-
-	result2 := transport.GetFileContext("exec-1")
-	if result2.FileServerURL != "http://new-url/v2/files" {
-		t.Errorf("FileServerURL after overwrite = %v, want http://new-url/v2/files", result2.FileServerURL)
-	}
-}
-
-func TestFileContextConcurrency(t *testing.T) {
-	logger := zap.NewNop()
-	client := r.NewClient(&r.Options{
-		Addr: "localhost:6379",
-	})
-	defer client.Close()
-
-	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
-	}
-
-	transport := NewRedisTransport(options)
-
-	var wg sync.WaitGroup
-	iterations := 100
-
-	// Concurrent writes
-	for i := 0; i < iterations; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			transport.SetFileContext("exec", &ExecutionFileContext{
-				FileServerURL: "http://example.com",
-				AgentKey:      "key",
-			})
-		}(i)
-	}
-
-	// Concurrent reads
-	for i := 0; i < iterations; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			_ = transport.GetFileContext("exec")
-		}(i)
-	}
-
-	wg.Wait()
-}
-
 func TestSignalEphemeralDone(t *testing.T) {
 	logger := zap.NewNop()
 	client := r.NewClient(&r.Options{
@@ -473,13 +270,16 @@ func TestSignalEphemeralDone(t *testing.T) {
 	})
 	defer client.Close()
 
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
 	t.Run("ephemeral mode sends signal", func(t *testing.T) {
 		options := &Options{
-			RedisClient:   client,
-			StreamKeys:    []string{"test-stream"},
-			Logger:        logger,
-			ExecutionPool: 1,
-			Ephemeral:     true,
+			RedisClient:         client,
+			StreamKeys:          []string{"test-stream"},
+			Logger:              logger,
+			ExecutionPool:       1,
+			Ephemeral:           true,
+			FileContextProvider: mockFileContextProvider,
 		}
 
 		transport := NewRedisTransport(options)
@@ -500,11 +300,12 @@ func TestSignalEphemeralDone(t *testing.T) {
 
 	t.Run("non-ephemeral mode does not send signal", func(t *testing.T) {
 		options := &Options{
-			RedisClient:   client,
-			StreamKeys:    []string{"test-stream"},
-			Logger:        logger,
-			ExecutionPool: 1,
-			Ephemeral:     false,
+			RedisClient:         client,
+			StreamKeys:          []string{"test-stream"},
+			Logger:              logger,
+			ExecutionPool:       1,
+			Ephemeral:           false,
+			FileContextProvider: mockFileContextProvider,
 		}
 
 		transport := NewRedisTransport(options)
@@ -522,50 +323,6 @@ func TestSignalEphemeralDone(t *testing.T) {
 	})
 }
 
-func TestVariableStoreConcurrency(t *testing.T) {
-	logger := zap.NewNop()
-	client := r.NewClient(&r.Options{
-		Addr: "localhost:6379",
-	})
-	defer client.Close()
-
-	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    []string{"test-stream"},
-		Logger:        logger,
-		ExecutionPool: 1,
-	}
-
-	transport := NewRedisTransport(options)
-
-	var wg sync.WaitGroup
-	iterations := 100
-
-	// Concurrent writes
-	for i := 0; i < iterations; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			transport.variableStoreLock.Lock()
-			transport.variableStore["exec"] = map[string]string{"key": "value"}
-			transport.variableStoreLock.Unlock()
-		}(i)
-	}
-
-	// Concurrent reads
-	for i := 0; i < iterations; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			transport.variableStoreLock.RLock()
-			_ = transport.variableStore["exec"]
-			transport.variableStoreLock.RUnlock()
-		}(i)
-	}
-
-	wg.Wait()
-}
-
 func TestXReadArgsStructure(t *testing.T) {
 	// Test that xReadArgs are set correctly during construction
 	logger := zap.NewNop()
@@ -574,12 +331,15 @@ func TestXReadArgsStructure(t *testing.T) {
 	})
 	defer client.Close()
 
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
 	streamKeys := []string{"stream1", "stream2"}
 	options := &Options{
-		RedisClient:   client,
-		StreamKeys:    streamKeys,
-		Logger:        logger,
-		ExecutionPool: 1,
+		RedisClient:         client,
+		StreamKeys:          streamKeys,
+		Logger:              logger,
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
 	}
 
 	transport := NewRedisTransport(options)

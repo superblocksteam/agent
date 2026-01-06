@@ -7,28 +7,15 @@ import (
 
 	"workers/ephemeral/task-manager/internal/plugin"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
+	mocks "workers/ephemeral/task-manager/mocks/internal_/store/redis"
 
 	r "github.com/redis/go-redis/v9"
-	"github.com/superblocksteam/agent/pkg/store"
+	"github.com/superblocksteam/agent/pkg/store/mock"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
-
-// mockStore implements store.Store for testing
-type mockStore struct{}
-
-func (m *mockStore) Read(ctx context.Context, keys ...string) ([]any, error)             { return nil, nil }
-func (m *mockStore) Write(ctx context.Context, kvs ...*store.KV) error                   { return nil }
-func (m *mockStore) Delete(ctx context.Context, keys ...string) error                    { return nil }
-func (m *mockStore) Expire(ctx context.Context, ttl time.Duration, keys ...string) error { return nil }
-func (m *mockStore) Decr(ctx context.Context, key string) error                          { return nil }
-func (m *mockStore) Copy(ctx context.Context, src, dst string) error                     { return nil }
-func (m *mockStore) Scan(ctx context.Context, pattern string) ([]string, error)          { return nil, nil }
-func (m *mockStore) Key(prefix, suffix string) (string, error)                           { return prefix + suffix, nil }
-
-var _ store.Store = (*mockStore)(nil)
 
 func TestNewOptionsDefaults(t *testing.T) {
 	opts := NewOptions()
@@ -41,9 +28,6 @@ func TestNewOptionsDefaults(t *testing.T) {
 	}
 	if opts.MessageCount != 10 {
 		t.Errorf("MessageCount = %v, want 10", opts.MessageCount)
-	}
-	if opts.GRPCPort != 50050 {
-		t.Errorf("GRPCPort = %v, want 50050", opts.GRPCPort)
 	}
 }
 
@@ -128,21 +112,11 @@ func TestWithExecutionPool(t *testing.T) {
 	}
 }
 
-func TestWithGRPCAddress(t *testing.T) {
-	address := "localhost:50051"
-	opts := NewOptions(WithGRPCAddress(address))
-
-	if opts.GRPCAddress != address {
-		t.Errorf("GRPCAddress = %v, want %v", opts.GRPCAddress, address)
-	}
-}
-
-func TestWithGRPCPort(t *testing.T) {
-	port := 50051
-	opts := NewOptions(WithGRPCPort(port))
-
-	if opts.GRPCPort != port {
-		t.Errorf("GRPCPort = %v, want %v", opts.GRPCPort, port)
+func TestWithFileContextProvider(t *testing.T) {
+	provider := mocks.NewFileContextProvider(t)
+	opts := NewOptions(WithFileContextProvider(provider))
+	if opts.FileContextProvider != provider {
+		t.Errorf("FileContextProvider = %v, want %v", opts.FileContextProvider, provider)
 	}
 }
 
@@ -176,6 +150,7 @@ func TestWithEphemeralTimeout(t *testing.T) {
 
 func TestOptionsChaining(t *testing.T) {
 	logger := zap.NewNop()
+	provider := mocks.NewFileContextProvider(t)
 
 	opts := NewOptions(
 		WithWorkerId("worker-1"),
@@ -183,7 +158,7 @@ func TestOptionsChaining(t *testing.T) {
 		WithExecutionPool(25),
 		WithBlockDuration(3*time.Second),
 		WithMessageCount(5),
-		WithGRPCPort(50060),
+		WithFileContextProvider(provider),
 		WithEphemeral(true),
 		WithLogger(logger),
 	)
@@ -203,8 +178,8 @@ func TestOptionsChaining(t *testing.T) {
 	if opts.MessageCount != 5 {
 		t.Errorf("MessageCount = %v, want 5", opts.MessageCount)
 	}
-	if opts.GRPCPort != 50060 {
-		t.Errorf("GRPCPort = %v, want 50060", opts.GRPCPort)
+	if opts.FileContextProvider != provider {
+		t.Errorf("FileContextProvider = %v, want %v", opts.FileContextProvider, provider)
 	}
 	if opts.Ephemeral != true {
 		t.Errorf("Ephemeral = %v, want true", opts.Ephemeral)
@@ -227,11 +202,13 @@ func TestOptionsOverride(t *testing.T) {
 }
 
 func TestWithPluginExecutor(t *testing.T) {
+	store := mock.NewStore(t)
+
 	// Create a real plugin executor (the interface is from the plugin_executor package)
 	executor := plugin_executor.NewPluginExecutor(&plugin_executor.Options{
 		Logger:   zap.NewNop(),
 		Language: "python",
-		Store:    &mockStore{},
+		Store:    store,
 	})
 	opts := NewOptions(WithPluginExecutor(executor))
 

@@ -84,6 +84,8 @@ export class Custom extends jspb.Message {
     clearPresignedexpiration(): void;
     getPresignedexpiration(): Property | undefined;
     setPresignedexpiration(value?: Property): Custom;
+    getPresignedmethod(): PresignedMethod;
+    setPresignedmethod(value: PresignedMethod): Custom;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Custom.AsObject;
@@ -98,6 +100,7 @@ export class Custom extends jspb.Message {
 export namespace Custom {
     export type AsObject = {
         presignedexpiration?: Property.AsObject,
+        presignedmethod: PresignedMethod,
     }
 }
 
@@ -181,4 +184,10 @@ export namespace Plugin {
         superblocksmetadata?: SuperblocksMetadata.AsObject,
         listFilesConfig?: ListFilesConfig.AsObject,
     }
+}
+
+export enum PresignedMethod {
+    PRESIGNED_METHOD_UNSPECIFIED = 0,
+    PRESIGNED_METHOD_GET = 1,
+    PRESIGNED_METHOD_PUT = 2,
 }

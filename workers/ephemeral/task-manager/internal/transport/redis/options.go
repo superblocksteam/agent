@@ -6,26 +6,26 @@ import (
 	r "github.com/redis/go-redis/v9"
 
 	"workers/ephemeral/task-manager/internal/plugin_executor"
+	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 
 	"go.uber.org/zap"
 )
 
 // Options for creating a RedisTransport
 type Options struct {
-	RedisClient      *r.Client
-	StreamKeys       []string
-	Logger           *zap.Logger
-	BlockDuration    time.Duration
-	MessageCount     int64
-	WorkerId         string
-	ConsumerGroup    string
-	PluginExecutor   plugin_executor.PluginExecutor
-	ExecutionPool    int64
-	GRPCAddress      string
-	GRPCPort         int
-	Ephemeral        bool
-	EphemeralTimeout time.Duration // Timeout for ephemeral job execution (0 = no timeout)
-	AgentKey         string        // Agent key for file server authentication
+	RedisClient         *r.Client
+	StreamKeys          []string
+	Logger              *zap.Logger
+	BlockDuration       time.Duration
+	MessageCount        int64
+	WorkerId            string
+	ConsumerGroup       string
+	PluginExecutor      plugin_executor.PluginExecutor
+	ExecutionPool       int64
+	FileContextProvider redisstore.FileContextProvider
+	Ephemeral           bool
+	EphemeralTimeout    time.Duration // Timeout for ephemeral job execution (0 = no timeout)
+	AgentKey            string        // Agent key for file server authentication
 }
 
 // Option is a function that modifies Options
@@ -94,17 +94,10 @@ func WithExecutionPool(value int64) Option {
 	}
 }
 
-// WithGRPCAddress sets the gRPC address for variable store
-func WithGRPCAddress(value string) Option {
+// WithFileContextProvider sets the file context provider
+func WithFileContextProvider(value redisstore.FileContextProvider) Option {
 	return func(o *Options) {
-		o.GRPCAddress = value
-	}
-}
-
-// WithGRPCPort sets the gRPC port for variable store
-func WithGRPCPort(value int) Option {
-	return func(o *Options) {
-		o.GRPCPort = value
+		o.FileContextProvider = value
 	}
 }
 
@@ -135,7 +128,6 @@ func NewOptions(opts ...Option) *Options {
 		ExecutionPool: 50,
 		BlockDuration: 5 * time.Second,
 		MessageCount:  10,
-		GRPCPort:      50050,
 	}
 	for _, opt := range opts {
 		opt(options)

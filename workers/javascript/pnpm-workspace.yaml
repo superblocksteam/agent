@@ -3,15 +3,16 @@ packages:
   - 'packages/**'
   - '../ephemeral/javascript-sandbox'
 onlyBuiltDependencies:
-  - "@swc/core"
+  - '@swc/core'
+  - aws-sdk
+  - bcrypt
   - couchbase
   - cpu-features
+  - deasync
+  - esbuild
   - lz4
   - nice-napi
+  - node-expat
   - oracledb
   - protobufjs
   - ssh2
-  - aws-sdk
-  - bcrypt
-  - deasync
-  - node-expat

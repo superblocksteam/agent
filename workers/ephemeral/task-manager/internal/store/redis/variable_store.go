@@ -10,11 +10,11 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
-	r "github.com/redis/go-redis/v9"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	"github.com/superblocksteam/agent/pkg/store"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
+	"github.com/superblocksteam/run"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -26,32 +26,72 @@ type ExecutionFileContext struct {
 	AgentKey      string
 }
 
-// VariableStoreProvider provides access to variable store data
-type VariableStoreProvider interface {
-	GetVariableStore() map[string]map[string]string
-	GetVariableStoreLock() *sync.RWMutex
-	GetRedisClient() *r.Client
-	// File fetching context
+type FileContextProvider interface {
 	GetFileContext(executionID string) *ExecutionFileContext
 	SetFileContext(executionID string, ctx *ExecutionFileContext)
+	CleanupExecution(executionID string)
 }
 
 // VariableStoreGRPC implements the VariableStore gRPC service
 type VariableStoreGRPC struct {
 	workerv1.UnimplementedSandboxVariableStoreServiceServer
-	provider VariableStoreProvider
-	logger   *zap.Logger
-	server   *grpc.Server
-	port     int
+	kvStore store.Store
+	logger  *zap.Logger
+	server  *grpc.Server
+	port    int
+
+	// File context for each execution (file server URL, agent key)
+	fileContexts     map[string]*ExecutionFileContext
+	fileContextsLock sync.RWMutex
+
+	shutdownLock sync.Mutex
+	done         chan error
+
+	run.ForwardCompatibility
 }
 
+var _ run.Runnable = &VariableStoreGRPC{}
+
 // NewVariableStoreGRPC creates a new VariableStoreGRPC server
-func NewVariableStoreGRPC(provider VariableStoreProvider, logger *zap.Logger, port int) *VariableStoreGRPC {
+func NewVariableStoreGRPC(kvStore store.Store, logger *zap.Logger, port int) *VariableStoreGRPC {
 	return &VariableStoreGRPC{
-		provider: provider,
-		logger:   logger,
-		port:     port,
+		kvStore:      kvStore,
+		logger:       logger,
+		port:         port,
+		fileContexts: make(map[string]*ExecutionFileContext),
 	}
+}
+
+func (s *VariableStoreGRPC) Name() string {
+	return "VariableStoreGRPC"
+}
+
+func (s *VariableStoreGRPC) Run(ctx context.Context) error {
+	s.done = make(chan error)
+
+	go func() {
+		if err := s.Start(); err != nil {
+			s.logger.Error("VariableStoreGRPC server returned with error", zap.Error(err))
+			s.done <- err
+		}
+	}()
+	defer s.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-s.done:
+		return err
+	}
+}
+
+func (s *VariableStoreGRPC) Close(ctx context.Context) error {
+	s.Stop()
+	return nil
+}
+
+func (s *VariableStoreGRPC) Alive() bool {
+	return s.server != nil
 }
 
 // Start starts the gRPC server
@@ -70,8 +110,13 @@ func (s *VariableStoreGRPC) Start() error {
 
 // Stop stops the gRPC server
 func (s *VariableStoreGRPC) Stop() {
+	s.shutdownLock.Lock()
+	defer s.shutdownLock.Unlock()
+
 	if s.server != nil {
 		s.server.GracefulStop()
+		s.server = nil
+		close(s.done)
 	}
 }
 
@@ -82,63 +127,12 @@ func (s *VariableStoreGRPC) GetVariable(ctx context.Context, req *workerv1.GetVa
 		"VariableStore.GetVariable",
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.GetVariableResponse, error) {
-			store := s.provider.GetVariableStore()
-			lock := s.provider.GetVariableStoreLock()
-			redis := s.provider.GetRedisClient()
-
-			lock.RLock()
-			defer lock.RUnlock()
-
-			execVars, ok := store[req.ExecutionId]
-			if !ok {
-				return &workerv1.GetVariableResponse{Found: false}, nil
-			}
-
-			value, ok := execVars[req.Key]
-			if !ok {
-				// Try Redis if not in memory
-				val, err := redis.Get(ctx, req.Key).Result()
-				if err == r.Nil {
-					return &workerv1.GetVariableResponse{Found: false}, nil
-				} else if err != nil {
-					return nil, err
-				}
-				return &workerv1.GetVariableResponse{Value: val, Found: true}, nil
-			}
-
-			return &workerv1.GetVariableResponse{Value: value, Found: true}, nil
-		},
-		nil,
-	)
-	return resp, err
-}
-
-// SetVariable implements the SetVariable RPC
-func (s *VariableStoreGRPC) SetVariable(ctx context.Context, req *workerv1.SetVariableRequest) (*workerv1.SetVariableResponse, error) {
-	resp, err := tracer.Observe(
-		ctx,
-		"VariableStore.SetVariable",
-		nil,
-		func(ctx context.Context, span trace.Span) (*workerv1.SetVariableResponse, error) {
-			store := s.provider.GetVariableStore()
-			lock := s.provider.GetVariableStoreLock()
-			redis := s.provider.GetRedisClient()
-
-			lock.Lock()
-			defer lock.Unlock()
-
-			if _, ok := store[req.ExecutionId]; !ok {
-				store[req.ExecutionId] = make(map[string]string)
-			}
-			store[req.ExecutionId][req.Key] = req.Value
-
-			// Also write to Redis for persistence
-			err := redis.Set(ctx, req.Key, req.Value, 24*time.Hour).Err()
+			values, err := s.readFromKvStore(ctx, req.Key)
 			if err != nil {
-				s.logger.Warn("failed to write variable to Redis", zap.Error(err))
+				return nil, err
 			}
 
-			return &workerv1.SetVariableResponse{Success: true}, nil
+			return &workerv1.GetVariableResponse{Value: values[0], Found: true}, nil
 		},
 		nil,
 	)
@@ -152,31 +146,30 @@ func (s *VariableStoreGRPC) GetVariables(ctx context.Context, req *workerv1.GetV
 		"VariableStore.GetVariables",
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.GetVariablesResponse, error) {
-			store := s.provider.GetVariableStore()
-			lock := s.provider.GetVariableStoreLock()
-			redis := s.provider.GetRedisClient()
-
-			lock.RLock()
-			defer lock.RUnlock()
-
-			values := make([]string, len(req.Keys))
-			execVars := store[req.ExecutionId]
-
-			for i, key := range req.Keys {
-				if execVars != nil {
-					if val, ok := execVars[key]; ok {
-						values[i] = val
-						continue
-					}
-				}
-				// Try Redis
-				val, err := redis.Get(ctx, key).Result()
-				if err == nil {
-					values[i] = val
-				}
+			values, err := s.readFromKvStore(ctx, req.Keys...)
+			if err != nil {
+				return nil, err
 			}
 
 			return &workerv1.GetVariablesResponse{Values: values}, nil
+		},
+		nil,
+	)
+	return resp, err
+}
+
+// SetVariable implements the SetVariable RPC
+func (s *VariableStoreGRPC) SetVariable(ctx context.Context, req *workerv1.SetVariableRequest) (*workerv1.SetVariableResponse, error) {
+	resp, err := tracer.Observe(
+		ctx,
+		"VariableStore.SetVariable",
+		nil,
+		func(ctx context.Context, span trace.Span) (*workerv1.SetVariableResponse, error) {
+			if err := s.writeToKvStore(ctx, &workerv1.KeyValue{Key: req.Key, Value: req.Value}); err != nil {
+				return nil, err
+			}
+
+			return &workerv1.SetVariableResponse{Success: true}, nil
 		},
 		nil,
 	)
@@ -190,26 +183,8 @@ func (s *VariableStoreGRPC) SetVariables(ctx context.Context, req *workerv1.SetV
 		"VariableStore.SetVariables",
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.SetVariablesResponse, error) {
-			store := s.provider.GetVariableStore()
-			lock := s.provider.GetVariableStoreLock()
-			redis := s.provider.GetRedisClient()
-
-			lock.Lock()
-			defer lock.Unlock()
-
-			if _, ok := store[req.ExecutionId]; !ok {
-				store[req.ExecutionId] = make(map[string]string)
-			}
-
-			pipe := redis.Pipeline()
-			for _, kv := range req.Kvs {
-				store[req.ExecutionId][kv.Key] = kv.Value
-				// Use namespaced key to prevent collisions between executions
-				pipe.Set(ctx, kv.Key, kv.Value, 24*time.Hour)
-			}
-			_, err := pipe.Exec(ctx)
-			if err != nil {
-				s.logger.Warn("failed to write variables to Redis", zap.Error(err))
+			if err := s.writeToKvStore(ctx, req.Kvs...); err != nil {
+				return nil, err
 			}
 
 			return &workerv1.SetVariablesResponse{Success: true}, nil
@@ -217,6 +192,69 @@ func (s *VariableStoreGRPC) SetVariables(ctx context.Context, req *workerv1.SetV
 		nil,
 	)
 	return resp, err
+}
+
+func (s *VariableStoreGRPC) readFromKvStore(ctx context.Context, keys ...string) ([]string, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+
+	values, err := s.kvStore.Read(ctx, keys...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(values) != len(keys) {
+		return nil, fmt.Errorf("expected %d values, got %d", len(keys), len(values))
+	}
+
+	results := make([]string, len(keys))
+	for i, value := range values {
+		if value == nil {
+			results[i] = "null"
+		} else if valStr, ok := value.(string); ok {
+			results[i] = valStr
+		} else {
+			return nil, fmt.Errorf("expected string value, got %T", value)
+		}
+	}
+
+	return results, nil
+}
+
+func (s *VariableStoreGRPC) writeToKvStore(ctx context.Context, kvs ...*workerv1.KeyValue) error {
+	pairs := make([]*store.KV, len(kvs))
+	for i, kv := range kvs {
+		pairs[i] = &store.KV{
+			Key:   kv.Key,
+			Value: kv.Value,
+		}
+	}
+
+	return s.kvStore.Write(ctx, pairs...)
+}
+
+// GetFileContext returns the file context for an execution
+func (s *VariableStoreGRPC) GetFileContext(executionID string) *ExecutionFileContext {
+	s.fileContextsLock.RLock()
+	defer s.fileContextsLock.RUnlock()
+
+	return s.fileContexts[executionID]
+}
+
+// SetFileContext sets the file context for an execution
+func (s *VariableStoreGRPC) SetFileContext(executionID string, ctx *ExecutionFileContext) {
+	s.fileContextsLock.Lock()
+	defer s.fileContextsLock.Unlock()
+
+	s.fileContexts[executionID] = ctx
+}
+
+func (s *VariableStoreGRPC) CleanupExecution(executionID string) {
+	s.fileContextsLock.Lock()
+	defer s.fileContextsLock.Unlock()
+
+	delete(s.fileContexts, executionID)
 }
 
 // FetchFile implements the FetchFile RPC - fetches file contents from the orchestrator's file server
@@ -227,7 +265,7 @@ func (s *VariableStoreGRPC) FetchFile(ctx context.Context, req *workerv1.FetchFi
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.FetchFileResponse, error) {
 			// Get file context for this execution
-			fileCtx := s.provider.GetFileContext(req.ExecutionId)
+			fileCtx := s.GetFileContext(req.ExecutionId)
 			if fileCtx == nil {
 				return &workerv1.FetchFileResponse{Error: "no file context for execution"}, nil
 			}
@@ -292,7 +330,7 @@ func (s *VariableStoreGRPC) fetchFromFileServer(ctx context.Context, fileServerU
 }
 
 // parseV2FileResponse parses the v2 file server response format (JSON lines with base64 data)
-func (s *VariableStoreGRPC) parseV2FileResponse(body []byte) ([]byte, error) {
+func (*VariableStoreGRPC) parseV2FileResponse(body []byte) ([]byte, error) {
 	lines := strings.Split(string(body), "\n")
 	var result []byte
 

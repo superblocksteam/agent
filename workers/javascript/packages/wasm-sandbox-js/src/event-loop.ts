@@ -1,4 +1,4 @@
-import type { JSPromiseState, QuickJSContext, QuickJSHandle } from 'quickjs-emscripten';
+import type { JSPromiseState, QuickJSContext, QuickJSHandle } from 'quickjs-emscripten-core';
 
 /**
  * Best-effort function invocation helper.

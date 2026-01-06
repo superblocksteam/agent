@@ -287,7 +287,7 @@ func (p *pluginExecutor) buildKvPair(key string, message proto.Message, quotas *
 }
 
 func (p *pluginExecutor) pushToKVStore(ctx context.Context, kv *store.KV, perf *transportv1.Performance) error {
-	_, err := tracer.Observe[any](
+	_, err := tracer.Observe(
 		ctx,
 		"store.write",
 		nil,

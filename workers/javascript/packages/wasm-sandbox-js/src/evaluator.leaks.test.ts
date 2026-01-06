@@ -17,41 +17,29 @@
  * (likely in `evaluator.ts` or `marshal.ts`) that needs to be fixed.
  */
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { TestQuickJSWASMModule, newQuickJSWASMModuleFromVariant } from 'quickjs-emscripten-core';
+import DEBUG_SYNC from '@jitl/quickjs-wasmfile-debug-sync';
 
 type EvaluateExpressions = (typeof import('./evaluator'))['evaluateExpressions'];
 type HostFunction = (typeof import('./marshal'))['hostFunction'];
 
-type QuickJSTestCtor = NonNullable<(typeof import('quickjs-emscripten'))['TestQuickJSWASMModule']>;
-type LeakDetectingModule = InstanceType<QuickJSTestCtor>;
-
-async function createLeakDetectingModule(): Promise<LeakDetectingModule> {
-  const quickjs = await import('quickjs-emscripten');
-  const wasmModule = await quickjs.newQuickJSWASMModule(quickjs.DEBUG_SYNC);
-
-  const TestModuleCtor = quickjs.TestQuickJSWASMModule as QuickJSTestCtor | undefined;
-
-  if (!TestModuleCtor) {
-    throw new Error('TestQuickJSWASMModule export not found');
-  }
-
-  return new TestModuleCtor(wasmModule);
+async function createLeakDetectingModule(): Promise<TestQuickJSWASMModule> {
+  const wasmModule = await newQuickJSWASMModuleFromVariant(DEBUG_SYNC);
+  return new TestQuickJSWASMModule(wasmModule);
 }
 
 describe('evaluateExpressions leak checks', () => {
   let evaluateExpressions: EvaluateExpressions;
   let hostFunction: HostFunction;
-  let leakModule: LeakDetectingModule;
+  let leakModule: TestQuickJSWASMModule;
 
   beforeEach(async () => {
     jest.resetModules();
 
     leakModule = await createLeakDetectingModule();
 
-    jest.unstable_mockModule('quickjs-emscripten', async () => {
-      const actual = await jest.requireActual<typeof import('quickjs-emscripten')>('quickjs-emscripten');
-
+    jest.unstable_mockModule('./quickjs', async () => {
       return {
-        ...actual,
         getQuickJS: async () => leakModule
       };
     });

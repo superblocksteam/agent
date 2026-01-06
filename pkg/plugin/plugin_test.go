@@ -130,6 +130,11 @@ func removeZeroValues(m map[string]interface{}) {
 		}
 
 		switch t := v.Interface().(type) {
+		case string:
+			// Protobuf enums with zero value are conventionally named *_UNSPECIFIED
+			if strings.HasSuffix(t, "_UNSPECIFIED") {
+				delete(m, mapKey.String())
+			}
 		case map[string]interface{}:
 			// Recurse into the map, then remove the field if it's empty
 			removeZeroValues(t)

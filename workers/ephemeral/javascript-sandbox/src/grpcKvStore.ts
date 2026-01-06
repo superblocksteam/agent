@@ -30,7 +30,13 @@ export class GrpcKvStore implements KVStore {
           reject(error);
           return;
         }
-        const data = response.getValuesList().map((value) => JSON.parse(value));
+
+        const data = response.getValuesList().map((value) => {
+          if (value === '') {
+            return null;
+          }
+          return JSON.parse(value);
+        });
         resolve({ data });
       });
     });
@@ -38,10 +44,15 @@ export class GrpcKvStore implements KVStore {
 
   public async write(key: string, value: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
+      let jsonValue: string | undefined = JSON.stringify(value);
+      if (value === undefined) {
+        jsonValue = 'null';
+      }
+
       const request = new SetVariableRequest();
       request.setExecutionId(this.executionId);
       request.setKey(key);
-      request.setValue(JSON.stringify(value));
+      request.setValue(jsonValue);
 
       this.client.setVariable(request, (error) => {
         if (error) {
@@ -120,14 +131,10 @@ export class GrpcKvStore implements KVStore {
    */
   public async prefetchFiles(paths: string[]): Promise<void> {
     const fetchPromises = paths.map(async (path) => {
-      try {
-        const contents = await this.fetchFile(path);
-        this.fileCache.set(path, contents);
-      } catch (error) {
-        console.error('failed to prefetch file:', path, error);
-        throw error;
-      }
+      const contents = await this.fetchFile(path);
+      this.fileCache.set(path, contents);
     });
+
     await Promise.all(fetchPromises);
   }
 

@@ -1,5 +1,5 @@
 {
-	"id": "3931059a-6c90-4898-a93e-a3df4e086157",
+	"id": "5ab2aaa1-62d2-4650-ba7b-f7b0bb02077f",
 	"name": "ci-opa",
 	"values": [
 		{
@@ -67,9 +67,16 @@
 			"value": "false",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "SKIP_PARALLEL_TESTS",
+			"value": "false",
+			"type": "default",
+			"enabled": true
 		}
 	],
+	"color": null,
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2025-07-01T22:20:32.876Z",
-	"_postman_exported_using": "Postman/11.51.3"
+	"_postman_exported_at": "2026-01-05T20:50:19.291Z",
+	"_postman_exported_using": "Postman/11.77.2"
 }

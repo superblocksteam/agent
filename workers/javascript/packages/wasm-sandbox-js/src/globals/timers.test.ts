@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { getQuickJS, type QuickJSWASMModule } from 'quickjs-emscripten';
+import { getQuickJS } from '../quickjs';
+import type { QuickJSWASMModule } from 'quickjs-emscripten-core';
 import { createEventLoop } from '../event-loop';
 import { registerGlobalSetTimeout } from './timers';
 
