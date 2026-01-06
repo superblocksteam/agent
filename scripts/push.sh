@@ -170,7 +170,7 @@ function push() {
   local tmp=$(mktemp -d)
   local internal=$(pwd)
 
-  __do git diff "${last_synced_commit}" HEAD > "${tmp}"/code.patch
+  __do git diff --binary "${last_synced_commit}" HEAD > "${tmp}"/code.patch
 
   echo ""
   echo " [INFO] The patch to be applied has been staged here (${tmp}/code.patch)."

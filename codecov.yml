@@ -1,11 +1,32 @@
 ---
 codecov:
-  require_ci_to_pass: yes
+  require_ci_to_pass: true
   notify:
-    # should be 3, tune to 2 until we figure out why coverage is JSON formatted and unsupported
-    # thread: https://superblockshq.slack.com/archives/C04NZ1C2L31/p1712690097342629
-    # after_n_builds: 2
-    wait_for_ci: yes
+    # Wait for all 9 codecov uploads before generating report:
+    # test-go, test-task-manager, test-js-unit, test-js-sandbox-unit,
+    # test-py-unit, test-py-sandbox, e2e-quotas, e2e-cloud, e2e-opa
+    after_n_builds: 9
+    wait_for_ci: true
+# Configure flags with carryforward so missing uploads use previous coverage
+flags:
+  test-go:
+    carryforward: true
+  test-task-manager:
+    carryforward: true
+  test-js-unit:
+    carryforward: true
+  test-js-sandbox-unit:
+    carryforward: true
+  test-py-unit:
+    carryforward: true
+  test-py-sandbox:
+    carryforward: true
+  e2e-quotas:
+    carryforward: true
+  e2e-cloud:
+    carryforward: true
+  e2e-opa:
+    carryforward: true
 ignore:
   - "./config/"
   - "./docs/"
@@ -17,3 +38,4 @@ ignore:
   - "**/*_test.ts"
   - "**/gen/**"
   - "**/javascript-sandbox/src/types/"
+  - "**/quickjs-emscripten/**"

@@ -6,7 +6,9 @@ import (
 	"testing"
 	"time"
 
+	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 	mocks "workers/ephemeral/task-manager/mocks/internal_/plugin_executor"
+	mocksstore "workers/ephemeral/task-manager/mocks/internal_/store/redis"
 
 	redismock "github.com/go-redis/redismock/v9"
 	redis "github.com/redis/go-redis/v9"
@@ -102,18 +104,19 @@ func TestPluginInvocationAfterPollingMessage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			redisClient, redisMock := redismock.NewClientMock()
 			mockPluginExecutor := mocks.NewPluginExecutor(t)
+			mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 			transport := NewRedisTransport(&Options{
-				RedisClient:    redisClient,
-				StreamKeys:     []string{"stream1"},
-				WorkerId:       "worker1",
-				ConsumerGroup:  "group1",
-				BlockDuration:  5 * time.Second,
-				MessageCount:   10,
-				PluginExecutor: mockPluginExecutor,
-				Logger:         zap.NewNop(),
-				ExecutionPool:  10,
-				GRPCAddress:    "localhost:50050",
+				RedisClient:         redisClient,
+				StreamKeys:          []string{"stream1"},
+				WorkerId:            "worker1",
+				ConsumerGroup:       "group1",
+				BlockDuration:       5 * time.Second,
+				MessageCount:        10,
+				PluginExecutor:      mockPluginExecutor,
+				Logger:              zap.NewNop(),
+				ExecutionPool:       10,
+				FileContextProvider: mockFileContextProvider,
 			})
 
 			byteEncoded, _ := protojson.Marshal(tc.request)
@@ -154,6 +157,9 @@ func TestPluginInvocationAfterPollingMessage(t *testing.T) {
 				NoMkStream: true,
 			}).SetVal("someId")
 
+			mockFileContextProvider.On("SetFileContext", "exec-123", &redisstore.ExecutionFileContext{}).Return()
+			mockFileContextProvider.On("CleanupExecution", "exec-123").Return()
+
 			if tc.method == "Execute" {
 				mockPluginExecutor.On(tc.method, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 			} else {
@@ -172,18 +178,19 @@ func TestEmptyExecutionPoolSkipsPolling(t *testing.T) {
 	// The full polling with multiple batches has complex async behavior
 	redisClient, redisMock := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:    redisClient,
-		StreamKeys:     []string{"stream1"},
-		WorkerId:       "worker1",
-		ConsumerGroup:  "group1",
-		BlockDuration:  5 * time.Second,
-		MessageCount:   2,
-		PluginExecutor: mockPluginExecutor,
-		Logger:         zap.NewNop(),
-		ExecutionPool:  2,
-		GRPCAddress:    "localhost:50050",
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        2,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       2,
+		FileContextProvider: mockFileContextProvider,
 	})
 
 	// Verify initial pool size
@@ -216,18 +223,19 @@ func TestEmptyExecutionPoolSkipsPolling(t *testing.T) {
 func TestClosingWhenPoolIsFull(t *testing.T) {
 	redisClient, _ := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:    redisClient,
-		StreamKeys:     []string{"stream1"},
-		WorkerId:       "worker1",
-		ConsumerGroup:  "group1",
-		BlockDuration:  5 * time.Second,
-		MessageCount:   10,
-		PluginExecutor: mockPluginExecutor,
-		Logger:         zap.NewNop(),
-		ExecutionPool:  10,
-		GRPCAddress:    "localhost:50050",
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
 	})
 
 	err := transport.Close(context.Background())
@@ -238,18 +246,19 @@ func TestClosingWhenPoolIsFull(t *testing.T) {
 func TestClosingProperlyDrainsRequests(t *testing.T) {
 	redisClient, redisMock := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:    redisClient,
-		StreamKeys:     []string{"stream1"},
-		WorkerId:       "worker1",
-		ConsumerGroup:  "group1",
-		BlockDuration:  5 * time.Second,
-		MessageCount:   2,
-		PluginExecutor: mockPluginExecutor,
-		Logger:         zap.NewNop(),
-		ExecutionPool:  2,
-		GRPCAddress:    "localhost:50050",
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        2,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       2,
+		FileContextProvider: mockFileContextProvider,
 	})
 
 	req := &v1.Request{
@@ -303,6 +312,9 @@ func TestClosingProperlyDrainsRequests(t *testing.T) {
 		Values:     mock.Anything,
 		NoMkStream: true,
 	}).SetVal("someId")
+
+	mockFileContextProvider.On("SetFileContext", "exec-123", &redisstore.ExecutionFileContext{}).Return()
+	mockFileContextProvider.On("CleanupExecution", "exec-123").Return()
 
 	mockPluginExecutor.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		After(500*time.Millisecond).
@@ -412,20 +424,21 @@ func TestStreamKeysGeneration(t *testing.T) {
 func TestEphemeralModeTransport(t *testing.T) {
 	redisClient, _ := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:      redisClient,
-		StreamKeys:       []string{"stream1"},
-		WorkerId:         "worker1",
-		ConsumerGroup:    "group1",
-		BlockDuration:    5 * time.Second,
-		MessageCount:     1,
-		PluginExecutor:   mockPluginExecutor,
-		Logger:           zap.NewNop(),
-		ExecutionPool:    1,
-		GRPCAddress:      "localhost:50050",
-		Ephemeral:        true,
-		EphemeralTimeout: 30 * time.Second,
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        1,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
+		Ephemeral:           true,
+		EphemeralTimeout:    30 * time.Second,
 	})
 
 	assert.True(t, transport.ephemeral)
@@ -436,20 +449,21 @@ func TestEphemeralModeTransport(t *testing.T) {
 func TestWaitForCompletionSuccess(t *testing.T) {
 	redisClient, _ := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:      redisClient,
-		StreamKeys:       []string{"stream1"},
-		WorkerId:         "worker1",
-		ConsumerGroup:    "group1",
-		BlockDuration:    5 * time.Second,
-		MessageCount:     1,
-		PluginExecutor:   mockPluginExecutor,
-		Logger:           zap.NewNop(),
-		ExecutionPool:    1,
-		GRPCAddress:      "localhost:50050",
-		Ephemeral:        true,
-		EphemeralTimeout: 1 * time.Second,
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        1,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
+		Ephemeral:           true,
+		EphemeralTimeout:    1 * time.Second,
 	})
 
 	// Send success (nil) on ephemeralDone before timeout
@@ -465,20 +479,21 @@ func TestWaitForCompletionSuccess(t *testing.T) {
 func TestWaitForCompletionError(t *testing.T) {
 	redisClient, _ := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:      redisClient,
-		StreamKeys:       []string{"stream1"},
-		WorkerId:         "worker1",
-		ConsumerGroup:    "group1",
-		BlockDuration:    5 * time.Second,
-		MessageCount:     1,
-		PluginExecutor:   mockPluginExecutor,
-		Logger:           zap.NewNop(),
-		ExecutionPool:    1,
-		GRPCAddress:      "localhost:50050",
-		Ephemeral:        true,
-		EphemeralTimeout: 1 * time.Second,
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        1,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
+		Ephemeral:           true,
+		EphemeralTimeout:    1 * time.Second,
 	})
 
 	// Send an error on ephemeralDone before timeout
@@ -495,20 +510,21 @@ func TestWaitForCompletionError(t *testing.T) {
 func TestEphemeralModeTimeoutZeroMeansNoTimeout(t *testing.T) {
 	redisClient, _ := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:      redisClient,
-		StreamKeys:       []string{"stream1"},
-		WorkerId:         "worker1",
-		ConsumerGroup:    "group1",
-		BlockDuration:    5 * time.Second,
-		MessageCount:     1,
-		PluginExecutor:   mockPluginExecutor,
-		Logger:           zap.NewNop(),
-		ExecutionPool:    1,
-		GRPCAddress:      "localhost:50050",
-		Ephemeral:        true,
-		EphemeralTimeout: 0, // No timeout
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        1,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
+		Ephemeral:           true,
+		EphemeralTimeout:    0, // No timeout
 	})
 
 	assert.True(t, transport.ephemeral)
@@ -521,20 +537,21 @@ func TestSendTimeoutResponseCreatesValidResponse(t *testing.T) {
 
 	redisClient, _ := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:      redisClient,
-		StreamKeys:       []string{"stream1"},
-		WorkerId:         "worker1",
-		ConsumerGroup:    "group1",
-		BlockDuration:    5 * time.Second,
-		MessageCount:     1,
-		PluginExecutor:   mockPluginExecutor,
-		Logger:           zap.NewNop(),
-		ExecutionPool:    1,
-		GRPCAddress:      "localhost:50050",
-		Ephemeral:        true,
-		EphemeralTimeout: 100 * time.Millisecond,
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        1,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
+		Ephemeral:           true,
+		EphemeralTimeout:    100 * time.Millisecond,
 	})
 
 	// Verify the transport has the timeout configured
@@ -549,18 +566,19 @@ func TestSendTimeoutResponseCreatesValidResponse(t *testing.T) {
 func TestInitStreamsCreatesConsumerGroup(t *testing.T) {
 	redisClient, redisMock := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:    redisClient,
-		StreamKeys:     []string{"stream1", "stream2"},
-		WorkerId:       "worker1",
-		ConsumerGroup:  "group1",
-		BlockDuration:  5 * time.Second,
-		MessageCount:   10,
-		PluginExecutor: mockPluginExecutor,
-		Logger:         zap.NewNop(),
-		ExecutionPool:  10,
-		GRPCAddress:    "localhost:50050",
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1", "stream2"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
 	})
 
 	// Expect consumer group creation for each stream
@@ -574,18 +592,19 @@ func TestInitStreamsCreatesConsumerGroup(t *testing.T) {
 func TestInitStreamsHandlesExistingGroup(t *testing.T) {
 	redisClient, redisMock := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:    redisClient,
-		StreamKeys:     []string{"stream1"},
-		WorkerId:       "worker1",
-		ConsumerGroup:  "group1",
-		BlockDuration:  5 * time.Second,
-		MessageCount:   10,
-		PluginExecutor: mockPluginExecutor,
-		Logger:         zap.NewNop(),
-		ExecutionPool:  10,
-		GRPCAddress:    "localhost:50050",
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
 	})
 
 	// Simulate consumer group already exists
@@ -602,18 +621,19 @@ func TestInitStreamsHandlesExistingGroup(t *testing.T) {
 func TestAckMessage(t *testing.T) {
 	redisClient, redisMock := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:    redisClient,
-		StreamKeys:     []string{"stream1"},
-		WorkerId:       "worker1",
-		ConsumerGroup:  "group1",
-		BlockDuration:  5 * time.Second,
-		MessageCount:   10,
-		PluginExecutor: mockPluginExecutor,
-		Logger:         zap.NewNop(),
-		ExecutionPool:  10,
-		GRPCAddress:    "localhost:50050",
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
 	})
 
 	redisMock.ExpectXAdd(&redis.XAddArgs{
@@ -631,18 +651,19 @@ func TestAckMessage(t *testing.T) {
 func TestSendResult(t *testing.T) {
 	redisClient, redisMock := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
 	transport := NewRedisTransport(&Options{
-		RedisClient:    redisClient,
-		StreamKeys:     []string{"stream1"},
-		WorkerId:       "worker1",
-		ConsumerGroup:  "group1",
-		BlockDuration:  5 * time.Second,
-		MessageCount:   10,
-		PluginExecutor: mockPluginExecutor,
-		Logger:         zap.NewNop(),
-		ExecutionPool:  10,
-		GRPCAddress:    "localhost:50050",
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
 	})
 
 	response := &v1.Response{

@@ -22,8 +22,16 @@ message Property {
   repeated string valueOptions = 11;
 }
 
+// HTTP method for presigned URL generation
+enum PresignedMethod {
+  PRESIGNED_METHOD_UNSPECIFIED = 0;  // Default: treated as GET for backward compatibility
+  PRESIGNED_METHOD_GET = 1;          // Generate download URL
+  PRESIGNED_METHOD_PUT = 2;          // Generate upload URL
+}
+
 message Custom {
   Property presignedExpiration = 1;
+  PresignedMethod presignedMethod = 2;
 }
 
 message ListFilesConfig {

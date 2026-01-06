@@ -10,6 +10,7 @@ ARG NODE_VERSION=20.19.5
 ARG PNPM_VERSION=10.19.0
 ARG S6_OVERLAY_VERSION=3.2.1.0
 ARG DEASYNC_VERSION=0.1.29
+ARG EMSDK_VERSION=3.1.65
 ARG LIBEXPAT_VERSION=2.6.3
 ARG REQUIREMENTS_FILE=requirements-slim.txt
 ARG SLIM_IMAGE=true
@@ -66,6 +67,7 @@ ARG GO_VERSION
 ARG PNPM_VERSION
 ARG S6_OVERLAY_VERSION
 ARG DEASYNC_VERSION
+ARG EMSDK_VERSION
 ARG WORKER_JS_PREPARE_FS_ARGS
 
 ENV PATH=/usr/local/go/bin:$PATH
@@ -96,11 +98,24 @@ RUN cd /workers/javascript                && \
     npm install                           && \
     npx pnpm fetch
 
+# Install Java (for closure compiler) and emscripten after pnpm fetch
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends default-jre-headless && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/emscripten-core/emsdk.git /emsdk && \
+    cd /emsdk && \
+    ./emsdk install ${EMSDK_VERSION} && \
+    ./emsdk activate ${EMSDK_VERSION}
+
+ENV PATH="/emsdk:/emsdk/upstream/emscripten:${PATH}"
+ENV EMSDK=/emsdk
+
 COPY . .
 
 RUN cd /workers/javascript                                                                                                           && \
     scripts/prepare-fs-for-build.sh --working-dir /workers/javascript ${WORKER_JS_PREPARE_FS_ARGS} && \
-    npx pnpm install -r --offline                                                                                                    && \
+    npx pnpm install -r                                                                                                              && \
     npx pnpm --filter "*" build                                                                                                      && \
     rm -rf node_modules                                                                                                              && \
     npm install                                                                                                                      && \

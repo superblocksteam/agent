@@ -7,6 +7,40 @@ import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialM
 import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
+ * HTTP method for presigned URL generation
+ *
+ * @generated from enum plugins.s3.v1.PresignedMethod
+ */
+export enum PresignedMethod {
+  /**
+   * Default: treated as GET for backward compatibility
+   *
+   * @generated from enum value: PRESIGNED_METHOD_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Generate download URL
+   *
+   * @generated from enum value: PRESIGNED_METHOD_GET = 1;
+   */
+  GET = 1,
+
+  /**
+   * Generate upload URL
+   *
+   * @generated from enum value: PRESIGNED_METHOD_PUT = 2;
+   */
+  PUT = 2,
+}
+// Retrieve enum metadata with: proto3.getEnumType(PresignedMethod)
+proto3.util.setEnumType(PresignedMethod, "plugins.s3.v1.PresignedMethod", [
+  { no: 0, name: "PRESIGNED_METHOD_UNSPECIFIED" },
+  { no: 1, name: "PRESIGNED_METHOD_GET" },
+  { no: 2, name: "PRESIGNED_METHOD_PUT" },
+]);
+
+/**
  * @generated from message plugins.s3.v1.SuperblocksMetadata
  */
 export class SuperblocksMetadata extends Message<SuperblocksMetadata> {
@@ -149,6 +183,11 @@ export class Custom extends Message<Custom> {
    */
   presignedExpiration?: Property;
 
+  /**
+   * @generated from field: plugins.s3.v1.PresignedMethod presignedMethod = 2;
+   */
+  presignedMethod = PresignedMethod.UNSPECIFIED;
+
   constructor(data?: PartialMessage<Custom>) {
     super();
     proto3.util.initPartial(data, this);
@@ -158,6 +197,7 @@ export class Custom extends Message<Custom> {
   static readonly typeName = "plugins.s3.v1.Custom";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "presignedExpiration", kind: "message", T: Property },
+    { no: 2, name: "presignedMethod", kind: "enum", T: proto3.getEnumType(PresignedMethod) },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Custom {

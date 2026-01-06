@@ -33,6 +33,8 @@ import {
   S3DatasourceConfiguration
 } from '@superblocks/shared';
 
+// Enum string names from proto definition: plugins.s3.v1.PresignedMethod
+const PRESIGNED_METHOD_PUT = 'PRESIGNED_METHOD_PUT';
 import { getS3ClientConfig, buildListObjectsV2Command, validateS3Action } from './utils';
 
 export default class S3Plugin extends BasePlugin {
@@ -229,11 +231,20 @@ export default class S3Plugin extends BasePlugin {
           }))
         );
       } else if (s3Action === S3ActionType.GENERATE_PRESIGNED_URL) {
+        const rawExpiration = configuration.custom?.presignedExpiration?.value;
+        let expiration: number | undefined;
+        if (rawExpiration !== undefined) {
+          expiration = Number(rawExpiration);
+          if (Number.isNaN(expiration) || expiration <= 0) {
+            throw new IntegrationError(`Invalid presigned URL expiration value: ${rawExpiration}`, ErrorCode.INTEGRATION_SYNTAX);
+          }
+        }
         ret.output = await this.generateSignedURL(
           s3Client,
           configuration.resource ?? '',
           configuration.path ?? '',
-          Number(configuration.custom?.presignedExpiration?.value)
+          expiration,
+          configuration.custom?.presignedMethod as string | undefined
         );
       }
       return ret;
@@ -273,9 +284,8 @@ export default class S3Plugin extends BasePlugin {
       const names = files.map((file) => file.name);
       s3ReqString += `\nBucket: ${configuration.resource}\nFile Objects: ${JSON.stringify(names)}`;
     } else if (s3Action === S3ActionType.GENERATE_PRESIGNED_URL) {
-      s3ReqString += `\nBucket: ${configuration.resource}\nKey: ${JSON.stringify(configuration.path)})}\nExpiration: ${
-        configuration.custom?.presignedExpiration?.value
-      }`;
+      const httpMethod = (configuration.custom?.presignedMethod as unknown as string) === PRESIGNED_METHOD_PUT ? 'PUT' : 'GET';
+      s3ReqString += `\nBucket: ${configuration.resource}\nKey: ${JSON.stringify(configuration.path)}\nMethod: ${httpMethod}\nExpiration: ${configuration.custom?.presignedExpiration?.value}`;
     }
     return s3ReqString;
   }
@@ -351,11 +361,15 @@ export default class S3Plugin extends BasePlugin {
     );
   }
 
-  private async generateSignedURL(s3Client: S3Client, bucket: string, key: string, expiration?: number): Promise<string> {
-    const command = new GetObjectCommand({
-      Bucket: bucket,
-      Key: key
-    });
+  private async generateSignedURL(
+    s3Client: S3Client,
+    bucket: string,
+    key: string,
+    expiration?: number,
+    method?: string
+  ): Promise<string> {
+    const command =
+      method === PRESIGNED_METHOD_PUT ? new PutObjectCommand({ Bucket: bucket, Key: key }) : new GetObjectCommand({ Bucket: bucket, Key: key });
     const signedUrl = await getSignedUrl(s3Client, command, {
       expiresIn: expiration ?? DEFAULT_S3_PRESIGNED_URL_EXPIRATION_SECONDS
     });

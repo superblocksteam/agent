@@ -12,6 +12,7 @@ import (
 	"workers/ephemeral/task-manager/internal/health"
 	"workers/ephemeral/task-manager/internal/plugin/sandbox"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
+	internalstore "workers/ephemeral/task-manager/internal/store/redis"
 	"workers/ephemeral/task-manager/internal/transport/redis"
 
 	r "github.com/redis/go-redis/v9"
@@ -306,6 +307,9 @@ func main() {
 		CheckInterval:  viper.GetDuration("health.check.interval"),
 	})
 
+	// Create variable store gRPC server
+	variableStoreGrpcRunnable := internalstore.NewVariableStoreGRPC(storeClient, logger, viper.GetInt("grpc.port"))
+
 	// Create Redis transport
 	transportRunnable := redis.NewRedisTransport(redis.NewOptions(
 		redis.WithLogger(logger),
@@ -317,8 +321,7 @@ func main() {
 		redis.WithPluginExecutor(pluginExec),
 		redis.WithStreamKeys(streamKeys),
 		redis.WithWorkerId(id),
-		redis.WithGRPCAddress(grpcAddress),
-		redis.WithGRPCPort(viper.GetInt("grpc.port")),
+		redis.WithFileContextProvider(variableStoreGrpcRunnable),
 		redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
 		redis.WithEphemeralTimeout(viper.GetDuration("sandbox.timeout")),
 		redis.WithAgentKey(viper.GetString("superblocks.key")),
@@ -337,6 +340,7 @@ func main() {
 
 	g.Always(process.New())
 	g.Always(healthChecker)
+	g.Always(variableStoreGrpcRunnable)
 	g.Always(transportRunnable)
 	g.Always(tracerRunnable)
 

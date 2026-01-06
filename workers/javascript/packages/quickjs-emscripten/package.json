@@ -1,0 +1,35 @@
+{
+  "name": "quickjs-emscripten-repo",
+  "private": true,
+  "version": "0.31.0",
+  "sideEffects": false,
+  "license": "MIT",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/justjake/quickjs-emscripten"
+  },
+  "scripts": {
+    "clean": "pnpm -r --filter './packages/*' run clean",
+    "vendor:quickjs:subtree": "git subtree $ACTION --prefix=vendor/quickjs --squash git@github.com:bellard/quickjs.git master",
+    "vendor:quickjs:pull": "ACTION=pull pnpm run vendor:quickjs:subtree && pnpm run vendor:quickjs:patch",
+    "vendor:quickjs:add": "ACTION=add pnpm run vendor:quickjs:subtree",
+    "vendor:quickjs:patch": "git apply vendor/quickjs-patches/*",
+    "check": "pnpm run build && pnpm run check:types && pnpm run test",
+    "test": "pnpm -r --filter './packages/*' run test",
+    "check:types": "pnpm -r --filter './packages/*' run tsc",
+    "build": "pnpm --filter @jitl/tsconfig run build && pnpm -r --filter './packages/*' run build"
+  },
+  "devDependencies": {
+    "@jitl/tsconfig": "workspace:*",
+    "@types/emscripten": "^1.38.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.10.5",
+    "fs-extra": "^11.2.0",
+    "prettier": "^3.2.0",
+    "tsup": "^8.0.1",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3",
+    "vitest": "2.0.5"
+  }
+}

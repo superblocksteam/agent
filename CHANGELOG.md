@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validate view mode against profiles for API execution with provided definition
 - Restrict access to blocked packages in JavaScript steps via: dynamic import, `eval`, and Function constructors
 - Update JavaScript worker to execute language steps within `vm2`
+- Support generating presigned PUT URLs for s3
 - Add support for Kubernetes Gateway API as an alternative to Ingress for routing traffic to the agent
 - Update FilePicker download endpoint to ensure requested download paths are under the temp directory
 - Add WASM-based sandbox using QuickJS for more secure JavaScript binding resolution

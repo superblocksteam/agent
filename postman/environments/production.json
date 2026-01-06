@@ -1,5 +1,5 @@
 {
-	"id": "16dea4fa-73c6-423b-b46a-b520c0849a1e",
+	"id": "5f51b4e2-0ada-456b-84f3-358f7beef228",
 	"name": "production",
 	"values": [
 		{
@@ -61,9 +61,16 @@
 			"value": "false",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "SKIP_PARALLEL_TESTS",
+			"value": "false",
+			"type": "default",
+			"enabled": true
 		}
 	],
+	"color": null,
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2025-07-01T22:20:54.926Z",
-	"_postman_exported_using": "Postman/11.51.3"
+	"_postman_exported_at": "2026-01-05T20:51:58.026Z",
+	"_postman_exported_using": "Postman/11.77.2"
 }

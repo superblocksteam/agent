@@ -14,6 +14,7 @@ export * as OracleDbPluginV1 from "./oracledb/v1/plugin_pb";
 export * as RedisPluginV1 from "./redis/v1/plugin_pb";
 export * as RestApiV1 from "./restapi/v1/plugin_pb";
 export * as RestApiIntegrationV1 from "./restapiintegration/v1/plugin_pb";
+export * as S3PluginV1 from "./s3/v1/plugin_pb";
 export * as SalesforcePluginV1 from "./salesforce/v1/plugin_pb";
 export * as SmtpPluginV1 from "./smtp/v1/plugin_pb";
 

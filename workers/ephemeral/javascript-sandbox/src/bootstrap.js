@@ -14,6 +14,10 @@ const { NodeVM } = require('vm2');
 const eventEmitter = new EventEmitter();
 
 function cleanStack(stack, lineOffset) {
+  if (!stack) {
+    return undefined;
+  }
+
   const extractPathRegex = /\s+at.*[(\s](.*)\)?/;
 
   const errorLines = stack.replace(/\\/g, '/').split('\n');
@@ -130,8 +134,9 @@ const sharedCode = `
 module.exports.executeCode = async (workerData) => {
   const { context, code, filePaths, inheritedEnv } = workerData;
 
+  // Add 3 lines for the newline, module export declaration and the function call to create file objects
+  const codeLineNumberOffset = sharedCode.split('\n').length + 3;
   const ret = new ExecutionOutput();
-  const codeLineNumberOffset = sharedCode.split('\n').length;
   let variableClient;
 
   try {
@@ -209,7 +214,9 @@ module.exports = async function() {
     }
   } catch (err) {
     eventEmitter.removeAllListeners();
-    ret.error = cleanStack(err.stack, codeLineNumberOffset);
+
+    const defaultErrMsg = err instanceof Error ? err.message : String(err);
+    ret.error = cleanStack(err.stack, codeLineNumberOffset) ?? defaultErrMsg;
   }
 
   return ret;

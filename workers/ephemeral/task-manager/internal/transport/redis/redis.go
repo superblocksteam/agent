@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"workers/ephemeral/task-manager/internal/plugin_executor"
+	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 
 	r "github.com/redis/go-redis/v9"
 	"github.com/superblocksteam/agent/pkg/constants"
@@ -45,18 +46,8 @@ type redisTransport struct {
 	logger         *zap.Logger
 	pluginExecutor plugin_executor.PluginExecutor
 
-	// Variable store
-	variableStore     map[string]map[string]string
-	variableStoreLock sync.RWMutex
-
-	// File context for each execution (file server URL, agent key)
-	fileContexts     map[string]*ExecutionFileContext
-	fileContextsLock sync.RWMutex
-
-	// gRPC server for variable store
-	grpcAddress string
-	grpcPort    int
-	grpcServer  *VariableStoreGRPC
+	// File context provider
+	fileContextProvider redisstore.FileContextProvider
 
 	// Agent key for file server authentication
 	agentKey string
@@ -101,25 +92,18 @@ func NewRedisTransport(options *Options) *redisTransport {
 	executionPool := &atomic.Int64{}
 	executionPool.Store(options.ExecutionPool)
 
-	variableStore := make(map[string]map[string]string)
-	fileContexts := make(map[string]*ExecutionFileContext)
-
 	return &redisTransport{
-		redis:          options.RedisClient,
-		blockDuration:  options.BlockDuration,
-		messageCount:   options.MessageCount,
-		streamKeys:     options.StreamKeys,
-		xReadArgs:      generateXReadArgs(options.StreamKeys),
-		workerId:       options.WorkerId,
-		consumerGroup:  options.ConsumerGroup,
-		logger:         options.Logger,
-		pluginExecutor: options.PluginExecutor,
-		grpcAddress:    options.GRPCAddress,
-		grpcPort:       options.GRPCPort,
-		agentKey:       options.AgentKey,
-
-		variableStore: variableStore,
-		fileContexts:  fileContexts,
+		redis:               options.RedisClient,
+		blockDuration:       options.BlockDuration,
+		messageCount:        options.MessageCount,
+		streamKeys:          options.StreamKeys,
+		xReadArgs:           generateXReadArgs(options.StreamKeys),
+		workerId:            options.WorkerId,
+		consumerGroup:       options.ConsumerGroup,
+		logger:              options.Logger,
+		pluginExecutor:      options.PluginExecutor,
+		fileContextProvider: options.FileContextProvider,
+		agentKey:            options.AgentKey,
 
 		mutex: &sync.Mutex{},
 
@@ -375,18 +359,16 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 		zap.String("inbox", request.GetInbox()),
 	)
 
-	// Initialize variable store for this execution
-	executionID := pluginProps.GetExecutionId()
-	rt.variableStoreLock.Lock()
-	rt.variableStore[executionID] = make(map[string]string)
-	rt.variableStoreLock.Unlock()
-
 	// Set file context for this execution (for FetchFile RPC)
-	rt.SetFileContext(executionID, &ExecutionFileContext{
-		FileServerURL: pluginProps.GetFileServerUrl(),
-		AgentKey:      rt.agentKey,
-	})
-	defer rt.cleanupExecution(executionID)
+	executionID := pluginProps.GetExecutionId()
+	rt.fileContextProvider.SetFileContext(
+		executionID,
+		&redisstore.ExecutionFileContext{
+			FileServerURL: pluginProps.GetFileServerUrl(),
+			AgentKey:      rt.agentKey,
+		},
+	)
+	defer rt.fileContextProvider.CleanupExecution(executionID)
 
 	perf := &transportv1.Performance{
 		QueueRequest:  &transportv1.Performance_Observable{},
@@ -486,43 +468,9 @@ func (rt *redisTransport) signalEphemeralDone(err error) {
 	}
 }
 
-func (rt *redisTransport) cleanupExecution(executionID string) {
-	rt.variableStoreLock.Lock()
-	delete(rt.variableStore, executionID)
-	rt.variableStoreLock.Unlock()
-
-	rt.fileContextsLock.Lock()
-	delete(rt.fileContexts, executionID)
-	rt.fileContextsLock.Unlock()
-}
-
-// GetVariableStore returns the variable store (for gRPC server)
-func (rt *redisTransport) GetVariableStore() map[string]map[string]string {
-	return rt.variableStore
-}
-
-// GetVariableStoreLock returns the lock for the variable store
-func (rt *redisTransport) GetVariableStoreLock() *sync.RWMutex {
-	return &rt.variableStoreLock
-}
-
 // GetRedisClient returns the Redis client (for gRPC server)
 func (rt *redisTransport) GetRedisClient() *r.Client {
 	return rt.redis
-}
-
-// GetFileContext returns the file context for an execution
-func (rt *redisTransport) GetFileContext(executionID string) *ExecutionFileContext {
-	rt.fileContextsLock.RLock()
-	defer rt.fileContextsLock.RUnlock()
-	return rt.fileContexts[executionID]
-}
-
-// SetFileContext sets the file context for an execution
-func (rt *redisTransport) SetFileContext(executionID string, ctx *ExecutionFileContext) {
-	rt.fileContextsLock.Lock()
-	defer rt.fileContextsLock.Unlock()
-	rt.fileContexts[executionID] = ctx
 }
 
 // Run implements run.Runnable
@@ -530,14 +478,6 @@ func (rt *redisTransport) Run(ctx context.Context) error {
 	if err := rt.initStreams(); err != nil {
 		return err
 	}
-
-	// Start gRPC server for variable store
-	rt.grpcServer = NewVariableStoreGRPC(rt, rt.logger, rt.grpcPort)
-	go func() {
-		if err := rt.grpcServer.Start(); err != nil {
-			rt.logger.Error("failed to start gRPC server", zap.Error(err))
-		}
-	}()
 
 	return rt.poll()
 }
@@ -548,10 +488,6 @@ func (rt *redisTransport) Close(ctx context.Context) error {
 	rt.logger.Info("closing redis transport", zap.Error(ctx.Err()))
 	rt.alive.Store(false)
 	rt.cancel()
-
-	if rt.grpcServer != nil {
-		rt.grpcServer.Stop()
-	}
 
 	if rt.executionPool.Load() == rt.executionPoolSize {
 		return nil

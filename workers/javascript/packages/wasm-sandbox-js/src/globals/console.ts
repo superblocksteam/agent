@@ -1,4 +1,4 @@
-import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten';
+import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten-core';
 
 type VMConsoleLogger = Pick<Console, 'log' | 'warn' | 'error'>;
 

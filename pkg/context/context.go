@@ -33,7 +33,7 @@ type Context struct {
 	RequestOptions       *apiv1.ExecuteRequest_Options
 
 	// If we are inside of an active loop, this will represent the
-	// name of the loop block that will will use to back out too.
+	// name of the loop block that we will use to back out to.
 	breakScope string
 	options    *options.Options
 	lineage    []string

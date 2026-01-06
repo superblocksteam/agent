@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { getQuickJS, type QuickJSWASMModule } from 'quickjs-emscripten';
+import { getQuickJS } from '../quickjs';
+import type { QuickJSWASMModule } from 'quickjs-emscripten-core';
 import { registerGlobalLazyLibrary, registerGlobalLibrary } from './libraries';
 
 describe('globals/libraries', () => {

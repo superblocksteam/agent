@@ -1,5 +1,5 @@
 import type { EventLoop } from '../event-loop';
-import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten';
+import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten-core';
 
 /**
  * Exposes a partial implementation of `setTimeout` to the VM.

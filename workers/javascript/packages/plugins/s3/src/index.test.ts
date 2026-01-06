@@ -167,3 +167,138 @@ describe('s3 upload', () => {
     });
   });
 });
+
+describe('s3 generate presigned url', () => {
+  const plugin: S3Plugin = new S3Plugin();
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+
+  beforeEach(() => {
+    // Reset mocks to track which command was used
+    jest.clearAllMocks();
+  });
+
+  test('generates GET presigned URL by default (backward compatibility)', async () => {
+    const result = await plugin.execute({
+      ...DUMMY_EXECUTE_COMMON_PARAMETERS,
+      datasourceConfiguration: {},
+      mutableOutput: new ExecutionOutput(),
+      actionConfiguration: {
+        action: S3ActionType.GENERATE_PRESIGNED_URL,
+        resource: 'my-bucket',
+        path: 'my-file.txt',
+        custom: {
+          presignedExpiration: { value: '3600' }
+        }
+      },
+      files: []
+    });
+
+    expect(result.output).toBe('https://fancy-bucket.s3.us-west-2.amazonaws.com/superblocks-master.zip?extra_headers');
+    expect(GetObjectCommand).toHaveBeenCalledWith({ Bucket: 'my-bucket', Key: 'my-file.txt' });
+    expect(getSignedUrl).toHaveBeenCalledWith(expect.anything(), expect.anything(), { expiresIn: 3600 });
+  });
+
+  test('generates GET presigned URL when method is explicitly GET', async () => {
+    const result = await plugin.execute({
+      ...DUMMY_EXECUTE_COMMON_PARAMETERS,
+      datasourceConfiguration: {},
+      mutableOutput: new ExecutionOutput(),
+      actionConfiguration: {
+        action: S3ActionType.GENERATE_PRESIGNED_URL,
+        resource: 'my-bucket',
+        path: 'my-file.txt',
+        custom: {
+          presignedExpiration: { value: '3600' },
+          presignedMethod: 'PRESIGNED_METHOD_GET'
+        } as never // presignedMethod is enum string in proto, not Property
+      },
+      files: []
+    });
+
+    expect(result.output).toBe('https://fancy-bucket.s3.us-west-2.amazonaws.com/superblocks-master.zip?extra_headers');
+    expect(GetObjectCommand).toHaveBeenCalledWith({ Bucket: 'my-bucket', Key: 'my-file.txt' });
+    expect(getSignedUrl).toHaveBeenCalledWith(expect.anything(), expect.anything(), { expiresIn: 3600 });
+  });
+
+  test('generates PUT presigned URL when method is PUT', async () => {
+    const result = await plugin.execute({
+      ...DUMMY_EXECUTE_COMMON_PARAMETERS,
+      datasourceConfiguration: {},
+      mutableOutput: new ExecutionOutput(),
+      actionConfiguration: {
+        action: S3ActionType.GENERATE_PRESIGNED_URL,
+        resource: 'my-bucket',
+        path: 'upload-target.txt',
+        custom: {
+          presignedExpiration: { value: '3600' },
+          presignedMethod: 'PRESIGNED_METHOD_PUT'
+        } as never // presignedMethod is enum string in proto, not Property
+      },
+      files: []
+    });
+
+    expect(result.output).toBe('https://fancy-bucket.s3.us-west-2.amazonaws.com/superblocks-master.zip?extra_headers');
+    expect(PutObjectCommand).toHaveBeenCalledWith({ Bucket: 'my-bucket', Key: 'upload-target.txt' });
+    expect(getSignedUrl).toHaveBeenCalledWith(expect.anything(), expect.anything(), { expiresIn: 3600 });
+  });
+
+  test('throws error when presignedExpiration is invalid (NaN)', async () => {
+    await expect(
+      plugin.execute({
+        ...DUMMY_EXECUTE_COMMON_PARAMETERS,
+        datasourceConfiguration: {},
+        mutableOutput: new ExecutionOutput(),
+        actionConfiguration: {
+          action: S3ActionType.GENERATE_PRESIGNED_URL,
+          resource: 'my-bucket',
+          path: 'my-file.txt',
+          custom: {
+            presignedExpiration: { value: 'invalid-number' }
+          }
+        },
+        files: []
+      })
+    ).rejects.toThrow('Invalid presigned URL expiration value: invalid-number');
+  });
+
+  test('throws error when presignedExpiration is zero', async () => {
+    await expect(
+      plugin.execute({
+        ...DUMMY_EXECUTE_COMMON_PARAMETERS,
+        datasourceConfiguration: {},
+        mutableOutput: new ExecutionOutput(),
+        actionConfiguration: {
+          action: S3ActionType.GENERATE_PRESIGNED_URL,
+          resource: 'my-bucket',
+          path: 'my-file.txt',
+          custom: {
+            presignedExpiration: { value: '0' }
+          }
+        },
+        files: []
+      })
+    ).rejects.toThrow('Invalid presigned URL expiration value: 0');
+  });
+
+  test('throws error when presignedExpiration is empty string', async () => {
+    await expect(
+      plugin.execute({
+        ...DUMMY_EXECUTE_COMMON_PARAMETERS,
+        datasourceConfiguration: {},
+        mutableOutput: new ExecutionOutput(),
+        actionConfiguration: {
+          action: S3ActionType.GENERATE_PRESIGNED_URL,
+          resource: 'my-bucket',
+          path: 'my-file.txt',
+          custom: {
+            presignedExpiration: { value: '' }
+          }
+        },
+        files: []
+      })
+    ).rejects.toThrow('Invalid presigned URL expiration value: ');
+  });
+});

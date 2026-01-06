@@ -1,0 +1,76 @@
+{
+	"id": "96716e7f-9b4c-487a-83de-52f80166610b",
+	"name": "ci-ephemeral",
+	"values": [
+		{
+			"key": "orchestrator_scheme",
+			"value": "http",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "orchestrator_host",
+			"value": "127.0.0.1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "orchestrator_port",
+			"value": "8080",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "mock_oauth_server_url",
+			"value": "mock_oauth_server",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "superblocks_jwt",
+			"value": "eyJhbGciOiJFUzI1NiIsImtpZCI6IkdwV1QxNlpPM3FzTzRnT1hEbjVjU0F4Slk4TFpuWGU1Nk9FTWp5YXIxUUkiLCJ0eXAiOiJKV1QifQ.eyJpYXQiOjE3NDYwMzc4MjksIm9yZ19pZCI6ImY2ZWU1MTc4LWY0ODEtNDg5ZC1iZTVjLWRjYWY5Y2IxZTdiOCIsIm9yZ190eXBlIjoiZW50ZXJwcmlzZSIsInVzZXJfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJ1c2VyX25hbWUiOiJtaXN0YSBzdXBhIGJsb2NrcyIsInVzZXJfZW1haWwiOiJ0ZXN0QHN1cGVyYmxvY2tzdGVzdC5jb20iLCJ1c2VyX3R5cGUiOiJzdXBlcmJsb2NrcyIsInJiYWNfZ3JvdXBfaWRzIjpbIjEiXSwicmJhY19ncm91cHMiOlsiZ3JvdXAtYWJjZCJdLCJyYmFjX2dyb3VwX29iamVjdHMiOlt7Im5hbWUiOiJncm91cC1hYmNkIiwiaWQiOiIxIn1dLCJyYmFjX3JvbGUiOiJhZG1pbiJ9.OcXnEvD7zdNulwSiYEBuE_HyPdUbd7Q72tbgNfaGXwKx7YuiAmYqFwCX2VVWE61KaJR4WwcfFLa7RTzW5pqV9Q",
+			"type": "secret",
+			"enabled": true
+		},
+		{
+			"key": "integration_kinesis_host",
+			"value": "http://localstack",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "integration_s3_host",
+			"value": "http://localstack",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "integration_mongodb_host",
+			"value": "mongodb",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "auth0_jwt",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsIm5hbWUiOiJKb2V5IERvZSIsImlhdCI6MTY4MDAwMDAwMH0.dummysignature1234567890",
+			"type": "secret",
+			"enabled": true
+		},
+		{
+			"key": "RUN_DISABLED_TESTS",
+			"value": "false",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "SKIP_PARALLEL_TESTS",
+			"value": "true",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"color": null,
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2026-01-05T20:50:00.050Z",
+	"_postman_exported_using": "Postman/11.77.2"
+}
