@@ -11,7 +11,7 @@
     "test": "npm run test:unit && npm run test:unit:transport",
     "test:unit": "jest ./src/*.test.ts ./src/**/*.test.ts ./src/**/**/*.test.ts ./src/test/unit --testPathIgnorePatterns ./src/test/load ./src/test/integration src/*.integration.test.ts --passWithNoTests",
     "test:unit:transport": "jest ./src/test/unit",
-    "test:integration": "jest ./src/test/integration --maxWorkers=25%",
+    "test:integration": "jest ./src/test/integration/store && jest ./src/test/integration/e2e ./src/test/integration/random --runInBand",
     "test:integration:store": "jest ./src/test/integration/store",
     "test:integration:e2e": "jest ./src/test/integration/e2e",
     "test:integration:e2e:variable": "jest ./src/test/integration/e2e/variable.test.ts",

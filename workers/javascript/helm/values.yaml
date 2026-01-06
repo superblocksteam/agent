@@ -49,9 +49,14 @@ worker:
 queue:
   deploy: false
   host: '<override>'
+  # Redis port used for the worker queue; override if your Redis instance listens on a non-default port
+  port: 6379
   token: '<override>'
   blockMs: 5000
   batchSize: 10
+  # Wait for Redis to be ready before starting worker containers
+  # Disabled by default; enable in CI/test environments where Redis may start slowly
+  waitForRedisReady: false
   pool:
     min: 10
     max: 50
