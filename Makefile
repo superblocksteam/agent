@@ -191,6 +191,10 @@ test-e2e-ephemeral:
 		-i "package deps" \
 		-i "restricted"
 
+.PHONY: test-e2e-ephemeral-smokescreen
+test-e2e-ephemeral-smokescreen:
+	postman collection run --color on --verbose ./postman/ephemeral_collection.json -e ./postman/environments/$(POSTMAN_ENV).json
+
 .PHONY: test-integration
 test-integration: deps kafka
 	@gotestsum $(GOTESTSUM_OPTIONS) -- -count=1 -timeout 30s -covermode=atomic -coverprofile=coverage-integration.out -coverpkg=./... $(INTEGRATION_TEST_PACKAGES)

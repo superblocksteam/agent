@@ -15,7 +15,14 @@ from textwrap import indent
 from traceback import extract_tb
 from typing import Any, Optional
 
-from src.constants import get_env_var
+from src.constants import (
+    get_env_var,
+    SUPERBLOCKS_WORKER_PROXY_ENABLED,
+    SUPERBLOCKS_WORKER_PROXY_HOST,
+    SUPERBLOCKS_WORKER_PROXY_PORT,
+    SUPERBLOCKS_WORKER_HTTP_PROXY,
+    SUPERBLOCKS_WORKER_HTTPS_PROXY,
+)
 from src.restricted import ALLOW_BUILTINS, restricted_environment
 from src.superblocks import Object, Reader, encode_bytestring_as_json
 from src.variables.variable import build_variables
@@ -247,12 +254,57 @@ class Executor:
             return f"__EXCEPTION__Error: {error} "
 
     def _build_sandbox_environment(self) -> dict[str, str]:
-        """Build environment variables for sandboxed execution."""
+        """Build environment variables for sandboxed execution.
+
+        This includes:
+        - User-specified allowed environment variables
+        - Proxy configuration (HTTP_PROXY, HTTPS_PROXY, NO_PROXY) if enabled
+        """
         allowed_vars = get_env_var(
             "SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST", default=[], as_type=list, unset=False
         )
-        return {
+        env = {
             env_var: os.environ.get(env_var, "")
             for env_var in allowed_vars
             if env_var and env_var in os.environ
         }
+
+        # Add proxy environment variables if proxy is enabled
+        if SUPERBLOCKS_WORKER_PROXY_ENABLED:
+            env.update(self._build_proxy_environment())
+
+        return env
+
+    def _build_proxy_environment(self) -> dict[str, str]:
+        """Build proxy-related environment variables.
+
+        Sets HTTP_PROXY, HTTPS_PROXY, http_proxy, https_proxy, NO_PROXY, and no_proxy.
+        These are recognized by most HTTP libraries (requests, urllib, aiohttp, etc.)
+
+        Priority:
+        1. SUPERBLOCKS_WORKER_HTTP_PROXY/HTTPS_PROXY if set
+        2. Otherwise, construct from PROXY_HOST:PROXY_PORT
+        """
+        proxy_env: dict[str, str] = {}
+
+        # Determine HTTP proxy URL
+        http_proxy_url = SUPERBLOCKS_WORKER_HTTP_PROXY
+        if not http_proxy_url and SUPERBLOCKS_WORKER_PROXY_HOST:
+            http_proxy_url = f"http://{SUPERBLOCKS_WORKER_PROXY_HOST}:{SUPERBLOCKS_WORKER_PROXY_PORT}"
+
+        # Determine HTTPS proxy URL (defaults to HTTP proxy if not specified)
+        https_proxy_url = SUPERBLOCKS_WORKER_HTTPS_PROXY
+        if not https_proxy_url:
+            https_proxy_url = http_proxy_url
+
+        # Set both uppercase and lowercase versions for maximum compatibility
+        # Some libraries check HTTP_PROXY, others check http_proxy
+        if http_proxy_url:
+            proxy_env["HTTP_PROXY"] = http_proxy_url
+            proxy_env["http_proxy"] = http_proxy_url
+
+        if https_proxy_url:
+            proxy_env["HTTPS_PROXY"] = https_proxy_url
+            proxy_env["https_proxy"] = https_proxy_url
+
+        return proxy_env

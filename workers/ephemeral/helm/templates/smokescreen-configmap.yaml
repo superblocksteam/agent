@@ -1,0 +1,39 @@
+{{- if .Values.smokescreen.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smokescreen-config
+  labels:
+    app.kubernetes.io/name: smokescreen
+    app.kubernetes.io/component: egress-proxy
+data:
+  config.yaml: |
+    # Smokescreen Configuration
+    # https://github.com/stripe/smokescreen
+    ip: "0.0.0.0"
+    port: {{ .Values.smokescreen.port }}
+    allow_missing_role: true
+    unsafe_allow_private_ranges: {{ .Values.smokescreen.allowPrivateRanges }}
+    acl_file: /etc/smokescreen/acl.yaml
+    connect_timeout: {{ .Values.smokescreen.connectTimeout }}
+  acl.yaml: |
+    # Smokescreen ACL Configuration
+    # Policy: OPEN by default - all external hosts allowed, internal services blocked.
+    ---
+    version: v1
+    services: []
+    default:
+      project: sandbox
+      action: open
+    global_allow_list:
+      # Allow list from values (overrides deny list)
+      {{- range .Values.smokescreen.allowList }}
+      - {{ . | quote }}
+      {{- end }}
+    global_deny_list:
+      # Deny list from values
+      {{- range .Values.smokescreen.denyList }}
+      - {{ . | quote }}
+      {{- end }}
+{{- end }}

@@ -59,8 +59,26 @@ spec:
         - name: ephemeral-worker-docker
         {{- end }}
 
-        # Sandbox runs as a sidecar (initContainer with restartPolicy: Always)
+        # Sidecars run as initContainers with restartPolicy: Always
         initContainers:
+        {{- if $.Values.smokescreen.enabled }}
+        # Smokescreen egress proxy - filters outbound connections from sandbox
+        - name: smokescreen
+          image: "{{ $.Values.smokescreen.image.repository }}:{{ $.Values.smokescreen.image.tag }}"
+          imagePullPolicy: {{ $.Values.smokescreen.image.pullPolicy }}
+          restartPolicy: Always
+          resources:
+            {{- toYaml $.Values.smokescreen.resources | nindent 12 }}
+          ports:
+          - name: proxy
+            containerPort: {{ $.Values.smokescreen.port }}
+            protocol: TCP
+          volumeMounts:
+          - name: smokescreen-config
+            mountPath: /etc/smokescreen
+            readOnly: true
+        {{- end }}
+        # Sandbox runs as a sidecar
         - name: {{ $language }}-sandbox
           image: "{{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
           imagePullPolicy: {{ (($v.sandbox).image).pullPolicy | default $sandboxConfig.image.pullPolicy }}
@@ -70,6 +88,15 @@ spec:
           env:
           - name: GRPC_PORT
             value: "{{ $sandboxConfig.port }}"
+          {{- if $.Values.smokescreen.enabled }}
+          # Route ALL sandbox traffic through smokescreen proxy (no exceptions)
+          - name: SUPERBLOCKS_WORKER_PROXY_ENABLED
+            value: "true"
+          - name: SUPERBLOCKS_WORKER_PROXY_HOST
+            value: "localhost"
+          - name: SUPERBLOCKS_WORKER_PROXY_PORT
+            value: "{{ $.Values.smokescreen.port }}"
+          {{- end }}
           {{- with $sandboxConfig.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -228,5 +255,11 @@ spec:
         {{- with $v.tolerations | default $.Values.tolerations }}
         tolerations:
           {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- if $.Values.smokescreen.enabled }}
+        volumes:
+        - name: smokescreen-config
+          configMap:
+            name: smokescreen-config
         {{- end }}
 {{- end }}
