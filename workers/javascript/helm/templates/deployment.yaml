@@ -37,6 +37,37 @@ spec:
       imagePullSecrets:
       - name: workers-docker
       {{- end }}
+      {{- if $.Values.queue.waitForRedisReady }}
+      initContainers:
+      - name: wait-for-redis
+        image: busybox:1.36
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 32Mi
+        command:
+        - sh
+        - -c
+        - |
+          max_attempts=60
+          attempt=1
+          echo "Waiting for Redis at {{ $.Values.queue.host }}:{{ $.Values.queue.port | default 6379 }} (max ${max_attempts} attempts)..."
+          until nc -z {{ $.Values.queue.host }} {{ $.Values.queue.port | default 6379 }}; do
+            if [ "$attempt" -ge "$max_attempts" ]; then
+              echo "ERROR: Redis at {{ $.Values.queue.host }}:{{ $.Values.queue.port | default 6379 }} not ready after ${max_attempts} attempts. Giving up."
+              exit 1
+            fi
+            echo "Redis is not ready yet (attempt ${attempt}/${max_attempts}), retrying in 2s..."
+            attempt=$((attempt + 1))
+            sleep 2
+          done
+          echo "Redis TCP port is open, waiting a bit longer to ensure readiness..."
+          sleep 5
+          echo "Redis is ready!"
+      {{- end }}
       containers:
       - name: worker
         image: "{{ (($v.image).repository) | default ($.Values.image.repository | default "ghcr.io/superblocksteam/worker.js") }}:{{ (($v.image).tag) | default ($.Values.image.tag | default "latest") }}"
