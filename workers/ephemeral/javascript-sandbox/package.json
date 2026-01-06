@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.9.0",
+    "proxy-agent": "^6.3.0",
     "@grpc/proto-loader": "^0.7.10",
     "@notionhq/client": "2.2.15",
     "@paralleldrive/cuid2": "2.2.2",

@@ -2,6 +2,9 @@ import * as grpc from '@grpc/grpc-js';
 
 import { executeCode } from './bootstrap';
 import {
+  SUPERBLOCKS_WORKER_PROXY_ENABLED,
+  SUPERBLOCKS_WORKER_PROXY_HOST,
+  SUPERBLOCKS_WORKER_PROXY_PORT,
   SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT,
   SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_RESPONSE_SIZE
@@ -13,6 +16,20 @@ import {
 } from './types/worker/v1/sandbox_executor_transport_grpc_pb';
 import { ExecuteRequest, ExecuteResponse } from './types/worker/v1/sandbox_executor_transport_pb';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
+
+// Set up proxy URL for vm2 sandbox to use.
+// This must happen before any user code execution but after imports.
+if (SUPERBLOCKS_WORKER_PROXY_ENABLED && SUPERBLOCKS_WORKER_PROXY_HOST) {
+  // Validate proxy port configuration
+  if (!SUPERBLOCKS_WORKER_PROXY_PORT || SUPERBLOCKS_WORKER_PROXY_PORT <= 0 || SUPERBLOCKS_WORKER_PROXY_PORT > 65535) {
+    throw new Error(`Invalid SUPERBLOCKS_WORKER_PROXY_PORT: ${SUPERBLOCKS_WORKER_PROXY_PORT}. Must be a valid port number (1-65535).`);
+  }
+
+  // Store proxy URL for bootstrap.js to create mocked http/https modules.
+  // The mocked modules force ALL traffic through the proxy - no env vars needed.
+  process.env.__SUPERBLOCKS_PROXY_URL = `http://${SUPERBLOCKS_WORKER_PROXY_HOST}:${SUPERBLOCKS_WORKER_PROXY_PORT}`;
+  console.log(`Network proxy enabled: ${process.env.__SUPERBLOCKS_PROXY_URL}`);
+}
 
 const SandboxExecutorTransportServiceImpl: ISandboxExecutorTransportServiceServer = {
   execute: (call: grpc.ServerUnaryCall<ExecuteRequest, ExecuteResponse>, callback: grpc.sendUnaryData<ExecuteResponse>) => {

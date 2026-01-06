@@ -87,3 +87,23 @@ SUPERBLOCKS_PYTHON_EXECUTION_IMPORT_DENY_LIST = get_env_var(
 SUPERBLOCKS_PYTHON_EXECUTION_BUILTINS_DENY_LIST = get_env_var(
     "SUPERBLOCKS_PYTHON_EXECUTION_BUILTINS_DENY_LIST", default=[], as_type=list
 )
+
+# Network proxy configuration
+# When enabled, all outbound network connections will be routed through the specified proxy
+SUPERBLOCKS_WORKER_PROXY_ENABLED = get_env_var(
+    "SUPERBLOCKS_WORKER_PROXY_ENABLED", default=False, as_type=bool, unset=False
+)
+SUPERBLOCKS_WORKER_PROXY_HOST = get_env_var(
+    "SUPERBLOCKS_WORKER_PROXY_HOST", default="", unset=False
+)
+SUPERBLOCKS_WORKER_PROXY_PORT = get_env_var(
+    "SUPERBLOCKS_WORKER_PROXY_PORT", default=8080, as_type=int, unset=False
+)
+# HTTP_PROXY/HTTPS_PROXY URLs (alternative to host:port configuration)
+# These take precedence over PROXY_HOST/PROXY_PORT if set
+SUPERBLOCKS_WORKER_HTTP_PROXY = get_env_var(
+    "SUPERBLOCKS_WORKER_HTTP_PROXY", default="", unset=False
+)
+SUPERBLOCKS_WORKER_HTTPS_PROXY = get_env_var(
+    "SUPERBLOCKS_WORKER_HTTPS_PROXY", default="", unset=False
+)

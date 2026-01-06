@@ -173,6 +173,40 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 podAnnotations: {}
+# Smokescreen egress proxy configuration
+# When enabled, sandbox traffic is routed through smokescreen for filtering
+smokescreen:
+  enabled: false
+  image:
+    repository: ghcr.io/superblocksteam/smokescreen
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 4750
+  connectTimeout: 10s
+  allowPrivateRanges: false
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  # Allow list - these hosts override the deny list
+  # Task-managers must be allowed for VariableStore gRPC calls
+  allowList:
+    - python-ephemeral
+    - javascript-ephemeral
+  # Deny list - block access to internal infrastructure
+  denyList:
+    - python-sandbox
+    - javascript-sandbox
+    - agent
+    - orchestrator
+    - redis
+    - otel-collector
+    - agent
+    - orchestrator
+    - redis
+    - otel-collector
 # Image pull secrets
 image:
   credentials:
