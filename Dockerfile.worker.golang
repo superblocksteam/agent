@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.9.0
 
-FROM ghcr.io/superblocksteam/golang:1.25.1-trixie AS builder
+FROM ghcr.io/superblocksteam/golang:1.25.5-trixie AS builder
 
 ARG GO_ARCH=amd64
 
@@ -26,8 +26,10 @@ RUN GOOS=linux GOARCH=${GO_ARCH} make build-go SERVICE_NAME="worker.go"         
 FROM ghcr.io/superblocksteam/debian:trixie-20250811-slim
 
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends ca-certificates \
-    && apt-get clean
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy in our compiled binary
 COPY --from=builder /go/src/github.com/superblocksteam/agent/workers/golang/worker.go /worker-go
