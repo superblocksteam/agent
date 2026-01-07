@@ -130,7 +130,25 @@ func (s *server) Workflow(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv
 	return workflowResponse, nil
 }
 
+// requireAuthForInlineDefinition checks if the request contains an inline definition
+// and requires authorization if so. This prevents anonymous users from executing
+// arbitrary code while still allowing public apps (which use fetch by ID) to work.
+func requireAuthForInlineDefinition(ctx context.Context, req *apiv1.ExecuteRequest) error {
+	if _, ok := req.GetRequest().(*apiv1.ExecuteRequest_Definition); ok {
+		requestUsesJwtAuth, err := constants.GetRequestUsesJwtAuth(ctx)
+		if err != nil || !requestUsesJwtAuth {
+			return sberror.AuthorizationError(errors.New("Authorization header required for inline definitions"))
+		}
+	}
+	return nil
+}
+
 func (s *server) Await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *apiv1.AwaitResponse, err error) {
+	// Require authorization for inline definitions to prevent anonymous code execution
+	if err := requireAuthForInlineDefinition(ctx, req); err != nil {
+		return nil, err
+	}
+
 	if req.Options == nil || !req.Options.Async {
 		return s.await(ctx, req)
 	}
@@ -233,6 +251,11 @@ func (s *server) TwoWayStream(stream apiv1.ExecutorService_TwoWayStreamServer) (
 		}
 	}
 
+	// Require authorization for inline definitions to prevent anonymous code execution
+	if err := requireAuthForInlineDefinition(stream.Context(), req); err != nil {
+		return err
+	}
+
 	requests := make(chan *apiv1.Function_Request)
 	responses := make(chan *apiv1.Function_Response)
 
@@ -300,6 +323,11 @@ func (s *server) TwoWayStream(stream apiv1.ExecutorService_TwoWayStreamServer) (
 }
 
 func (s *server) Stream(req *apiv1.ExecuteRequest, stream apiv1.ExecutorService_StreamServer) (first error) {
+	// Require authorization for inline definitions to prevent anonymous code execution
+	if err := requireAuthForInlineDefinition(stream.Context(), req); err != nil {
+		return err
+	}
+
 	// TODO(frank): Move to `stream` after I ensure it doesn't break anything.
 	if err := utils.ProtoValidate(req); err != nil {
 		return err
