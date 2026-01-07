@@ -32,8 +32,9 @@ RUN make build-go SERVICE_VERSION=${SERVICE_VERSION} EXTRA_GO_OPTIONS=${EXTRA_GO
 # Build the final image
 FROM ghcr.io/superblocksteam/ubuntu:24.04 AS base
 
-# Install CA certificates
+# Install CA certificates and apply security updates
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install ca-certificates -y \
     && update-ca-certificates \
     && apt-get clean \
