@@ -9,6 +9,8 @@ import (
 
 	"github.com/superblocksteam/agent/pkg/secrets"
 	"github.com/superblocksteam/agent/pkg/utils"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -35,6 +37,46 @@ import (
 
 	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 )
+
+// mockServerStream implements grpc.ServerStream for testing
+type mockServerStream struct {
+	ctx context.Context
+}
+
+func (m *mockServerStream) SetHeader(metadata.MD) error  { return nil }
+func (m *mockServerStream) SendHeader(metadata.MD) error { return nil }
+func (m *mockServerStream) SetTrailer(metadata.MD)       {}
+func (m *mockServerStream) Context() context.Context     { return m.ctx }
+func (m *mockServerStream) SendMsg(interface{}) error    { return nil }
+func (m *mockServerStream) RecvMsg(interface{}) error    { return nil }
+
+// mockStreamServer implements apiv1.ExecutorService_StreamServer for testing
+type mockStreamServer struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (m *mockStreamServer) Send(*apiv1.StreamResponse) error { return nil }
+func (m *mockStreamServer) Context() context.Context         { return m.ctx }
+
+// mockTwoWayStreamServer implements apiv1.ExecutorService_TwoWayStreamServer for testing
+type mockTwoWayStreamServer struct {
+	grpc.ServerStream
+	ctx          context.Context
+	recvMessages []*apiv1.TwoWayRequest
+	recvIndex    int
+}
+
+func (m *mockTwoWayStreamServer) Send(*apiv1.TwoWayResponse) error { return nil }
+func (m *mockTwoWayStreamServer) Recv() (*apiv1.TwoWayRequest, error) {
+	if m.recvIndex >= len(m.recvMessages) {
+		return nil, errors.New("no more messages")
+	}
+	msg := m.recvMessages[m.recvIndex]
+	m.recvIndex++
+	return msg, nil
+}
+func (m *mockTwoWayStreamServer) Context() context.Context { return m.ctx }
 
 func TestGetActionConfig(t *testing.T) {
 	testCases := []struct {
@@ -459,6 +501,354 @@ func TestTestAuthorizationRequired(t *testing.T) {
 				if err != nil {
 					assert.False(t, sberror.IsAuthorizationError(err), "should not get AuthorizationError when auth header is present")
 				}
+			}
+		})
+	}
+}
+
+// TestInlineDefinitionAuthorizationRequired ensures that endpoints accepting ExecuteRequest
+// require authorization when an inline definition is provided. This prevents anonymous users
+// from executing arbitrary code while still allowing public apps (which use fetch by ID) to work.
+func TestInlineDefinitionAuthorizationRequired(t *testing.T) {
+	testCases := []struct {
+		name            string
+		useDefinition   bool // true = inline definition, false = fetch by ID
+		contextWithAuth bool
+		expectAuthError bool
+	}{
+		{
+			name:            "inline definition without auth - should reject",
+			useDefinition:   true,
+			contextWithAuth: false,
+			expectAuthError: true,
+		},
+		{
+			name:            "inline definition with auth - should allow",
+			useDefinition:   true,
+			contextWithAuth: true,
+			expectAuthError: false,
+		},
+		{
+			name:            "fetch by ID without auth - should allow (for public apps)",
+			useDefinition:   false,
+			contextWithAuth: false,
+			expectAuthError: false,
+		},
+		{
+			name:            "fetch by ID with auth - should allow",
+			useDefinition:   false,
+			contextWithAuth: true,
+			expectAuthError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			// Auth middleware sets this flag based on whether X-Superblocks-Authorization header exists
+			if tc.contextWithAuth {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, true)
+			} else {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, false)
+			}
+
+			var req *apiv1.ExecuteRequest
+			if tc.useDefinition {
+				req = &apiv1.ExecuteRequest{
+					Request: &apiv1.ExecuteRequest_Definition{
+						Definition: &apiv1.Definition{
+							Api: &apiv1.Api{
+								Metadata: &v1.Metadata{
+									Name: "test-api",
+								},
+							},
+						},
+					},
+				}
+			} else {
+				req = &apiv1.ExecuteRequest{
+					Request: &apiv1.ExecuteRequest_Fetch_{
+						Fetch: &apiv1.ExecuteRequest_Fetch{
+							Id: "some-api-id",
+						},
+					},
+				}
+			}
+
+			err := requireAuthForInlineDefinition(ctx, req)
+
+			if tc.expectAuthError {
+				require.Error(t, err)
+				assert.True(t, sberror.IsAuthorizationError(err), "expected AuthorizationError")
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// TestStreamInlineDefinitionAuthorizationRequired tests that the Stream endpoint
+// rejects inline definitions without authorization.
+func TestStreamInlineDefinitionAuthorizationRequired(t *testing.T) {
+	testCases := []struct {
+		name            string
+		useDefinition   bool
+		contextWithAuth bool
+		expectAuthError bool
+	}{
+		{
+			name:            "inline definition without auth - should reject",
+			useDefinition:   true,
+			contextWithAuth: false,
+			expectAuthError: true,
+		},
+		{
+			name:            "inline definition with auth - should allow (will fail later for other reasons)",
+			useDefinition:   true,
+			contextWithAuth: true,
+			expectAuthError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			if tc.contextWithAuth {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, true)
+			} else {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, false)
+			}
+
+			mockWorker := &worker.MockClient{}
+			fetcher := &fetchmocks.Fetcher{}
+
+			defer metrics.SetupForTesting()()
+			server := NewServer(&Config{
+				Logger:        zap.NewNop(),
+				Store:         store.Memory(),
+				Worker:        mockWorker,
+				Fetcher:       fetcher,
+				SecretManager: secrets.NewSecretManager(),
+			})
+
+			var req *apiv1.ExecuteRequest
+			if tc.useDefinition {
+				req = &apiv1.ExecuteRequest{
+					Request: &apiv1.ExecuteRequest_Definition{
+						Definition: &apiv1.Definition{
+							Api: &apiv1.Api{
+								Metadata: &v1.Metadata{
+									Name: "test-api",
+								},
+							},
+						},
+					},
+				}
+			} else {
+				req = &apiv1.ExecuteRequest{
+					Request: &apiv1.ExecuteRequest_Fetch_{
+						Fetch: &apiv1.ExecuteRequest_Fetch{
+							Id: "some-api-id",
+						},
+					},
+				}
+			}
+
+			mockStream := &mockStreamServer{
+				ServerStream: &mockServerStream{ctx: ctx},
+				ctx:          ctx,
+			}
+
+			err := server.Stream(req, mockStream)
+
+			if tc.expectAuthError {
+				require.Error(t, err)
+				assert.True(t, sberror.IsAuthorizationError(err), "expected AuthorizationError, got: %v", err)
+			}
+			// When auth is present but definition is inline, it will fail later during execution
+			// for other reasons (missing fetcher setup, etc.), but NOT with an auth error
+			if tc.contextWithAuth && err != nil {
+				assert.False(t, sberror.IsAuthorizationError(err), "should not get AuthorizationError when auth header is present")
+			}
+		})
+	}
+}
+
+// TestAwaitInlineDefinitionAuthorizationRequired tests that the Await endpoint
+// rejects inline definitions without authorization.
+func TestAwaitInlineDefinitionAuthorizationRequired(t *testing.T) {
+	testCases := []struct {
+		name            string
+		useDefinition   bool
+		contextWithAuth bool
+		expectAuthError bool
+	}{
+		{
+			name:            "inline definition without auth - should reject",
+			useDefinition:   true,
+			contextWithAuth: false,
+			expectAuthError: true,
+		},
+		{
+			name:            "inline definition with auth - should allow (will fail later for other reasons)",
+			useDefinition:   true,
+			contextWithAuth: true,
+			expectAuthError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			if tc.contextWithAuth {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, true)
+			} else {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, false)
+			}
+
+			mockWorker := &worker.MockClient{}
+			fetcher := &fetchmocks.Fetcher{}
+
+			defer metrics.SetupForTesting()()
+			server := NewServer(&Config{
+				Logger:        zap.NewNop(),
+				Store:         store.Memory(),
+				Worker:        mockWorker,
+				Fetcher:       fetcher,
+				SecretManager: secrets.NewSecretManager(),
+			})
+
+			var req *apiv1.ExecuteRequest
+			if tc.useDefinition {
+				req = &apiv1.ExecuteRequest{
+					Request: &apiv1.ExecuteRequest_Definition{
+						Definition: &apiv1.Definition{
+							Api: &apiv1.Api{
+								Metadata: &v1.Metadata{
+									Name: "test-api",
+								},
+							},
+						},
+					},
+				}
+			} else {
+				req = &apiv1.ExecuteRequest{
+					Request: &apiv1.ExecuteRequest_Fetch_{
+						Fetch: &apiv1.ExecuteRequest_Fetch{
+							Id: "some-api-id",
+						},
+					},
+				}
+			}
+
+			_, err := server.Await(ctx, req)
+
+			if tc.expectAuthError {
+				require.Error(t, err)
+				assert.True(t, sberror.IsAuthorizationError(err), "expected AuthorizationError, got: %v", err)
+			}
+			// When auth is present but definition is inline, it will fail later during execution
+			// for other reasons (missing fetcher setup, etc.), but NOT with an auth error
+			if tc.contextWithAuth && err != nil {
+				assert.False(t, sberror.IsAuthorizationError(err), "should not get AuthorizationError when auth header is present")
+			}
+		})
+	}
+}
+
+// TestTwoWayStreamInlineDefinitionAuthorizationRequired tests that the TwoWayStream endpoint
+// rejects inline definitions without authorization.
+func TestTwoWayStreamInlineDefinitionAuthorizationRequired(t *testing.T) {
+	testCases := []struct {
+		name            string
+		useDefinition   bool
+		contextWithAuth bool
+		expectAuthError bool
+	}{
+		{
+			name:            "inline definition without auth - should reject",
+			useDefinition:   true,
+			contextWithAuth: false,
+			expectAuthError: true,
+		},
+		{
+			name:            "inline definition with auth - should allow (will fail later for other reasons)",
+			useDefinition:   true,
+			contextWithAuth: true,
+			expectAuthError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			if tc.contextWithAuth {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, true)
+			} else {
+				ctx = context.WithValue(ctx, constants.ContextKeyRequestUsesJwtAuth, false)
+			}
+
+			mockWorker := &worker.MockClient{}
+			fetcher := &fetchmocks.Fetcher{}
+
+			defer metrics.SetupForTesting()()
+			server := NewServer(&Config{
+				Logger:        zap.NewNop(),
+				Store:         store.Memory(),
+				Worker:        mockWorker,
+				Fetcher:       fetcher,
+				SecretManager: secrets.NewSecretManager(),
+			})
+
+			var executeRequest *apiv1.ExecuteRequest
+			if tc.useDefinition {
+				executeRequest = &apiv1.ExecuteRequest{
+					Request: &apiv1.ExecuteRequest_Definition{
+						Definition: &apiv1.Definition{
+							Api: &apiv1.Api{
+								Metadata: &v1.Metadata{
+									Name: "test-api",
+								},
+							},
+						},
+					},
+				}
+			} else {
+				executeRequest = &apiv1.ExecuteRequest{
+					Request: &apiv1.ExecuteRequest_Fetch_{
+						Fetch: &apiv1.ExecuteRequest_Fetch{
+							Id: "some-api-id",
+						},
+					},
+				}
+			}
+
+			mockStream := &mockTwoWayStreamServer{
+				ServerStream: &mockServerStream{ctx: ctx},
+				ctx:          ctx,
+				recvMessages: []*apiv1.TwoWayRequest{
+					{
+						Type: &apiv1.TwoWayRequest_Execute{
+							Execute: executeRequest,
+						},
+					},
+				},
+			}
+
+			err := server.TwoWayStream(mockStream)
+
+			if tc.expectAuthError {
+				require.Error(t, err)
+				assert.True(t, sberror.IsAuthorizationError(err), "expected AuthorizationError, got: %v", err)
+			}
+			// When auth is present but definition is inline, it will fail later during execution
+			// for other reasons (missing fetcher setup, etc.), but NOT with an auth error
+			if tc.contextWithAuth && err != nil {
+				assert.False(t, sberror.IsAuthorizationError(err), "should not get AuthorizationError when auth header is present")
 			}
 		})
 	}
