@@ -105,3 +105,10 @@ Check data domain
 {{- fail "superblocks.agentDataDomain must be set to app.superblocks.com or eu.superblocks.com" }}}
 {{- end }}
 {{- end -}}
+
+{{/*
+Secrets encryption key secret name
+*/}}
+{{- define "superblocks-agent.secrets-encryption-key-name" -}}
+{{ printf "%s-secrets-encryption-key" (include "superblocks-agent.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end -}}

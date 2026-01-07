@@ -135,6 +135,8 @@ image:
     password: '<override>'
 launchdarkly:
   apikey: '<override>'
+secrets:
+  encryptionKey: '<override>'
 !!merge <<: *tolerations
 !!merge <<: *selector
 # to be used for local testing only
