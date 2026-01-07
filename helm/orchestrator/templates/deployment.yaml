@@ -114,6 +114,11 @@ spec:
             secretKeyRef:
               name: orchestrator-launchdarkly
               key: apikey
+        - name: SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: orchestrator-secrets-encryption
+              key: key
         {{- if .Values.kafka.enabled }}
         - name: SUPERBLOCKS_ORCHESTRATOR_KAFKA_SASL_USERNAME
           valueFrom:

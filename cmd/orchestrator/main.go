@@ -211,7 +211,7 @@ func init() {
 		"A list of cors headers to allow. This is only used if handle.cors is true. If nothing is set, all headers are allowed.",
 	)
 	pflag.String("this.region", "us-west-2", "The region this component is deployed in.")
-	pflag.String("secrets.encryption.key", "22f0e749288e8455bd525b12fe857726", "")
+	pflag.String("secrets.encryption.key", "CHANGE_ME_INSECURE_DEFAULT_KEY!!", "AES encryption key for secrets cache.")
 	pflag.String("secrets.cache.mode", "memory", "The cache mode to use for the secrets store. Possible values are 'memory' and 'redis'.")
 	pflag.Bool("signature.verification.enabled", false, "Whether or not to enable signature verification.")
 	pflag.StringToString("signature.keys", map[string]string{}, "The set of potential keys used to sign and verify payloads.")

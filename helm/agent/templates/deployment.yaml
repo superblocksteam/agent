@@ -128,6 +128,17 @@ spec:
           value: {{ .Values.superblocks.workers.python.execution.importDenyList | join "," | quote }}
         - name: SUPERBLOCKS_PYTHON_EXECUTION_BUILTINS_DENY_LIST
           value: {{ .Values.superblocks.workers.python.execution.builtinsDenyList | join "," | quote }}
+        {{- if or .Values.superblocks.secretsEncryptionKey .Values.superblocks.secretsEncryptionKeyExistingSecret }}
+        - name: SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              {{- if .Values.superblocks.secretsEncryptionKeyExistingSecret }}
+              name: {{ .Values.superblocks.secretsEncryptionKeyExistingSecret }}
+              {{- else }}
+              name: {{ include "superblocks-agent.secrets-encryption-key-name" . }}
+              {{- end }}
+              key: SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY
+        {{- end }}
         {{- if .Values.extraEnv }}
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
         {{- end }}

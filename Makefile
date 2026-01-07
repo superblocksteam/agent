@@ -270,7 +270,8 @@ deploy-helm:
 		--set superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
 		--set kafka.username="$(HELM_KAFKA_USERNAME)" \
 		--set kafka.password="$(HELM_KAFKA_PASSWORD)" \
-		--set launchdarkly.apikey="$(HELM_LAUNCHDARKLY_APIKEY)" $(HELM_EXTRA_ARGS)
+		--set launchdarkly.apikey="$(HELM_LAUNCHDARKLY_APIKEY)" \
+		--set secrets.encryptionKey="$(HELM_SECRETS_ENCRYPTION_KEY)" $(HELM_EXTRA_ARGS)
 
 HELM_TIMEOUT := "10m"
 .PHONY: deploy-helm-opa

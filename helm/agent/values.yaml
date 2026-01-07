@@ -17,6 +17,14 @@ superblocks:
   # SUPERBLOCKS_AGENT_REDIS_PASSWORD: <my-redis-password>
   # agentRedisPasswordExistingSecret: "my-redis-password-secret", optional. Secret is created for you if not specified.
 
+  # Secrets cache configuration
+  # When using redis cache mode, an encryption key is required.
+  # Generate a key with: openssl rand -hex 16
+  # secretsEncryptionKey: ""
+  # Existing secret must contain the value:
+  # SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY: <32-char-hex-key>
+  # secretsEncryptionKeyExistingSecret: "my-encryption-key-secret", optional. Secret is created for you if not specified.
+
   # Tags can be used to specify which profile-specific workloads can be executed on this agent.
   # This is a more flexible alternative to (and eventual replacement of) 'agentEnvironment'.
   # This is being rolled out in beta, and the syntax may change in the future.
