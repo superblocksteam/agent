@@ -153,11 +153,6 @@ redis:
     replicaCount: 0
 networkpolicy:
   disable: true
-kafka:
-  bootstrap: <override>
-  username: <override>
-  password: <override>
-  enabled: true
 events:
   cloud:
     enabled: false

@@ -85,8 +85,6 @@ spec:
         - "--auth.jwt.enabled=true"
         - "--auth.jwt.jwks_url={{ .Values.auth.jwt.jwks_url }}"
         - "--file.server.url=http://$(SUPERBLOCKS_AGENT_INTERNAL_HOST):{{$.Values.service.ports.http}}/v2/files"
-        - "--kafka.bootstrap={{ .Values.kafka.bootstrap }}"
-        - "--kafka.enabled={{ .Values.kafka.enabled }}"
         - "--events.cloud.enabled={{ .Values.events.cloud.enabled }}"
         - "--handle.cors=false"
         {{- if (.Values.superblocks).dataDomain }}
@@ -119,18 +117,6 @@ spec:
             secretKeyRef:
               name: orchestrator-secrets-encryption
               key: key
-        {{- if .Values.kafka.enabled }}
-        - name: SUPERBLOCKS_ORCHESTRATOR_KAFKA_SASL_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: orchestrator-kafka
-              key: username
-        - name: SUPERBLOCKS_ORCHESTRATOR_KAFKA_SASL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: orchestrator-kafka
-              key: password
-        {{- end }}
         - name: SUPERBLOCKS_ORCHESTRATOR_TRANSPORT_REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
