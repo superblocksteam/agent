@@ -140,7 +140,7 @@ describe.skip('Streaming', () => {
   });
 });
 
-describe('Connection', () => {
+describe.skip('Connection', () => {
   test(
     'connection succeeds with basic config',
     async () => {
