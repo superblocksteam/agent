@@ -10,141 +10,6 @@ const {
 const { EventEmitter } = require('events');
 const _ = require('lodash');
 const { NodeVM } = require('vm2');
-const http = require('http');
-const https = require('https');
-
-// Create proxied http/https modules for vm2 sandbox
-// This ensures ALL network traffic from user code goes through smokescreen
-function createProxiedHttpModule(proxyUrl) {
-  if (!proxyUrl) return null;
-
-  // Dynamically require proxy-agent only when needed
-  const { ProxyAgent } = require('proxy-agent');
-  const agent = new ProxyAgent(proxyUrl);
-
-  // Wrap http.request to force agent usage
-  const proxiedRequest = function(...args) {
-    // Parse args same way Node.js does
-    let options = {};
-    let callback;
-
-    if (typeof args[0] === 'string') {
-      const urlObj = new URL(args[0]);
-      options = {
-        protocol: urlObj.protocol,
-        hostname: urlObj.hostname,
-        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-        path: urlObj.pathname + urlObj.search,
-        host: urlObj.host
-      };
-      if (typeof args[1] === 'object') {
-        options = { ...options, ...args[1] };
-        callback = args[2];
-      } else {
-        callback = args[1];
-      }
-    } else if (args[0] instanceof URL) {
-      const urlObj = args[0];
-      options = {
-        protocol: urlObj.protocol,
-        hostname: urlObj.hostname,
-        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-        path: urlObj.pathname + urlObj.search,
-        host: urlObj.host
-      };
-      if (typeof args[1] === 'object') {
-        options = { ...options, ...args[1] };
-        callback = args[2];
-      } else {
-        callback = args[1];
-      }
-    } else {
-      options = args[0] || {};
-      callback = args[1];
-    }
-
-    // Force all requests through the proxy agent
-    options.agent = agent;
-
-    return http.request(options, callback);
-  };
-
-  const proxiedGet = function(...args) {
-    const req = proxiedRequest(...args);
-    req.end();
-    return req;
-  };
-
-  // Return object with all http properties plus our overrides
-  return Object.assign({}, http, {
-    globalAgent: agent,
-    request: proxiedRequest,
-    get: proxiedGet
-  });
-}
-
-function createProxiedHttpsModule(proxyUrl) {
-  if (!proxyUrl) return null;
-
-  const { ProxyAgent } = require('proxy-agent');
-  const agent = new ProxyAgent(proxyUrl);
-
-  const proxiedRequest = function(...args) {
-    let options = {};
-    let callback;
-
-    if (typeof args[0] === 'string') {
-      const urlObj = new URL(args[0]);
-      options = {
-        protocol: urlObj.protocol,
-        hostname: urlObj.hostname,
-        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-        path: urlObj.pathname + urlObj.search,
-        host: urlObj.host
-      };
-      if (typeof args[1] === 'object') {
-        options = { ...options, ...args[1] };
-        callback = args[2];
-      } else {
-        callback = args[1];
-      }
-    } else if (args[0] instanceof URL) {
-      const urlObj = args[0];
-      options = {
-        protocol: urlObj.protocol,
-        hostname: urlObj.hostname,
-        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-        path: urlObj.pathname + urlObj.search,
-        host: urlObj.host
-      };
-      if (typeof args[1] === 'object') {
-        options = { ...options, ...args[1] };
-        callback = args[2];
-      } else {
-        callback = args[1];
-      }
-    } else {
-      options = args[0] || {};
-      callback = args[1];
-    }
-
-    options.agent = agent;
-
-    return https.request(options, callback);
-  };
-
-  const proxiedGet = function(...args) {
-    const req = proxiedRequest(...args);
-    req.end();
-    return req;
-  };
-
-  return Object.assign({}, https, {
-    globalAgent: agent,
-    request: proxiedRequest,
-    get: proxiedGet
-  });
-}
 
 const eventEmitter = new EventEmitter();
 
@@ -313,17 +178,6 @@ module.exports.executeCode = async (workerData) => {
       }
     }
 
-    // Create mocked http/https modules that force ALL traffic through proxy
-    // No HTTP_PROXY env vars needed - the mocked modules enforce it at the socket level
-    const requireMock = {};
-    const proxyUrl = process.env.__SUPERBLOCKS_PROXY_URL;
-    if (proxyUrl) {
-      const proxiedHttp = createProxiedHttpModule(proxyUrl);
-      const proxiedHttps = createProxiedHttpsModule(proxyUrl);
-      if (proxiedHttp) requireMock.http = proxiedHttp;
-      if (proxiedHttps) requireMock.https = proxiedHttps;
-    }
-
     // Create vm2 sandbox for user script execution
     const vm = new NodeVM({
       argv: [],
@@ -332,8 +186,7 @@ module.exports.executeCode = async (workerData) => {
       eval: false,
       require: {
         builtin: ['*', '-child_process', '-process'],
-        external: true,
-        mock: requireMock
+        external: true
       },
       sandbox: {
         ...context.globals,

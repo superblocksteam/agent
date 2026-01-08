@@ -4,36 +4,70 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: smokescreen-config
-  labels:
-    app.kubernetes.io/name: smokescreen
-    app.kubernetes.io/component: egress-proxy
 data:
   config.yaml: |
-    # Smokescreen Configuration
-    # https://github.com/stripe/smokescreen
+    ---
     ip: "0.0.0.0"
     port: {{ .Values.smokescreen.port }}
-    allow_missing_role: true
-    unsafe_allow_private_ranges: {{ .Values.smokescreen.allowPrivateRanges }}
     acl_file: /etc/smokescreen/acl.yaml
-    connect_timeout: {{ .Values.smokescreen.connectTimeout }}
+    {{- if .Values.smokescreen.mtls.enabled }}
+    # mTLS configuration - require client certificates
+    tls:
+      cert_file: /etc/smokescreen/certs/server/tls.crt
+      key_file: /etc/smokescreen/certs/server/tls.key
+      client_ca_files:
+        - /etc/smokescreen/certs/ca/ca.crt
+    # Role is determined by client certificate CN
+    allow_missing_role: false
+    {{- else }}
+    allow_missing_role: true
+    {{- end }}
+    unsafe_allow_private_ranges: {{ .Values.smokescreen.allowPrivateRanges | default false }}
+    connect_timeout: {{ .Values.smokescreen.connectTimeout | default "10s" }}
   acl.yaml: |
-    # Smokescreen ACL Configuration
-    # Policy: OPEN by default - all external hosts allowed, internal services blocked.
     ---
     version: v1
+    {{- if .Values.smokescreen.mtls.enabled }}
+    # Role-based ACL - role comes from client certificate CN
+    services:
+      # task-manager can access everything including Redis
+      - name: task-manager
+        project: superblocks
+        action: open
+      # sandbox containers - restricted access (deny list applies)
+      - name: python-sandbox
+        project: superblocks
+        action: open
+        denied_domains:
+          {{- range .Values.smokescreen.denyList }}
+          - {{ . | quote }}
+          {{- end }}
+      - name: javascript-sandbox
+        project: superblocks
+        action: open
+        denied_domains:
+          {{- range .Values.smokescreen.denyList }}
+          - {{ . | quote }}
+          {{- end }}
+    {{- else }}
     services: []
+    {{- end }}
     default:
-      project: sandbox
+      name: default
+      project: superblocks
+      {{- if .Values.smokescreen.mtls.enabled }}
+      # Enforce (block) by default if no valid certificate
+      action: enforce
+      {{- else }}
       action: open
+      {{- end }}
     global_allow_list:
-      # Allow list from values (overrides deny list)
       {{- range .Values.smokescreen.allowList }}
       - {{ . | quote }}
       {{- end }}
     global_deny_list:
-      # Deny list from values
       {{- range .Values.smokescreen.denyList }}
       - {{ . | quote }}
       {{- end }}
 {{- end }}
+

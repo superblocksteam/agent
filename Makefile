@@ -193,7 +193,7 @@ test-e2e-ephemeral:
 
 .PHONY: test-e2e-ephemeral-smokescreen
 test-e2e-ephemeral-smokescreen:
-	postman collection run --color on --verbose ./postman/ephemeral_collection.json -e ./postman/environments/$(POSTMAN_ENV).json
+	postman collection run --color on --verbose ./postman/ephemeral_network_isolation.json -e ./postman/environments/$(POSTMAN_ENV).json
 
 .PHONY: test-integration
 test-integration: deps kafka

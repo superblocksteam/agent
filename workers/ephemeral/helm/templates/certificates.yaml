@@ -1,0 +1,118 @@
+{{- if and .Values.smokescreen.enabled .Values.smokescreen.mtls.enabled }}
+---
+# Self-signed CA Issuer for smokescreen mTLS
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: smokescreen-ca-issuer
+spec:
+  selfSigned: {}
+---
+# CA Certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: smokescreen-ca
+spec:
+  isCA: true
+  commonName: smokescreen-ca
+  secretName: smokescreen-ca-secret
+  duration: 87600h # 10 years
+  renewBefore: 720h # 30 days
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: smokescreen-ca-issuer
+    kind: Issuer
+---
+# CA Issuer using the generated CA
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: smokescreen-issuer
+spec:
+  ca:
+    secretName: smokescreen-ca-secret
+---
+# Certificate for smokescreen server
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: smokescreen-server
+spec:
+  secretName: smokescreen-server-cert
+  duration: 720h    # 30 days
+  renewBefore: 168h # 7 days before expiry
+  commonName: smokescreen
+  dnsNames:
+    - smokescreen
+    - localhost
+    - "127.0.0.1"
+  usages:
+    - server auth
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: smokescreen-issuer
+    kind: Issuer
+---
+# Certificate for task-manager (allows Redis access)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: task-manager
+spec:
+  secretName: task-manager-cert
+  duration: 720h    # 30 days
+  renewBefore: 168h # 7 days before expiry
+  commonName: task-manager
+  usages:
+    - client auth
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: smokescreen-issuer
+    kind: Issuer
+---
+# Certificate for python-sandbox (no Redis access)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: python-sandbox
+spec:
+  secretName: python-sandbox-cert
+  duration: 720h    # 30 days
+  renewBefore: 168h # 7 days before expiry
+  commonName: python-sandbox
+  usages:
+    - client auth
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: smokescreen-issuer
+    kind: Issuer
+---
+# Certificate for javascript-sandbox (no Redis access)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: javascript-sandbox
+spec:
+  secretName: javascript-sandbox-cert
+  duration: 720h    # 30 days
+  renewBefore: 168h # 7 days before expiry
+  commonName: javascript-sandbox
+  usages:
+    - client auth
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: smokescreen-issuer
+    kind: Issuer
+{{- end }}
+
