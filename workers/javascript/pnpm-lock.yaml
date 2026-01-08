@@ -73,9 +73,6 @@ importers:
       notion-to-md:
         specifier: 3.1.1
         version: 3.1.1
-      proxy-agent:
-        specifier: ^6.3.0
-        version: 6.5.0
       vm2:
         specifier: ^3.10.0
         version: 3.10.0

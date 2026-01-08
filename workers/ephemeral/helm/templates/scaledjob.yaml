@@ -62,11 +62,85 @@ spec:
         # Sidecars run as initContainers with restartPolicy: Always
         initContainers:
         {{- if $.Values.smokescreen.enabled }}
-        # Smokescreen egress proxy - filters outbound connections from sandbox
+        # iptables init container - blocks direct HTTP/HTTPS from sandbox
+        - name: iptables-init
+          image: alpine:3.19
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+              - NET_ADMIN
+          command:
+          - /bin/sh
+          - -c
+          - |
+            set -ex
+            apk add --no-cache iptables
+
+            PROXY_UID=65534    # smokescreen
+            TASKMAN_UID=1000   # task-manager
+
+            echo "=== Configuring network isolation ==="
+
+            # Allow localhost (sandbox <-> task-manager gRPC)
+            iptables -A OUTPUT -d 127.0.0.0/8 -j ACCEPT
+
+            # Allow DNS (required for name resolution)
+            iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+
+            # Allow established connections (for allowed UIDs)
+            iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+            # Allow smokescreen full access (required for proxy)
+            iptables -A OUTPUT -m owner --uid-owner $PROXY_UID -j ACCEPT
+
+            # Allow task-manager full access (needs Redis, orchestrator, etc.)
+            iptables -A OUTPUT -m owner --uid-owner $TASKMAN_UID -j ACCEPT
+
+            {{- if $.Values.network.vpcCIDR }}
+            # Block VPC CIDR (configured via helm values)
+            echo "Blocking VPC CIDR: {{ $.Values.network.vpcCIDR }}"
+            iptables -A OUTPUT -d {{ $.Values.network.vpcCIDR }} -j DROP
+            {{- end }}
+
+            {{- if $.Values.network.serviceCIDR }}
+            # Block Kubernetes service CIDR
+            echo "Blocking Service CIDR: {{ $.Values.network.serviceCIDR }}"
+            iptables -A OUTPUT -d {{ $.Values.network.serviceCIDR }} -j DROP
+            {{- end }}
+
+            {{- range $.Values.network.additionalBlockedCIDRs }}
+            # Block additional CIDR
+            echo "Blocking additional CIDR: {{ . }}"
+            iptables -A OUTPUT -d {{ . }} -j DROP
+            {{- end }}
+
+            {{- if not $.Values.network.vpcCIDR }}
+            # No VPC CIDR specified - block all RFC 1918 private ranges (SSRF protection)
+            echo "No VPC CIDR specified - blocking all RFC 1918 ranges"
+            iptables -A OUTPUT -d 10.0.0.0/8 -j DROP
+            iptables -A OUTPUT -d 172.16.0.0/12 -j DROP
+            iptables -A OUTPUT -d 192.168.0.0/16 -j DROP
+            iptables -A OUTPUT -d 169.254.0.0/16 -j DROP
+            iptables -A OUTPUT -d 100.64.0.0/10 -j DROP
+            {{- end }}
+
+            # DEFAULT DENY: Block everything else for sandbox
+            iptables -A OUTPUT -j DROP
+
+            echo "=== iptables configured ==="
+            echo "task-manager (UID $TASKMAN_UID): full access"
+            echo "smokescreen (UID $PROXY_UID): full access"
+            echo "sandbox: localhost + smokescreen proxy ONLY"
+            iptables -L OUTPUT -n -v --line-numbers
+        # Smokescreen egress proxy with mTLS certificate-based access control
         - name: smokescreen
           image: "{{ $.Values.smokescreen.image.repository }}:{{ $.Values.smokescreen.image.tag }}"
           imagePullPolicy: {{ $.Values.smokescreen.image.pullPolicy }}
           restartPolicy: Always
+          securityContext:
+            runAsUser: 65534
+            runAsNonRoot: true
           resources:
             {{- toYaml $.Values.smokescreen.resources | nindent 12 }}
           ports:
@@ -77,6 +151,14 @@ spec:
           - name: smokescreen-config
             mountPath: /etc/smokescreen
             readOnly: true
+          {{- if $.Values.smokescreen.mtls.enabled }}
+          - name: smokescreen-server-cert
+            mountPath: /etc/smokescreen/certs/server
+            readOnly: true
+          - name: smokescreen-ca-cert
+            mountPath: /etc/smokescreen/certs/ca
+            readOnly: true
+          {{- end }}
         {{- end }}
         # Sandbox runs as a sidecar
         - name: {{ $language }}-sandbox
@@ -88,15 +170,6 @@ spec:
           env:
           - name: GRPC_PORT
             value: "{{ $sandboxConfig.port }}"
-          {{- if $.Values.smokescreen.enabled }}
-          # Route ALL sandbox traffic through smokescreen proxy (no exceptions)
-          - name: SUPERBLOCKS_WORKER_PROXY_ENABLED
-            value: "true"
-          - name: SUPERBLOCKS_WORKER_PROXY_HOST
-            value: "localhost"
-          - name: SUPERBLOCKS_WORKER_PROXY_PORT
-            value: "{{ $.Values.smokescreen.port }}"
-          {{- end }}
           {{- with $sandboxConfig.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -113,6 +186,11 @@ spec:
         - name: task-manager
           image: "{{ (($v.taskManager).image).repository | default $.Values.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.taskManager.image.tag }}"
           imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
+          {{- if $.Values.smokescreen.enabled }}
+          securityContext:
+            runAsUser: 1000  # Must match TASKMAN_UID in iptables-init
+            runAsNonRoot: true
+          {{- end }}
           resources:
             {{- toYaml (deepCopy ($.Values.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
           {{- with (($v.taskManager).startupProbe) | default $.Values.taskManager.startupProbe }}
@@ -225,21 +303,27 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           env:
+          {{- if $.Values.queue.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: worker-queue-redis-token
                 key: token
+          {{- end }}
+          {{- if $.Values.kvstore.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: worker-kvstore-redis-token
                 key: token
+          {{- end }}
+          {{- if $.Values.superblocks.key }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_SUPERBLOCKS_KEY
             valueFrom:
               secretKeyRef:
                 name: worker-agent-key
                 key: key
+          {{- end }}
           {{- with ($v.taskManager).extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -261,5 +345,22 @@ spec:
         - name: smokescreen-config
           configMap:
             name: smokescreen-config
+        {{- if $.Values.smokescreen.mtls.enabled }}
+        - name: smokescreen-server-cert
+          secret:
+            secretName: smokescreen-server-cert
+        - name: smokescreen-ca-cert
+          secret:
+            secretName: smokescreen-ca-secret
+            items:
+            - key: ca.crt
+              path: ca.crt
+        - name: task-manager-cert
+          secret:
+            secretName: task-manager-cert
+        - name: {{ $language }}-sandbox-cert
+          secret:
+            secretName: {{ $language }}-sandbox-cert
+        {{- end }}
         {{- end }}
 {{- end }}

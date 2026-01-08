@@ -16,7 +16,7 @@
 		},
 		{
 			"key": "orchestrator_port",
-			"value": "18080",
+			"value": "8080",
 			"type": "default",
 			"enabled": true
 		},

@@ -21,13 +21,6 @@ x-task-manager-environment: &task-manager-environment
   SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_TLS: "false"
   # Don't exit after one job (ephemeral=false) - allows task-manager to process multiple jobs
   SUPERBLOCKS_WORKER_SANDBOX_WORKER_EPHEMERAL: "false"
-# Proxy configuration for sandboxes - routes all outbound traffic through Smokescreen
-# When enabled, sandbox HTTP/HTTPS traffic goes through the proxy.
-# Task-manager VariableStore is allowed through via smokescreen ACL (in allow list).
-x-sandbox-proxy-environment: &sandbox-proxy-environment
-  SUPERBLOCKS_WORKER_PROXY_ENABLED: "${SUPERBLOCKS_WORKER_PROXY_ENABLED:-false}"
-  SUPERBLOCKS_WORKER_PROXY_HOST: "smokescreen"
-  SUPERBLOCKS_WORKER_PROXY_PORT: "4750"
 x-task-manager-base: &task-manager-base
   image: ghcr.io/superblocksteam/task-manager:${EPHEMERAL_IMAGE_TAG:-latest}
   build:
@@ -44,8 +37,6 @@ x-python-sandbox-base: &python-sandbox-base
   build:
     context: .
     dockerfile: Dockerfile.sandbox.python
-  environment:
-    !!merge <<: *sandbox-proxy-environment
   networks:
     - default
 x-javascript-sandbox-base: &javascript-sandbox-base
@@ -53,8 +44,6 @@ x-javascript-sandbox-base: &javascript-sandbox-base
   build:
     context: .
     dockerfile: Dockerfile.sandbox.javascript
-  environment:
-    !!merge <<: *sandbox-proxy-environment
   networks:
     - default
 services:
@@ -66,31 +55,11 @@ services:
     command: --requirepass koala
     pull_policy: always
   # ============================================================================
-  # Smokescreen Egress Proxy (https://github.com/stripe/smokescreen)
-  # ============================================================================
-  # Smokescreen is an HTTP CONNECT proxy that intercepts and controls outbound
-  # connections from sandbox containers. All sandbox egress can be routed through
-  # this proxy for monitoring, filtering, or redirection.
-  #
-  # To enable proxy for sandboxes, set: SUPERBLOCKS_WORKER_PROXY_ENABLED=true
-  smokescreen:
-    image: ghcr.io/superblocksteam/smokescreen:${EPHEMERAL_IMAGE_TAG:-latest}
-    build:
-      context: .
-      dockerfile: Dockerfile.smokescreen
-    container_name: smokescreen
-    ports:
-      - 4750:4750
-    networks:
-      - default
-  # ============================================================================
   # Python Ephemeral Workers
   # ============================================================================
   python-sandbox:
     !!merge <<: *python-sandbox-base
     container_name: python-sandbox
-    depends_on:
-      - smokescreen
   python-ephemeral:
     !!merge <<: *task-manager-base
     container_name: python-ephemeral
@@ -111,8 +80,6 @@ services:
   javascript-sandbox:
     !!merge <<: *javascript-sandbox-base
     container_name: javascript-sandbox
-    depends_on:
-      - smokescreen
   javascript-ephemeral:
     !!merge <<: *task-manager-base
     container_name: javascript-ephemeral

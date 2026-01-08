@@ -173,8 +173,19 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 podAnnotations: {}
+# Network isolation configuration
+# Blocks sandbox from accessing internal infrastructure via iptables
+network:
+  # VPC CIDR to block - set this to your cloud VPC range
+  # Leave empty to block ALL RFC 1918 private ranges (10.x, 172.16.x, 192.168.x)
+  vpcCIDR: ""
+  # Kubernetes service CIDR (blocks access to k8s services)
+  serviceCIDR: ""
+  # Additional CIDRs to block (list)
+  additionalBlockedCIDRs: []
 # Smokescreen egress proxy configuration
-# When enabled, sandbox traffic is routed through smokescreen for filtering
+# Access control enforced via mTLS certificates
+# Use Kubernetes NetworkPolicy for additional network-level controls
 smokescreen:
   enabled: true
   image:
@@ -184,26 +195,24 @@ smokescreen:
   port: 4750
   connectTimeout: 10s
   allowPrivateRanges: false
+  # mTLS configuration for certificate-based access control
+  mtls:
+    enabled: true # Certificates required for egress access
   resources:
     limits:
       memory: 128Mi
     requests:
       cpu: 50m
       memory: 64Mi
-  # Allow list - these hosts override the deny list
-  # In Kubernetes, sandbox accesses task-manager via localhost (same pod sidecar)
+  # Allow list - hosts that can be accessed
   allowList:
     - localhost
     - "127.0.0.1"
-  # Deny list - block access to internal infrastructure
+  # Deny list - hosts to block (in addition to private ranges)
   denyList:
-    - python-sandbox
-    - javascript-sandbox
-    - agent
-    - orchestrator
     - redis
+    - orchestrator
     - otel-collector
-    # Block Kubernetes API server (prevent SSRF to k8s control plane)
     - kubernetes.default.svc.cluster.local
     - kubernetes.default.svc
     - kubernetes.default

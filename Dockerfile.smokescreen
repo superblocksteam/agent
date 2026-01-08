@@ -26,21 +26,26 @@ FROM alpine:3.19
 
 WORKDIR /app
 
-# Install ca-certificates for HTTPS
-RUN apk add --no-cache ca-certificates
+# Install ca-certificates for HTTPS and iptables for the init container
+RUN apk add --no-cache ca-certificates iptables
 
 # Copy the binary
 COPY --from=builder /app/smokescreen .
 
-# Create config directory
-RUN mkdir -p /etc/smokescreen
+# Create config directory and set permissions
+RUN mkdir -p /etc/smokescreen && \
+    chown -R 65534:65534 /etc/smokescreen && \
+    chown 65534:65534 /app/smokescreen
 
 # Copy configuration files
 # For Kubernetes: ACL is overwritten by ConfigMap mount
 # For Docker Compose: uses these defaults
-COPY config/smokescreen.yaml /etc/smokescreen/config.yaml
-COPY config/smokescreen-acl.yaml /etc/smokescreen/acl.yaml
+COPY --chown=65534:65534 config/smokescreen.yaml /etc/smokescreen/config.yaml
+COPY --chown=65534:65534 config/smokescreen-acl.yaml /etc/smokescreen/acl.yaml
 
 EXPOSE 4750
+
+# Run as nobody user (UID 65534) - iptables rules exclude this UID to avoid loops
+USER 65534
 
 CMD ["/app/smokescreen", "--config-file", "/etc/smokescreen/config.yaml"]
