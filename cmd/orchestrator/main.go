@@ -32,7 +32,6 @@ import (
 	"github.com/superblocksteam/agent/internal/flags"
 	flagoptions "github.com/superblocksteam/agent/internal/flags/options"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
-	"github.com/superblocksteam/agent/internal/kafka"
 	"github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/internal/registration"
@@ -41,7 +40,6 @@ import (
 	signatureReconcilerServer "github.com/superblocksteam/agent/internal/signature/reconciler/server"
 	signatureReconcilerSigner "github.com/superblocksteam/agent/internal/signature/reconciler/signer"
 	signatureReconcilerWatcher "github.com/superblocksteam/agent/internal/signature/reconciler/watcher"
-	"github.com/superblocksteam/agent/internal/syncer"
 	"github.com/superblocksteam/agent/internal/transport"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/constants"
@@ -56,8 +54,6 @@ import (
 	grpcserver "github.com/superblocksteam/agent/pkg/grpc"
 	httpserver "github.com/superblocksteam/agent/pkg/http"
 	"github.com/superblocksteam/agent/pkg/httpretry"
-	kafkaconsumer "github.com/superblocksteam/agent/pkg/kafka/consumer"
-	kafkaproducer "github.com/superblocksteam/agent/pkg/kafka/producer"
 	metrics_exporter "github.com/superblocksteam/agent/pkg/metrics"
 	grpc_auth "github.com/superblocksteam/agent/pkg/middleware/auth"
 	grpc_cancellation "github.com/superblocksteam/agent/pkg/middleware/cancellation"
@@ -181,13 +177,6 @@ func init() {
 	pflag.String("agent.host.url", "http://localhost:8080", "URL of the host the agent is running on")
 	pflag.String("agent.version", "0.0.0", "Version of the agent")
 	pflag.String("agent.version.external", "0.0.0", "External version of the agent")
-	pflag.String("kafka.sasl.username", "", "")
-	pflag.String("kafka.sasl.password", "", "")
-	pflag.String("kafka.bootstrap", "127.0.0.1:19092", "")
-	pflag.String("kafka.consumer.group.id", "main", "Kafka consumer group ID")
-	pflag.String("kafka.topic.metadata", "metadata.cloud", "Kafka topic for metadata")
-	pflag.Int("kafka.consumer.workers", 10, "")
-	pflag.Bool("kafka.enabled", false, "")
 	pflag.Bool("events.cloud.enabled", false, "Whether or not to listen for cloud events")
 	pflag.String("events.cloud.url", "queue.intake.superblocks.com:8443", "URL to listen on for cloud events")
 	pflag.Bool("events.cloud.insecure", false, "Whether or not to use an insecure grpc connection for cloud events")
@@ -569,60 +558,6 @@ func main() {
 			ServerClient: serverHttpClient,
 			IntakeClient: intakeHttpClient,
 		})
-	}
-
-	var kafkaConsumerRunnable run.Runnable
-	{
-		syncer, err := syncer.New(&syncer.Config{
-			Logger:  logger,
-			Worker:  workerClient,
-			Fetcher: fetcher,
-		})
-		if err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
-		}
-
-		kafkaConsumerRunnable, err = kafkaconsumer.New(&kafkaconsumer.Options{
-			Topics:         []string{viper.GetString("kafka.topic.metadata")},
-			Logger:         logger,
-			Handler:        kafka.Dispatcher(syncer, logger),
-			Workers:        viper.GetInt("kafka.consumer.workers"),
-			MetricsCounter: metrics.KafkaConsumedMessagesTotal,
-			Config: map[string]interface{}{
-				"security.protocol": "SASL_SSL",
-				"sasl.mechanisms":   "PLAIN",
-				"sasl.username":     viper.GetString("kafka.sasl.username"),
-				"sasl.password":     viper.GetString("kafka.sasl.password"),
-				"bootstrap.servers": viper.GetString("kafka.bootstrap"),
-				"group.id":          viper.GetString("kafka.consumer.group.id"),
-			},
-		})
-
-		if err != nil {
-			logger.Error(err.Error(), zap.Error(err))
-			os.Exit(1)
-		}
-	}
-
-	var kafkaProducerRunnable run.Runnable
-	{
-		var err error
-		kafkaProducerRunnable, err = kafkaproducer.New(&kafkaproducer.Options{
-			Config: map[string]interface{}{
-				"security.protocol": "SASL_SSL",
-				"sasl.mechanisms":   "PLAIN",
-				"sasl.username":     viper.GetString("kafka.sasl.username"),
-				"sasl.password":     viper.GetString("kafka.sasl.password"),
-				"bootstrap.servers": viper.GetString("kafka.bootstrap"),
-			},
-			Logger: logger,
-		})
-
-		if err != nil {
-			logger.Error(err.Error(), zap.Error(err))
-			os.Exit(1)
-		}
 	}
 
 	defaultResolveOptions := []options.Option{
@@ -1093,8 +1028,6 @@ func main() {
 	// order of shutdown is the same as the order of creation
 	g.Always(process.New())
 
-	g.Add(viper.GetBool("kafka.enabled"), kafkaConsumerRunnable)
-	g.Add(viper.GetBool("kafka.enabled"), kafkaProducerRunnable)
 	g.Add(viper.GetBool("jobs.enabled"), scheduledJobRunner)
 	g.Add(viper.GetBool("events.cloud.enabled"), eventsCloudRunnable)
 

@@ -268,8 +268,6 @@ deploy-helm:
 		--set image.credentials.password="${HELM_IMAGE_CREDENTIALS_PASSWORD}" \
 		--set image.tag="$(IMAGE_TAG)" \
 		--set superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
-		--set kafka.username="$(HELM_KAFKA_USERNAME)" \
-		--set kafka.password="$(HELM_KAFKA_PASSWORD)" \
 		--set launchdarkly.apikey="$(HELM_LAUNCHDARKLY_APIKEY)" \
 		--set secrets.encryptionKey="$(HELM_SECRETS_ENCRYPTION_KEY)" $(HELM_EXTRA_ARGS)
 
