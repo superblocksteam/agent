@@ -7,6 +7,7 @@ on:
 permissions:
   id-token: write
   contents: write
+  packages: write
 env:
   REGISTRY_IMAGE: ghcr.io/superblocksteam/worker.py
 jobs:
@@ -67,7 +68,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure AWS credentials - us-west-2
         uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
         with:
@@ -137,7 +138,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
@@ -173,7 +174,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: pull image
         run: |
           docker pull ghcr.io/superblocksteam/worker.py:sha-${{ github.sha }}${{ matrix.suffix }}
@@ -261,7 +262,7 @@ jobs:
           registry: ghcr.io
           repository: superblocksteam/worker.py
           target: sha-${{ github.sha }}
-          token: ${{ secrets.GHCR_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           tags: |
             ${{ steps.bump_semver.outputs.tag }}
             latest
@@ -271,7 +272,7 @@ jobs:
           registry: ghcr.io
           repository: superblocksteam/worker.py
           target: sha-${{ github.sha }}-slim
-          token: ${{ secrets.GHCR_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           tags: |
             ${{ steps.bump_semver.outputs.tag }}-slim
             latest-slim
