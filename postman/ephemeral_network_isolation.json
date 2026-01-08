@@ -35,7 +35,7 @@
 					],
 					"request": {
 						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
 							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonLocalhostTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\ns = socket.socket()\\ns.settimeout(3)\\ntry:\\n    s.connect(('127.0.0.1', 50050))\\n    s.close()\\n    result = {'localhost': 'ALLOWED'}\\nexcept Exception as e:\\n    result = {'localhost': f'BLOCKED ({type(e).__name__})'}\\nreturn result\"}}}]}}}"
@@ -75,7 +75,7 @@
 					],
 					"request": {
 						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
 							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000002\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"JSLocalhostTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"const net = require('net');\\nlet localhost = 'BLOCKED';\\nawait new Promise(r => {\\n    const s = new net.Socket();\\n    s.setTimeout(3000);\\n    s.on('connect', () => { localhost = 'ALLOWED'; s.end(); r(); });\\n    s.on('timeout', () => { s.destroy(); r(); });\\n    s.on('error', () => r());\\n    s.connect(50050, '127.0.0.1');\\n});\\nreturn { localhost };\"}}}]}}}"
@@ -119,7 +119,7 @@
 					],
 					"request": {
 						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
 							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000003\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonHTTPSTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\ns = socket.socket()\\ns.settimeout(3)\\ntry:\\n    s.connect(('httpbin.org', 443))\\n    result = {'https': 'FAIL - ALLOWED'}\\nexcept Exception as e:\\n    result = {'https': f'BLOCKED ({type(e).__name__})'}\\nreturn result\"}}}]}}}"
@@ -158,7 +158,7 @@
 					],
 					"request": {
 						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
 							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000004\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"JSHTTPSTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"const net = require('net');\\nlet https = 'BLOCKED';\\nawait new Promise(r => {\\n    const s = new net.Socket();\\n    s.setTimeout(3000);\\n    s.on('connect', () => { https = 'FAIL - ALLOWED'; s.end(); r(); });\\n    s.on('timeout', () => { s.destroy(); r(); });\\n    s.on('error', () => r());\\n    s.connect(443, 'httpbin.org');\\n});\\nreturn { https };\"}}}]}}}"
@@ -197,7 +197,7 @@
 					],
 					"request": {
 						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
 							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000005\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonRedisTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\ns = socket.socket()\\ns.settimeout(3)\\ntry:\\n    s.connect(('redis', 6379))\\n    result = {'redis': 'FAIL - ALLOWED'}\\nexcept Exception as e:\\n    result = {'redis': f'BLOCKED ({type(e).__name__})'}\\nreturn result\"}}}]}}}"
@@ -236,7 +236,7 @@
 					],
 					"request": {
 						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
 							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000006\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"JSRedisTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"const net = require('net');\\nlet redis = 'BLOCKED';\\nawait new Promise(r => {\\n    const s = new net.Socket();\\n    s.setTimeout(3000);\\n    s.on('connect', () => { redis = 'FAIL - ALLOWED'; s.end(); r(); });\\n    s.on('timeout', () => { s.destroy(); r(); });\\n    s.on('error', () => r());\\n    s.connect(6379, 'redis');\\n});\\nreturn { redis };\"}}}]}}}"
