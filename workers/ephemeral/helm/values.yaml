@@ -62,6 +62,8 @@ taskManager:
         - /tmp/worker_healthy
 # Sandbox configurations (per language)
 sandbox:
+  # Default gRPC port for sandbox pods (used in NetworkPolicy)
+  port: 50051
   # Runtime class for sandbox pods (e.g., gvisor for secure isolation)
   # Falls back to global runtimeClassName if not set
   runtimeClassName: ""

@@ -35,8 +35,17 @@ spec:
         - protocol: TCP
           port: 53
 
-    # Allow RFC-1918 private ranges only (internal VPC)
-    # Task-manager needs: Redis, K8s API, sandbox pods, OTEL collector
+    # Allow egress to sandbox pods (required for gRPC connection)
+    - to:
+        - podSelector:
+            matchLabels:
+              role: sandbox
+      ports:
+        - protocol: TCP
+          port: {{ .Values.sandbox.port }}
+
+    # Allow RFC-1918 private ranges (internal VPC)
+    # Task-manager needs: Redis, K8s API, OTEL collector
     - to:
         - ipBlock:
             cidr: 10.0.0.0/8
@@ -46,6 +55,30 @@ spec:
     - to:
         - ipBlock:
             cidr: 192.168.0.0/16
+
+---
+# Sandbox Ingress Policy - Allow task-manager to connect for gRPC
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-ingress
+  labels:
+    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      role: sandbox
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow task-manager to connect to sandbox gRPC port
+    - from:
+        - podSelector:
+            matchLabels:
+              role: task-manager
+      ports:
+        - protocol: TCP
+          port: {{ .Values.sandbox.port }}
 
 ---
 # Sandbox Network Policy - Restrictive

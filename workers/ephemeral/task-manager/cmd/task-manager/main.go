@@ -289,6 +289,9 @@ func main() {
 			os.Exit(1)
 		}
 
+		// In dynamic mode, the sandbox is in a separate pod and needs the TM's actual IP
+		grpcAddress = fmt.Sprintf("%s:%d", podIP, viper.GetInt("grpc.port"))
+
 		// Get namespace from environment or flag
 		namespace := viper.GetString("sandbox.namespace")
 		if namespace == "" {
