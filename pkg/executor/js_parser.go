@@ -27,6 +27,7 @@ var (
 		"Event",
 		"EventTarget",
 		"exports",
+		"fetch",
 		"File",
 		"FormData",
 		"Headers",
