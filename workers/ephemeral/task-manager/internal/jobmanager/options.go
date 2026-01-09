@@ -42,6 +42,9 @@ type Options struct {
 	// Owner reference fields (for garbage collection when task-manager pod is deleted)
 	OwnerPodName string
 	OwnerPodUID  string
+
+	// ImagePullSecrets for sandbox pods (to pull from private registries)
+	ImagePullSecrets []string
 }
 
 // Option is a functional option for Options
@@ -128,6 +131,13 @@ func WithOwnerPodName(name string) Option {
 func WithOwnerPodUID(uid string) Option {
 	return func(o *Options) {
 		o.OwnerPodUID = uid
+	}
+}
+
+// WithImagePullSecrets sets the image pull secrets for sandbox pods
+func WithImagePullSecrets(secrets []string) Option {
+	return func(o *Options) {
+		o.ImagePullSecrets = secrets
 	}
 }
 

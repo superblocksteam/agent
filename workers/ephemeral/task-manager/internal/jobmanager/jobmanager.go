@@ -33,6 +33,8 @@ type SandboxJobManager struct {
 	// Owner reference for garbage collection
 	ownerPodName string
 	ownerPodUID  string
+	// Image pull secrets for sandbox pods
+	imagePullSecrets []string
 }
 
 // SandboxInfo contains information about a running sandbox
@@ -59,6 +61,7 @@ func NewSandboxJobManager(opts *Options) *SandboxJobManager {
 		podReadyTimeout:         opts.PodReadyTimeout,
 		ownerPodName:            opts.OwnerPodName,
 		ownerPodUID:             opts.OwnerPodUID,
+		imagePullSecrets:        opts.ImagePullSecrets,
 	}
 }
 
@@ -161,6 +164,7 @@ func (m *SandboxJobManager) buildJobSpec(jobName, executionID, language string) 
 				Spec: corev1.PodSpec{
 					RestartPolicy:                corev1.RestartPolicyNever,
 					AutomountServiceAccountToken: ptr.To(false),
+					ImagePullSecrets:             m.buildImagePullSecrets(),
 					Containers: []corev1.Container{
 						{
 							Name:            fmt.Sprintf("%s-sandbox", language),
@@ -310,6 +314,19 @@ func getPodFailureReason(pod *corev1.Pod) string {
 	return pod.Status.Message
 }
 
+// buildImagePullSecrets creates the image pull secrets for sandbox pods
+func (m *SandboxJobManager) buildImagePullSecrets() []corev1.LocalObjectReference {
+	if len(m.imagePullSecrets) == 0 {
+		return nil
+	}
+
+	refs := make([]corev1.LocalObjectReference, len(m.imagePullSecrets))
+	for i, name := range m.imagePullSecrets {
+		refs[i] = corev1.LocalObjectReference{Name: name}
+	}
+	return refs
+}
+
 // buildOwnerReferences creates owner references for garbage collection.
 // When the task-manager pod is deleted, the sandbox Job will be automatically deleted.
 func (m *SandboxJobManager) buildOwnerReferences() []metav1.OwnerReference {
@@ -326,10 +343,11 @@ func (m *SandboxJobManager) buildOwnerReferences() []metav1.OwnerReference {
 			UID:        types.UID(m.ownerPodUID),
 			// Controller = false: non-controlling owner reference for garbage collection.
 			// When task-manager is deleted, sandbox Jobs are automatically cleaned up.
-			// SECURITY: Using false prevents potential attack vectors where a compromised
-			// sandbox could exploit the controller relationship.
-			Controller:         ptr.To(false),
-			BlockOwnerDeletion: ptr.To(false), // Don't block task-manager deletion
+			Controller: ptr.To(false),
+			// BlockOwnerDeletion = true: prevents task-manager pod from being fully deleted
+			// until the sandbox Job is gone. This gives the task-manager time to complete
+			// in-flight executions during the terminationGracePeriodSeconds window.
+			BlockOwnerDeletion: ptr.To(true),
 		},
 	}
 }

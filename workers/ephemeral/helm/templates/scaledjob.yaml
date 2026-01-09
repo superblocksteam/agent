@@ -108,6 +108,9 @@ spec:
           {{- if or $.Values.sandbox.runtimeClassName $.Values.runtimeClassName }}
           - "--sandbox.runtimeClass={{ $.Values.sandbox.runtimeClassName | default $.Values.runtimeClassName }}"
           {{- end }}
+          {{- if $.Values.image.credentials }}
+          - "--sandbox.imagePullSecrets=ephemeral-worker-docker"
+          {{- end }}
           # gRPC configuration (variable store for sandbox)
           - "--grpc.port={{ $.Values.grpc.port }}"
           # Worker configuration

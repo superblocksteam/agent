@@ -93,6 +93,7 @@ func init() {
 	pflag.Int("sandbox.port", 50051, "gRPC port for sandbox container.")
 	pflag.Int("sandbox.ttl", 60, "TTL in seconds for completed sandbox Jobs.")
 	pflag.String("sandbox.runtimeClass", "", "RuntimeClass for sandbox Jobs (e.g., 'gvisor').")
+	pflag.StringSlice("sandbox.imagePullSecrets", []string{}, "Image pull secret names for sandbox pods (comma-separated).")
 
 	// gRPC settings for variable store
 	pflag.Int("grpc.port", 50050, "The port for the VariableStore gRPC server.")
@@ -330,6 +331,7 @@ func main() {
 			jobmanager.WithGRPCPort(viper.GetInt("grpc.port")),
 			jobmanager.WithTTL(int32(viper.GetInt("sandbox.ttl"))),
 			jobmanager.WithRuntimeClassName(viper.GetString("sandbox.runtimeClass")),
+			jobmanager.WithImagePullSecrets(viper.GetStringSlice("sandbox.imagePullSecrets")),
 			jobmanager.WithLogger(logger),
 			jobmanager.WithOwnerPodName(ownerPodName),
 			jobmanager.WithOwnerPodUID(ownerPodUID),
