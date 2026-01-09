@@ -124,6 +124,10 @@ func (m *mockPlugin) PreDelete(ctx context.Context, datasourceConfig *structpb.S
 	return nil
 }
 
+func (m *mockPlugin) Close() {
+	// No-op for tests
+}
+
 // Verify mockPlugin implements Plugin interface
 var _ plugin.Plugin = (*mockPlugin)(nil)
 

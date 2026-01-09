@@ -370,6 +370,12 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 	)
 	defer rt.fileContextProvider.CleanupExecution(executionID)
 
+	// Set allowed keys for this execution (key allowlisting for security)
+	if provider, ok := rt.fileContextProvider.(redisstore.ExecutionContextProvider); ok {
+		allowedKeys := ComputeAllowedKeys(executionID, pluginProps)
+		provider.SetAllowedKeys(executionID, allowedKeys)
+	}
+
 	perf := &transportv1.Performance{
 		QueueRequest:  &transportv1.Performance_Observable{},
 		QueueResponse: &transportv1.Performance_Observable{},
@@ -488,6 +494,9 @@ func (rt *redisTransport) Close(ctx context.Context) error {
 	rt.logger.Info("closing redis transport", zap.Error(ctx.Err()))
 	rt.alive.Store(false)
 	rt.cancel()
+
+	// Close the plugin executor to clean up all plugins (e.g., sandbox Jobs)
+	rt.pluginExecutor.Close()
 
 	if rt.executionPool.Load() == rt.executionPoolSize {
 		return nil

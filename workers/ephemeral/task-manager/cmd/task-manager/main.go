@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"workers/ephemeral/task-manager/internal/health"
+	"workers/ephemeral/task-manager/internal/jobmanager"
 	"workers/ephemeral/task-manager/internal/plugin/sandbox"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
 	internalstore "workers/ephemeral/task-manager/internal/store/redis"
@@ -82,8 +84,15 @@ func init() {
 	pflag.Bool("worker.ephemeral", false, "Run in ephemeral mode: process one job and exit.")
 
 	// Sandbox settings
-	pflag.String("sandbox.address", "python-sandbox:50051", "The address of the sandbox gRPC server.")
-	pflag.Duration("sandbox.timeout", 5*time.Minute, "Timeout for ephemeral job execution. If sandbox doesn't respond before timeout, task-manager returns failure and exits 0.")
+	// Static mode: connect to existing sandbox at this address (Docker Compose)
+	pflag.String("sandbox.address", "", "Address of existing sandbox gRPC server. If set, skips Kubernetes Job creation.")
+	// Dynamic mode: create Kubernetes Jobs (requires POD_IP, POD_NAMESPACE, sandbox.image)
+	pflag.Duration("sandbox.timeout", 0, "Timeout for ephemeral job execution. 0 means no timeout.")
+	pflag.String("sandbox.namespace", "", "Kubernetes namespace for sandbox Jobs (defaults to current namespace from POD_NAMESPACE env).")
+	pflag.String("sandbox.image", "", "Container image for sandbox Jobs.")
+	pflag.Int("sandbox.port", 50051, "gRPC port for sandbox container.")
+	pflag.Int("sandbox.ttl", 60, "TTL in seconds for completed sandbox Jobs.")
+	pflag.String("sandbox.runtimeClass", "", "RuntimeClass for sandbox Jobs (e.g., 'gvisor').")
 
 	// gRPC settings for variable store
 	pflag.Int("grpc.port", 50050, "The port for the VariableStore gRPC server.")
@@ -229,6 +238,9 @@ func main() {
 		)
 	}
 
+	// Create variable store gRPC server (created early so it can be passed to JobSandboxPlugin)
+	variableStoreGrpcRunnable := internalstore.NewVariableStoreGRPC(storeClient, logger, viper.GetInt("grpc.port"))
+
 	// Create plugin executor
 	pluginExec := plugin_executor.NewPluginExecutor(
 		plugin_executor.NewOptions(
@@ -238,26 +250,128 @@ func main() {
 		),
 	)
 
-	// Create and register sandbox plugin
-	sandboxPlugin, err := sandbox.NewSandboxPlugin(&sandbox.Options{
-		Address:              viper.GetString("sandbox.address"),
-		Language:             language,
-		Logger:               logger,
-		VariableStoreAddress: grpcAddress,
-		Store:                storeClient, // Pass store for reading context bindings
-	})
-	if err != nil {
-		logger.Error("could not create sandbox plugin", zap.Error(err))
-		os.Exit(1)
-	}
-	defer sandboxPlugin.Close()
-	pluginExec.RegisterPlugin(language, sandboxPlugin)
+	// Determine sandbox mode: static address (Docker Compose) or dynamic Jobs (Kubernetes)
+	sandboxAddress := viper.GetString("sandbox.address")
+	useStaticSandbox := sandboxAddress != ""
 
-	logger.Info("connected to sandbox",
-		zap.String("language", language),
-		zap.String("address", viper.GetString("sandbox.address")),
-		zap.String("variable_store_address", grpcAddress),
-	)
+	var sandboxPlugin *sandbox.SandboxPlugin
+
+	if useStaticSandbox {
+		// Static mode: connect to existing sandbox at configured address
+		// Used for Docker Compose e2e testing where sandbox containers already exist
+		var err error
+		sandboxPlugin, err = sandbox.NewSandboxPlugin(context.Background(), &sandbox.Options{
+			Address:              sandboxAddress,
+			Language:             language,
+			Logger:               logger,
+			Store:                storeClient,
+			VariableStoreAddress: grpcAddress,
+		})
+		if err != nil {
+			logger.Error("failed to create sandbox plugin", zap.Error(err))
+			os.Exit(1)
+		}
+
+		logger.Info("sandbox configured (static mode)",
+			zap.String("language", language),
+			zap.String("address", sandboxAddress),
+			zap.Int("grpc_port", viper.GetInt("grpc.port")),
+		)
+	} else {
+		// Dynamic mode: create Kubernetes Jobs for each sandbox
+		// Used in production with KEDA-managed task-manager pods
+
+		// Get Pod IP from environment (set via Downward API)
+		podIP := os.Getenv("POD_IP")
+		if podIP == "" {
+			logger.Error("POD_IP environment variable is required (or set sandbox.address for static mode)")
+			os.Exit(1)
+		}
+
+		// Get namespace from environment or flag
+		namespace := viper.GetString("sandbox.namespace")
+		if namespace == "" {
+			namespace = os.Getenv("POD_NAMESPACE")
+		}
+		if namespace == "" {
+			logger.Error("sandbox.namespace or POD_NAMESPACE is required (or set sandbox.address for static mode)")
+			os.Exit(1)
+		}
+
+		// Get sandbox image
+		sandboxImage := viper.GetString("sandbox.image")
+		if sandboxImage == "" {
+			logger.Error("sandbox.image is required (or set sandbox.address for static mode)")
+			os.Exit(1)
+		}
+
+		// Create Kubernetes client
+		k8sClient, err := jobmanager.NewInClusterClient()
+		if err != nil {
+			logger.Error("could not create kubernetes client", zap.Error(err))
+			os.Exit(1)
+		}
+
+		// Get owner pod info for garbage collection (from Downward API)
+		ownerPodName := os.Getenv("POD_NAME")
+		ownerPodUID := os.Getenv("POD_UID")
+		if ownerPodName == "" || ownerPodUID == "" {
+			logger.Error("POD_NAME or POD_UID not set, sandbox jobs will not have owner references for automatic cleanup")
+			os.Exit(1)
+		}
+
+		// Create job manager
+		jobMgr := jobmanager.NewSandboxJobManager(jobmanager.NewOptions(
+			jobmanager.WithClientset(k8sClient),
+			jobmanager.WithNamespace(namespace),
+			jobmanager.WithImage(sandboxImage),
+			jobmanager.WithPort(viper.GetInt("sandbox.port")),
+			jobmanager.WithPodIP(podIP),
+			jobmanager.WithGRPCPort(viper.GetInt("grpc.port")),
+			jobmanager.WithTTL(int32(viper.GetInt("sandbox.ttl"))),
+			jobmanager.WithRuntimeClassName(viper.GetString("sandbox.runtimeClass")),
+			jobmanager.WithLogger(logger),
+			jobmanager.WithOwnerPodName(ownerPodName),
+			jobmanager.WithOwnerPodUID(ownerPodUID),
+		))
+
+		// Create sandbox plugin - this creates the sandbox Job and connects to it
+		sandboxPlugin, err = sandbox.NewSandboxPlugin(context.Background(), &sandbox.Options{
+			JobManager:           jobMgr,
+			Language:             language,
+			Logger:               logger,
+			Store:                storeClient,
+			VariableStoreAddress: grpcAddress,
+			IPFilterSetter:       variableStoreGrpcRunnable, // Filter connections by sandbox IP
+			ExecutionID:          id,                        // Use worker ID for sandbox Job name
+		})
+		if err != nil {
+			logger.Error("failed to create sandbox plugin", zap.Error(err))
+			os.Exit(1)
+		}
+
+		// Set up security violation handler - terminate immediately if sandbox tries to access unauthorized keys
+		variableStoreGrpcRunnable.SetSecurityViolationHandler(func(v internalstore.SecurityViolation) {
+			logger.Error("SECURITY VIOLATION DETECTED - terminating task-manager",
+				zap.String("violation_type", v.ViolationType),
+				zap.String("execution_id", v.ExecutionID),
+				zap.String("requested_key", v.RequestedKey),
+				zap.Strings("allowed_keys", v.AllowedKeys),
+				zap.String("client_ip", v.ClientIP),
+			)
+		})
+
+		logger.Info("sandbox configured (dynamic mode)",
+			zap.String("language", language),
+			zap.String("namespace", namespace),
+			zap.String("image", sandboxImage),
+			zap.String("pod_ip", podIP),
+			zap.Int("grpc_port", viper.GetInt("grpc.port")),
+		)
+
+	}
+
+	pluginExec.RegisterPlugin(language, sandboxPlugin)
 
 	// Generate stream keys
 	// Allow override via --worker.stream.keys for testing
@@ -298,17 +412,15 @@ func main() {
 	}
 
 	// Create health checker with file-based health checks
+	// Sandbox health check reports NOT READY while sandbox is being created
 	healthChecker := health.NewChecker(&health.Options{
 		Redis:          redisClient,
-		Sandbox:        sandboxPlugin,
+		Sandbox:        sandboxPlugin, // Reports Connecting while sandbox is being created
 		Logger:         logger,
 		PingTimeout:    viper.GetDuration("health.ping.timeout"),
 		HealthFilePath: viper.GetString("health.file"),
 		CheckInterval:  viper.GetDuration("health.check.interval"),
 	})
-
-	// Create variable store gRPC server
-	variableStoreGrpcRunnable := internalstore.NewVariableStoreGRPC(storeClient, logger, viper.GetInt("grpc.port"))
 
 	// Create Redis transport
 	transportRunnable := redis.NewRedisTransport(redis.NewOptions(

@@ -33,6 +33,7 @@ type PluginExecutor interface {
 	Metadata(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
 	Test(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
 	PreDelete(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
+	Close()
 }
 
 type pluginExecutor struct {
@@ -249,6 +250,13 @@ func (p *pluginExecutor) PreDelete(ctx context.Context, pluginName string, props
 
 	plug.PreDelete(ctx, props.GetDatasourceConfiguration())
 	return nil, nil
+}
+
+// Close closes all registered plugins
+func (p *pluginExecutor) Close() {
+	for _, plug := range p.plugins {
+		plug.Close()
+	}
 }
 
 func (p *pluginExecutor) buildKvPair(key string, message proto.Message, quotas *transportv1.Request_Data_Data_Quota, logger *zap.Logger, errMsg string) (*store.KV, error) {

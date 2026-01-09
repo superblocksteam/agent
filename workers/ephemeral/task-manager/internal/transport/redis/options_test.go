@@ -238,5 +238,6 @@ func (m *mockPlugin) Test(ctx context.Context, datasourceConfig *structpb.Struct
 func (m *mockPlugin) PreDelete(ctx context.Context, datasourceConfig *structpb.Struct) error {
 	return nil
 }
+func (m *mockPlugin) Close() {}
 
 var _ plugin.Plugin = (*mockPlugin)(nil)

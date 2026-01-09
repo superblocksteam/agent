@@ -225,6 +225,8 @@ func TestClosingWhenPoolIsFull(t *testing.T) {
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
 	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
+	mockPluginExecutor.On("Close").Return()
+
 	transport := NewRedisTransport(&Options{
 		RedisClient:         redisClient,
 		StreamKeys:          []string{"stream1"},
@@ -319,6 +321,7 @@ func TestClosingProperlyDrainsRequests(t *testing.T) {
 	mockPluginExecutor.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		After(500*time.Millisecond).
 		Return(nil, nil)
+	mockPluginExecutor.On("Close").Return()
 
 	_, err := transport.pollOnce()
 	assert.NoError(t, err)

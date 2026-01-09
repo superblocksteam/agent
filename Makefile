@@ -191,8 +191,8 @@ test-e2e-ephemeral:
 		-i "package deps" \
 		-i "restricted"
 
-.PHONY: test-e2e-ephemeral-smokescreen
-test-e2e-ephemeral-smokescreen:
+.PHONY: test-e2e-ephemeral-network
+test-e2e-ephemeral-network:
 	postman collection run --color on --verbose ./postman/ephemeral_network_isolation.json -e ./postman/environments/$(POSTMAN_ENV).json
 
 .PHONY: test-integration

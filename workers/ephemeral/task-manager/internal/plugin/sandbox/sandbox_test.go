@@ -178,39 +178,15 @@ func TestSandboxPluginName(t *testing.T) {
 }
 
 func TestSandboxPluginClose(t *testing.T) {
-	// Test with nil connection
+	// Test with nil connection and jobInfo
 	plugin := &SandboxPlugin{
-		conn: nil,
+		conn:    nil,
+		jobInfo: nil,
+		logger:  zap.NewNop(),
 	}
 
-	err := plugin.Close()
-	if err != nil {
-		t.Errorf("Close() with nil conn should return nil, got %v", err)
-	}
-}
-
-func TestSandboxPluginCloseWithConnection(t *testing.T) {
-	// Create a real connection that we can close
-	// Note: This will fail to connect but the conn object will be non-nil
-	logger := zap.NewNop()
-	opts := &Options{
-		Address:  "localhost:99999", // Invalid port
-		Language: "python",
-		Logger:   logger,
-	}
-
-	// NewSandboxPlugin may fail but we can still test Close on a plugin struct
-	plugin := &SandboxPlugin{
-		conn:     nil, // Can't easily create a real conn without a server
-		language: opts.Language,
-		address:  opts.Address,
-		logger:   opts.Logger,
-	}
-
-	err := plugin.Close()
-	if err != nil {
-		t.Errorf("Close() should return nil for nil conn, got %v", err)
-	}
+	// Should not panic
+	plugin.Close()
 }
 
 func TestSandboxPluginStream(t *testing.T) {

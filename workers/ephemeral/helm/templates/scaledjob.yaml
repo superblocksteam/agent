@@ -1,3 +1,16 @@
+# =============================================================================
+# Task Manager ScaledJob
+#
+# KEDA manages a pool of task-manager pods that:
+# 1. Pull work from Redis queue
+# 2. Dynamically create sandbox Jobs for execution
+# 3. Communicate with sandbox via gRPC
+# 4. Delete sandbox Jobs after execution
+# 5. Self-terminate (ephemeral mode)
+#
+# Network isolation is enforced via Kubernetes NetworkPolicy on sandbox Jobs.
+# Task-manager has full internal network access; sandbox Jobs are restricted.
+# =============================================================================
 {{- range $k, $v := .Values.fleets }}
 {{- $language := $v.language | required "language is required (python or javascript)" }}
 {{- $sandboxConfig := index $.Values.sandbox $language }}
@@ -44,153 +57,25 @@ spec:
       metadata:
         labels:
           {{- include "ephemeral.worker.labels" $v | nindent 10 }}
+          role: task-manager
+          language: {{ $language }}
         {{- with $podAnnotations }}
         annotations:
           {{- toYaml . | nindent 10 }}
         {{- end }}
       spec:
         restartPolicy: Never
-        automountServiceAccountToken: false
-        {{- if $.Values.runtimeClassName }}
-        runtimeClassName: {{ $.Values.runtimeClassName }}
-        {{- end }}
+        terminationGracePeriodSeconds: 60
+        serviceAccountName: task-manager
         {{- if $.Values.image.credentials }}
         imagePullSecrets:
         - name: ephemeral-worker-docker
         {{- end }}
 
-        # Sidecars run as initContainers with restartPolicy: Always
-        initContainers:
-        {{- if $.Values.smokescreen.enabled }}
-        # iptables init container - blocks direct HTTP/HTTPS from sandbox
-        - name: iptables-init
-          image: alpine:3.19
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            capabilities:
-              add:
-              - NET_ADMIN
-          command:
-          - /bin/sh
-          - -c
-          - |
-            set -ex
-            apk add --no-cache iptables
-
-            PROXY_UID=65534    # smokescreen
-            TASKMAN_UID=1000   # task-manager
-
-            echo "=== Configuring network isolation ==="
-
-            # Allow localhost (sandbox <-> task-manager gRPC)
-            iptables -A OUTPUT -d 127.0.0.0/8 -j ACCEPT
-
-            # Allow DNS (required for name resolution)
-            iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
-
-            # Allow established connections (for allowed UIDs)
-            iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-            # Allow smokescreen full access (required for proxy)
-            iptables -A OUTPUT -m owner --uid-owner $PROXY_UID -j ACCEPT
-
-            # Allow task-manager full access (needs Redis, orchestrator, etc.)
-            iptables -A OUTPUT -m owner --uid-owner $TASKMAN_UID -j ACCEPT
-
-            {{- if $.Values.network.vpcCIDR }}
-            # Block VPC CIDR (configured via helm values)
-            echo "Blocking VPC CIDR: {{ $.Values.network.vpcCIDR }}"
-            iptables -A OUTPUT -d {{ $.Values.network.vpcCIDR }} -j DROP
-            {{- end }}
-
-            {{- if $.Values.network.serviceCIDR }}
-            # Block Kubernetes service CIDR
-            echo "Blocking Service CIDR: {{ $.Values.network.serviceCIDR }}"
-            iptables -A OUTPUT -d {{ $.Values.network.serviceCIDR }} -j DROP
-            {{- end }}
-
-            {{- range $.Values.network.additionalBlockedCIDRs }}
-            # Block additional CIDR
-            echo "Blocking additional CIDR: {{ . }}"
-            iptables -A OUTPUT -d {{ . }} -j DROP
-            {{- end }}
-
-            {{- if not $.Values.network.vpcCIDR }}
-            # No VPC CIDR specified - block all RFC 1918 private ranges (SSRF protection)
-            echo "No VPC CIDR specified - blocking all RFC 1918 ranges"
-            iptables -A OUTPUT -d 10.0.0.0/8 -j DROP
-            iptables -A OUTPUT -d 172.16.0.0/12 -j DROP
-            iptables -A OUTPUT -d 192.168.0.0/16 -j DROP
-            iptables -A OUTPUT -d 169.254.0.0/16 -j DROP
-            iptables -A OUTPUT -d 100.64.0.0/10 -j DROP
-            {{- end }}
-
-            # DEFAULT DENY: Block everything else for sandbox
-            iptables -A OUTPUT -j DROP
-
-            echo "=== iptables configured ==="
-            echo "task-manager (UID $TASKMAN_UID): full access"
-            echo "smokescreen (UID $PROXY_UID): full access"
-            echo "sandbox: localhost + smokescreen proxy ONLY"
-            iptables -L OUTPUT -n -v --line-numbers
-        # Smokescreen egress proxy with mTLS certificate-based access control
-        - name: smokescreen
-          image: "{{ $.Values.smokescreen.image.repository }}:{{ $.Values.smokescreen.image.tag }}"
-          imagePullPolicy: {{ $.Values.smokescreen.image.pullPolicy }}
-          restartPolicy: Always
-          securityContext:
-            runAsUser: 65534
-            runAsNonRoot: true
-          resources:
-            {{- toYaml $.Values.smokescreen.resources | nindent 12 }}
-          ports:
-          - name: proxy
-            containerPort: {{ $.Values.smokescreen.port }}
-            protocol: TCP
-          volumeMounts:
-          - name: smokescreen-config
-            mountPath: /etc/smokescreen
-            readOnly: true
-          {{- if $.Values.smokescreen.mtls.enabled }}
-          - name: smokescreen-server-cert
-            mountPath: /etc/smokescreen/certs/server
-            readOnly: true
-          - name: smokescreen-ca-cert
-            mountPath: /etc/smokescreen/certs/ca
-            readOnly: true
-          {{- end }}
-        {{- end }}
-        # Sandbox runs as a sidecar
-        - name: {{ $language }}-sandbox
-          image: "{{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
-          imagePullPolicy: {{ (($v.sandbox).image).pullPolicy | default $sandboxConfig.image.pullPolicy }}
-          restartPolicy: Always
-          resources:
-            {{- toYaml (deepCopy ($sandboxConfig.resources | default dict) | merge (($v.sandbox).resources | default dict)) | nindent 12 }}
-          env:
-          - name: GRPC_PORT
-            value: "{{ $sandboxConfig.port }}"
-          {{- with $sandboxConfig.extraEnv }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
-          {{- with ($v.sandbox).extraEnv }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
-          ports:
-          - name: grpc
-            containerPort: {{ $sandboxConfig.port }}
-            protocol: TCP
-
-        # Task Manager is the main container
         containers:
         - name: task-manager
           image: "{{ (($v.taskManager).image).repository | default $.Values.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.taskManager.image.tag }}"
           imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
-          {{- if $.Values.smokescreen.enabled }}
-          securityContext:
-            runAsUser: 1000  # Must match TASKMAN_UID in iptables-init
-            runAsNonRoot: true
-          {{- end }}
           resources:
             {{- toYaml (deepCopy ($.Values.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
           {{- with (($v.taskManager).startupProbe) | default $.Values.taskManager.startupProbe }}
@@ -215,9 +100,15 @@ spec:
           - "--log.level={{ $.Values.observability.logging.level }}"
           # Language
           - "--worker.language={{ $language }}"
-          # Sandbox address (localhost since it's a sidecar)
-          - "--sandbox.address=localhost:{{ $sandboxConfig.port }}"
-          # gRPC configuration
+          # Sandbox mode - create separate sandbox Jobs
+          - "--sandbox.namespace={{ $.Release.Namespace }}"
+          - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
+          - "--sandbox.port={{ $sandboxConfig.port }}"
+          - "--sandbox.ttl={{ $.Values.sandboxJob.ttlSecondsAfterFinished | default 60 }}"
+          {{- if or $.Values.sandbox.runtimeClassName $.Values.runtimeClassName }}
+          - "--sandbox.runtimeClass={{ $.Values.sandbox.runtimeClassName | default $.Values.runtimeClassName }}"
+          {{- end }}
+          # gRPC configuration (variable store for sandbox)
           - "--grpc.port={{ $.Values.grpc.port }}"
           # Worker configuration
           - "--worker.consumer.group={{ $v.consumerGroup }}"
@@ -303,6 +194,24 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           env:
+          # Pod info via Downward API
+          # Required to properly set owner reference for sandbox cleanup
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
           {{- if $.Values.queue.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
             valueFrom:
@@ -327,6 +236,10 @@ spec:
           {{- with ($v.taskManager).extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          ports:
+          - name: grpc
+            containerPort: {{ $.Values.grpc.port }}
+            protocol: TCP
 
         {{- with $v.nodeSelector | default $.Values.nodeSelector }}
         nodeSelector:
@@ -339,28 +252,5 @@ spec:
         {{- with $v.tolerations | default $.Values.tolerations }}
         tolerations:
           {{- toYaml . | nindent 10 }}
-        {{- end }}
-        {{- if $.Values.smokescreen.enabled }}
-        volumes:
-        - name: smokescreen-config
-          configMap:
-            name: smokescreen-config
-        {{- if $.Values.smokescreen.mtls.enabled }}
-        - name: smokescreen-server-cert
-          secret:
-            secretName: smokescreen-server-cert
-        - name: smokescreen-ca-cert
-          secret:
-            secretName: smokescreen-ca-secret
-            items:
-            - key: ca.crt
-              path: ca.crt
-        - name: task-manager-cert
-          secret:
-            secretName: task-manager-cert
-        - name: {{ $language }}-sandbox-cert
-          secret:
-            secretName: {{ $language }}-sandbox-cert
-        {{- end }}
         {{- end }}
 {{- end }}

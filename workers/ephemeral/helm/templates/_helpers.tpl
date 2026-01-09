@@ -5,12 +5,35 @@
 {{- end }}
 
 {{/*
-Worker labels
+Common labels for all ephemeral worker resources
+*/}}
+{{- define "ephemeral_worker.labels" -}}
+app.kubernetes.io/name: ephemeral-worker
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{/*
+Worker labels for fleet-specific resources
 */}}
 {{- define "ephemeral.worker.labels" -}}
 component: worker.ephemeral
 language: {{ .language }}
 bucket: {{ .bucket }}
+{{- end -}}
+
+{{/*
+Task manager pod labels
+*/}}
+{{- define "task-manager.labels" -}}
+role: task-manager
+{{- end -}}
+
+{{/*
+Sandbox pod labels
+*/}}
+{{- define "sandbox.labels" -}}
+role: sandbox
 {{- end -}}
 
 {{/*

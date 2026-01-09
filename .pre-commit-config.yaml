@@ -8,7 +8,25 @@ repos:
       - id: go-mod-tidy
         name: "[go] tidy"
       - id: go-generate
-        name: "[go] generate"
+        name: "[go] generate (root)"
+        pass_filenames: false
+        files: ^(?!workers/golang/|workers/shared/|workers/ephemeral/task-manager/).*
+        args: [./...]
+      - id: go-generate
+        name: "[go] generate (go worker)"
+        pass_filenames: false
+        files: ^workers/golang/
+        args: [./...]
+      - id: go-generate
+        name: "[go] generate (task-manager)"
+        pass_filenames: false
+        files: ^workers/ephemeral/task-manager/
+        args: [./...]
+      - id: go-generate
+        name: "[go] generate (shared)"
+        pass_filenames: false
+        files: ^workers/shared/
+        args: [./...]
       - id: go-imports
         name: "[go] imports"
         exclude: |

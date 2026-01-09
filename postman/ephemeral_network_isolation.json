@@ -2,15 +2,15 @@
 	"info": {
 		"_postman_id": "network-isolation-tests",
 		"name": "Ephemeral Worker Network Isolation Tests",
-		"description": "Tests to verify network isolation for ephemeral workers with default-deny iptables.\n\nTest order is important - localhost tests run FIRST while fresh pods are available.\n\nThese tests verify that:\n- Sandbox CAN reach localhost (task-manager gRPC)\n- Sandbox cannot reach external HTTPS (blocked by iptables)\n- Sandbox cannot reach Redis (blocked by iptables)",
+		"description": "Tests to verify network isolation for ephemeral workers using job-based sandbox architecture.\n\nWith job-based sandboxes:\n- Each execution runs in its own Kubernetes pod\n- NetworkPolicy blocks access to internal infrastructure (Redis, K8s API)\n- Variable key whitelisting prevents unauthorized data access\n- Internet access is allowed for legitimate use cases\n\nThese tests verify:\n- Sandbox can reach the internet (public HTTP/HTTPS)\n- Sandbox CANNOT reach Redis (blocked by NetworkPolicy)\n- Sandbox CANNOT access unauthorized variable keys (security violation)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Localhost Tests (Run First)",
+			"name": "Internet Access Tests",
 			"item": [
 				{
-					"name": "Python can reach localhost gRPC",
+					"name": "Python can reach public HTTPS",
 					"event": [
 						{
 							"listen": "test",
@@ -22,11 +22,10 @@
 									"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
 									"});",
 									"",
-									"pm.test(\"localhost is allowed\", () => {",
-									"    // InternalError means pod recycled before result, which is expected for ephemeral workers",
+									"pm.test(\"public HTTPS is allowed\", () => {",
+									"    const hasAllowedResult = response.output?.result?.https === 'ALLOWED';",
 									"    const hasError = response.errors && response.errors.some(e => e.message === 'InternalError');",
-									"    const isAllowed = response.output && response.output.result && response.output.result.localhost === 'ALLOWED';",
-									"    pm.expect(hasError || isAllowed).to.be.true;",
+									"    pm.expect(hasAllowedResult || hasError).to.be.true;",
 									"});"
 								],
 								"type": "text/javascript"
@@ -38,7 +37,7 @@
 						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonLocalhostTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\ns = socket.socket()\\ns.settimeout(3)\\ntry:\\n    s.connect(('127.0.0.1', 50050))\\n    s.close()\\n    result = {'localhost': 'ALLOWED'}\\nexcept Exception as e:\\n    result = {'localhost': f'BLOCKED ({type(e).__name__})'}\\nreturn result\"}}}]}}}"
+							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonHTTPSTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\nimport ssl\\ns = socket.socket()\\ns.settimeout(10)\\ntry:\\n    s.connect(('httpbin.org', 443))\\n    ctx = ssl.create_default_context()\\n    s = ctx.wrap_socket(s, server_hostname='httpbin.org')\\n    s.close()\\n    result = {'https': 'ALLOWED'}\\nexcept Exception as e:\\n    result = {'https': f'BLOCKED ({type(e).__name__}: {str(e)})'}\\nreturn result\"}}}]}}}"
 						},
 						"url": {
 							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
@@ -50,7 +49,7 @@
 					}
 				},
 				{
-					"name": "JavaScript can reach localhost gRPC",
+					"name": "JavaScript can reach public HTTPS",
 					"event": [
 						{
 							"listen": "test",
@@ -62,11 +61,10 @@
 									"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
 									"});",
 									"",
-									"pm.test(\"localhost is allowed\", () => {",
-									"    // InternalError means pod recycled before result, which is expected for ephemeral workers",
+									"pm.test(\"public HTTPS is allowed\", () => {",
+									"    const hasAllowedResult = response.output?.result?.https === 'ALLOWED';",
 									"    const hasError = response.errors && response.errors.some(e => e.message === 'InternalError');",
-									"    const isAllowed = response.output && response.output.result && response.output.result.localhost === 'ALLOWED';",
-									"    pm.expect(hasError || isAllowed).to.be.true;",
+									"    pm.expect(hasAllowedResult || hasError).to.be.true;",
 									"});"
 								],
 								"type": "text/javascript"
@@ -78,7 +76,7 @@
 						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000002\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"JSLocalhostTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"const net = require('net');\\nlet localhost = 'BLOCKED';\\nawait new Promise(r => {\\n    const s = new net.Socket();\\n    s.setTimeout(3000);\\n    s.on('connect', () => { localhost = 'ALLOWED'; s.end(); r(); });\\n    s.on('timeout', () => { s.destroy(); r(); });\\n    s.on('error', () => r());\\n    s.connect(50050, '127.0.0.1');\\n});\\nreturn { localhost };\"}}}]}}}"
+							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000002\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"JSHTTPSTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"const https = require('https');\\nlet result = 'BLOCKED';\\nawait new Promise(resolve => {\\n    const req = https.get('https://httpbin.org/get', { timeout: 10000 }, (res) => {\\n        result = 'ALLOWED';\\n        res.destroy();\\n        resolve();\\n    });\\n    req.on('error', (e) => {\\n        result = `BLOCKED (${e.code}: ${e.message})`;\\n        resolve();\\n    });\\n    req.on('timeout', () => {\\n        req.destroy();\\n        result = 'BLOCKED (timeout)';\\n        resolve();\\n    });\\n});\\nreturn { https: result };\"}}}]}}}"
 						},
 						"url": {
 							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
@@ -92,86 +90,8 @@
 			]
 		},
 		{
-			"name": "Blocking Tests",
+			"name": "Infrastructure Blocking Tests (NetworkPolicy)",
 			"item": [
-				{
-					"name": "Python cannot reach external HTTPS",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"pm.test(\"status is completed\", () => {",
-									"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
-									"});",
-									"",
-									"pm.test(\"HTTPS is blocked\", () => {",
-									"    const hasBlockedResult = response.output?.result?.https?.includes('BLOCKED');",
-									"    const hasError = response.errors && response.errors.length > 0;",
-									"    pm.expect(hasBlockedResult || hasError).to.be.true;",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000003\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonHTTPSTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\ns = socket.socket()\\ns.settimeout(3)\\ntry:\\n    s.connect(('httpbin.org', 443))\\n    result = {'https': 'FAIL - ALLOWED'}\\nexcept Exception as e:\\n    result = {'https': f'BLOCKED ({type(e).__name__})'}\\nreturn result\"}}}]}}}"
-						},
-						"url": {
-							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
-							"protocol": "{{orchestrator_scheme}}",
-							"host": ["{{orchestrator_host}}"],
-							"port": "{{orchestrator_port}}",
-							"path": ["v2", "execute"]
-						}
-					}
-				},
-				{
-					"name": "JavaScript cannot reach external HTTPS",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"const response = pm.response.json();",
-									"",
-									"pm.test(\"status is completed\", () => {",
-									"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
-									"});",
-									"",
-									"pm.test(\"HTTPS is blocked\", () => {",
-									"    const hasBlockedResult = response.output?.result?.https?.includes('BLOCKED');",
-									"    const hasError = response.errors && response.errors.length > 0;",
-									"    pm.expect(hasBlockedResult || hasError).to.be.true;",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000004\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"JSHTTPSTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"const net = require('net');\\nlet https = 'BLOCKED';\\nawait new Promise(r => {\\n    const s = new net.Socket();\\n    s.setTimeout(3000);\\n    s.on('connect', () => { https = 'FAIL - ALLOWED'; s.end(); r(); });\\n    s.on('timeout', () => { s.destroy(); r(); });\\n    s.on('error', () => r());\\n    s.connect(443, 'httpbin.org');\\n});\\nreturn { https };\"}}}]}}}"
-						},
-						"url": {
-							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
-							"protocol": "{{orchestrator_scheme}}",
-							"host": ["{{orchestrator_host}}"],
-							"port": "{{orchestrator_port}}",
-							"path": ["v2", "execute"]
-						}
-					}
-				},
 				{
 					"name": "Python cannot reach Redis",
 					"event": [
@@ -185,7 +105,7 @@
 									"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
 									"});",
 									"",
-									"pm.test(\"Redis is blocked\", () => {",
+									"pm.test(\"Redis is blocked by NetworkPolicy\", () => {",
 									"    const hasBlockedResult = response.output?.result?.redis?.includes('BLOCKED');",
 									"    const hasError = response.errors && response.errors.length > 0;",
 									"    pm.expect(hasBlockedResult || hasError).to.be.true;",
@@ -200,7 +120,7 @@
 						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000005\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonRedisTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\ns = socket.socket()\\ns.settimeout(3)\\ntry:\\n    s.connect(('redis', 6379))\\n    result = {'redis': 'FAIL - ALLOWED'}\\nexcept Exception as e:\\n    result = {'redis': f'BLOCKED ({type(e).__name__})'}\\nreturn result\"}}}]}}}"
+							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000003\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonRedisTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\ns = socket.socket()\\ns.settimeout(5)\\ntry:\\n    # Try to connect to Redis - should be blocked by NetworkPolicy\\n    s.connect(('redis-master', 6379))\\n    result = {'redis': 'FAIL - ALLOWED (NetworkPolicy not enforced)'}\\nexcept Exception as e:\\n    result = {'redis': f'BLOCKED ({type(e).__name__})'}\\nreturn result\"}}}]}}}"
 						},
 						"url": {
 							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
@@ -224,7 +144,7 @@
 									"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
 									"});",
 									"",
-									"pm.test(\"Redis is blocked\", () => {",
+									"pm.test(\"Redis is blocked by NetworkPolicy\", () => {",
 									"    const hasBlockedResult = response.output?.result?.redis?.includes('BLOCKED');",
 									"    const hasError = response.errors && response.errors.length > 0;",
 									"    pm.expect(hasBlockedResult || hasError).to.be.true;",
@@ -239,7 +159,46 @@
 						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000006\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"JSRedisTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"const net = require('net');\\nlet redis = 'BLOCKED';\\nawait new Promise(r => {\\n    const s = new net.Socket();\\n    s.setTimeout(3000);\\n    s.on('connect', () => { redis = 'FAIL - ALLOWED'; s.end(); r(); });\\n    s.on('timeout', () => { s.destroy(); r(); });\\n    s.on('error', () => r());\\n    s.connect(6379, 'redis');\\n});\\nreturn { redis };\"}}}]}}}"
+							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000004\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"JSRedisTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"const net = require('net');\\nlet redis = 'BLOCKED';\\nawait new Promise(r => {\\n    const s = new net.Socket();\\n    s.setTimeout(5000);\\n    s.on('connect', () => { redis = 'FAIL - ALLOWED (NetworkPolicy not enforced)'; s.end(); r(); });\\n    s.on('timeout', () => { redis = 'BLOCKED (timeout)'; s.destroy(); r(); });\\n    s.on('error', (e) => { redis = `BLOCKED (${e.code})`; r(); });\\n    s.connect(6379, 'redis-master');\\n});\\nreturn { redis };\"}}}]}}}"
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "Python cannot reach private IP ranges",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"status is completed\", () => {",
+									"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
+									"});",
+									"",
+									"pm.test(\"private IP is blocked by NetworkPolicy\", () => {",
+									"    const hasBlockedResult = response.output?.result?.private_ip?.includes('BLOCKED');",
+									"    const hasError = response.errors && response.errors.length > 0;",
+									"    pm.expect(hasBlockedResult || hasError).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000005\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"PythonPrivateIPTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"import socket\\ns = socket.socket()\\ns.settimeout(5)\\ntry:\\n    # Try to connect to a private IP range - should be blocked by NetworkPolicy\\n    s.connect(('10.0.0.1', 80))\\n    result = {'private_ip': 'FAIL - ALLOWED (NetworkPolicy not enforced)'}\\nexcept Exception as e:\\n    result = {'private_ip': f'BLOCKED ({type(e).__name__})'}\\nreturn result\"}}}]}}}"
 						},
 						"url": {
 							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",

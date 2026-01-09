@@ -62,6 +62,9 @@ taskManager:
         - /tmp/worker_healthy
 # Sandbox configurations (per language)
 sandbox:
+  # Runtime class for sandbox pods (e.g., gvisor for secure isolation)
+  # Falls back to global runtimeClassName if not set
+  runtimeClassName: ""
   python:
     image:
       repository: ghcr.io/superblocksteam/python-sandbox
@@ -90,6 +93,13 @@ sandbox:
     port: 50051
     # Additional args/env for the javascript sandbox
     extraEnv: []
+# Sandbox Job configuration
+# Task-manager creates sandbox Jobs dynamically for each execution
+sandboxJob:
+  # Auto-delete job 60s after completion (success or failure)
+  ttlSecondsAfterFinished: 60
+  # No restart attempts on failure
+  backoffLimit: 0
 # KEDA ScaledJob configuration
 keda:
   pollingInterval: 5
@@ -183,40 +193,12 @@ network:
   serviceCIDR: ""
   # Additional CIDRs to block (list)
   additionalBlockedCIDRs: []
-# Smokescreen egress proxy configuration
-# Access control enforced via mTLS certificates
-# Use Kubernetes NetworkPolicy for additional network-level controls
-smokescreen:
-  enabled: true
-  image:
-    repository: ghcr.io/superblocksteam/smokescreen
-    tag: latest
-    pullPolicy: IfNotPresent
-  port: 4750
-  connectTimeout: 10s
-  allowPrivateRanges: false
-  # mTLS configuration for certificate-based access control
-  mtls:
-    enabled: true # Certificates required for egress access
-  resources:
-    limits:
-      memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
-  # Allow list - hosts that can be accessed
-  allowList:
-    - localhost
-    - "127.0.0.1"
-  # Deny list - hosts to block (in addition to private ranges)
-  denyList:
-    - redis
-    - orchestrator
-    - otel-collector
-    - kubernetes.default.svc.cluster.local
-    - kubernetes.default.svc
-    - kubernetes.default
-    - kubernetes
+  # Additional CIDRs to allow (list) - for customer internal APIs that should be accessible
+  # These CIDRs will be explicitly allowed even if they fall within blocked ranges
+  additionalAllowedCIDRs: []
+# gVisor runtime class name (if using gVisor for sandbox isolation)
+# Set this to your gVisor RuntimeClass name (e.g., "gvisor", "runsc")
+runtimeClassName: ""
 # Image pull secrets
 image:
   credentials:

@@ -63,16 +63,6 @@ sandbox:
     image:
       repository: ghcr.io/superblocksteam/javascript-sandbox
       pullPolicy: IfNotPresent
-# Smokescreen egress proxy
-smokescreen:
-  enabled: true
-  image:
-    repository: ghcr.io/superblocksteam/smokescreen
-    pullPolicy: IfNotPresent
-  # mTLS for role-based access control (defense in depth with iptables)
-  # mTLS for role-based access control (defense in depth with iptables)
-  mtls:
-    enabled: true
 # Redis configuration - use Bitnami Redis deployed to Kind
 queue:
   deploy: false

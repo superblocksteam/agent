@@ -26,4 +26,8 @@ type Plugin interface {
 
 	// PreDelete is called before a datasource is deleted.
 	PreDelete(ctx context.Context, datasourceConfig *structpb.Struct) error
+
+	// Close cleans up any resources held by the plugin.
+	// Called when the worker is shutting down.
+	Close()
 }

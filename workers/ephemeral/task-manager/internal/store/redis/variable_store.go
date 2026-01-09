@@ -18,6 +18,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 // ExecutionFileContext stores file fetching context for an execution
@@ -32,6 +35,30 @@ type FileContextProvider interface {
 	CleanupExecution(executionID string)
 }
 
+// SecurityViolation represents an unauthorized access attempt by a sandbox
+type SecurityViolation struct {
+	ExecutionID   string
+	RequestedKey  string
+	AllowedKeys   []string
+	ClientIP      string
+	ViolationType string // "key_not_allowed" or "ip_not_allowed"
+}
+
+// SecurityViolationHandler is called when a sandbox attempts unauthorized access
+type SecurityViolationHandler func(violation SecurityViolation)
+
+// ExecutionContextProvider extends FileContextProvider with key allowlisting
+type ExecutionContextProvider interface {
+	FileContextProvider
+	// SetAllowedKeys sets the allowed variable keys for an execution.
+	// Only these keys can be requested by the sandbox.
+	SetAllowedKeys(executionID string, keys []string)
+	// SetSecurityViolationHandler sets the callback for security violations.
+	// When a sandbox attempts to access a key it's not allowed to access,
+	// this handler is called. The task-manager should use this to terminate immediately.
+	SetSecurityViolationHandler(handler SecurityViolationHandler)
+}
+
 // VariableStoreGRPC implements the VariableStore gRPC service
 type VariableStoreGRPC struct {
 	workerv1.UnimplementedSandboxVariableStoreServiceServer
@@ -43,6 +70,19 @@ type VariableStoreGRPC struct {
 	// File context for each execution (file server URL, agent key)
 	fileContexts     map[string]*ExecutionFileContext
 	fileContextsLock sync.RWMutex
+
+	// IP filtering - only allow connections from the spawned sandbox
+	allowedIP     string
+	allowedIPLock sync.RWMutex
+
+	// Key allowlisting - only allow requests for pre-computed keys
+	// Maps execution ID to set of allowed keys
+	allowedKeys     map[string]map[string]struct{}
+	allowedKeysLock sync.RWMutex
+
+	// Security violation handler - called when sandbox attempts unauthorized access
+	securityHandler     SecurityViolationHandler
+	securityHandlerLock sync.RWMutex
 
 	shutdownLock sync.Mutex
 	done         chan error
@@ -59,6 +99,7 @@ func NewVariableStoreGRPC(kvStore store.Store, logger *zap.Logger, port int) *Va
 		logger:       logger,
 		port:         port,
 		fileContexts: make(map[string]*ExecutionFileContext),
+		allowedKeys:  make(map[string]map[string]struct{}),
 	}
 }
 
@@ -94,6 +135,57 @@ func (s *VariableStoreGRPC) Alive() bool {
 	return s.server != nil
 }
 
+// SetAllowedIP sets the allowed sandbox IP for this variable store.
+// Only connections from this IP will be accepted.
+// If empty, all connections are allowed (useful for testing).
+func (s *VariableStoreGRPC) SetAllowedIP(ip string) {
+	s.allowedIPLock.Lock()
+	defer s.allowedIPLock.Unlock()
+	s.allowedIP = ip
+	s.logger.Info("variable store IP filter set", zap.String("allowed_ip", ip))
+}
+
+// ipFilterInterceptor returns a gRPC unary interceptor that filters by allowed IP.
+func (s *VariableStoreGRPC) ipFilterInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		s.allowedIPLock.RLock()
+		allowedIP := s.allowedIP
+		s.allowedIPLock.RUnlock()
+
+		// If no IP filter set, allow all (for testing)
+		if allowedIP == "" {
+			return handler(ctx, req)
+		}
+
+		// Extract peer IP from context
+		p, ok := peer.FromContext(ctx)
+		if !ok {
+			s.logger.Warn("failed to get peer from context")
+			return nil, status.Error(codes.PermissionDenied, "unable to determine client IP")
+		}
+
+		clientIP := extractIP(p.Addr.String())
+		if clientIP != allowedIP {
+			s.logger.Warn("rejected connection from unauthorized IP",
+				zap.String("client_ip", clientIP),
+				zap.String("allowed_ip", allowedIP))
+			return nil, status.Error(codes.PermissionDenied, "unauthorized client IP")
+		}
+
+		return handler(ctx, req)
+	}
+}
+
+// extractIP extracts the IP address from an address string (IP:port format)
+func extractIP(addr string) string {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		// If it's not in host:port format, assume it's just an IP
+		return addr
+	}
+	return host
+}
+
 // Start starts the gRPC server
 func (s *VariableStoreGRPC) Start() error {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
@@ -101,11 +193,18 @@ func (s *VariableStoreGRPC) Start() error {
 		return fmt.Errorf("failed to listen on port %d: %w", s.port, err)
 	}
 
-	s.server = grpc.NewServer()
+	// Create server with IP filtering interceptor
+	// Use lock to synchronize with Stop() which may be called concurrently
+	s.shutdownLock.Lock()
+	s.server = grpc.NewServer(
+		grpc.UnaryInterceptor(s.ipFilterInterceptor()),
+	)
 	workerv1.RegisterSandboxVariableStoreServiceServer(s.server, s)
+	server := s.server
+	s.shutdownLock.Unlock()
 
 	s.logger.Info("VariableStore gRPC server starting", zap.Int("port", s.port))
-	return s.server.Serve(lis)
+	return server.Serve(lis)
 }
 
 // Stop stops the gRPC server
@@ -116,7 +215,10 @@ func (s *VariableStoreGRPC) Stop() {
 	if s.server != nil {
 		s.server.GracefulStop()
 		s.server = nil
-		close(s.done)
+		if s.done != nil {
+			close(s.done)
+			s.done = nil
+		}
 	}
 }
 
@@ -127,6 +229,20 @@ func (s *VariableStoreGRPC) GetVariable(ctx context.Context, req *workerv1.GetVa
 		"VariableStore.GetVariable",
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.GetVariableResponse, error) {
+			// Validate key against allowlist
+			if !s.isKeyAllowed(req.ExecutionId, req.Key) {
+				// Get client IP for security logging
+				clientIP := "unknown"
+				if p, ok := peer.FromContext(ctx); ok {
+					clientIP = extractIP(p.Addr.String())
+				}
+
+				// Trigger security violation - this will log and call handler
+				s.triggerSecurityViolation(req.ExecutionId, req.Key, clientIP)
+
+				return nil, status.Error(codes.PermissionDenied, "key not allowed")
+			}
+
 			values, err := s.readFromKvStore(ctx, req.Key)
 			if err != nil {
 				return nil, err
@@ -146,6 +262,22 @@ func (s *VariableStoreGRPC) GetVariables(ctx context.Context, req *workerv1.GetV
 		"VariableStore.GetVariables",
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.GetVariablesResponse, error) {
+			// Validate all keys against allowlist
+			for _, key := range req.Keys {
+				if !s.isKeyAllowed(req.ExecutionId, key) {
+					// Get client IP for security logging
+					clientIP := "unknown"
+					if p, ok := peer.FromContext(ctx); ok {
+						clientIP = extractIP(p.Addr.String())
+					}
+
+					// Trigger security violation - this will log and call handler
+					s.triggerSecurityViolation(req.ExecutionId, key, clientIP)
+
+					return nil, status.Error(codes.PermissionDenied, "key not allowed: "+key)
+				}
+			}
+
 			values, err := s.readFromKvStore(ctx, req.Keys...)
 			if err != nil {
 				return nil, err
@@ -252,9 +384,92 @@ func (s *VariableStoreGRPC) SetFileContext(executionID string, ctx *ExecutionFil
 
 func (s *VariableStoreGRPC) CleanupExecution(executionID string) {
 	s.fileContextsLock.Lock()
-	defer s.fileContextsLock.Unlock()
-
 	delete(s.fileContexts, executionID)
+	s.fileContextsLock.Unlock()
+
+	s.allowedKeysLock.Lock()
+	delete(s.allowedKeys, executionID)
+	s.allowedKeysLock.Unlock()
+}
+
+// SetAllowedKeys sets the allowed variable keys for an execution.
+// Only these keys can be requested by the sandbox via GetVariable/GetVariables.
+func (s *VariableStoreGRPC) SetAllowedKeys(executionID string, keys []string) {
+	s.allowedKeysLock.Lock()
+	defer s.allowedKeysLock.Unlock()
+
+	keySet := make(map[string]struct{}, len(keys))
+	for _, key := range keys {
+		keySet[key] = struct{}{}
+	}
+	s.allowedKeys[executionID] = keySet
+
+	s.logger.Debug("set allowed keys for execution",
+		zap.String("execution_id", executionID),
+		zap.Int("key_count", len(keys)))
+}
+
+// SetSecurityViolationHandler sets the callback for security violations.
+// When a sandbox attempts to access a key it's not allowed to access,
+// this handler is called. The task-manager should use this to terminate immediately.
+func (s *VariableStoreGRPC) SetSecurityViolationHandler(handler SecurityViolationHandler) {
+	s.securityHandlerLock.Lock()
+	defer s.securityHandlerLock.Unlock()
+	s.securityHandler = handler
+}
+
+// isKeyAllowed checks if a key is allowed for the given execution.
+// Returns true if no allowlist is set (for testing).
+func (s *VariableStoreGRPC) isKeyAllowed(executionID, key string) bool {
+	s.allowedKeysLock.RLock()
+	defer s.allowedKeysLock.RUnlock()
+
+	keySet, exists := s.allowedKeys[executionID]
+	if !exists {
+		// No allowlist set - allow all (backward compatibility)
+		return true
+	}
+
+	_, allowed := keySet[key]
+	return allowed
+}
+
+// triggerSecurityViolation logs the violation and calls the security handler
+func (s *VariableStoreGRPC) triggerSecurityViolation(executionID, requestedKey, clientIP string) {
+	// Get allowed keys for logging
+	s.allowedKeysLock.RLock()
+	var allowedKeysList []string
+	if keySet, exists := s.allowedKeys[executionID]; exists {
+		allowedKeysList = make([]string, 0, len(keySet))
+		for k := range keySet {
+			allowedKeysList = append(allowedKeysList, k)
+		}
+	}
+	s.allowedKeysLock.RUnlock()
+
+	// Log the violation with full details
+	s.logger.Error("SECURITY VIOLATION: sandbox attempted to access unauthorized variable",
+		zap.String("execution_id", executionID),
+		zap.String("requested_key", requestedKey),
+		zap.String("client_ip", clientIP),
+		zap.Strings("allowed_keys", allowedKeysList),
+		zap.String("action", "terminating task-manager"),
+	)
+
+	// Call the security handler if set
+	s.securityHandlerLock.RLock()
+	handler := s.securityHandler
+	s.securityHandlerLock.RUnlock()
+
+	if handler != nil {
+		handler(SecurityViolation{
+			ExecutionID:   executionID,
+			RequestedKey:  requestedKey,
+			AllowedKeys:   allowedKeysList,
+			ClientIP:      clientIP,
+			ViolationType: "key_not_allowed",
+		})
+	}
 }
 
 // FetchFile implements the FetchFile RPC - fetches file contents from the orchestrator's file server

@@ -66,30 +66,6 @@ sandbox:
       repository: ghcr.io/superblocksteam/javascript-sandbox
       tag: latest
       pullPolicy: IfNotPresent
-# Smokescreen egress proxy - redirects HTTP/HTTPS through proxy
-smokescreen:
-  enabled: true
-  image:
-    repository: ghcr.io/superblocksteam/smokescreen
-    tag: latest
-    pullPolicy: IfNotPresent
-  iptables:
-    image:
-      repository: alpine
-      tag: "3.19"
-      pullPolicy: IfNotPresent
-  # mTLS for role-based access control
-  # Works in combination with UID-based iptables rules for defense in depth
-  mtls:
-    enabled: true
-  allowPrivateRanges: true # Needed for Docker networking (host.docker.internal)
-  allowList:
-    - localhost
-    - "127.0.0.1"
-    - host.docker.internal
-  denyList:
-    - redis
-    - orchestrator
 # Redis configuration - Docker Redis uses "koala" password
 queue:
   host: host.docker.internal

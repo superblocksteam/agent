@@ -40,11 +40,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY --from=builder /app/workers/ephemeral/task-manager/task-manager .
 
 # Default environment variables for Task Manager
+# Note: sandbox.address is NOT set - defaults to job mode (dynamic Kubernetes Jobs)
+# For static mode (Docker Compose), set SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS
 ENV SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_HOST=redis \
     SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PORT=6379 \
     SUPERBLOCKS_WORKER_SANDBOX_WORKER_LANGUAGE=javascript \
     SUPERBLOCKS_WORKER_SANDBOX_WORKER_CONSUMER_GROUP=sandbox-javascript-workers \
-    SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS=javascript-sandbox:50051 \
     SUPERBLOCKS_WORKER_SANDBOX_GRPC_PORT=50050 \
     SUPERBLOCKS_WORKER_SANDBOX_OTEL_COLLECTOR_HTTP_URL=http://otel-desktop-viewer:4318
 

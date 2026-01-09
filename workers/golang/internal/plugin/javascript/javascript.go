@@ -202,3 +202,8 @@ func retrieveGetFileFunc(props *transportv1.Request_Data_Data_Props, headers map
 		return readFile(resp.Body)
 	}
 }
+
+// Close implements plugin.Plugin
+func (p *javascriptPlugin) Close() {
+	// No-op - javascript plugin doesn't hold persistent resources
+}

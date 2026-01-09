@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
+	"workers/ephemeral/task-manager/internal/jobmanager"
 	"workers/ephemeral/task-manager/internal/plugin"
 
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
@@ -26,12 +28,21 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// SandboxPlugin executes code by forwarding to a gRPC sandbox server
+// IPFilterSetter allows setting IP filters on the variable store
+type IPFilterSetter interface {
+	SetAllowedIP(ip string)
+}
+
+// SandboxPlugin executes code by forwarding to a gRPC sandbox server.
+// The sandbox runs in a separate Kubernetes Job that is created at startup
+// and deleted at shutdown.
 type SandboxPlugin struct {
-	client   workerv1.SandboxExecutorTransportServiceClient
-	conn     *grpc.ClientConn
+	// gRPC client to sandbox
+	client workerv1.SandboxExecutorTransportServiceClient
+	conn   *grpc.ClientConn
+
+	// Plugin configuration
 	language string
-	address  string
 	logger   *zap.Logger
 
 	// Variable store address to pass to sandbox
@@ -39,47 +50,127 @@ type SandboxPlugin struct {
 
 	// Store for reading context bindings from Redis
 	store store.Store
+
+	// Job manager for creating/deleting sandbox Jobs
+	jobManager *jobmanager.SandboxJobManager
+	jobInfo    *jobmanager.SandboxInfo
+
+	// IP filter for the variable store - only accept connections from sandbox
+	ipFilterSetter IPFilterSetter
+
+	// Mutex for cleanup
+	mu sync.Mutex
 }
 
 var _ plugin.Plugin = &SandboxPlugin{}
 
 const emptyContextJSON = `{"globals": {}, "outputs": {}}`
 
-// NewSandboxPlugin creates a new sandbox plugin
-func NewSandboxPlugin(opts *Options) (*SandboxPlugin, error) {
-	// Configure keepalive to detect dead connections
-	keepaliveParams := keepalive.ClientParameters{
-		Time:                10 * time.Second, // Send pings every 10 seconds if no activity
-		Timeout:             5 * time.Second,  // Wait 5 seconds for ping ack before considering dead
-		PermitWithoutStream: true,             // Send pings even without active streams
-	}
+// Options configures the SandboxPlugin
+type Options struct {
+	// Static mode: connect to existing sandbox at this address
+	Address string
+	// Dynamic mode: create Kubernetes Jobs (requires JobManager and ExecutionID)
+	JobManager  *jobmanager.SandboxJobManager
+	ExecutionID string // Used to name the sandbox Job
 
-	conn, err := grpc.NewClient(
-		opts.Address,
-		// insecure is used as these containers share a pod and are not exposed outside the pod context
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithKeepaliveParams(keepaliveParams),
-		grpc.WithConnectParams(grpc.ConnectParams{
-			MinConnectTimeout: 5 * time.Second, // Minimum timeout for connection attempts
-		}),
-		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(100*1024*1024), // 100MB max response
-			grpc.MaxCallSendMsgSize(30*1024*1024),  // 30MB max request
-		),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to sandbox server: %w", err)
-	}
+	// Common options
+	Language             string
+	Logger               *zap.Logger
+	VariableStoreAddress string
+	Store                store.Store
+	IPFilterSetter       IPFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
+}
 
-	return &SandboxPlugin{
-		client:               workerv1.NewSandboxExecutorTransportServiceClient(conn),
-		conn:                 conn,
+// NewSandboxPlugin creates a new sandbox plugin.
+// In static mode (Address set), it connects directly to an existing sandbox.
+// In dynamic mode (JobManager set), it creates a Kubernetes Job and connects to it.
+func NewSandboxPlugin(ctx context.Context, opts *Options) (*SandboxPlugin, error) {
+	p := &SandboxPlugin{
 		language:             opts.Language,
-		address:              opts.Address,
 		logger:               opts.Logger,
 		variableStoreAddress: opts.VariableStoreAddress,
 		store:                opts.Store,
-	}, nil
+		jobManager:           opts.JobManager,
+		ipFilterSetter:       opts.IPFilterSetter,
+	}
+
+	var sandboxAddress string
+
+	if opts.Address != "" {
+		// Static mode: connect to existing sandbox at configured address
+		sandboxAddress = opts.Address
+
+		p.logger.Info("sandbox plugin connecting (static mode)",
+			zap.String("language", opts.Language),
+			zap.String("address", sandboxAddress),
+		)
+	} else if opts.JobManager != nil {
+		// Dynamic mode: create a Kubernetes Job for the sandbox
+		jobInfo, err := opts.JobManager.CreateSandbox(ctx, opts.ExecutionID, opts.Language)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create sandbox job: %w", err)
+		}
+		p.jobInfo = jobInfo
+		sandboxAddress = jobInfo.Address
+
+		// Set IP filter on variable store - only accept connections from this sandbox
+		if opts.IPFilterSetter != nil {
+			opts.IPFilterSetter.SetAllowedIP(jobInfo.PodIP)
+		}
+
+		p.logger.Info("sandbox plugin initialized (dynamic mode)",
+			zap.String("language", opts.Language),
+			zap.String("job", jobInfo.JobName),
+			zap.String("address", jobInfo.Address),
+			zap.String("pod_ip", jobInfo.PodIP),
+		)
+	} else {
+		return nil, fmt.Errorf("either Address or JobManager must be provided")
+	}
+
+	// Connect to the sandbox
+	conn, client, err := p.connectToSandbox(sandboxAddress)
+	if err != nil {
+		// Cleanup the job if we can't connect (only in dynamic mode)
+		if p.jobInfo != nil && opts.JobManager != nil {
+			_ = opts.JobManager.DeleteSandbox(context.Background(), p.jobInfo.JobName)
+		}
+		return nil, fmt.Errorf("failed to connect to sandbox: %w", err)
+	}
+
+	p.conn = conn
+	p.client = client
+
+	return p, nil
+}
+
+// connectToSandbox creates a gRPC connection to the sandbox pod
+func (p *SandboxPlugin) connectToSandbox(address string) (*grpc.ClientConn, workerv1.SandboxExecutorTransportServiceClient, error) {
+	keepaliveParams := keepalive.ClientParameters{
+		Time:                10 * time.Second,
+		Timeout:             5 * time.Second,
+		PermitWithoutStream: true,
+	}
+
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithKeepaliveParams(keepaliveParams),
+		grpc.WithConnectParams(grpc.ConnectParams{
+			MinConnectTimeout: 5 * time.Second,
+		}),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(100*1024*1024),
+			grpc.MaxCallSendMsgSize(30*1024*1024),
+		),
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create gRPC connection: %w", err)
+	}
+
+	client := workerv1.NewSandboxExecutorTransportServiceClient(conn)
+	return conn, client, nil
 }
 
 // Execute runs code in the sandbox
@@ -214,12 +305,37 @@ func (p *SandboxPlugin) Name() string {
 	return p.language
 }
 
-// Close closes the gRPC connection
-func (p *SandboxPlugin) Close() error {
+// Close cleans up any resources - closes connection and deletes sandbox Job.
+// Called when the worker is shutting down.
+func (p *SandboxPlugin) Close() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	if p.conn != nil {
-		return p.conn.Close()
+		_ = p.conn.Close()
+		p.conn = nil
+		p.client = nil
 	}
-	return nil
+
+	if p.jobInfo != nil && p.jobManager != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := p.jobManager.DeleteSandbox(ctx, p.jobInfo.JobName); err != nil {
+			p.logger.Warn("failed to delete sandbox job",
+				zap.String("job", p.jobInfo.JobName),
+				zap.Error(err),
+			)
+		} else {
+			p.logger.Info("deleted sandbox job", zap.String("job", p.jobInfo.JobName))
+		}
+		p.jobInfo = nil
+	}
+}
+
+// ConnectionState returns the underlying gRPC connection state for health checking
+func (p *SandboxPlugin) ConnectionState() connectivity.State {
+	return p.conn.GetState()
 }
 
 // parseResultJSON parses raw JSON from sandbox into a structpb.Value.
@@ -245,11 +361,6 @@ func parseResultJSON(jsonResult string) *structpb.Value {
 	}
 
 	return result
-}
-
-// ConnectionState returns the underlying gRPC connection state for health checking
-func (p *SandboxPlugin) ConnectionState() connectivity.State {
-	return p.conn.GetState()
 }
 
 // getCodeFromProps extracts the code/script from action configuration
@@ -370,7 +481,6 @@ func (p *SandboxPlugin) buildContextJSON(ctx context.Context, props *transportv1
 	}
 
 	// Read native variables from Redis (for inputs like FilePicker1, Table1, etc.)
-	// TODO actually add filepicker support  https://linear.app/superblocks/issue/AGENT-772/support-filepicker-in-task-manager
 	// This mimics workers/python/src/plugin/props_reader.py _load_from_store native variable handling
 	if p.store != nil && len(variables) > 0 {
 		// Collect native and filepicker variables

@@ -80,7 +80,6 @@ deploy-helm:
 		--set taskManager.image.tag="$(IMAGE_TAG)" \
 		--set sandbox.python.image.tag="$(IMAGE_TAG)" \
 		--set sandbox.javascript.image.tag="$(IMAGE_TAG)" \
-		--set smokescreen.image.tag="$(IMAGE_TAG)" \
 		$(HELM_EXTRA_ARGS)
 
 load-images:
@@ -89,7 +88,6 @@ load-images:
 	kind load docker-image $(IMAGE_REGISTRY)/task-manager:$(IMAGE_TAG) --name superblocks || true
 	kind load docker-image $(IMAGE_REGISTRY)/python-sandbox:$(IMAGE_TAG) --name superblocks || true
 	kind load docker-image $(IMAGE_REGISTRY)/javascript-sandbox:$(IMAGE_TAG) --name superblocks || true
-	kind load docker-image $(IMAGE_REGISTRY)/smokescreen:$(IMAGE_TAG) --name superblocks || true
 
 # ============================================================================
 # Full Kind Deployment (Orchestrator + Redis + Ephemeral Workers)
@@ -154,10 +152,6 @@ logs:
 	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) logs -l app.kubernetes.io/name=orchestrator --tail=100 || true
 	@echo "==> Ephemeral worker logs (all containers):"
 	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) logs -l component=worker.ephemeral --all-containers --tail=100 || true
-	@echo "==> Init container logs (iptables-init):"
-	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) logs -l component=worker.ephemeral -c iptables-init --tail=50 || true
-	@echo "==> Smokescreen logs:"
-	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) logs -l component=worker.ephemeral -c smokescreen --tail=50 || true
 	@echo "==> KEDA operator logs:"
 	kubectl --context $(K8S_CONTEXT) -n keda logs -l app=keda-operator --tail=50 || true
 	@echo "==> Redis logs:"
