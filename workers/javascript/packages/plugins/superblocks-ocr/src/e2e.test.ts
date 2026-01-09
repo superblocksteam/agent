@@ -115,7 +115,8 @@ describe('execute', () => {
     TEST_TIMEOUT_MS
   );
 
-  test(
+  // Skipped: Azure wildcard DNS resolves invalid.cognitiveservices.azure.com, returning 401 instead of ENOTFOUND
+  test.skip(
     'fails with invalid computer vision url',
     async () => {
       const newProps = cloneDeep(props);
