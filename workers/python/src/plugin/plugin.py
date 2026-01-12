@@ -246,6 +246,7 @@ class Python(Plugin):
                     path = int(path)
                 obj = obj[path]
             obj["readContents"] = partial(reader.readContents, key, value)
+            obj["readContentsAsync"] = partial(reader.readContentsAsync, key, value)
 
         data = Object(
             {"context": props["context"], "code": props["actionConfiguration"]["body"]}

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Add support for file uploads in 2.0 apps
 - Require authorization header for inline definitions in `/v2/execute`, `/v2/execute/stream`, and `/v2/execute/twoway` endpoints to prevent anonymous code execution while still allowing public apps (fetch by ID) to work
 - Upgrade Go 1.25.1 → 1.25.5, golang.org/x/crypto v0.41.0 → v0.45.0, golang.org/x/sync v0.17.0 → v0.18.0, golang.org/x/text v0.28.0 → v0.31.0 and run `apt-get upgrade -y` in Dockerfiles to resolve CVEs.
 - Do not fail when primitive values are used as inputs to Python APIs, similar to JavaScript APIs

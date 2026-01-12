@@ -1,6 +1,7 @@
 """Tests for the superblocks module."""
 
 import json
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -56,13 +57,17 @@ class TestObject:
         assert obj.__dict__ is obj
 
     def test_deeply_nested_object(self):
-        obj = Object({
-            "this": {
-                "be": {
-                    "a": {"very": {"nested": {"object": [{"my": {"value": "bar"}}]}}}
+        obj = Object(
+            {
+                "this": {
+                    "be": {
+                        "a": {
+                            "very": {"nested": {"object": [{"my": {"value": "bar"}}]}}
+                        }
+                    }
                 }
             }
-        })
+        )
         assert obj.this.be.a.very.nested.object[0].my.value == "bar"
 
     def test_iteration_over_items(self):
@@ -185,3 +190,51 @@ class TestJsonRoundTrip:
         json_str = json.dumps({"data": encoded})
         decoded = loads(json_str)
         assert decoded.data == original_bytes
+
+
+class TestReader:
+    def test_readContents_returns_text(self):
+        """Test readContents returns text content by default."""
+        mock_fetcher = MagicMock(return_value=b"Hello, World!")
+        reader = Reader(mock_fetcher)
+
+        result = reader.readContents("test.txt", "/tmp/test.txt")
+        assert result == "Hello, World!"
+        mock_fetcher.assert_called_once_with("/tmp/test.txt")
+
+    def test_readContents_returns_base64_for_binary(self):
+        """Test readContents returns base64 for binary content."""
+        # Binary content - needs to be long enough to trigger binary detection
+        binary_content = b"\xff\xd8\xff\xe0" + b"\x00" * 100
+        mock_fetcher = MagicMock(return_value=binary_content)
+        reader = Reader(mock_fetcher)
+
+        result = reader.readContents("test.jpg", "/tmp/test.jpg")
+        # Should be base64 encoded string
+        assert isinstance(result, str)
+
+    def test_readContents_with_raw_mode(self):
+        """Test readContents with mode='raw' returns bytes."""
+        mock_fetcher = MagicMock(return_value=b"raw bytes")
+        reader = Reader(mock_fetcher)
+
+        result = reader.readContents("test.bin", "/tmp/test.bin", mode="raw")
+        assert result == b"raw bytes"
+
+    @pytest.mark.asyncio
+    async def test_readContentsAsync_returns_text(self):
+        """Test readContentsAsync returns text content by default."""
+        mock_fetcher = MagicMock(return_value=b"Hello, Async!")
+        reader = Reader(mock_fetcher)
+
+        result = await reader.readContentsAsync("test.txt", "/tmp/test.txt")
+        assert result == "Hello, Async!"
+
+    @pytest.mark.asyncio
+    async def test_readContentsAsync_with_raw_mode(self):
+        """Test readContentsAsync with mode='raw' returns bytes."""
+        mock_fetcher = MagicMock(return_value=b"async raw bytes")
+        reader = Reader(mock_fetcher)
+
+        result = await reader.readContentsAsync("test.bin", "/tmp/test.bin", mode="raw")
+        assert result == b"async raw bytes"

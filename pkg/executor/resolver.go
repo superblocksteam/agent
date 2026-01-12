@@ -1769,12 +1769,26 @@ func shouldRenderActionConfig(action *structpb.Struct, pluginType string, stream
 		return false
 	}
 
+	// fileObjects field (S3, GCS) may reference file arrays without "files." in the binding
+	// Only skip rendering if it contains a binding pattern
+	if fileObjectsField, ok := action.Fields["fileObjects"]; ok {
+		if strVal, isString := fileObjectsField.Kind.(*structpb.Value_StringValue); isString {
+			str := strVal.StringValue
+			// Check if it's actually a binding (contains $ or {{)
+			if strings.Contains(str, "$") || strings.Contains(str, "{{") {
+				return false
+			}
+		}
+	}
+
 	var referencesFilePicker func(value *structpb.Value) bool
-	// write a recursive function that checks if the action config has any string values in it that contain "readContents"
+	// Check if the action config references file-related bindings that should be resolved by the worker
 	referencesFilePicker = func(value *structpb.Value) bool {
 		switch value.Kind.(type) {
 		case *structpb.Value_StringValue:
-			return strings.Contains(value.GetStringValue(), "readContents")
+			str := value.GetStringValue()
+			// Check for file-related bindings that should be resolved by the worker
+			return strings.Contains(str, "readContents") || strings.Contains(str, "files.")
 		case *structpb.Value_ListValue:
 			for _, v := range value.GetListValue().Values {
 				if referencesFilePicker(v) {

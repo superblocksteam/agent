@@ -2,7 +2,12 @@ import pytest
 from fixtures import dump_and_load
 
 import superblocks
-from utils import extract_vars, get_tree_path_to_disk_path
+from utils import (
+    _is_dict_like,
+    extract_vars,
+    get_tree_path_to_disk_path,
+    is_readable_file,
+)
 
 
 def test_extract_vars_filters_hidden_variables():
@@ -163,3 +168,77 @@ def test_get_tree_path_to_disk_path():
         "FilePicker1.files.0": "/var/folders/1d/rvn3c5b15cx0z9z9thcds79c0000gn/T/dev-agent-key/"
         "uppy-test_csv-1e-text_csv-79376-1664833779646_dev-agent-key"
     }
+
+
+def test_is_readable_file_without_previewUrl():
+    """File objects from API uploads may not have previewUrl (browser-only blob URL)."""
+    file_without_preview = {
+        "name": "test.pdf",
+        "extension": "pdf",
+        "type": "application/pdf",
+        "size": 12345,
+        "encoding": "text",
+        "$superblocksId": "test-file-id",
+    }
+    assert is_readable_file(file_without_preview) is True
+
+
+def test_is_readable_file_with_previewUrl():
+    """File objects from FilePicker include previewUrl."""
+    file_with_preview = {
+        "name": "test.pdf",
+        "extension": "pdf",
+        "type": "application/pdf",
+        "size": 12345,
+        "encoding": "text",
+        "$superblocksId": "test-file-id",
+        "previewUrl": "blob:http://localhost:3000/abc123",
+    }
+    assert is_readable_file(file_with_preview) is True
+
+
+def test_is_dict_like_with_superblocks_object():
+    """superblocks.Object should be treated as dict-like."""
+    obj = dump_and_load({"foo": "bar"})
+    assert type(obj) is superblocks.Object
+    assert _is_dict_like(obj) is True
+
+
+def test_is_dict_like_with_dict():
+    """Regular dict should be treated as dict-like."""
+    assert _is_dict_like({"foo": "bar"}) is True
+
+
+def test_is_dict_like_with_non_dict():
+    """Non-dict types should not be dict-like."""
+    assert _is_dict_like("string") is False
+    assert _is_dict_like(123) is False
+    assert _is_dict_like([1, 2, 3]) is False
+
+
+def test_get_tree_path_to_disk_path_with_superblocks_object():
+    """get_tree_path_to_disk_path should work with superblocks.Object types."""
+    globals_obj = dump_and_load(
+        {
+            "testFile": {
+                "files": [
+                    {
+                        "name": "test.pdf",
+                        "extension": "pdf",
+                        "type": "application/pdf",
+                        "size": 12345,
+                        "encoding": "text",
+                        "$superblocksId": "test-file-id",
+                    }
+                ]
+            }
+        }
+    )
+    files = [
+        {
+            "originalname": "test-file-id",
+            "path": "/tmp/test-file",
+        }
+    ]
+    result = get_tree_path_to_disk_path(globals_obj, files)
+    assert result == {"testFile.files.0": "/tmp/test-file"}

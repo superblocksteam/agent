@@ -70,6 +70,16 @@ class Reader:
         buf = BytesIO(contents)
         return self.__serialize(buf, name, mode)
 
+    async def readContentsAsync(self, name, path, mode=None):
+        """Async version of readContents."""
+        import asyncio
+        from io import BytesIO
+
+        # Wrap sync fetcher in thread to avoid blocking
+        contents = await asyncio.to_thread(self._file_fetcher, path)
+        buf = BytesIO(contents)
+        return self.__serialize(buf, name, mode)
+
     def __serialize(self, f, name, mode=None):
         f.seek(0)
         if mode == "raw":

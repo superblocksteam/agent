@@ -18,6 +18,11 @@ def extract_vars(context) -> Object:
     return output
 
 
+def _is_dict_like(obj):
+    """Check if obj is dict-like (dict or superblocks.Object)."""
+    return isinstance(obj, (dict, Object))
+
+
 def is_readable_file(root):
     def _is_readable_file(key, value):
         if key in ["name", "extension", "type", "encoding", "$superblocksId"]:
@@ -27,11 +32,12 @@ def is_readable_file(root):
 
         return True
 
-    if not isinstance(root, dict) or len(root.items()) == 0:
+    if not _is_dict_like(root) or len(root.items()) == 0:
         return False
 
     # List of keys expected in a file object provided in the context
     # We must assert that the object contains these fields exactly.
+    # Note: previewUrl is browser-only (blob URLs) and may not be present in API contexts
     required_file_keys = {
         "name",
         "extension",
@@ -39,10 +45,9 @@ def is_readable_file(root):
         "encoding",
         "$superblocksId",
         "size",
-        "previewUrl",
     }
 
-    optional_file_keys = {"path"}
+    optional_file_keys = {"path", "previewUrl"}
 
     all_file_keys = required_file_keys.union(optional_file_keys)
 
@@ -55,9 +60,7 @@ def is_readable_file(root):
 
 def get_file_paths(root: Optional[Dict | List], path: List = []) -> List:
     paths: List = []
-    if (root is None) or (
-        (not isinstance(root, dict)) and (not isinstance(root, list))
-    ):
+    if (root is None) or ((not _is_dict_like(root)) and (not isinstance(root, list))):
         return paths
 
     if isinstance(root, list):
@@ -68,14 +71,14 @@ def get_file_paths(root: Optional[Dict | List], path: List = []) -> List:
     if is_readable_file(root):
         return [path]
 
-    # we're guaranteed that root is a dict at this point
+    # we're guaranteed that root is dict-like at this point
     for key, value in root.items():
         if is_readable_file(value):
             paths.append([*path, key])
         elif value is not None and isinstance(value, list):
             for idx, item in enumerate(value):
                 paths = [*paths, *get_file_paths(item, [*path, key, str(idx)])]
-        elif value is not None and isinstance(value, dict):
+        elif value is not None and _is_dict_like(value):
             paths = [*paths, *get_file_paths(value, [*path, key])]
 
     return paths

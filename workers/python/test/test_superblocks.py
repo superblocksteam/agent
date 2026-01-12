@@ -1,4 +1,7 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pandas as pd
+import pytest
 from fixtures import dump_and_load
 from hypothesis import given
 from hypothesis import strategies as st
@@ -151,3 +154,117 @@ def test_sanitize_agent_key():
     assert reader._sanitize_agent_key("+are+you+serious") == "--are--you--serious"
     assert reader._sanitize_agent_key("are+you+serious+") == "are--you--serious--"
     assert reader._sanitize_agent_key("/are+you/serious+") == "__are--you__serious--"
+
+
+@pytest.mark.asyncio
+async def test_readContentsAsync_returns_text():
+    """Test readContentsAsync returns text content by default."""
+    reader = superblocks.Reader(
+        {"$fileServerUrl": "http://localhost/v1/files", "$agentKey": "test-key"}
+    )
+
+    # Mock the async fetch
+    mock_response = AsyncMock()
+    mock_response.status = 200
+    mock_response.read = AsyncMock(return_value=b"Hello, World!")
+
+    mock_session = MagicMock()
+    mock_session.get = MagicMock(
+        return_value=AsyncMock(
+            __aenter__=AsyncMock(return_value=mock_response), __aexit__=AsyncMock()
+        )
+    )
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock()
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
+        result = await reader.readContentsAsync("test.txt", "/tmp/test.txt")
+        assert result == "Hello, World!"
+
+
+@pytest.mark.asyncio
+async def test_readContentsAsync_returns_base64_for_binary():
+    """Test readContentsAsync returns base64 for binary content."""
+    reader = superblocks.Reader(
+        {"$fileServerUrl": "http://localhost/v1/files", "$agentKey": "test-key"}
+    )
+
+    # Binary content with NUL bytes (0x00) which are detected as binary
+    # The detection considers bytes 0x00-0x06, 0x0E-0x1A, 0x1C-0x1F as binary
+    binary_content = b"\x00\x01\x02\x03"
+
+    mock_response = AsyncMock()
+    mock_response.status = 200
+    mock_response.read = AsyncMock(return_value=binary_content)
+
+    mock_session = MagicMock()
+    mock_session.get = MagicMock(
+        return_value=AsyncMock(
+            __aenter__=AsyncMock(return_value=mock_response), __aexit__=AsyncMock()
+        )
+    )
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock()
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
+        result = await reader.readContentsAsync("test.bin", "/tmp/test.bin")
+        # Should be base64 encoded
+        assert isinstance(result, str)
+        assert result == "AAECAw=="  # base64 of \x00\x01\x02\x03
+
+
+@pytest.mark.asyncio
+async def test_readContentsAsync_with_raw_mode():
+    """Test readContentsAsync with mode='raw' returns bytes."""
+    reader = superblocks.Reader(
+        {"$fileServerUrl": "http://localhost/v1/files", "$agentKey": "test-key"}
+    )
+
+    mock_response = AsyncMock()
+    mock_response.status = 200
+    mock_response.read = AsyncMock(return_value=b"raw bytes")
+
+    mock_session = MagicMock()
+    mock_session.get = MagicMock(
+        return_value=AsyncMock(
+            __aenter__=AsyncMock(return_value=mock_response), __aexit__=AsyncMock()
+        )
+    )
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock()
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
+        result = await reader.readContentsAsync("test.bin", "/tmp/test.bin", mode="raw")
+        assert result == b"raw bytes"
+
+
+@pytest.mark.asyncio
+async def test_readContentsAsync_v2_file_server():
+    """Test readContentsAsync handles v2 file server JSON format."""
+    import base64
+    import json
+
+    reader = superblocks.Reader(
+        {"$fileServerUrl": "http://localhost/v2/files", "$agentKey": "test-key"}
+    )
+
+    # V2 format: newline-delimited JSON with base64 data
+    chunk_data = base64.b64encode(b"Hello from v2").decode()
+    v2_response = json.dumps({"result": {"data": chunk_data}}) + "\n"
+
+    mock_response = AsyncMock()
+    mock_response.status = 200
+    mock_response.read = AsyncMock(return_value=v2_response.encode())
+
+    mock_session = MagicMock()
+    mock_session.get = MagicMock(
+        return_value=AsyncMock(
+            __aenter__=AsyncMock(return_value=mock_response), __aexit__=AsyncMock()
+        )
+    )
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock()
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
+        result = await reader.readContentsAsync("test.txt", "/tmp/test.txt")
+        assert result == "Hello from v2"

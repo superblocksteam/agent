@@ -241,6 +241,59 @@ func TestShouldRenderActionConfig(t *testing.T) {
 		assert.False(t, shouldRenderActionConfig(action4, "somePlugin", false))
 	})
 
+	t.Run("Should return false if files. exists in a string field", func(t *testing.T) {
+		t.Parallel()
+		action := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"body": {Kind: &structpb.Value_StringValue{StringValue: "${files.files}"}},
+			},
+		}
+		assert.False(t, shouldRenderActionConfig(action, "somePlugin", false))
+	})
+
+	t.Run("Should return false if files. exists in a nested binding", func(t *testing.T) {
+		t.Parallel()
+		action := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"body": {Kind: &structpb.Value_StringValue{StringValue: "${FilePicker1.files.0.name}"}},
+			},
+		}
+		assert.False(t, shouldRenderActionConfig(action, "somePlugin", false))
+	})
+
+	t.Run("Should return false if fileObjects is a string binding (covers bindings without files.)", func(t *testing.T) {
+		t.Parallel()
+		action := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"fileObjects": {Kind: &structpb.Value_StringValue{StringValue: "${Api1.output}"}},
+			},
+		}
+		assert.False(t, shouldRenderActionConfig(action, "somePlugin", false))
+	})
+
+	t.Run("Should not special-case fileObjects if it's not a binding string", func(t *testing.T) {
+		t.Parallel()
+		action := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				// This should not trigger the fileObjects fast-path because it's not a binding.
+				"fileObjects": {Kind: &structpb.Value_StringValue{StringValue: "[]"}},
+			},
+		}
+		// With no file-related references, the default behavior is to render.
+		assert.True(t, shouldRenderActionConfig(action, "somePlugin", false))
+	})
+
+	t.Run("Should not special-case fileObjects if it's already a literal array", func(t *testing.T) {
+		t.Parallel()
+		action := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"fileObjects": {Kind: &structpb.Value_ListValue{ListValue: &structpb.ListValue{}}},
+			},
+		}
+		// With no file-related references, the default behavior is to render.
+		assert.True(t, shouldRenderActionConfig(action, "somePlugin", false))
+	})
+
 	t.Run("Should return true otherwise", func(t *testing.T) {
 		t.Parallel()
 		action5 := &structpb.Struct{

@@ -59,6 +59,12 @@ class Reader:
         payload = self.__serialize(self.__fetchFromController(path), name, mode)
         return payload
 
+    async def readContentsAsync(self, name, path, mode=None):
+        payload = self.__serialize(
+            await self.__fetchFromControllerAsync(path), name, mode
+        )
+        return payload
+
     def __serialize(self, f, name, mode=None):
         f.seek(0)
         if mode == "raw":
@@ -123,6 +129,43 @@ class Reader:
             return newBuf
         else:
             return buf
+
+    async def __fetchFromControllerAsync(self, path: str):
+        from io import BytesIO
+
+        import aiohttp
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                self._globals["$fileServerUrl"],
+                params={"location": path},
+                headers={
+                    "x-superblocks-agent-key": self._sanitize_agent_key(
+                        self._globals["$agentKey"]
+                    )
+                },
+            ) as response:
+                if response.status != 200:
+                    raise Exception("Internal Server Error")
+
+                content = await response.read()
+                buf = BytesIO(content)
+
+                if "v2" in self._globals["$fileServerUrl"]:
+                    str_content = buf.getvalue().decode("utf-8")
+                    splitted = str_content.split("\n")
+
+                    newBuf = BytesIO()
+                    for one in splitted:
+                        if len(one) == 0:
+                            return newBuf
+                        obj = json.loads(one)
+                        data = base64.b64decode(obj.get("result").get("data"))
+                        newBuf.write(data)
+
+                    return newBuf
+                else:
+                    return buf
 
     def _sanitize_agent_key(self, agent_key: str) -> str:
         return agent_key.replace(r"/", "__").replace(r"+", "--")

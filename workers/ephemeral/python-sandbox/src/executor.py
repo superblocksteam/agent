@@ -162,6 +162,7 @@ class Executor:
                             break
                     if obj is not None and isinstance(obj, dict):
                         obj["readContents"] = partial(reader.readContents, key, remote_path)
+                        obj["readContentsAsync"] = partial(reader.readContentsAsync, key, remote_path)
 
             # Copy globals values to module dict for direct access (always do this)
             for k in globals_dict.keys():
