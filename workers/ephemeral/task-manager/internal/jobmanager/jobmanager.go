@@ -28,6 +28,8 @@ type SandboxJobManager struct {
 	grpcPort                int
 	ttlSecondsAfterFinished int32
 	runtimeClassName        string
+	nodeSelector            map[string]string
+	tolerations             []corev1.Toleration
 	logger                  *zap.Logger
 	podReadyTimeout         time.Duration
 	// Owner reference for garbage collection
@@ -57,6 +59,8 @@ func NewSandboxJobManager(opts *Options) *SandboxJobManager {
 		grpcPort:                opts.GRPCPort,
 		ttlSecondsAfterFinished: opts.TTLSecondsAfterFinished,
 		runtimeClassName:        opts.RuntimeClassName,
+		nodeSelector:            opts.NodeSelector,
+		tolerations:             opts.Tolerations,
 		logger:                  opts.Logger,
 		podReadyTimeout:         opts.PodReadyTimeout,
 		ownerPodName:            opts.OwnerPodName,
@@ -202,6 +206,16 @@ func (m *SandboxJobManager) buildJobSpec(jobName, executionID, language string) 
 	// Set runtime class if specified (for gVisor)
 	if m.runtimeClassName != "" {
 		job.Spec.Template.Spec.RuntimeClassName = &m.runtimeClassName
+	}
+
+	// Set node selector if specified
+	if len(m.nodeSelector) > 0 {
+		job.Spec.Template.Spec.NodeSelector = m.nodeSelector
+	}
+
+	// Set tolerations if specified
+	if len(m.tolerations) > 0 {
+		job.Spec.Template.Spec.Tolerations = m.tolerations
 	}
 
 	return job

@@ -111,6 +111,12 @@ spec:
           {{- if $.Values.image.credentials }}
           - "--sandbox.imagePullSecrets=ephemeral-worker-docker"
           {{- end }}
+          {{- if or $.Values.nodeSelector $.Values.sandbox.nodeSelector }}
+          - "--sandbox.nodeSelector={{ toJson ($.Values.sandbox.nodeSelector | default $.Values.nodeSelector) }}"
+          {{- end }}
+          {{- if or $.Values.tolerations $.Values.sandbox.tolerations }}
+          - "--sandbox.tolerations={{ toJson ($.Values.sandbox.tolerations | default $.Values.tolerations) }}"
+          {{- end }}
           # gRPC configuration (variable store for sandbox)
           - "--grpc.port={{ $.Values.grpc.port }}"
           # Worker configuration

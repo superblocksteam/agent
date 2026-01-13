@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -32,6 +33,12 @@ type Options struct {
 
 	// RuntimeClass for gVisor
 	RuntimeClassName string
+
+	// NodeSelector for sandbox pods (to schedule on specific nodes)
+	NodeSelector map[string]string
+
+	// Tolerations for sandbox pods (to tolerate node taints)
+	Tolerations []corev1.Toleration
 
 	// Logger
 	Logger *zap.Logger
@@ -138,6 +145,20 @@ func WithOwnerPodUID(uid string) Option {
 func WithImagePullSecrets(secrets []string) Option {
 	return func(o *Options) {
 		o.ImagePullSecrets = secrets
+	}
+}
+
+// WithNodeSelector sets the node selector for sandbox pods
+func WithNodeSelector(nodeSelector map[string]string) Option {
+	return func(o *Options) {
+		o.NodeSelector = nodeSelector
+	}
+}
+
+// WithTolerations sets the tolerations for sandbox pods
+func WithTolerations(tolerations []corev1.Toleration) Option {
+	return func(o *Options) {
+		o.Tolerations = tolerations
 	}
 }
 

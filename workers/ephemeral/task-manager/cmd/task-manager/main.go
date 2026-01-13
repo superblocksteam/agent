@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -31,6 +32,7 @@ import (
 	"github.com/superblocksteam/run/contrib/process"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -94,6 +96,8 @@ func init() {
 	pflag.Int("sandbox.ttl", 60, "TTL in seconds for completed sandbox Jobs.")
 	pflag.String("sandbox.runtimeClass", "", "RuntimeClass for sandbox Jobs (e.g., 'gvisor').")
 	pflag.StringSlice("sandbox.imagePullSecrets", []string{}, "Image pull secret names for sandbox pods (comma-separated).")
+	pflag.String("sandbox.nodeSelector", "", "Node selector for sandbox pods as JSON (e.g., '{\"key\":\"value\"}').")
+	pflag.String("sandbox.tolerations", "", "Tolerations for sandbox pods as JSON array (e.g., '[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"gvisor\",\"effect\":\"NoSchedule\"}]').")
 
 	// gRPC settings for variable store
 	pflag.Int("grpc.port", 50050, "The port for the VariableStore gRPC server.")
@@ -324,6 +328,24 @@ func main() {
 			os.Exit(1)
 		}
 
+		// Parse nodeSelector from JSON if provided
+		var nodeSelector map[string]string
+		if nodeSelectorJSON := viper.GetString("sandbox.nodeSelector"); nodeSelectorJSON != "" {
+			if err := json.Unmarshal([]byte(nodeSelectorJSON), &nodeSelector); err != nil {
+				logger.Error("failed to parse sandbox.nodeSelector JSON", zap.Error(err))
+				os.Exit(1)
+			}
+		}
+
+		// Parse tolerations from JSON if provided
+		var tolerations []corev1.Toleration
+		if tolerationsJSON := viper.GetString("sandbox.tolerations"); tolerationsJSON != "" {
+			if err := json.Unmarshal([]byte(tolerationsJSON), &tolerations); err != nil {
+				logger.Error("failed to parse sandbox.tolerations JSON", zap.Error(err))
+				os.Exit(1)
+			}
+		}
+
 		// Create job manager
 		jobMgr := jobmanager.NewSandboxJobManager(jobmanager.NewOptions(
 			jobmanager.WithClientset(k8sClient),
@@ -334,6 +356,8 @@ func main() {
 			jobmanager.WithGRPCPort(viper.GetInt("grpc.port")),
 			jobmanager.WithTTL(int32(viper.GetInt("sandbox.ttl"))),
 			jobmanager.WithRuntimeClassName(viper.GetString("sandbox.runtimeClass")),
+			jobmanager.WithNodeSelector(nodeSelector),
+			jobmanager.WithTolerations(tolerations),
 			jobmanager.WithImagePullSecrets(viper.GetStringSlice("sandbox.imagePullSecrets")),
 			jobmanager.WithLogger(logger),
 			jobmanager.WithOwnerPodName(ownerPodName),
