@@ -42,3 +42,14 @@ Sandbox container name based on language
 {{- define "sandbox.name" -}}
 {{ .language }}-sandbox
 {{- end -}}
+
+{{/*
+Convert a map to key=value,key2=value2 format for StringToString flags
+*/}}
+{{- define "mapToStringFlag" -}}
+{{- $pairs := list -}}
+{{- range $key, $value := . -}}
+{{- $pairs = append $pairs (printf "%s=%s" $key $value) -}}
+{{- end -}}
+{{- join "," $pairs -}}
+{{- end -}}

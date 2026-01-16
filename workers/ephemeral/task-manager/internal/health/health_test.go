@@ -96,34 +96,46 @@ func TestCheckRedis(t *testing.T) {
 
 func TestCheckSandbox(t *testing.T) {
 	tests := []struct {
-		name         string
-		sandboxState connectivity.State
-		expectError  bool
+		name                 string
+		sandboxState         connectivity.State
+		sandboxEverConnected bool
+		expectError          bool
 	}{
 		{
-			name:         "ready state is healthy",
-			sandboxState: connectivity.Ready,
-			expectError:  false,
+			name:                 "ready state is healthy",
+			sandboxState:         connectivity.Ready,
+			sandboxEverConnected: false,
+			expectError:          false,
 		},
 		{
-			name:         "idle state is healthy",
-			sandboxState: connectivity.Idle,
-			expectError:  false,
+			name:                 "idle state is healthy",
+			sandboxState:         connectivity.Idle,
+			sandboxEverConnected: false,
+			expectError:          false,
 		},
 		{
-			name:         "connecting state is healthy",
-			sandboxState: connectivity.Connecting,
-			expectError:  false,
+			name:                 "connecting state is healthy",
+			sandboxState:         connectivity.Connecting,
+			sandboxEverConnected: false,
+			expectError:          false,
 		},
 		{
-			name:         "transient failure returns error",
-			sandboxState: connectivity.TransientFailure,
-			expectError:  true,
+			name:                 "transient failure is healthy before first connection",
+			sandboxState:         connectivity.TransientFailure,
+			sandboxEverConnected: false,
+			expectError:          false,
 		},
 		{
-			name:         "shutdown returns error",
-			sandboxState: connectivity.Shutdown,
-			expectError:  true,
+			name:                 "transient failure returns error after first connection",
+			sandboxState:         connectivity.TransientFailure,
+			sandboxEverConnected: true,
+			expectError:          true,
+		},
+		{
+			name:                 "shutdown returns error",
+			sandboxState:         connectivity.Shutdown,
+			sandboxEverConnected: false,
+			expectError:          true,
 		},
 	}
 
@@ -134,6 +146,7 @@ func TestCheckSandbox(t *testing.T) {
 			mockSandbox.On("ConnectionState").Return(tt.sandboxState)
 
 			checker := newTestChecker(mockRedis, mockSandbox, "/tmp/test_health")
+			checker.sandboxEverConnected = tt.sandboxEverConnected
 			err := checker.checkSandbox()
 
 			if tt.expectError {
@@ -144,6 +157,19 @@ func TestCheckSandbox(t *testing.T) {
 			mockSandbox.AssertExpectations(t)
 		})
 	}
+}
+
+func TestCheckSandbox_SetsEverConnectedOnReady(t *testing.T) {
+	mockRedis := new(MockRedisChecker)
+	mockSandbox := new(MockSandboxChecker)
+	mockSandbox.On("ConnectionState").Return(connectivity.Ready)
+
+	checker := newTestChecker(mockRedis, mockSandbox, "/tmp/test_health")
+	assert.False(t, checker.sandboxEverConnected)
+
+	err := checker.checkSandbox()
+	assert.NoError(t, err)
+	assert.True(t, checker.sandboxEverConnected, "sandboxEverConnected should be set to true after Ready state")
 }
 
 func TestCheckSandboxNil(t *testing.T) {
@@ -180,39 +206,60 @@ func TestMarkHealthyAndUnhealthy(t *testing.T) {
 
 func TestUpdateHealthFile(t *testing.T) {
 	tests := []struct {
-		name                string
-		redisHealthy        bool
-		sandboxState        *connectivity.State
-		expectSandboxCalled bool // Whether sandbox check should be called
-		expectHealthy       bool
+		name                 string
+		redisHealthy         bool
+		sandboxState         *connectivity.State
+		sandboxEverConnected bool
+		expectSandboxCalled  bool // Whether sandbox check should be called
+		expectHealthy        bool
 	}{
 		{
-			name:                "healthy when redis and sandbox are healthy",
-			redisHealthy:        true,
-			sandboxState:        ptr(connectivity.Ready),
-			expectSandboxCalled: true,
-			expectHealthy:       true,
+			name:                 "healthy when redis and sandbox are healthy",
+			redisHealthy:         true,
+			sandboxState:         ptr(connectivity.Ready),
+			sandboxEverConnected: false,
+			expectSandboxCalled:  true,
+			expectHealthy:        true,
 		},
 		{
-			name:                "unhealthy when redis fails",
-			redisHealthy:        false,
-			sandboxState:        nil, // Won't be checked since Redis fails first
-			expectSandboxCalled: false,
-			expectHealthy:       false,
+			name:                 "unhealthy when redis fails",
+			redisHealthy:         false,
+			sandboxState:         nil, // Won't be checked since Redis fails first
+			sandboxEverConnected: false,
+			expectSandboxCalled:  false,
+			expectHealthy:        false,
 		},
 		{
-			name:                "unhealthy when sandbox is shutdown",
-			redisHealthy:        true,
-			sandboxState:        ptr(connectivity.Shutdown),
-			expectSandboxCalled: true,
-			expectHealthy:       false,
+			name:                 "unhealthy when sandbox is shutdown",
+			redisHealthy:         true,
+			sandboxState:         ptr(connectivity.Shutdown),
+			sandboxEverConnected: false,
+			expectSandboxCalled:  true,
+			expectHealthy:        false,
 		},
 		{
-			name:                "healthy when sandbox is nil",
-			redisHealthy:        true,
-			sandboxState:        nil,
-			expectSandboxCalled: false,
-			expectHealthy:       true,
+			name:                 "healthy when sandbox is nil",
+			redisHealthy:         true,
+			sandboxState:         nil,
+			sandboxEverConnected: false,
+			expectSandboxCalled:  false,
+			expectHealthy:        true,
+		},
+		{
+			name:                 "healthy when sandbox in transient failure before first connection",
+			redisHealthy:         true,
+			sandboxState:         ptr(connectivity.TransientFailure),
+			sandboxEverConnected: false,
+			expectSandboxCalled:  true,
+			expectHealthy:        true,
+		},
+		{
+			name:                 "unhealthy when sandbox in transient failure after first connection",
+			redisHealthy:         true,
+			sandboxState:         ptr(connectivity.TransientFailure),
+			sandboxEverConnected: true,
+			expectSandboxCalled:  true,
+			expectHealthy:        false,
 		},
 	}
 
@@ -240,6 +287,7 @@ func TestUpdateHealthFile(t *testing.T) {
 			} else {
 				checker = newTestChecker(mockRedis, nil, healthFile)
 			}
+			checker.sandboxEverConnected = tt.sandboxEverConnected
 
 			checker.updateHealthFile()
 

@@ -3,7 +3,6 @@ package health
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"time"
 
@@ -34,9 +33,14 @@ type Checker struct {
 	pingTimeout    time.Duration
 	healthFilePath string
 	checkInterval  time.Duration
+
+	// Sandbox connection tracking
+	sandboxEverConnected bool // true once sandbox has been Ready at least once
+
+	run.ForwardCompatibility
 }
 
-var _ run.Runnable = &Checker{}
+var _ run.Runnable = (*Checker)(nil)
 
 // Options for creating a health Checker
 type Options struct {
@@ -94,13 +98,22 @@ func (c *Checker) checkSandbox() error {
 
 	state := c.sandbox.ConnectionState()
 	switch state {
-	case connectivity.Ready, connectivity.Idle:
-		// Considered healthy
+	case connectivity.Ready:
+		// Mark that we've successfully connected at least once
+		c.sandboxEverConnected = true
+		return nil
+	case connectivity.Idle:
+		// Idle is healthy (connection pooling, will reconnect on demand)
 		return nil
 	case connectivity.Connecting:
 		// Still connecting, consider it healthy during startup
 		return nil
 	case connectivity.TransientFailure:
+		// Be lenient during initial connection attempts
+		if !c.sandboxEverConnected {
+			c.logger.Debug("sandbox connection in transient failure during initial connection, allowing")
+			return nil
+		}
 		return fmt.Errorf("sandbox connection in transient failure: %s", state.String())
 	case connectivity.Shutdown:
 		return fmt.Errorf("sandbox connection shutdown: %s", state.String())
@@ -180,9 +193,4 @@ func (c *Checker) Name() string {
 // Alive implements run.Runnable
 func (c *Checker) Alive() bool {
 	return true
-}
-
-// Fields implements run.Runnable
-func (c *Checker) Fields() []slog.Attr {
-	return []slog.Attr{}
 }

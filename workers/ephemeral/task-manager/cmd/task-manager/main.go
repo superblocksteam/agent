@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -97,8 +96,8 @@ func init() {
 	pflag.Int("sandbox.ttl", 60, "TTL in seconds for completed sandbox Jobs.")
 	pflag.String("sandbox.runtimeClass", "", "RuntimeClass for sandbox Jobs (e.g., 'gvisor').")
 	pflag.StringSlice("sandbox.imagePullSecrets", []string{}, "Image pull secret names for sandbox pods (comma-separated).")
-	pflag.String("sandbox.nodeSelector", "", "Node selector for sandbox pods as JSON (e.g., '{\"key\":\"value\"}').")
-	pflag.String("sandbox.tolerations", "", "Tolerations for sandbox pods as JSON array (e.g., '[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"gvisor\",\"effect\":\"NoSchedule\"}]').")
+	pflag.StringToString("sandbox.nodeSelector", map[string]string{}, "Node selector for sandbox pods (e.g., 'key=value,key2=value2').")
+	pflag.StringArray("sandbox.toleration", []string{}, "Toleration for sandbox pods (format: 'key=x,operator=y,value=z,effect=w'). Can be specified multiple times for multiple tolerations.")
 
 	// gRPC settings for variable store
 	pflag.Int("grpc.port", 50050, "The port for the VariableStore gRPC server.")
@@ -380,22 +379,34 @@ func main() {
 			os.Exit(1)
 		}
 
-		// Parse nodeSelector from JSON if provided
-		var nodeSelector map[string]string
-		if nodeSelectorJSON := viper.GetString("sandbox.nodeSelector"); nodeSelectorJSON != "" {
-			if err := json.Unmarshal([]byte(nodeSelectorJSON), &nodeSelector); err != nil {
-				logger.Error("failed to parse sandbox.nodeSelector JSON", zap.Error(err))
-				os.Exit(1)
-			}
-		}
+		nodeSelector := viper.GetStringMapString("sandbox.nodeSelector")
 
-		// Parse tolerations from JSON if provided
+		// Parse tolerations from string array (format: "key=x,operator=y,value=z,effect=w")
 		var tolerations []corev1.Toleration
-		if tolerationsJSON := viper.GetString("sandbox.tolerations"); tolerationsJSON != "" {
-			if err := json.Unmarshal([]byte(tolerationsJSON), &tolerations); err != nil {
-				logger.Error("failed to parse sandbox.tolerations JSON", zap.Error(err))
-				os.Exit(1)
+		for _, t := range viper.GetStringSlice("sandbox.toleration") {
+			// Parse the key=value pairs
+			pairs := make(map[string]string)
+			for _, pair := range strings.Split(t, ",") {
+				kv := strings.SplitN(pair, "=", 2)
+				if len(kv) == 2 {
+					pairs[kv[0]] = kv[1]
+				}
 			}
+
+			toleration := corev1.Toleration{}
+			if key, ok := pairs["key"]; ok {
+				toleration.Key = key
+			}
+			if operator, ok := pairs["operator"]; ok {
+				toleration.Operator = corev1.TolerationOperator(operator)
+			}
+			if value, ok := pairs["value"]; ok {
+				toleration.Value = value
+			}
+			if effect, ok := pairs["effect"]; ok {
+				toleration.Effect = corev1.TaintEffect(effect)
+			}
+			tolerations = append(tolerations, toleration)
 		}
 
 		// Set up security violation handler for when sandbox tries to access unauthorized keys
