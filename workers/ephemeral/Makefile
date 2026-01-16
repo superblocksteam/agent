@@ -51,15 +51,39 @@ lint:
 # ============================================================================
 
 deploy-kind:
-	@echo "==> Creating Kind cluster..."
-	@kind get clusters | grep superblocks > /dev/null || kind create cluster --name superblocks --wait 60s
+	@echo "==> Creating Kind cluster with Calico CNI..."
+	@kind get clusters | grep -q superblocks || kind create cluster --name superblocks --config kind-config.yaml
+	@echo "==> Adding Helm repos..."
+	@helm repo add projectcalico https://docs.tigera.io/calico/charts || true
+	@helm repo add kedacore https://kedacore.github.io/charts || true
+	@helm repo update
+	@echo "==> Installing Calico CNI..."
+	@helm upgrade --install calico projectcalico/tigera-operator \
+		--namespace tigera-operator \
+		--create-namespace \
+		--kube-context $(K8S_CONTEXT) \
+		--version v3.27.0 \
+		--wait \
+		--timeout 3m
+	@echo "==> Waiting for Calico to be ready..."
+	@kubectl --context $(K8S_CONTEXT) -n calico-system wait --for=condition=ready pod -l k8s-app=calico-node --timeout=180s || true
+	@kubectl --context $(K8S_CONTEXT) -n calico-system wait --for=condition=ready pod -l k8s-app=calico-kube-controllers --timeout=120s || true
 	@echo "==> Installing cert-manager..."
 	@kubectl --context $(K8S_CONTEXT) apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml
 	@echo "==> Waiting for cert-manager to be ready..."
-	@kubectl --context $(K8S_CONTEXT) -n cert-manager wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager --timeout=120s
+	@kubectl --context $(K8S_CONTEXT) -n cert-manager wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager --timeout=300s || { \
+		echo "==> cert-manager pods failed to become ready. Collecting diagnostics..."; \
+		echo "==> Pod status:"; \
+		kubectl --context $(K8S_CONTEXT) -n cert-manager get pods -o wide || true; \
+		echo "==> Pod descriptions:"; \
+		kubectl --context $(K8S_CONTEXT) -n cert-manager describe pods || true; \
+		echo "==> cert-manager logs:"; \
+		kubectl --context $(K8S_CONTEXT) -n cert-manager logs -l app.kubernetes.io/instance=cert-manager --all-containers --tail=100 || true; \
+		echo "==> Events in cert-manager namespace:"; \
+		kubectl --context $(K8S_CONTEXT) -n cert-manager get events --sort-by='.lastTimestamp' || true; \
+		exit 1; \
+	}
 	@echo "==> Installing KEDA..."
-	@helm repo add kedacore https://kedacore.github.io/charts || true
-	@helm repo update
 	@helm upgrade --install keda kedacore/keda \
 		--namespace keda \
 		--create-namespace \
@@ -191,7 +215,7 @@ help:
 	@echo "  make clean            Remove generated files"
 	@echo ""
 	@echo "Kind Deployment (Ephemeral Workers Only):"
-	@echo "  make deploy-kind      Create Kind cluster and install KEDA"
+	@echo "  make deploy-kind      Create Kind cluster with Calico CNI, cert-manager, and KEDA"
 	@echo "  make load-images      Load Docker images into Kind"
 	@echo "  make deploy-helm      Deploy ephemeral workers via Helm"
 	@echo "  make logs             Fetch pod logs"

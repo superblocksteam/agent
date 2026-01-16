@@ -1,9 +1,14 @@
 # =============================================================================
-# Network Policies for Ephemeral Workers
+# Calico Network Policies for Ephemeral Workers
 #
-# Two separate policies:
-# 1. Task Manager: RFC-1918 only (Redis, K8s API, sandbox pods - all internal)
-# 2. Sandbox: Restricted (only task-manager pods for gRPC, internet excluding private ranges)
+# Uses Calico NetworkPolicy CRD with explicit order to take precedence over
+# the allow-all GlobalNetworkPolicy (which has no order).
+#
+# Four policies:
+# 1. Task Manager Egress: RFC-1918 only (Redis, K8s API, sandbox pods - all internal)
+# 2. Task Manager Ingress: Only sandbox pods on gRPC port (deny all other ingress)
+# 3. Sandbox Egress: Restricted (only task-manager pods for gRPC, internet excluding private ranges)
+# 4. Sandbox Ingress: Only task-manager pods on sandbox gRPC port (deny all other ingress)
 #
 # This provides true network isolation since task-manager and sandbox run in
 # separate pods with separate NetworkPolicies.
@@ -13,148 +18,154 @@
 # Task Manager Network Policy - Internal VPC only
 # Task manager needs access to Redis, K8s API, sandbox pods, OTEL collector
 # All of these are internal services - no internet access needed
-apiVersion: networking.k8s.io/v1
+apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
   name: task-manager-egress
   labels:
     {{- include "ephemeral_worker.labels" . | nindent 4 }}
 spec:
-  podSelector:
-    matchLabels:
-      role: task-manager
-  policyTypes:
+  order: 10
+  selector: role == 'task-manager'
+  types:
     - Egress
   egress:
-    # Allow DNS (required for service discovery)
-    - to:
-        - namespaceSelector: {}
-      ports:
-        - protocol: UDP
-          port: 53
-        - protocol: TCP
-          port: 53
+    # Allow DNS (UDP and TCP)
+    - action: Allow
+      protocol: UDP
+      destination:
+        ports:
+          - 53
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 53
 
     # Allow egress to sandbox pods (required for gRPC connection)
-    - to:
-        - podSelector:
-            matchLabels:
-              role: sandbox
-      ports:
-        - protocol: TCP
-          port: {{ .Values.sandbox.port }}
+    - action: Allow
+      protocol: TCP
+      destination:
+        selector: role == 'sandbox'
+        ports:
+          - {{ .Values.sandbox.port }}
 
     # Allow RFC-1918 private ranges (internal VPC)
     # Task-manager needs: Redis, K8s API, OTEL collector
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.0/8
-    - to:
-        - ipBlock:
-            cidr: 172.16.0.0/12
-    - to:
-        - ipBlock:
-            cidr: 192.168.0.0/16
+    - action: Allow
+      destination:
+        nets:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+
+    # Deny everything else (no internet access for task-manager)
+    - action: Deny
+
+---
+# Sandbox Network Policy - Restrictive egress
+# Order 10 ensures this takes precedence over allow-all GlobalNetworkPolicy
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-egress-deny-private
+  labels:
+    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+spec:
+  order: 10
+  selector: role == 'sandbox'
+  types:
+    - Egress
+  egress:
+    # Allow DNS (UDP and TCP)
+    - action: Allow
+      protocol: UDP
+      destination:
+        ports:
+          - 53
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 53
+
+    # Allow task-manager pods (for gRPC variable store)
+    - action: Allow
+      protocol: TCP
+      destination:
+        selector: role == 'task-manager'
+        ports:
+          - {{ .Values.grpc.port }}
+
+    {{- if .Values.network.additionalAllowedCIDRs }}
+    # Customer-specified allowed CIDRs (internal APIs, etc.)
+    {{- range .Values.network.additionalAllowedCIDRs }}
+    - action: Allow
+      destination:
+        nets:
+          - {{ . }}
+    {{- end }}
+    {{- end }}
+
+    # Deny all private ranges (SSRF protection)
+    - action: Deny
+      destination:
+        nets:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+          - 169.254.0.0/16
+          - 100.64.0.0/10
+
+    # Allow everything else (internet)
+    - action: Allow
 
 ---
 # Sandbox Ingress Policy - Allow task-manager to connect for gRPC
-apiVersion: networking.k8s.io/v1
+apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
   name: sandbox-ingress
   labels:
     {{- include "ephemeral_worker.labels" . | nindent 4 }}
 spec:
-  podSelector:
-    matchLabels:
-      role: sandbox
-  policyTypes:
+  order: 10
+  selector: role == 'sandbox'
+  types:
     - Ingress
   ingress:
-    # Allow task-manager to connect to sandbox gRPC port
-    - from:
-        - podSelector:
-            matchLabels:
-              role: task-manager
-      ports:
-        - protocol: TCP
-          port: {{ .Values.sandbox.port }}
+    # Allow task-manager pods to connect to sandbox gRPC port
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: role == 'task-manager'
+      destination:
+        ports:
+          - {{ .Values.sandbox.port }}
+    # Deny all other ingress
+    - action: Deny
 
 ---
-# Sandbox Network Policy - Restrictive
-# Sandbox can only reach task-manager (for gRPC variable store) and internet
-apiVersion: networking.k8s.io/v1
+# Task Manager Ingress Policy - Only allow sandbox to connect for gRPC
+apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
-  name: sandbox-egress
+  name: task-manager-ingress
   labels:
     {{- include "ephemeral_worker.labels" . | nindent 4 }}
 spec:
-  podSelector:
-    matchLabels:
-      role: sandbox
-  policyTypes:
-    - Egress
-  egress:
-    # Allow DNS (required for external hostname resolution)
-    - to:
-        - namespaceSelector: {}
-      ports:
-        - protocol: UDP
-          port: 53
-        - protocol: TCP
-          port: 53
-
-    # Allow kube-dns specifically
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - protocol: UDP
-          port: 53
-
-    # Allow task-manager pods (for gRPC variable store)
-    - to:
-        - podSelector:
-            matchLabels:
-              role: task-manager
-      ports:
-        - protocol: TCP
-          port: {{ .Values.grpc.port }}
-
-    {{- if .Values.network.additionalAllowedCIDRs }}
-    # Customer-specified allowed CIDRs (internal APIs, etc.)
-    {{- range .Values.network.additionalAllowedCIDRs }}
-    - to:
-        - ipBlock:
-            cidr: {{ . }}
-    {{- end }}
-    {{- end }}
-
-    {{- if .Values.network.vpcCIDR }}
-    # Allow egress to internet (excluding VPC CIDR)
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - {{ .Values.network.vpcCIDR }}
-              {{- range .Values.network.additionalBlockedCIDRs }}
-              - {{ . }}
-              {{- end }}
-    {{- else }}
-    # Block RFC 1918 private ranges (SSRF protection)
-    # Allow all other egress (internet)
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
-              - 169.254.0.0/16
-              - 100.64.0.0/10
-    {{- end }}
+  order: 10
+  selector: role == 'task-manager'
+  types:
+    - Ingress
+  ingress:
+    # Allow sandbox pods to connect to task-manager gRPC port (variable store)
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: role == 'sandbox'
+      destination:
+        ports:
+          - {{ .Values.grpc.port }}
+    # Deny all other ingress
+    - action: Deny
