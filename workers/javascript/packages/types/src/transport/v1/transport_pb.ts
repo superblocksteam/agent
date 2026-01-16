@@ -13,6 +13,7 @@ import { Metadata as Metadata$1 } from "../../plugins/kafka/v1/plugin_pb";
 import { Metadata as Metadata$2 } from "../../plugins/kinesis/v1/plugin_pb";
 import { Plugin_Metadata } from "../../plugins/cosmosdb/v1/plugin_pb";
 import { Plugin_Metadata as Plugin_Metadata$1 } from "../../plugins/adls/v1/plugin_pb";
+import { Plugin_Metadata as Plugin_Metadata$2 } from "../../plugins/salesforce/v1/plugin_pb";
 import { Api } from "../../api/v1/api_pb";
 import { Stores } from "../../store/v1/store_pb";
 
@@ -925,6 +926,21 @@ export class Response_Data_Data extends Message<Response_Data_Data> {
    */
   graphql?: Struct;
 
+  /**
+   * @generated from field: optional google.protobuf.Struct open_api_spec = 13;
+   */
+  openApiSpec?: Struct;
+
+  /**
+   * @generated from field: optional plugins.salesforce.v1.Plugin.Metadata salesforce = 14;
+   */
+  salesforce?: Plugin_Metadata$2;
+
+  /**
+   * @generated from field: optional bool load_disabled = 15;
+   */
+  loadDisabled?: boolean;
+
   constructor(data?: PartialMessage<Response_Data_Data>) {
     super();
     proto3.util.initPartial(data, this);
@@ -945,6 +961,9 @@ export class Response_Data_Data extends Message<Response_Data_Data> {
     { no: 10, name: "dynamodb", kind: "message", T: Any, opt: true },
     { no: 11, name: "g_sheets_next_page_token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 12, name: "graphql", kind: "message", T: Struct, opt: true },
+    { no: 13, name: "open_api_spec", kind: "message", T: Struct, opt: true },
+    { no: 14, name: "salesforce", kind: "message", T: Plugin_Metadata$2, opt: true },
+    { no: 15, name: "load_disabled", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Response_Data_Data {

@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SandboxExecutorTransportServiceClient interface {
-	Execute(ctx context.Context, in *ExecuteRequest, opts ...grpc.CallOption) (*ExecuteResponse, error)
+	Execute(ctx context.Context, in *ExecuteRequestV1, opts ...grpc.CallOption) (*ExecuteResponseV1, error)
 }
 
 type sandboxExecutorTransportServiceClient struct {
@@ -37,8 +37,8 @@ func NewSandboxExecutorTransportServiceClient(cc grpc.ClientConnInterface) Sandb
 	return &sandboxExecutorTransportServiceClient{cc}
 }
 
-func (c *sandboxExecutorTransportServiceClient) Execute(ctx context.Context, in *ExecuteRequest, opts ...grpc.CallOption) (*ExecuteResponse, error) {
-	out := new(ExecuteResponse)
+func (c *sandboxExecutorTransportServiceClient) Execute(ctx context.Context, in *ExecuteRequestV1, opts ...grpc.CallOption) (*ExecuteResponseV1, error) {
+	out := new(ExecuteResponseV1)
 	err := c.cc.Invoke(ctx, SandboxExecutorTransportService_Execute_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -50,14 +50,14 @@ func (c *sandboxExecutorTransportServiceClient) Execute(ctx context.Context, in 
 // All implementations should embed UnimplementedSandboxExecutorTransportServiceServer
 // for forward compatibility
 type SandboxExecutorTransportServiceServer interface {
-	Execute(context.Context, *ExecuteRequest) (*ExecuteResponse, error)
+	Execute(context.Context, *ExecuteRequestV1) (*ExecuteResponseV1, error)
 }
 
 // UnimplementedSandboxExecutorTransportServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedSandboxExecutorTransportServiceServer struct {
 }
 
-func (UnimplementedSandboxExecutorTransportServiceServer) Execute(context.Context, *ExecuteRequest) (*ExecuteResponse, error) {
+func (UnimplementedSandboxExecutorTransportServiceServer) Execute(context.Context, *ExecuteRequestV1) (*ExecuteResponseV1, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Execute not implemented")
 }
 
@@ -73,7 +73,7 @@ func RegisterSandboxExecutorTransportServiceServer(s grpc.ServiceRegistrar, srv 
 }
 
 func _SandboxExecutorTransportService_Execute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExecuteRequest)
+	in := new(ExecuteRequestV1)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func _SandboxExecutorTransportService_Execute_Handler(srv interface{}, ctx conte
 		FullMethod: SandboxExecutorTransportService_Execute_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SandboxExecutorTransportServiceServer).Execute(ctx, req.(*ExecuteRequest))
+		return srv.(SandboxExecutorTransportServiceServer).Execute(ctx, req.(*ExecuteRequestV1))
 	}
 	return interceptor(ctx, in, info, handler)
 }

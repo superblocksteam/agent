@@ -35,22 +35,22 @@ var (
 	_ = sort.Sort
 )
 
-// Validate checks the field values on ExecuteRequest with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *ExecuteRequest) Validate() error {
+// Validate checks the field values on ExecuteRequestV1 with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ExecuteRequestV1) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on ExecuteRequest with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in ExecuteRequestMultiError,
-// or nil if none found.
-func (m *ExecuteRequest) ValidateAll() error {
+// ValidateAll checks the field values on ExecuteRequestV1 with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ExecuteRequestV1MultiError, or nil if none found.
+func (m *ExecuteRequestV1) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *ExecuteRequest) validate(all bool) error {
+func (m *ExecuteRequestV1) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -72,19 +72,19 @@ func (m *ExecuteRequest) validate(all bool) error {
 	// no validation rules for Files
 
 	if len(errors) > 0 {
-		return ExecuteRequestMultiError(errors)
+		return ExecuteRequestV1MultiError(errors)
 	}
 
 	return nil
 }
 
-// ExecuteRequestMultiError is an error wrapping multiple validation errors
-// returned by ExecuteRequest.ValidateAll() if the designated constraints
+// ExecuteRequestV1MultiError is an error wrapping multiple validation errors
+// returned by ExecuteRequestV1.ValidateAll() if the designated constraints
 // aren't met.
-type ExecuteRequestMultiError []error
+type ExecuteRequestV1MultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m ExecuteRequestMultiError) Error() string {
+func (m ExecuteRequestV1MultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -93,11 +93,11 @@ func (m ExecuteRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m ExecuteRequestMultiError) AllErrors() []error { return m }
+func (m ExecuteRequestV1MultiError) AllErrors() []error { return m }
 
-// ExecuteRequestValidationError is the validation error returned by
-// ExecuteRequest.Validate if the designated constraints aren't met.
-type ExecuteRequestValidationError struct {
+// ExecuteRequestV1ValidationError is the validation error returned by
+// ExecuteRequestV1.Validate if the designated constraints aren't met.
+type ExecuteRequestV1ValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -105,22 +105,22 @@ type ExecuteRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e ExecuteRequestValidationError) Field() string { return e.field }
+func (e ExecuteRequestV1ValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ExecuteRequestValidationError) Reason() string { return e.reason }
+func (e ExecuteRequestV1ValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ExecuteRequestValidationError) Cause() error { return e.cause }
+func (e ExecuteRequestV1ValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ExecuteRequestValidationError) Key() bool { return e.key }
+func (e ExecuteRequestV1ValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ExecuteRequestValidationError) ErrorName() string { return "ExecuteRequestValidationError" }
+func (e ExecuteRequestV1ValidationError) ErrorName() string { return "ExecuteRequestV1ValidationError" }
 
 // Error satisfies the builtin error interface
-func (e ExecuteRequestValidationError) Error() string {
+func (e ExecuteRequestV1ValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -132,14 +132,14 @@ func (e ExecuteRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sExecuteRequest.%s: %s%s",
+		"invalid %sExecuteRequestV1.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ExecuteRequestValidationError{}
+var _ error = ExecuteRequestV1ValidationError{}
 
 var _ interface {
 	Field() string
@@ -147,24 +147,24 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ExecuteRequestValidationError{}
+} = ExecuteRequestV1ValidationError{}
 
-// Validate checks the field values on ExecuteResponse with the rules defined
+// Validate checks the field values on ExecuteResponseV1 with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
-func (m *ExecuteResponse) Validate() error {
+func (m *ExecuteResponseV1) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on ExecuteResponse with the rules
+// ValidateAll checks the field values on ExecuteResponseV1 with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// ExecuteResponseMultiError, or nil if none found.
-func (m *ExecuteResponse) ValidateAll() error {
+// ExecuteResponseV1MultiError, or nil if none found.
+func (m *ExecuteResponseV1) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *ExecuteResponse) validate(all bool) error {
+func (m *ExecuteResponseV1) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -178,19 +178,19 @@ func (m *ExecuteResponse) validate(all bool) error {
 	// no validation rules for Error
 
 	if len(errors) > 0 {
-		return ExecuteResponseMultiError(errors)
+		return ExecuteResponseV1MultiError(errors)
 	}
 
 	return nil
 }
 
-// ExecuteResponseMultiError is an error wrapping multiple validation errors
-// returned by ExecuteResponse.ValidateAll() if the designated constraints
+// ExecuteResponseV1MultiError is an error wrapping multiple validation errors
+// returned by ExecuteResponseV1.ValidateAll() if the designated constraints
 // aren't met.
-type ExecuteResponseMultiError []error
+type ExecuteResponseV1MultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m ExecuteResponseMultiError) Error() string {
+func (m ExecuteResponseV1MultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -199,11 +199,11 @@ func (m ExecuteResponseMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m ExecuteResponseMultiError) AllErrors() []error { return m }
+func (m ExecuteResponseV1MultiError) AllErrors() []error { return m }
 
-// ExecuteResponseValidationError is the validation error returned by
-// ExecuteResponse.Validate if the designated constraints aren't met.
-type ExecuteResponseValidationError struct {
+// ExecuteResponseV1ValidationError is the validation error returned by
+// ExecuteResponseV1.Validate if the designated constraints aren't met.
+type ExecuteResponseV1ValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -211,22 +211,24 @@ type ExecuteResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e ExecuteResponseValidationError) Field() string { return e.field }
+func (e ExecuteResponseV1ValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ExecuteResponseValidationError) Reason() string { return e.reason }
+func (e ExecuteResponseV1ValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ExecuteResponseValidationError) Cause() error { return e.cause }
+func (e ExecuteResponseV1ValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ExecuteResponseValidationError) Key() bool { return e.key }
+func (e ExecuteResponseV1ValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ExecuteResponseValidationError) ErrorName() string { return "ExecuteResponseValidationError" }
+func (e ExecuteResponseV1ValidationError) ErrorName() string {
+	return "ExecuteResponseV1ValidationError"
+}
 
 // Error satisfies the builtin error interface
-func (e ExecuteResponseValidationError) Error() string {
+func (e ExecuteResponseV1ValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -238,14 +240,14 @@ func (e ExecuteResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sExecuteResponse.%s: %s%s",
+		"invalid %sExecuteResponseV1.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ExecuteResponseValidationError{}
+var _ error = ExecuteResponseV1ValidationError{}
 
 var _ interface {
 	Field() string
@@ -253,4 +255,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ExecuteResponseValidationError{}
+} = ExecuteResponseV1ValidationError{}

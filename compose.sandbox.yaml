@@ -1,0 +1,72 @@
+---
+# Docker Compose for sandboxed workers (task-manager + JavaScript sandbox worker)
+# Used for e2e testing plugins/integrations in sandbox mode
+x-environment: &environment
+  SUPERBLOCKS_AGENT_KEY: dev-agent-key
+  SUPERBLOCKS_AGENT_REDIS_TOKEN: koala
+  SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: koala
+  SUPERBLOCKS_AGENT_TLS_INSECURE: 'true'
+  SUPERBLOCKS_AGENT_REDIS_HOST: redis
+  SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis
+x-task-manager-environment: &task-manager-environment
+  !!merge <<: *environment
+  # Task-manager uses SUPERBLOCKS_WORKER_SANDBOX prefix for viper
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_HOST: redis
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PORT: "6379"
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD: koala
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_TLS: "false"
+  SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_HOST: redis
+  SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PORT: "6379"
+  SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD: koala
+  SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_TLS: "false"
+  # The non-language execution workers are persistent
+  SUPERBLOCKS_WORKER_SANDBOX_WORKER_EPHEMERAL: "false"
+x-task-manager-base: &task-manager-base
+  image: ghcr.io/superblocksteam/task-manager:${SANDBOX_IMAGE_TAG:-latest}
+  build:
+    context: .
+    dockerfile: Dockerfile.worker.task-manager
+  depends_on:
+    - redis
+  environment:
+    !!merge <<: *task-manager-environment
+  networks:
+    - default
+x-javascript-sandbox-base: &javascript-sandbox-base
+  image: ghcr.io/superblocksteam/javascript-sandbox:${SANDBOX_IMAGE_TAG:-latest}
+  build:
+    context: .
+    dockerfile: Dockerfile.sandbox.javascript
+  networks:
+    - default
+services:
+  # Redis is shared with compose.full.yaml
+  redis:
+    image: ghcr.io/superblocksteam/redis:6
+    ports:
+      - 6379:6379
+    command: --requirepass koala
+    pull_policy: always
+  # ============================================================================
+  # JavaScript Sandbox
+  # ============================================================================
+  javascript-sandbox:
+    !!merge <<: *javascript-sandbox-base
+    container_name: javascript-sandbox
+  javascript-sandbox-manager:
+    !!merge <<: *task-manager-base
+    container_name: javascript-sandbox-manager
+    environment:
+      !!merge <<: *task-manager-environment
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: -javascript -python * # All plugins except JavaScript and Python
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE
+      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-sandbox:50051
+      SUPERBLOCKS_WORKER_SANDBOX_GRPC_ADDRESS: javascript-sandbox-manager:50050
+    depends_on:
+      - redis
+      - javascript-sandbox
+networks:
+  default:
+    name: orchestrator_default
+    external: true

@@ -1,20 +1,15 @@
 package redis
 
 import (
-	"context"
 	"testing"
 	"time"
 
-	"workers/ephemeral/task-manager/internal/plugin"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
 	mocks "workers/ephemeral/task-manager/mocks/internal_/store/redis"
 
 	r "github.com/redis/go-redis/v9"
 	"github.com/superblocksteam/agent/pkg/store/mock"
-	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
-	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestNewOptionsDefaults(t *testing.T) {
@@ -133,21 +128,6 @@ func TestWithEphemeral(t *testing.T) {
 	}
 }
 
-func TestWithEphemeralTimeout(t *testing.T) {
-	timeout := 30 * time.Second
-	opts := NewOptions(WithEphemeralTimeout(timeout))
-
-	if opts.EphemeralTimeout != timeout {
-		t.Errorf("EphemeralTimeout = %v, want %v", opts.EphemeralTimeout, timeout)
-	}
-
-	// Test with zero (no timeout)
-	opts = NewOptions(WithEphemeralTimeout(0))
-	if opts.EphemeralTimeout != 0 {
-		t.Errorf("EphemeralTimeout = %v, want 0", opts.EphemeralTimeout)
-	}
-}
-
 func TestOptionsChaining(t *testing.T) {
 	logger := zap.NewNop()
 	provider := mocks.NewFileContextProvider(t)
@@ -206,9 +186,8 @@ func TestWithPluginExecutor(t *testing.T) {
 
 	// Create a real plugin executor (the interface is from the plugin_executor package)
 	executor := plugin_executor.NewPluginExecutor(&plugin_executor.Options{
-		Logger:   zap.NewNop(),
-		Language: "python",
-		Store:    store,
+		Logger: zap.NewNop(),
+		Store:  store,
 	})
 	opts := NewOptions(WithPluginExecutor(executor))
 
@@ -216,28 +195,3 @@ func TestWithPluginExecutor(t *testing.T) {
 		t.Error("PluginExecutor should be set")
 	}
 }
-
-// mockPlugin implements the plugin.Plugin interface for testing
-type mockPlugin struct {
-	name string
-}
-
-func (m *mockPlugin) Name() string { return m.name }
-func (m *mockPlugin) Execute(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-	return &apiv1.Output{}, nil
-}
-func (m *mockPlugin) Stream(ctx context.Context, props *transportv1.Request_Data_Data_Props, send func(message any), until func()) error {
-	return nil
-}
-func (m *mockPlugin) Metadata(ctx context.Context, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
-	return nil, nil
-}
-func (m *mockPlugin) Test(ctx context.Context, datasourceConfig *structpb.Struct) error {
-	return nil
-}
-func (m *mockPlugin) PreDelete(ctx context.Context, datasourceConfig *structpb.Struct) error {
-	return nil
-}
-func (m *mockPlugin) Close() {}
-
-var _ plugin.Plugin = (*mockPlugin)(nil)

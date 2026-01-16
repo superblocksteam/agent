@@ -17,6 +17,7 @@ import * as plugins_cosmosdb_v1_plugin_pb from "../../plugins/cosmosdb/v1/plugin
 import * as plugins_couchbase_v1_plugin_pb from "../../plugins/couchbase/v1/plugin_pb";
 import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
 import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
+import * as plugins_salesforce_v1_plugin_pb from "../../plugins/salesforce/v1/plugin_pb";
 import * as store_v1_store_pb from "../../store/v1/store_pb";
 import * as validate_validate_pb from "../../validate/validate_pb";
 
@@ -595,6 +596,21 @@ export namespace Response {
             getGraphql(): google_protobuf_struct_pb.Struct | undefined;
             setGraphql(value?: google_protobuf_struct_pb.Struct): Data;
 
+            hasOpenApiSpec(): boolean;
+            clearOpenApiSpec(): void;
+            getOpenApiSpec(): google_protobuf_struct_pb.Struct | undefined;
+            setOpenApiSpec(value?: google_protobuf_struct_pb.Struct): Data;
+
+            hasSalesforce(): boolean;
+            clearSalesforce(): void;
+            getSalesforce(): plugins_salesforce_v1_plugin_pb.Plugin.Metadata | undefined;
+            setSalesforce(value?: plugins_salesforce_v1_plugin_pb.Plugin.Metadata): Data;
+
+            hasLoadDisabled(): boolean;
+            clearLoadDisabled(): void;
+            getLoadDisabled(): boolean | undefined;
+            setLoadDisabled(value: boolean): Data;
+
             serializeBinary(): Uint8Array;
             toObject(includeInstance?: boolean): Data.AsObject;
             static toObject(includeInstance: boolean, msg: Data): Data.AsObject;
@@ -619,6 +635,9 @@ export namespace Response {
                 dynamodb?: google_protobuf_any_pb.Any.AsObject,
                 gSheetsNextPageToken?: string,
                 graphql?: google_protobuf_struct_pb.Struct.AsObject,
+                openApiSpec?: google_protobuf_struct_pb.Struct.AsObject,
+                salesforce?: plugins_salesforce_v1_plugin_pb.Plugin.Metadata.AsObject,
+                loadDisabled?: boolean,
             }
         }
 

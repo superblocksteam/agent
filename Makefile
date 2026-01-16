@@ -179,18 +179,6 @@ checkout:
 test-e2e-quotas:
 	postman collection run --color on --verbose ./postman/quota_collection.json -e ./postman/environments/$(POSTMAN_ENV).json
 
-.PHONY: test-e2e-ephemeral
-test-e2e-ephemeral:
-	postman collection run --color on --verbose ./postman/collection.json -e ./postman/environments/$(POSTMAN_ENV).json \
-		-i python -i javascript \
-		-i "dot notation attributes" \
-		-i "step referencing previous step output" \
-		-i "high throughput with long running tasks" \
-		-i "no wait parallels with step in between" \
-		-i "large nested object" \
-		-i "package deps" \
-		-i "restricted"
-
 .PHONY: test-e2e-ephemeral-network
 test-e2e-ephemeral-network:
 	postman collection run --color on --verbose ./postman/ephemeral_network_isolation.json -e ./postman/environments/$(POSTMAN_ENV).json

@@ -22,7 +22,7 @@ class SandboxExecutorServicer(executor_pb2_grpc.SandboxExecutorTransportServiceS
         timeout_ms = request.timeout_ms or 30000
 
         if not script.strip():
-            return executor_pb2.ExecuteResponse(
+            return executor_pb2.ExecuteResponseV1(
                 result="",
                 stdout=[],
                 stderr=[],
@@ -57,7 +57,7 @@ class SandboxExecutorServicer(executor_pb2_grpc.SandboxExecutorTransportServiceS
                 superblocks_files=superblocks_files,
             )
 
-            return executor_pb2.ExecuteResponse(
+            return executor_pb2.ExecuteResponseV1(
                 result=result,
                 stdout=stdout,
                 stderr=stderr,
@@ -66,7 +66,7 @@ class SandboxExecutorServicer(executor_pb2_grpc.SandboxExecutorTransportServiceS
             )
 
         except Exception as e:
-            return executor_pb2.ExecuteResponse(
+            return executor_pb2.ExecuteResponseV1(
                 result="",
                 stdout=[],
                 stderr=[],

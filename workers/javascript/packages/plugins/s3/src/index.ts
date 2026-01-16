@@ -361,15 +361,11 @@ export default class S3Plugin extends BasePlugin {
     );
   }
 
-  private async generateSignedURL(
-    s3Client: S3Client,
-    bucket: string,
-    key: string,
-    expiration?: number,
-    method?: string
-  ): Promise<string> {
+  private async generateSignedURL(s3Client: S3Client, bucket: string, key: string, expiration?: number, method?: string): Promise<string> {
     const command =
-      method === PRESIGNED_METHOD_PUT ? new PutObjectCommand({ Bucket: bucket, Key: key }) : new GetObjectCommand({ Bucket: bucket, Key: key });
+      method === PRESIGNED_METHOD_PUT
+        ? new PutObjectCommand({ Bucket: bucket, Key: key })
+        : new GetObjectCommand({ Bucket: bucket, Key: key });
     const signedUrl = await getSignedUrl(s3Client, command, {
       expiresIn: expiration ?? DEFAULT_S3_PRESIGNED_URL_EXPIRATION_SECONDS
     });

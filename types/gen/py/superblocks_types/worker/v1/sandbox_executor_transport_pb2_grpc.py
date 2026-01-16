@@ -17,8 +17,8 @@ class SandboxExecutorTransportServiceStub(object):
         """
         self.Execute = channel.unary_unary(
                 '/worker.v1.SandboxExecutorTransportService/Execute',
-                request_serializer=worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteRequest.SerializeToString,
-                response_deserializer=worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteResponse.FromString,
+                request_serializer=worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteRequestV1.SerializeToString,
+                response_deserializer=worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteResponseV1.FromString,
                 _registered_method=True)
 
 
@@ -37,8 +37,8 @@ def add_SandboxExecutorTransportServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Execute': grpc.unary_unary_rpc_method_handler(
                     servicer.Execute,
-                    request_deserializer=worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteRequest.FromString,
-                    response_serializer=worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteResponse.SerializeToString,
+                    request_deserializer=worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteRequestV1.FromString,
+                    response_serializer=worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteResponseV1.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -67,8 +67,8 @@ class SandboxExecutorTransportService(object):
             request,
             target,
             '/worker.v1.SandboxExecutorTransportService/Execute',
-            worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteRequest.SerializeToString,
-            worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteResponse.FromString,
+            worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteRequestV1.SerializeToString,
+            worker_dot_v1_dot_sandbox__executor__transport__pb2.ExecuteResponseV1.FromString,
             options,
             channel_credentials,
             insecure,

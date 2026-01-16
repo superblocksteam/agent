@@ -6,11 +6,11 @@ option go_package = "github.com/superblocksteam/agent/types/gen/go/worker/v1";
 
 // Service for executing code in Python/JavaScript workers
 service SandboxExecutorTransportService {
-  rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+  rpc Execute(ExecuteRequestV1) returns (ExecuteResponseV1);
 }
 
 // Execute request sent to workers
-message ExecuteRequest {
+message ExecuteRequestV1 {
   // The code to execute
   string script = 1;
   // JSON-encoded context variables (accessible as globals in the script)
@@ -28,7 +28,7 @@ message ExecuteRequest {
   map<string, string> files = 7;
 }
 
-message ExecuteResponse {
+message ExecuteResponseV1 {
   // JSON-encoded result from the script
   string result = 1;
   // Standard output lines

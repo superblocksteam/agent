@@ -40,6 +40,11 @@ charts/
 /workers/ephemeral/javascript-sandbox/**/dist
 /workers/ephemeral/javascript-sandbox/**/*.tsbuildinfo
 
+/workers/ephemeral/javascript-plugins-sandbox/.pnpm-store/
+/workers/ephemeral/javascript-plugins-sandbox/**/node_modules/
+/workers/ephemeral/javascript-plugins-sandbox/**/dist
+/workers/ephemeral/javascript-plugins-sandbox/**/*.tsbuildinfo
+
 /workers/python/coverage.json
 **/__pycache__/
 

@@ -93,13 +93,17 @@ spec:
           command: ["./task-manager"]
           args:
           # Ephemeral mode - process one job and exit
+          {{- if $v.ephemeral }}
           - "--worker.ephemeral=true"
+          {{- else if $.Values.worker.ephemeral }}
+          - "--worker.ephemeral=true"
+          {{- else }}
+          - "--worker.ephemeral=false"
+          {{- end }}
           # Health check configuration
           - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.taskManager.healthFilePath }}"
           # Logging
           - "--log.level={{ $.Values.observability.logging.level }}"
-          # Language
-          - "--worker.language={{ $language }}"
           # Sandbox mode - create separate sandbox Jobs
           - "--sandbox.namespace={{ $.Release.Namespace }}"
           - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
@@ -121,17 +125,26 @@ spec:
           - "--grpc.port={{ $.Values.grpc.port }}"
           # Worker configuration
           - "--worker.consumer.group={{ $v.consumerGroup }}"
+          {{- if $v.plugins }}
+          - "--worker.plugins={{ join "," $v.plugins }}"
+          {{- else if $.Values.worker.plugins }}
+          - "--worker.plugins={{ join "," $.Values.worker.plugins }}"
+          {{- end }}
+          {{- if $v.events }}
+          - "--worker.events={{ join "," $v.events }}"
+          {{- else if $.Values.worker.events }}
+          - "--worker.events={{ join "," $.Values.worker.events }}"
+          {{- end }}
           {{- if $v.streams }}
           - "--worker.stream.keys={{ join "," $v.streams }}"
           {{- else if $.Values.worker.streams }}
           - "--worker.stream.keys={{ join "," $.Values.worker.streams }}"
           {{- else }}
           - "--worker.group={{ $.Values.worker.group }}"
-          - "--worker.bucket={{ $v.bucket }}"
-          {{- if $v.events }}
-          - "--worker.events={{ join "," ($v.events | default $.Values.worker.events) }}"
-          {{- else if $.Values.worker.events }}
-          - "--worker.events={{ join "," $.Values.worker.events }}"
+          {{- if $v.buckets }}
+          - "--worker.buckets={{ join "," $v.buckets }}"
+          {{- else if $.Values.worker.buckets }}
+          - "--worker.buckets={{ join "," $.Values.worker.buckets }}"
           {{- end }}
           {{- end }}
           # Redis transport

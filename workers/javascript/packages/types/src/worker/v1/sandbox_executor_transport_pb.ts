@@ -9,9 +9,9 @@ import { Message, proto3 } from "@bufbuild/protobuf";
 /**
  * Execute request sent to workers
  *
- * @generated from message worker.v1.ExecuteRequest
+ * @generated from message worker.v1.ExecuteRequestV1
  */
-export class ExecuteRequest extends Message<ExecuteRequest> {
+export class ExecuteRequestV1 extends Message<ExecuteRequestV1> {
   /**
    * The code to execute
    *
@@ -62,13 +62,13 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
    */
   files: { [key: string]: string } = {};
 
-  constructor(data?: PartialMessage<ExecuteRequest>) {
+  constructor(data?: PartialMessage<ExecuteRequestV1>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "worker.v1.ExecuteRequest";
+  static readonly typeName = "worker.v1.ExecuteRequestV1";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "script", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "context_json", kind: "scalar", T: 9 /* ScalarType.STRING */ },
@@ -79,27 +79,27 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
     { no: 7, name: "files", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteRequest {
-    return new ExecuteRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteRequestV1 {
+    return new ExecuteRequestV1().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ExecuteRequest {
-    return new ExecuteRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ExecuteRequestV1 {
+    return new ExecuteRequestV1().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ExecuteRequest {
-    return new ExecuteRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ExecuteRequestV1 {
+    return new ExecuteRequestV1().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ExecuteRequest | PlainMessage<ExecuteRequest> | undefined, b: ExecuteRequest | PlainMessage<ExecuteRequest> | undefined): boolean {
-    return proto3.util.equals(ExecuteRequest, a, b);
+  static equals(a: ExecuteRequestV1 | PlainMessage<ExecuteRequestV1> | undefined, b: ExecuteRequestV1 | PlainMessage<ExecuteRequestV1> | undefined): boolean {
+    return proto3.util.equals(ExecuteRequestV1, a, b);
   }
 }
 
 /**
- * @generated from message worker.v1.ExecuteResponse
+ * @generated from message worker.v1.ExecuteResponseV1
  */
-export class ExecuteResponse extends Message<ExecuteResponse> {
+export class ExecuteResponseV1 extends Message<ExecuteResponseV1> {
   /**
    * JSON-encoded result from the script
    *
@@ -135,13 +135,13 @@ export class ExecuteResponse extends Message<ExecuteResponse> {
    */
   error = "";
 
-  constructor(data?: PartialMessage<ExecuteResponse>) {
+  constructor(data?: PartialMessage<ExecuteResponseV1>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "worker.v1.ExecuteResponse";
+  static readonly typeName = "worker.v1.ExecuteResponseV1";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "result", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "stdout", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
@@ -150,20 +150,20 @@ export class ExecuteResponse extends Message<ExecuteResponse> {
     { no: 5, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteResponse {
-    return new ExecuteResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteResponseV1 {
+    return new ExecuteResponseV1().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ExecuteResponse {
-    return new ExecuteResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ExecuteResponseV1 {
+    return new ExecuteResponseV1().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ExecuteResponse {
-    return new ExecuteResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ExecuteResponseV1 {
+    return new ExecuteResponseV1().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ExecuteResponse | PlainMessage<ExecuteResponse> | undefined, b: ExecuteResponse | PlainMessage<ExecuteResponse> | undefined): boolean {
-    return proto3.util.equals(ExecuteResponse, a, b);
+  static equals(a: ExecuteResponseV1 | PlainMessage<ExecuteResponseV1> | undefined, b: ExecuteResponseV1 | PlainMessage<ExecuteResponseV1> | undefined): boolean {
+    return proto3.util.equals(ExecuteResponseV1, a, b);
   }
 }
 

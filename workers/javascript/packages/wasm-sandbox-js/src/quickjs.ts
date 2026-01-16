@@ -2,8 +2,8 @@
  * Local wrapper for quickjs-emscripten to avoid importing all variant packages.
  * This uses only the release-sync variant that we need.
  */
-import { newQuickJSWASMModuleFromVariant, type QuickJSWASMModule } from 'quickjs-emscripten-core';
 import RELEASE_SYNC from '@jitl/quickjs-wasmfile-release-sync';
+import { newQuickJSWASMModuleFromVariant, type QuickJSWASMModule } from 'quickjs-emscripten-core';
 
 let singletonPromise: Promise<QuickJSWASMModule> | undefined = undefined;
 

@@ -283,8 +283,8 @@ export class Worker implements Closer {
    * If a topic is provided, this function will return a {@link UtilFunc}
    * that does not return until the provided topic has no subscribers. This
    * gives streamable plugins that run forever (i.e. Kafka) a way to shutdown
-   * gracefully if the client is no longer around. We can optionall introduce
-   * another way to gracefully shutdown (i.e. propogating a message) but this
+   * gracefully if the client is no longer around. We can optionally introduce
+   * another way to gracefully shutdown (i.e. propagating a message) but this
    * logic will still be needed to gracefully shutdown streamable plugins if
    * the client is non-gracefully shutdown or a network brownout occurs.
    *

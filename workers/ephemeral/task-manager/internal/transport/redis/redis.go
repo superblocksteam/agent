@@ -4,7 +4,6 @@ import (
 	"context"
 	stderr "errors"
 	"fmt"
-	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,7 +17,6 @@ import (
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/worker"
 	redisutils "github.com/superblocksteam/agent/pkg/worker/transport/redis"
-	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"github.com/superblocksteam/run"
 	"go.opentelemetry.io/otel"
@@ -32,10 +30,9 @@ const (
 	INBOX_DATA_MESSAGE_ID = "0-2"
 )
 
-// ErrEphemeralTimeout is returned when an ephemeral job times out waiting for completion.
-var ErrEphemeralTimeout = stderr.New("ephemeral execution timed out")
-
 type redisTransport struct {
+	initialized bool
+
 	redis          *r.Client
 	blockDuration  time.Duration
 	messageCount   int64
@@ -62,15 +59,13 @@ type redisTransport struct {
 	context context.Context
 	cancel  context.CancelFunc
 
-	// Ephemeral mode: process one job and exit
-	ephemeral        bool
-	ephemeralTimeout time.Duration // Timeout for ephemeral job execution
-	ephemeralDone    chan error    // Signals ephemeral job completion with result
-	ephemeralOnce    sync.Once     // Ensures only the first completion signal is sent
-	lastInbox        string        // Inbox of last message (for timeout response in ephemeral mode)
+	// Ephemeral mode: process only one message and exit
+	ephemeral bool
+
+	run.ForwardCompatibility
 }
 
-var _ run.Runnable = &redisTransport{}
+var _ run.Runnable = (*redisTransport)(nil)
 
 func generateXReadArgs(streamKeys []string) []string {
 	xReadArgs := make([]string, len(streamKeys)*2)
@@ -89,6 +84,7 @@ func NewRedisTransport(options *Options) *redisTransport {
 	ctx, cancel := context.WithCancel(context.Background())
 	alive := &atomic.Bool{}
 	alive.Store(true)
+
 	executionPool := &atomic.Int64{}
 	executionPool.Store(options.ExecutionPool)
 
@@ -115,10 +111,28 @@ func NewRedisTransport(options *Options) *redisTransport {
 		context: ctx,
 		cancel:  cancel,
 
-		ephemeral:        options.Ephemeral,
-		ephemeralTimeout: options.EphemeralTimeout,
-		ephemeralDone:    make(chan error, 1),
+		ephemeral: options.Ephemeral,
 	}
+}
+
+func (rt *redisTransport) init() error {
+	if rt.initialized {
+		return nil
+	}
+
+	if rt.ephemeral {
+		rt.executionPool.Store(1)
+		rt.executionPoolSize = 1
+
+		rt.logger = rt.logger.With(zap.Bool("ephemeral", true))
+	}
+
+	if err := rt.initStreams(); err != nil {
+		return err
+	}
+
+	rt.initialized = true
+	return nil
 }
 
 func (rt *redisTransport) initStreams() error {
@@ -153,58 +167,51 @@ func (rt *redisTransport) ackMessage(inboxId string) error {
 }
 
 // poll is the main polling loop.
-//
-// Both modes share pollOnce() for the core Redis read and message handling logic.
-// The key differences are:
-//   - Ephemeral mode: Reads 1 message, handles synchronously, then waits for
-//     completion with optional timeout before exiting.
-//   - Continuous mode: Reads multiple messages (up to execution pool limit),
-//     handles concurrently via goroutines, loops forever.
 func (rt *redisTransport) poll() error {
-	// TODO(brandon): Remove this once we have a proper timeout implementation for more than language plugins.
-	// if rt.ephemeral {
-	// 	rt.logger.Info("running in ephemeral mode, waiting for single job",
-	// 		zap.Duration("timeout", rt.ephemeralTimeout))
-	// }
+	if !rt.initialized {
+		return stderr.New("transport not initialized")
+	}
 
-	for {
-		if !rt.alive.Load() {
-			return nil
-		}
-
+	for rt.context.Err() == nil {
 		handled, err := rt.pollOnce()
 		if err != nil {
+			rt.logger.Error("error while polling messages", zap.Error(err))
 			if rt.ephemeral {
 				return err
 			}
-			rt.logger.Error("error while polling messages", zap.Error(err))
-			continue
 		}
 
-		// In ephemeral mode, wait for job completion after handling a message
+		// If the execution pool is exhausted, wait
+		if rt.executionPool.Load() <= 0 {
+			select {
+			case <-rt.context.Done():
+				return rt.context.Err()
+			case <-rt.workerReturned:
+			}
+		}
+
+		// In ephemeral mode, return once the execution is complete
 		if rt.ephemeral && handled {
-			return rt.waitForCompletion()
+			return nil
 		}
 	}
+
+	return rt.context.Err()
 }
 
 // pollOnce reads messages from Redis and dispatches them for handling.
 // Returns (true, nil) if at least one message was handled.
-//
-// Behavior differs by mode:
-//   - Ephemeral: Reads 1 message, handles synchronously, saves inbox for timeout response
-//   - Continuous: Reads up to execution pool limit, spawns goroutines for each message
 func (rt *redisTransport) pollOnce() (bool, error) {
-	// Ephemeral mode always reads 1 message; continuous mode respects execution pool
-	count := int64(1)
-	if !rt.ephemeral {
-		remaining := rt.executionPool.Load()
-		if remaining <= 0 {
-			<-rt.workerReturned
+	remaining := rt.executionPool.Load()
+	if remaining <= 0 {
+		select {
+		case <-rt.context.Done():
+			return false, rt.context.Err()
+		case <-rt.workerReturned:
 			return false, nil
 		}
-		count = min(rt.messageCount, remaining)
 	}
+	count := min(rt.messageCount, remaining)
 
 	messages, err := rt.redis.XReadGroup(rt.context, &r.XReadGroupArgs{
 		Group:    rt.consumerGroup,
@@ -227,24 +234,18 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 			handled = true
 			m := mesg
 
-			if rt.ephemeral {
-				// Ephemeral: handle synchronously, save inbox for potential timeout response
-				rt.logger.Info("ephemeral mode: received job", zap.String("id", mesg.ID))
-				rt.saveMessageInbox(&m)
-				rt.handleMessage(&m, stream.Stream)
-				return true, nil
-			}
-
-			// Continuous: handle concurrently with execution pool management
+			// handle messages concurrently with execution pool management
 			rt.logger.Debug("message received", zap.String("stream", stream.Stream), zap.String("id", mesg.ID))
 			rt.executionPool.Add(-1)
 
 			go func(streamKey string) {
 				rt.handleMessage(&m, streamKey)
+
 				rt.mutex.Lock()
+				defer rt.mutex.Unlock()
+
 				pool := rt.executionPool.Add(1)
 				rt.workerReturned <- rt.executionPoolSize - pool
-				defer rt.mutex.Unlock()
 			}(stream.Stream)
 		}
 	}
@@ -252,90 +253,12 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 	return handled, nil
 }
 
-// saveMessageInbox extracts the inbox from a message for potential timeout response.
-func (rt *redisTransport) saveMessageInbox(msg *r.XMessage) {
-	requests, err := redisutils.UnwrapRedisProtoMessages(
-		[]r.XMessage{*msg},
-		func() *transportv1.Request { return &transportv1.Request{} },
-		"data",
-	)
-	if err == nil && len(requests) == 1 {
-		rt.mutex.Lock()
-		rt.lastInbox = requests[0].GetInbox()
-		rt.mutex.Unlock()
-	}
-}
-
-// waitForCompletion waits for the ephemeral job to complete with optional timeout.
-// Returns nil to exit cleanly (exit 0) in all cases except indefinite wait with error.
-func (rt *redisTransport) waitForCompletion() error {
-	// TODO(brandon): Remove this once we have a proper timeout implementation for more than language plugins.
-	// if rt.ephemeralTimeout > 0 {
-	// 	select {
-	// 	case err := <-rt.ephemeralDone:
-	// 		if err != nil {
-	// 			rt.logger.Error("ephemeral execution failed", zap.Error(err))
-	// 			return err
-	// 		}
-	// 		rt.logger.Info("ephemeral mode: job completed successfully")
-	// 		return nil
-	// 	case <-time.After(rt.ephemeralTimeout):
-	// 		rt.logger.Error("ephemeral execution timed out",
-	// 			zap.Duration("timeout", rt.ephemeralTimeout))
-
-	// 		rt.mutex.Lock()
-	// 		inbox := rt.lastInbox
-	// 		rt.mutex.Unlock()
-	// 		if inbox != "" {
-	// 			rt.sendTimeoutResponse(inbox, rt.ephemeralTimeout)
-	// 		}
-	// 		return ErrEphemeralTimeout
-	// 	}
-	// }
-
-	// No timeout: wait indefinitely
-	err := <-rt.ephemeralDone
-	if err != nil {
-		rt.logger.Error("ephemeral execution failed", zap.Error(err))
-		return err
-	}
-	rt.logger.Info("ephemeral mode: job completed successfully")
-	return nil
-}
-
-// sendTimeoutResponse sends a 504 Gateway Timeout error response to the inbox.
-func (rt *redisTransport) sendTimeoutResponse(inbox string, timeout time.Duration) {
-	timeoutErr := errors.IntegrationError(
-		fmt.Errorf("Timed out after %v", timeout),
-		commonv1.Code_CODE_INTEGRATION_QUERY_TIMEOUT,
-	)
-
-	resp := &transportv1.Response{
-		Pinned: errors.ToCommonV1(timeoutErr),
-		Data: &transportv1.Response_Data{
-			Pinned: &transportv1.Performance{
-				QueueResponse: &transportv1.Performance_Observable{
-					Start: float64(time.Now().UnixMicro()),
-				},
-			},
-			Data: &transportv1.Response_Data_Data{},
-		},
-	}
-
-	if err := rt.sendResult(resp, inbox); err != nil {
-		rt.logger.Error("failed to send timeout response", zap.Error(err), zap.String("inbox", inbox))
-	} else {
-		rt.logger.Info("sent 504 timeout response", zap.String("inbox", inbox), zap.Duration("timeout", timeout))
-	}
-}
-
 func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 	rt.redis.XAck(context.Background(), stream, rt.consumerGroup, message.ID)
 
 	requests, err := redisutils.UnwrapRedisProtoMessages([]r.XMessage{*message}, func() *transportv1.Request { return &transportv1.Request{} }, "data")
 	if err != nil || len(requests) != 1 {
-		rt.logger.Error("error while unwrapping messages", zap.Error(err))
-		rt.signalEphemeralDone(fmt.Errorf("error unwrapping message: %w", err))
+		rt.logger.Error("error unwrapping messages", zap.Error(err))
 		return
 	}
 
@@ -344,8 +267,8 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 
 	pluginName := request.GetData().GetPinned().GetName()
 	pluginProps := request.GetData().GetData().GetProps()
-	ctxWithTrace := otel.GetTextMapPropagator().Extract(context.Background(), propagation.MapCarrier(requestMeta.GetCarrier()))
-	ctxWithBaggage := propagation.Baggage{}.Extract(ctxWithTrace, propagation.MapCarrier(requestMeta.GetCarrier()))
+	ctxWithTrace := otel.GetTextMapPropagator().Extract(context.Background(), propagation.MapCarrier(requestMeta.GetObservability().GetBaggage()))
+	ctxWithBaggage := propagation.Baggage{}.Extract(ctxWithTrace, propagation.MapCarrier(requestMeta.GetObservability().GetBaggage()))
 
 	ctx := constants.WithExecutionID(ctxWithBaggage, request.GetData().GetData().GetProps().GetExecutionId())
 	logger := rt.logger.With(
@@ -385,7 +308,6 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 	if pluginProps.GetVersion() != "v3" {
 		if err := rt.ackMessage(request.GetInbox()); err != nil {
 			logger.Error("could not send ack to inbox", zap.Error(err))
-			rt.signalEphemeralDone(err)
 			return
 		}
 	}
@@ -396,7 +318,7 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 
 		switch requestMeta.GetEvent() {
 		case string(worker.EventExecute):
-			result, execErr = rt.pluginExecutor.Execute(ctx, pluginName, pluginProps, request.GetData().GetData().GetQuotas(), perf)
+			result, execErr = rt.pluginExecutor.Execute(ctx, pluginName, pluginProps, request.GetData().GetData().GetQuotas(), requestMeta, perf)
 		case string(worker.EventStream):
 			execErr = stderr.New("streaming not supported yet")
 		case string(worker.EventMetadata):
@@ -438,10 +360,8 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 
 	if sendErr != nil {
 		logger.Error("could not send response to inbox", zap.Error(sendErr))
-		rt.signalEphemeralDone(sendErr)
 	} else {
 		logger.Debug("result sent")
-		rt.signalEphemeralDone(nil)
 	}
 }
 
@@ -463,25 +383,9 @@ func (rt *redisTransport) sendResult(result *transportv1.Response, stream string
 	return err
 }
 
-// signalEphemeralDone sends a completion signal in ephemeral mode.
-// Uses sync.Once to ensure only the first completion signal is sent,
-// preventing lost error signals from race conditions.
-func (rt *redisTransport) signalEphemeralDone(err error) {
-	if rt.ephemeral {
-		rt.ephemeralOnce.Do(func() {
-			rt.ephemeralDone <- err
-		})
-	}
-}
-
-// GetRedisClient returns the Redis client (for gRPC server)
-func (rt *redisTransport) GetRedisClient() *r.Client {
-	return rt.redis
-}
-
 // Run implements run.Runnable
 func (rt *redisTransport) Run(ctx context.Context) error {
-	if err := rt.initStreams(); err != nil {
+	if err := rt.init(); err != nil {
 		return err
 	}
 
@@ -495,9 +399,6 @@ func (rt *redisTransport) Close(ctx context.Context) error {
 	rt.alive.Store(false)
 	rt.cancel()
 
-	// Close the plugin executor to clean up all plugins (e.g., sandbox Jobs)
-	rt.pluginExecutor.Close()
-
 	if rt.executionPool.Load() == rt.executionPoolSize {
 		return nil
 	}
@@ -508,11 +409,6 @@ func (rt *redisTransport) Close(ctx context.Context) error {
 			return nil
 		}
 	}
-}
-
-// Fields implements run.Runnable
-func (rt *redisTransport) Fields() []slog.Attr {
-	return []slog.Attr{}
 }
 
 // Name implements run.Runnable

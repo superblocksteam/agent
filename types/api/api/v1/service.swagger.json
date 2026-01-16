@@ -277,13 +277,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v1StreamResponse"
+                  "$ref": "#/definitions/apiv1StreamResponse"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of v1StreamResponse"
+              "title": "Stream result of apiv1StreamResponse"
             }
           },
           "default": {
@@ -318,13 +318,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/v1StreamResponse"
+                  "$ref": "#/definitions/apiv1StreamResponse"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of v1StreamResponse"
+              "title": "Stream result of apiv1StreamResponse"
             }
           },
           "default": {
@@ -556,7 +556,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1MetadataRequest"
+              "$ref": "#/definitions/apiv1MetadataRequest"
             }
           }
         ],
@@ -655,7 +655,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1TestRequest"
+              "$ref": "#/definitions/apiv1TestRequest"
             }
           }
         ],
@@ -1313,6 +1313,18 @@
         }
       }
     },
+    "MetadataObject": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ObjectField"
+          }
+        }
+      }
+    },
     "MetadataResponseBucketMetadata": {
       "type": "object",
       "properties": {
@@ -1544,6 +1556,20 @@
           "type": "string"
         },
         "scope": {
+          "type": "string"
+        }
+      }
+    },
+    "ObjectField": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
           "type": "string"
         }
       }
@@ -2960,6 +2986,21 @@
         }
       }
     },
+    "apiv1MetadataRequest": {
+      "type": "object",
+      "properties": {
+        "integration": {
+          "type": "string",
+          "title": "The integration id"
+        },
+        "profile": {
+          "$ref": "#/definitions/v1Profile"
+        },
+        "stepConfiguration": {
+          "type": "object"
+        }
+      }
+    },
     "apiv1Mock": {
       "type": "object",
       "properties": {
@@ -3027,6 +3068,38 @@
             "type": "string",
             "format": "int64"
           }
+        }
+      }
+    },
+    "apiv1StreamResponse": {
+      "type": "object",
+      "properties": {
+        "execution": {
+          "type": "string",
+          "description": "The execution ID. This can be used to retrieve outputs after the fact."
+        },
+        "event": {
+          "$ref": "#/definitions/v1Event"
+        }
+      }
+    },
+    "apiv1TestRequest": {
+      "type": "object",
+      "properties": {
+        "datasourceConfig": {
+          "type": "object"
+        },
+        "integrationType": {
+          "type": "string"
+        },
+        "configurationId": {
+          "type": "string"
+        },
+        "profile": {
+          "$ref": "#/definitions/v1Profile"
+        },
+        "actionConfig": {
+          "type": "object"
         }
       }
     },
@@ -3192,6 +3265,27 @@
       "properties": {
         "pluginVersion": {
           "type": "string"
+        }
+      }
+    },
+    "dynamodbv1Table": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "partitionKey": {
+          "type": "string"
+        },
+        "sortKey": {
+          "type": "string"
+        },
+        "indexes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Index"
+          }
         }
       }
     },
@@ -3561,6 +3655,18 @@
         },
         "sql": {
           "type": "string"
+        }
+      }
+    },
+    "pluginsdynamodbv1Metadata": {
+      "type": "object",
+      "properties": {
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/dynamodbv1Table"
+          }
         }
       }
     },
@@ -5025,6 +5131,18 @@
         }
       }
     },
+    "pluginssalesforcev1PluginMetadata": {
+      "type": "object",
+      "properties": {
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataObject"
+          }
+        }
+      }
+    },
     "pluginssmtpv1Plugin": {
       "type": "object",
       "properties": {
@@ -6139,6 +6257,20 @@
         }
       }
     },
+    "v1Index": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "partitionKey": {
+          "type": "string"
+        },
+        "sortKey": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListFilesConfig": {
       "type": "object",
       "properties": {
@@ -6149,21 +6281,6 @@
         "delimiter": {
           "type": "string",
           "description": "A delimiter is a character that you use to group keys."
-        }
-      }
-    },
-    "v1MetadataRequest": {
-      "type": "object",
-      "properties": {
-        "integration": {
-          "type": "string",
-          "title": "The integration id"
-        },
-        "profile": {
-          "$ref": "#/definitions/v1Profile"
-        },
-        "stepConfiguration": {
-          "type": "object"
         }
       }
     },
@@ -6194,8 +6311,20 @@
         "graphql": {
           "type": "object"
         },
+        "dynamodb": {
+          "$ref": "#/definitions/pluginsdynamodbv1Metadata"
+        },
+        "salesforce": {
+          "$ref": "#/definitions/pluginssalesforcev1PluginMetadata"
+        },
+        "openApiSpec": {
+          "type": "object"
+        },
         "gSheetsNextPageToken": {
           "type": "string"
+        },
+        "loadDisabled": {
+          "type": "boolean"
         }
       }
     },
@@ -6810,38 +6939,6 @@
         }
       }
     },
-    "v1StreamResponse": {
-      "type": "object",
-      "properties": {
-        "execution": {
-          "type": "string",
-          "description": "The execution ID. This can be used to retrieve outputs after the fact."
-        },
-        "event": {
-          "$ref": "#/definitions/v1Event"
-        }
-      }
-    },
-    "v1TestRequest": {
-      "type": "object",
-      "properties": {
-        "datasourceConfig": {
-          "type": "object"
-        },
-        "integrationType": {
-          "type": "string"
-        },
-        "configurationId": {
-          "type": "string"
-        },
-        "profile": {
-          "$ref": "#/definitions/v1Profile"
-        },
-        "actionConfig": {
-          "type": "object"
-        }
-      }
-    },
     "v1TestResponse": {
       "type": "object"
     },
@@ -6896,7 +6993,7 @@
       "type": "object",
       "properties": {
         "stream": {
-          "$ref": "#/definitions/v1StreamResponse"
+          "$ref": "#/definitions/apiv1StreamResponse"
         },
         "function": {
           "$ref": "#/definitions/v1FunctionRequest"

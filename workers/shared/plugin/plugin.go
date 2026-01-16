@@ -4,8 +4,8 @@ package plugin
 import (
 	"context"
 
-	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -13,21 +13,31 @@ import (
 // Both the golang and ephemeral workers implement this interface.
 type Plugin interface {
 	// Execute runs code and returns the output.
-	Execute(ctx context.Context, requestProps *transportv1.Request_Data_Data_Props) (*apiv1.Output, error)
+	Execute(
+		ctx context.Context,
+		requestMeta *workerv1.RequestMetadata,
+		requestProps *transportv1.Request_Data_Data_Props,
+		quotas *transportv1.Request_Data_Data_Quota,
+		pinned *transportv1.Request_Data_Pinned,
+	) (*workerv1.ExecuteResponse, error)
 
 	// Stream executes code with streaming output.
-	Stream(ctx context.Context, requestProps *transportv1.Request_Data_Data_Props, send func(message any), until func()) error
+	Stream(
+		ctx context.Context,
+		requestMeta *workerv1.RequestMetadata,
+		requestProps *transportv1.Request_Data_Data_Props,
+		quotas *transportv1.Request_Data_Data_Quota,
+		pinned *transportv1.Request_Data_Pinned,
+		send func(message any),
+		until func(),
+	) error
 
 	// Metadata returns plugin metadata for the given configuration.
-	Metadata(ctx context.Context, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error)
+	Metadata(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error)
 
 	// Test validates a datasource configuration.
-	Test(ctx context.Context, datasourceConfig *structpb.Struct) error
+	Test(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error
 
 	// PreDelete is called before a datasource is deleted.
-	PreDelete(ctx context.Context, datasourceConfig *structpb.Struct) error
-
-	// Close cleans up any resources held by the plugin.
-	// Called when the worker is shutting down.
-	Close()
+	PreDelete(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error
 }

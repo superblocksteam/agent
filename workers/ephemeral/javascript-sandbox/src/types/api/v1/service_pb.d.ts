@@ -16,8 +16,10 @@ import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/stru
 import * as plugins_adls_v1_plugin_pb from "../../plugins/adls/v1/plugin_pb";
 import * as plugins_cosmosdb_v1_plugin_pb from "../../plugins/cosmosdb/v1/plugin_pb";
 import * as plugins_couchbase_v1_plugin_pb from "../../plugins/couchbase/v1/plugin_pb";
+import * as plugins_dynamodb_v1_plugin_pb from "../../plugins/dynamodb/v1/plugin_pb";
 import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
 import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
+import * as plugins_salesforce_v1_plugin_pb from "../../plugins/salesforce/v1/plugin_pb";
 import * as protoc_gen_openapiv2_options_annotations_pb from "../../protoc-gen-openapiv2/options/annotations_pb";
 import * as store_v1_store_pb from "../../store/v1/store_pb";
 import * as validate_validate_pb from "../../validate/validate_pb";
@@ -1122,8 +1124,25 @@ export class MetadataResponse extends jspb.Message {
     clearGraphql(): void;
     getGraphql(): google_protobuf_struct_pb.Struct | undefined;
     setGraphql(value?: google_protobuf_struct_pb.Struct): MetadataResponse;
+
+    hasDynamodb(): boolean;
+    clearDynamodb(): void;
+    getDynamodb(): plugins_dynamodb_v1_plugin_pb.Metadata | undefined;
+    setDynamodb(value?: plugins_dynamodb_v1_plugin_pb.Metadata): MetadataResponse;
+
+    hasSalesforce(): boolean;
+    clearSalesforce(): void;
+    getSalesforce(): plugins_salesforce_v1_plugin_pb.Plugin.Metadata | undefined;
+    setSalesforce(value?: plugins_salesforce_v1_plugin_pb.Plugin.Metadata): MetadataResponse;
+
+    hasOpenApiSpec(): boolean;
+    clearOpenApiSpec(): void;
+    getOpenApiSpec(): google_protobuf_struct_pb.Struct | undefined;
+    setOpenApiSpec(value?: google_protobuf_struct_pb.Struct): MetadataResponse;
     getGSheetsNextPageToken(): string;
     setGSheetsNextPageToken(value: string): MetadataResponse;
+    getLoadDisabled(): boolean;
+    setLoadDisabled(value: boolean): MetadataResponse;
 
     getMetadataCase(): MetadataResponse.MetadataCase;
 
@@ -1147,7 +1166,11 @@ export namespace MetadataResponse {
         cosmosdb?: plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.AsObject,
         adls?: plugins_adls_v1_plugin_pb.Plugin.Metadata.AsObject,
         graphql?: google_protobuf_struct_pb.Struct.AsObject,
+        dynamodb?: plugins_dynamodb_v1_plugin_pb.Metadata.AsObject,
+        salesforce?: plugins_salesforce_v1_plugin_pb.Plugin.Metadata.AsObject,
+        openApiSpec?: google_protobuf_struct_pb.Struct.AsObject,
         gSheetsNextPageToken: string,
+        loadDisabled: boolean,
     }
 
 
@@ -1377,6 +1400,9 @@ export namespace MetadataResponse {
         COSMOSDB = 6,
         ADLS = 7,
         GRAPHQL = 9,
+        DYNAMODB = 10,
+        SALESFORCE = 11,
+        OPEN_API_SPEC = 12,
     }
 
 }

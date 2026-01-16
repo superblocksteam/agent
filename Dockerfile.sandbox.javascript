@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.9.0
-# JavaScript sandbox for ephemeral worker
-# Executes JavaScript scripts in a sandboxed gRPC server
+# JavaScript plugins sandbox for ephemeral worker
+# Executes JavaScript plugin steps in a sandboxed gRPC server
 
 ARG NODE_VERSION=20.19.5
 ARG TRANSPORT_GRPC_PORT=50051
@@ -36,22 +36,21 @@ RUN npm install -g pnpm@${PNPM_VERSION}
 
 # Copy the javascript workspace
 COPY workers/javascript/ ./workers/javascript/
-COPY workers/ephemeral/javascript-sandbox/ ./workers/ephemeral/javascript-sandbox/
+COPY workers/ephemeral/javascript-plugins-sandbox/ ./workers/ephemeral/javascript-plugins-sandbox/
 
 # Install dependencies
 WORKDIR /app/workers/javascript
 RUN pnpm install --frozen-lockfile
 
 # Build all packages in dependency order
-RUN pnpm --filter javascript-sandbox... run build
+RUN pnpm --filter javascript-plugins-sandbox... run build
 
-# Deploy javascript-sandbox with all its dependencies to a self-contained directory
+# Deploy javascript-plugins-sandbox with all its dependencies to a self-contained directory
 # --legacy is needed for pnpm v10+ when not using inject-workspace-packages
-RUN pnpm --filter javascript-sandbox deploy --legacy --prod /deploy
+RUN pnpm --filter javascript-plugins-sandbox deploy --legacy --prod /deploy
 
-# Copy bootstrap.js and generated protobuf types to the deployed dist
-RUN cp /app/workers/ephemeral/javascript-sandbox/src/bootstrap.js /deploy/dist/ && \
-    cp -r /app/workers/ephemeral/javascript-sandbox/src/types /deploy/dist/
+# Copy generated protobuf types to the deployed dist
+RUN cp -r /app/workers/ephemeral/javascript-plugins-sandbox/src/types /deploy/dist/
 
 # Production stage
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION}-bookworm-slim
@@ -62,6 +61,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT=${TRANSPORT_GRPC_PORT}
+
+# Set empty values for env vars required by @superblocks/worker.js at import time
+# These are not actually used by the sandbox at runtime
+ENV SUPERBLOCKS_AGENT_KEY=""
+ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA=""
+ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519=""
 
 # Copy the self-contained deployment
 COPY --from=builder /deploy /app

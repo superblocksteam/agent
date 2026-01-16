@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n*worker/v1/sandbox_executor_transport.proto\x12\tworker.v1\"\xe0\x02\n\x0e\x45xecuteRequest\x12\x16\n\x06script\x18\x01 \x01(\tR\x06script\x12!\n\x0c\x63ontext_json\x18\x02 \x01(\tR\x0b\x63ontextJson\x12\x1d\n\ntimeout_ms\x18\x03 \x01(\x05R\ttimeoutMs\x12!\n\x0c\x65xecution_id\x18\x04 \x01(\tR\x0b\x65xecutionId\x12\x34\n\x16variable_store_address\x18\x05 \x01(\tR\x14variableStoreAddress\x12%\n\x0evariables_json\x18\x06 \x01(\tR\rvariablesJson\x12:\n\x05\x66iles\x18\x07 \x03(\x0b\x32$.worker.v1.ExecuteRequest.FilesEntryR\x05\x66iles\x1a\x38\n\nFilesEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05value:\x02\x38\x01\"\x8c\x01\n\x0f\x45xecuteResponse\x12\x16\n\x06result\x18\x01 \x01(\tR\x06result\x12\x16\n\x06stdout\x18\x02 \x03(\tR\x06stdout\x12\x16\n\x06stderr\x18\x03 \x03(\tR\x06stderr\x12\x1b\n\texit_code\x18\x04 \x01(\x05R\x08\x65xitCode\x12\x14\n\x05\x65rror\x18\x05 \x01(\tR\x05\x65rror2c\n\x1fSandboxExecutorTransportService\x12@\n\x07\x45xecute\x12\x19.worker.v1.ExecuteRequest\x1a\x1a.worker.v1.ExecuteResponseB9Z7github.com/superblocksteam/agent/types/gen/go/worker/v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n*worker/v1/sandbox_executor_transport.proto\x12\tworker.v1\"\xe4\x02\n\x10\x45xecuteRequestV1\x12\x16\n\x06script\x18\x01 \x01(\tR\x06script\x12!\n\x0c\x63ontext_json\x18\x02 \x01(\tR\x0b\x63ontextJson\x12\x1d\n\ntimeout_ms\x18\x03 \x01(\x05R\ttimeoutMs\x12!\n\x0c\x65xecution_id\x18\x04 \x01(\tR\x0b\x65xecutionId\x12\x34\n\x16variable_store_address\x18\x05 \x01(\tR\x14variableStoreAddress\x12%\n\x0evariables_json\x18\x06 \x01(\tR\rvariablesJson\x12<\n\x05\x66iles\x18\x07 \x03(\x0b\x32&.worker.v1.ExecuteRequestV1.FilesEntryR\x05\x66iles\x1a\x38\n\nFilesEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05value:\x02\x38\x01\"\x8e\x01\n\x11\x45xecuteResponseV1\x12\x16\n\x06result\x18\x01 \x01(\tR\x06result\x12\x16\n\x06stdout\x18\x02 \x03(\tR\x06stdout\x12\x16\n\x06stderr\x18\x03 \x03(\tR\x06stderr\x12\x1b\n\texit_code\x18\x04 \x01(\x05R\x08\x65xitCode\x12\x14\n\x05\x65rror\x18\x05 \x01(\tR\x05\x65rror2g\n\x1fSandboxExecutorTransportService\x12\x44\n\x07\x45xecute\x12\x1b.worker.v1.ExecuteRequestV1\x1a\x1c.worker.v1.ExecuteResponseV1B9Z7github.com/superblocksteam/agent/types/gen/go/worker/v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,14 +32,14 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'worker.v1.sandbox_executor_
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z7github.com/superblocksteam/agent/types/gen/go/worker/v1'
-  _globals['_EXECUTEREQUEST_FILESENTRY']._loaded_options = None
-  _globals['_EXECUTEREQUEST_FILESENTRY']._serialized_options = b'8\001'
-  _globals['_EXECUTEREQUEST']._serialized_start=58
-  _globals['_EXECUTEREQUEST']._serialized_end=410
-  _globals['_EXECUTEREQUEST_FILESENTRY']._serialized_start=354
-  _globals['_EXECUTEREQUEST_FILESENTRY']._serialized_end=410
-  _globals['_EXECUTERESPONSE']._serialized_start=413
-  _globals['_EXECUTERESPONSE']._serialized_end=553
-  _globals['_SANDBOXEXECUTORTRANSPORTSERVICE']._serialized_start=555
-  _globals['_SANDBOXEXECUTORTRANSPORTSERVICE']._serialized_end=654
+  _globals['_EXECUTEREQUESTV1_FILESENTRY']._loaded_options = None
+  _globals['_EXECUTEREQUESTV1_FILESENTRY']._serialized_options = b'8\001'
+  _globals['_EXECUTEREQUESTV1']._serialized_start=58
+  _globals['_EXECUTEREQUESTV1']._serialized_end=414
+  _globals['_EXECUTEREQUESTV1_FILESENTRY']._serialized_start=358
+  _globals['_EXECUTEREQUESTV1_FILESENTRY']._serialized_end=414
+  _globals['_EXECUTERESPONSEV1']._serialized_start=417
+  _globals['_EXECUTERESPONSEV1']._serialized_end=559
+  _globals['_SANDBOXEXECUTORTRANSPORTSERVICE']._serialized_start=561
+  _globals['_SANDBOXEXECUTORTRANSPORTSERVICE']._serialized_end=664
 # @@protoc_insertion_point(module_scope)

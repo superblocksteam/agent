@@ -24,8 +24,7 @@ type Options struct {
 	ExecutionPool       int64
 	FileContextProvider redisstore.FileContextProvider
 	Ephemeral           bool
-	EphemeralTimeout    time.Duration // Timeout for ephemeral job execution (0 = no timeout)
-	AgentKey            string        // Agent key for file server authentication
+	AgentKey            string // Agent key for file server authentication
 }
 
 // Option is a function that modifies Options
@@ -105,13 +104,6 @@ func WithFileContextProvider(value redisstore.FileContextProvider) Option {
 func WithEphemeral(value bool) Option {
 	return func(o *Options) {
 		o.Ephemeral = value
-	}
-}
-
-// WithEphemeralTimeout sets the timeout for ephemeral job execution
-func WithEphemeralTimeout(value time.Duration) Option {
-	return func(o *Options) {
-		o.EphemeralTimeout = value
 	}
 }
 

@@ -3551,6 +3551,8 @@ func (m *MetadataResponse) validate(all bool) error {
 
 	// no validation rules for GSheetsNextPageToken
 
+	// no validation rules for LoadDisabled
+
 	switch v := m.Metadata.(type) {
 	case *MetadataResponse_DatabaseSchemaMetadata_:
 		if v == nil {
@@ -3874,6 +3876,129 @@ func (m *MetadataResponse) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return MetadataResponseValidationError{
 					field:  "Graphql",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *MetadataResponse_Dynamodb:
+		if v == nil {
+			err := MetadataResponseValidationError{
+				field:  "Metadata",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetDynamodb()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, MetadataResponseValidationError{
+						field:  "Dynamodb",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, MetadataResponseValidationError{
+						field:  "Dynamodb",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDynamodb()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return MetadataResponseValidationError{
+					field:  "Dynamodb",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *MetadataResponse_Salesforce:
+		if v == nil {
+			err := MetadataResponseValidationError{
+				field:  "Metadata",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetSalesforce()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, MetadataResponseValidationError{
+						field:  "Salesforce",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, MetadataResponseValidationError{
+						field:  "Salesforce",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetSalesforce()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return MetadataResponseValidationError{
+					field:  "Salesforce",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *MetadataResponse_OpenApiSpec:
+		if v == nil {
+			err := MetadataResponseValidationError{
+				field:  "Metadata",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetOpenApiSpec()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, MetadataResponseValidationError{
+						field:  "OpenApiSpec",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, MetadataResponseValidationError{
+						field:  "OpenApiSpec",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetOpenApiSpec()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return MetadataResponseValidationError{
+					field:  "OpenApiSpec",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}

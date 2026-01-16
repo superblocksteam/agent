@@ -32,7 +32,7 @@ var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
 func request_SandboxExecutorTransportService_Execute_0(ctx context.Context, marshaler runtime.Marshaler, client SandboxExecutorTransportServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ExecuteRequest
+	var protoReq ExecuteRequestV1
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
@@ -45,7 +45,7 @@ func request_SandboxExecutorTransportService_Execute_0(ctx context.Context, mars
 }
 
 func local_request_SandboxExecutorTransportService_Execute_0(ctx context.Context, marshaler runtime.Marshaler, server SandboxExecutorTransportServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ExecuteRequest
+	var protoReq ExecuteRequestV1
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {

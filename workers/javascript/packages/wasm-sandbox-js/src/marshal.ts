@@ -91,12 +91,7 @@ function safeDisposeDeferred(deferred: DeferredPromise): void {
   }
 }
 
-function settleDeferredFulfilled(
-  ctx: QuickJSContext,
-  deferred: DeferredPromise,
-  value: unknown,
-  helpers: ToVmHelpers
-): void {
+function settleDeferredFulfilled(ctx: QuickJSContext, deferred: DeferredPromise, value: unknown, helpers: ToVmHelpers): void {
   let handle: QuickJSHandle | undefined;
   let errorHandle: QuickJSHandle | undefined;
 
@@ -153,11 +148,7 @@ function settleDeferredRejected(ctx: QuickJSContext, deferred: DeferredPromise, 
  * then marshals the result/error back into the VM. Async results are bridged via
  * the EventLoop so timeouts/teardown can abort pending work safely.
  */
-function createVmHostFunction<T extends (...args: unknown[]) => unknown>(
-  ctx: QuickJSContext,
-  fn: T,
-  helpers: ToVmHelpers
-): QuickJSHandle {
+function createVmHostFunction<T extends (...args: unknown[]) => unknown>(ctx: QuickJSContext, fn: T, helpers: ToVmHelpers): QuickJSHandle {
   const { extractValue, eventLoop } = helpers;
 
   return ctx.newFunction(fn.name || '', (...argHandles: QuickJSHandle[]) => {

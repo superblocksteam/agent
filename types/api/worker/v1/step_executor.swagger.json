@@ -226,6 +226,18 @@
         }
       }
     },
+    "MetadataObject": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ObjectField"
+          }
+        }
+      }
+    },
     "MetadataResponseBucketMetadata": {
       "type": "object",
       "properties": {
@@ -333,6 +345,20 @@
             "type": "object",
             "$ref": "#/definitions/MetadataCollection"
           }
+        }
+      }
+    },
+    "ObjectField": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
         }
       }
     },
@@ -452,6 +478,18 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        }
+      }
+    },
+    "pluginssalesforcev1PluginMetadata": {
+      "type": "object",
+      "properties": {
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/MetadataObject"
           }
         }
       }
@@ -669,6 +707,15 @@
         },
         "graphql": {
           "type": "object"
+        },
+        "openApiSpec": {
+          "type": "object"
+        },
+        "salesforce": {
+          "$ref": "#/definitions/pluginssalesforcev1PluginMetadata"
+        },
+        "loadDisabled": {
+          "type": "boolean"
         }
       }
     },

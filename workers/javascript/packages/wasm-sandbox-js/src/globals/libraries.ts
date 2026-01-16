@@ -66,7 +66,13 @@ const LAZY_LIBRARY_FACTORY = `
  * @param globalName - The name to expose on globalThis (e.g., "_" for lodash, "moment" for moment)
  * @param fileName - The filename to use for error messages (e.g., "lodash.min.js")
  */
-export function registerGlobalLazyLibrary(ctx: QuickJSContext, source: string, globalName: string, libraryName: string, librarySourceFileName: string) {
+export function registerGlobalLazyLibrary(
+  ctx: QuickJSContext,
+  source: string,
+  globalName: string,
+  libraryName: string,
+  librarySourceFileName: string
+) {
   // Create host function that loads the library via reentrant evalCode
   const loadLibraryFn = ctx.newFunction('loadLibrary', () => {
     registerGlobalLibrary(ctx, source, librarySourceFileName);

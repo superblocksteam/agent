@@ -45,10 +45,14 @@ var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb
 goog.object.extend(proto, plugins_cosmosdb_v1_plugin_pb);
 var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb');
 goog.object.extend(proto, plugins_couchbase_v1_plugin_pb);
+var plugins_dynamodb_v1_plugin_pb = require('../../plugins/dynamodb/v1/plugin_pb');
+goog.object.extend(proto, plugins_dynamodb_v1_plugin_pb);
 var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
 var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
 goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
+var plugins_salesforce_v1_plugin_pb = require('../../plugins/salesforce/v1/plugin_pb');
+goog.object.extend(proto, plugins_salesforce_v1_plugin_pb);
 var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb');
 goog.object.extend(proto, protoc$gen$openapiv2_options_annotations_pb);
 var store_v1_store_pb = require('../../store/v1/store_pb');
@@ -8527,7 +8531,7 @@ proto.api.v1.MetadataRequest.prototype.hasStepConfiguration = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.MetadataResponse.oneofGroups_ = [[1,2,3,4,5,6,7,9]];
+proto.api.v1.MetadataResponse.oneofGroups_ = [[1,2,3,4,5,6,7,9,10,11,12]];
 
 /**
  * @enum {number}
@@ -8541,7 +8545,10 @@ proto.api.v1.MetadataResponse.MetadataCase = {
   KINESIS: 5,
   COSMOSDB: 6,
   ADLS: 7,
-  GRAPHQL: 9
+  GRAPHQL: 9,
+  DYNAMODB: 10,
+  SALESFORCE: 11,
+  OPEN_API_SPEC: 12
 };
 
 /**
@@ -8590,7 +8597,11 @@ proto.api.v1.MetadataResponse.toObject = function(includeInstance, msg) {
     cosmosdb: (f = msg.getCosmosdb()) && plugins_cosmosdb_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
     adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
     graphql: (f = msg.getGraphql()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
-    gSheetsNextPageToken: jspb.Message.getFieldWithDefault(msg, 8, "")
+    dynamodb: (f = msg.getDynamodb()) && plugins_dynamodb_v1_plugin_pb.Metadata.toObject(includeInstance, f),
+    salesforce: (f = msg.getSalesforce()) && plugins_salesforce_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
+    openApiSpec: (f = msg.getOpenApiSpec()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
+    gSheetsNextPageToken: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    loadDisabled: jspb.Message.getBooleanFieldWithDefault(msg, 13, false)
   };
 
   if (includeInstance) {
@@ -8667,9 +8678,28 @@ proto.api.v1.MetadataResponse.deserializeBinaryFromReader = function(msg, reader
       reader.readMessage(value,google_protobuf_struct_pb.Struct.deserializeBinaryFromReader);
       msg.setGraphql(value);
       break;
+    case 10:
+      var value = new plugins_dynamodb_v1_plugin_pb.Metadata;
+      reader.readMessage(value,plugins_dynamodb_v1_plugin_pb.Metadata.deserializeBinaryFromReader);
+      msg.setDynamodb(value);
+      break;
+    case 11:
+      var value = new plugins_salesforce_v1_plugin_pb.Plugin.Metadata;
+      reader.readMessage(value,plugins_salesforce_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
+      msg.setSalesforce(value);
+      break;
+    case 12:
+      var value = new google_protobuf_struct_pb.Struct;
+      reader.readMessage(value,google_protobuf_struct_pb.Struct.deserializeBinaryFromReader);
+      msg.setOpenApiSpec(value);
+      break;
     case 8:
       var value = /** @type {string} */ (reader.readString());
       msg.setGSheetsNextPageToken(value);
+      break;
+    case 13:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setLoadDisabled(value);
       break;
     default:
       reader.skipField();
@@ -8764,10 +8794,41 @@ proto.api.v1.MetadataResponse.serializeBinaryToWriter = function(message, writer
       google_protobuf_struct_pb.Struct.serializeBinaryToWriter
     );
   }
+  f = message.getDynamodb();
+  if (f != null) {
+    writer.writeMessage(
+      10,
+      f,
+      plugins_dynamodb_v1_plugin_pb.Metadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getSalesforce();
+  if (f != null) {
+    writer.writeMessage(
+      11,
+      f,
+      plugins_salesforce_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getOpenApiSpec();
+  if (f != null) {
+    writer.writeMessage(
+      12,
+      f,
+      google_protobuf_struct_pb.Struct.serializeBinaryToWriter
+    );
+  }
   f = message.getGSheetsNextPageToken();
   if (f.length > 0) {
     writer.writeString(
       8,
+      f
+    );
+  }
+  f = message.getLoadDisabled();
+  if (f) {
+    writer.writeBool(
+      13,
       f
     );
   }
@@ -10686,6 +10747,117 @@ proto.api.v1.MetadataResponse.prototype.hasGraphql = function() {
 
 
 /**
+ * optional plugins.dynamodb.v1.Metadata dynamodb = 10;
+ * @return {?proto.plugins.dynamodb.v1.Metadata}
+ */
+proto.api.v1.MetadataResponse.prototype.getDynamodb = function() {
+  return /** @type{?proto.plugins.dynamodb.v1.Metadata} */ (
+    jspb.Message.getWrapperField(this, plugins_dynamodb_v1_plugin_pb.Metadata, 10));
+};
+
+
+/**
+ * @param {?proto.plugins.dynamodb.v1.Metadata|undefined} value
+ * @return {!proto.api.v1.MetadataResponse} returns this
+*/
+proto.api.v1.MetadataResponse.prototype.setDynamodb = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 10, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.MetadataResponse} returns this
+ */
+proto.api.v1.MetadataResponse.prototype.clearDynamodb = function() {
+  return this.setDynamodb(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.MetadataResponse.prototype.hasDynamodb = function() {
+  return jspb.Message.getField(this, 10) != null;
+};
+
+
+/**
+ * optional plugins.salesforce.v1.Plugin.Metadata salesforce = 11;
+ * @return {?proto.plugins.salesforce.v1.Plugin.Metadata}
+ */
+proto.api.v1.MetadataResponse.prototype.getSalesforce = function() {
+  return /** @type{?proto.plugins.salesforce.v1.Plugin.Metadata} */ (
+    jspb.Message.getWrapperField(this, plugins_salesforce_v1_plugin_pb.Plugin.Metadata, 11));
+};
+
+
+/**
+ * @param {?proto.plugins.salesforce.v1.Plugin.Metadata|undefined} value
+ * @return {!proto.api.v1.MetadataResponse} returns this
+*/
+proto.api.v1.MetadataResponse.prototype.setSalesforce = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 11, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.MetadataResponse} returns this
+ */
+proto.api.v1.MetadataResponse.prototype.clearSalesforce = function() {
+  return this.setSalesforce(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.MetadataResponse.prototype.hasSalesforce = function() {
+  return jspb.Message.getField(this, 11) != null;
+};
+
+
+/**
+ * optional google.protobuf.Struct open_api_spec = 12;
+ * @return {?proto.google.protobuf.Struct}
+ */
+proto.api.v1.MetadataResponse.prototype.getOpenApiSpec = function() {
+  return /** @type{?proto.google.protobuf.Struct} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_struct_pb.Struct, 12));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Struct|undefined} value
+ * @return {!proto.api.v1.MetadataResponse} returns this
+*/
+proto.api.v1.MetadataResponse.prototype.setOpenApiSpec = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 12, proto.api.v1.MetadataResponse.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.MetadataResponse} returns this
+ */
+proto.api.v1.MetadataResponse.prototype.clearOpenApiSpec = function() {
+  return this.setOpenApiSpec(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.MetadataResponse.prototype.hasOpenApiSpec = function() {
+  return jspb.Message.getField(this, 12) != null;
+};
+
+
+/**
  * optional string g_sheets_next_page_token = 8;
  * @return {string}
  */
@@ -10700,6 +10872,24 @@ proto.api.v1.MetadataResponse.prototype.getGSheetsNextPageToken = function() {
  */
 proto.api.v1.MetadataResponse.prototype.setGSheetsNextPageToken = function(value) {
   return jspb.Message.setProto3StringField(this, 8, value);
+};
+
+
+/**
+ * optional bool load_disabled = 13;
+ * @return {boolean}
+ */
+proto.api.v1.MetadataResponse.prototype.getLoadDisabled = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 13, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api.v1.MetadataResponse} returns this
+ */
+proto.api.v1.MetadataResponse.prototype.setLoadDisabled = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 13, value);
 };
 
 

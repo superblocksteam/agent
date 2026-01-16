@@ -9,9 +9,11 @@ import (
 
 	"workers/ephemeral/task-manager/internal/plugin"
 
+	commonErr "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/store"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -78,70 +80,65 @@ var _ store.Store = (*mockStore)(nil)
 // mockPlugin implements plugin.Plugin for testing
 type mockPlugin struct {
 	name         string
-	executeFunc  func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error)
-	streamFunc   func(ctx context.Context, props *transportv1.Request_Data_Data_Props, send func(message any), until func()) error
-	metadataFunc func(ctx context.Context, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error)
-	testFunc     func(ctx context.Context, datasourceConfig *structpb.Struct) error
-	preDeleteFn  func(ctx context.Context, datasourceConfig *structpb.Struct) error
+	executeFunc  func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error)
+	streamFunc   func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(message any), until func()) error
+	metadataFunc func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error)
+	testFunc     func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error
+	preDeleteFn  func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error
 }
 
 func (m *mockPlugin) Name() string {
 	return m.name
 }
 
-func (m *mockPlugin) Execute(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
+func (m *mockPlugin) Execute(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
 	if m.executeFunc != nil {
-		return m.executeFunc(ctx, props)
+		return m.executeFunc(ctx, requestMeta, props, quotas, pinned)
 	}
-	return &apiv1.Output{}, nil
+	return &workerv1.ExecuteResponse{}, nil
 }
 
-func (m *mockPlugin) Stream(ctx context.Context, props *transportv1.Request_Data_Data_Props, send func(message any), until func()) error {
+func (m *mockPlugin) Stream(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(message any), until func()) error {
 	if m.streamFunc != nil {
-		return m.streamFunc(ctx, props, send, until)
+		return m.streamFunc(ctx, requestMeta, props, quotas, pinned, send, until)
 	}
 	return nil
 }
 
-func (m *mockPlugin) Metadata(ctx context.Context, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
+func (m *mockPlugin) Metadata(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
 	if m.metadataFunc != nil {
-		return m.metadataFunc(ctx, datasourceConfig, actionConfig)
+		return m.metadataFunc(ctx, requestMeta, datasourceConfig, actionConfig)
 	}
 	return &transportv1.Response_Data_Data{}, nil
 }
 
-func (m *mockPlugin) Test(ctx context.Context, datasourceConfig *structpb.Struct) error {
+func (m *mockPlugin) Test(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error {
 	if m.testFunc != nil {
-		return m.testFunc(ctx, datasourceConfig)
+		return m.testFunc(ctx, requestMeta, datasourceConfig, actionConfig)
 	}
 	return nil
 }
 
-func (m *mockPlugin) PreDelete(ctx context.Context, datasourceConfig *structpb.Struct) error {
+func (m *mockPlugin) PreDelete(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error {
 	if m.preDeleteFn != nil {
-		return m.preDeleteFn(ctx, datasourceConfig)
+		return m.preDeleteFn(ctx, requestMeta, datasourceConfig)
 	}
 	return nil
-}
-
-func (m *mockPlugin) Close() {
-	// No-op for tests
 }
 
 // Verify mockPlugin implements Plugin interface
 var _ plugin.Plugin = (*mockPlugin)(nil)
 
 // newTestExecutor creates a plugin executor with mocked dependencies for testing
-func newTestExecutor(language string) PluginExecutor {
+func newTestExecutor() PluginExecutor {
 	return NewPluginExecutor(&Options{
-		Logger:   zap.NewNop(),
-		Language: language,
-		Store:    newMockStore(),
+		Logger: zap.NewNop(),
+		Store:  newMockStore(),
 	})
 }
 
 func TestNewPluginExecutor(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	if executor == nil {
 		t.Fatal("NewPluginExecutor returned nil")
@@ -155,7 +152,7 @@ func TestNewPluginExecutor(t *testing.T) {
 }
 
 func TestRegisterPlugin(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{name: "test-plugin"}
 	err := executor.RegisterPlugin("test", mock)
@@ -174,7 +171,7 @@ func TestRegisterPlugin(t *testing.T) {
 }
 
 func TestRegisterMultiplePlugins(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	executor.RegisterPlugin("python", &mockPlugin{name: "python"})
 	executor.RegisterPlugin("javascript", &mockPlugin{name: "javascript"})
@@ -187,7 +184,7 @@ func TestRegisterMultiplePlugins(t *testing.T) {
 }
 
 func TestListPluginsEmpty(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	plugins := executor.ListPlugins()
 	if len(plugins) != 0 {
@@ -196,15 +193,23 @@ func TestListPluginsEmpty(t *testing.T) {
 }
 
 func TestExecuteSuccess(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
-	expectedOutput := &apiv1.Output{
-		Stdout: []string{"hello world"},
+	expectedOutput := &workerv1.ExecuteResponse{
+		Output: &apiv1.OutputOld{
+			Log: []string{"hello world"},
+		},
+		StructuredLog: []*workerv1.StructuredLog{
+			{
+				Level:   workerv1.StructuredLog_LEVEL_INFO,
+				Message: "hello world",
+			},
+		},
 	}
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
 			return expectedOutput, nil
 		},
 	}
@@ -214,7 +219,7 @@ func TestExecuteSuccess(t *testing.T) {
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil)
+	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -229,11 +234,11 @@ func TestExecuteSuccess(t *testing.T) {
 }
 
 func TestExecuteWithError(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
 			return nil, errors.New("execution failed")
 		},
 	}
@@ -243,7 +248,7 @@ func TestExecuteWithError(t *testing.T) {
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil)
+	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	// Execute stores error in result.Err and returns nil when output is stored successfully
 	if err != nil {
@@ -259,12 +264,12 @@ func TestExecuteWithError(t *testing.T) {
 }
 
 func TestExecuteUnknownPlugin(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
 
-	_, err := executor.Execute(ctx, "unknown", props, nil, nil)
+	_, err := executor.Execute(ctx, "unknown", props, nil, nil, nil)
 
 	if err == nil {
 		t.Error("Execute() should return error for unknown plugin")
@@ -272,15 +277,15 @@ func TestExecuteUnknownPlugin(t *testing.T) {
 }
 
 func TestExecuteLanguageMismatch(t *testing.T) {
-	executor := newTestExecutor("python") // This executor only handles python
+	executor := newTestExecutor()
 
-	mock := &mockPlugin{name: "javascript"}
-	executor.RegisterPlugin("javascript", mock)
+	mock := &mockPlugin{name: "python"}
+	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
 
-	_, err := executor.Execute(ctx, "javascript", props, nil, nil)
+	_, err := executor.Execute(ctx, "javascript", props, nil, nil, nil)
 
 	if err == nil {
 		t.Error("Execute() should return error for language mismatch")
@@ -288,12 +293,12 @@ func TestExecuteLanguageMismatch(t *testing.T) {
 }
 
 func TestExecuteWithQuota(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-			return &apiv1.Output{}, nil
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{}, nil
 		},
 	}
 
@@ -305,7 +310,7 @@ func TestExecuteWithQuota(t *testing.T) {
 		Duration: 5000, // 5 seconds
 	}
 
-	result, err := executor.Execute(ctx, "python", props, quota, nil)
+	result, err := executor.Execute(ctx, "python", props, quota, nil, nil)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -316,12 +321,12 @@ func TestExecuteWithQuota(t *testing.T) {
 }
 
 func TestExecuteWithPerformance(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-			return &apiv1.Output{}, nil
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{}, nil
 		},
 	}
 
@@ -331,7 +336,7 @@ func TestExecuteWithPerformance(t *testing.T) {
 	props := &transportv1.Request_Data_Data_Props{}
 	perf := &transportv1.Performance{}
 
-	_, err := executor.Execute(ctx, "python", props, nil, perf)
+	_, err := executor.Execute(ctx, "python", props, nil, nil, perf)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -344,7 +349,7 @@ func TestExecuteWithPerformance(t *testing.T) {
 }
 
 func TestStreamUnknownPlugin(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
@@ -357,11 +362,11 @@ func TestStreamUnknownPlugin(t *testing.T) {
 }
 
 func TestStreamSuccess(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		streamFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props, send func(message any), until func()) error {
+		streamFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(message any), until func()) error {
 			return nil
 		},
 	}
@@ -379,7 +384,7 @@ func TestStreamSuccess(t *testing.T) {
 }
 
 func TestMetadataUnknownPlugin(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
@@ -392,7 +397,7 @@ func TestMetadataUnknownPlugin(t *testing.T) {
 }
 
 func TestMetadataSuccess(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	expectedResult := &transportv1.Response_Data_Data{
 		Key: "metadata-key",
@@ -400,7 +405,7 @@ func TestMetadataSuccess(t *testing.T) {
 
 	mock := &mockPlugin{
 		name: "python",
-		metadataFunc: func(ctx context.Context, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
+		metadataFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
 			return expectedResult, nil
 		},
 	}
@@ -421,7 +426,7 @@ func TestMetadataSuccess(t *testing.T) {
 }
 
 func TestTestUnknownPlugin(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
@@ -434,11 +439,11 @@ func TestTestUnknownPlugin(t *testing.T) {
 }
 
 func TestTestSuccess(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		testFunc: func(ctx context.Context, datasourceConfig *structpb.Struct) error {
+		testFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error {
 			return nil
 		},
 	}
@@ -459,11 +464,11 @@ func TestTestSuccess(t *testing.T) {
 }
 
 func TestTestWithError(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		testFunc: func(ctx context.Context, datasourceConfig *structpb.Struct) error {
+		testFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error {
 			return errors.New("test failed")
 		},
 	}
@@ -481,7 +486,7 @@ func TestTestWithError(t *testing.T) {
 }
 
 func TestPreDeleteUnknownPlugin(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
@@ -494,11 +499,11 @@ func TestPreDeleteUnknownPlugin(t *testing.T) {
 }
 
 func TestPreDeleteSuccess(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		preDeleteFn: func(ctx context.Context, datasourceConfig *structpb.Struct) error {
+		preDeleteFn: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error {
 			return nil
 		},
 	}
@@ -517,11 +522,11 @@ func TestPreDeleteSuccess(t *testing.T) {
 }
 
 func TestExecuteWithNilOutput(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
 			return nil, nil // Return nil output, no error
 		},
 	}
@@ -531,7 +536,7 @@ func TestExecuteWithNilOutput(t *testing.T) {
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil)
+	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -542,14 +547,29 @@ func TestExecuteWithNilOutput(t *testing.T) {
 }
 
 func TestExecuteWithStdoutStderr(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-			return &apiv1.Output{
-				Stdout: []string{"stdout line 1", "stdout line 2"},
-				Stderr: []string{"stderr line 1"},
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Output: &apiv1.OutputOld{
+					Log: []string{"stdout line 1", "stdout line 2", "[ERROR] stderr line 1"},
+				},
+				StructuredLog: []*workerv1.StructuredLog{
+					{
+						Level:   workerv1.StructuredLog_LEVEL_INFO,
+						Message: "stdout line 1",
+					},
+					{
+						Level:   workerv1.StructuredLog_LEVEL_INFO,
+						Message: "stdout line 2",
+					},
+					{
+						Level:   workerv1.StructuredLog_LEVEL_ERROR,
+						Message: "stderr line 1",
+					},
+				},
 			}, nil
 		},
 	}
@@ -559,7 +579,7 @@ func TestExecuteWithStdoutStderr(t *testing.T) {
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil)
+	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -570,14 +590,25 @@ func TestExecuteWithStdoutStderr(t *testing.T) {
 }
 
 func TestExecuteWithStdoutStderrAndError(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-			return &apiv1.Output{
-				Stdout: []string{"output"},
-				Stderr: []string{"error output"},
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Output: &apiv1.OutputOld{
+					Log: []string{"output", "[ERROR] error output"},
+				},
+				StructuredLog: []*workerv1.StructuredLog{
+					{
+						Level:   workerv1.StructuredLog_LEVEL_INFO,
+						Message: "output",
+					},
+					{
+						Level:   workerv1.StructuredLog_LEVEL_ERROR,
+						Message: "error output",
+					},
+				},
 			}, errors.New("execution error")
 		},
 	}
@@ -587,7 +618,7 @@ func TestExecuteWithStdoutStderrAndError(t *testing.T) {
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil)
+	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	// Execute stores error in result.Err and returns nil when output is stored successfully
 	if err != nil {
@@ -603,14 +634,25 @@ func TestExecuteWithStdoutStderrAndError(t *testing.T) {
 }
 
 func TestExecuteWithDeadlineExceeded(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-			return &apiv1.Output{
-				Stdout: []string{"should be cleared"},
-				Stderr: []string{"should be cleared"},
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Output: &apiv1.OutputOld{
+					Log: []string{"should be cleared", "[ERROR] should be cleared"},
+				},
+				StructuredLog: []*workerv1.StructuredLog{
+					{
+						Level:   workerv1.StructuredLog_LEVEL_INFO,
+						Message: "should be cleared",
+					},
+					{
+						Level:   workerv1.StructuredLog_LEVEL_ERROR,
+						Message: "should be cleared",
+					},
+				},
 			}, context.DeadlineExceeded
 		},
 	}
@@ -620,7 +662,7 @@ func TestExecuteWithDeadlineExceeded(t *testing.T) {
 	ctx := context.Background()
 	props := &transportv1.Request_Data_Data_Props{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil)
+	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	// DeadlineExceeded should be converted to DurationQuotaError and stored in result.Err
 	if err != nil {
@@ -639,12 +681,12 @@ func TestExecuteWithDeadlineExceeded(t *testing.T) {
 }
 
 func TestStreamWithError(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
 
 	expectedErr := errors.New("stream error")
 	mock := &mockPlugin{
 		name: "python",
-		streamFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props, send func(message any), until func()) error {
+		streamFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(message any), until func()) error {
 			return expectedErr
 		},
 	}
@@ -662,13 +704,14 @@ func TestStreamWithError(t *testing.T) {
 }
 
 func TestMetadataWithError(t *testing.T) {
-	executor := newTestExecutor("python")
+	executor := newTestExecutor()
+	pluginErr := errors.New("metadata error")
+	expectedErr := &commonErr.InternalError{Err: pluginErr}
 
-	expectedErr := errors.New("metadata error")
 	mock := &mockPlugin{
 		name: "python",
-		metadataFunc: func(ctx context.Context, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
-			return nil, expectedErr
+		metadataFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
+			return nil, pluginErr
 		},
 	}
 
@@ -679,7 +722,7 @@ func TestMetadataWithError(t *testing.T) {
 
 	_, err := executor.Metadata(ctx, "python", props, nil)
 
-	if err != expectedErr {
+	if !errors.Is(err, expectedErr) {
 		t.Errorf("Metadata() error = %v, want %v", err, expectedErr)
 	}
 }
@@ -691,17 +734,18 @@ func TestMetadataWithError(t *testing.T) {
 func TestExecuteStoresOutputInKVStore(t *testing.T) {
 	mockStore := newMockStore()
 	executor := NewPluginExecutor(&Options{
-		Logger:   zap.NewNop(),
-		Language: "python",
-		Store:    mockStore,
+		Logger: zap.NewNop(),
+		Store:  mockStore,
 	})
 
 	expectedResult := "hello world"
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-			return &apiv1.Output{
-				Result: structpb.NewStringValue(expectedResult),
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Output: &apiv1.OutputOld{
+					Output: structpb.NewStringValue(expectedResult),
+				},
 			}, nil
 		},
 	}
@@ -713,7 +757,7 @@ func TestExecuteStoresOutputInKVStore(t *testing.T) {
 		ExecutionId: "test-exec-123",
 	}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil)
+	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -750,15 +794,14 @@ func TestExecuteStoresOutputInKVStore(t *testing.T) {
 func TestExecuteKeyIsUnique(t *testing.T) {
 	mockStore := newMockStore()
 	executor := NewPluginExecutor(&Options{
-		Logger:   zap.NewNop(),
-		Language: "python",
-		Store:    mockStore,
+		Logger: zap.NewNop(),
+		Store:  mockStore,
 	})
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-			return &apiv1.Output{}, nil
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{}, nil
 		},
 	}
 
@@ -770,8 +813,8 @@ func TestExecuteKeyIsUnique(t *testing.T) {
 	}
 
 	// Execute twice with the same execution ID
-	result1, err1 := executor.Execute(ctx, "python", props, nil, nil)
-	result2, err2 := executor.Execute(ctx, "python", props, nil, nil)
+	result1, err1 := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result2, err2 := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	if err1 != nil || err2 != nil {
 		t.Fatalf("Execute() errors: %v, %v", err1, err2)
@@ -791,16 +834,23 @@ func TestExecuteKeyIsUnique(t *testing.T) {
 func TestExecuteWithErrorStillStoresOutput(t *testing.T) {
 	mockStore := newMockStore()
 	executor := NewPluginExecutor(&Options{
-		Logger:   zap.NewNop(),
-		Language: "python",
-		Store:    mockStore,
+		Logger: zap.NewNop(),
+		Store:  mockStore,
 	})
 
 	mock := &mockPlugin{
 		name: "python",
-		executeFunc: func(ctx context.Context, props *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
-			return &apiv1.Output{
-				Stderr: []string{"error occurred"},
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Output: &apiv1.OutputOld{
+					Log: []string{"error occurred"},
+				},
+				StructuredLog: []*workerv1.StructuredLog{
+					{
+						Level:   workerv1.StructuredLog_LEVEL_ERROR,
+						Message: "error occurred",
+					},
+				},
 			}, errors.New("execution failed")
 		},
 	}
@@ -812,7 +862,7 @@ func TestExecuteWithErrorStillStoresOutput(t *testing.T) {
 		ExecutionId: "test-exec-error",
 	}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil)
+	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
 
 	// Error should be in result.Err, not returned
 	if err != nil {

@@ -3004,6 +3004,76 @@ func (m *Response_Data_Data) validate(all bool) error {
 
 	}
 
+	if m.OpenApiSpec != nil {
+
+		if all {
+			switch v := interface{}(m.GetOpenApiSpec()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, Response_Data_DataValidationError{
+						field:  "OpenApiSpec",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, Response_Data_DataValidationError{
+						field:  "OpenApiSpec",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetOpenApiSpec()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return Response_Data_DataValidationError{
+					field:  "OpenApiSpec",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Salesforce != nil {
+
+		if all {
+			switch v := interface{}(m.GetSalesforce()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, Response_Data_DataValidationError{
+						field:  "Salesforce",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, Response_Data_DataValidationError{
+						field:  "Salesforce",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetSalesforce()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return Response_Data_DataValidationError{
+					field:  "Salesforce",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.LoadDisabled != nil {
+		// no validation rules for LoadDisabled
+	}
+
 	if len(errors) > 0 {
 		return Response_Data_DataMultiError(errors)
 	}

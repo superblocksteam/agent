@@ -15,6 +15,8 @@ import { Metadata as Metadata$2 } from "../../plugins/kafka/v1/plugin_pb";
 import { Metadata as Metadata$3 } from "../../plugins/kinesis/v1/plugin_pb";
 import { Plugin_Metadata } from "../../plugins/cosmosdb/v1/plugin_pb";
 import { Plugin_Metadata as Plugin_Metadata$1 } from "../../plugins/adls/v1/plugin_pb";
+import { Metadata as Metadata$4 } from "../../plugins/dynamodb/v1/plugin_pb";
+import { Plugin_Metadata as Plugin_Metadata$2 } from "../../plugins/salesforce/v1/plugin_pb";
 
 /**
  * @generated from enum api.v1.ViewMode
@@ -1887,12 +1889,35 @@ export class MetadataResponse extends Message<MetadataResponse> {
      */
     value: Struct;
     case: "graphql";
+  } | {
+    /**
+     * @generated from field: plugins.dynamodb.v1.Metadata dynamodb = 10;
+     */
+    value: Metadata$4;
+    case: "dynamodb";
+  } | {
+    /**
+     * @generated from field: plugins.salesforce.v1.Plugin.Metadata salesforce = 11;
+     */
+    value: Plugin_Metadata$2;
+    case: "salesforce";
+  } | {
+    /**
+     * @generated from field: google.protobuf.Struct open_api_spec = 12;
+     */
+    value: Struct;
+    case: "openApiSpec";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
    * @generated from field: string g_sheets_next_page_token = 8;
    */
   gSheetsNextPageToken = "";
+
+  /**
+   * @generated from field: bool load_disabled = 13;
+   */
+  loadDisabled = false;
 
   constructor(data?: PartialMessage<MetadataResponse>) {
     super();
@@ -1910,7 +1935,11 @@ export class MetadataResponse extends Message<MetadataResponse> {
     { no: 6, name: "cosmosdb", kind: "message", T: Plugin_Metadata, oneof: "metadata" },
     { no: 7, name: "adls", kind: "message", T: Plugin_Metadata$1, oneof: "metadata" },
     { no: 9, name: "graphql", kind: "message", T: Struct, oneof: "metadata" },
+    { no: 10, name: "dynamodb", kind: "message", T: Metadata$4, oneof: "metadata" },
+    { no: 11, name: "salesforce", kind: "message", T: Plugin_Metadata$2, oneof: "metadata" },
+    { no: 12, name: "open_api_spec", kind: "message", T: Struct, oneof: "metadata" },
     { no: 8, name: "g_sheets_next_page_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 13, name: "load_disabled", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MetadataResponse {

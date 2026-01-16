@@ -14,8 +14,10 @@ import "google/protobuf/struct.proto";
 import "plugins/adls/v1/plugin.proto";
 import "plugins/cosmosdb/v1/plugin.proto";
 import "plugins/couchbase/v1/plugin.proto";
+import "plugins/dynamodb/v1/plugin.proto";
 import "plugins/kafka/v1/plugin.proto";
 import "plugins/kinesis/v1/plugin.proto";
+import "plugins/salesforce/v1/plugin.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "store/v1/store.proto";
 import "validate/validate.proto";
@@ -603,9 +605,13 @@ message MetadataResponse {
     plugins.cosmosdb.v1.Plugin.Metadata cosmosdb = 6;
     plugins.adls.v1.Plugin.Metadata adls = 7;
     google.protobuf.Struct graphql = 9;
+    plugins.dynamodb.v1.Metadata dynamodb = 10;
+    plugins.salesforce.v1.Plugin.Metadata salesforce = 11;
+    google.protobuf.Struct open_api_spec = 12;
   }
 
   string g_sheets_next_page_token = 8;
+  bool load_disabled = 13;
 }
 
 message DownloadRequest {

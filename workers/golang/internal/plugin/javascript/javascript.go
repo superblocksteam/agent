@@ -22,6 +22,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/utils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -75,7 +76,7 @@ func (p *javascriptPlugin) execute(ctx context.Context, requestProps *transportv
 
 	rawCode := getCodeFromProps(requestProps, logger)
 	code := fmt.Sprintf("await (async () => { %s })()", rawCode)
-	variables := utils.NewMapFromGoMap[*transportv1.Variable](requestProps.GetVariables())
+	variables := utils.NewMapFromGoMap(requestProps.GetVariables())
 
 	output := &apiv1.Output{
 		Request:   rawCode,
@@ -107,29 +108,61 @@ func (p *javascriptPlugin) execute(ctx context.Context, requestProps *transportv
 	return output, nil
 }
 
-func (p *javascriptPlugin) Execute(ctx context.Context, requestProps *transportv1.Request_Data_Data_Props) (*apiv1.Output, error) {
+func (p *javascriptPlugin) Execute(
+	ctx context.Context,
+	_ *workerv1.RequestMetadata,
+	requestProps *transportv1.Request_Data_Data_Props,
+	_ *transportv1.Request_Data_Data_Quota,
+	_ *transportv1.Request_Data_Pinned,
+) (*workerv1.ExecuteResponse, error) {
 	// Okay, so it turns out we have a 3 way race if we pass in the execution context here. Either a sandbox closed err, quotas error, or a context deadline exceeded err.
 	// Since we're always closing the sandbox after the engine is complete, we can safely pass a background context here
 	logger := p.logger.With(zap.String(observability.OBS_TAG_CORRELATION_ID, constants.ExecutionID(ctx)))
 	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{Logger: logger, Store: p.storeClient, BindingErrorOptions: []commonErr.BindingErrorOption{commonErr.WithLocation()}})
 	defer sandbox.Close()
 
-	return p.execute(ctx, requestProps, sandbox, logger)
+	output, err := p.execute(ctx, requestProps, sandbox, logger)
+	if output == nil {
+		output = &apiv1.Output{}
+	}
+
+	return &workerv1.ExecuteResponse{
+		Output:        output.ToOld(),
+		StructuredLog: structuredLogsFromOutput(output),
+	}, err
 }
 
-func (p *javascriptPlugin) Stream(ctx context.Context, requestProps *transportv1.Request_Data_Data_Props, send func(message any), until func()) error {
+func (p *javascriptPlugin) Stream(
+	ctx context.Context,
+	requestMeta *workerv1.RequestMetadata,
+	requestProps *transportv1.Request_Data_Data_Props,
+	quotas *transportv1.Request_Data_Data_Quota,
+	pinned *transportv1.Request_Data_Pinned,
+	send func(message any),
+	until func(),
+) error {
 	return errors.ErrUnsupported
 }
 
-func (p *javascriptPlugin) Metadata(ctx context.Context, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error) {
+func (p *javascriptPlugin) Metadata(
+	ctx context.Context,
+	requestMeta *workerv1.RequestMetadata,
+	datasourceConfig *structpb.Struct,
+	actionConfig *structpb.Struct,
+) (*transportv1.Response_Data_Data, error) {
 	return nil, errors.ErrUnsupported
 }
 
-func (p *javascriptPlugin) Test(ctx context.Context, datasourceConfig *structpb.Struct) error {
+func (p *javascriptPlugin) Test(
+	ctx context.Context,
+	requestMeta *workerv1.RequestMetadata,
+	datasourceConfig *structpb.Struct,
+	actionConfig *structpb.Struct,
+) error {
 	return errors.ErrUnsupported
 }
 
-func (p *javascriptPlugin) PreDelete(ctx context.Context, datasourceConfig *structpb.Struct) error {
+func (p *javascriptPlugin) PreDelete(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error {
 	return errors.ErrUnsupported
 }
 
@@ -165,6 +198,24 @@ func ioReaderToStringSlice(reader io.Reader, delimiter string, logger *zap.Logge
 	}
 
 	return results[:numStrs]
+}
+
+func structuredLogsFromOutput(output *apiv1.Output) []*workerv1.StructuredLog {
+	var structuredLogs []*workerv1.StructuredLog
+	for _, log := range output.GetStdout() {
+		structuredLogs = append(structuredLogs, &workerv1.StructuredLog{
+			Level:   workerv1.StructuredLog_LEVEL_INFO,
+			Message: log,
+		})
+	}
+	for _, log := range output.GetStderr() {
+		structuredLogs = append(structuredLogs, &workerv1.StructuredLog{
+			Level:   workerv1.StructuredLog_LEVEL_ERROR,
+			Message: log,
+		})
+	}
+
+	return structuredLogs
 }
 
 func retrieveGetFileFunc(props *transportv1.Request_Data_Data_Props, headers map[string][]string) engineUtils.GetFileFunc {

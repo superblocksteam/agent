@@ -24,41 +24,9 @@ func (_m *PluginExecutor) EXPECT() *PluginExecutor_Expecter {
 	return &PluginExecutor_Expecter{mock: &_m.Mock}
 }
 
-// Close provides a mock function with no fields
-func (_m *PluginExecutor) Close() {
-	_m.Called()
-}
-
-// PluginExecutor_Close_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Close'
-type PluginExecutor_Close_Call struct {
-	*mock.Call
-}
-
-// Close is a helper method to define mock.On call
-func (_e *PluginExecutor_Expecter) Close() *PluginExecutor_Close_Call {
-	return &PluginExecutor_Close_Call{Call: _e.mock.On("Close")}
-}
-
-func (_c *PluginExecutor_Close_Call) Run(run func()) *PluginExecutor_Close_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *PluginExecutor_Close_Call) Return() *PluginExecutor_Close_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *PluginExecutor_Close_Call) RunAndReturn(run func()) *PluginExecutor_Close_Call {
-	_c.Run(run)
-	return _c
-}
-
-// Execute provides a mock function with given fields: ctx, pluginName, props, quotas, perf
-func (_m *PluginExecutor) Execute(ctx context.Context, pluginName string, props *v1.Request_Data_Data_Props, quotas *v1.Request_Data_Data_Quota, perf *v1.Performance) (*v1.Response_Data_Data, error) {
-	ret := _m.Called(ctx, pluginName, props, quotas, perf)
+// Execute provides a mock function with given fields: ctx, pluginName, props, quotas, reqMeta, perf
+func (_m *PluginExecutor) Execute(ctx context.Context, pluginName string, props *v1.Request_Data_Data_Props, quotas *v1.Request_Data_Data_Quota, reqMeta *v1.Request_Data_Pinned, perf *v1.Performance) (*v1.Response_Data_Data, error) {
+	ret := _m.Called(ctx, pluginName, props, quotas, reqMeta, perf)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
@@ -66,19 +34,19 @@ func (_m *PluginExecutor) Execute(ctx context.Context, pluginName string, props 
 
 	var r0 *v1.Response_Data_Data
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Request_Data_Data_Quota, *v1.Performance) (*v1.Response_Data_Data, error)); ok {
-		return rf(ctx, pluginName, props, quotas, perf)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Request_Data_Data_Quota, *v1.Request_Data_Pinned, *v1.Performance) (*v1.Response_Data_Data, error)); ok {
+		return rf(ctx, pluginName, props, quotas, reqMeta, perf)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Request_Data_Data_Quota, *v1.Performance) *v1.Response_Data_Data); ok {
-		r0 = rf(ctx, pluginName, props, quotas, perf)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Request_Data_Data_Quota, *v1.Request_Data_Pinned, *v1.Performance) *v1.Response_Data_Data); ok {
+		r0 = rf(ctx, pluginName, props, quotas, reqMeta, perf)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Response_Data_Data)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Request_Data_Data_Quota, *v1.Performance) error); ok {
-		r1 = rf(ctx, pluginName, props, quotas, perf)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Request_Data_Data_Quota, *v1.Request_Data_Pinned, *v1.Performance) error); ok {
+		r1 = rf(ctx, pluginName, props, quotas, reqMeta, perf)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -96,14 +64,15 @@ type PluginExecutor_Execute_Call struct {
 //   - pluginName string
 //   - props *v1.Request_Data_Data_Props
 //   - quotas *v1.Request_Data_Data_Quota
+//   - reqMeta *v1.Request_Data_Pinned
 //   - perf *v1.Performance
-func (_e *PluginExecutor_Expecter) Execute(ctx interface{}, pluginName interface{}, props interface{}, quotas interface{}, perf interface{}) *PluginExecutor_Execute_Call {
-	return &PluginExecutor_Execute_Call{Call: _e.mock.On("Execute", ctx, pluginName, props, quotas, perf)}
+func (_e *PluginExecutor_Expecter) Execute(ctx interface{}, pluginName interface{}, props interface{}, quotas interface{}, reqMeta interface{}, perf interface{}) *PluginExecutor_Execute_Call {
+	return &PluginExecutor_Execute_Call{Call: _e.mock.On("Execute", ctx, pluginName, props, quotas, reqMeta, perf)}
 }
 
-func (_c *PluginExecutor_Execute_Call) Run(run func(ctx context.Context, pluginName string, props *v1.Request_Data_Data_Props, quotas *v1.Request_Data_Data_Quota, perf *v1.Performance)) *PluginExecutor_Execute_Call {
+func (_c *PluginExecutor_Execute_Call) Run(run func(ctx context.Context, pluginName string, props *v1.Request_Data_Data_Props, quotas *v1.Request_Data_Data_Quota, reqMeta *v1.Request_Data_Pinned, perf *v1.Performance)) *PluginExecutor_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(*v1.Request_Data_Data_Props), args[3].(*v1.Request_Data_Data_Quota), args[4].(*v1.Performance))
+		run(args[0].(context.Context), args[1].(string), args[2].(*v1.Request_Data_Data_Props), args[3].(*v1.Request_Data_Data_Quota), args[4].(*v1.Request_Data_Pinned), args[5].(*v1.Performance))
 	})
 	return _c
 }
@@ -113,7 +82,7 @@ func (_c *PluginExecutor_Execute_Call) Return(_a0 *v1.Response_Data_Data, _a1 er
 	return _c
 }
 
-func (_c *PluginExecutor_Execute_Call) RunAndReturn(run func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Request_Data_Data_Quota, *v1.Performance) (*v1.Response_Data_Data, error)) *PluginExecutor_Execute_Call {
+func (_c *PluginExecutor_Execute_Call) RunAndReturn(run func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Request_Data_Data_Quota, *v1.Request_Data_Pinned, *v1.Performance) (*v1.Response_Data_Data, error)) *PluginExecutor_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

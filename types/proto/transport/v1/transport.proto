@@ -14,6 +14,7 @@ import "plugins/cosmosdb/v1/plugin.proto";
 import "plugins/couchbase/v1/plugin.proto";
 import "plugins/kafka/v1/plugin.proto";
 import "plugins/kinesis/v1/plugin.proto";
+import "plugins/salesforce/v1/plugin.proto";
 import "store/v1/store.proto";
 import "validate/validate.proto";
 
@@ -150,6 +151,9 @@ message Response {
       optional google.protobuf.Any dynamodb = 10;
       optional string g_sheets_next_page_token = 11;
       optional google.protobuf.Struct graphql = 12;
+      optional google.protobuf.Struct open_api_spec = 13;
+      optional plugins.salesforce.v1.Plugin.Metadata salesforce = 14;
+      optional bool load_disabled = 15;
     }
     Performance pinned = 1;
     Data data = 2;

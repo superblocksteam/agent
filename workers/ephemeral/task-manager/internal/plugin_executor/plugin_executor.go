@@ -15,12 +15,11 @@ import (
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/utils"
-	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
+	commonV1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 // PluginExecutor manages plugin execution
@@ -28,35 +27,35 @@ import (
 type PluginExecutor interface {
 	RegisterPlugin(name string, plugin plugin.Plugin) error
 	ListPlugins() []string
-	Execute(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
+	Execute(
+		ctx context.Context,
+		pluginName string,
+		props *transportv1.Request_Data_Data_Props,
+		quotas *transportv1.Request_Data_Data_Quota,
+		reqMeta *transportv1.Request_Data_Pinned,
+		perf *transportv1.Performance,
+	) (*transportv1.Response_Data_Data, error)
 	Stream(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance, send func(message any), until func()) error
 	Metadata(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
 	Test(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
 	PreDelete(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
-	Close()
 }
 
 type pluginExecutor struct {
-	plugins  map[string]plugin.Plugin
-	logger   *zap.Logger
-	language string      // The language this executor handles (e.g., "python", "javascript")
-	store    store.Store // KV store for output
+	plugins map[string]plugin.Plugin
+	logger  *zap.Logger
+	store   store.Store // KV store for output
 }
 
 // NewPluginExecutor creates a new plugin executor.
-// Language is required - each ephemeral worker handles exactly one language.
 func NewPluginExecutor(options *Options) PluginExecutor {
-	if options.Language == "" {
-		panic("plugin_executor: Language is required")
-	}
 	if options.Store == nil {
 		panic("plugin_executor: Store is required")
 	}
 	return &pluginExecutor{
-		plugins:  make(map[string]plugin.Plugin),
-		logger:   options.Logger,
-		language: options.Language,
-		store:    options.Store,
+		plugins: make(map[string]plugin.Plugin),
+		logger:  options.Logger,
+		store:   options.Store,
 	}
 }
 
@@ -75,17 +74,37 @@ func (p *pluginExecutor) ListPlugins() []string {
 	return plugins
 }
 
+func (p *pluginExecutor) getPlugin(pluginName string) (plugin.Plugin, error) {
+	if p == nil {
+		return nil, fmt.Errorf("unknown plugin: %s", pluginName)
+	}
+
+	plug, ok := p.plugins[pluginName]
+	if !ok {
+		return nil, fmt.Errorf("unknown plugin: %s", pluginName)
+	}
+
+	return plug, nil
+}
+
 // Execute runs code using the appropriate plugin
-func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, parentPerf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
+func (p *pluginExecutor) Execute(
+	ctx context.Context,
+	pluginName string,
+	props *transportv1.Request_Data_Data_Props,
+	quotas *transportv1.Request_Data_Data_Quota,
+	meta *transportv1.Request_Data_Pinned,
+	parentPerf *transportv1.Performance,
+) (*transportv1.Response_Data_Data, error) {
+
 	logger := p.logger.With(
 		zap.String(observability.OBS_TAG_CORRELATION_ID, constants.ExecutionID(ctx)),
 	)
 
-	// Verify request matches this worker's language
-	if pluginName != p.language {
-		err := fmt.Errorf("this worker only handles %s, got %s", p.language, pluginName)
-		logger.Error("language mismatch", zap.Error(err))
-		return nil, err
+	plug, err := p.getPlugin(pluginName)
+	if err != nil {
+		logger.Error("unknown/unsupported plugin", zap.String("plugin", pluginName), zap.Error(err))
+		return nil, &commonErr.InternalError{Err: err}
 	}
 
 	// Apply quota timeout if specified
@@ -96,6 +115,7 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 		defer cancel()
 	}
 
+	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
 	resp := &transportv1.Response_Data_Data{}
 	perf := &transportv1.Performance{
 		PluginExecution: &transportv1.Performance_Observable{},
@@ -122,20 +142,13 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 	}
 	resp.Key = props.GetExecutionId() + ".output." + uuid
 
-	plug, ok := p.plugins[pluginName]
-	if !ok {
-		err := fmt.Errorf("unknown plugin: %s", pluginName)
-		logger.Error("plugin not found", zap.Error(err))
-		return resp, err
-	}
-
 	output, err := tracer.Observe(
 		ctx,
 		fmt.Sprintf("execute.plugin.%s", pluginName),
 		nil,
-		func(_ context.Context, _ trace.Span) (*apiv1.Output, error) {
+		func(_ context.Context, _ trace.Span) (*workerv1.ExecuteResponse, error) {
 			perf.PluginExecution.Start = float64(time.Now().UnixMicro())
-			res, err := plug.Execute(timedCtx, props)
+			res, err := plug.Execute(timedCtx, requestMeta, props, quotas, meta)
 			perf.PluginExecution.End = float64(time.Now().UnixMicro())
 			return res, err
 		},
@@ -144,36 +157,31 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 
 	// If the plugin returns a nil result for the output, set to default/empty value
 	if output == nil {
-		output = &apiv1.Output{}
+		output = &workerv1.ExecuteResponse{}
+	}
+	if err == nil && output.GetError() != nil {
+		err = output.GetError()
 	}
 
 	if err != nil {
 		if _, isQuotaErr := commonErr.IsQuotaError(err); isQuotaErr || err == context.DeadlineExceeded {
-			output.Stdout = nil
-			output.Stderr = nil
+			output.StructuredLog = nil
+			output.Output.Log = nil
 			err = errors.New("DurationQuotaError")
 		}
+
 		resp.Err = commonErr.ToCommonV1(err)
-		// Set error name like Python worker does
-		if resp.Err != nil {
-			if resp.Err.Message == "DurationQuotaError" || resp.Err.Message == "QuotaError" {
-				resp.Err.Name = "QuotaError"
-			} else {
-				resp.Err.Name = "IntegrationError"
-			}
+		if resp.Err.Message == "DurationQuotaError" || resp.Err.Message == "QuotaError" {
+			resp.Err.Name = "QuotaError"
+		} else {
+			resp.Err.Name = "IntegrationError"
 		}
 	}
 
 	p.logExecutionOutput(ctx, output, err, logger)
 
-	// Determine error message to store in output (matching Python worker behavior)
-	var errMsgForOutput string
-	if err != nil {
-		errMsgForOutput = err.Error()
-	}
-
 	// Store output in KV store
-	kvPair, kvErr := p.buildKvPair(resp.Key, output.ToOld(), quotas, logger, errMsgForOutput)
+	kvPair, kvErr := p.buildKvPair(resp.Key, output, quotas, logger, resp.Err)
 	if kvErr != nil {
 		logger.Error("failed to build KV pair", zap.Error(kvErr))
 		return resp, kvErr
@@ -185,10 +193,10 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 			if resp.Err != nil {
 				resp.Err.Name = "QuotaError"
 			}
-			output.Result = nil
+			output.Output.Output = nil
 
 			// Try again without the result, include QuotaError in output
-			kvPair, kvErr = p.buildKvPair(resp.Key, output.ToOld(), nil, logger, "QuotaError")
+			kvPair, kvErr = p.buildKvPair(resp.Key, output, nil, logger, resp.Err)
 			if kvErr == nil {
 				kvErr = p.pushToKVStore(ctx, kvPair, perf)
 			}
@@ -208,32 +216,40 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 
 // Stream runs streaming execution using the appropriate plugin
 func (p *pluginExecutor) Stream(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance, send func(message any), until func()) error {
-	plug, ok := p.plugins[pluginName]
-	if !ok {
-		return &commonErr.InternalError{}
+	plug, err := p.getPlugin(pluginName)
+	if err != nil {
+		return &commonErr.InternalError{Err: err}
 	}
 
-	return plug.Stream(ctx, props, send, until)
+	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
+	return plug.Stream(ctx, requestMeta, props, nil, nil, send, until)
 }
 
 // Metadata retrieves metadata from the plugin
 func (p *pluginExecutor) Metadata(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
-	plug, ok := p.plugins[pluginName]
-	if !ok {
-		return nil, &commonErr.InternalError{}
+	plug, err := p.getPlugin(pluginName)
+	if err != nil {
+		return nil, &commonErr.InternalError{Err: err}
 	}
 
-	return plug.Metadata(ctx, props.GetDatasourceConfiguration(), props.GetActionConfiguration())
+	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
+	resp, err := plug.Metadata(ctx, requestMeta, props.GetDatasourceConfiguration(), props.GetActionConfiguration())
+	if err != nil {
+		return nil, &commonErr.InternalError{Err: err}
+	}
+
+	return resp, nil
 }
 
 // Test runs a connection test using the plugin
 func (p *pluginExecutor) Test(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
-	plug, ok := p.plugins[pluginName]
-	if !ok {
-		return nil, &commonErr.InternalError{}
+	plug, err := p.getPlugin(pluginName)
+	if err != nil {
+		return nil, &commonErr.InternalError{Err: err}
 	}
 
-	err := plug.Test(ctx, props.GetDatasourceConfiguration())
+	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
+	err = plug.Test(ctx, requestMeta, props.GetDatasourceConfiguration(), props.GetActionConfiguration())
 	if err != nil {
 		return nil, err
 	}
@@ -243,43 +259,30 @@ func (p *pluginExecutor) Test(ctx context.Context, pluginName string, props *tra
 
 // PreDelete runs pre-delete logic using the plugin
 func (p *pluginExecutor) PreDelete(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
-	plug, ok := p.plugins[pluginName]
-	if !ok {
-		return nil, &commonErr.InternalError{}
+	plug, err := p.getPlugin(pluginName)
+	if err != nil {
+		return nil, &commonErr.InternalError{Err: err}
 	}
 
-	plug.PreDelete(ctx, props.GetDatasourceConfiguration())
+	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
+	plug.PreDelete(ctx, requestMeta, props.GetDatasourceConfiguration())
+
 	return nil, nil
 }
 
-// Close closes all registered plugins
-func (p *pluginExecutor) Close() {
-	for _, plug := range p.plugins {
-		plug.Close()
-	}
-}
+func (p *pluginExecutor) buildKvPair(
+	key string,
+	message *workerv1.ExecuteResponse,
+	quotas *transportv1.Request_Data_Data_Quota,
+	logger *zap.Logger,
+	executionErr *commonV1.Error,
+) (*store.KV, error) {
 
-func (p *pluginExecutor) buildKvPair(key string, message proto.Message, quotas *transportv1.Request_Data_Data_Quota, logger *zap.Logger, errMsg string) (*store.KV, error) {
-	// First marshal the protobuf message
-	jsonData, err := protojson.Marshal(message)
+	outputMap := p.executeResponseToOutputMap(message, executionErr)
+	jsonData, err := json.Marshal(outputMap)
 	if err != nil {
-		logger.Error("failed to JSON serialize proto message", zap.Error(err))
-		return nil, fmt.Errorf("failed to JSON serialize proto message: %w", err)
-	}
-
-	// If there's an error, we need to add the error field to the output
-	if errMsg != "" {
-		var outputMap map[string]any
-		if unmarshalErr := json.Unmarshal(jsonData, &outputMap); unmarshalErr != nil {
-			logger.Error("failed to unmarshal output for error injection", zap.Error(unmarshalErr))
-		} else {
-			outputMap["error"] = errMsg
-			jsonData, err = json.Marshal(outputMap)
-			if err != nil {
-				logger.Error("failed to marshal output with error", zap.Error(err))
-				return nil, fmt.Errorf("failed to marshal output with error: %w", err)
-			}
-		}
+		logger.Error("failed to marshal output map", zap.Error(err))
+		return nil, fmt.Errorf("failed to marshal output with error: %w", err)
 	}
 
 	var maxSize int64
@@ -310,20 +313,60 @@ func (p *pluginExecutor) pushToKVStore(ctx context.Context, kv *store.KV, perf *
 	return err
 }
 
-func (p *pluginExecutor) logExecutionOutput(ctx context.Context, output *apiv1.Output, err error, logger *zap.Logger) {
+func (*pluginExecutor) logExecutionOutput(ctx context.Context, output *workerv1.ExecuteResponse, err error, logger *zap.Logger) {
 	l := logger.With(
 		zap.String(observability.OBS_TAG_COMPONENT, "worker.ephemeral"),
 		zap.String(observability.OBS_TAG_REMOTE, "true"),
 	)
 
-	for _, log := range output.GetStdout() {
-		l.Info(log)
-	}
-	for _, log := range output.GetStderr() {
-		l.Error(log)
+	for _, log := range output.GetStructuredLog() {
+		switch log.GetLevel() {
+		case workerv1.StructuredLog_LEVEL_INFO:
+			l.Info(log.GetMessage())
+		case workerv1.StructuredLog_LEVEL_WARN:
+			l.Warn(log.GetMessage())
+		case workerv1.StructuredLog_LEVEL_ERROR:
+			l.Error(log.GetMessage())
+		}
 	}
 
 	if err != nil {
 		l.Error(err.Error())
 	}
+}
+
+func (*pluginExecutor) executeResponseToOutputMap(response *workerv1.ExecuteResponse, executionErr *commonV1.Error) map[string]any {
+	outputMap := map[string]any{
+		"output":        response.GetOutput().GetOutput().AsInterface(),
+		"log":           response.GetOutput().GetLog(),
+		"request":       response.GetOutput().GetRequest(),
+		"children":      response.GetChildren(),
+		"executionTime": response.GetExecutionTime().AsDuration().Milliseconds(),
+	}
+
+	var prioritizedError *commonV1.Error
+	if executionErr != nil {
+		prioritizedError = executionErr
+	} else if response.GetError() != nil {
+		prioritizedError = response.GetError()
+	}
+
+	if prioritizedError != nil {
+		outputMap["error"] = prioritizedError.GetMessage()
+		outputMap["integrationErrorCode"] = prioritizedError.GetCode()
+	}
+
+	if response.GetAuthError() {
+		outputMap["authError"] = true
+	}
+
+	if response.GetStartTime() != nil {
+		outputMap["startTimeUtc"] = response.GetStartTime().AsTime().UnixMilli()
+	}
+
+	if response.GetOutput().GetPlaceHoldersInfo() != nil {
+		outputMap["placeholdersInfo"] = response.GetOutput().GetPlaceHoldersInfo().AsInterface()
+	}
+
+	return outputMap
 }

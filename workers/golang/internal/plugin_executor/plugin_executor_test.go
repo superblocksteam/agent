@@ -16,6 +16,7 @@ import (
 	mockStore "github.com/superblocksteam/agent/pkg/store/mock"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.opentelemetry.io/otel/propagation"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -26,7 +27,32 @@ import (
 func registerPlugins(t *testing.T, pe PluginExecutor) {
 	mockPlugin := mocks.NewPlugin(t)
 	pe.RegisterPlugin("postgres", mockPlugin)
-	mockPlugin.On("Execute", mock.Anything).Return(&apiv1.Output{Result: structpb.NewStringValue("ex result")}, nil)
+	mockPlugin.On(
+		"Execute",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+	).Return(&workerv1.ExecuteResponse{Output: &apiv1.OutputOld{Output: structpb.NewStringValue("ex result")}}, nil)
+}
+
+func structuredLogsFromOutput(output *apiv1.Output) []*workerv1.StructuredLog {
+	var structuredLogs []*workerv1.StructuredLog
+	for _, log := range output.GetStdout() {
+		structuredLogs = append(structuredLogs, &workerv1.StructuredLog{
+			Level:   workerv1.StructuredLog_LEVEL_INFO,
+			Message: log,
+		})
+	}
+	for _, log := range output.GetStderr() {
+		structuredLogs = append(structuredLogs, &workerv1.StructuredLog{
+			Level:   workerv1.StructuredLog_LEVEL_ERROR,
+			Message: log,
+		})
+	}
+
+	return structuredLogs
 }
 
 func TestExecute(t *testing.T) {
@@ -77,7 +103,7 @@ func TestExecute_LogsExecutionLogsAndErrors(t *testing.T) {
 	testCases := []struct {
 		name         string
 		carrier      map[string]string
-		pluginOutput *apiv1.Output
+		apiOutput    *apiv1.Output
 		pluginError  error
 		storeError   error
 		expectedLogs map[zapcore.Level][]observer.LoggedEntry
@@ -94,7 +120,7 @@ func TestExecute_LogsExecutionLogsAndErrors(t *testing.T) {
 			carrier: map[string]string{
 				"baggage": "id=api1,env=staging;shadow=true",
 			},
-			pluginOutput: &apiv1.Output{
+			apiOutput: &apiv1.Output{
 				Stdout: []string{
 					"Step 1 started",
 					"Step 2 started",
@@ -165,7 +191,7 @@ func TestExecute_LogsExecutionLogsAndErrors(t *testing.T) {
 		},
 		{
 			name: "logs no baggage data",
-			pluginOutput: &apiv1.Output{
+			apiOutput: &apiv1.Output{
 				Stdout: []string{
 					"Step 1 started",
 				},
@@ -231,7 +257,7 @@ func TestExecute_LogsExecutionLogsAndErrors(t *testing.T) {
 			carrier: map[string]string{
 				"baggage": "id=bbbbb,env=canary",
 			},
-			pluginOutput: &apiv1.Output{
+			apiOutput: &apiv1.Output{
 				Stdout: []string{
 					"Step 1 started",
 				},
@@ -288,7 +314,7 @@ func TestExecute_LogsExecutionLogsAndErrors(t *testing.T) {
 		},
 		{
 			name: "error logs for non-quota KV store error",
-			pluginOutput: &apiv1.Output{
+			apiOutput: &apiv1.Output{
 				Stdout: []string{
 					"Step 1 started",
 					"Step 1 completed",
@@ -358,7 +384,22 @@ func TestExecute_LogsExecutionLogsAndErrors(t *testing.T) {
 			anyCtx := propagation.Baggage{}.Extract(context.Background(), propagation.MapCarrier(tc.carrier))
 			ctxWithExecId := constants.WithExecutionID(anyCtx, anyProps.GetExecutionId())
 
-			mockPlugin.On("Execute", mock.Anything, anyProps).Return(tc.pluginOutput, tc.pluginError).Once()
+			var expectedPluginOutput *workerv1.ExecuteResponse
+			if tc.apiOutput != nil {
+				expectedPluginOutput = &workerv1.ExecuteResponse{
+					Output:        tc.apiOutput.ToOld(),
+					StructuredLog: structuredLogsFromOutput(tc.apiOutput),
+				}
+			}
+
+			mockPlugin.On(
+				"Execute",
+				mock.Anything,
+				mock.Anything,
+				anyProps,
+				mock.Anything,
+				mock.Anything,
+			).Return(expectedPluginOutput, tc.pluginError).Once()
 			mockKvStore.On("Write", mock.Anything, mock.Anything).Return(tc.storeError).Once()
 
 			resp, err := executor.Execute(ctxWithExecId, "v8", anyProps, nil, &transportv1.Performance{})
@@ -464,7 +505,16 @@ func TestStream(t *testing.T) {
 
 			if tc.registerPlugin {
 				executor.RegisterPlugin("v8", mockPlugin)
-				mockPlugin.On("Stream", anyCtx, anyProps, mock.AnythingOfType("func(interface {})"), mock.AnythingOfType("func()")).Return(tc.expectedErr).Once()
+				mockPlugin.On(
+					"Stream",
+					anyCtx,
+					mock.Anything,
+					anyProps,
+					mock.Anything,
+					mock.Anything,
+					mock.AnythingOfType("func(interface {})"),
+					mock.AnythingOfType("func()"),
+				).Return(tc.expectedErr).Once()
 			}
 
 			err := executor.Stream(anyCtx, "v8", anyProps, anyPerf, anySendFn, anyUntilFn)
@@ -573,11 +623,17 @@ func TestEventExecutions(t *testing.T) {
 
 				switch tc.event {
 				case "Metadata":
-					mockPlugin.On("Metadata", anyCtx, dataConfig, actionConfig).Return(tc.expectedResp, tc.expectedErr).Once()
+					mockPlugin.On(
+						"Metadata",
+						anyCtx,
+						mock.Anything,
+						dataConfig,
+						actionConfig,
+					).Return(tc.expectedResp, tc.expectedErr).Once()
 				case "Test":
-					mockPlugin.On("Test", anyCtx, dataConfig).Return(tc.expectedErr).Once()
+					mockPlugin.On("Test", anyCtx, mock.Anything, dataConfig, actionConfig).Return(tc.expectedErr).Once()
 				case "PreDelete":
-					mockPlugin.On("PreDelete", anyCtx, dataConfig).Return(tc.expectedErr).Once()
+					mockPlugin.On("PreDelete", anyCtx, mock.Anything, dataConfig).Return(tc.expectedErr).Once()
 				}
 			}
 

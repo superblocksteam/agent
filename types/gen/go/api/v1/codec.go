@@ -19,29 +19,27 @@ func (a *Api) UnmarshalJSON(data []byte) error {
 
 func (o *Output) ToOld() *OutputOld {
 	var logsCombined []string
-	for _, log := range o.Stdout {
+	for _, log := range o.GetStdout() {
 		logsCombined = append(logsCombined, log)
 	}
-	for _, err := range o.Stderr {
+	for _, err := range o.GetStderr() {
 		logsCombined = append(logsCombined, "[ERROR] "+err)
 	}
 
 	var requestSummary string
-	if o.Request != "" {
-		requestSummary = o.Request
-	} else if o.RequestV2 != nil {
-		requestSummary = o.RequestV2.Summary
+	if o.GetRequest() != "" {
+		requestSummary = o.GetRequest()
+	} else if o.GetRequestV2() != nil {
+		requestSummary = o.GetRequestV2().GetSummary()
 	}
 
 	var placeHoldersInfo *structpb.Value
-	if o.RequestV2 != nil && o.RequestV2.Metadata != nil && o.RequestV2.Metadata.Fields != nil {
-		if val, ok := o.RequestV2.Metadata.Fields["placeHoldersInfo"]; ok {
-			placeHoldersInfo = val
-		}
+	if val, ok := o.GetRequestV2().GetMetadata().GetFields()["placeHoldersInfo"]; ok {
+		placeHoldersInfo = val
 	}
 
 	return &OutputOld{
-		Output:           o.Result,
+		Output:           o.GetResult(),
 		Log:              logsCombined,
 		Request:          requestSummary,
 		PlaceHoldersInfo: placeHoldersInfo,

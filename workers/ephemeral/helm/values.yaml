@@ -5,6 +5,11 @@
 #   python-ba:
 #     language: python
 #     consumerGroup: ephemeral-python
+#     ephemeral: true
+#     plugins:
+#       - python
+#     events:
+#       - execute
 #     triggerStreams:
 #       - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
 #       - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
@@ -13,8 +18,19 @@
 #       - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
 #   javascript-ba:
 #     language: javascript
-#     bucket: BA
+#     buckets:
+#       - BA
 #     consumerGroup: ephemeral-javascript
+#     ephemeral: true
+#     plugins:
+#       - '*'
+#       - '-javascript'
+#       - '-python'
+#     events:
+#       - execute
+#       - metadata
+#       - test
+#       - pre_delete
 #     # Verbatim triggers configuration
 #     triggers:
 #       - type: redis-streams
@@ -69,7 +85,7 @@ sandbox:
   runtimeClassName: ""
   python:
     image:
-      repository: ghcr.io/superblocksteam/python-sandbox
+      repository: ghcr.io/superblocksteam/python-lang-executor-sandbox
       tag: latest
       pullPolicy: IfNotPresent
     resources:
@@ -83,7 +99,7 @@ sandbox:
     extraEnv: []
   javascript:
     image:
-      repository: ghcr.io/superblocksteam/javascript-sandbox
+      repository: ghcr.io/superblocksteam/javascript-lang-executor-sandbox
       tag: latest
       pullPolicy: IfNotPresent
     resources:

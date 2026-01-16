@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package worker.v1;
+
+import "api/v1/event.proto";
+import "common/v1/errors.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "transport/v1/transport.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/worker/v1";
+
+// Service for executing code in Python/JavaScript workers
+service SandboxTransportService {
+  rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+  rpc Stream(StreamRequest) returns (StreamResponse);
+  rpc Metadata(MetadataRequest) returns (transport.v1.Response.Data.Data);
+  rpc Test(TestRequest) returns (google.protobuf.Empty);
+  rpc PreDelete(PreDeleteRequest) returns (google.protobuf.Empty);
+}
+
+message RequestMetadata {
+  string pluginName = 1;
+}
+
+// Execute request sent to workers
+message ExecuteRequest {
+  RequestMetadata metadata = 1;
+
+  // The request props (contains the action config and datasource config)
+  transport.v1.Request.Data.Data.Props props = 2;
+
+  // The quotas to apply to this step
+  transport.v1.Request.Data.Data.Quota quotas = 3;
+
+  // The pinned data (contains the observability tags)
+  transport.v1.Request.Data.Pinned pinned = 4;
+
+  // Address of the variable store (task-manager) for callbacks
+  string variable_store_address = 5;
+}
+
+message ExecuteResponse {
+  api.v1.OutputOld output = 1;
+
+  common.v1.Error error = 2;
+  bool authError = 3;
+  repeated string children = 4;
+  optional google.protobuf.Timestamp startTime = 5;
+  google.protobuf.Duration executionTime = 6;
+  repeated StructuredLog structuredLog = 7;
+}
+
+message StreamRequest {
+  ExecuteRequest request = 1;
+}
+
+message StreamResponse {
+  google.protobuf.Empty response = 1;
+}
+
+message MetadataRequest {
+  RequestMetadata metadata = 1;
+  google.protobuf.Struct datasourceConfig = 2;
+  google.protobuf.Struct actionConfig = 3;
+  string variable_store_address = 4;
+}
+
+message TestRequest {
+  RequestMetadata metadata = 1;
+  google.protobuf.Struct datasourceConfig = 2;
+  google.protobuf.Struct actionConfig = 3;
+  string variable_store_address = 4;
+}
+
+message PreDeleteRequest {
+  RequestMetadata metadata = 1;
+  google.protobuf.Struct datasourceConfig = 2;
+}
+
+message StructuredLog {
+  enum Level {
+    LEVEL_UNSPECIFIED = 0;
+    LEVEL_INFO = 1;
+    LEVEL_WARN = 2;
+    LEVEL_ERROR = 3;
+  }
+
+  string message = 1;
+  Level level = 2;
+}

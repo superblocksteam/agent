@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -161,7 +160,7 @@ func TestPluginInvocationAfterPollingMessage(t *testing.T) {
 			mockFileContextProvider.On("CleanupExecution", "exec-123").Return()
 
 			if tc.method == "Execute" {
-				mockPluginExecutor.On(tc.method, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				mockPluginExecutor.On(tc.method, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 			} else {
 				mockPluginExecutor.On(tc.method, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 			}
@@ -224,8 +223,6 @@ func TestClosingWhenPoolIsFull(t *testing.T) {
 	redisClient, _ := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
 	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
-
-	mockPluginExecutor.On("Close").Return()
 
 	transport := NewRedisTransport(&Options{
 		RedisClient:         redisClient,
@@ -318,10 +315,10 @@ func TestClosingProperlyDrainsRequests(t *testing.T) {
 	mockFileContextProvider.On("SetFileContext", "exec-123", &redisstore.ExecutionFileContext{}).Return()
 	mockFileContextProvider.On("CleanupExecution", "exec-123").Return()
 
-	mockPluginExecutor.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mockPluginExecutor.
+		On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		After(500*time.Millisecond).
 		Return(nil, nil)
-	mockPluginExecutor.On("Close").Return()
 
 	_, err := transport.pollOnce()
 	assert.NoError(t, err)
@@ -335,7 +332,7 @@ func TestStreamKeysGeneration(t *testing.T) {
 		name      string
 		plugins   []string
 		group     string
-		bucket    string
+		buckets   []string
 		events    []string
 		ephemeral bool
 		expected  []string
@@ -344,17 +341,17 @@ func TestStreamKeysGeneration(t *testing.T) {
 			name:    "single plugin single event",
 			plugins: []string{"python"},
 			group:   "main",
-			bucket:  "BA",
+			buckets: []string{"BA"},
 			events:  []string{"execute"},
 			expected: []string{
 				"agent.main.bucket.BA.plugin.python.event.execute",
 			},
 		},
 		{
-			name:      "single plugin single event ephemeral",
+			name:      "single bucket single plugin single event ephemeral",
 			plugins:   []string{"python"},
 			group:     "main",
-			bucket:    "BA",
+			buckets:   []string{"BA"},
 			events:    []string{"execute"},
 			ephemeral: true,
 			expected: []string{
@@ -362,10 +359,10 @@ func TestStreamKeysGeneration(t *testing.T) {
 			},
 		},
 		{
-			name:    "single plugin multiple events",
+			name:    "single bucket single plugin multiple events",
 			plugins: []string{"python"},
 			group:   "main",
-			bucket:  "BA",
+			buckets: []string{"BA"},
 			events:  []string{"execute", "metadata"},
 			expected: []string{
 				"agent.main.bucket.BA.plugin.python.event.execute",
@@ -373,10 +370,10 @@ func TestStreamKeysGeneration(t *testing.T) {
 			},
 		},
 		{
-			name:    "multiple plugins single event",
+			name:    "single bucket multiple plugins single event",
 			plugins: []string{"python", "javascript"},
 			group:   "main",
-			bucket:  "BA",
+			buckets: []string{"BA"},
 			events:  []string{"execute"},
 			expected: []string{
 				"agent.main.bucket.BA.plugin.python.event.execute",
@@ -384,10 +381,10 @@ func TestStreamKeysGeneration(t *testing.T) {
 			},
 		},
 		{
-			name:      "multiple plugins and events ephemeral",
+			name:      "multiple buckets multiple plugins and events ephemeral",
 			plugins:   []string{"python", "javascript"},
 			group:     "main",
-			bucket:    "BA",
+			buckets:   []string{"BA", "BE"},
 			events:    []string{"execute", "test"},
 			ephemeral: true,
 			expected: []string{
@@ -395,13 +392,17 @@ func TestStreamKeysGeneration(t *testing.T) {
 				"agent.main.bucket.BA.ephemeral.plugin.python.event.test",
 				"agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute",
 				"agent.main.bucket.BA.ephemeral.plugin.javascript.event.test",
+				"agent.main.bucket.BE.ephemeral.plugin.python.event.execute",
+				"agent.main.bucket.BE.ephemeral.plugin.python.event.test",
+				"agent.main.bucket.BE.ephemeral.plugin.javascript.event.execute",
+				"agent.main.bucket.BE.ephemeral.plugin.javascript.event.test",
 			},
 		},
 		{
 			name:     "empty plugins",
 			plugins:  []string{},
 			group:    "main",
-			bucket:   "BA",
+			buckets:  []string{"BA"},
 			events:   []string{"execute"},
 			expected: []string{},
 		},
@@ -409,7 +410,7 @@ func TestStreamKeysGeneration(t *testing.T) {
 			name:      "empty plugins ephemeral",
 			plugins:   []string{},
 			group:     "main",
-			bucket:    "BA",
+			buckets:   []string{"BA"},
 			events:    []string{"execute"},
 			ephemeral: true,
 			expected:  []string{},
@@ -418,14 +419,14 @@ func TestStreamKeysGeneration(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := StreamKeys(tc.plugins, tc.group, tc.bucket, tc.events, tc.ephemeral)
+			result := StreamKeys(tc.plugins, tc.group, tc.buckets, tc.events, tc.ephemeral)
 			assert.ElementsMatch(t, tc.expected, result)
 		})
 	}
 }
 
 func TestEphemeralModeTransport(t *testing.T) {
-	redisClient, _ := redismock.NewClientMock()
+	redisClient, redisMock := redismock.NewClientMock()
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
 	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
@@ -438,132 +439,18 @@ func TestEphemeralModeTransport(t *testing.T) {
 		MessageCount:        1,
 		PluginExecutor:      mockPluginExecutor,
 		Logger:              zap.NewNop(),
-		ExecutionPool:       1,
+		ExecutionPool:       15,
 		FileContextProvider: mockFileContextProvider,
 		Ephemeral:           true,
-		EphemeralTimeout:    30 * time.Second,
 	})
+	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
 
-	assert.True(t, transport.ephemeral)
-	assert.Equal(t, 30*time.Second, transport.ephemeralTimeout)
-	assert.NotNil(t, transport.ephemeralDone)
-}
+	err := transport.init()
 
-func TestWaitForCompletionSuccess(t *testing.T) {
-	redisClient, _ := redismock.NewClientMock()
-	mockPluginExecutor := mocks.NewPluginExecutor(t)
-	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
-
-	transport := NewRedisTransport(&Options{
-		RedisClient:         redisClient,
-		StreamKeys:          []string{"stream1"},
-		WorkerId:            "worker1",
-		ConsumerGroup:       "group1",
-		BlockDuration:       5 * time.Second,
-		MessageCount:        1,
-		PluginExecutor:      mockPluginExecutor,
-		Logger:              zap.NewNop(),
-		ExecutionPool:       1,
-		FileContextProvider: mockFileContextProvider,
-		Ephemeral:           true,
-		EphemeralTimeout:    1 * time.Second,
-	})
-
-	// Send success (nil) on ephemeralDone before timeout
-	go func() {
-		time.Sleep(50 * time.Millisecond)
-		transport.ephemeralDone <- nil
-	}()
-
-	err := transport.waitForCompletion()
 	assert.NoError(t, err)
-}
-
-func TestWaitForCompletionError(t *testing.T) {
-	redisClient, _ := redismock.NewClientMock()
-	mockPluginExecutor := mocks.NewPluginExecutor(t)
-	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
-
-	transport := NewRedisTransport(&Options{
-		RedisClient:         redisClient,
-		StreamKeys:          []string{"stream1"},
-		WorkerId:            "worker1",
-		ConsumerGroup:       "group1",
-		BlockDuration:       5 * time.Second,
-		MessageCount:        1,
-		PluginExecutor:      mockPluginExecutor,
-		Logger:              zap.NewNop(),
-		ExecutionPool:       1,
-		FileContextProvider: mockFileContextProvider,
-		Ephemeral:           true,
-		EphemeralTimeout:    1 * time.Second,
-	})
-
-	// Send an error on ephemeralDone before timeout
-	expectedErr := errors.New("execution failed")
-	go func() {
-		time.Sleep(50 * time.Millisecond)
-		transport.ephemeralDone <- expectedErr
-	}()
-
-	err := transport.waitForCompletion()
-	assert.ErrorIs(t, err, expectedErr)
-}
-
-func TestEphemeralModeTimeoutZeroMeansNoTimeout(t *testing.T) {
-	redisClient, _ := redismock.NewClientMock()
-	mockPluginExecutor := mocks.NewPluginExecutor(t)
-	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
-
-	transport := NewRedisTransport(&Options{
-		RedisClient:         redisClient,
-		StreamKeys:          []string{"stream1"},
-		WorkerId:            "worker1",
-		ConsumerGroup:       "group1",
-		BlockDuration:       5 * time.Second,
-		MessageCount:        1,
-		PluginExecutor:      mockPluginExecutor,
-		Logger:              zap.NewNop(),
-		ExecutionPool:       1,
-		FileContextProvider: mockFileContextProvider,
-		Ephemeral:           true,
-		EphemeralTimeout:    0, // No timeout
-	})
-
 	assert.True(t, transport.ephemeral)
-	assert.Equal(t, time.Duration(0), transport.ephemeralTimeout)
-}
-
-func TestSendTimeoutResponseCreatesValidResponse(t *testing.T) {
-	// This test verifies the timeout response structure without mocking Redis
-	// The sendTimeoutResponse function is tested indirectly through integration
-
-	redisClient, _ := redismock.NewClientMock()
-	mockPluginExecutor := mocks.NewPluginExecutor(t)
-	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
-
-	transport := NewRedisTransport(&Options{
-		RedisClient:         redisClient,
-		StreamKeys:          []string{"stream1"},
-		WorkerId:            "worker1",
-		ConsumerGroup:       "group1",
-		BlockDuration:       5 * time.Second,
-		MessageCount:        1,
-		PluginExecutor:      mockPluginExecutor,
-		Logger:              zap.NewNop(),
-		ExecutionPool:       1,
-		FileContextProvider: mockFileContextProvider,
-		Ephemeral:           true,
-		EphemeralTimeout:    100 * time.Millisecond,
-	})
-
-	// Verify the transport has the timeout configured
-	assert.Equal(t, 100*time.Millisecond, transport.ephemeralTimeout)
-	assert.True(t, transport.ephemeral)
-
-	// The sendTimeoutResponse function will attempt to send to Redis
-	// which will fail (no expectation set), but this verifies it doesn't panic
-	transport.sendTimeoutResponse("testInbox", 100*time.Millisecond)
+	assert.Equal(t, int64(1), transport.executionPool.Load())
+	assert.Equal(t, int64(1), transport.executionPoolSize)
 }
 
 func TestInitStreamsCreatesConsumerGroup(t *testing.T) {

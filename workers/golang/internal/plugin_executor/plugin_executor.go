@@ -15,13 +15,12 @@ import (
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/utils"
-	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 type PluginExecutor interface {
@@ -99,9 +98,9 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 		ctx,
 		fmt.Sprintf("execute.plugin.%s", pluginName),
 		nil,
-		func(_ context.Context, _ trace.Span) (*apiv1.Output, error) {
+		func(_ context.Context, _ trace.Span) (*workerv1.ExecuteResponse, error) {
 			perf.PluginExecution.Start = float64(time.Now().UnixMicro())
-			res, err := plug.Execute(timedCtx, props)
+			res, err := plug.Execute(timedCtx, nil, props, nil, nil)
 			perf.PluginExecution.End = float64(time.Now().UnixMicro())
 			return res, err
 		},
@@ -111,13 +110,15 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 	// If the plugin returns a nil result for the output (e.g. in the case of an execution error) set
 	// the output to a default/empty value
 	if output == nil {
-		output = &apiv1.Output{}
+		output = &workerv1.ExecuteResponse{}
 	}
 
 	if err != nil {
 		if _, isQuotaErr := commonErr.IsQuotaError(err); isQuotaErr || err == context.DeadlineExceeded {
-			output.Stdout = nil
-			output.Stderr = nil
+			output.StructuredLog = nil
+			if output.GetOutput().GetLog() != nil {
+				output.Output.Log = nil
+			}
 			err = errors.New("DurationQuotaError")
 		}
 
@@ -127,16 +128,18 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 	p.logExecutionOutput(ctx, output, err, logger)
 
 	var kvPair *store.KV
-	if kvPair, err = p.buildKvPair(resp.Key, output.ToOld(), quotas, logger); err == nil {
+	if kvPair, err = p.buildKvPair(resp.Key, output, quotas, logger); err == nil {
 		err = p.pushToKVStore(ctx, kvPair, perf)
 	}
 
 	if err != nil {
 		if err, isQuotaErr := commonErr.IsQuotaError(err); isQuotaErr {
 			resp.Err = commonErr.ToCommonV1(err)
-			output.Result = nil
+			if output.GetOutput().GetOutput() != nil {
+				output.Output.Output = nil
+			}
 
-			if kvPair, err = p.buildKvPair(resp.Key, output.ToOld(), nil, logger); err == nil {
+			if kvPair, err = p.buildKvPair(resp.Key, output, nil, logger); err == nil {
 				err = p.pushToKVStore(ctx, kvPair, perf)
 			}
 
@@ -159,7 +162,7 @@ func (p *pluginExecutor) Stream(ctx context.Context, pluginName string, props *t
 		return &commonErr.InternalError{}
 	}
 
-	err := plug.Stream(ctx, props, send, until)
+	err := plug.Stream(ctx, nil, props, nil, nil, send, until)
 	if err != nil {
 		return err
 	}
@@ -173,7 +176,7 @@ func (p *pluginExecutor) Metadata(ctx context.Context, pluginName string, props 
 		return nil, &commonErr.InternalError{}
 	}
 
-	pluginRes, err := plugin.Metadata(ctx, props.GetDatasourceConfiguration(), props.GetActionConfiguration())
+	pluginRes, err := plugin.Metadata(ctx, nil, props.GetDatasourceConfiguration(), props.GetActionConfiguration())
 
 	if err != nil {
 		return nil, err
@@ -188,7 +191,7 @@ func (p *pluginExecutor) Test(ctx context.Context, pluginName string, props *tra
 		return nil, &commonErr.InternalError{}
 	}
 
-	err := plugin.Test(ctx, props.GetDatasourceConfiguration())
+	err := plugin.Test(ctx, nil, props.GetDatasourceConfiguration(), props.GetActionConfiguration())
 	if err != nil {
 		return nil, err
 	}
@@ -202,12 +205,12 @@ func (p *pluginExecutor) PreDelete(ctx context.Context, pluginName string, props
 		return nil, &commonErr.InternalError{}
 	}
 
-	plugin.PreDelete(ctx, props.GetDatasourceConfiguration())
+	plugin.PreDelete(ctx, nil, props.GetDatasourceConfiguration())
 	return nil, nil
 }
 
-func (p *pluginExecutor) buildKvPair(key string, message proto.Message, quotas *transportv1.Request_Data_Data_Quota, logger *zap.Logger) (*store.KV, error) {
-	jsonData, err := protojson.Marshal(message)
+func (p *pluginExecutor) buildKvPair(key string, message *workerv1.ExecuteResponse, quotas *transportv1.Request_Data_Data_Quota, logger *zap.Logger) (*store.KV, error) {
+	jsonData, err := protojson.Marshal(message.GetOutput())
 	if err != nil {
 		logger.Error("failed to JSON serialize proto message", zap.Error(err))
 		return nil, fmt.Errorf("failed to JSON serialize proto message: %w", err)
@@ -237,7 +240,7 @@ func (p *pluginExecutor) pushToKVStore(ctx context.Context, kv *store.KV, perf *
 	return err
 }
 
-func (p *pluginExecutor) logExecutionOutput(ctx context.Context, output *apiv1.Output, err error, logger *zap.Logger) {
+func (p *pluginExecutor) logExecutionOutput(ctx context.Context, output *workerv1.ExecuteResponse, err error, logger *zap.Logger) {
 	l := logger.With(
 		append(
 			[]zap.Field{
@@ -248,11 +251,15 @@ func (p *pluginExecutor) logExecutionOutput(ctx context.Context, output *apiv1.O
 		)...,
 	)
 
-	for _, log := range output.GetStdout() {
-		l.Info(log)
-	}
-	for _, log := range output.GetStderr() {
-		l.Error(log)
+	for _, log := range output.GetStructuredLog() {
+		switch log.GetLevel() {
+		case workerv1.StructuredLog_LEVEL_INFO:
+			l.Info(log.GetMessage())
+		case workerv1.StructuredLog_LEVEL_WARN:
+			l.Warn(log.GetMessage())
+		case workerv1.StructuredLog_LEVEL_ERROR:
+			l.Error(log.GetMessage())
+		}
 	}
 
 	if err != nil {

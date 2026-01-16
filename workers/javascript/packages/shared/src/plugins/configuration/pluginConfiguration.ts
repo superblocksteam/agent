@@ -4,8 +4,8 @@ import { FetchAndExecuteProps } from '../execution';
 export type PluginConfiguration = ConnectionPoolConfiguration &
   JavascriptPluginConfiguration &
   PythonPluginConfiguration &
-  WorkflowPluginConfiguration &
-  RestApiPluginConfiguration;
+  RestApiPluginConfiguration &
+  WorkflowPluginConfiguration;
 
 export type ConnectionPoolConfiguration = {
   connectionPoolIdleTimeoutMs: number;
@@ -20,7 +20,7 @@ export type PythonPluginConfiguration = {
 };
 
 export type WorkflowPluginConfiguration = {
-  workflowFetchAndExecuteFunc: (fetchAndExecuteProps: FetchAndExecuteProps) => Promise<ApiExecutionResponse>;
+  workflowFetchAndExecuteFunc: ((fetchAndExecuteProps: FetchAndExecuteProps) => Promise<ApiExecutionResponse>) | null;
 };
 
 export type RestApiPluginConfiguration = {

@@ -45,6 +45,8 @@ var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
 var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
 goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
+var plugins_salesforce_v1_plugin_pb = require('../../plugins/salesforce/v1/plugin_pb');
+goog.object.extend(proto, plugins_salesforce_v1_plugin_pb);
 var store_v1_store_pb = require('../../store/v1/store_pb');
 goog.object.extend(proto, store_v1_store_pb);
 var validate_validate_pb = require('../../validate/validate_pb');
@@ -4222,7 +4224,10 @@ proto.transport.v1.Response.Data.Data.toObject = function(includeInstance, msg) 
     adls: (f = msg.getAdls()) && plugins_adls_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
     dynamodb: (f = msg.getDynamodb()) && google_protobuf_any_pb.Any.toObject(includeInstance, f),
     gSheetsNextPageToken: jspb.Message.getFieldWithDefault(msg, 11, ""),
-    graphql: (f = msg.getGraphql()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f)
+    graphql: (f = msg.getGraphql()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
+    openApiSpec: (f = msg.getOpenApiSpec()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
+    salesforce: (f = msg.getSalesforce()) && plugins_salesforce_v1_plugin_pb.Plugin.Metadata.toObject(includeInstance, f),
+    loadDisabled: jspb.Message.getBooleanFieldWithDefault(msg, 15, false)
   };
 
   if (includeInstance) {
@@ -4316,6 +4321,20 @@ proto.transport.v1.Response.Data.Data.deserializeBinaryFromReader = function(msg
       var value = new google_protobuf_struct_pb.Struct;
       reader.readMessage(value,google_protobuf_struct_pb.Struct.deserializeBinaryFromReader);
       msg.setGraphql(value);
+      break;
+    case 13:
+      var value = new google_protobuf_struct_pb.Struct;
+      reader.readMessage(value,google_protobuf_struct_pb.Struct.deserializeBinaryFromReader);
+      msg.setOpenApiSpec(value);
+      break;
+    case 14:
+      var value = new plugins_salesforce_v1_plugin_pb.Plugin.Metadata;
+      reader.readMessage(value,plugins_salesforce_v1_plugin_pb.Plugin.Metadata.deserializeBinaryFromReader);
+      msg.setSalesforce(value);
+      break;
+    case 15:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setLoadDisabled(value);
       break;
     default:
       reader.skipField();
@@ -4438,6 +4457,29 @@ proto.transport.v1.Response.Data.Data.serializeBinaryToWriter = function(message
       12,
       f,
       google_protobuf_struct_pb.Struct.serializeBinaryToWriter
+    );
+  }
+  f = message.getOpenApiSpec();
+  if (f != null) {
+    writer.writeMessage(
+      13,
+      f,
+      google_protobuf_struct_pb.Struct.serializeBinaryToWriter
+    );
+  }
+  f = message.getSalesforce();
+  if (f != null) {
+    writer.writeMessage(
+      14,
+      f,
+      plugins_salesforce_v1_plugin_pb.Plugin.Metadata.serializeBinaryToWriter
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 15));
+  if (f != null) {
+    writer.writeBool(
+      15,
+      f
     );
   }
 };
@@ -4865,6 +4907,116 @@ proto.transport.v1.Response.Data.Data.prototype.clearGraphql = function() {
  */
 proto.transport.v1.Response.Data.Data.prototype.hasGraphql = function() {
   return jspb.Message.getField(this, 12) != null;
+};
+
+
+/**
+ * optional google.protobuf.Struct open_api_spec = 13;
+ * @return {?proto.google.protobuf.Struct}
+ */
+proto.transport.v1.Response.Data.Data.prototype.getOpenApiSpec = function() {
+  return /** @type{?proto.google.protobuf.Struct} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_struct_pb.Struct, 13));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Struct|undefined} value
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+*/
+proto.transport.v1.Response.Data.Data.prototype.setOpenApiSpec = function(value) {
+  return jspb.Message.setWrapperField(this, 13, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+ */
+proto.transport.v1.Response.Data.Data.prototype.clearOpenApiSpec = function() {
+  return this.setOpenApiSpec(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Response.Data.Data.prototype.hasOpenApiSpec = function() {
+  return jspb.Message.getField(this, 13) != null;
+};
+
+
+/**
+ * optional plugins.salesforce.v1.Plugin.Metadata salesforce = 14;
+ * @return {?proto.plugins.salesforce.v1.Plugin.Metadata}
+ */
+proto.transport.v1.Response.Data.Data.prototype.getSalesforce = function() {
+  return /** @type{?proto.plugins.salesforce.v1.Plugin.Metadata} */ (
+    jspb.Message.getWrapperField(this, plugins_salesforce_v1_plugin_pb.Plugin.Metadata, 14));
+};
+
+
+/**
+ * @param {?proto.plugins.salesforce.v1.Plugin.Metadata|undefined} value
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+*/
+proto.transport.v1.Response.Data.Data.prototype.setSalesforce = function(value) {
+  return jspb.Message.setWrapperField(this, 14, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+ */
+proto.transport.v1.Response.Data.Data.prototype.clearSalesforce = function() {
+  return this.setSalesforce(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Response.Data.Data.prototype.hasSalesforce = function() {
+  return jspb.Message.getField(this, 14) != null;
+};
+
+
+/**
+ * optional bool load_disabled = 15;
+ * @return {boolean}
+ */
+proto.transport.v1.Response.Data.Data.prototype.getLoadDisabled = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 15, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+ */
+proto.transport.v1.Response.Data.Data.prototype.setLoadDisabled = function(value) {
+  return jspb.Message.setField(this, 15, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.transport.v1.Response.Data.Data} returns this
+ */
+proto.transport.v1.Response.Data.Data.prototype.clearLoadDisabled = function() {
+  return jspb.Message.setField(this, 15, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Response.Data.Data.prototype.hasLoadDisabled = function() {
+  return jspb.Message.getField(this, 15) != null;
 };
 
 

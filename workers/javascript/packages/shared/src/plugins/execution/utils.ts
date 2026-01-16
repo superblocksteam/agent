@@ -1,4 +1,8 @@
 import { spawn } from 'child_process';
+import * as http from 'node:http';
+import { promisify } from 'node:util';
+import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
+import deasync from 'deasync';
 import _, { get, isArray, isBuffer, isObject, isPlainObject, isString } from 'lodash';
 import { render } from 'mustache';
 import { IntegrationError } from '../../errors';
@@ -16,10 +20,6 @@ import { extractMustacheStrings, FlatContext } from './mustache';
 import { ProcessInput } from './types';
 import { buildVariables } from './variable';
 import { nodeVMWithContext } from './vm';
-import * as http from 'node:http';
-import { promisify } from 'node:util';
-import deasync from 'deasync';
-import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
 
 function shouldUseWasmBindingsSandbox(context: ExecutionContext): boolean {
   if (typeof context.useWasmBindingsSandbox === 'boolean') {
@@ -152,42 +152,46 @@ function fetchFromController(
   fileServerUrl: string,
   agentKey: string,
   location: string,
-  callback: (err: Error | null, result: Buffer | null) => void,
+  callback: (err: Error | null, result: Buffer | null) => void
 ) {
   const url = new URL(fileServerUrl);
   url.searchParams.set('location', location);
-  http.get(url.toString(), {
-    headers: { 'x-superblocks-agent-key': agentKey }
-  }, (response) => {
-    if (response.statusCode != 200) {
-      return callback(new Error('Internal Server Error'), null);
+  http.get(
+    url.toString(),
+    {
+      headers: { 'x-superblocks-agent-key': agentKey }
+    },
+    (response) => {
+      if (response.statusCode != 200) {
+        return callback(new Error('Internal Server Error'), null);
+      }
+      const chunks = [];
+      let chunkStrings = '';
+      response.on('data', (chunk) => {
+        if (fileServerUrl.includes('v2')) {
+          const serialized = serialize(chunk);
+          chunkStrings += serialized;
+        } else {
+          chunks.push(Buffer.from(chunk));
+        }
+      });
+      response.on('error', (err) => callback(err, null));
+      response.on('end', () => {
+        if (fileServerUrl.includes('v2')) {
+          const processed = chunkStrings
+            .split('\n')
+            .filter((str) => str.length > 0)
+            .map((str) => {
+              const json = JSON.parse(str);
+              return Buffer.from(json.result.data, 'base64');
+            });
+          callback(null, Buffer.concat(processed as unknown as readonly Uint8Array[]));
+        } else {
+          callback(null, Buffer.concat(chunks));
+        }
+      });
     }
-    const chunks = [];
-    let chunkStrings = '';
-    response.on('data', (chunk) => {
-      if (fileServerUrl.includes('v2')) {
-        const serialized = serialize(chunk)
-        chunkStrings += serialized
-      } else {
-        chunks.push(Buffer.from(chunk))
-      }
-    });
-    response.on('error', (err) => callback(err, null));
-    response.on('end', () => {
-      if (fileServerUrl.includes('v2')) {
-        const processed = chunkStrings
-        .split('\n')
-        .filter((str) => str.length > 0)
-        .map((str) => {
-          const json = JSON.parse(str);
-          return Buffer.from(json.result.data, 'base64');
-        });
-        callback(null, Buffer.concat(processed as unknown as readonly Uint8Array[]))
-      } else {
-        callback(null, Buffer.concat(chunks))
-      }
-    });
-  })
+  );
 }
 
 /**

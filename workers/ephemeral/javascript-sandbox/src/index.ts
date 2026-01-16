@@ -11,11 +11,11 @@ import {
   ISandboxExecutorTransportServiceServer,
   SandboxExecutorTransportServiceService
 } from './types/worker/v1/sandbox_executor_transport_grpc_pb';
-import { ExecuteRequest, ExecuteResponse } from './types/worker/v1/sandbox_executor_transport_pb';
+import { ExecuteRequestV1, ExecuteResponseV1 } from './types/worker/v1/sandbox_executor_transport_pb';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
 
 const SandboxExecutorTransportServiceImpl: ISandboxExecutorTransportServiceServer = {
-  execute: (call: grpc.ServerUnaryCall<ExecuteRequest, ExecuteResponse>, callback: grpc.sendUnaryData<ExecuteResponse>) => {
+  execute: (call: grpc.ServerUnaryCall<ExecuteRequestV1, ExecuteResponseV1>, callback: grpc.sendUnaryData<ExecuteResponseV1>) => {
     const request = call.request;
     const variableStoreClient = new SandboxVariableStoreServiceClient(request.getVariableStoreAddress(), grpc.credentials.createInsecure());
     const kvStore = new GrpcKvStore(request.getExecutionId(), variableStoreClient);
@@ -43,7 +43,7 @@ const SandboxExecutorTransportServiceImpl: ISandboxExecutorTransportServiceServe
       inheritedEnv: []
     })
       .then((execOutput) => {
-        const response = new ExecuteResponse();
+        const response = new ExecuteResponseV1();
         response.setResult(JSON.stringify(execOutput.output));
         response.setStdoutList(execOutput.structuredLog.filter((log) => log.level === 'info').map((log) => log.msg));
         response.setStderrList(execOutput.structuredLog.filter((log) => log.level !== 'info').map((log) => log.msg));

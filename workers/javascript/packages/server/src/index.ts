@@ -192,3 +192,8 @@ export const run = async (plugins: Record<string, unknown>): Promise<void> => {
     ]
   );
 };
+
+export * from './performance';
+export * from './plugin-property';
+export * from './tracer';
+export * from './types';

@@ -1,10 +1,10 @@
-import { getQuickJS } from './quickjs';
 import { createEventLoop } from './event-loop';
 import { registerGlobalBuffer } from './globals/buffer';
 import { CommonLibrary, registerCommonLazyLibrary } from './globals/common-libraries';
 import { registerGlobalConsole } from './globals/console';
 import { registerGlobalSetTimeout } from './globals/timers';
 import { createMarshaller } from './marshal';
+import { getQuickJS } from './quickjs';
 
 type EvaluateLimits = {
   /**

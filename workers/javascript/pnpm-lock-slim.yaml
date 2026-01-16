@@ -8,6 +8,190 @@ importers:
 
   .: {}
 
+  ../ephemeral/javascript-plugins-sandbox:
+    dependencies:
+      '@grpc/grpc-js':
+        specifier: ^1.9.0
+        version: 1.14.3
+      '@grpc/proto-loader':
+        specifier: ^0.7.10
+        version: 0.7.15
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
+      '@superblocks/shared':
+        specifier: workspace:*
+        version: link:../../javascript/packages/shared
+      '@superblocks/worker.js':
+        specifier: workspace:*
+        version: link:../../javascript/packages/server
+      '@superblocksteam/adls':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/adls
+      '@superblocksteam/athena':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/athena
+      '@superblocksteam/bigquery':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/bigquery
+      '@superblocksteam/cockroachdb':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/cockroachdb
+      '@superblocksteam/cosmosdb':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/cosmosdb
+      '@superblocksteam/couchbase':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/couchbase
+      '@superblocksteam/databricks':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/databricks
+      '@superblocksteam/dynamodb':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/dynamodb
+      '@superblocksteam/email':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/email
+      '@superblocksteam/gcs':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/gcs
+      '@superblocksteam/graphql':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/graphql
+      '@superblocksteam/gsheets':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/gsheets
+      '@superblocksteam/javascript':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/javascript
+      '@superblocksteam/kafka':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/kafka
+      '@superblocksteam/kinesis':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/kinesis
+      '@superblocksteam/mariadb':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/mariadb
+      '@superblocksteam/mongodb':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/mongodb
+      '@superblocksteam/mssql':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/mssql
+      '@superblocksteam/mysql':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/mysql
+      '@superblocksteam/openai':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/openai
+      '@superblocksteam/oracledb':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/oracledb
+      '@superblocksteam/postgres':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/postgres
+      '@superblocksteam/redis':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/redis
+      '@superblocksteam/redshift':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/redshift
+      '@superblocksteam/restapi':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/restapi
+      '@superblocksteam/restapiintegration':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/restapiintegration
+      '@superblocksteam/rockset':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/rockset
+      '@superblocksteam/s3':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/s3
+      '@superblocksteam/salesforce':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/salesforce
+      '@superblocksteam/smtp':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/smtp
+      '@superblocksteam/snowflake':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/snowflake
+      '@superblocksteam/superblocks-ocr':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/superblocks-ocr
+      '@superblocksteam/workflow':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/workflow
+      dotenv:
+        specifier: 16.4.5
+        version: 16.4.5
+      google-protobuf:
+        specifier: ^3.21.2
+        version: 3.21.4
+      ion-js:
+        specifier: 5.2.1
+        version: 5.2.1
+      jsbi:
+        specifier: 4.3.0
+        version: 4.3.0
+      pino:
+        specifier: 8.21.0
+        version: 8.21.0
+      prom-client:
+        specifier: 15.1.3
+        version: 15.1.3
+    devDependencies:
+      '@jest/globals':
+        specifier: ^29.7.0
+        version: 29.7.0
+      '@types/google-protobuf':
+        specifier: ^3.15.12
+        version: 3.15.12
+      '@types/jest':
+        specifier: 29.5.12
+        version: 29.5.12
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.8.0
+        version: 7.8.0(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser':
+        specifier: ^7.8.0
+        version: 7.8.0(eslint@8.57.0)(typescript@5.5.4)
+      eslint:
+        specifier: 8.57.0
+        version: 8.57.0
+      eslint-config-prettier:
+        specifier: 8.1.0
+        version: 8.1.0(eslint@8.57.0)
+      eslint-import-resolver-typescript:
+        specifier: ^2.5.0
+        version: 2.5.0(eslint-plugin-import@2.29.1)(eslint@8.57.0)
+      eslint-plugin-import:
+        specifier: ^2.29.1
+        version: 2.29.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@2.5.0)(eslint@8.57.0)
+      eslint-plugin-prettier:
+        specifier: 5.2.1
+        version: 5.2.1(eslint-config-prettier@8.1.0(eslint@8.57.0))(eslint@8.57.0)(prettier@3.3.3)
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@20.14.8)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@20.14.8)(typescript@5.5.4))
+      prettier:
+        specifier: 3.3.3
+        version: 3.3.3
+      rimraf:
+        specifier: ^5.0.0
+        version: 5.0.10
+      ts-jest:
+        specifier: ^29.2.6
+        version: 29.4.6(@babel/core@7.25.2)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.25.2))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.14.8)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@20.14.8)(typescript@5.5.4)))(typescript@5.5.4)
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@swc/core@1.7.26)(@types/node@20.14.8)(typescript@5.5.4)
+      typescript:
+        specifier: ^5.5.4
+        version: 5.5.4
+
   ../ephemeral/javascript-sandbox:
     dependencies:
       '@grpc/grpc-js':
@@ -8998,10 +9182,6 @@ packages:
     resolution: {integrity: sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==}
     engines: {node: '>= 6'}
 
-  readable-stream@4.5.2:
-    resolution: {integrity: sha512-yjavECdqeZ3GLXNgRXgeQEdz9fvDDkNKyHnbHRFtOr7/LcfgBcmct7t/ET+HaCTqfh06OzoAxrkN/IfjJBVe+g==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
-
   readable-stream@4.7.0:
     resolution: {integrity: sha512-oIGGmcpTLwPga8Bn6/Z75SVaH1z5dUut2ibSyAMVhmUggWpmDn2dapB0n7f8nwaSiRtepAsfJyfXIO5DCVAODg==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
@@ -14254,7 +14434,7 @@ snapshots:
       '@types/readable-stream': 4.0.15
       buffer: 6.0.3
       inherits: 2.0.4
-      readable-stream: 4.5.2
+      readable-stream: 4.7.0
 
   bn.js@4.12.0: {}
 
@@ -17298,7 +17478,7 @@ snapshots:
 
   pino-abstract-transport@1.2.0:
     dependencies:
-      readable-stream: 4.5.2
+      readable-stream: 4.7.0
       split2: 4.2.0
 
   pino-std-serializers@3.2.0: {}
@@ -17523,14 +17703,6 @@ snapshots:
       inherits: 2.0.4
       string_decoder: 1.3.0
       util-deprecate: 1.0.2
-
-  readable-stream@4.5.2:
-    dependencies:
-      abort-controller: 3.0.0
-      buffer: 6.0.3
-      events: 3.3.0
-      process: 0.11.10
-      string_decoder: 1.3.0
 
   readable-stream@4.7.0:
     dependencies:
