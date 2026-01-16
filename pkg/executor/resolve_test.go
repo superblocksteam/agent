@@ -198,6 +198,7 @@ func TestVariables(t *testing.T) {
 				flags := new(mockflags.Flags)
 				flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
+				flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 
 				mocker := new(mocker.Mocker)
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
@@ -1658,6 +1659,7 @@ func TestBlocks(t *testing.T) {
 				flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+				flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 
 				mocker := new(mocker.Mocker)
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
@@ -1949,6 +1951,7 @@ func TestAuthorizedBlocks(t *testing.T) {
 				flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+				flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 
 				mocker := new(mocker.Mocker)
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
@@ -2042,11 +2045,12 @@ func TestQuota(t *testing.T) {
 	defer metrics.SetupForTesting()()
 
 	for _, test := range []struct {
-		name          string
-		blocks        []*apiv1.Block
-		key           func(string, string) (string, error)
-		sizeQuota     int
-		durationQuota int
+		name                   string
+		blocks                 []*apiv1.Block
+		key                    func(string, string) (string, error)
+		sizeQuota              int
+		durationQuota          int
+		useWasmBindingsSandbox bool
 	}{
 		{
 			name: "variables",
@@ -2067,8 +2071,32 @@ func TestQuota(t *testing.T) {
 			key: func(prefix, value string) (string, error) {
 				return fmt.Sprintf("%s.%s", prefix, base64.StdEncoding.EncodeToString([]byte(value))), nil
 			},
-			sizeQuota:     100,
-			durationQuota: 150,
+			sizeQuota:              100,
+			durationQuota:          150,
+			useWasmBindingsSandbox: false,
+		},
+		{
+			name: "variables_wasm_bindings_enabled",
+			blocks: []*apiv1.Block{
+				{
+					Name: "BlockTryERROR",
+					Config: &apiv1.Block_Step{
+						Step: &apiv1.Step{
+							Config: &apiv1.Step_Javascript{
+								Javascript: &javascriptv1.Plugin{
+									Body: "return 5;",
+								},
+							},
+						},
+					},
+				},
+			},
+			key: func(prefix, value string) (string, error) {
+				return fmt.Sprintf("%s.%s", prefix, base64.StdEncoding.EncodeToString([]byte(value))), nil
+			},
+			sizeQuota:              100,
+			durationQuota:          150,
+			useWasmBindingsSandbox: true,
 		},
 	} {
 
@@ -2112,6 +2140,7 @@ func TestQuota(t *testing.T) {
 			flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(test.durationQuota, nil)
 			flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(test.sizeQuota, nil)
 			flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+			flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(test.useWasmBindingsSandbox)
 
 			mocker := new(mocker.Mocker)
 			mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
@@ -2150,8 +2179,10 @@ func TestQuota(t *testing.T) {
 
 			calls := mockWorker.Calls
 			quota := calls[0].Arguments.Get(2).(*transportv1.Request_Data_Data).Quotas
+			props := calls[0].Arguments.Get(2).(*transportv1.Request_Data_Data).Props
 			assert.Equal(t, quota.Duration, int32(test.durationQuota))
 			assert.Equal(t, quota.Size, int32(test.sizeQuota))
+			assert.Equal(t, test.useWasmBindingsSandbox, props.GetUseWasmBindingsSandbox())
 		})
 	}
 }
@@ -2238,6 +2269,7 @@ func TestStream(t *testing.T) {
 				flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+				flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 
 				mocker := new(mocker.Mocker)
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)

@@ -1,5 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext } from '../../types';
+import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
+import * as vm from './vm';
 import { resolveAllBindings, serialize } from './utils';
 
 describe('utils', () => {
@@ -69,6 +71,24 @@ describe('utils', () => {
       expect(result['_.isEmpty("test")']).toEqual(false);
     });
 
+    it('should use WASM when context.useWasmBindingsSandbox is true', async () => {
+      const wasmSpy = jest.spyOn(wasmSandbox, 'evaluateExpressions');
+      const vmSpy = jest.spyOn(vm, 'nodeVMWithContext');
+      try {
+        const context = new ExecutionContext();
+        context.useWasmBindingsSandbox = true;
+        context.addGlobalVariable('x', 2);
+
+        const result = await resolveAllBindings('{{ x + 1 }}', context, {}, false);
+        expect(result['x + 1']).toEqual(3);
+        expect(wasmSpy).toHaveBeenCalled();
+        expect(vmSpy).not.toHaveBeenCalled();
+      } finally {
+        wasmSpy.mockRestore();
+        vmSpy.mockRestore();
+      }
+    });
+
     it('should not allow requiring restricted modules', async () => {
       const context = new ExecutionContext();
       // TODO: `fs` is still not blocked by the VM2 codepath because it is used internally. When this is fixed (or the VM2 codepath is removed),
@@ -80,37 +100,29 @@ describe('utils', () => {
     });
 
     it('should not expose $agentKey or $fileServerUrl in the WASM sandbox', async () => {
-      const prevWasm = process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
-      try {
-        process.env.SUPERBLOCKS_USE_WASM_SANDBOX = 'true';
+      const context = new ExecutionContext();
+      context.useWasmBindingsSandbox = true;
+      context.addGlobalVariable('$agentKey', 'super-secret-agent-key');
+      context.addGlobalVariable('$fileServerUrl', 'http://example.invalid/v2/files');
 
-        const context = new ExecutionContext();
-        context.addGlobalVariable('$agentKey', 'super-secret-agent-key');
-        context.addGlobalVariable('$fileServerUrl', 'http://example.invalid/v2/files');
-
-        await expect(resolveAllBindings('{{ $agentKey }}', context, {}, false)).rejects.toThrow(/\$agentKey.*not defined/i);
-        await expect(resolveAllBindings('{{ $fileServerUrl }}', context, {}, false)).rejects.toThrow(/\$fileServerUrl.*not defined/i);
-      } finally {
-        if (prevWasm === undefined) delete process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
-        else process.env.SUPERBLOCKS_USE_WASM_SANDBOX = prevWasm;
-      }
+      await expect(resolveAllBindings('{{ $agentKey }}', context, {}, false)).rejects.toThrow(/\$agentKey.*not defined/i);
+      await expect(resolveAllBindings('{{ $fileServerUrl }}', context, {}, false)).rejects.toThrow(/\$fileServerUrl.*not defined/i);
     });
 
     it('should enforce the WASM sandbox memory limit', async () => {
-      const prevWasm = process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
       const prevReqMax = process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX;
       try {
-        process.env.SUPERBLOCKS_USE_WASM_SANDBOX = 'true';
         // Set an explicit heap cap (bytes) above the 16MiB floor.
         const capBytes = 20 * 1024 ** 2; // 20MiB
         process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX = String(capBytes);
 
+        const context = new ExecutionContext();
+        context.useWasmBindingsSandbox = true;
+
         // Try to allocate a very large string in the VM; this should fail under the WASM sandbox memory limit.
         const expr = '{{ "x".repeat(30000000) }}';
-        await expect(resolveAllBindings(expr, new ExecutionContext(), {}, false)).rejects.toThrow(/out of memory|memory/i);
+        await expect(resolveAllBindings(expr, context, {}, false)).rejects.toThrow(/out of memory|memory/i);
       } finally {
-        if (prevWasm === undefined) delete process.env.SUPERBLOCKS_USE_WASM_SANDBOX;
-        else process.env.SUPERBLOCKS_USE_WASM_SANDBOX = prevWasm;
         if (prevReqMax === undefined) delete process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX;
         else process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX = prevReqMax;
       }

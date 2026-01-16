@@ -81,6 +81,10 @@ func (flags *noopFlags) GetGoWorkerEnabled(string, string) bool {
 	return flags.options.DefaultGoWorkerEnabled
 }
 
+func (flags *noopFlags) GetJsBindingsUseWasmBindingsSandboxEnabled(string, string) bool {
+	return flags.options.BindingsWasmSandboxEnabled
+}
+
 func (flags *noopFlags) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
 	return flags.options.DefaultEphemeralEnabledPlugins
 }

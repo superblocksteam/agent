@@ -23,6 +23,7 @@ type Options struct {
 	DefaultEphemeralSupportedEvents                 []string
 	DefaultWorkflowPluginInheritanceEnabled         bool
 	DefaultValidateSubjectTokenDuringOboFlowEnabled bool
+	BindingsWasmSandboxEnabled                      bool
 	Logger                                          *zap.Logger
 	Config                                          *string
 }
@@ -128,6 +129,12 @@ func WithDefaultValidateSubjectTokenDuringOboFlowEnabled(validationEnabled bool)
 func WithLogger(logger *zap.Logger) Option {
 	return func(d *Options) {
 		d.Logger = logger
+	}
+}
+
+func WithBindingsWasmSandboxEnabled(enabled bool) Option {
+	return func(d *Options) {
+		d.BindingsWasmSandboxEnabled = enabled
 	}
 }
 

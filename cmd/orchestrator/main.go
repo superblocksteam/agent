@@ -212,6 +212,7 @@ func init() {
 	pflag.StringSlice("worker.ephemeral.supported.events", []string{"execute"}, "A list of events that are supported for ephemeral execution.")
 	pflag.Bool("agent.plugins.workflow.inherit_parameters.enabled", false, "Whether or not to use the API's mode and branch for workflow plugin step execution.")
 	pflag.Bool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled", true, "Whether or not to validate subject tokens during OBO flow.")
+	pflag.Bool("bindings.wasm_sandbox.enabled", false, "Enable WASM sandbox for bindings evaluation. LaunchDarkly takes priority if configured.")
 
 	// This pflag setup allows the stdlib flag package to be used with viper.
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -495,6 +496,9 @@ func main() {
 			options = append(options, flagoptions.WithLocal(viper.GetString("launchdarkly.config")))
 			internalOptions = append(internalOptions, internalflagsclient.WithLocal(viper.GetString("launchdarkly.config")))
 		}
+
+		bindingsWasmSandboxEnabled := viper.GetBool("bindings.wasm_sandbox.enabled")
+		options = append(options, flagoptions.WithBindingsWasmSandboxEnabled(bindingsWasmSandboxEnabled))
 
 		if viper.GetBool("quotas.enabled") {
 			internalFlagsClient := internalflagsclient.NewLaunchDarklyClient(viper.GetString("launchdarkly.apikey"), internalOptions...)

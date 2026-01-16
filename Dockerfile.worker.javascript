@@ -69,7 +69,6 @@ RUN id -u node &>/dev/null || useradd node                                      
 
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA=dev-private-rsa
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519=dev-private-ed25519
-ENV SUPERBLOCKS_USE_WASM_SANDBOX=false
 ENV FLEET=all
 
 CMD node /workers/javascript/packages/fleets/$FLEET/dist/src/index.js

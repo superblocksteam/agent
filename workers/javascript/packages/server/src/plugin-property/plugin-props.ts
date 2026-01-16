@@ -59,6 +59,9 @@ export class PluginProps {
   @StreamProperty()
   render?: boolean;
 
+  @StreamProperty()
+  useWasmBindingsSandbox?: boolean;
+
   store?: KVStore;
 
   version?: string;

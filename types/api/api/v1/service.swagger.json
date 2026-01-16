@@ -4913,6 +4913,9 @@
       "properties": {
         "presignedExpiration": {
           "$ref": "#/definitions/pluginss3v1Property"
+        },
+        "presignedMethod": {
+          "$ref": "#/definitions/v1PresignedMethod"
         }
       }
     },
@@ -6284,6 +6287,17 @@
           "format": "int64"
         }
       }
+    },
+    "v1PresignedMethod": {
+      "type": "string",
+      "enum": [
+        "PRESIGNED_METHOD_UNSPECIFIED",
+        "PRESIGNED_METHOD_GET",
+        "PRESIGNED_METHOD_PUT"
+      ],
+      "default": "PRESIGNED_METHOD_UNSPECIFIED",
+      "description": "- PRESIGNED_METHOD_UNSPECIFIED: Default: treated as GET for backward compatibility\n - PRESIGNED_METHOD_GET: Generate download URL\n - PRESIGNED_METHOD_PUT: Generate upload URL",
+      "title": "HTTP method for presigned URL generation"
     },
     "v1Profile": {
       "type": "object",

@@ -743,17 +743,20 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 			}
 		}
 
+		useWasmBindingsSandbox := r.flags.GetJsBindingsUseWasmBindingsSandboxEnabled(r.organizationPlan, r.orgId)
+
 		props = &transportv1.Request_Data_Data_Props{
-			ActionConfiguration: resolvedActionCfg,
-			BindingKeys:         []*transportv1.Request_Data_Data_Props_Binding{},
-			ExecutionId:         r.execution,
-			StepName:            ctx.Name,
-			Environment:         r.profile, // NOTE(frank): I don't think we need this anymore.
-			Variables:           ctx.ReferencedVariables(resolvedActionCfg.String()),
-			FileServerUrl:       r.fileServerUrl,
-			Files:               r.files,
-			Render:              !shouldRender, // NOTE(frank): We can deprecate this once all rendering is moved to the orchestrator.
-			Version:             "v2",
+			ActionConfiguration:    resolvedActionCfg,
+			BindingKeys:            []*transportv1.Request_Data_Data_Props_Binding{},
+			ExecutionId:            r.execution,
+			StepName:               ctx.Name,
+			Environment:            r.profile, // NOTE(frank): I don't think we need this anymore.
+			Variables:              ctx.ReferencedVariables(resolvedActionCfg.String()),
+			FileServerUrl:          r.fileServerUrl,
+			Files:                  r.files,
+			Render:                 !shouldRender, // NOTE(frank): We can deprecate this once all rendering is moved to the orchestrator.
+			Version:                "v2",
+			UseWasmBindingsSandbox: useWasmBindingsSandbox,
 		}
 
 		if integration, ok := r.integrations[step.GetIntegration()]; ok {

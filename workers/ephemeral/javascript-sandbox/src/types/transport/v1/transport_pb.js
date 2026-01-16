@@ -2348,7 +2348,8 @@ proto.transport.v1.Request.Data.Data.Props.toObject = function(includeInstance, 
     filesList: jspb.Message.toObjectList(msg.getFilesList(),
     proto.transport.v1.Request.Data.Data.Props.File.toObject, includeInstance),
     render: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
-    version: jspb.Message.getFieldWithDefault(msg, 12, "")
+    version: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    useWasmBindingsSandbox: jspb.Message.getBooleanFieldWithDefault(msg, 13, false)
   };
 
   if (includeInstance) {
@@ -2439,6 +2440,10 @@ proto.transport.v1.Request.Data.Data.Props.deserializeBinaryFromReader = functio
     case 12:
       var value = /** @type {string} */ (reader.readString());
       msg.setVersion(value);
+      break;
+    case 13:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setUseWasmBindingsSandbox(value);
       break;
     default:
       reader.skipField();
@@ -2552,6 +2557,13 @@ proto.transport.v1.Request.Data.Data.Props.serializeBinaryToWriter = function(me
   if (f.length > 0) {
     writer.writeString(
       12,
+      f
+    );
+  }
+  f = message.getUseWasmBindingsSandbox();
+  if (f) {
+    writer.writeBool(
+      13,
       f
     );
   }
@@ -3427,6 +3439,24 @@ proto.transport.v1.Request.Data.Data.Props.prototype.getVersion = function() {
  */
 proto.transport.v1.Request.Data.Data.Props.prototype.setVersion = function(value) {
   return jspb.Message.setProto3StringField(this, 12, value);
+};
+
+
+/**
+ * optional bool use_wasm_bindings_sandbox = 13;
+ * @return {boolean}
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.getUseWasmBindingsSandbox = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 13, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.transport.v1.Request.Data.Data.Props} returns this
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.setUseWasmBindingsSandbox = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 13, value);
 };
 
 

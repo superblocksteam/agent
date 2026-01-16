@@ -216,6 +216,8 @@ export class Shim<T extends BasePlugin> implements Plugin {
     pluginProps.context.variables = pluginProps.variables ?? {};
     pluginProps.redactedContext.kvStore = this._kv;
     pluginProps.redactedContext.variables = pluginProps.variables ?? {};
+    pluginProps.context.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
+    pluginProps.redactedContext.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
     pluginProps.version = _request.props.version;
 
     this.convertPluginConfigTypesInPlace(pluginProps);

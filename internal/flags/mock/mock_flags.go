@@ -124,6 +124,24 @@ func (_m *Flags) GetGoWorkerEnabled(tier string, orgId string) bool {
 	return r0
 }
 
+// GetJsBindingsUseWasmBindingsSandboxEnabled provides a mock function with given fields: tier, orgId
+func (_m *Flags) GetJsBindingsUseWasmBindingsSandboxEnabled(tier string, orgId string) bool {
+	ret := _m.Called(tier, orgId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetJsBindingsUseWasmBindingsSandboxEnabled")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
+		r0 = rf(tier, orgId)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // GetMaxParallelPoolSizeByAPI provides a mock function with given fields: _a0
 func (_m *Flags) GetMaxParallelPoolSizeByAPI(_a0 string) int {
 	ret := _m.Called(_a0)

@@ -42,10 +42,6 @@ worker:
   execution:
     pool:
       size: 0
-    wasmSandbox:
-      # Enable WASM sandbox for JavaScript execution
-      # When enabled, JavaScript code runs in an isolated WASM environment
-      enabled: false
 queue:
   deploy: false
   host: '<override>'

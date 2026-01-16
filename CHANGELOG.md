@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Require authorization header for `/v2/test` endpoint to prevent unauthenticated environment variable access
 - Enforce WASM sandbox memory limit for host-side allocations
 - Pass a memory limit to the WASM sandbox
+- Control the WASM bindings sandbox rollout via LaunchDarkly
 
 ## v1.31.0
 - Add support for restricting imports and built in functions in Python language execution steps

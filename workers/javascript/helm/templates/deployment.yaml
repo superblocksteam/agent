@@ -168,8 +168,6 @@ spec:
           value: worker.js
         - name: DD_VERSION
           value: {{ $.Values.image.tag }}
-        - name: SUPERBLOCKS_USE_WASM_SANDBOX
-          value: {{ $.Values.worker.execution.wasmSandbox.enabled | quote }}
         ports:
         - name: health
           containerPort: {{ $.Values.service.ports.health }}

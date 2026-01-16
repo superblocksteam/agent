@@ -39,6 +39,7 @@ export class ExecutionContext {
   globals: { [key: string]: unknown };
   variables?: Record<string, { key: string; type: string; mode?: string }>;
   kvStore?: KVStore;
+  useWasmBindingsSandbox?: boolean;
 
   outputs: { [key: string]: ExecutionOutput };
   preparedStatementContext: unknown[];
@@ -55,6 +56,7 @@ export class ExecutionContext {
     this.globals = context && context.globals ? _.cloneDeep(context.globals) : {};
     this.outputs = context && context.outputs ? _.cloneDeep(context.outputs) : {};
     this.preparedStatementContext = context && context.preparedStatementContext ? _.cloneDeep(context.preparedStatementContext) : [];
+    this.useWasmBindingsSandbox = context?.useWasmBindingsSandbox;
   }
 
   // Do not merge the objects in arrays. Just replace the entire array.

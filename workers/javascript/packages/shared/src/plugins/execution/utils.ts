@@ -21,17 +21,11 @@ import { promisify } from 'node:util';
 import deasync from 'deasync';
 import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
 
-/**
- * Returns whether the WASM-based sandbox implementation is enabled.
- *
- * Controlled by the environment variable `SUPERBLOCKS_USE_WASM_SANDBOX`:
- * - `'true'` enables the WASM sandbox
- * - anything else (or unset) uses the legacy VM2 sandbox
- *
- * `env` is injectable as an argument for testability purposes.
- */
-export function isWasmSandboxEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return (env.SUPERBLOCKS_USE_WASM_SANDBOX ?? 'false') === 'true';
+function shouldUseWasmBindingsSandbox(context: ExecutionContext): boolean {
+  if (typeof context.useWasmBindingsSandbox === 'boolean') {
+    return context.useWasmBindingsSandbox;
+  }
+  return false;
 }
 
 const DATA_TAG = 'SUPERBLOCKSDATA';
@@ -197,8 +191,7 @@ function fetchFromController(
 }
 
 /**
- * Router function that delegates to either the WASM-based or VM2-based implementation
- * based on the SUPERBLOCKS_USE_WASM_SANDBOX environment variable.
+ * Router function that delegates to either the WASM-based or VM2-based implementation.
  */
 export const resolveAllBindings = async (
   unresolvedValue: string,
@@ -206,7 +199,7 @@ export const resolveAllBindings = async (
   filePaths: Record<string, string>,
   escapeStrings: boolean
 ): Promise<Record<string, unknown>> => {
-  if (isWasmSandboxEnabled()) {
+  if (shouldUseWasmBindingsSandbox(context)) {
     return resolveAllBindingsWasm(unresolvedValue, context, filePaths, escapeStrings);
   }
   return resolveAllBindingsVm2(unresolvedValue, context, filePaths, escapeStrings);
@@ -380,7 +373,6 @@ function prepareGlobalsWithFileMethods(
 
 /**
  * Legacy VM2-based implementation.
- * This remains the default when SUPERBLOCKS_USE_WASM_SANDBOX is not set or false.
  */
 export const resolveAllBindingsVm2 = async (
   unresolvedValue: string,

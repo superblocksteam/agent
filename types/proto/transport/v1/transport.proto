@@ -99,6 +99,8 @@ message Request {
         repeated File files = 10;
         bool render = 11; // If true, the worker will render the action configuration.
         string version = 12;
+        // If true, the JS worker should use the WASM sandbox for bindings evaluation.
+        bool use_wasm_bindings_sandbox = 13;
       }
 
       message Quota {

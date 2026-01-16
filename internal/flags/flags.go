@@ -35,6 +35,7 @@ type Flags interface {
 	GetMaxStreamSendSizeV2(tier string, orgId string) int
 	GetComputeMinutesPerWeekV2(tier string, orgId string) float64
 	GetGoWorkerEnabled(tier string, orgId string) bool
+	GetJsBindingsUseWasmBindingsSandboxEnabled(tier string, orgId string) bool
 
 	GetEphemeralEnabledPlugins(tier string, orgId string) []string
 	GetEphemeralSupportedEvents(tier string, orgId string) []string

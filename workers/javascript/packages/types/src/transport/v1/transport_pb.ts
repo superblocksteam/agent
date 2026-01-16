@@ -546,6 +546,13 @@ export class Request_Data_Data_Props extends Message<Request_Data_Data_Props> {
    */
   version = "";
 
+  /**
+   * If true, the JS worker should use the WASM sandbox for bindings evaluation.
+   *
+   * @generated from field: bool use_wasm_bindings_sandbox = 13;
+   */
+  useWasmBindingsSandbox = false;
+
   constructor(data?: PartialMessage<Request_Data_Data_Props>) {
     super();
     proto3.util.initPartial(data, this);
@@ -566,6 +573,7 @@ export class Request_Data_Data_Props extends Message<Request_Data_Data_Props> {
     { no: 10, name: "files", kind: "message", T: Request_Data_Data_Props_File, repeated: true },
     { no: 11, name: "render", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 12, name: "version", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 13, name: "use_wasm_bindings_sandbox", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Request_Data_Data_Props {

@@ -347,6 +347,8 @@ export namespace Request {
                 setRender(value: boolean): Props;
                 getVersion(): string;
                 setVersion(value: string): Props;
+                getUseWasmBindingsSandbox(): boolean;
+                setUseWasmBindingsSandbox(value: boolean): Props;
 
                 serializeBinary(): Uint8Array;
                 toObject(includeInstance?: boolean): Props.AsObject;
@@ -373,6 +375,7 @@ export namespace Request {
                     filesList: Array<Request.Data.Data.Props.File.AsObject>,
                     render: boolean,
                     version: string,
+                    useWasmBindingsSandbox: boolean,
                 }
 
 

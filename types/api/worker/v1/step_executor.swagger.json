@@ -113,6 +113,10 @@
         },
         "version": {
           "type": "string"
+        },
+        "useWasmBindingsSandbox": {
+          "type": "boolean",
+          "description": "If true, the JS worker should use the WASM sandbox for bindings evaluation."
         }
       }
     },
