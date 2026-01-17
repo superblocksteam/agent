@@ -104,6 +104,7 @@ func init() {
 	pflag.String("grpc.address", "", "The address for sandbox to connect to VariableStore (defaults to localhost:grpc.port).")
 
 	// Health check settings
+	pflag.Bool("health.enabled", false, "Whether to enable health checks.")
 	pflag.String("health.file", "/tmp/worker_healthy", "The path to the health file for file-based probes.")
 	pflag.Duration("health.ping.timeout", 5*time.Second, "Timeout for Redis ping health checks.")
 	pflag.Duration("health.check.interval", 5*time.Second, "The interval for health checks.")
@@ -581,7 +582,7 @@ func main() {
 	var g run.Group
 
 	g.Always(process.New())
-	g.Always(healthChecker)
+	g.Add(viper.GetBool("health.enabled"), healthChecker)
 	g.Always(variableStoreGrpcRunnable)
 	g.Add(sandboxPlugin != nil, sandboxPlugin)
 	g.Add(sandboxExecutorPlugin != nil, sandboxExecutorPlugin)

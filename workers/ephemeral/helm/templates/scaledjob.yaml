@@ -78,6 +78,7 @@ spec:
           imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
           resources:
             {{- toYaml (deepCopy ($.Values.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
+          {{- if $.Values.taskManager.probesEnabled }}
           {{- with (($v.taskManager).startupProbe) | default $.Values.taskManager.startupProbe }}
           startupProbe:
             {{- toYaml . | nindent 12 }}
@@ -89,6 +90,7 @@ spec:
           {{- with (($v.taskManager).livenessProbe) | default $.Values.taskManager.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- end }}
           command: ["./task-manager"]
           args:

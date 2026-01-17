@@ -56,6 +56,8 @@ taskManager:
   extraArgs: []
   # Health file path for file-based probes
   healthFilePath: /tmp/worker_healthy
+  # Set to false to disable all probes (startup, readiness, liveness)
+  probesEnabled: true
   # Startup probe - checks if health file exists (created when Redis and sandbox are ready)
   startupProbe:
     exec:
