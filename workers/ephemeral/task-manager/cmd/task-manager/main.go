@@ -239,10 +239,15 @@ func main() {
 		tracerRunnable = t.Runnable
 	}
 
+	hostname := os.Getenv("POD_IP")
+	if hostname == "" {
+		hostname = "localhost"
+	}
+
 	// Determine gRPC address for variable store
 	grpcAddress := viper.GetString("grpc.address")
 	if grpcAddress == "" {
-		grpcAddress = fmt.Sprintf("localhost:%d", viper.GetInt("grpc.port"))
+		grpcAddress = fmt.Sprintf("%s:%d", hostname, viper.GetInt("grpc.port"))
 	}
 
 	// Create Redis store client (uses same Redis as transport by default)
@@ -347,9 +352,6 @@ func main() {
 			logger.Error("POD_IP environment variable is required (or set sandbox.address for static mode)")
 			os.Exit(1)
 		}
-
-		// In dynamic mode, the sandbox is in a separate pod and needs the TM's actual IP
-		grpcAddress = fmt.Sprintf("%s:%d", podIP, viper.GetInt("grpc.port"))
 
 		namespace := viper.GetString("sandbox.namespace")
 		if namespace == "" {

@@ -124,7 +124,7 @@ func (m *K8sJobManager) DeleteSandbox(ctx context.Context, jobName string) error
 }
 
 // buildJobSpec creates the Job specification for a sandbox
-func (m *K8sJobManager) buildJobSpec(jobName, executionID, language string) *batchv1.Job {
+func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batchv1.Job {
 	ttl := m.ttlSecondsAfterFinished
 	backoffLimit := int32(0)
 	parallelism := int32(1)
@@ -136,11 +136,13 @@ func (m *K8sJobManager) buildJobSpec(jobName, executionID, language string) *bat
 	containerName := "javascript-sandbox"
 	labels := map[string]string{
 		"role":         "sandbox",
-		"execution-id": executionID,
+		"sandbox-id":   sandboxId,
+		"execution-id": sandboxId,
 	}
 	specLabels := map[string]string{
 		"role":         "sandbox",
-		"execution-id": executionID,
+		"sandbox-id":   sandboxId,
+		"execution-id": sandboxId,
 		"job-name":     jobName,
 	}
 
@@ -177,16 +179,20 @@ func (m *K8sJobManager) buildJobSpec(jobName, executionID, language string) *bat
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Env: []corev1.EnvVar{
 								{
-									Name:  "VARIABLE_STORE_ADDRESS",
+									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_SANDBOX_ID",
+									Value: sandboxId,
+								},
+								{
+									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT",
+									Value: fmt.Sprintf("%d", m.port),
+								},
+								{
+									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS",
 									Value: variableStoreAddress,
 								},
 								{
 									Name:  "EXECUTION_ID",
-									Value: executionID,
-								},
-								{
-									Name:  "GRPC_PORT",
-									Value: fmt.Sprintf("%d", m.port),
+									Value: sandboxId,
 								},
 							},
 							Ports: []corev1.ContainerPort{

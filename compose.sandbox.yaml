@@ -53,6 +53,8 @@ services:
   javascript-sandbox:
     !!merge <<: *javascript-sandbox-base
     container_name: javascript-sandbox
+    environment:
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS: javascript-sandbox-manager:50050
   javascript-sandbox-manager:
     !!merge <<: *task-manager-base
     container_name: javascript-sandbox-manager
