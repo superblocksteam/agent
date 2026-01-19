@@ -248,6 +248,8 @@ deploy-helm:
 		--set ephemeral_worker.taskManager.image.tag="$(IMAGE_TAG)" \
 		--set ephemeral_worker.sandbox.javascript.image.tag="$(IMAGE_TAG)" \
 		--set ephemeral_worker.sandbox.python.image.tag="$(IMAGE_TAG)" \
+		--set ephemeral_worker.sandbox.javascript.langExecutorImage.tag="$(IMAGE_TAG)" \
+		--set ephemeral_worker.sandbox.python.langExecutorImage.tag="$(IMAGE_TAG)" \
 		--set queue.host="${HELM_QUEUE_HOST}" \
 		--set queue.token="${HELM_QUEUE_TOKEN}" \
 		--set kvstore.host="${HELM_KVSTORE_HOST}" \
