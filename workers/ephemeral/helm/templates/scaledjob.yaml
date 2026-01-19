@@ -109,6 +109,7 @@ spec:
           # Sandbox mode - create separate sandbox Jobs
           - "--sandbox.namespace={{ $.Release.Namespace }}"
           - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
+          - "--sandbox.lang-executor.image={{ (($v.sandbox).langExecutorImage).repository | default $sandboxConfig.langExecutorImage.repository }}:{{ (($v.sandbox).langExecutorImage).tag | default $sandboxConfig.langExecutorImage.tag }}"
           - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox.port }}"
           - "--sandbox.ttl={{ $.Values.sandboxJob.ttlSecondsAfterFinished | default 60 }}"
           {{- if or $.Values.sandbox.runtimeClassName $.Values.runtimeClassName }}

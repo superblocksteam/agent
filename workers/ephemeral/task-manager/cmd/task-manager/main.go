@@ -91,7 +91,8 @@ func init() {
 	// Dynamic mode: create Kubernetes Jobs (requires POD_IP, POD_NAMESPACE, sandbox.image)
 	pflag.Duration("sandbox.timeout", 0, "Timeout for ephemeral job execution. 0 means no timeout.")
 	pflag.String("sandbox.namespace", "", "Kubernetes namespace for sandbox Jobs (defaults to current namespace from POD_NAMESPACE env).")
-	pflag.String("sandbox.image", "", "Container image for sandbox Jobs.")
+	pflag.String("sandbox.image", "", "Container image for the sandbox.")
+	pflag.String("sandbox.lang-executor.image", "", "Container image for the sandbox language executor.")
 	pflag.Int("sandbox.port", 50051, "gRPC port for sandbox container.")
 	pflag.Int("sandbox.ttl", 60, "TTL in seconds for completed sandbox Jobs.")
 	pflag.String("sandbox.runtimeClass", "", "RuntimeClass for sandbox Jobs (e.g., 'gvisor').")
@@ -363,10 +364,7 @@ func main() {
 		}
 
 		sandboxImage := viper.GetString("sandbox.image")
-		if sandboxImage == "" {
-			logger.Error("sandbox.image is required (or set sandbox.address for static mode)")
-			os.Exit(1)
-		}
+		sandboxLangExecutorImage := viper.GetString("sandbox.lang-executor.image")
 
 		k8sClient, err := k8sjobmanager.NewInClusterClient()
 		if err != nil {
@@ -426,7 +424,6 @@ func main() {
 		jobManagerOptions := []k8sjobmanager.Option{
 			k8sjobmanager.WithClientset(k8sClient),
 			k8sjobmanager.WithNamespace(namespace),
-			k8sjobmanager.WithImage(sandboxImage),
 			k8sjobmanager.WithPort(viper.GetInt("sandbox.port")),
 			k8sjobmanager.WithPodIP(podIP),
 			k8sjobmanager.WithGRPCPort(viper.GetInt("grpc.port")),
@@ -441,7 +438,14 @@ func main() {
 		}
 
 		if nonLangRequired {
+			if sandboxImage == "" {
+				logger.Error("sandbox.image is required (or set sandbox.address for static mode)")
+				os.Exit(1)
+			}
+
+			jobManagerOptions = append(jobManagerOptions, k8sjobmanager.WithImage(sandboxImage))
 			jobMgr := k8sjobmanager.NewSandboxJobManager(k8sjobmanager.NewOptions(jobManagerOptions...))
+
 			sandboxOptions = append(sandboxOptions,
 				sandbox.WithConnectionMode(sandbox.SandboxConnectionModeDynamic),
 				sandbox.WithSandboxManager(jobMgr),
@@ -450,7 +454,16 @@ func main() {
 		}
 
 		if langExecutionRequired {
-			jobManagerOptions = append(jobManagerOptions, k8sjobmanager.WithLanguage(language))
+			if sandboxLangExecutorImage == "" {
+				logger.Error("sandbox.lang-executor.image is required (or set sandbox.address for static mode)")
+				os.Exit(1)
+			}
+
+			jobManagerOptions = append(
+				jobManagerOptions,
+				k8sjobmanager.WithImage(sandboxLangExecutorImage),
+				k8sjobmanager.WithLanguage(language),
+			)
 			jobMgr := k8sjobmanager.NewSandboxJobManager(k8sjobmanager.NewOptions(jobManagerOptions...))
 
 			sandboxLangExecutorOptions.ConnectionMode = sandbox_executor.SandboxConnectionModeDynamic

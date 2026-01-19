@@ -87,6 +87,10 @@ sandbox:
   runtimeClassName: ""
   python:
     image:
+      repository: ghcr.io/superblocksteam/javascript-sandbox
+      tag: latest
+      pullPolicy: IfNotPresent
+    langExecutorImage:
       repository: ghcr.io/superblocksteam/python-lang-executor-sandbox
       tag: latest
       pullPolicy: IfNotPresent
@@ -101,6 +105,10 @@ sandbox:
     extraEnv: []
   javascript:
     image:
+      repository: ghcr.io/superblocksteam/javascript-sandbox
+      tag: latest
+      pullPolicy: IfNotPresent
+    langExecutorImage:
       repository: ghcr.io/superblocksteam/javascript-lang-executor-sandbox
       tag: latest
       pullPolicy: IfNotPresent
