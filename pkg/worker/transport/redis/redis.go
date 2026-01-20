@@ -18,6 +18,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/errors"
 	metricsPkg "github.com/superblocksteam/agent/pkg/metrics"
 	"github.com/superblocksteam/agent/pkg/observability"
+	"github.com/superblocksteam/agent/pkg/pluginparser"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	"github.com/superblocksteam/agent/pkg/worker/options"
@@ -111,7 +112,7 @@ func (t *transport) Remote(ctx context.Context, pluginName string, organizationP
 
 	bucket := t.options.buckets.Assign(pluginName, estimate)
 
-	enabledPlugins := utils.NewSet(t.flags.GetEphemeralEnabledPlugins(organizationPlan, orgId)...)
+	enabledPlugins := pluginparser.ParsePlugins(t.flags.GetEphemeralEnabledPlugins(organizationPlan, orgId))
 	supportedEvents := utils.NewSet(t.flags.GetEphemeralSupportedEvents(organizationPlan, orgId)...)
 
 	streamFmtStr := "agent.main.bucket.%s.plugin.%s.event.%s"

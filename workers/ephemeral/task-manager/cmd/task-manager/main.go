@@ -13,7 +13,6 @@ import (
 	"workers/ephemeral/task-manager/internal/plugin/sandbox"
 	sandbox_executor "workers/ephemeral/task-manager/internal/plugin/sandboxexecutor"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
-	"workers/ephemeral/task-manager/internal/pluginparser"
 	"workers/ephemeral/task-manager/internal/sandboxmanager/k8sjobmanager"
 	internalstore "workers/ephemeral/task-manager/internal/store/redis"
 	"workers/ephemeral/task-manager/internal/transport/redis"
@@ -25,6 +24,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/observability/log"
 	"github.com/superblocksteam/agent/pkg/observability/obsup"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	"github.com/superblocksteam/agent/pkg/pluginparser"
 	"github.com/superblocksteam/agent/pkg/store"
 	redisstore "github.com/superblocksteam/agent/pkg/store/redis"
 	"github.com/superblocksteam/agent/pkg/utils"
@@ -521,7 +521,7 @@ func main() {
 			viper.GetString("worker.group"),
 			viper.GetStringSlice("worker.buckets"),
 			events.ToSlice(),
-			viper.GetBool("worker.ephemeral"),
+			true, // viper.GetBool("worker.ephemeral"), TODO: uncomment this once we have finished rolling out sandboxed execution
 		)
 	}
 
