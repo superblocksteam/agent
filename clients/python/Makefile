@@ -58,7 +58,7 @@ cov:
 pkg-build: 
 	@rm -rf build
 	@rm -rf dist
-	@$(PYTHON_CMD) setup.py sdist bdist_wheel
+	@$(PYTHON_CMD) -m build
 
 # publishes the currently built package to https://test.pypi.org/project/superblocks-agent/
 # we should always publish here first

@@ -50,6 +50,11 @@ services:
     volumes:
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   kafka:
     image: docker.redpanda.com/redpandadata/redpanda:latest
     command:
@@ -104,7 +109,13 @@ services:
       SUPERBLOCKS_INTAKE_KAFKA_BOOTSTRAP: kafka:9092
       SUPERBLOCKS_INTAKE_DB_URL: postgres://postgres:password@postgres:5432/postgres?sslmode=disable
       SUPERBLOCKS_INTAKE_HTTP_BIND: 0.0.0.0
-    depends_on: [kafka, kafka-setup, postgres]
+    depends_on:
+      kafka:
+        condition: service_started
+      kafka-setup:
+        condition: service_started
+      postgres:
+        condition: service_healthy
   mock:
     build:
       context: ./mocks
