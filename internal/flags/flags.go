@@ -42,6 +42,7 @@ type Flags interface {
 
 	GetWorkflowPluginInheritanceEnabled(orgId string) bool
 	GetValidateSubjectTokenDuringOboFlowEnabled(orgId string) bool
+	GetUseAgentKeyForHydration(orgId string) bool
 }
 
 type Client interface {

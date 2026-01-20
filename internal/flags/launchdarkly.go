@@ -119,6 +119,10 @@ func (flags *launchdarkly) GetValidateSubjectTokenDuringOboFlowEnabled(orgId str
 	return flags.GetBoolVariationByOrg("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled", orgId, flags.options.DefaultValidateSubjectTokenDuringOboFlowEnabled)
 }
 
+func (flags *launchdarkly) GetUseAgentKeyForHydration(orgId string) bool {
+	return flags.GetBoolVariationByOrg("server.security.require-agent-key-for-hydration", orgId, false)
+}
+
 func (flags *launchdarkly) GetApiTimeoutV2(api *apiv1.Api, tier string) float64 {
 	fallback := flags.options.DefaultApiTimeout
 	orgId := api.GetMetadata().GetOrganization()

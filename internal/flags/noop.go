@@ -101,6 +101,10 @@ func (flags *noopFlags) GetValidateSubjectTokenDuringOboFlowEnabled(orgId string
 	return flags.options.DefaultValidateSubjectTokenDuringOboFlowEnabled
 }
 
+func (flags *noopFlags) GetUseAgentKeyForHydration(string) bool {
+	return false
+}
+
 func (flags *noopFlags) GetFlagSource() int {
 	return SourceNoop
 }

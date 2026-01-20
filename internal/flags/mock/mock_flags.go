@@ -412,6 +412,24 @@ func (_m *Flags) GetStepSizeV2(tier string, orgId string) int {
 	return r0
 }
 
+// GetUseAgentKeyForHydration provides a mock function with given fields: orgId
+func (_m *Flags) GetUseAgentKeyForHydration(orgId string) bool {
+	ret := _m.Called(orgId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUseAgentKeyForHydration")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string) bool); ok {
+		r0 = rf(orgId)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // GetValidateSubjectTokenDuringOboFlowEnabled provides a mock function with given fields: orgId
 func (_m *Flags) GetValidateSubjectTokenDuringOboFlowEnabled(orgId string) bool {
 	ret := _m.Called(orgId)

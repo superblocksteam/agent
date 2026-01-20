@@ -101,6 +101,15 @@ func (s *server) Health(_ context.Context, req *apiv1.HealthRequest) (*commonv1.
 	return s.Config.Health(req)
 }
 
+// getUseAgentKeyForHydration returns whether to use agent key for hydration requests.
+// Returns false (default) if Flags is nil (e.g., in tests without mock flags configured).
+func (s *server) getUseAgentKeyForHydration(orgId string) bool {
+	if s.Flags == nil {
+		return false
+	}
+	return s.Flags.GetUseAgentKeyForHydration(orgId)
+}
+
 func (s *server) Workflow(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.WorkflowResponse, error) {
 	if fetch := req.GetFetch(); fetch != nil {
 		if fetch.GetTest() {
@@ -551,7 +560,8 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	var rawResult *structpb.Struct
 	var rawApiValue *structpb.Value
 	{
-		useAgentKey := false
+		// Use empty string for orgId since we don't have it yet - flag will return default (false)
+		useAgentKey := s.getUseAgentKeyForHydration("")
 		result, rawResult, err = executor.Fetch(ctx, req, s.Fetcher, useAgentKey, s.Logger)
 		rawApiValue, _ = utils.GetStructField(rawResult, "api")
 	}
@@ -669,7 +679,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		RootStartTime:                time.Now(),
 		SecretManager:                s.SecretManager,
 		GarbageCollect:               true,
-		UseAgentKey:                  false,
+		UseAgentKey:                  s.getUseAgentKeyForHydration(constants.OrganizationID(ctx)),
 		Stores:                       result.GetStores(),
 		Secrets:                      s.Secrets,
 		Signature:                    s.Signature,
@@ -852,7 +862,8 @@ func (s *server) MetadataDeprecated(ctx context.Context, req *apiv1.MetadataRequ
 	var err error
 	var fetchRes *apiv1.Definition
 	{
-		useAgentKey := false
+		// Use empty string for orgId since we don't have it yet - flag will return default (false)
+		useAgentKey := s.getUseAgentKeyForHydration("")
 		fetchRes, _, err = s.Fetcher.FetchApi(ctx, &apiv1.ExecuteRequest_Fetch{
 			Id:      req.ApiId,
 			Profile: req.Profile,

@@ -160,6 +160,7 @@ func init() {
 	pflag.Bool("emitter.event.enabled", true, "")
 	pflag.Int("emitter.event.flush.max.items", 100, "")
 	pflag.String("superblocks.key", "dev-agent-key", "")
+	pflag.Bool("fetch.use_agent_key", false, "Whether to include agent key header when fetching API definitions. Enable after server supports it.")
 	pflag.String("otel.collector.http.url", "https://traces.intake.superblocks.com/v1/traces", "")
 	pflag.Duration("otel.batcher.batch_timeout", 1*time.Second, "The maximum delay allowed for a BatchSpanProcessor before it will export any held span.")
 	pflag.Duration("otel.batcher.export_timeout", 15*time.Second, "The amount of time a BatchSpanProcessor waits for an exporter to export before abandoning the export.")
