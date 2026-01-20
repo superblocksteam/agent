@@ -120,9 +120,16 @@ func (_m *MockClient) Fields() []slog.Attr {
 	return r0
 }
 
-// Metadata provides a mock function with given fields: _a0, _a1, _a2, _a3
-func (_m *MockClient) Metadata(_a0 context.Context, _a1 string, _a2 *structpb.Struct, _a3 *structpb.Struct) (*v1.Response, error) {
-	ret := _m.Called(_a0, _a1, _a2, _a3)
+// Metadata provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
+func (_m *MockClient) Metadata(_a0 context.Context, _a1 string, _a2 *structpb.Struct, _a3 *structpb.Struct, _a4 ...options.Option) (*v1.Response, error) {
+	_va := make([]interface{}, len(_a4))
+	for _i := range _a4 {
+		_va[_i] = _a4[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _a0, _a1, _a2, _a3)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Metadata")
@@ -130,19 +137,19 @@ func (_m *MockClient) Metadata(_a0 context.Context, _a1 string, _a2 *structpb.St
 
 	var r0 *v1.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, *structpb.Struct) (*v1.Response, error)); ok {
-		return rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, *structpb.Struct, ...options.Option) (*v1.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3, _a4...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, *structpb.Struct) *v1.Response); ok {
-		r0 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, *structpb.Struct, ...options.Option) *v1.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3, _a4...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *structpb.Struct, *structpb.Struct) error); ok {
-		r1 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *structpb.Struct, *structpb.Struct, ...options.Option) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3, _a4...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -168,9 +175,16 @@ func (_m *MockClient) Name() string {
 	return r0
 }
 
-// PreDelete provides a mock function with given fields: ctx, pluginName, datasourceConfig
-func (_m *MockClient) PreDelete(ctx context.Context, pluginName string, datasourceConfig *structpb.Struct) (*v1.Response, error) {
-	ret := _m.Called(ctx, pluginName, datasourceConfig)
+// PreDelete provides a mock function with given fields: ctx, pluginName, datasourceConfig, opts
+func (_m *MockClient) PreDelete(ctx context.Context, pluginName string, datasourceConfig *structpb.Struct, opts ...options.Option) (*v1.Response, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, pluginName, datasourceConfig)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PreDelete")
@@ -178,19 +192,19 @@ func (_m *MockClient) PreDelete(ctx context.Context, pluginName string, datasour
 
 	var r0 *v1.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct) (*v1.Response, error)); ok {
-		return rf(ctx, pluginName, datasourceConfig)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, ...options.Option) (*v1.Response, error)); ok {
+		return rf(ctx, pluginName, datasourceConfig, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct) *v1.Response); ok {
-		r0 = rf(ctx, pluginName, datasourceConfig)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, ...options.Option) *v1.Response); ok {
+		r0 = rf(ctx, pluginName, datasourceConfig, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *structpb.Struct) error); ok {
-		r1 = rf(ctx, pluginName, datasourceConfig)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *structpb.Struct, ...options.Option) error); ok {
+		r1 = rf(ctx, pluginName, datasourceConfig, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -244,9 +258,16 @@ func (_m *MockClient) Run(_a0 context.Context) error {
 	return r0
 }
 
-// TestConnection provides a mock function with given fields: ctx, pluginName, datasourceConfig, actionConfig
-func (_m *MockClient) TestConnection(ctx context.Context, pluginName string, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*v1.Response, error) {
-	ret := _m.Called(ctx, pluginName, datasourceConfig, actionConfig)
+// TestConnection provides a mock function with given fields: ctx, pluginName, datasourceConfig, actionConfig, opts
+func (_m *MockClient) TestConnection(ctx context.Context, pluginName string, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct, opts ...options.Option) (*v1.Response, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, pluginName, datasourceConfig, actionConfig)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for TestConnection")
@@ -254,19 +275,19 @@ func (_m *MockClient) TestConnection(ctx context.Context, pluginName string, dat
 
 	var r0 *v1.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, *structpb.Struct) (*v1.Response, error)); ok {
-		return rf(ctx, pluginName, datasourceConfig, actionConfig)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, *structpb.Struct, ...options.Option) (*v1.Response, error)); ok {
+		return rf(ctx, pluginName, datasourceConfig, actionConfig, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, *structpb.Struct) *v1.Response); ok {
-		r0 = rf(ctx, pluginName, datasourceConfig, actionConfig)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, *structpb.Struct, ...options.Option) *v1.Response); ok {
+		r0 = rf(ctx, pluginName, datasourceConfig, actionConfig, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *structpb.Struct, *structpb.Struct) error); ok {
-		r1 = rf(ctx, pluginName, datasourceConfig, actionConfig)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *structpb.Struct, *structpb.Struct, ...options.Option) error); ok {
+		r1 = rf(ctx, pluginName, datasourceConfig, actionConfig, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -468,7 +468,7 @@ func TestTestAuthorizationRequired(t *testing.T) {
 			tm.On("AddTokenIfNeeded", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(types.TokenPayload{}, nil).Maybe()
 
 			// Mock Worker TestConnection
-			mockWorker.On("TestConnection", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+			mockWorker.On("TestConnection", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
 
 			defer metrics.SetupForTesting()()
 			server := NewServer(&Config{
@@ -1169,7 +1169,7 @@ func TestMetadata(t *testing.T) {
 			tm.On("AddTokenIfNeeded", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(types.TokenPayload{}, nil)
 
 			mockWorker := &worker.MockClient{}
-			mockWorker.On("Metadata", ctx, tc.pluginId, mock.Anything, mock.Anything).Return(tc.expectedMetadataResp, tc.expectedMetadataErr)
+			mockWorker.On("Metadata", ctx, tc.pluginId, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedMetadataResp, tc.expectedMetadataErr)
 
 			fetcher := &fetchmocks.Fetcher{}
 			fetcher.On("FetchIntegration", ctx, tc.integrationId, mock.Anything).Return(&fetch.Integration{

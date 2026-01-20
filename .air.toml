@@ -59,6 +59,7 @@ full_bin = """ \
         --transport.redis.password=koala \
         --store.redis.password=koala \
         --worker.ephemeral.plugins.enabled=${SUPERBLOCKS_WORKER_EPHEMERAL_PLUGINS-}
+        --worker.ephemeral.supported.events=${SUPERBLOCKS_WORKER_EPHEMERAL_EVENTS-}
 
     """
 include_dir = [  ]

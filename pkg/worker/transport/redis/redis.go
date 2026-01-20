@@ -137,27 +137,27 @@ func (t *transport) Execute(ctx context.Context, plugin string, data *transportv
 	return perf, key, err
 }
 
-func (t *transport) Metadata(ctx context.Context, plugin string, d, a *structpb.Struct) (*transportv1.Response, error) {
+func (t *transport) Metadata(ctx context.Context, plugin string, d, a *structpb.Struct, opts ...options.Option) (*transportv1.Response, error) {
 	_, res, _, err := t.handleEvent(worker.WithEvent(ctx, worker.EventMetadata), plugin, &transportv1.Request_Data_Data{
 		DConfig: d,
 		AConfig: a,
-	})
+	}, opts...)
 
 	return res, err
 }
 
-func (t *transport) TestConnection(ctx context.Context, plugin string, d *structpb.Struct, a *structpb.Struct) (*transportv1.Response, error) {
+func (t *transport) TestConnection(ctx context.Context, plugin string, d *structpb.Struct, a *structpb.Struct, opts ...options.Option) (*transportv1.Response, error) {
 	_, res, _, err := t.handleEvent(worker.WithEvent(ctx, worker.EventTest), plugin, &transportv1.Request_Data_Data{
 		DConfig: d,
 		AConfig: a,
-	})
+	}, opts...)
 	return res, err
 }
 
-func (t *transport) PreDelete(ctx context.Context, plugin string, d *structpb.Struct) (*transportv1.Response, error) {
+func (t *transport) PreDelete(ctx context.Context, plugin string, d *structpb.Struct, opts ...options.Option) (*transportv1.Response, error) {
 	_, res, _, err := t.handleEvent(worker.WithEvent(ctx, worker.EventPreDelete), plugin, &transportv1.Request_Data_Data{
 		DConfig: d,
-	})
+	}, opts...)
 	return res, err
 }
 

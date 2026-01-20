@@ -41,6 +41,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/validation"
 	"github.com/superblocksteam/agent/pkg/worker"
+	workeroptions "github.com/superblocksteam/agent/pkg/worker/options"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
@@ -791,7 +792,8 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 		pluginConfig = structpb.NewStructValue(emptyConfig)
 	}
 
-	resp, err := s.Worker.Metadata(ctx, integration.PluginId, renderedIntegrationConfig, pluginConfig.GetStructValue())
+	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
+	resp, err := s.Worker.Metadata(ctx, integration.PluginId, renderedIntegrationConfig, pluginConfig.GetStructValue(), workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
 	if err != nil {
 		return nil, sberror.ToIntegrationError(err)
 	}
@@ -932,7 +934,8 @@ func (s *server) MetadataDeprecated(ctx context.Context, req *apiv1.MetadataRequ
 		return nil, err
 	}
 
-	resp, err := s.Worker.Metadata(ctx, pluginName, renderedIntegrationConfig, actionConfig)
+	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
+	resp, err := s.Worker.Metadata(ctx, pluginName, renderedIntegrationConfig, actionConfig, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
 	if err != nil {
 		return nil, sberror.ToIntegrationError(err)
 	}
@@ -1032,7 +1035,8 @@ func (s *server) Test(ctx context.Context, req *apiv1.TestRequest) (*apiv1.TestR
 		return nil, err
 	}
 
-	if _, err := s.Worker.TestConnection(ctx, plugin, renderedIntegrationConfig, req.ActionConfig); err != nil {
+	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
+	if _, err := s.Worker.TestConnection(ctx, plugin, renderedIntegrationConfig, req.ActionConfig, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId)); err != nil {
 		return nil, sberror.ToIntegrationError(err)
 	}
 
@@ -1075,7 +1079,8 @@ func (s *server) Delete(ctx context.Context, req *apiv1.DeleteRequest) (*apiv1.D
 		}
 	}
 
-	_, err = s.Worker.PreDelete(ctx, pluginName, integrationStruct)
+	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
+	_, err = s.Worker.PreDelete(ctx, pluginName, integrationStruct, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
 	if err != nil {
 		s.Logger.Warn("Failed to delete integration", zap.String("integrationId", integrationId))
 		return nil, sberror.ToIntegrationError(err)
@@ -1359,4 +1364,18 @@ func (s *server) evaluateDatasource(
 	}
 
 	return renderedIntegrationConfig.GetStructValue(), nil
+}
+
+func getOrganizationPlanAndIdFromContext(ctx context.Context) (orgPlan string, orgId string) {
+	if orgType, ok := jwt_validator.GetOrganizationType(ctx); ok {
+		orgPlan = orgType
+	}
+
+	if id, ok := jwt_validator.GetOrganizationID(ctx); ok {
+		orgId = id
+	} else {
+		orgId = constants.OrganizationID(ctx)
+	}
+
+	return orgPlan, orgId
 }

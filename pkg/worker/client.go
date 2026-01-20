@@ -42,9 +42,9 @@ type ExecuteResponse struct {
 //go:generate mockery --name=Client --output . --filename client_mock.go --outpkg worker --structname MockClient
 type Client interface {
 	Execute(context.Context, string, *transportv1.Request_Data_Data, ...options.Option) (*transportv1.Performance, string, error)
-	Metadata(context.Context, string, *structpb.Struct, *structpb.Struct) (*transportv1.Response, error)
-	TestConnection(ctx context.Context, pluginName string, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response, error)
-	PreDelete(ctx context.Context, pluginName string, datasourceConfig *structpb.Struct) (*transportv1.Response, error)
+	Metadata(context.Context, string, *structpb.Struct, *structpb.Struct, ...options.Option) (*transportv1.Response, error)
+	TestConnection(ctx context.Context, pluginName string, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct, opts ...options.Option) (*transportv1.Response, error)
+	PreDelete(ctx context.Context, pluginName string, datasourceConfig *structpb.Struct, opts ...options.Option) (*transportv1.Response, error)
 
 	Selector
 	run.Runnable
