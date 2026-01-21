@@ -114,6 +114,11 @@ export class SQLExecution extends jspb.Message {
     getUseParameterized(): boolean;
     setUseParameterized(value: boolean): SQLExecution;
 
+    hasParameters(): boolean;
+    clearParameters(): void;
+    getParameters(): string | undefined;
+    setParameters(value: string): SQLExecution;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): SQLExecution.AsObject;
     static toObject(includeInstance: boolean, msg: SQLExecution): SQLExecution.AsObject;
@@ -128,6 +133,7 @@ export namespace SQLExecution {
     export type AsObject = {
         sqlBody: string,
         useParameterized: boolean,
+        parameters?: string,
     }
 }
 

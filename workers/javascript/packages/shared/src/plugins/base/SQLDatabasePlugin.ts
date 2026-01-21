@@ -302,6 +302,12 @@ export abstract class SQLDatabasePlugin extends BasePlugin {
   }
 
   private _shouldNotUseParameterizedSql(resolutionContext: ActionConfigurationResolutionContext): boolean {
+    // If orchestrator already provided preparedStatementContext via `parameters` field,
+    // skip worker-side parameterization - orchestrator flow takes precedence
+    if (resolutionContext.context.preparedStatementContext?.length > 0) {
+      return true;
+    }
+
     // as we transition SQL plugins from older models to new proto models, we need to support both ways.
     // this custom logic can live here
     if ('usePreparedSql' in resolutionContext.actionConfiguration) {

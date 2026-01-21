@@ -203,6 +203,11 @@ export class Plugin extends Message<Plugin> {
    */
   schema?: string;
 
+  /**
+   * @generated from field: optional string parameters = 16;
+   */
+  parameters?: string;
+
   constructor(data?: PartialMessage<Plugin>) {
     super();
     proto3.util.initPartial(data, this);
@@ -225,6 +230,7 @@ export class Plugin extends Message<Plugin> {
     { no: 13, name: "insertedRows", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 14, name: "deletedRows", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 15, name: "schema", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 16, name: "parameters", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin {

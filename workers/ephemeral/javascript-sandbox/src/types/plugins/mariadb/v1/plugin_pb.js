@@ -430,7 +430,8 @@ proto.plugins.mariadb.v1.Plugin.toObject = function(includeInstance, msg) {
     superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.mariadb.v1.SuperblocksMetadata.toObject(includeInstance, f),
     insertedrows: jspb.Message.getFieldWithDefault(msg, 12, ""),
     deletedrows: jspb.Message.getFieldWithDefault(msg, 13, ""),
-    schema: jspb.Message.getFieldWithDefault(msg, 14, "")
+    schema: jspb.Message.getFieldWithDefault(msg, 14, ""),
+    parameters: jspb.Message.getFieldWithDefault(msg, 15, "")
   };
 
   if (includeInstance) {
@@ -524,6 +525,10 @@ proto.plugins.mariadb.v1.Plugin.deserializeBinaryFromReader = function(msg, read
     case 14:
       var value = /** @type {string} */ (reader.readString());
       msg.setSchema(value);
+      break;
+    case 15:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setParameters(value);
       break;
     default:
       reader.skipField();
@@ -651,6 +656,13 @@ proto.plugins.mariadb.v1.Plugin.serializeBinaryToWriter = function(message, writ
   if (f != null) {
     writer.writeString(
       14,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 15));
+  if (f != null) {
+    writer.writeString(
+      15,
       f
     );
   }
@@ -1126,6 +1138,42 @@ proto.plugins.mariadb.v1.Plugin.prototype.clearSchema = function() {
  */
 proto.plugins.mariadb.v1.Plugin.prototype.hasSchema = function() {
   return jspb.Message.getField(this, 14) != null;
+};
+
+
+/**
+ * optional string parameters = 15;
+ * @return {string}
+ */
+proto.plugins.mariadb.v1.Plugin.prototype.getParameters = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 15, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.mariadb.v1.Plugin} returns this
+ */
+proto.plugins.mariadb.v1.Plugin.prototype.setParameters = function(value) {
+  return jspb.Message.setField(this, 15, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.plugins.mariadb.v1.Plugin} returns this
+ */
+proto.plugins.mariadb.v1.Plugin.prototype.clearParameters = function() {
+  return jspb.Message.setField(this, 15, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.plugins.mariadb.v1.Plugin.prototype.hasParameters = function() {
+  return jspb.Message.getField(this, 15) != null;
 };
 
 

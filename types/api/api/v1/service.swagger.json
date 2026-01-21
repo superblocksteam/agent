@@ -3435,6 +3435,9 @@
         },
         "superblocksMetadata": {
           "$ref": "#/definitions/pluginsbigqueryv1SuperblocksMetadata"
+        },
+        "parameters": {
+          "type": "string"
         }
       }
     },
@@ -3518,6 +3521,9 @@
           "type": "string"
         },
         "schema": {
+          "type": "string"
+        },
+        "parameters": {
           "type": "string"
         }
       }
@@ -4161,6 +4167,9 @@
         },
         "schema": {
           "type": "string"
+        },
+        "parameters": {
+          "type": "string"
         }
       }
     },
@@ -4296,6 +4305,9 @@
         },
         "schema": {
           "type": "string"
+        },
+        "parameters": {
+          "type": "string"
         }
       }
     },
@@ -4368,6 +4380,9 @@
           "type": "string"
         },
         "schema": {
+          "type": "string"
+        },
+        "parameters": {
           "type": "string"
         }
       }
@@ -4645,6 +4660,9 @@
         },
         "schema": {
           "type": "string"
+        },
+        "parameters": {
+          "type": "string"
         }
       }
     },
@@ -4768,6 +4786,9 @@
         },
         "superblocksMetadata": {
           "$ref": "#/definitions/pluginsredshiftv1SuperblocksMetadata"
+        },
+        "parameters": {
+          "type": "string"
         }
       }
     },
@@ -5243,6 +5264,9 @@
         },
         "superblocksMetadata": {
           "$ref": "#/definitions/pluginssnowflakev1SuperblocksMetadata"
+        },
+        "parameters": {
+          "type": "string"
         }
       }
     },
@@ -6560,6 +6584,9 @@
         },
         "useParameterized": {
           "type": "boolean"
+        },
+        "parameters": {
+          "type": "string"
         }
       }
     },

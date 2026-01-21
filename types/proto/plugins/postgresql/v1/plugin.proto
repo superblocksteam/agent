@@ -35,4 +35,5 @@ message Plugin {
   optional string insertedRows = 13;
   optional string deletedRows = 14;
   optional string schema = 15;
+  optional string parameters = 16;
 }

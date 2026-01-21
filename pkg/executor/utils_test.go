@@ -1345,3 +1345,247 @@ func TestFetchDefinitionFromRequestWithValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestFindParametersExpression(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		action         map[string]any
+		expectedExpr   string
+		expectedNested bool
+	}{
+		{
+			name:           "no parameters field",
+			action:         map[string]any{"body": "SELECT * FROM users"},
+			expectedExpr:   "",
+			expectedNested: false,
+		},
+		{
+			name:           "flat parameters (postgres style)",
+			action:         map[string]any{"body": "SELECT * FROM users WHERE id = $1", "parameters": "[userId]"},
+			expectedExpr:   "[userId]",
+			expectedNested: false,
+		},
+		{
+			name: "nested parameters (databricks style)",
+			action: map[string]any{
+				"runSql": map[string]any{
+					"sqlBody":    "SELECT * FROM users WHERE id = :param_1",
+					"parameters": "[userId]",
+				},
+			},
+			expectedExpr:   "[userId]",
+			expectedNested: true,
+		},
+		{
+			name:           "empty parameters string",
+			action:         map[string]any{"parameters": ""},
+			expectedExpr:   "",
+			expectedNested: false,
+		},
+		{
+			name: "flat takes precedence over nested",
+			action: map[string]any{
+				"parameters": "[flatParam]",
+				"runSql": map[string]any{
+					"parameters": "[nestedParam]",
+				},
+			},
+			expectedExpr:   "[flatParam]",
+			expectedNested: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actionStruct, err := structpb.NewStruct(tt.action)
+			require.NoError(t, err)
+
+			expr, nestedStruct := findParametersExpression(actionStruct)
+
+			assert.Equal(t, tt.expectedExpr, expr)
+			if tt.expectedNested {
+				assert.NotNil(t, nestedStruct, "expected nested struct to be returned")
+			} else {
+				assert.Nil(t, nestedStruct, "expected nested struct to be nil")
+			}
+		})
+	}
+}
+
+func TestHasParametersField(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		action   map[string]any
+		expected bool
+	}{
+		{
+			name:     "no parameters",
+			action:   map[string]any{"body": "SELECT 1"},
+			expected: false,
+		},
+		{
+			name:     "flat parameters",
+			action:   map[string]any{"parameters": "[1, 2, 3]"},
+			expected: true,
+		},
+		{
+			name:     "nested parameters",
+			action:   map[string]any{"runSql": map[string]any{"parameters": "[1]"}},
+			expected: true,
+		},
+		{
+			name:     "empty parameters",
+			action:   map[string]any{"parameters": ""},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actionStruct, err := structpb.NewStruct(tt.action)
+			require.NoError(t, err)
+
+			result := hasParametersField(actionStruct)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestEvaluateParameters(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{
+		Logger: zap.NewNop(),
+	})
+	defer sandbox.Close()
+
+	tests := []struct {
+		name           string
+		action         map[string]any
+		expectedParams []any
+		expectedError  string
+		checkNested    bool // if true, verify parameters removed from nested runSql
+	}{
+		{
+			name:           "flat parameters with literals",
+			action:         map[string]any{"body": "SELECT * FROM users WHERE id = $1", "parameters": "[1, 'hello', true]"},
+			expectedParams: []any{float64(1), "hello", true},
+		},
+		{
+			name:           "spread operator in expression",
+			action:         map[string]any{"parameters": "[...[1, 2], 3]"},
+			expectedParams: []any{float64(1), float64(2), float64(3)},
+		},
+		{
+			name: "nested parameters (databricks style)",
+			action: map[string]any{
+				"runSql": map[string]any{
+					"sqlBody":    "SELECT * FROM users WHERE id = :param_1",
+					"parameters": "[123]",
+				},
+			},
+			expectedParams: []any{float64(123)},
+			checkNested:    true,
+		},
+		{
+			name:           "preserves number types",
+			action:         map[string]any{"parameters": "[99.99, 42, -10]"},
+			expectedParams: []any{99.99, float64(42), float64(-10)},
+		},
+		{
+			name:           "preserves boolean types",
+			action:         map[string]any{"parameters": "[true, false]"},
+			expectedParams: []any{true, false},
+		},
+		{
+			name:           "preserves null",
+			action:         map[string]any{"parameters": "[null, 'test']"},
+			expectedParams: []any{nil, "test"},
+		},
+		{
+			name:           "array parameter",
+			action:         map[string]any{"parameters": "[[1, 2, 3]]"},
+			expectedParams: []any{[]any{float64(1), float64(2), float64(3)}},
+		},
+		{
+			name:           "object parameter",
+			action:         map[string]any{"parameters": "[{\"name\": \"test\"}]"},
+			expectedParams: []any{map[string]any{"name": "test"}},
+		},
+		{
+			name:          "non-array result errors",
+			action:        map[string]any{"parameters": "\"not an array\""},
+			expectedError: "parameters must evaluate to an array",
+		},
+		{
+			name:          "undefined variable errors",
+			action:        map[string]any{"parameters": "[undefined_var]"},
+			expectedError: "parameters expression failed",
+		},
+		{
+			name:           "no parameters field - no-op",
+			action:         map[string]any{"body": "SELECT 1"},
+			expectedParams: nil,
+		},
+		{
+			name:           "empty parameters string - no-op",
+			action:         map[string]any{"parameters": ""},
+			expectedParams: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actionStruct, err := structpb.NewStruct(tt.action)
+			require.NoError(t, err)
+
+			ctx := apictx.New(&apictx.Context{
+				Context: context.Background(),
+			})
+
+			err = evaluateParameters(ctx, sandbox, actionStruct, zap.NewNop())
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				return
+			}
+
+			require.NoError(t, err)
+
+			if tt.expectedParams == nil {
+				// No parameters expected - verify preparedStatementContext not set
+				assert.Nil(t, actionStruct.Fields["preparedStatementContext"])
+				return
+			}
+
+			// Verify preparedStatementContext was set
+			psc := actionStruct.Fields["preparedStatementContext"]
+			require.NotNil(t, psc, "preparedStatementContext should be set")
+
+			listValue := psc.GetListValue()
+			require.NotNil(t, listValue, "preparedStatementContext should be a list")
+
+			// Convert to []any for comparison
+			var actualParams []any
+			for _, v := range listValue.Values {
+				actualParams = append(actualParams, v.AsInterface())
+			}
+
+			assert.Equal(t, tt.expectedParams, actualParams)
+
+			// Verify parameters field was removed
+			if tt.checkNested {
+				runSql := actionStruct.Fields["runSql"].GetStructValue()
+				assert.Nil(t, runSql.Fields["parameters"], "nested parameters should be removed")
+			} else if tt.action["parameters"] != nil && tt.action["parameters"] != "" {
+				assert.Nil(t, actionStruct.Fields["parameters"], "flat parameters should be removed")
+			}
+		})
+	}
+}

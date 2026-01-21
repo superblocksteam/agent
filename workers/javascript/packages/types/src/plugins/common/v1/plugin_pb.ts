@@ -277,6 +277,11 @@ export class SQLExecution extends Message<SQLExecution> {
    */
   useParameterized = false;
 
+  /**
+   * @generated from field: optional string parameters = 3;
+   */
+  parameters?: string;
+
   constructor(data?: PartialMessage<SQLExecution>) {
     super();
     proto3.util.initPartial(data, this);
@@ -287,6 +292,7 @@ export class SQLExecution extends Message<SQLExecution> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "sql_body", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "use_parameterized", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 3, name: "parameters", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SQLExecution {

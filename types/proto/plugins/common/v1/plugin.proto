@@ -26,6 +26,7 @@ message AWSConfig {
 message SQLExecution {
   string sql_body = 1;
   bool use_parameterized = 2;
+  optional string parameters = 3;
 }
 
 message SQLMappedColumns {

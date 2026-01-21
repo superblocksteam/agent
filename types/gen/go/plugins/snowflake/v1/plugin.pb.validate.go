@@ -544,6 +544,10 @@ func (m *Plugin) validate(all bool) error {
 		// no validation rules for MappingMode
 	}
 
+	if m.Parameters != nil {
+		// no validation rules for Parameters
+	}
+
 	if len(errors) > 0 {
 		return PluginMultiError(errors)
 	}

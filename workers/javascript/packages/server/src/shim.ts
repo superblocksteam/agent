@@ -222,6 +222,13 @@ export class Shim<T extends BasePlugin> implements Plugin {
 
     this.convertPluginConfigTypesInPlace(pluginProps);
 
+    // Copy preparedStatementContext from actionConfiguration to context
+    // This supports the new parameterized SQL flow where orchestrator evaluates the parameters expression
+    if (pluginProps.actionConfiguration?.preparedStatementContext) {
+      pluginProps.context.preparedStatementContext = pluginProps.actionConfiguration.preparedStatementContext;
+      pluginProps.redactedContext.preparedStatementContext = pluginProps.actionConfiguration.preparedStatementContext;
+    }
+
     return pluginProps;
   }
 

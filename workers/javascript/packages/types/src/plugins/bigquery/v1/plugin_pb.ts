@@ -188,6 +188,11 @@ export class Plugin extends Message<Plugin> {
    */
   superblocksMetadata?: SuperblocksMetadata;
 
+  /**
+   * @generated from field: optional string parameters = 12;
+   */
+  parameters?: string;
+
   constructor(data?: PartialMessage<Plugin>) {
     super();
     proto3.util.initPartial(data, this);
@@ -207,6 +212,7 @@ export class Plugin extends Message<Plugin> {
     { no: 9, name: "mappingMode", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 10, name: "mappedColumns", kind: "message", T: MappedColumns, repeated: true },
     { no: 11, name: "superblocksMetadata", kind: "message", T: SuperblocksMetadata },
+    { no: 12, name: "parameters", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Plugin {

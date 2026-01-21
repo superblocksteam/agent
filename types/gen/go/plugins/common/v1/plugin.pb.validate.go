@@ -312,6 +312,10 @@ func (m *SQLExecution) validate(all bool) error {
 
 	// no validation rules for UseParameterized
 
+	if m.Parameters != nil {
+		// no validation rules for Parameters
+	}
+
 	if len(errors) > 0 {
 		return SQLExecutionMultiError(errors)
 	}

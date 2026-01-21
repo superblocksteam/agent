@@ -743,6 +743,16 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 			}
 		}
 
+		// Evaluate parameters expression for parameterized SQL
+		// This checks for a 'parameters' field (flat or nested in runSql), evaluates it as JS,
+		// and sets 'preparedStatementContext' at the top level for the worker shim
+		if hasParametersField(resolvedActionCfg) {
+			sandbox := r.createSandboxFunc()
+			defer sandbox.Close()
+			if err := evaluateParameters(ctx, sandbox, resolvedActionCfg, r.logger); err != nil {
+				return nil, "", err
+			}
+		}
 		useWasmBindingsSandbox := r.flags.GetJsBindingsUseWasmBindingsSandboxEnabled(r.organizationPlan, r.orgId)
 
 		props = &transportv1.Request_Data_Data_Props{

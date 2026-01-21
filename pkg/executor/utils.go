@@ -97,6 +97,81 @@ func ResolveTemplate[T any](ctx *apictx.Context, sandbox engine.Sandbox, logger 
 	return &typed, nil
 }
 
+// evaluateParameters evaluates the 'parameters' field in a SQL action configuration.
+// It expects a JavaScript expression that evaluates to an array, e.g. "[params.userId, params.status]".
+// The resulting array is set as 'preparedStatementContext' in the action config.
+// Values are passed through as-is - drivers handle type conversion (e.g. Postgres supports native arrays).
+func evaluateParameters(ctx *apictx.Context, sandbox engine.Sandbox, action *structpb.Struct, logger *zap.Logger) error {
+	expression, nestedField := findParametersExpression(action)
+	if expression == "" {
+		return nil
+	}
+
+	e, err := sandbox.Engine(ctx.Context)
+	if err != nil {
+		return err
+	}
+	defer e.Close()
+
+	value := e.Resolve(ctx.Context, expression, ctx.Variables)
+	jsonStr, err := value.JSON()
+	if err != nil {
+		return sberrors.BindingError(fmt.Errorf("parameters expression failed: %w", err))
+	}
+
+	var params []any
+	if err := json.Unmarshal([]byte(jsonStr), &params); err != nil {
+		return sberrors.BindingError(fmt.Errorf("parameters must evaluate to an array: %w", err))
+	}
+
+	listValue := &structpb.ListValue{}
+	for i, p := range params {
+		v, err := structpb.NewValue(p)
+		if err != nil {
+			return sberrors.BindingError(fmt.Errorf("invalid parameter value at index %d: %w", i, err))
+		}
+		listValue.Values = append(listValue.Values, v)
+	}
+
+	action.Fields["preparedStatementContext"] = structpb.NewListValue(listValue)
+
+	if nestedField != nil {
+		delete(nestedField.Fields, "parameters")
+	} else {
+		delete(action.Fields, "parameters")
+	}
+
+	logger.Debug("evaluated parameters expression", zap.Int("paramCount", len(params)))
+
+	return nil
+}
+
+// findParametersExpression checks action.parameters (flat) and action.runSql.parameters (nested).
+func findParametersExpression(action *structpb.Struct) (string, *structpb.Struct) {
+	if paramsField := action.Fields["parameters"]; paramsField != nil {
+		if expr := paramsField.GetStringValue(); expr != "" {
+			return expr, nil
+		}
+	}
+
+	if runSqlField := action.Fields["runSql"]; runSqlField != nil {
+		if runSqlStruct := runSqlField.GetStructValue(); runSqlStruct != nil {
+			if paramsField := runSqlStruct.Fields["parameters"]; paramsField != nil {
+				if expr := paramsField.GetStringValue(); expr != "" {
+					return expr, runSqlStruct
+				}
+			}
+		}
+	}
+
+	return "", nil
+}
+
+func hasParametersField(action *structpb.Struct) bool {
+	expr, _ := findParametersExpression(action)
+	return expr != ""
+}
+
 func Execute(ctx context.Context, options *Options, send func(*apiv1.StreamResponse) error) (done *Done, err error, userError error) {
 	ctx = constants.WithApiType(
 		constants.WithApiStartTime(

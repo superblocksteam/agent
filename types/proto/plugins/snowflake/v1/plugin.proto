@@ -32,4 +32,5 @@ message Plugin {
   optional string mappingMode = 9;
   repeated MappedColumns mappedColumns = 10;
   SuperblocksMetadata superblocksMetadata = 11;
+  optional string parameters = 12;
 }

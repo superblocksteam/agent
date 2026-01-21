@@ -901,7 +901,8 @@ proto.plugins.common.v1.SQLExecution.prototype.toObject = function(opt_includeIn
 proto.plugins.common.v1.SQLExecution.toObject = function(includeInstance, msg) {
   var f, obj = {
     sqlBody: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    useParameterized: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
+    useParameterized: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    parameters: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -946,6 +947,10 @@ proto.plugins.common.v1.SQLExecution.deserializeBinaryFromReader = function(msg,
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setUseParameterized(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setParameters(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -989,6 +994,13 @@ proto.plugins.common.v1.SQLExecution.serializeBinaryToWriter = function(message,
       f
     );
   }
+  f = /** @type {string} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -1025,6 +1037,42 @@ proto.plugins.common.v1.SQLExecution.prototype.getUseParameterized = function() 
  */
 proto.plugins.common.v1.SQLExecution.prototype.setUseParameterized = function(value) {
   return jspb.Message.setProto3BooleanField(this, 2, value);
+};
+
+
+/**
+ * optional string parameters = 3;
+ * @return {string}
+ */
+proto.plugins.common.v1.SQLExecution.prototype.getParameters = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.common.v1.SQLExecution} returns this
+ */
+proto.plugins.common.v1.SQLExecution.prototype.setParameters = function(value) {
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.plugins.common.v1.SQLExecution} returns this
+ */
+proto.plugins.common.v1.SQLExecution.prototype.clearParameters = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.plugins.common.v1.SQLExecution.prototype.hasParameters = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 

@@ -635,7 +635,8 @@ proto.plugins.postgresql.v1.Plugin.toObject = function(includeInstance, msg) {
     superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.postgresql.v1.SuperblocksMetadata.toObject(includeInstance, f),
     insertedrows: jspb.Message.getFieldWithDefault(msg, 13, ""),
     deletedrows: jspb.Message.getFieldWithDefault(msg, 14, ""),
-    schema: jspb.Message.getFieldWithDefault(msg, 15, "")
+    schema: jspb.Message.getFieldWithDefault(msg, 15, ""),
+    parameters: jspb.Message.getFieldWithDefault(msg, 16, "")
   };
 
   if (includeInstance) {
@@ -729,6 +730,10 @@ proto.plugins.postgresql.v1.Plugin.deserializeBinaryFromReader = function(msg, r
     case 15:
       var value = /** @type {string} */ (reader.readString());
       msg.setSchema(value);
+      break;
+    case 16:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setParameters(value);
       break;
     default:
       reader.skipField();
@@ -856,6 +861,13 @@ proto.plugins.postgresql.v1.Plugin.serializeBinaryToWriter = function(message, w
   if (f != null) {
     writer.writeString(
       15,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 16));
+  if (f != null) {
+    writer.writeString(
+      16,
       f
     );
   }
@@ -1331,6 +1343,42 @@ proto.plugins.postgresql.v1.Plugin.prototype.clearSchema = function() {
  */
 proto.plugins.postgresql.v1.Plugin.prototype.hasSchema = function() {
   return jspb.Message.getField(this, 15) != null;
+};
+
+
+/**
+ * optional string parameters = 16;
+ * @return {string}
+ */
+proto.plugins.postgresql.v1.Plugin.prototype.getParameters = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 16, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.postgresql.v1.Plugin} returns this
+ */
+proto.plugins.postgresql.v1.Plugin.prototype.setParameters = function(value) {
+  return jspb.Message.setField(this, 16, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.plugins.postgresql.v1.Plugin} returns this
+ */
+proto.plugins.postgresql.v1.Plugin.prototype.clearParameters = function() {
+  return jspb.Message.setField(this, 16, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.plugins.postgresql.v1.Plugin.prototype.hasParameters = function() {
+  return jspb.Message.getField(this, 16) != null;
 };
 
 
