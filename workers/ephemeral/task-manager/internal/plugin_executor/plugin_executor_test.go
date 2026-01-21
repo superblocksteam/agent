@@ -9,7 +9,6 @@ import (
 
 	"workers/ephemeral/task-manager/internal/plugin"
 
-	commonErr "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/store"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
@@ -217,9 +216,9 @@ func TestExecuteSuccess(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -246,9 +245,9 @@ func TestExecuteWithError(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	// Execute stores error in result.Err and returns nil when output is stored successfully
 	if err != nil {
@@ -267,9 +266,9 @@ func TestExecuteUnknownPlugin(t *testing.T) {
 	executor := newTestExecutor()
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	_, err := executor.Execute(ctx, "unknown", props, nil, nil, nil)
+	_, err := executor.Execute(ctx, "unknown", reqData, nil, nil)
 
 	if err == nil {
 		t.Error("Execute() should return error for unknown plugin")
@@ -283,9 +282,9 @@ func TestExecuteLanguageMismatch(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	_, err := executor.Execute(ctx, "javascript", props, nil, nil, nil)
+	_, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
 
 	if err == nil {
 		t.Error("Execute() should return error for language mismatch")
@@ -305,12 +304,13 @@ func TestExecuteWithQuota(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
-	quota := &transportv1.Request_Data_Data_Quota{
-		Duration: 5000, // 5 seconds
+	reqData := &transportv1.Request_Data_Data{
+		Quotas: &transportv1.Request_Data_Data_Quota{
+			Duration: 5000, // 5 seconds
+		},
 	}
 
-	result, err := executor.Execute(ctx, "python", props, quota, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -333,10 +333,10 @@ func TestExecuteWithPerformance(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 	perf := &transportv1.Performance{}
 
-	_, err := executor.Execute(ctx, "python", props, nil, nil, perf)
+	_, err := executor.Execute(ctx, "python", reqData, nil, perf)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -352,9 +352,9 @@ func TestStreamUnknownPlugin(t *testing.T) {
 	executor := newTestExecutor()
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	err := executor.Stream(ctx, "unknown", props, nil, nil, nil)
+	err := executor.Stream(ctx, "unknown", reqData, nil, nil, nil)
 
 	if err == nil {
 		t.Error("Stream() should return error for unknown plugin")
@@ -374,9 +374,9 @@ func TestStreamSuccess(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	err := executor.Stream(ctx, "python", props, nil, nil, nil)
+	err := executor.Stream(ctx, "python", reqData, nil, nil, nil)
 
 	if err != nil {
 		t.Errorf("Stream() error = %v", err)
@@ -387,9 +387,9 @@ func TestMetadataUnknownPlugin(t *testing.T) {
 	executor := newTestExecutor()
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	_, err := executor.Metadata(ctx, "unknown", props, nil)
+	_, err := executor.Metadata(ctx, "unknown", reqData, nil)
 
 	if err == nil {
 		t.Error("Metadata() should return error for unknown plugin")
@@ -413,9 +413,9 @@ func TestMetadataSuccess(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	result, err := executor.Metadata(ctx, "python", props, nil)
+	result, err := executor.Metadata(ctx, "python", reqData, nil)
 
 	if err != nil {
 		t.Errorf("Metadata() error = %v", err)
@@ -429,9 +429,9 @@ func TestTestUnknownPlugin(t *testing.T) {
 	executor := newTestExecutor()
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	_, err := executor.Test(ctx, "unknown", props, nil)
+	_, err := executor.Test(ctx, "unknown", reqData, nil)
 
 	if err == nil {
 		t.Error("Test() should return error for unknown plugin")
@@ -451,9 +451,9 @@ func TestTestSuccess(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	result, err := executor.Test(ctx, "python", props, nil)
+	result, err := executor.Test(ctx, "python", reqData, nil)
 
 	if err != nil {
 		t.Errorf("Test() error = %v", err)
@@ -476,9 +476,9 @@ func TestTestWithError(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	_, err := executor.Test(ctx, "python", props, nil)
+	_, err := executor.Test(ctx, "python", reqData, nil)
 
 	if err == nil {
 		t.Error("Test() should return error when plugin test fails")
@@ -489,9 +489,9 @@ func TestPreDeleteUnknownPlugin(t *testing.T) {
 	executor := newTestExecutor()
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	_, err := executor.PreDelete(ctx, "unknown", props, nil)
+	_, err := executor.PreDelete(ctx, "unknown", reqData, nil)
 
 	if err == nil {
 		t.Error("PreDelete() should return error for unknown plugin")
@@ -511,10 +511,10 @@ func TestPreDeleteSuccess(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
 	// PreDelete always returns nil, nil
-	_, err := executor.PreDelete(ctx, "python", props, nil)
+	_, err := executor.PreDelete(ctx, "python", reqData, nil)
 
 	if err != nil {
 		t.Errorf("PreDelete() error = %v", err)
@@ -534,9 +534,9 @@ func TestExecuteWithNilOutput(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -577,9 +577,9 @@ func TestExecuteWithStdoutStderr(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	if err != nil {
 		t.Errorf("Execute() error = %v", err)
@@ -616,9 +616,9 @@ func TestExecuteWithStdoutStderrAndError(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	// Execute stores error in result.Err and returns nil when output is stored successfully
 	if err != nil {
@@ -660,9 +660,9 @@ func TestExecuteWithDeadlineExceeded(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	// DeadlineExceeded should be converted to DurationQuotaError and stored in result.Err
 	if err != nil {
@@ -694,9 +694,9 @@ func TestStreamWithError(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	err := executor.Stream(ctx, "python", props, nil, nil, nil)
+	err := executor.Stream(ctx, "python", reqData, nil, nil, nil)
 
 	if err != expectedErr {
 		t.Errorf("Stream() error = %v, want %v", err, expectedErr)
@@ -706,7 +706,7 @@ func TestStreamWithError(t *testing.T) {
 func TestMetadataWithError(t *testing.T) {
 	executor := newTestExecutor()
 	pluginErr := errors.New("metadata error")
-	expectedErr := &commonErr.InternalError{Err: pluginErr}
+	expectedErr := pluginErr
 
 	mock := &mockPlugin{
 		name: "python",
@@ -718,9 +718,9 @@ func TestMetadataWithError(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{}
+	reqData := &transportv1.Request_Data_Data{}
 
-	_, err := executor.Metadata(ctx, "python", props, nil)
+	_, err := executor.Metadata(ctx, "python", reqData, nil)
 
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("Metadata() error = %v, want %v", err, expectedErr)
@@ -753,11 +753,13 @@ func TestExecuteStoresOutputInKVStore(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{
-		ExecutionId: "test-exec-123",
+	reqData := &transportv1.Request_Data_Data{
+		Props: &transportv1.Request_Data_Data_Props{
+			ExecutionId: "test-exec-123",
+		},
 	}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -808,13 +810,15 @@ func TestExecuteKeyIsUnique(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{
-		ExecutionId: "test-exec-123",
+	reqData := &transportv1.Request_Data_Data{
+		Props: &transportv1.Request_Data_Data_Props{
+			ExecutionId: "test-exec-123",
+		},
 	}
 
 	// Execute twice with the same execution ID
-	result1, err1 := executor.Execute(ctx, "python", props, nil, nil, nil)
-	result2, err2 := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result1, err1 := executor.Execute(ctx, "python", reqData, nil, nil)
+	result2, err2 := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	if err1 != nil || err2 != nil {
 		t.Fatalf("Execute() errors: %v, %v", err1, err2)
@@ -858,11 +862,13 @@ func TestExecuteWithErrorStillStoresOutput(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	props := &transportv1.Request_Data_Data_Props{
-		ExecutionId: "test-exec-error",
+	reqData := &transportv1.Request_Data_Data{
+		Props: &transportv1.Request_Data_Data_Props{
+			ExecutionId: "test-exec-error",
+		},
 	}
 
-	result, err := executor.Execute(ctx, "python", props, nil, nil, nil)
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
 	// Error should be in result.Err, not returned
 	if err != nil {

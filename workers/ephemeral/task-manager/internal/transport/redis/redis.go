@@ -266,7 +266,8 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 	requestMeta := request.GetData().GetPinned()
 
 	pluginName := request.GetData().GetPinned().GetName()
-	pluginProps := request.GetData().GetData().GetProps()
+	requestData := request.GetData().GetData()
+	pluginProps := requestData.GetProps()
 	ctxWithTrace := otel.GetTextMapPropagator().Extract(context.Background(), propagation.MapCarrier(requestMeta.GetObservability().GetBaggage()))
 	ctxWithBaggage := propagation.Baggage{}.Extract(ctxWithTrace, propagation.MapCarrier(requestMeta.GetObservability().GetBaggage()))
 
@@ -318,15 +319,15 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 
 		switch requestMeta.GetEvent() {
 		case string(worker.EventExecute):
-			result, execErr = rt.pluginExecutor.Execute(ctx, pluginName, pluginProps, request.GetData().GetData().GetQuotas(), requestMeta, perf)
+			result, execErr = rt.pluginExecutor.Execute(ctx, pluginName, requestData, requestMeta, perf)
 		case string(worker.EventStream):
 			execErr = stderr.New("streaming not supported yet")
 		case string(worker.EventMetadata):
-			result, execErr = rt.pluginExecutor.Metadata(ctxWithBaggage, pluginName, pluginProps, perf)
+			result, execErr = rt.pluginExecutor.Metadata(ctxWithBaggage, pluginName, requestData, perf)
 		case string(worker.EventTest):
-			result, execErr = rt.pluginExecutor.Test(ctxWithBaggage, pluginName, pluginProps, perf)
+			result, execErr = rt.pluginExecutor.Test(ctxWithBaggage, pluginName, requestData, perf)
 		case string(worker.EventPreDelete):
-			result, execErr = rt.pluginExecutor.PreDelete(ctxWithBaggage, pluginName, pluginProps, perf)
+			result, execErr = rt.pluginExecutor.PreDelete(ctxWithBaggage, pluginName, requestData, perf)
 		default:
 			execErr = stderr.New("unknown event type")
 		}

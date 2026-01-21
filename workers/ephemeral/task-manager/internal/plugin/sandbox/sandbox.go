@@ -10,6 +10,7 @@ import (
 	"workers/ephemeral/task-manager/internal/plugin"
 	"workers/ephemeral/task-manager/internal/sandboxmanager"
 
+	commonErr "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	"github.com/superblocksteam/agent/pkg/store"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
@@ -18,9 +19,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -309,7 +312,17 @@ func (p *SandboxPlugin) Metadata(
 		nil,
 	)
 	if err != nil {
-		return nil, err
+		grpcErr, err := p.errorMessageFromGrpcError(err)
+		if grpcErr.Code() == codes.Internal {
+			return nil, &commonErr.InternalError{Err: err}
+		}
+
+		v1Err := commonErr.ToCommonV1(err)
+		if v1Err.Name == "" {
+			v1Err.Name = "IntegrationError"
+		}
+
+		return nil, v1Err
 	}
 
 	return resp, nil
@@ -331,6 +344,7 @@ func (p *SandboxPlugin) Test(ctx context.Context, requestMeta *workerv1.RequestM
 		nil,
 	)
 
+	_, err = p.errorMessageFromGrpcError(err)
 	return err
 }
 
@@ -347,9 +361,19 @@ func (p *SandboxPlugin) PreDelete(ctx context.Context, requestMeta *workerv1.Req
 		},
 		nil,
 	)
-	if err != nil {
-		return err
+
+	_, err = p.errorMessageFromGrpcError(err)
+	return err
+}
+
+func (*SandboxPlugin) errorMessageFromGrpcError(err error) (*status.Status, error) {
+	if err == nil {
+		return nil, nil
 	}
 
-	return nil
+	if grpcErr, ok := status.FromError(err); ok {
+		return grpcErr, errors.New(grpcErr.Message())
+	}
+
+	return nil, err
 }

@@ -30,15 +30,14 @@ type PluginExecutor interface {
 	Execute(
 		ctx context.Context,
 		pluginName string,
-		props *transportv1.Request_Data_Data_Props,
-		quotas *transportv1.Request_Data_Data_Quota,
+		reqData *transportv1.Request_Data_Data,
 		reqMeta *transportv1.Request_Data_Pinned,
 		perf *transportv1.Performance,
 	) (*transportv1.Response_Data_Data, error)
-	Stream(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance, send func(message any), until func()) error
-	Metadata(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
-	Test(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
-	PreDelete(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
+	Stream(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data, perf *transportv1.Performance, send func(message any), until func()) error
+	Metadata(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
+	Test(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
+	PreDelete(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
 }
 
 type pluginExecutor struct {
@@ -91,8 +90,7 @@ func (p *pluginExecutor) getPlugin(pluginName string) (plugin.Plugin, error) {
 func (p *pluginExecutor) Execute(
 	ctx context.Context,
 	pluginName string,
-	props *transportv1.Request_Data_Data_Props,
-	quotas *transportv1.Request_Data_Data_Quota,
+	reqData *transportv1.Request_Data_Data,
 	meta *transportv1.Request_Data_Pinned,
 	parentPerf *transportv1.Performance,
 ) (*transportv1.Response_Data_Data, error) {
@@ -109,9 +107,9 @@ func (p *pluginExecutor) Execute(
 
 	// Apply quota timeout if specified
 	timedCtx := ctx
-	if quotas != nil && quotas.GetDuration() > 0 {
+	if reqData.GetQuotas().GetDuration() > 0 {
 		var cancel context.CancelFunc
-		timedCtx, cancel = context.WithTimeout(ctx, time.Millisecond*time.Duration(quotas.Duration))
+		timedCtx, cancel = context.WithTimeout(ctx, time.Millisecond*time.Duration(reqData.GetQuotas().GetDuration()))
 		defer cancel()
 	}
 
@@ -140,7 +138,7 @@ func (p *pluginExecutor) Execute(
 		logger.Error("failed to generate UUID for output key", zap.Error(err))
 		return resp, err
 	}
-	resp.Key = props.GetExecutionId() + ".output." + uuid
+	resp.Key = reqData.GetProps().GetExecutionId() + ".output." + uuid
 
 	output, err := tracer.Observe(
 		ctx,
@@ -148,7 +146,7 @@ func (p *pluginExecutor) Execute(
 		nil,
 		func(_ context.Context, _ trace.Span) (*workerv1.ExecuteResponse, error) {
 			perf.PluginExecution.Start = float64(time.Now().UnixMicro())
-			res, err := plug.Execute(timedCtx, requestMeta, props, quotas, meta)
+			res, err := plug.Execute(timedCtx, requestMeta, reqData.GetProps(), reqData.GetQuotas(), meta)
 			perf.PluginExecution.End = float64(time.Now().UnixMicro())
 			return res, err
 		},
@@ -181,7 +179,7 @@ func (p *pluginExecutor) Execute(
 	p.logExecutionOutput(ctx, output, err, logger)
 
 	// Store output in KV store
-	kvPair, kvErr := p.buildKvPair(resp.Key, output, quotas, logger, resp.Err)
+	kvPair, kvErr := p.buildKvPair(resp.Key, output, reqData.GetQuotas(), logger, resp.Err)
 	if kvErr != nil {
 		logger.Error("failed to build KV pair", zap.Error(kvErr))
 		return resp, kvErr
@@ -215,41 +213,41 @@ func (p *pluginExecutor) Execute(
 }
 
 // Stream runs streaming execution using the appropriate plugin
-func (p *pluginExecutor) Stream(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance, send func(message any), until func()) error {
+func (p *pluginExecutor) Stream(ctx context.Context, pluginName string, reqData *transportv1.Request_Data_Data, perf *transportv1.Performance, send func(message any), until func()) error {
 	plug, err := p.getPlugin(pluginName)
 	if err != nil {
 		return &commonErr.InternalError{Err: err}
 	}
 
 	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
-	return plug.Stream(ctx, requestMeta, props, nil, nil, send, until)
+	return plug.Stream(ctx, requestMeta, reqData.GetProps(), nil, nil, send, until)
 }
 
 // Metadata retrieves metadata from the plugin
-func (p *pluginExecutor) Metadata(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
+func (p *pluginExecutor) Metadata(ctx context.Context, pluginName string, reqData *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
 	plug, err := p.getPlugin(pluginName)
 	if err != nil {
 		return nil, &commonErr.InternalError{Err: err}
 	}
 
 	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
-	resp, err := plug.Metadata(ctx, requestMeta, props.GetDatasourceConfiguration(), props.GetActionConfiguration())
+	resp, err := plug.Metadata(ctx, requestMeta, reqData.GetDConfig(), reqData.GetAConfig())
 	if err != nil {
-		return nil, &commonErr.InternalError{Err: err}
+		return nil, err
 	}
 
 	return resp, nil
 }
 
 // Test runs a connection test using the plugin
-func (p *pluginExecutor) Test(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
+func (p *pluginExecutor) Test(ctx context.Context, pluginName string, reqData *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
 	plug, err := p.getPlugin(pluginName)
 	if err != nil {
 		return nil, &commonErr.InternalError{Err: err}
 	}
 
 	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
-	err = plug.Test(ctx, requestMeta, props.GetDatasourceConfiguration(), props.GetActionConfiguration())
+	err = plug.Test(ctx, requestMeta, reqData.GetDConfig(), reqData.GetAConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -258,16 +256,16 @@ func (p *pluginExecutor) Test(ctx context.Context, pluginName string, props *tra
 }
 
 // PreDelete runs pre-delete logic using the plugin
-func (p *pluginExecutor) PreDelete(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
+func (p *pluginExecutor) PreDelete(ctx context.Context, pluginName string, reqData *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error) {
 	plug, err := p.getPlugin(pluginName)
 	if err != nil {
 		return nil, &commonErr.InternalError{Err: err}
 	}
 
 	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
-	plug.PreDelete(ctx, requestMeta, props.GetDatasourceConfiguration())
+	err = plug.PreDelete(ctx, requestMeta, reqData.GetDConfig())
 
-	return nil, nil
+	return nil, err
 }
 
 func (p *pluginExecutor) buildKvPair(

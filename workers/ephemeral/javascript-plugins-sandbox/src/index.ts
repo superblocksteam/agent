@@ -1,4 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
+import { IntegrationError } from '@superblocks/shared';
 import { ExecuteRequest, KVStore, MetadataRequest, PreDeleteRequest, StreamRequest, TestRequest } from '@superblocks/worker.js';
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 import {
@@ -54,10 +55,17 @@ function createSandboxTransportService(
         callback(null, protoResponse);
       })
       .catch((err) => {
-        callback({
-          code: grpc.status.INTERNAL,
-          message: err instanceof Error ? err.message : String(err)
-        });
+        if (err instanceof IntegrationError) {
+          callback({
+            code: grpc.status.INVALID_ARGUMENT,
+            message: err.message
+          });
+        } else {
+          callback({
+            code: grpc.status.INTERNAL,
+            message: err instanceof Error ? err.message : String(err)
+          });
+        }
       });
   }
 
