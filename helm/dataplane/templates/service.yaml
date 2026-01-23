@@ -1,0 +1,38 @@
+{{ $fullname := include "orchestrator.fullname" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "orchestrator.fullname" . }}
+  annotations:
+    konghq.com/plugins: {{ $fullname }}-cors,{{ $fullname }}-request-size
+  labels:
+    component: orchestrator
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.service.ports.http }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    component: orchestrator
+---
+# NOTE(frank): We need a separate service as we must adjust the kong plugins used.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "orchestrator.fullname" . }}-grpc
+  annotations:
+    konghq.com/protocol: "grpc"
+  labels:
+    component: orchestrator
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.service.ports.grpc }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+    component: orchestrator

@@ -1,0 +1,7 @@
+---
+apiVersion: v2
+name: dataplane
+description: A Helm chart for the entire Superblocks Dataplane.
+type: application
+version: 0.0.1
+appVersion: "latest"

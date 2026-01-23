@@ -1,0 +1,219 @@
+---
+x-tolerations: &tolerations
+  tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      value: lang-exec-worker
+      operator: Equal
+x-selector: &selector
+  nodeSelector:
+    superblocks.com/node-type: lang-exec-worker
+x-worker-python-fleet-shared: &worker_python_fleet_shared
+  events: execute
+  autoscaling:
+    disable: false
+  package: python
+x-worker-javascript-process-worker: &worker_javascript_process_worker
+  worker:
+    execution:
+      pool:
+        size: 4
+superblocks:
+  url: 'https://api.superblocks.com'
+  key: <override>
+autoscaling:
+  disable: false
+  min: 5
+  max: 50
+  cpu: 50
+podDisruptionBudget:
+  disable: false
+auth:
+  jwt:
+    jwks_url: 'https://prod-cdn.superblocks.com/.well-known/jwks.json'
+ingress:
+  opa:
+    enabled: false
+  dns: false
+  disable: false
+  certificate:
+    disable: false
+  host: <override>
+  cors:
+    # Can support multiple origins, comma separated
+    # For example: 'https://app.superblocks.com, https://app.superblockshq.com'
+    allowOrigin: '<override>'
+    age: 1728000
+    methods:
+      - GET
+      - PUT
+      - POST
+      - DELETE
+      - PATCH
+      - OPTIONS
+    headers:
+      - x-superblocks-request-id
+      - DNT
+      - Keep-Alive
+      - User-Agent
+      - X-Requested-With
+      - If-Modified-Since
+      - Cache-Control
+      - Content-Type
+      - Range
+      - Authorization
+      - X-Superblocks-Authorization
+      - X-Superblocks-Data-Domain
+service:
+  terminationGracePeriodSeconds: 16200
+  grpc:
+    maxMsgReq: 100000000
+    maxMsgRes: 100000000
+  logLevel: info
+  ports:
+    http: 8080
+    grpc: 8081
+  tls:
+    insecure: false
+observability:
+  logs:
+    intake:
+      endpoint: ''
+  metadata:
+    intake:
+      url: 'https://metadata.intake.superblocks.com'
+  event:
+    intake:
+      url: 'https://events.intake.superblocks.com'
+  tracing:
+    exporter:
+      scheme: http
+      port: 4318
+      path: '/v1/traces'
+      host: otelcol-collector.observability.svc.cluster.local
+resources:
+  limits:
+    memory: 1Gi
+  requests:
+    cpu: 150m
+    memory: 750Mi
+kvstore:
+  host: '<override>'
+  token: '<override>'
+  servername: ''
+  enable_tls: true
+  pool:
+    fast:
+      min: 10
+      max: 50
+    slow:
+      min: 10
+      max: 50
+  timeout:
+    dial: 20s
+queue:
+  deploy: false
+  host: '<override>'
+  token: '<override>'
+  servername: ''
+  enable_tls: true
+  pool:
+    min: 10
+    max: 50
+  timeout:
+    dial: 20s
+image:
+  orchestrator:
+    repository: ghcr.io/superblocksteam/orchestrator
+    tag: latest
+    pullPolicy: IfNotPresent
+  javascript:
+    repository: ghcr.io/superblocksteam/worker.js
+    tag: latest
+    pullPolicy: IfNotPresent
+  ephemeral:
+    repository: ghcr.io/superblocksteam/ephemeral-worker
+    tag: latest
+    pullPolicy: IfNotPresent
+secrets:
+  encryptionKey: '<override>'
+bindings:
+  # Enable WASM sandbox for bindings evaluation.
+  # LaunchDarkly takes priority when configured; this is used as fallback.
+  wasmSandboxEnabled: false
+networkpolicy:
+  disable: true
+events:
+  cloud:
+    enabled: false
+extraEnv: {}
+gateway:
+  gatewayRefs:
+    - name: internal-gateway
+      namespace: kong-ingress-controller
+  maxBodySize: 500
+  timeouts:
+    request: 10m
+    backendRequest: 10m
+worker_js:
+  deploy: false
+  !!merge <<: *tolerations
+  !!merge <<: *selector
+  fleets:
+    main.ba.javascript.shared.auxillary:
+      !!merge <<: *worker_javascript_process_worker
+      bucket: BA
+      async: true
+      events: '!execute'
+      group: one
+      package: all
+      resources:
+        requests:
+          memory: 400Mi
+      autoscaling:
+        min: 1
+    main.ba.javascript.shared.execute:
+      !!merge <<: *worker_javascript_process_worker
+      bucket: BA
+      async: true
+      group: two
+      package: non-lang
+      events: execute
+    main.be.javascript.shared.execute:
+      !!merge <<: *worker_javascript_process_worker
+      bucket: BE
+      async: true
+      group: three
+      package: non-lang
+      events: execute
+      autoscaling:
+        min: 1
+ephemeral_worker:
+  deploy: true
+  disableNodeSelector: true
+  disableTolerations: true
+  superblocks:
+    key: <override>
+  queue:
+    host: '<override>'
+    password: '<override>'
+    tls: false
+    servername: ""
+    pool:
+      min: 10
+      max: 50
+    timeout:
+      dial: 20s
+  kvstore:
+    host: '<override>'
+    password: '<override>'
+    tls: false
+    servername: ""
+    pool:
+      min: 10
+      max: 50
+    timeout:
+      dial: 20s
+  taskManager:
+    probesEnabled: false
+  fleets: {}

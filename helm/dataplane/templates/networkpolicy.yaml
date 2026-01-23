@@ -1,0 +1,590 @@
+# API Documentation:
+#   https://projectcalico.docs.tigera.io/reference/resources/networkpolicy
+
+# =============================================================================
+# Calico Network Policies
+#
+# Uses Calico NetworkPolicy CRD with explicit order to take precedence over
+# the allow-all GlobalNetworkPolicy (which has no order).
+#
+# Four policies:
+# 1. Task Manager Egress: RFC-1918 only (Redis, K8s API, sandbox pods - all internal)
+# 2. Task Manager Ingress: Only sandbox pods on gRPC port (deny all other ingress)
+# 3. Sandbox Egress: Restricted (only task-manager pods for gRPC, internet excluding private ranges)
+# 4. Sandbox Ingress: Only task-manager pods on sandbox gRPC port (deny all other ingress)
+#
+# This provides true network isolation since task-manager and sandbox run in
+# separate pods with separate NetworkPolicies.
+# =============================================================================
+{{- if not .Values.networkpolicy.disable }}
+---
+# Task Manager Network Policy - Internal VPC only
+# Task manager needs access to Redis, K8s API, sandbox pods, OTEL collector
+# All of these are internal services - no internet access needed
+
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: task-manager-egress
+  labels:
+    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+spec:
+  order: 10
+  selector: role == 'task-manager'
+  types:
+    - Egress
+  egress:
+    # Allow DNS (UDP and TCP)
+    - action: Allow
+      protocol: UDP
+      destination:
+        ports:
+          - 53
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 53
+
+    # Allow egress to sandbox pods (required for gRPC connection)
+    - action: Allow
+      protocol: TCP
+      destination:
+        selector: role == 'sandbox'
+        ports:
+          - {{ .Values.sandbox.port }}
+
+    # Allow RFC-1918 private ranges (internal VPC)
+    # Task-manager needs: Redis, K8s API, OTEL collector
+    - action: Allow
+      destination:
+        nets:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+
+    # Deny everything else (no internet access for task-manager)
+    - action: Deny
+
+---
+# Sandbox Network Policy - Restrictive egress
+# Order 10 ensures this takes precedence over allow-all GlobalNetworkPolicy
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-egress-deny-private
+  labels:
+    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+spec:
+  order: 10
+  selector: role == 'sandbox'
+  types:
+    - Egress
+  egress:
+    # Allow DNS (UDP and TCP)
+    - action: Allow
+      protocol: UDP
+      destination:
+        ports:
+          - 53
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 53
+
+    # Allow task-manager pods (for gRPC variable store)
+    - action: Allow
+      protocol: TCP
+      destination:
+        selector: role == 'task-manager'
+        ports:
+          - {{ .Values.grpc.port }}
+
+    {{- if .Values.network.additionalAllowedCIDRs }}
+    # Customer-specified allowed CIDRs (internal APIs, etc.)
+    {{- range .Values.network.additionalAllowedCIDRs }}
+    - action: Allow
+      destination:
+        nets:
+          - {{ . }}
+    {{- end }}
+    {{- end }}
+
+    # Deny all private ranges (SSRF protection)
+    - action: Deny
+      destination:
+        nets:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+          - 169.254.0.0/16
+          - 100.64.0.0/10
+
+    # Allow everything else (internet)
+    - action: Allow
+
+---
+# Sandbox Ingress Policy - Allow task-manager to connect for gRPC
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-ingress
+  labels:
+    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+spec:
+  order: 10
+  selector: role == 'sandbox'
+  types:
+    - Ingress
+  ingress:
+    # Allow task-manager pods to connect to sandbox gRPC port
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: role == 'task-manager'
+      destination:
+        ports:
+          - {{ .Values.sandbox.port }}
+    # Deny all other ingress
+    - action: Deny
+
+---
+# Task Manager Ingress Policy - Only allow sandbox to connect for gRPC
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: task-manager-ingress
+  labels:
+    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+spec:
+  order: 10
+  selector: role == 'task-manager'
+  types:
+    - Ingress
+  ingress:
+    # Allow sandbox pods to connect to task-manager gRPC port (variable store)
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: role == 'sandbox'
+      destination:
+        ports:
+          - {{ .Values.grpc.port }}
+    # Deny all other ingress
+    - action: Deny
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-ingress-allow-all
+spec:
+  order: 200
+  selector: component == 'orchestrator'
+  types:
+  - Ingress
+  ingress:
+  - action: Allow
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-egress-deny-aws-instance-metadata
+spec:
+  order: 191
+  selector: component == 'orchestrator'
+  types:
+  - Egress
+  egress:
+  - action: Deny
+    destination:
+      nets:
+      # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
+      - 169.254.169.254/32
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-egress-deny-rfc1918
+spec:
+  order: 190
+  selector: component == 'orchestrator'
+  types:
+  - Egress
+  egress:
+  - action: Deny
+    destination:
+      nets:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-ingress-allow
+spec:
+  order: 182
+  selector: component == 'orchestrator'
+  types:
+  - Ingress
+  ingress:
+  - action: Allow
+    source:
+      namespaceSelector: 'agent-namespace == "true"'
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-egress-allow-dns-tcp
+spec:
+  order: 181
+  selector: component == 'orchestrator'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      services:
+        name: kube-dns
+        namespace: kube-system
+      ports:
+      - 53
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-egress-allow-dns-udp
+spec:
+  order: 180
+  selector: component == 'orchestrator'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: UDP
+    destination:
+      services:
+        name: kube-dns
+        namespace: kube-system
+      ports:
+      - 53
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-allow-datadog-udp-port
+spec:
+  order: 171
+  selector: component == 'orchestrator'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: UDP
+    destination:
+      nets:
+      - 10.0.0.0/8
+      ports:
+      - 8125
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-allow-datadog-tcp-port
+spec:
+  order: 170
+  selector: component == 'orchestrator'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      - 10.0.0.0/8
+      ports:
+      - 8126
+      - 4318 # HTTP OTLP
+      - 4317 # GRPC OTLP
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-allow-redis-tcp-port
+spec:
+  order: 160
+  selector: component == 'orchestrator'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      - 10.0.0.0/8
+      ports:
+      - 6379
+
+# Begin Ephemeral Worker Network Policies
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-ephemeral-egress-allow-all
+spec:
+  order: 200
+  selector: component == 'worker.ephemeral'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-ephemeral-egress-deny-cluster
+spec:
+  order: 190
+  selector: component == 'worker.ephemeral'
+  types:
+  - Egress
+  egress:
+  # This will not protect fargate nodes https://docs.aws.amazon.com/eks/latest/userguide/cni-network-policy.html
+  # Deny traffic to all Kubernetes namespaces
+  - action: Deny
+    destination:
+      namespaceSelector: all()
+  # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
+  - action: Deny
+    destination:
+      nets:
+      - 169.254.169.254/32
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-ephemeral-egress-allow-orchestrator
+spec:
+  order: 182
+  selector: component == 'worker.ephemeral'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    destination:
+      selector: component == 'orchestrator'
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-ephemeral-egress-allow-dns
+spec:
+  order: 180
+  selector: component == 'worker.ephemeral'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: UDP
+    destination:
+      services:
+        name: kube-dns
+        namespace: kube-system
+      ports:
+      - 53
+  - action: Allow
+    protocol: TCP
+    destination:
+      services:
+        name: kube-dns
+        namespace: kube-system
+      ports:
+      - 53
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-ephemeral-egress-allow-otlp
+spec:
+  order: 170
+  selector: component == 'worker.ephemeral'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      namespaceSelector: kubernetes.io/metadata.name == 'observability'
+      ports:
+      - 4318 # HTTP OTLP
+# End Ephemeral Worker Network Policies
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-deny-aws-instance-metadata
+spec:
+  order: 91
+  selector: component == 'worker.js'
+  types:
+  - Egress
+  egress:
+  - action: Deny
+    destination:
+      nets:
+      # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
+      - 169.254.169.254/32
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-deny-rfc1918
+spec:
+  order: 90
+  selector: component == 'worker.js'
+  types:
+  - Egress
+  egress:
+  - action: Deny
+    destination:
+      nets:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+
+{{- range $name, $rule := .Values.networkpolicy.egress }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-{{ $name }}
+spec:
+  order: {{ $rule.priority }}
+  selector: component == 'worker.js'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      {{- range $rule.cidrs }}
+      - {{ . }}
+      {{- end }}
+      ports:
+      {{- range $rule.ports }}
+      - {{ . }}
+      {{- end }}
+{{- end }}
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-controller-egress-allow
+spec:
+  order: 88
+  selector: component == 'worker.js'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    destination:
+      namespaceSelector: 'agent-namespace == "true"'
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-allow-dns-tcp
+spec:
+  order: 81
+  selector: component == 'worker.js'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      services:
+        name: kube-dns
+        namespace: kube-system
+      ports:
+      - 53
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-allow-dns-udp
+spec:
+  order: 80
+  selector: component == 'worker.js'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: UDP
+    destination:
+      services:
+        name: kube-dns
+        namespace: kube-system
+      ports:
+      - 53
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-allow-otlp-tcp-port
+spec:
+  order: 70
+  selector: component == 'worker.js'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      - 10.0.0.0/8
+      ports:
+      - 4318 # HTTP OTLP
+      - 4317 # GRPC OTLP
+
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-allow-redis-tcp-port
+spec:
+  order: 60
+  selector: component == 'worker.js'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      - 10.0.0.0/8
+      ports:
+      - 6379
+
+{{- end }}

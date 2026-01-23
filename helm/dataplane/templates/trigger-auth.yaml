@@ -1,0 +1,12 @@
+{{- if .Values.queue.password }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: redis-trigger-auth
+spec:
+  secretTargetRef:
+    - parameter: password
+      name: queue-redis-token
+      key: token
+{{- end }}

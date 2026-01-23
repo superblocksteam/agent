@@ -65,7 +65,3 @@ repos:
     hooks:
       - id: yamlfmt
         name: "[yaml] format"
-        exclude: |
-          (?x)^(
-              workers/javascript/packages/quickjs-emscripten/.*
-          )$

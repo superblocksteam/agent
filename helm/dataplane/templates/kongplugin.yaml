@@ -1,0 +1,49 @@
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ include "orchestrator.fullname" . }}-cors
+  label:
+    global: "false"
+plugin: cors
+config:
+  origins:
+  {{- range split "," .Values.ingress.cors.allowOrigin }}
+    - {{ . }}
+  {{- end }}
+  methods:
+  {{- range .Values.ingress.cors.methods }}
+    - {{ . }}
+  {{- end }}
+  headers:
+  {{- range .Values.ingress.cors.headers }}
+    - {{ . }}
+  {{- end }}
+  exposed_headers:
+  # Expose all headers
+    - "*"
+  credentials: true
+  max_age: {{ .Values.ingress.cors.age }}
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ include "orchestrator.fullname" . }}-request-size
+  label:
+    global: "false"
+plugin: request-size-limiting
+config:
+  allowed_payload_size: {{ .Values.gateway.maxBodySize }}
+  size_unit: megabytes
+  require_content_length: false
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ include "orchestrator.fullname" . }}-404
+  label:
+    global: "false"
+plugin: request-termination
+config:
+  status_code: 404
+  message: No route found.
