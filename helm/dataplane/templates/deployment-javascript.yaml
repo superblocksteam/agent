@@ -150,17 +150,7 @@ spec:
         - name: SUPERBLOCKS_AGENT_KEY
           valueFrom:
             secretKeyRef:
-              name: agent-key
-              key: key
-        - name: SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA
-          valueFrom:
-            secretKeyRef:
-              name: workers-tunnel-private-key-rsa
-              key: key
-        - name: SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519
-          valueFrom:
-            secretKeyRef:
-              name: workers-tunnel-private-key-ed25519
+              name: dataplane-superblocks-key
               key: key
         ports:
         - name: health

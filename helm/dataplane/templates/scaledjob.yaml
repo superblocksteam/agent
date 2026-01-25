@@ -263,7 +263,7 @@ spec:
           - name: SUPERBLOCKS_WORKER_SANDBOX_SUPERBLOCKS_KEY
             valueFrom:
               secretKeyRef:
-                name: agent-key
+                name: dataplane-superblocks-key
                 key: key
           {{- end }}
           {{- with ($v.taskManager).extraEnv }}
