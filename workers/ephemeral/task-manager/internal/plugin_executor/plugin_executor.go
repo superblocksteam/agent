@@ -31,13 +31,20 @@ type PluginExecutor interface {
 		ctx context.Context,
 		pluginName string,
 		reqData *transportv1.Request_Data_Data,
-		reqMeta *transportv1.Request_Data_Pinned,
+		pinned *transportv1.Request_Data_Pinned,
 		perf *transportv1.Performance,
 	) (*transportv1.Response_Data_Data, error)
-	Stream(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data, perf *transportv1.Performance, send func(message any), until func()) error
-	Metadata(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
-	Test(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
-	PreDelete(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
+	Stream(
+		ctx context.Context,
+		pluginName string,
+		topic string,
+		reqData *transportv1.Request_Data_Data,
+		pinned *transportv1.Request_Data_Pinned,
+		perf *transportv1.Performance,
+	) (*transportv1.Response_Data_Data, error)
+	Metadata(ctx context.Context, pluginName string, reqData *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
+	Test(ctx context.Context, pluginName string, reqData *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
+	PreDelete(ctx context.Context, pluginName string, reqData *transportv1.Request_Data_Data, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
 }
 
 type pluginExecutor struct {
@@ -91,7 +98,7 @@ func (p *pluginExecutor) Execute(
 	ctx context.Context,
 	pluginName string,
 	reqData *transportv1.Request_Data_Data,
-	meta *transportv1.Request_Data_Pinned,
+	pinned *transportv1.Request_Data_Pinned,
 	parentPerf *transportv1.Performance,
 ) (*transportv1.Response_Data_Data, error) {
 
@@ -146,7 +153,7 @@ func (p *pluginExecutor) Execute(
 		nil,
 		func(_ context.Context, _ trace.Span) (*workerv1.ExecuteResponse, error) {
 			perf.PluginExecution.Start = float64(time.Now().UnixMicro())
-			res, err := plug.Execute(timedCtx, requestMeta, reqData.GetProps(), reqData.GetQuotas(), meta)
+			res, err := plug.Execute(timedCtx, requestMeta, reqData.GetProps(), reqData.GetQuotas(), pinned)
 			perf.PluginExecution.End = float64(time.Now().UnixMicro())
 			return res, err
 		},
@@ -213,14 +220,48 @@ func (p *pluginExecutor) Execute(
 }
 
 // Stream runs streaming execution using the appropriate plugin
-func (p *pluginExecutor) Stream(ctx context.Context, pluginName string, reqData *transportv1.Request_Data_Data, perf *transportv1.Performance, send func(message any), until func()) error {
+func (p *pluginExecutor) Stream(
+	ctx context.Context,
+	pluginName string,
+	topic string,
+	reqData *transportv1.Request_Data_Data,
+	pinned *transportv1.Request_Data_Pinned,
+	parentPerf *transportv1.Performance,
+) (*transportv1.Response_Data_Data, error) {
+
 	plug, err := p.getPlugin(pluginName)
 	if err != nil {
-		return &commonErr.InternalError{Err: err}
+		return nil, &commonErr.InternalError{Err: err}
 	}
 
 	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
-	return plug.Stream(ctx, requestMeta, reqData.GetProps(), nil, nil, send, until)
+	perf := &transportv1.Performance{
+		PluginExecution: &transportv1.Performance_Observable{},
+	}
+
+	// Merge perf into parent if provided
+	if parentPerf != nil {
+		defer func() {
+			if perf.PluginExecution != nil {
+				parentPerf.PluginExecution = perf.PluginExecution
+			}
+		}()
+	}
+
+	_, err = tracer.Observe(
+		ctx,
+		fmt.Sprintf("stream.plugin.%s", pluginName),
+		nil,
+		func(_ context.Context, _ trace.Span) (any, error) {
+			perf.PluginExecution.Start = float64(time.Now().UnixMicro())
+			err := plug.Stream(ctx, topic, requestMeta, reqData.GetProps(), reqData.GetQuotas(), pinned)
+			perf.PluginExecution.End = float64(time.Now().UnixMicro())
+			return nil, err
+		},
+		nil,
+	)
+
+	return nil, err
 }
 
 // Metadata retrieves metadata from the plugin

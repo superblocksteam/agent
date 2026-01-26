@@ -57,7 +57,27 @@ func (m *SendRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Topic
+	if utf8.RuneCountInString(m.GetTopic()) < 1 {
+		err := SendRequestValidationError{
+			field:  "Topic",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetData() == nil {
+		err := SendRequestValidationError{
+			field:  "Data",
+			reason: "value is required",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if all {
 		switch v := interface{}(m.GetData()).(type) {

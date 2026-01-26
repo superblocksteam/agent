@@ -137,6 +137,8 @@ export class StreamRequest extends jspb.Message {
     clearRequest(): void;
     getRequest(): ExecuteRequest | undefined;
     setRequest(value?: ExecuteRequest): StreamRequest;
+    getTopic(): string;
+    setTopic(value: string): StreamRequest;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): StreamRequest.AsObject;
@@ -151,29 +153,7 @@ export class StreamRequest extends jspb.Message {
 export namespace StreamRequest {
     export type AsObject = {
         request?: ExecuteRequest.AsObject,
-    }
-}
-
-export class StreamResponse extends jspb.Message { 
-
-    hasResponse(): boolean;
-    clearResponse(): void;
-    getResponse(): google_protobuf_empty_pb.Empty | undefined;
-    setResponse(value?: google_protobuf_empty_pb.Empty): StreamResponse;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): StreamResponse.AsObject;
-    static toObject(includeInstance: boolean, msg: StreamResponse): StreamResponse.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: StreamResponse, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): StreamResponse;
-    static deserializeBinaryFromReader(message: StreamResponse, reader: jspb.BinaryReader): StreamResponse;
-}
-
-export namespace StreamResponse {
-    export type AsObject = {
-        response?: google_protobuf_empty_pb.Empty.AsObject,
+        topic: string,
     }
 }
 

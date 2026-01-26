@@ -67,11 +67,11 @@ services:
       !!merge <<: *task-manager-environment
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: python
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKET: BA
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
       SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: python-lang-executor-sandbox:50051
-      SUPERBLOCKS_WORKER_SANDBOX_GRPC_ADDRESS: python-ephemeral:50050
-      # Match orchestrator's ephemeral routing (--worker.ephemeral.plugins.enabled)
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_STREAM_KEYS: agent.main.bucket.BA.ephemeral.plugin.python.event.execute agent.main.bucket.BE.ephemeral.plugin.python.event.execute agent.main.bucket.B1.ephemeral.plugin.python.event.execute agent.main.bucket.B2.ephemeral.plugin.python.event.execute
+      SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS: python-ephemeral:50050
+      SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT: 50052
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_SANDBOX_STREAMS_SEPARATE: true
     depends_on:
       - redis
       - python-lang-executor-sandbox
@@ -88,11 +88,11 @@ services:
       !!merge <<: *task-manager-environment
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: javascript
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKET: BA
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
       SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-lang-executor-sandbox:50051
-      SUPERBLOCKS_WORKER_SANDBOX_GRPC_ADDRESS: javascript-ephemeral:50050
-      # Match orchestrator's ephemeral routing (--worker.ephemeral.plugins.enabled)
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_STREAM_KEYS: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute agent.main.bucket.BE.ephemeral.plugin.javascript.event.execute agent.main.bucket.B1.ephemeral.plugin.javascript.event.execute agent.main.bucket.B2.ephemeral.plugin.javascript.event.execute
+      SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS: javascript-ephemeral:50050
+      SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT: 50052
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_SANDBOX_STREAMS_SEPARATE: true
     depends_on:
       - redis
       - javascript-lang-executor-sandbox

@@ -33,7 +33,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SandboxTransportServiceClient interface {
 	Execute(ctx context.Context, in *ExecuteRequest, opts ...grpc.CallOption) (*ExecuteResponse, error)
-	Stream(ctx context.Context, in *StreamRequest, opts ...grpc.CallOption) (*StreamResponse, error)
+	Stream(ctx context.Context, in *StreamRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Metadata(ctx context.Context, in *MetadataRequest, opts ...grpc.CallOption) (*v1.Response_Data_Data, error)
 	Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PreDelete(ctx context.Context, in *PreDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -56,8 +56,8 @@ func (c *sandboxTransportServiceClient) Execute(ctx context.Context, in *Execute
 	return out, nil
 }
 
-func (c *sandboxTransportServiceClient) Stream(ctx context.Context, in *StreamRequest, opts ...grpc.CallOption) (*StreamResponse, error) {
-	out := new(StreamResponse)
+func (c *sandboxTransportServiceClient) Stream(ctx context.Context, in *StreamRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, SandboxTransportService_Stream_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (c *sandboxTransportServiceClient) PreDelete(ctx context.Context, in *PreDe
 // for forward compatibility
 type SandboxTransportServiceServer interface {
 	Execute(context.Context, *ExecuteRequest) (*ExecuteResponse, error)
-	Stream(context.Context, *StreamRequest) (*StreamResponse, error)
+	Stream(context.Context, *StreamRequest) (*emptypb.Empty, error)
 	Metadata(context.Context, *MetadataRequest) (*v1.Response_Data_Data, error)
 	Test(context.Context, *TestRequest) (*emptypb.Empty, error)
 	PreDelete(context.Context, *PreDeleteRequest) (*emptypb.Empty, error)
@@ -110,7 +110,7 @@ type UnimplementedSandboxTransportServiceServer struct {
 func (UnimplementedSandboxTransportServiceServer) Execute(context.Context, *ExecuteRequest) (*ExecuteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Execute not implemented")
 }
-func (UnimplementedSandboxTransportServiceServer) Stream(context.Context, *StreamRequest) (*StreamResponse, error) {
+func (UnimplementedSandboxTransportServiceServer) Stream(context.Context, *StreamRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stream not implemented")
 }
 func (UnimplementedSandboxTransportServiceServer) Metadata(context.Context, *MetadataRequest) (*v1.Response_Data_Data, error) {

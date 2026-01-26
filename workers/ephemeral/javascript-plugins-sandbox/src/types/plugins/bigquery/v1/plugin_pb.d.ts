@@ -123,6 +123,11 @@ export class Plugin extends jspb.Message {
     getSuperblocksmetadata(): SuperblocksMetadata | undefined;
     setSuperblocksmetadata(value?: SuperblocksMetadata): Plugin;
 
+    hasParameters(): boolean;
+    clearParameters(): void;
+    getParameters(): string | undefined;
+    setParameters(value: string): Plugin;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Plugin.AsObject;
     static toObject(includeInstance: boolean, msg: Plugin): Plugin.AsObject;
@@ -146,5 +151,6 @@ export namespace Plugin {
         mappingmode?: string,
         mappedcolumnsList: Array<MappedColumns.AsObject>,
         superblocksmetadata?: SuperblocksMetadata.AsObject,
+        parameters?: string,
     }
 }

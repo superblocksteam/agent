@@ -634,7 +634,8 @@ proto.plugins.snowflake.v1.Plugin.toObject = function(includeInstance, msg) {
     mappingmode: jspb.Message.getFieldWithDefault(msg, 9, ""),
     mappedcolumnsList: jspb.Message.toObjectList(msg.getMappedcolumnsList(),
     proto.plugins.snowflake.v1.MappedColumns.toObject, includeInstance),
-    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.snowflake.v1.SuperblocksMetadata.toObject(includeInstance, f)
+    superblocksmetadata: (f = msg.getSuperblocksmetadata()) && proto.plugins.snowflake.v1.SuperblocksMetadata.toObject(includeInstance, f),
+    parameters: jspb.Message.getFieldWithDefault(msg, 12, "")
   };
 
   if (includeInstance) {
@@ -718,6 +719,10 @@ proto.plugins.snowflake.v1.Plugin.deserializeBinaryFromReader = function(msg, re
       var value = new proto.plugins.snowflake.v1.SuperblocksMetadata;
       reader.readMessage(value,proto.plugins.snowflake.v1.SuperblocksMetadata.deserializeBinaryFromReader);
       msg.setSuperblocksmetadata(value);
+      break;
+    case 12:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setParameters(value);
       break;
     default:
       reader.skipField();
@@ -827,6 +832,13 @@ proto.plugins.snowflake.v1.Plugin.serializeBinaryToWriter = function(message, wr
       11,
       f,
       proto.plugins.snowflake.v1.SuperblocksMetadata.serializeBinaryToWriter
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 12));
+  if (f != null) {
+    writer.writeString(
+      12,
+      f
     );
   }
 };
@@ -1197,6 +1209,42 @@ proto.plugins.snowflake.v1.Plugin.prototype.clearSuperblocksmetadata = function(
  */
 proto.plugins.snowflake.v1.Plugin.prototype.hasSuperblocksmetadata = function() {
   return jspb.Message.getField(this, 11) != null;
+};
+
+
+/**
+ * optional string parameters = 12;
+ * @return {string}
+ */
+proto.plugins.snowflake.v1.Plugin.prototype.getParameters = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 12, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.snowflake.v1.Plugin} returns this
+ */
+proto.plugins.snowflake.v1.Plugin.prototype.setParameters = function(value) {
+  return jspb.Message.setField(this, 12, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.plugins.snowflake.v1.Plugin} returns this
+ */
+proto.plugins.snowflake.v1.Plugin.prototype.clearParameters = function() {
+  return jspb.Message.setField(this, 12, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.plugins.snowflake.v1.Plugin.prototype.hasParameters = function() {
+  return jspb.Message.getField(this, 12) != null;
 };
 
 

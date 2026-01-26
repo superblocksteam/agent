@@ -15,7 +15,7 @@ option go_package = "github.com/superblocksteam/agent/types/gen/go/worker/v1";
 // Service for executing code in Python/JavaScript workers
 service SandboxTransportService {
   rpc Execute(ExecuteRequest) returns (ExecuteResponse);
-  rpc Stream(StreamRequest) returns (StreamResponse);
+  rpc Stream(StreamRequest) returns (google.protobuf.Empty);
   rpc Metadata(MetadataRequest) returns (transport.v1.Response.Data.Data);
   rpc Test(TestRequest) returns (google.protobuf.Empty);
   rpc PreDelete(PreDeleteRequest) returns (google.protobuf.Empty);
@@ -55,10 +55,7 @@ message ExecuteResponse {
 
 message StreamRequest {
   ExecuteRequest request = 1;
-}
-
-message StreamResponse {
-  google.protobuf.Empty response = 1;
+  string topic = 2;
 }
 
 message MetadataRequest {

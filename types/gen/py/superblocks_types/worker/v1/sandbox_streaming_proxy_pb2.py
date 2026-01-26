@@ -22,12 +22,13 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from superblocks_types.buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 from superblocks_types.validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\'worker/v1/sandbox_streaming_proxy.proto\x12\tworker.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17validate/validate.proto\"g\n\x0bSendRequest\x12\"\n\x05topic\x18\x01 \x01(\tB\x0c\xfa\x42\tr\x02\x10\x01\x8a\x01\x02\x10\x01R\x05topic\x12\x34\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x16.google.protobuf.ValueB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01R\x04\x64\x61ta\"$\n\x0cUntilRequest\x12\x14\n\x05topic\x18\x01 \x01(\tR\x05topic2\x94\x01\n\x1cSandboxStreamingProxyService\x12\x38\n\x04Send\x12\x16.worker.v1.SendRequest\x1a\x16.google.protobuf.Empty\"\x00\x12:\n\x05Until\x12\x17.worker.v1.UntilRequest\x1a\x16.google.protobuf.Empty\"\x00\x42\x39Z7github.com/superblocksteam/agent/types/gen/go/worker/v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\'worker/v1/sandbox_streaming_proxy.proto\x12\tworker.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17validate/validate.proto\"o\n\x0bSendRequest\x12$\n\x05topic\x18\x01 \x01(\tB\x0e\xfa\x42\x04r\x02\x10\x01\xbaH\x04r\x02\x10\x01R\x05topic\x12:\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x16.google.protobuf.ValueB\x0e\xfa\x42\x05\x8a\x01\x02\x10\x01\xbaH\x03\xc8\x01\x01R\x04\x64\x61ta\"$\n\x0cUntilRequest\x12\x14\n\x05topic\x18\x01 \x01(\tR\x05topic2\x94\x01\n\x1cSandboxStreamingProxyService\x12\x38\n\x04Send\x12\x16.worker.v1.SendRequest\x1a\x16.google.protobuf.Empty\"\x00\x12:\n\x05Until\x12\x17.worker.v1.UntilRequest\x1a\x16.google.protobuf.Empty\"\x00\x42\x39Z7github.com/superblocksteam/agent/types/gen/go/worker/v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,13 +37,13 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z7github.com/superblocksteam/agent/types/gen/go/worker/v1'
   _globals['_SENDREQUEST'].fields_by_name['topic']._loaded_options = None
-  _globals['_SENDREQUEST'].fields_by_name['topic']._serialized_options = b'\372B\tr\002\020\001\212\001\002\020\001'
+  _globals['_SENDREQUEST'].fields_by_name['topic']._serialized_options = b'\372B\004r\002\020\001\272H\004r\002\020\001'
   _globals['_SENDREQUEST'].fields_by_name['data']._loaded_options = None
-  _globals['_SENDREQUEST'].fields_by_name['data']._serialized_options = b'\372B\005\212\001\002\020\001'
-  _globals['_SENDREQUEST']._serialized_start=138
-  _globals['_SENDREQUEST']._serialized_end=241
-  _globals['_UNTILREQUEST']._serialized_start=243
-  _globals['_UNTILREQUEST']._serialized_end=279
-  _globals['_SANDBOXSTREAMINGPROXYSERVICE']._serialized_start=282
-  _globals['_SANDBOXSTREAMINGPROXYSERVICE']._serialized_end=430
+  _globals['_SENDREQUEST'].fields_by_name['data']._serialized_options = b'\372B\005\212\001\002\020\001\272H\003\310\001\001'
+  _globals['_SENDREQUEST']._serialized_start=167
+  _globals['_SENDREQUEST']._serialized_end=278
+  _globals['_UNTILREQUEST']._serialized_start=280
+  _globals['_UNTILREQUEST']._serialized_end=316
+  _globals['_SANDBOXSTREAMINGPROXYSERVICE']._serialized_start=319
+  _globals['_SANDBOXSTREAMINGPROXYSERVICE']._serialized_end=467
 # @@protoc_insertion_point(module_scope)

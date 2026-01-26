@@ -113,6 +113,11 @@ export class Plugin extends jspb.Message {
     getSchema(): string | undefined;
     setSchema(value: string): Plugin;
 
+    hasParameters(): boolean;
+    clearParameters(): void;
+    getParameters(): string | undefined;
+    setParameters(value: string): Plugin;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Plugin.AsObject;
     static toObject(includeInstance: boolean, msg: Plugin): Plugin.AsObject;
@@ -139,5 +144,6 @@ export namespace Plugin {
         insertedrows?: string,
         deletedrows?: string,
         schema?: string,
+        parameters?: string,
     }
 }

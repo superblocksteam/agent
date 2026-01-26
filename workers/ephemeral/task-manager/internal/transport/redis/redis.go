@@ -321,7 +321,7 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 		case string(worker.EventExecute):
 			result, execErr = rt.pluginExecutor.Execute(ctx, pluginName, requestData, requestMeta, perf)
 		case string(worker.EventStream):
-			execErr = stderr.New("streaming not supported yet")
+			result, execErr = rt.pluginExecutor.Stream(ctx, pluginName, request.GetTopic(), requestData, requestMeta, perf)
 		case string(worker.EventMetadata):
 			result, execErr = rt.pluginExecutor.Metadata(ctxWithBaggage, pluginName, requestData, perf)
 		case string(worker.EventTest):

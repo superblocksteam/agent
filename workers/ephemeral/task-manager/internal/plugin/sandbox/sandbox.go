@@ -28,9 +28,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// IPFilterSetter allows setting IP filters on the variable store
-type IPFilterSetter interface {
-	SetAllowedIP(ip string)
+// IpFilterSetter allows setting IP filters on the variable store
+type IpFilterSetter interface {
+	SetAllowedIps(ips ...string)
 }
 
 // SandboxPlugin executes code by forwarding to a gRPC sandbox server.
@@ -60,7 +60,7 @@ type SandboxPlugin struct {
 	sandboxInfo    *sandboxmanager.SandboxInfo
 
 	// IP filter for the variable store - only accept connections from sandbox
-	ipFilterSetter IPFilterSetter
+	ipFilterSetter IpFilterSetter
 
 	// Mutex for cleanup
 	mu sync.Mutex
@@ -88,7 +88,7 @@ func NewSandboxPlugin(options ...Option) (*SandboxPlugin, error) {
 		variableStoreAddress: opts.VariableStoreAddress,
 		store:                opts.KvStore,
 		sandboxManager:       opts.SandboxManager,
-		ipFilterSetter:       opts.IPFilterSetter,
+		ipFilterSetter:       opts.IpFilterSetter,
 	}
 
 	return p, nil
@@ -146,7 +146,7 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 
 		// Set IP filter on variable store - only accept connections from this sandbox
 		if p.ipFilterSetter != nil {
-			p.ipFilterSetter.SetAllowedIP(sandboxInfo.Ip)
+			p.ipFilterSetter.SetAllowedIps(sandboxInfo.Ip)
 		}
 
 		p.logger.Info("sandbox plugin initialized (dynamic mode)",
@@ -279,15 +279,33 @@ func (p *SandboxPlugin) Execute(
 // Stream is not supported for sandbox plugins
 func (p *SandboxPlugin) Stream(
 	ctx context.Context,
+	topic string,
 	requestMeta *workerv1.RequestMetadata,
 	props *transportv1.Request_Data_Data_Props,
 	quotas *transportv1.Request_Data_Data_Quota,
 	pinned *transportv1.Request_Data_Pinned,
-	send func(message any),
-	until func(),
 ) error {
 
-	return errors.ErrUnsupported
+	_, err := tracer.Observe(
+		ctx,
+		fmt.Sprintf("sandbox.%s.stream", requestMeta.GetPluginName()),
+		nil,
+		func(ctx context.Context, span trace.Span) (*emptypb.Empty, error) {
+			return p.client.Stream(ctx, &workerv1.StreamRequest{
+				Request: &workerv1.ExecuteRequest{
+					Metadata: requestMeta,
+					Props:    props,
+					Quotas:   quotas,
+					Pinned:   pinned,
+				},
+				Topic: topic,
+			})
+		},
+		nil,
+	)
+
+	_, err = p.errorMessageFromGrpcError(err)
+	return err
 }
 
 func (p *SandboxPlugin) Metadata(

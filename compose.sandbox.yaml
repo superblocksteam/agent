@@ -55,6 +55,7 @@ services:
     container_name: javascript-sandbox
     environment:
       SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS: javascript-sandbox-manager:50050
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS: javascript-sandbox-manager:50052
   javascript-sandbox-manager:
     !!merge <<: *task-manager-base
     container_name: javascript-sandbox-manager
@@ -64,7 +65,8 @@ services:
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE
       SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-sandbox:50051
-      SUPERBLOCKS_WORKER_SANDBOX_GRPC_ADDRESS: javascript-sandbox-manager:50050
+      SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS: javascript-sandbox-manager:50050
+      SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT: 50052
     depends_on:
       - redis
       - javascript-sandbox

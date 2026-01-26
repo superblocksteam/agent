@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package worker.v1;
 
+import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "validate/validate.proto";
@@ -15,10 +16,13 @@ service SandboxStreamingProxyService {
 
 message SendRequest {
   string topic = 1 [
-    (validate.rules).message.required = true,
-    (validate.rules).string.min_len = 1
+    (validate.rules).string.min_len = 1,
+    (buf.validate.field).string.min_len = 1
   ];
-  google.protobuf.Value data = 2 [(validate.rules).message.required = true];
+  google.protobuf.Value data = 2 [
+    (validate.rules).message.required = true,
+    (buf.validate.field).required = true
+  ];
 }
 
 message UntilRequest {

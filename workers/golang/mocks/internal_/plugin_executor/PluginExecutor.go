@@ -302,17 +302,17 @@ func (_c *PluginExecutor_RegisterPlugin_Call) RunAndReturn(run func(string, plug
 	return _c
 }
 
-// Stream provides a mock function with given fields: ctx, pluginName, props, perf, send, until
-func (_m *PluginExecutor) Stream(ctx context.Context, pluginName string, props *v1.Request_Data_Data_Props, perf *v1.Performance, send func(interface{}), until func()) error {
-	ret := _m.Called(ctx, pluginName, props, perf, send, until)
+// Stream provides a mock function with given fields: ctx, pluginName, topic, props, perf
+func (_m *PluginExecutor) Stream(ctx context.Context, pluginName string, topic string, props *v1.Request_Data_Data_Props, perf *v1.Performance) error {
+	ret := _m.Called(ctx, pluginName, topic, props, perf)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Stream")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Performance, func(interface{}), func()) error); ok {
-		r0 = rf(ctx, pluginName, props, perf, send, until)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *v1.Request_Data_Data_Props, *v1.Performance) error); ok {
+		r0 = rf(ctx, pluginName, topic, props, perf)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -328,17 +328,16 @@ type PluginExecutor_Stream_Call struct {
 // Stream is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pluginName string
+//   - topic string
 //   - props *v1.Request_Data_Data_Props
 //   - perf *v1.Performance
-//   - send func(interface{})
-//   - until func()
-func (_e *PluginExecutor_Expecter) Stream(ctx interface{}, pluginName interface{}, props interface{}, perf interface{}, send interface{}, until interface{}) *PluginExecutor_Stream_Call {
-	return &PluginExecutor_Stream_Call{Call: _e.mock.On("Stream", ctx, pluginName, props, perf, send, until)}
+func (_e *PluginExecutor_Expecter) Stream(ctx interface{}, pluginName interface{}, topic interface{}, props interface{}, perf interface{}) *PluginExecutor_Stream_Call {
+	return &PluginExecutor_Stream_Call{Call: _e.mock.On("Stream", ctx, pluginName, topic, props, perf)}
 }
 
-func (_c *PluginExecutor_Stream_Call) Run(run func(ctx context.Context, pluginName string, props *v1.Request_Data_Data_Props, perf *v1.Performance, send func(interface{}), until func())) *PluginExecutor_Stream_Call {
+func (_c *PluginExecutor_Stream_Call) Run(run func(ctx context.Context, pluginName string, topic string, props *v1.Request_Data_Data_Props, perf *v1.Performance)) *PluginExecutor_Stream_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(*v1.Request_Data_Data_Props), args[3].(*v1.Performance), args[4].(func(interface{})), args[5].(func()))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(*v1.Request_Data_Data_Props), args[4].(*v1.Performance))
 	})
 	return _c
 }
@@ -348,7 +347,7 @@ func (_c *PluginExecutor_Stream_Call) Return(_a0 error) *PluginExecutor_Stream_C
 	return _c
 }
 
-func (_c *PluginExecutor_Stream_Call) RunAndReturn(run func(context.Context, string, *v1.Request_Data_Data_Props, *v1.Performance, func(interface{}), func()) error) *PluginExecutor_Stream_Call {
+func (_c *PluginExecutor_Stream_Call) RunAndReturn(run func(context.Context, string, string, *v1.Request_Data_Data_Props, *v1.Performance) error) *PluginExecutor_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }

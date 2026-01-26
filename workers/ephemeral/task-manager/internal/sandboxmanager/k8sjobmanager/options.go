@@ -26,7 +26,10 @@ type Options struct {
 	PodIP string
 
 	// Task manager's gRPC port (variable store)
-	GRPCPort int
+	VariableStoreGrpcPort int
+
+	// Task manager's gRPC port (streaming proxy)
+	StreamingProxyGrpcPort int
 
 	// TTL for completed Jobs (auto garbage collection)
 	TTLSecondsAfterFinished int32
@@ -95,10 +98,17 @@ func WithPodIP(ip string) Option {
 	}
 }
 
-// WithGRPCPort sets the task manager's gRPC port
-func WithGRPCPort(port int) Option {
+// WithVariableStoreGrpcPort sets the task manager's gRPC port
+func WithVariableStoreGrpcPort(port int) Option {
 	return func(o *Options) {
-		o.GRPCPort = port
+		o.VariableStoreGrpcPort = port
+	}
+}
+
+// WithStreamingProxyGrpcPort sets the task manager's gRPC port
+func WithStreamingProxyGrpcPort(port int) Option {
+	return func(o *Options) {
+		o.StreamingProxyGrpcPort = port
 	}
 }
 
@@ -176,7 +186,7 @@ func WithLanguage(language string) Option {
 func NewOptions(opts ...Option) *Options {
 	o := &Options{
 		Port:                    50051,
-		GRPCPort:                50050,
+		VariableStoreGrpcPort:   50050,
 		TTLSecondsAfterFinished: 60,
 		PodReadyTimeout:         2 * time.Minute,
 	}

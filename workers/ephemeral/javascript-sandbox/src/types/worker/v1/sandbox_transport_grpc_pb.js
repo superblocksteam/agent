@@ -88,17 +88,6 @@ function deserialize_worker_v1_StreamRequest(buffer_arg) {
   return worker_v1_sandbox_transport_pb.StreamRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_worker_v1_StreamResponse(arg) {
-  if (!(arg instanceof worker_v1_sandbox_transport_pb.StreamResponse)) {
-    throw new Error('Expected argument of type worker.v1.StreamResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_worker_v1_StreamResponse(buffer_arg) {
-  return worker_v1_sandbox_transport_pb.StreamResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_worker_v1_TestRequest(arg) {
   if (!(arg instanceof worker_v1_sandbox_transport_pb.TestRequest)) {
     throw new Error('Expected argument of type worker.v1.TestRequest');
@@ -129,11 +118,11 @@ var SandboxTransportServiceService = exports.SandboxTransportServiceService = {
     requestStream: false,
     responseStream: false,
     requestType: worker_v1_sandbox_transport_pb.StreamRequest,
-    responseType: worker_v1_sandbox_transport_pb.StreamResponse,
+    responseType: google_protobuf_empty_pb.Empty,
     requestSerialize: serialize_worker_v1_StreamRequest,
     requestDeserialize: deserialize_worker_v1_StreamRequest,
-    responseSerialize: serialize_worker_v1_StreamResponse,
-    responseDeserialize: deserialize_worker_v1_StreamResponse,
+    responseSerialize: serialize_google_protobuf_Empty,
+    responseDeserialize: deserialize_google_protobuf_Empty,
   },
   metadata: {
     path: '/worker.v1.SandboxTransportService/Metadata',

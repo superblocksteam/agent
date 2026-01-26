@@ -22,13 +22,18 @@ import {
   PluginProps,
   PluginPropsReader,
   PreDeleteRequest,
+  SendFunc,
   StepPerformanceImpl,
   StreamRequest,
-  TestRequest
+  TestRequest,
+  UntilFunc
 } from '@superblocks/worker.js';
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import { Value } from 'google-protobuf/google/protobuf/struct_pb';
 import P from 'pino';
-import { StreamOutput } from './messageTransformer';
+import { SandboxStreamRequest } from './messageTransformer';
+import { SandboxStreamingProxyServiceClient } from './types/worker/v1/sandbox_streaming_proxy_grpc_pb';
+import { SendRequest, UntilRequest } from './types/worker/v1/sandbox_streaming_proxy_pb';
 
 interface Variable {
   key: string;
@@ -39,9 +44,11 @@ interface Variable {
 export class PluginsRouter {
   private _logger: P.Logger;
   private _plugins: Record<string, BasePlugin>;
+  private _streamingClient: SandboxStreamingProxyServiceClient;
 
-  constructor(logger: P.Logger) {
+  constructor(logger: P.Logger, streamingClient: SandboxStreamingProxyServiceClient) {
     this._logger = logger.child({ name: 'PluginsRouter' });
+    this._streamingClient = streamingClient;
     this._plugins = {};
   }
 
@@ -83,11 +90,46 @@ export class PluginsRouter {
     }
   }
 
-  public async handleStreamEvent(pluginName: string, request: StreamRequest, kvStore: KVStore): Promise<StreamOutput> {
-    const result = await this.handleExecuteEvent(pluginName, request as ExecuteRequest, kvStore);
-    return {
-      output: result
+  public async handleStreamEvent(
+    pluginName: string,
+    sandboxRequest: SandboxStreamRequest,
+    kvStore: KVStore
+  ): Promise<google_protobuf_empty_pb.Empty> {
+    const topic = sandboxRequest.topic;
+    const request = sandboxRequest.request;
+
+    const baggage = getBaggageAsObjFromCarrier(request.baggage || {});
+    const observabilityTags = {
+      [OBS_CORRELATION_ID_TAG]: request.props?.executionId ?? '',
+      ...baggage
     };
+
+    const plugin = this.getPlugin(pluginName);
+    const perf = new StepPerformanceImpl({
+      queueRequest: {
+        end: micros(false)
+      }
+    });
+    const pluginProps = await this.constructPluginProps(request, pluginName, Event.STREAM, kvStore, perf, observabilityTags);
+    const originalLogger = plugin.logger;
+
+    try {
+      plugin.attachLogger(plugin.logger.child({ ...observabilityTags }));
+      await plugin.stream(
+        {
+          ...{ mutableOutput: new ExecutionOutput() },
+          ...pluginProps
+        },
+        this.buildSendFunc(topic ?? 'deadletter'),
+        {
+          until: this.buildUntilFunc(topic)
+        }
+      );
+
+      return new google_protobuf_empty_pb.Empty();
+    } finally {
+      plugin.attachLogger(originalLogger);
+    }
   }
 
   public async handleMetadataEvent(pluginName: string, request: MetadataRequest): Promise<MetadataResponse> {
@@ -221,5 +263,44 @@ export class PluginsRouter {
       this._logger.warn(`unmarshal datasourceConfig failed`);
       return datasourceConfigurationOriginal;
     }
+  }
+
+  private buildSendFunc(topic: string): SendFunc {
+    return async (data: unknown): Promise<void> => {
+      return new Promise<void>((resolve, reject) => {
+        const request = new SendRequest();
+        request.setTopic(topic);
+        request.setData(Value.fromJavaScript(JSON.parse(JSON.stringify(data))));
+
+        this._streamingClient.send(request, (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      });
+    };
+  }
+
+  private buildUntilFunc(topic?: string): UntilFunc | undefined {
+    if (!topic) {
+      return undefined;
+    }
+
+    return async (): Promise<void> => {
+      return new Promise<void>((resolve, reject) => {
+        const request = new UntilRequest();
+        request.setTopic(topic);
+
+        this._streamingClient.until(request, (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      });
+    };
   }
 }

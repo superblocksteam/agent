@@ -26,7 +26,8 @@ type K8sJobManager struct {
 	image                   string
 	port                    int
 	podIP                   string
-	grpcPort                int
+	variableStoreGrpcPort   int
+	streamingProxyGrpcPort  int
 	ttlSecondsAfterFinished int32
 	runtimeClassName        string
 	nodeSelector            map[string]string
@@ -50,7 +51,8 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		image:                   opts.Image,
 		port:                    opts.Port,
 		podIP:                   opts.PodIP,
-		grpcPort:                opts.GRPCPort,
+		variableStoreGrpcPort:   opts.VariableStoreGrpcPort,
+		streamingProxyGrpcPort:  opts.StreamingProxyGrpcPort,
 		ttlSecondsAfterFinished: opts.TTLSecondsAfterFinished,
 		runtimeClassName:        opts.RuntimeClassName,
 		nodeSelector:            opts.NodeSelector,
@@ -131,7 +133,10 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 	completions := int32(1)
 
 	// Variable store address - task manager's Pod IP + gRPC port
-	variableStoreAddress := fmt.Sprintf("%s:%d", m.podIP, m.grpcPort)
+	variableStoreAddress := fmt.Sprintf("%s:%d", m.podIP, m.variableStoreGrpcPort)
+
+	// Streaming proxy address - task manager's Pod IP + gRPC port
+	streamingProxyAddress := fmt.Sprintf("%s:%d", m.podIP, m.streamingProxyGrpcPort)
 
 	containerName := "javascript-sandbox"
 	labels := map[string]string{
@@ -189,6 +194,10 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 								{
 									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS",
 									Value: variableStoreAddress,
+								},
+								{
+									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS",
+									Value: streamingProxyAddress,
 								},
 								{
 									Name:  "EXECUTION_ID",

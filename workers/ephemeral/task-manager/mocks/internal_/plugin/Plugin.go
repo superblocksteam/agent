@@ -198,17 +198,17 @@ func (_c *Plugin_PreDelete_Call) RunAndReturn(run func(context.Context, *v1.Requ
 	return _c
 }
 
-// Stream provides a mock function with given fields: ctx, requestMeta, requestProps, quotas, pinned, send, until
-func (_m *Plugin) Stream(ctx context.Context, requestMeta *v1.RequestMetadata, requestProps *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(interface{}), until func()) error {
-	ret := _m.Called(ctx, requestMeta, requestProps, quotas, pinned, send, until)
+// Stream provides a mock function with given fields: ctx, topic, requestMeta, requestProps, quotas, pinned
+func (_m *Plugin) Stream(ctx context.Context, topic string, requestMeta *v1.RequestMetadata, requestProps *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) error {
+	ret := _m.Called(ctx, topic, requestMeta, requestProps, quotas, pinned)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Stream")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *v1.RequestMetadata, *transportv1.Request_Data_Data_Props, *transportv1.Request_Data_Data_Quota, *transportv1.Request_Data_Pinned, func(interface{}), func()) error); ok {
-		r0 = rf(ctx, requestMeta, requestProps, quotas, pinned, send, until)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.RequestMetadata, *transportv1.Request_Data_Data_Props, *transportv1.Request_Data_Data_Quota, *transportv1.Request_Data_Pinned) error); ok {
+		r0 = rf(ctx, topic, requestMeta, requestProps, quotas, pinned)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -223,19 +223,18 @@ type Plugin_Stream_Call struct {
 
 // Stream is a helper method to define mock.On call
 //   - ctx context.Context
+//   - topic string
 //   - requestMeta *v1.RequestMetadata
 //   - requestProps *transportv1.Request_Data_Data_Props
 //   - quotas *transportv1.Request_Data_Data_Quota
 //   - pinned *transportv1.Request_Data_Pinned
-//   - send func(interface{})
-//   - until func()
-func (_e *Plugin_Expecter) Stream(ctx interface{}, requestMeta interface{}, requestProps interface{}, quotas interface{}, pinned interface{}, send interface{}, until interface{}) *Plugin_Stream_Call {
-	return &Plugin_Stream_Call{Call: _e.mock.On("Stream", ctx, requestMeta, requestProps, quotas, pinned, send, until)}
+func (_e *Plugin_Expecter) Stream(ctx interface{}, topic interface{}, requestMeta interface{}, requestProps interface{}, quotas interface{}, pinned interface{}) *Plugin_Stream_Call {
+	return &Plugin_Stream_Call{Call: _e.mock.On("Stream", ctx, topic, requestMeta, requestProps, quotas, pinned)}
 }
 
-func (_c *Plugin_Stream_Call) Run(run func(ctx context.Context, requestMeta *v1.RequestMetadata, requestProps *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(interface{}), until func())) *Plugin_Stream_Call {
+func (_c *Plugin_Stream_Call) Run(run func(ctx context.Context, topic string, requestMeta *v1.RequestMetadata, requestProps *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned)) *Plugin_Stream_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*v1.RequestMetadata), args[2].(*transportv1.Request_Data_Data_Props), args[3].(*transportv1.Request_Data_Data_Quota), args[4].(*transportv1.Request_Data_Pinned), args[5].(func(interface{})), args[6].(func()))
+		run(args[0].(context.Context), args[1].(string), args[2].(*v1.RequestMetadata), args[3].(*transportv1.Request_Data_Data_Props), args[4].(*transportv1.Request_Data_Data_Quota), args[5].(*transportv1.Request_Data_Pinned))
 	})
 	return _c
 }
@@ -245,7 +244,7 @@ func (_c *Plugin_Stream_Call) Return(_a0 error) *Plugin_Stream_Call {
 	return _c
 }
 
-func (_c *Plugin_Stream_Call) RunAndReturn(run func(context.Context, *v1.RequestMetadata, *transportv1.Request_Data_Data_Props, *transportv1.Request_Data_Data_Quota, *transportv1.Request_Data_Pinned, func(interface{}), func()) error) *Plugin_Stream_Call {
+func (_c *Plugin_Stream_Call) RunAndReturn(run func(context.Context, string, *v1.RequestMetadata, *transportv1.Request_Data_Data_Props, *transportv1.Request_Data_Data_Quota, *transportv1.Request_Data_Pinned) error) *Plugin_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }

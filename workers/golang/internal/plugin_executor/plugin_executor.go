@@ -27,7 +27,7 @@ type PluginExecutor interface {
 	RegisterPlugin(name string, plugin plugin.Plugin) error
 	ListPlugins() []string
 	Execute(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
-	Stream(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance, send func(message any), until func()) error
+	Stream(ctx context.Context, pluginName string, topic string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) error
 	Metadata(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
 	Test(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
 	PreDelete(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance) (*transportv1.Response_Data_Data, error)
@@ -156,13 +156,13 @@ func (p *pluginExecutor) Execute(ctx context.Context, pluginName string, props *
 	return resp, nil
 }
 
-func (p *pluginExecutor) Stream(ctx context.Context, pluginName string, props *transportv1.Request_Data_Data_Props, perf *transportv1.Performance, send func(message any), until func()) error {
+func (p *pluginExecutor) Stream(ctx context.Context, pluginName string, topic string, props *transportv1.Request_Data_Data_Props, _ *transportv1.Performance) error {
 	plug, ok := p.plugins[pluginName]
 	if !ok {
 		return &commonErr.InternalError{}
 	}
 
-	err := plug.Stream(ctx, nil, props, nil, nil, send, until)
+	err := plug.Stream(ctx, topic, nil, props, nil, nil)
 	if err != nil {
 		return err
 	}

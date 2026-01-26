@@ -24,12 +24,11 @@ type Plugin interface {
 	// Stream executes code with streaming output.
 	Stream(
 		ctx context.Context,
+		topic string,
 		requestMeta *workerv1.RequestMetadata,
 		requestProps *transportv1.Request_Data_Data_Props,
 		quotas *transportv1.Request_Data_Data_Quota,
 		pinned *transportv1.Request_Data_Pinned,
-		send func(message any),
-		until func(),
 	) error
 
 	// Metadata returns plugin metadata for the given configuration.

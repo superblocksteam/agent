@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
-import { Duration, Empty, Message, proto3, Struct, Timestamp } from "@bufbuild/protobuf";
+import { Duration, Message, proto3, Struct, Timestamp } from "@bufbuild/protobuf";
 import { Request_Data_Data_Props, Request_Data_Data_Quota, Request_Data_Pinned } from "../../transport/v1/transport_pb";
 import { OutputOld } from "../../api/v1/event_pb";
 import { Error } from "../../common/v1/errors_pb";
@@ -199,6 +199,11 @@ export class StreamRequest extends Message<StreamRequest> {
    */
   request?: ExecuteRequest;
 
+  /**
+   * @generated from field: string topic = 2;
+   */
+  topic = "";
+
   constructor(data?: PartialMessage<StreamRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -208,6 +213,7 @@ export class StreamRequest extends Message<StreamRequest> {
   static readonly typeName = "worker.v1.StreamRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "request", kind: "message", T: ExecuteRequest },
+    { no: 2, name: "topic", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamRequest {
@@ -224,43 +230,6 @@ export class StreamRequest extends Message<StreamRequest> {
 
   static equals(a: StreamRequest | PlainMessage<StreamRequest> | undefined, b: StreamRequest | PlainMessage<StreamRequest> | undefined): boolean {
     return proto3.util.equals(StreamRequest, a, b);
-  }
-}
-
-/**
- * @generated from message worker.v1.StreamResponse
- */
-export class StreamResponse extends Message<StreamResponse> {
-  /**
-   * @generated from field: google.protobuf.Empty response = 1;
-   */
-  response?: Empty;
-
-  constructor(data?: PartialMessage<StreamResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "worker.v1.StreamResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "response", kind: "message", T: Empty },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamResponse {
-    return new StreamResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamResponse {
-    return new StreamResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamResponse {
-    return new StreamResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: StreamResponse | PlainMessage<StreamResponse> | undefined, b: StreamResponse | PlainMessage<StreamResponse> | undefined): boolean {
-    return proto3.util.equals(StreamResponse, a, b);
   }
 }
 

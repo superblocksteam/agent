@@ -6,6 +6,7 @@
 
 import * as grpc from "@grpc/grpc-js";
 import * as worker_v1_sandbox_streaming_proxy_pb from "../../worker/v1/sandbox_streaming_proxy_pb";
+import * as buf_validate_validate_pb from "../../buf/validate/validate_pb";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/struct_pb";
 import * as validate_validate_pb from "../../validate/validate_pb";

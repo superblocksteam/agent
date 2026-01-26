@@ -10,11 +10,14 @@ import (
 	"time"
 
 	"workers/ephemeral/task-manager/internal/health"
+	"workers/ephemeral/task-manager/internal/ipfiltermanager"
+	ipfiltermiddleware "workers/ephemeral/task-manager/internal/middleware/ipfilter"
 	"workers/ephemeral/task-manager/internal/plugin/sandbox"
 	sandbox_executor "workers/ephemeral/task-manager/internal/plugin/sandboxexecutor"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
 	"workers/ephemeral/task-manager/internal/sandboxmanager/k8sjobmanager"
 	internalstore "workers/ephemeral/task-manager/internal/store/redis"
+	"workers/ephemeral/task-manager/internal/streamingproxy"
 	"workers/ephemeral/task-manager/internal/transport/redis"
 
 	r "github.com/redis/go-redis/v9"
@@ -32,6 +35,7 @@ import (
 	"github.com/superblocksteam/run/contrib/process"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -102,8 +106,12 @@ func init() {
 	pflag.StringArray("sandbox.toleration", []string{}, "Toleration for sandbox pods (format: 'key=x,operator=y,value=z,effect=w'). Can be specified multiple times for multiple tolerations.")
 
 	// gRPC settings for variable store
-	pflag.Int("grpc.port", 50050, "The port for the VariableStore gRPC server.")
-	pflag.String("grpc.address", "", "The address for sandbox to connect to VariableStore (defaults to localhost:grpc.port).")
+	pflag.Int("variable.store.grpc.port", 50050, "The port for the VariableStore gRPC server.")
+	pflag.String("variable.store.grpc.address", "", "The address for sandbox to connect to VariableStore (defaults to localhost:variable.store.grpc.port).")
+
+	// gRPC settings for streaming proxy
+	pflag.Int("streaming.proxy.grpc.port", 50051, "The port for the StreamingProxy gRPC server.")
+	pflag.String("streaming.proxy.grpc.address", "", "The address for sandbox to connect to StreamingProxy (defaults to localhost:streaming.proxy.grpc.port).")
 
 	// Health check settings
 	pflag.Bool("health.enabled", false, "Whether to enable health checks.")
@@ -140,9 +148,6 @@ func init() {
 	viper.SetEnvPrefix("SUPERBLOCKS_WORKER_SANDBOX")
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	// Bind specific environment variables for compatibility
-	viper.BindEnv("grpc.port", "SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_PORT")
 
 	if path := viper.GetString("config.path"); path != "" {
 		viper.SetConfigFile(path)
@@ -247,9 +252,9 @@ func main() {
 	}
 
 	// Determine gRPC address for variable store
-	grpcAddress := viper.GetString("grpc.address")
-	if grpcAddress == "" {
-		grpcAddress = fmt.Sprintf("%s:%d", hostname, viper.GetInt("grpc.port"))
+	variableStoreGrpcAddress := viper.GetString("variable.store.grpc.address")
+	if variableStoreGrpcAddress == "" {
+		variableStoreGrpcAddress = fmt.Sprintf("%s:%d", hostname, viper.GetInt("variable.store.grpc.port"))
 	}
 
 	// Create Redis store client (uses same Redis as transport by default)
@@ -293,9 +298,6 @@ func main() {
 		)
 	}
 
-	// Create variable store gRPC server (created early so it can be passed to JobSandboxPlugin)
-	variableStoreGrpcRunnable := internalstore.NewVariableStoreGRPC(storeClient, logger, viper.GetInt("grpc.port"))
-
 	// Create plugin executor
 	pluginExec := plugin_executor.NewPluginExecutor(
 		plugin_executor.NewOptions(
@@ -303,6 +305,9 @@ func main() {
 			plugin_executor.WithStore(storeClient),
 		),
 	)
+
+	// Create IP filter manager
+	ipFilterManager := ipfiltermanager.NewIpFilterManager()
 
 	// Determine sandbox mode: static address (Docker Compose) or dynamic Jobs (Kubernetes)
 	sandboxAddress := viper.GetString("sandbox.address")
@@ -318,7 +323,7 @@ func main() {
 				sandbox.WithSandboxId(id),
 				sandbox.WithLogger(logger),
 				sandbox.WithKvStore(storeClient),
-				sandbox.WithVariableStoreAddress(grpcAddress),
+				sandbox.WithVariableStoreAddress(variableStoreGrpcAddress),
 			)
 		}
 	}
@@ -331,7 +336,7 @@ func main() {
 			sandboxLangExecutorOptions.Language = language
 			sandboxLangExecutorOptions.Logger = logger
 			sandboxLangExecutorOptions.Store = storeClient
-			sandboxLangExecutorOptions.VariableStoreAddress = grpcAddress
+			sandboxLangExecutorOptions.VariableStoreAddress = variableStoreGrpcAddress
 		}
 	}
 
@@ -411,23 +416,13 @@ func main() {
 			tolerations = append(tolerations, toleration)
 		}
 
-		// Set up security violation handler for when sandbox tries to access unauthorized keys
-		variableStoreGrpcRunnable.SetSecurityViolationHandler(func(v internalstore.SecurityViolation) {
-			logger.Error("security violation detected",
-				zap.String("violation_type", v.ViolationType),
-				zap.String("execution_id", v.ExecutionID),
-				zap.String("requested_key", v.RequestedKey),
-				zap.Strings("allowed_keys", v.AllowedKeys),
-				zap.String("client_ip", v.ClientIP),
-			)
-		})
-
 		jobManagerOptions := []k8sjobmanager.Option{
 			k8sjobmanager.WithClientset(k8sClient),
 			k8sjobmanager.WithNamespace(namespace),
 			k8sjobmanager.WithPort(viper.GetInt("sandbox.port")),
 			k8sjobmanager.WithPodIP(podIP),
-			k8sjobmanager.WithGRPCPort(viper.GetInt("grpc.port")),
+			k8sjobmanager.WithVariableStoreGrpcPort(viper.GetInt("variable.store.grpc.port")),
+			k8sjobmanager.WithStreamingProxyGrpcPort(viper.GetInt("streaming.proxy.grpc.port")),
 			k8sjobmanager.WithTTL(int32(viper.GetInt("sandbox.ttl"))),
 			k8sjobmanager.WithRuntimeClassName(viper.GetString("sandbox.runtimeClass")),
 			k8sjobmanager.WithNodeSelector(nodeSelector),
@@ -450,7 +445,7 @@ func main() {
 			sandboxOptions = append(sandboxOptions,
 				sandbox.WithConnectionMode(sandbox.SandboxConnectionModeDynamic),
 				sandbox.WithSandboxManager(jobMgr),
-				sandbox.WithIPFilterSetter(variableStoreGrpcRunnable),
+				sandbox.WithIpFilterSetter(ipFilterManager),
 			)
 		}
 
@@ -469,7 +464,7 @@ func main() {
 
 			sandboxLangExecutorOptions.ConnectionMode = sandbox_executor.SandboxConnectionModeDynamic
 			sandboxLangExecutorOptions.JobManager = jobMgr
-			sandboxLangExecutorOptions.IPFilterSetter = variableStoreGrpcRunnable
+			sandboxLangExecutorOptions.IpFilterSetter = ipFilterManager
 		}
 	}
 
@@ -551,6 +546,46 @@ func main() {
 		redisClient = r.NewClient(options)
 	}
 
+	// Create variable store gRPC server (created early so it can be passed to JobSandboxPlugin)
+	var variableStoreGrpcRunnable *internalstore.VariableStoreGRPC
+	{
+		grpcServer := grpc.NewServer(
+			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger)),
+		)
+
+		variableStoreGrpcRunnable = internalstore.NewVariableStoreGRPC(
+			internalstore.WithKvStore(storeClient),
+			internalstore.WithServer(grpcServer),
+			internalstore.WithLogger(logger),
+			internalstore.WithPort(viper.GetInt("variable.store.grpc.port")),
+		)
+
+		// Set up security violation handler for when sandbox tries to access unauthorized keys
+		variableStoreGrpcRunnable.SetSecurityViolationHandler(func(v internalstore.SecurityViolation) {
+			logger.Error("security violation detected",
+				zap.String("violation_type", v.ViolationType),
+				zap.String("execution_id", v.ExecutionID),
+				zap.String("requested_key", v.RequestedKey),
+				zap.Strings("allowed_keys", v.AllowedKeys),
+				zap.String("client_ip", v.ClientIP),
+			)
+		})
+	}
+
+	var streamingProxyService *streamingproxy.StreamingProxyService
+	{
+		grpcServer := grpc.NewServer(
+			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger)),
+		)
+
+		streamingProxyService = streamingproxy.NewStreamingProxyService(
+			streamingproxy.WithServer(grpcServer),
+			streamingproxy.WithRedisClient(redisClient),
+			streamingproxy.WithLogger(logger),
+			streamingproxy.WithPort(viper.GetInt("streaming.proxy.grpc.port")),
+		)
+	}
+
 	// Create health checker with file-based health checks
 	// Sandbox health check reports NOT READY while sandbox is being created
 	var sandboxForHealthCheck health.SandboxChecker
@@ -600,6 +635,7 @@ func main() {
 	g.Always(process.New())
 	g.Add(viper.GetBool("health.enabled"), healthChecker)
 	g.Always(variableStoreGrpcRunnable)
+	g.Always(streamingProxyService)
 	g.Add(sandboxPlugin != nil, sandboxPlugin)
 	g.Add(sandboxExecutorPlugin != nil, sandboxExecutorPlugin)
 	g.Always(transportRunnable)

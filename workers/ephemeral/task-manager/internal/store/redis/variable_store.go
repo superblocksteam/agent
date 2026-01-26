@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -84,7 +85,7 @@ type VariableStoreGRPC struct {
 	securityHandler     SecurityViolationHandler
 	securityHandlerLock sync.RWMutex
 
-	shutdownLock sync.Mutex
+	shutdownLock sync.RWMutex
 	done         chan error
 
 	run.ForwardCompatibility
@@ -93,11 +94,14 @@ type VariableStoreGRPC struct {
 var _ run.Runnable = &VariableStoreGRPC{}
 
 // NewVariableStoreGRPC creates a new VariableStoreGRPC server
-func NewVariableStoreGRPC(kvStore store.Store, logger *zap.Logger, port int) *VariableStoreGRPC {
+func NewVariableStoreGRPC(options ...Option) *VariableStoreGRPC {
+	opts := ApplyOptions(options...)
+
 	return &VariableStoreGRPC{
-		kvStore:      kvStore,
-		logger:       logger,
-		port:         port,
+		kvStore:      opts.kvStore,
+		logger:       opts.logger,
+		port:         opts.port,
+		server:       opts.server,
 		fileContexts: make(map[string]*ExecutionFileContext),
 		allowedKeys:  make(map[string]map[string]struct{}),
 	}
@@ -135,57 +139,6 @@ func (s *VariableStoreGRPC) Alive() bool {
 	return s.server != nil
 }
 
-// SetAllowedIP sets the allowed sandbox IP for this variable store.
-// Only connections from this IP will be accepted.
-// If empty, all connections are allowed (useful for testing).
-func (s *VariableStoreGRPC) SetAllowedIP(ip string) {
-	s.allowedIPLock.Lock()
-	defer s.allowedIPLock.Unlock()
-	s.allowedIP = ip
-	s.logger.Info("variable store IP filter set", zap.String("allowed_ip", ip))
-}
-
-// ipFilterInterceptor returns a gRPC unary interceptor that filters by allowed IP.
-func (s *VariableStoreGRPC) ipFilterInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		s.allowedIPLock.RLock()
-		allowedIP := s.allowedIP
-		s.allowedIPLock.RUnlock()
-
-		// If no IP filter set, allow all (for testing)
-		if allowedIP == "" {
-			return handler(ctx, req)
-		}
-
-		// Extract peer IP from context
-		p, ok := peer.FromContext(ctx)
-		if !ok {
-			s.logger.Warn("failed to get peer from context")
-			return nil, status.Error(codes.PermissionDenied, "unable to determine client IP")
-		}
-
-		clientIP := extractIP(p.Addr.String())
-		if clientIP != allowedIP {
-			s.logger.Warn("rejected connection from unauthorized IP",
-				zap.String("client_ip", clientIP),
-				zap.String("allowed_ip", allowedIP))
-			return nil, status.Error(codes.PermissionDenied, "unauthorized client IP")
-		}
-
-		return handler(ctx, req)
-	}
-}
-
-// extractIP extracts the IP address from an address string (IP:port format)
-func extractIP(addr string) string {
-	host, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		// If it's not in host:port format, assume it's just an IP
-		return addr
-	}
-	return host
-}
-
 // Start starts the gRPC server
 func (s *VariableStoreGRPC) Start() error {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
@@ -193,15 +146,18 @@ func (s *VariableStoreGRPC) Start() error {
 		return fmt.Errorf("failed to listen on port %d: %w", s.port, err)
 	}
 
-	// Create server with IP filtering interceptor
 	// Use lock to synchronize with Stop() which may be called concurrently
-	s.shutdownLock.Lock()
-	s.server = grpc.NewServer(
-		grpc.UnaryInterceptor(s.ipFilterInterceptor()),
-	)
+	s.shutdownLock.RLock()
+	if s.server == nil {
+		s.logger.Error("cannot start variable store gRPC server: gRPC server is nil")
+
+		s.shutdownLock.RUnlock()
+		return errors.New("cannot start variable store gRPC server: gRPC server is nil")
+	}
+
 	workerv1.RegisterSandboxVariableStoreServiceServer(s.server, s)
 	server := s.server
-	s.shutdownLock.Unlock()
+	s.shutdownLock.RUnlock()
 
 	s.logger.Info("VariableStore gRPC server starting", zap.Int("port", s.port))
 	return server.Serve(lis)
@@ -573,4 +529,14 @@ func (*VariableStoreGRPC) parseV2FileResponse(body []byte) ([]byte, error) {
 	}
 
 	return result, nil
+}
+
+// extractIP extracts the IP address from an address string (IP:port format)
+func extractIP(addr string) string {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		// If it's not in host:port format, assume it's just an IP
+		return addr
+	}
+	return host
 }

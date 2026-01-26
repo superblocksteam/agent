@@ -27,22 +27,22 @@ import {
   ExecuteRequest as ProtoExecuteRequest,
   ExecuteResponse as ProtoExecuteResponse,
   StreamRequest as ProtoStreamRequest,
-  StreamResponse as ProtoStreamResponse,
   MetadataRequest as ProtoMetadataRequest,
   TestRequest as ProtoTestRequest,
   PreDeleteRequest as ProtoPreDeleteRequest,
   StructuredLog as ProtoStructuredLog
 } from './types/worker/v1/sandbox_transport_pb';
 
-export class StreamOutput {
-  output: ExecutionOutput;
+export interface SandboxStreamRequest {
+  request: StreamRequest;
+  topic?: string;
 }
 
 export type ProtoRequest = ProtoExecuteRequest | ProtoStreamRequest | ProtoMetadataRequest | ProtoTestRequest | ProtoPreDeleteRequest;
-export type ProtoResponse = ProtoExecuteResponse | ProtoStreamResponse | ProtoTransportResponse.Data.Data;
+export type ProtoResponse = ProtoExecuteResponse | ProtoTransportResponse.Data.Data;
 
-export type NativeRequest = ExecuteRequest | StreamRequest | MetadataRequest | TestRequest | PreDeleteRequest;
-export type NativeResponse = ExecutionOutput | StreamOutput | MetadataResponse;
+export type NativeRequest = ExecuteRequest | SandboxStreamRequest | MetadataRequest | TestRequest | PreDeleteRequest;
+export type NativeResponse = ExecutionOutput | MetadataResponse;
 
 // Convert protobuf Variable.Type enum (number) to string expected by buildVariables
 function variableTypeToString(type: Variables.Type): string {
@@ -101,14 +101,11 @@ export class MessageTransformerImpl implements MessageTransformer {
   }
 
   public nativeResponseToProto(response: ExecutionOutput): ProtoExecuteResponse;
-  public nativeResponseToProto(response: StreamOutput): ProtoStreamResponse;
   public nativeResponseToProto(response: MetadataResponse): ProtoTransportResponse.Data.Data;
   public nativeResponseToProto(response: NativeResponse): ProtoResponse {
     switch (true) {
       case response instanceof ExecutionOutput:
         return this.executionOutputToProto(response);
-      case response instanceof StreamOutput:
-        return this.streamOutputToProto(response);
       default:
         // MetadataResponse is a type alias (not a class), so we handle it as the default case
         return this.metadataResponseToProto(response as MetadataResponse);
@@ -174,14 +171,17 @@ export class MessageTransformerImpl implements MessageTransformer {
     };
   }
 
-  private protoToStreamRequest(request: ProtoStreamRequest): StreamRequest {
+  private protoToStreamRequest(request: ProtoStreamRequest): SandboxStreamRequest {
     const protoExecuteRequest = request.getRequest();
     if (!protoExecuteRequest) {
       throw new Error('Invalid request type');
     }
 
     return {
-      ...this.protoToExecuteRequest(protoExecuteRequest)
+      topic: request.getTopic(),
+      request: {
+        ...this.protoToExecuteRequest(protoExecuteRequest)
+      }
     };
   }
 
@@ -270,7 +270,7 @@ export class MessageTransformerImpl implements MessageTransformer {
 
     // Set the output value
     if (response.output !== undefined) {
-      const outputValue = google_protobuf_struct_pb.Value.fromJavaScript(response.output);
+      const outputValue = google_protobuf_struct_pb.Value.fromJavaScript(this.cleanData(response.output));
       outputOld.setOutput(outputValue);
     }
 
@@ -286,17 +286,13 @@ export class MessageTransformerImpl implements MessageTransformer {
 
     // Set placeholders info
     if (response.placeholdersInfo) {
-      const placeholdersValue = google_protobuf_struct_pb.Value.fromJavaScript(response.placeholdersInfo);
+      const placeholdersValue = google_protobuf_struct_pb.Value.fromJavaScript(this.cleanData(response.placeholdersInfo));
       outputOld.setPlaceHoldersInfo(placeholdersValue);
     }
 
     protoResponse.setOutput(outputOld);
 
     return protoResponse;
-  }
-
-  private streamOutputToProto(response: StreamOutput): ProtoStreamResponse {
-    return new ProtoStreamResponse();
   }
 
   private metadataResponseToProto(response: MetadataResponse): ProtoTransportResponse.Data.Data {
@@ -341,7 +337,7 @@ export class MessageTransformerImpl implements MessageTransformer {
     if (response.dynamodb) {
       // Cast to plain object since DynamoDbV1.Metadata is created as a plain object at runtime
       const dynamodbStruct = google_protobuf_struct_pb.Struct.fromJavaScript(
-        response.dynamodb as unknown as { [key: string]: google_protobuf_struct_pb.JavaScriptValue }
+        this.cleanData(response.dynamodb) as unknown as { [key: string]: google_protobuf_struct_pb.JavaScriptValue }
       );
       const any = new Any();
       any.pack(dynamodbStruct.serializeBinary(), 'google.protobuf.Struct');
@@ -349,11 +345,11 @@ export class MessageTransformerImpl implements MessageTransformer {
     }
 
     if (response.graphql !== undefined) {
-      protoResponse.setGraphql(google_protobuf_struct_pb.Struct.fromJavaScript(response.graphql));
+      protoResponse.setGraphql(google_protobuf_struct_pb.Struct.fromJavaScript(this.cleanData(response.graphql)));
     }
 
     if (response.openApiSpec !== undefined) {
-      protoResponse.setOpenApiSpec(google_protobuf_struct_pb.Struct.fromJavaScript(response.openApiSpec));
+      protoResponse.setOpenApiSpec(google_protobuf_struct_pb.Struct.fromJavaScript(this.cleanData(response.openApiSpec)));
     }
 
     if (response.salesforce) {
@@ -574,5 +570,9 @@ export class MessageTransformerImpl implements MessageTransformer {
       );
     }
     return proto;
+  }
+
+  private cleanData(data: any): any {
+    return JSON.parse(JSON.stringify(data));
   }
 }

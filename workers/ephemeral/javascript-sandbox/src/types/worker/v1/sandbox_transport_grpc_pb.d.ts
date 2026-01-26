@@ -31,14 +31,14 @@ interface ISandboxTransportServiceService_IExecute extends grpc.MethodDefinition
     responseSerialize: grpc.serialize<worker_v1_sandbox_transport_pb.ExecuteResponse>;
     responseDeserialize: grpc.deserialize<worker_v1_sandbox_transport_pb.ExecuteResponse>;
 }
-interface ISandboxTransportServiceService_IStream extends grpc.MethodDefinition<worker_v1_sandbox_transport_pb.StreamRequest, worker_v1_sandbox_transport_pb.StreamResponse> {
+interface ISandboxTransportServiceService_IStream extends grpc.MethodDefinition<worker_v1_sandbox_transport_pb.StreamRequest, google_protobuf_empty_pb.Empty> {
     path: "/worker.v1.SandboxTransportService/Stream";
     requestStream: false;
     responseStream: false;
     requestSerialize: grpc.serialize<worker_v1_sandbox_transport_pb.StreamRequest>;
     requestDeserialize: grpc.deserialize<worker_v1_sandbox_transport_pb.StreamRequest>;
-    responseSerialize: grpc.serialize<worker_v1_sandbox_transport_pb.StreamResponse>;
-    responseDeserialize: grpc.deserialize<worker_v1_sandbox_transport_pb.StreamResponse>;
+    responseSerialize: grpc.serialize<google_protobuf_empty_pb.Empty>;
+    responseDeserialize: grpc.deserialize<google_protobuf_empty_pb.Empty>;
 }
 interface ISandboxTransportServiceService_IMetadata extends grpc.MethodDefinition<worker_v1_sandbox_transport_pb.MetadataRequest, transport_v1_transport_pb.Response.Data.Data> {
     path: "/worker.v1.SandboxTransportService/Metadata";
@@ -72,7 +72,7 @@ export const SandboxTransportServiceService: ISandboxTransportServiceService;
 
 export interface ISandboxTransportServiceServer extends grpc.UntypedServiceImplementation {
     execute: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.ExecuteRequest, worker_v1_sandbox_transport_pb.ExecuteResponse>;
-    stream: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.StreamRequest, worker_v1_sandbox_transport_pb.StreamResponse>;
+    stream: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.StreamRequest, google_protobuf_empty_pb.Empty>;
     metadata: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.MetadataRequest, transport_v1_transport_pb.Response.Data.Data>;
     test: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.TestRequest, google_protobuf_empty_pb.Empty>;
     preDelete: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.PreDeleteRequest, google_protobuf_empty_pb.Empty>;
@@ -82,9 +82,9 @@ export interface ISandboxTransportServiceClient {
     execute(request: worker_v1_sandbox_transport_pb.ExecuteRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.ExecuteResponse) => void): grpc.ClientUnaryCall;
     execute(request: worker_v1_sandbox_transport_pb.ExecuteRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.ExecuteResponse) => void): grpc.ClientUnaryCall;
     execute(request: worker_v1_sandbox_transport_pb.ExecuteRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.ExecuteResponse) => void): grpc.ClientUnaryCall;
-    stream(request: worker_v1_sandbox_transport_pb.StreamRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.StreamResponse) => void): grpc.ClientUnaryCall;
-    stream(request: worker_v1_sandbox_transport_pb.StreamRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.StreamResponse) => void): grpc.ClientUnaryCall;
-    stream(request: worker_v1_sandbox_transport_pb.StreamRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.StreamResponse) => void): grpc.ClientUnaryCall;
+    stream(request: worker_v1_sandbox_transport_pb.StreamRequest, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
+    stream(request: worker_v1_sandbox_transport_pb.StreamRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
+    stream(request: worker_v1_sandbox_transport_pb.StreamRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
     metadata(request: worker_v1_sandbox_transport_pb.MetadataRequest, callback: (error: grpc.ServiceError | null, response: transport_v1_transport_pb.Response.Data.Data) => void): grpc.ClientUnaryCall;
     metadata(request: worker_v1_sandbox_transport_pb.MetadataRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: transport_v1_transport_pb.Response.Data.Data) => void): grpc.ClientUnaryCall;
     metadata(request: worker_v1_sandbox_transport_pb.MetadataRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: transport_v1_transport_pb.Response.Data.Data) => void): grpc.ClientUnaryCall;
@@ -101,9 +101,9 @@ export class SandboxTransportServiceClient extends grpc.Client implements ISandb
     public execute(request: worker_v1_sandbox_transport_pb.ExecuteRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.ExecuteResponse) => void): grpc.ClientUnaryCall;
     public execute(request: worker_v1_sandbox_transport_pb.ExecuteRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.ExecuteResponse) => void): grpc.ClientUnaryCall;
     public execute(request: worker_v1_sandbox_transport_pb.ExecuteRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.ExecuteResponse) => void): grpc.ClientUnaryCall;
-    public stream(request: worker_v1_sandbox_transport_pb.StreamRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.StreamResponse) => void): grpc.ClientUnaryCall;
-    public stream(request: worker_v1_sandbox_transport_pb.StreamRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.StreamResponse) => void): grpc.ClientUnaryCall;
-    public stream(request: worker_v1_sandbox_transport_pb.StreamRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.StreamResponse) => void): grpc.ClientUnaryCall;
+    public stream(request: worker_v1_sandbox_transport_pb.StreamRequest, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
+    public stream(request: worker_v1_sandbox_transport_pb.StreamRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
+    public stream(request: worker_v1_sandbox_transport_pb.StreamRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
     public metadata(request: worker_v1_sandbox_transport_pb.MetadataRequest, callback: (error: grpc.ServiceError | null, response: transport_v1_transport_pb.Response.Data.Data) => void): grpc.ClientUnaryCall;
     public metadata(request: worker_v1_sandbox_transport_pb.MetadataRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: transport_v1_transport_pb.Response.Data.Data) => void): grpc.ClientUnaryCall;
     public metadata(request: worker_v1_sandbox_transport_pb.MetadataRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: transport_v1_transport_pb.Response.Data.Data) => void): grpc.ClientUnaryCall;

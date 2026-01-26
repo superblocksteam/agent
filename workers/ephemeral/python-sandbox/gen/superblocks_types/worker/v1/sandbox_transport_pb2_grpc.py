@@ -25,7 +25,7 @@ class SandboxTransportServiceStub(object):
         self.Stream = channel.unary_unary(
                 '/worker.v1.SandboxTransportService/Stream',
                 request_serializer=worker_dot_v1_dot_sandbox__transport__pb2.StreamRequest.SerializeToString,
-                response_deserializer=worker_dot_v1_dot_sandbox__transport__pb2.StreamResponse.FromString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 _registered_method=True)
         self.Metadata = channel.unary_unary(
                 '/worker.v1.SandboxTransportService/Metadata',
@@ -89,7 +89,7 @@ def add_SandboxTransportServiceServicer_to_server(servicer, server):
             'Stream': grpc.unary_unary_rpc_method_handler(
                     servicer.Stream,
                     request_deserializer=worker_dot_v1_dot_sandbox__transport__pb2.StreamRequest.FromString,
-                    response_serializer=worker_dot_v1_dot_sandbox__transport__pb2.StreamResponse.SerializeToString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
             'Metadata': grpc.unary_unary_rpc_method_handler(
                     servicer.Metadata,
@@ -161,7 +161,7 @@ class SandboxTransportService(object):
             target,
             '/worker.v1.SandboxTransportService/Stream',
             worker_dot_v1_dot_sandbox__transport__pb2.StreamRequest.SerializeToString,
-            worker_dot_v1_dot_sandbox__transport__pb2.StreamResponse.FromString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,

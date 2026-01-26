@@ -24,9 +24,9 @@ func (_m *PluginExecutor) EXPECT() *PluginExecutor_Expecter {
 	return &PluginExecutor_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: ctx, pluginName, reqData, reqMeta, perf
-func (_m *PluginExecutor) Execute(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, reqMeta *v1.Request_Data_Pinned, perf *v1.Performance) (*v1.Response_Data_Data, error) {
-	ret := _m.Called(ctx, pluginName, reqData, reqMeta, perf)
+// Execute provides a mock function with given fields: ctx, pluginName, reqData, pinned, perf
+func (_m *PluginExecutor) Execute(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, pinned *v1.Request_Data_Pinned, perf *v1.Performance) (*v1.Response_Data_Data, error) {
+	ret := _m.Called(ctx, pluginName, reqData, pinned, perf)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
@@ -35,10 +35,10 @@ func (_m *PluginExecutor) Execute(ctx context.Context, pluginName string, reqDat
 	var r0 *v1.Response_Data_Data
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Request_Data_Pinned, *v1.Performance) (*v1.Response_Data_Data, error)); ok {
-		return rf(ctx, pluginName, reqData, reqMeta, perf)
+		return rf(ctx, pluginName, reqData, pinned, perf)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Request_Data_Pinned, *v1.Performance) *v1.Response_Data_Data); ok {
-		r0 = rf(ctx, pluginName, reqData, reqMeta, perf)
+		r0 = rf(ctx, pluginName, reqData, pinned, perf)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Response_Data_Data)
@@ -46,7 +46,7 @@ func (_m *PluginExecutor) Execute(ctx context.Context, pluginName string, reqDat
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *v1.Request_Data_Data, *v1.Request_Data_Pinned, *v1.Performance) error); ok {
-		r1 = rf(ctx, pluginName, reqData, reqMeta, perf)
+		r1 = rf(ctx, pluginName, reqData, pinned, perf)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -63,13 +63,13 @@ type PluginExecutor_Execute_Call struct {
 //   - ctx context.Context
 //   - pluginName string
 //   - reqData *v1.Request_Data_Data
-//   - reqMeta *v1.Request_Data_Pinned
+//   - pinned *v1.Request_Data_Pinned
 //   - perf *v1.Performance
-func (_e *PluginExecutor_Expecter) Execute(ctx interface{}, pluginName interface{}, reqData interface{}, reqMeta interface{}, perf interface{}) *PluginExecutor_Execute_Call {
-	return &PluginExecutor_Execute_Call{Call: _e.mock.On("Execute", ctx, pluginName, reqData, reqMeta, perf)}
+func (_e *PluginExecutor_Expecter) Execute(ctx interface{}, pluginName interface{}, reqData interface{}, pinned interface{}, perf interface{}) *PluginExecutor_Execute_Call {
+	return &PluginExecutor_Execute_Call{Call: _e.mock.On("Execute", ctx, pluginName, reqData, pinned, perf)}
 }
 
-func (_c *PluginExecutor_Execute_Call) Run(run func(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, reqMeta *v1.Request_Data_Pinned, perf *v1.Performance)) *PluginExecutor_Execute_Call {
+func (_c *PluginExecutor_Execute_Call) Run(run func(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, pinned *v1.Request_Data_Pinned, perf *v1.Performance)) *PluginExecutor_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*v1.Request_Data_Data), args[3].(*v1.Request_Data_Pinned), args[4].(*v1.Performance))
 	})
@@ -133,9 +133,9 @@ func (_c *PluginExecutor_ListPlugins_Call) RunAndReturn(run func() []string) *Pl
 	return _c
 }
 
-// Metadata provides a mock function with given fields: ctx, pluginName, props, perf
-func (_m *PluginExecutor) Metadata(ctx context.Context, pluginName string, props *v1.Request_Data_Data, perf *v1.Performance) (*v1.Response_Data_Data, error) {
-	ret := _m.Called(ctx, pluginName, props, perf)
+// Metadata provides a mock function with given fields: ctx, pluginName, reqData, perf
+func (_m *PluginExecutor) Metadata(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, perf *v1.Performance) (*v1.Response_Data_Data, error) {
+	ret := _m.Called(ctx, pluginName, reqData, perf)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Metadata")
@@ -144,10 +144,10 @@ func (_m *PluginExecutor) Metadata(ctx context.Context, pluginName string, props
 	var r0 *v1.Response_Data_Data
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) (*v1.Response_Data_Data, error)); ok {
-		return rf(ctx, pluginName, props, perf)
+		return rf(ctx, pluginName, reqData, perf)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) *v1.Response_Data_Data); ok {
-		r0 = rf(ctx, pluginName, props, perf)
+		r0 = rf(ctx, pluginName, reqData, perf)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Response_Data_Data)
@@ -155,7 +155,7 @@ func (_m *PluginExecutor) Metadata(ctx context.Context, pluginName string, props
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) error); ok {
-		r1 = rf(ctx, pluginName, props, perf)
+		r1 = rf(ctx, pluginName, reqData, perf)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -171,13 +171,13 @@ type PluginExecutor_Metadata_Call struct {
 // Metadata is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pluginName string
-//   - props *v1.Request_Data_Data
+//   - reqData *v1.Request_Data_Data
 //   - perf *v1.Performance
-func (_e *PluginExecutor_Expecter) Metadata(ctx interface{}, pluginName interface{}, props interface{}, perf interface{}) *PluginExecutor_Metadata_Call {
-	return &PluginExecutor_Metadata_Call{Call: _e.mock.On("Metadata", ctx, pluginName, props, perf)}
+func (_e *PluginExecutor_Expecter) Metadata(ctx interface{}, pluginName interface{}, reqData interface{}, perf interface{}) *PluginExecutor_Metadata_Call {
+	return &PluginExecutor_Metadata_Call{Call: _e.mock.On("Metadata", ctx, pluginName, reqData, perf)}
 }
 
-func (_c *PluginExecutor_Metadata_Call) Run(run func(ctx context.Context, pluginName string, props *v1.Request_Data_Data, perf *v1.Performance)) *PluginExecutor_Metadata_Call {
+func (_c *PluginExecutor_Metadata_Call) Run(run func(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, perf *v1.Performance)) *PluginExecutor_Metadata_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*v1.Request_Data_Data), args[3].(*v1.Performance))
 	})
@@ -194,9 +194,9 @@ func (_c *PluginExecutor_Metadata_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
-// PreDelete provides a mock function with given fields: ctx, pluginName, props, perf
-func (_m *PluginExecutor) PreDelete(ctx context.Context, pluginName string, props *v1.Request_Data_Data, perf *v1.Performance) (*v1.Response_Data_Data, error) {
-	ret := _m.Called(ctx, pluginName, props, perf)
+// PreDelete provides a mock function with given fields: ctx, pluginName, reqData, perf
+func (_m *PluginExecutor) PreDelete(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, perf *v1.Performance) (*v1.Response_Data_Data, error) {
+	ret := _m.Called(ctx, pluginName, reqData, perf)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PreDelete")
@@ -205,10 +205,10 @@ func (_m *PluginExecutor) PreDelete(ctx context.Context, pluginName string, prop
 	var r0 *v1.Response_Data_Data
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) (*v1.Response_Data_Data, error)); ok {
-		return rf(ctx, pluginName, props, perf)
+		return rf(ctx, pluginName, reqData, perf)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) *v1.Response_Data_Data); ok {
-		r0 = rf(ctx, pluginName, props, perf)
+		r0 = rf(ctx, pluginName, reqData, perf)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Response_Data_Data)
@@ -216,7 +216,7 @@ func (_m *PluginExecutor) PreDelete(ctx context.Context, pluginName string, prop
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) error); ok {
-		r1 = rf(ctx, pluginName, props, perf)
+		r1 = rf(ctx, pluginName, reqData, perf)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -232,13 +232,13 @@ type PluginExecutor_PreDelete_Call struct {
 // PreDelete is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pluginName string
-//   - props *v1.Request_Data_Data
+//   - reqData *v1.Request_Data_Data
 //   - perf *v1.Performance
-func (_e *PluginExecutor_Expecter) PreDelete(ctx interface{}, pluginName interface{}, props interface{}, perf interface{}) *PluginExecutor_PreDelete_Call {
-	return &PluginExecutor_PreDelete_Call{Call: _e.mock.On("PreDelete", ctx, pluginName, props, perf)}
+func (_e *PluginExecutor_Expecter) PreDelete(ctx interface{}, pluginName interface{}, reqData interface{}, perf interface{}) *PluginExecutor_PreDelete_Call {
+	return &PluginExecutor_PreDelete_Call{Call: _e.mock.On("PreDelete", ctx, pluginName, reqData, perf)}
 }
 
-func (_c *PluginExecutor_PreDelete_Call) Run(run func(ctx context.Context, pluginName string, props *v1.Request_Data_Data, perf *v1.Performance)) *PluginExecutor_PreDelete_Call {
+func (_c *PluginExecutor_PreDelete_Call) Run(run func(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, perf *v1.Performance)) *PluginExecutor_PreDelete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*v1.Request_Data_Data), args[3].(*v1.Performance))
 	})
@@ -302,22 +302,34 @@ func (_c *PluginExecutor_RegisterPlugin_Call) RunAndReturn(run func(string, plug
 	return _c
 }
 
-// Stream provides a mock function with given fields: ctx, pluginName, props, perf, send, until
-func (_m *PluginExecutor) Stream(ctx context.Context, pluginName string, props *v1.Request_Data_Data, perf *v1.Performance, send func(interface{}), until func()) error {
-	ret := _m.Called(ctx, pluginName, props, perf, send, until)
+// Stream provides a mock function with given fields: ctx, pluginName, topic, reqData, pinned, perf
+func (_m *PluginExecutor) Stream(ctx context.Context, pluginName string, topic string, reqData *v1.Request_Data_Data, pinned *v1.Request_Data_Pinned, perf *v1.Performance) (*v1.Response_Data_Data, error) {
+	ret := _m.Called(ctx, pluginName, topic, reqData, pinned, perf)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Stream")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance, func(interface{}), func()) error); ok {
-		r0 = rf(ctx, pluginName, props, perf, send, until)
+	var r0 *v1.Response_Data_Data
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *v1.Request_Data_Data, *v1.Request_Data_Pinned, *v1.Performance) (*v1.Response_Data_Data, error)); ok {
+		return rf(ctx, pluginName, topic, reqData, pinned, perf)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *v1.Request_Data_Data, *v1.Request_Data_Pinned, *v1.Performance) *v1.Response_Data_Data); ok {
+		r0 = rf(ctx, pluginName, topic, reqData, pinned, perf)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*v1.Response_Data_Data)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *v1.Request_Data_Data, *v1.Request_Data_Pinned, *v1.Performance) error); ok {
+		r1 = rf(ctx, pluginName, topic, reqData, pinned, perf)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // PluginExecutor_Stream_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stream'
@@ -328,34 +340,34 @@ type PluginExecutor_Stream_Call struct {
 // Stream is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pluginName string
-//   - props *v1.Request_Data_Data
+//   - topic string
+//   - reqData *v1.Request_Data_Data
+//   - pinned *v1.Request_Data_Pinned
 //   - perf *v1.Performance
-//   - send func(interface{})
-//   - until func()
-func (_e *PluginExecutor_Expecter) Stream(ctx interface{}, pluginName interface{}, props interface{}, perf interface{}, send interface{}, until interface{}) *PluginExecutor_Stream_Call {
-	return &PluginExecutor_Stream_Call{Call: _e.mock.On("Stream", ctx, pluginName, props, perf, send, until)}
+func (_e *PluginExecutor_Expecter) Stream(ctx interface{}, pluginName interface{}, topic interface{}, reqData interface{}, pinned interface{}, perf interface{}) *PluginExecutor_Stream_Call {
+	return &PluginExecutor_Stream_Call{Call: _e.mock.On("Stream", ctx, pluginName, topic, reqData, pinned, perf)}
 }
 
-func (_c *PluginExecutor_Stream_Call) Run(run func(ctx context.Context, pluginName string, props *v1.Request_Data_Data, perf *v1.Performance, send func(interface{}), until func())) *PluginExecutor_Stream_Call {
+func (_c *PluginExecutor_Stream_Call) Run(run func(ctx context.Context, pluginName string, topic string, reqData *v1.Request_Data_Data, pinned *v1.Request_Data_Pinned, perf *v1.Performance)) *PluginExecutor_Stream_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(*v1.Request_Data_Data), args[3].(*v1.Performance), args[4].(func(interface{})), args[5].(func()))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(*v1.Request_Data_Data), args[4].(*v1.Request_Data_Pinned), args[5].(*v1.Performance))
 	})
 	return _c
 }
 
-func (_c *PluginExecutor_Stream_Call) Return(_a0 error) *PluginExecutor_Stream_Call {
-	_c.Call.Return(_a0)
+func (_c *PluginExecutor_Stream_Call) Return(_a0 *v1.Response_Data_Data, _a1 error) *PluginExecutor_Stream_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *PluginExecutor_Stream_Call) RunAndReturn(run func(context.Context, string, *v1.Request_Data_Data, *v1.Performance, func(interface{}), func()) error) *PluginExecutor_Stream_Call {
+func (_c *PluginExecutor_Stream_Call) RunAndReturn(run func(context.Context, string, string, *v1.Request_Data_Data, *v1.Request_Data_Pinned, *v1.Performance) (*v1.Response_Data_Data, error)) *PluginExecutor_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Test provides a mock function with given fields: ctx, pluginName, props, perf
-func (_m *PluginExecutor) Test(ctx context.Context, pluginName string, props *v1.Request_Data_Data, perf *v1.Performance) (*v1.Response_Data_Data, error) {
-	ret := _m.Called(ctx, pluginName, props, perf)
+// Test provides a mock function with given fields: ctx, pluginName, reqData, perf
+func (_m *PluginExecutor) Test(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, perf *v1.Performance) (*v1.Response_Data_Data, error) {
+	ret := _m.Called(ctx, pluginName, reqData, perf)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Test")
@@ -364,10 +376,10 @@ func (_m *PluginExecutor) Test(ctx context.Context, pluginName string, props *v1
 	var r0 *v1.Response_Data_Data
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) (*v1.Response_Data_Data, error)); ok {
-		return rf(ctx, pluginName, props, perf)
+		return rf(ctx, pluginName, reqData, perf)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) *v1.Response_Data_Data); ok {
-		r0 = rf(ctx, pluginName, props, perf)
+		r0 = rf(ctx, pluginName, reqData, perf)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Response_Data_Data)
@@ -375,7 +387,7 @@ func (_m *PluginExecutor) Test(ctx context.Context, pluginName string, props *v1
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *v1.Request_Data_Data, *v1.Performance) error); ok {
-		r1 = rf(ctx, pluginName, props, perf)
+		r1 = rf(ctx, pluginName, reqData, perf)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -391,13 +403,13 @@ type PluginExecutor_Test_Call struct {
 // Test is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pluginName string
-//   - props *v1.Request_Data_Data
+//   - reqData *v1.Request_Data_Data
 //   - perf *v1.Performance
-func (_e *PluginExecutor_Expecter) Test(ctx interface{}, pluginName interface{}, props interface{}, perf interface{}) *PluginExecutor_Test_Call {
-	return &PluginExecutor_Test_Call{Call: _e.mock.On("Test", ctx, pluginName, props, perf)}
+func (_e *PluginExecutor_Expecter) Test(ctx interface{}, pluginName interface{}, reqData interface{}, perf interface{}) *PluginExecutor_Test_Call {
+	return &PluginExecutor_Test_Call{Call: _e.mock.On("Test", ctx, pluginName, reqData, perf)}
 }
 
-func (_c *PluginExecutor_Test_Call) Run(run func(ctx context.Context, pluginName string, props *v1.Request_Data_Data, perf *v1.Performance)) *PluginExecutor_Test_Call {
+func (_c *PluginExecutor_Test_Call) Run(run func(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, perf *v1.Performance)) *PluginExecutor_Test_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*v1.Request_Data_Data), args[3].(*v1.Performance))
 	})

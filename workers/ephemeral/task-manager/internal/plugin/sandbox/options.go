@@ -22,7 +22,7 @@ type Options struct {
 	Logger               *zap.Logger
 	VariableStoreAddress string
 	KvStore              store.Store
-	IPFilterSetter       IPFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
+	IpFilterSetter       IpFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
 }
 
 type Option func(*Options)
@@ -69,9 +69,9 @@ func WithKvStore(kvStore store.Store) Option {
 	}
 }
 
-func WithIPFilterSetter(ipFilterSetter IPFilterSetter) Option {
+func WithIpFilterSetter(ipFilterSetter IpFilterSetter) Option {
 	return func(o *Options) {
-		o.IPFilterSetter = ipFilterSetter
+		o.IpFilterSetter = ipFilterSetter
 	}
 }
 

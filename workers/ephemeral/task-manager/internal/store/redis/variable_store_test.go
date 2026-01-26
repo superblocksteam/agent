@@ -12,13 +12,19 @@ import (
 	mockstore "github.com/superblocksteam/agent/pkg/store/mock"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 func TestNewVariableStoreGRPC(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	assert.NotNil(t, server)
 	assert.Equal(t, mockStore, server.kvStore)
@@ -30,7 +36,12 @@ func TestStop(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	// Stop should not panic when server is nil
 	server.Stop()
@@ -42,7 +53,12 @@ func TestStop_CalledMultipleTimes(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50051)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50051),
+	)
 
 	// Use a channel to capture the server start result
 	started := make(chan error, 1)
@@ -71,7 +87,12 @@ func TestStop_CalledMultipleTimesConcurrently(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50052)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50052),
+	)
 
 	// Use a channel to capture the server start result
 	started := make(chan error, 1)
@@ -125,7 +146,12 @@ func TestGetVariables(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	ctx := context.Background()
 	req := &workerv1.GetVariablesRequest{
@@ -146,7 +172,12 @@ func TestGetVariablesWithMissingKeys(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	ctx := context.Background()
 	req := &workerv1.GetVariablesRequest{
@@ -167,7 +198,12 @@ func TestSetVariable(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	ctx := context.Background()
 	req := &workerv1.SetVariableRequest{
@@ -189,7 +225,12 @@ func TestSetVariableNewExecution(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	ctx := context.Background()
 	req := &workerv1.SetVariableRequest{
@@ -211,7 +252,12 @@ func TestSetVariables(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	ctx := context.Background()
 	req := &workerv1.SetVariablesRequest{
@@ -240,7 +286,12 @@ func TestSetVariablesEmpty(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	ctx := context.Background()
 	req := &workerv1.SetVariablesRequest{
@@ -336,7 +387,12 @@ func TestKeyAllowlisting(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			logger := zap.NewNop()
 			mockStore := mockstore.NewStore(t)
-			server := NewVariableStoreGRPC(mockStore, logger, 50050)
+			server := NewVariableStoreGRPC(
+				WithKvStore(mockStore),
+				WithServer(grpc.NewServer()),
+				WithLogger(logger),
+				WithPort(50050),
+			)
 
 			// Setup allowlists
 			for execID, keys := range tt.allowlistSetup {
@@ -439,7 +495,12 @@ func TestAllowlistManagement(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			logger := zap.NewNop()
 			mockStore := mockstore.NewStore(t)
-			server := NewVariableStoreGRPC(mockStore, logger, 50050)
+			server := NewVariableStoreGRPC(
+				WithKvStore(mockStore),
+				WithServer(grpc.NewServer()),
+				WithLogger(logger),
+				WithPort(50050),
+			)
 
 			tt.setup(server)
 			tt.check(t, server)
@@ -455,7 +516,12 @@ func TestSecurityViolationHandler_CalledOnDisallowedKey(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	executionID := "exec-violation-test"
 	server.SetAllowedKeys(executionID, []string{"allowed-key"})
@@ -494,7 +560,12 @@ func TestSecurityViolationHandler_CalledOnBatchDisallowedKey(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	executionID := "exec-batch-violation-test"
 	server.SetAllowedKeys(executionID, []string{"key1", "key2"})
@@ -530,7 +601,12 @@ func TestSecurityViolationHandler_NotCalledForAllowedKey(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	executionID := "exec-no-violation"
 	server.SetAllowedKeys(executionID, []string{"allowed-key"})
@@ -564,7 +640,12 @@ func TestSecurityViolationHandler_NotSetDoesNotPanic(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
 
-	server := NewVariableStoreGRPC(mockStore, logger, 50050)
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
 
 	executionID := "exec-no-handler"
 	server.SetAllowedKeys(executionID, []string{"allowed-key"})

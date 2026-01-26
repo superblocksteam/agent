@@ -6,6 +6,7 @@ import {
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT,
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS
 } from './env';
 import { GrpcKvStore } from './grpcKvStore';
@@ -14,6 +15,7 @@ import { MessageTransformer, MessageTransformerImpl, NativeRequest, NativeRespon
 import { ALL_PLUGINS, loadPlugins } from './pluginsLoader';
 import { PluginsRouter } from './pluginsRouter';
 import { Response as ProtoTransportResponse } from './types/transport/v1/transport_pb';
+import { SandboxStreamingProxyServiceClient } from './types/worker/v1/sandbox_streaming_proxy_grpc_pb';
 import { ISandboxTransportServiceServer, SandboxTransportServiceService } from './types/worker/v1/sandbox_transport_grpc_pb';
 import {
   ExecuteRequest as ProtoExecuteRequest,
@@ -21,7 +23,6 @@ import {
   MetadataRequest as ProtoMetadataRequest,
   PreDeleteRequest as ProtoPreDeleteRequest,
   StreamRequest as ProtoStreamRequest,
-  StreamResponse as ProtoStreamResponse,
   TestRequest as ProtoTestRequest
 } from './types/worker/v1/sandbox_transport_pb';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
@@ -79,7 +80,10 @@ function createSandboxTransportService(
       void handleEvent(pluginsRouter.handleExecuteEvent.bind(pluginsRouter), pluginName, nativeRequest, callback, kvStore);
     },
 
-    stream(call: grpc.ServerWritableStream<ProtoStreamRequest, ProtoStreamResponse>, callback: grpc.sendUnaryData<ProtoStreamResponse>) {
+    stream(
+      call: grpc.ServerWritableStream<ProtoStreamRequest, google_protobuf_empty_pb.Empty>,
+      callback: grpc.sendUnaryData<google_protobuf_empty_pb.Empty>
+    ) {
       const pluginName = call.request.getRequest()?.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: StreamRequest = messageTransformer.protoRequestToNative(call.request) as StreamRequest;
       const executionId = nativeRequest.props?.executionId ?? '';
@@ -119,16 +123,21 @@ function createSandboxTransportService(
 
 // Start server
 function main() {
-  const pluginsRouter = new PluginsRouter(logger);
+  const variableStoreClient = new SandboxVariableStoreServiceClient(
+    SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS,
+    grpc.credentials.createInsecure()
+  );
+
+  const streamingClient = new SandboxStreamingProxyServiceClient(
+    SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS,
+    grpc.credentials.createInsecure()
+  );
+
+  const pluginsRouter = new PluginsRouter(logger, streamingClient);
   const plugins = loadPlugins(Object.keys(ALL_PLUGINS));
   Object.entries(plugins).forEach(([pluginId, plugin]) => {
     pluginsRouter.registerPlugin(pluginId, plugin);
   });
-
-  const variableStoreClient = new SandboxVariableStoreServiceClient(
-    SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS,
-    grpc.credentials.createInsecure(),
-  );
 
   const messageTransformer = new MessageTransformerImpl();
   const server = new grpc.Server({

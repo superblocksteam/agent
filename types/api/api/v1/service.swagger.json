@@ -277,13 +277,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/apiv1StreamResponse"
+                  "$ref": "#/definitions/v1StreamResponse"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of apiv1StreamResponse"
+              "title": "Stream result of v1StreamResponse"
             }
           },
           "default": {
@@ -318,13 +318,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/apiv1StreamResponse"
+                  "$ref": "#/definitions/v1StreamResponse"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of apiv1StreamResponse"
+              "title": "Stream result of v1StreamResponse"
             }
           },
           "default": {
@@ -3068,18 +3068,6 @@
             "type": "string",
             "format": "int64"
           }
-        }
-      }
-    },
-    "apiv1StreamResponse": {
-      "type": "object",
-      "properties": {
-        "execution": {
-          "type": "string",
-          "description": "The execution ID. This can be used to retrieve outputs after the fact."
-        },
-        "event": {
-          "$ref": "#/definitions/v1Event"
         }
       }
     },
@@ -6966,6 +6954,18 @@
         }
       }
     },
+    "v1StreamResponse": {
+      "type": "object",
+      "properties": {
+        "execution": {
+          "type": "string",
+          "description": "The execution ID. This can be used to retrieve outputs after the fact."
+        },
+        "event": {
+          "$ref": "#/definitions/v1Event"
+        }
+      }
+    },
     "v1TestResponse": {
       "type": "object"
     },
@@ -7020,7 +7020,7 @@
       "type": "object",
       "properties": {
         "stream": {
-          "$ref": "#/definitions/apiv1StreamResponse"
+          "$ref": "#/definitions/v1StreamResponse"
         },
         "function": {
           "$ref": "#/definitions/v1FunctionRequest"

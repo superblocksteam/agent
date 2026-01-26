@@ -762,15 +762,6 @@
         }
       },
       "title": "Execute request sent to workers"
-    },
-    "workerv1StreamResponse": {
-      "type": "object",
-      "properties": {
-        "response": {
-          "type": "object",
-          "properties": {}
-        }
-      }
     }
   }
 }

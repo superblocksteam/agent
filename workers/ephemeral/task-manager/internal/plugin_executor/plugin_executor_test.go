@@ -9,6 +9,7 @@ import (
 
 	"workers/ephemeral/task-manager/internal/plugin"
 
+	commonErr "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/store"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
@@ -80,7 +81,7 @@ var _ store.Store = (*mockStore)(nil)
 type mockPlugin struct {
 	name         string
 	executeFunc  func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error)
-	streamFunc   func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(message any), until func()) error
+	streamFunc   func(ctx context.Context, topic string, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) error
 	metadataFunc func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error)
 	testFunc     func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error
 	preDeleteFn  func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error
@@ -97,9 +98,9 @@ func (m *mockPlugin) Execute(ctx context.Context, requestMeta *workerv1.RequestM
 	return &workerv1.ExecuteResponse{}, nil
 }
 
-func (m *mockPlugin) Stream(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(message any), until func()) error {
+func (m *mockPlugin) Stream(ctx context.Context, topic string, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) error {
 	if m.streamFunc != nil {
-		return m.streamFunc(ctx, requestMeta, props, quotas, pinned, send, until)
+		return m.streamFunc(ctx, topic, requestMeta, props, quotas, pinned)
 	}
 	return nil
 }
@@ -352,12 +353,16 @@ func TestStreamUnknownPlugin(t *testing.T) {
 	executor := newTestExecutor()
 
 	ctx := context.Background()
+	unknownPlugin := "unknown"
+	anyTopic := "any-topic"
 	reqData := &transportv1.Request_Data_Data{}
+	pinned := &transportv1.Request_Data_Pinned{}
+	perf := &transportv1.Performance{}
 
-	err := executor.Stream(ctx, "unknown", reqData, nil, nil, nil)
+	_, err := executor.Stream(ctx, unknownPlugin, anyTopic, reqData, pinned, perf)
 
-	if err == nil {
-		t.Error("Stream() should return error for unknown plugin")
+	if err == nil || !errors.Is(err, &commonErr.InternalError{}) {
+		t.Errorf("Stream() should return InternalError for unknown plugin, got %v", err)
 	}
 }
 
@@ -366,7 +371,7 @@ func TestStreamSuccess(t *testing.T) {
 
 	mock := &mockPlugin{
 		name: "python",
-		streamFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(message any), until func()) error {
+		streamFunc: func(ctx context.Context, topic string, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) error {
 			return nil
 		},
 	}
@@ -374,12 +379,42 @@ func TestStreamSuccess(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
+	anyTopic := "any-topic"
 	reqData := &transportv1.Request_Data_Data{}
 
-	err := executor.Stream(ctx, "python", reqData, nil, nil, nil)
+	_, err := executor.Stream(ctx, "python", anyTopic, reqData, nil, nil)
 
 	if err != nil {
 		t.Errorf("Stream() error = %v", err)
+	}
+}
+
+func TestStreamSuccessParentPerfIsUpdated(t *testing.T) {
+	executor := newTestExecutor()
+
+	mock := &mockPlugin{
+		name: "python",
+		streamFunc: func(ctx context.Context, topic string, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) error {
+			return nil
+		},
+	}
+
+	executor.RegisterPlugin("python", mock)
+
+	ctx := context.Background()
+	anyTopic := "any-topic"
+	reqData := &transportv1.Request_Data_Data{}
+	pinned := &transportv1.Request_Data_Pinned{}
+	perf := &transportv1.Performance{}
+
+	_, err := executor.Stream(ctx, "python", anyTopic, reqData, pinned, perf)
+
+	if err != nil {
+		t.Errorf("Stream() error = %v", err)
+	}
+
+	if perf.PluginExecution == nil {
+		t.Error("Performance.PluginExecution should be set")
 	}
 }
 
@@ -686,7 +721,7 @@ func TestStreamWithError(t *testing.T) {
 	expectedErr := errors.New("stream error")
 	mock := &mockPlugin{
 		name: "python",
-		streamFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned, send func(message any), until func()) error {
+		streamFunc: func(ctx context.Context, topic string, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) error {
 			return expectedErr
 		},
 	}
@@ -694,9 +729,12 @@ func TestStreamWithError(t *testing.T) {
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
+	anyTopic := "any-topic"
 	reqData := &transportv1.Request_Data_Data{}
+	pinned := &transportv1.Request_Data_Pinned{}
+	perf := &transportv1.Performance{}
 
-	err := executor.Stream(ctx, "python", reqData, nil, nil, nil)
+	_, err := executor.Stream(ctx, "python", anyTopic, reqData, pinned, perf)
 
 	if err != expectedErr {
 		t.Errorf("Stream() error = %v, want %v", err, expectedErr)

@@ -3,6 +3,7 @@
 'use strict';
 var grpc = require('@grpc/grpc-js');
 var worker_v1_sandbox_streaming_proxy_pb = require('../../worker/v1/sandbox_streaming_proxy_pb.js');
+var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 var validate_validate_pb = require('../../validate/validate_pb.js');

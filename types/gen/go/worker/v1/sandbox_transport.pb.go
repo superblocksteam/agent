@@ -76,7 +76,7 @@ func (x StructuredLog_Level) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use StructuredLog_Level.Descriptor instead.
 func (StructuredLog_Level) EnumDescriptor() ([]byte, []int) {
-	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{8, 0}
+	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{7, 0}
 }
 
 type RequestMetadata struct {
@@ -311,6 +311,7 @@ type StreamRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	Request *ExecuteRequest `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	Topic   string          `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
 }
 
 func (x *StreamRequest) Reset() {
@@ -352,51 +353,11 @@ func (x *StreamRequest) GetRequest() *ExecuteRequest {
 	return nil
 }
 
-type StreamResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Response *emptypb.Empty `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
-}
-
-func (x *StreamResponse) Reset() {
-	*x = StreamResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *StreamResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StreamResponse) ProtoMessage() {}
-
-func (x *StreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StreamResponse.ProtoReflect.Descriptor instead.
-func (*StreamResponse) Descriptor() ([]byte, []int) {
-	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *StreamResponse) GetResponse() *emptypb.Empty {
+func (x *StreamRequest) GetTopic() string {
 	if x != nil {
-		return x.Response
+		return x.Topic
 	}
-	return nil
+	return ""
 }
 
 type MetadataRequest struct {
@@ -413,7 +374,7 @@ type MetadataRequest struct {
 func (x *MetadataRequest) Reset() {
 	*x = MetadataRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[5]
+		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -426,7 +387,7 @@ func (x *MetadataRequest) String() string {
 func (*MetadataRequest) ProtoMessage() {}
 
 func (x *MetadataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[5]
+	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -439,7 +400,7 @@ func (x *MetadataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetadataRequest.ProtoReflect.Descriptor instead.
 func (*MetadataRequest) Descriptor() ([]byte, []int) {
-	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{5}
+	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MetadataRequest) GetMetadata() *RequestMetadata {
@@ -484,7 +445,7 @@ type TestRequest struct {
 func (x *TestRequest) Reset() {
 	*x = TestRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[6]
+		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -497,7 +458,7 @@ func (x *TestRequest) String() string {
 func (*TestRequest) ProtoMessage() {}
 
 func (x *TestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[6]
+	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -510,7 +471,7 @@ func (x *TestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestRequest.ProtoReflect.Descriptor instead.
 func (*TestRequest) Descriptor() ([]byte, []int) {
-	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{6}
+	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TestRequest) GetMetadata() *RequestMetadata {
@@ -553,7 +514,7 @@ type PreDeleteRequest struct {
 func (x *PreDeleteRequest) Reset() {
 	*x = PreDeleteRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[7]
+		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -566,7 +527,7 @@ func (x *PreDeleteRequest) String() string {
 func (*PreDeleteRequest) ProtoMessage() {}
 
 func (x *PreDeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[7]
+	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -579,7 +540,7 @@ func (x *PreDeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreDeleteRequest.ProtoReflect.Descriptor instead.
 func (*PreDeleteRequest) Descriptor() ([]byte, []int) {
-	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{7}
+	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PreDeleteRequest) GetMetadata() *RequestMetadata {
@@ -608,7 +569,7 @@ type StructuredLog struct {
 func (x *StructuredLog) Reset() {
 	*x = StructuredLog{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[8]
+		mi := &file_worker_v1_sandbox_transport_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -621,7 +582,7 @@ func (x *StructuredLog) String() string {
 func (*StructuredLog) ProtoMessage() {}
 
 func (x *StructuredLog) ProtoReflect() protoreflect.Message {
-	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[8]
+	mi := &file_worker_v1_sandbox_transport_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -634,7 +595,7 @@ func (x *StructuredLog) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StructuredLog.ProtoReflect.Descriptor instead.
 func (*StructuredLog) Descriptor() ([]byte, []int) {
-	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{8}
+	return file_worker_v1_sandbox_transport_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StructuredLog) GetMessage() string {
@@ -714,16 +675,13 @@ var file_worker_v1_sandbox_transport_proto_rawDesc = []byte{
 	0x67, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72,
 	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74, 0x75, 0x72, 0x65, 0x64, 0x4c, 0x6f,
 	0x67, 0x52, 0x0d, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x75, 0x72, 0x65, 0x64, 0x4c, 0x6f, 0x67,
-	0x42, 0x0c, 0x0a, 0x0a, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x22, 0x44,
+	0x42, 0x0c, 0x0a, 0x0a, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x22, 0x5a,
 	0x0a, 0x0d, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
 	0x33, 0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x19, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x65,
 	0x63, 0x75, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x07, 0x72, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x22, 0x44, 0x0a, 0x0e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x32, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
-	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
-	0x52, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x81, 0x02, 0x0a, 0x0f, 0x4d,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x22, 0x81, 0x02, 0x0a, 0x0f, 0x4d,
 	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x36,
 	0x0a, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x1a, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x71,
@@ -776,33 +734,33 @@ var file_worker_v1_sandbox_transport_proto_rawDesc = []byte{
 	0x10, 0x00, 0x12, 0x0e, 0x0a, 0x0a, 0x4c, 0x45, 0x56, 0x45, 0x4c, 0x5f, 0x49, 0x4e, 0x46, 0x4f,
 	0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x4c, 0x45, 0x56, 0x45, 0x4c, 0x5f, 0x57, 0x41, 0x52, 0x4e,
 	0x10, 0x02, 0x12, 0x0f, 0x0a, 0x0b, 0x4c, 0x45, 0x56, 0x45, 0x4c, 0x5f, 0x45, 0x52, 0x52, 0x4f,
-	0x52, 0x10, 0x03, 0x32, 0xde, 0x02, 0x0a, 0x17, 0x53, 0x61, 0x6e, 0x64, 0x62, 0x6f, 0x78, 0x54,
+	0x52, 0x10, 0x03, 0x32, 0xdb, 0x02, 0x0a, 0x17, 0x53, 0x61, 0x6e, 0x64, 0x62, 0x6f, 0x78, 0x54,
 	0x72, 0x61, 0x6e, 0x73, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
 	0x40, 0x0a, 0x07, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x12, 0x19, 0x2e, 0x77, 0x6f, 0x72,
 	0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76,
 	0x31, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x3d, 0x0a, 0x06, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x77, 0x6f,
+	0x65, 0x12, 0x3a, 0x0a, 0x06, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x77, 0x6f,
 	0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76,
-	0x31, 0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x48, 0x0a, 0x08, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x2e, 0x77,
-	0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x74, 0x72, 0x61, 0x6e, 0x73,
-	0x70, 0x6f, 0x72, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x2e, 0x44, 0x61, 0x74, 0x61, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x12, 0x36, 0x0a, 0x04, 0x54, 0x65,
-	0x73, 0x74, 0x12, 0x16, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x54,
-	0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f,
-	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70,
-	0x74, 0x79, 0x12, 0x40, 0x0a, 0x09, 0x50, 0x72, 0x65, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x12,
-	0x1b, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x44,
-	0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45,
-	0x6d, 0x70, 0x74, 0x79, 0x42, 0x39, 0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
-	0x6f, 0x6d, 0x2f, 0x73, 0x75, 0x70, 0x65, 0x72, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x74, 0x65,
-	0x61, 0x6d, 0x2f, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2f, 0x67,
-	0x65, 0x6e, 0x2f, 0x67, 0x6f, 0x2f, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x48, 0x0a,
+	0x08, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x2e, 0x77, 0x6f, 0x72, 0x6b,
+	0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x70, 0x6f, 0x72,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x44, 0x61,
+	0x74, 0x61, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x12, 0x36, 0x0a, 0x04, 0x54, 0x65, 0x73, 0x74, 0x12,
+	0x16, 0x2e, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12,
+	0x40, 0x0a, 0x09, 0x50, 0x72, 0x65, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x12, 0x1b, 0x2e, 0x77,
+	0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x44, 0x65, 0x6c, 0x65,
+	0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74,
+	0x79, 0x42, 0x39, 0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x73, 0x75, 0x70, 0x65, 0x72, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x74, 0x65, 0x61, 0x6d, 0x2f,
+	0x61, 0x67, 0x65, 0x6e, 0x74, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2f, 0x67, 0x65, 0x6e, 0x2f,
+	0x67, 0x6f, 0x2f, 0x77, 0x6f, 0x72, 0x6b, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -818,65 +776,63 @@ func file_worker_v1_sandbox_transport_proto_rawDescGZIP() []byte {
 }
 
 var file_worker_v1_sandbox_transport_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_worker_v1_sandbox_transport_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_worker_v1_sandbox_transport_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_worker_v1_sandbox_transport_proto_goTypes = []interface{}{
 	(StructuredLog_Level)(0),           // 0: worker.v1.StructuredLog.Level
 	(*RequestMetadata)(nil),            // 1: worker.v1.RequestMetadata
 	(*ExecuteRequest)(nil),             // 2: worker.v1.ExecuteRequest
 	(*ExecuteResponse)(nil),            // 3: worker.v1.ExecuteResponse
 	(*StreamRequest)(nil),              // 4: worker.v1.StreamRequest
-	(*StreamResponse)(nil),             // 5: worker.v1.StreamResponse
-	(*MetadataRequest)(nil),            // 6: worker.v1.MetadataRequest
-	(*TestRequest)(nil),                // 7: worker.v1.TestRequest
-	(*PreDeleteRequest)(nil),           // 8: worker.v1.PreDeleteRequest
-	(*StructuredLog)(nil),              // 9: worker.v1.StructuredLog
-	(*v1.Request_Data_Data_Props)(nil), // 10: transport.v1.Request.Data.Data.Props
-	(*v1.Request_Data_Data_Quota)(nil), // 11: transport.v1.Request.Data.Data.Quota
-	(*v1.Request_Data_Pinned)(nil),     // 12: transport.v1.Request.Data.Pinned
-	(*v11.OutputOld)(nil),              // 13: api.v1.OutputOld
-	(*v12.Error)(nil),                  // 14: common.v1.Error
-	(*timestamppb.Timestamp)(nil),      // 15: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),        // 16: google.protobuf.Duration
+	(*MetadataRequest)(nil),            // 5: worker.v1.MetadataRequest
+	(*TestRequest)(nil),                // 6: worker.v1.TestRequest
+	(*PreDeleteRequest)(nil),           // 7: worker.v1.PreDeleteRequest
+	(*StructuredLog)(nil),              // 8: worker.v1.StructuredLog
+	(*v1.Request_Data_Data_Props)(nil), // 9: transport.v1.Request.Data.Data.Props
+	(*v1.Request_Data_Data_Quota)(nil), // 10: transport.v1.Request.Data.Data.Quota
+	(*v1.Request_Data_Pinned)(nil),     // 11: transport.v1.Request.Data.Pinned
+	(*v11.OutputOld)(nil),              // 12: api.v1.OutputOld
+	(*v12.Error)(nil),                  // 13: common.v1.Error
+	(*timestamppb.Timestamp)(nil),      // 14: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),        // 15: google.protobuf.Duration
+	(*structpb.Struct)(nil),            // 16: google.protobuf.Struct
 	(*emptypb.Empty)(nil),              // 17: google.protobuf.Empty
-	(*structpb.Struct)(nil),            // 18: google.protobuf.Struct
-	(*v1.Response_Data_Data)(nil),      // 19: transport.v1.Response.Data.Data
+	(*v1.Response_Data_Data)(nil),      // 18: transport.v1.Response.Data.Data
 }
 var file_worker_v1_sandbox_transport_proto_depIdxs = []int32{
 	1,  // 0: worker.v1.ExecuteRequest.metadata:type_name -> worker.v1.RequestMetadata
-	10, // 1: worker.v1.ExecuteRequest.props:type_name -> transport.v1.Request.Data.Data.Props
-	11, // 2: worker.v1.ExecuteRequest.quotas:type_name -> transport.v1.Request.Data.Data.Quota
-	12, // 3: worker.v1.ExecuteRequest.pinned:type_name -> transport.v1.Request.Data.Pinned
-	13, // 4: worker.v1.ExecuteResponse.output:type_name -> api.v1.OutputOld
-	14, // 5: worker.v1.ExecuteResponse.error:type_name -> common.v1.Error
-	15, // 6: worker.v1.ExecuteResponse.startTime:type_name -> google.protobuf.Timestamp
-	16, // 7: worker.v1.ExecuteResponse.executionTime:type_name -> google.protobuf.Duration
-	9,  // 8: worker.v1.ExecuteResponse.structuredLog:type_name -> worker.v1.StructuredLog
+	9,  // 1: worker.v1.ExecuteRequest.props:type_name -> transport.v1.Request.Data.Data.Props
+	10, // 2: worker.v1.ExecuteRequest.quotas:type_name -> transport.v1.Request.Data.Data.Quota
+	11, // 3: worker.v1.ExecuteRequest.pinned:type_name -> transport.v1.Request.Data.Pinned
+	12, // 4: worker.v1.ExecuteResponse.output:type_name -> api.v1.OutputOld
+	13, // 5: worker.v1.ExecuteResponse.error:type_name -> common.v1.Error
+	14, // 6: worker.v1.ExecuteResponse.startTime:type_name -> google.protobuf.Timestamp
+	15, // 7: worker.v1.ExecuteResponse.executionTime:type_name -> google.protobuf.Duration
+	8,  // 8: worker.v1.ExecuteResponse.structuredLog:type_name -> worker.v1.StructuredLog
 	2,  // 9: worker.v1.StreamRequest.request:type_name -> worker.v1.ExecuteRequest
-	17, // 10: worker.v1.StreamResponse.response:type_name -> google.protobuf.Empty
-	1,  // 11: worker.v1.MetadataRequest.metadata:type_name -> worker.v1.RequestMetadata
-	18, // 12: worker.v1.MetadataRequest.datasourceConfig:type_name -> google.protobuf.Struct
-	18, // 13: worker.v1.MetadataRequest.actionConfig:type_name -> google.protobuf.Struct
-	1,  // 14: worker.v1.TestRequest.metadata:type_name -> worker.v1.RequestMetadata
-	18, // 15: worker.v1.TestRequest.datasourceConfig:type_name -> google.protobuf.Struct
-	18, // 16: worker.v1.TestRequest.actionConfig:type_name -> google.protobuf.Struct
-	1,  // 17: worker.v1.PreDeleteRequest.metadata:type_name -> worker.v1.RequestMetadata
-	18, // 18: worker.v1.PreDeleteRequest.datasourceConfig:type_name -> google.protobuf.Struct
-	0,  // 19: worker.v1.StructuredLog.level:type_name -> worker.v1.StructuredLog.Level
-	2,  // 20: worker.v1.SandboxTransportService.Execute:input_type -> worker.v1.ExecuteRequest
-	4,  // 21: worker.v1.SandboxTransportService.Stream:input_type -> worker.v1.StreamRequest
-	6,  // 22: worker.v1.SandboxTransportService.Metadata:input_type -> worker.v1.MetadataRequest
-	7,  // 23: worker.v1.SandboxTransportService.Test:input_type -> worker.v1.TestRequest
-	8,  // 24: worker.v1.SandboxTransportService.PreDelete:input_type -> worker.v1.PreDeleteRequest
-	3,  // 25: worker.v1.SandboxTransportService.Execute:output_type -> worker.v1.ExecuteResponse
-	5,  // 26: worker.v1.SandboxTransportService.Stream:output_type -> worker.v1.StreamResponse
-	19, // 27: worker.v1.SandboxTransportService.Metadata:output_type -> transport.v1.Response.Data.Data
-	17, // 28: worker.v1.SandboxTransportService.Test:output_type -> google.protobuf.Empty
-	17, // 29: worker.v1.SandboxTransportService.PreDelete:output_type -> google.protobuf.Empty
-	25, // [25:30] is the sub-list for method output_type
-	20, // [20:25] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	1,  // 10: worker.v1.MetadataRequest.metadata:type_name -> worker.v1.RequestMetadata
+	16, // 11: worker.v1.MetadataRequest.datasourceConfig:type_name -> google.protobuf.Struct
+	16, // 12: worker.v1.MetadataRequest.actionConfig:type_name -> google.protobuf.Struct
+	1,  // 13: worker.v1.TestRequest.metadata:type_name -> worker.v1.RequestMetadata
+	16, // 14: worker.v1.TestRequest.datasourceConfig:type_name -> google.protobuf.Struct
+	16, // 15: worker.v1.TestRequest.actionConfig:type_name -> google.protobuf.Struct
+	1,  // 16: worker.v1.PreDeleteRequest.metadata:type_name -> worker.v1.RequestMetadata
+	16, // 17: worker.v1.PreDeleteRequest.datasourceConfig:type_name -> google.protobuf.Struct
+	0,  // 18: worker.v1.StructuredLog.level:type_name -> worker.v1.StructuredLog.Level
+	2,  // 19: worker.v1.SandboxTransportService.Execute:input_type -> worker.v1.ExecuteRequest
+	4,  // 20: worker.v1.SandboxTransportService.Stream:input_type -> worker.v1.StreamRequest
+	5,  // 21: worker.v1.SandboxTransportService.Metadata:input_type -> worker.v1.MetadataRequest
+	6,  // 22: worker.v1.SandboxTransportService.Test:input_type -> worker.v1.TestRequest
+	7,  // 23: worker.v1.SandboxTransportService.PreDelete:input_type -> worker.v1.PreDeleteRequest
+	3,  // 24: worker.v1.SandboxTransportService.Execute:output_type -> worker.v1.ExecuteResponse
+	17, // 25: worker.v1.SandboxTransportService.Stream:output_type -> google.protobuf.Empty
+	18, // 26: worker.v1.SandboxTransportService.Metadata:output_type -> transport.v1.Response.Data.Data
+	17, // 27: worker.v1.SandboxTransportService.Test:output_type -> google.protobuf.Empty
+	17, // 28: worker.v1.SandboxTransportService.PreDelete:output_type -> google.protobuf.Empty
+	24, // [24:29] is the sub-list for method output_type
+	19, // [19:24] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_worker_v1_sandbox_transport_proto_init() }
@@ -934,18 +890,6 @@ func file_worker_v1_sandbox_transport_proto_init() {
 			}
 		}
 		file_worker_v1_sandbox_transport_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StreamResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_worker_v1_sandbox_transport_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MetadataRequest); i {
 			case 0:
 				return &v.state
@@ -957,7 +901,7 @@ func file_worker_v1_sandbox_transport_proto_init() {
 				return nil
 			}
 		}
-		file_worker_v1_sandbox_transport_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_worker_v1_sandbox_transport_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TestRequest); i {
 			case 0:
 				return &v.state
@@ -969,7 +913,7 @@ func file_worker_v1_sandbox_transport_proto_init() {
 				return nil
 			}
 		}
-		file_worker_v1_sandbox_transport_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_worker_v1_sandbox_transport_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PreDeleteRequest); i {
 			case 0:
 				return &v.state
@@ -981,7 +925,7 @@ func file_worker_v1_sandbox_transport_proto_init() {
 				return nil
 			}
 		}
-		file_worker_v1_sandbox_transport_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_worker_v1_sandbox_transport_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*StructuredLog); i {
 			case 0:
 				return &v.state
@@ -1001,7 +945,7 @@ func file_worker_v1_sandbox_transport_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_worker_v1_sandbox_transport_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

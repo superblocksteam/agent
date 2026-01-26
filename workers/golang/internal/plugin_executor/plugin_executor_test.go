@@ -494,12 +494,9 @@ func TestStream(t *testing.T) {
 			defer mockPlugin.AssertExpectations(t)
 
 			anyCtx := context.Background()
+			anyTopic := "any-topic"
 			anyProps := &transportv1.Request_Data_Data_Props{ExecutionId: "step_id"}
-			anyPerf := &transportv1.Performance{
-				PluginExecution: &transportv1.Performance_Observable{},
-			}
-			anySendFn := func(message any) {}
-			anyUntilFn := func() {}
+			var anyPerf *transportv1.Performance
 
 			executor := NewPluginExecutor(&Options{})
 
@@ -508,16 +505,15 @@ func TestStream(t *testing.T) {
 				mockPlugin.On(
 					"Stream",
 					anyCtx,
+					mock.AnythingOfType("string"),
 					mock.Anything,
 					anyProps,
 					mock.Anything,
 					mock.Anything,
-					mock.AnythingOfType("func(interface {})"),
-					mock.AnythingOfType("func()"),
 				).Return(tc.expectedErr).Once()
 			}
 
-			err := executor.Stream(anyCtx, "v8", anyProps, anyPerf, anySendFn, anyUntilFn)
+			err := executor.Stream(anyCtx, "v8", anyTopic, anyProps, anyPerf)
 
 			assert.Equal(t, tc.expectedErr, err)
 		})

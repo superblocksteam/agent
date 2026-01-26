@@ -31,9 +31,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// IPFilterSetter allows setting IP filters on the variable store
-type IPFilterSetter interface {
-	SetAllowedIP(ip string)
+// IpFilterSetter allows setting IP filters on the variable store
+type IpFilterSetter interface {
+	SetAllowedIps(ips ...string)
 }
 
 // SandboxExecutorPlugin executes code by forwarding to a gRPC sandbox server.
@@ -64,7 +64,7 @@ type SandboxExecutorPlugin struct {
 	jobInfo    *sandboxmanager.SandboxInfo
 
 	// IP filter for the variable store - only accept connections from sandbox
-	ipFilterSetter IPFilterSetter
+	ipFilterSetter IpFilterSetter
 
 	// Mutex for cleanup
 	mu sync.Mutex
@@ -102,7 +102,7 @@ type Options struct {
 	Logger               *zap.Logger
 	VariableStoreAddress string
 	Store                store.Store
-	IPFilterSetter       IPFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
+	IpFilterSetter       IpFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
 }
 
 // NewSandboxExecutorPlugin creates a new sandbox plugin.
@@ -134,7 +134,7 @@ func NewSandboxExecutorPlugin(opts *Options) (*SandboxExecutorPlugin, error) {
 		variableStoreAddress: opts.VariableStoreAddress,
 		store:                opts.Store,
 		jobManager:           opts.JobManager,
-		ipFilterSetter:       opts.IPFilterSetter,
+		ipFilterSetter:       opts.IpFilterSetter,
 	}
 
 	return p, nil
@@ -279,13 +279,12 @@ func (p *SandboxExecutorPlugin) Execute(
 
 // Stream is not supported for sandbox plugins
 func (p *SandboxExecutorPlugin) Stream(
-	ctx context.Context,
+	_ context.Context,
+	_ string,
 	_ *workerv1.RequestMetadata,
-	props *transportv1.Request_Data_Data_Props,
+	_ *transportv1.Request_Data_Data_Props,
 	_ *transportv1.Request_Data_Data_Quota,
 	_ *transportv1.Request_Data_Pinned,
-	send func(message any),
-	until func(),
 ) error {
 	return errors.ErrUnsupported
 }
@@ -337,7 +336,7 @@ func (p *SandboxExecutorPlugin) Run(ctx context.Context) error {
 
 		// Set IP filter on variable store - only accept connections from this sandbox
 		if p.ipFilterSetter != nil {
-			p.ipFilterSetter.SetAllowedIP(jobInfo.Ip)
+			p.ipFilterSetter.SetAllowedIps(jobInfo.Ip)
 		}
 
 		p.logger.Info("sandbox plugin initialized (dynamic mode)",

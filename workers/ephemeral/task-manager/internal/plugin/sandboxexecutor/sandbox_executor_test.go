@@ -192,7 +192,7 @@ func TestSandboxPluginClose(t *testing.T) {
 func TestSandboxPluginStream(t *testing.T) {
 	plugin := &SandboxExecutorPlugin{}
 
-	err := plugin.Stream(context.Background(), nil, nil, nil, nil, nil, nil)
+	err := plugin.Stream(context.Background(), "", nil, nil, nil, nil)
 	if !errors.Is(err, errors.ErrUnsupported) {
 		t.Errorf("Stream() should return ErrUnsupported, got %v", err)
 	}
