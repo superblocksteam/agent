@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enforce WASM sandbox memory limit for host-side allocations
 - Pass a memory limit to the WASM sandbox
 - Control the WASM bindings sandbox rollout via LaunchDarkly
+- Add `Date` object marshalling support in WASM sandbox (`Date` objects are now preserved when passing between host and VM in both directions).
 
 ## v1.31.0
 - Add support for restricting imports and built in functions in Python language execution steps

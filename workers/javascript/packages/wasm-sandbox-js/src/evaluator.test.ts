@@ -859,6 +859,140 @@ describe('evaluateExpressions', () => {
     });
   });
 
+  describe('Date objects', () => {
+    it('passes Date from host to VM via globals and preserves value', async () => {
+      const hostDate = new Date('2024-06-15T12:30:45.123Z');
+      const expression = 'myDate.getTime()';
+      const results = await evaluateExpressions([expression], {
+        globals: { myDate: hostDate }
+      });
+
+      expect(results[expression]).toBe(hostDate.getTime());
+    });
+
+    it('allows Date methods to be called in VM when passed from host', async () => {
+      const hostDate = new Date('2024-06-15T12:30:45.123Z');
+      const expression = '[myDate.getUTCFullYear(), myDate.getUTCMonth(), myDate.getUTCDate(), myDate.getUTCHours()]';
+      const results = await evaluateExpressions([expression], {
+        globals: { myDate: hostDate }
+      });
+
+      expect(results[expression]).toEqual([2024, 5, 15, 12]); // Month is 0-indexed
+    });
+
+    it('returns Date from VM as a real Date instance', async () => {
+      const expression = "new Date('2024-06-15T12:30:45.123Z')";
+      const results = await evaluateExpressions([expression]);
+
+      const result = results[expression];
+      expect(result).toBeInstanceOf(Date);
+      expect((result as Date).getTime()).toBe(new Date('2024-06-15T12:30:45.123Z').getTime());
+    });
+
+    it('preserves Date timestamp in round-trip (host → VM → host)', async () => {
+      const hostDate = new Date('2024-06-15T12:30:45.123Z');
+      const expression = 'myDate'; // Just return the date as-is
+      const results = await evaluateExpressions([expression], {
+        globals: { myDate: hostDate }
+      });
+
+      const result = results[expression];
+      expect(result).toBeInstanceOf(Date);
+      expect((result as Date).getTime()).toBe(hostDate.getTime());
+    });
+
+    it('handles epoch date (Unix timestamp 0)', async () => {
+      const epochDate = new Date(0);
+      const expression = 'myDate.getTime()';
+      const results = await evaluateExpressions([expression], {
+        globals: { myDate: epochDate }
+      });
+
+      expect(results[expression]).toBe(0);
+    });
+
+    it('handles future dates', async () => {
+      const futureDate = new Date('2099-12-31T23:59:59.999Z');
+      const expression = 'myDate.toISOString()';
+      const results = await evaluateExpressions([expression], {
+        globals: { myDate: futureDate }
+      });
+
+      expect(results[expression]).toBe('2099-12-31T23:59:59.999Z');
+    });
+
+    it('handles invalid dates (NaN timestamp)', async () => {
+      const invalidDate = new Date('invalid');
+      const expression = 'Number.isNaN(myDate.getTime())';
+      const results = await evaluateExpressions([expression], {
+        globals: { myDate: invalidDate }
+      });
+
+      expect(results[expression]).toBe(true);
+    });
+
+    it('returns invalid Date from VM correctly', async () => {
+      const expression = "new Date('not a date')";
+      const results = await evaluateExpressions([expression]);
+
+      const result = results[expression];
+      expect(result).toBeInstanceOf(Date);
+      expect(Number.isNaN((result as Date).getTime())).toBe(true);
+    });
+
+    it('handles Date nested in objects', async () => {
+      const hostDate = new Date('2024-06-15T12:30:45.123Z');
+      const expression = '({ created: myDate, updated: myDate })';
+      const results = await evaluateExpressions([expression], {
+        globals: { myDate: hostDate }
+      });
+
+      const result = results[expression] as { created: Date; updated: Date };
+      expect(result.created).toBeInstanceOf(Date);
+      expect(result.updated).toBeInstanceOf(Date);
+      expect(result.created.getTime()).toBe(hostDate.getTime());
+      expect(result.updated.getTime()).toBe(hostDate.getTime());
+    });
+
+    it('handles Date nested in arrays', async () => {
+      const date1 = new Date('2024-01-01T00:00:00.000Z');
+      const date2 = new Date('2024-12-31T23:59:59.999Z');
+      const expression = '[date1, date2]';
+      const results = await evaluateExpressions([expression], {
+        globals: { date1, date2 }
+      });
+
+      const result = results[expression] as Date[];
+      expect(result).toHaveLength(2);
+      expect(result[0]).toBeInstanceOf(Date);
+      expect(result[1]).toBeInstanceOf(Date);
+      expect(result[0].getTime()).toBe(date1.getTime());
+      expect(result[1].getTime()).toBe(date2.getTime());
+    });
+
+    it('creates Date inside VM and returns it', async () => {
+      const expression = 'new Date(1718451045123)'; // Specific timestamp
+      const results = await evaluateExpressions([expression]);
+
+      const result = results[expression];
+      expect(result).toBeInstanceOf(Date);
+      expect((result as Date).getTime()).toBe(1718451045123);
+    });
+
+    it('supports Date arithmetic in VM', async () => {
+      const startDate = new Date('2024-06-15T00:00:00.000Z');
+      // Add 7 days in milliseconds
+      const expression = 'new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000)';
+      const results = await evaluateExpressions([expression], {
+        globals: { startDate }
+      });
+
+      const result = results[expression] as Date;
+      expect(result).toBeInstanceOf(Date);
+      expect(result.toISOString()).toBe('2024-06-22T00:00:00.000Z');
+    });
+  });
+
   describe('misc sandbox security', () => {
     it('prototype pollution in VM does not affect host Object.prototype', async () => {
       // Attempt to pollute Object.prototype inside the VM

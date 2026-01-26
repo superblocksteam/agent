@@ -77,6 +77,8 @@ export function hostFunction<T extends (...args: any[]) => any>(fn: T): HostFunc
 type ToVmHelpers = {
   extractValue: (handle: QuickJSHandle) => unknown;
   eventLoop: EventLoop;
+  /** Creates a Date in the VM from a host Date */
+  createDate: (date: Date) => QuickJSHandle;
   /** Only provided when Buffer support is enabled */
   createBuffer?: (bytes: Buffer) => QuickJSHandle;
 };
@@ -196,6 +198,8 @@ function createVmHostFunction<T extends (...args: unknown[]) => unknown>(ctx: Qu
 
 type FromVmHelpers = {
   isArray: (handle: QuickJSHandle) => boolean;
+  /** Checks if a VM value is a Date instance */
+  isDate: (handle: QuickJSHandle) => boolean;
   /** Only provided when Buffer support is enabled */
   isBuffer?: (handle: QuickJSHandle) => boolean;
   getObjectKeys: (handle: QuickJSHandle) => string[];
@@ -260,6 +264,11 @@ export function marshalToVm(
         "  import { hostFunction } from '@superblocks/wasm-sandbox-js';\n" +
         '  globals: { myFn: hostFunction(myFn) }'
     );
+  }
+
+  // Date - check before Buffer and generic object handling
+  if (hostValue instanceof Date) {
+    return helpers.createDate(hostValue);
   }
 
   // Buffer - check before Array since Buffer is array-like
@@ -351,7 +360,7 @@ function extractValidArrayIndex(key: string, length: number): number | null {
  * @returns The extracted host value
  */
 export function marshalFromVm(ctx: QuickJSContext, handle: QuickJSHandle, helpers: FromVmHelpers): unknown {
-  const { isArray, isBuffer, getObjectKeys, visitedSet, weakSetAdd, weakSetHas } = helpers;
+  const { isArray, isDate, isBuffer, getObjectKeys, visitedSet, weakSetAdd, weakSetHas } = helpers;
 
   const type = ctx.typeof(handle);
 
@@ -365,6 +374,22 @@ export function marshalFromVm(ctx: QuickJSContext, handle: QuickJSHandle, helper
   if (type === 'object') {
     // Check for null before any cycle detection or property access (avoid expensive dump of large objects)
     if (ctx.sameValue(handle, ctx.null)) return null;
+
+    // Check for Date first (before cycle detection and toJSON).
+    // Date objects are value-like types that can be safely referenced multiple times
+    // (each extraction creates a new host Date), so we don't need to track them for cycles.
+    if (isDate(handle)) {
+      const getTimeHandle = ctx.getProp(handle, 'getTime');
+      const result = ctx.callFunction(getTimeHandle, handle, []);
+      getTimeHandle.dispose();
+      if (result.error) {
+        result.error.dispose();
+        throw new Error('Failed to extract Date timestamp');
+      }
+      const timestamp = ctx.getNumber(result.value);
+      result.value.dispose();
+      return new Date(timestamp);
+    }
 
     // Detect cycles using a WeakSet of visited objects.
     if (weakSetHas(visitedSet, handle)) {
@@ -514,6 +539,19 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
     vmBufferFromFn = ctx.getProp(vmBufferHandle, 'from');
   }
 
+  // Date support handles (always enabled - Date is a fundamental JS type)
+  const vmDateHandle = ctx.getProp(ctx.global, 'Date');
+  // Pre-compile a helper function to construct Dates (since callFunction doesn't support `new`)
+  const vmDateConstructorFnResult = ctx.evalCode('(ts) => new Date(ts)', '<dateConstructor>', {
+    type: 'global',
+    strict: false
+  });
+  if (vmDateConstructorFnResult.error) {
+    vmDateConstructorFnResult.error.dispose();
+    throw new Error('Failed to create Date constructor helper');
+  }
+  const vmDateConstructorFn = vmDateConstructorFnResult.value;
+
   // Helper to check if a VM value is an array
   const isArray = (handle: QuickJSHandle): boolean => {
     const result = ctx.callFunction(vmArrayIsArrayFn, vmArrayHandle, [handle]);
@@ -539,6 +577,29 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
         return isBuf;
       }
     : undefined;
+
+  // Pre-compile a helper function to check instanceof Date
+  const vmIsDateFnResult = ctx.evalCode('(obj) => obj instanceof Date', '<isDate>', {
+    type: 'global',
+    strict: false
+  });
+  if (vmIsDateFnResult.error) {
+    vmIsDateFnResult.error.dispose();
+    throw new Error('Failed to create isDate helper');
+  }
+  const vmIsDateFn = vmIsDateFnResult.value;
+
+  // Helper to check if a VM value is a Date (using instanceof check)
+  const isDate = (handle: QuickJSHandle): boolean => {
+    const result = ctx.callFunction(vmIsDateFn, ctx.undefined, [handle]);
+    if (result.error) {
+      result.error.dispose();
+      return false;
+    }
+    const isDateValue = ctx.sameValue(result.value, ctx.true);
+    result.value.dispose();
+    return isDateValue;
+  };
 
   // Helper to get object keys from a VM object
   const getObjectKeys = (handle: QuickJSHandle): string[] => {
@@ -585,6 +646,19 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
       }
     : undefined;
 
+  // Helper to create a VM Date from a host Date
+  const createDate = (date: Date): QuickJSHandle => {
+    const timestampHandle = ctx.newNumber(date.getTime());
+    const result = ctx.callFunction(vmDateConstructorFn, ctx.undefined, [timestampHandle]);
+    timestampHandle.dispose();
+    if (result.error) {
+      const errorDump = ctx.dump(result.error);
+      result.error.dispose();
+      throw new Error(`Failed to create Date in VM: ${JSON.stringify(errorDump)}`);
+    }
+    return result.value;
+  };
+
   const createVisitedSet = (): QuickJSHandle => {
     const result = ctx.evalCode('new WeakSet()', '<weakset>', { type: 'global', strict: false });
     if (result.error) {
@@ -616,7 +690,7 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
     result.value.dispose();
   };
 
-  const baseFromVmHelpers = { isArray, isBuffer, getObjectKeys, weakSetHas, weakSetAdd } as const;
+  const baseFromVmHelpers = { isArray, isDate, isBuffer, getObjectKeys, weakSetHas, weakSetAdd } as const;
 
   const extractValue = (handle: QuickJSHandle): unknown => {
     const visitedSet = createVisitedSet();
@@ -629,13 +703,16 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
   };
 
   const injectValue = (value: unknown): QuickJSHandle => {
-    return marshalToVm(ctx, value, { extractValue, eventLoop, createBuffer });
+    return marshalToVm(ctx, value, { extractValue, eventLoop, createDate, createBuffer });
   };
 
   const dispose = (): void => {
     vmBufferFromFn?.dispose();
     vmBufferIsBufferFn?.dispose();
     vmBufferHandle?.dispose();
+    vmIsDateFn.dispose();
+    vmDateConstructorFn.dispose();
+    vmDateHandle.dispose();
     vmWeakSetAddFn.dispose();
     vmWeakSetHasFn.dispose();
     vmWeakSetPrototype.dispose();
