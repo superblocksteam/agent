@@ -8,16 +8,6 @@ x-tolerations: &tolerations
 x-selector: &selector
   nodeSelector:
     superblocks.com/node-type: lang-exec-worker
-x-worker-python-fleet-shared: &worker_python_fleet_shared
-  events: execute
-  autoscaling:
-    disable: false
-  package: python
-x-worker-javascript-process-worker: &worker_javascript_process_worker
-  worker:
-    execution:
-      pool:
-        size: 4
 superblocks:
   url: 'https://api.superblocks.com'
   key: <override>
@@ -161,7 +151,6 @@ worker_js:
   !!merge <<: *selector
   fleets:
     main.ba.javascript.shared.auxillary:
-      !!merge <<: *worker_javascript_process_worker
       bucket: BA
       async: true
       events: '!execute'
@@ -173,14 +162,12 @@ worker_js:
       autoscaling:
         min: 1
     main.ba.javascript.shared.execute:
-      !!merge <<: *worker_javascript_process_worker
       bucket: BA
       async: true
       group: two
       package: non-lang
       events: execute
     main.be.javascript.shared.execute:
-      !!merge <<: *worker_javascript_process_worker
       bucket: BE
       async: true
       group: three
