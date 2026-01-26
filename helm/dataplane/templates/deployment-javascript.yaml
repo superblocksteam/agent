@@ -70,7 +70,7 @@ spec:
       {{- end }}
       containers:
       - name: worker
-        image: "{{ (($v.image).repository) | default ($.Values.image.repository | default "ghcr.io/superblocksteam/worker.js") }}:{{ (($v.image).tag) | default ($.Values.image.tag | default "latest") }}"
+        image: "{{ (($v.image).repository) | default ($.Values.image.worker_js.repository | default "ghcr.io/superblocksteam/worker.js") }}:{{ ($.Values.image.worker_js.tag | default "latest") }}"
         imagePullPolicy: {{ $.Values.image.pullPolicy | default "IfNotPresent" }}
         resources:
           {{- toYaml (deepCopy ($.Values.resources | default dict) | merge ($v.resources)) | nindent 10 }}
