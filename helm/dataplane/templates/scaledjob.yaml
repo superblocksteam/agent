@@ -13,7 +13,7 @@
 # =============================================================================
 {{- range $k, $v := .Values.ephemeral_worker.fleets }}
 {{- $language := $v.language | required "language is required (python or javascript)" }}
-{{- $sandboxConfig := index $.Values.sandbox $language }}
+{{- $sandboxConfig := index $.Values.ephemeral_worker.sandbox $language }}
 {{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
 ---
 apiVersion: keda.sh/v1alpha1
@@ -23,22 +23,22 @@ metadata:
   labels:
     {{- include "ephemeral.worker.labels" $v | nindent 4 }}
 spec:
-  pollingInterval: {{ $v.keda.pollingInterval | default $.Values.keda.pollingInterval }}
-  successfulJobsHistoryLimit: {{ $v.keda.successfulJobsHistoryLimit | default $.Values.keda.successfulJobsHistoryLimit }}
-  failedJobsHistoryLimit: {{ $v.keda.failedJobsHistoryLimit | default $.Values.keda.failedJobsHistoryLimit }}
-  maxReplicaCount: {{ $v.keda.maxReplicaCount | default $.Values.keda.maxReplicaCount }}
-  minReplicaCount: {{ $v.keda.minReplicaCount | default $.Values.keda.minReplicaCount }}
-  {{- if or $v.keda.triggers $.Values.keda.triggers }}
+  pollingInterval: {{ $v.keda.pollingInterval | default $.Values.ephemeral_worker.keda.pollingInterval }}
+  successfulJobsHistoryLimit: {{ $v.keda.successfulJobsHistoryLimit | default $.Values.ephemeral_worker.keda.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ $v.keda.failedJobsHistoryLimit | default $.Values.ephemeral_worker.keda.failedJobsHistoryLimit }}
+  maxReplicaCount: {{ $v.keda.maxReplicaCount | default $.Values.ephemeral_worker.keda.maxReplicaCount }}
+  minReplicaCount: {{ $v.keda.minReplicaCount | default $.Values.ephemeral_worker.keda.minReplicaCount }}
+  {{- if or $v.keda.triggers $.Values.ephemeral_worker.keda.triggers }}
   triggers:
-    {{- toYaml ($v.keda.triggers | default $.Values.keda.triggers) | nindent 4 }}
+    {{- toYaml ($v.keda.triggers | default $.Values.ephemeral_worker.keda.triggers) | nindent 4 }}
   {{- else }}
   triggers:
     {{- range $v.triggerStreams }}
     - type: redis-streams
       metadata:
-        host: {{ $.Values.queue.host }}
-        port: {{ $.Values.queue.port | quote }}
-        enableTLS: {{ $.Values.queue.tls | quote }}
+        host: {{ $.Values.ephemeral_worker.queue.host }}
+        port: {{ $.Values.ephemeral_worker.queue.port | quote }}
+        enableTLS: {{ $.Values.ephemeral_worker.queue.tls | quote }}
         stream: {{ . }}
         consumerGroup: {{ $v.consumerGroup }}
         activationLagCount: "1"
@@ -47,12 +47,12 @@ spec:
     {{- end }}
   {{- end }}
   scalingStrategy:
-    {{- toYaml ($v.keda.scalingStrategy | default $.Values.keda.scalingStrategy | default (dict "strategy" "accurate")) | nindent 4 }}
+    {{- toYaml ($v.keda.scalingStrategy | default $.Values.ephemeral_worker.keda.scalingStrategy | default (dict "strategy" "accurate")) | nindent 4 }}
   jobTargetRef:
     parallelism: 1
     completions: 1
     backoffLimit: 0
-    ttlSecondsAfterFinished: {{ $v.keda.ttlSecondsAfterFinished | default $.Values.keda.ttlSecondsAfterFinished }}
+    ttlSecondsAfterFinished: {{ $v.keda.ttlSecondsAfterFinished | default $.Values.ephemeral_worker.keda.ttlSecondsAfterFinished }}
     template:
       metadata:
         labels:
@@ -67,27 +67,27 @@ spec:
         restartPolicy: Never
         terminationGracePeriodSeconds: 60
         serviceAccountName: task-manager
-        {{- if $.Values.image.credentials }}
+        {{- if $.Values.ephemeral_worker.image.credentials }}
         imagePullSecrets:
         - name: ephemeral-worker-docker
         {{- end }}
 
         containers:
         - name: task-manager
-          image: "{{ (($v.taskManager).image).repository | default $.Values.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.taskManager.image.tag }}"
-          imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
+          image: "{{ (($v.taskManager).image).repository | default $.Values.ephemeral_worker.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.ephemeral_worker.taskManager.image.tag }}"
+          imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.ephemeral_worker.taskManager.image.pullPolicy }}
           resources:
-            {{- toYaml (deepCopy ($.Values.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
-          {{- if $.Values.taskManager.probesEnabled }}
-          {{- with (($v.taskManager).startupProbe) | default $.Values.taskManager.startupProbe }}
+            {{- toYaml (deepCopy ($.Values.ephemeral_worker.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
+          {{- if $.Values.ephemeral_worker.taskManager.probesEnabled }}
+          {{- with (($v.taskManager).startupProbe) | default $.Values.ephemeral_worker.taskManager.startupProbe }}
           startupProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with (($v.taskManager).readinessProbe) | default $.Values.taskManager.readinessProbe }}
+          {{- with (($v.taskManager).readinessProbe) | default $.Values.ephemeral_worker.taskManager.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with (($v.taskManager).livenessProbe) | default $.Values.taskManager.livenessProbe }}
+          {{- with (($v.taskManager).livenessProbe) | default $.Values.ephemeral_worker.taskManager.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -97,7 +97,7 @@ spec:
           # Ephemeral mode - process one job and exit
           {{- if $v.ephemeral }}
           - "--worker.ephemeral=true"
-          {{- else if $.Values.worker.ephemeral }}
+          {{- else if $.Values.ephemeral_worker.worker.ephemeral }}
           - "--worker.ephemeral=true"
           {{- else }}
           - "--worker.ephemeral=false"
@@ -105,122 +105,122 @@ spec:
           # Whether to use separate transport streams for sandboxed executions
           {{- if $v.useSeparateSandboxStreams }}
           - "--worker.sandbox.streams.separate=true"
-          {{- else if $.Values.worker.useSeparateSandboxStreams }}
+          {{- else if $.Values.ephemeral_worker.worker.useSeparateSandboxStreams }}
           - "--worker.sandbox.streams.separate=true"
           {{- else }}
           - "--worker.sandbox.streams.separate=false"
           {{- end }}
           # Health check configuration
-          - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.taskManager.healthFilePath }}"
+          - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.ephemeral_worker.taskManager.healthFilePath }}"
           # Logging
-          - "--log.level={{ $.Values.observability.logging.level }}"
+          - "--log.level={{ $.Values.ephemeral_worker.observability.logging.level }}"
           # Sandbox mode - create separate sandbox Jobs
           - "--sandbox.namespace={{ $.Release.Namespace }}"
           - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
           - "--sandbox.lang-executor.image={{ (($v.sandbox).langExecutorImage).repository | default $sandboxConfig.langExecutorImage.repository }}:{{ (($v.sandbox).langExecutorImage).tag | default $sandboxConfig.langExecutorImage.tag }}"
-          - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox.port }}"
-          - "--sandbox.ttl={{ $.Values.sandboxJob.ttlSecondsAfterFinished | default 60 }}"
-          {{- if or $.Values.sandbox.runtimeClassName $.Values.runtimeClassName }}
-          - "--sandbox.runtimeClass={{ $.Values.sandbox.runtimeClassName | default $.Values.runtimeClassName }}"
+          - "--sandbox.port={{ $sandboxConfig.port | default $.Values.ephemeral_worker.sandbox.port }}"
+          - "--sandbox.ttl={{ $.Values.ephemeral_worker.sandboxJob.ttlSecondsAfterFinished | default 60 }}"
+          {{- if or $.Values.ephemeral_worker.sandbox.runtimeClassName $.Values.ephemeral_worker.runtimeClassName }}
+          - "--sandbox.runtimeClass={{ $.Values.ephemeral_worker.sandbox.runtimeClassName | default $.Values.ephemeral_worker.runtimeClassName }}"
           {{- end }}
-          {{- if $.Values.image.credentials }}
+          {{- if $.Values.ephemeral_worker.image.credentials }}
           - "--sandbox.imagePullSecrets=ephemeral-worker-docker"
           {{- end }}
-          {{- if or $.Values.nodeSelector $.Values.sandbox.nodeSelector }}
-          - "--sandbox.nodeSelector={{ include "mapToStringFlag" ($.Values.sandbox.nodeSelector | default $.Values.nodeSelector) }}"
+          {{- if or $.Values.nodeSelector $.Values.ephemeral_worker.sandbox.nodeSelector }}
+          - "--sandbox.nodeSelector={{ include "mapToStringFlag" ($.Values.ephemeral_worker.sandbox.nodeSelector | default $.Values.ephemeral_worker.nodeSelector) }}"
           {{- end }}
-          {{- range ($.Values.sandbox.tolerations | default $.Values.tolerations) }}
+          {{- range ($.Values.ephemeral_worker.sandbox.tolerations | default $.Values.ephemeral_worker.tolerations) }}
           - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
           {{- end }}
           # gRPC configuration (variable store for sandbox)
-          - "--grpc.port={{ $.Values.grpc.port }}"
+          - "--variable.store={{ $.Values.ephemeral_worker.grpc.port }}"
           # Worker configuration
           - "--worker.consumer.group={{ $v.consumerGroup }}"
           {{- if $v.plugins }}
           - "--worker.plugins={{ join "," $v.plugins }}"
-          {{- else if $.Values.worker.plugins }}
-          - "--worker.plugins={{ join "," $.Values.worker.plugins }}"
+          {{- else if $.Values.ephemeral_worker.worker.plugins }}
+          - "--worker.plugins={{ join "," $.Values.ephemeral_worker.worker.plugins }}"
           {{- end }}
           {{- if $v.events }}
           - "--worker.events={{ join "," $v.events }}"
-          {{- else if $.Values.worker.events }}
-          - "--worker.events={{ join "," $.Values.worker.events }}"
+          {{- else if $.Values.ephemeral_worker.worker.events }}
+          - "--worker.events={{ join "," $.Values.ephemeral_worker.worker.events }}"
           {{- end }}
           {{- if $v.streams }}
           - "--worker.stream.keys={{ join "," $v.streams }}"
-          {{- else if $.Values.worker.streams }}
-          - "--worker.stream.keys={{ join "," $.Values.worker.streams }}"
+          {{- else if $.Values.ephemeral_worker.worker.streams }}
+          - "--worker.stream.keys={{ join "," $.Values.ephemeral_worker.worker.streams }}"
           {{- else }}
-          - "--worker.group={{ $.Values.worker.group }}"
+          - "--worker.group={{ $.Values.ephemeral_worker.worker.group }}"
           {{- if $v.buckets }}
           - "--worker.buckets={{ join "," $v.buckets }}"
-          {{- else if $.Values.worker.buckets }}
-          - "--worker.buckets={{ join "," $.Values.worker.buckets }}"
+          {{- else if $.Values.ephemeral_worker.worker.buckets }}
+          - "--worker.buckets={{ join "," $.Values.ephemeral_worker.worker.buckets }}"
           {{- end }}
           {{- end }}
           # Redis transport
-          - "--transport.redis.host={{ $.Values.queue.host }}"
-          - "--transport.redis.port={{ $.Values.queue.port }}"
-          - "--transport.redis.tls={{ $.Values.queue.tls }}"
-          {{- if $.Values.queue.servername }}
-          - "--transport.redis.servername={{ $.Values.queue.servername }}"
+          - "--transport.redis.host={{ $.Values.ephemeral_worker.queue.host }}"
+          - "--transport.redis.port={{ $.Values.ephemeral_worker.queue.port }}"
+          - "--transport.redis.tls={{ $.Values.ephemeral_worker.queue.tls }}"
+          {{- if $.Values.ephemeral_worker.queue.servername }}
+          - "--transport.redis.servername={{ $.Values.ephemeral_worker.queue.servername }}"
           {{- end }}
-          - "--transport.redis.block.duration={{ $.Values.queue.blockDuration }}"
-          - "--transport.redis.max.messages={{ $.Values.queue.batchSize }}"
-          - "--transport.redis.execution.pool={{ $.Values.queue.executionPool }}"
-          - "--transport.redis.pool.max={{ $.Values.queue.pool.max }}"
-          - "--transport.redis.pool.min={{ $.Values.queue.pool.min }}"
-          {{- if $.Values.queue.timeout.dial }}
-          - "--transport.redis.timeout.dial={{ $.Values.queue.timeout.dial }}"
+          - "--transport.redis.block.duration={{ $.Values.ephemeral_worker.queue.blockDuration }}"
+          - "--transport.redis.max.messages={{ $.Values.ephemeral_worker.queue.batchSize }}"
+          - "--transport.redis.execution.pool={{ $.Values.ephemeral_worker.queue.executionPool }}"
+          - "--transport.redis.pool.max={{ $.Values.ephemeral_worker.queue.pool.max }}"
+          - "--transport.redis.pool.min={{ $.Values.ephemeral_worker.queue.pool.min }}"
+          {{- if $.Values.ephemeral_worker.queue.timeout.dial }}
+          - "--transport.redis.timeout.dial={{ $.Values.ephemeral_worker.queue.timeout.dial }}"
           {{- end }}
-          {{- if $.Values.queue.timeout.read }}
-          - "--transport.redis.timeout.read={{ $.Values.queue.timeout.read }}"
+          {{- if $.Values.ephemeral_worker.queue.timeout.read }}
+          - "--transport.redis.timeout.read={{ $.Values.ephemeral_worker.queue.timeout.read }}"
           {{- end }}
-          {{- if $.Values.queue.timeout.write }}
-          - "--transport.redis.timeout.write={{ $.Values.queue.timeout.write }}"
+          {{- if $.Values.ephemeral_worker.queue.timeout.write }}
+          - "--transport.redis.timeout.write={{ $.Values.ephemeral_worker.queue.timeout.write }}"
           {{- end }}
-          {{- if $.Values.queue.timeout.pool }}
-          - "--transport.redis.timeout.pool={{ $.Values.queue.timeout.pool }}"
+          {{- if $.Values.ephemeral_worker.queue.timeout.pool }}
+          - "--transport.redis.timeout.pool={{ $.Values.ephemeral_worker.queue.timeout.pool }}"
           {{- end }}
           # Redis store
-          - "--store.redis.host={{ $.Values.kvstore.host }}"
-          - "--store.redis.port={{ $.Values.kvstore.port }}"
-          - "--store.redis.tls={{ $.Values.kvstore.tls }}"
-          {{- if $.Values.kvstore.servername }}
-          - "--store.redis.servername={{ $.Values.kvstore.servername }}"
+          - "--store.redis.host={{ $.Values.ephemeral_worker.kvstore.host }}"
+          - "--store.redis.port={{ $.Values.ephemeral_worker.kvstore.port }}"
+          - "--store.redis.tls={{ $.Values.ephemeral_worker.kvstore.tls }}"
+          {{- if $.Values.ephemeral_worker.kvstore.servername }}
+          - "--store.redis.servername={{ $.Values.ephemeral_worker.kvstore.servername }}"
           {{- end }}
-          - "--store.redis.pool.max={{ $.Values.kvstore.pool.max }}"
-          - "--store.redis.pool.min={{ $.Values.kvstore.pool.min }}"
-          {{- if $.Values.kvstore.timeout.dial }}
-          - "--store.redis.timeout.dial={{ $.Values.kvstore.timeout.dial }}"
+          - "--store.redis.pool.max={{ $.Values.ephemeral_worker.kvstore.pool.max }}"
+          - "--store.redis.pool.min={{ $.Values.ephemeral_worker.kvstore.pool.min }}"
+          {{- if $.Values.ephemeral_worker.kvstore.timeout.dial }}
+          - "--store.redis.timeout.dial={{ $.Values.ephemeral_worker.kvstore.timeout.dial }}"
           {{- end }}
-          {{- if $.Values.kvstore.timeout.read }}
-          - "--store.redis.timeout.read={{ $.Values.kvstore.timeout.read }}"
+          {{- if $.Values.ephemeral_worker.kvstore.timeout.read }}
+          - "--store.redis.timeout.read={{ $.Values.ephemeral_worker.kvstore.timeout.read }}"
           {{- end }}
-          {{- if $.Values.kvstore.timeout.write }}
-          - "--store.redis.timeout.write={{ $.Values.kvstore.timeout.write }}"
+          {{- if $.Values.ephemeral_worker.kvstore.timeout.write }}
+          - "--store.redis.timeout.write={{ $.Values.ephemeral_worker.kvstore.timeout.write }}"
           {{- end }}
-          {{- if $.Values.kvstore.timeout.pool }}
-          - "--store.redis.timeout.pool={{ $.Values.kvstore.timeout.pool }}"
+          {{- if $.Values.ephemeral_worker.kvstore.timeout.pool }}
+          - "--store.redis.timeout.pool={{ $.Values.ephemeral_worker.kvstore.timeout.pool }}"
           {{- end }}
           # Observability
-          {{- if $.Values.observability.tracing.url }}
-          - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"
+          {{- if $.Values.ephemeral_worker.observability.tracing.url }}
+          - "--otel.collector.http.url={{ $.Values.ephemeral_worker.observability.tracing.url }}"
           {{- end }}
-          {{- if $.Values.observability.tracing.batchTimeout }}
-          - "--otel.batcher.batch.timeout={{ $.Values.observability.tracing.batchTimeout }}"
+          {{- if $.Values.ephemeral_worker.observability.tracing.batchTimeout }}
+          - "--otel.batcher.batch.timeout={{ $.Values.ephemeral_worker.observability.tracing.batchTimeout }}"
           {{- end }}
-          {{- if $.Values.observability.tracing.exportTimeout }}
-          - "--otel.batcher.export.timeout={{ $.Values.observability.tracing.exportTimeout }}"
+          {{- if $.Values.ephemeral_worker.observability.tracing.exportTimeout }}
+          - "--otel.batcher.export.timeout={{ $.Values.ephemeral_worker.observability.tracing.exportTimeout }}"
           {{- end }}
-          {{- if $.Values.observability.tracing.maxExportBatchSize }}
-          - "--otel.batcher.export.batch.max={{ $.Values.observability.tracing.maxExportBatchSize }}"
+          {{- if $.Values.ephemeral_worker.observability.tracing.maxExportBatchSize }}
+          - "--otel.batcher.export.batch.max={{ $.Values.ephemeral_worker.observability.tracing.maxExportBatchSize }}"
           {{- end }}
-          {{- if $.Values.observability.tracing.maxQueueSize }}
-          - "--otel.batcher.export.queue.max={{ $.Values.observability.tracing.maxQueueSize }}"
+          {{- if $.Values.ephemeral_worker.observability.tracing.maxQueueSize }}
+          - "--otel.batcher.export.queue.max={{ $.Values.ephemeral_worker.observability.tracing.maxQueueSize }}"
           {{- end }}
           # Extra args from values
-          {{- with $.Values.taskManager.extraArgs }}
+          {{- with $.Values.ephemeral_worker.taskManager.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
           {{- with ($v.taskManager).extraArgs }}
@@ -245,44 +245,38 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.uid
-          {{- if $.Values.queue.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: queue-redis-token
                 key: token
-          {{- end }}
-          {{- if $.Values.kvstore.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: kvstore-redis-token
                 key: token
-          {{- end }}
-          {{- if $.Values.superblocks.key }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_SUPERBLOCKS_KEY
             valueFrom:
               secretKeyRef:
                 name: dataplane-superblocks-key
                 key: key
-          {{- end }}
           {{- with ($v.taskManager).extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
           ports:
           - name: grpc
-            containerPort: {{ $.Values.grpc.port }}
+            containerPort: {{ $.Values.ephemeral_worker.grpc.port }}
             protocol: TCP
 
-        {{- with $v.nodeSelector | default $.Values.nodeSelector }}
+        {{- with $v.nodeSelector | default $.Values.ephemeral_worker.nodeSelector }}
         nodeSelector:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- with $v.affinity | default $.Values.affinity }}
+        {{- with $v.affinity | default $.Values.ephemeral_worker.affinity }}
         affinity:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- with $v.tolerations | default $.Values.tolerations }}
+        {{- with $v.tolerations | default $.Values.ephemeral_worker.tolerations }}
         tolerations:
           {{- toYaml . | nindent 10 }}
         {{- end }}

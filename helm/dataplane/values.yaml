@@ -176,31 +176,197 @@ worker_js:
       autoscaling:
         min: 1
 ephemeral_worker:
-  deploy: true
-  disableNodeSelector: true
-  disableTolerations: true
+  fleets: {}
+  # Task Manager configuration
+  taskManager:
+    image:
+      repository: ghcr.io/superblocksteam/task-manager
+      tag: latest
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    # Additional args to pass to the task-manager
+    extraArgs: []
+    # Health file path for file-based probes
+    healthFilePath: /tmp/worker_healthy
+    # Set to false to disable all probes (startup, readiness, liveness)
+    probesEnabled: true
+    # Startup probe - checks if health file exists (created when Redis and sandbox are ready)
+    startupProbe:
+      exec:
+        command:
+          - cat
+          - /tmp/worker_healthy
+      failureThreshold: 30 # Allow up to 60 seconds for startup (30 * 2s)
+      periodSeconds: 2
+    # Readiness probe - checks if Redis and sandbox are reachable
+    readinessProbe:
+      exec:
+        command:
+          - cat
+          - /tmp/worker_healthy
+    # Liveness probe - checks if task-manager and sandbox are alive
+    livenessProbe:
+      exec:
+        command:
+          - cat
+          - /tmp/worker_healthy
+  # Sandbox configurations (per language)
+  sandbox:
+    # Default gRPC port for sandbox pods (used in NetworkPolicy)
+    port: 50051
+    # Runtime class for sandbox pods (e.g., gvisor for secure isolation)
+    # Falls back to global runtimeClassName if not set
+    runtimeClassName: ""
+    python:
+      image:
+        repository: ghcr.io/superblocksteam/javascript-sandbox
+        tag: latest
+        pullPolicy: IfNotPresent
+      langExecutorImage:
+        repository: ghcr.io/superblocksteam/python-lang-executor-sandbox
+        tag: latest
+        pullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+      port: 50051
+      # Additional args/env for the python sandbox
+      extraEnv: []
+    javascript:
+      image:
+        repository: ghcr.io/superblocksteam/javascript-sandbox
+        tag: latest
+        pullPolicy: IfNotPresent
+      langExecutorImage:
+        repository: ghcr.io/superblocksteam/javascript-lang-executor-sandbox
+        tag: latest
+        pullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+      port: 50051
+      # Additional args/env for the javascript sandbox
+      extraEnv: []
+  # Sandbox Job configuration
+  # Task-manager creates sandbox Jobs dynamically for each execution
+  sandboxJob:
+    # Auto-delete job 60s after completion (success or failure)
+    ttlSecondsAfterFinished: 60
+    # No restart attempts on failure
+    backoffLimit: 0
+  # KEDA ScaledJob configuration
+  keda:
+    pollingInterval: 5
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    ttlSecondsAfterFinished: 30 # Auto-cleanup completed pods after 30 seconds
+    maxReplicaCount: 100
+    minReplicaCount: 0
+    # Scaling strategy: "default", "custom", or "accurate"
+    # "accurate" provides more precise scaling based on pending jobs
+    scalingStrategy:
+      strategy: accurate
+    # Scaling triggers - typically Redis stream length
+    triggers: []
+    # Example:
+    # triggers:
+    #   - type: redis-streams
+    #     metadata:
+    #       address: redis:6379
+    #       stream: sandbox:work:python
+    #       consumerGroup: ephemeral-python
+    #       activationLagCount: "3"
+  # Redis transport configuration
+  queue:
+    deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)
+    tls: false
+    host: redis
+    servername: ""
+    port: 6379
+    password: ""
+    blockDuration: 5s
+    batchSize: 10
+    executionPool: 100
+    pool:
+      min: 5
+      max: 10
+    timeout:
+      dial: 5s
+      read: 5m
+      write: 10s
+      pool: 5m
+  # Redis kvstore configuration
+  kvstore:
+    deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)
+    tls: false
+    host: redis
+    servername: ""
+    port: 6379
+    password: ""
+    pool:
+      min: 5
+      max: 10
+    timeout:
+      dial: 5s
+      read: 5m
+      write: 10s
+      pool: 5m
+  # gRPC configuration
+  grpc:
+    port: 50050
+  # Worker configuration
+  worker:
+    group: main
+    events:
+      - execute
+  # Observability
+  observability:
+    logging:
+      level: info
+    tracing:
+      url: ""
+      batchTimeout: 1s
+      exportTimeout: 15s
+      maxExportBatchSize: 1000
+      maxQueueSize: 5000
+  # Superblocks configuration
   superblocks:
     key: <override>
-  queue:
-    host: '<override>'
-    password: '<override>'
-    tls: false
-    servername: ""
-    pool:
-      min: 10
-      max: 50
-    timeout:
-      dial: 20s
-  kvstore:
-    host: '<override>'
-    password: '<override>'
-    tls: false
-    servername: ""
-    pool:
-      min: 10
-      max: 50
-    timeout:
-      dial: 20s
-  taskManager:
-    probesEnabled: false
-  fleets: {}
+  # Pod configuration
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+  # Network isolation configuration
+  # Blocks sandbox from accessing internal infrastructure via iptables
+  network:
+    # VPC CIDR to block - set this to your cloud VPC range
+    # Leave empty to block ALL RFC 1918 private ranges (10.x, 172.16.x, 192.168.x)
+    vpcCIDR: ""
+    # Kubernetes service CIDR (blocks access to k8s services)
+    serviceCIDR: ""
+    # Additional CIDRs to block (list)
+    additionalBlockedCIDRs: []
+    # Additional CIDRs to allow (list) - for customer internal APIs that should be accessible
+    # These CIDRs will be explicitly allowed even if they fall within blocked ranges
+    additionalAllowedCIDRs: []
+  # gVisor runtime class name (if using gVisor for sandbox isolation)
+  # Set this to your gVisor RuntimeClass name (e.g., "gvisor", "runsc")
+  runtimeClassName: ""
+  # Image pull secrets
+  image:
+    credentials:
+      registry: ghcr.io
+      username: '<override>'
+      password: '<override>'
