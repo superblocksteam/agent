@@ -3,6 +3,8 @@
 'use strict';
 var grpc = require('@grpc/grpc-js');
 var worker_v1_sandbox_variable_store_pb = require('../../worker/v1/sandbox_variable_store_pb.js');
+var google_api_annotations_pb = require('../../google/api/annotations_pb.js');
+var protoc$gen$openapiv2_options_annotations_pb = require('../../protoc-gen-openapiv2/options/annotations_pb.js');
 
 function serialize_worker_v1_FetchFileRequest(arg) {
   if (!(arg instanceof worker_v1_sandbox_variable_store_pb.FetchFileRequest)) {

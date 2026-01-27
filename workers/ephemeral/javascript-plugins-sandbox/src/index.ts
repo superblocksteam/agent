@@ -7,7 +7,8 @@ import {
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS,
-  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS,
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS
 } from './env';
 import { GrpcKvStore } from './grpcKvStore';
 import logger from './logger';
@@ -30,7 +31,8 @@ import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_var
 function createSandboxTransportService(
   pluginsRouter: PluginsRouter,
   messageTransformer: MessageTransformer,
-  variableStoreClient: SandboxVariableStoreServiceClient
+  variableStoreClient: SandboxVariableStoreServiceClient,
+  variableStoreHttpAddress: string
 ): ISandboxTransportServiceServer {
   function handleEvent(
     func: (
@@ -75,7 +77,7 @@ function createSandboxTransportService(
       const pluginName = call.request.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: ExecuteRequest = messageTransformer.protoRequestToNative(call.request) as ExecuteRequest;
       const executionId = nativeRequest.props?.executionId ?? '';
-      const kvStore = new GrpcKvStore(executionId, variableStoreClient);
+      const kvStore = new GrpcKvStore(executionId, variableStoreClient, variableStoreHttpAddress);
 
       void handleEvent(pluginsRouter.handleExecuteEvent.bind(pluginsRouter), pluginName, nativeRequest, callback, kvStore);
     },
@@ -87,7 +89,7 @@ function createSandboxTransportService(
       const pluginName = call.request.getRequest()?.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: StreamRequest = messageTransformer.protoRequestToNative(call.request) as StreamRequest;
       const executionId = nativeRequest.props?.executionId ?? '';
-      const kvStore = new GrpcKvStore(executionId, variableStoreClient);
+      const kvStore = new GrpcKvStore(executionId, variableStoreClient, variableStoreHttpAddress);
 
       void handleEvent(pluginsRouter.handleStreamEvent.bind(pluginsRouter), pluginName, nativeRequest, callback, kvStore);
     },
@@ -144,7 +146,15 @@ function main() {
     'grpc.max_receive_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
     'grpc.max_send_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE
   });
-  server.addService(SandboxTransportServiceService, createSandboxTransportService(pluginsRouter, messageTransformer, variableStoreClient));
+  server.addService(
+    SandboxTransportServiceService,
+    createSandboxTransportService(
+      pluginsRouter,
+      messageTransformer,
+      variableStoreClient,
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS
+    )
+  );
 
   const addr = `0.0.0.0:${SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT}`;
   server.bindAsync(addr, grpc.ServerCredentials.createInsecure(), (err) => {

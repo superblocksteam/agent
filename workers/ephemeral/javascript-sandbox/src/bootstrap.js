@@ -7,6 +7,7 @@ const {
   ExecutionOutput,
   VariableClient
 } = require('@superblocks/shared');
+const deasync = require('deasync');
 const { EventEmitter } = require('events');
 const _ = require('lodash');
 const { NodeVM } = require('vm2');
@@ -64,18 +65,12 @@ function serialize(buffer, mode) {
   return buffer.toString('utf8');
 }
 
-function createFunctionForPreparingGlobalObjectForFiles(kvStore, filePaths, useCache) {
+function createFunctionForPreparingGlobalObjectForFiles(kvStore, filePaths) {
   return (globalObject) => {
     Object.entries(filePaths).forEach(([treePath, remotePath]) => {
       const readContentsAsync = async (mode) => {
         if (!kvStore || typeof kvStore.fetchFile !== 'function') {
            throw new Error('File fetching not available');
-        }
-
-        // Check cache first (if files were prefetched)
-        if (kvStore.hasFileInCache && kvStore.hasFileInCache(remotePath)) {
-          const contents = kvStore.getFileFromCache(remotePath);
-          return serialize(contents, mode);
         }
 
         const contents = await kvStore.fetchFile(remotePath);
@@ -85,18 +80,12 @@ function createFunctionForPreparingGlobalObjectForFiles(kvStore, filePaths, useC
       readContentsAsync.toString = () => 'function readContentsAsync() { [native code] }';
 
       const readContents = (mode) => {
-        if (!useCache) {
-          throw new Error('Synchronous file reading not available');
+        if (!kvStore || typeof kvStore.fetchFile !== 'function') {
+          throw new Error('File fetching not available');
         }
 
-        if (!kvStore || typeof kvStore.getFileFromCache !== 'function') {
-          throw new Error('Synchronous file reading not available');
-        }
-        if (!kvStore.hasFileInCache(remotePath)) {
-          throw new Error('File not found');
-        }
-
-        const contents = kvStore.getFileFromCache(remotePath);
+        // Use the callback-based version for better deasync compatibility
+        const contents = deasync(kvStore.fetchFileCallback.bind(kvStore))(remotePath);
         return serialize(contents, mode);
       };
       // hide the implementation of the function
@@ -158,17 +147,7 @@ module.exports.executeCode = async (workerData) => {
 
     decodeBytestringsExecutionContext(context, true);
 
-    // Check for .readContents( after removing all .readContentsAsync( occurrences
-    const codeWithoutAsync = code.replace(/\.readContentsAsync\s*\(/g, '');
-    const useCache = /\.readContents\s*\(/.test(codeWithoutAsync);
-
-    // Prefetch files if code uses sync readContents
-    if (useCache && filePaths && Object.keys(filePaths).length > 0) {
-      const remotePaths = Object.values(filePaths);
-      await context.kvStore.prefetchFiles(remotePaths);
-    }
-
-    const prepareGlobalObjectForFiles = createFunctionForPreparingGlobalObjectForFiles(context.kvStore, filePaths, useCache);
+    const prepareGlobalObjectForFiles = createFunctionForPreparingGlobalObjectForFiles(context.kvStore, filePaths);
 
     // Build environment for user script
     const userProcessEnv = {};

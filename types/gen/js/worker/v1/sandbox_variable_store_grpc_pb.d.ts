@@ -6,6 +6,7 @@
 
 import * as grpc from "@grpc/grpc-js";
 import * as worker_v1_sandbox_variable_store_pb from "../../worker/v1/sandbox_variable_store_pb";
+import * as protoc_gen_openapiv2_options_annotations_pb from "../../protoc-gen-openapiv2/options/annotations_pb";
 
 interface ISandboxVariableStoreServiceService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
     getVariable: ISandboxVariableStoreServiceService_IGetVariable;

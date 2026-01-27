@@ -4,7 +4,8 @@ import { executeCode } from './bootstrap';
 import {
   SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
-  SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT
+  SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT,
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS
 } from './env';
 import { GrpcKvStore } from './grpcKvStore';
 import {
@@ -18,7 +19,11 @@ const SandboxExecutorTransportServiceImpl: ISandboxExecutorTransportServiceServe
   execute: (call: grpc.ServerUnaryCall<ExecuteRequestV1, ExecuteResponseV1>, callback: grpc.sendUnaryData<ExecuteResponseV1>) => {
     const request = call.request;
     const variableStoreClient = new SandboxVariableStoreServiceClient(request.getVariableStoreAddress(), grpc.credentials.createInsecure());
-    const kvStore = new GrpcKvStore(request.getExecutionId(), variableStoreClient);
+    const kvStore = new GrpcKvStore(
+      request.getExecutionId(),
+      variableStoreClient,
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS
+    );
 
     const ctx = JSON.parse(request.getContextJson());
     const variables = JSON.parse(request.getVariablesJson());

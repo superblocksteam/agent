@@ -1,4 +1,6 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import http from 'http';
+import { EventEmitter } from 'events';
 import { GrpcKvStore } from './grpcKvStore';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
 import {
@@ -6,27 +8,27 @@ import {
   SetVariableRequest,
   SetVariableResponse,
   SetVariablesRequest,
-  SetVariablesResponse,
-  FetchFileRequest,
-  FetchFileResponse
+  SetVariablesResponse
 } from './types/worker/v1/sandbox_variable_store_pb';
+
+jest.mock('http');
 
 // Mock the gRPC client
 const createMockClient = () => ({
   getVariables: jest.fn(),
   setVariable: jest.fn(),
-  setVariables: jest.fn(),
-  fetchFile: jest.fn()
+  setVariables: jest.fn()
 });
 
 describe('GrpcKvStore', () => {
   let mockClient: ReturnType<typeof createMockClient>;
   let store: GrpcKvStore;
+  const variableStoreHttpAddress = 'http://localhost:8080';
   const executionId = 'test-execution-id';
 
   beforeEach(() => {
     mockClient = createMockClient();
-    store = new GrpcKvStore(executionId, mockClient as unknown as SandboxVariableStoreServiceClient);
+    store = new GrpcKvStore(executionId, mockClient as unknown as SandboxVariableStoreServiceClient, variableStoreHttpAddress);
   });
 
   describe('read', () => {
@@ -255,197 +257,159 @@ describe('GrpcKvStore', () => {
 
   describe('fetchFile', () => {
     it('should fetch file contents successfully', async () => {
-      const fileContents = new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
+      const fileContents = Buffer.from('Hello');
+      const base64Contents = fileContents.toString('base64');
 
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse) => void) => {
-          expect(request.getExecutionId()).toBe(executionId);
-          expect(request.getPath()).toBe('/path/to/file.txt');
-          callback(null, {
-            getError: () => '',
-            getContents_asU8: () => fileContents
-          } as unknown as FetchFileResponse);
-        }
-      );
+      const mockResponse = new EventEmitter() as EventEmitter & { statusCode: number };
+      mockResponse.statusCode = 200;
+
+      const mockRequest = new EventEmitter() as EventEmitter & { end: jest.Mock };
+      mockRequest.end = jest.fn();
+
+      (http.request as jest.Mock).mockImplementation((url: string, options: unknown, callback: (res: typeof mockResponse) => void) => {
+        expect(url).toContain('/fetch-file');
+        expect(url).toContain(`executionId=${executionId}`);
+        expect(url).toContain('path=%2Fpath%2Fto%2Ffile.txt');
+
+        // Call the callback with mock response on next tick
+        process.nextTick(() => {
+          callback(mockResponse);
+          // Emit the response data
+          mockResponse.emit('data', Buffer.from(JSON.stringify({ contents: base64Contents })));
+          mockResponse.emit('end');
+        });
+
+        return mockRequest;
+      });
 
       const result = await store.fetchFile('/path/to/file.txt');
 
-      expect(result).toEqual(Buffer.from(fileContents));
-      expect(mockClient.fetchFile).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(fileContents);
+      expect(http.request).toHaveBeenCalledTimes(1);
     });
 
-    it('should reject on gRPC error', async () => {
-      const grpcError = new Error('File fetch gRPC error');
+    it('should reject on HTTP request error', async () => {
+      const httpError = new Error('Connection refused');
 
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse | null) => void) => {
-          callback(grpcError, null);
-        }
-      );
+      const mockRequest = new EventEmitter() as EventEmitter & { end: jest.Mock };
+      mockRequest.end = jest.fn();
 
-      await expect(store.fetchFile('/path/to/file')).rejects.toThrow('File fetch gRPC error');
+      (http.request as jest.Mock).mockImplementation((url: string, options: unknown, callback: (res: unknown) => void) => {
+        process.nextTick(() => {
+          mockRequest.emit('error', httpError);
+        });
+        return mockRequest;
+      });
+
+      await expect(store.fetchFile('/path/to/file')).rejects.toThrow('Connection refused');
     });
 
     it('should reject when response contains an error message', async () => {
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse) => void) => {
-          callback(null, {
-            getError: () => 'File not found',
-            getContents_asU8: () => new Uint8Array()
-          } as unknown as FetchFileResponse);
-        }
-      );
+      const mockResponse = new EventEmitter() as EventEmitter & { statusCode: number };
+      mockResponse.statusCode = 200;
+
+      const mockRequest = new EventEmitter() as EventEmitter & { end: jest.Mock };
+      mockRequest.end = jest.fn();
+
+      (http.request as jest.Mock).mockImplementation((url: string, options: unknown, callback: (res: typeof mockResponse) => void) => {
+        process.nextTick(() => {
+          callback(mockResponse);
+          mockResponse.emit('data', Buffer.from(JSON.stringify({ error: 'File not found' })));
+          mockResponse.emit('end');
+        });
+        return mockRequest;
+      });
 
       await expect(store.fetchFile('/nonexistent/file')).rejects.toThrow('File not found');
+    });
+
+    it('should reject on non-200 status code', async () => {
+      const mockResponse = new EventEmitter() as EventEmitter & { statusCode: number };
+      mockResponse.statusCode = 500;
+
+      const mockRequest = new EventEmitter() as EventEmitter & { end: jest.Mock };
+      mockRequest.end = jest.fn();
+
+      (http.request as jest.Mock).mockImplementation((url: string, options: unknown, callback: (res: typeof mockResponse) => void) => {
+        process.nextTick(() => {
+          callback(mockResponse);
+        });
+        return mockRequest;
+      });
+
+      await expect(store.fetchFile('/path/to/file')).rejects.toThrow('HTTP 500: Internal Server Error');
     });
   });
 
   describe('fetchFileCallback', () => {
     it('should call callback with file contents on success', (done) => {
-      const fileContents = new Uint8Array([1, 2, 3, 4]);
+      const fileContents = Buffer.from([1, 2, 3, 4]);
+      const base64Contents = fileContents.toString('base64');
 
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse) => void) => {
-          callback(null, {
-            getError: () => '',
-            getContents_asU8: () => fileContents
-          } as unknown as FetchFileResponse);
-        }
-      );
+      const mockResponse = new EventEmitter() as EventEmitter & { statusCode: number };
+      mockResponse.statusCode = 200;
+
+      const mockRequest = new EventEmitter() as EventEmitter & { end: jest.Mock };
+      mockRequest.end = jest.fn();
+
+      (http.request as jest.Mock).mockImplementation((url: string, options: unknown, callback: (res: typeof mockResponse) => void) => {
+        process.nextTick(() => {
+          callback(mockResponse);
+          mockResponse.emit('data', Buffer.from(JSON.stringify({ contents: base64Contents })));
+          mockResponse.emit('end');
+        });
+        return mockRequest;
+      });
 
       store.fetchFileCallback('/path/to/file', (error, result) => {
         expect(error).toBeNull();
-        expect(result).toEqual(Buffer.from(fileContents));
+        expect(result).toEqual(fileContents);
         done();
       });
     });
 
-    it('should call callback with error on gRPC failure', (done) => {
-      const grpcError = new Error('Connection lost');
+    it('should call callback with error on HTTP request failure', (done) => {
+      const httpError = new Error('Connection lost');
 
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse | null) => void) => {
-          callback(grpcError, null);
-        }
-      );
+      const mockRequest = new EventEmitter() as EventEmitter & { end: jest.Mock };
+      mockRequest.end = jest.fn();
+
+      (http.request as jest.Mock).mockImplementation((url: string, options: unknown, callback: (res: unknown) => void) => {
+        process.nextTick(() => {
+          mockRequest.emit('error', httpError);
+        });
+        return mockRequest;
+      });
 
       store.fetchFileCallback('/path/to/file', (error, result) => {
-        expect(error).toBe(grpcError);
-        expect(result).toBeUndefined();
+        expect(error).toBe(httpError);
+        expect(result).toBeNull();
         done();
       });
     });
 
     it('should call callback with error when response contains error message', (done) => {
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse) => void) => {
-          callback(null, {
-            getError: () => 'Access denied',
-            getContents_asU8: () => new Uint8Array()
-          } as unknown as FetchFileResponse);
-        }
-      );
+      const mockResponse = new EventEmitter() as EventEmitter & { statusCode: number };
+      mockResponse.statusCode = 200;
+
+      const mockRequest = new EventEmitter() as EventEmitter & { end: jest.Mock };
+      mockRequest.end = jest.fn();
+
+      (http.request as jest.Mock).mockImplementation((url: string, options: unknown, callback: (res: typeof mockResponse) => void) => {
+        process.nextTick(() => {
+          callback(mockResponse);
+          mockResponse.emit('data', Buffer.from(JSON.stringify({ error: 'Access denied' })));
+          mockResponse.emit('end');
+        });
+        return mockRequest;
+      });
 
       store.fetchFileCallback('/path/to/file', (error, result) => {
         expect(error).toBeInstanceOf(Error);
         expect(error?.message).toBe('Access denied');
-        expect(result).toBeUndefined();
+        expect(result).toBeNull();
         done();
       });
-    });
-  });
-
-  describe('prefetchFiles', () => {
-    it('should prefetch multiple files and store them in cache', async () => {
-      const file1Contents = new Uint8Array([65, 66, 67]); // "ABC"
-      const file2Contents = new Uint8Array([68, 69, 70]); // "DEF"
-
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse) => void) => {
-          const path = request.getPath();
-          if (path === '/file1.txt') {
-            callback(null, {
-              getError: () => '',
-              getContents_asU8: () => file1Contents
-            } as unknown as FetchFileResponse);
-          } else if (path === '/file2.txt') {
-            callback(null, {
-              getError: () => '',
-              getContents_asU8: () => file2Contents
-            } as unknown as FetchFileResponse);
-          }
-        }
-      );
-
-      await store.prefetchFiles(['/file1.txt', '/file2.txt']);
-
-      expect(store.hasFileInCache('/file1.txt')).toBe(true);
-      expect(store.hasFileInCache('/file2.txt')).toBe(true);
-      expect(store.getFileFromCache('/file1.txt')).toEqual(Buffer.from(file1Contents));
-      expect(store.getFileFromCache('/file2.txt')).toEqual(Buffer.from(file2Contents));
-      expect(mockClient.fetchFile).toHaveBeenCalledTimes(2);
-    });
-
-    it('should handle empty paths array', async () => {
-      await store.prefetchFiles([]);
-
-      expect(mockClient.fetchFile).not.toHaveBeenCalled();
-    });
-
-    it('should reject if any file fetch fails', async () => {
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse | null) => void) => {
-          callback(new Error('Fetch error'), null);
-        }
-      );
-
-      await expect(store.prefetchFiles(['/file.txt'])).rejects.toThrow('Fetch error');
-    });
-  });
-
-  describe('getFileFromCache', () => {
-    it('should return undefined for uncached files', () => {
-      const result = store.getFileFromCache('/not/in/cache');
-
-      expect(result).toBeUndefined();
-    });
-
-    it('should return cached file contents', async () => {
-      const fileContents = new Uint8Array([1, 2, 3]);
-
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse) => void) => {
-          callback(null, {
-            getError: () => '',
-            getContents_asU8: () => fileContents
-          } as unknown as FetchFileResponse);
-        }
-      );
-
-      await store.prefetchFiles(['/cached/file']);
-
-      expect(store.getFileFromCache('/cached/file')).toEqual(Buffer.from(fileContents));
-    });
-  });
-
-  describe('hasFileInCache', () => {
-    it('should return false for uncached files', () => {
-      expect(store.hasFileInCache('/not/cached')).toBe(false);
-    });
-
-    it('should return true for cached files', async () => {
-      mockClient.fetchFile.mockImplementation(
-        (request: FetchFileRequest, callback: (error: Error | null, response: FetchFileResponse) => void) => {
-          callback(null, {
-            getError: () => '',
-            getContents_asU8: () => new Uint8Array([1])
-          } as unknown as FetchFileResponse);
-        }
-      );
-
-      await store.prefetchFiles(['/exists']);
-
-      expect(store.hasFileInCache('/exists')).toBe(true);
     });
   });
 });

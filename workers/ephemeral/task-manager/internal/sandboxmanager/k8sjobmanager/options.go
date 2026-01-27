@@ -28,6 +28,9 @@ type Options struct {
 	// Task manager's gRPC port (variable store)
 	VariableStoreGrpcPort int
 
+	// Task manager's HTTP port (variable store)
+	VariableStoreHttpPort int
+
 	// Task manager's gRPC port (streaming proxy)
 	StreamingProxyGrpcPort int
 
@@ -102,6 +105,13 @@ func WithPodIP(ip string) Option {
 func WithVariableStoreGrpcPort(port int) Option {
 	return func(o *Options) {
 		o.VariableStoreGrpcPort = port
+	}
+}
+
+// WithVariableStoreHttpPort sets the task manager's HTTP port
+func WithVariableStoreHttpPort(port int) Option {
+	return func(o *Options) {
+		o.VariableStoreHttpPort = port
 	}
 }
 
@@ -187,6 +197,7 @@ func NewOptions(opts ...Option) *Options {
 	o := &Options{
 		Port:                    50051,
 		VariableStoreGrpcPort:   50050,
+		VariableStoreHttpPort:   8080,
 		TTLSecondsAfterFinished: 60,
 		PodReadyTimeout:         2 * time.Minute,
 	}

@@ -1,13 +1,17 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "worker/v1/sandbox_variable_store.proto",
-    "version": "version not set"
+    "title": "Superblocks Sandbox Variable Store Service",
+    "description": "This is the service that the Task Manager provides to the sandbox, to allow the sandbox to interact with the KV store.",
+    "version": "1.0"
   },
   "tags": [
     {
       "name": "SandboxVariableStoreService"
     }
+  ],
+  "schemes": [
+    "https"
   ],
   "consumes": [
     "application/json"
@@ -15,7 +19,47 @@
   "produces": [
     "application/json"
   ],
-  "paths": {},
+  "paths": {
+    "/fetch-file": {
+      "get": {
+        "summary": "Fetch a file from the orchestrator's file server",
+        "description": "This method fetches a file from the orchestrator's file server. The task-manager handles authentication with the orchestrator.",
+        "operationId": "FetchFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1FetchFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "executionId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "description": "The file path/location on the orchestrator",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "sandbox"
+        ]
+      }
+    }
+  },
   "definitions": {
     "googlerpcStatus": {
       "type": "object",

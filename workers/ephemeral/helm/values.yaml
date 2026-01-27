@@ -185,9 +185,16 @@ kvstore:
     read: 5m
     write: 10s
     pool: 5m
-# gRPC configuration
-grpc:
-  port: 50050
+# Variable Store gRPC service configuration
+variableStore:
+  grpc:
+    port: 50050
+  http:
+    port: 8080
+# Streaming Proxy gRPC service configuration
+streamingProxy:
+  grpc:
+    port: 50052
 # Worker configuration
 worker:
   group: main

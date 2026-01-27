@@ -95,7 +95,9 @@ spec:
       destination:
         selector: role == 'task-manager'
         ports:
-          - {{ .Values.grpc.port }}
+          - {{ .Values.variableStore.grpc.port }}
+          - {{ .Values.variableStore.http.port }}
+          - {{ .Values.streamingProxy.grpc.port }}
 
     {{- if .Values.network.additionalAllowedCIDRs }}
     # Customer-specified allowed CIDRs (internal APIs, etc.)
@@ -166,6 +168,8 @@ spec:
         selector: role == 'sandbox'
       destination:
         ports:
-          - {{ .Values.grpc.port }}
+          - {{ .Values.variableStore.grpc.port }}
+          - {{ .Values.variableStore.http.port }}
+          - {{ .Values.streamingProxy.grpc.port }}
     # Deny all other ingress
     - action: Deny

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -20,9 +21,11 @@ import (
 	"workers/ephemeral/task-manager/internal/streamingproxy"
 	"workers/ephemeral/task-manager/internal/transport/redis"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	r "github.com/redis/go-redis/v9"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	httpserver "github.com/superblocksteam/agent/pkg/http"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/log"
 	"github.com/superblocksteam/agent/pkg/observability/obsup"
@@ -31,11 +34,15 @@ import (
 	"github.com/superblocksteam/agent/pkg/store"
 	redisstore "github.com/superblocksteam/agent/pkg/store/redis"
 	"github.com/superblocksteam/agent/pkg/utils"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
 	"github.com/superblocksteam/run/contrib/process"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/encoding/protojson"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -109,9 +116,16 @@ func init() {
 	pflag.Int("variable.store.grpc.port", 50050, "The port for the VariableStore gRPC server.")
 	pflag.String("variable.store.grpc.address", "", "The address for sandbox to connect to VariableStore (defaults to localhost:variable.store.grpc.port).")
 
+	// HTTP (gRPC Gateway) settings for variable store
+	pflag.Int("variable.store.http.port", 8080, "The port for the VariableStore HTTP server.")
+	pflag.String("variable.store.http.bind", "0.0.0.0", "The address to bind the HTTP (gRPC Gateway) server on.")
+
 	// gRPC settings for streaming proxy
 	pflag.Int("streaming.proxy.grpc.port", 50051, "The port for the StreamingProxy gRPC server.")
-	pflag.String("streaming.proxy.grpc.address", "", "The address for sandbox to connect to StreamingProxy (defaults to localhost:streaming.proxy.grpc.port).")
+
+	// gRPC message size settings
+	pflag.Int("grpc.msg.req.max", 30000000, "Max message size in bytes to be received by the grpc server as a request. Default 30mb.")
+	pflag.Int("grpc.msg.res.max", 100000000, "Max message size in bytes to be sent by the grpc server response. Default 100mb.")
 
 	// Health check settings
 	pflag.Bool("health.enabled", false, "Whether to enable health checks.")
@@ -422,6 +436,7 @@ func main() {
 			k8sjobmanager.WithPort(viper.GetInt("sandbox.port")),
 			k8sjobmanager.WithPodIP(podIP),
 			k8sjobmanager.WithVariableStoreGrpcPort(viper.GetInt("variable.store.grpc.port")),
+			k8sjobmanager.WithVariableStoreHttpPort(viper.GetInt("variable.store.http.port")),
 			k8sjobmanager.WithStreamingProxyGrpcPort(viper.GetInt("streaming.proxy.grpc.port")),
 			k8sjobmanager.WithTTL(int32(viper.GetInt("sandbox.ttl"))),
 			k8sjobmanager.WithRuntimeClassName(viper.GetString("sandbox.runtimeClass")),
@@ -551,6 +566,9 @@ func main() {
 	{
 		grpcServer := grpc.NewServer(
 			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger)),
+			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
+			grpc.MaxSendMsgSize(viper.GetInt("grpc.msg.res.max")),
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		)
 
 		variableStoreGrpcRunnable = internalstore.NewVariableStoreGRPC(
@@ -572,10 +590,61 @@ func main() {
 		})
 	}
 
+	var variableStoreHttpRunnable run.Runnable
+	{
+		mux := runtime.NewServeMux(
+			runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.HTTPBodyMarshaler{
+				Marshaler: &runtime.JSONPb{
+					MarshalOptions: protojson.MarshalOptions{
+						UseProtoNames:   false,
+						EmitUnpopulated: false,
+						AllowPartial:    true,
+					},
+					UnmarshalOptions: protojson.UnmarshalOptions{
+						DiscardUnknown: true,
+					},
+				},
+			}),
+		)
+
+		opts := []grpc.DialOption{
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+			grpc.WithDefaultCallOptions(
+				// note that gateway uses the opposite of grpc direction.
+				// grpc send max (response) is gateway receive max
+				grpc.MaxCallRecvMsgSize(viper.GetInt("grpc.msg.res.max")),
+				grpc.MaxCallSendMsgSize(viper.GetInt("grpc.msg.req.max")),
+			),
+		}
+
+		err := workerv1.RegisterSandboxVariableStoreServiceHandlerFromEndpoint(
+			context.Background(),
+			mux,
+			variableStoreGrpcAddress,
+			opts,
+		)
+		if err != nil {
+			logger.Error("failed to register variable store gRPC gateway handler", zap.Error(err))
+			os.Exit(1)
+		}
+
+		variableStoreHttpRunnable = httpserver.Prepare(&httpserver.Options{
+			Name:         "variableStoreHttp",
+			Handler:      mux,
+			InsecurePort: viper.GetInt("variable.store.http.port"),
+			Logger:       logger,
+			InsecureAddr: viper.GetString("variable.store.http.bind"),
+		})
+	}
+
 	var streamingProxyService *streamingproxy.StreamingProxyService
 	{
 		grpcServer := grpc.NewServer(
 			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger)),
+			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
+			grpc.MaxSendMsgSize(viper.GetInt("grpc.msg.res.max")),
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		)
 
 		streamingProxyService = streamingproxy.NewStreamingProxyService(
@@ -634,8 +703,9 @@ func main() {
 
 	g.Always(process.New())
 	g.Add(viper.GetBool("health.enabled"), healthChecker)
-	g.Always(variableStoreGrpcRunnable)
 	g.Always(streamingProxyService)
+	g.Always(variableStoreGrpcRunnable)
+	g.Always(variableStoreHttpRunnable)
 	g.Add(sandboxPlugin != nil, sandboxPlugin)
 	g.Add(sandboxExecutorPlugin != nil, sandboxExecutorPlugin)
 	g.Always(transportRunnable)

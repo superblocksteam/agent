@@ -1,22 +1,21 @@
+import http from 'http';
 import { MaybeError } from '@superblocks/shared';
 import { IO, KVStore, KVStoreTx, WriteOps, Wrapped } from '@superblocks/worker.js';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
-import {
-  GetVariablesRequest,
-  SetVariableRequest,
-  SetVariablesRequest,
-  KeyValue,
-  FetchFileRequest
-} from './types/worker/v1/sandbox_variable_store_pb';
+import { GetVariablesRequest, SetVariableRequest, SetVariablesRequest, KeyValue } from './types/worker/v1/sandbox_variable_store_pb';
 
 export class GrpcKvStore implements KVStore {
   private readonly executionId: string;
   private readonly client: SandboxVariableStoreServiceClient;
-  private readonly fileCache: Map<string, Buffer> = new Map();
+  private readonly variableStoreHttpAddress: string;
 
-  public constructor(executionId: string, client: SandboxVariableStoreServiceClient) {
+  public constructor(executionId: string, client: SandboxVariableStoreServiceClient, variableStoreHttpAddress: string) {
     this.executionId = executionId;
     this.client = client;
+    this.variableStoreHttpAddress =
+      variableStoreHttpAddress.startsWith('http://') || variableStoreHttpAddress.startsWith('https://')
+        ? variableStoreHttpAddress
+        : `http://${variableStoreHttpAddress}`;
   }
 
   public async delete(keys: string[]): Promise<void> {
@@ -122,50 +121,53 @@ export class GrpcKvStore implements KVStore {
   /**
    * Callback-style version of fetchFile
    */
-  public fetchFileCallback(path: string, callback: (error: Error | null, result?: Buffer) => void): void {
-    const request = new FetchFileRequest();
-    request.setExecutionId(this.executionId);
-    request.setPath(path);
+  public fetchFileCallback(path: string, callback: (error: Error | null, result: Buffer | null) => void): void {
+    const url = new URL('/fetch-file', this.variableStoreHttpAddress);
+    url.searchParams.set('executionId', this.executionId);
+    url.searchParams.set('path', path);
 
-    this.client.fetchFile(request, (error, response) => {
-      if (error) {
-        callback(error);
-        return;
+    const options = {
+      method: 'GET'
+    };
+
+    const req = http.request(url.toString(), options, (response: http.IncomingMessage) => {
+      if (response.statusCode !== 200) {
+        return callback(new Error(`HTTP ${response.statusCode}: Internal Server Error`), null);
       }
-      const errorMsg = response.getError();
-      if (errorMsg) {
-        callback(new Error(errorMsg));
-        return;
-      }
-      callback(null, Buffer.from(response.getContents_asU8()));
+
+      const chunks: Buffer[] = [];
+      response.on('data', (chunk) => {
+        chunks.push(Buffer.from(chunk));
+      });
+      response.on('error', (error) => callback(error, null));
+      response.on('end', () => {
+        try {
+          const responseBody = Buffer.concat(chunks as unknown as Uint8Array[]).toString('utf8');
+          const jsonResponse = JSON.parse(responseBody);
+
+          // Check for error field in response
+          if (jsonResponse.error) {
+            return callback(new Error(jsonResponse.error), null);
+          }
+
+          // Decode base64 contents to Buffer
+          if (jsonResponse.contents) {
+            const contents = Buffer.from(jsonResponse.contents, 'base64');
+            callback(null, contents);
+          } else {
+            callback(new Error('Response missing contents field'), null);
+          }
+        } catch (error) {
+          callback(error instanceof Error ? error : new Error('Failed to parse response'), null);
+        }
+      });
     });
-  }
 
-  /**
-   * Prefetch multiple files and store them in the cache.
-   * Should be called before VM execution when sync file reads are needed.
-   */
-  public async prefetchFiles(paths: string[]): Promise<void> {
-    const fetchPromises = paths.map(async (path) => {
-      const contents = await this.fetchFile(path);
-      this.fileCache.set(path, contents);
+    req.on('error', (error) => {
+      callback(error, null);
     });
 
-    await Promise.all(fetchPromises);
-  }
-
-  /**
-   * Get file contents from cache. Returns undefined if not cached.
-   */
-  public getFileFromCache(path: string): Buffer | undefined {
-    return this.fileCache.get(path);
-  }
-
-  /**
-   * Check if a file is in the cache.
-   */
-  public hasFileInCache(path: string): boolean {
-    return this.fileCache.has(path);
+    req.end();
   }
 
   public async close(reason?: string): Promise<MaybeError> {

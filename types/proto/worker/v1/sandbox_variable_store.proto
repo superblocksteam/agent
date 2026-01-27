@@ -2,7 +2,20 @@ syntax = "proto3";
 
 package worker.v1;
 
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
 option go_package = "github.com/superblocksteam/agent/types/gen/go/worker/v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Superblocks Sandbox Variable Store Service"
+    description: "This is the service that the Task Manager provides to the sandbox, to allow the sandbox to interact with the KV store."
+    version: "1.0"
+  }
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+};
 
 service SandboxVariableStoreService {
   rpc GetVariable(GetVariableRequest) returns (GetVariableResponse);
@@ -11,7 +24,17 @@ service SandboxVariableStoreService {
   rpc SetVariables(SetVariablesRequest) returns (SetVariablesResponse);
   // FetchFile fetches file contents from the orchestrator's file server.
   // The task-manager handles authentication with the orchestrator.
-  rpc FetchFile(FetchFileRequest) returns (FetchFileResponse);
+  rpc FetchFile(FetchFileRequest) returns (FetchFileResponse) {
+    option (google.api.http) = {
+      get: "/fetch-file"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "FetchFile"
+      summary: "Fetch a file from the orchestrator's file server"
+      description: "This method fetches a file from the orchestrator's file server. The task-manager handles authentication with the orchestrator."
+      tags: "sandbox"
+    };
+  }
 }
 
 // Variable operations

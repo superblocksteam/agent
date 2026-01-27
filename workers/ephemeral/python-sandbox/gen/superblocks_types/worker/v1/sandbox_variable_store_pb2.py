@@ -22,38 +22,42 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from superblocks_types.google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
+from superblocks_types.protoc_gen_openapiv2.options import annotations_pb2 as protoc__gen__openapiv2_dot_options_dot_annotations__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n&worker/v1/sandbox_variable_store.proto\x12\tworker.v1\"I\n\x12GetVariableRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12\x10\n\x03key\x18\x02 \x01(\tR\x03key\"A\n\x13GetVariableResponse\x12\x14\n\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n\x05\x66ound\x18\x02 \x01(\x08R\x05\x66ound\"_\n\x12SetVariableRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12\x10\n\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n\x05value\x18\x03 \x01(\tR\x05value\"/\n\x13SetVariableResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\"L\n\x13GetVariablesRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12\x12\n\x04keys\x18\x02 \x03(\tR\x04keys\".\n\x14GetVariablesResponse\x12\x16\n\x06values\x18\x01 \x03(\tR\x06values\"_\n\x13SetVariablesRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12%\n\x03kvs\x18\x02 \x03(\x0b\x32\x13.worker.v1.KeyValueR\x03kvs\"2\n\x08KeyValue\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05value\"0\n\x14SetVariablesResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\"I\n\x10\x46\x65tchFileRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12\x12\n\x04path\x18\x02 \x01(\tR\x04path\"E\n\x11\x46\x65tchFileResponse\x12\x1a\n\x08\x63ontents\x18\x01 \x01(\x0cR\x08\x63ontents\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror2\xa3\x03\n\x1bSandboxVariableStoreService\x12L\n\x0bGetVariable\x12\x1d.worker.v1.GetVariableRequest\x1a\x1e.worker.v1.GetVariableResponse\x12L\n\x0bSetVariable\x12\x1d.worker.v1.SetVariableRequest\x1a\x1e.worker.v1.SetVariableResponse\x12O\n\x0cGetVariables\x12\x1e.worker.v1.GetVariablesRequest\x1a\x1f.worker.v1.GetVariablesResponse\x12O\n\x0cSetVariables\x12\x1e.worker.v1.SetVariablesRequest\x1a\x1f.worker.v1.SetVariablesResponse\x12\x46\n\tFetchFile\x12\x1b.worker.v1.FetchFileRequest\x1a\x1c.worker.v1.FetchFileResponseB9Z7github.com/superblocksteam/agent/types/gen/go/worker/v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n&worker/v1/sandbox_variable_store.proto\x12\tworker.v1\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"I\n\x12GetVariableRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12\x10\n\x03key\x18\x02 \x01(\tR\x03key\"A\n\x13GetVariableResponse\x12\x14\n\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n\x05\x66ound\x18\x02 \x01(\x08R\x05\x66ound\"_\n\x12SetVariableRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12\x10\n\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n\x05value\x18\x03 \x01(\tR\x05value\"/\n\x13SetVariableResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\"L\n\x13GetVariablesRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12\x12\n\x04keys\x18\x02 \x03(\tR\x04keys\".\n\x14GetVariablesResponse\x12\x16\n\x06values\x18\x01 \x03(\tR\x06values\"_\n\x13SetVariablesRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12%\n\x03kvs\x18\x02 \x03(\x0b\x32\x13.worker.v1.KeyValueR\x03kvs\"2\n\x08KeyValue\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05value\"0\n\x14SetVariablesResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\"I\n\x10\x46\x65tchFileRequest\x12!\n\x0c\x65xecution_id\x18\x01 \x01(\tR\x0b\x65xecutionId\x12\x12\n\x04path\x18\x02 \x01(\tR\x04path\"E\n\x11\x46\x65tchFileResponse\x12\x1a\n\x08\x63ontents\x18\x01 \x01(\x0cR\x08\x63ontents\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror2\x84\x05\n\x1bSandboxVariableStoreService\x12L\n\x0bGetVariable\x12\x1d.worker.v1.GetVariableRequest\x1a\x1e.worker.v1.GetVariableResponse\x12L\n\x0bSetVariable\x12\x1d.worker.v1.SetVariableRequest\x1a\x1e.worker.v1.SetVariableResponse\x12O\n\x0cGetVariables\x12\x1e.worker.v1.GetVariablesRequest\x1a\x1f.worker.v1.GetVariablesResponse\x12O\n\x0cSetVariables\x12\x1e.worker.v1.SetVariablesRequest\x1a\x1f.worker.v1.SetVariablesResponse\x12\xa6\x02\n\tFetchFile\x12\x1b.worker.v1.FetchFileRequest\x1a\x1c.worker.v1.FetchFileResponse\"\xdd\x01\x92\x41\xc6\x01\n\x07sandbox\x12\x30\x46\x65tch a file from the orchestrator\'s file server\x1a~This method fetches a file from the orchestrator\'s file server. The task-manager handles authentication with the orchestrator.*\tFetchFile\x82\xd3\xe4\x93\x02\r\x12\x0b/fetch-fileB\x90\x02Z7github.com/superblocksteam/agent/types/gen/go/worker/v1\x92\x41\xd3\x01\x12\xa9\x01\n*Superblocks Sandbox Variable Store Service\x12vThis is the service that the Task Manager provides to the sandbox, to allow the sandbox to interact with the KV store.2\x03\x31.0*\x01\x02\x32\x10\x61pplication/json:\x10\x61pplication/jsonb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'worker.v1.sandbox_variable_store_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'Z7github.com/superblocksteam/agent/types/gen/go/worker/v1'
-  _globals['_GETVARIABLEREQUEST']._serialized_start=53
-  _globals['_GETVARIABLEREQUEST']._serialized_end=126
-  _globals['_GETVARIABLERESPONSE']._serialized_start=128
-  _globals['_GETVARIABLERESPONSE']._serialized_end=193
-  _globals['_SETVARIABLEREQUEST']._serialized_start=195
-  _globals['_SETVARIABLEREQUEST']._serialized_end=290
-  _globals['_SETVARIABLERESPONSE']._serialized_start=292
-  _globals['_SETVARIABLERESPONSE']._serialized_end=339
-  _globals['_GETVARIABLESREQUEST']._serialized_start=341
-  _globals['_GETVARIABLESREQUEST']._serialized_end=417
-  _globals['_GETVARIABLESRESPONSE']._serialized_start=419
-  _globals['_GETVARIABLESRESPONSE']._serialized_end=465
-  _globals['_SETVARIABLESREQUEST']._serialized_start=467
-  _globals['_SETVARIABLESREQUEST']._serialized_end=562
-  _globals['_KEYVALUE']._serialized_start=564
-  _globals['_KEYVALUE']._serialized_end=614
-  _globals['_SETVARIABLESRESPONSE']._serialized_start=616
-  _globals['_SETVARIABLESRESPONSE']._serialized_end=664
-  _globals['_FETCHFILEREQUEST']._serialized_start=666
-  _globals['_FETCHFILEREQUEST']._serialized_end=739
-  _globals['_FETCHFILERESPONSE']._serialized_start=741
-  _globals['_FETCHFILERESPONSE']._serialized_end=810
-  _globals['_SANDBOXVARIABLESTORESERVICE']._serialized_start=813
-  _globals['_SANDBOXVARIABLESTORESERVICE']._serialized_end=1232
+  _globals['DESCRIPTOR']._serialized_options = b'Z7github.com/superblocksteam/agent/types/gen/go/worker/v1\222A\323\001\022\251\001\n*Superblocks Sandbox Variable Store Service\022vThis is the service that the Task Manager provides to the sandbox, to allow the sandbox to interact with the KV store.2\0031.0*\001\0022\020application/json:\020application/json'
+  _globals['_SANDBOXVARIABLESTORESERVICE'].methods_by_name['FetchFile']._loaded_options = None
+  _globals['_SANDBOXVARIABLESTORESERVICE'].methods_by_name['FetchFile']._serialized_options = b'\222A\306\001\n\007sandbox\0220Fetch a file from the orchestrator\'s file server\032~This method fetches a file from the orchestrator\'s file server. The task-manager handles authentication with the orchestrator.*\tFetchFile\202\323\344\223\002\r\022\013/fetch-file'
+  _globals['_GETVARIABLEREQUEST']._serialized_start=131
+  _globals['_GETVARIABLEREQUEST']._serialized_end=204
+  _globals['_GETVARIABLERESPONSE']._serialized_start=206
+  _globals['_GETVARIABLERESPONSE']._serialized_end=271
+  _globals['_SETVARIABLEREQUEST']._serialized_start=273
+  _globals['_SETVARIABLEREQUEST']._serialized_end=368
+  _globals['_SETVARIABLERESPONSE']._serialized_start=370
+  _globals['_SETVARIABLERESPONSE']._serialized_end=417
+  _globals['_GETVARIABLESREQUEST']._serialized_start=419
+  _globals['_GETVARIABLESREQUEST']._serialized_end=495
+  _globals['_GETVARIABLESRESPONSE']._serialized_start=497
+  _globals['_GETVARIABLESRESPONSE']._serialized_end=543
+  _globals['_SETVARIABLESREQUEST']._serialized_start=545
+  _globals['_SETVARIABLESREQUEST']._serialized_end=640
+  _globals['_KEYVALUE']._serialized_start=642
+  _globals['_KEYVALUE']._serialized_end=692
+  _globals['_SETVARIABLESRESPONSE']._serialized_start=694
+  _globals['_SETVARIABLESRESPONSE']._serialized_end=742
+  _globals['_FETCHFILEREQUEST']._serialized_start=744
+  _globals['_FETCHFILEREQUEST']._serialized_end=817
+  _globals['_FETCHFILERESPONSE']._serialized_start=819
+  _globals['_FETCHFILERESPONSE']._serialized_end=888
+  _globals['_SANDBOXVARIABLESTORESERVICE']._serialized_start=891
+  _globals['_SANDBOXVARIABLESTORESERVICE']._serialized_end=1535
 # @@protoc_insertion_point(module_scope)

@@ -132,7 +132,10 @@ spec:
           - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
           {{- end }}
           # gRPC configuration (variable store for sandbox)
-          - "--variable.store.grpc.port={{ $.Values.ephemeral_worker.grpc.port }}"
+          - "--variable.store.grpc.port={{ $.Values.ephemeral_worker.variableStore.grpc.port }}"
+          - "--variable.store.http.port={{ $.Values.ephemeral_worker.variableStore.http.port }}"
+          # gRPC configuration (streaming proxy for sandbox)
+          - "--streaming.proxy.grpc.port={{ $.Values.ephemeral_worker.streamingProxy.grpc.port }}"
           # Worker configuration
           - "--worker.consumer.group={{ $v.consumerGroup }}"
           {{- if $v.plugins }}
@@ -264,7 +267,12 @@ spec:
           {{- end }}
           ports:
           - name: grpc
-            containerPort: {{ $.Values.ephemeral_worker.grpc.port }}
+            containerPort: {{ $.Values.ephemeral_worker.variableStore.grpc.port }}
+            protocol: TCP
+          - name: variable-store-http
+            containerPort: {{ $.Values.ephemeral_worker.variableStore.http.port }}
+          - name: streaming-proxy-grpc
+            containerPort: {{ $.Values.ephemeral_worker.streamingProxy.grpc.port }}
             protocol: TCP
 
         {{- with $v.nodeSelector | default $.Values.ephemeral_worker.nodeSelector }}
