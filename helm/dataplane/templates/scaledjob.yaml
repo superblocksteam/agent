@@ -132,7 +132,7 @@ spec:
           - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
           {{- end }}
           # gRPC configuration (variable store for sandbox)
-          - "--variable.store={{ $.Values.ephemeral_worker.grpc.port }}"
+          - "--variable.store.grpc.port={{ $.Values.ephemeral_worker.grpc.port }}"
           # Worker configuration
           - "--worker.consumer.group={{ $v.consumerGroup }}"
           {{- if $v.plugins }}

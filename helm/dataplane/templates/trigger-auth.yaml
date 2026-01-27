@@ -1,4 +1,3 @@
-{{- if .Values.queue.password }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
@@ -9,4 +8,3 @@ spec:
     - parameter: password
       name: queue-redis-token
       key: token
-{{- end }}
