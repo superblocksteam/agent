@@ -58,7 +58,6 @@ spec:
         labels:
           {{- include "ephemeral.worker.labels" $v | nindent 10 }}
           role: task-manager
-          language: {{ $language }}
         {{- with $podAnnotations }}
         annotations:
           {{- toYaml . | nindent 10 }}

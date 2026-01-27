@@ -53,7 +53,6 @@ Worker labels for fleet-specific resources
 {{- define "ephemeral.worker.labels" -}}
 component: worker.ephemeral
 language: {{ .language }}
-bucket: {{ .bucket }}
 {{- end -}}
 
 {{/*
@@ -93,7 +92,6 @@ Worker labels
 */}}
 {{- define "worker.labels" -}}
 component: worker.js
-bucket: {{ .bucket }}
 plugins: {{ .package }}
 events: {{ .events | replace "!" "not." | replace "," "_" }}
 {{- end -}}
