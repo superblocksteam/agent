@@ -266,12 +266,12 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           ports:
-          - name: grpc
+          - name: var-store-grpc
             containerPort: {{ $.Values.ephemeral_worker.variableStore.grpc.port }}
             protocol: TCP
-          - name: variable-store-http
+          - name: var-store-http
             containerPort: {{ $.Values.ephemeral_worker.variableStore.http.port }}
-          - name: streaming-proxy-grpc
+          - name: stream-grpc
             containerPort: {{ $.Values.ephemeral_worker.streamingProxy.grpc.port }}
             protocol: TCP
 
