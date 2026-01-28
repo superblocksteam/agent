@@ -34,7 +34,7 @@ x-environment-lang: &environment-lang
   SUPERBLOCKS_AGENT_PLUGIN_EVENTS: execute
 services:
   redis:
-    image: ghcr.io/superblocksteam/redis:6
+    image: docker.io/valkey/valkey:8.1.5-alpine
     ports:
       - 6379:6379
     command: --requirepass koala

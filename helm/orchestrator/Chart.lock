@@ -1,7 +1,7 @@
 dependencies:
-- name: redis
+- name: valkey
   repository: oci://registry-1.docker.io/bitnamicharts
-  version: 22.0.7
+  version: 5.1.4
 - name: worker_go
   repository: file://../../workers/golang/helm
   version: 0.0.1
@@ -14,5 +14,5 @@ dependencies:
 - name: ephemeral_worker
   repository: file://../../workers/ephemeral/helm
   version: 0.0.1
-digest: sha256:1c2b30837dcd4431fd88cb1cb22fa19de644e806e3c7a8529f0c04b5a5d33e75
-generated: "2026-01-16T13:26:14.005596-05:00"
+digest: sha256:5fa4ea9370261e9ae98c2ca9affec746927d003a9d9b9c2436bfadd95655d529
+generated: "2026-01-27T19:32:41.149626-05:00"

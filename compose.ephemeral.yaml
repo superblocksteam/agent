@@ -49,7 +49,7 @@ x-javascript-lang-executor-sandbox-base: &javascript-lang-executor-sandbox-base
 services:
   # Redis is shared with compose.full.yaml
   redis:
-    image: ghcr.io/superblocksteam/redis:6
+    image: docker.io/valkey/valkey:8.1.5-alpine
     ports:
       - 6379:6379
     command: --requirepass koala

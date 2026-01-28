@@ -144,10 +144,11 @@ bindings:
 !!merge <<: *tolerations
 !!merge <<: *selector
 # to be used for local testing only
-redis:
+valkey:
   image:
-    repository: bitnamilegacy/redis
-    tag: 8.2.1-debian-12-r0
+    registry: docker.io
+    repository: valkey/valkey
+    tag: 8.1.5-alpine
   auth:
     enabled: true
     password: frankbasilgrecojr

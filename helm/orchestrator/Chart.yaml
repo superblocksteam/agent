@@ -6,8 +6,8 @@ type: application
 version: 0.0.1
 appVersion: "latest"
 dependencies:
-  - name: redis
-    version: 22.0.7
+  - name: valkey
+    version: 5.1.4
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: queue.deploy
   - name: worker_go

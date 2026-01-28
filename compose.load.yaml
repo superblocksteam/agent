@@ -2,7 +2,7 @@
 version: "3.7"
 services:
   redis:
-    image: redis:6
+    image: docker.io/valkey/valkey:8.1.5-alpine
     command: "--requirepass koala"
     pull_policy: always
   golang.ba.all:
