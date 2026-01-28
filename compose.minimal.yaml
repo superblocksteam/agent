@@ -2,7 +2,7 @@
 version: "3.7"
 services:
   redis:
-    image: docker.io/valkey/valkey:8.1.5-alpine
+    image: ghcr.io/superblocksteam/docker.io/valkey/valkey:8.1.5-alpine
     ports:
       - "6379:6379"
     command: "--requirepass koala"

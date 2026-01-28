@@ -146,8 +146,8 @@ bindings:
 # to be used for local testing only
 valkey:
   image:
-    registry: docker.io
-    repository: valkey/valkey
+    registry: ghcr.io/superblocksteam
+    repository: docker.io/valkey/valkey
     tag: 8.1.5-alpine
   auth:
     enabled: true
