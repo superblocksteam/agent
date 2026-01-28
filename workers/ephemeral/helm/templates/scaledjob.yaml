@@ -41,7 +41,10 @@ spec:
         enableTLS: {{ $.Values.queue.tls | quote }}
         stream: {{ . }}
         consumerGroup: {{ $v.consumerGroup }}
-        activationLagCount: "1"
+        {{- with $v.keda.lagCount | default $.Values.keda.lagCount }}
+        lagCount: {{ . | quote }}
+        {{- end }}
+        activationLagCount: {{ $v.keda.activationLagCount | default $.Values.keda.activationLagCount | default "1" | quote }}
       authenticationRef:
         name: redis-trigger-auth
     {{- end }}

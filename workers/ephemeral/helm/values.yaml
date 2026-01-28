@@ -16,6 +16,10 @@
 #     streams:
 #       - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
 #       - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
+#     # Per-fleet KEDA configuration (overrides global keda.*)
+#     keda:
+#       lagCount: "1"           # Target lag per pod for scaling
+#       activationLagCount: "1" # Minimum lag before scaling starts
 #   javascript-ba:
 #     language: javascript
 #     buckets:
@@ -31,14 +35,16 @@
 #       - metadata
 #       - test
 #       - pre_delete
-#     # Verbatim triggers configuration
-#     triggers:
-#       - type: redis-streams
-#         metadata:
-#           address: redis:6379
-#           stream: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute
-#           consumerGroup: ephemeral-javascript
-#           activationLagCount: "3"
+#     # Verbatim triggers configuration (use for full control)
+#     keda:
+#       triggers:
+#         - type: redis-streams
+#           metadata:
+#             address: redis:6379
+#             stream: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute
+#             consumerGroup: ephemeral-javascript
+#             lagCount: "1"
+#             activationLagCount: "1"
 fleets: {}
 # Task Manager configuration
 taskManager:
@@ -149,7 +155,8 @@ keda:
   #       address: redis:6379
   #       stream: sandbox:work:python
   #       consumerGroup: ephemeral-python
-  #       activationLagCount: "3"
+  #       lagCount: "1"
+  #       activationLagCount: "1"
 # Redis transport configuration
 queue:
   deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)

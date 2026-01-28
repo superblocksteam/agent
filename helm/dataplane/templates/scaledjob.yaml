@@ -41,7 +41,10 @@ spec:
         enableTLS: {{ $.Values.ephemeral_worker.queue.tls | quote }}
         stream: {{ . }}
         consumerGroup: {{ $v.consumerGroup }}
-        activationLagCount: "1"
+        {{- with $v.keda.lagCount | default $.Values.ephemeral_worker.keda.lagCount }}
+        lagCount: {{ . | quote }}
+        {{- end }}
+        activationLagCount: {{ $v.keda.activationLagCount | default $.Values.ephemeral_worker.keda.activationLagCount | default "1" | quote }}
       authenticationRef:
         name: redis-trigger-auth
     {{- end }}
