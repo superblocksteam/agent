@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.superblocks import Object
 from src.variables.variable_client import VariableClient
 
 
@@ -90,6 +91,27 @@ class TestVariableClient:
             key="my_key",
         )
 
+    @patch("src.variables.variable_client.variable_store_pb2.GetVariableRequest")
+    def test_get_dict_supports_dot_notation(self, MockRequest, client):
+        """Test that getting a dict variable supports dot notation access."""
+        mock_stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.found = True
+        mock_response.value = json.dumps({"name": "test", "nested": {"value": 42}})
+        mock_stub.GetVariable.return_value = mock_response
+        client.stub = mock_stub
+
+        result = client.get("my_key")
+
+        # Should return Object instance, not plain dict
+        assert isinstance(result, Object)
+        # Dot notation should work
+        assert result.name == "test"
+        assert result.nested.value == 42
+        # Bracket notation should also work
+        assert result["name"] == "test"
+        assert result["nested"]["value"] == 42
+
     def test_get_without_stub(self, client):
         """Test getting a variable without a stub."""
         result = client.get("my_key")
@@ -143,6 +165,28 @@ class TestVariableClient:
             execution_id="test-execution-id",
             keys=["key1", "key2", "key3"],
         )
+
+    @patch("src.variables.variable_client.variable_store_pb2.GetVariablesRequest")
+    def test_get_many_dict_supports_dot_notation(self, MockRequest, client):
+        """Test that getting multiple dict variables supports dot notation access."""
+        mock_stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.values = [
+            json.dumps({"name": "item1", "value": {"count": 10}}),
+            json.dumps({"name": "item2", "value": {"count": 20}}),
+        ]
+        mock_stub.GetVariables.return_value = mock_response
+        client.stub = mock_stub
+
+        result = client.get_many(["key1", "key2"])
+
+        # All results should be Object instances
+        assert all(isinstance(r, Object) for r in result)
+        # Dot notation should work
+        assert result[0].name == "item1"
+        assert result[0].value.count == 10
+        assert result[1].name == "item2"
+        assert result[1].value.count == 20
 
     def test_get_many_without_stub(self, client):
         """Test getting multiple variables without a stub."""

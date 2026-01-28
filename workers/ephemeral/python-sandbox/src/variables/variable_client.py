@@ -7,6 +7,7 @@ from typing import Any
 
 import grpc
 
+from src.superblocks import loads
 from superblocks_types.worker.v1 import sandbox_variable_store_pb2 as variable_store_pb2
 from superblocks_types.worker.v1 import sandbox_variable_store_pb2_grpc as variable_store_pb2_grpc
 
@@ -33,7 +34,10 @@ class VariableClient:
             self.stub = None
 
     def get(self, key: str) -> Any:
-        """Get a variable from the store."""
+        """Get a variable from the store.
+
+        Returns dict values as Object instances to support dot notation access.
+        """
         if not self.stub:
             return None
         try:
@@ -42,7 +46,7 @@ class VariableClient:
                 key=key,
             ))
             if resp.found:
-                return json.loads(resp.value) if resp.value else None
+                return loads(resp.value) if resp.value else None
             return None
         except Exception as e:
             print(f"Error getting variable {key}: {e}")
@@ -62,7 +66,10 @@ class VariableClient:
             print(f"Error setting variable {key}: {e}")
 
     def get_many(self, keys: list[str]) -> list[Any]:
-        """Get multiple variables from the store."""
+        """Get multiple variables from the store.
+
+        Returns dict values as Object instances to support dot notation access.
+        """
         if not self.stub:
             return [None] * len(keys)
         try:
@@ -70,7 +77,7 @@ class VariableClient:
                 execution_id=self.execution_id,
                 keys=keys,
             ))
-            return [json.loads(v) if v else None for v in resp.values]
+            return [loads(v) if v else None for v in resp.values]
         except Exception as e:
             print(f"Error getting variables: {e}")
             return [None] * len(keys)
