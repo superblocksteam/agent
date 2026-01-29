@@ -261,8 +261,8 @@ deploy-helm:
 		--set launchdarkly.apikey="$(HELM_LAUNCHDARKLY_APIKEY)" \
 		--set secrets.encryptionKey="$(HELM_SECRETS_ENCRYPTION_KEY)" $(HELM_EXTRA_ARGS)
 
-	if [ "$(ENVIRONMENT)" = "prod" ] || [ "$(ENVIRONMENT)" = "prod-eu" ]; then
-	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE)-valkey orchestrator-valkey helm/orchestrator \
+	@if [ "$(ENVIRONMENT)" = "prod" ] || [ "$(ENVIRONMENT)" = "prod-eu" ]; then \
+		helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE)-valkey orchestrator-valkey helm/orchestrator \
 		--debug \
 		--create-namespace \
 		--force \
@@ -275,16 +275,16 @@ deploy-helm:
 		--set worker_go.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
 		--set worker_py.image.tag=$(IMAGE_TAG) \
 		--set worker_py.queue.host=$(HELM_QUEUE_VALKEY_HOST) \
-		--set worker_py.queue.token="${HELM_QUEUE_TOKEN}" \
+		--set worker_py.queue.token="$(HELM_QUEUE_TOKEN)" \
 		--set worker_py.kvstore.host=$(HELM_KVSTORE_VALKEY_HOST) \
-		--set worker_py.kvstore.token="${HELM_KVSTORE_TOKEN}" \
+		--set worker_py.kvstore.token="$(HELM_KVSTORE_TOKEN)" \
 		--set worker_py.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
-		--set worker_js.queue.host="${HELM_QUEUE_VALKEY_HOST}" \
-		--set worker_js.queue.token="${HELM_QUEUE_TOKEN}" \
-		--set worker_js.kvstore.host="${HELM_KVSTORE_VALKEY_HOST}" \
-		--set worker_js.kvstore.token="${HELM_KVSTORE_TOKEN}" \
-		--set worker_js.image.credentials.username="${HELM_IMAGE_CREDENTIALS_USERNAME}" \
-		--set worker_js.image.credentials.password="${HELM_IMAGE_CREDENTIALS_PASSWORD}" \
+		--set worker_js.queue.host="$(HELM_QUEUE_VALKEY_HOST)" \
+		--set worker_js.queue.token="$(HELM_QUEUE_TOKEN)" \
+		--set worker_js.kvstore.host="$(HELM_KVSTORE_VALKEY_HOST)" \
+		--set worker_js.kvstore.token="$(HELM_KVSTORE_TOKEN)" \
+		--set worker_js.image.credentials.username="$(HELM_IMAGE_CREDENTIALS_USERNAME)" \
+		--set worker_js.image.credentials.password="$(HELM_IMAGE_CREDENTIALS_PASSWORD)" \
 		--set worker_js.image.tag="$(IMAGE_TAG)" \
 		--set worker_js.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
 		--set worker_js.superblocks.privateKeyRSA="$(HELM_WORKER_KEY_RSA)" \
@@ -296,23 +296,23 @@ deploy-helm:
 		--set ephemeral_worker.kvstore.host="$(HELM_KVSTORE_VALKEY_HOST)" \
 		--set ephemeral_worker.kvstore.servername="$(HELM_KVSTORE_VALKEY_HOST)" \
 		--set ephemeral_worker.kvstore.password="$(HELM_KVSTORE_TOKEN)" \
-		--set ephemeral_worker.image.credentials.username="${HELM_IMAGE_CREDENTIALS_USERNAME}" \
-		--set ephemeral_worker.image.credentials.password="${HELM_IMAGE_CREDENTIALS_PASSWORD}" \
+		--set ephemeral_worker.image.credentials.username="$(HELM_IMAGE_CREDENTIALS_USERNAME)" \
+		--set ephemeral_worker.image.credentials.password="$(HELM_IMAGE_CREDENTIALS_PASSWORD)" \
 		--set ephemeral_worker.taskManager.image.tag="$(IMAGE_TAG)" \
 		--set ephemeral_worker.sandbox.javascript.image.tag="$(IMAGE_TAG)" \
 		--set ephemeral_worker.sandbox.python.image.tag="$(IMAGE_TAG)" \
 		--set ephemeral_worker.sandbox.javascript.langExecutorImage.tag="$(IMAGE_TAG)" \
 		--set ephemeral_worker.sandbox.python.langExecutorImage.tag="$(IMAGE_TAG)" \
-		--set queue.host="${HELM_QUEUE_VALKEY_HOST}" \
-		--set queue.token="${HELM_QUEUE_TOKEN}" \
-		--set kvstore.host="${HELM_KVSTORE_VALKEY_HOST}" \
-		--set kvstore.token="${HELM_KVSTORE_TOKEN}" \
-		--set image.credentials.username="${HELM_IMAGE_CREDENTIALS_USERNAME}" \
-		--set image.credentials.password="${HELM_IMAGE_CREDENTIALS_PASSWORD}" \
+		--set queue.host="$(HELM_QUEUE_VALKEY_HOST)" \
+		--set queue.token="$(HELM_QUEUE_TOKEN)" \
+		--set kvstore.host="$(HELM_KVSTORE_VALKEY_HOST)" \
+		--set kvstore.token="$(HELM_KVSTORE_TOKEN)" \
+		--set image.credentials.username="$(HELM_IMAGE_CREDENTIALS_USERNAME)" \
+		--set image.credentials.password="$(HELM_IMAGE_CREDENTIALS_PASSWORD)" \
 		--set image.tag="$(IMAGE_TAG)" \
 		--set superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
 		--set launchdarkly.apikey="$(HELM_LAUNCHDARKLY_APIKEY)" \
-		--set secrets.encryptionKey="$(HELM_SECRETS_ENCRYPTION_KEY)" $(HELM_EXTRA_ARGS)
+		--set secrets.encryptionKey="$(HELM_SECRETS_ENCRYPTION_KEY)" $(HELM_EXTRA_ARGS); \
 	fi
 
 HELM_TIMEOUT := "10m"
