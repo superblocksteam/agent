@@ -1,26 +1,24 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 const {
+  addLogListenersToVM,
+  buildVariables,
   decodeBytestringsExecutionContext,
   ExecutionOutput,
-  addLogListenersToVM,
-  getTreePathToDiskPath,
-  nodeVMWithContext,
-  buildVariables
+  VariableClient
 } = require('@superblocks/shared');
+const deasync = require('deasync');
+const { EventEmitter } = require('events');
+const _ = require('lodash');
+const { NodeVM } = require('vm2');
 
-const VariableClient = require('./variable-client');
-
-const importString = `
-    var _ = require('lodash');
-    var moment = require('moment');
-    var axios = require('axios');
-    var fs = require('fs');
-    var AWS = require('aws-sdk');
-    var xmlbuilder2 = require('xmlbuilder2');
-    var base64url = require('base64url');
-    var deasync = require('deasync');
-`;
+const eventEmitter = new EventEmitter();
 
 function cleanStack(stack, lineOffset) {
+  if (!stack) {
+    return undefined;
+  }
+
   const extractPathRegex = /\s+at.*[(\s](.*)\)?/;
 
   const errorLines = stack.replace(/\\/g, '/').split('\n');
@@ -51,81 +49,62 @@ function cleanStack(stack, lineOffset) {
   return isNaN(errorLineNumber) ? errorStack : `Error on line ${errorLineNumber - lineOffset}:\n${errorStack}`;
 }
 
-const sharedCode = `
-module.exports = async function() {
-  ${importString}
-
-  function serialize(buffer, mode) {
-    if (mode === 'raw') {
-      return buffer;
-    }
-    if (mode === 'binary' || mode === 'text') {
-      // utf8 encoding is lossy for truly binary data, but not an error in JS
-      return buffer.toString(mode === 'binary' ? 'base64' : 'utf8');
-    }
-    // Otherwise, detect mode from first 1024 chars
-    const chunk = buffer.slice(0, 1024).toString('utf8');
-    if (chunk.indexOf('\u{FFFD}') > -1) {
-      return buffer.toString('base64');
-    }
-    return buffer.toString('utf8');
+function serialize(buffer, mode) {
+  if (mode === 'raw') {
+    return buffer;
   }
-
-  function fetchFromController(location, callback) {
-    require('http').get($fileServerUrl + '?location=' + location, {
-      headers: { 'x-superblocks-agent-key': $agentKey }
-    }, (response) => {
-      if (response.statusCode != 200) {
-        return callback(new Error('Internal Server Error'), null);
-      }
-
-      const chunks = [];
-      let chunkStrings = '';
-      response.on('data', (chunk) => {
-        if ($fileServerUrl.includes('v2')) {
-          const serialized = serialize(chunk)
-          chunkStrings += serialized
-        } else {
-          chunks.push(Buffer.from(chunk))
-        }
-      });
-      response.on('error', (err) => callback(err, null));
-      response.on('end', () => {
-        if ($fileServerUrl.includes('v2')) {
-          const processed = chunkStrings
-          .split('\\n')
-          .filter((str) => str.length > 0)
-          .map((str) => {
-            const json = JSON.parse(str);
-            return Buffer.from(json.result.data, 'base64');
-          });
-          callback(null, Buffer.concat(processed))
-        } else {
-          callback(null, Buffer.concat(chunks))
-        }
-      });
-    })
+  if (mode === 'binary' || mode === 'text') {
+    // utf8 encoding is lossy for truly binary data, but not an error in JS
+    return buffer.toString(mode === 'binary' ? 'base64' : 'utf8');
   }
+  // Otherwise, detect mode from first 1024 chars
+  const chunk = buffer.slice(0, 1024).toString('utf8');
+  if (chunk.indexOf('\u{FFFD}') > -1) {
+    return buffer.toString('base64');
+  }
+  return buffer.toString('utf8');
+}
 
-  Object.entries($superblocksFiles).forEach(([treePath, diskPath]) => {
-    const file = _.get(global, treePath);
-    _.set(global, treePath, {
-      ...file,
-      $superblocksId: undefined,
-      previewUrl: undefined,
-      readContentsAsync: async (mode) => {
-        const contents = await require('util').promisify(fetchFromController)(diskPath);
-        const response = await serialize(contents, mode);
-        return response;
-      },
-      readContents: (mode) => {
-        const contents = require('deasync')(fetchFromController)(diskPath);
-        const response = serialize(contents, mode);
-        return response;
-      }
+function createFunctionForPreparingGlobalObjectForFiles(kvStore, filePaths) {
+  return (globalObject) => {
+    Object.entries(filePaths).forEach(([treePath, remotePath]) => {
+      const readContentsAsync = async (mode) => {
+        if (!kvStore || typeof kvStore.fetchFile !== 'function') {
+           throw new Error('File fetching not available');
+        }
+
+        const contents = await kvStore.fetchFile(remotePath);
+        return serialize(contents, mode);
+      };
+      // hide the implementation of the function
+      readContentsAsync.toString = () => 'function readContentsAsync() { [native code] }';
+
+      const readContents = (mode) => {
+        if (!kvStore || typeof kvStore.fetchFile !== 'function') {
+          throw new Error('File fetching not available');
+        }
+
+        // Use the callback-based version for better deasync compatibility
+        const contents = deasync(kvStore.fetchFileCallback.bind(kvStore))(remotePath);
+        return serialize(contents, mode);
+      };
+      // hide the implementation of the function
+      readContents.toString = () => 'function readContents() { [native code] }';
+
+      const file = _.get(globalObject, treePath);
+      _.set(globalObject, treePath, {
+        ...file,
+        $superblocksId: undefined,
+        previewUrl: undefined,
+        readContentsAsync,
+        readContents,
+      });
     });
-  });
+  };
+}
 
+const sharedCode = `
+  // Augment console object to support log and dir methods
   var $augmentedConsole = (function(cons) {
     const util = require('util');
     return {
@@ -141,43 +120,83 @@ module.exports = async function() {
   console = $augmentedConsole;
 `;
 
-module.exports = async (workerData) => {
-  const { context, code, files, executionTimeout, port } = workerData;
+module.exports.executeCode = async (workerData) => {
+  const { context, code, filePaths, inheritedEnv } = workerData;
 
+  // Add 3 lines for the newline, module export declaration and the function call to create file objects
+  const codeLineNumberOffset = sharedCode.split('\n').length + 3;
   const ret = new ExecutionOutput();
-  const filePaths = getTreePathToDiskPath(context.globals, files);
-  const codeLineNumberOffset = sharedCode.split('\n').length;
   let variableClient;
 
   try {
-    const vm = nodeVMWithContext(context, filePaths, executionTimeout);
+    const execGlobalContext = {
+      ...context.globals,
+      ...context.outputs,
+      $superblocksFiles: filePaths ?? {},
+    };
+
     if (context.variables && typeof context.variables === 'object') {
-      variableClient = new VariableClient(port);
+      variableClient = new VariableClient(context.kvStore);
       const builtVariables = await buildVariables(context.variables, variableClient);
       for (const [k, v] of Object.entries(builtVariables)) {
-        vm.setGlobal(k, v);
+        execGlobalContext[k] = v;
       }
     } else {
       throw new Error(`variables not defined`);
     }
 
     decodeBytestringsExecutionContext(context, true);
+
+    const prepareGlobalObjectForFiles = createFunctionForPreparingGlobalObjectForFiles(context.kvStore, filePaths);
+
+    // Build environment for user script
+    const userProcessEnv = {};
+    for (const key of inheritedEnv ?? []) {
+      if (process.env[key]) {
+        userProcessEnv[key] = process.env[key];
+      }
+    }
+
+    // Create vm2 sandbox for user script execution
+    const vm = new NodeVM({
+      argv: [],
+      console: 'redirect',
+      env: userProcessEnv,
+      eval: false,
+      require: {
+        builtin: ['*', '-child_process', '-process'],
+        external: true
+      },
+      sandbox: {
+        ...context.globals,
+        ...context.outputs,
+        $superblocksFiles: filePaths ?? {},
+      },
+      wasm: false
+    });
     addLogListenersToVM(vm, ret);
-    ret.output = await vm.run(
-      `${sharedCode}
+    vm.setGlobals(execGlobalContext);
+    vm.setGlobal('$prepareGlobalObjectForFiles', prepareGlobalObjectForFiles);
+
+    const codeToExecute = `
+module.exports = async function() {
+  $prepareGlobalObjectForFiles(globalThis);
+  ${sharedCode}
   ${code}
-}()`,
-      __dirname
-    );
+}()`;
+
+    ret.output = await vm.run(codeToExecute, { filename: __dirname });
+    eventEmitter.removeAllListeners();
 
     if (variableClient) {
       await variableClient.flush();
     }
   } catch (err) {
-    ret.error = cleanStack(err.stack, codeLineNumberOffset);
-  } finally {
-    variableClient.close();
+    eventEmitter.removeAllListeners();
+
+    const defaultErrMsg = err instanceof Error ? err.message : String(err);
+    ret.error = cleanStack(err.stack, codeLineNumberOffset) ?? defaultErrMsg;
   }
 
-  return JSON.stringify(ret);
+  return ret;
 };

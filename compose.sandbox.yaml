@@ -62,9 +62,10 @@ services:
     container_name: javascript-sandbox-manager
     environment:
       !!merge <<: *task-manager-environment
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: -javascript -python * # All plugins except JavaScript and Python
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: -python * # All plugins except Python
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS_IMAGE_USE_LANG_EXECUTOR:
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
       SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-sandbox:50051
       SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS: javascript-sandbox-manager:50050
       SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT: 8080

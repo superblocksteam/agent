@@ -220,6 +220,8 @@ export class PluginsRouter {
     pluginProps.context.variables = pluginProps.variables ?? {};
     pluginProps.redactedContext.kvStore = kvStore;
     pluginProps.redactedContext.variables = pluginProps.variables ?? {};
+    pluginProps.context.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
+    pluginProps.redactedContext.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
     pluginProps.version = request.props.version;
 
     this.convertPluginConfigTypesInPlace(pluginName, pluginProps);
