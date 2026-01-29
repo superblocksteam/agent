@@ -261,7 +261,7 @@ deploy-helm:
 		--set launchdarkly.apikey="$(HELM_LAUNCHDARKLY_APIKEY)" \
 		--set secrets.encryptionKey="$(HELM_SECRETS_ENCRYPTION_KEY)" $(HELM_EXTRA_ARGS)
 
-	@if [ "$(ENVIRONMENT)" = "prod" ] || [ "$(ENVIRONMENT)" = "prod-eu" ]; then \
+	if [ "$(ENVIRONMENT)" = "production" ] || [ "$(ENVIRONMENT)" = "prod-eu" ]; then \
 		helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE)-valkey orchestrator-valkey helm/orchestrator \
 		--debug \
 		--create-namespace \
