@@ -3,6 +3,7 @@ import {
   BasePlugin,
   DatasourceConfiguration,
   ExecutionOutput,
+  IntegrationError,
   PLUGIN_ID_TO_PROTO_ACTION_CONFIGURATION_OBJECT_CALLABLE,
   PLUGIN_ID_TO_PROTO_DATASOURCE_CONFIGURATION_OBJECT_CALLABLE
 } from '@superblocks/shared';
@@ -138,7 +139,12 @@ export class PluginsRouter {
     const datasourceConfig = this.convertDatasourceConfig(pluginName, request.dConfig);
     const actionConfig = this.convertActionConfig(pluginName, request.aConfig);
 
-    return await plugin.metadata(datasourceConfig, actionConfig);
+    try {
+      return await plugin.metadata(datasourceConfig, actionConfig);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      throw new IntegrationError(errorMessage);
+    }
   }
 
   public async handleTestEvent(pluginName: string, request: TestRequest): Promise<google_protobuf_empty_pb.Empty> {
