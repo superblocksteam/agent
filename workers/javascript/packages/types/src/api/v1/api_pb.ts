@@ -5,45 +5,46 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Timestamp, Value } from "@bufbuild/protobuf";
-import { Metadata } from "../../common/v1/common_pb";
-import { Signature } from "../../utils/v1/utils_pb";
-import { Variables } from "./blocks_pb";
-import { Plugin } from "../../plugins/python/v1/plugin_pb";
-import { Plugin as Plugin$1 } from "../../plugins/bigquery/v1/plugin_pb";
-import { Plugin as Plugin$2 } from "../../plugins/dynamodb/v1/plugin_pb";
-import { Plugin as Plugin$3 } from "../../plugins/email/v1/plugin_pb";
-import { Plugin as Plugin$4 } from "../../plugins/graphql/v1/plugin_pb";
-import { Plugin as Plugin$5 } from "../../plugins/gsheets/v1/plugin_pb";
-import { Plugin as Plugin$6 } from "../../plugins/mariadb/v1/plugin_pb";
-import { Plugin as Plugin$7 } from "../../plugins/mssql/v1/plugin_pb";
-import { Plugin as Plugin$8 } from "../../plugins/mysql/v1/plugin_pb";
-import { Plugin as Plugin$9 } from "../../plugins/postgresql/v1/plugin_pb";
-import { Plugin as Plugin$10 } from "../../plugins/redshift/v1/plugin_pb";
-import { Plugin as Plugin$11 } from "../../plugins/restapi/v1/plugin_pb";
-import { Plugin as Plugin$12 } from "../../plugins/restapiintegration/v1/plugin_pb";
-import { Plugin as Plugin$13 } from "../../plugins/rockset/v1/plugin_pb";
-import { Plugin as Plugin$14 } from "../../plugins/s3/v1/plugin_pb";
-import { Plugin as Plugin$15 } from "../../plugins/snowflake/v1/plugin_pb";
-import { Plugin as Plugin$16 } from "../../plugins/workflow/v1/plugin_pb";
-import { Plugin as Plugin$17 } from "../../plugins/javascript/v1/plugin_pb";
-import { Plugin as Plugin$18 } from "../../plugins/mongodb/v1/plugin_pb";
-import { Plugin as Plugin$19 } from "../../plugins/gcs/v1/plugin_pb";
-import { Plugin as Plugin$20 } from "../../plugins/openai/v1/plugin_pb";
-import { Plugin as Plugin$21 } from "../../plugins/ocr/v1/plugin_pb";
-import { Plugin as Plugin$22 } from "../../plugins/kafka/v1/plugin_pb";
-import { Plugin as Plugin$23 } from "../../plugins/cockroachdb/v1/plugin_pb";
-import { Plugin as Plugin$24 } from "../../plugins/athena/v1/plugin_pb";
-import { Plugin as Plugin$25 } from "../../plugins/redis/v1/plugin_pb";
-import { Plugin as Plugin$26 } from "../../plugins/smtp/v1/plugin_pb";
-import { Plugin as Plugin$27 } from "../../plugins/salesforce/v1/plugin_pb";
-import { Plugin as Plugin$28 } from "../../plugins/adls/v1/plugin_pb";
-import { Plugin as Plugin$29 } from "../../plugins/pinecone/v1/plugin_pb";
-import { Plugin as Plugin$30 } from "../../plugins/cosmosdb/v1/plugin_pb";
-import { Plugin as Plugin$31 } from "../../plugins/oracledb/v1/plugin_pb";
-import { Plugin as Plugin$32 } from "../../plugins/databricks/v1/plugin_pb";
-import { Plugin as Plugin$33 } from "../../plugins/couchbase/v1/plugin_pb";
-import { Plugin as Plugin$34 } from "../../plugins/custom/v1/plugin_pb";
-import { Plugin as Plugin$35 } from "../../plugins/kinesis/v1/plugin_pb";
+import { Metadata } from "../../common/v1/common_pb.js";
+import { Signature } from "../../utils/v1/utils_pb.js";
+import { Variables } from "./blocks_pb.js";
+import { Plugin } from "../../plugins/python/v1/plugin_pb.js";
+import { Plugin as Plugin$1 } from "../../plugins/bigquery/v1/plugin_pb.js";
+import { Plugin as Plugin$2 } from "../../plugins/dynamodb/v1/plugin_pb.js";
+import { Plugin as Plugin$3 } from "../../plugins/email/v1/plugin_pb.js";
+import { Plugin as Plugin$4 } from "../../plugins/graphql/v1/plugin_pb.js";
+import { Plugin as Plugin$5 } from "../../plugins/gsheets/v1/plugin_pb.js";
+import { Plugin as Plugin$6 } from "../../plugins/mariadb/v1/plugin_pb.js";
+import { Plugin as Plugin$7 } from "../../plugins/mssql/v1/plugin_pb.js";
+import { Plugin as Plugin$8 } from "../../plugins/mysql/v1/plugin_pb.js";
+import { Plugin as Plugin$9 } from "../../plugins/postgresql/v1/plugin_pb.js";
+import { Plugin as Plugin$10 } from "../../plugins/redshift/v1/plugin_pb.js";
+import { Plugin as Plugin$11 } from "../../plugins/restapi/v1/plugin_pb.js";
+import { Plugin as Plugin$12 } from "../../plugins/restapiintegration/v1/plugin_pb.js";
+import { Plugin as Plugin$13 } from "../../plugins/rockset/v1/plugin_pb.js";
+import { Plugin as Plugin$14 } from "../../plugins/s3/v1/plugin_pb.js";
+import { Plugin as Plugin$15 } from "../../plugins/snowflake/v1/plugin_pb.js";
+import { Plugin as Plugin$16 } from "../../plugins/workflow/v1/plugin_pb.js";
+import { Plugin as Plugin$17 } from "../../plugins/javascript/v1/plugin_pb.js";
+import { Plugin as Plugin$18 } from "../../plugins/mongodb/v1/plugin_pb.js";
+import { Plugin as Plugin$19 } from "../../plugins/gcs/v1/plugin_pb.js";
+import { Plugin as Plugin$20 } from "../../plugins/openai/v1/plugin_pb.js";
+import { Plugin as Plugin$21 } from "../../plugins/ocr/v1/plugin_pb.js";
+import { Plugin as Plugin$22 } from "../../plugins/kafka/v1/plugin_pb.js";
+import { Plugin as Plugin$23 } from "../../plugins/cockroachdb/v1/plugin_pb.js";
+import { Plugin as Plugin$24 } from "../../plugins/athena/v1/plugin_pb.js";
+import { Plugin as Plugin$25 } from "../../plugins/redis/v1/plugin_pb.js";
+import { Plugin as Plugin$26 } from "../../plugins/smtp/v1/plugin_pb.js";
+import { Plugin as Plugin$27 } from "../../plugins/salesforce/v1/plugin_pb.js";
+import { Plugin as Plugin$28 } from "../../plugins/adls/v1/plugin_pb.js";
+import { Plugin as Plugin$29 } from "../../plugins/pinecone/v1/plugin_pb.js";
+import { Plugin as Plugin$30 } from "../../plugins/cosmosdb/v1/plugin_pb.js";
+import { Plugin as Plugin$31 } from "../../plugins/oracledb/v1/plugin_pb.js";
+import { Plugin as Plugin$32 } from "../../plugins/databricks/v1/plugin_pb.js";
+import { Plugin as Plugin$33 } from "../../plugins/couchbase/v1/plugin_pb.js";
+import { Plugin as Plugin$34 } from "../../plugins/custom/v1/plugin_pb.js";
+import { Plugin as Plugin$35 } from "../../plugins/kinesis/v1/plugin_pb.js";
+import { Plugin as Plugin$36 } from "../../plugins/lakebase/v1/plugin_pb.js";
 
 /**
  * @generated from enum api.v1.AuthorizationType
@@ -2398,6 +2399,12 @@ export class Step extends Message<Step> {
      */
     value: Plugin$12;
     case: "openaiV2";
+  } | {
+    /**
+     * @generated from field: plugins.lakebase.v1.Plugin lakebase = 79;
+     */
+    value: Plugin$36;
+    case: "lakebase";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Step>) {
@@ -2486,6 +2493,7 @@ export class Step extends Message<Step> {
     { no: 76, name: "kinesis", kind: "message", T: Plugin$35, oneof: "config" },
     { no: 77, name: "confluence", kind: "message", T: Plugin$12, oneof: "config" },
     { no: 78, name: "openai_v2", kind: "message", T: Plugin$12, oneof: "config" },
+    { no: 79, name: "lakebase", kind: "message", T: Plugin$36, oneof: "config" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Step {

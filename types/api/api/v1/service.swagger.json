@@ -1660,17 +1660,6 @@
         }
       }
     },
-    "PluginConnectionType": {
-      "type": "string",
-      "enum": [
-        "CONNECTION_TYPE_UNSPECIFIED",
-        "CONNECTION_TYPE_PAT",
-        "CONNECTION_TYPE_M2M",
-        "CONNECTION_TYPE_OAUTH_EXCHANGE"
-      ],
-      "default": "CONNECTION_TYPE_UNSPECIFIED",
-      "title": "- CONNECTION_TYPE_PAT: PERSONAL ACCESS TOKEN\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#databricks-personal-access-token-authentication\n - CONNECTION_TYPE_M2M: MACHINE TO MACHINE\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#oauth-machine-to-machine-m2m-authentication\n - CONNECTION_TYPE_OAUTH_EXCHANGE: OAUTH TOKEN EXCHANGE (ON-BEHALF-OF)\nOAuth Token Federation flow where an identity provider token is exchanged for a Databricks access token"
-    },
     "PluginConsume": {
       "type": "object",
       "properties": {
@@ -1842,7 +1831,7 @@
           "format": "int32"
         },
         "connectionType": {
-          "$ref": "#/definitions/PluginConnectionType"
+          "$ref": "#/definitions/pluginsdatabricksv1PluginConnectionType"
         },
         "token": {
           "type": "string",
@@ -2096,6 +2085,38 @@
         }
       },
       "title": "https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html\nhttps://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html"
+    },
+    "PluginLakebaseConnection": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "databaseName": {
+          "type": "string"
+        },
+        "connectionType": {
+          "$ref": "#/definitions/pluginslakebasev1PluginConnectionType"
+        },
+        "username": {
+          "type": "string",
+          "title": "Username/Password auth"
+        },
+        "password": {
+          "type": "string"
+        },
+        "oauthClientId": {
+          "type": "string",
+          "title": "OAuth Machine-to-Machine auth"
+        },
+        "oauthClientSecret": {
+          "type": "string"
+        }
+      }
     },
     "PluginLindex": {
       "type": "object",
@@ -3641,6 +3662,17 @@
         }
       }
     },
+    "pluginsdatabricksv1PluginConnectionType": {
+      "type": "string",
+      "enum": [
+        "CONNECTION_TYPE_UNSPECIFIED",
+        "CONNECTION_TYPE_PAT",
+        "CONNECTION_TYPE_M2M",
+        "CONNECTION_TYPE_OAUTH_EXCHANGE"
+      ],
+      "default": "CONNECTION_TYPE_UNSPECIFIED",
+      "title": "- CONNECTION_TYPE_PAT: PERSONAL ACCESS TOKEN\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#databricks-personal-access-token-authentication\n - CONNECTION_TYPE_M2M: MACHINE TO MACHINE\nhttps://docs.databricks.com/en/dev-tools/nodejs-sql-driver.html#oauth-machine-to-machine-m2m-authentication\n - CONNECTION_TYPE_OAUTH_EXCHANGE: OAUTH TOKEN EXCHANGE (ON-BEHALF-OF)\nOAuth Token Federation flow where an identity provider token is exchanged for a Databricks access token"
+    },
     "pluginsdynamodbv1MappedColumns": {
       "type": "object",
       "properties": {
@@ -4090,6 +4122,48 @@
         },
         "dynamicWorkflowConfiguration": {
           "$ref": "#/definitions/v1DynamicWorkflowConfiguration"
+        }
+      }
+    },
+    "pluginslakebasev1Plugin": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "connection": {
+          "$ref": "#/definitions/PluginLakebaseConnection"
+        },
+        "body": {
+          "type": "string"
+        },
+        "usePreparedSql": {
+          "type": "boolean"
+        },
+        "parameters": {
+          "type": "string"
+        },
+        "superblocksMetadata": {
+          "$ref": "#/definitions/pluginslakebasev1SuperblocksMetadata"
+        }
+      }
+    },
+    "pluginslakebasev1PluginConnectionType": {
+      "type": "string",
+      "enum": [
+        "CONNECTION_TYPE_UNSPECIFIED",
+        "CONNECTION_TYPE_USERNAME_PASSWORD",
+        "CONNECTION_TYPE_OAUTH_M2M",
+        "CONNECTION_TYPE_OAUTH_FEDERATION"
+      ],
+      "default": "CONNECTION_TYPE_UNSPECIFIED",
+      "title": "- CONNECTION_TYPE_USERNAME_PASSWORD: Username and password authentication\n - CONNECTION_TYPE_OAUTH_M2M: OAuth Machine-to-Machine (client credentials flow)\n - CONNECTION_TYPE_OAUTH_FEDERATION: OAuth Token Federation (on-behalf-of flow)"
+    },
+    "pluginslakebasev1SuperblocksMetadata": {
+      "type": "object",
+      "properties": {
+        "pluginVersion": {
+          "type": "string"
         }
       }
     },
@@ -6918,6 +6992,9 @@
         },
         "openaiV2": {
           "$ref": "#/definitions/pluginsrestapiintegrationv1Plugin"
+        },
+        "lakebase": {
+          "$ref": "#/definitions/pluginslakebasev1Plugin"
         }
       }
     },

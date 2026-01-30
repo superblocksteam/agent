@@ -47,6 +47,7 @@
     "@superblocksteam/javascript": "workspace:*",
     "@superblocksteam/kafka": "workspace:*",
     "@superblocksteam/kinesis": "workspace:*",
+    "@superblocksteam/lakebase": "workspace:*",
     "@superblocksteam/mariadb": "workspace:*",
     "@superblocksteam/mongodb": "workspace:*",
     "@superblocksteam/mssql": "workspace:*",

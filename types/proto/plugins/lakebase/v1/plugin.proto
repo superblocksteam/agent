@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package plugins.lakebase.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/lakebase/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Plugin {
+  string name = 1;
+  LakebaseConnection connection = 2;
+  string body = 3;
+  bool usePreparedSql = 4;
+  optional string parameters = 5;
+  SuperblocksMetadata superblocksMetadata = 6;
+
+  message LakebaseConnection {
+    string host = 1;
+    int32 port = 2;
+    string database_name = 3;
+    ConnectionType connection_type = 4;
+    // Username/Password auth
+    optional string username = 5;
+    optional string password = 6;
+    // OAuth Machine-to-Machine auth
+    optional string oauth_client_id = 7;
+    optional string oauth_client_secret = 8;
+    // Databricks workspace URL for OAuth (e.g., https://dbc-xxx.cloud.databricks.com)
+    optional string oauth_workspace_url = 9;
+    // Username for Token Federation with Login Identity Provider (typically user's email)
+    optional string federation_username = 10;
+  }
+
+  enum ConnectionType {
+    CONNECTION_TYPE_UNSPECIFIED = 0;
+    // Username and password authentication
+    CONNECTION_TYPE_USERNAME_PASSWORD = 1;
+    // OAuth Machine-to-Machine (client credentials flow)
+    CONNECTION_TYPE_OAUTH_M2M = 2;
+    // OAuth Token Federation (on-behalf-of flow)
+    CONNECTION_TYPE_OAUTH_FEDERATION = 3;
+  }
+}

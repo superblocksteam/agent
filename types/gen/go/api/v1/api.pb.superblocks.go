@@ -1243,3 +1243,19 @@ func (plugin *Step_OpenaiV2) Build() (map[string]any, error) {
 	}
 	return obj, nil
 }
+
+func (*Step_Lakebase) Name() string { return "lakebase" }
+
+func (*Step_Lakebase) Type() string { return "lakebase" }
+
+func (plugin *Step_Lakebase) Build() (map[string]any, error) {
+	var buf bytes.Buffer
+	if err := marshaler.Marshal(&buf, plugin.Lakebase); err != nil {
+		return nil, err
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
+}

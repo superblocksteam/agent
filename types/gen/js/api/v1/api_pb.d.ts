@@ -26,6 +26,7 @@ import * as plugins_gsheets_v1_plugin_pb from "../../plugins/gsheets/v1/plugin_p
 import * as plugins_javascript_v1_plugin_pb from "../../plugins/javascript/v1/plugin_pb";
 import * as plugins_kafka_v1_plugin_pb from "../../plugins/kafka/v1/plugin_pb";
 import * as plugins_kinesis_v1_plugin_pb from "../../plugins/kinesis/v1/plugin_pb";
+import * as plugins_lakebase_v1_plugin_pb from "../../plugins/lakebase/v1/plugin_pb";
 import * as plugins_mariadb_v1_plugin_pb from "../../plugins/mariadb/v1/plugin_pb";
 import * as plugins_mongodb_v1_plugin_pb from "../../plugins/mongodb/v1/plugin_pb";
 import * as plugins_mssql_v1_plugin_pb from "../../plugins/mssql/v1/plugin_pb";
@@ -1608,6 +1609,11 @@ export class Step extends jspb.Message {
     getOpenaiV2(): plugins_restapiintegration_v1_plugin_pb.Plugin | undefined;
     setOpenaiV2(value?: plugins_restapiintegration_v1_plugin_pb.Plugin): Step;
 
+    hasLakebase(): boolean;
+    clearLakebase(): void;
+    getLakebase(): plugins_lakebase_v1_plugin_pb.Plugin | undefined;
+    setLakebase(value?: plugins_lakebase_v1_plugin_pb.Plugin): Step;
+
     getConfigCase(): Step.ConfigCase;
 
     serializeBinary(): Uint8Array;
@@ -1700,6 +1706,7 @@ export namespace Step {
         kinesis?: plugins_kinesis_v1_plugin_pb.Plugin.AsObject,
         confluence?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
         openaiV2?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
+        lakebase?: plugins_lakebase_v1_plugin_pb.Plugin.AsObject,
     }
 
     export enum ConfigCase {
@@ -1781,6 +1788,7 @@ export namespace Step {
         KINESIS = 76,
         CONFLUENCE = 77,
         OPENAI_V2 = 78,
+        LAKEBASE = 79,
     }
 
 }

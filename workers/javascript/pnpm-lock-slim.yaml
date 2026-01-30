@@ -369,6 +369,9 @@ importers:
       '@superblocksteam/kinesis':
         specifier: workspace:*
         version: link:../../plugins/kinesis
+      '@superblocksteam/lakebase':
+        specifier: workspace:*
+        version: link:../../plugins/lakebase
       '@superblocksteam/mariadb':
         specifier: workspace:*
         version: link:../../plugins/mariadb
@@ -572,6 +575,9 @@ importers:
       '@superblocksteam/kinesis':
         specifier: workspace:*
         version: link:../../plugins/kinesis
+      '@superblocksteam/lakebase':
+        specifier: workspace:*
+        version: link:../../plugins/lakebase
       '@superblocksteam/mariadb':
         specifier: workspace:*
         version: link:../../plugins/mariadb
@@ -1886,6 +1892,79 @@ importers:
       '@jest/globals':
         specifier: ^29.7.0
         version: 29.7.0
+      '@swc/cli':
+        specifier: 0.6.0
+        version: 0.6.0(@swc/core@1.7.26)(chokidar@4.0.3)
+      '@swc/core':
+        specifier: 1.7.26
+        version: 1.7.26
+      '@swc/jest':
+        specifier: 0.2.36
+        version: 0.2.36(@swc/core@1.7.26)
+      '@types/jest':
+        specifier: 29.5.12
+        version: 29.5.12
+      '@types/lodash':
+        specifier: ^4.17.0
+        version: 4.17.7
+      '@types/node':
+        specifier: 20.14.8
+        version: 20.14.8
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.8.0
+        version: 7.8.0(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser':
+        specifier: ^7.8.0
+        version: 7.8.0(eslint@8.57.0)(typescript@5.5.4)
+      chokidar-cli:
+        specifier: 3.0.0
+        version: 3.0.0
+      eslint:
+        specifier: 8.57.0
+        version: 8.57.0
+      eslint-config-prettier:
+        specifier: 8.1.0
+        version: 8.1.0(eslint@8.57.0)
+      eslint-import-resolver-typescript:
+        specifier: ^2.5.0
+        version: 2.5.0(eslint-plugin-import@2.29.1)(eslint@8.57.0)
+      eslint-plugin-import:
+        specifier: ^2.29.1
+        version: 2.29.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@2.5.0)(eslint@8.57.0)
+      eslint-plugin-prettier:
+        specifier: 5.2.1
+        version: 5.2.1(eslint-config-prettier@8.1.0(eslint@8.57.0))(eslint@8.57.0)(prettier@3.3.3)
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@20.14.8)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@20.14.8)(typescript@5.5.4))
+      prettier:
+        specifier: 3.3.3
+        version: 3.3.3
+      rimraf:
+        specifier: ^5.0.0
+        version: 5.0.10
+      typescript:
+        specifier: ^5.5.4
+        version: 5.5.4
+
+  packages/plugins/lakebase:
+    dependencies:
+      '@superblocks/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@superblocksteam/types':
+        specifier: workspace:*
+        version: link:../../types
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      minimist:
+        specifier: 1.2.6
+        version: 1.2.6
+      pg:
+        specifier: 8.11.5
+        version: 8.11.5
+    devDependencies:
       '@swc/cli':
         specifier: 0.6.0
         version: 0.6.0(@swc/core@1.7.26)(chokidar@4.0.3)
@@ -12250,7 +12329,7 @@ snapshots:
   '@eslint/eslintrc@2.1.4':
     dependencies:
       ajv: 6.12.6
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3
       espree: 9.6.1
       globals: 13.24.0
       ignore: 5.3.2
@@ -12391,7 +12470,7 @@ snapshots:
   '@humanwhocodes/config-array@0.11.14':
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -13586,9 +13665,9 @@ snapshots:
       fast-glob: 3.3.2
       minimatch: 9.0.5
       piscina: 4.6.1
-      semver: 7.6.3
+      semver: 7.7.3
       slash: 3.0.0
-      source-map: 0.7.4
+      source-map: 0.7.6
     optionalDependencies:
       chokidar: 4.0.3
 
@@ -15268,7 +15347,7 @@ snapshots:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.6
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3
       doctrine: 3.0.0
       escape-string-regexp: 4.0.0
       eslint-scope: 7.2.2
@@ -16348,7 +16427,7 @@ snapshots:
 
   istanbul-lib-source-maps@4.0.1:
     dependencies:
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3
       istanbul-lib-coverage: 3.2.2
       source-map: 0.6.1
     transitivePeerDependencies:

@@ -23,6 +23,7 @@ import "plugins/gsheets/v1/plugin.proto";
 import "plugins/javascript/v1/plugin.proto";
 import "plugins/kafka/v1/plugin.proto";
 import "plugins/kinesis/v1/plugin.proto";
+import "plugins/lakebase/v1/plugin.proto";
 import "plugins/mariadb/v1/plugin.proto";
 import "plugins/mongodb/v1/plugin.proto";
 import "plugins/mssql/v1/plugin.proto";
@@ -456,5 +457,6 @@ message Step {
     plugins.kinesis.v1.Plugin kinesis = 76;
     plugins.restapiintegration.v1.Plugin confluence = 77 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
     plugins.restapiintegration.v1.Plugin openai_v2 = 78 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
+    plugins.lakebase.v1.Plugin lakebase = 79;
   }
 }

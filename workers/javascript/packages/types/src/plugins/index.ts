@@ -9,7 +9,8 @@ export * as DatabricksPluginV1 from "./databricks/v1/plugin_pb";
 export * as DynamoDbV1 from "./dynamodb/v1/plugin_pb";
 export * as GraphQlV1 from "./graphql/v1/plugin_pb";
 export * as KafkaV1 from "./kafka/v1/plugin_pb";
-export * as KinesisPluginV1 from "./kinesis/v1/plugin_pb"
+export * as KinesisPluginV1 from "./kinesis/v1/plugin_pb";
+export * as LakebasePluginV1 from "./lakebase/v1/plugin_pb";
 export * as OracleDbPluginV1 from "./oracledb/v1/plugin_pb";
 export * as RedisPluginV1 from "./redis/v1/plugin_pb";
 export * as RestApiV1 from "./restapi/v1/plugin_pb";

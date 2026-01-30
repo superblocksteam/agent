@@ -63,6 +63,8 @@ var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
 var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
+var plugins_lakebase_v1_plugin_pb = require('../../plugins/lakebase/v1/plugin_pb.js');
+goog.object.extend(proto, plugins_lakebase_v1_plugin_pb);
 var plugins_mariadb_v1_plugin_pb = require('../../plugins/mariadb/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_mariadb_v1_plugin_pb);
 var plugins_mongodb_v1_plugin_pb = require('../../plugins/mongodb/v1/plugin_pb.js');
@@ -8858,7 +8860,7 @@ proto.api.v1.Block.prototype.hasSend = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78]];
+proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79]];
 
 /**
  * @enum {number}
@@ -8941,7 +8943,8 @@ proto.api.v1.Step.ConfigCase = {
   GEMINI: 75,
   KINESIS: 76,
   CONFLUENCE: 77,
-  OPENAI_V2: 78
+  OPENAI_V2: 78,
+  LAKEBASE: 79
 };
 
 /**
@@ -9059,7 +9062,8 @@ proto.api.v1.Step.toObject = function(includeInstance, msg) {
     gemini: (f = msg.getGemini()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
     kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
     confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-    openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f)
+    openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    lakebase: (f = msg.getLakebase()) && plugins_lakebase_v1_plugin_pb.Plugin.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9484,6 +9488,11 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
       var value = new plugins_restapiintegration_v1_plugin_pb.Plugin;
       reader.readMessage(value,plugins_restapiintegration_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
       msg.setOpenaiV2(value);
+      break;
+    case 79:
+      var value = new plugins_lakebase_v1_plugin_pb.Plugin;
+      reader.readMessage(value,plugins_lakebase_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
+      msg.setLakebase(value);
       break;
     default:
       reader.skipField();
@@ -10135,6 +10144,14 @@ proto.api.v1.Step.serializeBinaryToWriter = function(message, writer) {
       78,
       f,
       plugins_restapiintegration_v1_plugin_pb.Plugin.serializeBinaryToWriter
+    );
+  }
+  f = message.getLakebase();
+  if (f != null) {
+    writer.writeMessage(
+      79,
+      f,
+      plugins_lakebase_v1_plugin_pb.Plugin.serializeBinaryToWriter
     );
   }
 };
@@ -13004,6 +13021,43 @@ proto.api.v1.Step.prototype.clearOpenaiV2 = function() {
  */
 proto.api.v1.Step.prototype.hasOpenaiV2 = function() {
   return jspb.Message.getField(this, 78) != null;
+};
+
+
+/**
+ * optional plugins.lakebase.v1.Plugin lakebase = 79;
+ * @return {?proto.plugins.lakebase.v1.Plugin}
+ */
+proto.api.v1.Step.prototype.getLakebase = function() {
+  return /** @type{?proto.plugins.lakebase.v1.Plugin} */ (
+    jspb.Message.getWrapperField(this, plugins_lakebase_v1_plugin_pb.Plugin, 79));
+};
+
+
+/**
+ * @param {?proto.plugins.lakebase.v1.Plugin|undefined} value
+ * @return {!proto.api.v1.Step} returns this
+*/
+proto.api.v1.Step.prototype.setLakebase = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 79, proto.api.v1.Step.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.Step} returns this
+ */
+proto.api.v1.Step.prototype.clearLakebase = function() {
+  return this.setLakebase(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.Step.prototype.hasLakebase = function() {
+  return jspb.Message.getField(this, 79) != null;
 };
 
 

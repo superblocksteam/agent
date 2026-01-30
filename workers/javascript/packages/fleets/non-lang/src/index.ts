@@ -14,6 +14,7 @@ import sb_graphql from '@superblocksteam/graphql';
 import sb_gsheets from '@superblocksteam/gsheets';
 import sb_kafka from '@superblocksteam/kafka';
 import sb_kinesis from '@superblocksteam/kinesis';
+import sb_lakebase from '@superblocksteam/lakebase';
 import sb_mariadb from '@superblocksteam/mariadb';
 import sb_mongodb from '@superblocksteam/mongodb';
 import sb_mssql from '@superblocksteam/mssql';
@@ -78,5 +79,6 @@ const secretStore = secrets();
     'sb-adls': new sb_adls(),
     'sb-databricks': new sb_databricks(),
     'sb-couchbase': new sb_couchbase(),
-    'sb-oracledb': new sb_oracledb()
+    'sb-oracledb': new sb_oracledb(),
+    'sb-lakebase': new sb_lakebase()
   }))();

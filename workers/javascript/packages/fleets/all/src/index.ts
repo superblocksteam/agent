@@ -15,6 +15,7 @@ import sb_gsheets from '@superblocksteam/gsheets';
 import sb_javascript from '@superblocksteam/javascript';
 import sb_kafka from '@superblocksteam/kafka';
 import sb_kinesis from '@superblocksteam/kinesis';
+import sb_lakebase from '@superblocksteam/lakebase';
 import sb_mariadb from '@superblocksteam/mariadb';
 import sb_mongodb from '@superblocksteam/mongodb';
 import sb_mssql from '@superblocksteam/mssql';
@@ -54,6 +55,7 @@ const secretStore = secrets();
     'sb-gsheets': new sb_gsheets(),
     'sb-kafka': kafka,
     'sb-kinesis': new sb_kinesis(),
+    'sb-lakebase': new sb_lakebase(),
     'sb-confluent': kafka,
     'sb-msk': kafka,
     'sb-redpanda': kafka,

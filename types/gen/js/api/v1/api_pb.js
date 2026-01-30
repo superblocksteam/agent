@@ -21,93 +21,95 @@ var global =
     (function () { return this; }).call(null) ||
     Function('return this')();
 
-var api_v1_blocks_pb = require('../../api/v1/blocks_pb');
+var api_v1_blocks_pb = require('../../api/v1/blocks_pb.js');
 goog.object.extend(proto, api_v1_blocks_pb);
-var buf_validate_validate_pb = require('../../buf/validate/validate_pb');
+var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
 goog.object.extend(proto, buf_validate_validate_pb);
-var common_v1_common_pb = require('../../common/v1/common_pb');
+var common_v1_common_pb = require('../../common/v1/common_pb.js');
 goog.object.extend(proto, common_v1_common_pb);
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
 var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
-var plugins_adls_v1_plugin_pb = require('../../plugins/adls/v1/plugin_pb');
+var plugins_adls_v1_plugin_pb = require('../../plugins/adls/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_adls_v1_plugin_pb);
-var plugins_athena_v1_plugin_pb = require('../../plugins/athena/v1/plugin_pb');
+var plugins_athena_v1_plugin_pb = require('../../plugins/athena/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_athena_v1_plugin_pb);
-var plugins_bigquery_v1_plugin_pb = require('../../plugins/bigquery/v1/plugin_pb');
+var plugins_bigquery_v1_plugin_pb = require('../../plugins/bigquery/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_bigquery_v1_plugin_pb);
-var plugins_cockroachdb_v1_plugin_pb = require('../../plugins/cockroachdb/v1/plugin_pb');
+var plugins_cockroachdb_v1_plugin_pb = require('../../plugins/cockroachdb/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_cockroachdb_v1_plugin_pb);
-var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb');
+var plugins_cosmosdb_v1_plugin_pb = require('../../plugins/cosmosdb/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_cosmosdb_v1_plugin_pb);
-var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb');
+var plugins_couchbase_v1_plugin_pb = require('../../plugins/couchbase/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_couchbase_v1_plugin_pb);
-var plugins_custom_v1_plugin_pb = require('../../plugins/custom/v1/plugin_pb');
+var plugins_custom_v1_plugin_pb = require('../../plugins/custom/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_custom_v1_plugin_pb);
-var plugins_databricks_v1_plugin_pb = require('../../plugins/databricks/v1/plugin_pb');
+var plugins_databricks_v1_plugin_pb = require('../../plugins/databricks/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_databricks_v1_plugin_pb);
-var plugins_dynamodb_v1_plugin_pb = require('../../plugins/dynamodb/v1/plugin_pb');
+var plugins_dynamodb_v1_plugin_pb = require('../../plugins/dynamodb/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_dynamodb_v1_plugin_pb);
-var plugins_email_v1_plugin_pb = require('../../plugins/email/v1/plugin_pb');
+var plugins_email_v1_plugin_pb = require('../../plugins/email/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_email_v1_plugin_pb);
-var plugins_gcs_v1_plugin_pb = require('../../plugins/gcs/v1/plugin_pb');
+var plugins_gcs_v1_plugin_pb = require('../../plugins/gcs/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_gcs_v1_plugin_pb);
-var plugins_graphql_v1_plugin_pb = require('../../plugins/graphql/v1/plugin_pb');
+var plugins_graphql_v1_plugin_pb = require('../../plugins/graphql/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_graphql_v1_plugin_pb);
-var plugins_gsheets_v1_plugin_pb = require('../../plugins/gsheets/v1/plugin_pb');
+var plugins_gsheets_v1_plugin_pb = require('../../plugins/gsheets/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_gsheets_v1_plugin_pb);
-var plugins_javascript_v1_plugin_pb = require('../../plugins/javascript/v1/plugin_pb');
+var plugins_javascript_v1_plugin_pb = require('../../plugins/javascript/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_javascript_v1_plugin_pb);
-var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb');
+var plugins_kafka_v1_plugin_pb = require('../../plugins/kafka/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_kafka_v1_plugin_pb);
-var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb');
+var plugins_kinesis_v1_plugin_pb = require('../../plugins/kinesis/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_kinesis_v1_plugin_pb);
-var plugins_mariadb_v1_plugin_pb = require('../../plugins/mariadb/v1/plugin_pb');
+var plugins_lakebase_v1_plugin_pb = require('../../plugins/lakebase/v1/plugin_pb.js');
+goog.object.extend(proto, plugins_lakebase_v1_plugin_pb);
+var plugins_mariadb_v1_plugin_pb = require('../../plugins/mariadb/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_mariadb_v1_plugin_pb);
-var plugins_mongodb_v1_plugin_pb = require('../../plugins/mongodb/v1/plugin_pb');
+var plugins_mongodb_v1_plugin_pb = require('../../plugins/mongodb/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_mongodb_v1_plugin_pb);
-var plugins_mssql_v1_plugin_pb = require('../../plugins/mssql/v1/plugin_pb');
+var plugins_mssql_v1_plugin_pb = require('../../plugins/mssql/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_mssql_v1_plugin_pb);
-var plugins_mysql_v1_plugin_pb = require('../../plugins/mysql/v1/plugin_pb');
+var plugins_mysql_v1_plugin_pb = require('../../plugins/mysql/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_mysql_v1_plugin_pb);
-var plugins_ocr_v1_plugin_pb = require('../../plugins/ocr/v1/plugin_pb');
+var plugins_ocr_v1_plugin_pb = require('../../plugins/ocr/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_ocr_v1_plugin_pb);
-var plugins_openai_v1_plugin_pb = require('../../plugins/openai/v1/plugin_pb');
+var plugins_openai_v1_plugin_pb = require('../../plugins/openai/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_openai_v1_plugin_pb);
-var plugins_oracledb_v1_plugin_pb = require('../../plugins/oracledb/v1/plugin_pb');
+var plugins_oracledb_v1_plugin_pb = require('../../plugins/oracledb/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_oracledb_v1_plugin_pb);
-var plugins_pinecone_v1_plugin_pb = require('../../plugins/pinecone/v1/plugin_pb');
+var plugins_pinecone_v1_plugin_pb = require('../../plugins/pinecone/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_pinecone_v1_plugin_pb);
-var plugins_postgresql_v1_plugin_pb = require('../../plugins/postgresql/v1/plugin_pb');
+var plugins_postgresql_v1_plugin_pb = require('../../plugins/postgresql/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_postgresql_v1_plugin_pb);
-var plugins_python_v1_plugin_pb = require('../../plugins/python/v1/plugin_pb');
+var plugins_python_v1_plugin_pb = require('../../plugins/python/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_python_v1_plugin_pb);
-var plugins_redis_v1_plugin_pb = require('../../plugins/redis/v1/plugin_pb');
+var plugins_redis_v1_plugin_pb = require('../../plugins/redis/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_redis_v1_plugin_pb);
-var plugins_redshift_v1_plugin_pb = require('../../plugins/redshift/v1/plugin_pb');
+var plugins_redshift_v1_plugin_pb = require('../../plugins/redshift/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_redshift_v1_plugin_pb);
-var plugins_restapi_v1_plugin_pb = require('../../plugins/restapi/v1/plugin_pb');
+var plugins_restapi_v1_plugin_pb = require('../../plugins/restapi/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_restapi_v1_plugin_pb);
-var plugins_restapiintegration_v1_plugin_pb = require('../../plugins/restapiintegration/v1/plugin_pb');
+var plugins_restapiintegration_v1_plugin_pb = require('../../plugins/restapiintegration/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_restapiintegration_v1_plugin_pb);
-var plugins_rockset_v1_plugin_pb = require('../../plugins/rockset/v1/plugin_pb');
+var plugins_rockset_v1_plugin_pb = require('../../plugins/rockset/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_rockset_v1_plugin_pb);
-var plugins_s3_v1_plugin_pb = require('../../plugins/s3/v1/plugin_pb');
+var plugins_s3_v1_plugin_pb = require('../../plugins/s3/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_s3_v1_plugin_pb);
-var plugins_salesforce_v1_plugin_pb = require('../../plugins/salesforce/v1/plugin_pb');
+var plugins_salesforce_v1_plugin_pb = require('../../plugins/salesforce/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_salesforce_v1_plugin_pb);
-var plugins_smtp_v1_plugin_pb = require('../../plugins/smtp/v1/plugin_pb');
+var plugins_smtp_v1_plugin_pb = require('../../plugins/smtp/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_smtp_v1_plugin_pb);
-var plugins_snowflake_v1_plugin_pb = require('../../plugins/snowflake/v1/plugin_pb');
+var plugins_snowflake_v1_plugin_pb = require('../../plugins/snowflake/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_snowflake_v1_plugin_pb);
-var plugins_workflow_v1_plugin_pb = require('../../plugins/workflow/v1/plugin_pb');
+var plugins_workflow_v1_plugin_pb = require('../../plugins/workflow/v1/plugin_pb.js');
 goog.object.extend(proto, plugins_workflow_v1_plugin_pb);
-var superblocks_v1_options_pb = require('../../superblocks/v1/options_pb');
+var superblocks_v1_options_pb = require('../../superblocks/v1/options_pb.js');
 goog.object.extend(proto, superblocks_v1_options_pb);
-var utils_v1_utils_pb = require('../../utils/v1/utils_pb');
+var utils_v1_utils_pb = require('../../utils/v1/utils_pb.js');
 goog.object.extend(proto, utils_v1_utils_pb);
-var validate_validate_pb = require('../../validate/validate_pb');
+var validate_validate_pb = require('../../validate/validate_pb.js');
 goog.object.extend(proto, validate_validate_pb);
 goog.exportSymbol('proto.api.v1.Api', null, global);
 goog.exportSymbol('proto.api.v1.Authorization', null, global);
@@ -8858,7 +8860,7 @@ proto.api.v1.Block.prototype.hasSend = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78]];
+proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79]];
 
 /**
  * @enum {number}
@@ -8941,7 +8943,8 @@ proto.api.v1.Step.ConfigCase = {
   GEMINI: 75,
   KINESIS: 76,
   CONFLUENCE: 77,
-  OPENAI_V2: 78
+  OPENAI_V2: 78,
+  LAKEBASE: 79
 };
 
 /**
@@ -9059,7 +9062,8 @@ proto.api.v1.Step.toObject = function(includeInstance, msg) {
     gemini: (f = msg.getGemini()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
     kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
     confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-    openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f)
+    openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    lakebase: (f = msg.getLakebase()) && plugins_lakebase_v1_plugin_pb.Plugin.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9484,6 +9488,11 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
       var value = new plugins_restapiintegration_v1_plugin_pb.Plugin;
       reader.readMessage(value,plugins_restapiintegration_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
       msg.setOpenaiV2(value);
+      break;
+    case 79:
+      var value = new plugins_lakebase_v1_plugin_pb.Plugin;
+      reader.readMessage(value,plugins_lakebase_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
+      msg.setLakebase(value);
       break;
     default:
       reader.skipField();
@@ -10135,6 +10144,14 @@ proto.api.v1.Step.serializeBinaryToWriter = function(message, writer) {
       78,
       f,
       plugins_restapiintegration_v1_plugin_pb.Plugin.serializeBinaryToWriter
+    );
+  }
+  f = message.getLakebase();
+  if (f != null) {
+    writer.writeMessage(
+      79,
+      f,
+      plugins_lakebase_v1_plugin_pb.Plugin.serializeBinaryToWriter
     );
   }
 };
@@ -13004,6 +13021,43 @@ proto.api.v1.Step.prototype.clearOpenaiV2 = function() {
  */
 proto.api.v1.Step.prototype.hasOpenaiV2 = function() {
   return jspb.Message.getField(this, 78) != null;
+};
+
+
+/**
+ * optional plugins.lakebase.v1.Plugin lakebase = 79;
+ * @return {?proto.plugins.lakebase.v1.Plugin}
+ */
+proto.api.v1.Step.prototype.getLakebase = function() {
+  return /** @type{?proto.plugins.lakebase.v1.Plugin} */ (
+    jspb.Message.getWrapperField(this, plugins_lakebase_v1_plugin_pb.Plugin, 79));
+};
+
+
+/**
+ * @param {?proto.plugins.lakebase.v1.Plugin|undefined} value
+ * @return {!proto.api.v1.Step} returns this
+*/
+proto.api.v1.Step.prototype.setLakebase = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 79, proto.api.v1.Step.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.Step} returns this
+ */
+proto.api.v1.Step.prototype.clearLakebase = function() {
+  return this.setLakebase(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.Step.prototype.hasLakebase = function() {
+  return jspb.Message.getField(this, 79) != null;
 };
 
 

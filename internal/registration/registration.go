@@ -59,6 +59,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"couchbase":          {"0.0.2"},
 	"databricks":         {"0.0.5"},
 	"oracledb":           {"0.0.2"},
+	"lakebase":           {"0.0.1"},
 }
 
 type Registrator interface {

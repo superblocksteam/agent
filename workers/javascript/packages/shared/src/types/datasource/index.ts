@@ -446,6 +446,30 @@ export type DatabricksDatasourceConfiguration = Pick<DatabricksPlugin.Plugin, 'n
     oauthType?: IntegrationAuthType.OAUTH2_TOKEN_EXCHANGE;
   };
 
+// Lakebase is Databricks's Postgres-compatible database
+// Connection types: Username/Password, OAuth M2M, OAuth Token Federation
+export type LakebaseDatasourceConfiguration = {
+  name?: string;
+  connection?: {
+    host?: string;
+    port?: number;
+    databaseName?: string;
+    connectionType?: number; // Maps to LakebasePluginV1.Plugin_ConnectionType enum
+    // Username/Password auth
+    username?: string;
+    password?: string;
+    // OAuth M2M auth
+    oauthClientId?: string;
+    oauthClientSecret?: string;
+    oauthWorkspaceUrl?: string;
+    // OAuth Token Federation auth
+    federationUsername?: string;
+  };
+} & AuthenticatedDatasourceConfig & {
+  authTypeField?: string;
+  oauthType?: IntegrationAuthType.OAUTH2_TOKEN_EXCHANGE;
+};
+
 export type OracleDbDatasourceConfiguration = Pick<OracleDbPlugin.Plugin, 'name' | 'connection' | 'dynamicWorkflowConfiguration'> & {
   connectionType?: 'fields' | 'url';
   connectionUrl?: string;
@@ -496,6 +520,7 @@ export type DatasourceConfiguration =
   | OracleDbDatasourceConfiguration
   | DatabricksDatasourceConfiguration
   | CouchbaseDatasourceConfiguration
+  | LakebaseDatasourceConfiguration
   | SecretStore;
 
 export type DatasourceConfigurationByType = {
@@ -536,6 +561,7 @@ export type DatasourceConfigurationByType = {
   rockset?: RocksetDatasourceConfiguration;
   gsheets?: GoogleSheetsDatasourceConfiguration;
   kafka?: KafkaDatasourceConfiguration;
+  lakebase?: LakebaseDatasourceConfiguration;
 };
 
 export enum DatasourceEnvironments {
