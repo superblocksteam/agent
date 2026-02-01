@@ -25,7 +25,7 @@ const (
 // NOTE: (joey) this must be updated each time the template for a plugin in the monorepo is bumped in order for OPA customers to see the latest plugin template changes supported by their agent
 var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"athena":             {"0.0.2"},
-	"bigquery":           {"0.0.8"},
+	"bigquery":           {"0.0.9"},
 	"cockroachdb":        {"0.0.3"},
 	"dynamodb":           {"0.0.7"},
 	"email":              {"0.0.7"},

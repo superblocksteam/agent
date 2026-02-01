@@ -54,6 +54,10 @@ message OAuth {
     SubjectTokenSource subject_token_source = 10;
     string subject_token_source_static_token = 11;
     string subject_token_type = 12;
+    string workforce_pool_id = 13;
+    string workforce_provider_id = 14;
+    string billing_project_number = 15;
+    string project_id = 16;
   }
 }
 

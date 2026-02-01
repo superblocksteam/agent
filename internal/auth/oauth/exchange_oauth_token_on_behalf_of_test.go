@@ -22,17 +22,19 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 	clock := clockwork.NewFakeClock()
 
 	testCases := []struct {
-		name                      string
-		authConfig                *v1.OAuth_AuthorizationCodeFlow
-		accessToken               string
-		accessExpiresAt           int64
-		origin                    string
-		expectedSubjectTokenType  string
-		expectedErr               string
-		exchangeRequestErr        error
-		exchangeRequestStatusCode int
-		exchangeResponseBody      string
-		cacheErr                  error
+		name                       string
+		authConfig                 *v1.OAuth_AuthorizationCodeFlow
+		accessToken                string
+		accessExpiresAt            int64
+		origin                     string
+		expectedSubjectTokenType   string
+		expectedRequestedTokenType string
+		expectedOptions            string
+		expectedErr                string
+		exchangeRequestErr         error
+		exchangeRequestStatusCode  int
+		exchangeResponseBody       string
+		cacheErr                   error
 	}{
 		{
 			name: "success, user token",
@@ -205,6 +207,53 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "organization"}`,
 			cacheErr:                  errors.New("error caching shared access token"),
 		},
+		{
+			name: "GCP STS URL includes requested_token_type",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience: "//iam.googleapis.com/locations/global/workforcePools/my-pool/providers/my-provider",
+				Scope:    "https://www.googleapis.com/auth/bigquery",
+				TokenUrl: "https://sts.googleapis.com/v1/token",
+			},
+			accessToken:                "gcp-access-token",
+			accessExpiresAt:            clock.Now().Add(time.Hour).Unix(),
+			origin:                     "origin",
+			expectedSubjectTokenType:   "urn:ietf:params:oauth:token-type:access_token",
+			expectedRequestedTokenType: "urn:ietf:params:oauth:token-type:access_token",
+			exchangeRequestStatusCode:  http.StatusOK,
+			exchangeResponseBody:       `{"access_token": "gcp-access-token", "token_type": "Bearer", "expires_in": 3600}`,
+		},
+		{
+			name: "non-GCP URL does not include requested_token_type",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience: "https://databricks.com/api",
+				Scope:    "all-apis",
+				TokenUrl: "https://accounts.cloud.databricks.com/oidc/token",
+			},
+			accessToken:                "databricks-access-token",
+			accessExpiresAt:            clock.Now().Add(time.Hour).Unix(),
+			origin:                     "origin",
+			expectedSubjectTokenType:   "urn:ietf:params:oauth:token-type:access_token",
+			expectedRequestedTokenType: "",
+			exchangeRequestStatusCode:  http.StatusOK,
+			exchangeResponseBody:       `{"access_token": "databricks-access-token", "token_type": "Bearer", "expires_in": 3600}`,
+		},
+		{
+			name: "billing project number generates options",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience:             "//iam.googleapis.com/locations/global/workforcePools/my-pool/providers/my-provider",
+				Scope:                "https://www.googleapis.com/auth/bigquery",
+				TokenUrl:             "https://sts.googleapis.com/v1/token",
+				BillingProjectNumber: "123456789",
+			},
+			accessToken:                "gcp-access-token",
+			accessExpiresAt:            clock.Now().Add(time.Hour).Unix(),
+			origin:                     "origin",
+			expectedSubjectTokenType:   "urn:ietf:params:oauth:token-type:access_token",
+			expectedRequestedTokenType: "urn:ietf:params:oauth:token-type:access_token",
+			expectedOptions:            `{"userProject":"123456789"}`,
+			exchangeRequestStatusCode:  http.StatusOK,
+			exchangeResponseBody:       `{"access_token": "gcp-access-token", "token_type": "Bearer", "expires_in": 3600}`,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -227,7 +276,14 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				"Do",
 				mock.MatchedBy(func(req *http.Request) bool {
 					actualSubjectTokenType := req.FormValue("subject_token_type")
-					assert.Equal(t, actualSubjectTokenType, tc.expectedSubjectTokenType)
+					assert.Equal(t, tc.expectedSubjectTokenType, actualSubjectTokenType)
+
+					actualRequestedTokenType := req.FormValue("requested_token_type")
+					assert.Equal(t, tc.expectedRequestedTokenType, actualRequestedTokenType)
+
+					actualOptions := req.FormValue("options")
+					assert.Equal(t, tc.expectedOptions, actualOptions)
+
 					return req.Method == http.MethodPost &&
 						req.URL.String() == tc.authConfig.TokenUrl &&
 						req.Header.Get("Content-Type") == "application/x-www-form-urlencoded" &&

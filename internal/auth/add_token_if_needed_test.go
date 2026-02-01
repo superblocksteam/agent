@@ -1089,6 +1089,40 @@ func TestAddTokenIfNeeded_OauthTokenExchange_OnBehalfOfExchangeFails(t *testing.
 	verify(t, validArgs)
 }
 
+func TestAddTokenIfNeeded_OauthTokenExchange_WorkforceIdentityFederation_AudienceConstruction(t *testing.T) {
+	args := validArgs(t)
+	args.authConfig["workforcePoolId"] = "my-pool"
+	args.authConfig["workforceProviderId"] = "my-provider"
+	args.authConfig["audience"] = "" // Empty to trigger auto-generation
+
+	// Verify the audience is constructed correctly by checking the HTTP request
+	args.mockHttpClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
+		return req.FormValue("audience") == "//iam.googleapis.com/locations/global/workforcePools/my-pool/providers/my-provider"
+	})).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(`{ "access_token": "token", "token_type": "access", "expires_in": 3600, "scope": "user" }`)),
+	}, nil).Once()
+
+	verify(t, args)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_WorkforceIdentityFederation_PreserveExplicitAudience(t *testing.T) {
+	args := validArgs(t)
+	args.authConfig["workforcePoolId"] = "my-pool"
+	args.authConfig["workforceProviderId"] = "my-provider"
+	args.authConfig["audience"] = "//iam.googleapis.com/custom/audience" // Explicit audience should be preserved
+
+	// Verify the explicit audience is preserved (not overwritten)
+	args.mockHttpClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
+		return req.FormValue("audience") == "//iam.googleapis.com/custom/audience"
+	})).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(`{ "access_token": "token", "token_type": "access", "expires_in": 3600, "scope": "user" }`)),
+	}, nil).Once()
+
+	verify(t, args)
+}
+
 func TestAddTokenIfNeeded_OauthImplicit(t *testing.T) {
 	clock := clockwork.NewFakeClock()
 	tm := &tokenManager{

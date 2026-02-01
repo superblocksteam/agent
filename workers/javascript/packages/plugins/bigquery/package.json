@@ -22,7 +22,8 @@
   "dependencies": {
     "@google-cloud/bigquery": "5.12.0",
     "@superblocks/shared": "workspace:*",
-        "lodash": "^4.17.21",
+    "google-auth-library": "9.15.1",
+    "lodash": "^4.17.21",
     "minimist": "1.2.6",
     "node-forge": "1.3.0"
   },

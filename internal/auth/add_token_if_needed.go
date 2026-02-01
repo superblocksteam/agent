@@ -466,6 +466,14 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 		return "", &sberrors.InternalError{Err: err}
 	}
 
+	if authConfigProto.WorkforcePoolId != "" && authConfigProto.WorkforceProviderId != "" && authConfigProto.Audience == "" {
+		authConfigProto.Audience = fmt.Sprintf(
+			"//iam.googleapis.com/locations/global/workforcePools/%s/providers/%s",
+			authConfigProto.WorkforcePoolId,
+			authConfigProto.WorkforceProviderId,
+		)
+	}
+
 	log = log.With(zap.String("subjectTokenSource", authConfigProto.GetSubjectTokenSource().String()))
 
 	if cachedToken := t.getCachedOauthToken(ctx, authType, authConfigProto, datasourceId, configurationId, pluginId, log); cachedToken != "" {

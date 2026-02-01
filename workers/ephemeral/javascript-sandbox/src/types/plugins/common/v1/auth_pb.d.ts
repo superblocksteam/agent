@@ -150,6 +150,14 @@ export namespace OAuth {
         setSubjectTokenSourceStaticToken(value: string): AuthorizationCodeFlow;
         getSubjectTokenType(): string;
         setSubjectTokenType(value: string): AuthorizationCodeFlow;
+        getWorkforcePoolId(): string;
+        setWorkforcePoolId(value: string): AuthorizationCodeFlow;
+        getWorkforceProviderId(): string;
+        setWorkforceProviderId(value: string): AuthorizationCodeFlow;
+        getBillingProjectNumber(): string;
+        setBillingProjectNumber(value: string): AuthorizationCodeFlow;
+        getProjectId(): string;
+        setProjectId(value: string): AuthorizationCodeFlow;
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): AuthorizationCodeFlow.AsObject;
@@ -175,6 +183,10 @@ export namespace OAuth {
             subjectTokenSource: OAuth.AuthorizationCodeFlow.SubjectTokenSource,
             subjectTokenSourceStaticToken: string,
             subjectTokenType: string,
+            workforcePoolId: string,
+            workforceProviderId: string,
+            billingProjectNumber: string,
+            projectId: string,
         }
 
         export enum SubjectTokenSource {

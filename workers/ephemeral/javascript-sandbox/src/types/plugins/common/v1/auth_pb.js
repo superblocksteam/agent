@@ -1377,7 +1377,11 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.toObject = function(includeI
     clientAuthMethod: jspb.Message.getFieldWithDefault(msg, 9, ""),
     subjectTokenSource: jspb.Message.getFieldWithDefault(msg, 10, 0),
     subjectTokenSourceStaticToken: jspb.Message.getFieldWithDefault(msg, 11, ""),
-    subjectTokenType: jspb.Message.getFieldWithDefault(msg, 12, "")
+    subjectTokenType: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    workforcePoolId: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    workforceProviderId: jspb.Message.getFieldWithDefault(msg, 14, ""),
+    billingProjectNumber: jspb.Message.getFieldWithDefault(msg, 15, ""),
+    projectId: jspb.Message.getFieldWithDefault(msg, 16, "")
   };
 
   if (includeInstance) {
@@ -1461,6 +1465,22 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.deserializeBinaryFromReader 
     case 12:
       var value = /** @type {string} */ (reader.readString());
       msg.setSubjectTokenType(value);
+      break;
+    case 13:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setWorkforcePoolId(value);
+      break;
+    case 14:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setWorkforceProviderId(value);
+      break;
+    case 15:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setBillingProjectNumber(value);
+      break;
+    case 16:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setProjectId(value);
       break;
     default:
       reader.skipField();
@@ -1572,6 +1592,34 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.serializeBinaryToWriter = fu
   if (f.length > 0) {
     writer.writeString(
       12,
+      f
+    );
+  }
+  f = message.getWorkforcePoolId();
+  if (f.length > 0) {
+    writer.writeString(
+      13,
+      f
+    );
+  }
+  f = message.getWorkforceProviderId();
+  if (f.length > 0) {
+    writer.writeString(
+      14,
+      f
+    );
+  }
+  f = message.getBillingProjectNumber();
+  if (f.length > 0) {
+    writer.writeString(
+      15,
+      f
+    );
+  }
+  f = message.getProjectId();
+  if (f.length > 0) {
+    writer.writeString(
+      16,
       f
     );
   }
@@ -1800,6 +1848,78 @@ proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getSubjectTokenTyp
  */
 proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setSubjectTokenType = function(value) {
   return jspb.Message.setProto3StringField(this, 12, value);
+};
+
+
+/**
+ * optional string workforce_pool_id = 13;
+ * @return {string}
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getWorkforcePoolId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 13, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow} returns this
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setWorkforcePoolId = function(value) {
+  return jspb.Message.setProto3StringField(this, 13, value);
+};
+
+
+/**
+ * optional string workforce_provider_id = 14;
+ * @return {string}
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getWorkforceProviderId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 14, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow} returns this
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setWorkforceProviderId = function(value) {
+  return jspb.Message.setProto3StringField(this, 14, value);
+};
+
+
+/**
+ * optional string billing_project_number = 15;
+ * @return {string}
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getBillingProjectNumber = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 15, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow} returns this
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setBillingProjectNumber = function(value) {
+  return jspb.Message.setProto3StringField(this, 15, value);
+};
+
+
+/**
+ * optional string project_id = 16;
+ * @return {string}
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.getProjectId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 16, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.plugins.common.v1.OAuth.AuthorizationCodeFlow} returns this
+ */
+proto.plugins.common.v1.OAuth.AuthorizationCodeFlow.prototype.setProjectId = function(value) {
+  return jspb.Message.setProto3StringField(this, 16, value);
 };
 
 

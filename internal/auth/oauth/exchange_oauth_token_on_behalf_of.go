@@ -60,6 +60,10 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 	if authConfig.SubjectTokenType != "" {
 		data.Set("subject_token_type", authConfig.SubjectTokenType)
 	}
+	// GCP STS requires requested_token_type; other providers may not support it
+	if parsedUrl, err := url.Parse(authConfig.TokenUrl); err == nil && parsedUrl.Hostname() == "sts.googleapis.com" {
+		data.Set("requested_token_type", "urn:ietf:params:oauth:token-type:access_token")
+	}
 	if authConfig.Audience != "" {
 		data.Set("audience", authConfig.Audience)
 	}
@@ -69,6 +73,13 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 	}
 	if authConfig.ClientSecret != "" {
 		data.Set("client_secret", authConfig.ClientSecret)
+	}
+	userProject := authConfig.BillingProjectNumber
+	if userProject == "" {
+		userProject = authConfig.ProjectId
+	}
+	if userProject != "" {
+		data.Set("options", fmt.Sprintf(`{"userProject":"%s"}`, userProject))
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", authConfig.TokenUrl, strings.NewReader(data.Encode()))

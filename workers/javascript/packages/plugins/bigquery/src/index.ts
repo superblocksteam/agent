@@ -13,6 +13,7 @@ import {
   Table,
   TableType
 } from '@superblocks/shared';
+import { OAuth2Client } from 'google-auth-library';
 import { isEmpty } from 'lodash';
 
 import { GET_DATSETS_QUERY, METADATA_BY_DATASET_QUERY } from './queries';
@@ -74,6 +75,47 @@ export default class BigqueryPlugin extends DatabasePlugin {
         pluginName: this.pluginName
       });
     }
+
+    // Check if using Workforce Identity Federation (OAuth token exchange)
+    if (datasourceConfiguration.connectionType === 'oauth-token-exchange') {
+      return this.createConnectionWithAccessToken(datasourceConfiguration);
+    }
+
+    // Default: Service account authentication
+    return this.createConnectionWithServiceAccount(datasourceConfiguration);
+  }
+
+  private createConnectionWithAccessToken(datasourceConfiguration: BigqueryDatasourceConfiguration): BigQuery {
+    const accessToken = datasourceConfiguration.authConfig?.authToken;
+    if (!accessToken) {
+      throw new IntegrationError(
+        'OAuth Token Exchange token expected but not present. Please ensure the integration is properly configured.',
+        ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD,
+        { pluginName: this.pluginName }
+      );
+    }
+
+    const authClient = new OAuth2Client();
+    authClient.setCredentials({ access_token: accessToken });
+
+    const projectId = this.getProjectId(datasourceConfiguration);
+    if (!projectId) {
+      throw new IntegrationError(
+        'Project ID is required for Workforce Identity Federation authentication.',
+        ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD,
+        { pluginName: this.pluginName }
+      );
+    }
+
+    return new BigQuery({
+      projectId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      authClient: authClient as any,
+      scopes: ['https://www.googleapis.com/auth/bigquery']
+    });
+  }
+
+  private createConnectionWithServiceAccount(datasourceConfiguration: BigqueryDatasourceConfiguration): BigQuery {
     try {
       const credentials = this.getCredentials(datasourceConfiguration);
       const projectId = credentials['project_id'];
@@ -94,11 +136,18 @@ export default class BigqueryPlugin extends DatabasePlugin {
     return JSON.parse(datasourceConfiguration.authentication?.custom?.googleServiceAccount?.value ?? '');
   }
 
+  private getProjectId(datasourceConfiguration: BigqueryDatasourceConfiguration): string | undefined {
+    if (datasourceConfiguration.connectionType === 'oauth-token-exchange') {
+      return datasourceConfiguration.authConfig?.projectId;
+    }
+    const credentials = this.getCredentials(datasourceConfiguration);
+    return credentials['project_id'];
+  }
+
   async metadata(datasourceConfiguration: BigqueryDatasourceConfiguration): Promise<DatasourceMetadataDto> {
     try {
       const client = await this.createConnection(datasourceConfiguration);
-      const credentials = this.getCredentials(datasourceConfiguration);
-      const projectId = credentials['project_id'];
+      const projectId = this.getProjectId(datasourceConfiguration);
       const tablesByFullNames: Record<string, Table> = {};
 
       // get datasets

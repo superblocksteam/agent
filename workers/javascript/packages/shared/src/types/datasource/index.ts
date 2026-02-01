@@ -210,10 +210,25 @@ export type AWSDatasourceConfiguration = BaseDatasourceConfiguration & {
 };
 
 export type BigqueryDatasourceConfiguration = BaseDatasourceConfiguration & {
+  connectionType?: 'service-account-key' | 'oauth-token-exchange';
+  authTypeField?: string;
   authentication?: {
     custom?: {
       googleServiceAccount?: Property;
     };
+  };
+  authConfig?: {
+    authToken?: string;
+    tokenUrl?: string;
+    audience?: string;
+    scope?: string;
+    subjectTokenType?: string;
+    subjectTokenSource?: string;
+    subjectTokenSourceStaticToken?: string;
+    workforcePoolId?: string;
+    workforceProviderId?: string;
+    projectId?: string;
+    billingProjectNumber?: string;
   };
 };
 

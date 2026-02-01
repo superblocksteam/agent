@@ -1641,6 +1641,14 @@ func (m *OAuth_AuthorizationCodeFlow) validate(all bool) error {
 
 	// no validation rules for SubjectTokenType
 
+	// no validation rules for WorkforcePoolId
+
+	// no validation rules for WorkforceProviderId
+
+	// no validation rules for BillingProjectNumber
+
+	// no validation rules for ProjectId
+
 	if len(errors) > 0 {
 		return OAuth_AuthorizationCodeFlowMultiError(errors)
 	}

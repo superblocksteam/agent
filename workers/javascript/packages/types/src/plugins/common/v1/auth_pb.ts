@@ -296,6 +296,26 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
    */
   subjectTokenType = "";
 
+  /**
+   * @generated from field: string workforce_pool_id = 13;
+   */
+  workforcePoolId = "";
+
+  /**
+   * @generated from field: string workforce_provider_id = 14;
+   */
+  workforceProviderId = "";
+
+  /**
+   * @generated from field: string billing_project_number = 15;
+   */
+  billingProjectNumber = "";
+
+  /**
+   * @generated from field: string project_id = 16;
+   */
+  projectId = "";
+
   constructor(data?: PartialMessage<OAuth_AuthorizationCodeFlow>) {
     super();
     proto3.util.initPartial(data, this);
@@ -316,6 +336,10 @@ export class OAuth_AuthorizationCodeFlow extends Message<OAuth_AuthorizationCode
     { no: 10, name: "subject_token_source", kind: "enum", T: proto3.getEnumType(OAuth_AuthorizationCodeFlow_SubjectTokenSource) },
     { no: 11, name: "subject_token_source_static_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 12, name: "subject_token_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 13, name: "workforce_pool_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 14, name: "workforce_provider_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 15, name: "billing_project_number", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 16, name: "project_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OAuth_AuthorizationCodeFlow {

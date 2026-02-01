@@ -1,8 +1,10 @@
 import { BigQuery } from '@google-cloud/bigquery';
 import { DUMMY_EXECUTE_COMMON_PARAMETERS, DUMMY_GOOGLE_SERVICE_ACCOUNT, ExecutionOutput } from '@superblocks/shared';
+import { OAuth2Client } from 'google-auth-library';
 import BigqueryPlugin from '.';
 
 jest.mock('@google-cloud/bigquery');
+jest.mock('google-auth-library');
 
 const DUMMY_ROWS = [
   {
@@ -164,5 +166,115 @@ describe('bigquery test', () => {
     });
     expect(getQueryResultsMock).toBeCalledTimes(1);
     expect(createQueryJobMock.mock.calls[0][0]).toEqual({ query: 'SELECT 1' });
+  });
+});
+
+describe('bigquery workforce identity federation', () => {
+  test('test: WIF connection with authToken and projectId succeeds', async () => {
+    const setCredentialsMock = jest.fn();
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
+      setCredentials: setCredentialsMock
+    }));
+
+    const getQueryResultsMock = jest.fn();
+    jest.spyOn(BigQuery.prototype, 'createQueryJob').mockImplementation(() => {
+      return [{ getQueryResults: getQueryResultsMock }];
+    });
+
+    const plugin: BigqueryPlugin = new BigqueryPlugin();
+    await plugin.test({
+      connectionType: 'oauth-token-exchange',
+      authConfig: {
+        authToken: 'test-access-token',
+        projectId: 'my-gcp-project'
+      }
+    });
+
+    expect(setCredentialsMock).toHaveBeenCalledWith({ access_token: 'test-access-token' });
+    expect(getQueryResultsMock).toBeCalledTimes(1);
+  });
+
+  test('test: WIF connection without projectId throws error', async () => {
+    const plugin: BigqueryPlugin = new BigqueryPlugin();
+    await expect(
+      plugin.test({
+        connectionType: 'oauth-token-exchange',
+        authConfig: {
+          authToken: 'test-access-token'
+        }
+      })
+    ).rejects.toThrow('Project ID is required for Workforce Identity Federation authentication');
+  });
+
+  test('test: WIF connection without authToken throws error', async () => {
+    const plugin: BigqueryPlugin = new BigqueryPlugin();
+    await expect(
+      plugin.test({
+        connectionType: 'oauth-token-exchange',
+        authConfig: {
+          projectId: 'my-gcp-project'
+        }
+      })
+    ).rejects.toThrow('OAuth Token Exchange token expected but not present');
+  });
+
+  test('execute: WIF connection happy path', async () => {
+    const setCredentialsMock = jest.fn();
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
+      setCredentials: setCredentialsMock
+    }));
+
+    const getQueryResultsMock = jest.fn().mockReturnValueOnce([DUMMY_ROWS]);
+    const jobMock = { getQueryResults: getQueryResultsMock };
+    jest.spyOn(BigQuery.prototype, 'createQueryJob').mockImplementation(() => {
+      return [jobMock];
+    });
+
+    const plugin: BigqueryPlugin = new BigqueryPlugin();
+    const mutableOutput = new ExecutionOutput();
+    const executeResult = await plugin.execute({
+      ...DUMMY_EXECUTE_COMMON_PARAMETERS,
+      mutableOutput,
+      datasourceConfiguration: {
+        connectionType: 'oauth-token-exchange',
+        authConfig: {
+          authToken: 'test-access-token',
+          projectId: 'my-gcp-project'
+        }
+      },
+      actionConfiguration: {
+        body: 'SELECT * FROM my_table LIMIT 5'
+      }
+    });
+
+    expect(setCredentialsMock).toHaveBeenCalledWith({ access_token: 'test-access-token' });
+    expect(executeResult.output).toEqual(DUMMY_ROWS);
+  });
+
+  test('metadata: WIF connection happy path', async () => {
+    const setCredentialsMock = jest.fn();
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
+      setCredentials: setCredentialsMock
+    }));
+
+    const getQueryResultsMock = jest.fn()
+      .mockReturnValueOnce([DUMMY_METADATA_DATASET_ROWS])
+      .mockReturnValueOnce([DUMMY_METADATA_TABLE_ROWS]);
+    const jobMock = { getQueryResults: getQueryResultsMock };
+    jest.spyOn(BigQuery.prototype, 'createQueryJob').mockImplementation(() => {
+      return [jobMock];
+    });
+
+    const plugin: BigqueryPlugin = new BigqueryPlugin();
+    const metadataResult = await plugin.metadata({
+      connectionType: 'oauth-token-exchange',
+      authConfig: {
+        authToken: 'test-access-token',
+        projectId: 'my-gcp-project'
+      }
+    });
+
+    expect(setCredentialsMock).toHaveBeenCalledWith({ access_token: 'test-access-token' });
+    expect(metadataResult).toEqual(EXPECTED_METADATA);
   });
 });
