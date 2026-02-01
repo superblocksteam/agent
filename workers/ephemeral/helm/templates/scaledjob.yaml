@@ -147,6 +147,13 @@ spec:
           {{- else if $.Values.worker.plugins }}
           - "--worker.plugins={{ join "," $.Values.worker.plugins }}"
           {{- end }}
+          {{- if $v.langExecutorPlugins }}
+          - "--worker.plugins.image.use_lang_executor={{ join "," $v.langExecutorPlugins }}"
+          {{- else if $.Values.worker.langExecutorPlugins }}
+          - "--worker.plugins.image.use_lang_executor={{ join "," $.Values.worker.langExecutorPlugins }}"
+          {{- else }}
+          - "--worker.plugins.image.use_lang_executor="
+          {{- end }}
           {{- if $v.events }}
           - "--worker.events={{ join "," $v.events }}"
           {{- else if $.Values.worker.events }}
