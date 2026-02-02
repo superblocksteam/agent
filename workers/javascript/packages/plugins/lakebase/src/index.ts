@@ -255,10 +255,11 @@ export default class LakebasePlugin extends DatabasePluginPooled<Client, Lakebas
           );
         }
 
-        const databricksUsername = connection.federationUsername;
+        // User email is populated by the orchestrator from the JWT context
+        const databricksUsername = datasourceConfiguration.authConfig?.userEmail;
         if (!databricksUsername) {
           throw new IntegrationError(
-            'Token Federation requires Databricks Username',
+            'Token Federation requires user email from authentication context',
             ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD,
             {
               pluginName: this.pluginName

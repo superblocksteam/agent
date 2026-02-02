@@ -29,8 +29,6 @@ message Plugin {
     optional string oauth_client_secret = 8;
     // Databricks workspace URL for OAuth (e.g., https://dbc-xxx.cloud.databricks.com)
     optional string oauth_workspace_url = 9;
-    // Username for Token Federation with Login Identity Provider (typically user's email)
-    optional string federation_username = 10;
   }
 
   enum ConnectionType {

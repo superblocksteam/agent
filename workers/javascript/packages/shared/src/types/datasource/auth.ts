@@ -263,7 +263,7 @@ type PublicOAuthCodeConfig = {
   revokeTokenUrl?: string;
   authToken?: string;
   hasToken?: boolean; // @deprecated not used anymore
-  userEmail?: string; // @deprecated not used anymore
+  userEmail?: string; // Used by integrations that need user identity (e.g., Lakebase Token Federation)
   sendOAuthState?: boolean;
 };
 

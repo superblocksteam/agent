@@ -477,8 +477,6 @@ export type LakebaseDatasourceConfiguration = {
     oauthClientId?: string;
     oauthClientSecret?: string;
     oauthWorkspaceUrl?: string;
-    // OAuth Token Federation auth
-    federationUsername?: string;
   };
 } & AuthenticatedDatasourceConfig & {
   authTypeField?: string;

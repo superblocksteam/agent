@@ -351,6 +351,10 @@ func (m *Plugin_LakebaseConnection) validate(all bool) error {
 		// no validation rules for OauthClientSecret
 	}
 
+	if m.OauthWorkspaceUrl != nil {
+		// no validation rules for OauthWorkspaceUrl
+	}
+
 	if len(errors) > 0 {
 		return Plugin_LakebaseConnectionMultiError(errors)
 	}

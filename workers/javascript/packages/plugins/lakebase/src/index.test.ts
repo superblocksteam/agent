@@ -255,20 +255,50 @@ describe('Lakebase Plugin', () => {
       await expect(plugin.test(federationConfig)).rejects.toThrow('OAuth Token Federation token expected but not present');
     });
 
-    it('should throw error when federation username is missing', async () => {
+    it('should throw error when user email is missing from auth context', async () => {
       const federationConfig: LakebaseDatasourceConfiguration = {
         ...datasourceConfiguration,
         connection: {
           ...datasourceConfiguration.connection,
-          connectionType: 3, // OAUTH_FEDERATION
-          federationUsername: undefined
+          connectionType: 3 // OAUTH_FEDERATION
         },
         authConfig: {
-          authToken: 'test-token'
+          authToken: 'test-token',
+          userEmail: undefined
         }
       };
 
-      await expect(plugin.test(federationConfig)).rejects.toThrow('Token Federation requires Databricks Username');
+      await expect(plugin.test(federationConfig)).rejects.toThrow('Token Federation requires user email from authentication context');
+    });
+
+    it('should connect with Token Federation using userEmail from authConfig', async () => {
+      jest.spyOn(Client.prototype, 'connect').mockImplementation((): void => undefined);
+      jest.spyOn(Client.prototype, 'query').mockImplementation((): void => undefined);
+
+      const federationConfig: LakebaseDatasourceConfiguration = {
+        ...datasourceConfiguration,
+        connection: {
+          ...datasourceConfiguration.connection,
+          connectionType: 3 // OAUTH_FEDERATION
+        },
+        authConfig: {
+          authToken: 'test-oauth-token',
+          userEmail: 'user@example.com'
+        }
+      };
+
+      await plugin.test(federationConfig);
+
+      expect(Client).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: 'user@example.com',
+          password: 'test-oauth-token',
+          ssl: expect.objectContaining({
+            rejectUnauthorized: true
+          }),
+          application_name: 'Superblocks'
+        })
+      );
     });
   });
 

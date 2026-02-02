@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	authtypes "github.com/superblocksteam/agent/internal/auth/types"
+	jwtvalidator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"github.com/superblocksteam/agent/pkg/constants"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
@@ -208,6 +209,12 @@ func (t *tokenManager) AddTokenIfNeeded(
 
 		// this will set the token at datasourceConfiguration['authConfig']['authToken']
 		authConfig.Fields["authToken"] = structpb.NewStringValue(tokenPayload.Token)
+
+		// Set user email from context for integrations that need it (e.g., Lakebase Token Federation)
+		if userEmail, ok := jwtvalidator.GetUserEmail(ctx); ok && userEmail != "" {
+			authConfig.Fields["userEmail"] = structpb.NewStringValue(userEmail)
+		}
+
 		tokenPayload.BindingName = "oauth"
 	case authTypeOauthImplicit:
 		tokenPayload.Token, cookieName = FirstMatchingCookie(cookies, authId+"-token", authIdExtra+"-token")

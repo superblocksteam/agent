@@ -19,6 +19,7 @@ import (
 	"github.com/superblocksteam/agent/internal/auth/mocks"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	flagsmocks "github.com/superblocksteam/agent/internal/flags/mock"
+	jwtvalidator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/constants"
 	pluginscommon "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
@@ -1087,6 +1088,82 @@ func TestAddTokenIfNeeded_OauthTokenExchange_OnBehalfOfExchangeFails(t *testing.
 	validArgs.expectedError = "IntegrationOAuthError: OAuth2 - \"On-Behalf-Of Token Exchange\" token exchange failed\n\nUnexpected status code: 400: { \"access_token\": \"token\", \"token_type\": \"access\", \"expires_in\": 3600, \"scope\": \"user\" }"
 
 	verify(t, validArgs)
+}
+
+func TestAddTokenIfNeeded_OauthTokenExchange_UserEmailFromContext(t *testing.T) {
+	// This test verifies that user email from JWT context is propagated to authConfig
+	// This is needed for integrations like Lakebase Token Federation that need user identity
+	args := validArgs(t)
+
+	datasourceConfig, err := structpb.NewStruct(
+		map[string]any{
+			"authType":   args.authType,
+			"authConfig": args.authConfig,
+		},
+	)
+	require.NoError(t, err)
+
+	oauthClient := &oauth.OAuthClient{
+		HttpClient:    args.mockHttpClient,
+		FetcherCacher: args.mockFetcherCacher,
+		Clock:         args.clock,
+		Logger:        zap.NewNop(),
+	}
+
+	mockFlags := flagsmocks.NewFlags(t)
+	mockFlags.On("GetValidateSubjectTokenDuringOboFlowEnabled", mock.Anything).Return(false).Maybe()
+
+	tm := &tokenManager{
+		OAuthClient:           oauthClient,
+		OAuthCodeTokenFetcher: args.mockOAuthCodeTokenFetcher,
+		clock:                 args.clock,
+		logger:                zap.NewNop(),
+		flags:                 mockFlags,
+	}
+
+	claims := jwt.MapClaims{
+		"exp": time.Now().Add(5 * time.Minute).Unix(),
+	}
+	claims[idpAccessTokenClaimKey] = args.identityProviderToken
+
+	authJwt, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-secret"))
+	require.NoError(t, err)
+
+	ctxMetadata := map[string]string{
+		constants.HeaderSuperblocksJwt: fmt.Sprintf("Bearer %s", authJwt),
+		"origin":                       "test",
+	}
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.New(ctxMetadata))
+	ctx = constants.WithApiType(ctx, constants.ApiTypeApi)
+
+	// Set user email in the context (simulating what the JWT middleware does)
+	ctx = jwtvalidator.WithUserEmail(ctx, "test-user@example.com")
+
+	// Set up expectations
+	args.mockOAuthCodeTokenFetcher.On("Fetch", ctx, args.authType, mock.Anything, args.datasourceId, args.configurationId, args.pluginId).Return("", "", fmt.Errorf("not found")).Once()
+	args.mockHttpClient.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(strings.NewReader(`{ "access_token": "exchanged-token", "token_type": "access", "expires_in": 3600, "scope": "user" }`)),
+	}, nil).Maybe()
+	args.mockFetcherCacher.On("CacheUserToken", ctx, args.authType, mock.Anything, oauth.TokenTypeAccess, "exchanged-token", mock.Anything, args.datasourceId, args.configurationId).Return(nil).Maybe()
+
+	_, err = tm.AddTokenIfNeeded(
+		ctx,
+		datasourceConfig,
+		nil,
+		nil,
+		args.datasourceId,
+		args.configurationId,
+		args.pluginId,
+	)
+
+	require.NoError(t, err)
+
+	// Verify userEmail was set in authConfig
+	authConfig := datasourceConfig.GetFields()["authConfig"].GetStructValue()
+	require.NotNil(t, authConfig)
+	userEmail := authConfig.GetFields()["userEmail"].GetStringValue()
+	assert.Equal(t, "test-user@example.com", userEmail)
 }
 
 func TestAddTokenIfNeeded_OauthTokenExchange_WorkforceIdentityFederation_AudienceConstruction(t *testing.T) {
