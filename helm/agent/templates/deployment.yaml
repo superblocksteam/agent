@@ -139,6 +139,8 @@ spec:
               {{- end }}
               key: SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY
         {{- end }}
+        - name: SUPERBLOCKS_ORCHESTRATOR_TELEMETRY_REMOTE_ENABLED
+          value: {{ .Values.superblocks.telemetry.remoteEnabled | quote }}
         {{- if .Values.extraEnv }}
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
         {{- end }}

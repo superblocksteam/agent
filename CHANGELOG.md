@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Add `superblocks.auditLogs.enabled` helm value to allow disabling audit log ingestion (defaults to enabled)
 - Add Workforce Identity Federation support for BigQuery
 - Add Databricks Lakebase integration
 - Add support for `parameters` array in SQL plugins for parameterized queries

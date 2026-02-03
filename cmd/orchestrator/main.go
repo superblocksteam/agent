@@ -105,6 +105,7 @@ func init() {
 	inception = time.Now()
 	systemruntime.GOMAXPROCS(systemruntime.NumCPU())
 
+	pflag.Bool("telemetry.remote.enabled", true, "Enable/disable all remote telemetry (OTEL traces/logs, audit logs, remote logs, events). When false, only local console logging is enabled.")
 	pflag.Bool("zen", false, "go easy on the log fields")
 	pflag.String("file.server.url", "http://localhost:8080/v2/files", "the url to send to workers by which it can access orchestrators file server endpoint")
 	pflag.Bool("test", false, "Are we in test mode?")
@@ -238,6 +239,16 @@ func main() {
 	var ready bool // We need to wait until all the runnables have beed added to the group.
 
 	pflag.Parse()
+
+	// Master telemetry switch - when disabled, turn off all remote telemetry
+	// This provides a single flag to disable all outbound telemetry for compliance requirements
+	if !viper.GetBool("telemetry.remote.enabled") {
+		viper.Set("otel.collector.http.url", "")
+		viper.Set("emitter.audit.enabled", false)
+		viper.Set("emitter.remote.enabled", false)
+		viper.Set("emitter.event.enabled", false)
+		viper.Set("events.cloud.enabled", false)
+	}
 
 	// Initialize metrics provider with OTEL support
 	metricsCtx := context.Background()

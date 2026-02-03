@@ -39,6 +39,12 @@ superblocks:
   # Enables the agent to handle CORS requests. This is required if you want to use the agent
   # without a reverse proxy.
   handleCors: true
+  # Remote telemetry configuration
+  # When enabled, telemetry (traces, logs, metrics, audit logs) is sent to Superblocks cloud.
+  # Set to false to disable ALL remote telemetry for compliance requirements (e.g., data residency).
+  # Only local console logging will be enabled when this is false.
+  telemetry:
+    remoteEnabled: true
   workers:
     python:
       execution:
