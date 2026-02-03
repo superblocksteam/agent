@@ -49,3 +49,6 @@ charts/
 **/__pycache__/
 
 /workers/ephemeral/task-manager/task-manager
+
+# Agent/MCP related
+.fastembed_cache/
