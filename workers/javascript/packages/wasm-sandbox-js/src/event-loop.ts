@@ -65,6 +65,7 @@ export class EventLoop {
   private pendingHostOps = 0;
   private wakeUp: (() => void) | null = null;
   private disposed = false;
+  private deadlineMs: number | undefined;
 
   private readonly abortController = new AbortController();
   private readonly activeCompletes = new Set<() => void>();
@@ -74,6 +75,15 @@ export class EventLoop {
     private readonly options: EventLoopOptions = {}
   ) {
     this.signal = this.abortController.signal;
+    this.deadlineMs = options.deadlineMs;
+  }
+
+  /**
+   * Update the deadline for the event loop.
+   * Use this to set a new deadline for each evaluation in a reusable sandbox.
+   */
+  public setDeadline(deadlineMs: number | undefined): void {
+    this.deadlineMs = deadlineMs;
   }
 
   /** Disposes the event loop, aborting all tracked host ops. Idempotent. */
@@ -229,7 +239,7 @@ export class EventLoop {
   }
 
   private throwIfTimedOut(): void {
-    const deadlineMs = this.options.deadlineMs;
+    const deadlineMs = this.deadlineMs;
     if (deadlineMs !== undefined && performance.now() >= deadlineMs) {
       this.dispose();
       throw new Error('Execution timed out');
@@ -241,7 +251,7 @@ export class EventLoop {
       throw new Error('Event loop disposed');
     }
 
-    const deadlineMs = this.options.deadlineMs;
+    const deadlineMs = this.deadlineMs;
     if (deadlineMs === undefined) {
       await new Promise<void>((resolve) => {
         this.wakeUp = resolve;

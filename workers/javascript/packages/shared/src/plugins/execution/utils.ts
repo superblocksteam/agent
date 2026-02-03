@@ -282,60 +282,74 @@ const resolveAllBindingsWasm = async (
 
   const expressions = extractMustacheStrings(unresolvedValue);
 
-  const bindingResults = await wasmSandbox.evaluateExpressions(expressions, {
-    globals,
-    libraries: ['lodash', 'moment'],
+  // Create a sandbox for evaluating all binding expressions
+  const sandbox = await wasmSandbox.createSandbox({
+    globalLibraries: ['lodash', 'moment'],
     enableBuffer: true,
     limits: {
-      // TODO: pass in the timeout from the caller side
-      timeMs: 500 * 1000,
       memoryBytes: maxMemoryBytes
     }
   });
 
-  // Process results to match the expected format
-  const ret: Record<string, unknown> = {};
-  for (const toEval of expressions) {
-    try {
-      const val = bindingResults[toEval];
+  try {
+    // Set up globals once for all expressions
+    sandbox.setGlobals(globals);
 
-      // Handle Buffer values returned from the sandbox
-      if (isBuffer(val)) {
-        ret[toEval] = val;
-        continue;
-      } else if (val && (val as { type?: string }).type === 'Buffer') {
-        // JSON-serialized Buffer format: { type: 'Buffer', data: number[] }
-        ret[toEval] = Buffer.from((val as { type: 'Buffer'; data: number[] }).data);
-        continue;
-      }
+    // Evaluate all expressions
+    const bindingResults: Record<string, unknown> = {};
+    // TODO: pass in the timeout from the caller side
+    const timeLimitMs = 500 * 1000;
 
-      if (isObject(val)) {
-        ret[toEval] = JSON.stringify(val);
-        continue;
-      }
+    for (const expr of expressions) {
+      bindingResults[expr] = await sandbox.evaluate(expr, { timeLimitMs });
+    }
+
+    // Process results to match the expected format
+    const ret: Record<string, unknown> = {};
+    for (const toEval of expressions) {
       try {
-        if (isString(val) && isObject(JSON.parse(val as string))) {
+        const val = bindingResults[toEval];
+
+        // Handle Buffer values returned from the sandbox
+        if (isBuffer(val)) {
           ret[toEval] = val;
           continue;
+        } else if (val && (val as { type?: string }).type === 'Buffer') {
+          // JSON-serialized Buffer format: { type: 'Buffer', data: number[] }
+          ret[toEval] = Buffer.from((val as { type: 'Buffer'; data: number[] }).data);
+          continue;
         }
-      } catch (_) {
-        // let it fallthrough
-      }
-      if (isString(val) && escapeStrings) {
-        // escape strings and remove extra quotes added by stringify
-        ret[toEval] = JSON.stringify(val).slice(1, -1);
-        continue;
-      }
-      ret[toEval] = val;
-    } catch (err) {
-      throw new Error(`error evaluating '${toEval}': ${err.message}`);
-    }
-  }
 
-  if (variableClient !== undefined) {
-    await variableClient.flush();
+        if (isObject(val)) {
+          ret[toEval] = JSON.stringify(val);
+          continue;
+        }
+        try {
+          if (isString(val) && isObject(JSON.parse(val as string))) {
+            ret[toEval] = val;
+            continue;
+          }
+        } catch (_) {
+          // let it fallthrough
+        }
+        if (isString(val) && escapeStrings) {
+          // escape strings and remove extra quotes added by stringify
+          ret[toEval] = JSON.stringify(val).slice(1, -1);
+          continue;
+        }
+        ret[toEval] = val;
+      } catch (err) {
+        throw new Error(`error evaluating '${toEval}': ${err.message}`);
+      }
+    }
+
+    if (variableClient !== undefined) {
+      await variableClient.flush();
+    }
+    return ret;
+  } finally {
+    sandbox.dispose();
   }
-  return ret;
 };
 
 /**

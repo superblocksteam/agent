@@ -21,41 +21,146 @@ Traditional JavaScript sandboxing approaches (like VM2) rely on Node.js's `vm` m
 ## Quick Start
 
 ```typescript
-import { evaluateExpressions, hostFunction } from '@superblocks/wasm-sandbox-js';
+import { createSandbox, hostFunction } from '@superblocks/wasm-sandbox-js';
 
-// Evaluate simple expressions
-const results = await evaluateExpressions(['1 + 2', '"hello".toUpperCase()']);
-console.log(results['1 + 2']); // 3
-console.log(results['"hello".toUpperCase()']); // 'HELLO'
+// Create a sandbox and evaluate expressions
+const sandbox = await createSandbox();
+try {
+  const result = await sandbox.evaluate('1 + 2');
+  console.log(result); // 3
+
+  const upper = await sandbox.evaluate('"hello".toUpperCase()');
+  console.log(upper); // 'HELLO'
+} finally {
+  sandbox.dispose();
+}
 
 // Inject globals
-const results = await evaluateExpressions(['user.name'], {
-  globals: { user: { name: 'Alice', role: 'admin' } }
-});
-console.log(results['user.name']); // 'Alice'
+const sandbox = await createSandbox();
+try {
+  sandbox.setGlobals({ user: { name: 'Alice', role: 'admin' } });
+  const result = await sandbox.evaluate('user.name');
+  console.log(result); // 'Alice'
+} finally {
+  sandbox.dispose();
+}
 
 // Expose host functions (must use hostFunction wrapper)
-const results = await evaluateExpressions(['fetchData("users")'], {
-  globals: {
+const sandbox = await createSandbox();
+try {
+  sandbox.setGlobals({
     fetchData: hostFunction(async (endpoint: string) => {
       // This runs in the host, not the sandbox
       return await myApi.fetch(endpoint);
     })
-  }
-});
+  });
+  const result = await sandbox.evaluate('fetchData("users")');
+} finally {
+  sandbox.dispose();
+}
 ```
 
 ## API Reference
 
-### `evaluateExpressions(expressions, options?)`
+### `createSandbox(options?)`
 
-Evaluates an array of JavaScript expressions in a sandboxed environment.
+Creates a sandbox for evaluating JavaScript expressions.
 
 **Parameters:**
-- `expressions: string[]` - Array of JavaScript expressions to evaluate
-- `options?: EvaluateOptions` - Configuration options
+- `options?: SandboxOptions` - Configuration options
+  - `limits?: { stackBytes?: number; memoryBytes?: number }` - Resource limits
+  - `enableBuffer?: boolean` - Enable Buffer API polyfill
+  - `enableTimers?: boolean` - Enable timer APIs (setTimeout)
+  - `globalLibraries?: ('lodash' | 'moment')[]` - Libraries to preload
 
-**Returns:** `Promise<Record<string, unknown>>` - Map of expression → result
+**Returns:** `Promise<Sandbox>`
+
+```typescript
+import { createSandbox, hostFunction } from '@superblocks/wasm-sandbox-js';
+
+// Create a pre-initialized sandbox
+const sandbox = await createSandbox({
+  enableBuffer: true,
+  limits: { memoryBytes: 16 * 1024 * 1024 }
+});
+
+try {
+  // Set up console logging
+  sandbox.setConsole({
+    log: (...args) => console.log('[sandbox]', ...args),
+    warn: (...args) => console.warn('[sandbox]', ...args),
+    error: (...args) => console.error('[sandbox]', ...args),
+  });
+
+  // Inject globals
+  sandbox.setGlobals({
+    user: { name: 'Alice' },
+    fetchData: hostFunction(async (url) => fetch(url).then(r => r.json()))
+  });
+
+  // Evaluate expressions
+  const result = await sandbox.evaluate('user.name', { timeLimitMs: 5000 });
+  console.log(result); // 'Alice'
+} finally {
+  // Always dispose when done
+  sandbox.dispose();
+}
+```
+
+### Sandbox Interface
+
+#### `sandbox.setConsole(logger)`
+
+Set the console logger for this sandbox. Can be called multiple times to change the logger between evaluations.
+
+```typescript
+sandbox.setConsole({
+  log: (...args) => myLogger.info(...args),
+  warn: (...args) => myLogger.warn(...args),
+  error: (...args) => myLogger.error(...args),
+});
+```
+
+#### `sandbox.setGlobals(globals)`
+
+Inject global variables into the VM. Can be called multiple times; new keys are added, existing keys are overwritten.
+
+```typescript
+sandbox.setGlobals({ user: { name: 'Alice' } });
+sandbox.setGlobals({ config: { debug: true } }); // Both user and config are available
+```
+
+#### `sandbox.evaluate(expression, options?)`
+
+Evaluate a single expression and return its result.
+
+**Parameters:**
+- `expression: string` - JavaScript expression to evaluate
+- `options?: SandboxEvaluateOptions`
+  - `timeLimitMs?: number` - Execution time limit in milliseconds (default: 10 seconds)
+  - `wrapperPrefixLines?: number` - Lines added before user code (for error position adjustment)
+  - `wrapperSuffixLines?: number` - Lines added after user code (for error position adjustment)
+
+**Returns:** `Promise<unknown>` - The expression result
+
+#### `sandbox.dispose()`
+
+Dispose of all resources. Must be called when done with the sandbox.
+
+The sandbox also implements `Disposable`, so you can use the `using` statement (Node.js 18.18.0+, TypeScript 5.2+) for automatic cleanup:
+
+```typescript
+{
+  using sandbox = await createSandbox();
+  sandbox.setGlobals({ x: 42 });
+  const result = await sandbox.evaluate('x + 1');
+  // sandbox.dispose() called automatically at end of scope
+}
+```
+
+#### `sandbox.isAlive`
+
+Whether the sandbox is still usable (not disposed).
 
 ### `hostFunction(fn)`
 
@@ -72,9 +177,10 @@ const fetchUser = hostFunction(async (id: string) => {
   return await db.users.find(id);
 });
 
-await evaluateExpressions(['add(1, 2)', 'fetchUser("123")'], {
-  globals: { add, fetchUser }
-});
+sandbox.setGlobals({ add, fetchUser });
+
+await sandbox.evaluate('add(1, 2)');
+await sandbox.evaluate('fetchUser("123")');
 ```
 
 **Important:** When the sandbox calls a host function:
@@ -105,17 +211,6 @@ class Counter {
 }
 ```
 
-### `prewarmEvaluator()`
-
-Pre-initialize the WASM module for faster first evaluation. Call during application startup.
-
-```typescript
-import { prewarmEvaluator } from '@superblocks/wasm-sandbox-js';
-
-// During app initialization
-await prewarmEvaluator();
-```
-
 ## Supported Libraries
 
 The sandbox can lazily load these libraries:
@@ -124,9 +219,13 @@ The sandbox can lazily load these libraries:
 - **moment** - Available as `moment`
 
 ```typescript
-await evaluateExpressions(['_.sum([1, 2, 3])'], {
-  libraries: ['lodash']
-});
+const sandbox = await createSandbox({ globalLibraries: ['lodash'] });
+try {
+  const result = await sandbox.evaluate('_.sum([1, 2, 3])');
+  console.log(result); // 6
+} finally {
+  sandbox.dispose();
+}
 ```
 
 ## Buffer Support
@@ -134,38 +233,48 @@ await evaluateExpressions(['_.sum([1, 2, 3])'], {
 Enable `enableBuffer: true` to support Buffer operations:
 
 ```typescript
-const results = await evaluateExpressions([
-  'Buffer.from("hello").toString("base64")',
-  'Buffer.from([1, 2, 3])'
-], { enableBuffer: true });
+const sandbox = await createSandbox({ enableBuffer: true });
+try {
+  const result = await sandbox.evaluate('Buffer.from("hello")');
+  // Buffers are automatically marshalled between the host and VM
+} finally {
+  sandbox.dispose();
+}
 ```
-
-Buffers are automatically marshalled between the host and VM.
 
 ## Error Handling
 
 Errors thrown in the sandbox are propagated to the host:
 
 ```typescript
+const sandbox = await createSandbox();
 try {
-  await evaluateExpressions(['throw new Error("oops")']);
+  await sandbox.evaluate('throw new Error("oops")');
 } catch (err) {
   console.log(err.message); // 'oops'
+} finally {
+  sandbox.dispose();
 }
 ```
 
 Errors in host functions are also propagated to the VM:
 
 ```typescript
-const fails = hostFunction(() => {
-  throw new Error('host error');
-});
+const sandbox = await createSandbox();
+try {
+  const fails = hostFunction(() => {
+    throw new Error('host error');
+  });
+  sandbox.setGlobals({ fails });
 
-// The VM can catch this
-await evaluateExpressions([`
-  try { fails(); } catch (e) { e.message }
-`], { globals: { fails } });
-// Returns: 'host error'
+  // The VM can catch this
+  const result = await sandbox.evaluate(`
+    try { fails(); } catch (e) { e.message }
+  `);
+  console.log(result); // 'host error'
+} finally {
+  sandbox.dispose();
+}
 ```
 
 ## Execution Limits
@@ -173,18 +282,21 @@ await evaluateExpressions([`
 Set time limits to prevent infinite loops:
 
 ```typescript
-await evaluateExpressions(['while(true) {}'], {
-  limits: { timeMs: 1000 } // 1 second timeout
-});
-// Throws after 1 second
+const sandbox = await createSandbox();
+try {
+  await sandbox.evaluate('while(true) {}', { timeLimitMs: 1000 });
+  // Throws after 1 second
+} finally {
+  sandbox.dispose();
+}
 ```
 
 ### Hard timeouts (recommended for production)
 
-`limits.timeMs` is a **soft, best-effort** limit enforced inside the sandbox. For the most reliable protection against hangs (including host-side work that cannot be preempted), run evaluation in a **dedicated Worker thread** and have the parent terminate it if the deadline passes.
+`timeLimitMs` is a **soft, best-effort** limit enforced inside the sandbox. For the most reliable protection against hangs (including host-side work that cannot be preempted), run evaluation in a **dedicated Worker thread** and have the parent terminate it if the deadline passes.
 
 Recommended pattern:
-- Set `limits.timeMs` (fast failure in the common case)
+- Set `timeLimitMs` (fast failure in the common case)
 - Also enforce a **hard wall-clock timeout** in the parent and call `worker.terminate()` on expiry
 - Recreate the worker after termination (do not reuse a timed-out worker)
 

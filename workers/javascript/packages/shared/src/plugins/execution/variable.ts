@@ -1,4 +1,4 @@
-import { toVmValue, hostFunction } from '@superblocks/wasm-sandbox-js';
+import { toVmValue, hostFunction, hostGetter } from '@superblocks/wasm-sandbox-js';
 import { decodeBytestrings } from '../../utils';
 import { VariableClient } from './utils';
 
@@ -91,7 +91,8 @@ export class SimpleVariable {
   [toVmValue]() {
     return {
       key: this.key,
-      value: this.value,
+      // Use hostGetter to make value reactive - reads current value on each access
+      value: hostGetter(() => this.value),
       set: hostFunction(this.set.bind(this))
     };
   }

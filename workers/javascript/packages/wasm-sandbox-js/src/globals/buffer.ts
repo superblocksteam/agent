@@ -1,12 +1,11 @@
 import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten-core';
 
 /**
- * Factory function that receives the host's encodeString helper and installs
- * the Buffer class on globalThis. This pattern avoids polluting the global
- * namespace with the helper function.
+ * Factory function that receives host helpers and installs the Buffer class on globalThis.
+ * This pattern avoids polluting the global namespace with the helper functions.
  */
 const BUFFER_POLYFILL = `
-(function(encodeString) {
+(function(encodeString, decodeBuffer) {
   class Buffer extends Uint8Array {
     static from(input, offsetOrEncoding, length) {
       if (typeof input === 'string') {
@@ -21,6 +20,15 @@ const BUFFER_POLYFILL = `
 
     static isBuffer(obj) {
       return obj instanceof Buffer;
+    }
+
+    toString(encoding, start, end) {
+      // Delegate to host for proper encoding support
+      const enc = encoding || 'utf-8';
+      const s = start !== undefined ? start : 0;
+      const e = end !== undefined ? end : this.length;
+      // Pass the underlying ArrayBuffer with byteOffset and byteLength info
+      return decodeBuffer(this.buffer, this.byteOffset, this.byteLength, enc, s, e);
     }
   }
   globalThis.Buffer = Buffer;
@@ -114,6 +122,38 @@ export function registerGlobalBuffer(ctx: QuickJSContext, options: RegisterGloba
     return ctx.newArrayBuffer(exactArrayBuffer);
   });
 
+  // Create host function for decoding buffer to string using native Node.js Buffer
+  const decodeBufferFn = ctx.newFunction(
+    'decodeBuffer',
+    (
+      arrayBufHandle: QuickJSHandle,
+      byteOffsetHandle: QuickJSHandle,
+      byteLengthHandle: QuickJSHandle,
+      encodingHandle: QuickJSHandle,
+      startHandle: QuickJSHandle,
+      endHandle: QuickJSHandle
+    ) => {
+      // Extract the ArrayBuffer from the VM
+      const arrayBufferView = ctx.getArrayBuffer(arrayBufHandle);
+      if (!arrayBufferView) {
+        throw ctx.newError('Buffer.toString(): invalid buffer');
+      }
+
+      const byteOffset = ctx.getNumber(byteOffsetHandle);
+      const byteLength = ctx.getNumber(byteLengthHandle);
+      const encoding = ctx.getString(encodingHandle) as BufferEncoding;
+      const start = ctx.getNumber(startHandle);
+      const end = ctx.getNumber(endHandle);
+
+      // Create a Node.js Buffer from the correct slice of the ArrayBuffer view
+      const slice = arrayBufferView.value.subarray(byteOffset, byteOffset + byteLength);
+      const nodeBuffer = Buffer.from(slice);
+      const result = nodeBuffer.toString(encoding, start, end);
+
+      return ctx.newString(result);
+    }
+  );
+
   // Evaluate the factory function.
   // We use 'global' mode (not 'module') because we need to get the function expression's value back.
   // Strict mode is enabled for safety since our polyfill code is strict-mode compatible.
@@ -126,13 +166,15 @@ export function registerGlobalBuffer(ctx: QuickJSContext, options: RegisterGloba
     const error = ctx.dump(factoryResult.error);
     factoryResult.error.dispose();
     encodeStringFn.dispose();
+    decodeBufferFn.dispose();
     throw new Error(`Failed to load Buffer polyfill: ${JSON.stringify(error)}`);
   }
 
-  // Call the factory function with the encodeString helper
-  const installResult = ctx.callFunction(factoryResult.value, ctx.undefined, [encodeStringFn]);
+  // Call the factory function with the helpers
+  const installResult = ctx.callFunction(factoryResult.value, ctx.undefined, [encodeStringFn, decodeBufferFn]);
   factoryResult.value.dispose();
   encodeStringFn.dispose();
+  decodeBufferFn.dispose();
 
   if (installResult.error) {
     const error = ctx.dump(installResult.error);

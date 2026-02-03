@@ -43,11 +43,21 @@ class HostFunctionWrapper<T extends (...args: unknown[]) => unknown> {
 }
 
 /**
+ * Wrapper class for getter functions that define reactive properties in the sandbox.
+ * The class is not exported - only the hostGetter() factory is public.
+ */
+// Actually, we do export this, but only to be used internally within this package
+// and not to the users of this package.
+export class HostGetterWrapper<T extends () => unknown> {
+  constructor(public readonly fn: T) {}
+}
+
+/**
  * Marks a function as safe to expose to the sandbox.
  *
- * Use this to explicitly opt-in when passing functions via `globals` to
- * `evaluateExpressions`. Functions not wrapped with `hostFunction()` will
- * throw an error when marshalling to the VM.
+ * Use this to explicitly opt-in when passing functions via `setGlobals()`.
+ * Functions not wrapped with `hostFunction()` will throw an error when
+ * marshalling to the VM.
  *
  * When the sandbox calls this function:
  * - Arguments are extracted from the VM and passed to the host function
@@ -57,13 +67,18 @@ class HostFunctionWrapper<T extends (...args: unknown[]) => unknown> {
  *
  * @example
  * ```typescript
- * import { evaluateExpressions, hostFunction } from '@superblocks/wasm-sandbox-js';
+ * import { createSandbox, hostFunction } from '@superblocks/wasm-sandbox-js';
  *
- * await evaluateExpressions(['getData()'], {
- *   globals: {
+ * const sandbox = await createSandbox();
+ * try {
+ *   sandbox.setGlobals({
  *     getData: hostFunction(() => ({ foo: 'bar' }))
- *   }
- * });
+ *   });
+ *   const result = await sandbox.evaluate('getData()');
+ *   console.log(result); // { foo: 'bar' }
+ * } finally {
+ *   sandbox.dispose();
+ * }
  * ```
  *
  * @param fn - The function to expose to the sandbox
@@ -72,6 +87,44 @@ class HostFunctionWrapper<T extends (...args: unknown[]) => unknown> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function hostFunction<T extends (...args: any[]) => any>(fn: T): HostFunctionWrapper<T> {
   return new HostFunctionWrapper(fn);
+}
+
+/**
+ * Marks a getter function for defining a reactive property in the sandbox.
+ *
+ * Use this when you need a property whose value is computed dynamically on each access.
+ * When the sandbox reads the property, the getter function is called and its return value
+ * is marshalled to the VM.
+ *
+ * This is useful for properties that change over time, such as a variable's current value
+ * after it has been modified by a setter.
+ *
+ * @example
+ * ```typescript
+ * import { toVmValue, hostFunction, hostGetter } from '@superblocks/wasm-sandbox-js';
+ *
+ * class Variable {
+ *   private _value = 0;
+ *
+ *   setValue(v: number) {
+ *     this._value = v;
+ *   }
+ *
+ *   [toVmValue]() {
+ *     return {
+ *       value: hostGetter(() => this._value),  // reactive - reads current value on each access
+ *       set: hostFunction(this.setValue.bind(this))
+ *     };
+ *   }
+ * }
+ * ```
+ *
+ * @param fn - A getter function that returns the current value
+ * @returns A wrapped getter that will be defined as a property getter in the VM
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function hostGetter<T extends () => any>(fn: T): HostGetterWrapper<T> {
+  return new HostGetterWrapper(fn);
 }
 
 type ToVmHelpers = {
@@ -256,6 +309,15 @@ export function marshalToVm(
     return createVmHostFunction(ctx, hostValue.fn, helpers);
   }
 
+  // Host getters - these should only be used as object property values, not directly
+  // If we encounter one at the top level, it means it wasn't part of an object, which is a usage error
+  if (hostValue instanceof HostGetterWrapper) {
+    throw new Error(
+      'hostGetter() can only be used as a property value within an object passed to setGlobals(). ' +
+        'Example: setGlobals({ myProp: hostGetter(() => value) })'
+    );
+  }
+
   // Raw functions without hostFunction() wrapper - throw helpful error
   if (typeof hostValue === 'function') {
     throw new Error(
@@ -316,9 +378,22 @@ export function marshalToVm(
     const obj = ctx.newObject();
     try {
       for (const [key, val] of Object.entries(hostValue)) {
-        const valHandle = marshalToVm(ctx, val, helpers, seen);
-        ctx.setProp(obj, key, valHandle);
-        valHandle.dispose();
+        if (val instanceof HostGetterWrapper) {
+          // Define a getter property that calls the host function on each access
+          // Use a fresh cycle detector for each access (similar to host function calls)
+          ctx.defineProp(obj, key, {
+            enumerable: true,
+            configurable: true,
+            get() {
+              const result = val.fn();
+              return marshalToVm(ctx, result, helpers);
+            }
+          });
+        } else {
+          const valHandle = marshalToVm(ctx, val, helpers, seen);
+          ctx.setProp(obj, key, valHandle);
+          valHandle.dispose();
+        }
       }
       return obj;
     } catch (err) {

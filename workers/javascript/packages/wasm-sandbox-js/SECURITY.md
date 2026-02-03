@@ -99,15 +99,13 @@ Our approach uses **QuickJS compiled to WebAssembly**. WebAssembly was designed 
 Functions cannot be exposed to the sandbox accidentally. The `hostFunction()` wrapper is **required**:
 
 ```typescript
+const sandbox = await createSandbox();
+
 // ❌ This throws an error
-await evaluateExpressions(['fn()'], {
-  globals: { fn: () => dangerousOperation() }
-});
+sandbox.setGlobals({ fn: () => dangerousOperation() });
 
 // ✅ Explicit opt-in required
-await evaluateExpressions(['fn()'], {
-  globals: { fn: hostFunction(() => safeOperation()) }
-});
+sandbox.setGlobals({ fn: hostFunction(() => safeOperation()) });
 ```
 
 This prevents accidental exposure of dangerous operations when building complex `globals` objects.
@@ -140,10 +138,13 @@ The sandbox starts with a minimal global environment:
 Time limits prevent infinite loops:
 
 ```typescript
-await evaluateExpressions(['while(true){}'], {
-  limits: { timeMs: 1000 }
-});
-// Throws after 1 second
+const sandbox = await createSandbox();
+try {
+  await sandbox.evaluate('while(true){}', { timeLimitMs: 1000 });
+  // Throws after 1 second
+} finally {
+  sandbox.dispose();
+}
 ```
 
 ## Security Considerations for Host Functions

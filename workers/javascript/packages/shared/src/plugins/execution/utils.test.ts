@@ -72,7 +72,7 @@ describe('utils', () => {
     });
 
     it('should use WASM when context.useWasmBindingsSandbox is true', async () => {
-      const wasmSpy = jest.spyOn(wasmSandbox, 'evaluateExpressions');
+      const wasmSpy = jest.spyOn(wasmSandbox, 'createSandbox');
       const vmSpy = jest.spyOn(vm, 'nodeVMWithContext');
       try {
         const context = new ExecutionContext();

@@ -1,4 +1,4 @@
-export { evaluateExpressions, prewarmEvaluator, defaultOptions } from './evaluator';
-export type { EvaluateOptions } from './evaluator';
+export { createSandbox } from './sandbox';
+export type { Sandbox, SandboxOptions, SandboxEvaluateOptions } from './sandbox';
 export type { CommonLibrary } from './globals/common-libraries';
-export { toVmValue, hostFunction } from './marshal';
+export { toVmValue, hostFunction, hostGetter } from './marshal';
