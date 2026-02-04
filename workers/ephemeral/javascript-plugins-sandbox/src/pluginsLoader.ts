@@ -15,6 +15,7 @@ import sb_gcs from '@superblocksteam/gcs';
 import sb_graphql from '@superblocksteam/graphql';
 import sb_gsheets from '@superblocksteam/gsheets';
 import sb_javascript from '@superblocksteam/javascript';
+import sb_javascriptwasm from '@superblocksteam/javascript-wasm';
 import sb_kafka from '@superblocksteam/kafka';
 import sb_kinesis from '@superblocksteam/kinesis';
 import sb_mariadb from '@superblocksteam/mariadb';
@@ -61,6 +62,7 @@ export const ALL_PLUGINS: Record<string, BasePlugin> = {
   redpanda: kafka,
   aivenkafka: kafka,
   javascript: new sb_javascript(),
+  javascriptwasm: new sb_javascriptwasm(),
   mariadb: new sb_mariadb(),
   mongodb: new sb_mongodb(),
   mssql: new sb_mssql(),
@@ -86,7 +88,8 @@ export const ALL_PLUGINS: Record<string, BasePlugin> = {
 };
 
 export const LANG_PLUGINS: Record<string, BasePlugin> = {
-  javascript: new sb_javascript()
+  javascript: new sb_javascript(),
+  javascriptwasm: new sb_javascriptwasm()
 };
 
 const tracer = trace.getTracer('sandbox-javascript', '0.0.1');

@@ -13,6 +13,7 @@ import sb_gcs from '@superblocksteam/gcs';
 import sb_graphql from '@superblocksteam/graphql';
 import sb_gsheets from '@superblocksteam/gsheets';
 import sb_javascript from '@superblocksteam/javascript';
+import sb_javascript_wasm from '@superblocksteam/javascript-wasm';
 import sb_kafka from '@superblocksteam/kafka';
 import sb_kinesis from '@superblocksteam/kinesis';
 import sb_lakebase from '@superblocksteam/lakebase';
@@ -61,6 +62,7 @@ const secretStore = secrets();
     'sb-redpanda': kafka,
     'sb-aivenkafka': kafka,
     'sb-javascript': new sb_javascript(),
+    'sb-javascriptwasm': new sb_javascript_wasm(),
     'sb-mariadb': new sb_mariadb(),
     'sb-mongodb': new sb_mongodb(),
     'sb-mssql': new sb_mssql(),

@@ -268,7 +268,7 @@ const resolveAllBindingsWasm = async (
 
   let variableClient: VariableClient | undefined;
   if (context.variables && typeof context.variables === 'object') {
-    variableClient = new VariableClient(context.kvStore as KVStore);
+    variableClient = new VariableClient(context.kvStore!);
     const builtVariables = await buildVariables(context.variables, variableClient);
     for (const [k, v] of Object.entries(builtVariables)) {
       globals[k] = v;
@@ -427,7 +427,7 @@ export const resolveAllBindingsVm2 = async (
   // TODO: remove when we fully evaluate bindings on orchestrator
   let variableClient: VariableClient;
   if (context.variables && typeof context.variables === 'object') {
-    variableClient = new VariableClient(context.kvStore as KVStore);
+    variableClient = new VariableClient(context.kvStore!);
     const builtVariables = await buildVariables(context.variables, variableClient);
     for (const [k, v] of Object.entries(builtVariables)) {
       vm.setGlobal(k, v);

@@ -44,6 +44,7 @@
     "@superblocksteam/gcs": "workspace:*",
     "@superblocksteam/graphql": "workspace:*",
     "@superblocksteam/gsheets": "workspace:*",
+    "@superblocksteam/javascript-wasm": "workspace:*",
     "@superblocksteam/kafka": "workspace:*",
     "@superblocksteam/kinesis": "workspace:*",
     "@superblocksteam/lakebase": "workspace:*",
