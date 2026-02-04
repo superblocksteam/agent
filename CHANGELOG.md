@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `superblocks.auditLogs.enabled` helm value to allow disabling audit log ingestion (defaults to enabled)
 - Add Workforce Identity Federation support for BigQuery
 - Add Databricks Lakebase integration
+  
+## v1.32.0
 - Add support for `parameters` array in SQL plugins for parameterized queries
 - Add support for file uploads in 2.0 apps
 - Require authorization header for inline definitions in `/v2/execute`, `/v2/execute/stream`, and `/v2/execute/twoway` endpoints to prevent anonymous code execution while still allowing public apps (fetch by ID) to work
