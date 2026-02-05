@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `superblocks.auditLogs.enabled` helm value to allow disabling audit log ingestion (defaults to enabled)
 - Add Workforce Identity Federation support for BigQuery
 - Add Databricks Lakebase integration
+- Upgrade vm2 to latest version (`3.10.4`) with fix for [CVE-2026-22709](https://www.cve.org/CVERecord?id=CVE-2026-22709)
   
 ## v1.32.0
 - Add support for `parameters` array in SQL plugins for parameterized queries
