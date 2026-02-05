@@ -18,25 +18,28 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name         string
-		plugin       plugin.Plugin
-		actionConfig *structpb.Struct
-		goEnabled    bool
-		expected     string
+		name              string
+		plugin            plugin.Plugin
+		actionConfig      *structpb.Struct
+		goEnabled         bool
+		pureJsWasmEnabled bool
+		expected          string
 	}{
 		{
-			name:         "Non-Javascript plugin returns plugin",
-			plugin:       &apiv1.Step_Mariadb{},
-			actionConfig: &structpb.Struct{},
-			goEnabled:    true,
-			expected:     "mariadb",
+			name:              "Non-Javascript plugin returns plugin",
+			plugin:            &apiv1.Step_Mariadb{},
+			actionConfig:      &structpb.Struct{},
+			goEnabled:         true,
+			pureJsWasmEnabled: false,
+			expected:          "mariadb",
 		},
 		{
-			name:         "Empty action config defaults to v8",
-			plugin:       &apiv1.Step_Javascript{},
-			actionConfig: &structpb.Struct{},
-			goEnabled:    true,
-			expected:     "v8",
+			name:              "Empty action config defaults to v8",
+			plugin:            &apiv1.Step_Javascript{},
+			actionConfig:      &structpb.Struct{},
+			goEnabled:         true,
+			pureJsWasmEnabled: false,
+			expected:          "v8",
 		},
 		{
 			name:   "Missing body defaults to v8",
@@ -44,8 +47,9 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 			actionConfig: &structpb.Struct{
 				Fields: map[string]*structpb.Value{},
 			},
-			goEnabled: true,
-			expected:  "v8",
+			goEnabled:         true,
+			pureJsWasmEnabled: false,
+			expected:          "v8",
 		},
 		{
 			name:   "Nil body defaults to v8",
@@ -55,8 +59,9 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 					"body": nil,
 				},
 			},
-			goEnabled: true,
-			expected:  "v8",
+			goEnabled:         true,
+			pureJsWasmEnabled: false,
+			expected:          "v8",
 		},
 		{
 			name:   "Empty string code body defaults to v8",
@@ -70,8 +75,9 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 					},
 				},
 			},
-			goEnabled: true,
-			expected:  "v8",
+			goEnabled:         true,
+			pureJsWasmEnabled: false,
+			expected:          "v8",
 		},
 		{
 			name:   "Code with only v8 supported modules returns v8",
@@ -85,8 +91,9 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 					},
 				},
 			},
-			goEnabled: true,
-			expected:  "v8",
+			goEnabled:         true,
+			pureJsWasmEnabled: false,
+			expected:          "v8",
 		},
 		{
 			name:   "Code with modules not supported by v8 falls back to javascript",
@@ -100,8 +107,9 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 					},
 				},
 			},
-			goEnabled: true,
-			expected:  "javascript",
+			goEnabled:         true,
+			pureJsWasmEnabled: false,
+			expected:          "javascript",
 		},
 		{
 			name:   "Code with unsupported node globals falls back to javascript",
@@ -115,8 +123,9 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 					},
 				},
 			},
-			goEnabled: true,
-			expected:  "javascript",
+			goEnabled:         true,
+			pureJsWasmEnabled: false,
+			expected:          "javascript",
 		},
 		{
 			name:   "Empty string code body defaults to javascript, when v8 is disabled",
@@ -130,8 +139,9 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 					},
 				},
 			},
-			goEnabled: false,
-			expected:  "javascript",
+			goEnabled:         false,
+			pureJsWasmEnabled: false,
+			expected:          "javascript",
 		},
 		{
 			name:   "Code with only v8 supported modules returns javascript, when v8 is disabled",
@@ -145,8 +155,9 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 					},
 				},
 			},
-			goEnabled: false,
-			expected:  "javascript",
+			goEnabled:         false,
+			pureJsWasmEnabled: false,
+			expected:          "javascript",
 		},
 		{
 			name:   "Code with non-v8 modules returns javascript, when v8 is disabled",
@@ -160,14 +171,72 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 					},
 				},
 			},
-			goEnabled: false,
-			expected:  "javascript",
+			goEnabled:         false,
+			pureJsWasmEnabled: false,
+			expected:          "javascript",
+		},
+		{
+			name:              "Empty action config returns javascriptwasm when pureJsWasm enabled",
+			plugin:            &apiv1.Step_Javascript{},
+			actionConfig:      &structpb.Struct{},
+			goEnabled:         true,
+			pureJsWasmEnabled: true,
+			expected:          "javascriptwasm",
+		},
+		{
+			name:   "Code with only v8 supported modules returns javascriptwasm when pureJsWasm enabled",
+			plugin: &apiv1.Step_Javascript{},
+			actionConfig: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"body": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: "var _ = require('lodash')\nconsole.log(_.Trim('hello world'))",
+						},
+					},
+				},
+			},
+			goEnabled:         true,
+			pureJsWasmEnabled: true,
+			expected:          "javascriptwasm",
+		},
+		{
+			name:   "Code with non-v8 modules returns javascript even when pureJsWasm enabled",
+			plugin: &apiv1.Step_Javascript{},
+			actionConfig: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"body": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: "var axios = require('axios')\nconsole.log(axios({{Step1.url}}))",
+						},
+					},
+				},
+			},
+			goEnabled:         true,
+			pureJsWasmEnabled: true,
+			expected:          "javascript",
+		},
+		{
+			name:              "Non-Javascript plugin returns plugin even when pureJsWasm enabled",
+			plugin:            &apiv1.Step_Mariadb{},
+			actionConfig:      &structpb.Struct{},
+			goEnabled:         true,
+			pureJsWasmEnabled: true,
+			expected:          "mariadb",
+		},
+		{
+			name:              "Pure JS returns javascriptwasm even when goEnabled is false",
+			plugin:            &apiv1.Step_Javascript{},
+			actionConfig:      &structpb.Struct{},
+			goEnabled:         false,
+			pureJsWasmEnabled: true,
+			expected:          "javascriptwasm",
 		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mockFlags := &mocks.Flags{}
 			mockFlags.On("GetGoWorkerEnabled", "somePlan", "someOrgId").Return(testCase.goEnabled)
+			mockFlags.On("GetPureJsUseWasmSandboxEnabled", "somePlan", "someOrgId").Return(testCase.pureJsWasmEnabled)
 
 			r := &resolver{
 				orgId:            "someOrgId",

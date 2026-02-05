@@ -1660,6 +1660,7 @@ func TestBlocks(t *testing.T) {
 				flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 				flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+				flags.On("GetPureJsUseWasmSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 
 				mocker := new(mocker.Mocker)
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
@@ -1952,6 +1953,7 @@ func TestAuthorizedBlocks(t *testing.T) {
 				flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 				flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+				flags.On("GetPureJsUseWasmSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 
 				mocker := new(mocker.Mocker)
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
@@ -2141,6 +2143,7 @@ func TestQuota(t *testing.T) {
 			flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(test.sizeQuota, nil)
 			flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 			flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(test.useWasmBindingsSandbox)
+			flags.On("GetPureJsUseWasmSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 
 			mocker := new(mocker.Mocker)
 			mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
@@ -2270,6 +2273,7 @@ func TestStream(t *testing.T) {
 				flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
 				flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 				flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+				flags.On("GetPureJsUseWasmSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
 
 				mocker := new(mocker.Mocker)
 				mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)

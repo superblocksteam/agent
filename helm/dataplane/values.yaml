@@ -126,6 +126,10 @@ bindings:
   # Enable WASM sandbox for bindings evaluation.
   # LaunchDarkly takes priority when configured; this is used as fallback.
   wasmSandboxEnabled: false
+pureJs:
+  # Enable WASM sandbox for pure JS step execution.
+  # LaunchDarkly takes priority when configured; this is used as fallback.
+  wasmSandboxEnabled: false
 networkpolicy:
   disable: true
 events:

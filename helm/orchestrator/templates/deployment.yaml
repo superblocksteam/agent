@@ -90,6 +90,9 @@ spec:
         {{- if .Values.bindings.wasmSandboxEnabled }}
         - "--bindings.wasm_sandbox.enabled=true"
         {{- end }}
+        {{- if .Values.pureJs.wasmSandboxEnabled }}
+        - "--purejs.wasm_sandbox.enabled=true"
+        {{- end }}
         {{- if (.Values.superblocks).dataDomain }}
         - "--data.domain={{ .Values.superblocks.dataDomain }}"
         {{- end }}

@@ -24,6 +24,7 @@ type Options struct {
 	DefaultWorkflowPluginInheritanceEnabled         bool
 	DefaultValidateSubjectTokenDuringOboFlowEnabled bool
 	BindingsWasmSandboxEnabled                      bool
+	PureJsWasmSandboxEnabled                        bool
 	Logger                                          *zap.Logger
 	Config                                          *string
 }
@@ -135,6 +136,12 @@ func WithLogger(logger *zap.Logger) Option {
 func WithBindingsWasmSandboxEnabled(enabled bool) Option {
 	return func(d *Options) {
 		d.BindingsWasmSandboxEnabled = enabled
+	}
+}
+
+func WithPureJsWasmSandboxEnabled(enabled bool) Option {
+	return func(d *Options) {
+		d.PureJsWasmSandboxEnabled = enabled
 	}
 }
 

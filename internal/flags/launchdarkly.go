@@ -103,6 +103,11 @@ func (flags *launchdarkly) GetJsBindingsUseWasmBindingsSandboxEnabled(tier strin
 	return flags.GetBoolVariation("worker.js.bindings.use_wasm_sandbox", tier, orgId, flags.options.BindingsWasmSandboxEnabled)
 }
 
+func (flags *launchdarkly) GetPureJsUseWasmSandboxEnabled(tier string, orgId string) bool {
+	// LaunchDarkly takes priority; CLI flag is used as fallback default
+	return flags.GetBoolVariation("worker.js.pure.use_wasm_sandbox", tier, orgId, flags.options.PureJsWasmSandboxEnabled)
+}
+
 func (flags *launchdarkly) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
 	return flags.GetStringSliceVariation("agent.worker.ephemeral.plugins.enabled", tier, orgId, flags.options.DefaultEphemeralEnabledPlugins)
 }

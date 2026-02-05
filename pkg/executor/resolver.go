@@ -904,8 +904,13 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 }
 
 func (r *resolver) getPluginNameForExecution(p plugin.Plugin, actionConfig *structpb.Struct) string {
-	if _, ok := p.(*apiv1.Step_Javascript); ok && r.flags.GetGoWorkerEnabled(r.organizationPlan, r.orgId) && canRouteToV8(actionConfig, r.v8SupportedModules, r.logger) {
-		return "v8"
+	if _, ok := p.(*apiv1.Step_Javascript); ok && canRouteToV8(actionConfig, r.v8SupportedModules, r.logger) {
+		if r.flags.GetPureJsUseWasmSandboxEnabled(r.organizationPlan, r.orgId) {
+			return "javascriptwasm"
+		}
+		if r.flags.GetGoWorkerEnabled(r.organizationPlan, r.orgId) {
+			return "v8"
+		}
 	}
 	return p.Type()
 }

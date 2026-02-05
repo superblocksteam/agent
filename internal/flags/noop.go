@@ -85,6 +85,10 @@ func (flags *noopFlags) GetJsBindingsUseWasmBindingsSandboxEnabled(string, strin
 	return flags.options.BindingsWasmSandboxEnabled
 }
 
+func (flags *noopFlags) GetPureJsUseWasmSandboxEnabled(string, string) bool {
+	return flags.options.PureJsWasmSandboxEnabled
+}
+
 func (flags *noopFlags) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
 	return flags.options.DefaultEphemeralEnabledPlugins
 }
