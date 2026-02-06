@@ -153,6 +153,7 @@ interface WorkerInput {
 // Sandbox configuration (constant for worker lifetime)
 const sandboxOptions: SandboxOptions = {
   enableBuffer: true,
+  enableAtob: true,
 };
 
 // Promise for the next sandbox. We store a Promise (not a resolved Sandbox) so that:

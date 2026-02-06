@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Workforce Identity Federation support for BigQuery
 - Add Databricks Lakebase integration
 - Upgrade vm2 to latest version (`3.10.4`) with fix for [CVE-2026-22709](https://www.cve.org/CVERecord?id=CVE-2026-22709)
-  
+- Add `atob` and `btoa` polyfills to the WASM sandbox
+
 ## v1.32.0
 - Add support for `parameters` array in SQL plugins for parameterized queries
 - Add support for file uploads in 2.0 apps

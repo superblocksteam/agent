@@ -910,6 +910,21 @@ describe('Sandbox', () => {
     });
   });
 
+  describe('atob/btoa', () => {
+    it('creates a sandbox with atob/btoa support', async () => {
+      const sandbox = await createSandbox({ enableAtob: true });
+      try {
+        const encoded = await sandbox.evaluate("btoa('hello')");
+        expect(encoded).toBe('aGVsbG8=');
+
+        const decoded = await sandbox.evaluate("atob('aGVsbG8=')");
+        expect(decoded).toBe('hello');
+      } finally {
+        sandbox.dispose();
+      }
+    });
+  });
+
   describe('limits', () => {
     it('respects custom time limit', async () => {
       const sandbox = await createSandbox();

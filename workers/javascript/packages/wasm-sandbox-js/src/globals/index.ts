@@ -1,3 +1,4 @@
+export { registerGlobalAtob } from './atob';
 export { registerGlobalBuffer } from './buffer';
 export { registerGlobalConsole } from './console';
 export { registerGlobalSetTimeout } from './timers';

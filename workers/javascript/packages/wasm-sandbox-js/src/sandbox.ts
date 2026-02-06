@@ -1,6 +1,7 @@
 import type { QuickJSContext, QuickJSRuntime } from 'quickjs-emscripten-core';
 import { createEventLoop, EventLoop } from './event-loop';
 import { INTERNAL_WRAPPER_LINES, adjustErrorLineNumbers, createErrorFromQuickJS } from './error';
+import { registerGlobalAtob } from './globals/atob';
 import { registerGlobalBuffer } from './globals/buffer';
 import { CommonLibrary, registerCommonLazyLibrary } from './globals/common-libraries';
 import { registerGlobalConsole } from './globals/console';
@@ -30,6 +31,10 @@ export interface SandboxOptions {
    * These cannot be changed after sandbox creation.
    */
   limits?: SandboxLimits;
+  /**
+   * Whether to enable the `atob` and `btoa` Base64 encoding/decoding polyfills.
+   */
+  enableAtob?: boolean;
   /**
    * Whether to enable the Buffer API polyfill.
    */
@@ -89,6 +94,7 @@ const defaultSandboxOptions: Required<SandboxOptions> = {
     stackBytes: 1024 * 1024, // 1 MiB
     memoryBytes: undefined,
   },
+  enableAtob: false,
   enableBuffer: false,
   enableTimers: false,
   globalLibraries: [],
@@ -402,6 +408,11 @@ export async function createSandbox(options: SandboxOptions = {}): Promise<Sandb
   // Create event loop without deadline initially (deadline set per-evaluation)
   const eventLoop = createEventLoop(ctx, { deadlineMs: undefined });
   const marshaller = createMarshaller(ctx, { eventLoop, enableBuffer: opts.enableBuffer });
+
+  // Register atob/btoa if enabled
+  if (opts.enableAtob) {
+    registerGlobalAtob(ctx);
+  }
 
   // Register timers if enabled
   if (opts.enableTimers) {

@@ -286,6 +286,7 @@ const resolveAllBindingsWasm = async (
   const sandbox = await wasmSandbox.createSandbox({
     globalLibraries: ['lodash', 'moment'],
     enableBuffer: true,
+    enableAtob: true,
     limits: {
       memoryBytes: maxMemoryBytes
     }
