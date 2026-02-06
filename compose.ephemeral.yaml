@@ -32,18 +32,18 @@ x-task-manager-base: &task-manager-base
     !!merge <<: *task-manager-environment
   networks:
     - default
-x-python-lang-executor-sandbox-base: &python-lang-executor-sandbox-base
-  image: ghcr.io/superblocksteam/python-lang-executor-sandbox:${EPHEMERAL_IMAGE_TAG:-latest}
+x-python-sandbox-base: &python-sandbox-base
+  image: ghcr.io/superblocksteam/python-sandbox:${EPHEMERAL_IMAGE_TAG:-latest}
   build:
     context: .
-    dockerfile: Dockerfile.sandbox-lang-executor.python
+    dockerfile: Dockerfile.sandbox.python
   networks:
     - default
-x-javascript-lang-executor-sandbox-base: &javascript-lang-executor-sandbox-base
-  image: ghcr.io/superblocksteam/javascript-lang-executor-sandbox:${EPHEMERAL_IMAGE_TAG:-latest}
+x-javascript-sandbox-base: &javascript-sandbox-base
+  image: ghcr.io/superblocksteam/javascript-sandbox:${EPHEMERAL_IMAGE_TAG:-latest}
   build:
     context: .
-    dockerfile: Dockerfile.sandbox-lang-executor.javascript
+    dockerfile: Dockerfile.sandbox.javascript
   networks:
     - default
 services:
@@ -57,51 +57,53 @@ services:
   # ============================================================================
   # Python Ephemeral Workers
   # ============================================================================
-  python-lang-executor-sandbox:
-    !!merge <<: *python-lang-executor-sandbox-base
-    container_name: python-lang-executor-sandbox
+  python-sandbox:
+    !!merge <<: *python-sandbox-base
+    container_name: python-sandbox
   python-ephemeral:
     !!merge <<: *task-manager-base
     container_name: python-ephemeral
     environment:
       !!merge <<: *task-manager-environment
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: python
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS_IMAGE_USE_LANG_EXECUTOR: python
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS_IMAGE_USE_LANG_EXECUTOR:
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
-      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: python-lang-executor-sandbox:50051
+      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: python-sandbox:50051
       SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS: python-ephemeral:50050
       SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT: 8080
       SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT: 50052
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_SANDBOX_STREAMS_SEPARATE: true
     depends_on:
       - redis
-      - python-lang-executor-sandbox
+      - python-sandbox
   # ============================================================================
   # JavaScript Ephemeral Workers
   # ============================================================================
-  javascript-lang-executor-sandbox:
-    !!merge <<: *javascript-lang-executor-sandbox-base
-    container_name: javascript-lang-executor-sandbox
+  javascript-sandbox:
+    !!merge <<: *javascript-sandbox-base
+    container_name: javascript-sandbox
     environment:
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS: javascript-ephemeral:50050
       SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS: javascript-ephemeral:8080
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS: javascript-ephemeral:50052
   javascript-ephemeral:
     !!merge <<: *task-manager-base
     container_name: javascript-ephemeral
     environment:
       !!merge <<: *task-manager-environment
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: javascript
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS_IMAGE_USE_LANG_EXECUTOR: javascript
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS_IMAGE_USE_LANG_EXECUTOR:
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
-      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-lang-executor-sandbox:50051
+      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-sandbox:50051
       SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS: javascript-ephemeral:50050
       SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT: 8080
       SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT: 50052
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_SANDBOX_STREAMS_SEPARATE: true
     depends_on:
       - redis
-      - javascript-lang-executor-sandbox
+      - javascript-sandbox
 networks:
   default:
     name: orchestrator_default

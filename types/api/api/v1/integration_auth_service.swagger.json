@@ -228,6 +228,18 @@
         },
         "subjectTokenType": {
           "type": "string"
+        },
+        "workforcePoolId": {
+          "type": "string"
+        },
+        "workforceProviderId": {
+          "type": "string"
+        },
+        "billingProjectNumber": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
         }
       }
     },

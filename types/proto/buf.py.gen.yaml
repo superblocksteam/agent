@@ -6,8 +6,12 @@ plugins:
     out: ../gen/py/superblocks_types
   - plugin: buf.build/protocolbuffers/python:v27.2
     out: ../gen/py/superblocks_types
+  - plugin: buf.build/protocolbuffers/pyi:v30.2
+    out: ../gen/py/superblocks_types
   # Generate to ephemeral python-sandbox
   - plugin: buf.build/grpc/python
     out: ../../workers/ephemeral/python-sandbox/gen/superblocks_types
   - plugin: buf.build/protocolbuffers/python:v27.2
+    out: ../../workers/ephemeral/python-sandbox/gen/superblocks_types
+  - plugin: buf.build/protocolbuffers/pyi:v30.2
     out: ../../workers/ephemeral/python-sandbox/gen/superblocks_types

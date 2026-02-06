@@ -110,8 +110,8 @@ load-images:
 	@echo "==> Loading images into Kind..."
 	kind load docker-image $(IMAGE_REGISTRY)/orchestrator:$(IMAGE_TAG) --name superblocks || true
 	kind load docker-image $(IMAGE_REGISTRY)/task-manager:$(IMAGE_TAG) --name superblocks || true
-	kind load docker-image $(IMAGE_REGISTRY)/python-lang-executor-sandbox:$(IMAGE_TAG) --name superblocks || true
-	kind load docker-image $(IMAGE_REGISTRY)/javascript-lang-executor-sandbox:$(IMAGE_TAG) --name superblocks || true
+	kind load docker-image $(IMAGE_REGISTRY)/python-sandbox:$(IMAGE_TAG) --name superblocks || true
+	kind load docker-image $(IMAGE_REGISTRY)/javascript-sandbox:$(IMAGE_TAG) --name superblocks || true
 
 # ============================================================================
 # Full Kind Deployment (Orchestrator + Redis + Ephemeral Workers)

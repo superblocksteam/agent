@@ -1,5 +1,6 @@
 """Constants for the Python sandbox."""
 
+from enum import Enum
 import os
 from typing import Any, Callable, Optional, Type
 
@@ -8,6 +9,31 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PLUGIN_NAME = "python-sandbox"
+
+STREAM_PROPERTIES = [
+    "actionConfiguration",
+    "agentCredentials",
+    "bindingKeys",
+    "datasourceConfiguration",
+    "environment",
+    "executionId",
+    "files",
+    "recursionContext",
+    "redactedDatasourceConfiguration",
+    "relayDelegate",
+    "stepName",
+    "forwardedCookies",
+    "$fileServerUrl",
+    "$flagWorker",
+]
+
+STORE_PROPERTY = "context"
+
+
+class ContextCategory(str, Enum):
+    CONTEXT_GLOBAL = "context.global"
+    CONTEXT_OUTPUT = "context.output"
+    CONTEXT_OUTPUT_V2 = "context.output.v2"
 
 
 def __cast_bool(value: str) -> bool:
@@ -55,6 +81,13 @@ def get_env_var(
         os.environ.pop(name, None)
     return var
 
+
+SUPERBLOCKS_AGENT_LOG_LEVEL = get_env_var(
+    "SUPERBLOCKS_AGENT_LOG_LEVEL", default="INFO"
+).upper()
+SUPERBLOCKS_AGENT_LOG_JSON_FORMAT = get_env_var(
+    "SUPERBLOCKS_AGENT_LOG_JSON_FORMAT", default=True, as_type=bool
+)
 
 # gRPC server configuration
 SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT = get_env_var(

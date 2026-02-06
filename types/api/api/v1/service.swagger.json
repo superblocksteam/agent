@@ -1511,6 +1511,18 @@
         },
         "subjectTokenType": {
           "type": "string"
+        },
+        "workforcePoolId": {
+          "type": "string"
+        },
+        "workforceProviderId": {
+          "type": "string"
+        },
+        "billingProjectNumber": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
         }
       }
     },
@@ -2115,6 +2127,10 @@
         },
         "oauthClientSecret": {
           "type": "string"
+        },
+        "oauthWorkspaceUrl": {
+          "type": "string",
+          "title": "Databricks workspace URL for OAuth (e.g., https://dbc-xxx.cloud.databricks.com)"
         }
       }
     },

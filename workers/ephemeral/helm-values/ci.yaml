@@ -57,11 +57,11 @@ taskManager:
 sandbox:
   python:
     image:
-      repository: ghcr.io/superblocksteam/python-lang-executor-sandbox
+      repository: ghcr.io/superblocksteam/python-sandbox
       pullPolicy: IfNotPresent
   javascript:
     image:
-      repository: ghcr.io/superblocksteam/javascript-lang-executor-sandbox
+      repository: ghcr.io/superblocksteam/javascript-sandbox
       pullPolicy: IfNotPresent
 # Redis configuration - use Bitnami Redis deployed to Kind
 queue:

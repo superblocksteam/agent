@@ -20,6 +20,7 @@ charts/
 *.env*
 !/config/.env*
 **/mise.toml
+**/pyrightconfig.json
 
 /regsync
 

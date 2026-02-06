@@ -13,9 +13,10 @@ from re import search
 from sys import exc_info
 from textwrap import indent
 from traceback import extract_tb
-from typing import Any, Optional
+from typing import Optional
 
 from src.constants import get_env_var
+from src.log import error
 from src.restricted import ALLOW_BUILTINS, restricted_environment
 from src.superblocks import Object, Reader, encode_bytestring_as_json
 from src.variables.variable import build_variables
@@ -28,11 +29,10 @@ class Executor:
         self,
         code: str,
         context: Object,
-        timeout_ms: int,
         variable_client: Optional[VariableClient] = None,
-        variables_json: str = "{}",
+        variables: dict = {},
         superblocks_files: Optional[dict] = None,
-    ) -> tuple[str, list[str], list[str], int]:
+    ) -> tuple[str, list[str], list[str]]:
         """
         Run Python code directly.
 
@@ -45,26 +45,22 @@ class Executor:
         result, stdout_data, stderr_data = self._execute(
             code,
             context,
-            variable_client.address if variable_client else "",
-            variable_client.execution_id if variable_client else "",
-            variables_json,
+            variable_client,
+            variables,
             superblocks_files=superblocks_files or {},
         )
 
         stdout_lines = stdout_data.splitlines() if stdout_data else []
         stderr_lines = stderr_data.splitlines() if stderr_data else []
 
-        exit_code = 0 if not any("__EXCEPTION__" in line for line in stderr_lines) else 1
-
-        return result, stdout_lines, stderr_lines, exit_code
+        return result, stdout_lines, stderr_lines
 
     def _execute(
         self,
         code: str,
         context: Object,
-        var_store_address: str,
-        execution_id: str,
-        variables_json: str,
+        variable_client: Optional[VariableClient],
+        variables: dict,
         superblocks_files: Optional[dict] = None,
     ) -> tuple[str, str, str]:
         """Execute code and return result, stdout, stderr."""
@@ -83,9 +79,8 @@ class Executor:
             result, stdout_data, stderr_data = self._run_code(
                 code,
                 context,
-                var_store_address,
-                execution_id,
-                variables_json,
+                variable_client,
+                variables,
                 superblocks_files=superblocks_files or {},
             )
         except Exception as e:
@@ -97,9 +92,8 @@ class Executor:
         self,
         code: str,
         context: Object,
-        var_store_address: str,
-        execution_id: str,
-        variables_json: str,
+        var_client: Optional[VariableClient],
+        var_spec: dict,
         superblocks_files: Optional[dict] = None,
     ) -> tuple[str, str, str]:
         """Inner execution logic."""
@@ -115,21 +109,16 @@ class Executor:
             my_module.__dict__[k] = context[k]
 
         # Set up variable client if address provided
-        var_client = None
-        if var_store_address and execution_id:
-            var_client = VariableClient(var_store_address, execution_id)
-            var_client.connect()
-
+        if var_client is not None:
             # Build variables from spec
             try:
-                var_spec = json.loads(variables_json) if variables_json else {}
                 if var_spec:
                     built_vars = build_variables(var_spec, var_client)
                     for k, v in built_vars.items():
                         if k not in my_module.__dict__:
                             my_module.__dict__[k] = v
             except Exception as e:
-                print(f"Error building variables: {e}")
+                error(f"Error building variables: {e}", exc_info=True)
 
         # Get globals dict from context (this is where native variables like Table1 live)
         globals_dict = my_module.__dict__.get("globals", {})
@@ -204,9 +193,6 @@ class Executor:
                             std_err.write(
                                 f"__EXCEPTION__Unable to parse error line number {str(inner_e)}"
                             )
-                    finally:
-                        if var_client:
-                            var_client.close()
 
         return result, std_out.getvalue(), std_err.getvalue()
 
@@ -215,7 +201,8 @@ class Executor:
         try:
             from plotly.graph_objects import Figure as PlotlyFigure
             if isinstance(result, PlotlyFigure):
-                return result.to_json()
+                result_json = result.to_json()
+                return str(result_json) if result_json else ""
         except ImportError:
             pass
 

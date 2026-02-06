@@ -1,0 +1,258 @@
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from typing import ClassVar as _ClassVar
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class Language(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    LANGUAGE_UNSPECIFIED: _ClassVar[Language]
+    LANGUAGE_EN: _ClassVar[Language]
+    LANGUAGE_AF: _ClassVar[Language]
+    LANGUAGE_SQ: _ClassVar[Language]
+    LANGUAGE_AR_DZ: _ClassVar[Language]
+    LANGUAGE_AR_BH: _ClassVar[Language]
+    LANGUAGE_AR_EG: _ClassVar[Language]
+    LANGUAGE_AR_IQ: _ClassVar[Language]
+    LANGUAGE_AR_JO: _ClassVar[Language]
+    LANGUAGE_AR_KW: _ClassVar[Language]
+    LANGUAGE_AR_LB: _ClassVar[Language]
+    LANGUAGE_AR_LY: _ClassVar[Language]
+    LANGUAGE_AR_MA: _ClassVar[Language]
+    LANGUAGE_AR_OM: _ClassVar[Language]
+    LANGUAGE_AR_QA: _ClassVar[Language]
+    LANGUAGE_AR_SA: _ClassVar[Language]
+    LANGUAGE_AR_SY: _ClassVar[Language]
+    LANGUAGE_AR_TN: _ClassVar[Language]
+    LANGUAGE_AR_AE: _ClassVar[Language]
+    LANGUAGE_AR_YE: _ClassVar[Language]
+    LANGUAGE_EU: _ClassVar[Language]
+    LANGUAGE_BE: _ClassVar[Language]
+    LANGUAGE_BG: _ClassVar[Language]
+    LANGUAGE_CA: _ClassVar[Language]
+    LANGUAGE_ZH_HK: _ClassVar[Language]
+    LANGUAGE_ZH_CN: _ClassVar[Language]
+    LANGUAGE_ZH_SG: _ClassVar[Language]
+    LANGUAGE_ZH_TW: _ClassVar[Language]
+    LANGUAGE_HR: _ClassVar[Language]
+    LANGUAGE_CS: _ClassVar[Language]
+    LANGUAGE_DA: _ClassVar[Language]
+    LANGUAGE_NL_BE: _ClassVar[Language]
+    LANGUAGE_NL: _ClassVar[Language]
+    LANGUAGE_EN_AU: _ClassVar[Language]
+    LANGUAGE_EN_BZ: _ClassVar[Language]
+    LANGUAGE_EN_CA: _ClassVar[Language]
+    LANGUAGE_EN_IE: _ClassVar[Language]
+    LANGUAGE_EN_JM: _ClassVar[Language]
+    LANGUAGE_EN_NZ: _ClassVar[Language]
+    LANGUAGE_EN_ZA: _ClassVar[Language]
+    LANGUAGE_EN_TT: _ClassVar[Language]
+    LANGUAGE_EN_GB: _ClassVar[Language]
+    LANGUAGE_EN_US: _ClassVar[Language]
+    LANGUAGE_ET: _ClassVar[Language]
+    LANGUAGE_FO: _ClassVar[Language]
+    LANGUAGE_FA: _ClassVar[Language]
+    LANGUAGE_FI: _ClassVar[Language]
+    LANGUAGE_FR_BE: _ClassVar[Language]
+    LANGUAGE_FR_CA: _ClassVar[Language]
+    LANGUAGE_FR_LU: _ClassVar[Language]
+    LANGUAGE_FR: _ClassVar[Language]
+    LANGUAGE_FR_CH: _ClassVar[Language]
+    LANGUAGE_GD: _ClassVar[Language]
+    LANGUAGE_DE_AT: _ClassVar[Language]
+    LANGUAGE_DE_LI: _ClassVar[Language]
+    LANGUAGE_DE_LU: _ClassVar[Language]
+    LANGUAGE_DE: _ClassVar[Language]
+    LANGUAGE_DE_CH: _ClassVar[Language]
+    LANGUAGE_EL: _ClassVar[Language]
+    LANGUAGE_HE: _ClassVar[Language]
+    LANGUAGE_HI: _ClassVar[Language]
+    LANGUAGE_HU: _ClassVar[Language]
+    LANGUAGE_IS: _ClassVar[Language]
+    LANGUAGE_ID: _ClassVar[Language]
+    LANGUAGE_GA: _ClassVar[Language]
+    LANGUAGE_IT: _ClassVar[Language]
+    LANGUAGE_IT_CH: _ClassVar[Language]
+    LANGUAGE_JA: _ClassVar[Language]
+    LANGUAGE_KO: _ClassVar[Language]
+    LANGUAGE_KU: _ClassVar[Language]
+    LANGUAGE_LV: _ClassVar[Language]
+    LANGUAGE_LT: _ClassVar[Language]
+    LANGUAGE_MK: _ClassVar[Language]
+    LANGUAGE_ML: _ClassVar[Language]
+    LANGUAGE_MS: _ClassVar[Language]
+    LANGUAGE_MT: _ClassVar[Language]
+    LANGUAGE_NO: _ClassVar[Language]
+    LANGUAGE_NB: _ClassVar[Language]
+    LANGUAGE_NN: _ClassVar[Language]
+    LANGUAGE_PL: _ClassVar[Language]
+    LANGUAGE_PT_BR: _ClassVar[Language]
+    LANGUAGE_PT: _ClassVar[Language]
+    LANGUAGE_PA: _ClassVar[Language]
+    LANGUAGE_RM: _ClassVar[Language]
+    LANGUAGE_RO: _ClassVar[Language]
+    LANGUAGE_RO_MD: _ClassVar[Language]
+    LANGUAGE_RU: _ClassVar[Language]
+    LANGUAGE_RU_MD: _ClassVar[Language]
+    LANGUAGE_SR: _ClassVar[Language]
+    LANGUAGE_SK: _ClassVar[Language]
+    LANGUAGE_SL: _ClassVar[Language]
+    LANGUAGE_SB: _ClassVar[Language]
+    LANGUAGE_ES_AR: _ClassVar[Language]
+    LANGUAGE_ES_BO: _ClassVar[Language]
+    LANGUAGE_ES_CL: _ClassVar[Language]
+    LANGUAGE_ES_CO: _ClassVar[Language]
+    LANGUAGE_ES_CR: _ClassVar[Language]
+    LANGUAGE_ES_DO: _ClassVar[Language]
+    LANGUAGE_ES_EC: _ClassVar[Language]
+    LANGUAGE_ES_SV: _ClassVar[Language]
+    LANGUAGE_ES_GT: _ClassVar[Language]
+    LANGUAGE_ES_HN: _ClassVar[Language]
+    LANGUAGE_ES_MX: _ClassVar[Language]
+    LANGUAGE_ES_NI: _ClassVar[Language]
+    LANGUAGE_ES_PA: _ClassVar[Language]
+    LANGUAGE_ES_PY: _ClassVar[Language]
+    LANGUAGE_ES_PE: _ClassVar[Language]
+    LANGUAGE_ES_PR: _ClassVar[Language]
+    LANGUAGE_ES: _ClassVar[Language]
+    LANGUAGE_ES_UY: _ClassVar[Language]
+    LANGUAGE_ES_VE: _ClassVar[Language]
+    LANGUAGE_SV: _ClassVar[Language]
+    LANGUAGE_SV_FI: _ClassVar[Language]
+    LANGUAGE_TH: _ClassVar[Language]
+    LANGUAGE_TS: _ClassVar[Language]
+    LANGUAGE_TN: _ClassVar[Language]
+    LANGUAGE_TR: _ClassVar[Language]
+    LANGUAGE_UA: _ClassVar[Language]
+    LANGUAGE_UR: _ClassVar[Language]
+    LANGUAGE_VE: _ClassVar[Language]
+    LANGUAGE_VI: _ClassVar[Language]
+    LANGUAGE_CY: _ClassVar[Language]
+    LANGUAGE_XH: _ClassVar[Language]
+    LANGUAGE_JI: _ClassVar[Language]
+    LANGUAGE_ZU: _ClassVar[Language]
+LANGUAGE_UNSPECIFIED: Language
+LANGUAGE_EN: Language
+LANGUAGE_AF: Language
+LANGUAGE_SQ: Language
+LANGUAGE_AR_DZ: Language
+LANGUAGE_AR_BH: Language
+LANGUAGE_AR_EG: Language
+LANGUAGE_AR_IQ: Language
+LANGUAGE_AR_JO: Language
+LANGUAGE_AR_KW: Language
+LANGUAGE_AR_LB: Language
+LANGUAGE_AR_LY: Language
+LANGUAGE_AR_MA: Language
+LANGUAGE_AR_OM: Language
+LANGUAGE_AR_QA: Language
+LANGUAGE_AR_SA: Language
+LANGUAGE_AR_SY: Language
+LANGUAGE_AR_TN: Language
+LANGUAGE_AR_AE: Language
+LANGUAGE_AR_YE: Language
+LANGUAGE_EU: Language
+LANGUAGE_BE: Language
+LANGUAGE_BG: Language
+LANGUAGE_CA: Language
+LANGUAGE_ZH_HK: Language
+LANGUAGE_ZH_CN: Language
+LANGUAGE_ZH_SG: Language
+LANGUAGE_ZH_TW: Language
+LANGUAGE_HR: Language
+LANGUAGE_CS: Language
+LANGUAGE_DA: Language
+LANGUAGE_NL_BE: Language
+LANGUAGE_NL: Language
+LANGUAGE_EN_AU: Language
+LANGUAGE_EN_BZ: Language
+LANGUAGE_EN_CA: Language
+LANGUAGE_EN_IE: Language
+LANGUAGE_EN_JM: Language
+LANGUAGE_EN_NZ: Language
+LANGUAGE_EN_ZA: Language
+LANGUAGE_EN_TT: Language
+LANGUAGE_EN_GB: Language
+LANGUAGE_EN_US: Language
+LANGUAGE_ET: Language
+LANGUAGE_FO: Language
+LANGUAGE_FA: Language
+LANGUAGE_FI: Language
+LANGUAGE_FR_BE: Language
+LANGUAGE_FR_CA: Language
+LANGUAGE_FR_LU: Language
+LANGUAGE_FR: Language
+LANGUAGE_FR_CH: Language
+LANGUAGE_GD: Language
+LANGUAGE_DE_AT: Language
+LANGUAGE_DE_LI: Language
+LANGUAGE_DE_LU: Language
+LANGUAGE_DE: Language
+LANGUAGE_DE_CH: Language
+LANGUAGE_EL: Language
+LANGUAGE_HE: Language
+LANGUAGE_HI: Language
+LANGUAGE_HU: Language
+LANGUAGE_IS: Language
+LANGUAGE_ID: Language
+LANGUAGE_GA: Language
+LANGUAGE_IT: Language
+LANGUAGE_IT_CH: Language
+LANGUAGE_JA: Language
+LANGUAGE_KO: Language
+LANGUAGE_KU: Language
+LANGUAGE_LV: Language
+LANGUAGE_LT: Language
+LANGUAGE_MK: Language
+LANGUAGE_ML: Language
+LANGUAGE_MS: Language
+LANGUAGE_MT: Language
+LANGUAGE_NO: Language
+LANGUAGE_NB: Language
+LANGUAGE_NN: Language
+LANGUAGE_PL: Language
+LANGUAGE_PT_BR: Language
+LANGUAGE_PT: Language
+LANGUAGE_PA: Language
+LANGUAGE_RM: Language
+LANGUAGE_RO: Language
+LANGUAGE_RO_MD: Language
+LANGUAGE_RU: Language
+LANGUAGE_RU_MD: Language
+LANGUAGE_SR: Language
+LANGUAGE_SK: Language
+LANGUAGE_SL: Language
+LANGUAGE_SB: Language
+LANGUAGE_ES_AR: Language
+LANGUAGE_ES_BO: Language
+LANGUAGE_ES_CL: Language
+LANGUAGE_ES_CO: Language
+LANGUAGE_ES_CR: Language
+LANGUAGE_ES_DO: Language
+LANGUAGE_ES_EC: Language
+LANGUAGE_ES_SV: Language
+LANGUAGE_ES_GT: Language
+LANGUAGE_ES_HN: Language
+LANGUAGE_ES_MX: Language
+LANGUAGE_ES_NI: Language
+LANGUAGE_ES_PA: Language
+LANGUAGE_ES_PY: Language
+LANGUAGE_ES_PE: Language
+LANGUAGE_ES_PR: Language
+LANGUAGE_ES: Language
+LANGUAGE_ES_UY: Language
+LANGUAGE_ES_VE: Language
+LANGUAGE_SV: Language
+LANGUAGE_SV_FI: Language
+LANGUAGE_TH: Language
+LANGUAGE_TS: Language
+LANGUAGE_TN: Language
+LANGUAGE_TR: Language
+LANGUAGE_UA: Language
+LANGUAGE_UR: Language
+LANGUAGE_VE: Language
+LANGUAGE_VI: Language
+LANGUAGE_CY: Language
+LANGUAGE_XH: Language
+LANGUAGE_JI: Language
+LANGUAGE_ZU: Language

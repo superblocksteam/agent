@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.log import error
 from src.variables.constants import VariableMode, VariableType
 from src.variables.variable_client import VariableClient
 
@@ -24,17 +25,24 @@ def build_variables(var_spec: dict, var_client: VariableClient) -> dict[str, Any
 
         if var_type in (VariableType.SIMPLE, VariableType.NATIVE):
             keys_to_read.append(key)
-            var_info.append((var_name, key, mode))
+            var_info.append((var_name, key, mode, var_type))
         elif var_type == VariableType.ADVANCED:
             # Advanced variables are accessed on-demand
             result[var_name] = AdvancedVariable(key, var_client, mode == VariableMode.READ_WRITE)
 
     # Batch read simple/native variables
     if keys_to_read:
-        values = var_client.get_many(keys_to_read)
-        for i, (var_name, key, mode) in enumerate(var_info):
+        values, _ = var_client.read(keys_to_read)
+        for i, (var_name, key, mode, var_type) in enumerate(var_info):
             allow_write = mode == VariableMode.READ_WRITE
-            result[var_name] = SimpleVariable(key, values[i], var_client, allow_write)
+
+            if var_type == VariableType.SIMPLE:
+                result[var_name] = SimpleVariable(key, values[i], var_client, allow_write)
+            elif var_type == VariableType.NATIVE:
+                result[var_name] = values[i]
+            else:
+                error("Invalid variable type, pre-read variables must be simple or native", var_name=var_name, var_type=var_type)
+                raise Exception(f"Invalid variable type, pre-read variables must be simple or native")
 
     return result
 
@@ -67,9 +75,10 @@ class AdvancedVariable:
         self.allow_write = allow_write
 
     def get(self):
-        return self.client.get(self.key)
+        result, _ = self.client.read([self.key])
+        return result[0] if len(result) > 0 else None
 
     def set(self, value: Any):
         if not self.allow_write:
             raise Exception("Variable write is forbidden.")
-        self.client.set(self.key, value)
+        self.client.write(self.key, value)
