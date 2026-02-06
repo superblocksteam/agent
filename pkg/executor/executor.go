@@ -35,6 +35,7 @@ import (
 	internalutils "github.com/superblocksteam/agent/internal/utils"
 	apictx "github.com/superblocksteam/agent/pkg/context"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
+	workerengine "github.com/superblocksteam/agent/pkg/engine/worker"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/executor/middleware"
 	"github.com/superblocksteam/agent/pkg/executor/middleware/ratelimit"
@@ -456,12 +457,26 @@ func (e *execution) Run(ctx context.Context) {
 	e.resolver.files = files
 	defer e.deleteFiles(files)
 
-	e.resolver.createSandboxFunc = func() engine.Sandbox {
-		return javascript.Sandbox(ctx, &javascript.Options{
-			Logger:    e.Logger,
-			Store:     e.Store,
-			AfterFunc: internalutils.EngineAfterFunc,
-		})
+	if e.resolver.shouldUseWorkerForControlFlowBindings() {
+		e.resolver.createSandboxFunc = func() engine.Sandbox {
+			return workerengine.Sandbox(&workerengine.Options{
+				Worker:        e.Worker,
+				Store:         e.Store,
+				ExecutionID:   e.id,
+				FileServerURL: e.FileServerUrl,
+				CtxFunc: func(c context.Context) context.Context {
+					return constants.WithRemainingDuration(c, e.resolver.timeLeftOnApi())
+				},
+			})
+		}
+	} else {
+		e.resolver.createSandboxFunc = func() engine.Sandbox {
+			return javascript.Sandbox(ctx, &javascript.Options{
+				Logger:    e.Logger,
+				Store:     e.Store,
+				AfterFunc: internalutils.EngineAfterFunc,
+			})
+		}
 	}
 
 	var sbctx *apictx.Context

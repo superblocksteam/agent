@@ -1251,16 +1251,19 @@ func (r *resolver) Conditional(ctx *apictx.Context, step *apiv1.Block_Conditiona
 	run := func(branch *apiv1.Block_Conditional_Condition, path ...string) error {
 		condition := utils.Escape(branch.Condition)
 
-		// We set as boolean to allow truthy / falsy conditions to be used.
-		sandbox := r.createSandboxFunc()
-		defer sandbox.Close()
-		shouldRunBranch, err := ResolveTemplate[bool](ctx, sandbox, r.logger, condition, false, engine.WithAsBoolean(), engine.WithResolved(strings.Join(path, ".")))
-		if err != nil {
-			ctx.AppendFormPath("if", "condition")
-			return err
+		var shouldRunBranch bool
+		{
+			sandbox := r.createSandboxFunc()
+			defer sandbox.Close()
+			result, err := ResolveTemplate[bool](ctx, sandbox, r.logger, condition, false, engine.WithAsBoolean(), engine.WithResolved(strings.Join(path, ".")))
+			if err != nil {
+				ctx.AppendFormPath("if", "condition")
+				return err
+			}
+			shouldRunBranch = *result
 		}
 
-		if *shouldRunBranch {
+		if shouldRunBranch {
 			matched = true
 			if _, ref, err = r.blocks(ctx.Sink(strings.Join(path, "_")), branch.Blocks, ops...); err != nil {
 				return err
@@ -1824,6 +1827,13 @@ func shouldRenderActionConfig(action *structpb.Struct, pluginType string, stream
 	}
 
 	return !referencesFilePicker(structpb.NewStructValue(action))
+}
+
+// shouldUseWorkerForControlFlowBindings returns whether control flow binding resolution
+// (e.g., conditional expressions, loop ranges) should be delegated to the JS worker
+// instead of being evaluated locally using V8.
+func (r *resolver) shouldUseWorkerForControlFlowBindings() bool {
+	return r.flags.GetPureJsUseWasmSandboxEnabled(r.organizationPlan, r.orgId)
 }
 
 func isJavaScriptExpression(input string) bool {

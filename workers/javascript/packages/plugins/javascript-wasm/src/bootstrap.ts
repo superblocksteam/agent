@@ -154,6 +154,8 @@ interface WorkerInput {
 const sandboxOptions: SandboxOptions = {
   enableBuffer: true,
   enableAtob: true,
+  // when this plugin is used to resolve bindings, these libraries need to be available
+  globalLibraries: ['lodash', 'moment'],
 };
 
 // Promise for the next sandbox. We store a Promise (not a resolved Sandbox) so that:
