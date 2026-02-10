@@ -174,7 +174,7 @@ worker_js:
       events: execute
       autoscaling:
         min: 1
-ephemeral_worker:
+sandbox_workers:
   fleets: {}
   # Task Manager configuration
   taskManager:

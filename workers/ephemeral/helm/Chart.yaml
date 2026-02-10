@@ -1,7 +1,7 @@
 ---
 apiVersion: v2
-name: ephemeral_worker
-description: A Helm chart for ephemeral workers using KEDA ScaledJob with Python/JavaScript sandboxes.
+name: sandbox_workers
+description: A Helm chart for sandboxed workers using KEDA ScaledJob with Python/JavaScript sandboxes.
 type: application
 version: 0.0.1
 appVersion: "latest"

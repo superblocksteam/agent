@@ -23,7 +23,7 @@ kind: NetworkPolicy
 metadata:
   name: task-manager-egress
   labels:
-    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
 spec:
   order: 10
   selector: role == 'task-manager'
@@ -70,7 +70,7 @@ kind: NetworkPolicy
 metadata:
   name: sandbox-egress-deny-private
   labels:
-    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
 spec:
   order: 10
   selector: role == 'sandbox'
@@ -129,7 +129,7 @@ kind: NetworkPolicy
 metadata:
   name: sandbox-ingress
   labels:
-    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
 spec:
   order: 10
   selector: role == 'sandbox'
@@ -154,7 +154,7 @@ kind: NetworkPolicy
 metadata:
   name: task-manager-ingress
   labels:
-    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
 spec:
   order: 10
   selector: role == 'task-manager'

@@ -11,8 +11,8 @@ dependencies:
 - name: worker_js
   repository: file://../../workers/javascript/helm
   version: 0.0.1
-- name: ephemeral_worker
+- name: sandbox_workers
   repository: file://../../workers/ephemeral/helm
   version: 0.0.1
-digest: sha256:5fa4ea9370261e9ae98c2ca9affec746927d003a9d9b9c2436bfadd95655d529
-generated: "2026-01-27T19:32:41.149626-05:00"
+digest: sha256:f1b0792b3a55f0d44aa446285ca5e3aefb13f93358d0040ed2b32ffc4b6028bf
+generated: "2026-02-10T11:31:14.431906-05:00"

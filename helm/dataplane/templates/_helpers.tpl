@@ -41,8 +41,8 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Common labels for all ephemeral worker resources
 */}}
-{{- define "ephemeral_worker.labels" -}}
-app.kubernetes.io/name: ephemeral-worker
+{{- define "sandbox_workers.labels" -}}
+app.kubernetes.io/name: sandbox-worker
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
@@ -50,8 +50,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Worker labels for fleet-specific resources
 */}}
-{{- define "ephemeral.worker.labels" -}}
-component: worker.ephemeral
+{{- define "sandbox.worker.labels" -}}
+component: worker.sandbox
 language: {{ .language }}
 {{- end -}}
 

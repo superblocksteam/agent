@@ -21,7 +21,7 @@ kind: ScaledJob
 metadata:
   name: {{ $k }}
   labels:
-    {{- include "ephemeral.worker.labels" $v | nindent 4 }}
+    {{- include "sandbox.worker.labels" $v | nindent 4 }}
 spec:
   pollingInterval: {{ $v.keda.pollingInterval | default $.Values.keda.pollingInterval }}
   successfulJobsHistoryLimit: {{ $v.keda.successfulJobsHistoryLimit | default $.Values.keda.successfulJobsHistoryLimit }}
@@ -59,7 +59,7 @@ spec:
     template:
       metadata:
         labels:
-          {{- include "ephemeral.worker.labels" $v | nindent 10 }}
+          {{- include "sandbox.worker.labels" $v | nindent 10 }}
           role: task-manager
           language: {{ $language }}
         {{- with $podAnnotations }}

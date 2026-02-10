@@ -11,14 +11,14 @@ kind: ServiceAccount
 metadata:
   name: task-manager
   labels:
-    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: task-manager-sandbox-creator
   labels:
-    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
 rules:
   # Jobs for sandbox execution
   - apiGroups: ["batch"]
@@ -38,7 +38,7 @@ kind: RoleBinding
 metadata:
   name: task-manager-sandbox-creator
   labels:
-    {{- include "ephemeral_worker.labels" . | nindent 4 }}
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
