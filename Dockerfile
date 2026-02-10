@@ -183,7 +183,7 @@ RUN src="/app/worker.py/${REQUIREMENTS_FILE}" && \
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN cd /app/worker.py                                                                                                                            && \
-    uv pip install --system --no-cache-dir --upgrade pip setuptools                                                                              && \
+    uv pip install --system --no-cache-dir --upgrade pip "setuptools>=65,<82"                                                                     && \
     apt-get update                                                                                                                               && \
     apt-get install -yqq --no-install-recommends lsb-release curl gpg                                                                            && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION_MAJOR}.x | bash -                                                                 && \

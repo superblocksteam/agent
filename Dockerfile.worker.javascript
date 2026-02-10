@@ -16,14 +16,14 @@ RUN apt-get update && \
 
 COPY ./workers/javascript/pnpm-workspace.yaml ./
 COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock.yaml ./
-COPY ./workers/ephemeral/javascript-sandbox/package.json ../ephemeral/javascript-sandbox/
+COPY ./workers/ephemeral/javascript-plugins-sandbox/package.json ../ephemeral/javascript-plugins-sandbox/
 
 RUN npm install -g clean-modules && \
   npm install                  && \
   npx pnpm fetch
 
 COPY ./workers/javascript/ ./
-COPY ./workers/ephemeral/javascript-sandbox/ ../ephemeral/javascript-sandbox/
+COPY ./workers/ephemeral/javascript-plugins-sandbox/ ../ephemeral/javascript-plugins-sandbox/
 
 # Install Java (for closure compiler) and emscripten after pnpm fetch
 RUN apt-get update && \

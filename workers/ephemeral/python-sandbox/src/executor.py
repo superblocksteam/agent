@@ -70,8 +70,7 @@ class Executor:
 
         # NOTE: We intentionally do NOT use os.chdir() here because:
         # 1. os.chdir() is process-wide, not thread-local
-        # 2. The gRPC server uses ThreadPoolExecutor for concurrency
-        # 3. Multiple threads calling os.chdir() would race and cause
+        # 2. Multiple threads calling os.chdir() would race and cause
         #    "[Errno 2] No such file or directory" errors
         # User code should not depend on the current working directory.
 

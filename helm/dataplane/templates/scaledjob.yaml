@@ -119,7 +119,6 @@ spec:
           # Sandbox mode - create separate sandbox Jobs
           - "--sandbox.namespace={{ $.Release.Namespace }}"
           - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
-          - "--sandbox.lang-executor.image={{ (($v.sandbox).langExecutorImage).repository | default $sandboxConfig.langExecutorImage.repository }}:{{ (($v.sandbox).langExecutorImage).tag | default $sandboxConfig.langExecutorImage.tag }}"
           - "--sandbox.port={{ $sandboxConfig.port | default $.Values.ephemeral_worker.sandbox.port }}"
           - "--sandbox.ttl={{ $.Values.ephemeral_worker.sandboxJob.ttlSecondsAfterFinished | default 60 }}"
           {{- if or $.Values.ephemeral_worker.sandbox.runtimeClassName $.Values.ephemeral_worker.runtimeClassName }}
@@ -145,13 +144,6 @@ spec:
           - "--worker.plugins={{ join "," $v.plugins }}"
           {{- else if $.Values.ephemeral_worker.worker.plugins }}
           - "--worker.plugins={{ join "," $.Values.ephemeral_worker.worker.plugins }}"
-          {{- end }}
-          {{- if $v.langExecutorPlugins }}
-          - "--worker.plugins.image.use_lang_executor={{ join "," $v.langExecutorPlugins }}"
-          {{- else if $.Values.ephemeral_worker.worker.langExecutorPlugins }}
-          - "--worker.plugins.image.use_lang_executor={{ join "," $.Values.ephemeral_worker.worker.langExecutorPlugins }}"
-          {{- else }}
-          - "--worker.plugins.image.use_lang_executor="
           {{- end }}
           {{- if $v.events }}
           - "--worker.events={{ join "," $v.events }}"

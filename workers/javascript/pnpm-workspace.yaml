@@ -1,7 +1,6 @@
 ---
 packages:
   - 'packages/**'
-  - '../ephemeral/javascript-sandbox'
   - '../ephemeral/javascript-plugins-sandbox'
 onlyBuiltDependencies:
   - '@swc/core'

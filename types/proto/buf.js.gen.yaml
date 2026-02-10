@@ -9,10 +9,6 @@ plugins:
   - plugin: buf.build/protocolbuffers/js:v3.21.2
     out: ../gen/js
     opt: import_style=commonjs
-  # generates js message files for javascript-sandbox
-  - plugin: buf.build/protocolbuffers/js:v3.21.2
-    out: ../../workers/ephemeral/javascript-sandbox/src/types
-    opt: import_style=commonjs
   # generates js message files for javascript-plugins-sandbox
   - plugin: buf.build/protocolbuffers/js:v3.21.2
     out: ../../workers/ephemeral/javascript-plugins-sandbox/src/types
@@ -20,11 +16,6 @@ plugins:
   # generates js server / client stubs files
   - name: grpc
     out: ../gen/js
-    opt: grpc_js
-    path: grpc_tools_node_protoc_plugin
-  # generates js server / client stubs files for javascript-sandbox
-  - name: grpc
-    out: ../../workers/ephemeral/javascript-sandbox/src/types
     opt: grpc_js
     path: grpc_tools_node_protoc_plugin
   # generates js server / client stubs files for javascript-plugins-sandbox
@@ -35,10 +26,6 @@ plugins:
   # generates .d.ts files
   - name: ts
     out: ../gen/js
-    opt: grpc_js
-  # generates .d.ts files for javascript-sandbox
-  - name: ts
-    out: ../../workers/ephemeral/javascript-sandbox/src/types
     opt: grpc_js
   # generates .d.ts files for javascript-plugins-sandbox
   - name: ts

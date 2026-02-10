@@ -40,7 +40,7 @@ x-javascript-sandbox-base: &javascript-sandbox-base
   networks:
     - default
 services:
-  # Redis is shared with compose.full.yaml
+  # Redis is shared with compose.ephemeral.yaml
   redis:
     image: ghcr.io/superblocksteam/docker.io/valkey/valkey:8.1.5-alpine
     ports:
@@ -62,8 +62,7 @@ services:
     container_name: javascript-sandbox-manager
     environment:
       !!merge <<: *task-manager-environment
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: -python * # All plugins except Python
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS_IMAGE_USE_LANG_EXECUTOR:
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: -javascript -python * # All plugins except JavaScript and Python
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
       SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-sandbox:50051

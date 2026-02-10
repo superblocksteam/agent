@@ -226,10 +226,6 @@ ephemeral_worker:
         repository: ghcr.io/superblocksteam/python-sandbox
         tag: latest
         pullPolicy: IfNotPresent
-      langExecutorImage:
-        repository: ghcr.io/superblocksteam/python-lang-executor-sandbox
-        tag: latest
-        pullPolicy: IfNotPresent
       resources:
         limits:
           memory: 2Gi
@@ -242,10 +238,6 @@ ephemeral_worker:
     javascript:
       image:
         repository: ghcr.io/superblocksteam/javascript-sandbox
-        tag: latest
-        pullPolicy: IfNotPresent
-      langExecutorImage:
-        repository: ghcr.io/superblocksteam/javascript-lang-executor-sandbox
         tag: latest
         pullPolicy: IfNotPresent
       resources:
