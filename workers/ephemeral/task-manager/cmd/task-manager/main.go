@@ -110,6 +110,9 @@ func init() {
 	pflag.StringToString("sandbox.nodeSelector", map[string]string{}, "Node selector for sandbox pods (e.g., 'key=value,key2=value2').")
 	pflag.StringArray("sandbox.toleration", []string{}, "Toleration for sandbox pods (format: 'key=x,operator=y,value=z,effect=w'). Can be specified multiple times for multiple tolerations.")
 
+	// IP filter settings
+	pflag.Bool("ip.filter.disabled", false, "Disable IP filtering for the variable store and streaming proxy (for testing/development).")
+
 	// gRPC settings for variable store
 	pflag.Int("variable.store.grpc.port", 50050, "The port for the VariableStore gRPC server.")
 	pflag.String("variable.store.grpc.address", "", "The address for sandbox to connect to VariableStore (defaults to localhost:variable.store.grpc.port).")
@@ -291,6 +294,10 @@ func main() {
 
 	// Create IP filter manager
 	ipFilterManager := ipfiltermanager.NewIpFilterManager()
+	ipFilterDisabled := viper.GetBool("ip.filter.disabled")
+	if ipFilterDisabled {
+		logger.Warn("IP filtering is disabled")
+	}
 
 	// Configure sandbox plugin options
 	sandboxOptions := []sandbox.Option{
@@ -460,7 +467,7 @@ func main() {
 	var variableStoreGrpcRunnable *internalstore.VariableStoreGRPC
 	{
 		grpcServer := grpc.NewServer(
-			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger)),
+			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger, ipFilterDisabled)),
 			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
 			grpc.MaxSendMsgSize(viper.GetInt("grpc.msg.res.max")),
 			grpc.StatsHandler(otelgrpc.NewServerHandler()),
@@ -524,9 +531,12 @@ func main() {
 			os.Exit(1)
 		}
 
+		// Wrap the mux with IP filter middleware
+		handler := ipfiltermiddleware.IpFilterHttpMiddleware(ipFilterManager, logger, ipFilterDisabled)(mux)
+
 		variableStoreHttpRunnable = httpserver.Prepare(&httpserver.Options{
 			Name:         "variableStoreHttp",
-			Handler:      mux,
+			Handler:      handler,
 			InsecurePort: viper.GetInt("variable.store.http.port"),
 			Logger:       logger,
 			InsecureAddr: viper.GetString("variable.store.http.bind"),
@@ -536,7 +546,7 @@ func main() {
 	var streamingProxyService *streamingproxy.StreamingProxyService
 	{
 		grpcServer := grpc.NewServer(
-			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger)),
+			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger, ipFilterDisabled)),
 			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
 			grpc.MaxSendMsgSize(viper.GetInt("grpc.msg.res.max")),
 			grpc.StatsHandler(otelgrpc.NewServerHandler()),

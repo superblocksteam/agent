@@ -21,6 +21,8 @@ x-task-manager-environment: &task-manager-environment
   SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_TLS: "false"
   # The non-language execution workers are persistent
   SUPERBLOCKS_WORKER_SANDBOX_WORKER_EPHEMERAL: "false"
+  # Disable IP filtering in compose (static sandbox mode) since sandbox IPs are not dynamically configured
+  SUPERBLOCKS_WORKER_SANDBOX_IP_FILTER_DISABLED: "true"
 x-task-manager-base: &task-manager-base
   image: ghcr.io/superblocksteam/task-manager:${SANDBOX_IMAGE_TAG:-latest}
   build:
