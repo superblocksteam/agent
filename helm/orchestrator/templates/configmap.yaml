@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: orchestrator-buckets-config
+  name: {{ include "orchestrator.fullname" . }}-buckets-config
 data:
   buckets.json: |-
     {

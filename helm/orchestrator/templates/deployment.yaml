@@ -43,7 +43,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.service.terminationGracePeriodSeconds }}
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
-      - name: orchestrator-docker
+      - name: {{ include "orchestrator.fullname" . }}-docker
       {{- end }}
       containers:
       - name: orchestrator
@@ -112,27 +112,27 @@ spec:
         - name: SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_KEY
           valueFrom:
             secretKeyRef:
-              name: orchestrator-superblocks-key
+              name: {{ include "orchestrator.fullname" . }}-superblocks-key
               key: key
         - name: SUPERBLOCKS_ORCHESTRATOR_LAUNCHDARKLY_APIKEY
           valueFrom:
             secretKeyRef:
-              name: orchestrator-launchdarkly
+              name: {{ include "orchestrator.fullname" . }}-launchdarkly
               key: apikey
         - name: SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY
           valueFrom:
             secretKeyRef:
-              name: orchestrator-secrets-encryption
+              name: {{ include "orchestrator.fullname" . }}-secrets-encryption
               key: key
         - name: SUPERBLOCKS_ORCHESTRATOR_TRANSPORT_REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: orchestrator-redis
+              name: {{ include "orchestrator.fullname" . }}-redis
               key: transport
         - name: SUPERBLOCKS_ORCHESTRATOR_STORE_REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: orchestrator-redis
+              name: {{ include "orchestrator.fullname" . }}-redis
               key: store
         - name: SUPERBLOCKS_AGENT_APP_ENV_TEST
           value: {{.Values.agentAppEnvTestValue}}
@@ -164,5 +164,5 @@ spec:
       volumes:
       - name: buckets
         configMap:
-          name: orchestrator-buckets-config
+          name: {{ include "orchestrator.fullname" . }}-buckets-config
 {{- end }}
