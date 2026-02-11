@@ -259,7 +259,7 @@ deploy-helm:
 		--set launchdarkly.apikey="$(HELM_LAUNCHDARKLY_APIKEY)" \
 		--set secrets.encryptionKey="$(HELM_SECRETS_ENCRYPTION_KEY)" $(HELM_EXTRA_ARGS)
 
-HELM_TIMEOUT := "10m"
+HELM_TIMEOUT := "20m"
 .PHONY: deploy-helm-opa
 deploy-helm-opa:
 
