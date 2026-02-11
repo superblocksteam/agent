@@ -44,6 +44,7 @@ import * as plugins_restapiintegration_v1_plugin_pb from "../../plugins/restapii
 import * as plugins_rockset_v1_plugin_pb from "../../plugins/rockset/v1/plugin_pb";
 import * as plugins_s3_v1_plugin_pb from "../../plugins/s3/v1/plugin_pb";
 import * as plugins_salesforce_v1_plugin_pb from "../../plugins/salesforce/v1/plugin_pb";
+import * as plugins_javascriptsdkapi_v1_plugin_pb from "../../plugins/javascriptsdkapi/v1/plugin_pb";
 import * as plugins_smtp_v1_plugin_pb from "../../plugins/smtp/v1/plugin_pb";
 import * as plugins_snowflake_v1_plugin_pb from "../../plugins/snowflake/v1/plugin_pb";
 import * as plugins_workflow_v1_plugin_pb from "../../plugins/workflow/v1/plugin_pb";
@@ -1614,6 +1615,11 @@ export class Step extends jspb.Message {
     getLakebase(): plugins_lakebase_v1_plugin_pb.Plugin | undefined;
     setLakebase(value?: plugins_lakebase_v1_plugin_pb.Plugin): Step;
 
+    hasJavascriptsdkapi(): boolean;
+    clearJavascriptsdkapi(): void;
+    getJavascriptsdkapi(): plugins_javascriptsdkapi_v1_plugin_pb.Plugin | undefined;
+    setJavascriptsdkapi(value?: plugins_javascriptsdkapi_v1_plugin_pb.Plugin): Step;
+
     getConfigCase(): Step.ConfigCase;
 
     serializeBinary(): Uint8Array;
@@ -1707,6 +1713,7 @@ export namespace Step {
         confluence?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
         openaiV2?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
         lakebase?: plugins_lakebase_v1_plugin_pb.Plugin.AsObject,
+        javascriptsdkapi?: plugins_javascriptsdkapi_v1_plugin_pb.Plugin.AsObject,
     }
 
     export enum ConfigCase {
@@ -1789,6 +1796,7 @@ export namespace Step {
         CONFLUENCE = 77,
         OPENAI_V2 = 78,
         LAKEBASE = 79,
+        JAVASCRIPTSDKAPI = 80,
     }
 
 }

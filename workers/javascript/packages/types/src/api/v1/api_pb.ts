@@ -45,6 +45,7 @@ import { Plugin as Plugin$33 } from "../../plugins/couchbase/v1/plugin_pb";
 import { Plugin as Plugin$34 } from "../../plugins/custom/v1/plugin_pb";
 import { Plugin as Plugin$35 } from "../../plugins/kinesis/v1/plugin_pb";
 import { Plugin as Plugin$36 } from "../../plugins/lakebase/v1/plugin_pb";
+import { Plugin as Plugin$37 } from "../../plugins/javascriptsdkapi/v1/plugin_pb";
 
 /**
  * @generated from enum api.v1.AuthorizationType
@@ -2405,6 +2406,12 @@ export class Step extends Message<Step> {
      */
     value: Plugin$36;
     case: "lakebase";
+  } | {
+    /**
+     * @generated from field: plugins.javascriptsdkapi.v1.Plugin javascriptsdkapi = 80;
+     */
+    value: Plugin$37;
+    case: "javascriptsdkapi";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Step>) {
@@ -2494,6 +2501,7 @@ export class Step extends Message<Step> {
     { no: 77, name: "confluence", kind: "message", T: Plugin$12, oneof: "config" },
     { no: 78, name: "openai_v2", kind: "message", T: Plugin$12, oneof: "config" },
     { no: 79, name: "lakebase", kind: "message", T: Plugin$36, oneof: "config" },
+    { no: 80, name: "javascriptsdkapi", kind: "message", T: Plugin$37, oneof: "config" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Step {

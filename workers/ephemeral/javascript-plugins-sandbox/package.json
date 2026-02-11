@@ -48,6 +48,7 @@
     "@superblocksteam/rockset": "workspace:*",
     "@superblocksteam/s3": "workspace:*",
     "@superblocksteam/salesforce": "workspace:*",
+    "@superblocksteam/javascript-sdk-api": "workspace:*",
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/smtp": "workspace:*",
     "@superblocksteam/snowflake": "workspace:*",

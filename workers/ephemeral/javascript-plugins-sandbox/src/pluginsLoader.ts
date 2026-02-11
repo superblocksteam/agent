@@ -32,6 +32,7 @@ import sb_restapiintegration from '@superblocksteam/restapiintegration';
 import sb_rockset from '@superblocksteam/rockset';
 import sb_s3 from '@superblocksteam/s3';
 import sb_salesforce from '@superblocksteam/salesforce';
+import sb_javascriptsdkapi from '@superblocksteam/javascript-sdk-api';
 import sb_smtp from '@superblocksteam/smtp';
 import sb_snowflake from '@superblocksteam/snowflake';
 import sb_superblocks_ocr from '@superblocksteam/superblocks-ocr';
@@ -42,6 +43,7 @@ const kafka = new sb_kafka();
 const graphql = new sb_graphql();
 const restapiintegration = new sb_restapiintegration();
 const redis = new sb_redis();
+const javascriptsdkapi = new sb_javascriptsdkapi();
 const secretStore = secrets();
 
 export const ALL_PLUGINS: Record<string, BasePlugin> = {
@@ -75,6 +77,7 @@ export const ALL_PLUGINS: Record<string, BasePlugin> = {
   rockset: new sb_rockset(),
   s3: new sb_s3(),
   salesforce: new sb_salesforce(),
+  javascriptsdkapi: javascriptsdkapi,
   smtp: new sb_smtp(),
   snowflake: new sb_snowflake(),
   ocr: new sb_superblocks_ocr(),
@@ -89,7 +92,8 @@ export const ALL_PLUGINS: Record<string, BasePlugin> = {
 
 export const LANG_PLUGINS: Record<string, BasePlugin> = {
   javascript: new sb_javascript(),
-  javascriptwasm: new sb_javascriptwasm()
+  javascriptwasm: new sb_javascriptwasm(),
+  javascriptsdkapi: javascriptsdkapi
 };
 
 const tracer = trace.getTracer('sandbox-javascript', '0.0.1');

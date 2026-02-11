@@ -1259,3 +1259,19 @@ func (plugin *Step_Lakebase) Build() (map[string]any, error) {
 	}
 	return obj, nil
 }
+
+func (*Step_Javascriptsdkapi) Name() string { return "javascriptsdkapi" }
+
+func (*Step_Javascriptsdkapi) Type() string { return "javascriptsdkapi" }
+
+func (plugin *Step_Javascriptsdkapi) Build() (map[string]any, error) {
+	var buf bytes.Buffer
+	if err := marshaler.Marshal(&buf, plugin.Javascriptsdkapi); err != nil {
+		return nil, err
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
+}

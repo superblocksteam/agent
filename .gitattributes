@@ -4,6 +4,7 @@
 *.pb.go linguist-generated=true
 *_pb2.py linguist-generated=true
 *_pb2_grpc.py linguist-generated=true
+*_pb2.pyi linguist-generated=true
 *_pb.d.ts linguist-generated=true
 *swagger.json linguist-generated=true
 workers/ephemeral/javascript-sandbox/src/types/* linguist-generated=true

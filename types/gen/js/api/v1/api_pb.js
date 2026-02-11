@@ -99,6 +99,8 @@ var plugins_s3_v1_plugin_pb = require('../../plugins/s3/v1/plugin_pb');
 goog.object.extend(proto, plugins_s3_v1_plugin_pb);
 var plugins_salesforce_v1_plugin_pb = require('../../plugins/salesforce/v1/plugin_pb');
 goog.object.extend(proto, plugins_salesforce_v1_plugin_pb);
+var plugins_javascriptsdkapi_v1_plugin_pb = require('../../plugins/javascriptsdkapi/v1/plugin_pb');
+goog.object.extend(proto, plugins_javascriptsdkapi_v1_plugin_pb);
 var plugins_smtp_v1_plugin_pb = require('../../plugins/smtp/v1/plugin_pb');
 goog.object.extend(proto, plugins_smtp_v1_plugin_pb);
 var plugins_snowflake_v1_plugin_pb = require('../../plugins/snowflake/v1/plugin_pb');
@@ -8860,7 +8862,7 @@ proto.api.v1.Block.prototype.hasSend = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79]];
+proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]];
 
 /**
  * @enum {number}
@@ -8944,7 +8946,8 @@ proto.api.v1.Step.ConfigCase = {
   KINESIS: 76,
   CONFLUENCE: 77,
   OPENAI_V2: 78,
-  LAKEBASE: 79
+  LAKEBASE: 79,
+  JAVASCRIPTSDKAPI: 80
 };
 
 /**
@@ -9063,7 +9066,8 @@ proto.api.v1.Step.toObject = function(includeInstance, msg) {
     kinesis: (f = msg.getKinesis()) && plugins_kinesis_v1_plugin_pb.Plugin.toObject(includeInstance, f),
     confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
     openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-    lakebase: (f = msg.getLakebase()) && plugins_lakebase_v1_plugin_pb.Plugin.toObject(includeInstance, f)
+    lakebase: (f = msg.getLakebase()) && plugins_lakebase_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    javascriptsdkapi: (f = msg.getJavascriptsdkapi()) && plugins_javascriptsdkapi_v1_plugin_pb.Plugin.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9493,6 +9497,11 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
       var value = new plugins_lakebase_v1_plugin_pb.Plugin;
       reader.readMessage(value,plugins_lakebase_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
       msg.setLakebase(value);
+      break;
+    case 80:
+      var value = new plugins_javascriptsdkapi_v1_plugin_pb.Plugin;
+      reader.readMessage(value,plugins_javascriptsdkapi_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
+      msg.setJavascriptsdkapi(value);
       break;
     default:
       reader.skipField();
@@ -10152,6 +10161,14 @@ proto.api.v1.Step.serializeBinaryToWriter = function(message, writer) {
       79,
       f,
       plugins_lakebase_v1_plugin_pb.Plugin.serializeBinaryToWriter
+    );
+  }
+  f = message.getJavascriptsdkapi();
+  if (f != null) {
+    writer.writeMessage(
+      80,
+      f,
+      plugins_javascriptsdkapi_v1_plugin_pb.Plugin.serializeBinaryToWriter
     );
   }
 };
@@ -13058,6 +13075,43 @@ proto.api.v1.Step.prototype.clearLakebase = function() {
  */
 proto.api.v1.Step.prototype.hasLakebase = function() {
   return jspb.Message.getField(this, 79) != null;
+};
+
+
+/**
+ * optional plugins.javascriptsdkapi.v1.Plugin javascriptsdkapi = 80;
+ * @return {?proto.plugins.javascriptsdkapi.v1.Plugin}
+ */
+proto.api.v1.Step.prototype.getJavascriptsdkapi = function() {
+  return /** @type{?proto.plugins.javascriptsdkapi.v1.Plugin} */ (
+    jspb.Message.getWrapperField(this, plugins_javascriptsdkapi_v1_plugin_pb.Plugin, 80));
+};
+
+
+/**
+ * @param {?proto.plugins.javascriptsdkapi.v1.Plugin|undefined} value
+ * @return {!proto.api.v1.Step} returns this
+*/
+proto.api.v1.Step.prototype.setJavascriptsdkapi = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 80, proto.api.v1.Step.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.Step} returns this
+ */
+proto.api.v1.Step.prototype.clearJavascriptsdkapi = function() {
+  return this.setJavascriptsdkapi(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.Step.prototype.hasJavascriptsdkapi = function() {
+  return jspb.Message.getField(this, 80) != null;
 };
 
 

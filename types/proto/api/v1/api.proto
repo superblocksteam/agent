@@ -41,6 +41,7 @@ import "plugins/restapiintegration/v1/plugin.proto";
 import "plugins/rockset/v1/plugin.proto";
 import "plugins/s3/v1/plugin.proto";
 import "plugins/salesforce/v1/plugin.proto";
+import "plugins/javascriptsdkapi/v1/plugin.proto";
 import "plugins/smtp/v1/plugin.proto";
 import "plugins/snowflake/v1/plugin.proto";
 import "plugins/workflow/v1/plugin.proto";
@@ -458,5 +459,6 @@ message Step {
     plugins.restapiintegration.v1.Plugin confluence = 77 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
     plugins.restapiintegration.v1.Plugin openai_v2 = 78 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
     plugins.lakebase.v1.Plugin lakebase = 79;
+    plugins.javascriptsdkapi.v1.Plugin javascriptsdkapi = 80;
   }
 }

@@ -20,6 +20,7 @@ var SUPERBLOCKS_PLUGINS_SET = utils.NewSet(
 	"graphql",
 	"gsheets",
 	"javascript",
+	"javascriptsdkapi",
 	"javascriptwasm",
 	"kafka",
 	"kinesis",

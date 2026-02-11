@@ -4020,6 +4020,14 @@
         }
       }
     },
+    "pluginsjavascriptsdkapiv1Plugin": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string"
+        }
+      }
+    },
     "pluginsjavascriptv1Plugin": {
       "type": "object",
       "properties": {
@@ -7011,6 +7019,9 @@
         },
         "lakebase": {
           "$ref": "#/definitions/pluginslakebasev1Plugin"
+        },
+        "javascriptsdkapi": {
+          "$ref": "#/definitions/pluginsjavascriptsdkapiv1Plugin"
         }
       }
     },
