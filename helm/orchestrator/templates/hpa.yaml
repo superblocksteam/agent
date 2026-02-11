@@ -1,4 +1,4 @@
-{{- if not .Values.autoscaling.disable }}
+{{- if and .Values.server.deploy (not .Values.autoscaling.disable) }}
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -10,7 +10,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: orchestrator
+    name: {{ include "orchestrator.fullname" . }}
   minReplicas: {{ .Values.autoscaling.min }}
   maxReplicas: {{ .Values.autoscaling.max }}
   metrics:

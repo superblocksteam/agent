@@ -19,6 +19,7 @@ x-worker-javascript-process-worker: &worker_javascript_process_worker
       pool:
         size: 4
 server:
+  deploy: true
   mock: false
 superblocks:
   url: 'https://app.superblocks.com'

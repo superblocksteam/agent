@@ -1,3 +1,4 @@
+{{- if .Values.server.deploy }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -31,3 +32,4 @@ data:
         }
       ]
     }
+{{- end }}
