@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,19 +13,22 @@ import (
 	pkgengine "github.com/superblocksteam/agent/pkg/engine"
 	storemock "github.com/superblocksteam/agent/pkg/store/mock"
 	"github.com/superblocksteam/agent/pkg/worker"
-	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// outputJSON builds a JSON string representing an apiv1.Output with the given result.
+// outputJSON builds a JSON string in the format the JS worker actually writes to the
+// KV store. The worker uses the legacy "output" field name (matching OutputOld in
+// event.pb.go), not the proto "result" field name. The custom Output.UnmarshalJSON
+// codec (in types/gen/go/api/v1/codec.go) maps "output" → Result.
 func outputJSON(t *testing.T, result *structpb.Value) string {
 	t.Helper()
-	out := &apiv1.Output{Result: result}
-	b, err := protojson.Marshal(out)
+	if result == nil {
+		return `{"output":null}`
+	}
+	resultJSON, err := result.MarshalJSON()
 	require.NoError(t, err)
-	return string(b)
+	return fmt.Sprintf(`{"output":%s}`, string(resultJSON))
 }
 
 // setupMocks creates mock worker and store, and wires them into an Options struct.

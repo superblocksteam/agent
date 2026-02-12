@@ -15,7 +15,6 @@ import (
 	pkgworker "github.com/superblocksteam/agent/pkg/worker"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -148,8 +147,11 @@ func (e *engine) execute(ctx context.Context, expression string, variables map[s
 		return nil, nil
 	}
 
+	// Important: apiv1.Output has a custom UnmarshalJSON (in types/gen/go/api/v1/codec.go)
+	// that maps the worker's "output" JSON field to the Result proto field. We must use
+	// encoding/json here (not protojson) so that the custom codec is invoked.
 	var output apiv1.Output
-	if err := protojson.Unmarshal([]byte(values[0].(string)), &output); err != nil {
+	if err := json.Unmarshal([]byte(values[0].(string)), &output); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal output: %w", err)
 	}
 
