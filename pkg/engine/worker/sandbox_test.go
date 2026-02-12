@@ -220,6 +220,19 @@ func TestResultNilOutput(t *testing.T) {
 	assert.Nil(t, result)
 }
 
+func TestResultIgnoresAdditionalOutputMetadataFields(t *testing.T) {
+	t.Parallel()
+	_, _, opts := setupMocks(t, "key-extra-fields", `{"output":1,"startTimeUtc":"2026-02-12T18:00:00Z","executionTime":5,"log":[],"request":"return 1"}`)
+
+	s := Sandbox(opts)
+	e, _ := s.Engine(context.Background())
+	v := e.Resolve(context.Background(), "{{ 1 }}", nil)
+
+	result, err := v.Result()
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), result)
+}
+
 func TestResultArrayOfStrings(t *testing.T) {
 	t.Parallel()
 	listVal, _ := structpb.NewList([]interface{}{"one", "two", "three"})

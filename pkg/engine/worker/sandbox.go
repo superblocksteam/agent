@@ -13,7 +13,6 @@ import (
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/utils"
 	pkgworker "github.com/superblocksteam/agent/pkg/worker"
-	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -147,15 +146,47 @@ func (e *engine) execute(ctx context.Context, expression string, variables map[s
 		return nil, nil
 	}
 
-	// Important: apiv1.Output has a custom UnmarshalJSON (in types/gen/go/api/v1/codec.go)
-	// that maps the worker's "output" JSON field to the Result proto field. We must use
-	// encoding/json here (not protojson) so that the custom codec is invoked.
-	var output apiv1.Output
-	if err := json.Unmarshal([]byte(values[0].(string)), &output); err != nil {
+	var raw string
+	switch value := values[0].(type) {
+	case string:
+		raw = value
+	case []byte:
+		raw = string(value)
+	default:
+		return nil, fmt.Errorf("failed to parse output payload: unexpected type %T", values[0])
+	}
+
+	result, err := parseOutputResult(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// parseOutputResult reads the worker output JSON and extracts only the evaluated result.
+// We intentionally ignore all other metadata fields (e.g. startTimeUtc, executionTime)
+// because bindings evaluation only needs the "output" value.
+func parseOutputResult(raw string) (*structpb.Value, error) {
+	var payload map[string]interface{}
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal output: %w", err)
 	}
 
-	return output.Result, nil
+	result, ok := payload["output"]
+	if !ok {
+		result, ok = payload["result"]
+		if !ok {
+			return nil, fmt.Errorf("failed to parse output payload: missing output field")
+		}
+	}
+
+	typed, err := structpb.NewValue(result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert output value: %w", err)
+	}
+
+	return typed, nil
 }
 
 // value implements pkgengine.Value using lazy evaluation. The expression is
