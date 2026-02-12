@@ -774,6 +774,14 @@ func main() {
 		}
 
 		jwtDecider := func(ctx context.Context, callMeta interceptors.CallMeta) bool {
+			// Unconditionally require JWT for certain request types, regardless of
+			// feature flags or context values. These checks must come before anything
+			// that could early-return false.
+			switch callMeta.ReqOrNil.(type) {
+			case *apiv1.ExecuteV3Request:
+				return true
+			}
+
 			jwtEnabled := viper.GetBool("auth.jwt.enabled")
 			requestUsesJwtAuth, err := constants.GetRequestUsesJwtAuth(ctx)
 			if err != nil {

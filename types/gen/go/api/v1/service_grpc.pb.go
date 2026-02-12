@@ -198,6 +198,7 @@ var DeprecatedService_ServiceDesc = grpc.ServiceDesc{
 
 const (
 	ExecutorService_Await_FullMethodName              = "/api.v1.ExecutorService/Await"
+	ExecutorService_ExecuteV3_FullMethodName          = "/api.v1.ExecutorService/ExecuteV3"
 	ExecutorService_TwoWayStream_FullMethodName       = "/api.v1.ExecutorService/TwoWayStream"
 	ExecutorService_MetadataDeprecated_FullMethodName = "/api.v1.ExecutorService/MetadataDeprecated"
 	ExecutorService_Metadata_FullMethodName           = "/api.v1.ExecutorService/Metadata"
@@ -217,6 +218,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ExecutorServiceClient interface {
 	Await(ctx context.Context, in *ExecuteRequest, opts ...grpc.CallOption) (*AwaitResponse, error)
+	ExecuteV3(ctx context.Context, in *ExecuteV3Request, opts ...grpc.CallOption) (*AwaitResponse, error)
 	TwoWayStream(ctx context.Context, opts ...grpc.CallOption) (ExecutorService_TwoWayStreamClient, error)
 	MetadataDeprecated(ctx context.Context, in *MetadataRequestDeprecated, opts ...grpc.CallOption) (*MetadataResponse, error)
 	Metadata(ctx context.Context, in *MetadataRequest, opts ...grpc.CallOption) (*MetadataResponse, error)
@@ -242,6 +244,15 @@ func NewExecutorServiceClient(cc grpc.ClientConnInterface) ExecutorServiceClient
 func (c *executorServiceClient) Await(ctx context.Context, in *ExecuteRequest, opts ...grpc.CallOption) (*AwaitResponse, error) {
 	out := new(AwaitResponse)
 	err := c.cc.Invoke(ctx, ExecutorService_Await_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *executorServiceClient) ExecuteV3(ctx context.Context, in *ExecuteV3Request, opts ...grpc.CallOption) (*AwaitResponse, error) {
+	out := new(AwaitResponse)
+	err := c.cc.Invoke(ctx, ExecutorService_ExecuteV3_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -429,6 +440,7 @@ func (c *executorServiceClient) Validate(ctx context.Context, in *ValidateReques
 // for forward compatibility
 type ExecutorServiceServer interface {
 	Await(context.Context, *ExecuteRequest) (*AwaitResponse, error)
+	ExecuteV3(context.Context, *ExecuteV3Request) (*AwaitResponse, error)
 	TwoWayStream(ExecutorService_TwoWayStreamServer) error
 	MetadataDeprecated(context.Context, *MetadataRequestDeprecated) (*MetadataResponse, error)
 	Metadata(context.Context, *MetadataRequest) (*MetadataResponse, error)
@@ -449,6 +461,9 @@ type UnimplementedExecutorServiceServer struct {
 
 func (UnimplementedExecutorServiceServer) Await(context.Context, *ExecuteRequest) (*AwaitResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Await not implemented")
+}
+func (UnimplementedExecutorServiceServer) ExecuteV3(context.Context, *ExecuteV3Request) (*AwaitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteV3 not implemented")
 }
 func (UnimplementedExecutorServiceServer) TwoWayStream(ExecutorService_TwoWayStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method TwoWayStream not implemented")
@@ -512,6 +527,24 @@ func _ExecutorService_Await_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExecutorServiceServer).Await(ctx, req.(*ExecuteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExecutorService_ExecuteV3_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExecuteV3Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExecutorServiceServer).ExecuteV3(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExecutorService_ExecuteV3_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExecutorServiceServer).ExecuteV3(ctx, req.(*ExecuteV3Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -756,6 +789,10 @@ var ExecutorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Await",
 			Handler:    _ExecutorService_Await_Handler,
+		},
+		{
+			MethodName: "ExecuteV3",
+			Handler:    _ExecutorService_ExecuteV3_Handler,
 		},
 		{
 			MethodName: "MetadataDeprecated",

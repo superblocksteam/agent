@@ -1210,3 +1210,77 @@ func TestMetadata(t *testing.T) {
 		})
 	}
 }
+
+// TestExecuteV3ConvertsToFetchRequest verifies that ExecuteV3 correctly
+// converts an ExecuteV3Request into an internal ExecuteRequest with Fetch
+// fields and delegates to the await() pipeline.
+func TestExecuteV3ConvertsToFetchRequest(t *testing.T) {
+	profileName := "production"
+
+	for _, test := range []struct {
+		name            string
+		request         *apiv1.ExecuteV3Request
+		expectedApiId   string
+		expectedMode    apiv1.ViewMode
+		expectedProfile *v1.Profile
+	}{
+		{
+			name: "all fields populated",
+			request: &apiv1.ExecuteV3Request{
+				ApiId:    "api-123",
+				ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+				Profile:  &v1.Profile{Name: &profileName},
+				Inputs: map[string]*structpb.Value{
+					"key": structpb.NewStringValue("value"),
+				},
+			},
+			expectedApiId:   "api-123",
+			expectedMode:    apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+			expectedProfile: &v1.Profile{Name: &profileName},
+		},
+		{
+			name: "minimal request with only api_id",
+			request: &apiv1.ExecuteV3Request{
+				ApiId: "api-456",
+			},
+			expectedApiId:   "api-456",
+			expectedMode:    apiv1.ViewMode_VIEW_MODE_UNSPECIFIED,
+			expectedProfile: nil,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			defer metrics.SetupForTesting()()
+
+			mockWorker := &worker.MockClient{}
+			fetcher := &fetchmocks.Fetcher{}
+
+			// Mock FetchApi to capture the request and return an error (to short-circuit execution).
+			fetchErr := errors.New("fetch stopped for test")
+			fetcher.On("FetchApi", mock.Anything, mock.MatchedBy(func(req *apiv1.ExecuteRequest_Fetch) bool {
+				assert.Equal(t, test.expectedApiId, req.GetId())
+				assert.Equal(t, test.expectedMode, req.GetViewMode())
+				assert.True(t, proto.Equal(test.expectedProfile, req.GetProfile()))
+				return true
+			}), mock.Anything).Return(nil, nil, fetchErr)
+
+			server := NewServer(&Config{
+				Logger:        zap.NewNop(),
+				Store:         store.Memory(),
+				Worker:        mockWorker,
+				Fetcher:       fetcher,
+				SecretManager: secrets.NewSecretManager(),
+			})
+
+			ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+			_, err := server.ExecuteV3(ctx, test.request)
+
+			// The pipeline should fail with our injected fetch error,
+			// not an authorization error (v3 doesn't use inline definitions).
+			require.Error(t, err)
+			assert.False(t, sberror.IsAuthorizationError(err),
+				"ExecuteV3 should not produce authorization errors")
+
+			fetcher.AssertExpectations(t)
+		})
+	}
+}

@@ -597,6 +597,73 @@ export class ExecuteRequest_File extends Message<ExecuteRequest_File> {
 }
 
 /**
+ * ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.
+ * Unlike ExecuteRequest, it always requires JWT authentication and only
+ * supports fetch-by-ID (no inline definitions).
+ *
+ * @generated from message api.v1.ExecuteV3Request
+ */
+export class ExecuteV3Request extends Message<ExecuteV3Request> {
+  /**
+   * The API ID to execute (required).
+   *
+   * @generated from field: string api_id = 1;
+   */
+  apiId = "";
+
+  /**
+   * Inputs accessible to steps.
+   *
+   * @generated from field: map<string, google.protobuf.Value> inputs = 2;
+   */
+  inputs: { [key: string]: Value } = {};
+
+  /**
+   * The view mode for execution.
+   *
+   * @generated from field: api.v1.ViewMode view_mode = 3;
+   */
+  viewMode = ViewMode.UNSPECIFIED;
+
+  /**
+   * The integration profile to use.
+   *
+   * @generated from field: common.v1.Profile profile = 4;
+   */
+  profile?: Profile;
+
+  constructor(data?: PartialMessage<ExecuteV3Request>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.ExecuteV3Request";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "api_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "inputs", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Value} },
+    { no: 3, name: "view_mode", kind: "enum", T: proto3.getEnumType(ViewMode) },
+    { no: 4, name: "profile", kind: "message", T: Profile },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteV3Request {
+    return new ExecuteV3Request().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ExecuteV3Request {
+    return new ExecuteV3Request().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ExecuteV3Request {
+    return new ExecuteV3Request().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ExecuteV3Request | PlainMessage<ExecuteV3Request> | undefined, b: ExecuteV3Request | PlainMessage<ExecuteV3Request> | undefined): boolean {
+    return proto3.util.equals(ExecuteV3Request, a, b);
+  }
+}
+
+/**
  * @generated from message api.v1.Definition
  */
 export class Definition extends Message<Definition> {

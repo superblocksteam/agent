@@ -122,6 +122,17 @@ function deserialize_api_v1_ExecuteRequest(buffer_arg) {
   return api_v1_service_pb.ExecuteRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_v1_ExecuteV3Request(arg) {
+  if (!(arg instanceof api_v1_service_pb.ExecuteV3Request)) {
+    throw new Error('Expected argument of type api.v1.ExecuteV3Request');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_v1_ExecuteV3Request(buffer_arg) {
+  return api_v1_service_pb.ExecuteV3Request.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_v1_HealthRequest(arg) {
   if (!(arg instanceof api_v1_service_pb.HealthRequest)) {
     throw new Error('Expected argument of type api.v1.HealthRequest');
@@ -338,6 +349,17 @@ var ExecutorServiceService = exports.ExecutorServiceService = {
     responseType: api_v1_service_pb.AwaitResponse,
     requestSerialize: serialize_api_v1_ExecuteRequest,
     requestDeserialize: deserialize_api_v1_ExecuteRequest,
+    responseSerialize: serialize_api_v1_AwaitResponse,
+    responseDeserialize: deserialize_api_v1_AwaitResponse,
+  },
+  executeV3: {
+    path: '/api.v1.ExecutorService/ExecuteV3',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_v1_service_pb.ExecuteV3Request,
+    responseType: api_v1_service_pb.AwaitResponse,
+    requestSerialize: serialize_api_v1_ExecuteV3Request,
+    requestDeserialize: deserialize_api_v1_ExecuteV3Request,
     responseSerialize: serialize_api_v1_AwaitResponse,
     responseDeserialize: deserialize_api_v1_AwaitResponse,
   },

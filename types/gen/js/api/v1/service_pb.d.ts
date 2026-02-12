@@ -325,6 +325,40 @@ export namespace ExecuteRequest {
 
 }
 
+export class ExecuteV3Request extends jspb.Message { 
+    getApiId(): string;
+    setApiId(value: string): ExecuteV3Request;
+
+    getInputsMap(): jspb.Map<string, google_protobuf_struct_pb.Value>;
+    clearInputsMap(): void;
+    getViewMode(): ViewMode;
+    setViewMode(value: ViewMode): ExecuteV3Request;
+
+    hasProfile(): boolean;
+    clearProfile(): void;
+    getProfile(): common_v1_common_pb.Profile | undefined;
+    setProfile(value?: common_v1_common_pb.Profile): ExecuteV3Request;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ExecuteV3Request.AsObject;
+    static toObject(includeInstance: boolean, msg: ExecuteV3Request): ExecuteV3Request.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ExecuteV3Request, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ExecuteV3Request;
+    static deserializeBinaryFromReader(message: ExecuteV3Request, reader: jspb.BinaryReader): ExecuteV3Request;
+}
+
+export namespace ExecuteV3Request {
+    export type AsObject = {
+        apiId: string,
+
+        inputsMap: Array<[string, google_protobuf_struct_pb.Value.AsObject]>,
+        viewMode: ViewMode,
+        profile?: common_v1_common_pb.Profile.AsObject,
+    }
+}
+
 export class Definition extends jspb.Message { 
 
     hasApi(): boolean;

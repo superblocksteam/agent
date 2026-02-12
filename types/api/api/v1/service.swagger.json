@@ -696,6 +696,40 @@
           "ExecutorService"
         ]
       }
+    },
+    "/v3/execute": {
+      "post": {
+        "summary": "Execute an API (v3)",
+        "operationId": "ExecutorService_ExecuteV3",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AwaitResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions).",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ExecuteV3Request"
+            }
+          }
+        ],
+        "tags": [
+          "ExecutorService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -6174,6 +6208,29 @@
           "description": "If true, the begin and complete events will be sent. This flag is need to retain backwards compatibility."
         }
       }
+    },
+    "v1ExecuteV3Request": {
+      "type": "object",
+      "properties": {
+        "apiId": {
+          "type": "string",
+          "description": "The API ID to execute (required)."
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Inputs accessible to steps."
+        },
+        "viewMode": {
+          "$ref": "#/definitions/v1ViewMode",
+          "description": "The view mode for execution."
+        },
+        "profile": {
+          "$ref": "#/definitions/v1Profile",
+          "description": "The integration profile to use."
+        }
+      },
+      "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions)."
     },
     "v1ExecutorServiceStreamBody": {
       "type": "object",

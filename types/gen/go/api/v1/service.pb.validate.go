@@ -689,6 +689,194 @@ var _ interface {
 	ErrorName() string
 } = ExecuteRequestValidationError{}
 
+// Validate checks the field values on ExecuteV3Request with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ExecuteV3Request) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ExecuteV3Request with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ExecuteV3RequestMultiError, or nil if none found.
+func (m *ExecuteV3Request) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ExecuteV3Request) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetApiId()) < 1 {
+		err := ExecuteV3RequestValidationError{
+			field:  "ApiId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	{
+		sorted_keys := make([]string, len(m.GetInputs()))
+		i := 0
+		for key := range m.GetInputs() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetInputs()[key]
+			_ = val
+
+			// no validation rules for Inputs[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, ExecuteV3RequestValidationError{
+							field:  fmt.Sprintf("Inputs[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, ExecuteV3RequestValidationError{
+							field:  fmt.Sprintf("Inputs[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return ExecuteV3RequestValidationError{
+						field:  fmt.Sprintf("Inputs[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	// no validation rules for ViewMode
+
+	if all {
+		switch v := interface{}(m.GetProfile()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ExecuteV3RequestValidationError{
+					field:  "Profile",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ExecuteV3RequestValidationError{
+					field:  "Profile",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetProfile()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ExecuteV3RequestValidationError{
+				field:  "Profile",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return ExecuteV3RequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ExecuteV3RequestMultiError is an error wrapping multiple validation errors
+// returned by ExecuteV3Request.ValidateAll() if the designated constraints
+// aren't met.
+type ExecuteV3RequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ExecuteV3RequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ExecuteV3RequestMultiError) AllErrors() []error { return m }
+
+// ExecuteV3RequestValidationError is the validation error returned by
+// ExecuteV3Request.Validate if the designated constraints aren't met.
+type ExecuteV3RequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ExecuteV3RequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ExecuteV3RequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ExecuteV3RequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ExecuteV3RequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ExecuteV3RequestValidationError) ErrorName() string { return "ExecuteV3RequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ExecuteV3RequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sExecuteV3Request.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ExecuteV3RequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ExecuteV3RequestValidationError{}
+
 // Validate checks the field values on Definition with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.

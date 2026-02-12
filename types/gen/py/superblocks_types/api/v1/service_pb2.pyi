@@ -143,6 +143,25 @@ class ExecuteRequest(_message.Message):
     view_mode: ViewMode
     def __init__(self, options: _Optional[_Union[ExecuteRequest.Options, _Mapping]] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., definition: _Optional[_Union[Definition, _Mapping]] = ..., fetch: _Optional[_Union[ExecuteRequest.Fetch, _Mapping]] = ..., fetch_by_path: _Optional[_Union[ExecuteRequest.FetchByPath, _Mapping]] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., mocks: _Optional[_Iterable[_Union[Mock, _Mapping]]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ...) -> None: ...
 
+class ExecuteV3Request(_message.Message):
+    __slots__ = ("api_id", "inputs", "view_mode", "profile")
+    class InputsEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: _struct_pb2.Value
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[_Union[_struct_pb2.Value, _Mapping]] = ...) -> None: ...
+    API_ID_FIELD_NUMBER: _ClassVar[int]
+    INPUTS_FIELD_NUMBER: _ClassVar[int]
+    VIEW_MODE_FIELD_NUMBER: _ClassVar[int]
+    PROFILE_FIELD_NUMBER: _ClassVar[int]
+    api_id: str
+    inputs: _containers.MessageMap[str, _struct_pb2.Value]
+    view_mode: ViewMode
+    profile: _common_pb2.Profile
+    def __init__(self, api_id: _Optional[str] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ...) -> None: ...
+
 class Definition(_message.Message):
     __slots__ = ("api", "integrations", "metadata", "stores")
     class Metadata(_message.Message):

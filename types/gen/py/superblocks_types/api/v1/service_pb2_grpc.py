@@ -165,6 +165,11 @@ class ExecutorServiceStub(object):
                 request_serializer=api_dot_v1_dot_service__pb2.ExecuteRequest.SerializeToString,
                 response_deserializer=api_dot_v1_dot_service__pb2.AwaitResponse.FromString,
                 _registered_method=True)
+        self.ExecuteV3 = channel.unary_unary(
+                '/api.v1.ExecutorService/ExecuteV3',
+                request_serializer=api_dot_v1_dot_service__pb2.ExecuteV3Request.SerializeToString,
+                response_deserializer=api_dot_v1_dot_service__pb2.AwaitResponse.FromString,
+                _registered_method=True)
         self.TwoWayStream = channel.stream_stream(
                 '/api.v1.ExecutorService/TwoWayStream',
                 request_serializer=api_dot_v1_dot_service__pb2.TwoWayRequest.SerializeToString,
@@ -231,6 +236,12 @@ class ExecutorServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Await(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExecuteV3(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -314,6 +325,11 @@ def add_ExecutorServiceServicer_to_server(servicer, server):
             'Await': grpc.unary_unary_rpc_method_handler(
                     servicer.Await,
                     request_deserializer=api_dot_v1_dot_service__pb2.ExecuteRequest.FromString,
+                    response_serializer=api_dot_v1_dot_service__pb2.AwaitResponse.SerializeToString,
+            ),
+            'ExecuteV3': grpc.unary_unary_rpc_method_handler(
+                    servicer.ExecuteV3,
+                    request_deserializer=api_dot_v1_dot_service__pb2.ExecuteV3Request.FromString,
                     response_serializer=api_dot_v1_dot_service__pb2.AwaitResponse.SerializeToString,
             ),
             'TwoWayStream': grpc.stream_stream_rpc_method_handler(
@@ -403,6 +419,33 @@ class ExecutorService(object):
             target,
             '/api.v1.ExecutorService/Await',
             api_dot_v1_dot_service__pb2.ExecuteRequest.SerializeToString,
+            api_dot_v1_dot_service__pb2.AwaitResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ExecuteV3(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.v1.ExecutorService/ExecuteV3',
+            api_dot_v1_dot_service__pb2.ExecuteV3Request.SerializeToString,
             api_dot_v1_dot_service__pb2.AwaitResponse.FromString,
             options,
             channel_credentials,

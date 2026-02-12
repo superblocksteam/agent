@@ -93,6 +93,7 @@ export class DeprecatedServiceClient extends grpc.Client implements IDeprecatedS
 
 interface IExecutorServiceService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
     await: IExecutorServiceService_IAwait;
+    executeV3: IExecutorServiceService_IExecuteV3;
     twoWayStream: IExecutorServiceService_ITwoWayStream;
     metadataDeprecated: IExecutorServiceService_IMetadataDeprecated;
     metadata: IExecutorServiceService_IMetadata;
@@ -113,6 +114,15 @@ interface IExecutorServiceService_IAwait extends grpc.MethodDefinition<api_v1_se
     responseStream: false;
     requestSerialize: grpc.serialize<api_v1_service_pb.ExecuteRequest>;
     requestDeserialize: grpc.deserialize<api_v1_service_pb.ExecuteRequest>;
+    responseSerialize: grpc.serialize<api_v1_service_pb.AwaitResponse>;
+    responseDeserialize: grpc.deserialize<api_v1_service_pb.AwaitResponse>;
+}
+interface IExecutorServiceService_IExecuteV3 extends grpc.MethodDefinition<api_v1_service_pb.ExecuteV3Request, api_v1_service_pb.AwaitResponse> {
+    path: "/api.v1.ExecutorService/ExecuteV3";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<api_v1_service_pb.ExecuteV3Request>;
+    requestDeserialize: grpc.deserialize<api_v1_service_pb.ExecuteV3Request>;
     responseSerialize: grpc.serialize<api_v1_service_pb.AwaitResponse>;
     responseDeserialize: grpc.deserialize<api_v1_service_pb.AwaitResponse>;
 }
@@ -229,6 +239,7 @@ export const ExecutorServiceService: IExecutorServiceService;
 
 export interface IExecutorServiceServer extends grpc.UntypedServiceImplementation {
     await: grpc.handleUnaryCall<api_v1_service_pb.ExecuteRequest, api_v1_service_pb.AwaitResponse>;
+    executeV3: grpc.handleUnaryCall<api_v1_service_pb.ExecuteV3Request, api_v1_service_pb.AwaitResponse>;
     twoWayStream: grpc.handleBidiStreamingCall<api_v1_service_pb.TwoWayRequest, api_v1_service_pb.TwoWayResponse>;
     metadataDeprecated: grpc.handleUnaryCall<api_v1_service_pb.MetadataRequestDeprecated, api_v1_service_pb.MetadataResponse>;
     metadata: grpc.handleUnaryCall<api_v1_service_pb.MetadataRequest, api_v1_service_pb.MetadataResponse>;
@@ -247,6 +258,9 @@ export interface IExecutorServiceClient {
     await(request: api_v1_service_pb.ExecuteRequest, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
     await(request: api_v1_service_pb.ExecuteRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
     await(request: api_v1_service_pb.ExecuteRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
+    executeV3(request: api_v1_service_pb.ExecuteV3Request, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
+    executeV3(request: api_v1_service_pb.ExecuteV3Request, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
+    executeV3(request: api_v1_service_pb.ExecuteV3Request, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
     twoWayStream(): grpc.ClientDuplexStream<api_v1_service_pb.TwoWayRequest, api_v1_service_pb.TwoWayResponse>;
     twoWayStream(options: Partial<grpc.CallOptions>): grpc.ClientDuplexStream<api_v1_service_pb.TwoWayRequest, api_v1_service_pb.TwoWayResponse>;
     twoWayStream(metadata: grpc.Metadata, options?: Partial<grpc.CallOptions>): grpc.ClientDuplexStream<api_v1_service_pb.TwoWayRequest, api_v1_service_pb.TwoWayResponse>;
@@ -288,6 +302,9 @@ export class ExecutorServiceClient extends grpc.Client implements IExecutorServi
     public await(request: api_v1_service_pb.ExecuteRequest, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
     public await(request: api_v1_service_pb.ExecuteRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
     public await(request: api_v1_service_pb.ExecuteRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
+    public executeV3(request: api_v1_service_pb.ExecuteV3Request, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
+    public executeV3(request: api_v1_service_pb.ExecuteV3Request, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
+    public executeV3(request: api_v1_service_pb.ExecuteV3Request, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.AwaitResponse) => void): grpc.ClientUnaryCall;
     public twoWayStream(options?: Partial<grpc.CallOptions>): grpc.ClientDuplexStream<api_v1_service_pb.TwoWayRequest, api_v1_service_pb.TwoWayResponse>;
     public twoWayStream(metadata?: grpc.Metadata, options?: Partial<grpc.CallOptions>): grpc.ClientDuplexStream<api_v1_service_pb.TwoWayRequest, api_v1_service_pb.TwoWayResponse>;
     public metadataDeprecated(request: api_v1_service_pb.MetadataRequestDeprecated, callback: (error: grpc.ServiceError | null, response: api_v1_service_pb.MetadataResponse) => void): grpc.ClientUnaryCall;

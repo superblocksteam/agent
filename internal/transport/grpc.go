@@ -153,6 +153,23 @@ func requireAuthForInlineDefinition(ctx context.Context, req *apiv1.ExecuteReque
 	return nil
 }
 
+// ExecuteV3 handles the /v3/execute endpoint for API 2.0 execution.
+// It converts the minimal ExecuteV3Request to an internal ExecuteRequest
+// and delegates to the existing await() pipeline. JWT is always required
+// (enforced by the jwtDecider in main.go).
+func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*apiv1.AwaitResponse, error) {
+	return s.await(ctx, &apiv1.ExecuteRequest{
+		Inputs: req.GetInputs(),
+		Request: &apiv1.ExecuteRequest_Fetch_{
+			Fetch: &apiv1.ExecuteRequest_Fetch{
+				Id:       req.GetApiId(),
+				ViewMode: req.GetViewMode(),
+				Profile:  req.GetProfile(),
+			},
+		},
+	})
+}
+
 func (s *server) Await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *apiv1.AwaitResponse, err error) {
 	// Require authorization for inline definitions to prevent anonymous code execution
 	if err := requireAuthForInlineDefinition(ctx, req); err != nil {

@@ -75,6 +75,14 @@ service ExecutorService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {summary: "Execute an API"};
   }
 
+  rpc ExecuteV3(ExecuteV3Request) returns (AwaitResponse) {
+    option (google.api.http) = {
+      post: "/v3/execute"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {summary: "Execute an API (v3)"};
+  }
+
   rpc TwoWayStream(stream TwoWayRequest) returns (stream TwoWayResponse) {
     option (google.api.http) = {
       post: "/v2/execute/twoway"
@@ -345,6 +353,26 @@ message ExecuteRequest {
    * For fetch/fetchByPath, the nested view_mode takes precedence.
    */
   ViewMode view_mode = 9;
+}
+
+// ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.
+// Unlike ExecuteRequest, it always requires JWT authentication and only
+// supports fetch-by-ID (no inline definitions).
+message ExecuteV3Request {
+  // The API ID to execute (required).
+  string api_id = 1 [
+    (validate.rules).string.min_len = 1,
+    (buf.validate.field).string.min_len = 1
+  ];
+
+  // Inputs accessible to steps.
+  map<string, google.protobuf.Value> inputs = 2;
+
+  // The view mode for execution.
+  ViewMode view_mode = 3;
+
+  // The integration profile to use.
+  common.v1.Profile profile = 4;
 }
 
 message Definition {
