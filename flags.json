@@ -248,6 +248,21 @@
       "variations": [30000, 300000, 3000],
       "deleted": false
     },
+    "agent.worker.ephemeral.plugins.enabled": {
+      "key": "agent.worker.ephemeral.plugins.enabled",
+      "on": true,
+      "targets": [],
+      "rules": [],
+      "fallthrough": {
+        "variation": 1
+      },
+      "offVariation": 0,
+      "variations": [
+        [],
+        ["javascriptsdkapi"]
+      ],
+      "deleted": false
+    },
     "agent.quota.api.parallel.pool.size.max": {
       "key": "agent.quota.api.parallel.pool.size.max",
       "on": true,
