@@ -208,6 +208,9 @@ spec:
           - "--store.redis.timeout.pool={{ $.Values.sandbox_workers.kvstore.timeout.pool }}"
           {{- end }}
           # Observability
+          {{- if $.Values.sandbox_workers.observability.metrics.url }}
+          - "--otel.metrics.collector.http.url={{ $.Values.sandbox_workers.observability.metrics.url }}"
+          {{- end }}
           {{- if $.Values.sandbox_workers.observability.tracing.url }}
           - "--otel.collector.http.url={{ $.Values.sandbox_workers.observability.tracing.url }}"
           {{- end }}

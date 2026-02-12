@@ -209,6 +209,9 @@ spec:
           - "--store.redis.timeout.pool={{ $.Values.kvstore.timeout.pool }}"
           {{- end }}
           # Observability
+          {{- if $.Values.observability.metrics.url }}
+          - "--otel.metrics.collector.http.url={{ $.Values.observability.metrics.url }}"
+          {{- end }}
           {{- if $.Values.observability.tracing.url }}
           - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"
           {{- end }}

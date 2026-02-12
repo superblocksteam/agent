@@ -339,6 +339,8 @@ sandbox_workers:
   observability:
     logging:
       level: info
+    metrics:
+      url: ""
     tracing:
       url: ""
       batchTimeout: 1s

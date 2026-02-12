@@ -136,7 +136,8 @@ func init() {
 	pflag.Duration("health.check.interval", 5*time.Second, "The interval for health checks.")
 
 	// OpenTelemetry settings
-	pflag.String("otel.collector.http.url", "http://127.0.0.1:4318", "The OTLP HTTP collector URL.")
+	pflag.String("otel.collector.http.url", "http://127.0.0.1:4318", "The OTLP HTTP collector URL for traces.")
+	pflag.String("otel.metrics.collector.http.url", "", "The OTLP HTTP collector URL for metrics. Falls back to otel.collector.http.url if empty.")
 	pflag.Duration("otel.batcher.batch.timeout", 1*time.Second, "The maximum delay allowed for a BatchSpanProcessor before it will export any held span.")
 	pflag.Duration("otel.batcher.export.timeout", 15*time.Second, "The amount of time a BatchSpanProcessor waits for an exporter to export before abandoning the export.")
 	pflag.Int("otel.batcher.export.batch.max", 1000, "The maximum export batch size allowed for a BatchSpanProcessor.")
@@ -233,9 +234,14 @@ func main() {
 
 		tracerRunnable = t.Runnable
 
+		metricsURL := viper.GetString("otel.metrics.collector.http.url")
+		if metricsURL == "" {
+			metricsURL = viper.GetString("otel.collector.http.url")
+		}
+
 		mp, err := sandboxmetrics.SetupMeterProvider(
 			context.Background(),
-			viper.GetString("otel.collector.http.url"),
+			metricsURL,
 			serviceLabel,
 			version,
 		)
