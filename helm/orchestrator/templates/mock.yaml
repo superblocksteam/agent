@@ -1,4 +1,4 @@
-{{- if and .Values.server.deploy .Values.server.mock }}
+{{- if .Values.server.mock }}
 ---
 apiVersion: v1
 kind: Service

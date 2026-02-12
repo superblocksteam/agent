@@ -1,4 +1,3 @@
-{{- if .Values.server.deploy }}
 ---
 apiVersion: configuration.konghq.com/v1
 kind: KongPlugin
@@ -48,4 +47,3 @@ plugin: request-termination
 config:
   status_code: 404
   message: No route found.
-{{- end }}

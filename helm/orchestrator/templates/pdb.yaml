@@ -1,4 +1,4 @@
-{{- if and .Values.server.deploy (not .Values.podDisruptionBudget.disable) }}
+{{- if not .Values.podDisruptionBudget.disable }}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

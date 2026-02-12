@@ -1,4 +1,3 @@
-{{- if .Values.server.deploy }}
 {{ $hosts := mustAppend ( .Values.ingress.additionalUrls | default (list) ) .Values.externalUrl }}
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: GRPCRoute
@@ -33,4 +32,3 @@ spec:
         - name: {{ include "orchestrator.fullname" $ }}-grpc
           kind: Service
           port: {{ .Values.service.ports.grpc }}
-{{- end }}

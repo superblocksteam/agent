@@ -1,4 +1,3 @@
-{{- if .Values.server.deploy }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -43,7 +42,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.service.terminationGracePeriodSeconds }}
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
-      - name: {{ include "orchestrator.fullname" . }}-docker
+      - name: orchestrator-docker
       {{- end }}
       containers:
       - name: orchestrator
@@ -112,27 +111,27 @@ spec:
         - name: SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ include "orchestrator.fullname" . }}-superblocks-key
+              name: orchestrator-superblocks-key
               key: key
         - name: SUPERBLOCKS_ORCHESTRATOR_LAUNCHDARKLY_APIKEY
           valueFrom:
             secretKeyRef:
-              name: {{ include "orchestrator.fullname" . }}-launchdarkly
+              name: orchestrator-launchdarkly
               key: apikey
         - name: SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ include "orchestrator.fullname" . }}-secrets-encryption
+              name: orchestrator-secrets-encryption
               key: key
         - name: SUPERBLOCKS_ORCHESTRATOR_TRANSPORT_REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ include "orchestrator.fullname" . }}-redis
+              name: orchestrator-redis
               key: transport
         - name: SUPERBLOCKS_ORCHESTRATOR_STORE_REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ include "orchestrator.fullname" . }}-redis
+              name: orchestrator-redis
               key: store
         - name: SUPERBLOCKS_AGENT_APP_ENV_TEST
           value: {{.Values.agentAppEnvTestValue}}
@@ -164,5 +163,4 @@ spec:
       volumes:
       - name: buckets
         configMap:
-          name: {{ include "orchestrator.fullname" . }}-buckets-config
-{{- end }}
+          name: orchestrator-buckets-config

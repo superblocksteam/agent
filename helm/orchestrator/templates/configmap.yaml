@@ -1,9 +1,8 @@
-{{- if .Values.server.deploy }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "orchestrator.fullname" . }}-buckets-config
+  name: orchestrator-buckets-config
 data:
   buckets.json: |-
     {
@@ -32,4 +31,3 @@ data:
         }
       ]
     }
-{{- end }}
