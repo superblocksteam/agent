@@ -29,21 +29,28 @@ var (
 
 // StepMetricLabels contains labels for step-related metrics.
 type StepMetricLabels struct {
-	PluginName  string
-	Bucket      string
-	PluginEvent string
-	Result      string
-	ApiType     string
+	PluginName    string
+	Bucket        string
+	PluginEvent   string
+	Result        string
+	ApiType       string
+	ExecutionMode string // "sandboxed" or "legacy" (empty defaults to "legacy")
 }
 
 // ToAttributes converts StepMetricLabels to OTEL attributes.
 func (l *StepMetricLabels) ToAttributes() []attribute.KeyValue {
+	executionMode := l.ExecutionMode
+	if executionMode == "" {
+		executionMode = "legacy"
+	}
+
 	return []attribute.KeyValue{
-		attribute.String("plugin_name", l.PluginName),
-		attribute.String("bucket", l.Bucket),
-		attribute.String("plugin_event", l.PluginEvent),
-		attribute.String("result", l.Result),
 		attribute.String("api_type", l.ApiType),
+		attribute.String("bucket", l.Bucket),
+		attribute.String("execution_mode", executionMode),
+		attribute.String("plugin_event", l.PluginEvent),
+		attribute.String("plugin_name", l.PluginName),
+		attribute.String("result", l.Result),
 	}
 }
 

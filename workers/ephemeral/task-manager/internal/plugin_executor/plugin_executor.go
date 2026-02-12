@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
 	"workers/ephemeral/task-manager/internal/plugin"
 
 	"github.com/superblocksteam/agent/pkg/constants"
@@ -100,7 +101,18 @@ func (p *pluginExecutor) Execute(
 	reqData *transportv1.Request_Data_Data,
 	pinned *transportv1.Request_Data_Pinned,
 	parentPerf *transportv1.Performance,
-) (*transportv1.Response_Data_Data, error) {
+) (resp *transportv1.Response_Data_Data, retErr error) {
+	executionStart := time.Now()
+	defer func() {
+		result := "succeeded"
+		if retErr != nil || (resp != nil && resp.Err != nil) {
+			result = "failed"
+		}
+		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxExecutionDuration,
+			time.Since(executionStart).Seconds(),
+			sandboxmetrics.AttrResult.String(result),
+		)
+	}()
 
 	logger := p.logger.With(
 		zap.String(observability.OBS_TAG_CORRELATION_ID, constants.ExecutionID(ctx)),
@@ -121,7 +133,7 @@ func (p *pluginExecutor) Execute(
 	}
 
 	requestMeta := &workerv1.RequestMetadata{PluginName: pluginName}
-	resp := &transportv1.Response_Data_Data{}
+	resp = &transportv1.Response_Data_Data{}
 	perf := &transportv1.Performance{
 		PluginExecution: &transportv1.Performance_Observable{},
 		KvStorePush:     &transportv1.Performance_Observable{},

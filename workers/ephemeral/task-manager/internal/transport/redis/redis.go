@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 
@@ -131,6 +132,9 @@ func (rt *redisTransport) init() error {
 		return err
 	}
 
+	// Report configured execution pool size
+	sandboxmetrics.RecordGauge(context.Background(), sandboxmetrics.SandboxExecutionPoolSize, rt.executionPoolSize)
+
 	rt.initialized = true
 	return nil
 }
@@ -237,6 +241,7 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 			// handle messages concurrently with execution pool management
 			rt.logger.Debug("message received", zap.String("stream", stream.Stream), zap.String("id", mesg.ID))
 			rt.executionPool.Add(-1)
+			sandboxmetrics.AddUpDownCounter(context.Background(), sandboxmetrics.SandboxExecutionPoolInUse, 1)
 
 			go func(streamKey string) {
 				rt.handleMessage(&m, streamKey)
@@ -244,6 +249,7 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 				rt.mutex.Lock()
 				defer rt.mutex.Unlock()
 
+				sandboxmetrics.AddUpDownCounter(context.Background(), sandboxmetrics.SandboxExecutionPoolInUse, -1)
 				pool := rt.executionPool.Add(1)
 				rt.workerReturned <- rt.executionPoolSize - pool
 			}(stream.Stream)

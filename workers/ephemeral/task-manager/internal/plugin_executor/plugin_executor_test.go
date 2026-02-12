@@ -715,6 +715,100 @@ func TestExecuteWithDeadlineExceeded(t *testing.T) {
 	}
 }
 
+func TestExecuteQuotaDurationCancelsBlockingPlugin(t *testing.T) {
+	executor := newTestExecutor()
+
+	mock := &mockPlugin{
+		name: "python",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			// Simulate a language step that blocks forever (e.g. `time.sleep(999999)`)
+			// and only returns when its context is cancelled.
+			<-ctx.Done()
+			return &workerv1.ExecuteResponse{
+				Output: &apiv1.OutputOld{
+					Log: []string{"should be cleared on timeout"},
+				},
+				StructuredLog: []*workerv1.StructuredLog{
+					{Level: workerv1.StructuredLog_LEVEL_INFO, Message: "should be cleared on timeout"},
+				},
+			}, ctx.Err()
+		},
+	}
+
+	executor.RegisterPlugin("python", mock)
+
+	ctx := context.Background()
+	quotaDurationMs := int32(100) // 100ms timeout
+	reqData := &transportv1.Request_Data_Data{
+		Quotas: &transportv1.Request_Data_Data_Quota{
+			Duration: quotaDurationMs,
+		},
+	}
+
+	start := time.Now()
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
+	elapsed := time.Since(start)
+
+	if err != nil {
+		t.Errorf("Execute() should not return error directly, got %v", err)
+	}
+	if result == nil {
+		t.Fatal("Execute() returned nil result")
+	}
+
+	// The quota duration timeout should have fired, producing a DurationQuotaError.
+	if result.Err == nil {
+		t.Fatal("Execute() result should have DurationQuotaError in Err field")
+	}
+	if result.Err.Message != "DurationQuotaError" {
+		t.Errorf("Execute() result.Err.Message = %v, want DurationQuotaError", result.Err.Message)
+	}
+	if result.Err.Name != "QuotaError" {
+		t.Errorf("Execute() result.Err.Name = %v, want QuotaError", result.Err.Name)
+	}
+
+	// Execution must complete in roughly the quota duration, not hang forever.
+	if elapsed > 5*time.Second {
+		t.Errorf("Execute() took %v; quota timeout of %dms should have cancelled it", elapsed, quotaDurationMs)
+	}
+}
+
+func TestExecuteZeroQuotaDurationDoesNotTimeout(t *testing.T) {
+	executor := newTestExecutor()
+
+	mock := &mockPlugin{
+		name: "python",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			// With zero quota, the context should have no deadline.
+			if _, hasDeadline := ctx.Deadline(); hasDeadline {
+				return nil, errors.New("context should not have a deadline when quota duration is 0")
+			}
+			return &workerv1.ExecuteResponse{}, nil
+		},
+	}
+
+	executor.RegisterPlugin("python", mock)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{
+		Quotas: &transportv1.Request_Data_Data_Quota{
+			Duration: 0, // no timeout
+		},
+	}
+
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
+
+	if err != nil {
+		t.Errorf("Execute() error = %v", err)
+	}
+	if result == nil {
+		t.Fatal("Execute() returned nil result")
+	}
+	if result.Err != nil {
+		t.Errorf("Execute() should succeed without error, got %v", result.Err)
+	}
+}
+
 func TestStreamWithError(t *testing.T) {
 	executor := newTestExecutor()
 

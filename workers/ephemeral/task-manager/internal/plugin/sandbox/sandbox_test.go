@@ -1,0 +1,212 @@
+package sandbox
+
+import (
+	"errors"
+	"testing"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+func TestNewSandboxPlugin_StaticMode(t *testing.T) {
+	t.Parallel()
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress("localhost:50051"),
+		WithSandboxId("test-sandbox"),
+	)
+
+	if err != nil {
+		t.Fatalf("NewSandboxPlugin() error = %v", err)
+	}
+	if p == nil {
+		t.Fatal("NewSandboxPlugin() returned nil")
+	}
+	if p.connectionMode != SandboxConnectionModeStatic {
+		t.Errorf("connectionMode = %v, want SandboxConnectionModeStatic", p.connectionMode)
+	}
+	if p.sandboxAddress != "localhost:50051" {
+		t.Errorf("sandboxAddress = %v, want localhost:50051", p.sandboxAddress)
+	}
+}
+
+func TestNewSandboxPlugin_StaticMode_MissingAddress(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+	)
+
+	if err == nil {
+		t.Fatal("NewSandboxPlugin() should return error when address is missing in static mode")
+	}
+}
+
+func TestNewSandboxPlugin_DynamicMode_MissingManager(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxId("test-sandbox"),
+	)
+
+	if err == nil {
+		t.Fatal("NewSandboxPlugin() should return error when sandbox manager is missing in dynamic mode")
+	}
+}
+
+func TestNewSandboxPlugin_DynamicMode_MissingSandboxId(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(&mockSandboxManager{}),
+	)
+
+	if err == nil {
+		t.Fatal("NewSandboxPlugin() should return error when sandbox id is missing in dynamic mode")
+	}
+}
+
+func TestNewSandboxPlugin_InvalidConnectionMode(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeUnspecified),
+	)
+
+	if err == nil {
+		t.Fatal("NewSandboxPlugin() should return error for invalid connection mode")
+	}
+}
+
+func TestSandboxPlugin_Name(t *testing.T) {
+	t.Parallel()
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress("localhost:50051"),
+		WithSandboxId("python-abc123"),
+	)
+	if err != nil {
+		t.Fatalf("NewSandboxPlugin() error = %v", err)
+	}
+
+	name := p.Name()
+	if name != "sandbox.python-abc123" {
+		t.Errorf("Name() = %v, want sandbox.python-abc123", name)
+	}
+}
+
+func TestErrorMessageFromGrpcError_Nil(t *testing.T) {
+	t.Parallel()
+
+	p := &SandboxPlugin{}
+
+	st, err := p.errorMessageFromGrpcError(nil)
+	if st != nil {
+		t.Errorf("errorMessageFromGrpcError(nil) status = %v, want nil", st)
+	}
+	if err != nil {
+		t.Errorf("errorMessageFromGrpcError(nil) error = %v, want nil", err)
+	}
+}
+
+func TestErrorMessageFromGrpcError_GrpcStatus(t *testing.T) {
+	t.Parallel()
+
+	p := &SandboxPlugin{}
+
+	grpcErr := status.Error(codes.InvalidArgument, "bad request")
+	st, err := p.errorMessageFromGrpcError(grpcErr)
+
+	if st == nil {
+		t.Fatal("errorMessageFromGrpcError() status should not be nil for gRPC error")
+	}
+	if st.Code() != codes.InvalidArgument {
+		t.Errorf("status code = %v, want InvalidArgument", st.Code())
+	}
+	if err == nil {
+		t.Fatal("errorMessageFromGrpcError() error should not be nil")
+	}
+	if err.Error() != "bad request" {
+		t.Errorf("error = %v, want 'bad request'", err.Error())
+	}
+}
+
+func TestErrorMessageFromGrpcError_NonGrpcError(t *testing.T) {
+	t.Parallel()
+
+	p := &SandboxPlugin{}
+
+	plainErr := errors.New("plain error")
+	st, err := p.errorMessageFromGrpcError(plainErr)
+
+	// Non-gRPC errors pass through as-is
+	if st != nil {
+		t.Errorf("errorMessageFromGrpcError() status = %v, want nil for non-gRPC error", st)
+	}
+	if err != plainErr {
+		t.Errorf("errorMessageFromGrpcError() should return original error")
+	}
+}
+
+func TestApplyOptions_Defaults(t *testing.T) {
+	t.Parallel()
+
+	opts := ApplyOptions()
+
+	if opts.Logger == nil {
+		t.Error("ApplyOptions() should set default logger")
+	}
+	if opts.KvStore == nil {
+		t.Error("ApplyOptions() should set default store")
+	}
+	if opts.ConnectionMode != SandboxConnectionModeUnspecified {
+		t.Errorf("ApplyOptions() ConnectionMode = %v, want Unspecified", opts.ConnectionMode)
+	}
+}
+
+func TestApplyOptions_Overrides(t *testing.T) {
+	t.Parallel()
+
+	mgr := &mockSandboxManager{}
+	opts := ApplyOptions(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("my-sandbox"),
+		WithSandboxAddress("localhost:1234"),
+		WithVariableStoreAddress("localhost:5678"),
+	)
+
+	if opts.ConnectionMode != SandboxConnectionModeDynamic {
+		t.Errorf("ConnectionMode = %v, want Dynamic", opts.ConnectionMode)
+	}
+	if opts.SandboxManager != mgr {
+		t.Error("SandboxManager should be set")
+	}
+	if opts.SandboxId != "my-sandbox" {
+		t.Errorf("SandboxId = %v, want my-sandbox", opts.SandboxId)
+	}
+	if opts.SandboxAddress != "localhost:1234" {
+		t.Errorf("SandboxAddress = %v, want localhost:1234", opts.SandboxAddress)
+	}
+	if opts.VariableStoreAddress != "localhost:5678" {
+		t.Errorf("VariableStoreAddress = %v, want localhost:5678", opts.VariableStoreAddress)
+	}
+}
+
+func TestConnectionModeConstants(t *testing.T) {
+	t.Parallel()
+
+	if SandboxConnectionModeUnspecified != 0 {
+		t.Errorf("SandboxConnectionModeUnspecified = %d, want 0", SandboxConnectionModeUnspecified)
+	}
+	if SandboxConnectionModeStatic != 1 {
+		t.Errorf("SandboxConnectionModeStatic = %d, want 1", SandboxConnectionModeStatic)
+	}
+	if SandboxConnectionModeDynamic != 2 {
+		t.Errorf("SandboxConnectionModeDynamic = %d, want 2", SandboxConnectionModeDynamic)
+	}
+}

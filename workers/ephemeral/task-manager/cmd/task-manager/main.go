@@ -12,6 +12,7 @@ import (
 
 	"workers/ephemeral/task-manager/internal/health"
 	"workers/ephemeral/task-manager/internal/ipfiltermanager"
+	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
 	ipfiltermiddleware "workers/ephemeral/task-manager/internal/middleware/ipfilter"
 	"workers/ephemeral/task-manager/internal/plugin/sandbox"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
@@ -209,6 +210,7 @@ func main() {
 	}
 
 	var tracerRunnable run.Runnable
+	var meterRunnable run.Runnable
 	{
 		t, err := tracer.Prepare(logger, obsup.Options{
 			ServiceName:    serviceLabel,
@@ -230,6 +232,23 @@ func main() {
 		}
 
 		tracerRunnable = t.Runnable
+
+		mp, err := sandboxmetrics.SetupMeterProvider(
+			context.Background(),
+			viper.GetString("otel.collector.http.url"),
+			serviceLabel,
+			version,
+		)
+		if err != nil {
+			logger.Error("could not create meter provider", zap.Error(err))
+			os.Exit(1)
+		}
+		meterRunnable = sandboxmetrics.NewRunnable(mp)
+
+		if err := sandboxmetrics.RegisterMetrics(); err != nil {
+			logger.Error("could not register sandbox metrics", zap.Error(err))
+			os.Exit(1)
+		}
 	}
 
 	hostname := os.Getenv("POD_IP")
@@ -605,6 +624,7 @@ func main() {
 	g.Always(sandboxPlugin)
 	g.Always(transportRunnable)
 	g.Always(tracerRunnable)
+	g.Always(meterRunnable)
 
 	logger.Info("starting worker",
 		zap.String("worker_id", id),

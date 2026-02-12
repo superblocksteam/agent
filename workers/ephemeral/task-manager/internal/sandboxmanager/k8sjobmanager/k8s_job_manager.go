@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
 	"workers/ephemeral/task-manager/internal/sandboxmanager"
 
 	"go.uber.org/zap"
@@ -71,6 +73,7 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 // CreateSandbox creates a new sandbox Job and waits for the Pod to be ready.
 // Returns SandboxInfo with the Pod IP and gRPC address.
 func (m *K8sJobManager) CreateSandbox(ctx context.Context, sandboxId string) (*sandboxmanager.SandboxInfo, error) {
+	start := time.Now()
 	jobName := fmt.Sprintf("sandbox-%s", sandboxId)
 
 	job := m.buildJobSpec(jobName, sandboxId, m.language)
@@ -83,6 +86,10 @@ func (m *K8sJobManager) CreateSandbox(ctx context.Context, sandboxId string) (*s
 
 	createdJob, err := m.clientset.BatchV1().Jobs(m.namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
+		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCreationDuration, time.Since(start).Seconds(),
+			sandboxmetrics.AttrLanguage.String(m.language),
+			sandboxmetrics.AttrResult.String("failed"),
+		)
 		return nil, fmt.Errorf("failed to create sandbox job: %w", err)
 	}
 
@@ -93,12 +100,21 @@ func (m *K8sJobManager) CreateSandbox(ctx context.Context, sandboxId string) (*s
 	// Wait for the Pod to be ready and get its IP
 	podInfo, err := m.waitForPodReady(ctx, jobName)
 	if err != nil {
+		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCreationDuration, time.Since(start).Seconds(),
+			sandboxmetrics.AttrLanguage.String(m.language),
+			sandboxmetrics.AttrResult.String("failed"),
+		)
 		// Cleanup the job if we failed to get a ready pod.
 		// Use ctx so this is cancellable - the owner reference on the job
 		// will ensure Kubernetes garbage collects it if this delete fails.
 		_ = m.DeleteSandbox(ctx, jobName)
 		return nil, fmt.Errorf("failed waiting for sandbox pod: %w", err)
 	}
+
+	sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCreationDuration, time.Since(start).Seconds(),
+		sandboxmetrics.AttrLanguage.String(m.language),
+		sandboxmetrics.AttrResult.String("succeeded"),
+	)
 
 	return &sandboxmanager.SandboxInfo{
 		Name:    jobName,

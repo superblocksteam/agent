@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
 	"workers/ephemeral/task-manager/internal/plugin"
 	"workers/ephemeral/task-manager/internal/sandboxmanager"
 
@@ -16,6 +18,7 @@ import (
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -64,6 +67,9 @@ type SandboxPlugin struct {
 
 	// Mutex for cleanup
 	mu sync.Mutex
+
+	// Tracks the number of executions to determine warm vs cold start.
+	executionCount atomic.Int64
 
 	run.ForwardCompatibility
 }
@@ -220,7 +226,11 @@ func (p *SandboxPlugin) Close(context.Context) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
+		start := time.Now()
 		if err := p.sandboxManager.DeleteSandbox(ctx, p.sandboxInfo.Id); err != nil {
+			sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxTeardownDuration, time.Since(start).Seconds(),
+				sandboxmetrics.AttrResult.String("failed"),
+			)
 			p.logger.Warn("failed to delete sandbox job",
 				zap.String("job", p.sandboxInfo.Name),
 				zap.String("sandbox_id", p.sandboxInfo.Id),
@@ -228,6 +238,10 @@ func (p *SandboxPlugin) Close(context.Context) error {
 			)
 			return err
 		}
+
+		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxTeardownDuration, time.Since(start).Seconds(),
+			sandboxmetrics.AttrResult.String("succeeded"),
+		)
 
 		p.logger.Info(
 			"deleted sandbox job",
@@ -253,7 +267,9 @@ func (p *SandboxPlugin) Execute(
 	quotas *transportv1.Request_Data_Data_Quota,
 	pinned *transportv1.Request_Data_Pinned,
 ) (*workerv1.ExecuteResponse, error) {
+	pluginAttr := attribute.String("plugin_name", requestMeta.GetPluginName())
 
+	codeExecStart := time.Now()
 	resp, err := tracer.Observe(
 		ctx,
 		fmt.Sprintf("sandbox.%s.execute", requestMeta.GetPluginName()),
@@ -269,6 +285,22 @@ func (p *SandboxPlugin) Execute(
 		},
 		nil,
 	)
+	codeExecDuration := time.Since(codeExecStart).Seconds()
+	sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCodeExecutionDuration, codeExecDuration, pluginAttr)
+
+	result := "succeeded"
+	if err != nil {
+		result = "failed"
+	}
+	resultAttr := sandboxmetrics.AttrResult.String(result)
+
+	warmStart := p.executionCount.Add(1) > 1
+	sandboxmetrics.AddCounter(ctx, sandboxmetrics.SandboxExecutionsTotal,
+		pluginAttr,
+		resultAttr,
+		sandboxmetrics.AttrWarmStart.Bool(warmStart),
+	)
+
 	if err != nil {
 		return nil, err
 	}
