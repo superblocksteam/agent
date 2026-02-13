@@ -1,5 +1,62 @@
 # Observability
 
+## Disabling Telemetry
+
+By default, the agent sends telemetry (traces, logs, and events) to Superblocks intake endpoints. You can disable this for compliance, air-gapped environments, or local development.
+
+### Disable All Remote Telemetry
+
+Set a single environment variable to turn off all outbound telemetry:
+
+```bash
+SUPERBLOCKS_ORCHESTRATOR_TELEMETRY_REMOTE_ENABLED=false
+```
+
+This disables:
+- **OTEL traces and logs** (falls back to stdout via `stdouttrace`)
+- **Remote logs** (emitter to `logs.intake.superblocks.com`)
+- **Audit logs** (emitter to metadata intake)
+- **Events** (emitter to `events.intake.superblocks.com`)
+- **Cloud events** (inbound gRPC event listener)
+
+Local console logging and Prometheus metrics (`/metrics` on port `9090`) remain available.
+
+### Disable Individual Components
+
+For finer-grained control, disable specific telemetry components independently:
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL` | `https://traces.intake.superblocks.com/v1/traces` | OTLP HTTP endpoint for traces, logs, and metrics. Set to `""` to disable (traces fall back to stdout). |
+| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_ENABLED` | `true` | Remote log emission to `logs.intake.superblocks.com`. |
+| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_AUDIT_ENABLED` | `true` | Audit log emission. |
+| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_EVENT_ENABLED` | `true` | Event emission. |
+| `SUPERBLOCKS_ORCHESTRATOR_EVENTS_CLOUD_ENABLED` | `false` | Cloud event listener (gRPC). |
+
+Example -- disable only OTEL traces while keeping logs and events:
+
+```bash
+SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL=""
+```
+
+### Redirecting Telemetry
+
+To send telemetry to your own collector instead of Superblocks, point the OTLP URL to your endpoint:
+
+```bash
+SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL="https://your-otel-collector:4318/v1/traces"
+```
+
+The agent derives the logs endpoint (`/v1/logs`) and metrics endpoint (`/v1/metrics`) from this base URL automatically.
+
+### What Remains Active
+
+Even with all remote telemetry disabled:
+- **Prometheus metrics** are served at `/metrics` on the metrics port (default `9090`). These are pull-based and do not send data externally.
+- **Local console logs** continue to write to stdout/stderr.
+
+---
+
 ## Traces
 
 The agent flushes OpenTelemetry traces from four **services** that can be set in DataDog with the `service` label 👇
