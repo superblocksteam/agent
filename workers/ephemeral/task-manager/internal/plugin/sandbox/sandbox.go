@@ -18,7 +18,6 @@ import (
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -267,7 +266,7 @@ func (p *SandboxPlugin) Execute(
 	quotas *transportv1.Request_Data_Data_Quota,
 	pinned *transportv1.Request_Data_Pinned,
 ) (*workerv1.ExecuteResponse, error) {
-	pluginAttr := attribute.String("plugin_name", requestMeta.GetPluginName())
+	pluginAttr := sandboxmetrics.AttrPlugin.String(requestMeta.GetPluginName())
 
 	codeExecStart := time.Now()
 	resp, err := tracer.Observe(

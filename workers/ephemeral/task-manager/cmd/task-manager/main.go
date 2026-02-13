@@ -244,6 +244,8 @@ func main() {
 			metricsURL,
 			serviceLabel,
 			version,
+			os.Getenv("POD_NAME"),
+			os.Getenv("FLEET_NAME"),
 		)
 		if err != nil {
 			logger.Error("could not create meter provider", zap.Error(err))

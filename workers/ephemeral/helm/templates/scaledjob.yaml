@@ -235,6 +235,9 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           env:
+          # Fleet identity
+          - name: FLEET_NAME
+            value: {{ $k }}
           # Pod info via Downward API
           # Required to properly set owner reference for sandbox cleanup
           - name: POD_IP

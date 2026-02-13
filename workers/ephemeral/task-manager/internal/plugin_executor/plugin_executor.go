@@ -110,6 +110,7 @@ func (p *pluginExecutor) Execute(
 		}
 		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxExecutionDuration,
 			time.Since(executionStart).Seconds(),
+			sandboxmetrics.AttrPlugin.String(pluginName),
 			sandboxmetrics.AttrResult.String(result),
 		)
 	}()

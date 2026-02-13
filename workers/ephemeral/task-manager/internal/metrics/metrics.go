@@ -11,6 +11,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/superblocksteam/run"
 	"go.opentelemetry.io/otel"
@@ -74,7 +75,7 @@ var (
 
 // SetupMeterProvider creates and registers an OTLP-based meter provider for
 // pushing sandbox metrics to the configured collector.
-func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersion string) (*sdkmetric.MeterProvider, error) {
+func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersion, podName, fleetName string) (*sdkmetric.MeterProvider, error) {
 	metricsURL := buildMetricsURL(otlpURL)
 
 	opts := []otlpmetrichttp.Option{
@@ -90,12 +91,20 @@ func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersio
 		return nil, err
 	}
 
+	attrs := []attribute.KeyValue{
+		semconv.ServiceNameKey.String(serviceName),
+		semconv.ServiceVersionKey.String(serviceVersion),
+	}
+	if podName != "" {
+		attrs = append(attrs, semconv.K8SPodNameKey.String(podName))
+	}
+	if fleetName != "" {
+		attrs = append(attrs, attribute.String("fleet", fleetName))
+	}
+
 	res, err := resource.Merge(
 		resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL,
-			semconv.ServiceNameKey.String(serviceName),
-			semconv.ServiceVersionKey.String(serviceVersion),
-		),
+		resource.NewWithAttributes(semconv.SchemaURL, attrs...),
 	)
 	if err != nil {
 		return nil, err
@@ -104,7 +113,9 @@ func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersio
 	views := histogramViews()
 
 	providerOpts := []sdkmetric.Option{
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter)),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter,
+			sdkmetric.WithInterval(10*time.Second),
+		)),
 		sdkmetric.WithResource(res),
 	}
 	providerOpts = append(providerOpts, views...)
@@ -294,8 +305,12 @@ func (r *meterProviderRunnable) Run(ctx context.Context) error {
 	return nil
 }
 
-func (r *meterProviderRunnable) Close(ctx context.Context) error {
+func (r *meterProviderRunnable) Close(_ context.Context) error {
 	if r.mp != nil {
+		// Use a dedicated context so the final flush completes even if
+		// the run-group context is already cancelled.
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 		return r.mp.Shutdown(ctx)
 	}
 	return nil
@@ -318,6 +333,7 @@ func buildMetricsURL(baseURL string) string {
 // Common attribute keys for sandbox metrics.
 var (
 	AttrLanguage  = attribute.Key("language")
+	AttrPlugin    = attribute.Key("plugin_name")
 	AttrResult    = attribute.Key("result")
 	AttrWarmStart = attribute.Key("warm_start")
 )
