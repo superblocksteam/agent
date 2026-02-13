@@ -212,7 +212,6 @@ deploy-helm:
 	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) orchestrator helm/orchestrator \
 		--debug \
 		--create-namespace \
-		--force \
 		--values helm/orchestrator/$(ENVIRONMENT).yaml \
 		--set worker_go.image.tag=$(IMAGE_TAG) \
 		--set worker_go.queue.host=$(HELM_QUEUE_HOST) \
