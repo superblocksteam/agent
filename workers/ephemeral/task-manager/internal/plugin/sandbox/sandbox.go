@@ -54,6 +54,9 @@ type SandboxPlugin struct {
 	// Variable store address to pass to sandbox
 	variableStoreAddress string
 
+	// Integration executor address to pass to sandbox
+	integrationExecutorAddress string
+
 	// Store for reading context bindings from Redis
 	store store.Store
 
@@ -86,14 +89,15 @@ func NewSandboxPlugin(options ...Option) (*SandboxPlugin, error) {
 	}
 
 	p := &SandboxPlugin{
-		connectionMode:       opts.ConnectionMode,
-		sandboxAddress:       opts.SandboxAddress,
-		sandboxId:            opts.SandboxId,
-		logger:               opts.Logger,
-		variableStoreAddress: opts.VariableStoreAddress,
-		store:                opts.KvStore,
-		sandboxManager:       opts.SandboxManager,
-		ipFilterSetter:       opts.IpFilterSetter,
+		connectionMode:             opts.ConnectionMode,
+		sandboxAddress:             opts.SandboxAddress,
+		sandboxId:                  opts.SandboxId,
+		logger:                     opts.Logger,
+		variableStoreAddress:       opts.VariableStoreAddress,
+		integrationExecutorAddress: opts.IntegrationExecutorAddress,
+		store:                      opts.KvStore,
+		sandboxManager:             opts.SandboxManager,
+		ipFilterSetter:             opts.IpFilterSetter,
 	}
 
 	return p, nil
@@ -275,11 +279,12 @@ func (p *SandboxPlugin) Execute(
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.ExecuteResponse, error) {
 			return p.client.Execute(ctx, &workerv1.ExecuteRequest{
-				Metadata:             requestMeta,
-				Props:                props,
-				Quotas:               quotas,
-				Pinned:               pinned,
-				VariableStoreAddress: p.variableStoreAddress,
+				Metadata:                   requestMeta,
+				Props:                      props,
+				Quotas:                     quotas,
+				Pinned:                     pinned,
+				VariableStoreAddress:       p.variableStoreAddress,
+				IntegrationExecutorAddress: p.integrationExecutorAddress,
 			})
 		},
 		nil,
@@ -352,10 +357,11 @@ func (p *SandboxPlugin) Metadata(
 		nil,
 		func(ctx context.Context, span trace.Span) (*transportv1.Response_Data_Data, error) {
 			return p.client.Metadata(ctx, &workerv1.MetadataRequest{
-				Metadata:             requestMeta,
-				DatasourceConfig:     datasourceConfig,
-				ActionConfig:         actionConfig,
-				VariableStoreAddress: p.variableStoreAddress,
+				Metadata:                   requestMeta,
+				DatasourceConfig:           datasourceConfig,
+				ActionConfig:               actionConfig,
+				VariableStoreAddress:       p.variableStoreAddress,
+				IntegrationExecutorAddress: p.integrationExecutorAddress,
 			})
 		},
 		nil,
@@ -384,10 +390,11 @@ func (p *SandboxPlugin) Test(ctx context.Context, requestMeta *workerv1.RequestM
 		nil,
 		func(ctx context.Context, span trace.Span) (*emptypb.Empty, error) {
 			return p.client.Test(ctx, &workerv1.TestRequest{
-				Metadata:             requestMeta,
-				DatasourceConfig:     datasourceConfig,
-				ActionConfig:         actionConfig,
-				VariableStoreAddress: p.variableStoreAddress,
+				Metadata:                   requestMeta,
+				DatasourceConfig:           datasourceConfig,
+				ActionConfig:               actionConfig,
+				VariableStoreAddress:       p.variableStoreAddress,
+				IntegrationExecutorAddress: p.integrationExecutorAddress,
 			})
 		},
 		nil,

@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package worker.v1;
+
+import "api/v1/service.proto";
+import "common/v1/common.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/worker/v1";
+
+// Service for executing integrations from sandbox code.
+// The sandbox calls this service on the task-manager (co-located in the same
+// pod via localhost) to trigger integration execution. The task-manager builds
+// an inline Definition and proxies the request to the orchestrator's Await
+// endpoint, forwarding the stored JWT for authorization.
+service SandboxIntegrationExecutorService {
+  rpc ExecuteIntegration(ExecuteIntegrationRequest) returns (ExecuteIntegrationResponse);
+}
+
+message ExecuteIntegrationRequest {
+  // The execution ID of the parent execution (used to look up stored JWT).
+  string execution_id = 1;
+
+  // The integration ID to execute against (e.g. a Postgres or REST API integration).
+  string integration_id = 2;
+
+  // The plugin type identifier (e.g. "postgres", "restapi", "mongodb").
+  // This determines which plugin-specific Step config field is populated.
+  string plugin_id = 3;
+
+  // The plugin-specific request configuration from the SDK's
+  // executeQuery(integrationId, request, ...) call.
+  google.protobuf.Struct action_configuration = 4;
+
+  // The view mode for execution.
+  api.v1.ViewMode view_mode = 5;
+
+  // The integration profile to use. If not set, falls back to the parent
+  // execution's profile.
+  common.v1.Profile profile = 6;
+}
+
+message ExecuteIntegrationResponse {
+  // The execution ID of the triggered execution.
+  string execution_id = 1;
+
+  // The output of the execution.
+  google.protobuf.Value output = 2;
+
+  // The error message, if any.
+  string error = 3;
+}

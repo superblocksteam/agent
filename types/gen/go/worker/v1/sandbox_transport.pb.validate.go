@@ -277,6 +277,8 @@ func (m *ExecuteRequest) validate(all bool) error {
 
 	// no validation rules for VariableStoreAddress
 
+	// no validation rules for IntegrationExecutorAddress
+
 	if len(errors) > 0 {
 		return ExecuteRequestMultiError(errors)
 	}
@@ -853,6 +855,8 @@ func (m *MetadataRequest) validate(all bool) error {
 
 	// no validation rules for VariableStoreAddress
 
+	// no validation rules for IntegrationExecutorAddress
+
 	if len(errors) > 0 {
 		return MetadataRequestMultiError(errors)
 	}
@@ -1041,6 +1045,8 @@ func (m *TestRequest) validate(all bool) error {
 	}
 
 	// no validation rules for VariableStoreAddress
+
+	// no validation rules for IntegrationExecutorAddress
 
 	if len(errors) > 0 {
 		return TestRequestMultiError(errors)

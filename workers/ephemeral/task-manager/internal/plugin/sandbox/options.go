@@ -19,10 +19,11 @@ type Options struct {
 	SandboxId      string // Used to name the sandbox (for dynamic mode)
 
 	// Common options
-	Logger               *zap.Logger
-	VariableStoreAddress string
-	KvStore              store.Store
-	IpFilterSetter       IpFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
+	Logger                     *zap.Logger
+	VariableStoreAddress       string
+	IntegrationExecutorAddress string
+	KvStore                    store.Store
+	IpFilterSetter             IpFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
 }
 
 type Option func(*Options)
@@ -60,6 +61,12 @@ func WithLogger(logger *zap.Logger) Option {
 func WithVariableStoreAddress(variableStoreAddress string) Option {
 	return func(o *Options) {
 		o.VariableStoreAddress = variableStoreAddress
+	}
+}
+
+func WithIntegrationExecutorAddress(address string) Option {
+	return func(o *Options) {
+		o.IntegrationExecutorAddress = address
 	}
 }
 

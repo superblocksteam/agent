@@ -56,6 +56,8 @@ export class ExecuteRequest extends jspb.Message {
     setPinned(value?: transport_v1_transport_pb.Request.Data.Pinned): ExecuteRequest;
     getVariableStoreAddress(): string;
     setVariableStoreAddress(value: string): ExecuteRequest;
+    getIntegrationExecutorAddress(): string;
+    setIntegrationExecutorAddress(value: string): ExecuteRequest;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ExecuteRequest.AsObject;
@@ -74,6 +76,7 @@ export namespace ExecuteRequest {
         quotas?: transport_v1_transport_pb.Request.Data.Data.Quota.AsObject,
         pinned?: transport_v1_transport_pb.Request.Data.Pinned.AsObject,
         variableStoreAddress: string,
+        integrationExecutorAddress: string,
     }
 }
 
@@ -175,6 +178,8 @@ export class MetadataRequest extends jspb.Message {
     setActionconfig(value?: google_protobuf_struct_pb.Struct): MetadataRequest;
     getVariableStoreAddress(): string;
     setVariableStoreAddress(value: string): MetadataRequest;
+    getIntegrationExecutorAddress(): string;
+    setIntegrationExecutorAddress(value: string): MetadataRequest;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): MetadataRequest.AsObject;
@@ -192,6 +197,7 @@ export namespace MetadataRequest {
         datasourceconfig?: google_protobuf_struct_pb.Struct.AsObject,
         actionconfig?: google_protobuf_struct_pb.Struct.AsObject,
         variableStoreAddress: string,
+        integrationExecutorAddress: string,
     }
 }
 
@@ -213,6 +219,8 @@ export class TestRequest extends jspb.Message {
     setActionconfig(value?: google_protobuf_struct_pb.Struct): TestRequest;
     getVariableStoreAddress(): string;
     setVariableStoreAddress(value: string): TestRequest;
+    getIntegrationExecutorAddress(): string;
+    setIntegrationExecutorAddress(value: string): TestRequest;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): TestRequest.AsObject;
@@ -230,6 +238,7 @@ export namespace TestRequest {
         datasourceconfig?: google_protobuf_struct_pb.Struct.AsObject,
         actionconfig?: google_protobuf_struct_pb.Struct.AsObject,
         variableStoreAddress: string,
+        integrationExecutorAddress: string,
     }
 }
 

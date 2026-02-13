@@ -94,6 +94,8 @@ type Options struct {
 	OrgPlan                      string
 	Files                        []*apiv1.ExecuteRequest_File
 	FileServerUrl                string
+	JwtToken                     string
+	Profile                      *commonv1.Profile
 	Inputs                       map[string]*structpb.Value
 	Fetcher                      fetch.Fetcher
 	FetchToken                   string

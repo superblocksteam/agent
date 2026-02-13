@@ -51,6 +51,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -665,6 +666,15 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	var failures []*commonv1.Error
 	var mutex sync.Mutex
 
+	// Extract the raw JWT from gRPC metadata so it can be forwarded to the
+	// task-manager (via transport Props) for proxied integration execution.
+	var jwtToken string
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
+			jwtToken = strings.TrimPrefix(vals[0], "Bearer ")
+		}
+	}
+
 	var fetchToken string
 	var branchName string
 	if fetch := req.GetFetch(); fetch != nil {
@@ -687,6 +697,8 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		Options:                      req.Options,
 		Files:                        req.Files,
 		FileServerUrl:                s.FileServerUrl,
+		JwtToken:                     jwtToken,
+		Profile:                      req.GetProfile(),
 		Inputs:                       inputs,
 		Fetcher:                      s.Fetcher,
 		Flags:                        s.Flags,

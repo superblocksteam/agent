@@ -9,6 +9,7 @@ import * as api_v1_api_pb from "../../api/v1/api_pb";
 import * as api_v1_blocks_pb from "../../api/v1/blocks_pb";
 import * as api_v1_service_pb from "../../api/v1/service_pb";
 import * as buf_validate_validate_pb from "../../buf/validate/validate_pb";
+import * as common_v1_common_pb from "../../common/v1/common_pb";
 import * as common_v1_errors_pb from "../../common/v1/errors_pb";
 import * as google_protobuf_any_pb from "google-protobuf/google/protobuf/any_pb";
 import * as google_protobuf_struct_pb from "google-protobuf/google/protobuf/struct_pb";
@@ -350,6 +351,13 @@ export namespace Request {
                 setVersion(value: string): Props;
                 getUseWasmBindingsSandbox(): boolean;
                 setUseWasmBindingsSandbox(value: boolean): Props;
+                getJwtToken(): string;
+                setJwtToken(value: string): Props;
+
+                hasProfile(): boolean;
+                clearProfile(): void;
+                getProfile(): common_v1_common_pb.Profile | undefined;
+                setProfile(value?: common_v1_common_pb.Profile): Props;
 
                 serializeBinary(): Uint8Array;
                 toObject(includeInstance?: boolean): Props.AsObject;
@@ -377,6 +385,8 @@ export namespace Request {
                     render: boolean,
                     version: string,
                     useWasmBindingsSandbox: boolean,
+                    jwtToken: string,
+                    profile?: common_v1_common_pb.Profile.AsObject,
                 }
 
 

@@ -85,6 +85,13 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
    */
   variableStoreAddress = "";
 
+  /**
+   * Address of the integration executor (task-manager) for executing integrations
+   *
+   * @generated from field: string integration_executor_address = 6;
+   */
+  integrationExecutorAddress = "";
+
   constructor(data?: PartialMessage<ExecuteRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -98,6 +105,7 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
     { no: 3, name: "quotas", kind: "message", T: Request_Data_Data_Quota },
     { no: 4, name: "pinned", kind: "message", T: Request_Data_Pinned },
     { no: 5, name: "variable_store_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "integration_executor_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteRequest {
@@ -257,6 +265,11 @@ export class MetadataRequest extends Message<MetadataRequest> {
    */
   variableStoreAddress = "";
 
+  /**
+   * @generated from field: string integration_executor_address = 5;
+   */
+  integrationExecutorAddress = "";
+
   constructor(data?: PartialMessage<MetadataRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -269,6 +282,7 @@ export class MetadataRequest extends Message<MetadataRequest> {
     { no: 2, name: "datasourceConfig", kind: "message", T: Struct },
     { no: 3, name: "actionConfig", kind: "message", T: Struct },
     { no: 4, name: "variable_store_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "integration_executor_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): MetadataRequest {
@@ -312,6 +326,11 @@ export class TestRequest extends Message<TestRequest> {
    */
   variableStoreAddress = "";
 
+  /**
+   * @generated from field: string integration_executor_address = 5;
+   */
+  integrationExecutorAddress = "";
+
   constructor(data?: PartialMessage<TestRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -324,6 +343,7 @@ export class TestRequest extends Message<TestRequest> {
     { no: 2, name: "datasourceConfig", kind: "message", T: Struct },
     { no: 3, name: "actionConfig", kind: "message", T: Struct },
     { no: 4, name: "variable_store_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "integration_executor_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): TestRequest {

@@ -6,6 +6,7 @@ import "api/v1/api.proto";
 import "api/v1/blocks.proto";
 import "api/v1/service.proto";
 import "buf/validate/validate.proto";
+import "common/v1/common.proto";
 import "common/v1/errors.proto";
 import "google/protobuf/any.proto";
 import "google/protobuf/struct.proto";
@@ -102,6 +103,12 @@ message Request {
         string version = 12;
         // If true, the JS worker should use the WASM sandbox for bindings evaluation.
         bool use_wasm_bindings_sandbox = 13;
+        // The raw JWT token for the request, forwarded to the task-manager so it
+        // can proxy integration execution calls back to the orchestrator.
+        string jwt_token = 14;
+        // The integration profile used for this execution. Forwarded to the
+        // task-manager as a fallback when the sandbox doesn't specify a profile.
+        common.v1.Profile profile = 15;
       }
 
       message Quota {

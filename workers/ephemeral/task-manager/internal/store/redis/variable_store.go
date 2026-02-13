@@ -14,6 +14,7 @@ import (
 
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	"github.com/superblocksteam/agent/pkg/store"
+	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
 	"go.opentelemetry.io/otel/trace"
@@ -28,6 +29,8 @@ import (
 type ExecutionFileContext struct {
 	FileServerURL string
 	AgentKey      string
+	JwtToken      string
+	Profile       *commonv1.Profile
 }
 
 type FileContextProvider interface {

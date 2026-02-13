@@ -21,18 +21,20 @@ class RequestMetadata(_message.Message):
     def __init__(self, pluginName: _Optional[str] = ...) -> None: ...
 
 class ExecuteRequest(_message.Message):
-    __slots__ = ("metadata", "props", "quotas", "pinned", "variable_store_address")
+    __slots__ = ("metadata", "props", "quotas", "pinned", "variable_store_address", "integration_executor_address")
     METADATA_FIELD_NUMBER: _ClassVar[int]
     PROPS_FIELD_NUMBER: _ClassVar[int]
     QUOTAS_FIELD_NUMBER: _ClassVar[int]
     PINNED_FIELD_NUMBER: _ClassVar[int]
     VARIABLE_STORE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
+    INTEGRATION_EXECUTOR_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     metadata: RequestMetadata
     props: _transport_pb2.Request.Data.Data.Props
     quotas: _transport_pb2.Request.Data.Data.Quota
     pinned: _transport_pb2.Request.Data.Pinned
     variable_store_address: str
-    def __init__(self, metadata: _Optional[_Union[RequestMetadata, _Mapping]] = ..., props: _Optional[_Union[_transport_pb2.Request.Data.Data.Props, _Mapping]] = ..., quotas: _Optional[_Union[_transport_pb2.Request.Data.Data.Quota, _Mapping]] = ..., pinned: _Optional[_Union[_transport_pb2.Request.Data.Pinned, _Mapping]] = ..., variable_store_address: _Optional[str] = ...) -> None: ...
+    integration_executor_address: str
+    def __init__(self, metadata: _Optional[_Union[RequestMetadata, _Mapping]] = ..., props: _Optional[_Union[_transport_pb2.Request.Data.Data.Props, _Mapping]] = ..., quotas: _Optional[_Union[_transport_pb2.Request.Data.Data.Quota, _Mapping]] = ..., pinned: _Optional[_Union[_transport_pb2.Request.Data.Pinned, _Mapping]] = ..., variable_store_address: _Optional[str] = ..., integration_executor_address: _Optional[str] = ...) -> None: ...
 
 class ExecuteResponse(_message.Message):
     __slots__ = ("output", "error", "authError", "children", "startTime", "executionTime", "structuredLog")
@@ -61,28 +63,32 @@ class StreamRequest(_message.Message):
     def __init__(self, request: _Optional[_Union[ExecuteRequest, _Mapping]] = ..., topic: _Optional[str] = ...) -> None: ...
 
 class MetadataRequest(_message.Message):
-    __slots__ = ("metadata", "datasourceConfig", "actionConfig", "variable_store_address")
+    __slots__ = ("metadata", "datasourceConfig", "actionConfig", "variable_store_address", "integration_executor_address")
     METADATA_FIELD_NUMBER: _ClassVar[int]
     DATASOURCECONFIG_FIELD_NUMBER: _ClassVar[int]
     ACTIONCONFIG_FIELD_NUMBER: _ClassVar[int]
     VARIABLE_STORE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
+    INTEGRATION_EXECUTOR_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     metadata: RequestMetadata
     datasourceConfig: _struct_pb2.Struct
     actionConfig: _struct_pb2.Struct
     variable_store_address: str
-    def __init__(self, metadata: _Optional[_Union[RequestMetadata, _Mapping]] = ..., datasourceConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., actionConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., variable_store_address: _Optional[str] = ...) -> None: ...
+    integration_executor_address: str
+    def __init__(self, metadata: _Optional[_Union[RequestMetadata, _Mapping]] = ..., datasourceConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., actionConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., variable_store_address: _Optional[str] = ..., integration_executor_address: _Optional[str] = ...) -> None: ...
 
 class TestRequest(_message.Message):
-    __slots__ = ("metadata", "datasourceConfig", "actionConfig", "variable_store_address")
+    __slots__ = ("metadata", "datasourceConfig", "actionConfig", "variable_store_address", "integration_executor_address")
     METADATA_FIELD_NUMBER: _ClassVar[int]
     DATASOURCECONFIG_FIELD_NUMBER: _ClassVar[int]
     ACTIONCONFIG_FIELD_NUMBER: _ClassVar[int]
     VARIABLE_STORE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
+    INTEGRATION_EXECUTOR_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     metadata: RequestMetadata
     datasourceConfig: _struct_pb2.Struct
     actionConfig: _struct_pb2.Struct
     variable_store_address: str
-    def __init__(self, metadata: _Optional[_Union[RequestMetadata, _Mapping]] = ..., datasourceConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., actionConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., variable_store_address: _Optional[str] = ...) -> None: ...
+    integration_executor_address: str
+    def __init__(self, metadata: _Optional[_Union[RequestMetadata, _Mapping]] = ..., datasourceConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., actionConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., variable_store_address: _Optional[str] = ..., integration_executor_address: _Optional[str] = ...) -> None: ...
 
 class PreDeleteRequest(_message.Message):
     __slots__ = ("metadata", "datasourceConfig")

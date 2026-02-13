@@ -40,6 +40,9 @@ message ExecuteRequest {
 
   // Address of the variable store (task-manager) for callbacks
   string variable_store_address = 5;
+
+  // Address of the integration executor (task-manager) for executing integrations
+  string integration_executor_address = 6;
 }
 
 message ExecuteResponse {
@@ -63,6 +66,7 @@ message MetadataRequest {
   google.protobuf.Struct datasourceConfig = 2;
   google.protobuf.Struct actionConfig = 3;
   string variable_store_address = 4;
+  string integration_executor_address = 5;
 }
 
 message TestRequest {
@@ -70,6 +74,7 @@ message TestRequest {
   google.protobuf.Struct datasourceConfig = 2;
   google.protobuf.Struct actionConfig = 3;
   string variable_store_address = 4;
+  string integration_executor_address = 5;
 }
 
 message PreDeleteRequest {

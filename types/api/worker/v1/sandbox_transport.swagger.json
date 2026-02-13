@@ -117,6 +117,14 @@
         "useWasmBindingsSandbox": {
           "type": "boolean",
           "description": "If true, the JS worker should use the WASM sandbox for bindings evaluation."
+        },
+        "jwtToken": {
+          "type": "string",
+          "description": "The raw JWT token for the request, forwarded to the task-manager so it\ncan proxy integration execution calls back to the orchestrator."
+        },
+        "profile": {
+          "$ref": "#/definitions/v1Profile",
+          "description": "The integration profile used for this execution. Forwarded to the\ntask-manager as a fallback when the sandbox doesn't specify a profile."
         }
       }
     },
@@ -620,6 +628,21 @@
         "placeHoldersInfo": {}
       }
     },
+    "v1Profile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "environment": {
+          "type": "string",
+          "title": "DEPRECATED"
+        }
+      }
+    },
     "v1RequestMetadata": {
       "type": "object",
       "properties": {
@@ -759,6 +782,10 @@
         "variableStoreAddress": {
           "type": "string",
           "title": "Address of the variable store (task-manager) for callbacks"
+        },
+        "integrationExecutorAddress": {
+          "type": "string",
+          "title": "Address of the integration executor (task-manager) for executing integrations"
         }
       },
       "title": "Execute request sent to workers"

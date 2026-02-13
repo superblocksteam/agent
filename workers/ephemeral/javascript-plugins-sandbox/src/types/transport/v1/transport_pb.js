@@ -29,6 +29,8 @@ var api_v1_service_pb = require('../../api/v1/service_pb.js');
 goog.object.extend(proto, api_v1_service_pb);
 var buf_validate_validate_pb = require('../../buf/validate/validate_pb.js');
 goog.object.extend(proto, buf_validate_validate_pb);
+var common_v1_common_pb = require('../../common/v1/common_pb.js');
+goog.object.extend(proto, common_v1_common_pb);
 var common_v1_errors_pb = require('../../common/v1/errors_pb.js');
 goog.object.extend(proto, common_v1_errors_pb);
 var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb.js');
@@ -2351,7 +2353,9 @@ proto.transport.v1.Request.Data.Data.Props.toObject = function(includeInstance, 
     proto.transport.v1.Request.Data.Data.Props.File.toObject, includeInstance),
     render: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
     version: jspb.Message.getFieldWithDefault(msg, 12, ""),
-    useWasmBindingsSandbox: jspb.Message.getBooleanFieldWithDefault(msg, 13, false)
+    useWasmBindingsSandbox: jspb.Message.getBooleanFieldWithDefault(msg, 13, false),
+    jwtToken: jspb.Message.getFieldWithDefault(msg, 14, ""),
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2446,6 +2450,15 @@ proto.transport.v1.Request.Data.Data.Props.deserializeBinaryFromReader = functio
     case 13:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setUseWasmBindingsSandbox(value);
+      break;
+    case 14:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setJwtToken(value);
+      break;
+    case 15:
+      var value = new common_v1_common_pb.Profile;
+      reader.readMessage(value,common_v1_common_pb.Profile.deserializeBinaryFromReader);
+      msg.setProfile(value);
       break;
     default:
       reader.skipField();
@@ -2567,6 +2580,21 @@ proto.transport.v1.Request.Data.Data.Props.serializeBinaryToWriter = function(me
     writer.writeBool(
       13,
       f
+    );
+  }
+  f = message.getJwtToken();
+  if (f.length > 0) {
+    writer.writeString(
+      14,
+      f
+    );
+  }
+  f = message.getProfile();
+  if (f != null) {
+    writer.writeMessage(
+      15,
+      f,
+      common_v1_common_pb.Profile.serializeBinaryToWriter
     );
   }
 };
@@ -3459,6 +3487,61 @@ proto.transport.v1.Request.Data.Data.Props.prototype.getUseWasmBindingsSandbox =
  */
 proto.transport.v1.Request.Data.Data.Props.prototype.setUseWasmBindingsSandbox = function(value) {
   return jspb.Message.setProto3BooleanField(this, 13, value);
+};
+
+
+/**
+ * optional string jwt_token = 14;
+ * @return {string}
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.getJwtToken = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 14, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.transport.v1.Request.Data.Data.Props} returns this
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.setJwtToken = function(value) {
+  return jspb.Message.setProto3StringField(this, 14, value);
+};
+
+
+/**
+ * optional common.v1.Profile profile = 15;
+ * @return {?proto.common.v1.Profile}
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.getProfile = function() {
+  return /** @type{?proto.common.v1.Profile} */ (
+    jspb.Message.getWrapperField(this, common_v1_common_pb.Profile, 15));
+};
+
+
+/**
+ * @param {?proto.common.v1.Profile|undefined} value
+ * @return {!proto.transport.v1.Request.Data.Data.Props} returns this
+*/
+proto.transport.v1.Request.Data.Data.Props.prototype.setProfile = function(value) {
+  return jspb.Message.setWrapperField(this, 15, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Request.Data.Data.Props} returns this
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.clearProfile = function() {
+  return this.setProfile(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.hasProfile = function() {
+  return jspb.Message.getField(this, 15) != null;
 };
 
 

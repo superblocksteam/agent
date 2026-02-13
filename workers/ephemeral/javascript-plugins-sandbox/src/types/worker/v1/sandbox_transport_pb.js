@@ -378,7 +378,8 @@ proto.worker.v1.ExecuteRequest.toObject = function(includeInstance, msg) {
     props: (f = msg.getProps()) && transport_v1_transport_pb.Request.Data.Data.Props.toObject(includeInstance, f),
     quotas: (f = msg.getQuotas()) && transport_v1_transport_pb.Request.Data.Data.Quota.toObject(includeInstance, f),
     pinned: (f = msg.getPinned()) && transport_v1_transport_pb.Request.Data.Pinned.toObject(includeInstance, f),
-    variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 5, "")
+    variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    integrationExecutorAddress: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -438,6 +439,10 @@ proto.worker.v1.ExecuteRequest.deserializeBinaryFromReader = function(msg, reade
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setVariableStoreAddress(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setIntegrationExecutorAddress(value);
       break;
     default:
       reader.skipField();
@@ -504,6 +509,13 @@ proto.worker.v1.ExecuteRequest.serializeBinaryToWriter = function(message, write
   if (f.length > 0) {
     writer.writeString(
       5,
+      f
+    );
+  }
+  f = message.getIntegrationExecutorAddress();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
       f
     );
   }
@@ -673,6 +685,24 @@ proto.worker.v1.ExecuteRequest.prototype.getVariableStoreAddress = function() {
  */
 proto.worker.v1.ExecuteRequest.prototype.setVariableStoreAddress = function(value) {
   return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional string integration_executor_address = 6;
+ * @return {string}
+ */
+proto.worker.v1.ExecuteRequest.prototype.getIntegrationExecutorAddress = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.worker.v1.ExecuteRequest} returns this
+ */
+proto.worker.v1.ExecuteRequest.prototype.setIntegrationExecutorAddress = function(value) {
+  return jspb.Message.setProto3StringField(this, 6, value);
 };
 
 
@@ -1335,7 +1365,8 @@ proto.worker.v1.MetadataRequest.toObject = function(includeInstance, msg) {
     metadata: (f = msg.getMetadata()) && proto.worker.v1.RequestMetadata.toObject(includeInstance, f),
     datasourceconfig: (f = msg.getDatasourceconfig()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
     actionconfig: (f = msg.getActionconfig()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
-    variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 4, "")
+    variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    integrationExecutorAddress: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -1390,6 +1421,10 @@ proto.worker.v1.MetadataRequest.deserializeBinaryFromReader = function(msg, read
     case 4:
       var value = /** @type {string} */ (reader.readString());
       msg.setVariableStoreAddress(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setIntegrationExecutorAddress(value);
       break;
     default:
       reader.skipField();
@@ -1448,6 +1483,13 @@ proto.worker.v1.MetadataRequest.serializeBinaryToWriter = function(message, writ
   if (f.length > 0) {
     writer.writeString(
       4,
+      f
+    );
+  }
+  f = message.getIntegrationExecutorAddress();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
       f
     );
   }
@@ -1583,6 +1625,24 @@ proto.worker.v1.MetadataRequest.prototype.setVariableStoreAddress = function(val
 };
 
 
+/**
+ * optional string integration_executor_address = 5;
+ * @return {string}
+ */
+proto.worker.v1.MetadataRequest.prototype.getIntegrationExecutorAddress = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.worker.v1.MetadataRequest} returns this
+ */
+proto.worker.v1.MetadataRequest.prototype.setIntegrationExecutorAddress = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
 
 
 
@@ -1618,7 +1678,8 @@ proto.worker.v1.TestRequest.toObject = function(includeInstance, msg) {
     metadata: (f = msg.getMetadata()) && proto.worker.v1.RequestMetadata.toObject(includeInstance, f),
     datasourceconfig: (f = msg.getDatasourceconfig()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
     actionconfig: (f = msg.getActionconfig()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
-    variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 4, "")
+    variableStoreAddress: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    integrationExecutorAddress: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -1673,6 +1734,10 @@ proto.worker.v1.TestRequest.deserializeBinaryFromReader = function(msg, reader) 
     case 4:
       var value = /** @type {string} */ (reader.readString());
       msg.setVariableStoreAddress(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setIntegrationExecutorAddress(value);
       break;
     default:
       reader.skipField();
@@ -1731,6 +1796,13 @@ proto.worker.v1.TestRequest.serializeBinaryToWriter = function(message, writer) 
   if (f.length > 0) {
     writer.writeString(
       4,
+      f
+    );
+  }
+  f = message.getIntegrationExecutorAddress();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
       f
     );
   }
@@ -1863,6 +1935,24 @@ proto.worker.v1.TestRequest.prototype.getVariableStoreAddress = function() {
  */
 proto.worker.v1.TestRequest.prototype.setVariableStoreAddress = function(value) {
   return jspb.Message.setProto3StringField(this, 4, value);
+};
+
+
+/**
+ * optional string integration_executor_address = 5;
+ * @return {string}
+ */
+proto.worker.v1.TestRequest.prototype.getIntegrationExecutorAddress = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.worker.v1.TestRequest} returns this
+ */
+proto.worker.v1.TestRequest.prototype.setIntegrationExecutorAddress = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
 };
 
 

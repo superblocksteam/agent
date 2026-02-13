@@ -296,9 +296,19 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 		&redisstore.ExecutionFileContext{
 			FileServerURL: pluginProps.GetFileServerUrl(),
 			AgentKey:      rt.agentKey,
+			JwtToken:      pluginProps.GetJwtToken(),
+			Profile:       pluginProps.GetProfile(),
 		},
 	)
 	defer rt.fileContextProvider.CleanupExecution(executionID)
+
+	// Clear sensitive fields from Props before they are forwarded to the sandbox.
+	// The JWT and profile are now stored server-side in ExecutionFileContext and
+	// looked up by execution ID — the sandbox must never receive them directly.
+	if pluginProps != nil {
+		pluginProps.JwtToken = ""
+		pluginProps.Profile = nil
+	}
 
 	// Set allowed keys for this execution (key allowlisting for security)
 	if provider, ok := rt.fileContextProvider.(redisstore.ExecutionContextProvider); ok {

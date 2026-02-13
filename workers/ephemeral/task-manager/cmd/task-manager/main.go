@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"workers/ephemeral/task-manager/internal/health"
+	"workers/ephemeral/task-manager/internal/integrationexecutor"
 	"workers/ephemeral/task-manager/internal/ipfiltermanager"
 	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
 	ipfiltermiddleware "workers/ephemeral/task-manager/internal/middleware/ipfilter"
@@ -124,6 +125,11 @@ func init() {
 
 	// gRPC settings for streaming proxy
 	pflag.Int("streaming.proxy.grpc.port", 50051, "The port for the StreamingProxy gRPC server.")
+
+	// Integration executor settings
+	pflag.Bool("integration.executor.enabled", false, "Whether to enable the IntegrationExecutor gRPC service (only for API 2.0 fleets).")
+	pflag.Int("integration.executor.grpc.port", 50052, "The port for the IntegrationExecutor gRPC server.")
+	pflag.String("orchestrator.grpc.address", "", "Internal gRPC address of the orchestrator for proxied integration execution.")
 
 	// gRPC message size settings
 	pflag.Int("grpc.msg.req.max", 30000000, "Max message size in bytes to be received by the grpc server as a request. Default 30mb.")
@@ -270,6 +276,12 @@ func main() {
 		variableStoreGrpcAddress = fmt.Sprintf("%s:%d", hostname, viper.GetInt("variable.store.grpc.port"))
 	}
 
+	// Determine gRPC address for integration executor
+	var integrationExecutorAddress string
+	if viper.GetBool("integration.executor.enabled") {
+		integrationExecutorAddress = fmt.Sprintf("%s:%d", hostname, viper.GetInt("integration.executor.grpc.port"))
+	}
+
 	// Create Redis store client (uses same Redis as transport by default)
 	var storeClient store.Store
 	{
@@ -332,6 +344,7 @@ func main() {
 		sandbox.WithLogger(logger),
 		sandbox.WithKvStore(storeClient),
 		sandbox.WithVariableStoreAddress(variableStoreGrpcAddress),
+		sandbox.WithIntegrationExecutorAddress(integrationExecutorAddress),
 	}
 
 	// Determine sandbox mode: static address (existing sandbox process e.g. Docker Compose) or dynamic Jobs (Kubernetes)
@@ -587,6 +600,35 @@ func main() {
 		)
 	}
 
+	// Create integration executor service (explicitly enabled via flag, only for API 2.0 fleets).
+	var integrationExecutorService *integrationexecutor.IntegrationExecutorService
+	integrationExecutorEnabled := viper.GetBool("integration.executor.enabled")
+	if integrationExecutorEnabled {
+		orchestratorAddr := viper.GetString("orchestrator.grpc.address")
+		if orchestratorAddr == "" {
+			logger.Error("orchestrator.grpc.address is required when integration.executor.enabled is true")
+			os.Exit(1)
+		}
+
+		grpcServer := grpc.NewServer(
+			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger, ipFilterDisabled)),
+			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
+			grpc.MaxSendMsgSize(viper.GetInt("grpc.msg.res.max")),
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		)
+
+		integrationExecutorService = integrationexecutor.New(
+			integrationexecutor.WithServer(grpcServer),
+			integrationexecutor.WithLogger(logger),
+			integrationexecutor.WithPort(viper.GetInt("integration.executor.grpc.port")),
+			integrationexecutor.WithOrchestratorAddress(orchestratorAddr),
+			integrationexecutor.WithFileContextProvider(variableStoreGrpcRunnable),
+		)
+	}
+	logger.Info("integration executor configuration",
+		zap.Bool("enabled", integrationExecutorEnabled),
+	)
+
 	// Create health checker with file-based health checks
 	// Sandbox health check reports NOT READY while sandbox is being created
 	healthChecker := health.NewChecker(&health.Options{
@@ -627,6 +669,7 @@ func main() {
 	g.Always(process.New())
 	g.Add(viper.GetBool("health.enabled"), healthChecker)
 	g.Always(streamingProxyService)
+	g.Add(integrationExecutorEnabled, integrationExecutorService)
 	g.Always(variableStoreGrpcRunnable)
 	g.Always(variableStoreHttpRunnable)
 	g.Always(sandboxPlugin)

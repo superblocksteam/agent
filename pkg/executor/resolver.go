@@ -37,6 +37,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/worker"
 	wops "github.com/superblocksteam/agent/pkg/worker/options"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
+	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	javascriptv1 "github.com/superblocksteam/agent/types/gen/go/plugins/javascript/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.opentelemetry.io/otel/attribute"
@@ -83,6 +84,8 @@ type resolver struct {
 	logger             *zap.Logger
 	files              []*transportv1.Request_Data_Data_Props_File
 	fileServerUrl      string
+	jwtToken           string
+	executionProfile   *commonv1.Profile
 	ctx                context.Context
 	cancel             context.CancelCauseFunc
 	rootStartTime      time.Time
@@ -170,6 +173,8 @@ func NewResolver(
 		worker:           worker,
 		logger:           logger,
 		fileServerUrl:    fileServerUrl,
+		jwtToken:         options.JwtToken,
+		executionProfile: options.Profile,
 		wg:               wg,
 		execution:        executionId,
 		key:              key,
@@ -767,6 +772,8 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 			Render:                 !shouldRender, // NOTE(frank): We can deprecate this once all rendering is moved to the orchestrator.
 			Version:                "v2",
 			UseWasmBindingsSandbox: useWasmBindingsSandbox,
+			JwtToken:               r.jwtToken,
+			Profile:                r.executionProfile,
 		}
 
 		if integration, ok := r.integrations[step.GetIntegration()]; ok {

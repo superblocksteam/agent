@@ -6,6 +6,7 @@
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Any, Message, proto3, protoInt64, Struct } from "@bufbuild/protobuf";
 import { Variables_Mode, Variables_Type } from "../../api/v1/blocks_pb";
+import { Profile } from "../../common/v1/common_pb";
 import { Error } from "../../common/v1/errors_pb";
 import { Definition, MetadataResponse_BucketMetadata, MetadataResponse_DatabaseSchemaMetadata } from "../../api/v1/service_pb";
 import { Metadata } from "../../plugins/couchbase/v1/plugin_pb";
@@ -554,6 +555,22 @@ export class Request_Data_Data_Props extends Message<Request_Data_Data_Props> {
    */
   useWasmBindingsSandbox = false;
 
+  /**
+   * The raw JWT token for the request, forwarded to the task-manager so it
+   * can proxy integration execution calls back to the orchestrator.
+   *
+   * @generated from field: string jwt_token = 14;
+   */
+  jwtToken = "";
+
+  /**
+   * The integration profile used for this execution. Forwarded to the
+   * task-manager as a fallback when the sandbox doesn't specify a profile.
+   *
+   * @generated from field: common.v1.Profile profile = 15;
+   */
+  profile?: Profile;
+
   constructor(data?: PartialMessage<Request_Data_Data_Props>) {
     super();
     proto3.util.initPartial(data, this);
@@ -575,6 +592,8 @@ export class Request_Data_Data_Props extends Message<Request_Data_Data_Props> {
     { no: 11, name: "render", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 12, name: "version", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 13, name: "use_wasm_bindings_sandbox", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 14, name: "jwt_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 15, name: "profile", kind: "message", T: Profile },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Request_Data_Data_Props {

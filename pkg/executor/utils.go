@@ -571,6 +571,8 @@ func HandleWorkflow(
 		RawApi:                rawApiValue,
 		Integrations:          def.Integrations,
 		FileServerUrl:         executeOpts.FileServerUrl,
+		JwtToken:              executeOpts.JwtToken,
+		Profile:               executeOpts.Profile,
 		TokenManager:          executeOpts.TokenManager,
 		IsDeployed:            true,
 		Flags:                 executeOpts.Flags,

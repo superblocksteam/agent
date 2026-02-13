@@ -2,6 +2,7 @@ from api.v1 import api_pb2 as _api_pb2
 from api.v1 import blocks_pb2 as _blocks_pb2
 from api.v1 import service_pb2 as _service_pb2
 from buf.validate import validate_pb2 as _validate_pb2
+from common.v1 import common_pb2 as _common_pb2
 from common.v1 import errors_pb2 as _errors_pb2
 from google.protobuf import any_pb2 as _any_pb2
 from google.protobuf import struct_pb2 as _struct_pb2
@@ -110,7 +111,7 @@ class Request(_message.Message):
         class Data(_message.Message):
             __slots__ = ("props", "d_config", "a_config", "quotas")
             class Props(_message.Message):
-                __slots__ = ("action_configuration", "datasource_configuration", "redacted_datasource_configuration", "execution_id", "step_name", "environment", "binding_keys", "variables", "fileServerUrl", "files", "render", "version", "use_wasm_bindings_sandbox")
+                __slots__ = ("action_configuration", "datasource_configuration", "redacted_datasource_configuration", "execution_id", "step_name", "environment", "binding_keys", "variables", "fileServerUrl", "files", "render", "version", "use_wasm_bindings_sandbox", "jwt_token", "profile")
                 class Binding(_message.Message):
                     __slots__ = ("key", "type")
                     KEY_FIELD_NUMBER: _ClassVar[int]
@@ -159,6 +160,8 @@ class Request(_message.Message):
                 RENDER_FIELD_NUMBER: _ClassVar[int]
                 VERSION_FIELD_NUMBER: _ClassVar[int]
                 USE_WASM_BINDINGS_SANDBOX_FIELD_NUMBER: _ClassVar[int]
+                JWT_TOKEN_FIELD_NUMBER: _ClassVar[int]
+                PROFILE_FIELD_NUMBER: _ClassVar[int]
                 action_configuration: _struct_pb2.Struct
                 datasource_configuration: _struct_pb2.Struct
                 redacted_datasource_configuration: _struct_pb2.Struct
@@ -172,7 +175,9 @@ class Request(_message.Message):
                 render: bool
                 version: str
                 use_wasm_bindings_sandbox: bool
-                def __init__(self, action_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., datasource_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., redacted_datasource_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., execution_id: _Optional[str] = ..., step_name: _Optional[str] = ..., environment: _Optional[str] = ..., binding_keys: _Optional[_Iterable[_Union[Request.Data.Data.Props.Binding, _Mapping]]] = ..., variables: _Optional[_Mapping[str, Variable]] = ..., fileServerUrl: _Optional[str] = ..., files: _Optional[_Iterable[_Union[Request.Data.Data.Props.File, _Mapping]]] = ..., render: bool = ..., version: _Optional[str] = ..., use_wasm_bindings_sandbox: bool = ...) -> None: ...
+                jwt_token: str
+                profile: _common_pb2.Profile
+                def __init__(self, action_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., datasource_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., redacted_datasource_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., execution_id: _Optional[str] = ..., step_name: _Optional[str] = ..., environment: _Optional[str] = ..., binding_keys: _Optional[_Iterable[_Union[Request.Data.Data.Props.Binding, _Mapping]]] = ..., variables: _Optional[_Mapping[str, Variable]] = ..., fileServerUrl: _Optional[str] = ..., files: _Optional[_Iterable[_Union[Request.Data.Data.Props.File, _Mapping]]] = ..., render: bool = ..., version: _Optional[str] = ..., use_wasm_bindings_sandbox: bool = ..., jwt_token: _Optional[str] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ...) -> None: ...
             class Quota(_message.Message):
                 __slots__ = ("size", "duration")
                 SIZE_FIELD_NUMBER: _ClassVar[int]
