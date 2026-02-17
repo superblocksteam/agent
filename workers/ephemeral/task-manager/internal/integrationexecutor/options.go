@@ -5,6 +5,8 @@
 package integrationexecutor
 
 import (
+	"crypto/ecdsa"
+
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 
 	"go.uber.org/zap"
@@ -24,6 +26,7 @@ type Options struct {
 	logger              *zap.Logger
 	orchestratorAddress string
 	fileContextProvider FileContextProvider
+	jwtSigningKey       *ecdsa.PublicKey
 }
 
 // Option is a functional option for configuring IntegrationExecutorService.
@@ -62,6 +65,14 @@ func WithOrchestratorAddress(value string) Option {
 func WithFileContextProvider(value FileContextProvider) Option {
 	return func(o *Options) {
 		o.fileContextProvider = value
+	}
+}
+
+// WithJWTSigningKey sets the ECDSA public key used to validate stored JWTs
+// before forwarding them to the orchestrator. If nil, JWT validation is skipped.
+func WithJWTSigningKey(value *ecdsa.PublicKey) Option {
+	return func(o *Options) {
+		o.jwtSigningKey = value
 	}
 }
 

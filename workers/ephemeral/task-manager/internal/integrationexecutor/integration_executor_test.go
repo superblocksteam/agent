@@ -2,10 +2,16 @@ package integrationexecutor
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"net"
 	"testing"
+	"time"
 
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -78,6 +84,138 @@ func startFakeOrchestrator(t *testing.T, fake *fakeOrchestratorServer) string {
 	})
 
 	return lis.Addr().String()
+}
+
+// generateTestKey creates an ECDSA P-256 key pair for testing.
+func generateTestKey(t *testing.T) *ecdsa.PrivateKey {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	return key
+}
+
+// signTestJWT creates a signed JWT with the given claims and private key.
+func signTestJWT(t *testing.T, key *ecdsa.PrivateKey, claims jwt.MapClaims) string {
+	t.Helper()
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	signed, err := token.SignedString(key)
+	require.NoError(t, err)
+	return signed
+}
+
+func TestValidateJWT(t *testing.T) {
+	key := generateTestKey(t)
+	otherKey := generateTestKey(t)
+
+	validToken := signTestJWT(t, key, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+
+	expiredToken := signTestJWT(t, key, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(-time.Hour).Unix(),
+	})
+
+	wrongKeyToken := signTestJWT(t, otherKey, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+
+	// Token that expires within the padding window (10s < 30s padding).
+	expiresSoonToken := signTestJWT(t, key, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(10 * time.Second).Unix(),
+	})
+
+	// Token with nbf set to now should be accepted (negative leeway bug would reject it).
+	tokenWithNbf := signTestJWT(t, key, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(time.Hour).Unix(),
+		"nbf": time.Now().Unix(),
+	})
+
+	// Token without exp claim should be rejected (exp is required).
+	tokenNoExp := signTestJWT(t, key, jwt.MapClaims{
+		"sub": "user-123",
+	})
+
+	// Create an HMAC-signed token to test wrong signing method detection.
+	hmacToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+	hmacSigned, err := hmacToken.SignedString([]byte("secret"))
+	require.NoError(t, err)
+
+	for _, test := range []struct {
+		name    string
+		key     *ecdsa.PublicKey
+		token   string
+		wantErr bool
+	}{
+		{
+			name:  "valid token",
+			key:   &key.PublicKey,
+			token: validToken,
+		},
+		{
+			name:    "expired token",
+			key:     &key.PublicKey,
+			token:   expiredToken,
+			wantErr: true,
+		},
+		{
+			name:    "wrong signing key",
+			key:     &key.PublicKey,
+			token:   wrongKeyToken,
+			wantErr: true,
+		},
+		{
+			name:    "expires within padding window",
+			key:     &key.PublicKey,
+			token:   expiresSoonToken,
+			wantErr: true,
+		},
+		{
+			name:    "wrong signing method (HMAC)",
+			key:     &key.PublicKey,
+			token:   hmacSigned,
+			wantErr: true,
+		},
+		{
+			name:  "nil key skips validation",
+			key:   nil,
+			token: "any-token",
+		},
+		{
+			name:    "malformed token",
+			key:     &key.PublicKey,
+			token:   "not.a.jwt",
+			wantErr: true,
+		},
+		{
+			name:  "valid token with nbf set to now",
+			key:   &key.PublicKey,
+			token: tokenWithNbf,
+		},
+		{
+			name:    "token without exp claim",
+			key:     &key.PublicKey,
+			token:   tokenNoExp,
+			wantErr: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			svc := &IntegrationExecutorService{jwtSigningKey: test.key}
+			err := svc.validateJWT(test.token)
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }
 
 func TestBuildStep(t *testing.T) {
@@ -161,10 +299,22 @@ func TestExecuteIntegration(t *testing.T) {
 		},
 	}
 
+	// Generate test ECDSA keys for JWT signing.
+	signingKey := generateTestKey(t)
+	validJWT := signTestJWT(t, signingKey, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+	expiredJWT := signTestJWT(t, signingKey, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(-time.Hour).Unix(),
+	})
+
 	for _, test := range []struct {
 		name            string
 		request         *workerv1.ExecuteIntegrationRequest
 		contexts        map[string]*redisstore.ExecutionFileContext
+		jwtSigningKey   *ecdsa.PublicKey
 		orchestratorErr error
 		wantCode        codes.Code
 		wantOutput      *structpb.Value
@@ -173,7 +323,25 @@ func TestExecuteIntegration(t *testing.T) {
 		wantProfile     *commonv1.Profile
 	}{
 		{
-			name: "happy path",
+			name: "happy path with JWT validation",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+				ViewMode:            apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+				Profile:             profileTest,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: validJWT, Profile: profileFallback},
+			},
+			jwtSigningKey: &signingKey.PublicKey,
+			wantJwt:       "Bearer " + validJWT,
+			wantProfile:   profileTest,
+			wantOutput:    outputValue,
+		},
+		{
+			name: "happy path without JWT validation (nil key)",
 			request: &workerv1.ExecuteIntegrationRequest{
 				ExecutionId:         "exec-1",
 				IntegrationId:       "int-1",
@@ -185,9 +353,10 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: "my-jwt-token", Profile: profileFallback},
 			},
-			wantJwt:     "my-jwt-token",
-			wantProfile: profileTest,
-			wantOutput:  outputValue,
+			jwtSigningKey: nil,
+			wantJwt:       "Bearer my-jwt-token",
+			wantProfile:   profileTest,
+			wantOutput:    outputValue,
 		},
 		{
 			name: "profile falls back to parent execution",
@@ -198,11 +367,26 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: "my-jwt-token", Profile: profileFallback},
+				"exec-1": {JwtToken: validJWT, Profile: profileFallback},
 			},
-			wantJwt:     "my-jwt-token",
-			wantProfile: profileFallback,
-			wantOutput:  outputValue,
+			jwtSigningKey: &signingKey.PublicKey,
+			wantJwt:       "Bearer " + validJWT,
+			wantProfile:   profileFallback,
+			wantOutput:    outputValue,
+		},
+		{
+			name: "expired JWT returns PermissionDenied",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: expiredJWT},
+			},
+			jwtSigningKey: &signingKey.PublicKey,
+			wantCode:      codes.PermissionDenied,
 		},
 		{
 			name: "missing execution_id",
@@ -262,8 +446,9 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: "my-jwt-token"},
+				"exec-1": {JwtToken: validJWT},
 			},
+			jwtSigningKey:   &signingKey.PublicKey,
 			orchestratorErr: status.Error(codes.Internal, "something went wrong"),
 			wantError:       "rpc error: code = Internal desc = something went wrong",
 		},
@@ -285,6 +470,7 @@ func TestExecuteIntegration(t *testing.T) {
 				logger:              zap.NewNop(),
 				orchestratorAddress: orchestratorAddr,
 				fileContextProvider: &mockFileContextProvider{contexts: test.contexts},
+				jwtSigningKey:       test.jwtSigningKey,
 			}
 
 			// Pre-create the orchestrator client for the test.
@@ -317,6 +503,8 @@ func TestExecuteIntegration(t *testing.T) {
 
 			assert.Equal(t, "result-exec-id", resp.GetExecutionId())
 			assert.Equal(t, test.wantOutput.GetStructValue().AsMap(), resp.GetOutput().GetStructValue().AsMap())
+
+			// Verify the orchestrator received the JWT with Bearer prefix.
 			assert.Equal(t, test.wantJwt, fake.lastJwtToken)
 
 			// Verify the Await request uses an inline Definition.

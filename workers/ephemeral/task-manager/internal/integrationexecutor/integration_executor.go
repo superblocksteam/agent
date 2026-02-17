@@ -2,12 +2,15 @@ package integrationexecutor
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/superblocksteam/agent/pkg/constants"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
@@ -35,6 +38,7 @@ type IntegrationExecutorService struct {
 	logger              *zap.Logger
 	orchestratorAddress string
 	fileContextProvider FileContextProvider
+	jwtSigningKey       *ecdsa.PublicKey
 
 	orchestratorClient     apiv1.ExecutorServiceClient
 	orchestratorClientLock sync.Mutex
@@ -58,6 +62,7 @@ func New(opts ...Option) *IntegrationExecutorService {
 		logger:              o.logger,
 		orchestratorAddress: o.orchestratorAddress,
 		fileContextProvider: o.fileContextProvider,
+		jwtSigningKey:       o.jwtSigningKey,
 		done:                make(chan error, 1),
 	}
 }
@@ -155,6 +160,44 @@ func (s *IntegrationExecutorService) getOrCreateOrchestratorClient() (apiv1.Exec
 	return s.orchestratorClient, nil
 }
 
+// jwtExpiryPadding rejects tokens that expire within this window. This avoids
+// forwarding a token to the orchestrator that is technically valid now but will
+// expire before the downstream request completes.
+const jwtExpiryPadding = 30 * time.Second
+
+// validateJWT validates the raw JWT token using the configured ECDSA public key.
+// If no signing key is configured, validation is skipped (returns nil).
+// Validates: ECDSA signature, expiry, algorithm, and sufficient remaining lifetime.
+func (s *IntegrationExecutorService) validateJWT(rawToken string) error {
+	if s.jwtSigningKey == nil {
+		return nil // JWT validation not configured; skip.
+	}
+
+	token, err := jwt.Parse(rawToken, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.jwtSigningKey, nil
+	}, jwt.WithExpirationRequired())
+	if err != nil {
+		return err
+	}
+
+	// Reject tokens that will expire before the downstream request completes.
+	// We check this separately (instead of jwt.WithLeeway) because negative
+	// leeway also tightens nbf validation, which would reject valid tokens
+	// for the first N seconds after issuance.
+	exp, err := token.Claims.GetExpirationTime()
+	if err != nil {
+		return fmt.Errorf("failed to get expiration time: %w", err)
+	}
+	if exp != nil && time.Until(exp.Time) < jwtExpiryPadding {
+		return fmt.Errorf("token expires too soon (in %s, need at least %s)", time.Until(exp.Time).Truncate(time.Second), jwtExpiryPadding)
+	}
+
+	return nil
+}
+
 // buildStep constructs an apiv1.Step with the correct plugin-typed config
 // using protojson to dynamically set the oneof field by plugin_id.
 //
@@ -219,6 +262,15 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
 	}
 
+	// Validate the stored JWT before forwarding to the orchestrator.
+	if err := s.validateJWT(fileCtx.JwtToken); err != nil {
+		s.logger.Warn("stored JWT validation failed",
+			zap.String("execution_id", req.GetExecutionId()),
+			zap.Error(err),
+		)
+		return nil, status.Errorf(codes.PermissionDenied, "JWT validation failed: %v", err)
+	}
+
 	client, err := s.getOrCreateOrchestratorClient()
 	if err != nil {
 		s.logger.Error("failed to get orchestrator client", zap.Error(err))
@@ -243,7 +295,9 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 	}
 
 	// Forward the JWT as outgoing gRPC metadata to the orchestrator.
-	md := metadata.Pairs(constants.HeaderSuperblocksJwt, fileCtx.JwtToken)
+	// The stored token has the "Bearer " prefix stripped, but the orchestrator's
+	// JWT middleware expects it in "Bearer <token>" format.
+	md := metadata.Pairs(constants.HeaderSuperblocksJwt, "Bearer "+fileCtx.JwtToken)
 	outCtx := metadata.NewOutgoingContext(ctx, md)
 
 	resp, err := client.Await(outCtx, &apiv1.ExecuteRequest{

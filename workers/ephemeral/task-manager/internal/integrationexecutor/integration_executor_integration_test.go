@@ -9,6 +9,8 @@ import (
 
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
@@ -42,6 +44,13 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 
 	profile := &commonv1.Profile{Name: strPtr("prod")}
 
+	// Generate a test JWT signed with a test ECDSA key.
+	signingKey := generateTestKey(t)
+	testJWT := signTestJWT(t, signingKey, jwt.MapClaims{
+		"sub": "user-123",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+
 	fake := &fakeOrchestratorServer{
 		response: &apiv1.AwaitResponse{
 			Execution: "orchestrator-exec-id",
@@ -51,7 +60,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 	orchestratorAddr := startFakeOrchestrator(t, fake)
 
 	fileContexts := map[string]*redisstore.ExecutionFileContext{
-		"exec-123": {JwtToken: "test-jwt-token", Profile: profile},
+		"exec-123": {JwtToken: testJWT, Profile: profile},
 	}
 
 	// Start the IntegrationExecutorService on a random port.
@@ -64,6 +73,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 		WithLogger(zap.NewNop()),
 		WithOrchestratorAddress(orchestratorAddr),
 		WithFileContextProvider(&mockFileContextProvider{contexts: fileContexts}),
+		WithJWTSigningKey(&signingKey.PublicKey),
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -126,8 +136,8 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 		assert.Equal(t, outputValue.GetStructValue().AsMap(), resp.GetOutput().GetStructValue().AsMap())
 		assert.Empty(t, resp.GetError())
 
-		// Verify the orchestrator received the correct JWT in metadata.
-		assert.Equal(t, "test-jwt-token", fake.lastJwtToken)
+		// Verify the orchestrator received the JWT with Bearer prefix in metadata.
+		assert.Equal(t, "Bearer "+testJWT, fake.lastJwtToken)
 
 		// Verify the orchestrator received an inline Definition.
 		def := fake.lastRequest.GetDefinition()
@@ -202,6 +212,36 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 		st, ok := status.FromError(err)
 		require.True(t, ok)
 		assert.Equal(t, codes.NotFound, st.Code())
+	})
+
+	t.Run("end-to-end expired JWT", func(t *testing.T) {
+		// Add an expired JWT context for this test.
+		expiredJWT := signTestJWT(t, signingKey, jwt.MapClaims{
+			"sub": "user-123",
+			"exp": time.Now().Add(-time.Hour).Unix(),
+		})
+		fileContexts["exec-expired"] = &redisstore.ExecutionFileContext{
+			JwtToken: expiredJWT,
+			Profile:  profile,
+		}
+		t.Cleanup(func() { delete(fileContexts, "exec-expired") })
+
+		actionConfig := &structpb.Struct{
+			Fields: map[string]*structpb.Value{},
+		}
+
+		_, err := client.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+			ExecutionId:         "exec-expired",
+			IntegrationId:       "my-integration",
+			PluginId:            "postgres",
+			ActionConfiguration: actionConfig,
+		})
+		require.Error(t, err)
+
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.PermissionDenied, st.Code())
+		assert.Contains(t, st.Message(), "JWT validation failed")
 	})
 
 	t.Run("end-to-end orchestrator error", func(t *testing.T) {
