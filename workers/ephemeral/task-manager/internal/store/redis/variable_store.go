@@ -378,8 +378,23 @@ func (s *VariableStoreGRPC) SetSecurityViolationHandler(handler SecurityViolatio
 }
 
 // isKeyAllowed checks if a key is allowed for the given execution.
-// Returns true if no allowlist is set (for testing).
+// Returns true if no allowlist is set (for backward compatibility, not just tests).
+//
+// Keys in the current execution's context/output namespaces
+// (e.g., "{executionID}.context.*" or "{executionID}.output.*") are always
+// allowed because they belong to the current execution's context data.
+// The explicit allowlist is still enforced for other keys (e.g., "VARIABLE.{uuid}"),
+// preventing cross-execution or unintended data access.
 func (s *VariableStoreGRPC) isKeyAllowed(executionID, key string) bool {
+	// Allow only well-known execution-scoped namespaces to bypass the allowlist.
+	// The orchestrator's BindingKeys field is deprecated and often empty, so we
+	// allow context/output keys rather than relying on an incomplete allowlist.
+	if executionID != "" &&
+		(strings.HasPrefix(key, executionID+".context.") ||
+			strings.HasPrefix(key, executionID+".output.")) {
+		return true
+	}
+
 	s.allowedKeysLock.RLock()
 	defer s.allowedKeysLock.RUnlock()
 

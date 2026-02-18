@@ -1,8 +1,6 @@
 ---
 codecov:
   require_ci_to_pass: true
-  notify:
-    manual_trigger: true
 coverage:
   status:
     project:
@@ -12,6 +10,27 @@ coverage:
     patch:
       default:
         if_ci_failed: error
+flags:
+  test-go:
+    carryforward: true
+  test-task-manager:
+    carryforward: true
+  test-js-unit:
+    carryforward: true
+  test-js-plugins-sandbox-unit:
+    carryforward: true
+  test-py-unit:
+    carryforward: true
+  test-py-sandbox:
+    carryforward: true
+  e2e-quotas:
+    carryforward: true
+  e2e-cloud:
+    carryforward: true
+  e2e-opa:
+    carryforward: true
+  superblocks-agent-client-python:
+    carryforward: true
 ignore:
   - "./config/"
   - "./docs/"

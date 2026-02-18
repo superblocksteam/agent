@@ -381,6 +381,61 @@ func TestKeyAllowlisting(t *testing.T) {
 			expectError:    false,
 			expectValue:    "value",
 		},
+		"execution_prefixed_context_output_key_allowed": {
+			allowlistSetup: map[string][]string{"exec-1": {"VARIABLE.uuid-1"}},
+			executionID:    "exec-1",
+			requestKey:     "exec-1.context.output.Step1",
+			mockReadKey:    "exec-1.context.output.Step1",
+			mockReadResult: []any{`{"output":"result"}`},
+			expectError:    false,
+			expectValue:    `{"output":"result"}`,
+		},
+		"execution_prefixed_context_global_key_allowed": {
+			allowlistSetup: map[string][]string{"exec-1": {"VARIABLE.uuid-1"}},
+			executionID:    "exec-1",
+			requestKey:     "exec-1.context.global.myGlobal",
+			mockReadKey:    "exec-1.context.global.myGlobal",
+			mockReadResult: []any{`"globalValue"`},
+			expectError:    false,
+			expectValue:    `"globalValue"`,
+		},
+		"execution_prefixed_output_v2_key_allowed": {
+			allowlistSetup: map[string][]string{"exec-1": {"VARIABLE.uuid-1"}},
+			executionID:    "exec-1",
+			requestKey:     "exec-1.output.some-uuid",
+			mockReadKey:    "exec-1.output.some-uuid",
+			mockReadResult: []any{`{"data":"v2output"}`},
+			expectError:    false,
+			expectValue:    `{"data":"v2output"}`,
+		},
+		"cross_execution_prefixed_key_rejected": {
+			allowlistSetup: map[string][]string{
+				"exec-A": {"VARIABLE.uuid-A"},
+				"exec-B": {"VARIABLE.uuid-B"},
+			},
+			executionID:   "exec-A",
+			requestKey:    "exec-B.context.output.Step1", // belongs to exec-B
+			expectError:   true,
+			errorContains: "key not allowed",
+		},
+		"batch_execution_prefixed_keys_allowed": {
+			allowlistSetup: map[string][]string{"exec-1": {"VARIABLE.uuid-1"}},
+			executionID:    "exec-1",
+			requestKeys:    []string{"exec-1.context.output.Step1", "exec-1.context.global.myGlobal"},
+			mockReadKeys:   []string{"exec-1.context.output.Step1", "exec-1.context.global.myGlobal"},
+			mockReadResult: []any{`"output1"`, `"global1"`},
+			expectError:    false,
+			expectValues:   []string{`"output1"`, `"global1"`},
+		},
+		"batch_mixed_prefixed_and_allowlisted_keys": {
+			allowlistSetup: map[string][]string{"exec-1": {"VARIABLE.uuid-1"}},
+			executionID:    "exec-1",
+			requestKeys:    []string{"exec-1.context.output.Step1", "VARIABLE.uuid-1"},
+			mockReadKeys:   []string{"exec-1.context.output.Step1", "VARIABLE.uuid-1"},
+			mockReadResult: []any{`"output"`, `"variable"`},
+			expectError:    false,
+			expectValues:   []string{`"output"`, `"variable"`},
+		},
 	}
 
 	for name, tt := range tests {
@@ -487,6 +542,38 @@ func TestAllowlistManagement(t *testing.T) {
 
 				assert.False(t, s.isKeyAllowed("exec-1", "old-key-1"))
 				assert.True(t, s.isKeyAllowed("exec-1", "new-key-1"))
+			},
+		},
+		"execution_prefixed_keys_bypass_allowlist": {
+			setup: func(s *VariableStoreGRPC) {
+				// Set a restrictive allowlist with only variable keys
+				s.SetAllowedKeys("exec-1", []string{"VARIABLE.uuid-1"})
+			},
+			check: func(t *testing.T, s *VariableStoreGRPC) {
+				// Known execution-scoped namespaces are allowed
+				assert.True(t, s.isKeyAllowed("exec-1", "exec-1.context.output.Step1"))
+				assert.True(t, s.isKeyAllowed("exec-1", "exec-1.context.global.myGlobal"))
+				assert.True(t, s.isKeyAllowed("exec-1", "exec-1.output.some-uuid"))
+
+				// Unknown execution-scoped namespaces are rejected
+				assert.False(t, s.isKeyAllowed("exec-1", "exec-1.unknown.something"))
+
+				// Cross-execution prefixed keys are rejected
+				assert.False(t, s.isKeyAllowed("exec-1", "exec-2.context.output.Step1"))
+
+				// Non-prefixed keys still go through allowlist
+				assert.True(t, s.isKeyAllowed("exec-1", "VARIABLE.uuid-1"))
+				assert.False(t, s.isKeyAllowed("exec-1", "VARIABLE.uuid-other"))
+			},
+		},
+		"empty_execution_id_does_not_bypass_allowlist": {
+			setup: func(s *VariableStoreGRPC) {
+				s.SetAllowedKeys("", []string{"allowed-key"})
+			},
+			check: func(t *testing.T, s *VariableStoreGRPC) {
+				// Empty executionID must not allow dot-prefixed keys to bypass
+				assert.False(t, s.isKeyAllowed("", ".context.output.Step1"))
+				assert.True(t, s.isKeyAllowed("", "allowed-key"))
 			},
 		},
 	}
