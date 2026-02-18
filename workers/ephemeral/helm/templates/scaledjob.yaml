@@ -227,6 +227,21 @@ spec:
           {{- if $.Values.observability.tracing.maxQueueSize }}
           - "--otel.batcher.export.queue.max={{ $.Values.observability.tracing.maxQueueSize }}"
           {{- end }}
+          # Integration executor - allows sandbox to execute integrations via orchestrator
+          {{- $ieEnabled := $.Values.integrationExecutor.enabled }}
+          {{- with ($v.integrationExecutor) }}
+          {{-   if hasKey . "enabled" }}
+          {{-     $ieEnabled = .enabled }}
+          {{-   end }}
+          {{- end }}
+          {{- if $ieEnabled }}
+          - "--integration.executor.enabled=true"
+          - "--integration.executor.grpc.port={{ (($v.integrationExecutor).grpc).port | default $.Values.integrationExecutor.grpc.port }}"
+          - "--orchestrator.grpc.address={{ $.Values.integrationExecutor.orchestratorGrpcAddress }}"
+          {{- if $.Values.integrationExecutor.jwtJwksUrl }}
+          - "--auth.jwt.jwks_url={{ $.Values.integrationExecutor.jwtJwksUrl }}"
+          {{- end }}
+          {{- end }}
           # Extra args from values
           {{- with $.Values.taskManager.extraArgs }}
           {{- toYaml . | nindent 10 }}
@@ -289,6 +304,11 @@ spec:
           - name: stream-grpc
             containerPort: {{ $.Values.streamingProxy.grpc.port }}
             protocol: TCP
+          {{- if $ieEnabled }}
+          - name: integ-exec-grpc
+            containerPort: {{ (($v.integrationExecutor).grpc).port | default $.Values.integrationExecutor.grpc.port }}
+            protocol: TCP
+          {{- end }}
 
         {{- with $v.nodeSelector | default $.Values.nodeSelector }}
         nodeSelector:

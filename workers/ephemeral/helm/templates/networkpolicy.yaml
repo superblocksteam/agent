@@ -89,7 +89,7 @@ spec:
         ports:
           - 53
 
-    # Allow task-manager pods (for gRPC variable store)
+    # Allow task-manager pods (for gRPC variable store, streaming proxy, and integration executor)
     - action: Allow
       protocol: TCP
       destination:
@@ -98,6 +98,9 @@ spec:
           - {{ .Values.variableStore.grpc.port }}
           - {{ .Values.variableStore.http.port }}
           - {{ .Values.streamingProxy.grpc.port }}
+          {{- if .Values.integrationExecutor.enabled }}
+          - {{ .Values.integrationExecutor.grpc.port }}
+          {{- end }}
 
     {{- if .Values.network.additionalAllowedCIDRs }}
     # Customer-specified allowed CIDRs (internal APIs, etc.)
@@ -161,7 +164,7 @@ spec:
   types:
     - Ingress
   ingress:
-    # Allow sandbox pods to connect to task-manager gRPC port (variable store)
+    # Allow sandbox pods to connect to task-manager gRPC ports (variable store, streaming proxy, and integration executor)
     - action: Allow
       protocol: TCP
       source:
@@ -171,5 +174,8 @@ spec:
           - {{ .Values.variableStore.grpc.port }}
           - {{ .Values.variableStore.http.port }}
           - {{ .Values.streamingProxy.grpc.port }}
+          {{- if .Values.integrationExecutor.enabled }}
+          - {{ .Values.integrationExecutor.grpc.port }}
+          {{- end }}
     # Deny all other ingress
     - action: Deny

@@ -226,6 +226,21 @@ spec:
           {{- if $.Values.sandbox_workers.observability.tracing.maxQueueSize }}
           - "--otel.batcher.export.queue.max={{ $.Values.sandbox_workers.observability.tracing.maxQueueSize }}"
           {{- end }}
+          # Integration executor - allows sandbox to execute integrations via orchestrator
+          {{- $ieEnabled := $.Values.sandbox_workers.integrationExecutor.enabled }}
+          {{- with ($v.integrationExecutor) }}
+          {{-   if hasKey . "enabled" }}
+          {{-     $ieEnabled = .enabled }}
+          {{-   end }}
+          {{- end }}
+          {{- if $ieEnabled }}
+          - "--integration.executor.enabled=true"
+          - "--integration.executor.grpc.port={{ (($v.integrationExecutor).grpc).port | default $.Values.sandbox_workers.integrationExecutor.grpc.port }}"
+          - "--orchestrator.grpc.address={{ include "orchestrator.fullname" $ }}-grpc:{{ $.Values.service.ports.grpc }}"
+          {{- if $.Values.auth.jwt.jwks_url }}
+          - "--auth.jwt.jwks_url={{ $.Values.auth.jwt.jwks_url }}"
+          {{- end }}
+          {{- end }}
           # Extra args from values
           {{- with $.Values.sandbox_workers.taskManager.extraArgs }}
           {{- toYaml . | nindent 10 }}
@@ -282,6 +297,11 @@ spec:
           - name: stream-grpc
             containerPort: {{ $.Values.sandbox_workers.streamingProxy.grpc.port }}
             protocol: TCP
+          {{- if $ieEnabled }}
+          - name: integ-exec-grpc
+            containerPort: {{ (($v.integrationExecutor).grpc).port | default $.Values.sandbox_workers.integrationExecutor.grpc.port }}
+            protocol: TCP
+          {{- end }}
 
         {{- with $v.nodeSelector | default $.Values.sandbox_workers.nodeSelector }}
         nodeSelector:

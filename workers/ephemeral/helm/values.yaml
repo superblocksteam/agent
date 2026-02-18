@@ -194,6 +194,19 @@ variableStore:
 streamingProxy:
   grpc:
     port: 50052
+# Integration executor configuration
+# When enabled, the task-manager runs a gRPC service that allows sandboxed code
+# to execute integrations by proxying requests to the orchestrator.
+# Requires orchestrator gRPC service to be accessible from task-manager pods.
+integrationExecutor:
+  enabled: false
+  grpc:
+    port: 50053
+  # Internal gRPC address of the orchestrator (e.g., "orchestrator-grpc:8081").
+  # Required when integration executor is enabled.
+  orchestratorGrpcAddress: ""
+  # JWKS URL for JWT validation. If empty, JWT validation is skipped.
+  jwtJwksUrl: ""
 # Worker configuration
 worker:
   group: main
