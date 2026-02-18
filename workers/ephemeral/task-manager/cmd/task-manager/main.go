@@ -436,6 +436,10 @@ func main() {
 			k8sjobmanager.WithOwnerPodUID(ownerPodUID),
 		}
 
+		if viper.GetBool("integration.executor.enabled") {
+			jobManagerOptions = append(jobManagerOptions, k8sjobmanager.WithIntegrationExecutorGrpcPort(viper.GetInt("integration.executor.grpc.port")))
+		}
+
 		sandboxImage := viper.GetString("sandbox.image")
 		if sandboxImage == "" {
 			logger.Error("sandbox.image is required (or set sandbox.address for static mode)")

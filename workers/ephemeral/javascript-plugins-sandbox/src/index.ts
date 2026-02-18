@@ -6,6 +6,7 @@ import {
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT,
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS
@@ -26,6 +27,7 @@ import {
   StreamRequest as ProtoStreamRequest,
   TestRequest as ProtoTestRequest
 } from './types/worker/v1/sandbox_transport_pb';
+import { SandboxIntegrationExecutorServiceClient } from './types/worker/v1/sandbox_integration_executor_grpc_pb';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
 
 function createSandboxTransportService(
@@ -135,7 +137,14 @@ function main() {
     grpc.credentials.createInsecure()
   );
 
-  const pluginsRouter = new PluginsRouter(logger, streamingClient);
+  const integrationExecutorClient = SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS
+    ? new SandboxIntegrationExecutorServiceClient(
+        SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS,
+        grpc.credentials.createInsecure()
+      )
+    : undefined;
+
+  const pluginsRouter = new PluginsRouter(logger, streamingClient, integrationExecutorClient);
   const plugins = loadPlugins(Object.keys(ALL_PLUGINS));
   Object.entries(plugins).forEach(([pluginId, plugin]) => {
     pluginsRouter.registerPlugin(pluginId, plugin);

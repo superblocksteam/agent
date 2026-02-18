@@ -44,29 +44,32 @@ type K8sJobManager struct {
 	imagePullSecrets []string
 	// Language of the sandbox
 	language string
+	// Task manager's integration executor gRPC port
+	integrationExecutorGrpcPort int
 }
 
 // NewSandboxJobManager creates a new SandboxJobManager
 func NewSandboxJobManager(opts *Options) *K8sJobManager {
 	return &K8sJobManager{
-		clientset:               opts.Clientset,
-		namespace:               opts.Namespace,
-		image:                   opts.Image,
-		port:                    opts.Port,
-		podIP:                   opts.PodIP,
-		variableStoreGrpcPort:   opts.VariableStoreGrpcPort,
-		variableStoreHttpPort:   opts.VariableStoreHttpPort,
-		streamingProxyGrpcPort:  opts.StreamingProxyGrpcPort,
-		ttlSecondsAfterFinished: opts.TTLSecondsAfterFinished,
-		runtimeClassName:        opts.RuntimeClassName,
-		nodeSelector:            opts.NodeSelector,
-		tolerations:             opts.Tolerations,
-		logger:                  opts.Logger,
-		podReadyTimeout:         opts.PodReadyTimeout,
-		ownerPodName:            opts.OwnerPodName,
-		ownerPodUID:             opts.OwnerPodUID,
-		imagePullSecrets:        opts.ImagePullSecrets,
-		language:                opts.Language,
+		clientset:                   opts.Clientset,
+		namespace:                   opts.Namespace,
+		image:                       opts.Image,
+		port:                        opts.Port,
+		podIP:                       opts.PodIP,
+		variableStoreGrpcPort:       opts.VariableStoreGrpcPort,
+		variableStoreHttpPort:       opts.VariableStoreHttpPort,
+		streamingProxyGrpcPort:      opts.StreamingProxyGrpcPort,
+		ttlSecondsAfterFinished:     opts.TTLSecondsAfterFinished,
+		runtimeClassName:            opts.RuntimeClassName,
+		nodeSelector:                opts.NodeSelector,
+		tolerations:                 opts.Tolerations,
+		logger:                      opts.Logger,
+		podReadyTimeout:             opts.PodReadyTimeout,
+		ownerPodName:                opts.OwnerPodName,
+		ownerPodUID:                 opts.OwnerPodUID,
+		imagePullSecrets:            opts.ImagePullSecrets,
+		language:                    opts.Language,
+		integrationExecutorGrpcPort: opts.IntegrationExecutorGrpcPort,
 	}
 }
 
@@ -240,6 +243,15 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 				},
 			},
 		},
+	}
+
+	// Set integration executor address if enabled
+	if m.integrationExecutorGrpcPort > 0 {
+		container := &job.Spec.Template.Spec.Containers[0]
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS",
+			Value: fmt.Sprintf("%s:%d", m.podIP, m.integrationExecutorGrpcPort),
+		})
 	}
 
 	// Set runtime class if specified (for gVisor)

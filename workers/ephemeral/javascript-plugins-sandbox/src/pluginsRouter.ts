@@ -7,6 +7,7 @@ import {
   PLUGIN_ID_TO_PROTO_ACTION_CONFIGURATION_OBJECT_CALLABLE,
   PLUGIN_ID_TO_PROTO_DATASOURCE_CONFIGURATION_OBJECT_CALLABLE
 } from '@superblocks/shared';
+import { GrpcIntegrationExecutor } from './grpcIntegrationExecutor';
 import {
   BindingKeyAndType,
   BindingType,
@@ -33,6 +34,7 @@ import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty
 import { Value } from 'google-protobuf/google/protobuf/struct_pb';
 import P from 'pino';
 import { SandboxStreamRequest } from './messageTransformer';
+import { SandboxIntegrationExecutorServiceClient } from './types/worker/v1/sandbox_integration_executor_grpc_pb';
 import { SandboxStreamingProxyServiceClient } from './types/worker/v1/sandbox_streaming_proxy_grpc_pb';
 import { SendRequest, UntilRequest } from './types/worker/v1/sandbox_streaming_proxy_pb';
 
@@ -46,10 +48,16 @@ export class PluginsRouter {
   private _logger: P.Logger;
   private _plugins: Record<string, BasePlugin>;
   private _streamingClient: SandboxStreamingProxyServiceClient;
+  private _integrationExecutorClient?: SandboxIntegrationExecutorServiceClient;
 
-  constructor(logger: P.Logger, streamingClient: SandboxStreamingProxyServiceClient) {
+  constructor(
+    logger: P.Logger,
+    streamingClient: SandboxStreamingProxyServiceClient,
+    integrationExecutorClient?: SandboxIntegrationExecutorServiceClient
+  ) {
     this._logger = logger.child({ name: 'PluginsRouter' });
     this._streamingClient = streamingClient;
+    this._integrationExecutorClient = integrationExecutorClient;
     this._plugins = {};
   }
 
@@ -226,6 +234,13 @@ export class PluginsRouter {
     pluginProps.context.variables = pluginProps.variables ?? {};
     pluginProps.redactedContext.kvStore = kvStore;
     pluginProps.redactedContext.variables = pluginProps.variables ?? {};
+
+    if (this._integrationExecutorClient) {
+      const executionId = request.props?.executionId ?? '';
+      const integrationExecutor = new GrpcIntegrationExecutor(executionId, this._integrationExecutorClient);
+      pluginProps.context.integrationExecutor = integrationExecutor;
+      pluginProps.redactedContext.integrationExecutor = integrationExecutor;
+    }
     pluginProps.context.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
     pluginProps.redactedContext.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
     pluginProps.version = request.props.version;

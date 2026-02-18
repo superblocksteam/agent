@@ -61,6 +61,9 @@ type Options struct {
 
 	// Language of the sandbox
 	Language string
+
+	// Task manager's gRPC port (integration executor)
+	IntegrationExecutorGrpcPort int
 }
 
 // Option is a functional option for Options
@@ -189,6 +192,13 @@ func WithTolerations(tolerations []corev1.Toleration) Option {
 func WithLanguage(language string) Option {
 	return func(o *Options) {
 		o.Language = language
+	}
+}
+
+// WithIntegrationExecutorGrpcPort sets the task manager's integration executor gRPC port
+func WithIntegrationExecutorGrpcPort(port int) Option {
+	return func(o *Options) {
+		o.IntegrationExecutorGrpcPort = port
 	}
 }
 

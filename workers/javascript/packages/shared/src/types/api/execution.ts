@@ -35,10 +35,19 @@ export interface KVStore {
   writeMany: (kvs: { key: string; value: unknown }[]) => Promise<void>;
 }
 
+export interface IntegrationExecutor {
+  executeIntegration(params: {
+    integrationId: string;
+    pluginId: string;
+    actionConfiguration?: Record<string, unknown>;
+  }): Promise<{ executionId: string; output: unknown; error?: string }>;
+}
+
 export class ExecutionContext {
   globals: { [key: string]: unknown };
   variables?: Record<string, { key: string; type: string; mode?: string }>;
   kvStore?: KVStore;
+  integrationExecutor?: IntegrationExecutor;
   useWasmBindingsSandbox?: boolean;
 
   outputs: { [key: string]: ExecutionOutput };
@@ -57,6 +66,9 @@ export class ExecutionContext {
     this.outputs = context && context.outputs ? _.cloneDeep(context.outputs) : {};
     this.preparedStatementContext = context && context.preparedStatementContext ? _.cloneDeep(context.preparedStatementContext) : [];
     this.useWasmBindingsSandbox = context?.useWasmBindingsSandbox;
+    this.kvStore = context?.kvStore;
+    this.integrationExecutor = context?.integrationExecutor;
+    this.variables = context?.variables ? _.cloneDeep(context.variables) : undefined;
   }
 
   // Do not merge the objects in arrays. Just replace the entire array.
