@@ -5,18 +5,20 @@
 # This is required for the separate pod architecture where task-manager
 # dynamically creates sandbox Jobs for each execution.
 # =============================================================================
+
+{{- $fullname := include "sandbox_workers.fullname" . }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: task-manager
+  name: {{ printf "%s-task-manager" $fullname | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "sandbox_workers.labels" . | nindent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: task-manager-sandbox-creator
+  name: {{ printf "%s-task-manager-sandbox-creator" $fullname | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "sandbox_workers.labels" . | nindent 4 }}
 rules:
@@ -36,14 +38,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: task-manager-sandbox-creator
+  name: {{ printf "%s-task-manager-sandbox-creator" $fullname | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "sandbox_workers.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: task-manager-sandbox-creator
+  name: {{ printf "%s-task-manager-sandbox-creator" $fullname | trunc 63 | trimSuffix "-" }}
 subjects:
   - kind: ServiceAccount
-    name: task-manager
+    name: {{ printf "%s-task-manager" $fullname | trunc 63 | trimSuffix "-" }}
     namespace: {{ .Release.Namespace }}

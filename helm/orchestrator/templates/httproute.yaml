@@ -1,3 +1,4 @@
+{{- if .Values.server.deploy }}
 {{ $hosts := mustAppend ( .Values.ingress.additionalUrls | default (list) ) .Values.externalUrl }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -56,3 +57,4 @@ spec:
         - name: {{ include "orchestrator.fullname" $ }}
           kind: Service
           port: {{ .Values.service.ports.http }}
+{{- end }}

@@ -11,6 +11,7 @@
 # Network isolation is enforced via Kubernetes NetworkPolicy on sandbox Jobs.
 # Task-manager has full internal network access; sandbox Jobs are restricted.
 # =============================================================================
+{{- $fullname := include "sandbox_workers.fullname" . }}
 {{- range $k, $v := .Values.fleets }}
 {{- $language := $v.language | required "language is required (python or javascript)" }}
 {{- $sandboxConfig := index $.Values.sandbox $language }}
@@ -19,7 +20,7 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata:
-  name: {{ $k }}
+  name: {{ printf "%s-%s" $fullname $k | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "sandbox.worker.labels" $v | nindent 4 }}
 spec:
@@ -46,7 +47,7 @@ spec:
         {{- end }}
         activationLagCount: {{ $v.keda.activationLagCount | default $.Values.keda.activationLagCount | default "1" | quote }}
       authenticationRef:
-        name: redis-trigger-auth
+        name: {{ printf "%s-redis-trigger-auth" $fullname | trunc 63 | trimSuffix "-" }}
     {{- end }}
   {{- end }}
   scalingStrategy:
@@ -69,10 +70,10 @@ spec:
       spec:
         restartPolicy: Never
         terminationGracePeriodSeconds: 60
-        serviceAccountName: task-manager
+        serviceAccountName: {{ printf "%s-task-manager" $fullname | trunc 63 | trimSuffix "-" }}
         {{- if $.Values.image.credentials }}
         imagePullSecrets:
-        - name: ephemeral-worker-docker
+        - name: {{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}
         {{- end }}
 
         containers:
@@ -126,7 +127,7 @@ spec:
           - "--sandbox.runtimeClass={{ $.Values.sandbox.runtimeClassName | default $.Values.runtimeClassName }}"
           {{- end }}
           {{- if $.Values.image.credentials }}
-          - "--sandbox.imagePullSecrets=ephemeral-worker-docker"
+          - "--sandbox.imagePullSecrets={{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}"
           {{- end }}
           {{- if or $.Values.nodeSelector $.Values.sandbox.nodeSelector }}
           - "--sandbox.nodeSelector={{ include "mapToStringFlag" ($.Values.sandbox.nodeSelector | default $.Values.nodeSelector) }}"
@@ -275,21 +276,21 @@ spec:
           - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: worker-queue-redis-token
+                name: {{ printf "%s-worker-queue-redis-token" $fullname | trunc 63 | trimSuffix "-" }}
                 key: token
           {{- end }}
           {{- if $.Values.kvstore.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: worker-kvstore-redis-token
+                name: {{ printf "%s-worker-kvstore-redis-token" $fullname | trunc 63 | trimSuffix "-" }}
                 key: token
           {{- end }}
           {{- if $.Values.superblocks.key }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_SUPERBLOCKS_KEY
             valueFrom:
               secretKeyRef:
-                name: worker-agent-key
+                name: {{ printf "%s-worker-agent-key" $fullname | trunc 63 | trimSuffix "-" }}
                 key: key
           {{- end }}
           {{- with ($v.taskManager).extraEnv }}

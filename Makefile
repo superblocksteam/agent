@@ -235,6 +235,41 @@ deploy-helm:
 		--set worker_js.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
 		--set worker_js.superblocks.privateKeyRSA="$(HELM_WORKER_KEY_RSA)" \
 		--set worker_js.superblocks.privateKeyEd25519="$(HELM_WORKER_KEY_ED25519)" \
+		--set sandbox_workers.fullnameOverride=orchestrator \
+		--set sandbox_workers.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
+		--set sandbox_workers.queue.host="$(HELM_QUEUE_HOST)" \
+		--set sandbox_workers.queue.servername="$(HELM_QUEUE_HOST)" \
+		--set sandbox_workers.queue.password="$(HELM_QUEUE_TOKEN)" \
+		--set sandbox_workers.kvstore.host="$(HELM_KVSTORE_HOST)" \
+		--set sandbox_workers.kvstore.servername="$(HELM_KVSTORE_HOST)" \
+		--set sandbox_workers.kvstore.password="$(HELM_KVSTORE_TOKEN)" \
+		--set sandbox_workers.image.credentials.username="${HELM_IMAGE_CREDENTIALS_USERNAME}" \
+		--set sandbox_workers.image.credentials.password="${HELM_IMAGE_CREDENTIALS_PASSWORD}" \
+		--set sandbox_workers.taskManager.image.tag="$(IMAGE_TAG)" \
+		--set sandbox_workers.sandbox.javascript.image.tag="$(IMAGE_TAG)" \
+		--set sandbox_workers.sandbox.python.image.tag="$(IMAGE_TAG)" \
+		--set queue.host="${HELM_QUEUE_HOST}" \
+		--set queue.token="${HELM_QUEUE_TOKEN}" \
+		--set kvstore.host="${HELM_KVSTORE_HOST}" \
+		--set kvstore.token="${HELM_KVSTORE_TOKEN}" \
+		--set image.credentials.username="${HELM_IMAGE_CREDENTIALS_USERNAME}" \
+		--set image.credentials.password="${HELM_IMAGE_CREDENTIALS_PASSWORD}" \
+		--set image.tag="$(IMAGE_TAG)" \
+		--set superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
+		--set launchdarkly.apikey="$(HELM_LAUNCHDARKLY_APIKEY)" \
+		--set secrets.encryptionKey="$(HELM_SECRETS_ENCRYPTION_KEY)" $(HELM_EXTRA_ARGS)
+
+	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) orchestrator-workers helm/orchestrator \
+		--debug \
+		--create-namespace \
+		--force \
+		--values helm/orchestrator/$(ENVIRONMENT).yaml \
+		--set server.deploy=false \
+		--set queue.deploy=false \
+		--set worker_go.deploy=false \
+		--set worker_py.deploy=false \
+		--set worker_js.deploy=false \
+		--set sandbox_workers.fullnameOverride=orchestrator-workers \
 		--set sandbox_workers.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
 		--set sandbox_workers.queue.host="$(HELM_QUEUE_HOST)" \
 		--set sandbox_workers.queue.servername="$(HELM_QUEUE_HOST)" \

@@ -86,3 +86,5 @@ imagePullSecrets: []
 # Superblocks configuration
 superblocks:
   key: dev-agent-key
+# Fullname override for sandbox workers
+fullnameOverride: sandbox-workers

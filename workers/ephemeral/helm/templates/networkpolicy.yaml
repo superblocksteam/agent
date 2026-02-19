@@ -14,6 +14,7 @@
 # separate pods with separate NetworkPolicies.
 # =============================================================================
 
+{{- $fullname := include "sandbox_workers.fullname" . }}
 ---
 # Task Manager Network Policy - Internal VPC only
 # Task manager needs access to Redis, K8s API, sandbox pods, OTEL collector
@@ -21,7 +22,7 @@
 apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
-  name: task-manager-egress
+  name: {{ printf "%s-task-manager-egress" $fullname | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "sandbox_workers.labels" . | nindent 4 }}
 spec:
@@ -68,7 +69,7 @@ spec:
 apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
-  name: sandbox-egress-deny-private
+  name: {{ printf "%s-sandbox-egress-deny-private" $fullname | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "sandbox_workers.labels" . | nindent 4 }}
 spec:
@@ -130,7 +131,7 @@ spec:
 apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
-  name: sandbox-ingress
+  name: {{ printf "%s-sandbox-ingress" $fullname | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "sandbox_workers.labels" . | nindent 4 }}
 spec:
@@ -155,7 +156,7 @@ spec:
 apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
-  name: task-manager-ingress
+  name: {{ printf "%s-task-manager-ingress" $fullname | trunc 63 | trimSuffix "-" }}
   labels:
     {{- include "sandbox_workers.labels" . | nindent 4 }}
 spec:

@@ -1,12 +1,13 @@
 {{- if .Values.queue.password }}
+{{- $fullname := include "sandbox_workers.fullname" . }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
 metadata:
-  name: redis-trigger-auth
+  name: {{ printf "%s-redis-trigger-auth" $fullname | trunc 63 | trimSuffix "-" }}
 spec:
   secretTargetRef:
     - parameter: password
-      name: worker-queue-redis-token
+      name: {{ printf "%s-worker-queue-redis-token" $fullname | trunc 63 | trimSuffix "-" }}
       key: token
 {{- end }}
