@@ -183,6 +183,10 @@ test-e2e-quotas:
 test-e2e-ephemeral-network:
 	postman collection run --color on --verbose ./postman/ephemeral_network_isolation.json -e ./postman/environments/$(POSTMAN_ENV).json
 
+.PHONY: test-e2e-javascriptsdkapi
+test-e2e-javascriptsdkapi:
+	postman collection run --color on --verbose ./postman/javascriptsdkapi_collection.json -e ./postman/environments/$(POSTMAN_ENV).json
+
 .PHONY: test-integration
 test-integration: deps kafka
 	@gotestsum $(GOTESTSUM_OPTIONS) -- -count=1 -timeout 30s -covermode=atomic -coverprofile=coverage-integration.out -coverpkg=./... $(INTEGRATION_TEST_PACKAGES)

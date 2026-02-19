@@ -27,20 +27,9 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       return output;
     }
 
-    // TODO(AGENT-xxxx): Execute bundled SDK API code.
-    // 1. Load the bundled module (actionConfiguration.body)
-    // 2. Detect SDK API exports (inputSchema, outputSchema, run)
-    // 3. Validate input against inputSchema
-    // 4. Set up integration callback context (IPC or gRPC)
-    // 5. Call run() with SDK context
-    // 6. Validate output against outputSchema
-    // 7. Return result
-    //
-    // See matt/api-sdk branch for WIP implementation:
-    //   - sdkApiExecutor.ts (detection + execution)
-    //   - ipcIntegration.ts (child-side IPC)
-    //   - ipcIntegrationExecutor.ts (parent-side IPC)
-
-    throw new Error('SDK API execution not yet implemented');
+    // Stub: proves the plugin was dispatched and received code.
+    // Full SDK API execution (inputSchema/outputSchema/run) will be implemented separately.
+    output.output = { pluginName: 'javascriptsdkapi', received: true };
+    return output;
   }
 }

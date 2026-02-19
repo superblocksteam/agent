@@ -23,6 +23,8 @@ x-task-manager-environment: &task-manager-environment
   SUPERBLOCKS_WORKER_SANDBOX_WORKER_EPHEMERAL: "false"
   # Disable IP filtering in compose (static sandbox mode) since sandbox IPs are not dynamically configured
   SUPERBLOCKS_WORKER_SANDBOX_IP_FILTER_DISABLED: "true"
+  # Use ephemeral.plugin stream names so orchestrator (with worker.ephemeral.plugins.enabled) routes here
+  SUPERBLOCKS_WORKER_SANDBOX_WORKER_SANDBOX_STREAMS_SEPARATE: "true"
 x-task-manager-base: &task-manager-base
   image: ghcr.io/superblocksteam/task-manager:${EPHEMERAL_IMAGE_TAG:-latest}
   build:
@@ -102,6 +104,31 @@ services:
     depends_on:
       - redis
       - javascript-ephemeral-sandbox
+  # ============================================================================
+  # JavaScript SDK API Ephemeral Workers (API 2.0 code-mode)
+  # ============================================================================
+  javascriptsdkapi-ephemeral-sandbox:
+    !!merge <<: *javascript-sandbox-base
+    container_name: javascriptsdkapi-ephemeral-sandbox
+    environment:
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS: javascriptsdkapi-ephemeral:50050
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS: javascriptsdkapi-ephemeral:8080
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS: javascriptsdkapi-ephemeral:50052
+  javascriptsdkapi-ephemeral:
+    !!merge <<: *task-manager-base
+    container_name: javascriptsdkapi-ephemeral
+    environment:
+      !!merge <<: *task-manager-environment
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: javascriptsdkapi
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
+      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascriptsdkapi-ephemeral-sandbox:50051
+      SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS: javascriptsdkapi-ephemeral:50050
+      SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT: 8080
+      SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT: 50052
+    depends_on:
+      - redis
+      - javascriptsdkapi-ephemeral-sandbox
 networks:
   default:
     name: orchestrator_default

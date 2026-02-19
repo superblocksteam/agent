@@ -1,0 +1,63 @@
+{
+	"info": {
+		"_postman_id": "javascriptsdkapi-e2e",
+		"name": "JavaScript SDK API - Ephemeral Worker E2E",
+		"description": "Tests for javascriptsdkapi plugin execution via ephemeral workers. Run with POSTMAN_ENV=ci-ephemeral.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "execute api with javascriptsdkapi step",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"assert status\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"assert javascriptsdkapi block output\", () => {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response.output).to.not.be.undefined;",
+							"    pm.expect(response.output.result).to.eql({ pluginName: \"javascriptsdkapi\", received: true });",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Superblocks-Authorization",
+						"value": "Bearer {{superblocks_jwt}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"options\": {\n        \"includeEventOutputs\": true,\n        \"includeEvents\": false\n    },\n    \"inputs\": {},\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"JavascriptSdkApiTest\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"VARS_BLOCK\",\n                    \"variables\": {\n                        \"items\": []\n                    }\n                },\n                {\n                    \"name\": \"BLOCK_STEP_JAVASCRIPTSDKAPI\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"stub-only: code content is not evaluated\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+					"protocol": "{{orchestrator_scheme}}",
+					"host": [
+						"{{orchestrator_host}}"
+					],
+					"port": "{{orchestrator_port}}",
+					"path": [
+						"v2",
+						"execute"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
