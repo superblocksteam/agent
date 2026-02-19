@@ -192,7 +192,12 @@ func (ldc *launchdarklyClient) GetStringSliceVariationCustomDims(flag string, or
 }
 
 func getVariationCustomDims[T any](client ldClient, flag string, orgId string, dims map[string]string, fallback T, logger *zap.Logger) T {
-	ctxBldr := (&ldcontext.Builder{}).Kind("user").Key(orgId)
+	ctxBldr := &ldcontext.Builder{}
+	if orgId != "" {
+		ctxBldr = ctxBldr.Kind("user").Key(orgId)
+	} else {
+		ctxBldr = ctxBldr.Kind("user").Key("anonymous").Anonymous(true)
+	}
 	for k, v := range dims {
 		ctxBldr = ctxBldr.SetString(k, v)
 	}

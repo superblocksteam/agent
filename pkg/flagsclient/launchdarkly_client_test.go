@@ -17,57 +17,53 @@ func TestGetVariationCustomDims(t *testing.T) {
 
 	for _, test := range []struct {
 		name       string
+		orgId      string
 		dimensions map[string]string
 		defaultVal any
 		expected   any
-		shouldErr  bool
 	}{
 		{
 			name:       "nil dimensions success",
+			orgId:      "validOrgId",
 			dimensions: nil,
 			defaultVal: false,
 			expected:   true,
 		},
 		{
 			name:       "empty dimensions success",
+			orgId:      "validOrgId",
 			dimensions: map[string]string{},
 			defaultVal: false,
 			expected:   true,
 		},
 		{
 			name:       "populated dimensions success",
+			orgId:      "validOrgId",
 			dimensions: map[string]string{"key": "value"},
 			defaultVal: false,
 			expected:   true,
 		},
 		{
-			name:       "build context error, returns default",
+			name:       "empty orgId uses anonymous context and evaluates flag",
+			orgId:      "",
 			dimensions: map[string]string{},
 			defaultVal: false,
-			expected:   false,
-			shouldErr:  true,
+			expected:   true,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			mockLdClient := newMockLdClient(t)
 
 			anyKey := "any.ld.key"
-			orgId := "validOrgId"
-			if test.shouldErr {
-				orgId = ""
-			} else {
-				mockLdClient.On("BoolVariation", anyKey, mock.Anything, test.defaultVal).Return(test.expected.(bool), nil).Once()
-			}
+			mockLdClient.On("BoolVariation", anyKey, mock.Anything, test.defaultVal).Return(test.expected.(bool), nil).Once()
 
 			observedCore, observedLogs := observer.New(zap.InfoLevel)
 			observedLogger := zap.New(observedCore)
 
-			actual := getVariationCustomDims(mockLdClient, anyKey, orgId, test.dimensions, test.defaultVal, observedLogger)
+			actual := getVariationCustomDims(mockLdClient, anyKey, test.orgId, test.dimensions, test.defaultVal, observedLogger)
 
 			assert.Equal(t, test.expected, actual)
-			if test.shouldErr {
-				assert.Len(t, observedLogs.FilterLevelExact(zap.ErrorLevel).All(), 1)
-			}
+			assert.Empty(t, observedLogs.FilterLevelExact(zap.ErrorLevel).All())
 		})
 	}
 }

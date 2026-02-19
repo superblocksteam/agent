@@ -58,6 +58,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// VisitorOrganizationID is the organization ID when a JWT is not required and not provided.
+const VisitorOrganizationID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+
 type server struct {
 	*Config
 	apiv1.UnimplementedExecutorServiceServer
@@ -105,10 +108,19 @@ func (s *server) Health(_ context.Context, req *apiv1.HealthRequest) (*commonv1.
 
 // getUseAgentKeyForHydration returns whether to use agent key for hydration requests.
 // Returns false (default) if Flags is nil (e.g., in tests without mock flags configured).
-func (s *server) getUseAgentKeyForHydration(orgId string) bool {
+func (s *server) getUseAgentKeyForHydration(ctx context.Context) bool {
 	if s.Flags == nil {
 		return false
 	}
+
+	orgId := constants.OrganizationID(ctx)
+	if orgId == "" {
+		requestUsesJwtAuth, err := constants.GetRequestUsesJwtAuth(ctx)
+		if err == nil && !requestUsesJwtAuth {
+			orgId = VisitorOrganizationID
+		}
+	}
+
 	return s.Flags.GetUseAgentKeyForHydration(orgId)
 }
 
@@ -579,8 +591,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	var rawResult *structpb.Struct
 	var rawApiValue *structpb.Value
 	{
-		// Use empty string for orgId since we don't have it yet - flag will return default (false)
-		useAgentKey := s.getUseAgentKeyForHydration("")
+		useAgentKey := s.getUseAgentKeyForHydration(ctx)
 		result, rawResult, err = executor.Fetch(ctx, req, s.Fetcher, useAgentKey, s.Logger)
 		rawApiValue, _ = utils.GetStructField(rawResult, "api")
 	}
@@ -709,7 +720,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		RootStartTime:                time.Now(),
 		SecretManager:                s.SecretManager,
 		GarbageCollect:               true,
-		UseAgentKey:                  s.getUseAgentKeyForHydration(constants.OrganizationID(ctx)),
+		UseAgentKey:                  s.getUseAgentKeyForHydration(ctx),
 		Stores:                       result.GetStores(),
 		Secrets:                      s.Secrets,
 		Signature:                    s.Signature,
@@ -893,8 +904,7 @@ func (s *server) MetadataDeprecated(ctx context.Context, req *apiv1.MetadataRequ
 	var err error
 	var fetchRes *apiv1.Definition
 	{
-		// Use empty string for orgId since we don't have it yet - flag will return default (false)
-		useAgentKey := s.getUseAgentKeyForHydration("")
+		useAgentKey := s.getUseAgentKeyForHydration(ctx)
 		fetchRes, _, err = s.Fetcher.FetchApi(ctx, &apiv1.ExecuteRequest_Fetch{
 			Id:      req.ApiId,
 			Profile: req.Profile,
