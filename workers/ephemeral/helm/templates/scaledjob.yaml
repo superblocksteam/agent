@@ -118,6 +118,8 @@ spec:
           - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.taskManager.healthFilePath }}"
           # Logging
           - "--log.level={{ $.Values.observability.logging.level }}"
+          # Sandbox language
+          - "--sandbox.language={{ $language }}"
           # Sandbox mode - create separate sandbox Jobs
           - "--sandbox.namespace={{ $.Release.Namespace }}"
           - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"

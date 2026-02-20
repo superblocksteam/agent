@@ -59,6 +59,7 @@ func init() {
 
 	// Logging
 	pflag.String("log.level", "info", "The logging level.")
+	pflag.String("sandbox.language", "javascript", "The language of the sandbox.")
 
 	// Redis transport settings
 	pflag.Bool("transport.redis.tls", false, "Whether to connect via SSL to the redis transport.")
@@ -434,6 +435,7 @@ func main() {
 			k8sjobmanager.WithLogger(logger),
 			k8sjobmanager.WithOwnerPodName(ownerPodName),
 			k8sjobmanager.WithOwnerPodUID(ownerPodUID),
+			k8sjobmanager.WithLanguage(viper.GetString("sandbox.language")),
 		}
 
 		if viper.GetBool("integration.executor.enabled") {

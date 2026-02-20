@@ -1,6 +1,7 @@
 package k8sjobmanager
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -146,14 +147,8 @@ func TestBuildJobSpec(t *testing.T) {
 			}
 
 			// Verify language-specific container name.
-			if test.language != "" {
-				assert.Equal(t, test.language+"-lang-executor-sandbox", container.Name)
-				assert.Equal(t, test.language, job.Labels["language"])
-			} else {
-				assert.Equal(t, "javascript-sandbox", container.Name)
-				_, hasLang := job.Labels["language"]
-				assert.False(t, hasLang)
-			}
+			assert.Equal(t, fmt.Sprintf("%s-sandbox", test.language), container.Name)
+			assert.Equal(t, test.language, job.Labels["language"])
 		})
 	}
 }

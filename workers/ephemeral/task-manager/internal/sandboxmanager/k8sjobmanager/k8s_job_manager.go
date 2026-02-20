@@ -6,6 +6,7 @@ package k8sjobmanager
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
@@ -68,7 +69,7 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		ownerPodName:                opts.OwnerPodName,
 		ownerPodUID:                 opts.OwnerPodUID,
 		imagePullSecrets:            opts.ImagePullSecrets,
-		language:                    opts.Language,
+		language:                    strings.ToLower(opts.Language),
 		integrationExecutorGrpcPort: opts.IntegrationExecutorGrpcPort,
 	}
 }
@@ -160,23 +161,19 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 	// Streaming proxy address - task manager's Pod IP + gRPC port
 	streamingProxyAddress := fmt.Sprintf("%s:%d", m.podIP, m.streamingProxyGrpcPort)
 
-	containerName := "javascript-sandbox"
+	containerName := fmt.Sprintf("%s-sandbox", language)
 	labels := map[string]string{
 		"role":         "sandbox",
 		"sandbox-id":   sandboxId,
 		"execution-id": sandboxId,
+		"language":     language,
 	}
 	specLabels := map[string]string{
 		"role":         "sandbox",
 		"sandbox-id":   sandboxId,
 		"execution-id": sandboxId,
 		"job-name":     jobName,
-	}
-
-	if language != "" {
-		containerName = fmt.Sprintf("%s-lang-executor-sandbox", language)
-		labels["language"] = language
-		specLabels["language"] = language
+		"language":     language,
 	}
 
 	job := &batchv1.Job{
