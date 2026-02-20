@@ -21,7 +21,7 @@ module.exports = [
 
             // Return a minimal esbuild-style CommonJS bundle that exports run().
             // The orchestrator wraps this and sends to javascriptsdkapi worker.
-            const bundle = 'module.exports={run:function(ctx){return {sdkapi:"ok",from:"fetchcode"};}};';
+            const bundle = 'module.exports={run:function(ctx){return {sdkapi:"ok",from:"fetchcode",user:ctx.user};}};';
 
             return res.status(200).json({ bundle });
           },
@@ -43,7 +43,7 @@ module.exports = [
               return res.sendStatus(401);
             }
 
-            const bundle = `module.exports={run:function(ctx){return {sdkapi:"ok",from:"fetchcode",branch:${JSON.stringify(req.params.branchName)}};}};`;
+            const bundle = `module.exports={run:function(ctx){return {sdkapi:"ok",from:"fetchcode",branch:${JSON.stringify(req.params.branchName)},user:ctx.user};}};`;
 
             return res.status(200).json({ bundle });
           },

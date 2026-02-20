@@ -10,30 +10,33 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
+	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 )
 
 func TestExtractUserContext(t *testing.T) {
 	t.Parallel()
 
-	t.Run("returns error when email is missing", func(t *testing.T) {
+	t.Run("returns error when user id is missing", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
 
 		uc, err := extractUserContext(ctx)
 		assert.Nil(t, uc)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "user email")
+		assert.Contains(t, err.Error(), "user id")
 	})
 
-	t.Run("extracts email only when no optional fields", func(t *testing.T) {
+	t.Run("extracts required user id with empty optional fields", func(t *testing.T) {
 		t.Parallel()
-		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx := context.WithValue(context.Background(), jwt_validator.ContextKeyUserId, "user-123")
 
 		uc, err := extractUserContext(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, "test@example.com", uc.Email)
-		assert.Empty(t, uc.ID)
+		assert.Equal(t, "user-123", uc.UserID)
+		assert.Empty(t, uc.Email)
 		assert.Empty(t, uc.Name)
+		assert.Equal(t, []string{}, uc.Groups)
+		assert.Equal(t, map[string]interface{}{}, uc.CustomClaims)
 	})
 
 	t.Run("extracts all fields when present", func(t *testing.T) {
@@ -41,12 +44,81 @@ func TestExtractUserContext(t *testing.T) {
 		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
 		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-123")
 		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserDisplayName, "Test User")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyRbacGroupObjects, []*authv1.Claims_RbacGroupObject{
+			{Id: "group-1", Name: "admins"},
+			{Id: "group-2", Name: "devs"},
+		})
+		md, err := structpb.NewStruct(map[string]interface{}{
+			"department": "engineering",
+			"tier":       "gold",
+		})
+		require.NoError(t, err)
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyMetadata, md)
 
 		uc, err := extractUserContext(ctx)
 		require.NoError(t, err)
+		assert.Equal(t, "user-123", uc.UserID)
 		assert.Equal(t, "test@example.com", uc.Email)
-		assert.Equal(t, "user-123", uc.ID)
 		assert.Equal(t, "Test User", uc.Name)
+		assert.Equal(t, []string{"admins", "devs"}, uc.Groups)
+		assert.Equal(t, "engineering", uc.CustomClaims["department"])
+		assert.Equal(t, "gold", uc.CustomClaims["tier"])
+	})
+
+	t.Run("fallback to email when user id is absent", func(t *testing.T) {
+		t.Parallel()
+		ctx := jwt_validator.WithUserEmail(context.Background(), "fallback@example.com")
+		// No ContextKeyUserId - simulates legacy JWT without user_id claim
+
+		uc, err := extractUserContext(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, "fallback@example.com", uc.UserID)
+		assert.Equal(t, "fallback@example.com", uc.Email)
+	})
+
+	t.Run("handles metadata with empty struct", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.WithValue(context.Background(), jwt_validator.ContextKeyUserId, "user-123")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyMetadata, &structpb.Struct{})
+
+		uc, err := extractUserContext(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, "user-123", uc.UserID)
+		assert.Equal(t, map[string]interface{}{}, uc.CustomClaims)
+	})
+}
+
+func TestToUserGroups(t *testing.T) {
+	t.Parallel()
+
+	t.Run("skips nil groups", func(t *testing.T) {
+		t.Parallel()
+		groups := []*authv1.Claims_RbacGroupObject{
+			nil,
+			{Id: "g1", Name: "admins"},
+			nil,
+		}
+		out := toUserGroups(groups)
+		assert.Equal(t, []string{"admins"}, out)
+	})
+
+	t.Run("uses id when name is empty", func(t *testing.T) {
+		t.Parallel()
+		groups := []*authv1.Claims_RbacGroupObject{
+			{Id: "group-id-only", Name: ""},
+		}
+		out := toUserGroups(groups)
+		assert.Equal(t, []string{"group-id-only"}, out)
+	})
+
+	t.Run("returns empty slice when all groups produce no output", func(t *testing.T) {
+		t.Parallel()
+		groups := []*authv1.Claims_RbacGroupObject{
+			nil,
+			{Id: "", Name: ""},
+		}
+		out := toUserGroups(groups)
+		assert.Equal(t, []string{}, out)
 	})
 }
 
@@ -56,9 +128,13 @@ func TestGenerateWrapperScript(t *testing.T) {
 	t.Run("generates script with user context and inputs", func(t *testing.T) {
 		t.Parallel()
 		user := &userContext{
-			Email: "user@example.com",
-			ID:    "u-1",
-			Name:  "Alice",
+			UserID: "u-1",
+			Email:  "user@example.com",
+			Name:   "Alice",
+			Groups: []string{"admins"},
+			CustomClaims: map[string]interface{}{
+				"department": "engineering",
+			},
 		}
 		inputs := map[string]*structpb.Value{
 			"name":  structpb.NewStringValue("world"),
@@ -68,9 +144,11 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 		script, err := generateWrapperScript(user, inputs, bundle)
 		require.NoError(t, err)
+		assert.Contains(t, script, `"userId":"u-1"`)
 		assert.Contains(t, script, `"email":"user@example.com"`)
-		assert.Contains(t, script, `"id":"u-1"`)
 		assert.Contains(t, script, `"name":"Alice"`)
+		assert.Contains(t, script, `"groups":["admins"]`)
+		assert.Contains(t, script, `"customClaims":{"department":"engineering"}`)
 		assert.Contains(t, script, `"world"`)
 		assert.Contains(t, script, `42`)
 		assert.Contains(t, script, bundle)
@@ -81,7 +159,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("handles nil inputs", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{Email: "a@b.com"}
+		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
 
 		script, err := generateWrapperScript(user, nil, "var x = 1;")
 		require.NoError(t, err)
@@ -91,7 +169,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("handles empty inputs", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{Email: "a@b.com"}
+		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
 
 		script, err := generateWrapperScript(user, map[string]*structpb.Value{}, "var x = 1;")
 		require.NoError(t, err)
@@ -100,21 +178,27 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("omits empty optional fields from user JSON", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{Email: "a@b.com"}
+		user := &userContext{
+			UserID:       "u-1",
+			Groups:       []string{},
+			CustomClaims: map[string]interface{}{},
+		}
 
 		script, err := generateWrapperScript(user, nil, "bundle")
 		require.NoError(t, err)
 
-		// The script should contain the email but not "id" or "name" keys
+		// The script should include required keys and omit optional keys.
 		// because json omitempty skips zero-value strings.
-		assert.Contains(t, script, `"email":"a@b.com"`)
-		assert.NotContains(t, script, `"id"`)
+		assert.Contains(t, script, `"userId":"u-1"`)
 		assert.NotContains(t, script, `"name"`)
+		assert.NotContains(t, script, `"email"`)
+		assert.Contains(t, script, `"groups":[]`)
+		assert.Contains(t, script, `"customClaims":{}`)
 	})
 
 	t.Run("includes run() invocation after bundle", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{Email: "a@b.com"}
+		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
 		bundle := "module.exports = { run: function(ctx) { return ctx; } };"
 
 		script, err := generateWrapperScript(user, nil, bundle)
@@ -127,7 +211,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("handles nested struct inputs", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{Email: "a@b.com"}
+		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
 
 		nested, err := structpb.NewStruct(map[string]interface{}{
 			"key": "value",
@@ -148,13 +232,26 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("handles bundle with backticks and template literals", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{Email: "a@b.com"}
+		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
 		bundle := "const msg = `hello ${name}`; module.exports = { run: () => msg };"
 
 		script, err := generateWrapperScript(user, nil, bundle)
 		require.NoError(t, err)
 		assert.Contains(t, script, "hello ${name}")
 		assert.Contains(t, script, "__sb_context")
+	})
+
+	t.Run("returns error when user context cannot be marshaled", func(t *testing.T) {
+		t.Parallel()
+		user := &userContext{
+			UserID:       "u-1",
+			CustomClaims: map[string]interface{}{"chan": make(chan int)},
+		}
+
+		script, err := generateWrapperScript(user, nil, "bundle")
+		assert.Empty(t, script)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "marshal user context")
 	})
 }
 

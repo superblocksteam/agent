@@ -6,33 +6,76 @@ import (
 	"fmt"
 
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
+	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // userContext holds the user identity extracted from JWT claims for code-mode wrapper generation.
 type userContext struct {
-	Email string `json:"email"`
-	ID    string `json:"id,omitempty"`
-	Name  string `json:"name,omitempty"`
+	UserID       string                 `json:"userId"`
+	Email        string                 `json:"email,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Groups       []string               `json:"groups"`
+	CustomClaims map[string]interface{} `json:"customClaims"`
 }
 
 // extractUserContext extracts user identity from JWT claims in the request context.
 func extractUserContext(ctx context.Context) (*userContext, error) {
-	email, ok := jwt_validator.GetUserEmail(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not get user email from JWT claims")
+	email, hasEmail := jwt_validator.GetUserEmail(ctx)
+	userID, hasUserID := jwt_validator.GetUserId(ctx)
+	if (!hasUserID || userID == "") && hasEmail && email != "" {
+		// Backward-compatible fallback when user_id is absent in claims.
+		userID = email
+	}
+	if userID == "" {
+		return nil, fmt.Errorf("could not get user id from JWT claims")
 	}
 
-	uc := &userContext{Email: email}
-
-	if id, ok := jwt_validator.GetUserId(ctx); ok {
-		uc.ID = id
+	uc := &userContext{
+		UserID:       userID,
+		Groups:       []string{},
+		CustomClaims: map[string]interface{}{},
 	}
+	if hasEmail && email != "" {
+		uc.Email = email
+	}
+
 	if name, ok := jwt_validator.GetUserDisplayName(ctx); ok {
 		uc.Name = name
 	}
 
+	if groups, ok := jwt_validator.GetRbacGroupObjects(ctx); ok {
+		uc.Groups = toUserGroups(groups)
+	}
+	if metadata, ok := jwt_validator.GetMetadata(ctx); ok && metadata != nil {
+		customClaims := metadata.AsMap()
+		if customClaims == nil {
+			customClaims = map[string]interface{}{}
+		}
+		uc.CustomClaims = customClaims
+	}
+
 	return uc, nil
+}
+
+func toUserGroups(groups []*authv1.Claims_RbacGroupObject) []string {
+	out := make([]string, 0, len(groups))
+	for _, group := range groups {
+		if group == nil {
+			continue
+		}
+		if name := group.GetName(); name != "" {
+			out = append(out, name)
+			continue
+		}
+		if id := group.GetId(); id != "" {
+			out = append(out, id)
+		}
+	}
+	if len(out) == 0 {
+		return []string{}
+	}
+	return out
 }
 
 // generateWrapperScript generates a JavaScript wrapper that makes the esbuild bundle callable

@@ -1331,7 +1331,10 @@ func TestExecuteCodeMode(t *testing.T) {
 				// Script should contain the user context and bundle (from rawResult)
 				assert.Contains(t, body, "__sb_context") &&
 				assert.Contains(t, body, "module.exports = { run: function(ctx) { return ctx; } };") &&
-				assert.Contains(t, body, "test@example.com")
+				assert.Contains(t, body, `"userId":"user-1"`) &&
+				assert.Contains(t, body, `"email":"test@example.com"`) &&
+				assert.Contains(t, body, `"groups":["admins"]`) &&
+				assert.Contains(t, body, `"customClaims":{"department":"engineering"}`)
 		})).Return(nil, outputKey, nil)
 
 		s := &server{
@@ -1347,6 +1350,12 @@ func TestExecuteCodeMode(t *testing.T) {
 		executionID := "exec-code-mode-success"
 		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
 		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyRbacGroupObjects, []*authv1.Claims_RbacGroupObject{
+			{Id: "group-1", Name: "admins"},
+		})
+		metadata, err := structpb.NewStruct(map[string]interface{}{"department": "engineering"})
+		require.NoError(t, err)
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyMetadata, metadata)
 		ctx = constants.WithExecutionID(ctx, executionID)
 
 		fetchCode := &apiv1.ExecuteRequest_FetchCode{
@@ -1547,7 +1556,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		mockWorker.AssertExpectations(t)
 	})
 
-	t.Run("returns error when JWT email is missing", func(t *testing.T) {
+	t.Run("returns error when JWT user id is missing", func(t *testing.T) {
 		t.Parallel()
 		defer metrics.SetupForTesting()()
 
@@ -1557,7 +1566,7 @@ func TestExecuteCodeMode(t *testing.T) {
 			},
 		}
 
-		// Context without JWT email.
+		// Context without JWT user identity.
 		ctx := context.Background()
 		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
 		result := &apiv1.Definition{
@@ -1581,7 +1590,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		})
 		assert.Error(t, err)
 		assert.True(t, sberror.IsAuthorizationError(err), "missing JWT should return auth error, not internal")
-		assert.Contains(t, err.Error(), "user email")
+		assert.Contains(t, err.Error(), "user id")
 		assert.Nil(t, done)
 		assert.Len(t, sentEvents, 1, "should send an error event")
 	})
