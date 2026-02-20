@@ -622,11 +622,11 @@ func main() {
 		if jwksURL := viper.GetString("auth.jwt.jwks_url"); jwksURL != "" {
 			key, err := crypto.LoadEcdsaPublicKeyFromJwksUrl(context.Background(), jwksURL)
 			if err != nil {
-				logger.Error("failed to load JWT signing key from JWKS URL", zap.String("url", jwksURL), zap.Error(err))
-				os.Exit(1)
+				logger.Warn("failed to load JWT signing key from JWKS URL", zap.String("url", jwksURL), zap.Error(err))
+			} else {
+				jwtSigningKey = key
+				logger.Info("JWT validation enabled for integration executor", zap.String("jwks_url", jwksURL))
 			}
-			jwtSigningKey = key
-			logger.Info("JWT validation enabled for integration executor", zap.String("jwks_url", jwksURL))
 		}
 
 		grpcServer := grpc.NewServer(
