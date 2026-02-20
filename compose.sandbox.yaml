@@ -64,7 +64,7 @@ services:
     container_name: javascript-sandbox-manager
     environment:
       !!merge <<: *task-manager-environment
-      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: -javascript -python * # All plugins except JavaScript and Python
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: -javascript -javascriptsdkapi -python * # All plugins except JavaScript (SDK API) and Python
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
       SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
       SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascript-sandbox:50051
