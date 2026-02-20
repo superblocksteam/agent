@@ -68,7 +68,6 @@ func TestExtractUserContext(t *testing.T) {
 	t.Run("fallback to email when user id is absent", func(t *testing.T) {
 		t.Parallel()
 		ctx := jwt_validator.WithUserEmail(context.Background(), "fallback@example.com")
-		// No ContextKeyUserId - simulates legacy JWT without user_id claim
 
 		uc, err := extractUserContext(ctx)
 		require.NoError(t, err)
@@ -125,7 +124,9 @@ func TestToUserGroups(t *testing.T) {
 func TestGenerateWrapperScript(t *testing.T) {
 	t.Parallel()
 
-	t.Run("generates script with user context and inputs", func(t *testing.T) {
+	defaultUser := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
+
+	t.Run("generates script with user context, inputs, and executionID", func(t *testing.T) {
 		t.Parallel()
 		user := &userContext{
 			UserID: "u-1",
@@ -140,9 +141,9 @@ func TestGenerateWrapperScript(t *testing.T) {
 			"name":  structpb.NewStringValue("world"),
 			"count": structpb.NewNumberValue(42),
 		}
-		bundle := "module.exports = { run: function() { return 'hello'; } };"
+		bundle := "module.exports = { default: { run: async function() { return 'hello'; }, inputSchema: {}, outputSchema: {} } };"
 
-		script, err := generateWrapperScript(user, inputs, bundle)
+		script, err := generateWrapperScript(user, inputs, bundle, "exec-123")
 		require.NoError(t, err)
 		assert.Contains(t, script, `"userId":"u-1"`)
 		assert.Contains(t, script, `"email":"user@example.com"`)
@@ -152,16 +153,16 @@ func TestGenerateWrapperScript(t *testing.T) {
 		assert.Contains(t, script, `"world"`)
 		assert.Contains(t, script, `42`)
 		assert.Contains(t, script, bundle)
+		assert.Contains(t, script, `"exec-123"`)
 		assert.Contains(t, script, "__sb_context")
+		assert.Contains(t, script, "__sb_executionId")
 		assert.Contains(t, script, "--- begin bundle ---")
 		assert.Contains(t, script, "--- end bundle ---")
 	})
 
 	t.Run("handles nil inputs", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
-
-		script, err := generateWrapperScript(user, nil, "var x = 1;")
+		script, err := generateWrapperScript(defaultUser, nil, "var x = 1;", "exec-1")
 		require.NoError(t, err)
 		assert.Contains(t, script, "{}")
 		assert.Contains(t, script, "var x = 1;")
@@ -169,14 +170,12 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("handles empty inputs", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
-
-		script, err := generateWrapperScript(user, map[string]*structpb.Value{}, "var x = 1;")
+		script, err := generateWrapperScript(defaultUser, map[string]*structpb.Value{}, "var x = 1;", "exec-1")
 		require.NoError(t, err)
 		assert.Contains(t, script, "{}")
 	})
 
-	t.Run("omits empty optional fields from user JSON", func(t *testing.T) {
+	t.Run("omits empty optional user fields from JSON", func(t *testing.T) {
 		t.Parallel()
 		user := &userContext{
 			UserID:       "u-1",
@@ -184,11 +183,8 @@ func TestGenerateWrapperScript(t *testing.T) {
 			CustomClaims: map[string]interface{}{},
 		}
 
-		script, err := generateWrapperScript(user, nil, "bundle")
+		script, err := generateWrapperScript(user, nil, "bundle", "exec-1")
 		require.NoError(t, err)
-
-		// The script should include required keys and omit optional keys.
-		// because json omitempty skips zero-value strings.
 		assert.Contains(t, script, `"userId":"u-1"`)
 		assert.NotContains(t, script, `"name"`)
 		assert.NotContains(t, script, `"email"`)
@@ -196,23 +192,40 @@ func TestGenerateWrapperScript(t *testing.T) {
 		assert.Contains(t, script, `"customClaims":{}`)
 	})
 
-	t.Run("includes run() invocation after bundle", func(t *testing.T) {
+	t.Run("uses __sb_execute and __sb_result pattern", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
-		bundle := "module.exports = { run: function(ctx) { return ctx; } };"
+		bundle := "module.exports = { default: { run: async function(ctx) { return ctx; }, inputSchema: {}, outputSchema: {} } };"
 
-		script, err := generateWrapperScript(user, nil, bundle)
+		script, err := generateWrapperScript(defaultUser, nil, bundle, "exec-1")
 		require.NoError(t, err)
-		assert.Contains(t, script, "__sb_run(__sb_context)")
-		assert.Contains(t, script, "return await __sb_run(__sb_context)")
+		assert.Contains(t, script, "__sb_execute")
+		assert.Contains(t, script, "__sb_result")
+		assert.Contains(t, script, "__sb_api")
+		assert.Contains(t, script, "__sb_executeQuery")
 		assert.Contains(t, script, "var module = { exports: {} }")
-		assert.Contains(t, script, `typeof __sb_run !== "function"`)
+		assert.Contains(t, script, `typeof __sb_api.run !== "function"`)
+		assert.Contains(t, script, "return __sb_result.output")
+	})
+
+	t.Run("validates CompiledApi shape", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "// empty bundle", "exec-1")
+		require.NoError(t, err)
+		assert.Contains(t, script, `does not export a valid CompiledApi`)
+	})
+
+	t.Run("includes executeQuery bridge for integrations", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1")
+		require.NoError(t, err)
+		assert.Contains(t, script, "__sb_executeQuery")
+		assert.Contains(t, script, "__sb_integrationExecutor")
+		assert.Contains(t, script, "pluginId")
+		assert.Contains(t, script, "actionConfiguration")
 	})
 
 	t.Run("handles nested struct inputs", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
-
 		nested, err := structpb.NewStruct(map[string]interface{}{
 			"key": "value",
 			"arr": []interface{}{"a", "b"},
@@ -224,7 +237,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 			"flag":   structpb.NewBoolValue(true),
 		}
 
-		script, err := generateWrapperScript(user, inputs, "bundle")
+		script, err := generateWrapperScript(defaultUser, inputs, "bundle", "exec-1")
 		require.NoError(t, err)
 		assert.Contains(t, script, `"key":"value"`)
 		assert.Contains(t, script, `"flag":true`)
@@ -232,13 +245,19 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("handles bundle with backticks and template literals", func(t *testing.T) {
 		t.Parallel()
-		user := &userContext{UserID: "u-1", Email: "a@b.com", Groups: []string{}, CustomClaims: map[string]interface{}{}}
-		bundle := "const msg = `hello ${name}`; module.exports = { run: () => msg };"
+		bundle := "const msg = `hello ${name}`; module.exports = { default: { run: () => msg, inputSchema: {}, outputSchema: {} } };"
 
-		script, err := generateWrapperScript(user, nil, bundle)
+		script, err := generateWrapperScript(defaultUser, nil, bundle, "exec-1")
 		require.NoError(t, err)
 		assert.Contains(t, script, "hello ${name}")
-		assert.Contains(t, script, "__sb_context")
+		assert.Contains(t, script, "__sb_execute")
+	})
+
+	t.Run("escapes special characters in executionID", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", `exec-"special"`)
+		require.NoError(t, err)
+		assert.Contains(t, script, `exec-\"special\"`)
 	})
 
 	t.Run("returns error when user context cannot be marshaled", func(t *testing.T) {
@@ -248,7 +267,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 			CustomClaims: map[string]interface{}{"chan": make(chan int)},
 		}
 
-		script, err := generateWrapperScript(user, nil, "bundle")
+		script, err := generateWrapperScript(user, nil, "bundle", "exec-1")
 		assert.Empty(t, script)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "marshal user context")

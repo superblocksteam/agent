@@ -16,7 +16,11 @@ RUN apt-get update && \
 
 COPY ./workers/javascript/pnpm-workspace.yaml ./
 COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock.yaml ./
+COPY ./workers/javascript/.npmrc ./
 COPY ./workers/ephemeral/javascript-plugins-sandbox/package.json ../ephemeral/javascript-plugins-sandbox/
+
+# NPM_TOKEN is used by .npmrc for GitHub Packages auth (interpolated by pnpm)
+ARG NPM_TOKEN
 
 RUN npm install -g clean-modules && \
   npm install                  && \

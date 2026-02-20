@@ -1,3 +1,10 @@
+/**
+ * JavaScript SDK API Plugin.
+ *
+ * Executes TypeScript-based APIs defined with @superblocksteam/sdk-api.
+ * Bridges the ESM sdk-api package into the VM2 sandbox by injecting
+ * `executeApi` and an integration executor bridge as sandbox globals.
+ */
 import {
   ErrorCode,
   EvaluationPair,
@@ -9,6 +16,21 @@ import {
 } from '@superblocks/shared';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { executeCode } = require('@superblocksteam/javascript/bootstrap');
+
+/**
+ * Dynamically imports the ESM @superblocksteam/sdk-api package.
+ * Cached after first load to avoid repeated dynamic imports.
+ */
+let sdkApiPromise: Promise<{ executeApi: (...args: unknown[]) => Promise<unknown> }> | null = null;
+
+function getSdkApi(): Promise<{ executeApi: (...args: unknown[]) => Promise<unknown> }> {
+  if (!sdkApiPromise) {
+    sdkApiPromise = import('@superblocksteam/sdk-api') as Promise<{
+      executeApi: (...args: unknown[]) => Promise<unknown>;
+    }>;
+  }
+  return sdkApiPromise;
+}
 
 export default class JavascriptSdkApiPlugin extends LanguagePlugin {
   pluginName = 'JavaScript SDK API';
@@ -44,10 +66,35 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       return output;
     }
 
+    // Load the ESM sdk-api package and extract executeApi.
+    const sdkApi = await getSdkApi();
+
+    // Build the integration executor bridge.
+    // This wraps context.integrationExecutor (a GrpcIntegrationExecutor) as a
+    // plain async function that can be passed through the VM2 sandbox boundary.
+    // The wrapper script calls this with {integrationId, pluginId, actionConfiguration}.
+    const integrationExecutorBridge = context.integrationExecutor
+      ? async (params: { integrationId: string; pluginId: string; actionConfiguration?: Record<string, unknown> }) => {
+          const result = await context.integrationExecutor!.executeIntegration(params);
+          if (result.error) {
+            throw new IntegrationError(result.error, ErrorCode.INTEGRATION_SYNTAX, {
+              pluginName: this.pluginName
+            });
+          }
+          return result.output;
+        }
+      : undefined;
+
+    const globals = {
+      ...(context.globals ?? {}),
+      __sb_execute: sdkApi.executeApi,
+      __sb_integrationExecutor: integrationExecutorBridge
+    };
+
     const runPromise = executeCode({
       context: {
         ...context,
-        globals: context.globals ?? {},
+        globals,
         outputs: context.outputs ?? {},
         variables: context.variables ?? {}
       },

@@ -819,15 +819,23 @@ func (s *server) executeCodeMode(
 	user, err := extractUserContext(ctx)
 	if err != nil {
 		logger.Error("could not extract user context", zap.Error(err))
-		// Code-mode requires JWT for user context. Return auth error so callers get
-		// Unauthenticated (not Internal) when reaching this path via legacy Await/Stream.
 		return sendError(sberror.AuthorizationError(err))
 	}
 
-	wrapperScript, err := generateWrapperScript(user, req.GetInputs(), bundle)
+	wrapperScript, err := generateWrapperScript(user, req.GetInputs(), bundle, executionID)
 	if err != nil {
 		logger.Error("could not generate wrapper script", zap.Error(err))
 		return sendError(err)
+	}
+
+	// Extract the raw JWT from gRPC metadata so it can be forwarded to the
+	// task-manager for proxied integration execution (same pattern as the
+	// standard execution path).
+	var jwtToken string
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
+			jwtToken = strings.TrimPrefix(vals[0], "Bearer ")
+		}
 	}
 
 	workerData := &transportv1.Request_Data_Data{
@@ -837,7 +845,10 @@ func (s *server) executeCodeMode(
 					"body": structpb.NewStringValue(wrapperScript),
 				},
 			},
-			StepName: "code-mode",
+			StepName:    "code-mode",
+			ExecutionId: executionID,
+			JwtToken:    jwtToken,
+			Profile:     fetchCode.GetProfile(),
 		},
 		AConfig: &structpb.Struct{
 			Fields: map[string]*structpb.Value{

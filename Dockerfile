@@ -89,7 +89,10 @@ RUN set -e; apt-get update && apt-get install -y curl                           
     tar -C /s6 -Jxpf /tmp/s6-overlay-noarch.tar.xz                                                                                   && \
     tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz
 
-COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock*.yaml /workers/javascript/
+# NPM_TOKEN is used by .npmrc for GitHub Packages auth (interpolated by pnpm)
+ARG NPM_TOKEN
+
+COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock*.yaml ./workers/javascript/.npmrc /workers/javascript/
 COPY ./workers/javascript/scripts/prepare-fs-for-build.sh /workers/javascript/scripts/
 
 RUN cd /workers/javascript                && \

@@ -1745,6 +1745,9 @@ importers:
       '@superblocksteam/javascript':
         specifier: workspace:*
         version: link:../javascript
+      '@superblocksteam/sdk-api':
+        specifier: ^0.0.1
+        version: 0.0.1
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0
@@ -5805,6 +5808,13 @@ packages:
 
   '@streamparser/json@0.0.20':
     resolution: {integrity: sha512-VqAAkydywPpkw63WQhPVKCD3SdwXuihCUVZbbiY3SfSTGQyHmwRoq27y4dmJdZuJwd5JIlQoMPyGvMbUPY0RKQ==}
+
+  '@superblocksteam/sdk-api@0.0.1':
+    resolution: {integrity: sha512-i5CpgZVbU29CicC97QVCpbJKuxjnG5+2c6bh55f8t9BUKjT9FMNEvniBE2WW/oAQo2KFdFdVsJje7b0wi3zmSQ==, tarball: https://npm.pkg.github.com/download/@superblocksteam/sdk-api/0.0.1/c1b3b020f76e9a7839ce98ac0e4022272e7b5c06}
+    engines: {node: '>=20', npm: '>=10.x'}
+
+  '@superblocksteam/types@0.1949.0':
+    resolution: {integrity: sha512-Anr4rbMAZ/Rnw1uytQ1UCe2RA/mVXSGvls7d12QMJqxcEuwkG8iJDsSBryR2Hubik1FUr+bC/o2wrzXS+DzJ/A==, tarball: https://npm.pkg.github.com/download/@superblocksteam/types/0.1949.0/ab02803c0a1b7218541501e9bae2939504cb93de}
 
   '@swc-node/core@1.14.1':
     resolution: {integrity: sha512-jrt5GUaZUU6cmMS+WTJEvGvaB6j1YNKPHPzC2PUi2BjaFbtxURHj6641Az6xN7b665hNniAIdvjxWcRml5yCnw==}
@@ -13497,6 +13507,15 @@ snapshots:
       text-hex: 1.0.0
 
   '@streamparser/json@0.0.20': {}
+
+  '@superblocksteam/sdk-api@0.0.1':
+    dependencies:
+      '@superblocksteam/types': 0.1949.0
+      zod: 3.25.76
+
+  '@superblocksteam/types@0.1949.0':
+    dependencies:
+      '@bufbuild/protobuf': 1.3.0
 
   '@swc-node/core@1.14.1(@swc/core@1.7.26)(@swc/types@0.1.25)':
     dependencies:

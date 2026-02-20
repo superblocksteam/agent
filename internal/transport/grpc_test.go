@@ -1328,13 +1328,11 @@ func TestExecuteCodeMode(t *testing.T) {
 			// Verify the action configuration contains the wrapper script with the bundle.
 			body := data.GetProps().GetActionConfiguration().GetFields()["body"].GetStringValue()
 			return body != "" &&
-				// Script should contain the user context and bundle (from rawResult)
-				assert.Contains(t, body, "__sb_context") &&
+				// Script should contain the sdk-api execute pattern and bundle (from rawResult)
+				assert.Contains(t, body, "__sb_execute") &&
+				assert.Contains(t, body, "__sb_result") &&
 				assert.Contains(t, body, "module.exports = { run: function(ctx) { return ctx; } };") &&
-				assert.Contains(t, body, `"userId":"user-1"`) &&
-				assert.Contains(t, body, `"email":"test@example.com"`) &&
-				assert.Contains(t, body, `"groups":["admins"]`) &&
-				assert.Contains(t, body, `"customClaims":{"department":"engineering"}`)
+				assert.Contains(t, body, "__sb_executionId")
 		})).Return(nil, outputKey, nil)
 
 		s := &server{
@@ -1658,7 +1656,7 @@ func TestExecuteCodeMode(t *testing.T) {
 
 		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.MatchedBy(func(data *transportv1.Request_Data_Data) bool {
 			body := data.GetProps().GetActionConfiguration().GetFields()["body"].GetStringValue()
-			return assert.Contains(t, body, "__sb_run(__sb_context)") &&
+			return assert.Contains(t, body, "__sb_execute") &&
 				assert.Contains(t, body, "var module = { exports: {} }")
 		})).Return(nil, outputKey, nil)
 

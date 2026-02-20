@@ -381,6 +381,8 @@ module.exports = [
       },
     ],
   },
+  // Application code routes (fetch-application-code, fetch-application-code-by-branch)
+  // are defined in mocks/routes/application-code.js to avoid duplicate route IDs.
   {
     id: 'patch-apis',
     url: '/api/v3/apis',

@@ -38,6 +38,9 @@ RUN npm install -g pnpm@${PNPM_VERSION}
 COPY workers/javascript/ ./workers/javascript/
 COPY workers/ephemeral/javascript-plugins-sandbox/ ./workers/ephemeral/javascript-plugins-sandbox/
 
+# NPM_TOKEN is used by .npmrc for GitHub Packages auth (interpolated by pnpm)
+ARG NPM_TOKEN
+
 # Install dependencies
 WORKDIR /app/workers/javascript
 RUN pnpm install --frozen-lockfile

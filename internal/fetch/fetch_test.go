@@ -28,15 +28,11 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// failingReadCloser implements io.ReadCloser but Read always returns an error.
-type failingReadCloser struct{}
+// errorReader is an io.Reader that always returns an error, used to test body read failures.
+type errorReader struct{}
 
-func (f *failingReadCloser) Read([]byte) (int, error) {
-	return 0, fmt.Errorf("read failed")
-}
-
-func (f *failingReadCloser) Close() error {
-	return nil
+func (e *errorReader) Read([]byte) (int, error) {
+	return 0, fmt.Errorf("simulated read error")
 }
 
 func TestRequest(t *testing.T) {
@@ -1627,16 +1623,33 @@ func TestFetchApiCode(t *testing.T) {
 			},
 		},
 		{
-			name:          "ReadAll fails returns error",
+			name:          "empty entryPoint omits param from URL",
 			applicationId: "app-123",
-			entryPoint:    "main.ts",
+			entryPoint:    "",
 			commitId:      "commit-abc",
 			metadata: map[string]string{
 				"authorization": "Bearer user-token",
 			},
 			response: &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       &failingReadCloser{},
+				Body:       io.NopCloser(strings.NewReader(`{"bundle":"no-entry-point"}`)),
+			},
+			expectedBundle: &ApiCodeBundle{Bundle: "no-entry-point"},
+			expectError:    false,
+			expectedURL:    "https://api.superblocks.com/api/v3/applications/app-123/code?commitId=commit-abc",
+			expectedHeaders: http.Header{
+				"Authorization":               {"Bearer user-token"},
+				"X-Superblocks-Authorization": []string(nil),
+			},
+		},
+		{
+			name:          "body read failure returns error",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			commitId:      "commit-abc",
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(&errorReader{}),
 			},
 			expectError: true,
 		},

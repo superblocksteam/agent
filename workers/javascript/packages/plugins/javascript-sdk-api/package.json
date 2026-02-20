@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-    "@superblocksteam/javascript": "workspace:*"
+    "@superblocksteam/javascript": "workspace:*",
+    "@superblocksteam/sdk-api": "^0.0.1"
   },
   "devDependencies": {
     "@swc/cli": "0.6.0",
