@@ -123,6 +123,36 @@ func (_m *Fetcher) FetchApiByPath(_a0 context.Context, request *v1.ExecuteReques
 	return r0, r1, r2
 }
 
+// FetchApiCode provides a mock function with given fields: ctx, applicationId, entryPoint, commitId, branchName, useAgentKey
+func (_m *Fetcher) FetchApiCode(ctx context.Context, applicationId string, entryPoint string, commitId string, branchName string, useAgentKey bool) (*fetch.ApiCodeBundle, error) {
+	ret := _m.Called(ctx, applicationId, entryPoint, commitId, branchName, useAgentKey)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FetchApiCode")
+	}
+
+	var r0 *fetch.ApiCodeBundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, bool) (*fetch.ApiCodeBundle, error)); ok {
+		return rf(ctx, applicationId, entryPoint, commitId, branchName, useAgentKey)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, bool) *fetch.ApiCodeBundle); ok {
+		r0 = rf(ctx, applicationId, entryPoint, commitId, branchName, useAgentKey)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fetch.ApiCodeBundle)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, bool) error); ok {
+		r1 = rf(ctx, applicationId, entryPoint, commitId, branchName, useAgentKey)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FetchIntegration provides a mock function with given fields: _a0, integrationId, profile
 func (_m *Fetcher) FetchIntegration(_a0 context.Context, integrationId string, profile *commonv1.Profile) (*fetch.Integration, error) {
 	ret := _m.Called(_a0, integrationId, profile)

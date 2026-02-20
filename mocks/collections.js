@@ -4,6 +4,8 @@ module.exports = [
     routes: [
       'fetch:id',
       'fetch-per-branch:id-and-branch',
+      'fetch-application-code:default',
+      'fetch-application-code-by-branch:default',
       'fetch-by-path-with-commit-id:default',
       'fetch-by-path-with-branch-name:default',
       'fetch-job:default',

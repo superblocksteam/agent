@@ -25,6 +25,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/constants"
 	sberror "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/store"
+	storemock "github.com/superblocksteam/agent/pkg/store/mock"
 	"github.com/superblocksteam/agent/pkg/worker"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	v1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
@@ -1211,57 +1212,78 @@ func TestMetadata(t *testing.T) {
 	}
 }
 
-// TestExecuteV3ConvertsToFetchRequest verifies that ExecuteV3 correctly
-// converts an ExecuteV3Request into an internal ExecuteRequest with Fetch
-// fields and delegates to the await() pipeline.
-func TestExecuteV3ConvertsToFetchRequest(t *testing.T) {
-	profileName := "production"
+// TestExecuteV3ConvertsToFetchCodeRequest verifies that ExecuteV3 correctly
+// converts an ExecuteV3Request into an internal ExecuteRequest with FetchCode,
+// passing applicationId through to FetchApiCode. Fetch() calls FetchApiCode
+// directly (same flow as FetchByPath) and returns synthetic def + bundle in rawDef.
+func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
+	commitId := "commit-abc"
+	branchName := "feature/code-mode"
 
 	for _, test := range []struct {
-		name            string
-		request         *apiv1.ExecuteV3Request
-		expectedApiId   string
-		expectedMode    apiv1.ViewMode
-		expectedProfile *v1.Profile
+		name                  string
+		request               *apiv1.ExecuteV3Request
+		expectedApplicationId string
+		expectedCommitId      *string
+		expectedBranchName    *string
 	}{
 		{
-			name: "all fields populated",
+			name: "all fields populated with commitId",
 			request: &apiv1.ExecuteV3Request{
-				ApiId:    "api-123",
-				ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
-				Profile:  &v1.Profile{Name: &profileName},
-				Inputs: map[string]*structpb.Value{
-					"key": structpb.NewStringValue("value"),
-				},
+				ApplicationId: "app-123",
+				ViewMode:      apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+				CommitId:      &commitId,
 			},
-			expectedApiId:   "api-123",
-			expectedMode:    apiv1.ViewMode_VIEW_MODE_DEPLOYED,
-			expectedProfile: &v1.Profile{Name: &profileName},
+			expectedApplicationId: "app-123",
+			expectedCommitId:      &commitId,
+			expectedBranchName:    nil,
 		},
 		{
-			name: "minimal request with only api_id",
+			name: "with branchName instead of commitId",
 			request: &apiv1.ExecuteV3Request{
-				ApiId: "api-456",
+				ApplicationId: "app-789",
+				ViewMode:      apiv1.ViewMode_VIEW_MODE_EDIT,
+				BranchName:    &branchName,
 			},
-			expectedApiId:   "api-456",
-			expectedMode:    apiv1.ViewMode_VIEW_MODE_UNSPECIFIED,
-			expectedProfile: nil,
+			expectedApplicationId: "app-789",
+			expectedCommitId:      nil,
+			expectedBranchName:    &branchName,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			defer metrics.SetupForTesting()()
 
+			expectedCommitId := ""
+			if test.expectedCommitId != nil {
+				expectedCommitId = *test.expectedCommitId
+			}
+			expectedBranchName := ""
+			if test.expectedBranchName != nil {
+				expectedBranchName = *test.expectedBranchName
+			}
+
 			mockWorker := &worker.MockClient{}
 			fetcher := &fetchmocks.Fetcher{}
 
-			// Mock FetchApi to capture the request and return an error (to short-circuit execution).
+			// FetchCode skips FetchApi and goes straight to FetchApiCode via fetchCodeBundle.
+			// Mock FetchApiCode to verify applicationId, commitId, and branchName propagation.
 			fetchErr := errors.New("fetch stopped for test")
-			fetcher.On("FetchApi", mock.Anything, mock.MatchedBy(func(req *apiv1.ExecuteRequest_Fetch) bool {
-				assert.Equal(t, test.expectedApiId, req.GetId())
-				assert.Equal(t, test.expectedMode, req.GetViewMode())
-				assert.True(t, proto.Equal(test.expectedProfile, req.GetProfile()))
-				return true
-			}), mock.Anything).Return(nil, nil, fetchErr)
+			fetcher.On("FetchApiCode", mock.Anything,
+				mock.MatchedBy(func(appId string) bool {
+					assert.Equal(t, test.expectedApplicationId, appId)
+					return true
+				}),
+				"", // entryPoint is empty for code-mode
+				mock.MatchedBy(func(commitId string) bool {
+					assert.Equal(t, expectedCommitId, commitId, "commitId must propagate correctly")
+					return true
+				}),
+				mock.MatchedBy(func(branchName string) bool {
+					assert.Equal(t, expectedBranchName, branchName, "branchName must propagate correctly")
+					return true
+				}),
+				mock.Anything, // useAgentKey
+			).Return(nil, fetchErr)
 
 			server := NewServer(&Config{
 				Logger:        zap.NewNop(),
@@ -1272,15 +1294,588 @@ func TestExecuteV3ConvertsToFetchRequest(t *testing.T) {
 			})
 
 			ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+			ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
 			_, err := server.ExecuteV3(ctx, test.request)
 
-			// The pipeline should fail with our injected fetch error,
-			// not an authorization error (v3 doesn't use inline definitions).
 			require.Error(t, err)
-			assert.False(t, sberror.IsAuthorizationError(err),
-				"ExecuteV3 should not produce authorization errors")
-
 			fetcher.AssertExpectations(t)
 		})
 	}
 }
+
+// TestExecuteCodeMode verifies the direct code-mode execution path bypasses the block executor
+// and dispatches the combined wrapper+bundle script directly to the JS worker.
+func TestExecuteCodeMode(t *testing.T) {
+	t.Parallel()
+
+	t.Run("dispatches wrapper+bundle to worker and returns output", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		// Pre-write the worker output to the store (simulating what the worker would do).
+		// Workers use protojson.Marshal(OutputOld), which produces camelCase (e.g. placeHoldersInfo).
+		// We use protojson.Unmarshal to avoid silent data loss from encoding/json's snake_case expectation.
+		outputJSON := `{"output":{"key":"value"},"placeHoldersInfo":{"foo":"bar"}}`
+		outputKey := "output-key-123"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+		// Mock Worker.Execute to return the output key.
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.MatchedBy(func(data *transportv1.Request_Data_Data) bool {
+			// Verify the action configuration contains the wrapper script with the bundle.
+			body := data.GetProps().GetActionConfiguration().GetFields()["body"].GetStringValue()
+			return body != "" &&
+				// Script should contain the user context and bundle (from rawResult)
+				assert.Contains(t, body, "__sb_context") &&
+				assert.Contains(t, body, "module.exports = { run: function(ctx) { return ctx; } };") &&
+				assert.Contains(t, body, "test@example.com")
+		})).Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger:  zap.NewNop(),
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+			},
+		}
+
+		// Set up context with JWT claims for user extraction.
+		executionID := "exec-code-mode-success"
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, executionID)
+
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{
+			Id:       "app-1",
+			CommitId: strPtr("commit-abc"),
+		}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+			Inputs: map[string]*structpb.Value{
+				"greeting": structpb.NewStringValue("hello"),
+			},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		send := func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		}
+
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function(ctx) { return ctx; } };"),
+			},
+		}
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, send)
+		require.NoError(t, err)
+		require.NotNil(t, done)
+		assert.Equal(t, "code-mode", done.Last)
+		assert.NotNil(t, done.Output)
+		assert.NotNil(t, done.Output.Result, "output.Result should be populated from worker response")
+		// Verify protojson camelCase (placeHoldersInfo) is preserved; encoding/json would have lost it.
+		require.NotNil(t, done.Output.RequestV2)
+		require.NotNil(t, done.Output.RequestV2.Metadata)
+		ph := done.Output.RequestV2.Metadata.GetFields()["placeHoldersInfo"]
+		require.NotNil(t, ph)
+		assert.Equal(t, "bar", ph.GetStructValue().GetFields()["foo"].GetStringValue())
+		assert.Len(t, sentEvents, 1)
+		assert.Equal(t, executionID, sentEvents[0].GetExecution())
+		assert.Empty(t, sentEvents[0].GetEvent().GetResponse().GetErrors(), "success case should have no errors")
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("propagates execution errors in response when worker output contains error", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		// Worker output with error field (JS bundle threw at runtime).
+		// Workers set output.error when execution fails; OutputFromOutputOldJSON maps this to Stderr.
+		outputJSON := `{"output":{},"log":["[ERROR] runtime error"],"error":"ReferenceError: x is not defined"}`
+		outputKey := "output-key-error"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+			Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger:  zap.NewNop(),
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = constants.WithExecutionID(ctx, "exec-code-mode-error")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("code"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		})
+		require.NoError(t, err)
+		require.NotNil(t, done)
+		require.NotNil(t, done.Output)
+		assert.Len(t, done.Output.Stderr, 2, "Stderr should include both log [ERROR] and error field")
+		assert.Contains(t, done.Output.Stderr, "runtime error")
+		assert.Contains(t, done.Output.Stderr, "ReferenceError: x is not defined")
+
+		require.Len(t, sentEvents, 1)
+		respEvent := sentEvents[0].GetEvent().GetResponse()
+		require.NotNil(t, respEvent)
+		assert.Len(t, respEvent.Errors, 2, "Response.Errors should propagate worker execution errors")
+		assert.Equal(t, "runtime error", respEvent.Errors[0].GetMessage())
+		assert.Equal(t, "ReferenceError: x is not defined", respEvent.Errors[1].GetMessage())
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("sends structured error event when bundle is missing from rawResult", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+			},
+		}
+
+		executionID := "exec-code-mode-missing-bundle"
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = constants.WithExecutionID(ctx, executionID)
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		// rawResult with empty bundle - simulates Fetch returning malformed data.
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue(""),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "missing bundle")
+		assert.Nil(t, done)
+		assert.Len(t, sentEvents, 1, "should send an error event")
+		assert.Equal(t, executionID, sentEvents[0].GetExecution())
+		assert.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetError())
+	})
+
+	t.Run("sends structured error event when worker execution fails", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+			Return(nil, "", errors.New("worker crashed"))
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("code"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "worker crashed")
+		assert.Nil(t, done)
+		assert.Len(t, sentEvents, 1, "should send an error event")
+		assert.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetError())
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("returns error when JWT email is missing", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+			},
+		}
+
+		// Context without JWT email.
+		ctx := context.Background()
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("code"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		})
+		assert.Error(t, err)
+		assert.True(t, sberror.IsAuthorizationError(err), "missing JWT should return auth error, not internal")
+		assert.Contains(t, err.Error(), "user email")
+		assert.Nil(t, done)
+		assert.Len(t, sentEvents, 1, "should send an error event")
+	})
+
+	t.Run("garbage collects output key after success", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+
+		outputKey := "gc-test-key"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":"ok"}`}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+			Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("code"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		require.NoError(t, err)
+		require.NotNil(t, done)
+
+		// The output key should have been cleaned up.
+		vals, readErr := memStore.Read(context.Background(), outputKey)
+		assert.NoError(t, readErr)
+		if len(vals) > 0 {
+			assert.Nil(t, vals[0], "output key should have been garbage collected")
+		}
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("wrapper script contains run() invocation", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+
+		outputKey := "run-test-key"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":"ok"}`}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.MatchedBy(func(data *transportv1.Request_Data_Data) bool {
+			body := data.GetProps().GetActionConfiguration().GetFields()["body"].GetStringValue()
+			return assert.Contains(t, body, "__sb_run(__sb_context)") &&
+				assert.Contains(t, body, "var module = { exports: {} }")
+		})).Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function(ctx) { return ctx; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		require.NoError(t, err)
+		require.NotNil(t, done)
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("sends error event when rawResult is nil", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		s := &server{
+			Config: &Config{Logger: zap.NewNop()},
+		}
+
+		executionID := "exec-code-mode-nil-raw"
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = constants.WithExecutionID(ctx, executionID)
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, nil, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "nil rawResult")
+		assert.Nil(t, done)
+		assert.Len(t, sentEvents, 1)
+		assert.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetError())
+	})
+
+	t.Run("returns error when Store.Read fails", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		mockStore := &storemock.Store{}
+		outputKey := "read-error-key"
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+			Return(nil, outputKey, nil)
+		mockStore.On("Read", mock.Anything, outputKey).Return(nil, errors.New("redis connection failed"))
+		mockStore.On("Delete", mock.Anything, outputKey).Return(nil)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  mockStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{"bundle": structpb.NewStringValue("code")},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "redis connection failed")
+		assert.Nil(t, done)
+
+		mockWorker.AssertExpectations(t)
+		mockStore.AssertExpectations(t)
+	})
+
+	t.Run("returns error when store value has unexpected type", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+		outputKey := "unexpected-type-key"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: 42}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+			Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{"bundle": structpb.NewStringValue("code")},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected store value type int")
+		assert.Nil(t, done)
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("returns error when worker output JSON is malformed", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+		outputKey := "malformed-json-key"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{invalid json`}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+			Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{"bundle": structpb.NewStringValue("code")},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "could not unmarshal worker output")
+		assert.Nil(t, done)
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("returns error when send fails", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+		outputKey := "send-fail-key"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":"ok"}`}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+			Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{"bundle": structpb.NewStringValue("code")},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		sendErr := errors.New("stream closed")
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return sendErr })
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, sendErr)
+		assert.Nil(t, done)
+
+		mockWorker.AssertExpectations(t)
+	})
+}
+
+func strPtr(s string) *string { return &s }

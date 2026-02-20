@@ -718,7 +718,7 @@
         "parameters": [
           {
             "name": "body",
-            "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions).",
+            "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions). Uses FetchCode for API 2.0\ncode delivery.",
             "in": "body",
             "required": true,
             "schema": {
@@ -1181,6 +1181,27 @@
         }
       }
     },
+    "ExecuteRequestFetchCode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "profile": {
+          "$ref": "#/definitions/v1Profile"
+        },
+        "viewMode": {
+          "$ref": "#/definitions/v1ViewMode"
+        },
+        "commitId": {
+          "type": "string"
+        },
+        "branchName": {
+          "type": "string"
+        }
+      },
+      "description": "FetchCode is used by ExecuteV3 for API 2.0 execution with code delivery.\nFetches the Definition by ID (same as Fetch), then fetches and injects the\nesbuild bundle from GET /api/v3/applications/{id}/code for javascriptsdkapi steps."
+    },
     "ExecutorServiceAwaitBody": {
       "type": "object",
       "properties": {
@@ -1231,6 +1252,10 @@
         "fetchByPath": {
           "$ref": "#/definitions/ExecuteRequestFetchByPath",
           "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
+        },
+        "fetchCode": {
+          "$ref": "#/definitions/ExecuteRequestFetchCode",
+          "description": "Fetch by ID with API 2.0 code delivery. Used by ExecuteV3."
         },
         "files": {
           "type": "array",
@@ -3033,6 +3058,10 @@
         "fetchByPath": {
           "$ref": "#/definitions/ExecuteRequestFetchByPath",
           "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
+        },
+        "fetchCode": {
+          "$ref": "#/definitions/ExecuteRequestFetchCode",
+          "description": "Fetch by ID with API 2.0 code delivery. Used by ExecuteV3."
         },
         "files": {
           "type": "array",
@@ -5984,6 +6013,10 @@
           "$ref": "#/definitions/ExecuteRequestFetchByPath",
           "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
         },
+        "fetchCode": {
+          "$ref": "#/definitions/ExecuteRequestFetchCode",
+          "description": "Fetch by ID with API 2.0 code delivery. Used by ExecuteV3."
+        },
         "files": {
           "type": "array",
           "items": {
@@ -6212,9 +6245,9 @@
     "v1ExecuteV3Request": {
       "type": "object",
       "properties": {
-        "apiId": {
+        "applicationId": {
           "type": "string",
-          "description": "The API ID to execute (required)."
+          "description": "The application ID to execute (required)."
         },
         "inputs": {
           "type": "object",
@@ -6228,9 +6261,17 @@
         "profile": {
           "$ref": "#/definitions/v1Profile",
           "description": "The integration profile to use."
+        },
+        "commitId": {
+          "type": "string",
+          "description": "Optional commit ID for code delivery (live edit). Required for code-mode APIs when not deployed."
+        },
+        "branchName": {
+          "type": "string",
+          "description": "Optional branch name for code delivery (live edit). Required for code-mode APIs when not deployed."
         }
       },
-      "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions)."
+      "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions). Uses FetchCode for API 2.0\ncode delivery."
     },
     "v1ExecutorServiceStreamBody": {
       "type": "object",
@@ -6282,6 +6323,10 @@
         "fetchByPath": {
           "$ref": "#/definitions/ExecuteRequestFetchByPath",
           "description": "Details on how to fetch the API by a path relative to the root of an (application) bundle."
+        },
+        "fetchCode": {
+          "$ref": "#/definitions/ExecuteRequestFetchCode",
+          "description": "Fetch by ID with API 2.0 code delivery. Used by ExecuteV3."
         },
         "files": {
           "type": "array",

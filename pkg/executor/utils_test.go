@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/superblocksteam/agent/internal/fetch"
 	fetchmocks "github.com/superblocksteam/agent/internal/fetch/mocks"
 	mocks "github.com/superblocksteam/agent/internal/flags/mock"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
@@ -701,6 +702,103 @@ func TestSingleStepRunApiDefinitionParsing(t *testing.T) {
 		assert.Equal(t, "profile1", rawMetadata.GetFields()["profile"].GetStringValue())
 		assert.Equal(t, "free", rawMetadata.GetFields()["organizationPlan"].GetStringValue())
 		assert.Equal(t, "ClosedAI", rawMetadata.GetFields()["organizationName"].GetStringValue())
+	})
+}
+
+func TestFetch_FetchCodePath(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	t.Run("returns error for empty applicationId", func(t *testing.T) {
+		t.Parallel()
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: ""}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+		_, _, err := Fetch(context.Background(), req, &fetchmocks.Fetcher{}, false, zap.NewNop())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "applicationId")
+	})
+
+	t.Run("propagates FetchApiCode error", func(t *testing.T) {
+		t.Parallel()
+		commitID := "abc"
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: &commitID}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+		fetcher := &fetchmocks.Fetcher{}
+		fetchErr := fmt.Errorf("server error")
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "abc", "", false).
+			Return(nil, fetchErr)
+		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		require.Error(t, err)
+		assert.ErrorIs(t, err, fetchErr)
+		fetcher.AssertExpectations(t)
+	})
+
+	t.Run("returns error for empty bundle", func(t *testing.T) {
+		t.Parallel()
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1"}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+		fetcher := &fetchmocks.Fetcher{}
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", false).
+			Return(&fetch.ApiCodeBundle{Bundle: ""}, nil)
+		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "empty bundle")
+		fetcher.AssertExpectations(t)
+	})
+
+	t.Run("returns def and rawDef with bundle when successful", func(t *testing.T) {
+		t.Parallel()
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1"}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+		fetcher := &fetchmocks.Fetcher{}
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", false).
+			Return(&fetch.ApiCodeBundle{Bundle: "const x = 1;"}, nil)
+		def, rawDef, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		require.NoError(t, err)
+		assert.Equal(t, "code-mode", def.GetApi().GetMetadata().GetName())
+		assert.Equal(t, "app-1", def.GetApi().GetTrigger().GetApplication().GetId())
+		require.NotNil(t, rawDef)
+		assert.Equal(t, "const x = 1;", rawDef.GetFields()["bundle"].GetStringValue())
+		fetcher.AssertExpectations(t)
+	})
+
+	t.Run("propagates commitId and branchName to FetchApiCode", func(t *testing.T) {
+		t.Parallel()
+		commitID := "commit-123"
+		branch := "main"
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-2", CommitId: &commitID, BranchName: &branch}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+		fetcher := &fetchmocks.Fetcher{}
+		fetcher.On("FetchApiCode", mock.Anything, "app-2", "", "commit-123", "main", false).
+			Return(&fetch.ApiCodeBundle{Bundle: "code"}, nil)
+		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		require.NoError(t, err)
+		fetcher.AssertExpectations(t)
+	})
+
+	t.Run("returns error when FetchApiCode returns nil bundle", func(t *testing.T) {
+		t.Parallel()
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1"}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+		fetcher := &fetchmocks.Fetcher{}
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", false).
+			Return(nil, nil)
+		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "empty bundle")
+		fetcher.AssertExpectations(t)
 	})
 }
 

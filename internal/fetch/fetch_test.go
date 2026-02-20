@@ -28,6 +28,17 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// failingReadCloser implements io.ReadCloser but Read always returns an error.
+type failingReadCloser struct{}
+
+func (f *failingReadCloser) Read([]byte) (int, error) {
+	return 0, fmt.Errorf("read failed")
+}
+
+func (f *failingReadCloser) Close() error {
+	return nil
+}
+
 func TestRequest(t *testing.T) {
 	t.Parallel()
 
@@ -1459,6 +1470,216 @@ func TestUpsertMetadata(t *testing.T) {
 			req := intakeClient.Calls[0].Arguments[2].(*syncerv1.UpsertMetadataRequest)
 
 			assert.Equal(t, test.request, req)
+		})
+	}
+}
+
+func TestFetchApiCode(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name            string
+		applicationId   string
+		entryPoint      string
+		commitId        string
+		branchName      string
+		metadata        map[string]string
+		useAgentKey     bool
+		response        *http.Response
+		httpErr         error
+		expectedBundle  *ApiCodeBundle
+		expectError     bool
+		expectedURL     string
+		expectedHeaders http.Header
+	}{
+		{
+			name:          "success with commitId only",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			commitId:      "commit-abc",
+			metadata: map[string]string{
+				"authorization":               "Bearer user-token",
+				"x-superblocks-authorization": "Bearer sb-token",
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"bundle":"const x = 1;"}`)),
+			},
+			expectedBundle: &ApiCodeBundle{Bundle: "const x = 1;"},
+			expectError:    false,
+			expectedURL:    "https://api.superblocks.com/api/v3/applications/app-123/code?commitId=commit-abc&entryPoint=main.ts",
+			expectedHeaders: http.Header{
+				"Authorization":               {"Bearer user-token"},
+				"X-Superblocks-Authorization": {"Bearer sb-token"},
+			},
+		},
+		{
+			name:          "success with branchName",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			branchName:    "feature/code-mode",
+			metadata: map[string]string{
+				"authorization": "Bearer user-token",
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"bundle":"const y = 2;"}`)),
+			},
+			expectedBundle: &ApiCodeBundle{Bundle: "const y = 2;"},
+			expectError:    false,
+			expectedURL:    "https://api.superblocks.com/api/v3/applications/app-123/branches/feature%2Fcode-mode/code?entryPoint=main.ts",
+			expectedHeaders: http.Header{
+				"Authorization":               {"Bearer user-token"},
+				"X-Superblocks-Authorization": []string(nil),
+			},
+		},
+		{
+			name:          "success with neither commitId nor branchName (live-edit default branch)",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			metadata: map[string]string{
+				"authorization": "Bearer user-token",
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"bundle":"const default = 1;"}`)),
+			},
+			expectedBundle: &ApiCodeBundle{Bundle: "const default = 1;"},
+			expectError:    false,
+			expectedURL:    "https://api.superblocks.com/api/v3/applications/app-123/code?entryPoint=main.ts",
+			expectedHeaders: http.Header{
+				"Authorization":               {"Bearer user-token"},
+				"X-Superblocks-Authorization": []string(nil),
+			},
+		},
+		{
+			name:          "success with both commitId and branchName",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			commitId:      "commit-abc",
+			branchName:    "feature/code-mode",
+			metadata: map[string]string{
+				"authorization": "Bearer user-token",
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"bundle":"const z = 3;"}`)),
+			},
+			expectedBundle: &ApiCodeBundle{Bundle: "const z = 3;"},
+			expectError:    false,
+			expectedURL:    "https://api.superblocks.com/api/v3/applications/app-123/code?commitId=commit-abc&entryPoint=main.ts",
+			expectedHeaders: http.Header{
+				"Authorization":               {"Bearer user-token"},
+				"X-Superblocks-Authorization": []string(nil),
+			},
+		},
+		{
+			name:          "nil response returns error",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			commitId:      "commit-abc",
+			response:      nil,
+			httpErr:       fmt.Errorf("connection refused"),
+			expectError:   true,
+		},
+		{
+			name:          "HTTP error status returns error",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			commitId:      "commit-abc",
+			response: &http.Response{
+				StatusCode: http.StatusNotFound,
+				Body:       io.NopCloser(strings.NewReader(`{"error":"not found"}`)),
+			},
+			expectError: true,
+		},
+		{
+			name:          "malformed JSON returns error",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			commitId:      "commit-abc",
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`not json`)),
+			},
+			expectError: true,
+		},
+		{
+			name:          "with agent key",
+			applicationId: "app-456",
+			entryPoint:    "index.ts",
+			commitId:      "commit-xyz",
+			useAgentKey:   true,
+			metadata: map[string]string{
+				"authorization": "Bearer user-token",
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"bundle":"agent-key-bundle"}`)),
+			},
+			expectedBundle: &ApiCodeBundle{Bundle: "agent-key-bundle"},
+			expectError:    false,
+			expectedURL:    "https://api.superblocks.com/api/v3/applications/app-456/code?commitId=commit-xyz&entryPoint=index.ts",
+			expectedHeaders: http.Header{
+				"Authorization":               {"Bearer user-token"},
+				"X-Superblocks-Agent-Key":     {"foobar"},
+				"X-Superblocks-Authorization": []string(nil),
+			},
+		},
+		{
+			name:          "ReadAll fails returns error",
+			applicationId: "app-123",
+			entryPoint:    "main.ts",
+			commitId:      "commit-abc",
+			metadata: map[string]string{
+				"authorization": "Bearer user-token",
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       &failingReadCloser{},
+			},
+			expectError: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			mockHttpClient := mocks.NewHttpClient(t)
+			mockHttpClient.On("Do", mock.Anything).Return(test.response, test.httpErr)
+
+			serverClient := clients.NewServerClient(&clients.ServerClientOptions{
+				URL:                 "https://api.superblocks.com",
+				Client:              mockHttpClient,
+				SuperblocksAgentKey: "foobar",
+			})
+
+			f := New(&Options{
+				Logger:       zap.NewNop(),
+				ServerClient: serverClient,
+			})
+
+			md := metadata.MD{}
+			for k, v := range test.metadata {
+				md.Set(k, v)
+			}
+			ctx := metadata.NewIncomingContext(context.Background(), md)
+
+			bundle, err := f.FetchApiCode(ctx, test.applicationId, test.entryPoint, test.commitId, test.branchName, test.useAgentKey)
+
+			if test.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, bundle)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedBundle, bundle)
+
+			mockHttpClient.AssertNumberOfCalls(t, "Do", 1)
+			req := mockHttpClient.Calls[0].Arguments[0].(*http.Request)
+			assert.Equal(t, http.MethodGet, req.Method)
+			assert.Equal(t, test.expectedURL, req.URL.String())
+			for key, expected := range test.expectedHeaders {
+				assert.Equal(t, expected, req.Header[key], "header %s", key)
+			}
 		})
 	}
 }

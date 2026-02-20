@@ -4,6 +4,10 @@
   "description": "Superblocks JavaScript Plugin",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./bootstrap": "./src/bootstrap.js"
+  },
   "engines": {
     "node": "20.19.5"
   },

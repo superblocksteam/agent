@@ -271,6 +271,42 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 		}
 
 		metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "succeeded"))
+	} else if fc := request.GetFetchCode(); fc != nil {
+		// FetchCode takes applicationId (not apiId). Same flow as FetchByPath: external
+		// request to load the result. FetchApiCode returns a code bundle (different
+		// format than Definition); we put it in rawDef for executeCodeMode.
+		if fc.GetId() == "" {
+			return nil, nil, fmt.Errorf("missing applicationId in FetchCode request")
+		}
+		bundle, err := fetcher.FetchApiCode(ctx, fc.GetId(), "", fc.GetCommitId(), fc.GetBranchName(), useAgentKey)
+		if err != nil {
+			metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))
+			return nil, nil, err
+		}
+		metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "succeeded"))
+		if bundle == nil || bundle.Bundle == "" {
+			return nil, nil, fmt.Errorf("empty bundle returned for application %q", fc.GetId())
+		}
+		def = &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &commonv1.Metadata{
+					Name: "code-mode",
+				},
+				Trigger: &apiv1.Trigger{
+					Config: &apiv1.Trigger_Application_{
+						Application: &apiv1.Trigger_Application{
+							Id: fc.GetId(),
+						},
+					},
+				},
+			},
+		}
+		rawDef = &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue(bundle.Bundle),
+			},
+		}
+		return def, rawDef, nil
 	} else if f := request.GetFetchByPath(); f != nil {
 		if def, rawDef, err = fetcher.FetchApiByPath(ctx, f, useAgentKey); err != nil {
 			metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))

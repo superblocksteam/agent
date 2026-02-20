@@ -1742,6 +1742,9 @@ importers:
       '@superblocks/shared':
         specifier: workspace:*
         version: link:../../shared
+      '@superblocksteam/javascript':
+        specifier: workspace:*
+        version: link:../javascript
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0

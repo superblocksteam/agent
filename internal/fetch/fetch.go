@@ -59,6 +59,7 @@ type Options struct {
 type Fetcher interface {
 	FetchApi(context context.Context, request *apiv1.ExecuteRequest_Fetch, useAgentKey bool) (*apiv1.Definition, *structpb.Struct, error)
 	FetchApiByPath(context context.Context, request *apiv1.ExecuteRequest_FetchByPath, useAgentKey bool) (*apiv1.Definition, *structpb.Struct, error)
+	FetchApiCode(ctx context.Context, applicationId string, entryPoint string, commitId string, branchName string, useAgentKey bool) (*ApiCodeBundle, error)
 	FetchScheduledJobs(context.Context) (*transportv1.FetchScheduleJobResp, *structpb.Struct, error)
 	FetchIntegrationMetadata(context.Context, string) (*integrationv1.GetIntegrationResponse, error)
 	FetchIntegration(context context.Context, integrationId string, profile *commonv1.Profile) (*Integration, error)
@@ -72,6 +73,11 @@ type FetchIntegrationResponse struct {
 	Data struct {
 		Integration *Integration `json:"datasource"`
 	} `json:"data"`
+}
+
+// ApiCodeBundle is the response from GET /api/v3/applications/{id}/code (API 2.0 esbuild bundle).
+type ApiCodeBundle struct {
+	Bundle string
 }
 
 type Integration struct {
@@ -122,6 +128,70 @@ func (f *fetcher) FetchApiByPath(ctx context.Context, options *apiv1.ExecuteRequ
 	defer resp.Body.Close()
 
 	return f.handleFetchApiResponse(ctx, resp, err, logger)
+}
+
+func (f *fetcher) FetchApiCode(ctx context.Context, applicationId string, entryPoint string, commitId string, branchName string, useAgentKey bool) (*ApiCodeBundle, error) {
+	logger := utils.ContexualLogger(ctx, f.logger.With(
+		zap.String("application_id", applicationId),
+		zap.String("entry_point", entryPoint),
+		zap.String("commit_id", commitId),
+	))
+
+	headers := map[string][]string{}
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		headers["Authorization"] = md.Get("authorization")
+		headers["X-Superblocks-Authorization"] = md.Get("x-superblocks-authorization")
+	}
+
+	query := url.Values{}
+	if entryPoint != "" {
+		query.Set("entryPoint", entryPoint)
+	}
+	if commitId != "" {
+		query.Set("commitId", commitId)
+	}
+
+	resp, err := tracer.Observe(ctx, "fetch.api_code", map[string]any{
+		observability.OBS_TAG_RESOURCE_ID: applicationId,
+	}, func(ctx context.Context, _ trace.Span) (*http.Response, error) {
+		return f.serverClient.GetApplicationCode(ctx, nil, headers, query, applicationId, branchName, commitId, useAgentKey)
+	}, nil)
+
+	if resp == nil {
+		logger.Error("could not fetch api code from superblocks: response is nil", zap.Error(err))
+		return nil, sberrors.ErrInternal
+	}
+	defer resp.Body.Close()
+
+	if i, e := clients.Check(err, resp); e != nil {
+		logger.Error(
+			"could not fetch api code from superblocks",
+			zap.NamedError("originalErr", err),
+			zap.NamedError("internalError", i),
+			zap.NamedError("externalError", e),
+			zap.Int("resp.StatusCode", respStatusCode(resp)),
+			zap.String("resp.StatusCode.String", http.StatusText(respStatusCode(resp))),
+		)
+		return nil, e
+	}
+
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("could not read fetch api code response body", zap.Error(err))
+		return nil, sberrors.ErrInternal
+	}
+
+	var result struct {
+		Bundle string `json:"bundle"`
+	}
+	if err := json.Unmarshal(respData, &result); err != nil {
+		logger.Error("could not unmarshal api code response", zap.Error(err))
+		return nil, sberrors.ErrInternal
+	}
+
+	return &ApiCodeBundle{
+		Bundle: result.Bundle,
+	}, nil
 }
 
 func (f *fetcher) handleFetchApiResponse(ctx context.Context, resp *http.Response, err error, logger *zap.Logger) (*apiv1.Definition, *structpb.Struct, error) {

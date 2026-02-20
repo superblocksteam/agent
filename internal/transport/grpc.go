@@ -47,6 +47,7 @@ import (
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
 	secretsv1 "github.com/superblocksteam/agent/types/gen/go/secrets/v1"
 	securityv1 "github.com/superblocksteam/agent/types/gen/go/security/v1"
+	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	utilsv1 "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -168,17 +169,20 @@ func requireAuthForInlineDefinition(ctx context.Context, req *apiv1.ExecuteReque
 
 // ExecuteV3 handles the /v3/execute endpoint for API 2.0 execution.
 // It converts the minimal ExecuteV3Request to an internal ExecuteRequest
-// and delegates to the existing await() pipeline. JWT is always required
-// (enforced by the jwtDecider in main.go).
+// with FetchCode (API 2.0 code delivery) and delegates to the existing
+// await() pipeline. JWT is always required (enforced by the jwtDecider in main.go).
 func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*apiv1.AwaitResponse, error) {
+	fetchCode := &apiv1.ExecuteRequest_FetchCode{
+		Id:         req.GetApplicationId(),
+		ViewMode:   req.GetViewMode(),
+		Profile:    req.GetProfile(),
+		CommitId:   req.CommitId,
+		BranchName: req.BranchName,
+	}
 	return s.await(ctx, &apiv1.ExecuteRequest{
 		Inputs: req.GetInputs(),
-		Request: &apiv1.ExecuteRequest_Fetch_{
-			Fetch: &apiv1.ExecuteRequest_Fetch{
-				Id:       req.GetApiId(),
-				ViewMode: req.GetViewMode(),
-				Profile:  req.GetProfile(),
-			},
+		Request: &apiv1.ExecuteRequest_FetchCode_{
+			FetchCode: fetchCode,
 		},
 	})
 }
@@ -557,7 +561,7 @@ func injectGlobalUserIntoInputs(ctx context.Context, inputs map[string]*structpb
 }
 
 // getViewMode returns the view mode for the request.
-// For fetch/fetchByPath, it uses the nested view_mode.
+// For fetch/fetchByPath/fetchCode, it uses the nested view_mode.
 // For inline definitions, it uses the top-level view_mode.
 func getViewMode(req *apiv1.ExecuteRequest) apiv1.ViewMode {
 	if fetch := req.GetFetch(); fetch != nil {
@@ -565,6 +569,9 @@ func getViewMode(req *apiv1.ExecuteRequest) apiv1.ViewMode {
 	}
 	if fetchByPath := req.GetFetchByPath(); fetchByPath != nil {
 		return fetchByPath.GetViewMode()
+	}
+	if fetchCode := req.GetFetchCode(); fetchCode != nil {
+		return fetchCode.GetViewMode()
 	}
 	return req.GetViewMode()
 }
@@ -587,17 +594,24 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		}
 	}
 
+	useAgentKey := s.getUseAgentKeyForHydration(ctx)
+
 	var result *apiv1.Definition
 	var rawResult *structpb.Struct
 	var rawApiValue *structpb.Value
 	{
-		useAgentKey := s.getUseAgentKeyForHydration(ctx)
 		result, rawResult, err = executor.Fetch(ctx, req, s.Fetcher, useAgentKey, s.Logger)
 		rawApiValue, _ = utils.GetStructField(rawResult, "api")
 	}
 
 	if err != nil {
 		return nil, err
+	}
+
+	// Code-mode direct execution: bypass the block executor entirely.
+	// Bundle was fetched in Fetch(); generate wrapper script and dispatch to JS worker.
+	if fetchCode := req.GetFetchCode(); fetchCode != nil {
+		return s.executeCodeMode(ctx, fetchCode, result, rawResult, req, useAgentKey, send)
 	}
 
 	viewMode := getViewMode(req)
@@ -670,6 +684,8 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 				return nil, sberror.ErrInternal
 			}
 		} else {
+			// Fetch and inline definitions use mustache.
+			// (FetchCode takes the direct code-mode path and never reaches here.)
 			templatePlugin = mustache.Instance
 		}
 	}
@@ -694,6 +710,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	} else if fetchByPath := req.GetFetchByPath(); fetchByPath != nil {
 		branchName = fetchByPath.GetBranchName()
 	}
+	// NOTE: FetchCode requests are handled by executeCodeMode() above and never reach here.
 
 	done, err, _ = executor.Execute(ctx, &executor.Options{
 		Logger:                       s.Logger.With(observability.Enrich(result.Api, viewMode.Enum())...).With(observability.EnrichUserInfo(ctx, result.Metadata)...),
@@ -746,6 +763,160 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	})
 
 	return done, err
+}
+
+// executeCodeMode handles the FetchCode (API 2.0 / code-mode) execution path.
+// It bypasses the block executor entirely: uses the bundle from rawResult (fetched
+// in Fetch()), generates a JS wrapper with user context + inputs, and dispatches
+// the combined script directly to the JS worker.
+func (s *server) executeCodeMode(
+	ctx context.Context,
+	fetchCode *apiv1.ExecuteRequest_FetchCode,
+	result *apiv1.Definition,
+	rawResult *structpb.Struct,
+	req *apiv1.ExecuteRequest,
+	useAgentKey bool,
+	send func(*apiv1.StreamResponse) error,
+) (*executor.Done, error) {
+	logger := s.Logger.With(
+		zap.String("execution_path", "code-mode"),
+		zap.String("organizationId", result.GetApi().GetMetadata().GetOrganization()),
+	)
+	executionID := constants.ExecutionID(ctx)
+
+	sendError := func(err error) (*executor.Done, error) {
+		commonErr := sberror.ToCommonV1(err)
+		_ = send(&apiv1.StreamResponse{
+			Execution: executionID,
+			Event: &apiv1.Event{
+				Name: result.GetApi().GetMetadata().GetName(),
+				Type: apiv1.BlockType_BLOCK_TYPE_STEP,
+				Event: &apiv1.Event_End_{
+					End: &apiv1.Event_End{
+						Error: commonErr,
+					},
+				},
+			},
+		})
+		return nil, err
+	}
+
+	bundle := ""
+	if rawResult != nil {
+		if f := rawResult.GetFields()["bundle"]; f != nil {
+			bundle = f.GetStringValue()
+		}
+	}
+	if bundle == "" {
+		detail := "empty bundle string"
+		if rawResult == nil {
+			detail = "nil rawResult"
+		}
+		logger.Error("missing bundle in rawResult", zap.String("detail", detail))
+		return sendError(fmt.Errorf("missing bundle in code-mode response: %s", detail))
+	}
+
+	user, err := extractUserContext(ctx)
+	if err != nil {
+		logger.Error("could not extract user context", zap.Error(err))
+		// Code-mode requires JWT for user context. Return auth error so callers get
+		// Unauthenticated (not Internal) when reaching this path via legacy Await/Stream.
+		return sendError(sberror.AuthorizationError(err))
+	}
+
+	wrapperScript, err := generateWrapperScript(user, req.GetInputs(), bundle)
+	if err != nil {
+		logger.Error("could not generate wrapper script", zap.Error(err))
+		return sendError(err)
+	}
+
+	workerData := &transportv1.Request_Data_Data{
+		Props: &transportv1.Request_Data_Data_Props{
+			ActionConfiguration: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"body": structpb.NewStringValue(wrapperScript),
+				},
+			},
+			StepName: "code-mode",
+		},
+		AConfig: &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"body": structpb.NewStringValue(wrapperScript),
+			},
+		},
+		Quotas: &transportv1.Request_Data_Data_Quota{
+			Duration: 1_200_000, // 20 minutes, matches javascriptExecutionTimeoutMs default
+		},
+	}
+
+	_, outputKey, err := s.Worker.Execute(ctx, "javascriptsdkapi", workerData)
+	if err != nil {
+		logger.Error("worker execution failed", zap.Error(err))
+		return sendError(err)
+	}
+
+	// Clean up the output key from the store to prevent leaking Redis keys.
+	defer func() {
+		if outputKey != "" {
+			if delErr := s.Store.Delete(context.WithoutCancel(ctx), outputKey); delErr != nil {
+				logger.Warn("could not garbage-collect worker output key", zap.Error(delErr), zap.String("output_key", outputKey))
+			}
+		}
+	}()
+
+	values, err := s.Store.Read(ctx, outputKey)
+	if err != nil {
+		logger.Error("could not read worker output", zap.Error(err), zap.String("output_key", outputKey))
+		return sendError(err)
+	}
+
+	var output apiv1.Output
+	if len(values) > 0 && values[0] != nil {
+		var raw string
+		switch v := values[0].(type) {
+		case string:
+			raw = v
+		case []byte:
+			raw = string(v)
+		default:
+			return sendError(fmt.Errorf("unexpected store value type %T", values[0]))
+		}
+		parsed, jsonErr := apiv1.OutputFromOutputOldJSON([]byte(raw))
+		if jsonErr != nil {
+			logger.Error("could not unmarshal worker output", zap.Error(jsonErr))
+			return sendError(fmt.Errorf("could not unmarshal worker output: %w", jsonErr))
+		}
+		output = *parsed
+	}
+
+	var responseErrors []*commonv1.Error
+	if len(output.Stderr) > 0 {
+		responseErrors = make([]*commonv1.Error, len(output.Stderr))
+		for i, msg := range output.Stderr {
+			responseErrors[i] = &commonv1.Error{Message: msg}
+		}
+	}
+
+	if sendErr := send(&apiv1.StreamResponse{
+		Execution: executionID,
+		Event: &apiv1.Event{
+			Name: result.GetApi().GetMetadata().GetName(),
+			Event: &apiv1.Event_Response_{
+				Response: &apiv1.Event_Response{
+					Last:   "code-mode",
+					Errors: responseErrors,
+				},
+			},
+		},
+	}); sendErr != nil {
+		logger.Error("could not send stream response", zap.Error(sendErr))
+		return nil, sendErr
+	}
+
+	return &executor.Done{
+		Output: &output,
+		Last:   "code-mode",
+	}, nil
 }
 
 func (s *server) Status(ctx context.Context, req *apiv1.StatusRequest) (*apiv1.AwaitResponse, error) {

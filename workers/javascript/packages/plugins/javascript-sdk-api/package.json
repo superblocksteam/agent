@@ -11,7 +11,8 @@
     "typecheck": "npx tsc"
   },
   "dependencies": {
-    "@superblocks/shared": "workspace:*"
+    "@superblocks/shared": "workspace:*",
+    "@superblocksteam/javascript": "workspace:*"
   },
   "devDependencies": {
     "@swc/cli": "0.6.0",

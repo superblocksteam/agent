@@ -175,6 +175,36 @@ func (_m *ServerClient) GetApiByPath(_a0 context.Context, _a1 *time.Duration, _a
 	return r0, r1
 }
 
+// GetApplicationCode provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4, _a5, _a6, _a7
+func (_m *ServerClient) GetApplicationCode(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values, _a4 string, _a5 string, _a6 string, _a7 bool) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3, _a4, _a5, _a6, _a7)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetApplicationCode")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values, string, string, string, bool) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3, _a4, _a5, _a6, _a7)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values, string, string, string, bool) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3, _a4, _a5, _a6, _a7)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, url.Values, string, string, string, bool) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3, _a4, _a5, _a6, _a7)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetIntegrationConfiguration provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
 func (_m *ServerClient) GetIntegrationConfiguration(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values, _a4 string) (*http.Response, error) {
 	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)

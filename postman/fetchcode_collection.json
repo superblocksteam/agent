@@ -1,0 +1,183 @@
+{
+  "info": {
+    "_postman_id": "fetchcode-e2e",
+    "name": "FetchCode - Ephemeral Worker E2E",
+    "description": "E2E tests for FetchCode (API 2.0 code delivery) path using ExecuteV3. Validates that the orchestrator fetches the definition, fetches the code bundle from the server, and executes via javascriptsdkapi ephemeral workers. Run with POSTMAN_ENV=ci-ephemeral.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "ExecuteV3 with commitId (FetchCode path)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('FetchCode execution succeeded via ephemeral worker', () => {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.output).to.not.be.undefined;",
+              "    pm.expect(response.output.result).to.not.be.undefined;",
+              "    pm.expect(response.output.result.sdkapi).to.eql('ok');",
+              "    pm.expect(response.output.result.from).to.eql('fetchcode');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Superblocks-Authorization",
+            "value": "Bearer {{superblocks_jwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"applicationId\": \"00000000-0000-0000-0000-000000000001\",\n    \"commitId\": \"test-commit-for-fetchcode\",\n    \"inputs\": {}\n}"
+        },
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{orchestrator_port}}",
+          "path": [
+            "v3",
+            "execute"
+          ]
+        }
+      }
+    },
+    {
+      "name": "ExecuteV3 with branchName (FetchCode path)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('FetchCode with branchName succeeded', () => {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.output).to.not.be.undefined;",
+              "    pm.expect(response.output.result).to.not.be.undefined;",
+              "    pm.expect(response.output.result.sdkapi).to.eql('ok');",
+              "    pm.expect(response.output.result.from).to.eql('fetchcode');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Superblocks-Authorization",
+            "value": "Bearer {{superblocks_jwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"applicationId\": \"00000000-0000-0000-0000-000000000002\",\n    \"branchName\": \"jdoe/test-branch\",\n    \"inputs\": {}\n}"
+        },
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{orchestrator_port}}",
+          "path": [
+            "v3",
+            "execute"
+          ]
+        }
+      }
+    },
+    {
+      "name": "ExecuteV3 with neither commitId nor branchName (default branch)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('FetchCode with default branch (live-edit) succeeded', () => {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.output).to.not.be.undefined;",
+              "    pm.expect(response.output.result).to.not.be.undefined;",
+              "    pm.expect(response.output.result.sdkapi).to.eql('ok');",
+              "    pm.expect(response.output.result.from).to.eql('fetchcode');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Superblocks-Authorization",
+            "value": "Bearer {{superblocks_jwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"applicationId\": \"00000000-0000-0000-0000-000000000001\",\n    \"inputs\": {}\n}"
+        },
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{orchestrator_port}}",
+          "path": [
+            "v3",
+            "execute"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "orchestrator_scheme",
+      "value": "http"
+    },
+    {
+      "key": "orchestrator_host",
+      "value": "localhost"
+    },
+    {
+      "key": "orchestrator_port",
+      "value": "8080"
+    }
+  ]
+}

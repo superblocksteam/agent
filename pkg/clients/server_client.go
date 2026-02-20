@@ -55,6 +55,7 @@ type ServerClient interface {
 	PostHealthcheck(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                               // Sends a healthcheck
 	GetApi(context.Context, *time.Duration, http.Header, url.Values, string, bool, string) (*http.Response, error)                       // Fetches an api
 	GetApiByPath(context.Context, *time.Duration, http.Header, url.Values, string, string, string, string, bool) (*http.Response, error) // Fetches an api by path
+	GetApplicationCode(context.Context, *time.Duration, http.Header, url.Values, string, string, string, bool) (*http.Response, error)   // Fetches application code bundle (API 2.0)
 	PostDatasource(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                             // Fetches an integration
 	ValidateProfile(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                    // Validates profile restrictions
 	PostSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                         // Create user specific auth token
@@ -120,6 +121,23 @@ func (s *serverClient) GetApiByPath(
 		path = fmt.Sprintf("%s/%s/%s/%s", path, "commits", commitId, url.PathEscape(apiPath))
 	} else {
 		path = fmt.Sprintf("%s/%s/%s/%s", path, "branches", url.PathEscape(branchName), url.PathEscape(apiPath))
+	}
+	return s.sendRequest(ctx, timeout, http.MethodGet, path, headers, query, nil, useAgentKey)
+}
+
+func (s *serverClient) GetApplicationCode(
+	ctx context.Context,
+	timeout *time.Duration,
+	headers http.Header,
+	query url.Values,
+	applicationId string,
+	branchName string,
+	commitId string,
+	useAgentKey bool,
+) (*http.Response, error) {
+	path := fmt.Sprintf("%s/%s/code", "api/v3/applications", applicationId)
+	if branchName != "" && commitId == "" {
+		path = fmt.Sprintf("%s/%s/%s/%s/code", "api/v3/applications", applicationId, "branches", url.PathEscape(branchName))
 	}
 	return s.sendRequest(ctx, timeout, http.MethodGet, path, headers, query, nil, useAgentKey)
 }

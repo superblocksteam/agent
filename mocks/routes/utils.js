@@ -31,7 +31,7 @@ function validateAgentKey(req) {
 }
 
 function validateBearerToken(req) {
-  const token = req.get('Authorization');
+  const token = req.get('Authorization') || req.get('X-Superblocks-Authorization');
   return doValidateBearerToken(token);
 }
 

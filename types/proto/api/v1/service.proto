@@ -305,6 +305,24 @@ message ExecuteRequest {
   }
 
   /*
+   * FetchCode is used by ExecuteV3 for API 2.0 execution with code delivery.
+   * Unlike Fetch, this does NOT fetch the Definition from the server. Instead,
+   * it creates a synthetic Definition with minimal metadata and fetches the
+   * esbuild bundle from GET /api/v3/applications/{id}/code. The bundle is
+   * wrapped and dispatched directly to the JS worker, bypassing the block executor.
+   */
+  message FetchCode {
+    string id = 1 [
+      (validate.rules).string.min_len = 1,
+      (buf.validate.field).string.min_len = 1
+    ];
+    common.v1.Profile profile = 2;
+    ViewMode view_mode = 3;
+    optional string commit_id = 4;
+    optional string branch_name = 5;
+  }
+
+  /*
    * Request options.
    */
   Options options = 1;
@@ -332,6 +350,11 @@ message ExecuteRequest {
      * Details on how to fetch the API by a path relative to the root of an (application) bundle.
      */
     FetchByPath fetch_by_path = 8;
+
+    /*
+     * Fetch by ID with API 2.0 code delivery. Used by ExecuteV3.
+     */
+    FetchCode fetch_code = 10;
   }
 
   message File {
@@ -357,10 +380,11 @@ message ExecuteRequest {
 
 // ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.
 // Unlike ExecuteRequest, it always requires JWT authentication and only
-// supports fetch-by-ID (no inline definitions).
+// supports fetch-by-ID (no inline definitions). Uses FetchCode for API 2.0
+// code delivery.
 message ExecuteV3Request {
-  // The API ID to execute (required).
-  string api_id = 1 [
+  // The application ID to execute (required).
+  string application_id = 1 [
     (validate.rules).string.min_len = 1,
     (buf.validate.field).string.min_len = 1
   ];
@@ -373,6 +397,12 @@ message ExecuteV3Request {
 
   // The integration profile to use.
   common.v1.Profile profile = 4;
+
+  // Optional commit ID for code delivery (live edit). Required for code-mode APIs when not deployed.
+  optional string commit_id = 5;
+
+  // Optional branch name for code delivery (live edit). Required for code-mode APIs when not deployed.
+  optional string branch_name = 6;
 }
 
 message Definition {

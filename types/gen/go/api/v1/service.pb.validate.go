@@ -597,6 +597,48 @@ func (m *ExecuteRequest) validate(all bool) error {
 			}
 		}
 
+	case *ExecuteRequest_FetchCode_:
+		if v == nil {
+			err := ExecuteRequestValidationError{
+				field:  "Request",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		oneofRequestPresent = true
+
+		if all {
+			switch v := interface{}(m.GetFetchCode()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ExecuteRequestValidationError{
+						field:  "FetchCode",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ExecuteRequestValidationError{
+						field:  "FetchCode",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetFetchCode()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ExecuteRequestValidationError{
+					field:  "FetchCode",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -711,9 +753,9 @@ func (m *ExecuteV3Request) validate(all bool) error {
 
 	var errors []error
 
-	if utf8.RuneCountInString(m.GetApiId()) < 1 {
+	if utf8.RuneCountInString(m.GetApplicationId()) < 1 {
 		err := ExecuteV3RequestValidationError{
-			field:  "ApiId",
+			field:  "ApplicationId",
 			reason: "value length must be at least 1 runes",
 		}
 		if !all {
@@ -797,6 +839,14 @@ func (m *ExecuteV3Request) validate(all bool) error {
 				cause:  err,
 			}
 		}
+	}
+
+	if m.CommitId != nil {
+		// no validation rules for CommitId
+	}
+
+	if m.BranchName != nil {
+		// no validation rules for BranchName
 	}
 
 	if len(errors) > 0 {
@@ -5056,6 +5106,158 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ExecuteRequest_FetchByPathValidationError{}
+
+// Validate checks the field values on ExecuteRequest_FetchCode with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ExecuteRequest_FetchCode) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ExecuteRequest_FetchCode with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ExecuteRequest_FetchCodeMultiError, or nil if none found.
+func (m *ExecuteRequest_FetchCode) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ExecuteRequest_FetchCode) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetId()) < 1 {
+		err := ExecuteRequest_FetchCodeValidationError{
+			field:  "Id",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if all {
+		switch v := interface{}(m.GetProfile()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ExecuteRequest_FetchCodeValidationError{
+					field:  "Profile",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ExecuteRequest_FetchCodeValidationError{
+					field:  "Profile",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetProfile()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ExecuteRequest_FetchCodeValidationError{
+				field:  "Profile",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for ViewMode
+
+	if m.CommitId != nil {
+		// no validation rules for CommitId
+	}
+
+	if m.BranchName != nil {
+		// no validation rules for BranchName
+	}
+
+	if len(errors) > 0 {
+		return ExecuteRequest_FetchCodeMultiError(errors)
+	}
+
+	return nil
+}
+
+// ExecuteRequest_FetchCodeMultiError is an error wrapping multiple validation
+// errors returned by ExecuteRequest_FetchCode.ValidateAll() if the designated
+// constraints aren't met.
+type ExecuteRequest_FetchCodeMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ExecuteRequest_FetchCodeMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ExecuteRequest_FetchCodeMultiError) AllErrors() []error { return m }
+
+// ExecuteRequest_FetchCodeValidationError is the validation error returned by
+// ExecuteRequest_FetchCode.Validate if the designated constraints aren't met.
+type ExecuteRequest_FetchCodeValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ExecuteRequest_FetchCodeValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ExecuteRequest_FetchCodeValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ExecuteRequest_FetchCodeValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ExecuteRequest_FetchCodeValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ExecuteRequest_FetchCodeValidationError) ErrorName() string {
+	return "ExecuteRequest_FetchCodeValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ExecuteRequest_FetchCodeValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sExecuteRequest_FetchCode.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ExecuteRequest_FetchCodeValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ExecuteRequest_FetchCodeValidationError{}
 
 // Validate checks the field values on ExecuteRequest_File with the rules
 // defined in the proto definition for this message. If any rules are
