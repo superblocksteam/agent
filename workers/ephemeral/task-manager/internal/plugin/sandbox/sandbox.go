@@ -32,7 +32,7 @@ import (
 
 // IpFilterSetter allows setting IP filters on the variable store
 type IpFilterSetter interface {
-	SetAllowedIps(ips ...string)
+	AddAllowedIps(ips ...string)
 }
 
 // SandboxPlugin executes code by forwarding to a gRPC sandbox server.
@@ -155,7 +155,7 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 
 		// Set IP filter on variable store - only accept connections from this sandbox
 		if p.ipFilterSetter != nil {
-			p.ipFilterSetter.SetAllowedIps(sandboxInfo.Ip)
+			p.ipFilterSetter.AddAllowedIps(sandboxInfo.Ip)
 		}
 
 		p.logger.Info("sandbox plugin initialized (dynamic mode)",

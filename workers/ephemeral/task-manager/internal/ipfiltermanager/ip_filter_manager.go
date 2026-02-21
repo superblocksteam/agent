@@ -13,7 +13,7 @@ type IpFilterManager struct {
 
 func NewIpFilterManager(allowedIps ...string) *IpFilterManager {
 	return &IpFilterManager{
-		allowedIps: utils.NewSet[string](allowedIps...),
+		allowedIps: utils.NewSet(allowedIps...),
 	}
 }
 

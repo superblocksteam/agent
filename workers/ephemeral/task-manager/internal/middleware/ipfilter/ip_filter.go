@@ -35,9 +35,11 @@ func validateIp(allowedIps *utils.Set[string], clientIp string, logger *zap.Logg
 	}
 
 	if !allowedIps.Contains(clientIp) {
-		logger.Warn("rejected connection from unauthorized IP",
+		logger.Warn(
+			"rejected connection from unauthorized IP",
 			zap.String("client_ip", clientIp),
-			zap.Strings("allowed_ips", allowedIps.ToSlice()))
+			zap.Strings("allowed_ips", allowedIps.ToSlice()),
+		)
 		return IpFilterDenied
 	}
 

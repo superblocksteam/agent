@@ -451,6 +451,8 @@ func main() {
 		jobManagerOptions = append(jobManagerOptions, k8sjobmanager.WithImage(sandboxImage))
 		jobMgr := k8sjobmanager.NewSandboxJobManager(k8sjobmanager.NewOptions(jobManagerOptions...))
 
+		ipFilterManager.AddAllowedIps(podIP)
+
 		sandboxOptions = append(sandboxOptions,
 			sandbox.WithConnectionMode(sandbox.SandboxConnectionModeDynamic),
 			sandbox.WithSandboxManager(jobMgr),

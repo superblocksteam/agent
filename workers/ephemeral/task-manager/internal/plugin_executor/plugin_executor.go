@@ -367,7 +367,7 @@ func (p *pluginExecutor) pushToKVStore(ctx context.Context, kv *store.KV, perf *
 
 func (*pluginExecutor) logExecutionOutput(ctx context.Context, output *workerv1.ExecuteResponse, err error, logger *zap.Logger) {
 	l := logger.With(
-		zap.String(observability.OBS_TAG_COMPONENT, "worker.ephemeral"),
+		zap.String(observability.OBS_TAG_COMPONENT, "worker.sandbox"),
 		zap.String(observability.OBS_TAG_REMOTE, "true"),
 	)
 

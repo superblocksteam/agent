@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
@@ -163,12 +164,14 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 
 	containerName := fmt.Sprintf("%s-sandbox", language)
 	labels := map[string]string{
+		"component":    "worker.sandbox",
 		"role":         "sandbox",
 		"sandbox-id":   sandboxId,
 		"execution-id": sandboxId,
 		"language":     language,
 	}
 	specLabels := map[string]string{
+		"component":    "worker.sandbox",
 		"role":         "sandbox",
 		"sandbox-id":   sandboxId,
 		"execution-id": sandboxId,
@@ -233,6 +236,18 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 									ContainerPort: int32(m.port),
 									Protocol:      corev1.ProtocolTCP,
 								},
+							},
+							// Readiness probe: only mark Ready when gRPC server is listening.
+							// Prevents task-manager from connecting before sandbox has bound to port 50051.
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.FromInt32(int32(m.port)),
+									},
+								},
+								InitialDelaySeconds: 2,
+								PeriodSeconds:       2,
+								TimeoutSeconds:      1,
 							},
 							// TODO: Add resource limits from config
 						},
