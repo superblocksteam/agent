@@ -178,6 +178,7 @@ func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*a
 		Profile:    req.GetProfile(),
 		CommitId:   req.CommitId,
 		BranchName: req.BranchName,
+		EntryPoint: req.EntryPoint,
 	}
 	return s.await(ctx, &apiv1.ExecuteRequest{
 		Inputs: req.GetInputs(),

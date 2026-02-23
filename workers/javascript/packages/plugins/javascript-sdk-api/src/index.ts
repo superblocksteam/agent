@@ -91,6 +91,15 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       __sb_integrationExecutor: integrationExecutorBridge
     };
 
+    // Resolve require roots so the VM2 sandbox can find @superblocksteam/sdk-api.
+    // process.cwd() covers the sandbox image; the second path resolves to the
+    // project root relative to the worker entrypoint (process.argv[1]).
+    const path = require('path');
+    const requireRoot = [process.cwd()];
+    if (process.argv[1]) {
+      requireRoot.push(path.resolve(path.dirname(process.argv[1]), '..'));
+    }
+
     const runPromise = executeCode({
       context: {
         ...context,
@@ -100,7 +109,8 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       },
       code,
       filePaths: {},
-      inheritedEnv: []
+      inheritedEnv: [],
+      requireRoot
     });
 
     let timer: ReturnType<typeof setTimeout> | undefined;

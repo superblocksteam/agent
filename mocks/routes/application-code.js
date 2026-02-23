@@ -22,7 +22,8 @@ module.exports = [
             // Return a minimal esbuild-style CommonJS bundle exporting a CompiledApi shape.
             // The orchestrator wraps this and sends to javascriptsdkapi worker via executeApi().
             // Bundle accesses __sb_context.user (a sandbox global set by the wrapper).
-            const bundle = 'module.exports={default:{inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},run:async function(ctx){return {sdkapi:"ok",from:"fetchcode",user:__sb_context.user};}}};';
+            // Include integrations:[] so sdk-api executeApi doesn't crash on [...api.integrations].
+            const bundle = 'module.exports={default:{name:"fetchcode-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){return {sdkapi:"ok",from:"fetchcode",user:ctx.user};}}};';
 
             return res.status(200).json({ bundle });
           },
@@ -44,7 +45,7 @@ module.exports = [
               return res.sendStatus(401);
             }
 
-            const bundle = `module.exports={default:{inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},run:async function(ctx){return {sdkapi:"ok",from:"fetchcode",branch:${JSON.stringify(req.params.branchName)},user:__sb_context.user};}}};`;
+            const bundle = `module.exports={default:{name:"fetchcode-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){return {sdkapi:"ok",from:"fetchcode",branch:${JSON.stringify(req.params.branchName)},user:ctx.user};}}};`;
 
             return res.status(200).json({ bundle });
           },

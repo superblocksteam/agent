@@ -40,8 +40,13 @@ function evaluateWrapper(
 
 /**
  * Builds a wrapper script matching what generateWrapperScript produces in Go.
+ * integrations is always [] because code-mode resolves them lazily via executeQuery.
  */
-function buildWrapper(bundle: string, inputs = '{}', executionId = '"integration-test"') {
+function buildWrapper(
+  bundle: string,
+  inputs = '{}',
+  executionId = '"integration-test"'
+) {
   return `"use strict";
 var module = { exports: {} };
 var exports = module.exports;
@@ -82,6 +87,7 @@ var __sb_result = await __sb_execute(__sb_api, {
   integrations: [],
   executionId: __sb_executionId,
   env: {},
+  user: __sb_context.user,
   executeQuery: __sb_executeQuery,
 });
 
@@ -91,6 +97,8 @@ if (!__sb_result.success) {
 return __sb_result.output;
 `;
 }
+
+const TEST_USER = { userId: 'test-user', email: 'test@example.com', groups: [] as string[], customClaims: {} };
 
 describe('sdk-api integration tests (real executeApi)', () => {
   let executeApi: (...args: unknown[]) => Promise<unknown>;
@@ -108,10 +116,12 @@ describe('sdk-api integration tests (real executeApi)', () => {
     it('executes a simple API with string input/output', async () => {
       // Build a CompiledApi using the real sdk-api api() function
       const compiledApi = api({
+        name: 'test',
         input: z.object({ greeting: z.string() }),
         output: z.object({ message: z.string() }),
-        async run(ctx: { input: { greeting: string } }) {
-          return { message: `${ctx.input.greeting}, world!` };
+        integrations: {},
+        async run(_ctx: unknown, input: { greeting: string }) {
+          return { message: `${input.greeting}, world!` };
         }
       });
 
@@ -123,6 +133,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
         integrations: [],
         executionId: 'test-exec-1',
         env: {},
+        user: TEST_USER,
         executeQuery: jest.fn()
       });
 
@@ -134,10 +145,12 @@ describe('sdk-api integration tests (real executeApi)', () => {
 
     it('executes with numeric inputs', async () => {
       const compiledApi = api({
+        name: 'test',
         input: z.object({ a: z.number(), b: z.number() }),
         output: z.object({ sum: z.number() }),
-        async run(ctx: { input: { a: number; b: number } }) {
-          return { sum: ctx.input.a + ctx.input.b };
+        integrations: {},
+        async run(_ctx: unknown, input: { a: number; b: number }) {
+          return { sum: input.a + input.b };
         }
       });
 
@@ -146,6 +159,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
         integrations: [],
         executionId: 'test-exec-2',
         env: {},
+        user: TEST_USER,
         executeQuery: jest.fn()
       });
 
@@ -159,8 +173,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
   describe('input validation', () => {
     it('rejects input that fails Zod validation', async () => {
       const compiledApi = api({
+        name: 'test',
         input: z.object({ name: z.string() }),
         output: z.object({ ok: z.string() }),
+        integrations: {},
         async run() {
           return { ok: 'should not reach here' };
         }
@@ -171,6 +187,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
         integrations: [],
         executionId: 'test-input-fail',
         env: {},
+        user: TEST_USER,
         executeQuery: jest.fn()
       }) as { success: boolean; error?: { code: string } };
 
@@ -180,8 +197,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
 
     it('rejects missing required fields', async () => {
       const compiledApi = api({
+        name: 'test',
         input: z.object({ requiredField: z.string() }),
         output: z.object({ ok: z.string() }),
+        integrations: {},
         async run() {
           return { ok: 'should not reach here' };
         }
@@ -192,6 +211,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
         integrations: [],
         executionId: 'test-input-missing',
         env: {},
+        user: TEST_USER,
         executeQuery: jest.fn()
       }) as { success: boolean; error?: { code: string } };
 
@@ -203,8 +223,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
   describe('output validation', () => {
     it('rejects output that fails Zod validation', async () => {
       const compiledApi = api({
+        name: 'test',
         input: z.object({}),
         output: z.object({ count: z.number() }),
+        integrations: {},
         async run() {
           return { count: 'not-a-number' } as never; // wrong type
         }
@@ -215,6 +237,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
         integrations: [],
         executionId: 'test-output-fail',
         env: {},
+        user: TEST_USER,
         executeQuery: jest.fn()
       }) as { success: boolean; error?: { code: string } };
 
@@ -226,8 +249,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
   describe('run() errors', () => {
     it('catches thrown errors in run() and returns error response', async () => {
       const compiledApi = api({
+        name: 'test',
         input: z.object({}),
         output: z.object({ ok: z.string() }),
+        integrations: {},
         async run() {
           throw new Error('Something went wrong in user code');
         }
@@ -238,6 +263,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
         integrations: [],
         executionId: 'test-run-error',
         env: {},
+        user: TEST_USER,
         executeQuery: jest.fn()
       }) as { success: boolean; error?: { code: string; message: string } };
 
@@ -254,21 +280,23 @@ describe('sdk-api integration tests (real executeApi)', () => {
         { id: 2, name: 'Bob' }
       ]);
 
-      // Build an inline CJS bundle that uses ctx.postgres()
-      // Since we can't serialize real Zod schemas in a string bundle, use inline safeParse
+      // Declare integrations on the CompiledApi so getIntegrationDeclarations builds ctx.integrations.db.
+      // request.integrations stays [] (lazy resolution via executeQuery, matching production).
       const bundle = `
         module.exports = { default: {
+          name: 'test',
           inputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
           outputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          integrations: [{ key: 'db', pluginId: 'postgres', id: 'Production DB' }],
           run: async function(ctx) {
-            // Simulate what a postgres client query does: call executeQuery
-            var rows = await ctx.postgres('Production DB').query('SELECT * FROM users', { safeParse: function(v) { return { success: true, data: v }; } });
+            var schema = { safeParse: function(v) { return { success: true, data: v }; } };
+            var rows = await ctx.integrations.db.query('SELECT * FROM users', schema);
             return { users: rows };
           }
         }};`;
 
       const result = await evaluateWrapper(
-        buildWrapper(bundle, '{}'),
+        buildWrapper(bundle),
         {
           __sb_execute: executeApi,
           __sb_integrationExecutor: mockIntegrationExecutor
@@ -293,22 +321,24 @@ describe('sdk-api integration tests (real executeApi)', () => {
 
       const bundle = `
         module.exports = { default: {
+          name: 'test',
           inputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
           outputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          integrations: [{ key: 'db', pluginId: 'postgres', id: 'Broken DB' }],
           run: async function(ctx) {
-            return await ctx.postgres('Broken DB').execute('DROP TABLE users');
+            return await ctx.integrations.db.execute('DROP TABLE users');
           }
         }};`;
 
       await expect(
         evaluateWrapper(
-          buildWrapper(bundle, '{}'),
+          buildWrapper(bundle),
           {
             __sb_execute: executeApi,
             __sb_integrationExecutor: mockIntegrationExecutor
           }
         )
-      ).rejects.toThrow('Connection refused');
+      ).rejects.toThrow(/Integration.*failed|Connection refused/);
     });
   });
 
@@ -317,6 +347,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
       // An inline CJS bundle with safeParse that enforces types
       const bundle = `
         module.exports = { default: {
+          name: 'test',
           inputSchema: {
             safeParse: function(v) {
               if (!v || typeof v.name !== 'string') return { success: false, error: { issues: [{ message: 'name must be a string' }] } };
@@ -329,8 +360,9 @@ describe('sdk-api integration tests (real executeApi)', () => {
               return { success: true, data: v };
             }
           },
-          run: async function(ctx) {
-            return { greeting: 'Hello, ' + ctx.input.name + '!' };
+          integrations: [],
+          run: async function(ctx, input) {
+            return { greeting: 'Hello, ' + input.name + '!' };
           }
         }};`;
 
@@ -348,6 +380,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
     it('end-to-end: executeApi rejects invalid input via wrapper', async () => {
       const bundle = `
         module.exports = { default: {
+          name: 'test',
           inputSchema: {
             safeParse: function(v) {
               if (!v || typeof v.name !== 'string') return { success: false, error: { issues: [{ message: 'name required' }] } };
@@ -355,6 +388,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
             }
           },
           outputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          integrations: [],
           run: async function(ctx) { return { ok: true }; }
         }};`;
 
@@ -373,6 +407,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
     it('end-to-end: executeApi rejects invalid output via wrapper', async () => {
       const bundle = `
         module.exports = { default: {
+          name: 'test',
           inputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
           outputSchema: {
             safeParse: function(v) {
@@ -380,6 +415,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
               return { success: true, data: v };
             }
           },
+          integrations: [],
           run: async function(ctx) {
             return { count: 'not-a-number' };
           }

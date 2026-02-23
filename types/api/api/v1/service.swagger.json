@@ -1198,9 +1198,13 @@
         },
         "branchName": {
           "type": "string"
+        },
+        "entryPoint": {
+          "type": "string",
+          "description": "The entry point path relative to the application root (e.g. \"server/apis/GetUsers/api.ts\")."
         }
       },
-      "description": "FetchCode is used by ExecuteV3 for API 2.0 execution with code delivery.\nFetches the Definition by ID (same as Fetch), then fetches and injects the\nesbuild bundle from GET /api/v3/applications/{id}/code for javascriptsdkapi steps."
+      "description": "FetchCode is used by ExecuteV3 for API 2.0 execution with code delivery.\nUnlike Fetch, this does NOT fetch the Definition from the server. Instead,\nit creates a synthetic Definition with minimal metadata and fetches the\nesbuild bundle from GET /api/v3/applications/{id}/code. The bundle is\nwrapped and dispatched directly to the JS worker, bypassing the block executor."
     },
     "ExecutorServiceAwaitBody": {
       "type": "object",
@@ -6269,6 +6273,10 @@
         "branchName": {
           "type": "string",
           "description": "Optional branch name for code delivery (live edit). Required for code-mode APIs when not deployed."
+        },
+        "entryPoint": {
+          "type": "string",
+          "description": "The entry point path relative to the application root (e.g. \"server/apis/GetUsers/api.ts\")."
         }
       },
       "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions). Uses FetchCode for API 2.0\ncode delivery."

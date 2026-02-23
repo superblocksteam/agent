@@ -320,6 +320,8 @@ message ExecuteRequest {
     ViewMode view_mode = 3;
     optional string commit_id = 4;
     optional string branch_name = 5;
+    // The entry point path relative to the application root (e.g. "server/apis/GetUsers/api.ts").
+    optional string entry_point = 6;
   }
 
   /*
@@ -403,6 +405,9 @@ message ExecuteV3Request {
 
   // Optional branch name for code delivery (live edit). Required for code-mode APIs when not deployed.
   optional string branch_name = 6;
+
+  // The entry point path relative to the application root (e.g. "server/apis/GetUsers/api.ts").
+  optional string entry_point = 7;
 }
 
 message Definition {

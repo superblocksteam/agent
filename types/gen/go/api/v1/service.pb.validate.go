@@ -849,6 +849,10 @@ func (m *ExecuteV3Request) validate(all bool) error {
 		// no validation rules for BranchName
 	}
 
+	if m.EntryPoint != nil {
+		// no validation rules for EntryPoint
+	}
+
 	if len(errors) > 0 {
 		return ExecuteV3RequestMultiError(errors)
 	}
@@ -5177,6 +5181,10 @@ func (m *ExecuteRequest_FetchCode) validate(all bool) error {
 
 	if m.BranchName != nil {
 		// no validation rules for BranchName
+	}
+
+	if m.EntryPoint != nil {
+		// no validation rules for EntryPoint
 	}
 
 	if len(errors) > 0 {

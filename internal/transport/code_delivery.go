@@ -157,6 +157,7 @@ var __sb_result = await __sb_execute(__sb_api, {
   integrations: [],
   executionId: __sb_executionId,
   env: {},
+  user: __sb_context.user,
   executeQuery: __sb_executeQuery,
 });
 

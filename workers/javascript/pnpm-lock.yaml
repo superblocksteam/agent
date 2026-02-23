@@ -121,6 +121,9 @@ importers:
       '@superblocksteam/salesforce':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/salesforce
+      '@superblocksteam/sdk-api':
+        specifier: ^0.0.2
+        version: 0.0.2
       '@superblocksteam/smtp':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/smtp
@@ -1746,8 +1749,8 @@ importers:
         specifier: workspace:*
         version: link:../javascript
       '@superblocksteam/sdk-api':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^0.0.2
+        version: 0.0.2
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0
@@ -5809,12 +5812,12 @@ packages:
   '@streamparser/json@0.0.20':
     resolution: {integrity: sha512-VqAAkydywPpkw63WQhPVKCD3SdwXuihCUVZbbiY3SfSTGQyHmwRoq27y4dmJdZuJwd5JIlQoMPyGvMbUPY0RKQ==}
 
-  '@superblocksteam/sdk-api@0.0.1':
-    resolution: {integrity: sha512-i5CpgZVbU29CicC97QVCpbJKuxjnG5+2c6bh55f8t9BUKjT9FMNEvniBE2WW/oAQo2KFdFdVsJje7b0wi3zmSQ==, tarball: https://npm.pkg.github.com/download/@superblocksteam/sdk-api/0.0.1/c1b3b020f76e9a7839ce98ac0e4022272e7b5c06}
+  '@superblocksteam/sdk-api@0.0.2':
+    resolution: {integrity: sha512-pQ8xO0G29NcytnAwJFVhYDPhdPp3k2R148IM2y8fwI4xsoFuW7uDCBH4wIgTBgssRxKUmWRZw4dJbEoG9QmmOQ==, tarball: https://npm.pkg.github.com/download/@superblocksteam/sdk-api/0.0.2/8633cccf29907be5c0e57110094b08cbd0beaa1a}
     engines: {node: '>=20', npm: '>=10.x'}
 
-  '@superblocksteam/types@0.1949.0':
-    resolution: {integrity: sha512-Anr4rbMAZ/Rnw1uytQ1UCe2RA/mVXSGvls7d12QMJqxcEuwkG8iJDsSBryR2Hubik1FUr+bC/o2wrzXS+DzJ/A==, tarball: https://npm.pkg.github.com/download/@superblocksteam/types/0.1949.0/ab02803c0a1b7218541501e9bae2939504cb93de}
+  '@superblocksteam/types@1.91.0':
+    resolution: {integrity: sha512-2Wk4lDqmrYAyT6yGoWeD+xZa/tsJmoKr83jFusGV9Mi5eV4ebCN+ZtKg3QdPMOZEq6PgdRcY1+fhleopuDbl0g==, tarball: https://npm.pkg.github.com/download/@superblocksteam/types/1.91.0/0581c3fb1a146a00d9187d698b52daf8eb882a7a}
 
   '@swc-node/core@1.14.1':
     resolution: {integrity: sha512-jrt5GUaZUU6cmMS+WTJEvGvaB6j1YNKPHPzC2PUi2BjaFbtxURHj6641Az6xN7b665hNniAIdvjxWcRml5yCnw==}
@@ -13508,12 +13511,12 @@ snapshots:
 
   '@streamparser/json@0.0.20': {}
 
-  '@superblocksteam/sdk-api@0.0.1':
+  '@superblocksteam/sdk-api@0.0.2':
     dependencies:
-      '@superblocksteam/types': 0.1949.0
+      '@superblocksteam/types': 1.91.0
       zod: 3.25.76
 
-  '@superblocksteam/types@0.1949.0':
+  '@superblocksteam/types@1.91.0':
     dependencies:
       '@bufbuild/protobuf': 1.3.0
 

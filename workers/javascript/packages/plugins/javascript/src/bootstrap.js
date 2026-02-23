@@ -121,7 +121,7 @@ const sharedCode = `
 `;
 
 module.exports.executeCode = async (workerData) => {
-  const { context, code, filePaths, inheritedEnv } = workerData;
+  const { context, code, filePaths, inheritedEnv, requireRoot } = workerData;
 
   // Add 3 lines for the newline, module export declaration and the function call to create file objects
   const codeLineNumberOffset = sharedCode.split('\n').length + 3;
@@ -165,7 +165,8 @@ module.exports.executeCode = async (workerData) => {
       eval: false,
       require: {
         builtin: ['*', '-child_process', '-process'],
-        external: true
+        external: true,
+        ...(requireRoot ? { root: requireRoot } : {})
       },
       sandbox: {
         ...context.globals,
