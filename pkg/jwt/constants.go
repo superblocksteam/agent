@@ -16,6 +16,7 @@ const (
 	ContextKeyOrganziationId
 	ContextKeyDirectoryHash
 	ContextKeyCommitId
+	ContextKeyUserId
 	ContextKeyUserEmail
 	ContextKeyUserType
 	ContextKeyName
@@ -75,6 +76,15 @@ func GetCommitID(ctx context.Context) (string, bool) {
 	return val, ok
 }
 
+func WithUserID(ctx context.Context, userId string) context.Context {
+	return context.WithValue(ctx, ContextKeyUserId, userId)
+}
+
+func GetUserID(ctx context.Context) (string, bool) {
+	val, ok := ctx.Value(ContextKeyUserId).(string)
+	return val, ok
+}
+
 func WithUserEmail(ctx context.Context, userEmail string) context.Context {
 	return context.WithValue(ctx, ContextKeyUserEmail, userEmail)
 }
@@ -107,6 +117,10 @@ func EnrichedLogger(ctx context.Context, logger *zap.Logger) *zap.Logger {
 
 	if orgID, ok := GetOrganizationID(ctx); ok {
 		l = l.With(zap.String("organization_id", orgID))
+	}
+
+	if userId, ok := GetUserID(ctx); ok {
+		l = l.With(zap.String("user_id", userId))
 	}
 
 	if userEmail, ok := GetUserEmail(ctx); ok {

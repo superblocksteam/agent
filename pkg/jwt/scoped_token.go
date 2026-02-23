@@ -65,6 +65,7 @@ type AllScopedClaims struct {
 
 	ApplicationId  string   `json:"app_id"`
 	OrganizationId string   `json:"org_id"`
+	UserId         string   `json:"user_id,omitempty"`
 	UserEmail      string   `json:"user_email"`
 	UserType       UserType `json:"user_type"`
 
@@ -84,6 +85,7 @@ func NewAllScopedClaims(opts ...Option) *AllScopedClaims {
 		OrganizationId: o.OrganizationId,
 		DirectoryHash:  o.DirectoryHash,
 		CommitId:       o.CommitId,
+		UserId:         o.UserId,
 		UserEmail:      o.UserEmail,
 		UserType:       o.UserType,
 	}
@@ -103,6 +105,7 @@ func (c *AllScopedClaims) AsBuildScopedClaims() *BuildScopedClaims {
 		OrganizationId: c.OrganizationId,
 		DirectoryHash:  c.DirectoryHash,
 		CommitId:       c.CommitId,
+		UserId:         c.UserId,
 		UserEmail:      c.UserEmail,
 		UserType:       c.UserType,
 	}
@@ -121,6 +124,7 @@ func (c *AllScopedClaims) AsViewScopedClaims() *ViewScopedClaims {
 		ApplicationId:  c.ApplicationId,
 		OrganizationId: c.OrganizationId,
 		DirectoryHash:  c.DirectoryHash,
+		UserId:         c.UserId,
 		UserEmail:      c.UserEmail,
 		UserType:       c.UserType,
 	}
@@ -139,6 +143,7 @@ func (c *AllScopedClaims) AsPreviewScopedClaims() *PreviewScopedClaims {
 		ApplicationId:  c.ApplicationId,
 		OrganizationId: c.OrganizationId,
 		DirectoryHash:  c.DirectoryHash,
+		UserId:         c.UserId,
 		UserEmail:      c.UserEmail,
 		UserType:       c.UserType,
 	}
@@ -156,6 +161,7 @@ func (c *AllScopedClaims) AsEditScopedClaims() *EditScopedClaims {
 		},
 		ApplicationId:  c.ApplicationId,
 		OrganizationId: c.OrganizationId,
+		UserId:         c.UserId,
 		UserEmail:      c.UserEmail,
 		UserType:       c.UserType,
 	}
@@ -216,6 +222,7 @@ type BuildScopedClaims struct {
 	OrganizationId string   `json:"org_id"`
 	DirectoryHash  string   `json:"dir_hash"`
 	CommitId       string   `json:"commit_id"`
+	UserId         string   `json:"user_id,omitempty"`
 	UserEmail      string   `json:"user_email"`
 	UserType       UserType `json:"user_type"`
 }
@@ -232,6 +239,7 @@ func NewBuildScopedClaims(opts ...Option) *BuildScopedClaims {
 		OrganizationId: o.OrganizationId,
 		DirectoryHash:  o.DirectoryHash,
 		CommitId:       o.CommitId,
+		UserId:         o.UserId,
 		UserEmail:      o.UserEmail,
 		UserType:       o.UserType,
 	}
@@ -267,6 +275,7 @@ type ViewScopedClaims struct {
 	ApplicationId  string   `json:"app_id"`
 	OrganizationId string   `json:"org_id"`
 	DirectoryHash  string   `json:"dir_hash"`
+	UserId         string   `json:"user_id,omitempty"`
 	UserEmail      string   `json:"user_email"`
 	UserType       UserType `json:"user_type"`
 }
@@ -282,6 +291,7 @@ func NewViewScopedClaims(opts ...Option) *ViewScopedClaims {
 		ApplicationId:  o.ApplicationId,
 		OrganizationId: o.OrganizationId,
 		DirectoryHash:  o.DirectoryHash,
+		UserId:         o.UserId,
 		UserEmail:      o.UserEmail,
 		UserType:       o.UserType,
 	}
@@ -317,6 +327,7 @@ type PreviewScopedClaims struct {
 	ApplicationId  string   `json:"app_id"`
 	OrganizationId string   `json:"org_id"`
 	DirectoryHash  string   `json:"dir_hash"`
+	UserId         string   `json:"user_id,omitempty"`
 	UserEmail      string   `json:"user_email"`
 	UserType       UserType `json:"user_type"`
 }
@@ -332,6 +343,7 @@ func NewPreviewScopedClaims(opts ...Option) *PreviewScopedClaims {
 		ApplicationId:  o.ApplicationId,
 		OrganizationId: o.OrganizationId,
 		DirectoryHash:  o.DirectoryHash,
+		UserId:         o.UserId,
 		UserEmail:      o.UserEmail,
 		UserType:       o.UserType,
 	}
@@ -366,6 +378,7 @@ type EditScopedClaims struct {
 
 	ApplicationId  string   `json:"app_id"`
 	OrganizationId string   `json:"org_id"`
+	UserId         string   `json:"user_id,omitempty"`
 	UserEmail      string   `json:"user_email"`
 	UserType       UserType `json:"user_type"`
 }
@@ -380,6 +393,7 @@ func NewEditScopedClaims(opts ...Option) *EditScopedClaims {
 		},
 		ApplicationId:  o.ApplicationId,
 		OrganizationId: o.OrganizationId,
+		UserId:         o.UserId,
 		UserEmail:      o.UserEmail,
 		UserType:       o.UserType,
 	}

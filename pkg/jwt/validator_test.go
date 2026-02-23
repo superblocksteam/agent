@@ -66,6 +66,7 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			OrganizationId: "org",
 			DirectoryHash:  "dir",
 			CommitId:       "commit",
+			UserId:         "user-uuid",
 			UserEmail:      "admin@example.com",
 			UserType:       UserTypeExternal,
 		},
@@ -78,6 +79,7 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			OrganizationId: "org1",
 			DirectoryHash:  "dir1",
 			CommitId:       "commit1",
+			UserId:         "user-uuid-1",
 			UserEmail:      "user1@example.com",
 			UserType:       UserTypeSuperblocks,
 		},
@@ -89,6 +91,7 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			ApplicationId:  "app1",
 			OrganizationId: "org1",
 			DirectoryHash:  "dir1",
+			UserId:         "user-uuid-1",
 			UserEmail:      "user1@example.com",
 			UserType:       UserTypeSuperblocks,
 		},
@@ -100,6 +103,7 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			ApplicationId:  "app1",
 			OrganizationId: "org1",
 			DirectoryHash:  "dir1",
+			UserId:         "user-uuid-1",
 			UserEmail:      "user1@example.com",
 			UserType:       UserTypeSuperblocks,
 		},
@@ -110,6 +114,7 @@ func validValidatorArgs(t *testing.T, opts ...testOption) *validatorArgs {
 			},
 			ApplicationId:  "app1",
 			OrganizationId: "org1",
+			UserId:         "user-uuid-1",
 			UserEmail:      "user1@example.com",
 			UserType:       UserTypeSuperblocks,
 		},
@@ -164,6 +169,14 @@ func verifyAllScopedClaims(t *testing.T, a *validatorArgs) {
 	orgId, exists := GetOrganizationID(allCtx)
 	assert.True(t, exists)
 	assert.Equal(t, a.allScopeClaims.OrganizationId, orgId)
+
+	userId, exists := GetUserID(allCtx)
+	if a.allScopeClaims.UserId != "" {
+		assert.True(t, exists)
+		assert.Equal(t, a.allScopeClaims.UserId, userId)
+	} else {
+		assert.False(t, exists)
+	}
 
 	userEmail, exists := GetUserEmail(allCtx)
 	assert.True(t, exists)
@@ -236,6 +249,14 @@ func verifyBuildScopedClaims(t *testing.T, a *validatorArgs, useScopedValidation
 	assert.True(t, exists)
 	assert.Equal(t, a.buildScopeClaims.CommitId, commitId)
 
+	userId, exists := GetUserID(buildCtx)
+	if a.buildScopeClaims.UserId != "" {
+		assert.True(t, exists)
+		assert.Equal(t, a.buildScopeClaims.UserId, userId)
+	} else {
+		assert.False(t, exists)
+	}
+
 	userEmail, exists := GetUserEmail(buildCtx)
 	assert.True(t, exists)
 	assert.Equal(t, a.buildScopeClaims.UserEmail, userEmail)
@@ -286,6 +307,14 @@ func verifyViewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 	dirHash, exists := GetDirectoryHash(viewCtx)
 	assert.True(t, exists)
 	assert.Equal(t, a.viewScopeClaims.DirectoryHash, dirHash)
+
+	userId, exists := GetUserID(viewCtx)
+	if a.viewScopeClaims.UserId != "" {
+		assert.True(t, exists)
+		assert.Equal(t, a.viewScopeClaims.UserId, userId)
+	} else {
+		assert.False(t, exists)
+	}
 
 	userEmail, exists := GetUserEmail(viewCtx)
 	assert.True(t, exists)
@@ -338,6 +367,14 @@ func verifyPreviewScopedClaims(t *testing.T, a *validatorArgs, useScopedValidati
 	assert.True(t, exists)
 	assert.Equal(t, a.previewScopeClaims.DirectoryHash, dirHash)
 
+	userId, exists := GetUserID(previewCtx)
+	if a.previewScopeClaims.UserId != "" {
+		assert.True(t, exists)
+		assert.Equal(t, a.previewScopeClaims.UserId, userId)
+	} else {
+		assert.False(t, exists)
+	}
+
 	userEmail, exists := GetUserEmail(previewCtx)
 	assert.True(t, exists)
 	assert.Equal(t, a.previewScopeClaims.UserEmail, userEmail)
@@ -384,6 +421,14 @@ func verifyEditScopedClaims(t *testing.T, a *validatorArgs, useScopedValidationF
 	orgId, exists := GetOrganizationID(editCtx)
 	assert.True(t, exists)
 	assert.Equal(t, a.editScopeClaims.OrganizationId, orgId)
+
+	userId, exists := GetUserID(editCtx)
+	if a.editScopeClaims.UserId != "" {
+		assert.True(t, exists)
+		assert.Equal(t, a.editScopeClaims.UserId, userId)
+	} else {
+		assert.False(t, exists)
+	}
 
 	userEmail, exists := GetUserEmail(editCtx)
 	assert.True(t, exists)

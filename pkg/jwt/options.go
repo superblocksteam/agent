@@ -12,6 +12,7 @@ type options struct {
 	OrganizationId string
 	DirectoryHash  string
 	CommitId       string
+	UserId         string
 	UserEmail      string
 	UserType       UserType
 }
@@ -51,6 +52,12 @@ func JwtWithDirectoryHash(directoryHash string) Option {
 func JwtWithCommitId(commitId string) Option {
 	return func(o *options) {
 		o.CommitId = commitId
+	}
+}
+
+func JwtWithUserId(userId string) Option {
+	return func(o *options) {
+		o.UserId = userId
 	}
 }
 

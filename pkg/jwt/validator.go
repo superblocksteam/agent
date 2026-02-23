@@ -82,6 +82,10 @@ func ValidateBuildScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.
 	}
 	ctx = WithCommitID(ctx, commitId)
 
+	if userId := c.UserId; userId != "" {
+		ctx = WithUserID(ctx, userId)
+	}
+
 	userEmail := c.UserEmail
 	if userEmail == "" {
 		return nil, errors.New("could not get user email")
@@ -120,6 +124,10 @@ func ValidateViewScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.C
 		return nil, errors.New("could not get directory hash")
 	}
 	ctx = WithDirectoryHash(ctx, dirHash)
+
+	if userId := c.UserId; userId != "" {
+		ctx = WithUserID(ctx, userId)
+	}
 
 	userEmail := c.UserEmail
 	if userEmail == "" {
@@ -160,6 +168,10 @@ func ValidatePreviewScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jw
 	}
 	ctx = WithDirectoryHash(ctx, dirHash)
 
+	if userId := c.UserId; userId != "" {
+		ctx = WithUserID(ctx, userId)
+	}
+
 	userEmail := c.UserEmail
 	if userEmail == "" {
 		return nil, errors.New("could not get user email")
@@ -192,6 +204,10 @@ func ValidateEditScopedClaims(ctx context.Context, _ *jwt.Token, jwtClaims jwt.C
 		return nil, errors.New("could not get organization id")
 	}
 	ctx = WithOrganizationID(ctx, orgId)
+
+	if userId := c.UserId; userId != "" {
+		ctx = WithUserID(ctx, userId)
+	}
 
 	userEmail := c.UserEmail
 	if userEmail == "" {
