@@ -105,6 +105,8 @@ var plugins_smtp_v1_plugin_pb = require('../../plugins/smtp/v1/plugin_pb');
 goog.object.extend(proto, plugins_smtp_v1_plugin_pb);
 var plugins_snowflake_v1_plugin_pb = require('../../plugins/snowflake/v1/plugin_pb');
 goog.object.extend(proto, plugins_snowflake_v1_plugin_pb);
+var plugins_snowflakepostgres_v1_plugin_pb = require('../../plugins/snowflakepostgres/v1/plugin_pb');
+goog.object.extend(proto, plugins_snowflakepostgres_v1_plugin_pb);
 var plugins_workflow_v1_plugin_pb = require('../../plugins/workflow/v1/plugin_pb');
 goog.object.extend(proto, plugins_workflow_v1_plugin_pb);
 var superblocks_v1_options_pb = require('../../superblocks/v1/options_pb');
@@ -8862,7 +8864,7 @@ proto.api.v1.Block.prototype.hasSend = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]];
+proto.api.v1.Step.oneofGroups_ = [[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81]];
 
 /**
  * @enum {number}
@@ -8947,7 +8949,8 @@ proto.api.v1.Step.ConfigCase = {
   CONFLUENCE: 77,
   OPENAI_V2: 78,
   LAKEBASE: 79,
-  JAVASCRIPTSDKAPI: 80
+  JAVASCRIPTSDKAPI: 80,
+  SNOWFLAKEPOSTGRES: 81
 };
 
 /**
@@ -9067,7 +9070,8 @@ proto.api.v1.Step.toObject = function(includeInstance, msg) {
     confluence: (f = msg.getConfluence()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
     openaiV2: (f = msg.getOpenaiV2()) && plugins_restapiintegration_v1_plugin_pb.Plugin.toObject(includeInstance, f),
     lakebase: (f = msg.getLakebase()) && plugins_lakebase_v1_plugin_pb.Plugin.toObject(includeInstance, f),
-    javascriptsdkapi: (f = msg.getJavascriptsdkapi()) && plugins_javascriptsdkapi_v1_plugin_pb.Plugin.toObject(includeInstance, f)
+    javascriptsdkapi: (f = msg.getJavascriptsdkapi()) && plugins_javascriptsdkapi_v1_plugin_pb.Plugin.toObject(includeInstance, f),
+    snowflakepostgres: (f = msg.getSnowflakepostgres()) && plugins_snowflakepostgres_v1_plugin_pb.Plugin.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9502,6 +9506,11 @@ proto.api.v1.Step.deserializeBinaryFromReader = function(msg, reader) {
       var value = new plugins_javascriptsdkapi_v1_plugin_pb.Plugin;
       reader.readMessage(value,plugins_javascriptsdkapi_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
       msg.setJavascriptsdkapi(value);
+      break;
+    case 81:
+      var value = new plugins_snowflakepostgres_v1_plugin_pb.Plugin;
+      reader.readMessage(value,plugins_snowflakepostgres_v1_plugin_pb.Plugin.deserializeBinaryFromReader);
+      msg.setSnowflakepostgres(value);
       break;
     default:
       reader.skipField();
@@ -10169,6 +10178,14 @@ proto.api.v1.Step.serializeBinaryToWriter = function(message, writer) {
       80,
       f,
       plugins_javascriptsdkapi_v1_plugin_pb.Plugin.serializeBinaryToWriter
+    );
+  }
+  f = message.getSnowflakepostgres();
+  if (f != null) {
+    writer.writeMessage(
+      81,
+      f,
+      plugins_snowflakepostgres_v1_plugin_pb.Plugin.serializeBinaryToWriter
     );
   }
 };
@@ -13112,6 +13129,43 @@ proto.api.v1.Step.prototype.clearJavascriptsdkapi = function() {
  */
 proto.api.v1.Step.prototype.hasJavascriptsdkapi = function() {
   return jspb.Message.getField(this, 80) != null;
+};
+
+
+/**
+ * optional plugins.snowflakepostgres.v1.Plugin snowflakepostgres = 81;
+ * @return {?proto.plugins.snowflakepostgres.v1.Plugin}
+ */
+proto.api.v1.Step.prototype.getSnowflakepostgres = function() {
+  return /** @type{?proto.plugins.snowflakepostgres.v1.Plugin} */ (
+    jspb.Message.getWrapperField(this, plugins_snowflakepostgres_v1_plugin_pb.Plugin, 81));
+};
+
+
+/**
+ * @param {?proto.plugins.snowflakepostgres.v1.Plugin|undefined} value
+ * @return {!proto.api.v1.Step} returns this
+*/
+proto.api.v1.Step.prototype.setSnowflakepostgres = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 81, proto.api.v1.Step.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api.v1.Step} returns this
+ */
+proto.api.v1.Step.prototype.clearSnowflakepostgres = function() {
+  return this.setSnowflakepostgres(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.Step.prototype.hasSnowflakepostgres = function() {
+  return jspb.Message.getField(this, 81) != null;
 };
 
 

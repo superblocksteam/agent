@@ -32,6 +32,7 @@ import sb_s3 from '@superblocksteam/s3';
 import sb_salesforce from '@superblocksteam/salesforce';
 import sb_smtp from '@superblocksteam/smtp';
 import sb_snowflake from '@superblocksteam/snowflake';
+import sb_snowflakepostgres from '@superblocksteam/snowflakepostgres';
 import sb_superblocks_ocr from '@superblocksteam/superblocks-ocr';
 import sb_workflow from '@superblocksteam/workflow';
 
@@ -74,6 +75,7 @@ const secretStore = secrets();
     'sb-salesforce': new sb_salesforce(),
     'sb-smtp': new sb_smtp(),
     'sb-snowflake': new sb_snowflake(),
+    'sb-snowflakepostgres': new sb_snowflakepostgres(),
     'sb-ocr': new sb_superblocks_ocr(),
     'sb-workflow': new sb_workflow(),
     'sb-redis': redis,

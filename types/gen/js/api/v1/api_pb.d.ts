@@ -47,6 +47,7 @@ import * as plugins_salesforce_v1_plugin_pb from "../../plugins/salesforce/v1/pl
 import * as plugins_javascriptsdkapi_v1_plugin_pb from "../../plugins/javascriptsdkapi/v1/plugin_pb";
 import * as plugins_smtp_v1_plugin_pb from "../../plugins/smtp/v1/plugin_pb";
 import * as plugins_snowflake_v1_plugin_pb from "../../plugins/snowflake/v1/plugin_pb";
+import * as plugins_snowflakepostgres_v1_plugin_pb from "../../plugins/snowflakepostgres/v1/plugin_pb";
 import * as plugins_workflow_v1_plugin_pb from "../../plugins/workflow/v1/plugin_pb";
 import * as superblocks_v1_options_pb from "../../superblocks/v1/options_pb";
 import * as utils_v1_utils_pb from "../../utils/v1/utils_pb";
@@ -1620,6 +1621,11 @@ export class Step extends jspb.Message {
     getJavascriptsdkapi(): plugins_javascriptsdkapi_v1_plugin_pb.Plugin | undefined;
     setJavascriptsdkapi(value?: plugins_javascriptsdkapi_v1_plugin_pb.Plugin): Step;
 
+    hasSnowflakepostgres(): boolean;
+    clearSnowflakepostgres(): void;
+    getSnowflakepostgres(): plugins_snowflakepostgres_v1_plugin_pb.Plugin | undefined;
+    setSnowflakepostgres(value?: plugins_snowflakepostgres_v1_plugin_pb.Plugin): Step;
+
     getConfigCase(): Step.ConfigCase;
 
     serializeBinary(): Uint8Array;
@@ -1714,6 +1720,7 @@ export namespace Step {
         openaiV2?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
         lakebase?: plugins_lakebase_v1_plugin_pb.Plugin.AsObject,
         javascriptsdkapi?: plugins_javascriptsdkapi_v1_plugin_pb.Plugin.AsObject,
+        snowflakepostgres?: plugins_snowflakepostgres_v1_plugin_pb.Plugin.AsObject,
     }
 
     export enum ConfigCase {
@@ -1797,6 +1804,7 @@ export namespace Step {
         OPENAI_V2 = 78,
         LAKEBASE = 79,
         JAVASCRIPTSDKAPI = 80,
+        SNOWFLAKEPOSTGRES = 81,
     }
 
 }

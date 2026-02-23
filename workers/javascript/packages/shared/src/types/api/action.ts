@@ -261,6 +261,8 @@ export type CockroachDBActionConfiguration = DBActionConfiguration;
 
 export type LakebaseActionConfiguration = DBActionConfiguration;
 
+export type SnowflakePostgresActionConfiguration = DBActionConfiguration;
+
 export type MsSqlActionConfiguration = DBActionConfiguration;
 
 export type PythonActionConfiguration = {
@@ -394,6 +396,7 @@ export type ActionConfiguration = PluginMetadata &
     | DatabricksActionConfiguration
     | CouchbaseActionConfiguration
     | LakebaseActionConfiguration
+    | SnowflakePostgresActionConfiguration
   );
 
 export function getAction(actionId: string, actions: ApiDetails): Action {

@@ -44,6 +44,7 @@ import "plugins/salesforce/v1/plugin.proto";
 import "plugins/javascriptsdkapi/v1/plugin.proto";
 import "plugins/smtp/v1/plugin.proto";
 import "plugins/snowflake/v1/plugin.proto";
+import "plugins/snowflakepostgres/v1/plugin.proto";
 import "plugins/workflow/v1/plugin.proto";
 import "superblocks/v1/options.proto";
 import "utils/v1/utils.proto";
@@ -460,5 +461,6 @@ message Step {
     plugins.restapiintegration.v1.Plugin openai_v2 = 78 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
     plugins.lakebase.v1.Plugin lakebase = 79;
     plugins.javascriptsdkapi.v1.Plugin javascriptsdkapi = 80;
+    plugins.snowflakepostgres.v1.Plugin snowflakepostgres = 81;
   }
 }

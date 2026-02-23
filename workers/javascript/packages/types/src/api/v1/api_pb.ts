@@ -46,6 +46,7 @@ import { Plugin as Plugin$34 } from "../../plugins/custom/v1/plugin_pb";
 import { Plugin as Plugin$35 } from "../../plugins/kinesis/v1/plugin_pb";
 import { Plugin as Plugin$36 } from "../../plugins/lakebase/v1/plugin_pb";
 import { Plugin as Plugin$37 } from "../../plugins/javascriptsdkapi/v1/plugin_pb";
+import { Plugin as Plugin$38 } from "../../plugins/snowflakepostgres/v1/plugin_pb";
 
 /**
  * @generated from enum api.v1.AuthorizationType
@@ -2412,6 +2413,12 @@ export class Step extends Message<Step> {
      */
     value: Plugin$37;
     case: "javascriptsdkapi";
+  } | {
+    /**
+     * @generated from field: plugins.snowflakepostgres.v1.Plugin snowflakepostgres = 81;
+     */
+    value: Plugin$38;
+    case: "snowflakepostgres";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Step>) {
@@ -2502,6 +2509,7 @@ export class Step extends Message<Step> {
     { no: 78, name: "openai_v2", kind: "message", T: Plugin$12, oneof: "config" },
     { no: 79, name: "lakebase", kind: "message", T: Plugin$36, oneof: "config" },
     { no: 80, name: "javascriptsdkapi", kind: "message", T: Plugin$37, oneof: "config" },
+    { no: 81, name: "snowflakepostgres", kind: "message", T: Plugin$38, oneof: "config" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Step {

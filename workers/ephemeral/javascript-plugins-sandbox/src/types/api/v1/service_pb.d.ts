@@ -91,6 +91,11 @@ export class ExecuteRequest extends jspb.Message {
     clearFetchByPath(): void;
     getFetchByPath(): ExecuteRequest.FetchByPath | undefined;
     setFetchByPath(value?: ExecuteRequest.FetchByPath): ExecuteRequest;
+
+    hasFetchCode(): boolean;
+    clearFetchCode(): void;
+    getFetchCode(): ExecuteRequest.FetchCode | undefined;
+    setFetchCode(value?: ExecuteRequest.FetchCode): ExecuteRequest;
     clearFilesList(): void;
     getFilesList(): Array<ExecuteRequest.File>;
     setFilesList(value: Array<ExecuteRequest.File>): ExecuteRequest;
@@ -127,6 +132,7 @@ export namespace ExecuteRequest {
         definition?: Definition.AsObject,
         fetch?: ExecuteRequest.Fetch.AsObject,
         fetchByPath?: ExecuteRequest.FetchByPath.AsObject,
+        fetchCode?: ExecuteRequest.FetchCode.AsObject,
         filesList: Array<ExecuteRequest.File.AsObject>,
         profile?: common_v1_common_pb.Profile.AsObject,
         mocksList: Array<Mock.AsObject>,
@@ -281,6 +287,47 @@ export namespace ExecuteRequest {
         }
     }
 
+    export class FetchCode extends jspb.Message { 
+        getId(): string;
+        setId(value: string): FetchCode;
+
+        hasProfile(): boolean;
+        clearProfile(): void;
+        getProfile(): common_v1_common_pb.Profile | undefined;
+        setProfile(value?: common_v1_common_pb.Profile): FetchCode;
+        getViewMode(): ViewMode;
+        setViewMode(value: ViewMode): FetchCode;
+
+        hasCommitId(): boolean;
+        clearCommitId(): void;
+        getCommitId(): string | undefined;
+        setCommitId(value: string): FetchCode;
+
+        hasBranchName(): boolean;
+        clearBranchName(): void;
+        getBranchName(): string | undefined;
+        setBranchName(value: string): FetchCode;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): FetchCode.AsObject;
+        static toObject(includeInstance: boolean, msg: FetchCode): FetchCode.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: FetchCode, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): FetchCode;
+        static deserializeBinaryFromReader(message: FetchCode, reader: jspb.BinaryReader): FetchCode;
+    }
+
+    export namespace FetchCode {
+        export type AsObject = {
+            id: string,
+            profile?: common_v1_common_pb.Profile.AsObject,
+            viewMode: ViewMode,
+            commitId?: string,
+            branchName?: string,
+        }
+    }
+
     export class File extends jspb.Message { 
         getOriginalname(): string;
         setOriginalname(value: string): File;
@@ -321,13 +368,14 @@ export namespace ExecuteRequest {
         DEFINITION = 3,
         FETCH = 4,
         FETCH_BY_PATH = 8,
+        FETCH_CODE = 10,
     }
 
 }
 
 export class ExecuteV3Request extends jspb.Message { 
-    getApiId(): string;
-    setApiId(value: string): ExecuteV3Request;
+    getApplicationId(): string;
+    setApplicationId(value: string): ExecuteV3Request;
 
     getInputsMap(): jspb.Map<string, google_protobuf_struct_pb.Value>;
     clearInputsMap(): void;
@@ -338,6 +386,16 @@ export class ExecuteV3Request extends jspb.Message {
     clearProfile(): void;
     getProfile(): common_v1_common_pb.Profile | undefined;
     setProfile(value?: common_v1_common_pb.Profile): ExecuteV3Request;
+
+    hasCommitId(): boolean;
+    clearCommitId(): void;
+    getCommitId(): string | undefined;
+    setCommitId(value: string): ExecuteV3Request;
+
+    hasBranchName(): boolean;
+    clearBranchName(): void;
+    getBranchName(): string | undefined;
+    setBranchName(value: string): ExecuteV3Request;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ExecuteV3Request.AsObject;
@@ -351,11 +409,13 @@ export class ExecuteV3Request extends jspb.Message {
 
 export namespace ExecuteV3Request {
     export type AsObject = {
-        apiId: string,
+        applicationId: string,
 
         inputsMap: Array<[string, google_protobuf_struct_pb.Value.AsObject]>,
         viewMode: ViewMode,
         profile?: common_v1_common_pb.Profile.AsObject,
+        commitId?: string,
+        branchName?: string,
     }
 }
 

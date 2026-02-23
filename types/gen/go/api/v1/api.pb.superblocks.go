@@ -1275,3 +1275,19 @@ func (plugin *Step_Javascriptsdkapi) Build() (map[string]any, error) {
 	}
 	return obj, nil
 }
+
+func (*Step_Snowflakepostgres) Name() string { return "snowflakepostgres" }
+
+func (*Step_Snowflakepostgres) Type() string { return "snowflakepostgres" }
+
+func (plugin *Step_Snowflakepostgres) Build() (map[string]any, error) {
+	var buf bytes.Buffer
+	if err := marshaler.Marshal(&buf, plugin.Snowflakepostgres); err != nil {
+		return nil, err
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
+}

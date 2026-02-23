@@ -64,6 +64,7 @@
     "@superblocksteam/salesforce": "workspace:*",
     "@superblocksteam/smtp": "workspace:*",
     "@superblocksteam/snowflake": "workspace:*",
+    "@superblocksteam/snowflakepostgres": "workspace:*",
     "@superblocksteam/superblocks-ocr": "workspace:*",
     "@superblocksteam/workflow": "workspace:*",
     "ion-js": "5.2.1",

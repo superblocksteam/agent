@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package plugins.snowflakepostgres.v1;
+
+option go_package = "github.com/superblocksteam/agent/types/gen/go/plugins/snowflakepostgres/v1";
+
+message SuperblocksMetadata {
+  string pluginVersion = 1;
+}
+
+message Plugin {
+  string name = 1;
+  SnowflakePostgresConnection connection = 2;
+  string body = 3;
+  bool usePreparedSql = 4;
+  optional string parameters = 5;
+  SuperblocksMetadata superblocksMetadata = 6;
+
+  message SnowflakePostgresConnection {
+    string host = 1;
+    int32 port = 2;
+    string database_name = 3;
+    optional string username = 4;
+    optional string password = 5;
+    bool use_self_signed_ssl = 6;
+    optional string ca = 7;
+    optional string key = 8;
+    optional string cert = 9;
+  }
+}

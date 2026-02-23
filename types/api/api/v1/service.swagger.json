@@ -2579,6 +2579,39 @@
         }
       }
     },
+    "PluginSnowflakePostgresConnection": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "databaseName": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "useSelfSignedSsl": {
+          "type": "boolean"
+        },
+        "ca": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "cert": {
+          "type": "string"
+        }
+      }
+    },
     "PluginSoql": {
       "type": "object",
       "properties": {
@@ -5356,6 +5389,37 @@
         }
       }
     },
+    "pluginssnowflakepostgresv1Plugin": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "connection": {
+          "$ref": "#/definitions/PluginSnowflakePostgresConnection"
+        },
+        "body": {
+          "type": "string"
+        },
+        "usePreparedSql": {
+          "type": "boolean"
+        },
+        "parameters": {
+          "type": "string"
+        },
+        "superblocksMetadata": {
+          "$ref": "#/definitions/pluginssnowflakepostgresv1SuperblocksMetadata"
+        }
+      }
+    },
+    "pluginssnowflakepostgresv1SuperblocksMetadata": {
+      "type": "object",
+      "properties": {
+        "pluginVersion": {
+          "type": "string"
+        }
+      }
+    },
     "pluginssnowflakev1MappedColumns": {
       "type": "object",
       "properties": {
@@ -7132,6 +7196,9 @@
         },
         "javascriptsdkapi": {
           "$ref": "#/definitions/pluginsjavascriptsdkapiv1Plugin"
+        },
+        "snowflakepostgres": {
+          "$ref": "#/definitions/pluginssnowflakepostgresv1Plugin"
         }
       }
     },

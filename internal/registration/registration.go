@@ -60,6 +60,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"databricks":         {"0.0.5"},
 	"oracledb":           {"0.0.2"},
 	"lakebase":           {"0.0.1"},
+	"snowflakepostgres":  {"0.0.1"},
 }
 
 type Registrator interface {

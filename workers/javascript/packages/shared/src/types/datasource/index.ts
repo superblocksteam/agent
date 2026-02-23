@@ -483,6 +483,24 @@ export type LakebaseDatasourceConfiguration = {
   oauthType?: IntegrationAuthType.OAUTH2_TOKEN_EXCHANGE;
 };
 
+// Snowflake Postgres is Snowflake's Postgres-compatible database endpoint
+export type SnowflakePostgresDatasourceConfiguration = {
+  name?: string;
+  connection?: {
+    host?: string;
+    port?: number;
+    databaseName?: string;
+    username?: string;
+    password?: string;
+    useSelfSignedSsl?: boolean;
+    ca?: string;
+    key?: string;
+    cert?: string;
+  };
+  connectionType?: 'fields' | 'url';
+  connectionUrl?: string;
+};
+
 export type OracleDbDatasourceConfiguration = Pick<OracleDbPlugin.Plugin, 'name' | 'connection' | 'dynamicWorkflowConfiguration'> & {
   connectionType?: 'fields' | 'url';
   connectionUrl?: string;
@@ -534,6 +552,7 @@ export type DatasourceConfiguration =
   | DatabricksDatasourceConfiguration
   | CouchbaseDatasourceConfiguration
   | LakebaseDatasourceConfiguration
+  | SnowflakePostgresDatasourceConfiguration
   | SecretStore;
 
 export type DatasourceConfigurationByType = {
@@ -575,6 +594,7 @@ export type DatasourceConfigurationByType = {
   gsheets?: GoogleSheetsDatasourceConfiguration;
   kafka?: KafkaDatasourceConfiguration;
   lakebase?: LakebaseDatasourceConfiguration;
+  snowflakepostgres?: SnowflakePostgresDatasourceConfiguration;
 };
 
 export enum DatasourceEnvironments {

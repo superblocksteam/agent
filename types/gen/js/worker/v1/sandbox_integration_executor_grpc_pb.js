@@ -2,9 +2,9 @@
 
 'use strict';
 var grpc = require('@grpc/grpc-js');
-var worker_v1_sandbox_integration_executor_pb = require('../../worker/v1/sandbox_integration_executor_pb.js');
-var api_v1_service_pb = require('../../api/v1/service_pb.js');
-var common_v1_common_pb = require('../../common/v1/common_pb.js');
+var worker_v1_sandbox_integration_executor_pb = require('../../worker/v1/sandbox_integration_executor_pb');
+var api_v1_service_pb = require('../../api/v1/service_pb');
+var common_v1_common_pb = require('../../common/v1/common_pb');
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 
 function serialize_worker_v1_ExecuteIntegrationRequest(arg) {

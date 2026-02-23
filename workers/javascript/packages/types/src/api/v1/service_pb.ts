@@ -174,6 +174,15 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
      */
     value: ExecuteRequest_FetchByPath;
     case: "fetchByPath";
+  } | {
+    /**
+     *
+     * Fetch by ID with API 2.0 code delivery. Used by ExecuteV3.
+     *
+     * @generated from field: api.v1.ExecuteRequest.FetchCode fetch_code = 10;
+     */
+    value: ExecuteRequest_FetchCode;
+    case: "fetchCode";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   /**
@@ -213,6 +222,7 @@ export class ExecuteRequest extends Message<ExecuteRequest> {
     { no: 3, name: "definition", kind: "message", T: Definition, oneof: "request" },
     { no: 4, name: "fetch", kind: "message", T: ExecuteRequest_Fetch, oneof: "request" },
     { no: 8, name: "fetch_by_path", kind: "message", T: ExecuteRequest_FetchByPath, oneof: "request" },
+    { no: 10, name: "fetch_code", kind: "message", T: ExecuteRequest_FetchCode, oneof: "request" },
     { no: 5, name: "files", kind: "message", T: ExecuteRequest_File, repeated: true },
     { no: 6, name: "profile", kind: "message", T: Profile },
     { no: 7, name: "mocks", kind: "message", T: Mock, repeated: true },
@@ -536,6 +546,74 @@ export class ExecuteRequest_FetchByPath extends Message<ExecuteRequest_FetchByPa
 }
 
 /**
+ *
+ * FetchCode is used by ExecuteV3 for API 2.0 execution with code delivery.
+ * Unlike Fetch, this does NOT fetch the Definition from the server. Instead,
+ * it creates a synthetic Definition with minimal metadata and fetches the
+ * esbuild bundle from GET /api/v3/applications/{id}/code. The bundle is
+ * wrapped and dispatched directly to the JS worker, bypassing the block executor.
+ *
+ * @generated from message api.v1.ExecuteRequest.FetchCode
+ */
+export class ExecuteRequest_FetchCode extends Message<ExecuteRequest_FetchCode> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  /**
+   * @generated from field: common.v1.Profile profile = 2;
+   */
+  profile?: Profile;
+
+  /**
+   * @generated from field: api.v1.ViewMode view_mode = 3;
+   */
+  viewMode = ViewMode.UNSPECIFIED;
+
+  /**
+   * @generated from field: optional string commit_id = 4;
+   */
+  commitId?: string;
+
+  /**
+   * @generated from field: optional string branch_name = 5;
+   */
+  branchName?: string;
+
+  constructor(data?: PartialMessage<ExecuteRequest_FetchCode>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.ExecuteRequest.FetchCode";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "profile", kind: "message", T: Profile },
+    { no: 3, name: "view_mode", kind: "enum", T: proto3.getEnumType(ViewMode) },
+    { no: 4, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 5, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteRequest_FetchCode {
+    return new ExecuteRequest_FetchCode().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ExecuteRequest_FetchCode {
+    return new ExecuteRequest_FetchCode().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ExecuteRequest_FetchCode {
+    return new ExecuteRequest_FetchCode().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ExecuteRequest_FetchCode | PlainMessage<ExecuteRequest_FetchCode> | undefined, b: ExecuteRequest_FetchCode | PlainMessage<ExecuteRequest_FetchCode> | undefined): boolean {
+    return proto3.util.equals(ExecuteRequest_FetchCode, a, b);
+  }
+}
+
+/**
  * @generated from message api.v1.ExecuteRequest.File
  */
 export class ExecuteRequest_File extends Message<ExecuteRequest_File> {
@@ -599,17 +677,18 @@ export class ExecuteRequest_File extends Message<ExecuteRequest_File> {
 /**
  * ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.
  * Unlike ExecuteRequest, it always requires JWT authentication and only
- * supports fetch-by-ID (no inline definitions).
+ * supports fetch-by-ID (no inline definitions). Uses FetchCode for API 2.0
+ * code delivery.
  *
  * @generated from message api.v1.ExecuteV3Request
  */
 export class ExecuteV3Request extends Message<ExecuteV3Request> {
   /**
-   * The API ID to execute (required).
+   * The application ID to execute (required).
    *
-   * @generated from field: string api_id = 1;
+   * @generated from field: string application_id = 1;
    */
-  apiId = "";
+  applicationId = "";
 
   /**
    * Inputs accessible to steps.
@@ -632,6 +711,20 @@ export class ExecuteV3Request extends Message<ExecuteV3Request> {
    */
   profile?: Profile;
 
+  /**
+   * Optional commit ID for code delivery (live edit). Required for code-mode APIs when not deployed.
+   *
+   * @generated from field: optional string commit_id = 5;
+   */
+  commitId?: string;
+
+  /**
+   * Optional branch name for code delivery (live edit). Required for code-mode APIs when not deployed.
+   *
+   * @generated from field: optional string branch_name = 6;
+   */
+  branchName?: string;
+
   constructor(data?: PartialMessage<ExecuteV3Request>) {
     super();
     proto3.util.initPartial(data, this);
@@ -640,10 +733,12 @@ export class ExecuteV3Request extends Message<ExecuteV3Request> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "api.v1.ExecuteV3Request";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "api_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "application_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "inputs", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Value} },
     { no: 3, name: "view_mode", kind: "enum", T: proto3.getEnumType(ViewMode) },
     { no: 4, name: "profile", kind: "message", T: Profile },
+    { no: 5, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 6, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteV3Request {

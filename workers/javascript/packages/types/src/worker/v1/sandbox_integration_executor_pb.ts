@@ -5,8 +5,8 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3, Struct, Value } from "@bufbuild/protobuf";
-import { ViewMode } from "../../api/v1/service_pb.js";
-import { Profile } from "../../common/v1/common_pb.js";
+import { ViewMode } from "../../api/v1/service_pb";
+import { Profile } from "../../common/v1/common_pb";
 
 /**
  * @generated from message worker.v1.ExecuteIntegrationRequest
