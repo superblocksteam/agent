@@ -358,6 +358,43 @@ func TestMustacheUnwrapping(t *testing.T) {
 	assert.Equal(t, "return 40 + 2", body)
 }
 
+func TestMustacheUnwrappingEmptyBindingToNull(t *testing.T) {
+	t.Parallel()
+
+	mockWorker := worker.NewMockClient(t)
+	mockStore := storemock.NewStore(t)
+
+	var capturedData *transportv1.Request_Data_Data
+
+	mockWorker.On("Execute", mock.Anything, "javascriptwasm", mock.Anything).
+		Run(func(args mock.Arguments) {
+			capturedData = args.Get(2).(*transportv1.Request_Data_Data)
+		}).
+		Return((*transportv1.Performance)(nil), "key-empty-binding", nil)
+
+	mockStore.On("Read", mock.Anything, "key-empty-binding").
+		Return([]interface{}{outputJSON(t, structpb.NewNullValue())}, nil)
+
+	opts := &Options{
+		Worker:        mockWorker,
+		Store:         mockStore,
+		ExecutionID:   "test-exec-id",
+		FileServerURL: "http://localhost:8080",
+	}
+
+	s := Sandbox(opts)
+	e, _ := s.Engine(context.Background())
+	v := e.Resolve(context.Background(), "{{ }}", nil)
+
+	result, err := v.Result()
+	require.NoError(t, err)
+	assert.Nil(t, result)
+
+	// Empty bindings should evaluate as null to preserve V8 parity.
+	body := capturedData.Props.ActionConfiguration.Fields["body"].GetStringValue()
+	assert.Equal(t, "return null", body)
+}
+
 func TestAsBooleanWrapsWithDoubleNegation(t *testing.T) {
 	t.Parallel()
 

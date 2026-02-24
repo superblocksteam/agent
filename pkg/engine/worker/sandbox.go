@@ -62,6 +62,10 @@ type engine struct {
 func (e *engine) Resolve(ctx context.Context, code string, variables utils.Map[*transportv1.Variable], _ ...pkgengine.ResolveOption) pkgengine.Value {
 	// Unwrap mustache template delimiters if present (e.g., "{{ x > 5 }}" -> "x > 5").
 	unwrapped := utils.IdempotentUnwrap(code)
+	if unwrapped == "" {
+		// Match local V8 behavior: empty bindings like "{{ }}" resolve to null.
+		unwrapped = "null"
+	}
 
 	// Convert utils.Map to plain map for the proto field.
 	var varsMap map[string]*transportv1.Variable
