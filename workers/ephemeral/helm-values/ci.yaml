@@ -7,6 +7,10 @@ fleets:
     language: python
     bucket: BA
     consumerGroup: ephemeral-python
+    plugins:
+      - python
+    events:
+      - execute
     streams:
       - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
       - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
@@ -24,17 +28,26 @@ fleets:
             consumerGroup: ephemeral-python
             lagCount: "1"
           authenticationRef:
-            name: redis-trigger-auth
+            name: sandbox-workers-redis-trigger-auth
   # JavaScript ephemeral worker fleet
   javascript-ba:
     language: javascript
     bucket: BA
     consumerGroup: ephemeral-javascript
+    plugins:
+      - javascript
+      - javascriptwasm
+    events:
+      - execute
     streams:
       - agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute
       - agent.main.bucket.BE.ephemeral.plugin.javascript.event.execute
       - agent.main.bucket.B1.ephemeral.plugin.javascript.event.execute
       - agent.main.bucket.B2.ephemeral.plugin.javascript.event.execute
+      - agent.main.bucket.BA.ephemeral.plugin.javascriptwasm.event.execute
+      - agent.main.bucket.BE.ephemeral.plugin.javascriptwasm.event.execute
+      - agent.main.bucket.B1.ephemeral.plugin.javascriptwasm.event.execute
+      - agent.main.bucket.B2.ephemeral.plugin.javascriptwasm.event.execute
     keda:
       pollingInterval: 1
       minReplicaCount: 1
@@ -47,7 +60,15 @@ fleets:
             consumerGroup: ephemeral-javascript
             lagCount: "1"
           authenticationRef:
-            name: redis-trigger-auth
+            name: sandbox-workers-redis-trigger-auth
+        - type: redis-streams
+          metadata:
+            address: redis-master.superblocks.svc.cluster.local:6379
+            stream: agent.main.bucket.BA.ephemeral.plugin.javascriptwasm.event.execute
+            consumerGroup: ephemeral-javascript
+            lagCount: "1"
+          authenticationRef:
+            name: sandbox-workers-redis-trigger-auth
 # Task Manager image (built in CI)
 taskManager:
   image:

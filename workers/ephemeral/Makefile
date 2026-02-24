@@ -151,14 +151,14 @@ deploy-orchestrator:
 		--env="SUPERBLOCKS_ORCHESTRATOR_STORE_REDIS_PASSWORD=koala" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_DATA_DOMAIN=app.superblocks.com" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_BUCKETS_CONFIG=buckets.minimal.json" \
-		--env="SUPERBLOCKS_ORCHESTRATOR_WORKER_EPHEMERAL_PLUGINS_ENABLED=python,javascript" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_LOG_LEVEL=debug" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_SIGNATURE_VERIFICATION_ENABLED=false" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY=e2e_test_encryption_key_32bytes!" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_REGISTRATION_ENABLED=false" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_EVENTS_CLOUD_ENABLED=false" \
 		-- \
-		--http.bind=0.0.0.0
+		--http.bind=0.0.0.0 \
+		--worker.ephemeral.plugins.enabled=python,javascript,javascriptwasm
 	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) expose pod orchestrator --port=8080 --target-port=8080 --name=orchestrator || true
 	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) wait --for=condition=ready pod/orchestrator --timeout=120s
 
