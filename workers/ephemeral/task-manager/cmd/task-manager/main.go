@@ -436,6 +436,7 @@ func main() {
 			k8sjobmanager.WithOwnerPodName(ownerPodName),
 			k8sjobmanager.WithOwnerPodUID(ownerPodUID),
 			k8sjobmanager.WithLanguage(viper.GetString("sandbox.language")),
+			k8sjobmanager.WithEphemeral(viper.GetBool("worker.ephemeral")),
 		}
 
 		if viper.GetBool("integration.executor.enabled") {

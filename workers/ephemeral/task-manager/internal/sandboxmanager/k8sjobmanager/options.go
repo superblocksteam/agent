@@ -64,6 +64,9 @@ type Options struct {
 
 	// Task manager's gRPC port (integration executor)
 	IntegrationExecutorGrpcPort int
+
+	// Ephemeral mode: task-manager processes one job and exits
+	Ephemeral bool
 }
 
 // Option is a functional option for Options
@@ -199,6 +202,13 @@ func WithLanguage(language string) Option {
 func WithIntegrationExecutorGrpcPort(port int) Option {
 	return func(o *Options) {
 		o.IntegrationExecutorGrpcPort = port
+	}
+}
+
+// WithEphemeral sets ephemeral mode
+func WithEphemeral(ephemeral bool) Option {
+	return func(o *Options) {
+		o.Ephemeral = ephemeral
 	}
 }
 

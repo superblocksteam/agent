@@ -51,6 +51,8 @@ type K8sJobManager struct {
 	language string
 	// Task manager's integration executor gRPC port
 	integrationExecutorGrpcPort int
+	// Ephemeral mode: task-manager processes one job and exits
+	ephemeral bool
 }
 
 // NewSandboxJobManager creates a new SandboxJobManager
@@ -75,6 +77,7 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		imagePullSecrets:            opts.ImagePullSecrets,
 		language:                    strings.ToLower(opts.Language),
 		integrationExecutorGrpcPort: opts.IntegrationExecutorGrpcPort,
+		ephemeral:                   opts.Ephemeral,
 	}
 }
 
@@ -328,18 +331,27 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 	containerName := fmt.Sprintf("%s-sandbox", language)
 	labels := map[string]string{
 		"component":    "worker.sandbox",
-		"role":         "sandbox",
-		"sandbox-id":   sandboxId,
+		"ephemeral":    fmt.Sprintf("%t", m.ephemeral),
 		"execution-id": sandboxId,
 		"language":     language,
+		"role":         "sandbox",
+		"sandbox-id":   sandboxId,
 	}
 	specLabels := map[string]string{
 		"component":    "worker.sandbox",
-		"role":         "sandbox",
-		"sandbox-id":   sandboxId,
+		"ephemeral":    fmt.Sprintf("%t", m.ephemeral),
 		"execution-id": sandboxId,
 		"job-name":     jobName,
 		"language":     language,
+		"role":         "sandbox",
+		"sandbox-id":   sandboxId,
+	}
+
+	var podAnnotations map[string]string
+	if m.ephemeral {
+		podAnnotations = map[string]string{
+			"karpenter.sh/do-not-disrupt": "true",
+		}
 	}
 
 	job := &batchv1.Job{
@@ -356,7 +368,8 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 			Completions:             &completions,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: specLabels,
+					Labels:      specLabels,
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					RestartPolicy:                corev1.RestartPolicyNever,

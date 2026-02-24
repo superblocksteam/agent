@@ -43,6 +43,7 @@ func TestNewSandboxJobManager(t *testing.T) {
 			WithImagePullSecrets(imagePullSecrets),
 			WithLanguage("python"),
 			WithIntegrationExecutorGrpcPort(50052),
+			WithEphemeral(true),
 		)
 
 		m := NewSandboxJobManager(opts)
@@ -65,6 +66,7 @@ func TestNewSandboxJobManager(t *testing.T) {
 		assert.Equal(t, imagePullSecrets, m.imagePullSecrets)
 		assert.Equal(t, "python", m.language)
 		assert.Equal(t, 50052, m.integrationExecutorGrpcPort)
+		assert.True(t, m.ephemeral)
 	})
 
 	t.Run("uses default option values", func(t *testing.T) {
@@ -86,6 +88,7 @@ func TestBuildJobSpec(t *testing.T) {
 		name                        string
 		integrationExecutorGrpcPort int
 		language                    string
+		ephemeral                   bool
 		expectIntegrationExecutor   bool
 	}{
 		{
@@ -112,6 +115,16 @@ func TestBuildJobSpec(t *testing.T) {
 			language:                    "",
 			expectIntegrationExecutor:   false,
 		},
+		{
+			name:      "ephemeral adds do-not-disrupt annotation",
+			language:  "javascript",
+			ephemeral: true,
+		},
+		{
+			name:      "non-ephemeral omits do-not-disrupt annotation",
+			language:  "javascript",
+			ephemeral: false,
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			m := &K8sJobManager{
@@ -125,6 +138,7 @@ func TestBuildJobSpec(t *testing.T) {
 				ttlSecondsAfterFinished:     60,
 				language:                    test.language,
 				integrationExecutorGrpcPort: test.integrationExecutorGrpcPort,
+				ephemeral:                   test.ephemeral,
 				logger:                      zap.NewNop(),
 			}
 
@@ -132,6 +146,12 @@ func TestBuildJobSpec(t *testing.T) {
 
 			assert.Equal(t, "sandbox-test-123", job.Name)
 			assert.Equal(t, "test-ns", job.Namespace)
+
+			if test.ephemeral {
+				assert.Equal(t, "true", job.Spec.Template.ObjectMeta.Annotations["karpenter.sh/do-not-disrupt"])
+			} else {
+				assert.Empty(t, job.Spec.Template.ObjectMeta.Annotations)
+			}
 
 			container := job.Spec.Template.Spec.Containers[0]
 
@@ -153,9 +173,11 @@ func TestBuildJobSpec(t *testing.T) {
 				assert.False(t, found, "expected integration executor env var to not be set")
 			}
 
-			// Verify language-specific container name.
+			// Verify language-specific container name and ephemeral label.
 			assert.Equal(t, fmt.Sprintf("%s-sandbox", test.language), container.Name)
 			assert.Equal(t, test.language, job.Labels["language"])
+			assert.Equal(t, fmt.Sprintf("%t", test.ephemeral), job.Labels["ephemeral"])
+			assert.Equal(t, fmt.Sprintf("%t", test.ephemeral), job.Spec.Template.Labels["ephemeral"])
 		})
 	}
 }
