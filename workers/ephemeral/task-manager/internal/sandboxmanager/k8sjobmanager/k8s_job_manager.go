@@ -16,10 +16,13 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	k8swatch "k8s.io/client-go/tools/watch"
 	"k8s.io/utils/ptr"
 )
 
@@ -146,6 +149,166 @@ func (m *K8sJobManager) DeleteSandbox(ctx context.Context, jobName string) error
 	}
 
 	return nil
+}
+
+// WatchSandboxPod watches the sandbox pod and closes the returned channel when the pod is
+// no longer available (deleted, failed, evicted)
+func (m *K8sJobManager) WatchSandboxPod(ctx context.Context, jobName string) <-chan error {
+	deadCh := make(chan error, 1)
+	go func() {
+		defer close(deadCh)
+
+		labelSelector := fmt.Sprintf("job-name=%s", jobName)
+		podInterface := m.clientset.CoreV1().Pods(m.namespace)
+
+		// Initial list to get resource version for RetryWatcher (required for reconnection).
+		list, err := podInterface.List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+		if err != nil {
+			m.logger.Warn(
+				"failed to list sandbox pods for watch",
+				zap.String("job", jobName),
+				zap.Error(err),
+			)
+
+			deadCh <- fmt.Errorf("failed to start sandbox pod watcher: %w", err)
+			return
+		}
+
+		initialRV := list.ResourceVersion
+		if initialRV == "" || initialRV == "0" {
+			m.logger.Warn(
+				"invalid resource version for RetryWatcher, using raw watch",
+				zap.String("job", jobName),
+				zap.String("resourceVersion", initialRV),
+			)
+
+			m.watchSandboxPodRaw(ctx, jobName, labelSelector, podInterface, deadCh)
+			return
+		}
+
+		lwWithCtx := &cache.ListWatch{
+			ListWithContextFunc: func(ctx context.Context, opts metav1.ListOptions) (runtime.Object, error) {
+				opts.LabelSelector = labelSelector
+				return podInterface.List(ctx, opts)
+			},
+			WatchFuncWithContext: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+				opts.LabelSelector = labelSelector
+				return podInterface.Watch(ctx, opts)
+			},
+		}
+
+		retryWatcher, err := k8swatch.NewRetryWatcherWithContext(ctx, initialRV, lwWithCtx)
+		if err != nil {
+			m.logger.Warn(
+				"failed to create sandbox pod retry watcher",
+				zap.String("job", jobName),
+				zap.Error(err),
+			)
+
+			deadCh <- fmt.Errorf("failed to start sandbox pod retry watcher: %w", err)
+			return
+		}
+		defer retryWatcher.Stop()
+
+		m.processPodWatchEvents(ctx, jobName, retryWatcher.ResultChan(), deadCh)
+	}()
+
+	return deadCh
+}
+
+// watchSandboxPodRaw is a fallback when RetryWatcher cannot be used (e.g. invalid resource version)
+func (m *K8sJobManager) watchSandboxPodRaw(
+	ctx context.Context,
+	jobName, labelSelector string,
+	podInterface interface {
+		Watch(context.Context, metav1.ListOptions) (watch.Interface, error)
+	},
+	deadCh chan<- error,
+) {
+	watcher, err := podInterface.Watch(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+	if err != nil {
+		m.logger.Warn(
+			"failed to start sandbox pod watcher",
+			zap.String("job", jobName),
+			zap.Error(err),
+		)
+
+		deadCh <- fmt.Errorf("failed to start sandbox pod raw watcher: %w", err)
+		return
+	}
+	defer watcher.Stop()
+
+	m.processPodWatchEvents(ctx, jobName, watcher.ResultChan(), deadCh)
+}
+
+// processPodWatchEvents handles watch events for pod lifecycle (deleted, failed, succeeded)
+func (m *K8sJobManager) processPodWatchEvents(
+	ctx context.Context,
+	jobName string,
+	resultChan <-chan watch.Event,
+	deadCh chan<- error,
+) {
+	for {
+		select {
+		case <-ctx.Done():
+			deadCh <- ctx.Err()
+			return
+		case event, ok := <-resultChan:
+			if !ok {
+				deadCh <- fmt.Errorf("pod watcher channel closed")
+				return
+			}
+
+			if event.Type == watch.Error {
+				m.logger.Warn(
+					"sandbox pod watcher error",
+					zap.String("job", jobName),
+					zap.Any("object", event.Object),
+				)
+
+				deadCh <- fmt.Errorf("sandbox pod watcher error: %v", event.Object)
+				return
+			}
+
+			pod, ok := event.Object.(*corev1.Pod)
+			if !ok {
+				continue
+			}
+
+			switch event.Type {
+			case watch.Deleted:
+				m.logger.Info(
+					"sandbox pod deleted",
+					zap.String("job", jobName),
+					zap.String("pod", pod.Name),
+				)
+
+				deadCh <- fmt.Errorf("sandbox pod deleted: %s", pod.Name)
+				return
+			case watch.Modified:
+				if pod.Status.Phase == corev1.PodFailed {
+					m.logger.Info(
+						"sandbox pod failed",
+						zap.String("job", jobName),
+						zap.String("pod", pod.Name),
+						zap.String("reason", getPodFailureReason(pod)),
+					)
+
+					deadCh <- fmt.Errorf("sandbox pod failed: %s", getPodFailureReason(pod))
+					return
+				} else if pod.Status.Phase == corev1.PodSucceeded {
+					m.logger.Info(
+						"sandbox pod unexpectedly completed successfully",
+						zap.String("job", jobName),
+						zap.String("pod", pod.Name),
+					)
+
+					deadCh <- fmt.Errorf("sandbox pod unexpectedly completed successfully: %s", pod.Name)
+					return
+				}
+			}
+		}
+	}
 }
 
 // buildJobSpec creates the Job specification for a sandbox

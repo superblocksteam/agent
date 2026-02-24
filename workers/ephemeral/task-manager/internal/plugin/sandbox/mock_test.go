@@ -9,6 +9,7 @@ import (
 type mockSandboxManager struct {
 	createFunc func(ctx context.Context, sandboxId string) (*sandboxmanager.SandboxInfo, error)
 	deleteFunc func(ctx context.Context, sandboxId string) error
+	watchFunc  func(ctx context.Context, jobName string) <-chan error
 }
 
 func (m *mockSandboxManager) CreateSandbox(ctx context.Context, sandboxId string) (*sandboxmanager.SandboxInfo, error) {
@@ -28,4 +29,11 @@ func (m *mockSandboxManager) DeleteSandbox(ctx context.Context, sandboxId string
 		return m.deleteFunc(ctx, sandboxId)
 	}
 	return nil
+}
+
+func (m *mockSandboxManager) WatchSandboxPod(ctx context.Context, jobName string) <-chan error {
+	if m.watchFunc != nil {
+		return m.watchFunc(ctx, jobName)
+	}
+	return make(chan error)
 }

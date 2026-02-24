@@ -1,9 +1,19 @@
 package sandbox
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"net"
 	"testing"
+	"time"
 
+	"workers/ephemeral/task-manager/internal/sandboxmanager"
+
+	"github.com/stretchr/testify/require"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -208,5 +218,121 @@ func TestConnectionModeConstants(t *testing.T) {
 	}
 	if SandboxConnectionModeDynamic != 2 {
 		t.Errorf("SandboxConnectionModeDynamic = %d, want 2", SandboxConnectionModeDynamic)
+	}
+}
+
+func TestSandboxPlugin_Run_ReturnsContextError_WhenSandboxDeadChannelSendsContextError(t *testing.T) {
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: addr,
+			}, nil
+		},
+		watchFunc: func(ctx context.Context, _ string) <-chan error {
+			ch := make(chan error, 1)
+			go func() {
+				<-ctx.Done()
+				ch <- ctx.Err()
+				close(ch)
+			}()
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- p.Run(ctx)
+	}()
+
+	// Give Run time to create sandbox and connect.
+	time.Sleep(200 * time.Millisecond)
+	cancel()
+
+	err = <-errCh
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.Canceled)
+}
+
+func TestSandboxPlugin_Run_ReturnsWrappedError_WhenSandboxDeadChannelSendsNonContextError(t *testing.T) {
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	ctx := context.Background()
+	podDeletedErr := fmt.Errorf("sandbox pod deleted: sandbox-test-abc123")
+
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: addr,
+			}, nil
+		},
+		watchFunc: func(context.Context, string) <-chan error {
+			ch := make(chan error, 1)
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				ch <- podDeletedErr
+				close(ch)
+			}()
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- p.Run(ctx)
+	}()
+
+	gotErr := <-errCh
+	require.Error(t, gotErr)
+	require.ErrorIs(t, gotErr, podDeletedErr)
+	require.Contains(t, gotErr.Error(), "sandbox pod is no longer available")
+}
+
+// startSandboxGrpcServer starts a minimal gRPC server that implements SandboxTransportService
+// and returns the address (caller must call the returned cleanup function)
+func startSandboxGrpcServer(t *testing.T) (addr string, cleanup func()) {
+	t.Helper()
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	grpcServer := grpc.NewServer()
+	workerv1.RegisterSandboxTransportServiceServer(grpcServer, &workerv1.UnimplementedSandboxTransportServiceServer{})
+
+	go func() {
+		_ = grpcServer.Serve(lis)
+	}()
+
+	return lis.Addr().String(), func() {
+		grpcServer.GracefulStop()
+		_ = lis.Close()
 	}
 }

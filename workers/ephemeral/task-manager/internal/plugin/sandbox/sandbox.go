@@ -129,11 +129,18 @@ func (p *SandboxPlugin) Name() string {
 }
 
 func (p *SandboxPlugin) Run(ctx context.Context) error {
+	var sandboxDeadCh <-chan error
+
 	switch p.connectionMode {
 	case SandboxConnectionModeStatic:
 		if p.sandboxAddress == "" {
 			return fmt.Errorf("sandbox address is required in static mode")
 		}
+
+		noopSandboxDeadCh := make(chan error)
+		defer close(noopSandboxDeadCh)
+
+		sandboxDeadCh = noopSandboxDeadCh
 
 		// Static mode: connect to existing sandbox at configured address
 		p.logger.Info("sandbox plugin initialized (static mode)",
@@ -158,6 +165,8 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 			p.ipFilterSetter.AddAllowedIps(sandboxInfo.Ip)
 		}
 
+		sandboxDeadCh = p.sandboxManager.WatchSandboxPod(ctx, p.sandboxInfo.Name)
+
 		p.logger.Info("sandbox plugin initialized (dynamic mode)",
 			zap.String("sandbox_id", p.sandboxId),
 			zap.String("job", sandboxInfo.Name),
@@ -181,8 +190,19 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 	p.conn = conn
 	p.client = client
 
-	<-ctx.Done()
-	return ctx.Err()
+	select {
+	case err := <-sandboxDeadCh:
+		if err != nil {
+			if err != ctx.Err() {
+				return fmt.Errorf("sandbox pod is no longer available: %w", err)
+			}
+			return ctx.Err()
+		}
+
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // connectToSandbox creates a gRPC connection to the sandbox pod
