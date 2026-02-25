@@ -597,6 +597,13 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 
 	useAgentKey := s.getUseAgentKeyForHydration(ctx)
 
+	// Code-mode fetches (FetchCode) always use the agent key so that
+	// ephemeral/PR environments work even when the LaunchDarkly flag
+	// client falls back to defaults.
+	if req.GetFetchCode() != nil {
+		useAgentKey = true
+	}
+
 	var result *apiv1.Definition
 	var rawResult *structpb.Struct
 	var rawApiValue *structpb.Value
