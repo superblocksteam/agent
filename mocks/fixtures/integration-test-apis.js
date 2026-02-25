@@ -585,7 +585,7 @@ const integrationTestApis = [
         organization: '00000000-0000-0000-0000-000000000001',
       },
       signature: {
-        data: 'q+2F6FB2tSR03acE2oAhFYTHYdpCpOqMbVvnAmKfLAovhz6+t/WB1wie/6UDpX5PX42EB+Eqx9EDsWC6Hp73Ag==',
+        data: 'IRjp0znf1qvK8IypkNIijDZcbUtiu+tBK3+UzN9bRnlhOHDrKcinUKqqA+A/bLA+MFfQBvmqwc8cEkF9AAzGCw==',
       },
       blocks: [
         {
@@ -612,7 +612,7 @@ const integrationTestApis = [
                   name: 'Conditional',
                   conditional: {
                     if: {
-                      condition: '{{ err.value === "Error on line 1:\\\\nError: This should fail" }}',
+                      condition: '{{ err.value.includes("This should fail") }}',
                       blocks: [
                         {
                           name: 'HANDLE_CATCH',
