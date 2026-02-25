@@ -113,6 +113,12 @@ func init() {
 	pflag.StringToString("sandbox.nodeSelector", map[string]string{}, "Node selector for sandbox pods (e.g., 'key=value,key2=value2').")
 	pflag.StringArray("sandbox.toleration", []string{}, "Toleration for sandbox pods (format: 'key=x,operator=y,value=z,effect=w'). Can be specified multiple times for multiple tolerations.")
 
+	// Sandbox resource requests/limits
+	pflag.String("sandbox.resources.requests.cpu", "", "CPU request for sandbox containers (e.g., '100m').")
+	pflag.String("sandbox.resources.requests.memory", "", "Memory request for sandbox containers (e.g., '256Mi').")
+	pflag.String("sandbox.resources.limits.cpu", "", "CPU limit for sandbox containers (e.g., '500m').")
+	pflag.String("sandbox.resources.limits.memory", "", "Memory limit for sandbox containers (e.g., '2Gi').")
+
 	// IP filter settings
 	pflag.Bool("ip.filter.disabled", false, "Disable IP filtering for the variable store and streaming proxy (for testing/development).")
 
@@ -435,6 +441,10 @@ func main() {
 			k8sjobmanager.WithOwnerPodUID(ownerPodUID),
 			k8sjobmanager.WithLanguage(viper.GetString("sandbox.language")),
 			k8sjobmanager.WithEphemeral(viper.GetBool("worker.ephemeral")),
+			k8sjobmanager.WithResourceRequestsCPU(viper.GetString("sandbox.resources.requests.cpu")),
+			k8sjobmanager.WithResourceRequestsMemory(viper.GetString("sandbox.resources.requests.memory")),
+			k8sjobmanager.WithResourceLimitsCPU(viper.GetString("sandbox.resources.limits.cpu")),
+			k8sjobmanager.WithResourceLimitsMemory(viper.GetString("sandbox.resources.limits.memory")),
 		}
 
 		if viper.GetBool("integration.executor.enabled") {

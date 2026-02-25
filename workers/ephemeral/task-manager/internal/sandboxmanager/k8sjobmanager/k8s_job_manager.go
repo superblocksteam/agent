@@ -53,6 +53,8 @@ type K8sJobManager struct {
 	integrationExecutorGrpcPort int
 	// Ephemeral mode: task-manager processes one job and exits
 	ephemeral bool
+	// Resource requirements for sandbox containers
+	resources corev1.ResourceRequirements
 }
 
 // NewSandboxJobManager creates a new SandboxJobManager
@@ -78,6 +80,7 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		language:                    strings.ToLower(opts.Language),
 		integrationExecutorGrpcPort: opts.IntegrationExecutorGrpcPort,
 		ephemeral:                   opts.Ephemeral,
+		resources:                   opts.BuildResourceRequirements(),
 	}
 }
 
@@ -413,6 +416,7 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 									Protocol:      corev1.ProtocolTCP,
 								},
 							},
+							Resources: m.resources,
 							// Readiness probe: only mark Ready when gRPC server is listening.
 							// Prevents task-manager from connecting before sandbox has bound to port 50051.
 							ReadinessProbe: &corev1.Probe{
@@ -425,7 +429,6 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 								PeriodSeconds:       2,
 								TimeoutSeconds:      1,
 							},
-							// TODO: Add resource limits from config
 						},
 					},
 				},

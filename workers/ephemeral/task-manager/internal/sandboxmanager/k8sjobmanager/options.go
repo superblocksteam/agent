@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -67,6 +68,12 @@ type Options struct {
 
 	// Ephemeral mode: task-manager processes one job and exits
 	Ephemeral bool
+
+	// Resource requests and limits for sandbox containers
+	ResourceRequestsCPU    string
+	ResourceRequestsMemory string
+	ResourceLimitsCPU      string
+	ResourceLimitsMemory   string
 }
 
 // Option is a functional option for Options
@@ -210,6 +217,64 @@ func WithEphemeral(ephemeral bool) Option {
 	return func(o *Options) {
 		o.Ephemeral = ephemeral
 	}
+}
+
+// WithResourceRequestsCPU sets the CPU request for sandbox containers
+func WithResourceRequestsCPU(cpu string) Option {
+	return func(o *Options) {
+		o.ResourceRequestsCPU = cpu
+	}
+}
+
+// WithResourceRequestsMemory sets the memory request for sandbox containers
+func WithResourceRequestsMemory(mem string) Option {
+	return func(o *Options) {
+		o.ResourceRequestsMemory = mem
+	}
+}
+
+// WithResourceLimitsCPU sets the CPU limit for sandbox containers
+func WithResourceLimitsCPU(cpu string) Option {
+	return func(o *Options) {
+		o.ResourceLimitsCPU = cpu
+	}
+}
+
+// WithResourceLimitsMemory sets the memory limit for sandbox containers
+func WithResourceLimitsMemory(mem string) Option {
+	return func(o *Options) {
+		o.ResourceLimitsMemory = mem
+	}
+}
+
+// BuildResourceRequirements constructs a corev1.ResourceRequirements from the string fields.
+// Empty strings are skipped, so only explicitly configured values are set.
+func (o *Options) BuildResourceRequirements() corev1.ResourceRequirements {
+	reqs := corev1.ResourceRequirements{}
+
+	requests := corev1.ResourceList{}
+	if o.ResourceRequestsCPU != "" {
+		requests[corev1.ResourceCPU] = resource.MustParse(o.ResourceRequestsCPU)
+	}
+	if o.ResourceRequestsMemory != "" {
+		requests[corev1.ResourceMemory] = resource.MustParse(o.ResourceRequestsMemory)
+	}
+	if len(requests) > 0 {
+		reqs.Requests = requests
+	}
+
+	limits := corev1.ResourceList{}
+	if o.ResourceLimitsCPU != "" {
+		limits[corev1.ResourceCPU] = resource.MustParse(o.ResourceLimitsCPU)
+	}
+	if o.ResourceLimitsMemory != "" {
+		limits[corev1.ResourceMemory] = resource.MustParse(o.ResourceLimitsMemory)
+	}
+	if len(limits) > 0 {
+		reqs.Limits = limits
+	}
+
+	return reqs
 }
 
 // NewOptions creates Options with defaults and applies functional options

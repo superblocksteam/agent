@@ -137,6 +137,24 @@ spec:
           {{- range ($.Values.sandbox.tolerations | default $.Values.tolerations) }}
           - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
           {{- end }}
+          {{- with (($v.sandbox).resources) | default $sandboxConfig.resources }}
+          {{- with .requests }}
+          {{- with .cpu }}
+          - "--sandbox.resources.requests.cpu={{ . }}"
+          {{- end }}
+          {{- with .memory }}
+          - "--sandbox.resources.requests.memory={{ . }}"
+          {{- end }}
+          {{- end }}
+          {{- with .limits }}
+          {{- with .cpu }}
+          - "--sandbox.resources.limits.cpu={{ . }}"
+          {{- end }}
+          {{- with .memory }}
+          - "--sandbox.resources.limits.memory={{ . }}"
+          {{- end }}
+          {{- end }}
+          {{- end }}
           # gRPC configuration (variable store for sandbox)
           - "--variable.store.grpc.port={{ $.Values.variableStore.grpc.port }}"
           - "--variable.store.http.port={{ $.Values.variableStore.http.port }}"

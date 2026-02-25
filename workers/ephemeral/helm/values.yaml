@@ -101,7 +101,7 @@ sandbox:
         memory: 2Gi
       requests:
         cpu: 100m
-        memory: 256Mi
+        memory: 700Mi
     port: 50051
     # Additional args/env for the python sandbox
     extraEnv: []
@@ -115,7 +115,7 @@ sandbox:
         memory: 2Gi
       requests:
         cpu: 100m
-        memory: 256Mi
+        memory: 700Mi
     port: 50051
     # Additional args/env for the javascript sandbox
     extraEnv: []
