@@ -75,7 +75,7 @@ ingress:
       - X-Superblocks-Authorization
       - X-Superblocks-Data-Domain
 service:
-  terminationGracePeriodSeconds: 16200
+  terminationGracePeriodSeconds: 2700
   grpc:
     maxMsgReq: 100000000
     maxMsgRes: 100000000

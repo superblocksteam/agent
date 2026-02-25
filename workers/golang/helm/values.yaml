@@ -1,5 +1,5 @@
 ---
-terminationGracePeriodSeconds: 16200
+terminationGracePeriodSeconds: 900
 # The default resources for all fleets. Fleets can override these values.
 resources:
   limits:
