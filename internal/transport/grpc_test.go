@@ -1333,7 +1333,7 @@ func TestExecuteCodeMode(t *testing.T) {
 				assert.Contains(t, body, "__sb_result") &&
 				assert.Contains(t, body, "module.exports = { run: function(ctx) { return ctx; } };") &&
 				assert.Contains(t, body, "__sb_executionId")
-		})).Return(nil, outputKey, nil)
+		}), mock.Anything, mock.Anything).Return(nil, outputKey, nil)
 
 		s := &server{
 			Config: &Config{
@@ -1416,7 +1416,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		outputKey := "output-key-error"
 		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
 
-		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, outputKey, nil)
 
 		s := &server{
@@ -1514,7 +1514,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		defer metrics.SetupForTesting()()
 
 		mockWorker := &worker.MockClient{}
-		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, "", errors.New("worker crashed"))
 
 		s := &server{
@@ -1603,7 +1603,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		outputKey := "gc-test-key"
 		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":"ok"}`}))
 
-		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, outputKey, nil)
 
 		s := &server{
@@ -1658,7 +1658,7 @@ func TestExecuteCodeMode(t *testing.T) {
 			body := data.GetProps().GetActionConfiguration().GetFields()["body"].GetStringValue()
 			return assert.Contains(t, body, "__sb_execute") &&
 				assert.Contains(t, body, "var module = { exports: {} }")
-		})).Return(nil, outputKey, nil)
+		}), mock.Anything, mock.Anything).Return(nil, outputKey, nil)
 
 		s := &server{
 			Config: &Config{
@@ -1729,7 +1729,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		mockWorker := &worker.MockClient{}
 		mockStore := &storemock.Store{}
 		outputKey := "read-error-key"
-		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, outputKey, nil)
 		mockStore.On("Read", mock.Anything, outputKey).Return(nil, errors.New("redis connection failed"))
 		mockStore.On("Delete", mock.Anything, outputKey).Return(nil)
@@ -1772,7 +1772,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		outputKey := "unexpected-type-key"
 		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: 42}))
 
-		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, outputKey, nil)
 
 		s := &server{
@@ -1812,7 +1812,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		outputKey := "malformed-json-key"
 		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{invalid json`}))
 
-		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, outputKey, nil)
 
 		s := &server{
@@ -1852,7 +1852,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		outputKey := "send-fail-key"
 		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":"ok"}`}))
 
-		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything).
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
 			Return(nil, outputKey, nil)
 
 		s := &server{

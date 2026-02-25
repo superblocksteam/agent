@@ -868,7 +868,8 @@ func (s *server) executeCodeMode(
 		},
 	}
 
-	_, outputKey, err := s.Worker.Execute(ctx, "javascriptsdkapi", workerData)
+	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
+	_, outputKey, err := s.Worker.Execute(ctx, "javascriptsdkapi", workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
 	if err != nil {
 		logger.Error("worker execution failed", zap.Error(err))
 		return sendError(err)
