@@ -17,8 +17,8 @@ func (_m *IpFilterSetter) EXPECT() *IpFilterSetter_Expecter {
 	return &IpFilterSetter_Expecter{mock: &_m.Mock}
 }
 
-// SetAllowedIps provides a mock function with given fields: ips
-func (_m *IpFilterSetter) SetAllowedIps(ips ...string) {
+// AddAllowedIps provides a mock function with given fields: ips
+func (_m *IpFilterSetter) AddAllowedIps(ips ...string) {
 	_va := make([]interface{}, len(ips))
 	for _i := range ips {
 		_va[_i] = ips[_i]
@@ -28,19 +28,19 @@ func (_m *IpFilterSetter) SetAllowedIps(ips ...string) {
 	_m.Called(_ca...)
 }
 
-// IpFilterSetter_SetAllowedIps_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetAllowedIps'
-type IpFilterSetter_SetAllowedIps_Call struct {
+// IpFilterSetter_AddAllowedIps_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddAllowedIps'
+type IpFilterSetter_AddAllowedIps_Call struct {
 	*mock.Call
 }
 
-// SetAllowedIps is a helper method to define mock.On call
+// AddAllowedIps is a helper method to define mock.On call
 //   - ips ...string
-func (_e *IpFilterSetter_Expecter) SetAllowedIps(ips ...interface{}) *IpFilterSetter_SetAllowedIps_Call {
-	return &IpFilterSetter_SetAllowedIps_Call{Call: _e.mock.On("SetAllowedIps",
+func (_e *IpFilterSetter_Expecter) AddAllowedIps(ips ...interface{}) *IpFilterSetter_AddAllowedIps_Call {
+	return &IpFilterSetter_AddAllowedIps_Call{Call: _e.mock.On("AddAllowedIps",
 		append([]interface{}{}, ips...)...)}
 }
 
-func (_c *IpFilterSetter_SetAllowedIps_Call) Run(run func(ips ...string)) *IpFilterSetter_SetAllowedIps_Call {
+func (_c *IpFilterSetter_AddAllowedIps_Call) Run(run func(ips ...string)) *IpFilterSetter_AddAllowedIps_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]string, len(args)-0)
 		for i, a := range args[0:] {
@@ -53,12 +53,12 @@ func (_c *IpFilterSetter_SetAllowedIps_Call) Run(run func(ips ...string)) *IpFil
 	return _c
 }
 
-func (_c *IpFilterSetter_SetAllowedIps_Call) Return() *IpFilterSetter_SetAllowedIps_Call {
+func (_c *IpFilterSetter_AddAllowedIps_Call) Return() *IpFilterSetter_AddAllowedIps_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *IpFilterSetter_SetAllowedIps_Call) RunAndReturn(run func(...string)) *IpFilterSetter_SetAllowedIps_Call {
+func (_c *IpFilterSetter_AddAllowedIps_Call) RunAndReturn(run func(...string)) *IpFilterSetter_AddAllowedIps_Call {
 	_c.Run(run)
 	return _c
 }

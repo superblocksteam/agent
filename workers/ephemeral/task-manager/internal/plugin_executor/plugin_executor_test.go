@@ -79,12 +79,13 @@ var _ store.Store = (*mockStore)(nil)
 
 // mockPlugin implements plugin.Plugin for testing
 type mockPlugin struct {
-	name         string
-	executeFunc  func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error)
-	streamFunc   func(ctx context.Context, topic string, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) error
-	metadataFunc func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error)
-	testFunc     func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error
-	preDeleteFn  func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error
+	name                string
+	executeFunc         func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error)
+	streamFunc          func(ctx context.Context, topic string, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) error
+	metadataFunc        func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) (*transportv1.Response_Data_Data, error)
+	testFunc            func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error
+	preDeleteFn         func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error
+	notifyWhenReadyFunc func(notifyCh chan<- bool)
 }
 
 func (m *mockPlugin) Name() string {
@@ -124,6 +125,12 @@ func (m *mockPlugin) PreDelete(ctx context.Context, requestMeta *workerv1.Reques
 		return m.preDeleteFn(ctx, requestMeta, datasourceConfig)
 	}
 	return nil
+}
+
+func (m *mockPlugin) NotifyWhenReady(notifyCh chan<- bool) {
+	if m.notifyWhenReadyFunc != nil {
+		m.notifyWhenReadyFunc(notifyCh)
+	}
 }
 
 // Verify mockPlugin implements Plugin interface
@@ -189,6 +196,118 @@ func TestListPluginsEmpty(t *testing.T) {
 	plugins := executor.ListPlugins()
 	if len(plugins) != 0 {
 		t.Errorf("ListPlugins() = %d plugins, want 0", len(plugins))
+	}
+}
+
+func TestPluginsReady_NoPlugins(t *testing.T) {
+	t.Parallel()
+
+	executor := newTestExecutor()
+	ctx := context.Background()
+
+	readyCh := executor.PluginsReady(ctx)
+	v, ok := <-readyCh
+	if !ok {
+		t.Fatal("PluginsReady channel closed unexpectedly")
+	}
+	if !v {
+		t.Errorf("PluginsReady() = %v, want true", v)
+	}
+}
+
+func TestPluginsReady_SinglePluginSignalsReady(t *testing.T) {
+	t.Parallel()
+
+	executor := newTestExecutor()
+	mock := &mockPlugin{
+		name: "python",
+		notifyWhenReadyFunc: func(notifyCh chan<- bool) {
+			notifyCh <- true
+		},
+	}
+	executor.RegisterPlugin("python", mock)
+
+	ctx := context.Background()
+	readyCh := executor.PluginsReady(ctx)
+	v, ok := <-readyCh
+	if !ok {
+		t.Fatal("PluginsReady channel closed unexpectedly")
+	}
+	if !v {
+		t.Errorf("PluginsReady() = %v, want true", v)
+	}
+}
+
+func TestPluginsReady_MultiplePluginsAllSignalReady(t *testing.T) {
+	t.Parallel()
+
+	executor := newTestExecutor()
+	for _, name := range []string{"python", "javascript", "go"} {
+		n := name
+		executor.RegisterPlugin(name, &mockPlugin{
+			name: n,
+			notifyWhenReadyFunc: func(notifyCh chan<- bool) {
+				notifyCh <- true
+			},
+		})
+	}
+
+	ctx := context.Background()
+	readyCh := executor.PluginsReady(ctx)
+	v, ok := <-readyCh
+	if !ok {
+		t.Fatal("PluginsReady channel closed unexpectedly")
+	}
+	if !v {
+		t.Errorf("PluginsReady() = %v, want true", v)
+	}
+}
+
+func TestPluginsReady_ContextCancelledBeforeAllReady(t *testing.T) {
+	t.Parallel()
+
+	executor := newTestExecutor()
+	// Plugin that never signals ready
+	executor.RegisterPlugin("python", &mockPlugin{
+		name: "python",
+		// notifyWhenReadyFunc nil - never sends to channel
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	readyCh := executor.PluginsReady(ctx)
+
+	cancel()
+
+	v, ok := <-readyCh
+	if ok {
+		t.Errorf("PluginsReady channel should be closed on context cancellation, got value %v", v)
+	}
+	if v {
+		t.Errorf("PluginsReady() = %v, want false", v)
+	}
+}
+
+func TestPluginsReady_SamePluginRegisteredTwice_DeduplicatedByInstance(t *testing.T) {
+	t.Parallel()
+
+	executor := newTestExecutor()
+	mock := &mockPlugin{
+		name: "shared",
+		notifyWhenReadyFunc: func(notifyCh chan<- bool) {
+			notifyCh <- true
+		},
+	}
+	executor.RegisterPlugin("python", mock)
+	executor.RegisterPlugin("javascript", mock) // same instance, different name
+
+	ctx := context.Background()
+	readyCh := executor.PluginsReady(ctx)
+	v, ok := <-readyCh
+	if !ok {
+		t.Fatal("PluginsReady channel closed unexpectedly")
+	}
+	if !v {
+		t.Errorf("PluginsReady() = %v, want true", v)
 	}
 }
 

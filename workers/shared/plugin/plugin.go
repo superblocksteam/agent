@@ -39,4 +39,7 @@ type Plugin interface {
 
 	// PreDelete is called before a datasource is deleted.
 	PreDelete(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error
+
+	// Ready returns a channel that reports true when the plugin is ready to execute code.
+	NotifyWhenReady(notifyCh chan<- bool)
 }

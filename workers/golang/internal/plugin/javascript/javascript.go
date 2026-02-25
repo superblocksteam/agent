@@ -165,6 +165,12 @@ func (p *javascriptPlugin) PreDelete(ctx context.Context, requestMeta *workerv1.
 	return errors.ErrUnsupported
 }
 
+func (p *javascriptPlugin) NotifyWhenReady(notifyCh chan<- bool) {
+	go func() {
+		notifyCh <- true
+	}()
+}
+
 func getCodeFromProps(props *transportv1.Request_Data_Data_Props, logger *zap.Logger) string {
 	actionConfig := props.GetActionConfiguration()
 	code, err := utils.GetStructField(actionConfig, "body")

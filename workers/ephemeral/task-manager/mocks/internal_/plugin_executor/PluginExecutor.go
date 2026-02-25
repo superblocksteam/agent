@@ -194,6 +194,54 @@ func (_c *PluginExecutor_Metadata_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
+// PluginsReady provides a mock function with given fields: ctx
+func (_m *PluginExecutor) PluginsReady(ctx context.Context) <-chan bool {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PluginsReady")
+	}
+
+	var r0 <-chan bool
+	if rf, ok := ret.Get(0).(func(context.Context) <-chan bool); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan bool)
+		}
+	}
+
+	return r0
+}
+
+// PluginExecutor_PluginsReady_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PluginsReady'
+type PluginExecutor_PluginsReady_Call struct {
+	*mock.Call
+}
+
+// PluginsReady is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *PluginExecutor_Expecter) PluginsReady(ctx interface{}) *PluginExecutor_PluginsReady_Call {
+	return &PluginExecutor_PluginsReady_Call{Call: _e.mock.On("PluginsReady", ctx)}
+}
+
+func (_c *PluginExecutor_PluginsReady_Call) Run(run func(ctx context.Context)) *PluginExecutor_PluginsReady_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *PluginExecutor_PluginsReady_Call) Return(_a0 <-chan bool) *PluginExecutor_PluginsReady_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *PluginExecutor_PluginsReady_Call) RunAndReturn(run func(context.Context) <-chan bool) *PluginExecutor_PluginsReady_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // PreDelete provides a mock function with given fields: ctx, pluginName, reqData, perf
 func (_m *PluginExecutor) PreDelete(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, perf *v1.Performance) (*v1.Response_Data_Data, error) {
 	ret := _m.Called(ctx, pluginName, reqData, perf)

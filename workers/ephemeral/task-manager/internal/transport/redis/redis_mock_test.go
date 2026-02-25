@@ -445,12 +445,136 @@ func TestEphemeralModeTransport(t *testing.T) {
 	})
 	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
 
+	// init() waits for PluginsReady before proceeding
+	readyCh := make(chan bool, 1)
+	readyCh <- true
+	var readyRecv <-chan bool = readyCh
+	mockPluginExecutor.On("PluginsReady", mock.Anything).Return(readyRecv)
+
 	err := transport.init()
 
 	assert.NoError(t, err)
 	assert.True(t, transport.ephemeral)
 	assert.Equal(t, int64(1), transport.executionPool.Load())
 	assert.Equal(t, int64(1), transport.executionPoolSize)
+}
+
+func TestInitWaitsForPluginExecutorReady(t *testing.T) {
+	redisClient, redisMock := redismock.NewClientMock()
+	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
+
+	transport := NewRedisTransport(&Options{
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
+	})
+	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
+
+	// PluginsReady returns a channel that we control; init blocks until it receives
+	readyCh := make(chan bool, 1)
+	var readyRecv <-chan bool = readyCh
+	mockPluginExecutor.On("PluginsReady", mock.Anything).Return(readyRecv)
+
+	initDone := make(chan error, 1)
+	go func() {
+		initDone <- transport.init()
+	}()
+
+	// init should block waiting for the plugin executor
+	select {
+	case err := <-initDone:
+		t.Fatalf("init should block until PluginsReady signals; got err=%v", err)
+	case <-time.After(100 * time.Millisecond):
+		// init is correctly blocked
+	}
+
+	// Signal that plugins are ready
+	readyCh <- true
+
+	err := <-initDone
+	assert.NoError(t, err)
+	assert.True(t, transport.initialized)
+}
+
+func TestInitFailsWhenPluginExecutorNeverReadyAndTransportClosed(t *testing.T) {
+	redisClient, redisMock := redismock.NewClientMock()
+	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
+
+	transport := NewRedisTransport(&Options{
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
+	})
+	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
+
+	// PluginsReady returns a channel we never send to; init blocks indefinitely
+	readyCh := make(chan bool)
+	var readyRecv <-chan bool = readyCh
+	mockPluginExecutor.On("PluginsReady", mock.Anything).Return(readyRecv)
+
+	initDone := make(chan error, 1)
+	go func() {
+		initDone <- transport.init()
+	}()
+
+	// Give init time to block on the select
+	time.Sleep(100 * time.Millisecond)
+
+	// Close the transport (cancels context); init should return with context.Canceled
+	err := transport.Close(context.Background())
+	assert.NoError(t, err)
+
+	initErr := <-initDone
+	assert.Error(t, initErr)
+	assert.ErrorIs(t, initErr, context.Canceled)
+	assert.False(t, transport.initialized)
+}
+
+func TestInitFailsWhenPluginsReadyReturnsFalse(t *testing.T) {
+	redisClient, redisMock := redismock.NewClientMock()
+	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
+
+	transport := NewRedisTransport(&Options{
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
+	})
+	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
+
+	// PluginsReady returns a channel that sends false (plugin executor not ready)
+	readyCh := make(chan bool, 1)
+	readyCh <- false
+	var readyRecv <-chan bool = readyCh
+	mockPluginExecutor.On("PluginsReady", mock.Anything).Return(readyRecv)
+
+	err := transport.init()
+
+	assert.EqualError(t, err, "plugin executor not ready: failed to initialize transport")
+	assert.False(t, transport.initialized)
 }
 
 func TestInitStreamsCreatesConsumerGroup(t *testing.T) {

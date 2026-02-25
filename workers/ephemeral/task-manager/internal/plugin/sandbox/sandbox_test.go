@@ -316,6 +316,226 @@ func TestSandboxPlugin_Run_ReturnsWrappedError_WhenSandboxDeadChannelSendsNonCon
 	require.Contains(t, gotErr.Error(), "sandbox pod is no longer available")
 }
 
+func TestSandboxPlugin_NotifyWhenReady_NotifiesWhenSandboxBecomesReady(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	// createFunc sleeps to give us time to call NotifyWhenReady before the sandbox connects
+	createDone := make(chan struct{})
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			<-createDone
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: addr,
+			}, nil
+		},
+		watchFunc: func(ctx context.Context, _ string) <-chan error {
+			ch := make(chan error)
+			go func() {
+				<-ctx.Done()
+				close(ch)
+			}()
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	runErrCh := make(chan error, 1)
+	go func() {
+		runErrCh <- p.Run(ctx)
+	}()
+
+	// Call NotifyWhenReady before sandbox is ready (createFunc has not returned yet)
+	notifyCh := make(chan bool, 1)
+	p.NotifyWhenReady(notifyCh)
+
+	// Now allow the sandbox to be created and connected
+	close(createDone)
+
+	// Channel should be notified when sandbox becomes ready
+	v := <-notifyCh
+	require.True(t, v, "expected true from notify channel")
+}
+
+func TestSandboxPlugin_NotifyWhenReady_NotifiesImmediatelyWhenAlreadyReady(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: addr,
+			}, nil
+		},
+		watchFunc: func(ctx context.Context, _ string) <-chan error {
+			ch := make(chan error)
+			go func() {
+				<-ctx.Done()
+				close(ch)
+			}()
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	go func() {
+		_ = p.Run(ctx)
+	}()
+
+	// Wait for sandbox to become ready (Run connects quickly)
+	time.Sleep(500 * time.Millisecond)
+
+	// Call NotifyWhenReady after sandbox is already ready
+	notifyCh := make(chan bool, 1)
+	p.NotifyWhenReady(notifyCh)
+
+	// Channel should be notified
+	v := <-notifyCh
+	require.True(t, v, "expected true from notify channel")
+}
+
+func TestSandboxPlugin_NotifyWhenReady_DoesNotBlockWhenChannelNeverRead(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: addr,
+			}, nil
+		},
+		watchFunc: func(ctx context.Context, _ string) <-chan error {
+			ch := make(chan error)
+			go func() {
+				<-ctx.Done()
+				close(ch)
+			}()
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	go func() {
+		_ = p.Run(ctx)
+	}()
+
+	time.Sleep(500 * time.Millisecond)
+
+	// NotifyWhenReady must return immediately
+	notifyCh := make(chan bool)
+	done := make(chan struct{})
+	go func() {
+		p.NotifyWhenReady(notifyCh)
+		close(done)
+	}()
+
+	<-done
+}
+
+func TestSandboxPlugin_NotifyWhenReady_GoroutinesCleanedUpOnClose(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: addr,
+			}, nil
+		},
+		watchFunc: func(ctx context.Context, _ string) <-chan error {
+			ch := make(chan error)
+			go func() {
+				<-ctx.Done()
+				close(ch)
+			}()
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	go func() {
+		_ = p.Run(ctx)
+	}()
+
+	time.Sleep(500 * time.Millisecond)
+
+	// Register multiple unbuffered channels that are never read - spawns goroutines
+	// that block on send. Close() must cancel context so these goroutines exit.
+	for i := 0; i < 5; i++ {
+		p.NotifyWhenReady(make(chan bool))
+	}
+
+	// Close should return; internalCancel() allows blocked goroutines to exit
+	closeDone := make(chan struct{})
+	go func() {
+		err := p.Close(ctx)
+		require.NoError(t, err)
+		close(closeDone)
+	}()
+
+	<-closeDone
+}
+
 // startSandboxGrpcServer starts a minimal gRPC server that implements SandboxTransportService
 // and returns the address (caller must call the returned cleanup function)
 func startSandboxGrpcServer(t *testing.T) (addr string, cleanup func()) {

@@ -70,6 +70,14 @@ type SandboxPlugin struct {
 	// Mutex for cleanup
 	mu sync.Mutex
 
+	// Bool and slice of channels for notifying when the plugin is ready for executions
+	sandboxReady         atomic.Bool
+	sandboxReadyNotifyCh []chan<- bool
+
+	// Internal context and cancel function for shutting down the sandbox plugin cleanly (e.g. cleaning up go routines)
+	internalCtx    context.Context
+	internalCancel context.CancelFunc
+
 	// Tracks the number of executions to determine warm vs cold start.
 	executionCount atomic.Int64
 
@@ -88,6 +96,7 @@ func NewSandboxPlugin(options ...Option) (*SandboxPlugin, error) {
 		return nil, err
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
 	p := &SandboxPlugin{
 		connectionMode:             opts.ConnectionMode,
 		sandboxAddress:             opts.SandboxAddress,
@@ -98,6 +107,8 @@ func NewSandboxPlugin(options ...Option) (*SandboxPlugin, error) {
 		store:                      opts.KvStore,
 		sandboxManager:             opts.SandboxManager,
 		ipFilterSetter:             opts.IpFilterSetter,
+		internalCtx:                ctx,
+		internalCancel:             cancel,
 	}
 
 	return p, nil
@@ -130,6 +141,7 @@ func (p *SandboxPlugin) Name() string {
 
 func (p *SandboxPlugin) Run(ctx context.Context) error {
 	var sandboxDeadCh <-chan error
+	logger := p.logger
 
 	switch p.connectionMode {
 	case SandboxConnectionModeStatic:
@@ -143,10 +155,11 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 		sandboxDeadCh = noopSandboxDeadCh
 
 		// Static mode: connect to existing sandbox at configured address
-		p.logger.Info("sandbox plugin initialized (static mode)",
+		logger = logger.With(
 			zap.String("sandbox_id", p.sandboxId),
 			zap.String("address", p.sandboxAddress),
 		)
+		logger.Info("sandbox plugin initialized (static mode)")
 	case SandboxConnectionModeDynamic:
 		if p.sandboxManager == nil {
 			return fmt.Errorf("sandbox manager is required in dynamic mode")
@@ -167,12 +180,13 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 
 		sandboxDeadCh = p.sandboxManager.WatchSandboxPod(ctx, p.sandboxInfo.Name)
 
-		p.logger.Info("sandbox plugin initialized (dynamic mode)",
+		logger = logger.With(
 			zap.String("sandbox_id", p.sandboxId),
 			zap.String("job", sandboxInfo.Name),
 			zap.String("address", sandboxInfo.Address),
 			zap.String("sandbox_ip", sandboxInfo.Ip),
 		)
+		logger.Info("sandbox plugin initialized (dynamic mode)")
 	default:
 		return fmt.Errorf("invalid connection mode: %d", p.connectionMode)
 	}
@@ -189,6 +203,10 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 
 	p.conn = conn
 	p.client = client
+
+	logger.Info("successfully connected to sandbox, sandbox is ready for plugin executions")
+	p.sandboxReady.Store(true)
+	p.notifyReadyChannels()
 
 	select {
 	case err := <-sandboxDeadCh:
@@ -239,6 +257,8 @@ func (p *SandboxPlugin) Close(context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	p.internalCancel()
+
 	if p.conn != nil {
 		_ = p.conn.Close()
 		p.conn = nil
@@ -280,6 +300,34 @@ func (p *SandboxPlugin) Close(context.Context) error {
 // ConnectionState returns the underlying gRPC connection state for health checking
 func (p *SandboxPlugin) ConnectionState() connectivity.State {
 	return p.conn.GetState()
+}
+
+func (p *SandboxPlugin) NotifyWhenReady(notifyCh chan<- bool) {
+	p.mu.Lock()
+	p.sandboxReadyNotifyCh = append(p.sandboxReadyNotifyCh, notifyCh)
+	p.mu.Unlock()
+
+	if p.sandboxReady.Load() {
+		p.notifyReadyChannels()
+	}
+}
+
+func (p *SandboxPlugin) notifyReadyChannels() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for _, notifyCh := range p.sandboxReadyNotifyCh {
+		go func(notifyCh chan<- bool) {
+			select {
+			case <-p.internalCtx.Done():
+				return
+			case notifyCh <- true:
+				return
+			}
+		}(notifyCh)
+	}
+
+	p.sandboxReadyNotifyCh = nil
 }
 
 // Execute runs code in the sandbox

@@ -142,6 +142,26 @@ func (rt *redisTransport) init() error {
 	// Report configured execution pool size
 	sandboxmetrics.RecordGauge(context.Background(), sandboxmetrics.SandboxExecutionPoolSize, rt.executionPoolSize)
 
+	// Wait for plugin executor to be ready
+	readyCh := rt.pluginExecutor.PluginsReady(rt.context)
+	select {
+	case ready := <-readyCh:
+		if !ready {
+			if rt.context.Err() != nil {
+				return rt.context.Err()
+			}
+			return stderr.New("plugin executor not ready: failed to initialize transport")
+		}
+
+		rt.logger.Info("plugin executor ready, starting redis transport")
+	case <-rt.context.Done():
+		rt.logger.Warn(
+			"redis transport shutting down, before plugin executor is ever ready",
+			zap.Error(rt.context.Err()),
+		)
+		return rt.context.Err()
+	}
+
 	rt.initialized = true
 	return nil
 }

@@ -128,6 +128,55 @@ func (_c *SandboxManager_DeleteSandbox_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
+// WatchSandboxPod provides a mock function with given fields: ctx, jobName
+func (_m *SandboxManager) WatchSandboxPod(ctx context.Context, jobName string) <-chan error {
+	ret := _m.Called(ctx, jobName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WatchSandboxPod")
+	}
+
+	var r0 <-chan error
+	if rf, ok := ret.Get(0).(func(context.Context, string) <-chan error); ok {
+		r0 = rf(ctx, jobName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan error)
+		}
+	}
+
+	return r0
+}
+
+// SandboxManager_WatchSandboxPod_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WatchSandboxPod'
+type SandboxManager_WatchSandboxPod_Call struct {
+	*mock.Call
+}
+
+// WatchSandboxPod is a helper method to define mock.On call
+//   - ctx context.Context
+//   - jobName string
+func (_e *SandboxManager_Expecter) WatchSandboxPod(ctx interface{}, jobName interface{}) *SandboxManager_WatchSandboxPod_Call {
+	return &SandboxManager_WatchSandboxPod_Call{Call: _e.mock.On("WatchSandboxPod", ctx, jobName)}
+}
+
+func (_c *SandboxManager_WatchSandboxPod_Call) Run(run func(ctx context.Context, jobName string)) *SandboxManager_WatchSandboxPod_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *SandboxManager_WatchSandboxPod_Call) Return(_a0 <-chan error) *SandboxManager_WatchSandboxPod_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SandboxManager_WatchSandboxPod_Call) RunAndReturn(run func(context.Context, string) <-chan error) *SandboxManager_WatchSandboxPod_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewSandboxManager creates a new instance of SandboxManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewSandboxManager(t interface {

@@ -24,10 +24,10 @@ import (
 )
 
 // PluginExecutor manages plugin execution
-// This interface mirrors workers/golang/internal/plugin_executor.PluginExecutor
 type PluginExecutor interface {
 	RegisterPlugin(name string, plugin plugin.Plugin) error
 	ListPlugins() []string
+	PluginsReady(ctx context.Context) <-chan bool
 	Execute(
 		ctx context.Context,
 		pluginName string,
@@ -79,6 +79,39 @@ func (p *pluginExecutor) ListPlugins() []string {
 		plugins = append(plugins, name)
 	}
 	return plugins
+}
+
+func (p *pluginExecutor) PluginsReady(ctx context.Context) <-chan bool {
+	readyCh := make(chan bool, 1)
+	go func() {
+		pluginsNotReady := utils.NewSet[plugin.Plugin]()
+		for _, plug := range p.plugins {
+			pluginsNotReady.Add(plug)
+		}
+
+		numPluginsNotReady := pluginsNotReady.Size()
+		pluginsReadyCh := make(chan bool, numPluginsNotReady)
+		for _, plug := range pluginsNotReady.ToSlice() {
+			plug.NotifyWhenReady(pluginsReadyCh)
+		}
+
+		for numPluginsNotReady > 0 {
+			select {
+			case <-ctx.Done():
+				close(readyCh)
+				return
+			case ready := <-pluginsReadyCh:
+				if ready {
+					numPluginsNotReady--
+				}
+			}
+		}
+
+		readyCh <- true
+		close(readyCh)
+	}()
+
+	return readyCh
 }
 
 func (p *pluginExecutor) getPlugin(pluginName string) (plugin.Plugin, error) {

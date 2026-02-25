@@ -150,6 +150,39 @@ func (_c *Plugin_Metadata_Call) RunAndReturn(run func(context.Context, *v1.Reque
 	return _c
 }
 
+// NotifyWhenReady provides a mock function with given fields: notifyCh
+func (_m *Plugin) NotifyWhenReady(notifyCh chan<- bool) {
+	_m.Called(notifyCh)
+}
+
+// Plugin_NotifyWhenReady_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NotifyWhenReady'
+type Plugin_NotifyWhenReady_Call struct {
+	*mock.Call
+}
+
+// NotifyWhenReady is a helper method to define mock.On call
+//   - notifyCh chan<- bool
+func (_e *Plugin_Expecter) NotifyWhenReady(notifyCh interface{}) *Plugin_NotifyWhenReady_Call {
+	return &Plugin_NotifyWhenReady_Call{Call: _e.mock.On("NotifyWhenReady", notifyCh)}
+}
+
+func (_c *Plugin_NotifyWhenReady_Call) Run(run func(notifyCh chan<- bool)) *Plugin_NotifyWhenReady_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(chan<- bool))
+	})
+	return _c
+}
+
+func (_c *Plugin_NotifyWhenReady_Call) Return() *Plugin_NotifyWhenReady_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Plugin_NotifyWhenReady_Call) RunAndReturn(run func(chan<- bool)) *Plugin_NotifyWhenReady_Call {
+	_c.Run(run)
+	return _c
+}
+
 // PreDelete provides a mock function with given fields: ctx, requestMeta, datasourceConfig
 func (_m *Plugin) PreDelete(ctx context.Context, requestMeta *v1.RequestMetadata, datasourceConfig *structpb.Struct) error {
 	ret := _m.Called(ctx, requestMeta, datasourceConfig)
