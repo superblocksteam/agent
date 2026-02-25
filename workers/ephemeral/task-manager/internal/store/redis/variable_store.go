@@ -54,8 +54,9 @@ type SecurityViolationHandler func(violation SecurityViolation)
 // ExecutionContextProvider extends FileContextProvider with key allowlisting
 type ExecutionContextProvider interface {
 	FileContextProvider
-	// SetAllowedKeys sets the allowed variable keys for an execution.
-	// Only these keys can be requested by the sandbox.
+	// SetAllowedKeys merges allowed variable keys for an execution.
+	// Keys are additive for the lifetime of the execution and are cleared by CleanupExecution.
+	// This allows parallel setup calls for the same execution to accumulate permissions safely.
 	SetAllowedKeys(executionID string, keys []string)
 	// SetSecurityViolationHandler sets the callback for security violations.
 	// When a sandbox attempts to access a key it's not allowed to access,
@@ -259,6 +260,7 @@ func (s *VariableStoreGRPC) SetVariable(ctx context.Context, req *workerv1.SetVa
 			if err := s.writeToKvStore(ctx, &workerv1.KeyValue{Key: req.Key, Value: req.Value}); err != nil {
 				return nil, err
 			}
+			s.trackWrittenKey(req.ExecutionId, req.Key)
 
 			return &workerv1.SetVariableResponse{Success: true}, nil
 		},
@@ -276,6 +278,12 @@ func (s *VariableStoreGRPC) SetVariables(ctx context.Context, req *workerv1.SetV
 		func(ctx context.Context, span trace.Span) (*workerv1.SetVariablesResponse, error) {
 			if err := s.writeToKvStore(ctx, req.Kvs...); err != nil {
 				return nil, err
+			}
+			for _, kv := range req.Kvs {
+				if kv == nil {
+					continue
+				}
+				s.trackWrittenKey(req.ExecutionId, kv.Key)
 			}
 
 			return &workerv1.SetVariablesResponse{Success: true}, nil
@@ -325,6 +333,31 @@ func (s *VariableStoreGRPC) writeToKvStore(ctx context.Context, kvs ...*workerv1
 	return s.kvStore.Write(ctx, pairs...)
 }
 
+// trackWrittenKey extends an existing allowlist with sandbox-written variable keys.
+// This keeps read-after-write behavior working when VARIABLE.* keys are created
+// dynamically during execution (e.g. oauth/helper variables in parallel flows).
+// Keys outside the VARIABLE.* namespace are not tracked to avoid broadening read
+// permissions to arbitrary key spaces.
+// If no allowlist is configured for this execution, this is a no-op to preserve
+// backward-compatible behavior.
+func (s *VariableStoreGRPC) trackWrittenKey(executionID, key string) {
+	if executionID == "" || key == "" {
+		return
+	}
+	if !strings.HasPrefix(key, "VARIABLE.") {
+		return
+	}
+
+	s.allowedKeysLock.Lock()
+	defer s.allowedKeysLock.Unlock()
+
+	keySet, exists := s.allowedKeys[executionID]
+	if !exists {
+		return
+	}
+	keySet[key] = struct{}{}
+}
+
 // GetFileContext returns the file context for an execution
 func (s *VariableStoreGRPC) GetFileContext(executionID string) *ExecutionFileContext {
 	s.fileContextsLock.RLock()
@@ -351,21 +384,33 @@ func (s *VariableStoreGRPC) CleanupExecution(executionID string) {
 	s.allowedKeysLock.Unlock()
 }
 
-// SetAllowedKeys sets the allowed variable keys for an execution.
-// Only these keys can be requested by the sandbox via GetVariable/GetVariables.
+// SetAllowedKeys merges allowed variable keys for an execution.
+// Keys accumulate across calls and are not removed until CleanupExecution, so
+// concurrent requests under the same execution cannot clobber each other's allowlist.
+//
+// If called with an empty key set for a new execution, this still initializes an
+// explicit (empty) allowlist. This keeps the default posture restrictive for
+// non execution-scoped keys instead of implicitly allowing all access.
 func (s *VariableStoreGRPC) SetAllowedKeys(executionID string, keys []string) {
 	s.allowedKeysLock.Lock()
 	defer s.allowedKeysLock.Unlock()
 
-	keySet := make(map[string]struct{}, len(keys))
+	keySet, exists := s.allowedKeys[executionID]
+	if !exists {
+		keySet = make(map[string]struct{}, len(keys))
+		s.allowedKeys[executionID] = keySet
+	}
+
 	for _, key := range keys {
+		if key == "" {
+			continue
+		}
 		keySet[key] = struct{}{}
 	}
-	s.allowedKeys[executionID] = keySet
 
 	s.logger.Debug("set allowed keys for execution",
 		zap.String("execution_id", executionID),
-		zap.Int("key_count", len(keys)))
+		zap.Int("key_count", len(keySet)))
 }
 
 // SetSecurityViolationHandler sets the callback for security violations.

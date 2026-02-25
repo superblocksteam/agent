@@ -248,6 +248,66 @@ func TestSetVariableNewExecution(t *testing.T) {
 	assert.True(t, resp.Success)
 }
 
+func TestSetVariableTracksWrittenKeyInExistingAllowlist(t *testing.T) {
+	logger := zap.NewNop()
+	mockStore := mockstore.NewStore(t)
+
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
+	server.SetAllowedKeys("exec-1", []string{"existing-key"})
+
+	ctx := context.Background()
+	req := &workerv1.SetVariableRequest{
+		ExecutionId: "exec-1",
+		Key:         "VARIABLE.new-key",
+		Value:       "value1",
+	}
+
+	mockStore.On("Write", mock.Anything, &store.KV{Key: "VARIABLE.new-key", Value: "value1"}).Return(nil)
+
+	resp, err := server.SetVariable(ctx, req)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+	assert.True(t, server.isKeyAllowed("exec-1", "VARIABLE.new-key"))
+	assert.True(t, server.isKeyAllowed("exec-1", "existing-key"))
+}
+
+func TestSetVariableDoesNotTrackNonVariableKey(t *testing.T) {
+	logger := zap.NewNop()
+	mockStore := mockstore.NewStore(t)
+
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
+	server.SetAllowedKeys("exec-1", []string{"existing-key"})
+
+	ctx := context.Background()
+	req := &workerv1.SetVariableRequest{
+		ExecutionId: "exec-1",
+		Key:         "OTHER_NAMESPACE.key",
+		Value:       "value1",
+	}
+
+	mockStore.On("Write", mock.Anything, &store.KV{Key: "OTHER_NAMESPACE.key", Value: "value1"}).Return(nil)
+
+	resp, err := server.SetVariable(ctx, req)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+	assert.False(t, server.isKeyAllowed("exec-1", "OTHER_NAMESPACE.key"))
+	assert.True(t, server.isKeyAllowed("exec-1", "existing-key"))
+}
+
 func TestSetVariables(t *testing.T) {
 	logger := zap.NewNop()
 	mockStore := mockstore.NewStore(t)
@@ -306,6 +366,44 @@ func TestSetVariablesEmpty(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.True(t, resp.Success)
+}
+
+func TestSetVariablesTracksWrittenKeysInExistingAllowlist(t *testing.T) {
+	logger := zap.NewNop()
+	mockStore := mockstore.NewStore(t)
+
+	server := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(logger),
+		WithPort(50050),
+	)
+	server.SetAllowedKeys("exec-1", []string{"existing-key"})
+
+	ctx := context.Background()
+	req := &workerv1.SetVariablesRequest{
+		ExecutionId: "exec-1",
+		Kvs: []*workerv1.KeyValue{
+			{Key: "VARIABLE.key-1", Value: `"value1"`},
+			{Key: "VARIABLE.key-2", Value: `"value2"`},
+		},
+	}
+
+	mockStore.On(
+		"Write",
+		mock.Anything,
+		&store.KV{Key: "VARIABLE.key-1", Value: `"value1"`},
+		&store.KV{Key: "VARIABLE.key-2", Value: `"value2"`},
+	).Return(nil)
+
+	resp, err := server.SetVariables(ctx, req)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+	assert.True(t, server.isKeyAllowed("exec-1", "VARIABLE.key-1"))
+	assert.True(t, server.isKeyAllowed("exec-1", "VARIABLE.key-2"))
+	assert.True(t, server.isKeyAllowed("exec-1", "existing-key"))
 }
 
 // ============================================================================
@@ -380,6 +478,13 @@ func TestKeyAllowlisting(t *testing.T) {
 			mockReadResult: []any{"value"},
 			expectError:    false,
 			expectValue:    "value",
+		},
+		"empty_allowlist_rejects_non_prefixed_keys": {
+			allowlistSetup: map[string][]string{"exec-1": {}},
+			executionID:    "exec-1",
+			requestKey:     "VARIABLE.some-key",
+			expectError:    true,
+			errorContains:  "key not allowed",
 		},
 		"execution_prefixed_context_output_key_allowed": {
 			allowlistSetup: map[string][]string{"exec-1": {"VARIABLE.uuid-1"}},
@@ -530,7 +635,7 @@ func TestAllowlistManagement(t *testing.T) {
 				assert.True(t, s.isKeyAllowed("exec-1", "any-other-key"))
 			},
 		},
-		"overwrite_replaces_previous": {
+		"subsequent_calls_merge_keys": {
 			setup: func(s *VariableStoreGRPC) {
 				s.SetAllowedKeys("exec-1", []string{"old-key-1", "old-key-2"})
 			},
@@ -540,8 +645,17 @@ func TestAllowlistManagement(t *testing.T) {
 
 				s.SetAllowedKeys("exec-1", []string{"new-key-1", "new-key-2"})
 
-				assert.False(t, s.isKeyAllowed("exec-1", "old-key-1"))
+				assert.True(t, s.isKeyAllowed("exec-1", "old-key-1"))
 				assert.True(t, s.isKeyAllowed("exec-1", "new-key-1"))
+			},
+		},
+		"empty_key_set_creates_restrictive_allowlist": {
+			setup: func(s *VariableStoreGRPC) {
+				s.SetAllowedKeys("exec-empty", []string{})
+			},
+			check: func(t *testing.T, s *VariableStoreGRPC) {
+				assert.False(t, s.isKeyAllowed("exec-empty", "VARIABLE.some-key"))
+				assert.True(t, s.isKeyAllowed("exec-empty", "exec-empty.context.output.Step1"))
 			},
 		},
 		"execution_prefixed_keys_bypass_allowlist": {

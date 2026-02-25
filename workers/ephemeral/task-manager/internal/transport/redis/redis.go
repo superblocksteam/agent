@@ -46,6 +46,11 @@ type redisTransport struct {
 
 	// File context provider
 	fileContextProvider redisstore.FileContextProvider
+	// Tracks in-flight messages per execution so CleanupExecution only runs
+	// when the last concurrent handler for that execution completes.
+	executionContextInit sync.Once
+	executionContextLock *sync.Mutex
+	executionContextRefs map[string]int
 
 	// Agent key for file server authentication
 	agentKey string
@@ -90,17 +95,19 @@ func NewRedisTransport(options *Options) *redisTransport {
 	executionPool.Store(options.ExecutionPool)
 
 	return &redisTransport{
-		redis:               options.RedisClient,
-		blockDuration:       options.BlockDuration,
-		messageCount:        options.MessageCount,
-		streamKeys:          options.StreamKeys,
-		xReadArgs:           generateXReadArgs(options.StreamKeys),
-		workerId:            options.WorkerId,
-		consumerGroup:       options.ConsumerGroup,
-		logger:              options.Logger,
-		pluginExecutor:      options.PluginExecutor,
-		fileContextProvider: options.FileContextProvider,
-		agentKey:            options.AgentKey,
+		redis:                options.RedisClient,
+		blockDuration:        options.BlockDuration,
+		messageCount:         options.MessageCount,
+		streamKeys:           options.StreamKeys,
+		xReadArgs:            generateXReadArgs(options.StreamKeys),
+		workerId:             options.WorkerId,
+		consumerGroup:        options.ConsumerGroup,
+		logger:               options.Logger,
+		pluginExecutor:       options.PluginExecutor,
+		fileContextProvider:  options.FileContextProvider,
+		executionContextLock: &sync.Mutex{},
+		executionContextRefs: map[string]int{},
+		agentKey:             options.AgentKey,
 
 		mutex: &sync.Mutex{},
 
@@ -289,18 +296,9 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 		zap.String("inbox", request.GetInbox()),
 	)
 
-	// Set file context for this execution (for FetchFile RPC)
 	executionID := pluginProps.GetExecutionId()
-	rt.fileContextProvider.SetFileContext(
-		executionID,
-		&redisstore.ExecutionFileContext{
-			FileServerURL: pluginProps.GetFileServerUrl(),
-			AgentKey:      rt.agentKey,
-			JwtToken:      pluginProps.GetJwtToken(),
-			Profile:       pluginProps.GetProfile(),
-		},
-	)
-	defer rt.fileContextProvider.CleanupExecution(executionID)
+	rt.setupExecutionContext(executionID, pluginProps)
+	defer rt.teardownExecutionContext(executionID)
 
 	// Clear sensitive fields from Props before they are forwarded to the sandbox.
 	// The JWT and profile are now stored server-side in ExecutionFileContext and
@@ -308,12 +306,6 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 	if pluginProps != nil {
 		pluginProps.JwtToken = ""
 		pluginProps.Profile = nil
-	}
-
-	// Set allowed keys for this execution (key allowlisting for security)
-	if provider, ok := rt.fileContextProvider.(redisstore.ExecutionContextProvider); ok {
-		allowedKeys := ComputeAllowedKeys(executionID, pluginProps)
-		provider.SetAllowedKeys(executionID, allowedKeys)
 	}
 
 	perf := &transportv1.Performance{
@@ -380,6 +372,66 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 	} else {
 		logger.Debug("result sent")
 	}
+}
+
+func (rt *redisTransport) setupExecutionContext(executionID string, pluginProps *transportv1.Request_Data_Data_Props) {
+	if executionID == "" || rt.fileContextProvider == nil {
+		return
+	}
+	rt.ensureExecutionContextState()
+
+	rt.executionContextLock.Lock()
+	rt.executionContextRefs[executionID]++
+	// Keep setup within the same critical section as ref increment so teardown
+	// cannot clean up this execution before context/allowlist is initialized.
+	defer rt.executionContextLock.Unlock()
+
+	// Set file context for this execution (for FetchFile RPC).
+	rt.fileContextProvider.SetFileContext(
+		executionID,
+		&redisstore.ExecutionFileContext{
+			FileServerURL: pluginProps.GetFileServerUrl(),
+			AgentKey:      rt.agentKey,
+			JwtToken:      pluginProps.GetJwtToken(),
+			Profile:       pluginProps.GetProfile(),
+		},
+	)
+
+	// Set allowed keys for this execution (key allowlisting for security).
+	if provider, ok := rt.fileContextProvider.(redisstore.ExecutionContextProvider); ok {
+		allowedKeys := ComputeAllowedKeys(executionID, pluginProps)
+		provider.SetAllowedKeys(executionID, allowedKeys)
+	}
+}
+
+func (rt *redisTransport) teardownExecutionContext(executionID string) {
+	if executionID == "" || rt.fileContextProvider == nil {
+		return
+	}
+	rt.ensureExecutionContextState()
+
+	rt.executionContextLock.Lock()
+	current, ok := rt.executionContextRefs[executionID]
+	if !ok || current <= 1 {
+		delete(rt.executionContextRefs, executionID)
+		// Keep cleanup inside the same critical section so a new setup for the
+		// same execution cannot race between ref deletion and state cleanup.
+		rt.fileContextProvider.CleanupExecution(executionID)
+	} else {
+		rt.executionContextRefs[executionID] = current - 1
+	}
+	rt.executionContextLock.Unlock()
+}
+
+func (rt *redisTransport) ensureExecutionContextState() {
+	rt.executionContextInit.Do(func() {
+		if rt.executionContextLock == nil {
+			rt.executionContextLock = &sync.Mutex{}
+		}
+		if rt.executionContextRefs == nil {
+			rt.executionContextRefs = map[string]int{}
+		}
+	})
 }
 
 func (rt *redisTransport) sendResult(result *transportv1.Response, stream string) error {
