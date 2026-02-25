@@ -241,9 +241,6 @@ spec:
           - "--integration.executor.enabled=true"
           - "--integration.executor.grpc.port={{ (($v.integrationExecutor).grpc).port | default $.Values.integrationExecutor.grpc.port }}"
           - "--orchestrator.grpc.address={{ $.Values.integrationExecutor.orchestratorGrpcAddress }}"
-          {{- if $.Values.integrationExecutor.jwtJwksUrl }}
-          - "--auth.jwt.jwks_url={{ $.Values.integrationExecutor.jwtJwksUrl }}"
-          {{- end }}
           {{- end }}
           # Extra args from values
           {{- with $.Values.taskManager.extraArgs }}

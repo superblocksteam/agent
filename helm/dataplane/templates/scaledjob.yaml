@@ -237,9 +237,6 @@ spec:
           - "--integration.executor.enabled=true"
           - "--integration.executor.grpc.port={{ (($v.integrationExecutor).grpc).port | default $.Values.sandbox_workers.integrationExecutor.grpc.port }}"
           - "--orchestrator.grpc.address={{ include "orchestrator.fullname" $ }}-grpc:{{ $.Values.service.ports.grpc }}"
-          {{- if $.Values.auth.jwt.jwks_url }}
-          - "--auth.jwt.jwks_url={{ $.Values.auth.jwt.jwks_url }}"
-          {{- end }}
           {{- end }}
           # Extra args from values
           {{- with $.Values.sandbox_workers.taskManager.extraArgs }}

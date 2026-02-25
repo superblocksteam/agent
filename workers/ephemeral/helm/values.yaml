@@ -205,8 +205,6 @@ integrationExecutor:
   # Internal gRPC address of the orchestrator (e.g., "orchestrator-grpc:8081").
   # Required when integration executor is enabled.
   orchestratorGrpcAddress: ""
-  # JWKS URL for JWT validation. If empty, JWT validation is skipped.
-  jwtJwksUrl: ""
 # Worker configuration
 worker:
   group: main

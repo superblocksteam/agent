@@ -2,16 +2,10 @@ package integrationexecutor
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"net"
 	"testing"
-	"time"
 
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
-
-	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -84,138 +78,6 @@ func startFakeOrchestrator(t *testing.T, fake *fakeOrchestratorServer) string {
 	})
 
 	return lis.Addr().String()
-}
-
-// generateTestKey creates an ECDSA P-256 key pair for testing.
-func generateTestKey(t *testing.T) *ecdsa.PrivateKey {
-	t.Helper()
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	require.NoError(t, err)
-	return key
-}
-
-// signTestJWT creates a signed JWT with the given claims and private key.
-func signTestJWT(t *testing.T, key *ecdsa.PrivateKey, claims jwt.MapClaims) string {
-	t.Helper()
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	signed, err := token.SignedString(key)
-	require.NoError(t, err)
-	return signed
-}
-
-func TestValidateJWT(t *testing.T) {
-	key := generateTestKey(t)
-	otherKey := generateTestKey(t)
-
-	validToken := signTestJWT(t, key, jwt.MapClaims{
-		"sub": "user-123",
-		"exp": time.Now().Add(time.Hour).Unix(),
-	})
-
-	expiredToken := signTestJWT(t, key, jwt.MapClaims{
-		"sub": "user-123",
-		"exp": time.Now().Add(-time.Hour).Unix(),
-	})
-
-	wrongKeyToken := signTestJWT(t, otherKey, jwt.MapClaims{
-		"sub": "user-123",
-		"exp": time.Now().Add(time.Hour).Unix(),
-	})
-
-	// Token that expires within the padding window (10s < 30s padding).
-	expiresSoonToken := signTestJWT(t, key, jwt.MapClaims{
-		"sub": "user-123",
-		"exp": time.Now().Add(10 * time.Second).Unix(),
-	})
-
-	// Token with nbf set to now should be accepted (negative leeway bug would reject it).
-	tokenWithNbf := signTestJWT(t, key, jwt.MapClaims{
-		"sub": "user-123",
-		"exp": time.Now().Add(time.Hour).Unix(),
-		"nbf": time.Now().Unix(),
-	})
-
-	// Token without exp claim should be rejected (exp is required).
-	tokenNoExp := signTestJWT(t, key, jwt.MapClaims{
-		"sub": "user-123",
-	})
-
-	// Create an HMAC-signed token to test wrong signing method detection.
-	hmacToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": "user-123",
-		"exp": time.Now().Add(time.Hour).Unix(),
-	})
-	hmacSigned, err := hmacToken.SignedString([]byte("secret"))
-	require.NoError(t, err)
-
-	for _, test := range []struct {
-		name    string
-		key     *ecdsa.PublicKey
-		token   string
-		wantErr bool
-	}{
-		{
-			name:  "valid token",
-			key:   &key.PublicKey,
-			token: validToken,
-		},
-		{
-			name:    "expired token",
-			key:     &key.PublicKey,
-			token:   expiredToken,
-			wantErr: true,
-		},
-		{
-			name:    "wrong signing key",
-			key:     &key.PublicKey,
-			token:   wrongKeyToken,
-			wantErr: true,
-		},
-		{
-			name:    "expires within padding window",
-			key:     &key.PublicKey,
-			token:   expiresSoonToken,
-			wantErr: true,
-		},
-		{
-			name:    "wrong signing method (HMAC)",
-			key:     &key.PublicKey,
-			token:   hmacSigned,
-			wantErr: true,
-		},
-		{
-			name:  "nil key skips validation",
-			key:   nil,
-			token: "any-token",
-		},
-		{
-			name:    "malformed token",
-			key:     &key.PublicKey,
-			token:   "not.a.jwt",
-			wantErr: true,
-		},
-		{
-			name:  "valid token with nbf set to now",
-			key:   &key.PublicKey,
-			token: tokenWithNbf,
-		},
-		{
-			name:    "token without exp claim",
-			key:     &key.PublicKey,
-			token:   tokenNoExp,
-			wantErr: true,
-		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			svc := &IntegrationExecutorService{jwtSigningKey: test.key}
-			err := svc.validateJWT(test.token)
-			if test.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
 }
 
 func TestBuildStep(t *testing.T) {
@@ -299,22 +161,10 @@ func TestExecuteIntegration(t *testing.T) {
 		},
 	}
 
-	// Generate test ECDSA keys for JWT signing.
-	signingKey := generateTestKey(t)
-	validJWT := signTestJWT(t, signingKey, jwt.MapClaims{
-		"sub": "user-123",
-		"exp": time.Now().Add(time.Hour).Unix(),
-	})
-	expiredJWT := signTestJWT(t, signingKey, jwt.MapClaims{
-		"sub": "user-123",
-		"exp": time.Now().Add(-time.Hour).Unix(),
-	})
-
 	for _, test := range []struct {
 		name            string
 		request         *workerv1.ExecuteIntegrationRequest
 		contexts        map[string]*redisstore.ExecutionFileContext
-		jwtSigningKey   *ecdsa.PublicKey
 		orchestratorErr error
 		wantCode        codes.Code
 		wantOutput      *structpb.Value
@@ -323,25 +173,7 @@ func TestExecuteIntegration(t *testing.T) {
 		wantProfile     *commonv1.Profile
 	}{
 		{
-			name: "happy path with JWT validation",
-			request: &workerv1.ExecuteIntegrationRequest{
-				ExecutionId:         "exec-1",
-				IntegrationId:       "int-1",
-				PluginId:            "postgres",
-				ActionConfiguration: actionConfig,
-				ViewMode:            apiv1.ViewMode_VIEW_MODE_DEPLOYED,
-				Profile:             profileTest,
-			},
-			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT, Profile: profileFallback},
-			},
-			jwtSigningKey: &signingKey.PublicKey,
-			wantJwt:       "Bearer " + validJWT,
-			wantProfile:   profileTest,
-			wantOutput:    outputValue,
-		},
-		{
-			name: "happy path without JWT validation (nil key)",
+			name: "happy path",
 			request: &workerv1.ExecuteIntegrationRequest{
 				ExecutionId:         "exec-1",
 				IntegrationId:       "int-1",
@@ -353,10 +185,9 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: "my-jwt-token", Profile: profileFallback},
 			},
-			jwtSigningKey: nil,
-			wantJwt:       "Bearer my-jwt-token",
-			wantProfile:   profileTest,
-			wantOutput:    outputValue,
+			wantJwt:     "Bearer my-jwt-token",
+			wantProfile: profileTest,
+			wantOutput:  outputValue,
 		},
 		{
 			name: "profile falls back to parent execution",
@@ -367,26 +198,11 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT, Profile: profileFallback},
+				"exec-1": {JwtToken: "my-jwt-token", Profile: profileFallback},
 			},
-			jwtSigningKey: &signingKey.PublicKey,
-			wantJwt:       "Bearer " + validJWT,
-			wantProfile:   profileFallback,
-			wantOutput:    outputValue,
-		},
-		{
-			name: "expired JWT returns PermissionDenied",
-			request: &workerv1.ExecuteIntegrationRequest{
-				ExecutionId:         "exec-1",
-				IntegrationId:       "int-1",
-				PluginId:            "postgres",
-				ActionConfiguration: actionConfig,
-			},
-			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: expiredJWT},
-			},
-			jwtSigningKey: &signingKey.PublicKey,
-			wantCode:      codes.PermissionDenied,
+			wantJwt:     "Bearer my-jwt-token",
+			wantProfile: profileFallback,
+			wantOutput:  outputValue,
 		},
 		{
 			name: "missing execution_id",
@@ -446,11 +262,24 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT},
+				"exec-1": {JwtToken: "my-jwt-token"},
 			},
-			jwtSigningKey:   &signingKey.PublicKey,
 			orchestratorErr: status.Error(codes.Internal, "something went wrong"),
 			wantError:       "rpc error: code = Internal desc = something went wrong",
+		},
+		{
+			name: "nil action configuration defaults to empty struct",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: nil,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: "my-jwt-token"},
+			},
+			wantJwt:    "Bearer my-jwt-token",
+			wantOutput: outputValue,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -470,7 +299,6 @@ func TestExecuteIntegration(t *testing.T) {
 				logger:              zap.NewNop(),
 				orchestratorAddress: orchestratorAddr,
 				fileContextProvider: &mockFileContextProvider{contexts: test.contexts},
-				jwtSigningKey:       test.jwtSigningKey,
 			}
 
 			// Pre-create the orchestrator client for the test.
@@ -527,4 +355,126 @@ func TestExecuteIntegration(t *testing.T) {
 
 func strPtr(s string) *string {
 	return &s
+}
+
+// TestStartNilServer verifies that Start() returns an error when the gRPC
+// server was not configured (nil), rather than panicking or hanging.
+func TestStartNilServer(t *testing.T) {
+	port := getFreePort(t)
+	svc := &IntegrationExecutorService{
+		logger: zap.NewNop(),
+		// server intentionally nil
+		port: port,
+		done: make(chan error, 1),
+	}
+
+	err := svc.Start()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "gRPC server is nil")
+}
+
+// TestGetOrCreateOrchestratorClientCreatesAndReuses verifies that
+// getOrCreateOrchestratorClient lazily creates a gRPC client on the first
+// call and returns the cached client (without re-dialing) on subsequent calls.
+func TestGetOrCreateOrchestratorClientCreatesAndReuses(t *testing.T) {
+	fake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{Execution: "test"},
+	}
+	orchestratorAddr := startFakeOrchestrator(t, fake)
+
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: orchestratorAddr,
+	}
+
+	assert.Nil(t, svc.orchestratorClient)
+
+	// First call should create the connection and client.
+	client1, err := svc.getOrCreateOrchestratorClient()
+	require.NoError(t, err)
+	assert.NotNil(t, client1)
+	assert.NotNil(t, svc.orchestratorConn)
+
+	connAfterFirst := svc.orchestratorConn
+
+	// Second call should return the same client without creating a new connection.
+	client2, err := svc.getOrCreateOrchestratorClient()
+	require.NoError(t, err)
+	assert.NotNil(t, client2)
+	assert.Equal(t, connAfterFirst, svc.orchestratorConn, "connection should not be re-created on second call")
+}
+
+// TestCloseWithActiveOrchestratorConnection verifies that Close() properly
+// tears down an active orchestrator connection and marks the service as stopped.
+func TestCloseWithActiveOrchestratorConnection(t *testing.T) {
+	fake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{Execution: "test"},
+	}
+	orchestratorAddr := startFakeOrchestrator(t, fake)
+
+	conn, err := grpc.NewClient(
+		orchestratorAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+
+	svc := &IntegrationExecutorService{
+		logger:             zap.NewNop(),
+		server:             grpc.NewServer(),
+		orchestratorConn:   conn,
+		orchestratorClient: apiv1.NewExecutorServiceClient(conn),
+	}
+
+	assert.True(t, svc.Alive())
+
+	require.NoError(t, svc.Close(context.Background()))
+
+	assert.Nil(t, svc.orchestratorConn)
+	assert.Nil(t, svc.orchestratorClient)
+	assert.False(t, svc.Alive())
+}
+
+// TestExecuteIntegrationLazyClientCreation verifies that ExecuteIntegration
+// creates the orchestrator gRPC client lazily when it has not been pre-created.
+func TestExecuteIntegrationLazyClientCreation(t *testing.T) {
+	outputValue, err := structpb.NewValue(map[string]any{"key": "value"})
+	require.NoError(t, err)
+
+	fake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "lazy-exec-id",
+			Output:    &apiv1.Output{Result: outputValue},
+		},
+	}
+	orchestratorAddr := startFakeOrchestrator(t, fake)
+
+	// Do NOT pre-create the orchestrator client; it must be created lazily.
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: orchestratorAddr,
+		fileContextProvider: &mockFileContextProvider{
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: "lazy-token"},
+			},
+		},
+	}
+
+	resp, err := svc.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:   "exec-1",
+		IntegrationId: "int-1",
+		PluginId:      "postgres",
+		ActionConfiguration: &structpb.Struct{
+			Fields: map[string]*structpb.Value{},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "lazy-exec-id", resp.GetExecutionId())
+	assert.Empty(t, resp.GetError())
+
+	// The client and connection should now be cached on the service.
+	assert.NotNil(t, svc.orchestratorClient)
+	assert.NotNil(t, svc.orchestratorConn)
+
+	// JWT should have been forwarded with Bearer prefix.
+	assert.Equal(t, "Bearer lazy-token", fake.lastJwtToken)
 }

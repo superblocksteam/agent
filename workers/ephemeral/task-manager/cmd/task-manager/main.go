@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -27,7 +26,6 @@ import (
 	r "github.com/redis/go-redis/v9"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/superblocksteam/agent/pkg/crypto"
 	httpserver "github.com/superblocksteam/agent/pkg/http"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/log"
@@ -133,7 +131,7 @@ func init() {
 	pflag.Bool("integration.executor.enabled", false, "Whether to enable the IntegrationExecutor gRPC service (only for API 2.0 fleets).")
 	pflag.Int("integration.executor.grpc.port", 50052, "The port for the IntegrationExecutor gRPC server.")
 	pflag.String("orchestrator.grpc.address", "", "Internal gRPC address of the orchestrator for proxied integration execution.")
-	pflag.String("auth.jwt.jwks_url", "", "JWKS URL for JWT validation. If empty, JWT validation is skipped.")
+	pflag.String("auth.jwt.jwks_url", "", "Deprecated: JWT validation now happens on the orchestrator. This flag is kept for backward compatibility and is ignored.")
 
 	// gRPC message size settings
 	pflag.Int("grpc.msg.req.max", 30000000, "Max message size in bytes to be received by the grpc server as a request. Default 30mb.")
@@ -622,18 +620,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		// Load ECDSA public key from JWKS URL for JWT validation (optional).
-		var jwtSigningKey *ecdsa.PublicKey
-		if jwksURL := viper.GetString("auth.jwt.jwks_url"); jwksURL != "" {
-			key, err := crypto.LoadEcdsaPublicKeyFromJwksUrl(context.Background(), jwksURL)
-			if err != nil {
-				logger.Warn("failed to load JWT signing key from JWKS URL", zap.String("url", jwksURL), zap.Error(err))
-			} else {
-				jwtSigningKey = key
-				logger.Info("JWT validation enabled for integration executor", zap.String("jwks_url", jwksURL))
-			}
-		}
-
 		grpcServer := grpc.NewServer(
 			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger, ipFilterDisabled)),
 			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
@@ -647,7 +633,6 @@ func main() {
 			integrationexecutor.WithPort(viper.GetInt("integration.executor.grpc.port")),
 			integrationexecutor.WithOrchestratorAddress(orchestratorAddr),
 			integrationexecutor.WithFileContextProvider(variableStoreGrpcRunnable),
-			integrationexecutor.WithJWTSigningKey(jwtSigningKey),
 		)
 	}
 	logger.Info("integration executor configuration",
