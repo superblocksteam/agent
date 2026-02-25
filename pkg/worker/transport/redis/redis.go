@@ -112,15 +112,34 @@ func (t *transport) Remote(ctx context.Context, pluginName string, organizationP
 
 	bucket := t.options.buckets.Assign(pluginName, estimate)
 
-	enabledPlugins := pluginparser.ParsePlugins(t.flags.GetEphemeralEnabledPlugins(organizationPlan, orgId))
-	supportedEvents := utils.NewSet(t.flags.GetEphemeralSupportedEvents(organizationPlan, orgId)...)
+	rawEnabledPlugins := t.flags.GetEphemeralEnabledPlugins(organizationPlan, orgId)
+	rawSupportedEvents := t.flags.GetEphemeralSupportedEvents(organizationPlan, orgId)
+	enabledPlugins := pluginparser.ParsePlugins(rawEnabledPlugins)
+	supportedEvents := utils.NewSet(rawSupportedEvents...)
 
 	streamFmtStr := "agent.main.bucket.%s.plugin.%s.event.%s"
 	if enabledPlugins.Contains(pluginName) && supportedEvents.Contains(string(event)) {
 		streamFmtStr = "agent.main.bucket.%s.ephemeral.plugin.%s.event.%s"
 	}
 
-	return bucket, fmt.Sprintf(streamFmtStr, bucket, pluginName, event)
+	stream := fmt.Sprintf(streamFmtStr, bucket, pluginName, event)
+
+	t.options.logger.Info("resolved worker stream",
+		zap.String("plugin", pluginName),
+		zap.String("event", string(event)),
+		zap.String("stream", stream),
+		zap.Strings("raw_enabled_plugins", rawEnabledPlugins),
+		zap.Strings("parsed_enabled_plugins", enabledPlugins.ToSlice()),
+		zap.Strings("raw_supported_events", rawSupportedEvents),
+		zap.Strings("parsed_supported_events", supportedEvents.ToSlice()),
+		zap.Bool("plugin_enabled", enabledPlugins.Contains(pluginName)),
+		zap.Bool("event_supported", supportedEvents.Contains(string(event))),
+		zap.Bool("routed_ephemeral", enabledPlugins.Contains(pluginName) && supportedEvents.Contains(string(event))),
+		zap.String("org_plan", organizationPlan),
+		zap.String("org_id", orgId),
+	)
+
+	return bucket, stream
 }
 
 func (t *transport) Execute(ctx context.Context, plugin string, data *transportv1.Request_Data_Data, opts ...options.Option) (*transportv1.Performance, string, error) {
