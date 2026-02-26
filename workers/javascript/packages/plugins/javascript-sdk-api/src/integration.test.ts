@@ -17,6 +17,7 @@
 async function loadSdkApi(): Promise<{
   executeApi: (...args: unknown[]) => Promise<{ success: boolean; output?: unknown; error?: { code: string; message: string; details?: unknown } }>;
   api: (...args: unknown[]) => unknown;
+  postgres: (id: string) => { pluginId: string; id: string };
   z: { object: (...args: unknown[]) => unknown; string: () => unknown; number: () => unknown };
 }> {
   return await import('@superblocksteam/sdk-api') as never;
@@ -70,11 +71,21 @@ if (typeof __sb_execute !== "function") {
   throw new Error("__sb_execute (sdk-api executeApi) not injected into sandbox");
 }
 
-async function __sb_executeQuery(integrationId, request, metadata) {
+var __sb_pluginIdMap = {};
+if (__sb_api.integrations) {
+  for (var __sb_i = 0; __sb_i < __sb_api.integrations.length; __sb_i++) {
+    var __sb_decl = __sb_api.integrations[__sb_i];
+    if (__sb_decl && __sb_decl.id && __sb_decl.pluginId) {
+      __sb_pluginIdMap[__sb_decl.id] = __sb_decl.pluginId;
+    }
+  }
+}
+
+async function __sb_executeQuery(integrationId, request) {
   if (typeof __sb_integrationExecutor !== "function") {
     throw new Error("Integration operations require an integration executor (not available in this execution context)");
   }
-  var pluginId = (metadata && metadata.pluginId) || "";
+  var pluginId = __sb_pluginIdMap[integrationId] || "";
   return __sb_integrationExecutor({
     integrationId: integrationId,
     pluginId: pluginId,
@@ -114,12 +125,14 @@ const TEST_USER = { userId: 'test-user', email: 'test@example.com', groups: [] a
 describe('sdk-api integration tests (real executeApi)', () => {
   let executeApi: (...args: unknown[]) => Promise<unknown>;
   let api: (...args: unknown[]) => unknown;
+  let postgres: (id: string) => { pluginId: string; id: string };
   let z: { object: (...args: unknown[]) => unknown; string: () => { uuid: () => unknown }; number: () => { min: (n: number) => unknown } };
 
   beforeAll(async () => {
     const sdkApi = await loadSdkApi();
     executeApi = sdkApi.executeApi;
     api = sdkApi.api;
+    postgres = sdkApi.postgres;
     z = sdkApi.z as never;
   });
 
@@ -323,6 +336,58 @@ describe('sdk-api integration tests (real executeApi)', () => {
       expect(call.actionConfiguration).toEqual(
         expect.objectContaining({ body: 'SELECT * FROM users' })
       );
+    });
+
+    it('resolves pluginId from real api() + postgres() declarations', async () => {
+      const mockIntegrationExecutor = jest.fn().mockResolvedValue([{ id: 1 }]);
+
+      // Build a real CompiledApi using api() + postgres() — the same way users write code.
+      // api() calls extractIntegrationDeclarations() to produce the integrations array.
+      const compiledApi = api({
+        name: 'test-pluginid',
+        input: z.object({}),
+        output: z.object({}),
+        integrations: { db: postgres('pg-uuid-real') },
+        async run(ctx: { integrations: { db: { query: (sql: string, schema: unknown) => Promise<unknown> } } }) {
+          const schema = { safeParse: (v: unknown) => ({ success: true as const, data: v }) };
+          return await ctx.integrations.db.query('SELECT 1', schema);
+        }
+      }) as { integrations: Array<{ key: string; pluginId: string; id: string }> };
+
+      // Verify the real api() function produces the expected shape
+      expect(compiledApi.integrations).toEqual([
+        { key: 'db', pluginId: 'postgres', id: 'pg-uuid-real' }
+      ]);
+
+      // Now serialize as a CJS bundle (what esbuild would produce) and run through the wrapper.
+      // We inline the integrations array from the real CompiledApi.
+      const integrationsJSON = JSON.stringify(compiledApi.integrations);
+      const bundle = `
+        module.exports = { default: {
+          name: 'test-pluginid',
+          inputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          outputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          integrations: ${integrationsJSON},
+          run: async function(ctx) {
+            var schema = { safeParse: function(v) { return { success: true, data: v }; } };
+            return await ctx.integrations.db.query('SELECT 1', schema);
+          }
+        }};`;
+
+      const result = await evaluateWrapper(
+        buildWrapper(bundle),
+        {
+          __sb_execute: executeApi,
+          __sb_integrationExecutor: mockIntegrationExecutor
+        }
+      );
+
+      expect(result).toEqual([{ id: 1 }]);
+      expect(mockIntegrationExecutor).toHaveBeenCalledWith({
+        integrationId: 'pg-uuid-real',
+        pluginId: 'postgres',
+        actionConfiguration: expect.objectContaining({ body: 'SELECT 1' })
+      });
     });
 
     it('propagates integration executor errors as thrown exceptions', async () => {

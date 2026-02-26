@@ -224,6 +224,18 @@ func TestGenerateWrapperScript(t *testing.T) {
 		assert.Contains(t, script, "actionConfiguration")
 	})
 
+	t.Run("builds pluginId lookup map from api.integrations", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1")
+		require.NoError(t, err)
+		assert.Contains(t, script, "__sb_pluginIdMap",
+			"wrapper should build a map from integrationId to pluginId using api.integrations")
+		assert.Contains(t, script, "__sb_api.integrations",
+			"wrapper should read integrations from the loaded CompiledApi")
+		assert.Contains(t, script, "__sb_pluginIdMap[integrationId]",
+			"executeQuery should look up pluginId from the map, not from metadata arg")
+	})
+
 	t.Run("handles nested struct inputs", func(t *testing.T) {
 		t.Parallel()
 		nested, err := structpb.NewStruct(map[string]interface{}{

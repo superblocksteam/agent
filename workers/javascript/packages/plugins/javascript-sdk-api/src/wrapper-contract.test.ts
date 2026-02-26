@@ -61,11 +61,21 @@ if (typeof __sb_execute !== "function") {
   throw new Error("__sb_execute (sdk-api executeApi) not injected into sandbox");
 }
 
-async function __sb_executeQuery(integrationId, request, metadata) {
+var __sb_pluginIdMap = {};
+if (__sb_api.integrations) {
+  for (var __sb_i = 0; __sb_i < __sb_api.integrations.length; __sb_i++) {
+    var __sb_decl = __sb_api.integrations[__sb_i];
+    if (__sb_decl && __sb_decl.id && __sb_decl.pluginId) {
+      __sb_pluginIdMap[__sb_decl.id] = __sb_decl.pluginId;
+    }
+  }
+}
+
+async function __sb_executeQuery(integrationId, request) {
   if (typeof __sb_integrationExecutor !== "function") {
     throw new Error("Integration operations require an integration executor (not available in this execution context)");
   }
-  var pluginId = (metadata && metadata.pluginId) || "";
+  var pluginId = __sb_pluginIdMap[integrationId] || "";
   return __sb_integrationExecutor({
     integrationId: integrationId,
     pluginId: pluginId,
@@ -149,33 +159,11 @@ return __sb_result.output;
     ).rejects.toThrow('does not export a valid CompiledApi');
   });
 
-  it('bridges executeQuery to __sb_integrationExecutor with pluginId', async () => {
-    mockIntegrationExecutor.mockResolvedValue({ rows: [{ id: 1 }] });
-
-    // Set up __sb_execute to call executeQuery from the request
-    mockExecuteApi.mockImplementation(async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>, meta: { pluginId: string }) => Promise<unknown> }) => {
-      const queryResult = await req.executeQuery('my-postgres', { body: 'SELECT 1' }, { pluginId: 'postgres' });
-      return { success: true, output: queryResult };
-    });
-
-    const result = await evaluateWrapper(buildWrapper(asyncBundle), {
-      __sb_execute: mockExecuteApi,
-      __sb_integrationExecutor: mockIntegrationExecutor
-    });
-
-    expect(result).toEqual({ rows: [{ id: 1 }] });
-    expect(mockIntegrationExecutor).toHaveBeenCalledWith({
-      integrationId: 'my-postgres',
-      pluginId: 'postgres',
-      actionConfiguration: { body: 'SELECT 1' }
-    });
-  });
-
-  it('executeQuery defaults pluginId to empty when metadata is absent', async () => {
+  it('defaults pluginId to empty for unknown integrationId', async () => {
     mockIntegrationExecutor.mockResolvedValue('ok');
 
     mockExecuteApi.mockImplementation(async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
-      await req.executeQuery('some-integration', { action: 'test' });
+      await req.executeQuery('unknown-integration', { action: 'test' });
       return { success: true, output: 'done' };
     });
 
@@ -185,7 +173,7 @@ return __sb_result.output;
     });
 
     expect(mockIntegrationExecutor).toHaveBeenCalledWith({
-      integrationId: 'some-integration',
+      integrationId: 'unknown-integration',
       pluginId: '',
       actionConfiguration: { action: 'test' }
     });
@@ -247,6 +235,67 @@ return __sb_result.output;
         __sb_integrationExecutor: mockIntegrationExecutor
       })
     ).rejects.toThrow('Required');
+  });
+
+  // Bundle whose CompiledApi includes integration declarations in the post-compilation
+  // array form produced by api() → extractIntegrationDeclarations(). In source code the
+  // user writes `integrations: { db: postgres('uuid') }` but api() transforms that into
+  // `[{ key: 'db', pluginId: 'postgres', id: 'uuid' }]`. The integration tests verify
+  // this transformation using the real api() + postgres() functions.
+  const bundleWithIntegrations = `module.exports={default:{
+    inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+    outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+    integrations:[{key:"db",pluginId:"postgres",id:"pg-uuid-123"},{key:"cache",pluginId:"redis",id:"redis-uuid-456"}],
+    run:async function(ctx){return {ok:true};}
+  }};`;
+
+  it('resolves pluginId from api.integrations when metadata is absent (real SDK path)', async () => {
+    mockIntegrationExecutor.mockResolvedValue({ rows: [{ id: 1 }] });
+
+    mockExecuteApi.mockImplementation(async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
+      const queryResult = await req.executeQuery('pg-uuid-123', { body: 'SELECT 1' });
+      return { success: true, output: queryResult };
+    });
+
+    const result = await evaluateWrapper(buildWrapper(bundleWithIntegrations), {
+      __sb_execute: mockExecuteApi,
+      __sb_integrationExecutor: mockIntegrationExecutor
+    });
+
+    expect(result).toEqual({ rows: [{ id: 1 }] });
+    expect(mockIntegrationExecutor).toHaveBeenCalledWith({
+      integrationId: 'pg-uuid-123',
+      pluginId: 'postgres',
+      actionConfiguration: { body: 'SELECT 1' }
+    });
+  });
+
+  it('resolves pluginId for multiple integrations from api.integrations', async () => {
+    mockIntegrationExecutor.mockResolvedValueOnce({ rows: [] });
+    mockIntegrationExecutor.mockResolvedValueOnce('OK');
+
+    mockExecuteApi.mockImplementation(async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
+      const pgResult = await req.executeQuery('pg-uuid-123', { body: 'SELECT 1' });
+      const redisResult = await req.executeQuery('redis-uuid-456', { command: 'GET key' });
+      return { success: true, output: { pgResult, redisResult } };
+    });
+
+    const result = await evaluateWrapper(buildWrapper(bundleWithIntegrations), {
+      __sb_execute: mockExecuteApi,
+      __sb_integrationExecutor: mockIntegrationExecutor
+    });
+
+    expect(result).toEqual({ pgResult: { rows: [] }, redisResult: 'OK' });
+    expect(mockIntegrationExecutor).toHaveBeenNthCalledWith(1, {
+      integrationId: 'pg-uuid-123',
+      pluginId: 'postgres',
+      actionConfiguration: { body: 'SELECT 1' }
+    });
+    expect(mockIntegrationExecutor).toHaveBeenNthCalledWith(2, {
+      integrationId: 'redis-uuid-456',
+      pluginId: 'redis',
+      actionConfiguration: { command: 'GET key' }
+    });
   });
 
   it('throws when executeQuery called without integration executor', async () => {

@@ -138,13 +138,21 @@ if (typeof __sb_execute !== "function") {
   throw new Error("__sb_execute (sdk-api executeApi) not injected into sandbox");
 }
 
-// Bridge executeQuery: adapts sdk-api's (integrationId, request, metadata?) signature
-// to __sb_integrationExecutor's {integrationId, pluginId, actionConfiguration} params.
-async function __sb_executeQuery(integrationId, request, metadata) {
+var __sb_pluginIdMap = {};
+if (__sb_api.integrations) {
+  for (var __sb_i = 0; __sb_i < __sb_api.integrations.length; __sb_i++) {
+    var __sb_decl = __sb_api.integrations[__sb_i];
+    if (__sb_decl && __sb_decl.id && __sb_decl.pluginId) {
+      __sb_pluginIdMap[__sb_decl.id] = __sb_decl.pluginId;
+    }
+  }
+}
+
+async function __sb_executeQuery(integrationId, request) {
   if (typeof __sb_integrationExecutor !== "function") {
     throw new Error("Integration operations require an integration executor (not available in this execution context)");
   }
-  var pluginId = (metadata && metadata.pluginId) || "";
+  var pluginId = __sb_pluginIdMap[integrationId] || "";
   return __sb_integrationExecutor({
     integrationId: integrationId,
     pluginId: pluginId,
