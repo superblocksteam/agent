@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Add Snowflake Postgres support
+
+## v1.34.0
 - Add `atob` and `btoa` polyfills to the WASM sandbox
 - Added option to route all control flow related resolution of bindings to the WASM sandbox
+- Python worker bug fixes
 
 ## v1.33.1
 - Add `superblocks.auditLogs.enabled` helm value to allow disabling audit log ingestion (defaults to enabled)
