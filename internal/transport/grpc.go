@@ -905,6 +905,13 @@ func (s *server) executeCodeMode(
 					storeErr = fmt.Errorf("could not unmarshal worker output: %w", jsonErr)
 				} else {
 					output = *parsed
+					// SDK API (FetchCode) output: omit request to avoid exposing the full
+					// bundled code in the response. Clear Request and RequestV2.Summary
+					// but preserve RequestV2.Metadata (e.g. placeHoldersInfo).
+					output.Request = ""
+					if output.RequestV2 != nil {
+						output.RequestV2.Summary = ""
+					}
 				}
 			}
 		}
