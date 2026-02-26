@@ -363,16 +363,28 @@ module.exports.executeCode = async (workerData) => {
     }
 
     // Create vm2 sandbox for user script execution
+    const requireOpts = {
+      builtin: ['*', '-child_process', '-process'],
+      external: true
+    };
+    if (requireRoot && requireRoot.length > 0) {
+      requireOpts.root = requireRoot;
+      // customResolver: when VM2 cannot find a module via normal lookup (e.g. pnpm's
+      // .pnpm layout), try resolving from requireRoot so @superblocksteam/sdk-api works.
+      requireOpts.resolve = (moduleName, dirname) => {
+        try {
+          return require.resolve(moduleName, { paths: requireRoot });
+        } catch {
+          return undefined;
+        }
+      };
+    }
     const vm = new NodeVM({
       argv: [],
       console: 'redirect',
       env: userProcessEnv,
       eval: false,
-      require: {
-        builtin: ['*', '-child_process', '-process'],
-        external: true,
-        ...(requireRoot ? { root: requireRoot } : {})
-      },
+      require: requireOpts,
       sandbox: {
         ...context.globals,
         ...context.outputs,

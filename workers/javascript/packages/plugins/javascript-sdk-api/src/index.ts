@@ -14,6 +14,7 @@ import {
   LanguagePlugin,
   PluginExecutionProps
 } from '@superblocks/shared';
+import { buildRequireRoot } from './buildRequireRoot';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { executeCode } = require('@superblocksteam/javascript/bootstrap');
 
@@ -91,14 +92,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       __sb_integrationExecutor: integrationExecutorBridge
     };
 
-    // Resolve require roots so the VM2 sandbox can find @superblocksteam/sdk-api.
-    // process.cwd() covers the sandbox image; the second path resolves to the
-    // project root relative to the worker entrypoint (process.argv[1]).
-    const path = require('path');
-    const requireRoot = [process.cwd()];
-    if (process.argv[1]) {
-      requireRoot.push(path.resolve(path.dirname(process.argv[1]), '..'));
-    }
+    const requireRoot = buildRequireRoot();
 
     const runPromise = executeCode({
       context: {
