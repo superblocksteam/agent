@@ -19,6 +19,7 @@ charts/
 .air
 *.env*
 !/config/.env*
+!/workers/javascript/packages/fleets/*/.env
 **/mise.toml
 **/pyrightconfig.json
 

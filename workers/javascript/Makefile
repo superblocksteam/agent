@@ -73,6 +73,7 @@ clean:
 	@pnpm --filter @superblocks/worker.js clean
 	@pnpm --filter @superblocks/fleet.all clean
 	@pnpm --filter @superblocks/fleet.javascript clean
+	@pnpm --filter @superblocks/fleet.javascriptsdkapi clean
 	@pnpm --filter @superblocks/fleet.non-lang clean
 
 .PHONY: test-e2e
@@ -137,6 +138,10 @@ local-execute-be:
 .PHONY: local-js
 local-js:
 	@SUPERBLOCKS_AGENT_PLUGIN_EVENTS=execute SUPERBLOCKS_AGENT_BUCKET=BA pnpm --filter @superblocks/fleet.javascript start
+
+.PHONY: local-javascriptsdkapi
+local-javascriptsdkapi:
+	@SUPERBLOCKS_AGENT_PLUGIN_EVENTS=execute SUPERBLOCKS_AGENT_BUCKET=BA pnpm --filter @superblocks/fleet.javascriptsdkapi start
 
 .PHONY: deploy-kind
 deploy-kind:

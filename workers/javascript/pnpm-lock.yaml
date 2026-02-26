@@ -419,6 +419,61 @@ importers:
         specifier: 5.5.4
         version: 5.5.4
 
+  packages/fleets/javascriptsdkapi:
+    dependencies:
+      '@superblocks/worker.js':
+        specifier: workspace:*
+        version: link:../../server
+      '@superblocksteam/javascript-sdk-api':
+        specifier: workspace:*
+        version: link:../../plugins/javascript-sdk-api
+      ion-js:
+        specifier: 5.2.1
+        version: 5.2.1
+      jsbi:
+        specifier: 4.3.0
+        version: 4.3.0
+    devDependencies:
+      '@swc/cli':
+        specifier: 0.6.0
+        version: 0.6.0(@swc/core@1.7.26)(chokidar@4.0.3)
+      '@swc/core':
+        specifier: 1.7.26
+        version: 1.7.26
+      '@types/node':
+        specifier: 20.14.8
+        version: 20.14.8
+      '@typescript-eslint/eslint-plugin':
+        specifier: 7.8.0
+        version: 7.8.0(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser':
+        specifier: 7.8.0
+        version: 7.8.0(eslint@8.57.0)(typescript@5.5.4)
+      eslint:
+        specifier: 8.57.0
+        version: 8.57.0
+      eslint-config-prettier:
+        specifier: 8.1.0
+        version: 8.1.0(eslint@8.57.0)
+      eslint-import-resolver-typescript:
+        specifier: 2.5.0
+        version: 2.5.0(eslint-plugin-import@2.29.1)(eslint@8.57.0)
+      eslint-plugin-import:
+        specifier: 2.29.1
+        version: 2.29.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@2.5.0)(eslint@8.57.0)
+      eslint-plugin-prettier:
+        specifier: 5.2.1
+        version: 5.2.1(@types/eslint@8.56.12)(eslint-config-prettier@8.1.0(eslint@8.57.0))(eslint@8.57.0)(prettier@3.3.3)
+      nodemon:
+        specifier: 3.1.4
+        version: 3.1.4
+      ts-node:
+        specifier: 10.9.2
+        version: 10.9.2(@swc/core@1.7.26)(@types/node@20.14.8)(typescript@5.5.4)
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+
   packages/fleets/non-lang:
     dependencies:
       '@superblocks/worker.js':

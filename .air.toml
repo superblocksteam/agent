@@ -53,15 +53,15 @@ full_bin = """ \
         --data.domain=${SUPERBLOCKS_AGENT_DATA_DOMAIN-app.superblocks.com} \
         --superblocks.key=${SUPERBLOCKS_AGENT_KEY-dev-agent-key} \
         --agent.version.external=${version} \
-        --quotas.enabled=true \
+        --quotas.enabled=${SUPERBLOCKS_ORCHESTRATOR_QUOTAS_ENABLED:-true} \
         --events.cloud.enabled=${SUPERBLOCKS_ORCHESTRATOR_EVENTS_CLOUD_ENABLED-false} \
         --worker.go.enabled=${SUPERBLOCKS_ORCHESTRATOR_WORKER_GO_ENABLED-true} \
         --file.server.url=http://localhost:${SUPERBLOCKS_ORCHESTRATOR_HTTP_PORT:-18080}/v2/files \
         --metrics.port=${SUPERBLOCKS_ORCHESTRATOR_METRICS_PORT:-9090} \
         --transport.redis.password=koala \
         --store.redis.password=koala \
-        --worker.ephemeral.plugins.enabled=${SUPERBLOCKS_WORKER_EPHEMERAL_PLUGINS-} \
-        --worker.ephemeral.supported.events=${SUPERBLOCKS_WORKER_EPHEMERAL_EVENTS-}
+        --worker.ephemeral.plugins.enabled=${SUPERBLOCKS_WORKER_EPHEMERAL_PLUGINS:-} \
+        --worker.ephemeral.supported.events=${SUPERBLOCKS_WORKER_EPHEMERAL_EVENTS:-execute}  # SUPERBLOCKS_ORCHESTRATOR_QUOTAS_ENABLED=false also disables LD configs
 
     """
 include_dir = [  ]

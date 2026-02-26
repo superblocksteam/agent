@@ -118,6 +118,9 @@ importers:
       '@superblocksteam/salesforce':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/salesforce
+      '@superblocksteam/sdk-api':
+        specifier: ^0.0.2
+        version: 0.0.2
       '@superblocksteam/smtp':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/smtp
@@ -302,6 +305,9 @@ importers:
       '@superblocksteam/snowflake':
         specifier: workspace:*
         version: link:../../plugins/snowflake
+      '@superblocksteam/snowflakepostgres':
+        specifier: workspace:*
+        version: link:../../plugins/snowflakepostgres
       '@superblocksteam/superblocks-ocr':
         specifier: workspace:*
         version: link:../../plugins/superblocks-ocr
@@ -363,6 +369,61 @@ importers:
       '@superblocksteam/javascript':
         specifier: workspace:*
         version: link:../../plugins/javascript
+      ion-js:
+        specifier: 5.2.1
+        version: 5.2.1
+      jsbi:
+        specifier: 4.3.0
+        version: 4.3.0
+    devDependencies:
+      '@swc/cli':
+        specifier: 0.6.0
+        version: 0.6.0(@swc/core@1.7.26)(chokidar@4.0.3)
+      '@swc/core':
+        specifier: 1.7.26
+        version: 1.7.26
+      '@types/node':
+        specifier: 20.14.8
+        version: 20.14.8
+      '@typescript-eslint/eslint-plugin':
+        specifier: 7.8.0
+        version: 7.8.0(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser':
+        specifier: 7.8.0
+        version: 7.8.0(eslint@8.57.0)(typescript@5.5.4)
+      eslint:
+        specifier: 8.57.0
+        version: 8.57.0
+      eslint-config-prettier:
+        specifier: 8.1.0
+        version: 8.1.0(eslint@8.57.0)
+      eslint-import-resolver-typescript:
+        specifier: 2.5.0
+        version: 2.5.0(eslint-plugin-import@2.29.1)(eslint@8.57.0)
+      eslint-plugin-import:
+        specifier: 2.29.1
+        version: 2.29.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@2.5.0)(eslint@8.57.0)
+      eslint-plugin-prettier:
+        specifier: 5.2.1
+        version: 5.2.1(eslint-config-prettier@8.1.0(eslint@8.57.0))(eslint@8.57.0)(prettier@3.3.3)
+      nodemon:
+        specifier: 3.1.4
+        version: 3.1.4
+      ts-node:
+        specifier: 10.9.2
+        version: 10.9.2(@swc/core@1.7.26)(@types/node@20.14.8)(typescript@5.5.4)
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+
+  packages/fleets/javascriptsdkapi:
+    dependencies:
+      '@superblocks/worker.js':
+        specifier: workspace:*
+        version: link:../../server
+      '@superblocksteam/javascript-sdk-api':
+        specifier: workspace:*
+        version: link:../../plugins/javascript-sdk-api
       ion-js:
         specifier: 5.2.1
         version: 5.2.1
@@ -511,6 +572,9 @@ importers:
       '@superblocksteam/snowflake':
         specifier: workspace:*
         version: link:../../plugins/snowflake
+      '@superblocksteam/snowflakepostgres':
+        specifier: workspace:*
+        version: link:../../plugins/snowflakepostgres
       '@superblocksteam/superblocks-ocr':
         specifier: workspace:*
         version: link:../../plugins/superblocks-ocr
@@ -1703,6 +1767,12 @@ importers:
       '@superblocks/shared':
         specifier: workspace:*
         version: link:../../shared
+      '@superblocksteam/javascript':
+        specifier: workspace:*
+        version: link:../javascript
+      '@superblocksteam/sdk-api':
+        specifier: ^0.0.2
+        version: 0.0.2
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0
@@ -3163,6 +3233,79 @@ importers:
       snowflake-sdk:
         specifier: 2.0.3
         version: 2.0.3(asn1.js@5.4.1)
+    devDependencies:
+      '@swc/cli':
+        specifier: 0.6.0
+        version: 0.6.0(@swc/core@1.7.26)(chokidar@4.0.3)
+      '@swc/core':
+        specifier: 1.7.26
+        version: 1.7.26
+      '@swc/jest':
+        specifier: 0.2.36
+        version: 0.2.36(@swc/core@1.7.26)
+      '@types/jest':
+        specifier: 29.5.12
+        version: 29.5.12
+      '@types/lodash':
+        specifier: ^4.17.0
+        version: 4.17.7
+      '@types/node':
+        specifier: 20.14.8
+        version: 20.14.8
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.8.0
+        version: 7.8.0(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser':
+        specifier: ^7.8.0
+        version: 7.8.0(eslint@8.57.0)(typescript@5.5.4)
+      chokidar-cli:
+        specifier: 3.0.0
+        version: 3.0.0
+      eslint:
+        specifier: 8.57.0
+        version: 8.57.0
+      eslint-config-prettier:
+        specifier: 8.1.0
+        version: 8.1.0(eslint@8.57.0)
+      eslint-import-resolver-typescript:
+        specifier: ^2.5.0
+        version: 2.5.0(eslint-plugin-import@2.29.1)(eslint@8.57.0)
+      eslint-plugin-import:
+        specifier: ^2.29.1
+        version: 2.29.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@2.5.0)(eslint@8.57.0)
+      eslint-plugin-prettier:
+        specifier: 5.2.1
+        version: 5.2.1(eslint-config-prettier@8.1.0(eslint@8.57.0))(eslint@8.57.0)(prettier@3.3.3)
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@20.14.8)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@20.14.8)(typescript@5.5.4))
+      prettier:
+        specifier: 3.3.3
+        version: 3.3.3
+      rimraf:
+        specifier: ^5.0.0
+        version: 5.0.10
+      typescript:
+        specifier: ^5.5.4
+        version: 5.5.4
+
+  packages/plugins/snowflakepostgres:
+    dependencies:
+      '@superblocks/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@superblocksteam/types':
+        specifier: workspace:*
+        version: link:../../types
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      minimist:
+        specifier: 1.2.6
+        version: 1.2.6
+      pg:
+        specifier: 8.11.5
+        version: 8.11.5
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0
@@ -5792,6 +5935,13 @@ packages:
 
   '@streamparser/json@0.0.20':
     resolution: {integrity: sha512-VqAAkydywPpkw63WQhPVKCD3SdwXuihCUVZbbiY3SfSTGQyHmwRoq27y4dmJdZuJwd5JIlQoMPyGvMbUPY0RKQ==}
+
+  '@superblocksteam/sdk-api@0.0.2':
+    resolution: {integrity: sha512-pQ8xO0G29NcytnAwJFVhYDPhdPp3k2R148IM2y8fwI4xsoFuW7uDCBH4wIgTBgssRxKUmWRZw4dJbEoG9QmmOQ==, tarball: https://npm.pkg.github.com/download/@superblocksteam/sdk-api/0.0.2/8633cccf29907be5c0e57110094b08cbd0beaa1a}
+    engines: {node: '>=20', npm: '>=10.x'}
+
+  '@superblocksteam/types@1.91.0':
+    resolution: {integrity: sha512-2Wk4lDqmrYAyT6yGoWeD+xZa/tsJmoKr83jFusGV9Mi5eV4ebCN+ZtKg3QdPMOZEq6PgdRcY1+fhleopuDbl0g==, tarball: https://npm.pkg.github.com/download/@superblocksteam/types/1.91.0/0581c3fb1a146a00d9187d698b52daf8eb882a7a}
 
   '@swc-node/core@1.14.1':
     resolution: {integrity: sha512-jrt5GUaZUU6cmMS+WTJEvGvaB6j1YNKPHPzC2PUi2BjaFbtxURHj6641Az6xN7b665hNniAIdvjxWcRml5yCnw==}
@@ -11612,7 +11762,7 @@ snapshots:
       '@azure/core-auth': 1.7.2
       '@azure/core-rest-pipeline': 1.16.3
       '@azure/core-tracing': 1.1.2
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       fast-json-stable-stringify: 2.1.0
       jsbi: 3.2.5
       node-abort-controller: 3.1.1
@@ -11749,7 +11899,7 @@ snapshots:
       '@babel/traverse': 7.25.3
       '@babel/types': 7.25.2
       convert-source-map: 2.0.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -11917,7 +12067,7 @@ snapshots:
       '@babel/parser': 7.25.3
       '@babel/template': 7.25.0
       '@babel/types': 7.25.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -12159,7 +12309,7 @@ snapshots:
   '@eslint/eslintrc@2.1.4':
     dependencies:
       ajv: 6.12.6
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       espree: 9.6.1
       globals: 13.24.0
       ignore: 5.3.2
@@ -12296,7 +12446,7 @@ snapshots:
   '@humanwhocodes/config-array@0.11.14':
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -13489,6 +13639,15 @@ snapshots:
 
   '@streamparser/json@0.0.20': {}
 
+  '@superblocksteam/sdk-api@0.0.2':
+    dependencies:
+      '@superblocksteam/types': 1.91.0
+      zod: 3.23.8
+
+  '@superblocksteam/types@1.91.0':
+    dependencies:
+      '@bufbuild/protobuf': 1.3.0
+
   '@swc-node/core@1.14.1(@swc/core@1.7.26)(@swc/types@0.1.12)':
     dependencies:
       '@swc/core': 1.7.26
@@ -13500,7 +13659,7 @@ snapshots:
       '@swc-node/sourcemap-support': 0.6.1
       '@swc/core': 1.7.26
       colorette: 2.0.20
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       oxc-resolver: 11.17.0
       pirates: 4.0.7
       tslib: 2.8.1
@@ -13833,7 +13992,7 @@ snapshots:
       '@typescript-eslint/type-utils': 7.8.0(eslint@8.57.0)(typescript@5.5.4)
       '@typescript-eslint/utils': 7.8.0(eslint@8.57.0)(typescript@5.5.4)
       '@typescript-eslint/visitor-keys': 7.8.0
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       eslint: 8.57.0
       graphemer: 1.4.0
       ignore: 5.3.2
@@ -13851,7 +14010,7 @@ snapshots:
       '@typescript-eslint/types': 7.8.0
       '@typescript-eslint/typescript-estree': 7.8.0(typescript@5.5.4)
       '@typescript-eslint/visitor-keys': 7.8.0
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       eslint: 8.57.0
     optionalDependencies:
       typescript: 5.5.4
@@ -13867,7 +14026,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/typescript-estree': 7.8.0(typescript@5.5.4)
       '@typescript-eslint/utils': 7.8.0(eslint@8.57.0)(typescript@5.5.4)
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       eslint: 8.57.0
       ts-api-utils: 1.3.0(typescript@5.5.4)
     optionalDependencies:
@@ -13881,7 +14040,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 7.8.0
       '@typescript-eslint/visitor-keys': 7.8.0
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.5
@@ -14045,13 +14204,13 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
   agent-base@7.1.1:
     dependencies:
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -14574,7 +14733,7 @@ snapshots:
   cmake-js@7.3.0:
     dependencies:
       axios: 1.8.3(debug@4.4.3)
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       fs-extra: 11.2.0
       lodash.isplainobject: 4.0.6
       memory-stream: 1.0.0
@@ -14763,15 +14922,15 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
-  debug@4.3.6(supports-color@5.5.0):
+  debug@4.3.6:
     dependencies:
       ms: 2.1.2
-    optionalDependencies:
-      supports-color: 5.5.0
 
-  debug@4.4.3:
+  debug@4.4.3(supports-color@5.5.0):
     dependencies:
       ms: 2.1.3
+    optionalDependencies:
+      supports-color: 5.5.0
 
   decamelize@1.2.0: {}
 
@@ -15067,7 +15226,7 @@ snapshots:
 
   eslint-import-resolver-typescript@2.5.0(eslint-plugin-import@2.29.1)(eslint@8.57.0):
     dependencies:
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       eslint: 8.57.0
       eslint-plugin-import: 2.29.1(@typescript-eslint/parser@7.8.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@2.5.0)(eslint@8.57.0)
       glob: 7.2.3
@@ -15144,7 +15303,7 @@ snapshots:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.6
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       doctrine: 3.0.0
       escape-string-regexp: 4.0.0
       eslint-scope: 7.2.2
@@ -15455,7 +15614,7 @@ snapshots:
 
   follow-redirects@1.15.9(debug@4.4.3):
     optionalDependencies:
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
 
   for-each@0.3.3:
     dependencies:
@@ -15629,7 +15788,7 @@ snapshots:
     dependencies:
       basic-ftp: 5.0.5
       data-uri-to-buffer: 6.0.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       fs-extra: 11.2.0
     transitivePeerDependencies:
       - supports-color
@@ -15892,14 +16051,14 @@ snapshots:
     dependencies:
       '@tootallnate/once': 2.0.0
       agent-base: 6.0.2
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
   http-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.1
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -15916,14 +16075,14 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@7.0.5:
     dependencies:
       agent-base: 7.1.1
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -15986,7 +16145,7 @@ snapshots:
     dependencies:
       '@ioredis/commands': 1.2.0
       cluster-key-slot: 1.1.2
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       denque: 2.1.0
       lodash.defaults: 4.2.0
       lodash.isarguments: 3.1.0
@@ -16153,7 +16312,7 @@ snapshots:
 
   istanbul-lib-source-maps@4.0.1:
     dependencies:
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       istanbul-lib-coverage: 3.2.2
       source-map: 0.6.1
     transitivePeerDependencies:
@@ -16851,7 +17010,7 @@ snapshots:
     dependencies:
       '@tediousjs/connection-string': 0.5.0
       commander: 11.1.0
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       rfdc: 1.4.1
       tarn: 3.0.2
       tedious: 16.7.1
@@ -16917,7 +17076,7 @@ snapshots:
 
   nodemailer-mock@2.0.1(nodemailer@6.9.9):
     dependencies:
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       nodemailer: 6.9.9
     transitivePeerDependencies:
       - supports-color
@@ -16927,11 +17086,11 @@ snapshots:
   nodemon@3.1.4:
     dependencies:
       chokidar: 3.6.0
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
       ignore-by-default: 1.0.1
       minimatch: 3.1.2
       pstree.remy: 1.1.8
-      semver: 7.6.3
+      semver: 7.7.3
       simple-update-notifier: 2.0.0
       supports-color: 5.5.0
       touch: 3.1.1
@@ -17134,7 +17293,7 @@ snapshots:
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.1
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
       get-uri: 6.0.3
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.5
@@ -17413,7 +17572,7 @@ snapshots:
   proxy-agent@6.4.0:
     dependencies:
       agent-base: 7.1.1
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.5
       lru-cache: 7.18.3
@@ -17551,14 +17710,14 @@ snapshots:
 
   retry-request@4.2.2:
     dependencies:
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
       extend: 3.0.2
     transitivePeerDependencies:
       - supports-color
 
   retry-request@5.0.2:
     dependencies:
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       extend: 3.0.2
     transitivePeerDependencies:
       - supports-color
@@ -17796,7 +17955,7 @@ snapshots:
   socks-proxy-agent@8.0.4:
     dependencies:
       agent-base: 7.1.1
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
       socks: 2.8.3
     transitivePeerDependencies:
       - supports-color
@@ -18287,7 +18446,7 @@ snapshots:
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@5.5.0)
       esbuild: 0.27.2
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
@@ -18447,7 +18606,7 @@ snapshots:
   vite-node@2.0.5(@types/node@20.14.8):
     dependencies:
       cac: 6.7.14
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@5.5.0)
       pathe: 1.1.2
       tinyrainbow: 1.2.0
       vite: 5.4.21(@types/node@20.14.8)
@@ -18464,7 +18623,7 @@ snapshots:
 
   vite-tsconfig-paths@6.0.3(typescript@5.5.4)(vite@5.4.21(@types/node@20.14.8)):
     dependencies:
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       globrex: 0.1.2
       tsconfck: 3.1.6(typescript@5.5.4)
     optionalDependencies:
@@ -18492,7 +18651,7 @@ snapshots:
       '@vitest/spy': 2.0.5
       '@vitest/utils': 2.0.5
       chai: 5.3.3
-      debug: 4.3.6(supports-color@5.5.0)
+      debug: 4.3.6
       execa: 8.0.1
       magic-string: 0.30.21
       pathe: 1.1.2
@@ -18705,5 +18864,4 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod@3.23.8:
-    optional: true
+  zod@3.23.8: {}
