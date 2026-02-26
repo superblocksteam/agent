@@ -155,5 +155,132 @@ describe('GrpcIntegrationExecutor', () => {
         })
       ).rejects.toThrow('gRPC connection failed');
     });
+
+    // Struct.fromJavaScript → Value.fromJavaScript throws "Unexpected struct type." for any
+    // type that is not string, number, boolean, null, array, or plain object.
+    // The JSON round-trip in executeIntegration must sanitize the config before serialization.
+
+    it('should not throw when actionConfiguration contains undefined values', async () => {
+      const mockResponse = {
+        getExecutionId: () => 'resp-exec-id',
+        getOutput: () => undefined,
+        getError: () => ''
+      };
+
+      mockClient.executeIntegration.mockImplementation(
+        (_request: ExecuteIntegrationRequest, callback: (error: Error | null, response: typeof mockResponse) => void) => {
+          callback(null, mockResponse);
+        }
+      );
+
+      // { body, parameters: undefined } is what PostgresClientImpl.buildRequest returns
+      // for a no-param query. Without the JSON round-trip this throws "Unexpected struct type."
+      await expect(
+        executor.executeIntegration({
+          integrationId: 'int-1',
+          pluginId: 'postgres',
+          actionConfiguration: { body: 'SELECT 1', parameters: undefined }
+        })
+      ).resolves.toBeDefined();
+    });
+
+    it('should strip undefined values from actionConfiguration before serialization', async () => {
+      const mockResponse = {
+        getExecutionId: () => 'resp-exec-id',
+        getOutput: () => undefined,
+        getError: () => ''
+      };
+
+      mockClient.executeIntegration.mockImplementation(
+        (request: ExecuteIntegrationRequest, callback: (error: Error | null, response: typeof mockResponse) => void) => {
+          const struct = request.getActionConfiguration();
+          expect(struct).toBeDefined();
+          const jsObj = struct!.toJavaScript() as Record<string, unknown>;
+          // undefined values must be absent; only the defined field remains
+          expect(jsObj).toEqual({ body: 'SELECT 1' });
+          expect('parameters' in jsObj).toBe(false);
+          callback(null, mockResponse);
+        }
+      );
+
+      await executor.executeIntegration({
+        integrationId: 'int-1',
+        pluginId: 'postgres',
+        actionConfiguration: { body: 'SELECT 1', parameters: undefined }
+      });
+    });
+
+    it('should strip nested undefined values from actionConfiguration', async () => {
+      const mockResponse = {
+        getExecutionId: () => 'resp-exec-id',
+        getOutput: () => undefined,
+        getError: () => ''
+      };
+
+      mockClient.executeIntegration.mockImplementation(
+        (request: ExecuteIntegrationRequest, callback: (error: Error | null, response: typeof mockResponse) => void) => {
+          const struct = request.getActionConfiguration();
+          const jsObj = struct!.toJavaScript() as Record<string, unknown>;
+          expect(jsObj).toEqual({ nested: { present: 'yes' } });
+          callback(null, mockResponse);
+        }
+      );
+
+      await executor.executeIntegration({
+        integrationId: 'int-1',
+        pluginId: 'postgres',
+        actionConfiguration: { nested: { present: 'yes', missing: undefined } }
+      });
+    });
+
+    it('should preserve null values in actionConfiguration', async () => {
+      const mockResponse = {
+        getExecutionId: () => 'resp-exec-id',
+        getOutput: () => undefined,
+        getError: () => ''
+      };
+
+      mockClient.executeIntegration.mockImplementation(
+        (request: ExecuteIntegrationRequest, callback: (error: Error | null, response: typeof mockResponse) => void) => {
+          const struct = request.getActionConfiguration();
+          const jsObj = struct!.toJavaScript() as Record<string, unknown>;
+          // null is a valid JSON/Struct value and must be preserved
+          expect(jsObj).toEqual({ body: 'SELECT 1', filter: null });
+          callback(null, mockResponse);
+        }
+      );
+
+      await executor.executeIntegration({
+        integrationId: 'int-1',
+        pluginId: 'postgres',
+        actionConfiguration: { body: 'SELECT 1', filter: null }
+      });
+    });
+
+    it('should not throw when actionConfiguration contains function values', async () => {
+      const mockResponse = {
+        getExecutionId: () => 'resp-exec-id',
+        getOutput: () => undefined,
+        getError: () => ''
+      };
+
+      mockClient.executeIntegration.mockImplementation(
+        (request: ExecuteIntegrationRequest, callback: (error: Error | null, response: typeof mockResponse) => void) => {
+          const struct = request.getActionConfiguration();
+          const jsObj = struct!.toJavaScript() as Record<string, unknown>;
+          // functions are dropped by JSON.stringify, just like undefined
+          expect('fn' in jsObj).toBe(false);
+          callback(null, mockResponse);
+        }
+      );
+
+      await expect(
+        executor.executeIntegration({
+          integrationId: 'int-1',
+          pluginId: 'postgres',
+          actionConfiguration: { body: 'SELECT 1', fn: () => 'ignored' }
+        })
+      ).resolves.toBeDefined();
+    });
   });
 });

@@ -31,9 +31,13 @@ export class GrpcIntegrationExecutor implements IntegrationExecutor {
       request.setPluginId(params.pluginId);
 
       if (params.actionConfiguration) {
-        request.setActionConfiguration(
-          Struct.fromJavaScript(params.actionConfiguration as unknown as { [key: string]: JavaScriptValue })
-        );
+        // Struct.fromJavaScript calls Value.fromJavaScript on each property value.
+        // Value.fromJavaScript only handles string, number, boolean, null, array,
+        // and object — passing undefined (e.g. optional fields left unset) throws
+        // "Unexpected struct type." Use JSON round-trip to strip undefined values
+        // and coerce any non-JSON-safe types before serialization.
+        const clean = JSON.parse(JSON.stringify(params.actionConfiguration));
+        request.setActionConfiguration(Struct.fromJavaScript(clean as { [key: string]: JavaScriptValue }));
       }
 
       this.client.executeIntegration(request, (error, response) => {
