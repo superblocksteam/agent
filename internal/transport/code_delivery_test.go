@@ -260,6 +260,28 @@ func TestGenerateWrapperScript(t *testing.T) {
 		assert.Contains(t, script, `exec-\"special\"`)
 	})
 
+	t.Run("error handling extracts cause and issues from error details", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1")
+		require.NoError(t, err)
+
+		// The wrapper must surface details.cause so callers see the
+		// underlying reason (e.g. DB connection error) instead of just
+		// "Integration failed during query". Raw V8 line numbers from the
+		// combined wrapper+bundle are not useful; structured error details
+		// are the primary debug signal.
+		assert.Contains(t, script, "__sb_err.details.cause",
+			"wrapper should extract cause from error details for richer diagnostics")
+		assert.Contains(t, script, "__sb_err.details.issues",
+			"wrapper should extract validation issues from error details")
+		assert.Contains(t, script, `__sb_cause.message`,
+			"wrapper should prefer cause.message when cause is an object")
+
+		// The wrapper should NOT prefix error code into the message (user feedback).
+		assert.NotContains(t, script, `"[" + __sb_err.code`,
+			"error code should not be prefixed into the human-readable message")
+	})
+
 	t.Run("returns error when user context cannot be marshaled", func(t *testing.T) {
 		t.Parallel()
 		user := &userContext{

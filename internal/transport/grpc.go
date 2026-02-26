@@ -869,11 +869,7 @@ func (s *server) executeCodeMode(
 	}
 
 	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
-	_, outputKey, err := s.Worker.Execute(ctx, "javascriptsdkapi", workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
-	if err != nil {
-		logger.Error("worker execution failed", zap.Error(err))
-		return sendError(err)
-	}
+	_, outputKey, workerErr := s.Worker.Execute(ctx, "javascriptsdkapi", workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
 
 	// Clean up the output key from the store to prevent leaking Redis keys.
 	defer func() {
@@ -884,37 +880,56 @@ func (s *server) executeCodeMode(
 		}
 	}()
 
-	values, err := s.Store.Read(ctx, outputKey)
-	if err != nil {
-		logger.Error("could not read worker output", zap.Error(err), zap.String("output_key", outputKey))
-		return sendError(err)
+	// Read the worker output from the store. When the worker succeeded this is
+	// the normal path. When the worker failed, the store may still contain
+	// stdout/stderr captured before the error, which is valuable for debugging.
+	var output apiv1.Output
+	var storeErr error
+	if outputKey != "" {
+		values, readErr := s.Store.Read(ctx, outputKey)
+		if readErr != nil {
+			storeErr = readErr
+		} else if len(values) > 0 && values[0] != nil {
+			var raw string
+			switch v := values[0].(type) {
+			case string:
+				raw = v
+			case []byte:
+				raw = string(v)
+			default:
+				storeErr = fmt.Errorf("unexpected store value type %T", values[0])
+			}
+			if raw != "" {
+				parsed, jsonErr := apiv1.OutputFromOutputOldJSON([]byte(raw))
+				if jsonErr != nil {
+					storeErr = fmt.Errorf("could not unmarshal worker output: %w", jsonErr)
+				} else {
+					output = *parsed
+				}
+			}
+		}
 	}
 
-	var output apiv1.Output
-	if len(values) > 0 && values[0] != nil {
-		var raw string
-		switch v := values[0].(type) {
-		case string:
-			raw = v
-		case []byte:
-			raw = string(v)
-		default:
-			return sendError(fmt.Errorf("unexpected store value type %T", values[0]))
-		}
-		parsed, jsonErr := apiv1.OutputFromOutputOldJSON([]byte(raw))
-		if jsonErr != nil {
-			logger.Error("could not unmarshal worker output", zap.Error(jsonErr))
-			return sendError(fmt.Errorf("could not unmarshal worker output: %w", jsonErr))
-		}
-		output = *parsed
+	// When the worker succeeded but we can't read the output, that's a hard
+	// error — we have no result to return.
+	if workerErr == nil && storeErr != nil {
+		logger.Error("could not read worker output", zap.Error(storeErr), zap.String("output_key", outputKey))
+		return sendError(storeErr)
+	}
+
+	// When the worker failed and we couldn't recover any output from the
+	// store, fall back to the original error-only path.
+	if workerErr != nil && len(output.Stdout) == 0 && len(output.Stderr) == 0 && output.Result == nil {
+		logger.Error("worker execution failed", zap.Error(workerErr))
+		return sendError(workerErr)
 	}
 
 	var responseErrors []*commonv1.Error
-	if len(output.Stderr) > 0 {
-		responseErrors = make([]*commonv1.Error, len(output.Stderr))
-		for i, msg := range output.Stderr {
-			responseErrors[i] = &commonv1.Error{Message: msg}
-		}
+	if workerErr != nil {
+		responseErrors = append(responseErrors, sberror.ToCommonV1(workerErr))
+	}
+	for _, msg := range output.Stderr {
+		responseErrors = append(responseErrors, &commonv1.Error{Message: msg})
 	}
 
 	if sendErr := send(&apiv1.StreamResponse{

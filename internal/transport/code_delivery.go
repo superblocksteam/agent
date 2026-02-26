@@ -162,7 +162,18 @@ var __sb_result = await __sb_execute(__sb_api, {
 });
 
 if (!__sb_result.success) {
-  throw new Error(__sb_result.error ? __sb_result.error.message || JSON.stringify(__sb_result.error) : "SDK API execution failed");
+  var __sb_err = __sb_result.error || {};
+  var __sb_msg = __sb_err.message || "SDK API execution failed";
+  if (__sb_err.details) {
+    var __sb_cause = __sb_err.details.cause;
+    if (__sb_cause) {
+      __sb_msg += ": " + (typeof __sb_cause === "string" ? __sb_cause : (__sb_cause.message || JSON.stringify(__sb_cause)));
+    }
+    if (__sb_err.details.issues) {
+      __sb_msg += ": " + JSON.stringify(__sb_err.details.issues);
+    }
+  }
+  throw new Error(__sb_msg);
 }
 return __sb_result.output;
 `, string(userJSON), string(inputsJSON), string(executionIDJSON), bundle)

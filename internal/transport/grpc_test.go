@@ -27,6 +27,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/store"
 	storemock "github.com/superblocksteam/agent/pkg/store/mock"
 	"github.com/superblocksteam/agent/pkg/worker"
+	workeroptions "github.com/superblocksteam/agent/pkg/worker/options"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	v1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
@@ -1554,6 +1555,134 @@ func TestExecuteCodeMode(t *testing.T) {
 		mockWorker.AssertExpectations(t)
 	})
 
+	t.Run("passes JWT org_id and org_type to worker as OrganizationPlan and OrgId options", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		outputKey := "output-key-org"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{}}`}))
+
+		var capturedOpts []workeroptions.Option
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				// The variadic options start at index 3.
+				for i := 3; i < len(args); i++ {
+					if opt, ok := args[i].(workeroptions.Option); ok {
+						capturedOpts = append(capturedOpts, opt)
+					}
+				}
+			}).
+			Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger:  zap.NewNop(),
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = jwt_validator.WithOrganizationID(ctx, "cdc9b994-34a3-41bc-8a07-1d0f47b61d84")
+		ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+		ctx = constants.WithExecutionID(ctx, "exec-org-id-test")
+
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function(ctx) { return ctx; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		_, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error {
+			return nil
+		})
+		require.NoError(t, err)
+
+		applied := workeroptions.Apply(capturedOpts...)
+		assert.Equal(t, "cdc9b994-34a3-41bc-8a07-1d0f47b61d84", applied.OrgId,
+			"Worker.Execute must receive orgId from JWT org_id claim")
+		assert.Equal(t, "ENTERPRISE", applied.OrganizationPlan,
+			"Worker.Execute must receive orgPlan from JWT org_type claim")
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("passes empty orgId and orgPlan when JWT claims are missing", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		outputKey := "output-key-no-org"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{}}`}))
+
+		var capturedOpts []workeroptions.Option
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				for i := 3; i < len(args); i++ {
+					if opt, ok := args[i].(workeroptions.Option); ok {
+						capturedOpts = append(capturedOpts, opt)
+					}
+				}
+			}).
+			Return(nil, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger:  zap.NewNop(),
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+			},
+		}
+
+		// Context with user email (required) but WITHOUT org_id / org_type JWT claims.
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, "exec-no-org-test")
+
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("code"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		_, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error {
+			return nil
+		})
+		require.NoError(t, err)
+
+		applied := workeroptions.Apply(capturedOpts...)
+		assert.Empty(t, applied.OrgId,
+			"Without JWT org_id claim, orgId should be empty — LD flags will use fallthrough defaults")
+		assert.Empty(t, applied.OrganizationPlan,
+			"Without JWT org_type claim, orgPlan should be empty — LD flags will use fallthrough defaults")
+
+		mockWorker.AssertExpectations(t)
+	})
+
 	t.Run("returns error when JWT user id is missing", func(t *testing.T) {
 		t.Parallel()
 		defer metrics.SetupForTesting()()
@@ -1841,6 +1970,175 @@ func TestExecuteCodeMode(t *testing.T) {
 		assert.Nil(t, done)
 
 		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("recovers stdout/stderr from store when worker fails", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+
+		outputKey := "output-key-worker-err-with-logs"
+		outputJSON := `{"output":{"partial":"data"},"log":["[INFO] connecting to db","[ERROR] connection refused"],"error":"Integration \"abc\" failed during \"query\": ECONNREFUSED"}`
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+		workerErr := errors.New("execution failed: non-zero exit code")
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, outputKey, workerErr)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		executionID := "exec-worker-err-with-logs"
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, executionID)
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function() {} };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		})
+
+		require.NoError(t, err, "should succeed with structured errors, not return a Go error")
+		require.NotNil(t, done)
+		require.NotNil(t, done.Output)
+
+		assert.Contains(t, done.Output.Stdout, "[INFO] connecting to db", "stdout log lines should be recovered")
+		assert.Contains(t, done.Output.Stderr, "connection refused", "stderr log lines should be recovered")
+		assert.Contains(t, done.Output.Stderr, `Integration "abc" failed during "query": ECONNREFUSED`, "error field should appear in stderr")
+
+		require.Len(t, sentEvents, 1)
+		respEvent := sentEvents[0].GetEvent().GetResponse()
+		require.NotNil(t, respEvent, "should send a Response event, not an End/error event")
+		require.GreaterOrEqual(t, len(respEvent.Errors), 2, "should include worker error + stderr entries")
+		assert.Contains(t, respEvent.Errors[0].GetMessage(), "execution failed", "first error should be the worker error")
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("falls back to sendError when worker fails and store has no useful output", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+
+		// Don't pre-write anything to the store for this key — simulates the
+		// worker crashing before it could write any output.
+		outputKey := "output-key-worker-err-empty"
+
+		workerErr := errors.New("sandbox OOM killed")
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, outputKey, workerErr)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, "exec-worker-err-empty-output")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("code"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		})
+
+		assert.Error(t, err, "should return Go error when no useful output to recover")
+		assert.Contains(t, err.Error(), "sandbox OOM killed")
+		assert.Nil(t, done)
+		require.Len(t, sentEvents, 1)
+		assert.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetError(), "should send End error event, not Response event")
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("worker fails and store read also fails falls back to sendError", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		mockStore := &storemock.Store{}
+		outputKey := "output-key-both-fail"
+
+		workerErr := errors.New("worker timeout")
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, outputKey, workerErr)
+		mockStore.On("Read", mock.Anything, outputKey).Return(nil, errors.New("redis unavailable"))
+		mockStore.On("Delete", mock.Anything, outputKey).Return(nil)
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Store:  mockStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, "exec-both-fail")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{Metadata: &v1.Metadata{Name: "code-mode"}},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{"bundle": structpb.NewStringValue("code")},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		})
+
+		assert.Error(t, err, "should fall back to sendError when both worker and store fail")
+		assert.Contains(t, err.Error(), "worker timeout")
+		assert.Nil(t, done)
+		require.Len(t, sentEvents, 1)
+		assert.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetError())
+
+		mockWorker.AssertExpectations(t)
+		mockStore.AssertExpectations(t)
 	})
 
 	t.Run("returns error when send fails", func(t *testing.T) {

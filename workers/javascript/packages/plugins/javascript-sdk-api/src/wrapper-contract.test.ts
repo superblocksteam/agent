@@ -82,7 +82,18 @@ var __sb_result = await __sb_execute(__sb_api, {
 });
 
 if (!__sb_result.success) {
-  throw new Error(__sb_result.error ? __sb_result.error.message || JSON.stringify(__sb_result.error) : "SDK API execution failed");
+  var __sb_err = __sb_result.error || {};
+  var __sb_msg = __sb_err.message || "SDK API execution failed";
+  if (__sb_err.details) {
+    var __sb_cause = __sb_err.details.cause;
+    if (__sb_cause) {
+      __sb_msg += ": " + (typeof __sb_cause === "string" ? __sb_cause : (__sb_cause.message || JSON.stringify(__sb_cause)));
+    }
+    if (__sb_err.details.issues) {
+      __sb_msg += ": " + JSON.stringify(__sb_err.details.issues);
+    }
+  }
+  throw new Error(__sb_msg);
 }
 return __sb_result.output;
 `;
@@ -178,6 +189,64 @@ return __sb_result.output;
       pluginId: '',
       actionConfiguration: { action: 'test' }
     });
+  });
+
+  it('surfaces error details.cause in the thrown error message', async () => {
+    mockExecuteApi.mockResolvedValue({
+      success: false,
+      error: {
+        code: 'INTEGRATION_ERROR',
+        message: 'Integration "db" failed during "query"',
+        details: {
+          integrationName: 'db',
+          operation: 'query',
+          cause: { message: 'ECONNREFUSED 127.0.0.1:5432' }
+        }
+      }
+    });
+
+    await expect(
+      evaluateWrapper(buildWrapper(asyncBundle), {
+        __sb_execute: mockExecuteApi,
+        __sb_integrationExecutor: mockIntegrationExecutor
+      })
+    ).rejects.toThrow('ECONNREFUSED 127.0.0.1:5432');
+  });
+
+  it('surfaces string cause in the thrown error message', async () => {
+    mockExecuteApi.mockResolvedValue({
+      success: false,
+      error: {
+        code: 'INTEGRATION_ERROR',
+        message: 'Integration "db" failed during "query"',
+        details: { cause: 'connection timeout after 30s' }
+      }
+    });
+
+    await expect(
+      evaluateWrapper(buildWrapper(asyncBundle), {
+        __sb_execute: mockExecuteApi,
+        __sb_integrationExecutor: mockIntegrationExecutor
+      })
+    ).rejects.toThrow('connection timeout after 30s');
+  });
+
+  it('surfaces validation issues in the thrown error message', async () => {
+    mockExecuteApi.mockResolvedValue({
+      success: false,
+      error: {
+        code: 'INPUT_VALIDATION',
+        message: 'Input validation failed',
+        details: { issues: [{ path: ['name'], message: 'Required' }] }
+      }
+    });
+
+    await expect(
+      evaluateWrapper(buildWrapper(asyncBundle), {
+        __sb_execute: mockExecuteApi,
+        __sb_integrationExecutor: mockIntegrationExecutor
+      })
+    ).rejects.toThrow('Required');
   });
 
   it('throws when executeQuery called without integration executor', async () => {

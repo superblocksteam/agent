@@ -199,15 +199,94 @@ describe('bootstrap', () => {
       const filePaths: Record<string, string> = {};
       const inheritedEnv: string[] = [];
 
-      const expectedErr = `Error on line 126:
-Error: variables not defined`;
-
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.log.length).toEqual(0);
       expect(result.output).toEqual({});
-      expect(result.error).toEqual(expectedErr);
+      expect(result.error).toMatch(/^Error on line \d+:\nError: variables not defined$/);
+    });
+
+    it('should map error lines to original source using inline source map', async () => {
+      const mockStore = new MockKVStore();
+      await mockStore.write('name', 'TestFunc');
+      const context: ExecutionContext = new ExecutionContext();
+      context.variables = {
+        name: {
+          key: 'name',
+          type: VariableType.Native,
+          mode: 'read'
+        }
+      };
+      context.kvStore = mockStore as unknown as KVStore;
+
+      const sourceMap = JSON.stringify({
+        version: 3,
+        sources: ['apis/get-users.ts'],
+        mappings: 'AAAA;AACA;AACA',
+        names: []
+      });
+      const base64Map = Buffer.from(sourceMap).toString('base64');
+
+      const code = [
+        '// --- begin bundle ---',
+        'var x = 1;',
+        'var y = 2;',
+        'throw new Error("source mapped error");',
+        '//# sourceMappingURL=data:application/json;base64,' + base64Map,
+        '// --- end bundle ---'
+      ].join('\n');
+
+      const filePaths: Record<string, string> = {};
+      const inheritedEnv: string[] = [];
+
+      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(result).toBeDefined();
+      expect(result.output).toEqual({});
+      expect(result.error).toContain('Error on line 3 (apis/get-users.ts)');
+      expect(result.error).toContain('source mapped error');
+      expect(result.error).not.toMatch(/\s+at\s+/);
+    });
+
+    it('should strip /virtual/backend/ prefix from source-mapped paths', async () => {
+      const mockStore = new MockKVStore();
+      await mockStore.write('name', 'TestFunc');
+      const context: ExecutionContext = new ExecutionContext();
+      context.variables = {
+        name: {
+          key: 'name',
+          type: VariableType.Native,
+          mode: 'read'
+        }
+      };
+      context.kvStore = mockStore as unknown as KVStore;
+
+      const sourceMap = JSON.stringify({
+        version: 3,
+        sources: ['/virtual/backend/apis/get-users.ts'],
+        mappings: 'AAAA;AACA',
+        names: []
+      });
+      const base64Map = Buffer.from(sourceMap).toString('base64');
+
+      const code = [
+        '// --- begin bundle ---',
+        'var x = 1;',
+        'throw new Error("virtual path error");',
+        '//# sourceMappingURL=data:application/json;base64,' + base64Map,
+        '// --- end bundle ---'
+      ].join('\n');
+
+      const filePaths: Record<string, string> = {};
+      const inheritedEnv: string[] = [];
+
+      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(result).toBeDefined();
+      expect(result.error).toContain('apis/get-users.ts');
+      expect(result.error).not.toContain('/virtual/backend/');
+      expect(result.error).toContain('Error on line 2');
     });
 
     it('should throw syntax error', async () => {
