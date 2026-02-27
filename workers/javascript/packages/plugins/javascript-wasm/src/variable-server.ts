@@ -13,7 +13,7 @@ interface VariableMessage {
 
 /**
  * Extended KVStore interface that includes the fetchFileCallback method.
- * This method is only available when running under an ephemeral worker,
+ * This method is only available when running under a sandbox worker,
  * where the KVStore is a GrpcKvStore instance.
  */
 interface KVStoreWithFileFetch extends KVStore {
@@ -30,32 +30,41 @@ export class VariableServer {
     this.#clientPort = port2;
 
     port1.on('message', (message: VariableMessage) => {
-      (async () => {
-        if (message.type === 'readStore') {
-          const resp = await kvStore.read(message.keys!);
-          port1.postMessage({ id: message.id, body: resp });
-        } else if (message.type === 'writeStore') {
-          await kvStore.write(message.key!, message.value as string);
-          port1.postMessage({ id: message.id });
-        } else if (message.type === 'writeStoreMany') {
-          await kvStore.writeMany(message.payload!);
-          port1.postMessage({ id: message.id });
-        } else if (message.type === 'fetchFile') {
-          // fetchFileCallback is only available in ephemeral workers (GrpcKvStore)
-          if (!kvStore.fetchFileCallback) {
-            port1.postMessage({
-              id: message.id,
-              error: 'fetchFileCallback is not available (not running in ephemeral worker)'
-            });
-            return;
-          }
-          kvStore.fetchFileCallback(message.path!, (error, result) => {
-            if (error) {
-              port1.postMessage({ id: message.id, error: error.message });
-            } else {
-              // Buffer (Uint8Array subclass) is supported by structured clone algorithm
-              port1.postMessage({ id: message.id, body: { data: result } });
+      void (async () => {
+        try {
+          if (message.type === 'readStore') {
+            const resp = await kvStore.read(message.keys!);
+            port1.postMessage({ id: message.id, body: resp });
+          } else if (message.type === 'writeStore') {
+            await kvStore.write(message.key!, message.value as string);
+            port1.postMessage({ id: message.id });
+          } else if (message.type === 'writeStoreMany') {
+            await kvStore.writeMany(message.payload!);
+            port1.postMessage({ id: message.id });
+          } else if (message.type === 'fetchFile') {
+            // fetchFileCallback is only available in sandbox workers (GrpcKvStore)
+            if (!kvStore.fetchFileCallback) {
+              port1.postMessage({
+                id: message.id,
+                error: 'fetchFileCallback is not available (not running in sandbox worker)'
+              });
+              return;
             }
+            kvStore.fetchFileCallback(message.path!, (error, result) => {
+              if (error) {
+                port1.postMessage({ id: message.id, error: error.message });
+              } else {
+                // Buffer (Uint8Array subclass) is supported by structured clone algorithm
+                port1.postMessage({ id: message.id, body: { data: result } });
+              }
+            });
+          } else {
+            port1.postMessage({ id: message.id, error: `unsupported message type: ${String(message.type)}` });
+          }
+        } catch (error) {
+          port1.postMessage({
+            id: message.id,
+            error: error instanceof Error ? error.message : String(error)
           });
         }
       })();

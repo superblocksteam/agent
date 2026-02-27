@@ -1,20 +1,19 @@
 import {
   ErrorCode,
   EvaluationPair,
-  ExecutionContext,
   ExecutionOutput,
   extractJsEvaluationPairsWithTokenizer,
   IntegrationError,
   JavascriptActionConfiguration,
   JavascriptDatasourceConfiguration,
   LanguagePlugin,
-  PluginExecutionProps,
-  RequestFiles
+  PluginExecutionProps
 } from '@superblocks/shared';
 import { tokenize } from 'esprima';
 import { omit } from 'lodash';
 import { WorkerPool } from './pool';
 import { VariableServer } from './variable-server';
+import type { WorkerTaskInput } from './worker-types';
 
 /**
  * Buffer time (ms) added to the hard timeout (worker termination) beyond the soft timeout.
@@ -32,26 +31,27 @@ import { VariableServer } from './variable-server';
  */
 const HARD_TIMEOUT_BUFFER_MS = 1000;
 
-export type JavascriptWasmProcessInput = {
-  context: ExecutionContext;
-  code: string;
-  files?: RequestFiles;
-  executionTimeout: number;
-  executionId?: string;
-};
-
-/**
- * Extended props interface that includes executionId.
- * In the ephemeral worker context, executionId is provided by the pluginsRouter.
- */
 interface JavascriptWasmPluginExecutionProps
   extends PluginExecutionProps<JavascriptDatasourceConfiguration, JavascriptActionConfiguration> {
   quotas?: Record<string, number>;
-  executionId?: string;
 }
 
 export default class JavascriptWasmPlugin extends LanguagePlugin {
   pluginName = 'JavaScriptWASM';
+
+  private parseExecutionTimeoutMs(): number {
+    // Accept numeric strings that may include separators (e.g. "1_200_000").
+    const raw = String(this.pluginConfiguration.javascriptExecutionTimeoutMs ?? '').replaceAll('_', '');
+    const parsed = Number(raw);
+
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+
+    // Fall back to the same timeout used by the plugin loader default
+    // (javascriptExecutionTimeoutMs = "1_200_000"), when config is missing/invalid.
+    return 1_200_000;
+  }
 
   async init(): Promise<void> {
     WorkerPool.configure();
@@ -66,15 +66,10 @@ export default class JavascriptWasmPlugin extends LanguagePlugin {
     return extractJsEvaluationPairsWithTokenizer(code, entitiesToExtract, dataContext, tokenize);
   }
 
-  async execute({
-    context,
-    actionConfiguration,
-    files,
-    quotas,
-    executionId
-  }: JavascriptWasmPluginExecutionProps): Promise<ExecutionOutput> {
+  async execute({ context, actionConfiguration, files, quotas }: JavascriptWasmPluginExecutionProps): Promise<ExecutionOutput> {
     try {
-      const executionTimeout = quotas?.duration || Number(this.pluginConfiguration.javascriptExecutionTimeoutMs);
+      const configuredTimeout = this.parseExecutionTimeoutMs();
+      const executionTimeout = quotas?.duration && quotas.duration > 0 ? quotas.duration : configuredTimeout;
       if (!actionConfiguration.body) {
         return ExecutionOutput.fromJSONString('null');
       }
@@ -83,8 +78,7 @@ export default class JavascriptWasmPlugin extends LanguagePlugin {
         context: context,
         code: actionConfiguration.body,
         files,
-        executionTimeout,
-        executionId
+        executionTimeout
       });
       return output;
     } catch (err) {
@@ -92,7 +86,7 @@ export default class JavascriptWasmPlugin extends LanguagePlugin {
     }
   }
 
-  async executeInWorker(input: JavascriptWasmProcessInput): Promise<ExecutionOutput> {
+  async executeInWorker(input: WorkerTaskInput): Promise<ExecutionOutput> {
     const abortController = new AbortController();
     const { signal } = abortController;
     const softTimeout = input.executionTimeout;
@@ -111,7 +105,9 @@ export default class JavascriptWasmPlugin extends LanguagePlugin {
           code: input.code,
           executionTimeout: input.executionTimeout,
           files: input.files,
-          executionId: input.executionId
+          useSandboxFileFetcher: Boolean(
+            (input.context.kvStore as unknown as { fetchFileCallback?: unknown } | undefined)?.fetchFileCallback
+          )
         },
         signal,
         variableServer.clientPort()

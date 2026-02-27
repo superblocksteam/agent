@@ -1,23 +1,15 @@
 import * as http from 'node:http';
 import { format, promisify } from 'node:util';
-import { MessagePort } from 'worker_threads';
-import {
-  buildVariables,
-  decodeBytestringsExecutionContext,
-  ExecutionContext,
-  ExecutionOutput,
-  getTreePathToDiskPath,
-  RequestFile,
-  serialize,
-} from '@superblocks/shared';
+import { buildVariables, decodeBytestringsExecutionContext, ExecutionOutput, getTreePathToDiskPath, serialize } from '@superblocks/shared';
 import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
-import type { Sandbox, SandboxOptions } from '@superblocks/wasm-sandbox-js';
 import deasync from 'deasync';
 import _ from 'lodash';
 import { VariableClient } from './variable-client';
+import type { WorkerInput } from './worker-types';
+import type { Sandbox, SandboxOptions } from '@superblocks/wasm-sandbox-js';
 
 /**
- * Fetch file from the controller (non-ephemeral worker mode).
+ * Fetch file from the controller (mode without sandbox file fetching).
  * Uses fileServerUrl and agentKey from context.globals.
  */
 function fetchFromController(
@@ -70,7 +62,7 @@ function fetchFromController(
 }
 
 /**
- * File fetcher configuration for old (non-ephemeral) workers.
+ * File fetcher configuration for workers without sandbox file fetching.
  * Uses the controller's file server with agent key authentication.
  */
 interface ControllerFileFetcher {
@@ -80,21 +72,17 @@ interface ControllerFileFetcher {
 }
 
 /**
- * File fetcher configuration for ephemeral workers.
+ * File fetcher configuration for sandbox workers.
  * Uses the VariableClient to proxy file fetching through the KVStore (GrpcKvStore).
  */
-interface EphemeralFileFetcher {
-  type: 'ephemeral';
+interface SandboxFileFetcher {
+  type: 'sandbox';
   variableClient: VariableClient;
 }
 
-type FileFetcher = ControllerFileFetcher | EphemeralFileFetcher;
+type FileFetcher = ControllerFileFetcher | SandboxFileFetcher;
 
-function prepareGlobalsWithFileMethods(
-  globals: Record<string, unknown>,
-  filePaths: Record<string, string>,
-  fetcher: FileFetcher
-): void {
+function prepareGlobalsWithFileMethods(globals: Record<string, unknown>, filePaths: Record<string, string>, fetcher: FileFetcher): void {
   Object.entries(filePaths).forEach(([treePath, diskPath]) => {
     if (!diskPath) return;
 
@@ -113,7 +101,7 @@ function prepareGlobalsWithFileMethods(
         return serialize(contents, mode);
       };
     } else {
-      // Ephemeral worker: fetch via VariableClient (proxied through KVStore/GrpcKvStore)
+      // Sandbox worker: fetch via VariableClient (proxied through KVStore/GrpcKvStore)
       const { variableClient } = fetcher;
       const fetchFileCallback = (path: string, cb: (err: Error | null, result: Buffer | null) => void): void => {
         variableClient.fetchFileCallback(path, cb);
@@ -141,21 +129,12 @@ function prepareGlobalsWithFileMethods(
   });
 }
 
-interface WorkerInput {
-  context: ExecutionContext;
-  code: string;
-  files?: RequestFile[];
-  executionTimeout: number;
-  port: MessagePort;
-  executionId?: string;
-}
-
 // Sandbox configuration (constant for worker lifetime)
 const sandboxOptions: SandboxOptions = {
   enableBuffer: true,
   enableAtob: true,
   // when this plugin is used to resolve bindings, these libraries need to be available
-  globalLibraries: ['lodash', 'moment'],
+  globalLibraries: ['lodash', 'moment']
 };
 
 // Promise for the next sandbox. We store a Promise (not a resolved Sandbox) so that:
@@ -188,7 +167,7 @@ async function initialize(): Promise<typeof handleTask> {
  * The next sandbox is created in parallel but we don't wait for it.
  */
 async function handleTask(workerData: WorkerInput): Promise<string> {
-  const { context, code, files, executionTimeout, port, executionId } = workerData;
+  const { context, code, files, executionTimeout, port, useSandboxFileFetcher } = workerData;
 
   // Wait for the sandbox (usually already resolved from previous task or init)
   const sandbox = await nextSandboxPromise;
@@ -204,10 +183,10 @@ async function handleTask(workerData: WorkerInput): Promise<string> {
   try {
     // Determine file fetcher based on worker mode
     let fileFetcher: FileFetcher;
-    if (executionId) {
-      // Ephemeral worker: fetch files via VariableClient (proxied through KVStore/GrpcKvStore)
+    if (useSandboxFileFetcher) {
+      // Sandbox worker: fetch files via VariableClient (proxied through KVStore/GrpcKvStore)
       fileFetcher = {
-        type: 'ephemeral',
+        type: 'sandbox',
         variableClient
       };
     } else {
@@ -271,7 +250,7 @@ async function handleTask(workerData: WorkerInput): Promise<string> {
       timeLimitMs: executionTimeout,
       // Tell evaluate about our wrapper line so error positions are adjusted correctly
       wrapperPrefixLines: 1,
-      wrapperSuffixLines: 1,
+      wrapperSuffixLines: 1
     });
 
     // Flush any buffered variable writes

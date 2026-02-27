@@ -1,7 +1,8 @@
-import { describe, it, beforeAll, afterAll, expect } from '@jest/globals';
+import { describe, it, beforeAll, afterAll, expect, jest, afterEach } from '@jest/globals';
 import { ExecutionContext } from '@superblocks/shared';
 import JavascriptWasmPlugin from './index';
 import { VariableType, VariableMode } from './constants';
+import { WorkerPool } from './pool';
 
 export class MockKVStore {
   private _store: { [key: string]: unknown } = {};
@@ -132,6 +133,91 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       });
 
       expect(result.output).toBe('async completed');
+    });
+  });
+
+  describe('execute() timeout selection', () => {
+    afterEach(() => {
+      const pluginWithConfig = plugin as unknown as {
+        pluginConfiguration: { javascriptExecutionTimeoutMs?: string };
+      };
+      pluginWithConfig.pluginConfiguration = {};
+      jest.restoreAllMocks();
+    });
+
+    it('should parse configured timeout with underscores', async () => {
+      const pluginWithConfig = plugin as unknown as {
+        pluginConfiguration: { javascriptExecutionTimeoutMs?: string };
+      };
+      pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: '1_234' };
+
+      const executeInWorkerSpy = jest
+        .spyOn(plugin, 'executeInWorker')
+        .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+
+      await plugin.execute({
+        context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
+        actionConfiguration: { body: 'return 1;' },
+      } as unknown as Parameters<typeof plugin.execute>[0]);
+
+      expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 1234 }));
+    });
+
+    it('should fall back to default timeout when config is invalid', async () => {
+      const pluginWithConfig = plugin as unknown as {
+        pluginConfiguration: { javascriptExecutionTimeoutMs?: string };
+      };
+      pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: 'not-a-number' };
+
+      const executeInWorkerSpy = jest
+        .spyOn(plugin, 'executeInWorker')
+        .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+
+      await plugin.execute({
+        context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
+        actionConfiguration: { body: 'return 1;' },
+      } as unknown as Parameters<typeof plugin.execute>[0]);
+
+      expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 1_200_000 }));
+    });
+
+    it('should prefer quotas.duration over configured timeout', async () => {
+      const pluginWithConfig = plugin as unknown as {
+        pluginConfiguration: { javascriptExecutionTimeoutMs?: string };
+      };
+      pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: '2000' };
+
+      const executeInWorkerSpy = jest
+        .spyOn(plugin, 'executeInWorker')
+        .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+
+      await plugin.execute({
+        context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
+        actionConfiguration: { body: 'return 1;' },
+        quotas: { duration: 3210 }
+      } as unknown as Parameters<typeof plugin.execute>[0]);
+
+      expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 3210 }));
+    });
+
+    it('should convert AbortError from worker execution into timeout IntegrationError', async () => {
+      const runSpy = jest
+        .spyOn(WorkerPool, 'run')
+        .mockRejectedValue(Object.assign(new Error('aborted by hard timeout'), { name: 'AbortError' }));
+
+      await expect(
+        plugin.executeInWorker({
+          context: {
+            globals: {},
+            variables: {},
+            kvStore: new MockKVStore()
+          } as unknown as ExecutionContext,
+          code: 'while(true) {}',
+          executionTimeout: 10
+        })
+      ).rejects.toThrow('[AbortError] Timed out after 10ms');
+
+      runSpy.mockRestore();
     });
   });
 
@@ -482,10 +568,10 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     });
   });
 
-  describe('File fetching (ephemeral worker path)', () => {
+  describe('File fetching (sandbox worker path)', () => {
     /**
-     * MockKVStore with fetchFileCallback support for ephemeral worker testing.
-     * This simulates the GrpcKvStore used in ephemeral workers.
+     * MockKVStore with fetchFileCallback support for sandbox worker testing.
+     * This simulates the GrpcKvStore used in sandbox workers.
      */
     class MockKVStoreWithFileFetch extends MockKVStore {
       private _files: { [path: string]: Buffer } = {};
@@ -508,10 +594,42 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       }
     }
 
-    it('should fetch text file via ephemeral path using sync readContents()', async () => {
+    it('should derive useSandboxFileFetcher from kvStore capability', async () => {
+      const runSpy = jest.spyOn(WorkerPool, 'run');
+
+      try {
+        await plugin.executeInWorker({
+          context: {
+            globals: {},
+            variables: {},
+            kvStore: new MockKVStoreWithFileFetch()
+          } as unknown as ExecutionContext,
+          code: 'return null',
+          executionTimeout: 10000
+        });
+
+        await plugin.executeInWorker({
+          context: {
+            globals: {},
+            variables: {},
+            kvStore: new MockKVStore()
+          } as unknown as ExecutionContext,
+          code: 'return null',
+          executionTimeout: 10000
+        });
+
+        expect(runSpy).toHaveBeenCalledTimes(2);
+        expect((runSpy.mock.calls[0]?.[0] as { useSandboxFileFetcher?: boolean })?.useSandboxFileFetcher).toBe(true);
+        expect((runSpy.mock.calls[1]?.[0] as { useSandboxFileFetcher?: boolean })?.useSandboxFileFetcher).toBe(false);
+      } finally {
+        runSpy.mockRestore();
+      }
+    });
+
+    it('should fetch text file via sandbox path using sync readContents()', async () => {
       const store = new MockKVStoreWithFileFetch();
-      const diskPath = '/tmp/uploads/ephemeral-file-sync.txt';
-      const fileContent = 'Hello from ephemeral worker (sync)!';
+      const diskPath = '/tmp/uploads/sandbox-file-sync.txt';
+      const fileContent = 'Hello from sandbox worker (sync)!';
       store.setFile(diskPath, Buffer.from(fileContent));
 
       const result = await plugin.executeInWorker({
@@ -520,7 +638,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
             FilePicker1: {
               files: [
                 {
-                  name: 'ephemeral-file-sync.txt',
+                  name: 'sandbox-file-sync.txt',
                   $superblocksId: diskPath
                 }
               ]
@@ -539,18 +657,17 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
             path: diskPath
           }
         ],
-        executionTimeout: 10000,
-        executionId: 'test-execution-id' // Triggers ephemeral path
+        executionTimeout: 10000
       });
 
       expect(result.error).toBeUndefined();
       expect(result.output).toBe(fileContent);
     });
 
-    it('should fetch text file via ephemeral path using readContentsAsync()', async () => {
+    it('should fetch text file via sandbox path using readContentsAsync()', async () => {
       const store = new MockKVStoreWithFileFetch();
-      const diskPath = '/tmp/uploads/ephemeral-file.txt';
-      const fileContent = 'Hello from ephemeral worker!';
+      const diskPath = '/tmp/uploads/sandbox-file.txt';
+      const fileContent = 'Hello from sandbox worker!';
       store.setFile(diskPath, Buffer.from(fileContent));
 
       const result = await plugin.executeInWorker({
@@ -559,7 +676,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
             FilePicker1: {
               files: [
                 {
-                  name: 'ephemeral-file.txt',
+                  name: 'sandbox-file.txt',
                   $superblocksId: diskPath
                 }
               ]
@@ -580,15 +697,14 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
             path: diskPath
           }
         ],
-        executionTimeout: 10000,
-        executionId: 'test-execution-id' // Triggers ephemeral path
+        executionTimeout: 10000
       });
 
       expect(result.error).toBeUndefined();
       expect(result.output).toBe(fileContent);
     });
 
-    it('should fetch binary file via ephemeral path using readContentsAsync(raw)', async () => {
+    it('should fetch binary file via sandbox path using readContentsAsync(raw)', async () => {
       const store = new MockKVStoreWithFileFetch();
       const diskPath = '/tmp/uploads/binary.bin';
       const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0xff, 0xfe, 0xfd]);
@@ -625,8 +741,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
             path: diskPath
           }
         ],
-        executionTimeout: 10000,
-        executionId: 'test-execution-id'
+        executionTimeout: 10000
       });
 
       expect(result.error).toBeUndefined();
@@ -637,7 +752,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       });
     });
 
-    it('should handle file not found in ephemeral path using readContentsAsync()', async () => {
+    it('should handle file not found in sandbox path using readContentsAsync()', async () => {
       const store = new MockKVStoreWithFileFetch();
       const diskPath = '/tmp/uploads/nonexistent.txt';
       // Don't add file to store
@@ -668,20 +783,19 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
             path: diskPath
           }
         ],
-        executionTimeout: 10000,
-        executionId: 'test-execution-id'
+        executionTimeout: 10000
       });
 
       expect(result.error).toBeDefined();
       expect(result.error).toContain('File not found');
     });
 
-    it('should fetch multiple files via ephemeral path using readContentsAsync()', async () => {
+    it('should fetch multiple files via sandbox path using readContentsAsync()', async () => {
       const store = new MockKVStoreWithFileFetch();
       const diskPath1 = '/tmp/uploads/file1.txt';
       const diskPath2 = '/tmp/uploads/file2.txt';
-      store.setFile(diskPath1, Buffer.from('Ephemeral file 1'));
-      store.setFile(diskPath2, Buffer.from('Ephemeral file 2'));
+      store.setFile(diskPath1, Buffer.from('Sandbox file 1'));
+      store.setFile(diskPath2, Buffer.from('Sandbox file 2'));
 
       const result = await plugin.executeInWorker({
         context: {
@@ -705,14 +819,13 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
           { originalname: diskPath1, path: diskPath1 },
           { originalname: diskPath2, path: diskPath2 }
         ],
-        executionTimeout: 10000,
-        executionId: 'test-execution-id'
+        executionTimeout: 10000
       });
 
       expect(result.error).toBeUndefined();
       expect(result.output).toEqual({
-        file1: 'Ephemeral file 1',
-        file2: 'Ephemeral file 2'
+        file1: 'Sandbox file 1',
+        file2: 'Sandbox file 2'
       });
     });
   });

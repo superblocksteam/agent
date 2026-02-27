@@ -4,8 +4,8 @@ import { ExecutionContext } from '@superblocks/shared';
 import JavascriptWasmPlugin from './index';
 
 /**
- * Tests for the orchestrator file fetching path (non-ephemeral worker mode).
- * This path is used when executionId is NOT provided, and files are fetched
+ * Tests for the orchestrator file fetching path (mode without sandbox file fetching).
+ * This path is used when useSandboxFileFetcher is false/undefined, and files are fetched
  * via HTTP from the orchestrator's file server using $fileServerUrl and $agentKey.
  */
 
@@ -132,7 +132,7 @@ describe('fetchFromController (controller file fetching path)', () => {
         }
       ],
       executionTimeout: 10000
-      // Note: executionId is NOT provided, triggering the controller path
+      // Note: useSandboxFileFetcher is not set, so controller path is used
     });
 
     expect(result.error).toBeUndefined();

@@ -38,6 +38,30 @@ export class MockKVStore {
   }
 }
 
+class FlakyReadKVStore extends MockKVStore {
+  private failNextRead = true;
+
+  public async read(keys: string[]): Promise<{ data: unknown[] }> {
+    if (this.failNextRead) {
+      this.failNextRead = false;
+      throw new Error('read failed once');
+    }
+    return super.read(keys);
+  }
+}
+
+class FailingWriteKVStore extends MockKVStore {
+  public async write(key: string, value: unknown): Promise<void> {
+    throw new Error('write failed');
+  }
+}
+
+class FailingWriteManyKVStore extends MockKVStore {
+  public async writeMany(payload: { key: string; value: unknown }[]): Promise<void> {
+    throw new Error('writeMany failed');
+  }
+}
+
 describe('Test simple variables', () => {
   it('Test read', async () => {
     const input = {
@@ -391,7 +415,7 @@ describe('Test native variables', () => {
 });
 
 /**
- * MockKVStore with fetchFileCallback support for ephemeral worker testing.
+ * MockKVStore with fetchFileCallback support for sandbox worker testing.
  */
 export class MockKVStoreWithFileFetch extends MockKVStore {
   private _files: { [path: string]: Buffer } = {};
@@ -411,7 +435,7 @@ export class MockKVStoreWithFileFetch extends MockKVStore {
   }
 }
 
-describe('Test fetchFile (ephemeral worker path)', () => {
+describe('Test fetchFile (sandbox worker path)', () => {
   it('should fetch file successfully via VariableClient', async () => {
     const store = new MockKVStoreWithFileFetch();
     const fileContent = Buffer.from('hello world');
@@ -477,7 +501,7 @@ describe('Test fetchFile (ephemeral worker path)', () => {
   });
 
   it('should return error when fetchFileCallback is not available on kvStore', async () => {
-    // Use MockKVStore without fetchFileCallback (simulates non-ephemeral worker)
+    // Use MockKVStore without fetchFileCallback (simulates mode without sandbox file fetching)
     const store = new MockKVStore();
 
     const variableServer = new VariableServer(store);
@@ -490,7 +514,46 @@ describe('Test fetchFile (ephemeral worker path)', () => {
           else resolve(data!);
         });
       })
-    ).rejects.toThrow('fetchFileCallback is not available (not running in ephemeral worker)');
+    ).rejects.toThrow('fetchFileCallback is not available (not running in sandbox worker)');
+
+    variableClient.close();
+    variableServer.close();
+  });
+});
+
+describe('Test variable transport error handling', () => {
+  it('should propagate read errors and keep serving subsequent requests', async () => {
+    const store = new FlakyReadKVStore();
+    await store.write('ok-key', { ok: true });
+
+    const variableServer = new VariableServer(store);
+    const variableClient = new VariableClient(variableServer.clientPort());
+
+    await expect(variableClient.read(['ok-key'])).rejects.toThrow('read failed once');
+    await expect(variableClient.read(['ok-key'])).resolves.toEqual({ data: [{ ok: true }] });
+
+    variableClient.close();
+    variableServer.close();
+  });
+
+  it('should propagate writeStore errors', async () => {
+    const store = new FailingWriteKVStore();
+    const variableServer = new VariableServer(store);
+    const variableClient = new VariableClient(variableServer.clientPort());
+
+    await expect(variableClient.write('some-key', 'value')).rejects.toThrow('write failed');
+
+    variableClient.close();
+    variableServer.close();
+  });
+
+  it('should propagate writeStoreMany errors', async () => {
+    const store = new FailingWriteManyKVStore();
+    const variableServer = new VariableServer(store);
+    const variableClient = new VariableClient(variableServer.clientPort());
+
+    variableClient.writeBuffer('some-key', 'value');
+    await expect(variableClient.flush()).rejects.toThrow('writeMany failed');
 
     variableClient.close();
     variableServer.close();

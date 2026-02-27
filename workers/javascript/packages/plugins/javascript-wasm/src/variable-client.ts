@@ -2,7 +2,7 @@ import { MessagePort } from 'worker_threads';
 
 interface VariableMessage {
   id: number;
-  body?: { data: unknown };
+  body?: { data: unknown } | { data: unknown[] };
   error?: string;
 }
 
@@ -55,7 +55,10 @@ export class VariableClient {
   async read(keys: string[]): Promise<{ data: unknown[] }> {
     const id = this.nextId++;
     this.port.postMessage({ id: id, type: 'readStore', keys: keys });
-    const responseMessage = await this.allocatePromise(id);
+    const responseMessage = await this.awaitResponse(id);
+    if (!responseMessage.body || !Array.isArray((responseMessage.body as { data: unknown[] }).data)) {
+      throw new Error('readStore response missing data array');
+    }
     return responseMessage.body as { data: unknown[] };
   }
 
@@ -74,7 +77,7 @@ export class VariableClient {
     }
 
     this.port.postMessage({ id: id, type: 'writeStore', key: key, value: sanitizedValue });
-    await this.allocatePromise(id);
+    await this.awaitResponse(id);
   }
 
   // For simple variable
@@ -97,12 +100,12 @@ export class VariableClient {
   async flush(): Promise<void> {
     const id = this.nextId++;
     this.port.postMessage({ id: id, type: 'writeStoreMany', payload: this.writableBuffer });
-    await this.allocatePromise(id);
+    await this.awaitResponse(id);
   }
 
   /**
    * Fetch file contents via the KVStore proxy.
-   * This method is only functional when running under an ephemeral worker,
+   * This method is only functional when running under a sandbox worker,
    * where the KVStore is a GrpcKvStore instance with fetchFileCallback support.
    *
    * Callback-style API to match the interface expected by deasync.
@@ -121,6 +124,14 @@ export class VariableClient {
     return new Promise((resolve) => {
       this.pendingResolvers[id] = resolve;
     });
+  }
+
+  private async awaitResponse(id: number): Promise<VariableMessage> {
+    const responseMessage = await this.allocatePromise(id);
+    if (responseMessage.error) {
+      throw new Error(responseMessage.error);
+    }
+    return responseMessage;
   }
 
   close(): void {

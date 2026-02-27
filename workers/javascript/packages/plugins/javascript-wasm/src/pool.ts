@@ -1,4 +1,5 @@
 import Piscina from 'piscina';
+import type { WorkerInput, WorkerTaskInput } from './worker-types';
 import type { MessagePort } from 'worker_threads';
 
 // Detect if running from TypeScript source (test/dev) or compiled JS (production)
@@ -10,9 +11,7 @@ export class WorkerPool {
   private activeTaskCount: number;
 
   private constructor() {
-    const filename = isTypeScript
-      ? __dirname + '/bootstrap.ts'
-      : __dirname + '/bootstrap.js';
+    const filename = isTypeScript ? __dirname + '/bootstrap.ts' : __dirname + '/bootstrap.js';
 
     this.pool = new Piscina({
       filename,
@@ -45,13 +44,11 @@ export class WorkerPool {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
-  public static async run(input: any, signal: AbortSignal, port: MessagePort): Promise<string> {
+  public static async run(input: WorkerTaskInput, signal: AbortSignal, port: MessagePort): Promise<string> {
     this._instance.activeTaskCount += 1;
-    input.port = port;
+    const workerInput: WorkerInput = { ...input, port };
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await this.getPool().run(input, { signal, transferList: [port as any] });
+      return await this.getPool().run(workerInput, { signal, transferList: [port] });
     } finally {
       this._instance.activeTaskCount -= 1;
     }
