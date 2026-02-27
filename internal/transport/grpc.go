@@ -1113,9 +1113,21 @@ func (s *server) executeCodeMode(
 	var responseErrors []*commonv1.Error
 	if workerErr != nil {
 		responseErrors = append(responseErrors, sberror.ToCommonV1(workerErr))
-	}
-	for _, msg := range output.Stderr {
-		responseErrors = append(responseErrors, &commonv1.Error{Message: msg})
+		// output.Stderr already contains the fatal error (added by
+		// OutputFromOutputOldJSON from the worker's "error" JSON field).
+		// workerErr carries the same message but with newlines escaped by
+		// utils.Escape ("\n" → "\\n"), so we unescape before comparing to
+		// avoid including the same error twice.
+		unescaped := strings.ReplaceAll(workerErr.Error(), "\\n", "\n")
+		for _, msg := range output.Stderr {
+			if msg != unescaped {
+				responseErrors = append(responseErrors, &commonv1.Error{Message: msg})
+			}
+		}
+	} else {
+		for _, msg := range output.Stderr {
+			responseErrors = append(responseErrors, &commonv1.Error{Message: msg})
+		}
 	}
 
 	if sendErr := send(&apiv1.StreamResponse{
