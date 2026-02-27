@@ -286,6 +286,41 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		}, nil
 	}
 
+	// Propagate block-level execution errors. When the integration plugin fails
+	// (e.g. a bad SQL query, connection error), the orchestrator returns them in
+	// Errors rather than as a gRPC status error. Without this check the caller
+	// would receive a nil Output and no Error, which surfaces as the confusing
+	// "Expected array result from Postgres query, got: undefined" message in the
+	// SDK instead of the actual plugin error.
+	//
+	// Use Message first, then Name, then Code.String() as fallbacks so that
+	// errors with empty Message but non-empty Name or Code are still surfaced.
+	if errs := resp.GetErrors(); len(errs) > 0 {
+		msgs := make([]string, 0, len(errs))
+		for _, e := range errs {
+			msg := e.GetMessage()
+			if msg == "" {
+				msg = e.GetName()
+			}
+			if msg == "" && e.GetCode() != commonv1.Code_CODE_UNSPECIFIED {
+				msg = e.GetCode().String()
+			}
+			if msg == "" {
+				msg = "integration execution failed"
+			}
+			msgs = append(msgs, msg)
+		}
+		s.logger.Warn("integration execution returned block-level errors",
+			zap.String("execution_id", req.GetExecutionId()),
+			zap.String("integration_id", req.GetIntegrationId()),
+			zap.String("plugin_id", req.GetPluginId()),
+			zap.Strings("errors", msgs),
+		)
+		return &workerv1.ExecuteIntegrationResponse{
+			Error: strings.Join(msgs, "; "),
+		}, nil
+	}
+
 	return &workerv1.ExecuteIntegrationResponse{
 		ExecutionId: resp.GetExecution(),
 		Output:      resp.GetOutput().GetResult(),

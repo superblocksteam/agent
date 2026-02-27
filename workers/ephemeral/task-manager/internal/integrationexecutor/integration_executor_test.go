@@ -175,16 +175,17 @@ func TestExecuteIntegration(t *testing.T) {
 	validJWT := makeTestJWT(testOrgID)
 
 	for _, test := range []struct {
-		name            string
-		request         *workerv1.ExecuteIntegrationRequest
-		contexts        map[string]*redisstore.ExecutionFileContext
-		orchestratorErr error
-		wantCode        codes.Code
-		wantOutput      *structpb.Value
-		wantError       string
-		wantJwt         string
-		wantOrg         string
-		wantProfile     *commonv1.Profile
+		name               string
+		request            *workerv1.ExecuteIntegrationRequest
+		contexts           map[string]*redisstore.ExecutionFileContext
+		orchestratorErr    error
+		orchestratorErrors []*commonv1.Error // block-level errors in AwaitResponse.Errors
+		wantCode           codes.Code
+		wantOutput         *structpb.Value
+		wantError          string
+		wantJwt            string
+		wantOrg            string
+		wantProfile        *commonv1.Profile
 	}{
 		{
 			name: "happy path",
@@ -310,16 +311,89 @@ func TestExecuteIntegration(t *testing.T) {
 			wantOrg:    testOrgID,
 			wantOutput: outputValue,
 		},
+		{
+			name: "orchestrator returns block-level errors (e.g. bad SQL query)",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: validJWT},
+			},
+			// Simulate a failed Postgres step: orchestrator returns errors and no output.
+			// Without the fix this would return output=nil and error="" which caused the
+			// confusing "Expected array result from Postgres query, got: undefined" message.
+			orchestratorErrors: []*commonv1.Error{
+				{Message: `relation "users" does not exist`},
+			},
+			wantError: `relation "users" does not exist`,
+		},
+		{
+			name: "orchestrator returns errors with empty Message but non-empty Name",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: validJWT},
+			},
+			// Some plugins return errors with Name/Code but empty Message.
+			// Without the fix these would fall through to success path (nil Output, no Error).
+			orchestratorErrors: []*commonv1.Error{
+				{Name: "ConnectionError"},
+			},
+			wantError: "ConnectionError",
+		},
+		{
+			name: "orchestrator returns errors with empty Message and Name, uses Code fallback",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: validJWT},
+			},
+			orchestratorErrors: []*commonv1.Error{
+				{Code: commonv1.Code_CODE_INTEGRATION_NETWORK},
+			},
+			wantError: "CODE_INTEGRATION_NETWORK",
+		},
+		{
+			name: "orchestrator returns errors with all fields empty, uses generic fallback",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: validJWT},
+			},
+			orchestratorErrors: []*commonv1.Error{
+				{},
+			},
+			wantError: "integration execution failed",
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			fakeResp := &apiv1.AwaitResponse{
+				Execution: "result-exec-id",
+				Errors:    test.orchestratorErrors,
+			}
+			// Only populate Output when there are no block-level errors, mirroring
+			// what the real orchestrator does for a successful step execution.
+			if len(test.orchestratorErrors) == 0 {
+				fakeResp.Output = &apiv1.Output{Result: outputValue}
+			}
 			fake := &fakeOrchestratorServer{
-				response: &apiv1.AwaitResponse{
-					Execution: "result-exec-id",
-					Output: &apiv1.Output{
-						Result: outputValue,
-					},
-				},
-				err: test.orchestratorErr,
+				response: fakeResp,
+				err:      test.orchestratorErr,
 			}
 
 			orchestratorAddr := startFakeOrchestrator(t, fake)
