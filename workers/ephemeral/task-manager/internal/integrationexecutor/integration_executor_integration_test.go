@@ -41,7 +41,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 	require.NoError(t, err)
 
 	profile := &commonv1.Profile{Name: strPtr("prod")}
-	testJWT := "test-jwt-token"
+	testJWT := makeTestJWT(testOrgID)
 
 	fake := &fakeOrchestratorServer{
 		response: &apiv1.AwaitResponse{
@@ -140,6 +140,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 		assert.Equal(t, "query", block.GetName())
 		assert.Equal(t, "my-integration", block.GetStep().GetIntegration())
 		assert.NotNil(t, block.GetStep().GetPostgres(), "expected postgres config")
+		assert.Equal(t, testOrgID, def.GetApi().GetMetadata().GetOrganization())
 
 		assert.Equal(t, apiv1.ViewMode_VIEW_MODE_DEPLOYED, fake.lastRequest.GetViewMode())
 		assert.Equal(t, "prod", fake.lastRequest.GetProfile().GetName())

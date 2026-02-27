@@ -2,10 +2,12 @@ package integrationexecutor
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/superblocksteam/agent/pkg/constants"
@@ -219,6 +221,11 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
 	}
 
+	orgID, err := extractOrgIDFromJWT(fileCtx.JwtToken)
+	if err != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "could not extract org_id from JWT: %v", err)
+	}
+
 	client, err := s.getOrCreateOrchestratorClient()
 	if err != nil {
 		s.logger.Error("failed to get orchestrator client", zap.Error(err))
@@ -253,8 +260,9 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 			Definition: &apiv1.Definition{
 				Api: &apiv1.Api{
 					Metadata: &commonv1.Metadata{
-						Id:   fmt.Sprintf("sdk-query-%s", req.GetIntegrationId()),
-						Name: "SDK Integration Query",
+						Id:           fmt.Sprintf("sdk-query-%s", req.GetIntegrationId()),
+						Name:         "SDK Integration Query",
+						Organization: orgID,
 					},
 					Blocks: []*apiv1.Block{{
 						Name:   "query",
@@ -282,4 +290,33 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		ExecutionId: resp.GetExecution(),
 		Output:      resp.GetOutput().GetResult(),
 	}, nil
+}
+
+// extractOrgIDFromJWT extracts the org_id claim from a JWT without verifying the
+// signature. The token may optionally carry a "Bearer " prefix. This mirrors the
+// logic in main-worker-integration-executor.ts.
+func extractOrgIDFromJWT(jwtToken string) (string, error) {
+	token := strings.TrimPrefix(jwtToken, "Bearer ")
+	parts := strings.Split(token, ".")
+	if len(parts) < 2 {
+		return "", errors.New("malformed JWT: expected at least two dot-separated segments")
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return "", fmt.Errorf("malformed JWT payload: %w", err)
+	}
+
+	var claims struct {
+		OrgID string `json:"org_id"`
+	}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return "", fmt.Errorf("malformed JWT payload JSON: %w", err)
+	}
+
+	if claims.OrgID == "" {
+		return "", errors.New("JWT payload missing org_id claim")
+	}
+
+	return claims.OrgID, nil
 }

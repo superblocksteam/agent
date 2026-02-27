@@ -2,6 +2,8 @@ package integrationexecutor
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"net"
 	"testing"
 
@@ -21,6 +23,15 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+const testOrgID = "11111111-1111-1111-1111-111111111111"
+
+// makeTestJWT builds a minimal unsigned JWT whose payload contains the given org_id.
+func makeTestJWT(orgID string) string {
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none","typ":"JWT"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf(`{"org_id":%q}`, orgID)))
+	return header + "." + payload + ".fakesig"
+}
 
 // mockFileContextProvider implements FileContextProvider for testing.
 type mockFileContextProvider struct {
@@ -161,6 +172,8 @@ func TestExecuteIntegration(t *testing.T) {
 		},
 	}
 
+	validJWT := makeTestJWT(testOrgID)
+
 	for _, test := range []struct {
 		name            string
 		request         *workerv1.ExecuteIntegrationRequest
@@ -170,6 +183,7 @@ func TestExecuteIntegration(t *testing.T) {
 		wantOutput      *structpb.Value
 		wantError       string
 		wantJwt         string
+		wantOrg         string
 		wantProfile     *commonv1.Profile
 	}{
 		{
@@ -183,9 +197,10 @@ func TestExecuteIntegration(t *testing.T) {
 				Profile:             profileTest,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: "my-jwt-token", Profile: profileFallback},
+				"exec-1": {JwtToken: validJWT, Profile: profileFallback},
 			},
-			wantJwt:     "Bearer my-jwt-token",
+			wantJwt:     "Bearer " + validJWT,
+			wantOrg:     testOrgID,
 			wantProfile: profileTest,
 			wantOutput:  outputValue,
 		},
@@ -198,9 +213,10 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: "my-jwt-token", Profile: profileFallback},
+				"exec-1": {JwtToken: validJWT, Profile: profileFallback},
 			},
-			wantJwt:     "Bearer my-jwt-token",
+			wantJwt:     "Bearer " + validJWT,
+			wantOrg:     testOrgID,
 			wantProfile: profileFallback,
 			wantOutput:  outputValue,
 		},
@@ -254,6 +270,18 @@ func TestExecuteIntegration(t *testing.T) {
 			wantCode: codes.PermissionDenied,
 		},
 		{
+			name: "malformed JWT in context",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:   "exec-1",
+				IntegrationId: "int-1",
+				PluginId:      "postgres",
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: "not-a-jwt"},
+			},
+			wantCode: codes.PermissionDenied,
+		},
+		{
 			name: "orchestrator returns error",
 			request: &workerv1.ExecuteIntegrationRequest{
 				ExecutionId:         "exec-1",
@@ -262,7 +290,7 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: "my-jwt-token"},
+				"exec-1": {JwtToken: validJWT},
 			},
 			orchestratorErr: status.Error(codes.Internal, "something went wrong"),
 			wantError:       "rpc error: code = Internal desc = something went wrong",
@@ -276,9 +304,10 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: nil,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: "my-jwt-token"},
+				"exec-1": {JwtToken: validJWT},
 			},
-			wantJwt:    "Bearer my-jwt-token",
+			wantJwt:    "Bearer " + validJWT,
+			wantOrg:    testOrgID,
 			wantOutput: outputValue,
 		},
 	} {
@@ -346,9 +375,72 @@ func TestExecuteIntegration(t *testing.T) {
 			assert.NotNil(t, block.GetStep(), "expected block to contain a Step")
 			assert.Equal(t, test.request.GetIntegrationId(), block.GetStep().GetIntegration())
 
+			if test.wantOrg != "" {
+				assert.Equal(t, test.wantOrg, def.GetApi().GetMetadata().GetOrganization())
+			}
+
 			if test.wantProfile != nil {
 				assert.Equal(t, test.wantProfile.GetName(), fake.lastRequest.GetProfile().GetName())
 			}
+		})
+	}
+}
+
+func TestExtractOrgIDFromJWT(t *testing.T) {
+	validUUID := "11111111-1111-1111-1111-111111111111"
+	validJWT := makeTestJWT(validUUID)
+
+	for _, test := range []struct {
+		name    string
+		token   string
+		wantID  string
+		wantErr string
+	}{
+		{
+			name:   "valid token without Bearer prefix",
+			token:  validJWT,
+			wantID: validUUID,
+		},
+		{
+			name:   "valid token with Bearer prefix",
+			token:  "Bearer " + validJWT,
+			wantID: validUUID,
+		},
+		{
+			name:    "empty string",
+			token:   "",
+			wantErr: "malformed JWT",
+		},
+		{
+			name:    "single segment (no dots)",
+			token:   "onlyone",
+			wantErr: "malformed JWT",
+		},
+		{
+			name:    "invalid base64 payload",
+			token:   "header.!!!.sig",
+			wantErr: "malformed JWT payload",
+		},
+		{
+			name:    "valid base64 payload but missing org_id",
+			token:   "header." + base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"user123"}`)) + ".sig",
+			wantErr: "missing org_id",
+		},
+		{
+			name:    "empty org_id in payload",
+			token:   "header." + base64.RawURLEncoding.EncodeToString([]byte(`{"org_id":""}`)) + ".sig",
+			wantErr: "missing org_id",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := extractOrgIDFromJWT(test.token)
+			if test.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, test.wantID, got)
 		})
 	}
 }
@@ -448,13 +540,15 @@ func TestExecuteIntegrationLazyClientCreation(t *testing.T) {
 	}
 	orchestratorAddr := startFakeOrchestrator(t, fake)
 
+	lazyJWT := makeTestJWT(testOrgID)
+
 	// Do NOT pre-create the orchestrator client; it must be created lazily.
 	svc := &IntegrationExecutorService{
 		logger:              zap.NewNop(),
 		orchestratorAddress: orchestratorAddr,
 		fileContextProvider: &mockFileContextProvider{
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: "lazy-token"},
+				"exec-1": {JwtToken: lazyJWT},
 			},
 		},
 	}
@@ -476,5 +570,5 @@ func TestExecuteIntegrationLazyClientCreation(t *testing.T) {
 	assert.NotNil(t, svc.orchestratorConn)
 
 	// JWT should have been forwarded with Bearer prefix.
-	assert.Equal(t, "Bearer lazy-token", fake.lastJwtToken)
+	assert.Equal(t, "Bearer "+lazyJWT, fake.lastJwtToken)
 }
