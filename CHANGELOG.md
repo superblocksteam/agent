@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 - Add Snowflake Postgres support
 
+## v1.35.0
+- Security patches
+
 ## v1.34.0
 - Add `atob` and `btoa` polyfills to the WASM sandbox
 - Added option to route all control flow related resolution of bindings to the WASM sandbox
