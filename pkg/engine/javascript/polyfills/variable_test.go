@@ -3,9 +3,9 @@ package polyfills
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/mock"
 )
@@ -34,7 +34,7 @@ func TestInjectVariableSet(t *testing.T) {
 			mockstore.On("Write", context.Background(), &store.KV{
 				Key:   "foo",
 				Value: `"bar"`,
-				TTL:   24 * time.Hour,
+				TTL:   constants.ExecutionVariableTTL,
 			}).Return(nil)
 
 			polyfillFunc := func() Polyfill {

@@ -3,10 +3,10 @@ package polyfills
 import (
 	"context"
 	"strings"
-	"time"
 
 	v8 "rogchap.com/v8go"
 
+	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/store"
 )
@@ -193,7 +193,7 @@ func (v *variable) set(ctx context.Context) v8.FunctionCallback {
 				pairs = append(pairs, &store.KV{
 					Key:   keys[i],
 					Value: values[i],
-					TTL:   24 * time.Hour,
+					TTL:   constants.ExecutionVariableTTL,
 				})
 			}
 		}

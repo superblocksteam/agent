@@ -38,6 +38,10 @@ const (
 
 	EventTypeUnknown = "unknown"
 	EventTypeTest    = "test"
+
+	// ExecutionVariableTTL is the retention period for execution-scoped
+	// variable values persisted to the store.
+	ExecutionVariableTTL = 24 * time.Hour
 )
 
 func WithAgentId(ctx context.Context, agentId string) context.Context {

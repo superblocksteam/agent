@@ -14,10 +14,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	mockflags "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"go.uber.org/zap"
 
+	"github.com/superblocksteam/agent/pkg/constants"
 	apictx "github.com/superblocksteam/agent/pkg/context"
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
@@ -2329,6 +2331,381 @@ func TestStream(t *testing.T) {
 			assert.Equal(t, test.executed, executed(), test.name)
 		})
 	}
+}
+
+type quoteFormattingError struct {
+	msg string
+}
+
+func (e quoteFormattingError) Error() string {
+	return e.msg
+}
+
+func (e quoteFormattingError) Format(state fmt.State, verb rune) {
+	if verb == 'q' {
+		_, _ = fmt.Fprint(state, `"formatter output"`)
+		return
+	}
+	_, _ = fmt.Fprint(state, e.msg)
+}
+
+type recordingStore struct {
+	store.Store
+	mu     sync.Mutex
+	writes []*store.KV
+}
+
+func newRecordingStore(base store.Store) *recordingStore {
+	return &recordingStore{Store: base}
+}
+
+func (s *recordingStore) Write(ctx context.Context, pairs ...*store.KV) error {
+	s.mu.Lock()
+	for _, pair := range pairs {
+		copied := *pair
+		s.writes = append(s.writes, &copied)
+	}
+	s.mu.Unlock()
+
+	return s.Store.Write(ctx, pairs...)
+}
+
+func (s *recordingStore) findWrite(predicate func(*store.KV) bool) (*store.KV, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, write := range s.writes {
+		if predicate(write) {
+			return write, true
+		}
+	}
+
+	return nil, false
+}
+
+type failingWriteStore struct {
+	store.Store
+	err error
+}
+
+func (s *failingWriteStore) Write(ctx context.Context, pairs ...*store.KV) error {
+	return s.err
+}
+
+func newTryCatchResolver(t *testing.T, kvStore store.Store) (*resolver, *apictx.Context, []string) {
+	t.Helper()
+
+	ctx, cancel := context.WithCancelCause(context.Background())
+
+	events, _ := _events()
+	visited := []string{}
+	visitedLock := sync.Mutex{}
+
+	mockWorker := &worker.MockClient{}
+	mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(ctx context.Context, _ string, _ *transportv1.Request_Data_Data, _ ...wops.Option) *transportv1.Performance {
+			return nil
+		},
+		func(ctx context.Context, _ string, _ *transportv1.Request_Data_Data, _ ...wops.Option) string {
+			return "outputkey"
+		},
+		func(ctx context.Context, _ string, _ *transportv1.Request_Data_Data, _ ...wops.Option) error {
+			name, _ := ctx.Value(ctxKeyBlockName).(string)
+			visitedLock.Lock()
+			visited = append(visited, name)
+			visitedLock.Unlock()
+
+			if name == "BlockTryERROR" {
+				return quoteFormattingError{msg: "this is the error"}
+			}
+			return nil
+		},
+	)
+
+	createSandboxFunc := func() engine.Sandbox {
+		return javascript.Sandbox(ctx, &javascript.Options{
+			Logger: zap.NewNop(),
+			Store:  kvStore,
+		})
+	}
+
+	flags := new(mockflags.Flags)
+	flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
+	flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
+	flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+	flags.On("GetPureJsUseWasmSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+	flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+
+	mocker := new(mocker.Mocker)
+	mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
+
+	return &resolver{
+			wg:                &sync.WaitGroup{},
+			ctx:               ctx,
+			cancel:            cancel,
+			flags:             flags,
+			logger:            zap.NewNop(),
+			worker:            mockWorker,
+			key:               utils.NewMap[string](),
+			variables:         gc.New(&gc.Options{Store: store.Memory()}),
+			parallels:         utils.NewList[chan struct{}](),
+			store:             kvStore,
+			execution:         "ABCD-1234",
+			createSandboxFunc: createSandboxFunc,
+			manager: &manager{
+				mutex:   sync.RWMutex{},
+				exiters: map[string](chan *exit){},
+			},
+			rootStartTime:  time.Now(),
+			timeout:        time.Second * 10,
+			templatePlugin: mustache.Instance,
+			Events:         events,
+			Options: &Options{
+				Mocker: mocker,
+			},
+		},
+		apictx.New(&apictx.Context{
+			Execution: "ABCD-1234",
+			Name:      "ROOT",
+			Context:   ctx,
+		}),
+		visited
+}
+
+func newTryCatchStep() *apiv1.Block_TryCatch {
+	return &apiv1.Block_TryCatch{
+		Variables: &apiv1.Block_TryCatch_Variables{
+			Error: "err",
+		},
+		Try: &apiv1.Blocks{
+			Blocks: []*apiv1.Block{
+				{
+					Name: "BlockTryERROR",
+					Config: &apiv1.Block_Step{
+						Step: &apiv1.Step{
+							Config: &apiv1.Step_Javascript{
+								Javascript: &javascriptv1.Plugin{Body: "return 5;"},
+							},
+						},
+					},
+				},
+			},
+		},
+		Catch: &apiv1.Blocks{
+			Blocks: []*apiv1.Block{
+				{
+					Name: "BlockCatch",
+					Config: &apiv1.Block_Step{
+						Step: &apiv1.Step{
+							Config: &apiv1.Step_Javascript{
+								Javascript: &javascriptv1.Plugin{Body: "return 6;"},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func TestTryCatchReusesExistingErrorVariableRef(t *testing.T) {
+	t.Parallel()
+
+	keyCalled := false
+	kvStore := store.Mock(func(_, _ string) (string, error) {
+		keyCalled = true
+		return "", errors.New("Key should not be called when err variable already exists")
+	})
+
+	resolver, apiCtx, _ := newTryCatchResolver(t, kvStore)
+	apiCtx = apiCtx.WithVariables(map[string]*transportv1.Variable{
+		"err": {
+			Key:  "VARIABLE.existing-err",
+			Type: apiv1.Variables_TYPE_SIMPLE,
+			Mode: apiv1.Variables_MODE_READWRITE,
+		},
+	})
+
+	_, err := resolver.TryCatch(apiCtx, newTryCatchStep())
+	require.NoError(t, err)
+	assert.False(t, keyCalled)
+
+	expectedCatchValue, marshalErr := json.Marshal("this is the error")
+	require.NoError(t, marshalErr)
+
+	values, readErr := kvStore.Read(context.Background(), "VARIABLE.existing-err")
+	require.NoError(t, readErr)
+	require.Len(t, values, 1)
+	assert.Equal(t, string(expectedCatchValue), values[0])
+}
+
+func TestTryCatchReturnsWriteErrorWhenPersistingCatchVariableFails(t *testing.T) {
+	t.Parallel()
+
+	expectedErr := errors.New("write failure")
+	kvStore := &failingWriteStore{
+		Store: store.Memory(),
+		err:   expectedErr,
+	}
+
+	resolver, apiCtx, _ := newTryCatchResolver(t, kvStore)
+
+	_, err := resolver.TryCatch(apiCtx, newTryCatchStep())
+	require.Error(t, err)
+	assert.ErrorIs(t, err, expectedErr)
+}
+
+func TestTryCatchStoresErrorMessageNotFormatterOutput(t *testing.T) {
+	t.Parallel()
+
+	code := "return 5;"
+	step := &apiv1.Block_Step{
+		Step: &apiv1.Step{
+			Config: &apiv1.Step_Javascript{
+				Javascript: &javascriptv1.Plugin{
+					Body: code,
+				},
+			},
+		},
+	}
+
+	events, _ := _events()
+	visited := []string{}
+	visitedLock := sync.Mutex{}
+
+	mockWorker := &worker.MockClient{}
+	mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(ctx context.Context, _ string, _ *transportv1.Request_Data_Data, _ ...wops.Option) *transportv1.Performance {
+			return nil
+		},
+		func(ctx context.Context, _ string, _ *transportv1.Request_Data_Data, _ ...wops.Option) string {
+			return "outputkey"
+		},
+		func(ctx context.Context, _ string, _ *transportv1.Request_Data_Data, _ ...wops.Option) error {
+			name, _ := ctx.Value(ctxKeyBlockName).(string)
+			visitedLock.Lock()
+			visited = append(visited, name)
+			visitedLock.Unlock()
+			if name == "BlockTryERROR" {
+				return quoteFormattingError{msg: "this is the error"}
+			}
+			return nil
+		},
+	)
+
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
+
+	memoryStore := newRecordingStore(store.Memory())
+	createSandboxFunc := func() engine.Sandbox {
+		return javascript.Sandbox(ctx, &javascript.Options{
+			Logger: zap.NewNop(),
+			Store:  memoryStore,
+		})
+	}
+
+	flags := new(mockflags.Flags)
+	flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
+	flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
+	flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+	flags.On("GetPureJsUseWasmSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+	flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+
+	mocker := new(mocker.Mocker)
+	mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
+
+	resolver := &resolver{
+		wg:                &sync.WaitGroup{},
+		ctx:               ctx,
+		cancel:            cancel,
+		flags:             flags,
+		logger:            zap.NewNop(),
+		worker:            mockWorker,
+		key:               utils.NewMap[string](),
+		variables:         gc.New(&gc.Options{Store: store.Memory()}),
+		parallels:         utils.NewList[chan struct{}](),
+		store:             memoryStore,
+		execution:         "ABCD-1234",
+		createSandboxFunc: createSandboxFunc,
+		manager: &manager{
+			mutex:   sync.RWMutex{},
+			exiters: map[string](chan *exit){},
+		},
+		rootStartTime:  time.Now(),
+		timeout:        time.Second * 10,
+		templatePlugin: mustache.Instance,
+		Events:         events,
+		Options: &Options{
+			Mocker: mocker,
+		},
+	}
+
+	blocks := []*apiv1.Block{
+		{
+			Name: "TestTryCatch",
+			Config: &apiv1.Block_TryCatch_{
+				TryCatch: &apiv1.Block_TryCatch{
+					Variables: &apiv1.Block_TryCatch_Variables{
+						Error: "err",
+					},
+					Try: &apiv1.Blocks{
+						Blocks: []*apiv1.Block{
+							{
+								Name:   "BlockTryERROR",
+								Config: step,
+							},
+						},
+					},
+					Catch: &apiv1.Blocks{
+						Blocks: []*apiv1.Block{
+							{
+								Name: "TestConditional",
+								Config: &apiv1.Block_Conditional_{
+									Conditional: &apiv1.Block_Conditional{
+										If: &apiv1.Block_Conditional_Condition{
+											Condition: `{{ err.value === "this is the error" }}`,
+											Blocks: []*apiv1.Block{
+												{
+													Name:   "BlockOne",
+													Config: step,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err := resolver.blocks(apictx.New(&apictx.Context{
+		Execution: "ABCD-1234",
+		Name:      "ROOT",
+		Context:   ctx,
+	}), blocks)
+	assert.NoError(t, err)
+
+	visitedLock.Lock()
+	defer visitedLock.Unlock()
+	assert.Contains(t, visited, "BlockTryERROR")
+	assert.Contains(t, visited, "BlockOne")
+
+	expectedCatchValue, marshalErr := json.Marshal("this is the error")
+	assert.NoError(t, marshalErr)
+
+	catchWrite, found := memoryStore.findWrite(func(kv *store.KV) bool {
+		value, ok := kv.Value.(string)
+		if !ok {
+			return false
+		}
+
+		return strings.HasPrefix(kv.Key, "VARIABLE.") && value == string(expectedCatchValue)
+	})
+	require.True(t, found, "expected catch error variable write")
+	assert.Equal(t, constants.ExecutionVariableTTL, catchWrite.TTL)
 }
 
 func client() (worker.Client, func() []string) {

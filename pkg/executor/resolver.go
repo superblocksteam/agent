@@ -1207,19 +1207,42 @@ func (r *resolver) TryCatch(ctx *apictx.Context, step *apiv1.Block_TryCatch, ops
 			var newCtx *apictx.Context
 			{
 				if step.Variables != nil && step.Variables.Error != "" {
-					newCtx, err = r.Variables(ctx, &apiv1.Variables{
-						Items: []*apiv1.Variables_Config{
-							{
-								Key:   step.Variables.Error,
-								Value: fmt.Sprintf(`{{ %q }}`, err),
-								Type:  apiv1.Variables_TYPE_SIMPLE,
-								Mode:  apiv1.Variables_MODE_READWRITE,
-							},
+					// Persist catch error variables directly via the store to avoid a second
+					// sandbox round-trip for assignment.
+					errMessage := err.Error()
+					encodedMessage, marshalErr := json.Marshal(errMessage)
+					if marshalErr != nil {
+						return "", marshalErr
+					}
+
+					var ref string
+					if existing, ok := ctx.Variables.Get(step.Variables.Error); ok {
+						ref = existing.Key
+					} else {
+						ref, err = r.store.Key("VARIABLE", step.Variables.Error)
+						if err != nil {
+							r.logger.Error("failed to generate catch error variable key", zap.Error(err))
+							return "", sberrors.ErrInternal
+						}
+					}
+
+					if writeErr := r.store.Write(ctx.Context, &store.KV{
+						Key:   ref,
+						Value: string(encodedMessage),
+						TTL:   constants.ExecutionVariableTTL,
+					}); writeErr != nil {
+						r.logger.Error("failed to persist catch error variable", zap.Error(writeErr))
+						return "", writeErr
+					}
+					r.variables.Record(ref)
+
+					newCtx = ctx.WithVariables(map[string]*transportv1.Variable{
+						step.Variables.Error: {
+							Key:  ref,
+							Type: apiv1.Variables_TYPE_SIMPLE,
+							Mode: apiv1.Variables_MODE_READWRITE,
 						},
 					})
-					if err != nil {
-						return "", err
-					}
 				} else {
 					newCtx = ctx
 				}
