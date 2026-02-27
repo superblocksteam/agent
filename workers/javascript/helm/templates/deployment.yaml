@@ -16,6 +16,7 @@ spec:
   selector:
     matchLabels:
       {{- include "worker.labels" $v | nindent 6 }}
+  revisionHistoryLimit: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:

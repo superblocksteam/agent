@@ -191,6 +191,8 @@ worker_go:
 worker_py:
   deploy: false
   environment: staging
+  !!merge <<: *tolerations
+  !!merge <<: *selector
   fleets:
     main.test.python.execute:
       !!merge <<: *worker_python_fleet_shared
