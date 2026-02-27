@@ -1387,7 +1387,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, send)
 		require.NoError(t, err)
 		require.NotNil(t, done)
-		assert.Equal(t, "code-mode", done.Last)
+		assert.Equal(t, "api-2.0", done.Last)
 		assert.NotNil(t, done.Output)
 		assert.NotNil(t, done.Output.Result, "output.Result should be populated from worker response")
 		// Verify protojson camelCase (placeHoldersInfo) is preserved; encoding/json would have lost it.
@@ -1454,9 +1454,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, done)
 		require.NotNil(t, done.Output)
-		assert.Len(t, done.Output.Stderr, 2, "Stderr should include both log [ERROR] and error field")
-		assert.Contains(t, done.Output.Stderr, "runtime error")
-		assert.Contains(t, done.Output.Stderr, "ReferenceError: x is not defined")
+		assert.Empty(t, done.Output.Stderr, "Stderr should be cleared after promotion to Response.Errors")
 
 		require.Len(t, sentEvents, 1)
 		respEvent := sentEvents[0].GetEvent().GetResponse()
@@ -2023,14 +2021,19 @@ func TestExecuteCodeMode(t *testing.T) {
 		require.NotNil(t, done.Output)
 
 		assert.Contains(t, done.Output.Stdout, "[INFO] connecting to db", "stdout log lines should be recovered")
-		assert.Contains(t, done.Output.Stderr, "connection refused", "stderr log lines should be recovered")
-		assert.Contains(t, done.Output.Stderr, `Integration "abc" failed during "query": ECONNREFUSED`, "error field should appear in stderr")
+		assert.Empty(t, done.Output.Stderr, "stderr should be cleared after promotion to Response.Errors")
 
 		require.Len(t, sentEvents, 1)
 		respEvent := sentEvents[0].GetEvent().GetResponse()
 		require.NotNil(t, respEvent, "should send a Response event, not an End/error event")
 		require.GreaterOrEqual(t, len(respEvent.Errors), 2, "should include worker error + stderr entries")
 		assert.Contains(t, respEvent.Errors[0].GetMessage(), "execution failed", "first error should be the worker error")
+		errorMessages := make([]string, 0, len(respEvent.Errors))
+		for _, e := range respEvent.Errors {
+			errorMessages = append(errorMessages, e.GetMessage())
+		}
+		assert.Contains(t, errorMessages, "connection refused", "stderr log lines should appear in Response.Errors")
+		assert.Contains(t, errorMessages, `Integration "abc" failed during "query": ECONNREFUSED`, "error field should appear in Response.Errors")
 
 		mockWorker.AssertExpectations(t)
 	})
@@ -2181,6 +2184,67 @@ func TestExecuteCodeMode(t *testing.T) {
 
 		mockWorker.AssertExpectations(t)
 	})
+}
+
+// TestAwaitCodeModeErrorsPromotedToAwaitResponse verifies that execution errors
+// returned in StreamResponse.Event.Response.Errors (from executeCodeMode) are
+// promoted to AwaitResponse.Errors and not left in AwaitResponse.Output.Stderr.
+func TestAwaitCodeModeErrorsPromotedToAwaitResponse(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+	memStore := store.Memory()
+
+	// Worker output with a runtime error — same format as a real JS worker failure.
+	outputJSON := `{"output":{},"log":["[ERROR] something went wrong"],"error":"TypeError: cannot read property"}`
+	outputKey := "output-key-await-error"
+	require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+	fetcher.On("FetchApiCode", mock.Anything, "app-await", "", "", "", true).
+		Return(&fetch.ApiCodeBundle{Bundle: "throw new Error('oops');"}, nil)
+
+	mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+		Return(nil, outputKey, nil)
+
+	srv := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         memStore,
+		Worker:        mockWorker,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+	})
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+	ctx = constants.WithExecutionID(ctx, "exec-await-error")
+
+	req := &apiv1.ExecuteRequest{
+		Request: &apiv1.ExecuteRequest_FetchCode_{
+			FetchCode: &apiv1.ExecuteRequest_FetchCode{Id: "app-await"},
+		},
+	}
+
+	resp, err := srv.Await(ctx, req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	assert.Equal(t, apiv1.AwaitResponse_STATUS_COMPLETED, resp.GetStatus())
+
+	require.NotEmpty(t, resp.GetErrors(), "execution errors should be promoted to AwaitResponse.Errors")
+	messages := make([]string, 0, len(resp.GetErrors()))
+	for _, e := range resp.GetErrors() {
+		messages = append(messages, e.GetMessage())
+	}
+	assert.Contains(t, messages, "something went wrong")
+	assert.Contains(t, messages, "TypeError: cannot read property")
+
+	require.NotNil(t, resp.GetOutput())
+	assert.Empty(t, resp.GetOutput().GetStderr(), "output.stderr should be empty after promotion to AwaitResponse.Errors")
+
+	mockWorker.AssertExpectations(t)
+	fetcher.AssertExpectations(t)
 }
 
 func strPtr(s string) *string { return &s }

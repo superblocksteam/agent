@@ -239,11 +239,25 @@ func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 		done, err := s.stream(spanCtx, req, func(resp *apiv1.StreamResponse) error {
 			execution = resp.Execution
 
-			if err := forEach(resp); err != nil {
+			forEachErr := forEach(resp)
+
+			// Collect errors from code-mode Event_Response_ events. Regular (non-code-mode)
+			// block executions also set Event_Response_.Errors, but they do so by injecting
+			// the already-accumulated failures slice (see stream()), so we must not re-collect
+			// them here. API 2.0 responses are identified by Response.Last == "api-2.0".
+			var eventErrs []*commonv1.Error
+			if r := resp.GetEvent().GetResponse(); r != nil && r.GetLast() == "api-2.0" {
+				eventErrs = r.GetErrors()
+			}
+
+			if forEachErr != nil || len(eventErrs) > 0 {
 				mutex.Lock()
 				defer mutex.Unlock()
 
-				failures = append(failures, sberror.ToCommonV1(err))
+				if forEachErr != nil {
+					failures = append(failures, sberror.ToCommonV1(forEachErr))
+				}
+				failures = append(failures, eventErrs...)
 			}
 
 			return nil
@@ -787,7 +801,7 @@ func (s *server) executeCodeMode(
 	send func(*apiv1.StreamResponse) error,
 ) (*executor.Done, error) {
 	logger := s.Logger.With(
-		zap.String("execution_path", "code-mode"),
+		zap.String("execution_path", "api-2.0"),
 		zap.String("organizationId", result.GetApi().GetMetadata().GetOrganization()),
 	)
 	executionID := constants.ExecutionID(ctx)
@@ -821,7 +835,7 @@ func (s *server) executeCodeMode(
 			detail = "nil rawResult"
 		}
 		logger.Error("missing bundle in rawResult", zap.String("detail", detail))
-		return sendError(fmt.Errorf("missing bundle in code-mode response: %s", detail))
+		return sendError(fmt.Errorf("missing bundle in api-2.0 response: %s", detail))
 	}
 
 	user, err := extractUserContext(ctx)
@@ -853,7 +867,7 @@ func (s *server) executeCodeMode(
 					"body": structpb.NewStringValue(wrapperScript),
 				},
 			},
-			StepName:    "code-mode",
+			StepName:    "api-2.0",
 			ExecutionId: executionID,
 			JwtToken:    jwtToken,
 			Profile:     fetchCode.GetProfile(),
@@ -945,7 +959,7 @@ func (s *server) executeCodeMode(
 			Name: result.GetApi().GetMetadata().GetName(),
 			Event: &apiv1.Event_Response_{
 				Response: &apiv1.Event_Response{
-					Last:   "code-mode",
+					Last:   "api-2.0",
 					Errors: responseErrors,
 				},
 			},
@@ -955,9 +969,13 @@ func (s *server) executeCodeMode(
 		return nil, sendErr
 	}
 
+	// Errors have been promoted to StreamResponse.Event.Response.Errors and will be
+	// surfaced in AwaitResponse.Errors by await(). Clear from output to avoid duplication.
+	output.Stderr = nil
+
 	return &executor.Done{
 		Output: &output,
-		Last:   "code-mode",
+		Last:   "api-2.0",
 	}, nil
 }
 
