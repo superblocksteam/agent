@@ -177,6 +177,60 @@
           ]
         }
       }
+    },
+    {
+      "name": "ExecuteV3 with file upload (FetchCode path)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('FetchCode file upload succeeds and readContentsAsync works', () => {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.output).to.not.be.undefined;",
+              "    pm.expect(response.output.result).to.not.be.undefined;",
+              "    pm.expect(response.output.result.sdkapi).to.eql('ok');",
+              "    pm.expect(response.output.result.from).to.eql('fetchcode-file-upload');",
+              "    pm.expect(response.output.result.contents).to.eql('hello from v3 file upload');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Superblocks-Authorization",
+            "value": "Bearer {{superblocks_jwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"applicationId\": \"00000000-0000-0000-0000-000000000004\",\n    \"inputs\": {\n      \"SampleFiles\": {\n        \"files\": [\n          {\n            \"$superblocksId\": \"upload-1\",\n            \"name\": \"demo.txt\",\n            \"extension\": \"txt\",\n            \"type\": \"text/plain\",\n            \"encoding\": \"text\",\n            \"size\": 25\n          }\n        ]\n      }\n    },\n    \"files\": [\n      {\n        \"originalName\": \"upload-1\",\n        \"buffer\": \"aGVsbG8gZnJvbSB2MyBmaWxlIHVwbG9hZA==\",\n        \"encoding\": \"text\",\n        \"mimeType\": \"text/plain\",\n        \"size\": \"25\"\n      }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{orchestrator_port}}",
+          "path": [
+            "v3",
+            "execute"
+          ]
+        }
+      }
     }
   ],
   "variable": [

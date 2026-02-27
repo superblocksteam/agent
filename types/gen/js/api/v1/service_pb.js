@@ -292,7 +292,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.api.v1.ExecuteV3Request = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.api.v1.ExecuteV3Request.repeatedFields_, null);
 };
 goog.inherits(proto.api.v1.ExecuteV3Request, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -2835,7 +2835,8 @@ proto.api.v1.ExecuteRequest.FetchCode.toObject = function(includeInstance, msg) 
     profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
     viewMode: jspb.Message.getFieldWithDefault(msg, 3, 0),
     commitId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-    branchName: jspb.Message.getFieldWithDefault(msg, 5, "")
+    branchName: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    entryPoint: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -2892,6 +2893,10 @@ proto.api.v1.ExecuteRequest.FetchCode.deserializeBinaryFromReader = function(msg
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setBranchName(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setEntryPoint(value);
       break;
     default:
       reader.skipField();
@@ -2955,6 +2960,13 @@ proto.api.v1.ExecuteRequest.FetchCode.serializeBinaryToWriter = function(message
   if (f != null) {
     writer.writeString(
       5,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
+    writer.writeString(
+      6,
       f
     );
   }
@@ -3103,6 +3115,42 @@ proto.api.v1.ExecuteRequest.FetchCode.prototype.clearBranchName = function() {
  */
 proto.api.v1.ExecuteRequest.FetchCode.prototype.hasBranchName = function() {
   return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional string entry_point = 6;
+ * @return {string}
+ */
+proto.api.v1.ExecuteRequest.FetchCode.prototype.getEntryPoint = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api.v1.ExecuteRequest.FetchCode} returns this
+ */
+proto.api.v1.ExecuteRequest.FetchCode.prototype.setEntryPoint = function(value) {
+  return jspb.Message.setField(this, 6, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api.v1.ExecuteRequest.FetchCode} returns this
+ */
+proto.api.v1.ExecuteRequest.FetchCode.prototype.clearEntryPoint = function() {
+  return jspb.Message.setField(this, 6, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.ExecuteRequest.FetchCode.prototype.hasEntryPoint = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
@@ -3720,6 +3768,13 @@ proto.api.v1.ExecuteRequest.prototype.setViewMode = function(value) {
 
 
 
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.api.v1.ExecuteV3Request.repeatedFields_ = [8];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -3756,7 +3811,10 @@ proto.api.v1.ExecuteV3Request.toObject = function(includeInstance, msg) {
     viewMode: jspb.Message.getFieldWithDefault(msg, 3, 0),
     profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
     commitId: jspb.Message.getFieldWithDefault(msg, 5, ""),
-    branchName: jspb.Message.getFieldWithDefault(msg, 6, "")
+    branchName: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    entryPoint: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    filesList: jspb.Message.toObjectList(msg.getFilesList(),
+    proto.api.v1.ExecuteRequest.File.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -3819,6 +3877,15 @@ proto.api.v1.ExecuteV3Request.deserializeBinaryFromReader = function(msg, reader
     case 6:
       var value = /** @type {string} */ (reader.readString());
       msg.setBranchName(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setEntryPoint(value);
+      break;
+    case 8:
+      var value = new proto.api.v1.ExecuteRequest.File;
+      reader.readMessage(value,proto.api.v1.ExecuteRequest.File.deserializeBinaryFromReader);
+      msg.addFiles(value);
       break;
     default:
       reader.skipField();
@@ -3887,6 +3954,21 @@ proto.api.v1.ExecuteV3Request.serializeBinaryToWriter = function(message, writer
     writer.writeString(
       6,
       f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 7));
+  if (f != null) {
+    writer.writeString(
+      7,
+      f
+    );
+  }
+  f = message.getFilesList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      8,
+      f,
+      proto.api.v1.ExecuteRequest.File.serializeBinaryToWriter
     );
   }
 };
@@ -4057,6 +4139,80 @@ proto.api.v1.ExecuteV3Request.prototype.clearBranchName = function() {
  */
 proto.api.v1.ExecuteV3Request.prototype.hasBranchName = function() {
   return jspb.Message.getField(this, 6) != null;
+};
+
+
+/**
+ * optional string entry_point = 7;
+ * @return {string}
+ */
+proto.api.v1.ExecuteV3Request.prototype.getEntryPoint = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api.v1.ExecuteV3Request} returns this
+ */
+proto.api.v1.ExecuteV3Request.prototype.setEntryPoint = function(value) {
+  return jspb.Message.setField(this, 7, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api.v1.ExecuteV3Request} returns this
+ */
+proto.api.v1.ExecuteV3Request.prototype.clearEntryPoint = function() {
+  return jspb.Message.setField(this, 7, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.ExecuteV3Request.prototype.hasEntryPoint = function() {
+  return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * repeated ExecuteRequest.File files = 8;
+ * @return {!Array<!proto.api.v1.ExecuteRequest.File>}
+ */
+proto.api.v1.ExecuteV3Request.prototype.getFilesList = function() {
+  return /** @type{!Array<!proto.api.v1.ExecuteRequest.File>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.api.v1.ExecuteRequest.File, 8));
+};
+
+
+/**
+ * @param {!Array<!proto.api.v1.ExecuteRequest.File>} value
+ * @return {!proto.api.v1.ExecuteV3Request} returns this
+*/
+proto.api.v1.ExecuteV3Request.prototype.setFilesList = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 8, value);
+};
+
+
+/**
+ * @param {!proto.api.v1.ExecuteRequest.File=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.api.v1.ExecuteRequest.File}
+ */
+proto.api.v1.ExecuteV3Request.prototype.addFiles = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 8, opt_value, proto.api.v1.ExecuteRequest.File, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api.v1.ExecuteV3Request} returns this
+ */
+proto.api.v1.ExecuteV3Request.prototype.clearFilesList = function() {
+  return this.setFilesList([]);
 };
 
 

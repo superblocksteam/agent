@@ -224,6 +224,27 @@ func TestGenerateWrapperScript(t *testing.T) {
 		assert.Contains(t, script, "actionConfiguration")
 	})
 
+	t.Run("prepares file methods on marshaled inputs when available", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, map[string]*structpb.Value{
+			"SampleFiles": structpb.NewStructValue(&structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"files": structpb.NewListValue(&structpb.ListValue{
+						Values: []*structpb.Value{
+							structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"$superblocksId": structpb.NewStringValue("upload-1"),
+								},
+							}),
+						},
+					}),
+				},
+			}),
+		}, "bundle", "exec-1")
+		require.NoError(t, err)
+		assert.Contains(t, script, "$prepareGlobalObjectForFiles(__sb_context.inputs)")
+	})
+
 	t.Run("builds pluginId lookup map from api.integrations", func(t *testing.T) {
 		t.Parallel()
 		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1")

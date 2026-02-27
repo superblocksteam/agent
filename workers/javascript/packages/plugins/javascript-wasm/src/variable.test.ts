@@ -519,6 +519,33 @@ describe('Test fetchFile (sandbox worker path)', () => {
     variableClient.close();
     variableServer.close();
   });
+
+  it('should handle fetchFile response with undefined data without throwing Buffer.from error', async () => {
+    // Simulates GrpcKvStore or other backend returning body.data as undefined.
+    // Reproduces: "The 'data' argument must be of type string or an instance of Buffer... Received undefined"
+    // seen when Integration "..." failed during "query" in v3/execute with SDK API + Postgres.
+    const store = new (class extends MockKVStore {
+      public fetchFileCallback(path: string, callback: (error: Error | null, result: Buffer | null) => void): void {
+        setImmediate(() => callback(null, undefined as unknown as Buffer));
+      }
+    })();
+
+    const variableServer = new VariableServer(store);
+    const variableClient = new VariableClient(variableServer.clientPort());
+
+    const result = await new Promise<{ err: Error | null; data: Buffer | null }>((resolve) => {
+      variableClient.fetchFileCallback('/some/path', (err, data) => {
+        resolve({ err, data });
+      });
+    });
+
+    expect(result.err).toBeInstanceOf(Error);
+    expect(result.err?.message).toContain('fetchFile response missing data');
+    expect(result.data).toBeNull();
+
+    variableClient.close();
+    variableServer.close();
+  });
 });
 
 describe('Test variable transport error handling', () => {

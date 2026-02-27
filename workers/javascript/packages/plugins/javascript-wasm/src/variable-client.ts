@@ -35,9 +35,14 @@ export class VariableClient {
         if (message.error) {
           fetchCallback(new Error(message.error), null);
         } else {
-          // Data arrives as Uint8Array (Buffer subclass) via structured clone
-          const data = message.body?.data as Uint8Array;
-          fetchCallback(null, Buffer.from(data));
+          // Data arrives as Uint8Array (Buffer subclass) via structured clone.
+          // Guard against undefined: GrpcKvStore or backend may return body.data as undefined.
+          const data = message.body?.data;
+          if (data == null) {
+            fetchCallback(new Error('fetchFile response missing data'), null);
+            return;
+          }
+          fetchCallback(null, Buffer.from(data as Uint8Array));
         }
         return;
       }

@@ -123,6 +123,9 @@ var __sb_context = {
   user: %s,
   inputs: %s,
 };
+if (typeof $prepareGlobalObjectForFiles === "function") {
+  $prepareGlobalObjectForFiles(__sb_context.inputs);
+}
 var __sb_executionId = %s;
 
 // --- begin bundle ---

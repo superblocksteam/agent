@@ -50,7 +50,7 @@ class ValidateRequest(_message.Message):
     def __init__(self, api: _Optional[_Union[_api_pb2.Api, _Mapping]] = ...) -> None: ...
 
 class ExecuteRequest(_message.Message):
-    __slots__ = ("options", "inputs", "definition", "fetch", "fetch_by_path", "files", "profile", "mocks", "view_mode")
+    __slots__ = ("options", "inputs", "definition", "fetch", "fetch_by_path", "fetch_code", "files", "profile", "mocks", "view_mode")
     class Options(_message.Message):
         __slots__ = ("exclude_output", "include_event_outputs", "include_events", "start", "stop", "include_resolved", "include_api_events")
         EXCLUDE_OUTPUT_FIELD_NUMBER: _ClassVar[int]
@@ -103,6 +103,21 @@ class ExecuteRequest(_message.Message):
         commit_id: str
         branch_name: str
         def __init__(self, profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., test: bool = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., path: _Optional[str] = ..., application_id: _Optional[str] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ...) -> None: ...
+    class FetchCode(_message.Message):
+        __slots__ = ("id", "profile", "view_mode", "commit_id", "branch_name", "entry_point")
+        ID_FIELD_NUMBER: _ClassVar[int]
+        PROFILE_FIELD_NUMBER: _ClassVar[int]
+        VIEW_MODE_FIELD_NUMBER: _ClassVar[int]
+        COMMIT_ID_FIELD_NUMBER: _ClassVar[int]
+        BRANCH_NAME_FIELD_NUMBER: _ClassVar[int]
+        ENTRY_POINT_FIELD_NUMBER: _ClassVar[int]
+        id: str
+        profile: _common_pb2.Profile
+        view_mode: ViewMode
+        commit_id: str
+        branch_name: str
+        entry_point: str
+        def __init__(self, id: _Optional[str] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ..., entry_point: _Optional[str] = ...) -> None: ...
     class InputsEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -128,6 +143,7 @@ class ExecuteRequest(_message.Message):
     DEFINITION_FIELD_NUMBER: _ClassVar[int]
     FETCH_FIELD_NUMBER: _ClassVar[int]
     FETCH_BY_PATH_FIELD_NUMBER: _ClassVar[int]
+    FETCH_CODE_FIELD_NUMBER: _ClassVar[int]
     FILES_FIELD_NUMBER: _ClassVar[int]
     PROFILE_FIELD_NUMBER: _ClassVar[int]
     MOCKS_FIELD_NUMBER: _ClassVar[int]
@@ -137,14 +153,15 @@ class ExecuteRequest(_message.Message):
     definition: Definition
     fetch: ExecuteRequest.Fetch
     fetch_by_path: ExecuteRequest.FetchByPath
+    fetch_code: ExecuteRequest.FetchCode
     files: _containers.RepeatedCompositeFieldContainer[ExecuteRequest.File]
     profile: _common_pb2.Profile
     mocks: _containers.RepeatedCompositeFieldContainer[Mock]
     view_mode: ViewMode
-    def __init__(self, options: _Optional[_Union[ExecuteRequest.Options, _Mapping]] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., definition: _Optional[_Union[Definition, _Mapping]] = ..., fetch: _Optional[_Union[ExecuteRequest.Fetch, _Mapping]] = ..., fetch_by_path: _Optional[_Union[ExecuteRequest.FetchByPath, _Mapping]] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., mocks: _Optional[_Iterable[_Union[Mock, _Mapping]]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ...) -> None: ...
+    def __init__(self, options: _Optional[_Union[ExecuteRequest.Options, _Mapping]] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., definition: _Optional[_Union[Definition, _Mapping]] = ..., fetch: _Optional[_Union[ExecuteRequest.Fetch, _Mapping]] = ..., fetch_by_path: _Optional[_Union[ExecuteRequest.FetchByPath, _Mapping]] = ..., fetch_code: _Optional[_Union[ExecuteRequest.FetchCode, _Mapping]] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., mocks: _Optional[_Iterable[_Union[Mock, _Mapping]]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ...) -> None: ...
 
 class ExecuteV3Request(_message.Message):
-    __slots__ = ("api_id", "inputs", "view_mode", "profile")
+    __slots__ = ("application_id", "inputs", "view_mode", "profile", "commit_id", "branch_name", "entry_point", "files")
     class InputsEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -152,15 +169,23 @@ class ExecuteV3Request(_message.Message):
         key: str
         value: _struct_pb2.Value
         def __init__(self, key: _Optional[str] = ..., value: _Optional[_Union[_struct_pb2.Value, _Mapping]] = ...) -> None: ...
-    API_ID_FIELD_NUMBER: _ClassVar[int]
+    APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
     INPUTS_FIELD_NUMBER: _ClassVar[int]
     VIEW_MODE_FIELD_NUMBER: _ClassVar[int]
     PROFILE_FIELD_NUMBER: _ClassVar[int]
-    api_id: str
+    COMMIT_ID_FIELD_NUMBER: _ClassVar[int]
+    BRANCH_NAME_FIELD_NUMBER: _ClassVar[int]
+    ENTRY_POINT_FIELD_NUMBER: _ClassVar[int]
+    FILES_FIELD_NUMBER: _ClassVar[int]
+    application_id: str
     inputs: _containers.MessageMap[str, _struct_pb2.Value]
     view_mode: ViewMode
     profile: _common_pb2.Profile
-    def __init__(self, api_id: _Optional[str] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ...) -> None: ...
+    commit_id: str
+    branch_name: str
+    entry_point: str
+    files: _containers.RepeatedCompositeFieldContainer[ExecuteRequest.File]
+    def __init__(self, application_id: _Optional[str] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ..., entry_point: _Optional[str] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ...) -> None: ...
 
 class Definition(_message.Message):
     __slots__ = ("api", "integrations", "metadata", "stores")

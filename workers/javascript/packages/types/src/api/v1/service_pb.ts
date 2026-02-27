@@ -581,6 +581,13 @@ export class ExecuteRequest_FetchCode extends Message<ExecuteRequest_FetchCode> 
    */
   branchName?: string;
 
+  /**
+   * The entry point path relative to the application root (e.g. "server/apis/GetUsers/api.ts").
+   *
+   * @generated from field: optional string entry_point = 6;
+   */
+  entryPoint?: string;
+
   constructor(data?: PartialMessage<ExecuteRequest_FetchCode>) {
     super();
     proto3.util.initPartial(data, this);
@@ -594,6 +601,7 @@ export class ExecuteRequest_FetchCode extends Message<ExecuteRequest_FetchCode> 
     { no: 3, name: "view_mode", kind: "enum", T: proto3.getEnumType(ViewMode) },
     { no: 4, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 5, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 6, name: "entry_point", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteRequest_FetchCode {
@@ -725,6 +733,20 @@ export class ExecuteV3Request extends Message<ExecuteV3Request> {
    */
   branchName?: string;
 
+  /**
+   * The entry point path relative to the application root (e.g. "server/apis/GetUsers/api.ts").
+   *
+   * @generated from field: optional string entry_point = 7;
+   */
+  entryPoint?: string;
+
+  /**
+   * Optional file payloads for filepicker inputs.
+   *
+   * @generated from field: repeated api.v1.ExecuteRequest.File files = 8;
+   */
+  files: ExecuteRequest_File[] = [];
+
   constructor(data?: PartialMessage<ExecuteV3Request>) {
     super();
     proto3.util.initPartial(data, this);
@@ -739,6 +761,8 @@ export class ExecuteV3Request extends Message<ExecuteV3Request> {
     { no: 4, name: "profile", kind: "message", T: Profile },
     { no: 5, name: "commit_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 6, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 7, name: "entry_point", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 8, name: "files", kind: "message", T: ExecuteRequest_File, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteV3Request {

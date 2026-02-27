@@ -6341,6 +6341,14 @@
         "entryPoint": {
           "type": "string",
           "description": "The entry point path relative to the application root (e.g. \"server/apis/GetUsers/api.ts\")."
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ExecuteRequestFile"
+          },
+          "description": "Optional file payloads for filepicker inputs."
         }
       },
       "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions). Uses FetchCode for API 2.0\ncode delivery."

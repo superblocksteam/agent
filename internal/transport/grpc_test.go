@@ -3,6 +3,9 @@ package transport
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/superblocksteam/agent/internal/metrics"
@@ -1302,6 +1305,320 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 			fetcher.AssertExpectations(t)
 		})
 	}
+}
+
+func TestExecuteV3ForwardsFilesToCodeModeWorker(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+	memStore := store.Memory()
+
+	outputKey := "output-key-v3-files"
+	require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{"ok":true}}`}))
+
+	var capturedPath string
+	mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.MatchedBy(func(data *transportv1.Request_Data_Data) bool {
+		props := data.GetProps()
+		if !assert.Equal(t, "http://localhost:8080/v2/files", props.GetFileServerUrl()) {
+			return false
+		}
+		if !assert.Contains(t, props.GetVariables(), "SampleFiles") {
+			return false
+		}
+		if !assert.Len(t, props.GetFiles(), 1) {
+			return false
+		}
+		capturedPath = props.GetFiles()[0].GetPath()
+		return assert.Equal(t, "upload-1", props.GetFiles()[0].GetOriginalname()) &&
+			assert.NotEmpty(t, capturedPath)
+	}), mock.Anything, mock.Anything).Return(nil, outputKey, nil)
+
+	fetcher.On(
+		"FetchApiCode",
+		mock.Anything,
+		"app-with-files",
+		"",
+		"",
+		"",
+		mock.Anything,
+	).Return(&fetch.ApiCodeBundle{
+		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+	}, nil)
+
+	s := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         memStore,
+		Worker:        mockWorker,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		FileServerUrl: "http://localhost:8080/v2/files",
+	})
+
+	sampleFilesInput, err := structpb.NewStruct(map[string]interface{}{
+		"files": []interface{}{
+			map[string]interface{}{
+				"$superblocksId": "upload-1",
+				"encoding":       "text",
+				"extension":      "txt",
+				"name":           "demo.txt",
+				"size":           5,
+				"type":           "text/plain",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "app-with-files",
+		Inputs: map[string]*structpb.Value{
+			"SampleFiles": structpb.NewStructValue(sampleFilesInput),
+		},
+		Files: []*apiv1.ExecuteRequest_File{
+			{
+				OriginalName: "upload-1",
+				Buffer:       []byte("hello"),
+				Encoding:     "text",
+				MimeType:     "text/plain",
+				Size:         "5",
+			},
+		},
+	}
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+	_, err = s.ExecuteV3(ctx, req)
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, capturedPath)
+	fetcher.AssertExpectations(t)
+	mockWorker.AssertExpectations(t)
+}
+
+func TestExecuteV3RejectsMissingReferencedFilePayload(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+
+	fetcher.On(
+		"FetchApiCode",
+		mock.Anything,
+		"app-with-files",
+		"",
+		"",
+		"",
+		mock.Anything,
+	).Return(&fetch.ApiCodeBundle{
+		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+	}, nil)
+
+	s := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         store.Memory(),
+		Worker:        mockWorker,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		FileServerUrl: "http://localhost:8080/v2/files",
+	})
+
+	sampleFilesInput, err := structpb.NewStruct(map[string]interface{}{
+		"files": []interface{}{
+			map[string]interface{}{
+				"$superblocksId": "upload-1",
+				"encoding":       "text",
+				"extension":      "txt",
+				"name":           "demo.txt",
+				"size":           5,
+				"type":           "text/plain",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "app-with-files",
+		Inputs: map[string]*structpb.Value{
+			"SampleFiles": structpb.NewStructValue(sampleFilesInput),
+		},
+		Files: []*apiv1.ExecuteRequest_File{
+			{
+				OriginalName: "upload-2",
+				Buffer:       []byte("hello"),
+				Encoding:     "text",
+				MimeType:     "text/plain",
+				Size:         "5",
+			},
+		},
+	}
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+	_, err = s.ExecuteV3(ctx, req)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "missing file payloads for $superblocksId values")
+	assert.Empty(t, mockWorker.Calls)
+	fetcher.AssertExpectations(t)
+}
+
+func TestExecuteV3RejectsDuplicateFileOriginalNames(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+
+	fetcher.On(
+		"FetchApiCode",
+		mock.Anything,
+		"app-with-files",
+		"",
+		"",
+		"",
+		mock.Anything,
+	).Return(&fetch.ApiCodeBundle{
+		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+	}, nil)
+
+	s := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         store.Memory(),
+		Worker:        mockWorker,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		FileServerUrl: "http://localhost:8080/v2/files",
+	})
+
+	sampleFilesInput, err := structpb.NewStruct(map[string]interface{}{
+		"files": []interface{}{
+			map[string]interface{}{
+				"$superblocksId": "upload-1",
+				"encoding":       "text",
+				"extension":      "txt",
+				"name":           "demo.txt",
+				"size":           5,
+				"type":           "text/plain",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "app-with-files",
+		Inputs: map[string]*structpb.Value{
+			"SampleFiles": structpb.NewStructValue(sampleFilesInput),
+		},
+		Files: []*apiv1.ExecuteRequest_File{
+			{
+				OriginalName: "upload-1",
+				Buffer:       []byte("hello"),
+				Encoding:     "text",
+				MimeType:     "text/plain",
+				Size:         "5",
+			},
+			{
+				OriginalName: "upload-1",
+				Buffer:       []byte("hello-again"),
+				Encoding:     "text",
+				MimeType:     "text/plain",
+				Size:         "11",
+			},
+		},
+	}
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+	_, err = s.ExecuteV3(ctx, req)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "duplicate file payload originalName")
+	assert.Empty(t, mockWorker.Calls)
+	fetcher.AssertExpectations(t)
+}
+
+func TestExecuteV3CleansMaterializedFilesOnVariableWriteError(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	tmpDir := t.TempDir()
+	t.Setenv("TMPDIR", tmpDir)
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+	mockStore := &storemock.Store{}
+
+	mockStore.On("Write", mock.Anything, mock.MatchedBy(func(kv *store.KV) bool {
+		return kv != nil && strings.Contains(kv.Key, ".code_mode.input.")
+	})).Return(errors.New("write failed")).Once()
+
+	fetcher.On(
+		"FetchApiCode",
+		mock.Anything,
+		"app-with-files",
+		"",
+		"",
+		"",
+		mock.Anything,
+	).Return(&fetch.ApiCodeBundle{
+		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+	}, nil)
+
+	s := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         mockStore,
+		Worker:        mockWorker,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		FileServerUrl: "http://localhost:8080/v2/files",
+	})
+
+	sampleFilesInput, err := structpb.NewStruct(map[string]interface{}{
+		"files": []interface{}{
+			map[string]interface{}{
+				"$superblocksId": "upload-1",
+				"encoding":       "text",
+				"extension":      "txt",
+				"name":           "demo.txt",
+				"size":           5,
+				"type":           "text/plain",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "app-with-files",
+		Inputs: map[string]*structpb.Value{
+			"SampleFiles": structpb.NewStructValue(sampleFilesInput),
+		},
+		Files: []*apiv1.ExecuteRequest_File{
+			{
+				OriginalName: "upload-1",
+				Buffer:       []byte("hello"),
+				Encoding:     "text",
+				MimeType:     "text/plain",
+				Size:         "5",
+			},
+		},
+	}
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+	_, err = s.ExecuteV3(ctx, req)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "write failed")
+
+	matches, globErr := filepath.Glob(filepath.Join(tmpDir, "execute-v3-upload-*"))
+	require.NoError(t, globErr)
+	assert.Empty(t, matches)
+
+	entries, readErr := os.ReadDir(tmpDir)
+	require.NoError(t, readErr)
+	assert.NotNil(t, entries)
+
+	mockStore.AssertExpectations(t)
+	fetcher.AssertExpectations(t)
+	assert.Empty(t, mockWorker.Calls)
 }
 
 // TestExecuteCodeMode verifies the direct code-mode execution path bypasses the block executor

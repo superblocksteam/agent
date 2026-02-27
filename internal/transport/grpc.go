@@ -2,11 +2,13 @@ package transport
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -182,6 +184,7 @@ func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*a
 	}
 	return s.await(ctx, &apiv1.ExecuteRequest{
 		Inputs: req.GetInputs(),
+		Files:  req.GetFiles(),
 		Request: &apiv1.ExecuteRequest_FetchCode_{
 			FetchCode: fetchCode,
 		},
@@ -495,6 +498,118 @@ func (*server) isFile(path string) bool {
 	}
 
 	return info.Mode().IsRegular()
+}
+
+func materializeExecuteFiles(files []*apiv1.ExecuteRequest_File) ([]*transportv1.Request_Data_Data_Props_File, error) {
+	materialized := make([]*transportv1.Request_Data_Data_Props_File, 0, len(files))
+	for _, fileData := range files {
+		if fileData == nil {
+			continue
+		}
+
+		tempFile, err := os.CreateTemp("", "execute-v3-upload-*")
+		if err != nil {
+			return materialized, err
+		}
+
+		if _, err := tempFile.Write(fileData.GetBuffer()); err != nil {
+			_ = tempFile.Close()
+			_ = os.Remove(tempFile.Name())
+			return materialized, err
+		}
+		if err := tempFile.Close(); err != nil {
+			_ = os.Remove(tempFile.Name())
+			return materialized, err
+		}
+
+		path := tempFile.Name()
+		materialized = append(materialized, &transportv1.Request_Data_Data_Props_File{
+			Originalname: strings.TrimSpace(fileData.GetOriginalName()),
+			Encoding:     fileData.GetEncoding(),
+			Mimetype:     fileData.GetMimeType(),
+			Size:         int64(len(fileData.GetBuffer())),
+			Destination:  path,
+			Filename:     filepath.Base(path),
+			Path:         path,
+		})
+	}
+	return materialized, nil
+}
+
+func collectSuperblocksIDs(value any, ids map[string]struct{}) {
+	switch typed := value.(type) {
+	case []any:
+		for _, item := range typed {
+			collectSuperblocksIDs(item, ids)
+		}
+	case map[string]any:
+		if rawID, ok := typed["$superblocksId"]; ok {
+			if id, ok := rawID.(string); ok && id != "" {
+				ids[id] = struct{}{}
+			}
+		}
+		for _, item := range typed {
+			collectSuperblocksIDs(item, ids)
+		}
+	}
+}
+
+func validateExecuteFileBindings(inputs map[string]*structpb.Value, files []*apiv1.ExecuteRequest_File) error {
+	if len(files) == 0 {
+		return nil
+	}
+
+	uploadedFileIDs := make(map[string]struct{}, len(files))
+	for i, file := range files {
+		if file == nil {
+			return fmt.Errorf("files[%d] is nil", i)
+		}
+
+		originalName := strings.TrimSpace(file.GetOriginalName())
+		if originalName == "" {
+			return fmt.Errorf("files[%d].originalName is required", i)
+		}
+		if _, exists := uploadedFileIDs[originalName]; exists {
+			return fmt.Errorf("duplicate file payload originalName %q", originalName)
+		}
+		uploadedFileIDs[originalName] = struct{}{}
+	}
+
+	referencedFileIDs := make(map[string]struct{})
+	for _, input := range inputs {
+		if input == nil {
+			continue
+		}
+		collectSuperblocksIDs(input.AsInterface(), referencedFileIDs)
+	}
+
+	if len(referencedFileIDs) == 0 {
+		return errors.New("files payload provided but no $superblocksId references were found in inputs")
+	}
+
+	var missing []string
+	for id := range referencedFileIDs {
+		if _, ok := uploadedFileIDs[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return fmt.Errorf("missing file payloads for $superblocksId values: %s", strings.Join(missing, ", "))
+	}
+
+	return nil
+}
+
+func deleteMaterializedFiles(files []*transportv1.Request_Data_Data_Props_File, logger *zap.Logger) {
+	for _, file := range files {
+		if file == nil || file.Destination == "" {
+			continue
+		}
+		if err := os.Remove(file.Destination); err != nil {
+			logger.Warn("could not remove materialized code-mode file", zap.String("path", file.Destination), zap.Error(err))
+		}
+	}
 }
 
 // returns a copy of the given inputs with 'Global.user' populated with values from the upstream JWT
@@ -860,6 +975,62 @@ func (s *server) executeCodeMode(
 		}
 	}
 
+	if err := validateExecuteFileBindings(req.GetInputs(), req.GetFiles()); err != nil {
+		logger.Error("invalid uploaded file bindings for code-mode", zap.Error(err))
+		return sendError(err)
+	}
+
+	var workerFiles []*transportv1.Request_Data_Data_Props_File
+	var outputKey string
+	propsVariables := make(map[string]*transportv1.Variable, len(req.GetInputs()))
+	var tempVariableStoreKeys []string
+	defer func() {
+		if outputKey != "" {
+			if delErr := s.Store.Delete(context.WithoutCancel(ctx), outputKey); delErr != nil {
+				logger.Warn("could not garbage-collect worker output key", zap.Error(delErr), zap.String("output_key", outputKey))
+			}
+		}
+		for _, key := range tempVariableStoreKeys {
+			if delErr := s.Store.Delete(context.WithoutCancel(ctx), key); delErr != nil {
+				logger.Warn("could not garbage-collect code-mode input variable key", zap.Error(delErr), zap.String("key", key))
+			}
+		}
+		deleteMaterializedFiles(workerFiles, logger)
+	}()
+
+	workerFiles, err = materializeExecuteFiles(req.GetFiles())
+	if err != nil {
+		logger.Error("could not materialize uploaded files for code-mode", zap.Error(err))
+		return sendError(err)
+	}
+
+	for inputName, inputValue := range req.GetInputs() {
+		if inputName == "" || inputValue == nil {
+			continue
+		}
+
+		serializedInputValue, marshalErr := json.Marshal(inputValue.AsInterface())
+		if marshalErr != nil {
+			logger.Error("could not serialize code-mode input variable", zap.String("input_name", inputName), zap.Error(marshalErr))
+			return sendError(marshalErr)
+		}
+
+		storeKey := fmt.Sprintf("%s.code_mode.input.%s", executionID, inputName)
+		if writeErr := s.Store.Write(ctx, &store.KV{
+			Key:   storeKey,
+			Value: string(serializedInputValue),
+		}); writeErr != nil {
+			logger.Error("could not persist code-mode input variable", zap.String("input_name", inputName), zap.Error(writeErr))
+			return sendError(writeErr)
+		}
+		tempVariableStoreKeys = append(tempVariableStoreKeys, storeKey)
+		propsVariables[inputName] = &transportv1.Variable{
+			Key:  storeKey,
+			Type: apiv1.Variables_TYPE_NATIVE,
+			Mode: apiv1.Variables_MODE_READ,
+		}
+	}
+
 	workerData := &transportv1.Request_Data_Data{
 		Props: &transportv1.Request_Data_Data_Props{
 			ActionConfiguration: &structpb.Struct{
@@ -867,10 +1038,13 @@ func (s *server) executeCodeMode(
 					"body": structpb.NewStringValue(wrapperScript),
 				},
 			},
-			StepName:    "api-2.0",
-			ExecutionId: executionID,
-			JwtToken:    jwtToken,
-			Profile:     fetchCode.GetProfile(),
+			StepName:      "api-2.0",
+			ExecutionId:   executionID,
+			FileServerUrl: s.FileServerUrl,
+			Files:         workerFiles,
+			Variables:     propsVariables,
+			JwtToken:      jwtToken,
+			Profile:       fetchCode.GetProfile(),
 		},
 		AConfig: &structpb.Struct{
 			Fields: map[string]*structpb.Value{
@@ -884,15 +1058,6 @@ func (s *server) executeCodeMode(
 
 	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
 	_, outputKey, workerErr := s.Worker.Execute(ctx, "javascriptsdkapi", workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
-
-	// Clean up the output key from the store to prevent leaking Redis keys.
-	defer func() {
-		if outputKey != "" {
-			if delErr := s.Store.Delete(context.WithoutCancel(ctx), outputKey); delErr != nil {
-				logger.Warn("could not garbage-collect worker output key", zap.Error(delErr), zap.String("output_key", outputKey))
-			}
-		}
-	}()
 
 	// Read the worker output from the store. When the worker succeeded this is
 	// the normal path. When the worker failed, the store may still contain

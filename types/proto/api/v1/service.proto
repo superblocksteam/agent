@@ -408,6 +408,9 @@ message ExecuteV3Request {
 
   // The entry point path relative to the application root (e.g. "server/apis/GetUsers/api.ts").
   optional string entry_point = 7;
+
+  // Optional file payloads for filepicker inputs.
+  repeated ExecuteRequest.File files = 8;
 }
 
 message Definition {

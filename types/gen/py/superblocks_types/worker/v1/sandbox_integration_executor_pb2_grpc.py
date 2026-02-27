@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from worker.v1 import sandbox_integration_executor_pb2 as worker_dot_v1_dot_sandbox__integration__executor__pb2
+from superblocks_types.worker.v1 import sandbox_integration_executor_pb2 as worker_dot_v1_dot_sandbox__integration__executor__pb2
 
 
 class SandboxIntegrationExecutorServiceStub(object):

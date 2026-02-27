@@ -22,8 +22,8 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from api.v1 import service_pb2 as api_dot_v1_dot_service__pb2
-from common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
+from superblocks_types.api.v1 import service_pb2 as api_dot_v1_dot_service__pb2
+from superblocks_types.common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
 from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
 

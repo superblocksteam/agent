@@ -1,0 +1,161 @@
+{
+  "info": {
+    "_postman_id": "v3-execute-buffer-regression",
+    "name": "V3 Execute - Buffer Undefined Regression",
+    "description": "Regression test for /v3/execute code-mode flow. This collection targets the Buffer.from(undefined) failure signature observed during integration query execution.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "ExecuteV3 code-mode does not hit Buffer.from(undefined)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const bodyText = pm.response.text();",
+              "let bodyJson = null;",
+              "try {",
+              "  bodyJson = pm.response.json();",
+              "} catch (_) {",
+              "  // Keep bodyText-only assertions when response is non-JSON.",
+              "}",
+              "",
+              "const fullBody = bodyJson ? JSON.stringify(bodyJson) : (bodyText || '');",
+              "",
+              "pm.test('response does not include Buffer.from(undefined) signature', () => {",
+              "  pm.expect(fullBody).to.not.include('The \"data\" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined');",
+              "  pm.expect(fullBody).to.not.include('Received undefined');",
+              "});",
+              "",
+              "pm.test('response does not include integration query failure wrapper', () => {",
+              "  pm.expect(fullBody).to.not.match(/Integration\\s+\".*\"\\s+failed\\s+during\\s+\"query\"/i);",
+              "  pm.expect(fullBody).to.not.match(/\\[EXECUTION_ERROR\\]/i);",
+              "});",
+              "",
+              "pm.test('response is not an internal execution failure envelope', () => {",
+              "  if (bodyJson && Array.isArray(bodyJson.errors)) {",
+              "    const joined = bodyJson.errors.map((e) => (e && (e.message || e.formattedError || e.name)) || '').join(' | ');",
+              "    pm.expect(joined).to.not.match(/data\\\" argument|Received undefined|Buffer/i);",
+              "  }",
+              "});",
+              "",
+              "pm.test('optional expected output markers', () => {",
+              "  const expectedFrom = pm.variables.get('expected_from');",
+              "  const expectedRowCountMinRaw = pm.variables.get('expected_row_count_min');",
+              "  if (!bodyJson || !bodyJson.output || !bodyJson.output.result) {",
+              "    return;",
+              "  }",
+              "",
+              "  if (expectedFrom) {",
+              "    pm.expect(bodyJson.output.result.from).to.eql(expectedFrom);",
+              "  }",
+              "",
+              "  if (expectedRowCountMinRaw !== undefined && expectedRowCountMinRaw !== null && expectedRowCountMinRaw !== '') {",
+              "    const expectedRowCountMin = Number(expectedRowCountMinRaw);",
+              "    pm.expect(bodyJson.output.result.query).to.be.an('object');",
+              "    pm.expect(bodyJson.output.result.query.rowCount).to.be.a('number');",
+              "    pm.expect(bodyJson.output.result.query.rowCount).to.be.at.least(expectedRowCountMin);",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Superblocks-Authorization",
+            "value": "Bearer {{superblocks_jwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicationId\": \"{{application_id}}\",\n  \"inputs\": {\n    \"orderId\": \"{{order_id}}\"\n  },\n  \"viewMode\": \"{{view_mode}}\",\n  \"entryPoint\": \"{{entry_point}}\",\n  \"profile\": {\n    \"id\": \"{{profile_id}}\",\n    \"name\": \"{{profile_name}}\",\n    \"key\": \"{{profile_key}}\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{orchestrator_port}}",
+          "path": [
+            "v3",
+            "execute"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "orchestrator_scheme",
+      "value": "https"
+    },
+    {
+      "key": "orchestrator_host",
+      "value": "agent-pr-17285.superblocks.dev"
+    },
+    {
+      "key": "orchestrator_port",
+      "value": "443"
+    },
+    {
+      "key": "application_id",
+      "value": "9875c57b-9336-4f41-babb-417c88c544f6"
+    },
+    {
+      "key": "entry_point",
+      "value": "server/apis/GetOrderById/api.ts"
+    },
+    {
+      "key": "order_id",
+      "value": "30000"
+    },
+    {
+      "key": "view_mode",
+      "value": "editor"
+    },
+    {
+      "key": "profile_id",
+      "value": "45d0cc5e-5317-4f3a-8582-f82c7811cc7b"
+    },
+    {
+      "key": "profile_name",
+      "value": "Production"
+    },
+    {
+      "key": "profile_key",
+      "value": "production"
+    },
+    {
+      "key": "expected_from",
+      "value": ""
+    },
+    {
+      "key": "expected_row_count_min",
+      "value": ""
+    },
+    {
+      "key": "superblocks_jwt",
+      "value": "REPLACE_ME_WITH_VALID_JWT"
+    }
+  ]
+}

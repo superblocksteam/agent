@@ -308,6 +308,11 @@ export namespace ExecuteRequest {
         getBranchName(): string | undefined;
         setBranchName(value: string): FetchCode;
 
+        hasEntryPoint(): boolean;
+        clearEntryPoint(): void;
+        getEntryPoint(): string | undefined;
+        setEntryPoint(value: string): FetchCode;
+
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): FetchCode.AsObject;
         static toObject(includeInstance: boolean, msg: FetchCode): FetchCode.AsObject;
@@ -325,6 +330,7 @@ export namespace ExecuteRequest {
             viewMode: ViewMode,
             commitId?: string,
             branchName?: string,
+            entryPoint?: string,
         }
     }
 
@@ -397,6 +403,15 @@ export class ExecuteV3Request extends jspb.Message {
     getBranchName(): string | undefined;
     setBranchName(value: string): ExecuteV3Request;
 
+    hasEntryPoint(): boolean;
+    clearEntryPoint(): void;
+    getEntryPoint(): string | undefined;
+    setEntryPoint(value: string): ExecuteV3Request;
+    clearFilesList(): void;
+    getFilesList(): Array<ExecuteRequest.File>;
+    setFilesList(value: Array<ExecuteRequest.File>): ExecuteV3Request;
+    addFiles(value?: ExecuteRequest.File, index?: number): ExecuteRequest.File;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ExecuteV3Request.AsObject;
     static toObject(includeInstance: boolean, msg: ExecuteV3Request): ExecuteV3Request.AsObject;
@@ -416,6 +431,8 @@ export namespace ExecuteV3Request {
         profile?: common_v1_common_pb.Profile.AsObject,
         commitId?: string,
         branchName?: string,
+        entryPoint?: string,
+        filesList: Array<ExecuteRequest.File.AsObject>,
     }
 }
 

@@ -19,6 +19,18 @@ module.exports = [
               return res.sendStatus(401);
             }
 
+            // Regression target: app id 000...003 executes a real integration query
+            // through the FetchCode -> javascriptsdkapi -> integration executor path.
+            if (req.params.applicationId === '00000000-0000-0000-0000-000000000003') {
+              const bundle = 'module.exports={default:{name:"fetchcode-regression-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[{key:"db",pluginId:"postgres",id:"my-integration-one"}],run:async function(ctx,input){const query=await ctx.integrations.db.execute("SELECT 1 WHERE $1::int > 0",[input.orderId]);return {sdkapi:"ok",from:"fetchcode-db-query",query:query};}}};';
+              return res.status(200).json({ bundle });
+            }
+
+            if (req.params.applicationId === '00000000-0000-0000-0000-000000000004') {
+              const bundle = 'module.exports={default:{name:"fetchcode-file-upload-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){const text=await input.SampleFiles.files[0].readContentsAsync("text");return {sdkapi:"ok",from:"fetchcode-file-upload",contents:text};}}};';
+              return res.status(200).json({ bundle });
+            }
+
             // Return a minimal esbuild-style CommonJS bundle exporting a CompiledApi shape.
             // The orchestrator wraps this and sends to javascriptsdkapi worker via executeApi().
             // Bundle accesses __sb_context.user (a sandbox global set by the wrapper).

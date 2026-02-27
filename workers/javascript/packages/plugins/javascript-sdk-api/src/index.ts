@@ -9,6 +9,7 @@ import {
   ErrorCode,
   EvaluationPair,
   ExecutionOutput,
+  getTreePathToDiskPath,
   IntegrationError,
   LanguageActionConfiguration,
   LanguagePlugin,
@@ -48,6 +49,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
   async execute({
     context,
     actionConfiguration,
+    files,
     quotas
   }: PluginExecutionProps): Promise<ExecutionOutput> {
     const code = (actionConfiguration as LanguageActionConfiguration).body;
@@ -93,6 +95,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
     };
 
     const requireRoot = buildRequireRoot();
+    const filePaths = getTreePathToDiskPath(context.globals ?? {}, files ?? []);
 
     const runPromise = executeCode({
       context: {
@@ -102,7 +105,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
         variables: context.variables ?? {}
       },
       code,
-      filePaths: {},
+      filePaths,
       inheritedEnv: [],
       requireRoot
     });
