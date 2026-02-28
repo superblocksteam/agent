@@ -127,18 +127,6 @@ func (s *server) getUseAgentKeyForHydration(ctx context.Context) bool {
 	return s.Flags.GetUseAgentKeyForHydration(orgId)
 }
 
-func shouldForceAgentKeyForHydration(ctx context.Context, req *apiv1.ExecuteRequest) bool {
-	if req.GetDefinition() == nil {
-		return false
-	}
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return false
-	}
-	values := md.Get(constants.HeaderForceAgentKey)
-	return len(values) > 0 && strings.EqualFold(values[0], "true")
-}
-
 func (s *server) Workflow(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.WorkflowResponse, error) {
 	if fetch := req.GetFetch(); fetch != nil {
 		if fetch.GetTest() {
@@ -744,11 +732,6 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	if req.GetFetchCode() != nil {
 		useAgentKey = true
 	}
-	// Proxied inline integration executions should use the same hydration path
-	// as code-mode so integrations visible to the caller remain executable.
-	if shouldForceAgentKeyForHydration(ctx, req) {
-		useAgentKey = true
-	}
 
 	var result *apiv1.Definition
 	var rawResult *structpb.Struct
@@ -982,14 +965,25 @@ func (s *server) executeCodeMode(
 		return sendError(err)
 	}
 
-	// Extract the raw JWT from gRPC metadata so it can be forwarded to the
-	// task-manager for proxied integration execution (same pattern as the
-	// standard execution path).
+	// Extract both JWT variants from gRPC metadata for proxied integration
+	// execution. The downstream integration fetch expects:
+	// - Authorization: Auth0 bearer token
+	// - X-Superblocks-Authorization: Superblocks bearer token
+	//
+	// For code-mode executions we pass both through the existing JwtToken field
+	// using a compact, backward-compatible encoding understood by the ephemeral
+	// task-manager integration executor.
 	var jwtToken string
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		var superblocksJwt string
 		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
-			jwtToken = strings.TrimPrefix(vals[0], "Bearer ")
+			superblocksJwt = strings.TrimPrefix(vals[0], "Bearer ")
 		}
+		var authorizationJwt string
+		if vals := md.Get("authorization"); len(vals) > 0 {
+			authorizationJwt = strings.TrimPrefix(vals[0], "Bearer ")
+		}
+		jwtToken = encodeWorkerJWTContext(superblocksJwt, authorizationJwt)
 	}
 
 	if err := validateExecuteFileBindings(req.GetInputs(), req.GetFiles()); err != nil {
@@ -1171,6 +1165,17 @@ func (s *server) executeCodeMode(
 		Output: &output,
 		Last:   "api-2.0",
 	}, nil
+}
+
+func encodeWorkerJWTContext(superblocksJWT, authorizationJWT string) string {
+	superblocksJWT = strings.TrimSpace(strings.TrimPrefix(superblocksJWT, "Bearer "))
+	authorizationJWT = strings.TrimSpace(strings.TrimPrefix(authorizationJWT, "Bearer "))
+
+	if superblocksJWT == "" || authorizationJWT == "" {
+		return ""
+	}
+
+	return "sbjwt=" + superblocksJWT + "\nauthjwt=" + authorizationJWT
 }
 
 func (s *server) Status(ctx context.Context, req *apiv1.StatusRequest) (*apiv1.AwaitResponse, error) {

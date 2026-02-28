@@ -52,7 +52,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 	orchestratorAddr := startFakeOrchestrator(t, fake)
 
 	fileContexts := map[string]*redisstore.ExecutionFileContext{
-		"exec-123": {JwtToken: testJWT, Profile: profile},
+		"exec-123": {JwtToken: makeWorkerJWTContext(testJWT, testJWT), Profile: profile},
 	}
 
 	// Start the IntegrationExecutorService on a random port.

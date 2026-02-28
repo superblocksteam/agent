@@ -392,6 +392,99 @@ func TestFetchIntegrations(t *testing.T) {
 	}
 }
 
+// TestFetchIntegrationsHeaderForwarding proves that the HTTP Authorization header
+// sent to the server is determined entirely by the "authorization" key in the
+// incoming gRPC metadata. This is the root cause of the "configuration not found
+// or inaccessible" bug: the integration executor was only setting
+// "x-superblocks-authorization" in the gRPC metadata, so the server's checkJwt
+// middleware saw no Authorization header and treated the request as a visitor,
+// causing the integration query to run against the wrong organization.
+func TestFetchIntegrationsHeaderForwarding(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name            string
+		metadata        map[string]string
+		useAgentKey     bool
+		expectedHeaders http.Header
+	}{
+		{
+			name: "BUG REPRO: only x-superblocks-authorization in gRPC metadata → no Authorization HTTP header",
+			metadata: map[string]string{
+				"x-superblocks-authorization": "Bearer user-jwt-token",
+			},
+			useAgentKey: true,
+			expectedHeaders: http.Header{
+				"Authorization":               []string(nil),
+				"X-Superblocks-Authorization": {"Bearer user-jwt-token"},
+				"X-Superblocks-Agent-Key":     {"test-agent-key"},
+			},
+		},
+		{
+			name: "FIX: both authorization and x-superblocks-authorization → both HTTP headers present",
+			metadata: map[string]string{
+				"authorization":               "Bearer user-jwt-token",
+				"x-superblocks-authorization": "Bearer user-jwt-token",
+			},
+			useAgentKey: true,
+			expectedHeaders: http.Header{
+				"Authorization":               {"Bearer user-jwt-token"},
+				"X-Superblocks-Authorization": {"Bearer user-jwt-token"},
+				"X-Superblocks-Agent-Key":     {"test-agent-key"},
+			},
+		},
+		{
+			name: "normal browser flow: both headers present, no agent key",
+			metadata: map[string]string{
+				"authorization":               "Bearer user-jwt-token",
+				"x-superblocks-authorization": "Bearer user-jwt-token",
+			},
+			useAgentKey: false,
+			expectedHeaders: http.Header{
+				"Authorization":               {"Bearer user-jwt-token"},
+				"X-Superblocks-Authorization": {"Bearer user-jwt-token"},
+				"X-Superblocks-Agent-Key":     []string(nil),
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			mockHttpClient := mocks.NewHttpClient(t)
+			mockHttpClient.On("Do", mock.Anything).Return(&http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"data":[]}`)),
+			}, nil)
+
+			fetcher := New(&Options{
+				Logger: zap.NewNop(),
+				ServerClient: clients.NewServerClient(&clients.ServerClientOptions{
+					URL:                 "https://api.superblocks.com",
+					Client:              mockHttpClient,
+					SuperblocksAgentKey: "test-agent-key",
+				}),
+			})
+
+			ctx := metadata.NewIncomingContext(
+				context.Background(),
+				metadata.New(test.metadata),
+			)
+
+			profileName := "production"
+			_, _ = fetcher.FetchIntegrations(ctx, &integrationv1.GetIntegrationsRequest{
+				Ids:     []string{"7f0d5df0-ddd0-48c3-87d4-03c9adb57b06"},
+				Profile: &commonv1.Profile{Name: &profileName},
+			}, test.useAgentKey)
+
+			mockHttpClient.AssertNumberOfCalls(t, "Do", 1)
+			req := mockHttpClient.Calls[0].Arguments[0].(*http.Request)
+
+			for key, expected := range test.expectedHeaders {
+				assert.Equal(t, expected, req.Header[key],
+					"HTTP header %q mismatch: server's checkJwt middleware uses Authorization to authenticate the user", key)
+			}
+		})
+	}
+}
+
 func TestFetchApi(t *testing.T) {
 	t.Parallel()
 

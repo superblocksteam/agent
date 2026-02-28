@@ -28,7 +28,6 @@ const (
 
 	HeaderAgentKey       = "x-superblocks-agent-key"
 	HeaderCorrelationId  = "x-superblocks-correlation-id"
-	HeaderForceAgentKey  = "x-superblocks-force-agent-key-hydration"
 	HeaderOrganizationId = "x-superblocks-organization-id"
 	HeaderSuperblocksJwt = "x-superblocks-authorization"
 

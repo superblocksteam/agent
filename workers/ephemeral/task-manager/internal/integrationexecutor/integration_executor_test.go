@@ -33,6 +33,13 @@ func makeTestJWT(orgID string) string {
 	return header + "." + payload + ".fakesig"
 }
 
+func makeWorkerJWTContext(superblocksJWT, authorizationJWT string) string {
+	return fmt.Sprintf("%s%s\n%s%s",
+		workerJWTContextSuperblocksPrefix, superblocksJWT,
+		workerJWTContextAuthorizationPrefix, authorizationJWT,
+	)
+}
+
 // mockFileContextProvider implements FileContextProvider for testing.
 type mockFileContextProvider struct {
 	contexts map[string]*redisstore.ExecutionFileContext
@@ -46,7 +53,7 @@ func (m *mockFileContextProvider) GetFileContext(executionID string) *redisstore
 type fakeOrchestratorServer struct {
 	apiv1.UnimplementedExecutorServiceServer
 
-	lastForceAgentKey string
+	lastAuthorization string
 	lastRequest       *apiv1.ExecuteRequest
 	lastJwtToken      string
 	response          *apiv1.AwaitResponse
@@ -56,13 +63,12 @@ type fakeOrchestratorServer struct {
 func (f *fakeOrchestratorServer) Await(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.AwaitResponse, error) {
 	f.lastRequest = req
 
-	// Extract JWT from incoming metadata.
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get("authorization"); len(vals) > 0 {
+			f.lastAuthorization = vals[0]
+		}
 		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
 			f.lastJwtToken = vals[0]
-		}
-		if vals := md.Get(constants.HeaderForceAgentKey); len(vals) > 0 {
-			f.lastForceAgentKey = vals[0]
 		}
 	}
 
@@ -202,7 +208,7 @@ func TestExecuteIntegration(t *testing.T) {
 				Profile:             profileTest,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT, Profile: profileFallback},
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT), Profile: profileFallback},
 			},
 			wantJwt:     "Bearer " + validJWT,
 			wantOrg:     testOrgID,
@@ -218,7 +224,7 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT, Profile: profileFallback},
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT), Profile: profileFallback},
 			},
 			wantJwt:     "Bearer " + validJWT,
 			wantOrg:     testOrgID,
@@ -282,7 +288,7 @@ func TestExecuteIntegration(t *testing.T) {
 				PluginId:      "postgres",
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: "not-a-jwt"},
+				"exec-1": {JwtToken: makeWorkerJWTContext("not-a-jwt", "not-a-jwt")},
 			},
 			wantCode: codes.PermissionDenied,
 		},
@@ -295,7 +301,7 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT},
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT)},
 			},
 			orchestratorErr: status.Error(codes.Internal, "something went wrong"),
 			wantError:       "rpc error: code = Internal desc = something went wrong",
@@ -309,7 +315,7 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: nil,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT},
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT)},
 			},
 			wantJwt:    "Bearer " + validJWT,
 			wantOrg:    testOrgID,
@@ -324,7 +330,7 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT},
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT)},
 			},
 			// Simulate a failed Postgres step: orchestrator returns errors and no output.
 			// Without the fix this would return output=nil and error="" which caused the
@@ -343,7 +349,7 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT},
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT)},
 			},
 			// Some plugins return errors with Name/Code but empty Message.
 			// Without the fix these would fall through to success path (nil Output, no Error).
@@ -361,7 +367,7 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT},
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT)},
 			},
 			orchestratorErrors: []*commonv1.Error{
 				{Code: commonv1.Code_CODE_INTEGRATION_NETWORK},
@@ -377,7 +383,7 @@ func TestExecuteIntegration(t *testing.T) {
 				ActionConfiguration: actionConfig,
 			},
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: validJWT},
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT)},
 			},
 			orchestratorErrors: []*commonv1.Error{
 				{},
@@ -439,9 +445,9 @@ func TestExecuteIntegration(t *testing.T) {
 			assert.Equal(t, "result-exec-id", resp.GetExecutionId())
 			assert.Equal(t, test.wantOutput.GetStructValue().AsMap(), resp.GetOutput().GetStructValue().AsMap())
 
-			// Verify the orchestrator received the JWT with Bearer prefix.
+			// Verify both authorization and x-superblocks-authorization carry the JWT.
+			assert.Equal(t, test.wantJwt, fake.lastAuthorization)
 			assert.Equal(t, test.wantJwt, fake.lastJwtToken)
-			assert.Equal(t, "true", fake.lastForceAgentKey)
 
 			// Verify the Await request uses an inline Definition.
 			def := fake.lastRequest.GetDefinition()
@@ -627,7 +633,7 @@ func TestExecuteIntegrationLazyClientCreation(t *testing.T) {
 		orchestratorAddress: orchestratorAddr,
 		fileContextProvider: &mockFileContextProvider{
 			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: lazyJWT},
+				"exec-1": {JwtToken: makeWorkerJWTContext(lazyJWT, lazyJWT)},
 			},
 		},
 	}
@@ -648,6 +654,7 @@ func TestExecuteIntegrationLazyClientCreation(t *testing.T) {
 	assert.NotNil(t, svc.orchestratorClient)
 	assert.NotNil(t, svc.orchestratorConn)
 
-	// JWT should have been forwarded with Bearer prefix.
+	// JWT should have been forwarded with Bearer prefix in both headers.
+	assert.Equal(t, "Bearer "+lazyJWT, fake.lastAuthorization)
 	assert.Equal(t, "Bearer "+lazyJWT, fake.lastJwtToken)
 }

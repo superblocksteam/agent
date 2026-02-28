@@ -26,6 +26,11 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+const (
+	workerJWTContextSuperblocksPrefix  = "sbjwt="
+	workerJWTContextAuthorizationPrefix = "authjwt="
+)
+
 // IntegrationExecutorService implements the SandboxIntegrationExecutorService
 // gRPC service. It proxies integration execution requests from the sandbox to
 // the orchestrator's Await endpoint using an inline Definition.
@@ -221,7 +226,12 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
 	}
 
-	orgID, err := extractOrgIDFromJWT(fileCtx.JwtToken)
+	superblocksToken, authorizationToken := parseWorkerJWTContext(fileCtx.JwtToken)
+	if superblocksToken == "" && authorizationToken == "" {
+		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
+	}
+
+	orgID, err := extractOrgIDFromJWT(superblocksToken)
 	if err != nil {
 		return nil, status.Errorf(codes.PermissionDenied, "could not extract org_id from JWT: %v", err)
 	}
@@ -249,12 +259,13 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Errorf(codes.InvalidArgument, "invalid step configuration: %v", err)
 	}
 
-	// Forward the JWT as outgoing gRPC metadata to the orchestrator.
-	// The stored token has the "Bearer " prefix stripped, but the orchestrator's
-	// JWT middleware expects it in "Bearer <token>" format.
+	// Forward both auth headers as outgoing gRPC metadata to the orchestrator.
+	// The server validates Authorization (Auth0 JWT) and uses
+	// x-superblocks-authorization for additional org/user context.
+	//
 	md := metadata.Pairs(
-		constants.HeaderSuperblocksJwt, "Bearer "+fileCtx.JwtToken,
-		constants.HeaderForceAgentKey, "true",
+		"authorization", "Bearer "+authorizationToken,
+		constants.HeaderSuperblocksJwt, "Bearer "+superblocksToken,
 	)
 	outCtx := metadata.NewOutgoingContext(ctx, md)
 
@@ -357,4 +368,29 @@ func extractOrgIDFromJWT(jwtToken string) (string, error) {
 	}
 
 	return claims.OrgID, nil
+}
+
+func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", ""
+	}
+
+	lines := strings.Split(raw, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, workerJWTContextSuperblocksPrefix) {
+			superblocksToken = strings.TrimSpace(strings.TrimPrefix(line, workerJWTContextSuperblocksPrefix))
+			continue
+		}
+		if strings.HasPrefix(line, workerJWTContextAuthorizationPrefix) {
+			authorizationToken = strings.TrimSpace(strings.TrimPrefix(line, workerJWTContextAuthorizationPrefix))
+		}
+	}
+
+	if superblocksToken != "" || authorizationToken != "" {
+		return superblocksToken, authorizationToken
+	}
+
+	return "", ""
 }
