@@ -400,12 +400,22 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 			def.Integrations = map[string]*structpb.Struct{}
 		}
 
+		fetchedConfigs := make(map[string]bool, len(resp.Data))
 		for _, integration := range resp.Data {
-			if integration == nil || len(integration.Configurations) == 0 {
-				logger.Warn("integration has no configurations", zap.String("id", integration.GetId()))
+			if integration == nil {
 				continue
 			}
+			if len(integration.Configurations) == 0 || integration.Configurations[0] == nil || integration.Configurations[0].GetConfiguration() == nil {
+				return nil, nil, fmt.Errorf("integration %q has no accessible configurations", integration.GetId())
+			}
 			def.Integrations[integration.Id] = integration.Configurations[0].Configuration
+			fetchedConfigs[integration.GetId()] = true
+		}
+
+		for _, integrationID := range integrationsToFetch {
+			if !fetchedConfigs[integrationID] {
+				return nil, nil, fmt.Errorf("integration %q configuration not found or inaccessible", integrationID)
+			}
 		}
 	}
 

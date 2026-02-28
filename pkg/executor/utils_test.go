@@ -1444,6 +1444,61 @@ func TestFetchDefinitionFromRequestWithValidation(t *testing.T) {
 	}
 }
 
+func TestFetchDefinitionFromRequestFailsWhenFetchedIntegrationHasNoConfigurations(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+	req := &apiv1.ExecuteRequest{
+		ViewMode: apiv1.ViewMode_VIEW_MODE_EDIT,
+		Profile: &commonv1.Profile{
+			Name: &profileName,
+		},
+		Request: &apiv1.ExecuteRequest_Definition{
+			Definition: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:   "api-id",
+						Name: "Test API",
+					},
+					Blocks: []*apiv1.Block{
+						{
+							Name: "Step1",
+							Config: &apiv1.Block_Step{
+								Step: &apiv1.Step{
+									Integration: "integration-1",
+								},
+							},
+						},
+					},
+				},
+				Integrations: map[string]*structpb.Struct{},
+			},
+		},
+	}
+
+	mockFetcher := fetchmocks.NewFetcher(t)
+	mockFetcher.On("ValidateProfile", mock.Anything, mock.Anything).Return(nil)
+	mockFetcher.On(
+		"FetchIntegrations",
+		mock.Anything,
+		mock.MatchedBy(func(fetchReq *integrationv1.GetIntegrationsRequest) bool {
+			return fetchReq.GetProfile().GetName() == profileName && len(fetchReq.GetIds()) == 1 && fetchReq.GetIds()[0] == "integration-1"
+		}),
+		false,
+	).Return(&integrationv1.GetIntegrationsResponse{
+		Data: []*integrationv1.Integration{
+			{
+				Id:             "integration-1",
+				Configurations: []*integrationv1.Configuration{},
+			},
+		},
+	}, nil)
+
+	_, _, err := fetchDefinitionFromRequest(context.Background(), req, mockFetcher, false, zap.NewNop())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "integration-1")
+}
+
 func TestFindParametersExpression(t *testing.T) {
 	t.Parallel()
 

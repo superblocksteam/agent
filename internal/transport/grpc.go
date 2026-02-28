@@ -127,6 +127,18 @@ func (s *server) getUseAgentKeyForHydration(ctx context.Context) bool {
 	return s.Flags.GetUseAgentKeyForHydration(orgId)
 }
 
+func shouldForceAgentKeyForHydration(ctx context.Context, req *apiv1.ExecuteRequest) bool {
+	if req.GetDefinition() == nil {
+		return false
+	}
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return false
+	}
+	values := md.Get(constants.HeaderForceAgentKey)
+	return len(values) > 0 && strings.EqualFold(values[0], "true")
+}
+
 func (s *server) Workflow(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.WorkflowResponse, error) {
 	if fetch := req.GetFetch(); fetch != nil {
 		if fetch.GetTest() {
@@ -732,6 +744,11 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	if req.GetFetchCode() != nil {
 		useAgentKey = true
 	}
+	// Proxied inline integration executions should use the same hydration path
+	// as code-mode so integrations visible to the caller remain executable.
+	if shouldForceAgentKeyForHydration(ctx, req) {
+		useAgentKey = true
+	}
 
 	var result *apiv1.Definition
 	var rawResult *structpb.Struct
@@ -874,7 +891,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		RootStartTime:                time.Now(),
 		SecretManager:                s.SecretManager,
 		GarbageCollect:               true,
-		UseAgentKey:                  s.getUseAgentKeyForHydration(ctx),
+		UseAgentKey:                  useAgentKey,
 		Stores:                       result.GetStores(),
 		Secrets:                      s.Secrets,
 		Signature:                    s.Signature,

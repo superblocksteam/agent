@@ -1307,6 +1307,36 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 	}
 }
 
+func TestShouldForceAgentKeyForHydration(t *testing.T) {
+	t.Parallel()
+
+	defReq := &apiv1.ExecuteRequest{
+		Request: &apiv1.ExecuteRequest_Definition{
+			Definition: &apiv1.Definition{},
+		},
+	}
+	fetchCodeReq := &apiv1.ExecuteRequest{
+		Request: &apiv1.ExecuteRequest_FetchCode_{
+			FetchCode: &apiv1.ExecuteRequest_FetchCode{Id: "app-1"},
+		},
+	}
+
+	ctxWithHeader := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs(constants.HeaderForceAgentKey, "true"),
+	)
+	ctxWithoutHeader := context.Background()
+	ctxFalseHeader := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs(constants.HeaderForceAgentKey, "false"),
+	)
+
+	assert.True(t, shouldForceAgentKeyForHydration(ctxWithHeader, defReq))
+	assert.False(t, shouldForceAgentKeyForHydration(ctxWithoutHeader, defReq))
+	assert.False(t, shouldForceAgentKeyForHydration(ctxFalseHeader, defReq))
+	assert.False(t, shouldForceAgentKeyForHydration(ctxWithHeader, fetchCodeReq))
+}
+
 func TestExecuteV3ForwardsFilesToCodeModeWorker(t *testing.T) {
 	t.Parallel()
 	defer metrics.SetupForTesting()()

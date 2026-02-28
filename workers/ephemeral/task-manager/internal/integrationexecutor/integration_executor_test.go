@@ -46,10 +46,11 @@ func (m *mockFileContextProvider) GetFileContext(executionID string) *redisstore
 type fakeOrchestratorServer struct {
 	apiv1.UnimplementedExecutorServiceServer
 
-	lastRequest  *apiv1.ExecuteRequest
-	lastJwtToken string
-	response     *apiv1.AwaitResponse
-	err          error
+	lastForceAgentKey string
+	lastRequest       *apiv1.ExecuteRequest
+	lastJwtToken      string
+	response          *apiv1.AwaitResponse
+	err               error
 }
 
 func (f *fakeOrchestratorServer) Await(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.AwaitResponse, error) {
@@ -59,6 +60,9 @@ func (f *fakeOrchestratorServer) Await(ctx context.Context, req *apiv1.ExecuteRe
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
 			f.lastJwtToken = vals[0]
+		}
+		if vals := md.Get(constants.HeaderForceAgentKey); len(vals) > 0 {
+			f.lastForceAgentKey = vals[0]
 		}
 	}
 
@@ -437,6 +441,7 @@ func TestExecuteIntegration(t *testing.T) {
 
 			// Verify the orchestrator received the JWT with Bearer prefix.
 			assert.Equal(t, test.wantJwt, fake.lastJwtToken)
+			assert.Equal(t, "true", fake.lastForceAgentKey)
 
 			// Verify the Await request uses an inline Definition.
 			def := fake.lastRequest.GetDefinition()

@@ -47,7 +47,11 @@ function fetchFromController(
             .filter((str) => str.length > 0)
             .map((str) => {
               const json = JSON.parse(str);
-              return Buffer.from(json.result.data, 'base64');
+              const data = json.result?.data;
+              if (data == null) {
+                throw new Error('fetchFile response missing data');
+              }
+              return Buffer.from(data, 'base64');
             });
           // Cast needed: TS 5.6+ made Uint8Array generic, causing type incompatibility with Buffer
           callback(null, Buffer.concat(processed as unknown as Uint8Array[]));

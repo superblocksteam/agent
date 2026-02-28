@@ -121,6 +121,10 @@ export class Shim<T extends BasePlugin> implements Plugin {
   }
 
   private convertDatasourceConfig(datasourceConfigurationOriginal): DatasourceConfiguration {
+    if (datasourceConfigurationOriginal == null || typeof datasourceConfigurationOriginal !== 'object') {
+      return datasourceConfigurationOriginal;
+    }
+
     try {
       if (Object.keys(PLUGIN_ID_TO_PROTO_DATASOURCE_CONFIGURATION_OBJECT_CALLABLE).includes(this.name)) {
         const datasourceConfiguration =

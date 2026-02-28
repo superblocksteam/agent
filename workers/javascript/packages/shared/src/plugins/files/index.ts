@@ -30,7 +30,11 @@ export async function getFileStream(context: ExecutionContext, location: string)
           .filter((str) => str.length > 0)
           .map((str) => {
             const json = JSON.parse(str);
-            return Buffer.from(json.result.data, 'base64');
+            const data = json.result?.data;
+            if (data == null) {
+              throw new Error('fetchFile response missing data');
+            }
+            return Buffer.from(data, 'base64');
           });
         resolve(Readable.from(Buffer.concat(chunks)));
       });

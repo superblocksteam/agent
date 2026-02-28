@@ -252,7 +252,10 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 	// Forward the JWT as outgoing gRPC metadata to the orchestrator.
 	// The stored token has the "Bearer " prefix stripped, but the orchestrator's
 	// JWT middleware expects it in "Bearer <token>" format.
-	md := metadata.Pairs(constants.HeaderSuperblocksJwt, "Bearer "+fileCtx.JwtToken)
+	md := metadata.Pairs(
+		constants.HeaderSuperblocksJwt, "Bearer "+fileCtx.JwtToken,
+		constants.HeaderForceAgentKey, "true",
+	)
 	outCtx := metadata.NewOutgoingContext(ctx, md)
 
 	resp, err := client.Await(outCtx, &apiv1.ExecuteRequest{

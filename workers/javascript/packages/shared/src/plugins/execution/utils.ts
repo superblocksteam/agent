@@ -183,7 +183,11 @@ function fetchFromController(
             .filter((str) => str.length > 0)
             .map((str) => {
               const json = JSON.parse(str);
-              return Buffer.from(json.result.data, 'base64');
+              const data = json.result?.data;
+              if (data == null) {
+                throw new Error('fetchFile response missing data');
+              }
+              return Buffer.from(data, 'base64');
             });
           callback(null, Buffer.concat(processed as unknown as readonly Uint8Array[]));
         } else {
@@ -486,7 +490,11 @@ module.exports = async function() {
           .filter((str) => str.length > 0)
           .map((str) => {
             const json = JSON.parse(str);
-            return Buffer.from(json.result.data, 'base64');
+            const data = json.result && json.result.data;
+            if (data == null) {
+              throw new Error('fetchFile response missing data');
+            }
+            return Buffer.from(data, 'base64');
           });
           callback(null, Buffer.concat(processed))
         } else {

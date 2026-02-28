@@ -18,6 +18,7 @@ async function loadSdkApi(): Promise<{
   executeApi: (...args: unknown[]) => Promise<{ success: boolean; output?: unknown; error?: { code: string; message: string; details?: unknown } }>;
   api: (...args: unknown[]) => unknown;
   postgres: (id: string) => { pluginId: string; id: string };
+  salesforce: (id: string) => { pluginId: string; id: string };
   z: { object: (...args: unknown[]) => unknown; string: () => unknown; number: () => unknown };
 }> {
   return await import('@superblocksteam/sdk-api') as never;
@@ -126,6 +127,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
   let executeApi: (...args: unknown[]) => Promise<unknown>;
   let api: (...args: unknown[]) => unknown;
   let postgres: (id: string) => { pluginId: string; id: string };
+  let salesforce: (id: string) => { pluginId: string; id: string };
   let z: { object: (...args: unknown[]) => unknown; string: () => { uuid: () => unknown }; number: () => { min: (n: number) => unknown } };
 
   beforeAll(async () => {
@@ -133,6 +135,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
     executeApi = sdkApi.executeApi;
     api = sdkApi.api;
     postgres = sdkApi.postgres;
+    salesforce = sdkApi.salesforce;
     z = sdkApi.z as never;
   });
 
@@ -388,6 +391,55 @@ describe('sdk-api integration tests (real executeApi)', () => {
         pluginId: 'postgres',
         actionConfiguration: expect.objectContaining({ body: 'SELECT 1' })
       });
+    });
+
+    it('resolves pluginId from real api() + salesforce() declarations', async () => {
+      const mockIntegrationExecutor = jest.fn().mockResolvedValue([{ Id: '001xx000003NGsY' }]);
+
+      const compiledApi = api({
+        name: 'test-salesforce-pluginid',
+        input: z.object({}),
+        output: z.object({}),
+        integrations: { sf: salesforce('sf-uuid-real') },
+        async run(ctx: { integrations: { sf: { query: (soql: string, schema: unknown) => Promise<unknown> } } }) {
+          const schema = { safeParse: (v: unknown) => ({ success: true as const, data: v }) };
+          return await ctx.integrations.sf.query('SELECT Id FROM Account LIMIT 1', schema);
+        }
+      }) as { integrations: Array<{ key: string; pluginId: string; id: string }> };
+
+      expect(compiledApi.integrations).toEqual([
+        { key: 'sf', pluginId: 'salesforce', id: 'sf-uuid-real' }
+      ]);
+
+      const integrationsJSON = JSON.stringify(compiledApi.integrations);
+      const bundle = `
+        module.exports = { default: {
+          name: 'test-salesforce-pluginid',
+          inputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          outputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          integrations: ${integrationsJSON},
+          run: async function(ctx) {
+            var schema = { safeParse: function(v) { return { success: true, data: v }; } };
+            return await ctx.integrations.sf.query('SELECT Id FROM Account LIMIT 1', schema);
+          }
+        }};`;
+
+      const result = await evaluateWrapper(
+        buildWrapper(bundle),
+        {
+          __sb_execute: executeApi,
+          __sb_integrationExecutor: mockIntegrationExecutor
+        }
+      );
+
+      expect(result).toEqual([{ Id: '001xx000003NGsY' }]);
+      expect(mockIntegrationExecutor).toHaveBeenCalledWith(
+        expect.objectContaining({
+          integrationId: 'sf-uuid-real',
+          pluginId: 'salesforce'
+        })
+      );
+      expect(mockIntegrationExecutor.mock.calls[0][0].actionConfiguration).toBeDefined();
     });
 
     it('propagates integration executor errors as thrown exceptions', async () => {
