@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	workerJWTContextSuperblocksPrefix  = "sbjwt="
+	workerJWTContextSuperblocksPrefix   = "sbjwt="
 	workerJWTContextAuthorizationPrefix = "authjwt="
 )
 
