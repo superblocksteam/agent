@@ -69,6 +69,14 @@ type Options struct {
 	// Ephemeral mode: task-manager processes one job and exits
 	Ephemeral bool
 
+	// Zone is the availability zone of the task-manager pod's node.
+	// When set, sandbox pods are constrained to this zone via nodeSelector.
+	Zone string
+
+	// OwnerPodLabels are labels from the task-manager pod, used to build
+	// pod affinity rules so sandboxes prefer the same node as their parent.
+	OwnerPodLabels map[string]string
+
 	// Resource requests and limits for sandbox containers
 	ResourceRequestsCPU    string
 	ResourceRequestsMemory string
@@ -216,6 +224,20 @@ func WithIntegrationExecutorGrpcPort(port int) Option {
 func WithEphemeral(ephemeral bool) Option {
 	return func(o *Options) {
 		o.Ephemeral = ephemeral
+	}
+}
+
+// WithZone sets the availability zone for sandbox pod scheduling
+func WithZone(zone string) Option {
+	return func(o *Options) {
+		o.Zone = zone
+	}
+}
+
+// WithOwnerPodLabels sets labels from the parent task-manager pod
+func WithOwnerPodLabels(labels map[string]string) Option {
+	return func(o *Options) {
+		o.OwnerPodLabels = labels
 	}
 }
 

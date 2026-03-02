@@ -26,6 +26,8 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+const zoneLabel = "topology.kubernetes.io/zone"
+
 // K8sJobManager manages the lifecycle of sandbox Jobs
 type K8sJobManager struct {
 	clientset               kubernetes.Interface
@@ -55,6 +57,10 @@ type K8sJobManager struct {
 	ephemeral bool
 	// Resource requirements for sandbox containers
 	resources corev1.ResourceRequirements
+	// Zone of the task-manager's node; constrains sandbox pods to same zone
+	zone string
+	// Labels from the parent task-manager pod for pod affinity matching
+	ownerPodLabels map[string]string
 }
 
 // NewSandboxJobManager creates a new SandboxJobManager
@@ -81,6 +87,8 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		integrationExecutorGrpcPort: opts.IntegrationExecutorGrpcPort,
 		ephemeral:                   opts.Ephemeral,
 		resources:                   opts.BuildResourceRequirements(),
+		zone:                        opts.Zone,
+		ownerPodLabels:              opts.OwnerPodLabels,
 	}
 }
 
@@ -455,6 +463,8 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		job.Spec.Template.Spec.NodeSelector = m.nodeSelector
 	}
 
+	job.Spec.Template.Spec.Affinity = m.buildAffinity()
+
 	// Set tolerations if specified
 	if len(m.tolerations) > 0 {
 		job.Spec.Template.Spec.Tolerations = m.tolerations
@@ -581,6 +591,64 @@ func (m *K8sJobManager) buildImagePullSecrets() []corev1.LocalObjectReference {
 		refs[i] = corev1.LocalObjectReference{Name: name}
 	}
 	return refs
+}
+
+// buildAffinity creates scheduling preferences for sandbox pods:
+//   - weight 100 node affinity: prefer the parent task-manager's AZ
+//   - weight  50 pod affinity:  prefer the same node as a task-manager
+//
+// Both are soft constraints so scheduling always succeeds.
+func (m *K8sJobManager) buildAffinity() *corev1.Affinity {
+	hasZone := m.zone != ""
+	hasLabels := len(m.ownerPodLabels) > 0
+
+	if !hasZone && !hasLabels {
+		return nil
+	}
+
+	affinity := &corev1.Affinity{}
+
+	if hasZone {
+		affinity.NodeAffinity = &corev1.NodeAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+				{
+					Weight: 100,
+					Preference: corev1.NodeSelectorTerm{
+						MatchExpressions: []corev1.NodeSelectorRequirement{
+							{
+								Key:      zoneLabel,
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{m.zone},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	if hasLabels {
+		matchLabels := make(map[string]string, len(m.ownerPodLabels))
+		for k, v := range m.ownerPodLabels {
+			matchLabels[k] = v
+		}
+
+		affinity.PodAffinity = &corev1.PodAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 50,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: matchLabels,
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			},
+		}
+	}
+
+	return affinity
 }
 
 // buildOwnerReferences creates owner references for garbage collection.

@@ -23,6 +23,7 @@ func TestNewSandboxJobManager(t *testing.T) {
 		tolerations := []corev1.Toleration{{Key: "sandbox", Operator: corev1.TolerationOpExists}}
 		nodeSelector := map[string]string{"node-type": "sandbox"}
 		imagePullSecrets := []string{"registry-creds"}
+		ownerPodLabels := map[string]string{"role": "task-manager", "fleet": "python-ba"}
 
 		opts := NewOptions(
 			WithNamespace("sandbox-ns"),
@@ -44,6 +45,8 @@ func TestNewSandboxJobManager(t *testing.T) {
 			WithLanguage("python"),
 			WithIntegrationExecutorGrpcPort(50052),
 			WithEphemeral(true),
+			WithZone("us-west-2a"),
+			WithOwnerPodLabels(ownerPodLabels),
 		)
 
 		m := NewSandboxJobManager(opts)
@@ -67,6 +70,8 @@ func TestNewSandboxJobManager(t *testing.T) {
 		assert.Equal(t, "python", m.language)
 		assert.Equal(t, 50052, m.integrationExecutorGrpcPort)
 		assert.True(t, m.ephemeral)
+		assert.Equal(t, "us-west-2a", m.zone)
+		assert.Equal(t, ownerPodLabels, m.ownerPodLabels)
 	})
 
 	t.Run("uses default option values", func(t *testing.T) {
@@ -180,6 +185,179 @@ func TestBuildJobSpec(t *testing.T) {
 			assert.Equal(t, fmt.Sprintf("%t", test.ephemeral), job.Spec.Template.Labels["ephemeral"])
 		})
 	}
+}
+
+func TestBuildJobSpecZonePreference(t *testing.T) {
+	for _, test := range []struct {
+		name               string
+		zone               string
+		expectNodeAffinity bool
+	}{
+		{
+			name:               "zone set adds preferred node affinity",
+			zone:               "us-west-2a",
+			expectNodeAffinity: true,
+		},
+		{
+			name:               "empty zone omits node affinity",
+			zone:               "",
+			expectNodeAffinity: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			m := &K8sJobManager{
+				namespace:               "test-ns",
+				image:                   "sandbox:latest",
+				port:                    50051,
+				podIP:                   "10.0.0.1",
+				variableStoreGrpcPort:   50050,
+				variableStoreHttpPort:   8080,
+				streamingProxyGrpcPort:  50053,
+				ttlSecondsAfterFinished: 60,
+				language:                "javascript",
+				zone:                    test.zone,
+				logger:                  zap.NewNop(),
+			}
+
+			job := m.buildJobSpec("sandbox-zone-test", "zone-test-1", "javascript")
+			affinity := job.Spec.Template.Spec.Affinity
+
+			if test.expectNodeAffinity {
+				require.NotNil(t, affinity)
+				require.NotNil(t, affinity.NodeAffinity)
+				preferred := affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+				require.Len(t, preferred, 1)
+				assert.Equal(t, int32(100), preferred[0].Weight)
+				exprs := preferred[0].Preference.MatchExpressions
+				require.Len(t, exprs, 1)
+				assert.Equal(t, "topology.kubernetes.io/zone", exprs[0].Key)
+				assert.Equal(t, corev1.NodeSelectorOpIn, exprs[0].Operator)
+				assert.Equal(t, []string{test.zone}, exprs[0].Values)
+			} else {
+				assert.Nil(t, affinity)
+			}
+
+			// Zone should NOT appear in nodeSelector
+			assert.Empty(t, job.Spec.Template.Spec.NodeSelector)
+		})
+	}
+}
+
+func TestBuildJobSpecZoneDoesNotMutateNodeSelector(t *testing.T) {
+	nodeSelector := map[string]string{"superblocks.com/node-type": "sandbox"}
+	m := &K8sJobManager{
+		namespace:               "test-ns",
+		image:                   "sandbox:latest",
+		port:                    50051,
+		podIP:                   "10.0.0.1",
+		variableStoreGrpcPort:   50050,
+		variableStoreHttpPort:   8080,
+		streamingProxyGrpcPort:  50053,
+		ttlSecondsAfterFinished: 60,
+		language:                "javascript",
+		zone:                    "us-east-1b",
+		nodeSelector:            nodeSelector,
+		logger:                  zap.NewNop(),
+	}
+
+	job := m.buildJobSpec("sandbox-zone-test", "zone-test-2", "javascript")
+
+	assert.Equal(t, nodeSelector, job.Spec.Template.Spec.NodeSelector,
+		"zone should be in node affinity, not nodeSelector")
+	assert.NotContains(t, job.Spec.Template.Spec.NodeSelector, "topology.kubernetes.io/zone")
+	require.NotNil(t, job.Spec.Template.Spec.Affinity)
+	require.NotNil(t, job.Spec.Template.Spec.Affinity.NodeAffinity)
+}
+
+func TestBuildJobSpecPodAffinity(t *testing.T) {
+	for _, test := range []struct {
+		name           string
+		ownerPodLabels map[string]string
+		expectAffinity bool
+	}{
+		{
+			name:           "owner labels set adds pod affinity",
+			ownerPodLabels: map[string]string{"role": "task-manager", "fleet": "python-ba"},
+			expectAffinity: true,
+		},
+		{
+			name:           "nil owner labels omits affinity",
+			ownerPodLabels: nil,
+			expectAffinity: false,
+		},
+		{
+			name:           "empty owner labels omits affinity",
+			ownerPodLabels: map[string]string{},
+			expectAffinity: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			m := &K8sJobManager{
+				namespace:               "test-ns",
+				image:                   "sandbox:latest",
+				port:                    50051,
+				podIP:                   "10.0.0.1",
+				variableStoreGrpcPort:   50050,
+				variableStoreHttpPort:   8080,
+				streamingProxyGrpcPort:  50053,
+				ttlSecondsAfterFinished: 60,
+				language:                "javascript",
+				ownerPodLabels:          test.ownerPodLabels,
+				logger:                  zap.NewNop(),
+			}
+
+			job := m.buildJobSpec("sandbox-affinity-test", "affinity-test-1", "javascript")
+			affinity := job.Spec.Template.Spec.Affinity
+
+			if test.expectAffinity {
+				require.NotNil(t, affinity)
+				require.NotNil(t, affinity.PodAffinity)
+				preferred := affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+				require.Len(t, preferred, 1)
+				assert.Equal(t, int32(50), preferred[0].Weight)
+				assert.Equal(t, "kubernetes.io/hostname", preferred[0].PodAffinityTerm.TopologyKey)
+				assert.Equal(t, test.ownerPodLabels, preferred[0].PodAffinityTerm.LabelSelector.MatchLabels)
+			} else {
+				assert.Nil(t, affinity)
+			}
+		})
+	}
+}
+
+func TestBuildJobSpecCombinedAffinity(t *testing.T) {
+	m := &K8sJobManager{
+		namespace:               "test-ns",
+		image:                   "sandbox:latest",
+		port:                    50051,
+		podIP:                   "10.0.0.1",
+		variableStoreGrpcPort:   50050,
+		variableStoreHttpPort:   8080,
+		streamingProxyGrpcPort:  50053,
+		ttlSecondsAfterFinished: 60,
+		language:                "javascript",
+		zone:                    "us-west-2a",
+		ownerPodLabels:          map[string]string{"role": "task-manager"},
+		logger:                  zap.NewNop(),
+	}
+
+	job := m.buildJobSpec("sandbox-combined", "combined-1", "javascript")
+	affinity := job.Spec.Template.Spec.Affinity
+	require.NotNil(t, affinity)
+
+	// Zone: preferred node affinity, weight 100
+	require.NotNil(t, affinity.NodeAffinity)
+	nodePreferred := affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+	require.Len(t, nodePreferred, 1)
+	assert.Equal(t, int32(100), nodePreferred[0].Weight)
+	assert.Equal(t, "topology.kubernetes.io/zone", nodePreferred[0].Preference.MatchExpressions[0].Key)
+	assert.Equal(t, []string{"us-west-2a"}, nodePreferred[0].Preference.MatchExpressions[0].Values)
+
+	// Same node: preferred pod affinity, weight 50
+	require.NotNil(t, affinity.PodAffinity)
+	podPreferred := affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+	require.Len(t, podPreferred, 1)
+	assert.Equal(t, int32(50), podPreferred[0].Weight)
+	assert.Equal(t, "kubernetes.io/hostname", podPreferred[0].PodAffinityTerm.TopologyKey)
 }
 
 func TestWatchSandboxPod(t *testing.T) {

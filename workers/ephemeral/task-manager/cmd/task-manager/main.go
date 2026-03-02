@@ -112,6 +112,7 @@ func init() {
 	pflag.StringSlice("sandbox.imagePullSecrets", []string{}, "Image pull secret names for sandbox pods (comma-separated).")
 	pflag.StringToString("sandbox.nodeSelector", map[string]string{}, "Node selector for sandbox pods (e.g., 'key=value,key2=value2').")
 	pflag.StringArray("sandbox.toleration", []string{}, "Toleration for sandbox pods (format: 'key=x,operator=y,value=z,effect=w'). Can be specified multiple times for multiple tolerations.")
+	pflag.String("sandbox.zone", "", "Availability zone for sandbox pods. Auto-discovered from node if NODE_NAME is set and this is empty.")
 
 	// Sandbox resource requests/limits
 	pflag.String("sandbox.resources.requests.cpu", "", "CPU request for sandbox containers (e.g., '100m').")
@@ -395,6 +396,28 @@ func main() {
 
 		nodeSelector := viper.GetStringMapString("sandbox.nodeSelector")
 
+		// Discover zone: explicit flag > auto-discovery from node
+		sandboxZone := viper.GetString("sandbox.zone")
+		if sandboxZone == "" {
+			if nodeName := os.Getenv("NODE_NAME"); nodeName != "" {
+				if z, err := k8sjobmanager.GetNodeZone(context.Background(), k8sClient, nodeName); err != nil {
+					logger.Warn("could not discover node zone, sandbox zone constraint will be skipped", zap.Error(err))
+				} else if z != "" {
+					sandboxZone = z
+					logger.Info("discovered task-manager zone from node", zap.String("zone", sandboxZone), zap.String("node", nodeName))
+				}
+			}
+		}
+
+		// Build owner pod labels for pod affinity matching.
+		// These must match the labels on the task-manager pod template in the ScaledJob.
+		ownerPodLabels := map[string]string{
+			"role": "task-manager",
+		}
+		if fleetName := os.Getenv("FLEET_NAME"); fleetName != "" {
+			ownerPodLabels["fleet"] = fleetName
+		}
+
 		// Parse tolerations from string array (format: "key=x,operator=y,value=z,effect=w")
 		var tolerations []corev1.Toleration
 		for _, t := range viper.GetStringSlice("sandbox.toleration") {
@@ -445,6 +468,8 @@ func main() {
 			k8sjobmanager.WithResourceRequestsMemory(viper.GetString("sandbox.resources.requests.memory")),
 			k8sjobmanager.WithResourceLimitsCPU(viper.GetString("sandbox.resources.limits.cpu")),
 			k8sjobmanager.WithResourceLimitsMemory(viper.GetString("sandbox.resources.limits.memory")),
+			k8sjobmanager.WithZone(sandboxZone),
+			k8sjobmanager.WithOwnerPodLabels(ownerPodLabels),
 		}
 
 		if viper.GetBool("integration.executor.enabled") {

@@ -61,8 +61,10 @@ spec:
       metadata:
         labels:
           {{- include "sandbox.worker.labels" $v | nindent 10 }}
-          role: task-manager
+          ephemeral: {{ ($v.ephemeral | default $.Values.worker.ephemeral | default false) | quote }}
+          fleet: {{ $k }}
           language: {{ $language }}
+          role: task-manager
         {{- with $podAnnotations }}
         annotations:
           {{- toYaml . | nindent 10 }}
@@ -289,6 +291,11 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.uid
+          # Node name for zone discovery (sandbox pod co-location)
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
           {{- if $.Values.queue.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
             valueFrom:

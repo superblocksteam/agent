@@ -49,3 +49,30 @@ subjects:
   - kind: ServiceAccount
     name: {{ printf "%s-task-manager" $fullname | trunc 63 | trimSuffix "-" }}
     namespace: {{ .Release.Namespace }}
+---
+# ClusterRole for reading node labels (zone discovery for sandbox co-location)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ printf "%s-task-manager-node-reader" $fullname | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ printf "%s-task-manager-node-reader" $fullname | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ printf "%s-task-manager-node-reader" $fullname | trunc 63 | trimSuffix "-" }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ printf "%s-task-manager" $fullname | trunc 63 | trimSuffix "-" }}
+    namespace: {{ .Release.Namespace }}

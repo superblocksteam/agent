@@ -1,8 +1,10 @@
 package k8sjobmanager
 
 import (
+	"context"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -21,4 +23,15 @@ func NewInClusterClient() (kubernetes.Interface, error) {
 	}
 
 	return clientset, nil
+}
+
+// GetNodeZone looks up the availability zone of the given node.
+// Returns empty string if the node has no zone label.
+func GetNodeZone(ctx context.Context, clientset kubernetes.Interface, nodeName string) (string, error) {
+	node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get node %s: %w", nodeName, err)
+	}
+
+	return node.Labels[zoneLabel], nil
 }
