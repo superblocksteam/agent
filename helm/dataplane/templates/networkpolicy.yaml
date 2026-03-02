@@ -63,7 +63,14 @@ spec:
           - 172.16.0.0/12
           - 192.168.0.0/16
 
-    # Deny everything else (no internet access for task-manager)
+    # Allow HTTPS egress (trace export, JWKS for integration executor auth)
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 443
+
+    # Deny everything else
     - action: Deny
 
 ---
