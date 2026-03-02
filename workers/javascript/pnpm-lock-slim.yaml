@@ -1689,8 +1689,8 @@ importers:
         specifier: 2.29.4
         version: 2.29.4
       vm2:
-        specifier: ^3.10.4
-        version: 3.10.4
+        specifier: ^3.10.5
+        version: 3.10.5
       xmlbuilder2:
         specifier: 3.0.2
         version: 3.0.2
@@ -3635,8 +3635,8 @@ importers:
         specifier: 15.1.3
         version: 15.1.3
       vm2:
-        specifier: ^3.10.4
-        version: 3.10.4
+        specifier: ^3.10.5
+        version: 3.10.5
     devDependencies:
       '@jest/globals':
         specifier: 29.7.0
@@ -3816,8 +3816,8 @@ importers:
         specifier: 8.3.2
         version: 8.3.2
       vm2:
-        specifier: 3.10.0
-        version: 3.10.0
+        specifier: 3.10.5
+        version: 3.10.5
       whatwg-mimetype:
         specifier: ^3.0.0
         version: 3.0.0
@@ -10287,13 +10287,8 @@ packages:
       jsdom:
         optional: true
 
-  vm2@3.10.0:
-    resolution: {integrity: sha512-3ggF4Bs0cw4M7Rxn19/Cv3nJi04xrgHwt4uLto+zkcZocaKwP/nKP9wPx6ggN2X0DSXxOOIc63BV1jvES19wXQ==}
-    engines: {node: '>=6.0'}
-    hasBin: true
-
-  vm2@3.10.4:
-    resolution: {integrity: sha512-Gl6r7MN3mkawGurFdp467yDJQ7HdragK2QVVWFbOCd3LPJXJLE2xZFwLCNhp04MTkHruPqLIOs3pYbJQJw/1aA==}
+  vm2@3.10.5:
+    resolution: {integrity: sha512-3P/2QDccVFBcujfCOeP8vVNuGfuBJHEuvGR8eMmI10p/iwLL2UwF5PDaNaoOS2pRGQEDmJRyeEcc8kmm2Z59RA==}
     engines: {node: '>=6.0'}
     hasBin: true
 
@@ -18674,12 +18669,7 @@ snapshots:
       - supports-color
       - terser
 
-  vm2@3.10.0:
-    dependencies:
-      acorn: 8.15.0
-      acorn-walk: 8.3.4
-
-  vm2@3.10.4:
+  vm2@3.10.5:
     dependencies:
       acorn: 8.15.0
       acorn-walk: 8.3.4
