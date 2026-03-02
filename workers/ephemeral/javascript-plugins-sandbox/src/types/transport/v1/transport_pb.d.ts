@@ -358,6 +358,8 @@ export namespace Request {
                 clearProfile(): void;
                 getProfile(): common_v1_common_pb.Profile | undefined;
                 setProfile(value?: common_v1_common_pb.Profile): Props;
+                getIntegrationsCallbackUrl(): string;
+                setIntegrationsCallbackUrl(value: string): Props;
 
                 serializeBinary(): Uint8Array;
                 toObject(includeInstance?: boolean): Props.AsObject;
@@ -387,6 +389,7 @@ export namespace Request {
                     useWasmBindingsSandbox: boolean,
                     jwtToken: string,
                     profile?: common_v1_common_pb.Profile.AsObject,
+                    integrationsCallbackUrl: string,
                 }
 
 

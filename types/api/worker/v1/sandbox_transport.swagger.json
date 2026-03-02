@@ -125,6 +125,10 @@
         "profile": {
           "$ref": "#/definitions/v1Profile",
           "description": "The integration profile used for this execution. Forwarded to the\ntask-manager as a fallback when the sandbox doesn't specify a profile."
+        },
+        "integrationsCallbackUrl": {
+          "type": "string",
+          "description": "Optional per-execution URL for integration callbacks. Used by the\ntask-manager integration executor to proxy integration calls."
         }
       }
     },

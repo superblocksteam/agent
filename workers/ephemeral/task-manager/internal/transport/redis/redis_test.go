@@ -472,6 +472,33 @@ func TestExecutionContextLifecycleInitializesZeroValueState(t *testing.T) {
 	}
 }
 
+func TestSetupExecutionContextStoresIntegrationsCallbackUrl(t *testing.T) {
+	provider := newTrackingExecutionContextProvider()
+	transport := &redisTransport{
+		fileContextProvider:  provider,
+		executionContextLock: &sync.Mutex{},
+		executionContextRefs: map[string]int{},
+		agentKey:             "agent-key",
+	}
+
+	props := &transportv1.Request_Data_Data_Props{
+		ExecutionId:             "exec-1",
+		FileServerUrl:           "http://files",
+		JwtToken:                "jwt",
+		IntegrationsCallbackUrl: "orchestrator-pr.internal:9000",
+	}
+
+	transport.setupExecutionContext("exec-1", props)
+
+	fileCtx := provider.GetFileContext("exec-1")
+	if fileCtx == nil {
+		t.Fatal("expected file context for execution")
+	}
+	if fileCtx.IntegrationsCallbackUrl != "orchestrator-pr.internal:9000" {
+		t.Fatalf("IntegrationsCallbackUrl = %q, want %q", fileCtx.IntegrationsCallbackUrl, "orchestrator-pr.internal:9000")
+	}
+}
+
 func TestExecutionContextLifecycleNoCleanupInterleavingWithNewSetup(t *testing.T) {
 	provider := newBlockingCleanupExecutionContextProvider()
 	transport := &redisTransport{

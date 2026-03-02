@@ -1396,6 +1396,61 @@ func TestExecuteV3ForwardsFilesToCodeModeWorker(t *testing.T) {
 	mockWorker.AssertExpectations(t)
 }
 
+func TestExecuteV3PropagatesIntegrationsCallbackUrlToWorkerProps(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	const callbackAddress = "http://orchestrator-pr.internal:9000"
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+	memStore := store.Memory()
+
+	outputKey := "output-key-v3-integrations-callback-url"
+	require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{"ok":true}}`}))
+
+	var capturedIntegrationsCallbackUrl string
+	mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.MatchedBy(func(data *transportv1.Request_Data_Data) bool {
+		capturedIntegrationsCallbackUrl = data.GetProps().GetIntegrationsCallbackUrl()
+		return true
+	}), mock.Anything, mock.Anything).Return(nil, outputKey, nil)
+
+	fetcher.On(
+		"FetchApiCode",
+		mock.Anything,
+		"app-with-callback",
+		"",
+		"",
+		"",
+		mock.Anything,
+	).Return(&fetch.ApiCodeBundle{
+		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+	}, nil)
+
+	s := NewServer(&Config{
+		Logger:                  zap.NewNop(),
+		Store:                   memStore,
+		Worker:                  mockWorker,
+		Fetcher:                 fetcher,
+		SecretManager:           secrets.NewSecretManager(),
+		IntegrationsCallbackUrl: callbackAddress,
+	})
+
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "app-with-callback",
+	}
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+
+	_, err := s.ExecuteV3(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, callbackAddress, capturedIntegrationsCallbackUrl)
+
+	fetcher.AssertExpectations(t)
+	mockWorker.AssertExpectations(t)
+}
+
 func TestExecuteV3RejectsMissingReferencedFilePayload(t *testing.T) {
 	t.Parallel()
 	defer metrics.SetupForTesting()()

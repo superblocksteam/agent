@@ -236,6 +236,118 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 	}
 }
 
+func TestIntegrationExecutorEndToEndPerExecutionAddressRouting(t *testing.T) {
+	defaultOutput, err := structpb.NewValue(map[string]any{"result": "default"})
+	require.NoError(t, err)
+	overrideOutput, err := structpb.NewValue(map[string]any{"result": "override"})
+	require.NoError(t, err)
+
+	testJWT := makeTestJWT(testOrgID)
+
+	defaultFake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "default-orchestrator-exec",
+			Output:    &apiv1.Output{Result: defaultOutput},
+		},
+	}
+	overrideFake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "override-orchestrator-exec",
+			Output:    &apiv1.Output{Result: overrideOutput},
+		},
+	}
+
+	defaultAddr := startFakeOrchestrator(t, defaultFake)
+	overrideAddr := startFakeOrchestrator(t, overrideFake)
+
+	fileContexts := map[string]*redisstore.ExecutionFileContext{
+		"exec-default": {JwtToken: makeWorkerJWTContext(testJWT, testJWT)},
+		"exec-override": {
+			JwtToken:                makeWorkerJWTContext(testJWT, testJWT),
+			IntegrationsCallbackUrl: "http://" + overrideAddr,
+		},
+	}
+
+	port := getFreePort(t)
+	grpcServer := grpc.NewServer()
+	svc := New(
+		WithServer(grpcServer),
+		WithPort(port),
+		WithLogger(zap.NewNop()),
+		WithOrchestratorAddress(defaultAddr),
+		WithFileContextProvider(&mockFileContextProvider{contexts: fileContexts}),
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- svc.Run(ctx)
+	}()
+
+	serviceAddr := fmt.Sprintf("127.0.0.1:%d", port)
+	require.Eventually(t, func() bool {
+		conn, err := grpc.NewClient(
+			serviceAddr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		if err != nil {
+			return false
+		}
+		defer conn.Close()
+
+		client := workerv1.NewSandboxIntegrationExecutorServiceClient(conn)
+		_, err = client.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{})
+		if err == nil {
+			return true
+		}
+		st, ok := status.FromError(err)
+		return ok && st.Code() != codes.Unavailable
+	}, 5*time.Second, 50*time.Millisecond, "service did not become ready")
+
+	conn, err := grpc.NewClient(
+		serviceAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() { conn.Close() })
+
+	client := workerv1.NewSandboxIntegrationExecutorServiceClient(conn)
+	actionConfig := &structpb.Struct{Fields: map[string]*structpb.Value{}}
+
+	respDefault, err := client.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:         "exec-default",
+		IntegrationId:       "my-integration",
+		PluginId:            "postgres",
+		ActionConfiguration: actionConfig,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "default-orchestrator-exec", respDefault.GetExecutionId())
+	assert.Equal(t, defaultOutput.GetStructValue().AsMap(), respDefault.GetOutput().GetStructValue().AsMap())
+
+	respOverride, err := client.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:         "exec-override",
+		IntegrationId:       "my-integration",
+		PluginId:            "postgres",
+		ActionConfiguration: actionConfig,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "override-orchestrator-exec", respOverride.GetExecutionId())
+	assert.Equal(t, overrideOutput.GetStructValue().AsMap(), respOverride.GetOutput().GetStructValue().AsMap())
+
+	assert.NotNil(t, defaultFake.lastRequest, "default orchestrator should receive fallback request")
+	assert.NotNil(t, overrideFake.lastRequest, "override orchestrator should receive override request")
+
+	cancel()
+	select {
+	case err := <-errCh:
+		assert.ErrorIs(t, err, context.Canceled)
+	case <-time.After(5 * time.Second):
+		t.Fatal("service did not shut down in time")
+	}
+}
+
 // TestIntegrationExecutorLifecycle verifies the service lifecycle methods.
 func TestIntegrationExecutorLifecycle(t *testing.T) {
 	port := getFreePort(t)

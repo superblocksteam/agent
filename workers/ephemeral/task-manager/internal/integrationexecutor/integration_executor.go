@@ -2,11 +2,13 @@ package integrationexecutor
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -19,6 +21,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -29,7 +32,21 @@ import (
 const (
 	workerJWTContextSuperblocksPrefix   = "sbjwt="
 	workerJWTContextAuthorizationPrefix = "authjwt="
+	maxOrchestratorClientCacheSize      = 128
 )
+
+type orchestratorDialTarget struct {
+	Address string
+	UseTLS  bool
+}
+
+func (d orchestratorDialTarget) cacheKey() string {
+	if d.UseTLS {
+		return "tls|" + d.Address
+	}
+
+	return "insecure|" + d.Address
+}
 
 // IntegrationExecutorService implements the SandboxIntegrationExecutorService
 // gRPC service. It proxies integration execution requests from the sandbox to
@@ -43,9 +60,12 @@ type IntegrationExecutorService struct {
 	orchestratorAddress string
 	fileContextProvider FileContextProvider
 
-	orchestratorClient     apiv1.ExecutorServiceClient
 	orchestratorClientLock sync.Mutex
-	orchestratorConn       *grpc.ClientConn
+	orchestratorClients    map[string]apiv1.ExecutorServiceClient
+	orchestratorConns      map[string]*grpc.ClientConn
+	orchestratorClientKeys []string
+	newOrchestratorConn    func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error)
+	closeOrchestratorConn  func(conn *grpc.ClientConn) error
 
 	shutdownLock sync.RWMutex
 	done         chan error
@@ -60,12 +80,19 @@ func New(opts ...Option) *IntegrationExecutorService {
 	o := ApplyOptions(opts...)
 
 	return &IntegrationExecutorService{
-		server:              o.server,
-		port:                o.port,
-		logger:              o.logger,
-		orchestratorAddress: o.orchestratorAddress,
-		fileContextProvider: o.fileContextProvider,
-		done:                make(chan error, 1),
+		server:                 o.server,
+		port:                   o.port,
+		logger:                 o.logger,
+		orchestratorAddress:    o.orchestratorAddress,
+		fileContextProvider:    o.fileContextProvider,
+		orchestratorClients:    map[string]apiv1.ExecutorServiceClient{},
+		orchestratorConns:      map[string]*grpc.ClientConn{},
+		orchestratorClientKeys: []string{},
+		newOrchestratorConn:    grpc.NewClient,
+		closeOrchestratorConn: func(conn *grpc.ClientConn) error {
+			return conn.Close()
+		},
+		done: make(chan error, 1),
 	}
 }
 
@@ -117,17 +144,28 @@ func (s *IntegrationExecutorService) Close(ctx context.Context) error {
 	s.shutdownLock.Lock()
 	defer s.shutdownLock.Unlock()
 
-	if s.orchestratorConn != nil {
-		if err := s.orchestratorConn.Close(); err != nil {
-			s.logger.Warn("error closing orchestrator connection", zap.Error(err))
-		}
-		s.orchestratorConn = nil
-		s.orchestratorClient = nil
-	}
-
+	// Stop accepting new RPCs and wait for active handlers to finish before
+	// tearing down cached orchestrator clients/connections.
 	if s.server != nil {
 		s.server.GracefulStop()
 		s.server = nil
+	}
+
+	s.orchestratorClientLock.Lock()
+	defer s.orchestratorClientLock.Unlock()
+
+	if s.orchestratorConns != nil {
+		for address, conn := range s.orchestratorConns {
+			if conn == nil {
+				continue
+			}
+			if err := s.closeOrchestratorConnection(conn); err != nil {
+				s.logger.Warn("error closing orchestrator connection", zap.String("address", address), zap.Error(err))
+			}
+		}
+		s.orchestratorConns = map[string]*grpc.ClientConn{}
+		s.orchestratorClients = map[string]apiv1.ExecutorServiceClient{}
+		s.orchestratorClientKeys = []string{}
 	}
 
 	return nil
@@ -135,31 +173,90 @@ func (s *IntegrationExecutorService) Close(ctx context.Context) error {
 
 // Alive returns true if the server is running.
 func (s *IntegrationExecutorService) Alive() bool {
+	s.shutdownLock.RLock()
+	defer s.shutdownLock.RUnlock()
 	return s.server != nil
 }
 
-// getOrCreateOrchestratorClient lazily creates a gRPC client to the orchestrator.
-func (s *IntegrationExecutorService) getOrCreateOrchestratorClient() (apiv1.ExecutorServiceClient, error) {
+// getOrCreateOrchestratorClient lazily creates and caches a gRPC client by dial target.
+func (s *IntegrationExecutorService) getOrCreateOrchestratorClient(target orchestratorDialTarget) (apiv1.ExecutorServiceClient, error) {
 	s.orchestratorClientLock.Lock()
 	defer s.orchestratorClientLock.Unlock()
 
-	if s.orchestratorClient != nil {
-		return s.orchestratorClient, nil
+	if s.orchestratorClients == nil {
+		s.orchestratorClients = map[string]apiv1.ExecutorServiceClient{}
+	}
+	if s.orchestratorConns == nil {
+		s.orchestratorConns = map[string]*grpc.ClientConn{}
+	}
+	if s.orchestratorClientKeys == nil {
+		s.orchestratorClientKeys = []string{}
 	}
 
-	conn, err := grpc.NewClient(
-		s.orchestratorAddress,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	cacheKey := target.cacheKey()
+	if client, ok := s.orchestratorClients[cacheKey]; ok {
+		return client, nil
+	}
+
+	if len(s.orchestratorClientKeys) >= maxOrchestratorClientCacheSize {
+		s.evictOldestOrchestratorClientLocked()
+	}
+
+	var transportCredentials credentials.TransportCredentials
+	if target.UseTLS {
+		transportCredentials = credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
+	} else {
+		transportCredentials = insecure.NewCredentials()
+	}
+
+	dialOrchestratorConn := s.newOrchestratorConn
+	if dialOrchestratorConn == nil {
+		dialOrchestratorConn = grpc.NewClient
+	}
+
+	conn, err := dialOrchestratorConn(
+		target.Address,
+		grpc.WithTransportCredentials(transportCredentials),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create orchestrator client: %w", err)
 	}
 
-	s.orchestratorConn = conn
-	s.orchestratorClient = apiv1.NewExecutorServiceClient(conn)
+	s.orchestratorConns[cacheKey] = conn
+	s.orchestratorClients[cacheKey] = apiv1.NewExecutorServiceClient(conn)
+	s.orchestratorClientKeys = append(s.orchestratorClientKeys, cacheKey)
 
-	return s.orchestratorClient, nil
+	return s.orchestratorClients[cacheKey], nil
+}
+
+func (s *IntegrationExecutorService) evictOldestOrchestratorClientLocked() {
+	if len(s.orchestratorClientKeys) == 0 {
+		return
+	}
+
+	oldestKey := s.orchestratorClientKeys[0]
+	s.orchestratorClientKeys = s.orchestratorClientKeys[1:]
+
+	if conn, ok := s.orchestratorConns[oldestKey]; ok && conn != nil {
+		if err := s.closeOrchestratorConnection(conn); err != nil {
+			s.logger.Warn("error closing evicted orchestrator connection", zap.String("cache_key", oldestKey), zap.Error(err))
+		}
+	}
+
+	delete(s.orchestratorConns, oldestKey)
+	delete(s.orchestratorClients, oldestKey)
+}
+
+func (s *IntegrationExecutorService) closeOrchestratorConnection(conn *grpc.ClientConn) error {
+	closeConn := s.closeOrchestratorConn
+	if closeConn == nil {
+		closeConn = func(c *grpc.ClientConn) error {
+			return c.Close()
+		}
+	}
+
+	return closeConn(conn)
 }
 
 // buildStep constructs an apiv1.Step with the correct plugin-typed config
@@ -236,9 +333,14 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Errorf(codes.PermissionDenied, "could not extract org_id from JWT: %v", err)
 	}
 
-	client, err := s.getOrCreateOrchestratorClient()
+	effectiveTarget, err := resolveEffectiveOrchestratorAddress(s.orchestratorAddress, fileCtx.IntegrationsCallbackUrl)
 	if err != nil {
-		s.logger.Error("failed to get orchestrator client", zap.Error(err))
+		return nil, status.Errorf(codes.InvalidArgument, "invalid orchestrator address: %v", err)
+	}
+
+	client, err := s.getOrCreateOrchestratorClient(effectiveTarget)
+	if err != nil {
+		s.logger.Error("failed to get orchestrator client", zap.String("address", effectiveTarget.Address), zap.Bool("tls", effectiveTarget.UseTLS), zap.Error(err))
 		return nil, status.Error(codes.Internal, "failed to connect to orchestrator")
 	}
 
@@ -338,6 +440,86 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 	return &workerv1.ExecuteIntegrationResponse{
 		ExecutionId: resp.GetExecution(),
 		Output:      resp.GetOutput().GetResult(),
+	}, nil
+}
+
+func resolveEffectiveOrchestratorAddress(defaultAddress, overrideAddress string) (orchestratorDialTarget, error) {
+	if strings.TrimSpace(overrideAddress) != "" {
+		return normalizeOrchestratorDialTarget(overrideAddress)
+	}
+
+	return normalizeOrchestratorDialTarget(defaultAddress)
+}
+
+func normalizeOrchestratorDialTarget(raw string) (orchestratorDialTarget, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return orchestratorDialTarget{}, errors.New("orchestrator address is empty")
+	}
+
+	if strings.Contains(raw, "://") {
+		parsed, err := url.Parse(raw)
+		if err != nil {
+			return orchestratorDialTarget{}, fmt.Errorf("invalid orchestrator URL: %w", err)
+		}
+		if parsed.Scheme == "" || parsed.Host == "" {
+			return orchestratorDialTarget{}, errors.New("orchestrator URL must be absolute")
+		}
+		if parsed.User != nil {
+			return orchestratorDialTarget{}, errors.New("orchestrator URL must not include user info")
+		}
+		if parsed.RawQuery != "" || parsed.Fragment != "" {
+			return orchestratorDialTarget{}, errors.New("orchestrator URL must not include query or fragment")
+		}
+		if parsed.Path != "" && parsed.Path != "/" {
+			return orchestratorDialTarget{}, errors.New("orchestrator URL must not include path")
+		}
+
+		host := parsed.Hostname()
+		if host == "" {
+			return orchestratorDialTarget{}, errors.New("orchestrator URL host is empty")
+		}
+
+		port := parsed.Port()
+		useTLS := false
+		if port == "" {
+			switch strings.ToLower(parsed.Scheme) {
+			case "http", "grpc":
+				port = "80"
+			case "https", "grpcs":
+				port = "443"
+				useTLS = true
+			default:
+				return orchestratorDialTarget{}, fmt.Errorf("unsupported orchestrator URL scheme %q", parsed.Scheme)
+			}
+		} else {
+			switch strings.ToLower(parsed.Scheme) {
+			case "http", "grpc":
+				useTLS = false
+			case "https", "grpcs":
+				useTLS = true
+			default:
+				return orchestratorDialTarget{}, fmt.Errorf("unsupported orchestrator URL scheme %q", parsed.Scheme)
+			}
+		}
+
+		return orchestratorDialTarget{
+			Address: net.JoinHostPort(host, port),
+			UseTLS:  useTLS,
+		}, nil
+	}
+
+	host, port, err := net.SplitHostPort(raw)
+	if err != nil {
+		return orchestratorDialTarget{}, fmt.Errorf("orchestrator address must be host:port or absolute URL: %w", err)
+	}
+	if host == "" || port == "" {
+		return orchestratorDialTarget{}, errors.New("orchestrator address must include host and port")
+	}
+
+	return orchestratorDialTarget{
+		Address: net.JoinHostPort(host, port),
+		UseTLS:  false,
 	}, nil
 }
 

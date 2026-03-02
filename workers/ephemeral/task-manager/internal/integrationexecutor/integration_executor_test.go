@@ -414,17 +414,6 @@ func TestExecuteIntegration(t *testing.T) {
 				fileContextProvider: &mockFileContextProvider{contexts: test.contexts},
 			}
 
-			// Pre-create the orchestrator client for the test.
-			conn, err := grpc.NewClient(
-				orchestratorAddr,
-				grpc.WithTransportCredentials(insecure.NewCredentials()),
-			)
-			require.NoError(t, err)
-			t.Cleanup(func() { conn.Close() })
-
-			svc.orchestratorClient = apiv1.NewExecutorServiceClient(conn)
-			svc.orchestratorConn = conn
-
 			resp, err := svc.ExecuteIntegration(context.Background(), test.request)
 
 			if test.wantCode != codes.OK {
@@ -507,6 +496,11 @@ func TestExtractOrgIDFromJWT(t *testing.T) {
 			wantErr: "malformed JWT payload",
 		},
 		{
+			name:    "invalid JSON payload",
+			token:   "header." + base64.RawURLEncoding.EncodeToString([]byte(`{"org_id":`)) + ".sig",
+			wantErr: "malformed JWT payload JSON",
+		},
+		{
 			name:    "valid base64 payload but missing org_id",
 			token:   "header." + base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"user123"}`)) + ".sig",
 			wantErr: "missing org_id",
@@ -526,6 +520,46 @@ func TestExtractOrgIDFromJWT(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, test.wantID, got)
+		})
+	}
+}
+
+func TestParseWorkerJWTContext(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		input     string
+		wantSuper string
+		wantAuth  string
+	}{
+		{
+			name:      "empty input",
+			input:     "",
+			wantSuper: "",
+			wantAuth:  "",
+		},
+		{
+			name:      "no recognized prefixes",
+			input:     "foo=bar\nanother=line",
+			wantSuper: "",
+			wantAuth:  "",
+		},
+		{
+			name:      "extracts both tokens",
+			input:     makeWorkerJWTContext("sb-token", "auth-token"),
+			wantSuper: "sb-token",
+			wantAuth:  "auth-token",
+		},
+		{
+			name:      "extracts prefixed tokens with whitespace",
+			input:     "  " + workerJWTContextSuperblocksPrefix + "  sb-token \n " + workerJWTContextAuthorizationPrefix + " auth-token  ",
+			wantSuper: "sb-token",
+			wantAuth:  "auth-token",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			gotSuper, gotAuth := parseWorkerJWTContext(test.input)
+			assert.Equal(t, test.wantSuper, gotSuper)
+			assert.Equal(t, test.wantAuth, gotAuth)
 		})
 	}
 }
@@ -564,21 +598,61 @@ func TestGetOrCreateOrchestratorClientCreatesAndReuses(t *testing.T) {
 		orchestratorAddress: orchestratorAddr,
 	}
 
-	assert.Nil(t, svc.orchestratorClient)
+	assert.Empty(t, svc.orchestratorClients)
+	assert.Empty(t, svc.orchestratorConns)
 
 	// First call should create the connection and client.
-	client1, err := svc.getOrCreateOrchestratorClient()
+	target := orchestratorDialTarget{Address: orchestratorAddr, UseTLS: false}
+	cacheKey := target.cacheKey()
+
+	client1, err := svc.getOrCreateOrchestratorClient(target)
 	require.NoError(t, err)
 	assert.NotNil(t, client1)
-	assert.NotNil(t, svc.orchestratorConn)
+	assert.NotNil(t, svc.orchestratorConns[cacheKey])
+	assert.NotNil(t, svc.orchestratorClients[cacheKey])
 
-	connAfterFirst := svc.orchestratorConn
+	connAfterFirst := svc.orchestratorConns[cacheKey]
 
 	// Second call should return the same client without creating a new connection.
-	client2, err := svc.getOrCreateOrchestratorClient()
+	client2, err := svc.getOrCreateOrchestratorClient(target)
 	require.NoError(t, err)
 	assert.NotNil(t, client2)
-	assert.Equal(t, connAfterFirst, svc.orchestratorConn, "connection should not be re-created on second call")
+	assert.Equal(t, connAfterFirst, svc.orchestratorConns[cacheKey], "connection should not be re-created on second call")
+	assert.Equal(t, client1, client2, "client should be re-used for the same address")
+}
+
+func TestGetOrCreateOrchestratorClientReturnsErrorForInvalidAddress(t *testing.T) {
+	dialErr := fmt.Errorf("dial failed")
+	svc := &IntegrationExecutorService{
+		logger: zap.NewNop(),
+		newOrchestratorConn: func(_ string, _ ...grpc.DialOption) (*grpc.ClientConn, error) {
+			return nil, dialErr
+		},
+	}
+
+	_, err := svc.getOrCreateOrchestratorClient(orchestratorDialTarget{
+		Address: "orchestrator.internal:443",
+		UseTLS:  false,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create orchestrator client")
+	assert.ErrorIs(t, err, dialErr)
+}
+
+func TestCloseOrchestratorConnectionUsesDefaultCloserFromNew(t *testing.T) {
+	fake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{Execution: "test"},
+	}
+	orchestratorAddr := startFakeOrchestrator(t, fake)
+
+	conn, err := grpc.NewClient(
+		orchestratorAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+
+	svc := New()
+	require.NoError(t, svc.closeOrchestratorConnection(conn))
 }
 
 // TestCloseWithActiveOrchestratorConnection verifies that Close() properly
@@ -596,18 +670,22 @@ func TestCloseWithActiveOrchestratorConnection(t *testing.T) {
 	require.NoError(t, err)
 
 	svc := &IntegrationExecutorService{
-		logger:             zap.NewNop(),
-		server:             grpc.NewServer(),
-		orchestratorConn:   conn,
-		orchestratorClient: apiv1.NewExecutorServiceClient(conn),
+		logger: zap.NewNop(),
+		server: grpc.NewServer(),
+		orchestratorConns: map[string]*grpc.ClientConn{
+			orchestratorDialTarget{Address: orchestratorAddr, UseTLS: false}.cacheKey(): conn,
+		},
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
+			orchestratorDialTarget{Address: orchestratorAddr, UseTLS: false}.cacheKey(): apiv1.NewExecutorServiceClient(conn),
+		},
 	}
 
 	assert.True(t, svc.Alive())
 
 	require.NoError(t, svc.Close(context.Background()))
 
-	assert.Nil(t, svc.orchestratorConn)
-	assert.Nil(t, svc.orchestratorClient)
+	assert.Empty(t, svc.orchestratorConns)
+	assert.Empty(t, svc.orchestratorClients)
 	assert.False(t, svc.Alive())
 }
 
@@ -651,10 +729,456 @@ func TestExecuteIntegrationLazyClientCreation(t *testing.T) {
 	assert.Empty(t, resp.GetError())
 
 	// The client and connection should now be cached on the service.
-	assert.NotNil(t, svc.orchestratorClient)
-	assert.NotNil(t, svc.orchestratorConn)
+	cacheKey := orchestratorDialTarget{Address: orchestratorAddr, UseTLS: false}.cacheKey()
+	assert.NotNil(t, svc.orchestratorClients[cacheKey])
+	assert.NotNil(t, svc.orchestratorConns[cacheKey])
 
 	// JWT should have been forwarded with Bearer prefix in both headers.
 	assert.Equal(t, "Bearer "+lazyJWT, fake.lastAuthorization)
 	assert.Equal(t, "Bearer "+lazyJWT, fake.lastJwtToken)
+}
+
+func TestExecuteIntegrationUsesOverrideAddressWhenPresent(t *testing.T) {
+	defaultOutput, err := structpb.NewValue(map[string]any{"source": "default"})
+	require.NoError(t, err)
+	overrideOutput, err := structpb.NewValue(map[string]any{"source": "override"})
+	require.NoError(t, err)
+
+	defaultFake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "default-exec",
+			Output:    &apiv1.Output{Result: defaultOutput},
+		},
+	}
+	overrideFake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "override-exec",
+			Output:    &apiv1.Output{Result: overrideOutput},
+		},
+	}
+
+	defaultAddr := startFakeOrchestrator(t, defaultFake)
+	overrideAddr := startFakeOrchestrator(t, overrideFake)
+	testJWT := makeTestJWT(testOrgID)
+
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: defaultAddr,
+		fileContextProvider: &mockFileContextProvider{
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {
+					JwtToken:                makeWorkerJWTContext(testJWT, testJWT),
+					IntegrationsCallbackUrl: "http://" + overrideAddr,
+				},
+			},
+		},
+	}
+
+	resp, err := svc.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:   "exec-1",
+		IntegrationId: "int-1",
+		PluginId:      "postgres",
+		ActionConfiguration: &structpb.Struct{
+			Fields: map[string]*structpb.Value{},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "override-exec", resp.GetExecutionId())
+	assert.Equal(t, overrideOutput.GetStructValue().AsMap(), resp.GetOutput().GetStructValue().AsMap())
+	assert.NotNil(t, overrideFake.lastRequest, "override orchestrator should receive the request")
+	assert.Nil(t, defaultFake.lastRequest, "default orchestrator should not receive the request when override is present")
+}
+
+func TestExecuteIntegrationFallsBackToDefaultAddressWhenOverrideMissing(t *testing.T) {
+	defaultOutput, err := structpb.NewValue(map[string]any{"source": "default"})
+	require.NoError(t, err)
+	overrideOutput, err := structpb.NewValue(map[string]any{"source": "override"})
+	require.NoError(t, err)
+
+	defaultFake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "default-exec",
+			Output:    &apiv1.Output{Result: defaultOutput},
+		},
+	}
+	overrideFake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "override-exec",
+			Output:    &apiv1.Output{Result: overrideOutput},
+		},
+	}
+
+	defaultAddr := startFakeOrchestrator(t, defaultFake)
+	_ = startFakeOrchestrator(t, overrideFake)
+	testJWT := makeTestJWT(testOrgID)
+
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: defaultAddr,
+		fileContextProvider: &mockFileContextProvider{
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {
+					JwtToken: makeWorkerJWTContext(testJWT, testJWT),
+				},
+			},
+		},
+	}
+
+	resp, err := svc.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:   "exec-1",
+		IntegrationId: "int-1",
+		PluginId:      "postgres",
+		ActionConfiguration: &structpb.Struct{
+			Fields: map[string]*structpb.Value{},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "default-exec", resp.GetExecutionId())
+	assert.Equal(t, defaultOutput.GetStructValue().AsMap(), resp.GetOutput().GetStructValue().AsMap())
+	assert.NotNil(t, defaultFake.lastRequest, "default orchestrator should receive the request")
+	assert.Nil(t, overrideFake.lastRequest, "unused orchestrator should not receive the request")
+}
+
+func TestExecuteIntegrationRejectsInvalidOverrideAddress(t *testing.T) {
+	defaultFake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "default-exec",
+			Output:    &apiv1.Output{Result: structpb.NewNullValue()},
+		},
+	}
+	defaultAddr := startFakeOrchestrator(t, defaultFake)
+	testJWT := makeTestJWT(testOrgID)
+
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: defaultAddr,
+		fileContextProvider: &mockFileContextProvider{
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {
+					JwtToken:                makeWorkerJWTContext(testJWT, testJWT),
+					IntegrationsCallbackUrl: "http://bad-host:8080/path-not-allowed",
+				},
+			},
+		},
+	}
+
+	_, err := svc.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:   "exec-1",
+		IntegrationId: "int-1",
+		PluginId:      "postgres",
+		ActionConfiguration: &structpb.Struct{
+			Fields: map[string]*structpb.Value{},
+		},
+	})
+	require.Error(t, err)
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.InvalidArgument, st.Code())
+	assert.Contains(t, st.Message(), "invalid orchestrator address")
+	assert.Nil(t, defaultFake.lastRequest, "request should fail before contacting orchestrator")
+}
+
+func TestExecuteIntegrationHTTPSOverrideUsesTLSDialing(t *testing.T) {
+	fake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "insecure-server-exec",
+			Output:    &apiv1.Output{Result: structpb.NewNullValue()},
+		},
+	}
+	defaultAddr := startFakeOrchestrator(t, fake) // insecure gRPC server
+	testJWT := makeTestJWT(testOrgID)
+
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: defaultAddr,
+		fileContextProvider: &mockFileContextProvider{
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {
+					JwtToken:                makeWorkerJWTContext(testJWT, testJWT),
+					IntegrationsCallbackUrl: "https://" + defaultAddr,
+				},
+			},
+		},
+	}
+
+	resp, err := svc.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:   "exec-1",
+		IntegrationId: "int-1",
+		PluginId:      "postgres",
+		ActionConfiguration: &structpb.Struct{
+			Fields: map[string]*structpb.Value{},
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.NotEmpty(t, resp.GetError(), "TLS dialing to an insecure server should fail")
+	assert.Nil(t, fake.lastRequest, "TLS handshake should fail before request reaches the fake orchestrator handler")
+}
+
+func TestExecuteIntegrationReturnsInternalWhenOrchestratorClientCreationFails(t *testing.T) {
+	testJWT := makeTestJWT(testOrgID)
+	dialErr := fmt.Errorf("dial failed")
+
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: "orchestrator.internal:443",
+		fileContextProvider: &mockFileContextProvider{
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {
+					JwtToken: makeWorkerJWTContext(testJWT, testJWT),
+				},
+			},
+		},
+		newOrchestratorConn: func(_ string, _ ...grpc.DialOption) (*grpc.ClientConn, error) {
+			return nil, dialErr
+		},
+	}
+
+	_, err := svc.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:   "exec-1",
+		IntegrationId: "int-1",
+		PluginId:      "postgres",
+		ActionConfiguration: &structpb.Struct{
+			Fields: map[string]*structpb.Value{},
+		},
+	})
+	require.Error(t, err)
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.Internal, st.Code())
+	assert.Contains(t, st.Message(), "failed to connect to orchestrator")
+}
+
+func TestNormalizeOrchestratorDialTarget(t *testing.T) {
+	for _, test := range []struct {
+		name         string
+		input        string
+		wantAddress  string
+		wantTLS      bool
+		wantErrMatch string
+	}{
+		{name: "host:port defaults to insecure", input: "orchestrator.internal:8081", wantAddress: "orchestrator.internal:8081", wantTLS: false},
+		{name: "http URL maps to insecure", input: "http://orchestrator.internal", wantAddress: "orchestrator.internal:80", wantTLS: false},
+		{name: "https URL maps to TLS", input: "https://orchestrator.internal", wantAddress: "orchestrator.internal:443", wantTLS: true},
+		{name: "https URL root path is allowed", input: "https://orchestrator.internal/", wantAddress: "orchestrator.internal:443", wantTLS: true},
+		{name: "grpcs URL maps to TLS", input: "grpcs://orchestrator.internal:9443", wantAddress: "orchestrator.internal:9443", wantTLS: true},
+		{name: "grpc URL maps to insecure", input: "grpc://orchestrator.internal:8081", wantAddress: "orchestrator.internal:8081", wantTLS: false},
+		{name: "reject URL path", input: "https://orchestrator.internal/grpc", wantErrMatch: "must not include path"},
+		{name: "reject URL user info", input: "https://user@orchestrator.internal", wantErrMatch: "must not include user info"},
+		{name: "reject URL query", input: "https://orchestrator.internal?x=1", wantErrMatch: "must not include query or fragment"},
+		{name: "reject URL fragment", input: "https://orchestrator.internal#anchor", wantErrMatch: "must not include query or fragment"},
+		{name: "reject unsupported URL scheme", input: "tcp://orchestrator.internal:9000", wantErrMatch: "unsupported orchestrator URL scheme"},
+		{name: "reject unsupported URL scheme without port", input: "tcp://orchestrator.internal", wantErrMatch: "unsupported orchestrator URL scheme"},
+		{name: "reject URL missing host", input: "http:///path", wantErrMatch: "must be absolute"},
+		{name: "reject URL with empty host", input: "https://:443", wantErrMatch: "host is empty"},
+		{name: "reject malformed URL", input: "://bad url", wantErrMatch: "invalid orchestrator URL"},
+		{name: "reject malformed absolute URL", input: "https://[::1", wantErrMatch: "invalid orchestrator URL"},
+		{name: "reject host without port for raw address", input: "orchestrator.internal", wantErrMatch: "must be host:port or absolute URL"},
+		{name: "reject empty host in raw address", input: ":8081", wantErrMatch: "must include host and port"},
+		{name: "reject empty port in raw address", input: "orchestrator.internal:", wantErrMatch: "must include host and port"},
+		{name: "reject empty", input: "", wantErrMatch: "is empty"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := normalizeOrchestratorDialTarget(test.input)
+			if test.wantErrMatch != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.wantErrMatch)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, test.wantAddress, got.Address)
+			assert.Equal(t, test.wantTLS, got.UseTLS)
+		})
+	}
+}
+
+func TestEvictOldestOrchestratorClientLockedClosesConnection(t *testing.T) {
+	fake := &fakeOrchestratorServer{response: &apiv1.AwaitResponse{Execution: "test"}}
+	addr := startFakeOrchestrator(t, fake)
+
+	conn, err := grpc.NewClient(
+		addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+
+	oldestTarget := orchestratorDialTarget{Address: addr, UseTLS: false}
+	oldestKey := oldestTarget.cacheKey()
+
+	svc := &IntegrationExecutorService{
+		logger: zap.NewNop(),
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
+			oldestKey: apiv1.NewExecutorServiceClient(conn),
+		},
+		orchestratorConns: map[string]*grpc.ClientConn{
+			oldestKey: conn,
+		},
+		orchestratorClientKeys: []string{oldestKey},
+	}
+
+	svc.evictOldestOrchestratorClientLocked()
+
+	assert.Empty(t, svc.orchestratorClientKeys)
+	assert.Empty(t, svc.orchestratorClients)
+	assert.Empty(t, svc.orchestratorConns)
+}
+
+func TestEvictOldestOrchestratorClientLockedNoopWhenEmpty(t *testing.T) {
+	svc := &IntegrationExecutorService{
+		logger:                 zap.NewNop(),
+		orchestratorClients:    map[string]apiv1.ExecutorServiceClient{},
+		orchestratorConns:      map[string]*grpc.ClientConn{},
+		orchestratorClientKeys: []string{},
+	}
+
+	svc.evictOldestOrchestratorClientLocked()
+
+	assert.Empty(t, svc.orchestratorClientKeys)
+	assert.Empty(t, svc.orchestratorClients)
+	assert.Empty(t, svc.orchestratorConns)
+}
+
+func TestCloseSkipsNilCachedConnection(t *testing.T) {
+	cacheKey := "insecure|nil-conn:8081"
+	svc := &IntegrationExecutorService{
+		logger: zap.NewNop(),
+		server: grpc.NewServer(),
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
+			cacheKey: nil,
+		},
+		orchestratorConns: map[string]*grpc.ClientConn{
+			cacheKey: nil,
+		},
+		orchestratorClientKeys: []string{cacheKey},
+	}
+
+	require.NoError(t, svc.Close(context.Background()))
+	assert.False(t, svc.Alive())
+	assert.Empty(t, svc.orchestratorClientKeys)
+	assert.Empty(t, svc.orchestratorClients)
+	assert.Empty(t, svc.orchestratorConns)
+}
+
+func TestCloseContinuesWhenCachedConnectionCloseFails(t *testing.T) {
+	cacheKey := "insecure|close-error:8081"
+	closeCalls := 0
+
+	svc := &IntegrationExecutorService{
+		logger: zap.NewNop(),
+		server: grpc.NewServer(),
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
+			cacheKey: nil,
+		},
+		orchestratorConns: map[string]*grpc.ClientConn{
+			cacheKey: new(grpc.ClientConn),
+		},
+		orchestratorClientKeys: []string{cacheKey},
+		closeOrchestratorConn: func(_ *grpc.ClientConn) error {
+			closeCalls++
+			return fmt.Errorf("close failed")
+		},
+	}
+
+	require.NoError(t, svc.Close(context.Background()))
+	assert.Equal(t, 1, closeCalls)
+	assert.False(t, svc.Alive())
+	assert.Empty(t, svc.orchestratorClientKeys)
+	assert.Empty(t, svc.orchestratorClients)
+	assert.Empty(t, svc.orchestratorConns)
+}
+
+func TestOrchestratorClientCacheEvictsOldestWhenFull(t *testing.T) {
+	fake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{Execution: "test"},
+	}
+	addr := startFakeOrchestrator(t, fake)
+
+	svc := &IntegrationExecutorService{
+		logger:                 zap.NewNop(),
+		orchestratorClients:    map[string]apiv1.ExecutorServiceClient{},
+		orchestratorConns:      map[string]*grpc.ClientConn{},
+		orchestratorClientKeys: []string{},
+	}
+
+	oldestKey := "insecure|oldest:1111"
+	for i := 0; i < maxOrchestratorClientCacheSize; i++ {
+		key := fmt.Sprintf("insecure|existing-%d:8081", i)
+		if i == 0 {
+			key = oldestKey
+		}
+		svc.orchestratorClientKeys = append(svc.orchestratorClientKeys, key)
+		svc.orchestratorClients[key] = nil
+		svc.orchestratorConns[key] = nil
+	}
+
+	newTarget := orchestratorDialTarget{Address: addr, UseTLS: false}
+	_, err := svc.getOrCreateOrchestratorClient(newTarget)
+	require.NoError(t, err)
+
+	assert.Len(t, svc.orchestratorClientKeys, maxOrchestratorClientCacheSize)
+	_, hasOldest := svc.orchestratorClients[oldestKey]
+	assert.False(t, hasOldest, "oldest client should be evicted")
+	_, hasNew := svc.orchestratorClients[newTarget.cacheKey()]
+	assert.True(t, hasNew, "new client should be cached")
+}
+
+func TestEvictOldestOrchestratorClientLockedContinuesWhenCloseFails(t *testing.T) {
+	oldestKey := "insecure|oldest:1111"
+	closeCalls := 0
+
+	svc := &IntegrationExecutorService{
+		logger: zap.NewNop(),
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
+			oldestKey: nil,
+		},
+		orchestratorConns: map[string]*grpc.ClientConn{
+			oldestKey: new(grpc.ClientConn),
+		},
+		orchestratorClientKeys: []string{oldestKey},
+		closeOrchestratorConn: func(_ *grpc.ClientConn) error {
+			closeCalls++
+			return fmt.Errorf("close failed")
+		},
+	}
+
+	svc.evictOldestOrchestratorClientLocked()
+
+	assert.Equal(t, 1, closeCalls)
+	assert.Empty(t, svc.orchestratorClientKeys)
+	assert.Empty(t, svc.orchestratorClients)
+	assert.Empty(t, svc.orchestratorConns)
+}
+
+func TestGetOrCreateOrchestratorClientReuseKeyedByAddress(t *testing.T) {
+	fakeA := &fakeOrchestratorServer{response: &apiv1.AwaitResponse{Execution: "a"}}
+	fakeB := &fakeOrchestratorServer{response: &apiv1.AwaitResponse{Execution: "b"}}
+	addrA := startFakeOrchestrator(t, fakeA)
+	addrB := startFakeOrchestrator(t, fakeB)
+
+	svc := &IntegrationExecutorService{
+		logger: zap.NewNop(),
+	}
+
+	targetA := orchestratorDialTarget{Address: addrA, UseTLS: false}
+	keyA := targetA.cacheKey()
+	_, err := svc.getOrCreateOrchestratorClient(targetA)
+	require.NoError(t, err)
+	connA := svc.orchestratorConns[keyA]
+
+	_, err = svc.getOrCreateOrchestratorClient(targetA)
+	require.NoError(t, err)
+	assert.Equal(t, connA, svc.orchestratorConns[keyA], "same address should reuse connection")
+
+	targetB := orchestratorDialTarget{Address: addrB, UseTLS: false}
+	keyB := targetB.cacheKey()
+	_, err = svc.getOrCreateOrchestratorClient(targetB)
+	require.NoError(t, err)
+	connB := svc.orchestratorConns[keyB]
+
+	assert.NotNil(t, connA)
+	assert.NotNil(t, connB)
+	assert.NotEqual(t, connA, connB, "different addresses should use different connections")
+	assert.Len(t, svc.orchestratorConns, 2)
+	assert.Len(t, svc.orchestratorClients, 2)
 }

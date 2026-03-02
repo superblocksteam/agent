@@ -117,6 +117,7 @@ func init() {
 	pflag.String("grpc.bind", "0.0.0.0", "The address to bind the grpc server on.")
 	pflag.Int("grpc.msg.res.max", 100000000, "Max message size in bytes to be sent by the from grpc server response. Default 100mb.")
 	pflag.Int("grpc.msg.req.max", 30000000, "Max message size in bytes be received by the grpc server as a request. Default 30mb.")
+	pflag.String("integrations.callback.url", "", "External gRPC address (scheme://host:port) workers use to call back to this orchestrator for integration execution. When empty, workers use their default orchestrator target.")
 	pflag.String("http.bind", "0.0.0.0", "The address to bind the grpc server on.")
 	pflag.Int("http.port", 8080, "The port to expose the http server on.")
 	pflag.Duration("job.poll.interval", 60*time.Second, "Polling interval for schedule jobs in milliseconds.")
@@ -703,19 +704,20 @@ func main() {
 	var grpcRunnable run.Runnable
 	{
 		grpcServer := transport.NewServer(&transport.Config{
-			WaitGroup:             wg,
-			Logger:                logger,
-			Worker:                workerClient,
-			Store:                 storage,
-			FileServerUrl:         viper.GetString("file.server.url"),
-			Flags:                 flagsClient,
-			DefaultResolveOptions: defaultResolveOptions,
-			Fetcher:               fetcher,
-			TokenManager:          auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms"), flagsClient),
-			AgentId:               id,
-			AgentVersion:          version,
-			SecretManager:         secretManager,
-			Secrets:               manager,
+			WaitGroup:               wg,
+			Logger:                  logger,
+			Worker:                  workerClient,
+			Store:                   storage,
+			FileServerUrl:           viper.GetString("file.server.url"),
+			Flags:                   flagsClient,
+			DefaultResolveOptions:   defaultResolveOptions,
+			Fetcher:                 fetcher,
+			TokenManager:            auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms"), flagsClient),
+			AgentId:                 id,
+			AgentVersion:            version,
+			IntegrationsCallbackUrl: viper.GetString("integrations.callback.url"),
+			SecretManager:           secretManager,
+			Secrets:                 manager,
 			Health: func(options *apiv1.HealthRequest) (response *commonv1.HealthResponse, err error) {
 				if !ready || !g.Alive() {
 					return nil, sberrors.HealthCheckError("The system is not ready.")

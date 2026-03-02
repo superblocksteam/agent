@@ -571,6 +571,14 @@ export class Request_Data_Data_Props extends Message<Request_Data_Data_Props> {
    */
   profile?: Profile;
 
+  /**
+   * Optional per-execution URL for integration callbacks. Used by the
+   * task-manager integration executor to proxy integration calls.
+   *
+   * @generated from field: string integrations_callback_url = 16;
+   */
+  integrationsCallbackUrl = "";
+
   constructor(data?: PartialMessage<Request_Data_Data_Props>) {
     super();
     proto3.util.initPartial(data, this);
@@ -594,6 +602,7 @@ export class Request_Data_Data_Props extends Message<Request_Data_Data_Props> {
     { no: 13, name: "use_wasm_bindings_sandbox", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 14, name: "jwt_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 15, name: "profile", kind: "message", T: Profile },
+    { no: 16, name: "integrations_callback_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Request_Data_Data_Props {

@@ -410,10 +410,11 @@ func (rt *redisTransport) setupExecutionContext(executionID string, pluginProps 
 	rt.fileContextProvider.SetFileContext(
 		executionID,
 		&redisstore.ExecutionFileContext{
-			FileServerURL: pluginProps.GetFileServerUrl(),
-			AgentKey:      rt.agentKey,
-			JwtToken:      pluginProps.GetJwtToken(),
-			Profile:       pluginProps.GetProfile(),
+			FileServerURL:           pluginProps.GetFileServerUrl(),
+			AgentKey:                rt.agentKey,
+			JwtToken:                pluginProps.GetJwtToken(),
+			Profile:                 pluginProps.GetProfile(),
+			IntegrationsCallbackUrl: pluginProps.GetIntegrationsCallbackUrl(),
 		},
 	)
 

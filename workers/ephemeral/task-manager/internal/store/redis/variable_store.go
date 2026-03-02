@@ -27,10 +27,11 @@ import (
 
 // ExecutionFileContext stores file fetching context for an execution
 type ExecutionFileContext struct {
-	FileServerURL string
-	AgentKey      string
-	JwtToken      string
-	Profile       *commonv1.Profile
+	FileServerURL           string
+	AgentKey                string
+	JwtToken                string
+	Profile                 *commonv1.Profile
+	IntegrationsCallbackUrl string
 }
 
 type FileContextProvider interface {

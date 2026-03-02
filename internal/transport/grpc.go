@@ -97,6 +97,12 @@ type Config struct {
 	Secrets               secrets.Secrets
 	Signature             signature.Registry
 	WaitGroup             *sync.WaitGroup
+	// IntegrationsCallbackUrl is the gRPC address that workers should use
+	// to call back to this orchestrator for proxied integration execution.
+	// When non-empty, it is set on every code-mode worker request so that
+	// shared staging workers route integration calls to this orchestrator
+	// instead of their default target.
+	IntegrationsCallbackUrl string
 }
 
 func NewServer(config *Config) Services {
@@ -1049,13 +1055,14 @@ func (s *server) executeCodeMode(
 					"body": structpb.NewStringValue(wrapperScript),
 				},
 			},
-			StepName:      "api-2.0",
-			ExecutionId:   executionID,
-			FileServerUrl: s.FileServerUrl,
-			Files:         workerFiles,
-			Variables:     propsVariables,
-			JwtToken:      jwtToken,
-			Profile:       fetchCode.GetProfile(),
+			StepName:                "api-2.0",
+			ExecutionId:             executionID,
+			FileServerUrl:           s.FileServerUrl,
+			Files:                   workerFiles,
+			Variables:               propsVariables,
+			JwtToken:                jwtToken,
+			Profile:                 fetchCode.GetProfile(),
+			IntegrationsCallbackUrl: s.IntegrationsCallbackUrl,
 		},
 		AConfig: &structpb.Struct{
 			Fields: map[string]*structpb.Value{

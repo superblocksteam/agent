@@ -2355,7 +2355,8 @@ proto.transport.v1.Request.Data.Data.Props.toObject = function(includeInstance, 
     version: jspb.Message.getFieldWithDefault(msg, 12, ""),
     useWasmBindingsSandbox: jspb.Message.getBooleanFieldWithDefault(msg, 13, false),
     jwtToken: jspb.Message.getFieldWithDefault(msg, 14, ""),
-    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f)
+    profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
+    integrationsCallbackUrl: jspb.Message.getFieldWithDefault(msg, 16, "")
   };
 
   if (includeInstance) {
@@ -2459,6 +2460,10 @@ proto.transport.v1.Request.Data.Data.Props.deserializeBinaryFromReader = functio
       var value = new common_v1_common_pb.Profile;
       reader.readMessage(value,common_v1_common_pb.Profile.deserializeBinaryFromReader);
       msg.setProfile(value);
+      break;
+    case 16:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setIntegrationsCallbackUrl(value);
       break;
     default:
       reader.skipField();
@@ -2595,6 +2600,13 @@ proto.transport.v1.Request.Data.Data.Props.serializeBinaryToWriter = function(me
       15,
       f,
       common_v1_common_pb.Profile.serializeBinaryToWriter
+    );
+  }
+  f = message.getIntegrationsCallbackUrl();
+  if (f.length > 0) {
+    writer.writeString(
+      16,
+      f
     );
   }
 };
@@ -3542,6 +3554,24 @@ proto.transport.v1.Request.Data.Data.Props.prototype.clearProfile = function() {
  */
 proto.transport.v1.Request.Data.Data.Props.prototype.hasProfile = function() {
   return jspb.Message.getField(this, 15) != null;
+};
+
+
+/**
+ * optional string integrations_callback_url = 16;
+ * @return {string}
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.getIntegrationsCallbackUrl = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 16, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.transport.v1.Request.Data.Data.Props} returns this
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.setIntegrationsCallbackUrl = function(value) {
+  return jspb.Message.setProto3StringField(this, 16, value);
 };
 
 

@@ -109,6 +109,9 @@ message Request {
         // The integration profile used for this execution. Forwarded to the
         // task-manager as a fallback when the sandbox doesn't specify a profile.
         common.v1.Profile profile = 15;
+        // Optional per-execution URL for integration callbacks. Used by the
+        // task-manager integration executor to proxy integration calls.
+        string integrations_callback_url = 16;
       }
 
       message Quota {
