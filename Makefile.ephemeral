@@ -1,0 +1,370 @@
+# ============================================================================
+# Ephemeral Worker Development (Native Builds)
+# ============================================================================
+#
+# Run from the orchestrator repo. Orchestrator + task-manager + JavaScript 2.0
+# sandbox; builds and runs Go/Node natively with Redis + Python sandbox in Docker.
+#
+# All-in-one (recommended):
+#   make ephemeral-up        # Kill, rebuild, start all services (background)
+#   make ephemeral-logs       # Tail all logs
+#   make ephemeral-status    # Check what's running
+#
+# OPA-equivalent env vars (same as public Docker Compose agent steps):
+#   SUPERBLOCKS_AGENT_SERVER_URL or __SUPERBLOCKS_AGENT_SERVER_URL  -> --superblocks.url (e.g. https://staging.superblocks.com)
+#   SUPERBLOCKS_AGENT_KEY                                         -> --superblocks.key
+#   SUPERBLOCKS_AGENT_HOST_URL                                     -> --agent.host.url + listen port (e.g. http://localhost:8080)
+#   SUPERBLOCKS_AGENT_DATA_DOMAIN                                  -> --data.domain (e.g. app.superblocks.com)
+#   SUPERBLOCKS_ORCHESTRATOR_REGISTRATION_ENABLED                  -> --registration.enabled (default true so agent connects)
+# Example (orchestrator-only, staging, health at :8080, agent connects):
+#   SUPERBLOCKS_AGENT_SERVER_URL=https://staging.superblocks.com \
+#   SUPERBLOCKS_AGENT_KEY=<AGENT_KEY> \
+#   SUPERBLOCKS_AGENT_HOST_URL=http://localhost:8080 \
+#   SUPERBLOCKS_AGENT_DATA_DOMAIN=app.superblocks.com \
+#   make ephemeral-deps ephemeral-orchestrator
+#
+# ============================================================================
+
+# Paths: run from orchestrator repo
+ORCH_SRC        = $(CURDIR)
+
+# Configuration
+EPHEMERAL_REDIS_PASSWORD ?= koala
+EPHEMERAL_COMPOSE_FILE   = $(CURDIR)/compose.ephemeral-dev.yaml
+
+# Source directories (orchestrator repo)
+TM_DIR          = $(ORCH_SRC)/workers/ephemeral/task-manager
+TM_BINARY       = $(TM_DIR)/task-manager
+JS_WORKSPACE    = $(ORCH_SRC)/workers/javascript
+JS_SANDBOX_DIR  = $(ORCH_SRC)/workers/ephemeral/javascript-plugins-sandbox
+ORCH_BINARY     = $(ORCH_SRC)/orchestrator
+
+# JS task-manager ports
+JS_TM_VAR_STORE_GRPC_PORT    ?= 50050
+JS_TM_VAR_STORE_HTTP_PORT    ?= 8085
+JS_TM_STREAMING_PORT         ?= 50052
+JS_TM_INTEGRATION_EXEC_PORT  ?= 50053
+JS_SANDBOX_PORT              ?= 50051
+
+# Python task-manager ports (offset to avoid conflicts with JS)
+PY_TM_VAR_STORE_GRPC_PORT    ?= 50060
+PY_TM_VAR_STORE_HTTP_PORT    ?= 8095
+PY_TM_STREAMING_PORT         ?= 50062
+PY_TM_INTEGRATION_EXEC_PORT  ?= 50063
+PY_SANDBOX_PORT              ?= 50061
+
+# Orchestrator ports (HTTP port is used for /health and the advertised agent URL)
+ORCH_HTTP_PORT    ?= 18080
+# When SUPERBLOCKS_AGENT_HOST_URL is set, use its port so the orchestrator listens where it advertises
+AGENT_HOST_PORT   := $(shell echo '$(SUPERBLOCKS_AGENT_HOST_URL)' | sed -n 's|.*:\([0-9]*\)/*.*|\1|p')
+ifneq ($(AGENT_HOST_PORT),)
+ORCH_HTTP_PORT    := $(AGENT_HOST_PORT)
+endif
+ORCH_GRPC_PORT    ?= 8081
+ORCH_METRICS_PORT ?= 9091
+ORCH_PPROF_PORT   ?= 7777
+
+# Make helper: literal comma for use inside $(call ...)
+, := ,
+
+# Common task-manager environment
+define TM_COMMON_ENV
+SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_HOST=127.0.0.1 \
+SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PORT=6379 \
+SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD=$(EPHEMERAL_REDIS_PASSWORD) \
+SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_TLS=false \
+SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_HOST=127.0.0.1 \
+SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PORT=6379 \
+SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD=$(EPHEMERAL_REDIS_PASSWORD) \
+SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_TLS=false \
+SUPERBLOCKS_WORKER_SANDBOX_WORKER_EPHEMERAL=false \
+SUPERBLOCKS_WORKER_SANDBOX_IP_FILTER_DISABLED=true \
+SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS="execute metadata test pre_delete" \
+SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS="BA BE B1 B2" \
+SUPERBLOCKS_WORKER_SANDBOX_ORCHESTRATOR_GRPC_ADDRESS=127.0.0.1:$(ORCH_GRPC_PORT)
+endef
+
+# ============================================================================
+# Docker Dependencies
+# ============================================================================
+
+.PHONY: ephemeral-deps
+ephemeral-deps:
+	EPHEMERAL_REDIS_PASSWORD=$(EPHEMERAL_REDIS_PASSWORD) docker compose -f $(EPHEMERAL_COMPOSE_FILE) up -d
+	@echo ""
+	@echo "==> Redis running on localhost:6379 (password: $(EPHEMERAL_REDIS_PASSWORD))"
+	@echo "==> Python sandbox running on localhost:$(PY_SANDBOX_PORT)"
+	@echo ""
+
+.PHONY: ephemeral-deps-down
+ephemeral-deps-down:
+	EPHEMERAL_REDIS_PASSWORD=$(EPHEMERAL_REDIS_PASSWORD) docker compose -f $(EPHEMERAL_COMPOSE_FILE) down -v
+
+# ============================================================================
+# Build Targets
+# ============================================================================
+
+.PHONY: ephemeral-build-orchestrator
+ephemeral-build-orchestrator:
+	@echo "==> Building orchestrator..."
+	@cd $(ORCH_SRC) && make build-go EXTRA_GO_OPTIONS='-cover'
+
+.PHONY: ephemeral-build-task-manager
+ephemeral-build-task-manager:
+	@echo "==> Building task-manager..."
+	@cd $(TM_DIR) && CGO_ENABLED=1 go build -ldflags="-s -w" -o task-manager ./cmd/task-manager
+
+.PHONY: ephemeral-build-js-sandbox
+ephemeral-build-js-sandbox:
+	@echo "==> Building JavaScript sandbox (this may take a while on first run)..."
+	@cd $(JS_WORKSPACE) && pnpm install && pnpm --filter javascript-plugins-sandbox... build
+
+.PHONY: ephemeral-build-go
+ephemeral-build-go: ephemeral-build-orchestrator ephemeral-build-task-manager
+	@if [ ! -f $(JS_SANDBOX_DIR)/dist/index.js ]; then \
+		echo "==> JS sandbox dist missing, building..."; \
+		$(MAKE) ephemeral-build-js-sandbox; \
+	else \
+		echo "==> JS sandbox dist exists, skipping (use 'make ephemeral-build-js-sandbox' to force)"; \
+	fi
+	@if [ -d $(JS_SANDBOX_DIR)/src/types ] && [ ! -d $(JS_SANDBOX_DIR)/dist/types ]; then \
+		echo "==> Copying protobuf types to JS sandbox dist..."; \
+		cp -r $(JS_SANDBOX_DIR)/src/types $(JS_SANDBOX_DIR)/dist/types; \
+	fi
+	@echo ""
+	@echo "==> Build complete"
+
+.PHONY: ephemeral-build
+ephemeral-build: ephemeral-build-orchestrator ephemeral-build-task-manager ephemeral-build-js-sandbox
+	@echo ""
+	@echo "==> All ephemeral binaries built successfully"
+
+# ============================================================================
+# Run Targets (each runs in foreground - use separate terminals)
+# ============================================================================
+
+.PHONY: ephemeral-orchestrator
+ephemeral-orchestrator: ephemeral-build-orchestrator
+	@echo "==> Starting orchestrator (HTTP=:$(ORCH_HTTP_PORT), gRPC=:$(ORCH_GRPC_PORT), metrics=:$(ORCH_METRICS_PORT), pprof=:$(ORCH_PPROF_PORT))..."
+	@cd $(ORCH_SRC) && SUPERBLOCKS_AGENT_APP_ENV_TEST=ok \
+	./orchestrator \
+		--zen \
+		--test=true \
+		--log.level=debug \
+		--transport.redis.password=$(EPHEMERAL_REDIS_PASSWORD) \
+		--store.redis.password=$(EPHEMERAL_REDIS_PASSWORD) \
+		--buckets.config=./buckets.minimal.json \
+		--auth.jwt.enabled=true \
+		--auth.jwt.jwks_url=https://staging-cdn.superblocks.com/.well-known/jwks.json \
+		--registration.enabled=$${SUPERBLOCKS_ORCHESTRATOR_REGISTRATION_ENABLED-true} \
+		--quotas.enabled=false \
+		--jobs.enabled=false \
+		--http.bind=127.0.0.1 \
+		--http.port=$(ORCH_HTTP_PORT) \
+		--grpc.bind=127.0.0.1 \
+		--metrics.port=$(ORCH_METRICS_PORT) \
+		--pprof.enabled=true \
+		--pprof.port=$(ORCH_PPROF_PORT) \
+		--agent.host.url=$${SUPERBLOCKS_AGENT_HOST_URL:-http://localhost:$(ORCH_HTTP_PORT)} \
+		--file.server.url=http://127.0.0.1:$(ORCH_HTTP_PORT)/v2/files \
+		--superblocks.url=$${SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_URL:-$${SUPERBLOCKS_AGENT_SERVER_URL:-$${__SUPERBLOCKS_AGENT_SERVER_URL:-http://127.0.0.1:8080}}} \
+		--superblocks.key=$${SUPERBLOCKS_AGENT_KEY-dev-agent-key} \
+		--data.domain=$${SUPERBLOCKS_AGENT_DATA_DOMAIN-app.superblocks.com} \
+		--worker.go.enabled=$${SUPERBLOCKS_ORCHESTRATOR_WORKER_GO_ENABLED-false} \
+		--worker.ephemeral.plugins.enabled=$${SUPERBLOCKS_WORKER_EPHEMERAL_PLUGINS-python,javascript} \
+		--worker.ephemeral.supported.events=$${SUPERBLOCKS_WORKER_EPHEMERAL_EVENTS-execute} \
+		--otel.collector.http.url=http://127.0.0.1:4318
+
+.PHONY: ephemeral-task-manager-js
+ephemeral-task-manager-js: ephemeral-build-task-manager
+	@echo "==> Starting JavaScript task-manager (var-store gRPC=:$(JS_TM_VAR_STORE_GRPC_PORT), HTTP=:$(JS_TM_VAR_STORE_HTTP_PORT))..."
+	@$(TM_COMMON_ENV) \
+	SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS=javascript \
+	SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS=127.0.0.1:$(JS_SANDBOX_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_PORT=$(JS_TM_VAR_STORE_GRPC_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_GRPC_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT=$(JS_TM_VAR_STORE_HTTP_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT=$(JS_TM_STREAMING_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_INTEGRATION_EXECUTOR_GRPC_PORT=$(JS_TM_INTEGRATION_EXEC_PORT) \
+	$(TM_BINARY)
+
+.PHONY: ephemeral-task-manager-py
+ephemeral-task-manager-py: ephemeral-build-task-manager
+	@echo "==> Starting Python task-manager (var-store gRPC=:$(PY_TM_VAR_STORE_GRPC_PORT), HTTP=:$(PY_TM_VAR_STORE_HTTP_PORT))..."
+	@$(TM_COMMON_ENV) \
+	SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS=python \
+	SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS=127.0.0.1:$(PY_SANDBOX_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_PORT=$(PY_TM_VAR_STORE_GRPC_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS=127.0.0.1:$(PY_TM_VAR_STORE_GRPC_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT=$(PY_TM_VAR_STORE_HTTP_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT=$(PY_TM_STREAMING_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_INTEGRATION_EXECUTOR_GRPC_PORT=$(PY_TM_INTEGRATION_EXEC_PORT) \
+	$(TM_BINARY)
+
+.PHONY: ephemeral-js-sandbox
+ephemeral-js-sandbox: ephemeral-build-js-sandbox
+	@echo "==> Starting JavaScript sandbox (gRPC=:$(JS_SANDBOX_PORT))..."
+	@env -u ELECTRON_RUN_AS_NODE \
+	SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT=$(JS_SANDBOX_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_GRPC_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_HTTP_PORT) \
+	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS=127.0.0.1:$(JS_TM_STREAMING_PORT) \
+	SUPERBLOCKS_AGENT_KEY="" \
+	SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA="" \
+	SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519="" \
+	node $(JS_SANDBOX_DIR)/dist/index.js
+
+# ============================================================================
+# Kill Targets
+# ============================================================================
+
+.PHONY: ephemeral-kill-orchestrator
+ephemeral-kill-orchestrator:
+	@echo "==> Killing orchestrator (port $(ORCH_HTTP_PORT))..."
+	@-kill $$(lsof -ti:$(ORCH_HTTP_PORT)) 2>/dev/null; true
+	@sleep 1
+
+.PHONY: ephemeral-kill-task-manager-js
+ephemeral-kill-task-manager-js:
+	@echo "==> Killing JS task-manager (port $(JS_TM_VAR_STORE_GRPC_PORT))..."
+	@-kill $$(lsof -ti:$(JS_TM_VAR_STORE_GRPC_PORT)) 2>/dev/null; true
+	@sleep 1
+
+.PHONY: ephemeral-kill-task-manager-py
+ephemeral-kill-task-manager-py:
+	@echo "==> Killing Python task-manager (port $(PY_TM_VAR_STORE_GRPC_PORT))..."
+	@-kill $$(lsof -ti:$(PY_TM_VAR_STORE_GRPC_PORT)) 2>/dev/null; true
+	@sleep 1
+
+.PHONY: ephemeral-kill-js-sandbox
+ephemeral-kill-js-sandbox:
+	@echo "==> Killing JS sandbox (port $(JS_SANDBOX_PORT))..."
+	@-kill $$(lsof -ti:$(JS_SANDBOX_PORT)) 2>/dev/null; true
+	@sleep 1
+
+.PHONY: ephemeral-kill-all
+ephemeral-kill-all: ephemeral-kill-orchestrator ephemeral-kill-task-manager-js ephemeral-kill-task-manager-py ephemeral-kill-js-sandbox
+	@echo "==> All ephemeral services killed"
+
+# ============================================================================
+# Restart Targets
+# ============================================================================
+
+.PHONY: ephemeral-restart-orchestrator
+ephemeral-restart-orchestrator: ephemeral-kill-orchestrator ephemeral-orchestrator
+
+.PHONY: ephemeral-restart-task-manager-js
+ephemeral-restart-task-manager-js: ephemeral-kill-task-manager-js ephemeral-task-manager-js
+
+.PHONY: ephemeral-restart-task-manager-py
+ephemeral-restart-task-manager-py: ephemeral-kill-task-manager-py ephemeral-task-manager-py
+
+.PHONY: ephemeral-restart-js-sandbox
+ephemeral-restart-js-sandbox: ephemeral-kill-js-sandbox ephemeral-js-sandbox
+
+# ============================================================================
+# All-in-One
+# ============================================================================
+
+EPHEMERAL_LOG_DIR ?= /tmp/ephemeral-dev
+
+define bg_start
+	@mkdir -p $(EPHEMERAL_LOG_DIR)
+	@echo "==> Starting $(1) (log: $(EPHEMERAL_LOG_DIR)/$(1).log)..."
+	@$(2) > $(EPHEMERAL_LOG_DIR)/$(1).log 2>&1 & echo $$! > $(EPHEMERAL_LOG_DIR)/$(1).pid
+endef
+
+.PHONY: ephemeral-up
+ephemeral-up: ephemeral-kill-all ephemeral-deps ephemeral-build-go
+	@echo ""
+	@echo "==> Starting all services in background..."
+	$(call bg_start,orchestrator,cd $(ORCH_SRC) && SUPERBLOCKS_AGENT_APP_ENV_TEST=ok \
+		./orchestrator \
+		--zen \
+		--test=true \
+		--log.level=debug \
+		--transport.redis.password=$(EPHEMERAL_REDIS_PASSWORD) \
+		--store.redis.password=$(EPHEMERAL_REDIS_PASSWORD) \
+		--buckets.config=./buckets.minimal.json \
+		--auth.jwt.enabled=true \
+		--auth.jwt.jwks_url=https://staging-cdn.superblocks.com/.well-known/jwks.json \
+		--registration.enabled=$${SUPERBLOCKS_ORCHESTRATOR_REGISTRATION_ENABLED-true} \
+		--quotas.enabled=false \
+		--jobs.enabled=false \
+		--http.bind=127.0.0.1 \
+		--http.port=$(ORCH_HTTP_PORT) \
+		--grpc.bind=127.0.0.1 \
+		--metrics.port=$(ORCH_METRICS_PORT) \
+		--pprof.enabled=true \
+		--pprof.port=$(ORCH_PPROF_PORT) \
+		--agent.host.url=$${SUPERBLOCKS_AGENT_HOST_URL:-http://localhost:$(ORCH_HTTP_PORT)} \
+		--file.server.url=http://127.0.0.1:$(ORCH_HTTP_PORT)/v2/files \
+		--superblocks.url=$${SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_URL:-$${SUPERBLOCKS_AGENT_SERVER_URL:-$${__SUPERBLOCKS_AGENT_SERVER_URL:-http://127.0.0.1:8080}}} \
+		--superblocks.key=$${SUPERBLOCKS_AGENT_KEY-dev-agent-key} \
+		--data.domain=$${SUPERBLOCKS_AGENT_DATA_DOMAIN-app.superblocks.com} \
+		--worker.go.enabled=$${SUPERBLOCKS_ORCHESTRATOR_WORKER_GO_ENABLED-false} \
+		--worker.ephemeral.plugins.enabled=$${SUPERBLOCKS_WORKER_EPHEMERAL_PLUGINS-python$(,)javascript} \
+		--worker.ephemeral.supported.events=$${SUPERBLOCKS_WORKER_EPHEMERAL_EVENTS-execute} \
+		--otel.collector.http.url=http://127.0.0.1:4318)
+	$(call bg_start,js-sandbox,env -u ELECTRON_RUN_AS_NODE \
+		SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT=$(JS_SANDBOX_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_GRPC_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_HTTP_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS=127.0.0.1:$(JS_TM_STREAMING_PORT) \
+		SUPERBLOCKS_AGENT_KEY="" \
+		SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA="" \
+		SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519="" \
+		node $(JS_SANDBOX_DIR)/dist/index.js)
+	$(call bg_start,task-manager-js,\
+		$(TM_COMMON_ENV) \
+		SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS=javascript \
+		SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS=127.0.0.1:$(JS_SANDBOX_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_PORT=$(JS_TM_VAR_STORE_GRPC_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_GRPC_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT=$(JS_TM_VAR_STORE_HTTP_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT=$(JS_TM_STREAMING_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_INTEGRATION_EXECUTOR_GRPC_PORT=$(JS_TM_INTEGRATION_EXEC_PORT) \
+		$(TM_BINARY))
+	$(call bg_start,task-manager-py,\
+		$(TM_COMMON_ENV) \
+		SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS=python \
+		SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS=127.0.0.1:$(PY_SANDBOX_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_PORT=$(PY_TM_VAR_STORE_GRPC_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS=127.0.0.1:$(PY_TM_VAR_STORE_GRPC_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT=$(PY_TM_VAR_STORE_HTTP_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT=$(PY_TM_STREAMING_PORT) \
+		SUPERBLOCKS_WORKER_SANDBOX_INTEGRATION_EXECUTOR_GRPC_PORT=$(PY_TM_INTEGRATION_EXEC_PORT) \
+		$(TM_BINARY))
+	@echo ""
+	@echo "==> All services running in background"
+	@echo "    Logs:   $(EPHEMERAL_LOG_DIR)/*.log"
+	@echo "    make ephemeral-status   Check service status"
+
+.PHONY: ephemeral-logs
+ephemeral-logs:
+	@tail -f $(EPHEMERAL_LOG_DIR)/orchestrator.log $(EPHEMERAL_LOG_DIR)/task-manager-js.log $(EPHEMERAL_LOG_DIR)/task-manager-py.log $(EPHEMERAL_LOG_DIR)/js-sandbox.log 2>/dev/null || echo "No logs yet. Run make ephemeral-up first."
+
+.PHONY: ephemeral-status
+ephemeral-status:
+	@echo "Ephemeral services:"
+	@for svc in orchestrator task-manager-js task-manager-py js-sandbox; do \
+		if [ -f $(EPHEMERAL_LOG_DIR)/$$svc.pid ] && kill -0 $$(cat $(EPHEMERAL_LOG_DIR)/$$svc.pid) 2>/dev/null; then \
+			echo "  ✓ $$svc (pid $$(cat $(EPHEMERAL_LOG_DIR)/$$svc.pid))"; \
+		else echo "  ✗ $$svc (not running)"; fi; \
+	done
+	@echo ""
+	@echo "Docker deps:"
+	@docker compose -f $(EPHEMERAL_COMPOSE_FILE) ps --format "  {{.Name}}: {{.Status}}" 2>/dev/null || echo "  (not running)"
+
+.PHONY: ephemeral-down
+ephemeral-down: ephemeral-kill-all ephemeral-deps-down
+	@rm -f $(EPHEMERAL_LOG_DIR)/*.pid
+	@echo "==> Ephemeral stack stopped"
+
+.PHONY: ephemeral-help
+ephemeral-help:
+	@echo "Ephemeral Worker Development (from orchestrator repo)"
+	@echo "  make ephemeral-up      Kill, rebuild, start all (background)"
+	@echo "  make ephemeral-status  Check what is running"
+	@echo "  make ephemeral-logs    Tail all logs"
+	@echo "  make ephemeral-down    Stop everything"

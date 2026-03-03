@@ -1,0 +1,24 @@
+---
+# Minimal Docker Compose for ephemeral worker development (run from orchestrator repo).
+# Provides Redis and Python sandbox. Orchestrator, task-manager, and JS sandbox run natively via Makefile.ephemeral.
+services:
+  redis:
+    image: ghcr.io/superblocksteam/docker.io/valkey/valkey:8.1.5-alpine
+    ports:
+      - "6379:6379"
+    command: --requirepass ${EPHEMERAL_REDIS_PASSWORD:-koala}
+    pull_policy: always
+  python-sandbox:
+    image: ghcr.io/superblocksteam/python-sandbox:${EPHEMERAL_IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.sandbox.python
+    ports:
+      - "50061:50051"
+    environment:
+      SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT: 50051
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS: host.docker.internal:50060
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS: host.docker.internal:8095
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS: host.docker.internal:50062
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

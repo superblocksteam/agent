@@ -2,6 +2,9 @@ include ./make/Makefile.base
 include ./make/Makefile.golang
 include ./make/Makefile.docker
 
+# Ephemeral worker dev: native orchestrator + task-manager + optional server (make ephemeral-up)
+-include Makefile.ephemeral
+
 # service args
 SERVICE_NAME     = orchestrator
 SERVICE_VERSION  = $(shell git rev-parse HEAD)
