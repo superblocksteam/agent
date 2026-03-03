@@ -16,9 +16,9 @@
 
 {{- $fullname := include "sandbox_workers.fullname" . }}
 ---
-# Task Manager Network Policy - Internal VPC only
-# Task manager needs access to Redis, K8s API, sandbox pods, OTEL collector
-# All of these are internal services - no internet access needed
+# Task Manager Network Policy
+# Task manager needs access to Redis, K8s API, sandbox pods, OTEL collector,
+# and HTTPS endpoints for integration executor callbacks / JWKS retrieval.
 apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
@@ -60,7 +60,14 @@ spec:
           - 172.16.0.0/12
           - 192.168.0.0/16
 
-    # Deny everything else (no internet access for task-manager)
+    # Allow HTTPS egress for integration callback routing and JWKS retrieval
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 443
+
+    # Deny everything else
     - action: Deny
 
 ---
