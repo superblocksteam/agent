@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 - Upgrade `vm2` to latest version (`v3.10.5`)
 - Add Snowflake Postgres support
+- Add plugin support for `snowflakecortex` integration
 
 ## v1.35.0
 - Security patches

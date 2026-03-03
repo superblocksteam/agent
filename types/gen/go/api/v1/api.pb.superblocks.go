@@ -1291,3 +1291,19 @@ func (plugin *Step_Snowflakepostgres) Build() (map[string]any, error) {
 	}
 	return obj, nil
 }
+
+func (*Step_Snowflakecortex) Name() string { return "snowflakecortex" }
+
+func (*Step_Snowflakecortex) Type() string { return "restapiintegration" }
+
+func (plugin *Step_Snowflakecortex) Build() (map[string]any, error) {
+	var buf bytes.Buffer
+	if err := marshaler.Marshal(&buf, plugin.Snowflakecortex); err != nil {
+		return nil, err
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
+}

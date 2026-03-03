@@ -462,5 +462,6 @@ message Step {
     plugins.lakebase.v1.Plugin lakebase = 79;
     plugins.javascriptsdkapi.v1.Plugin javascriptsdkapi = 80;
     plugins.snowflakepostgres.v1.Plugin snowflakepostgres = 81;
+    plugins.restapiintegration.v1.Plugin snowflakecortex = 82 [(superblocks.v1.integration_options) = {pluginType: "restapiintegration"}];
   }
 }

@@ -44,7 +44,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"python":             {"0.0.7"},
 	"redshift":           {"0.0.8"},
 	"restapi":            {"0.0.13"},
-	"restapiintegration": {"0.0.14"},
+	"restapiintegration": {"0.0.15"},
 	"rockset":            {"0.0.7"},
 	"s3":                 {"0.0.11"},
 	"salesforce":         {"0.0.2"},

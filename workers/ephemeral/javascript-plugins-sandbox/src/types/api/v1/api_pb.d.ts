@@ -1626,6 +1626,11 @@ export class Step extends jspb.Message {
     getSnowflakepostgres(): plugins_snowflakepostgres_v1_plugin_pb.Plugin | undefined;
     setSnowflakepostgres(value?: plugins_snowflakepostgres_v1_plugin_pb.Plugin): Step;
 
+    hasSnowflakecortex(): boolean;
+    clearSnowflakecortex(): void;
+    getSnowflakecortex(): plugins_restapiintegration_v1_plugin_pb.Plugin | undefined;
+    setSnowflakecortex(value?: plugins_restapiintegration_v1_plugin_pb.Plugin): Step;
+
     getConfigCase(): Step.ConfigCase;
 
     serializeBinary(): Uint8Array;
@@ -1721,6 +1726,7 @@ export namespace Step {
         lakebase?: plugins_lakebase_v1_plugin_pb.Plugin.AsObject,
         javascriptsdkapi?: plugins_javascriptsdkapi_v1_plugin_pb.Plugin.AsObject,
         snowflakepostgres?: plugins_snowflakepostgres_v1_plugin_pb.Plugin.AsObject,
+        snowflakecortex?: plugins_restapiintegration_v1_plugin_pb.Plugin.AsObject,
     }
 
     export enum ConfigCase {
@@ -1805,6 +1811,7 @@ export namespace Step {
         LAKEBASE = 79,
         JAVASCRIPTSDKAPI = 80,
         SNOWFLAKEPOSTGRES = 81,
+        SNOWFLAKECORTEX = 82,
     }
 
 }
