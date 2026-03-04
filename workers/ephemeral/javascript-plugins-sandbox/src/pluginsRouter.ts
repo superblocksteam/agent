@@ -247,6 +247,13 @@ export class PluginsRouter {
 
     this.convertPluginConfigTypesInPlace(pluginName, pluginProps);
 
+    // Copy preparedStatementContext from actionConfiguration to context.
+    // This supports SQL parameter arrays that are pre-evaluated by orchestrator.
+    if (pluginProps.actionConfiguration?.preparedStatementContext) {
+      pluginProps.context.preparedStatementContext = pluginProps.actionConfiguration.preparedStatementContext;
+      pluginProps.redactedContext.preparedStatementContext = pluginProps.actionConfiguration.preparedStatementContext;
+    }
+
     return pluginProps;
   }
 
