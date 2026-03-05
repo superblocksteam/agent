@@ -14,8 +14,6 @@ ENV SLACKCLIENT_SKIP_DEPRECATION true
 ENV NODE_VERSION 18.x
 ENV SUPERBLOCKS_SLIM_IMAGE true
 
-ARG EXTRA_DEBIAN_PACKAGES
-
 WORKDIR /usr/app/worker-python
 
 COPY requirements-slim.txt /usr/app/worker-python/
