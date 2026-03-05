@@ -1,7 +1,9 @@
 package redis
 
 import (
+	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
@@ -207,6 +209,104 @@ func TestRedisTransportAlive(t *testing.T) {
 
 	if transport.Alive() {
 		t.Error("transport should not be alive after setting alive to false")
+	}
+}
+
+func TestCloseDoesNotCloseWorkerReturnedChannel(t *testing.T) {
+	alive := &atomic.Bool{}
+	alive.Store(true)
+
+	executionPool := &atomic.Int64{}
+	executionPool.Store(1) // no in-flight workers; Close returns immediately
+
+	transport := &redisTransport{
+		logger:            zap.NewNop(),
+		alive:             alive,
+		executionPool:     executionPool,
+		executionPoolSize: 1,
+		workerReturned:    make(chan int64, 1),
+		cancel:            func() {},
+	}
+
+	err := transport.Close(context.Background())
+	if err != nil {
+		t.Fatalf("Close() error = %v", err)
+	}
+
+	func() {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				t.Fatalf("sending to workerReturned panicked after Close: %v", recovered)
+			}
+		}()
+		transport.workerReturned <- 1
+	}()
+
+	select {
+	case got := <-transport.workerReturned:
+		if got != 1 {
+			t.Fatalf("workerReturned value = %d, want 1", got)
+		}
+	default:
+		t.Fatal("expected workerReturned to remain writable after Close")
+	}
+}
+
+func TestNotifyWorkerReturnedDoesNotBlockWhenChannelFull(t *testing.T) {
+	transport := &redisTransport{
+		workerReturned: make(chan int64, 1),
+	}
+	transport.workerReturned <- 42
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		transport.notifyWorkerReturned(1)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("notifyWorkerReturned blocked on full channel")
+	}
+}
+
+func TestPollOnceIgnoresStaleWorkerReturnedSignals(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	executionPool := &atomic.Int64{}
+	executionPool.Store(0)
+
+	transport := &redisTransport{
+		context:        ctx,
+		executionPool:  executionPool,
+		workerReturned: make(chan int64, 1),
+	}
+	transport.workerReturned <- 99 // stale wake-up while pool is still empty
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, err := transport.pollOnce()
+		if err != nil {
+			t.Errorf("pollOnce() error = %v", err)
+		}
+	}()
+
+	select {
+	case <-done:
+		t.Fatal("pollOnce returned before pool capacity became available")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	transport.executionPool.Store(1)
+	transport.notifyWorkerReturned(0)
+
+	select {
+	case <-done:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("pollOnce did not return after pool capacity became available")
 	}
 }
 

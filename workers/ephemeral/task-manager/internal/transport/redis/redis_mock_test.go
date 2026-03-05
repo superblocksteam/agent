@@ -199,9 +199,10 @@ func TestEmptyExecutionPoolSkipsPolling(t *testing.T) {
 	transport.executionPool.Store(0)
 
 	// With pool empty, pollOnce should wait on workerReturned channel
-	// We simulate a worker returning
+	// We simulate a worker returning and restoring one free slot.
 	go func() {
 		time.Sleep(50 * time.Millisecond)
+		transport.executionPool.Store(1)
 		transport.workerReturned <- 0
 	}()
 

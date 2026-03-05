@@ -114,7 +114,7 @@ func NewRedisTransport(options *Options) *redisTransport {
 		alive:             alive,
 		executionPool:     executionPool,
 		executionPoolSize: options.ExecutionPool,
-		workerReturned:    make(chan int64),
+		workerReturned:    make(chan int64, 1),
 
 		context: ctx,
 		cancel:  cancel,
@@ -212,8 +212,9 @@ func (rt *redisTransport) poll() error {
 			}
 		}
 
-		// If the execution pool is exhausted, wait
-		if rt.executionPool.Load() <= 0 {
+		// If the execution pool is exhausted, wait for worker completion signals.
+		// Re-check in a loop because buffered wakeups can be stale.
+		for rt.executionPool.Load() <= 0 {
 			select {
 			case <-rt.context.Done():
 				return rt.context.Err()
@@ -235,12 +236,14 @@ func (rt *redisTransport) poll() error {
 func (rt *redisTransport) pollOnce() (bool, error) {
 	remaining := rt.executionPool.Load()
 	if remaining <= 0 {
-		select {
-		case <-rt.context.Done():
-			return false, rt.context.Err()
-		case <-rt.workerReturned:
-			return false, nil
+		for rt.executionPool.Load() <= 0 {
+			select {
+			case <-rt.context.Done():
+				return false, rt.context.Err()
+			case <-rt.workerReturned:
+			}
 		}
+		return false, nil
 	}
 	count := min(rt.messageCount, remaining)
 
@@ -278,7 +281,7 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 
 				sandboxmetrics.AddUpDownCounter(context.Background(), sandboxmetrics.SandboxExecutionPoolInUse, -1)
 				pool := rt.executionPool.Add(1)
-				rt.workerReturned <- rt.executionPoolSize - pool
+				rt.notifyWorkerReturned(rt.executionPoolSize - pool)
 			}(stream.Stream)
 		}
 	}
@@ -484,20 +487,28 @@ func (rt *redisTransport) Run(ctx context.Context) error {
 
 // Close implements run.Runnable
 func (rt *redisTransport) Close(ctx context.Context) error {
-	defer close(rt.workerReturned)
 	rt.logger.Info("closing redis transport", zap.Error(ctx.Err()))
 	rt.alive.Store(false)
 	rt.cancel()
 
-	if rt.executionPool.Load() == rt.executionPoolSize {
-		return nil
-	}
-	for {
-		busyWorkersRemaining := <-rt.workerReturned
-		rt.logger.Debug("worker returned", zap.Int64("remaining", busyWorkersRemaining))
-		if busyWorkersRemaining == 0 {
-			return nil
+	for rt.executionPool.Load() < rt.executionPoolSize {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-rt.workerReturned:
 		}
+	}
+
+	return nil
+}
+
+func (rt *redisTransport) notifyWorkerReturned(busyWorkersRemaining int64) {
+	// `workerReturned` is a wake-up signal channel, not a delivery queue.
+	// Drop duplicate signals when the channel is already full to avoid blocking
+	// completion goroutines when no receiver is currently waiting.
+	select {
+	case rt.workerReturned <- busyWorkersRemaining:
+	default:
 	}
 }
 
