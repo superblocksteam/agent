@@ -33,6 +33,7 @@ export interface KVStore {
   read: (keys: string[]) => Promise<{ data: unknown[] }>;
   write: (key: string, value: string) => Promise<void>;
   writeMany: (kvs: { key: string; value: unknown }[]) => Promise<void>;
+  fetchFileCallback?: (path: string, callback: (error: Error | null, result: Buffer | null) => void) => void;
 }
 
 export interface IntegrationExecutor {

@@ -2,7 +2,42 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext } from '../../types';
 import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
 import * as vm from './vm';
-import { resolveAllBindings, serialize } from './utils';
+import { resolveAllBindings, serialize, VariableClient } from './utils';
+
+class MockKVStore {
+  private _store: { [key: string]: unknown } = {};
+  fetchFileCallback?: (path: string, callback: (error: Error | null, result: Buffer | null) => void) => void;
+
+  public async read(keys: string[]): Promise<{ data: unknown[] }> {
+    const _matched: unknown[] = [];
+
+    keys.forEach((item: string) => {
+      _matched.push(this._store[item]);
+    });
+
+    return { data: _matched };
+  }
+
+  public async write(key: string, value: unknown): Promise<void> {
+    this._store[key] = value;
+  }
+
+  public async writeMany(payload: { key: string; value: unknown }[]): Promise<void> {
+    for (const { key, value } of payload) {
+      this._store[key] = value;
+    }
+  }
+
+  public async delete(keys: string[]): Promise<void> {
+    for (const key of keys) {
+      delete this._store[key];
+    }
+  }
+
+  public async close(reason: string | undefined): Promise<void> {
+    // do nothing
+  }
+}
 
 describe('utils', () => {
   describe('resolveAllBindings', () => {
@@ -76,6 +111,7 @@ describe('utils', () => {
       const vmSpy = jest.spyOn(vm, 'nodeVMWithContext');
       try {
         const context = new ExecutionContext();
+        context.kvStore = new MockKVStore();
         context.useWasmBindingsSandbox = true;
         context.addGlobalVariable('x', 2);
 
@@ -109,6 +145,15 @@ describe('utils', () => {
       await expect(resolveAllBindings('{{ $fileServerUrl }}', context, {}, false)).rejects.toThrow(/\$fileServerUrl.*not defined/i);
     });
 
+    it('should complete WASM binding resolution without kvStore when no variables or sandbox file fetcher', async () => {
+      const context = new ExecutionContext();
+      context.useWasmBindingsSandbox = true;
+      context.addGlobalVariable('x', 42);
+      // No kvStore, no variables, no file picker - useSandboxFileFetcher is false
+      const result = await resolveAllBindings('{{ x + 1 }}', context, {}, false);
+      expect(result['x + 1']).toBe(43);
+    });
+
     it('should enforce the WASM sandbox memory limit', async () => {
       const prevReqMax = process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX;
       try {
@@ -117,6 +162,7 @@ describe('utils', () => {
         process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX = String(capBytes);
 
         const context = new ExecutionContext();
+        context.kvStore = new MockKVStore();
         context.useWasmBindingsSandbox = true;
 
         // Try to allocate a very large string in the VM; this should fail under the WASM sandbox memory limit.
@@ -126,6 +172,75 @@ describe('utils', () => {
         if (prevReqMax === undefined) delete process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX;
         else process.env.SUPERBLOCKS_ORCHESTRATOR_GRPC_MSG_REQ_MAX = prevReqMax;
       }
+    });
+
+    it('should set useSandboxFileFetcher and use VariableClient when kvStore has fetchFileCallback (WASM)', async () => {
+      const mockContent = 'sandbox-fetched-content';
+      const kvStore = new MockKVStore();
+      kvStore.fetchFileCallback = (path, callback) => {
+        expect(path).toBe('/remote/file/path');
+        callback(null, Buffer.from(mockContent));
+      };
+
+      const context = new ExecutionContext();
+      context.kvStore = kvStore;
+      context.useWasmBindingsSandbox = true;
+      context.addGlobalVariable('FilePicker1', {
+        files: [
+          {
+            name: 'test.txt',
+            extension: 'txt',
+            type: 'text/plain',
+            size: 100,
+            encoding: 'text',
+            $superblocksId: 'test-id'
+          }
+        ]
+      });
+
+      const filePaths = { 'FilePicker1.files.0': '/remote/file/path' };
+      const result = await resolveAllBindings(
+        '{{ FilePicker1.files[0].readContents("text") }}',
+        context,
+        filePaths,
+        false
+      );
+
+      expect(result['FilePicker1.files[0].readContents("text")']).toBe(mockContent);
+    });
+
+    it('should use readContentsAsync with sandbox file fetcher (WASM)', async () => {
+      const mockContent = 'async-sandbox-content';
+      const kvStore = new MockKVStore();
+      kvStore.fetchFileCallback = (path, callback) => {
+        callback(null, Buffer.from(mockContent));
+      };
+
+      const context = new ExecutionContext();
+      context.kvStore = kvStore;
+      context.useWasmBindingsSandbox = true;
+      context.addGlobalVariable('FilePicker1', {
+        files: [
+          {
+            name: 'test.txt',
+            extension: 'txt',
+            type: 'text/plain',
+            size: 100,
+            encoding: 'text',
+            $superblocksId: 'test-id'
+          }
+        ]
+      });
+
+      const filePaths = { 'FilePicker1.files.0': '/async/file/path' };
+      const result = await resolveAllBindings(
+        '{{ await FilePicker1.files[0].readContentsAsync("text") }}',
+        context,
+        filePaths,
+        false
+      );
+
+      expect(result['await FilePicker1.files[0].readContentsAsync("text")']).toBe(mockContent);
     });
   });
 
@@ -160,6 +275,18 @@ describe('utils', () => {
       // \u{FFFD} logic check: buffer with invalid utf8 should return base64
       // Buffer.from([0xFF]).toString('utf8') produces replacement char \uFFFD
       expect(result).toBe(buffer.toString('base64'));
+    });
+  });
+
+  describe('VariableClient', () => {
+    it('should throw when fetchFileCallback is called but kvStore does not implement it', () => {
+      const kvStore = new MockKVStore();
+      // Intentionally omit fetchFileCallback to simulate misconfiguration
+      const client = new VariableClient(kvStore);
+
+      expect(() => {
+        client.fetchFileCallback('/some/path', (_err, _result) => {});
+      }).toThrow('KVStore does not implement fetchFileCallback');
     });
   });
 });

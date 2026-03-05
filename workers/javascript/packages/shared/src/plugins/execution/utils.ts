@@ -17,7 +17,7 @@ import {
 } from '../../types';
 import { RequestFile, RequestFiles } from '../files';
 import { extractMustacheStrings, FlatContext } from './mustache';
-import { ProcessInput } from './types';
+import { FileFetcher, ProcessInput } from './types';
 import { buildVariables } from './variable';
 import { nodeVMWithContext } from './vm';
 
@@ -208,7 +208,14 @@ export const resolveAllBindings = async (
   escapeStrings: boolean
 ): Promise<Record<string, unknown>> => {
   if (shouldUseWasmBindingsSandbox(context)) {
-    return resolveAllBindingsWasm(unresolvedValue, context, filePaths, escapeStrings);
+    const useSandboxFileFetcher = Boolean((context.kvStore as unknown as { fetchFileCallback?: unknown } | undefined)?.fetchFileCallback);
+    return resolveAllBindingsWasm(
+      unresolvedValue,
+      context,
+      filePaths,
+      escapeStrings,
+      useSandboxFileFetcher
+    );
   }
   return resolveAllBindingsVm2(unresolvedValue, context, filePaths, escapeStrings);
 };
@@ -221,7 +228,8 @@ const resolveAllBindingsWasm = async (
   unresolvedValue: string,
   context: ExecutionContext,
   filePaths: Record<string, string>,
-  escapeStrings: boolean
+  escapeStrings: boolean,
+  useSandboxFileFetcher: boolean
 ): Promise<Record<string, unknown>> => {
   const maxMemoryBytes = computeWasmSandboxMemoryLimitBytes();
 
@@ -271,18 +279,38 @@ const resolveAllBindingsWasm = async (
   }
 
   let variableClient: VariableClient | undefined;
-  if (context.variables && typeof context.variables === 'object') {
-    variableClient = new VariableClient(context.kvStore!);
+  if (context.kvStore && (context.variables || useSandboxFileFetcher)) {
+    variableClient = new VariableClient(context.kvStore);
+  }
+  if (context.variables && typeof context.variables === 'object' && variableClient !== undefined) {
     const builtVariables = await buildVariables(context.variables, variableClient);
     for (const [k, v] of Object.entries(builtVariables)) {
       globals[k] = v;
     }
   }
 
+  let fileFetcher: FileFetcher;
+  if (useSandboxFileFetcher) {
+    if (variableClient === undefined) {
+      throw new Error('useSandboxFileFetcher requires kvStore');
+    }
+
+    fileFetcher = {
+      type: 'sandbox',
+      client: variableClient
+    };
+  } else {
+    fileFetcher = {
+      type: 'controller',
+      fileServerUrl,
+      agentKey
+    };
+  }
+
   // Prepare file picker objects with readContentsAsync/readContents methods
   // This is done in the host (here) before passing to the VM, unlike the VM2
   // implementation which did this inside the VM via $prepareGlobalObjectForFiles.
-  prepareGlobalsWithFileMethods(globals, filePaths, fileServerUrl, agentKey);
+  prepareGlobalsWithFileMethods(globals, filePaths, fileFetcher);
 
   const expressions = extractMustacheStrings(unresolvedValue);
 
@@ -367,21 +395,42 @@ const resolveAllBindingsWasm = async (
 function prepareGlobalsWithFileMethods(
   globals: Record<string, unknown>,
   filePaths: Record<string, string>,
-  fileServerUrl: string,
-  agentKey: string
+  fetcher: FileFetcher,
 ): void {
   Object.entries(filePaths).forEach(([treePath, diskPath]) => {
     if (!diskPath) return;
 
-    const readContentsAsync = async (mode?: 'raw' | 'binary' | 'text' | unknown): Promise<string | Buffer> => {
-      const contents = await promisify(fetchFromController)(fileServerUrl, agentKey, diskPath);
-      return serialize(contents, mode);
-    };
+    let readContentsAsync: (mode?: 'raw' | 'binary' | 'text' | unknown) => Promise<string | Buffer>;
+    let readContents: (mode?: 'raw' | 'binary' | 'text' | unknown) => string | Buffer;
 
-    const readContents = (mode?: 'raw' | 'binary' | 'text' | unknown): string | Buffer => {
-      const contents = deasync(fetchFromController)(fileServerUrl, agentKey, diskPath);
-      return serialize(contents, mode);
-    };
+    if (fetcher.type === 'controller') {
+      // Old worker: fetch from controller
+      readContentsAsync = async (mode?: 'raw' | 'binary' | 'text' | unknown): Promise<string | Buffer> => {
+        const contents = await promisify(fetchFromController)(fetcher.fileServerUrl, fetcher.agentKey, diskPath);
+        return serialize(contents, mode);
+      };
+
+      readContents = (mode?: 'raw' | 'binary' | 'text' | unknown): string | Buffer => {
+        const contents = deasync(fetchFromController)(fetcher.fileServerUrl, fetcher.agentKey, diskPath);
+        return serialize(contents, mode);
+      };
+    } else {
+      // Sandbox worker: fetch via VariableClient (proxied through KVStore/GrpcKvStore)
+      const { client } = fetcher;
+      const fetchFileCallback = (path: string, cb: (err: Error | null, result: Buffer | null) => void): void => {
+        client.fetchFileCallback(path, cb);
+      };
+
+      readContentsAsync = async (mode?: 'raw' | 'binary' | 'text' | unknown): Promise<string | Buffer> => {
+        const contents = await promisify(fetchFileCallback)(diskPath);
+        return serialize(contents, mode);
+      };
+
+      readContents = (mode?: 'raw' | 'binary' | 'text' | unknown): string | Buffer => {
+        const contents = deasync(fetchFileCallback)(diskPath);
+        return serialize(contents, mode);
+      };
+    }
 
     const file = _.get(globals, treePath) as object | undefined;
     // Leaving $superblocksId set because it's required by our S3.
@@ -752,6 +801,16 @@ export class VariableClient {
 
   writeBuffer(key: string, value: unknown): void {
     this.#writableBuffer.push({ key: key, value: value });
+  }
+
+  fetchFileCallback(path: string, callback: (error: Error | null, result: Buffer | null) => void): void {
+    if (this.#kvStore.fetchFileCallback === undefined || typeof this.#kvStore.fetchFileCallback !== 'function') {
+      throw new Error(
+        'KVStore does not implement fetchFileCallback. useSandboxFileFetcher was enabled but the underlying kvStore lacks file fetching support.'
+      );
+    }
+
+    this.#kvStore.fetchFileCallback(path, callback);
   }
 
   async flush(): Promise<void> {
