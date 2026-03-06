@@ -192,7 +192,18 @@ func init() {
 func main() {
 	pflag.Parse()
 
-	plugins := pluginparser.ParsePlugins(viper.GetStringSlice("worker.plugins"))
+	// Viper's GetStringSlice does not split comma-separated env vars; it returns one element.
+	// Expand "javascript,javascriptsdkapi" into ["javascript", "javascriptsdkapi"].
+	pluginRaw := viper.GetStringSlice("worker.plugins")
+	var pluginList []string
+	for _, s := range pluginRaw {
+		for _, p := range strings.Split(s, ",") {
+			if t := strings.TrimSpace(p); t != "" {
+				pluginList = append(pluginList, t)
+			}
+		}
+	}
+	plugins := pluginparser.ParsePlugins(pluginList)
 	if plugins.IsEmpty() {
 		fmt.Fprintf(os.Stderr, "no plugins specified")
 		os.Exit(1)
