@@ -13,22 +13,22 @@
     "build": "swc ./src --out-dir ./dist --config-file .swcrc",
     "lint": "eslint . --ext ts",
     "lint:fix": "eslint . --ext ts --fix",
-    "typecheck": "npx tsc"
+    "typecheck": "tsc"
   },
   "devDependencies": {
-    "@swc/cli": "0.6.0",
-    "@swc/core": "1.7.26",
-    "@types/node": "20.14.8",
-    "@typescript-eslint/eslint-plugin": "7.8.0",
-    "@typescript-eslint/parser": "7.8.0",
-    "eslint": "8.57.0",
-    "eslint-config-prettier": "8.1.0",
-    "eslint-import-resolver-typescript": "2.5.0",
-    "eslint-plugin-import": "2.29.1",
-    "eslint-plugin-prettier": "5.2.1",
+    "@swc/cli": "catalog:",
+    "@swc/core": "catalog:",
+    "@types/node": "catalog:",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@typescript-eslint/parser": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-import-resolver-typescript": "catalog:",
+    "eslint-plugin-import": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
     "nodemon": "3.1.4",
     "ts-node": "10.9.2",
-    "typescript": "5.5.4"
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@superblocks/worker.js": "workspace:*",

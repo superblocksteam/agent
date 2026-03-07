@@ -18,8 +18,7 @@ exclude:
 - workers/python/helm/templates/
 - workers/javascript/helm/templates/
 - workers/ephemeral/helm/templates/
-- workers/javascript/pnpm-lock.yaml
-- workers/javascript/pnpm-lock-slim.yaml
+- pnpm-lock.yaml
 - helm/cloud-opa/templates/
 - clients/
 - workers/javascript/packages/quickjs-emscripten/

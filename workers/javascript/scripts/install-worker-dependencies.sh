@@ -57,9 +57,10 @@ prepareSlimDependencyInstall() {
 }
 
 installDependencies() {
-    npm install
-    npx pnpm install --lockfile-only
-    npx pnpm install
+    # Run pnpm install from workspace root (required for catalog: resolution)
+    local workspace_root
+    workspace_root=$(git rev-parse --show-toplevel)
+    pnpm install --dir "$workspace_root"
 }
 
 updateSlimDependencyFiles() {

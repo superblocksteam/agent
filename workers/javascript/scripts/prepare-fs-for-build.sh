@@ -9,8 +9,8 @@ set -eo pipefail
 working_dir=""
 is_slim_build=false
 
-file_patterns=("package-temp.json" "package-lock-temp.json" "pnpm-lock-temp.yaml")
-slim_file_patterns=("package-slim.json" "package-lock-slim.json" "pnpm-lock-slim.yaml")
+file_patterns=("package-temp.json")
+slim_file_patterns=("package-slim.json")
 
 exclude_dirs=(".git" "coverage" "dist" "node_modules" "src")
 
@@ -55,32 +55,16 @@ prepareDirectoriesForBuild() {
 
 prepareDirectoriesForStandardBuild() {
     for dir in "${target_dirs[@]}"; do
-        if [[ -e ${dir}/pnpm-lock-temp.yaml ]]; then
-            mv "${dir}/pnpm-lock-temp.yaml" "${dir}/pnpm-lock.yaml"
-        fi
-
         if [[ -e ${dir}/package-temp.json ]]; then
             mv "${dir}/package-temp.json" "${dir}/package.json"
-        fi
-
-        if [[ -e ${dir}/package-lock-temp.json ]]; then
-            mv "${dir}/package-lock-temp.json" "${dir}/package-lock.json"
         fi
     done
 }
 
 prepareDirectoriesForSlimBuild() {
     for dir in "${target_dirs[@]}"; do
-        if [[ -e "$dir/pnpm-lock-slim.yaml" ]]; then
-            mv "${dir}/pnpm-lock-slim.yaml" "${dir}/pnpm-lock.yaml"
-        fi
-
         if [[ -e "$dir/package-slim.json" ]]; then
             mv "${dir}/package-slim.json" "${dir}/package.json"
-        fi
-
-        if [[ -e "$dir/package-lock-slim.json" ]]; then
-            mv "${dir}/package-lock-slim.json" "${dir}/package-lock.json"
         fi
     done
 }

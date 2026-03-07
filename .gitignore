@@ -54,3 +54,5 @@ charts/
 
 # Agent/MCP related
 .fastembed_cache/
+.sisyphus/
+.serena/

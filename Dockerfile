@@ -7,15 +7,16 @@ ARG GO_VERSION=1.25.1
 ARG PYTHON_VERSION=3.10.18
 ARG NODE_VERSION_MAJOR=20
 ARG NODE_VERSION=20.19.5
-ARG PNPM_VERSION=10.19.0
 ARG S6_OVERLAY_VERSION=3.2.1.0
 ARG DEASYNC_VERSION=0.1.29
 ARG EMSDK_VERSION=3.1.65
 ARG LIBEXPAT_VERSION=2.6.3
 ARG REQUIREMENTS_FILE=requirements-slim.txt
 ARG SLIM_IMAGE=true
-ARG SB_GIT_COMMIT_SHA=unset
 ARG WORKER_JS_PREPARE_FS_ARGS=--slim
+ARG FLEET_PACKAGE=@superblocks/fleet.all
+ARG PNPM_VERSION=10.29.2
+ARG SB_GIT_COMMIT_SHA=unset
 ARG SERVICE_VERSION
 ARG EXTRA_GO_OPTIONS
 ARG INTERNAL_TAG
@@ -71,14 +72,17 @@ ARG BUILDARCH
 ARG NODE_VERSION
 ARG NODE_VERSION_MAJOR
 ARG GO_VERSION
-ARG PNPM_VERSION
 ARG S6_OVERLAY_VERSION
 ARG DEASYNC_VERSION
 ARG EMSDK_VERSION
 ARG WORKER_JS_PREPARE_FS_ARGS
+ARG FLEET_PACKAGE
+ARG PNPM_VERSION
 
 ENV PATH=/usr/local/go/bin:$PATH
 ENV BUILDARCH=$BUILDARCH
+
+WORKDIR /app
 
 ADD --chmod=777 https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
 ADD --chmod=777 https://go.dev/dl/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz /tmp
@@ -96,21 +100,21 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     wget -P /tmp https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz && \
     tar -C /s6 -Jxpf /tmp/s6-overlay-${S6_ARCH}.tar.xz                                                                               && \
     tar -C /s6 -Jxpf /tmp/s6-overlay-noarch.tar.xz                                                                                   && \
-    tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz
+    tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz                                                            && \
+    rm -f /etc/apt/sources.list.d/nodesource.list                                                                                    && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY pnpm-workspace.yaml package.json .npmrc pnpm-lock.yaml ./
 
 # NPM_TOKEN is used by .npmrc for GitHub Packages auth (interpolated by pnpm)
 ARG NPM_TOKEN
-
-COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock*.yaml ./workers/javascript/.npmrc /workers/javascript/
-COPY ./workers/javascript/scripts/prepare-fs-for-build.sh /workers/javascript/scripts/
-
-RUN --mount=type=cache,target=/root/.npm \
-    --mount=type=cache,target=/root/.local/share/pnpm/store \
-    cd /workers/javascript                && \
-    scripts/prepare-fs-for-build.sh --working-dir /workers/javascript ${WORKER_JS_PREPARE_FS_ARGS} && \
-    npm install -g clean-modules node-gyp && \
-    npm install                           && \
-    npx pnpm fetch
+# node-gyp must be available globally before pnpm fetch, because approved
+# native packages (lz4, cpu-features, node-expat) call node-gyp during fetch
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    wget -qO- https://get.pnpm.io/install.sh | PNPM_VERSION=${PNPM_VERSION} ENV="$HOME/.bashrc" SHELL="$(which bash)" bash - && \
+    . $HOME/.bashrc && \
+    pnpm add -g node-gyp && \
+    pnpm fetch
 
 # Install Java (for closure compiler) and emscripten after pnpm fetch
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -128,27 +132,36 @@ ENV EMSDK=/emsdk
 
 COPY . .
 
-RUN --mount=type=cache,target=/root/.npm \
-    --mount=type=cache,target=/root/.local/share/pnpm/store \
-    cd /workers/javascript                                                                                                           && \
-    scripts/prepare-fs-for-build.sh --working-dir /workers/javascript ${WORKER_JS_PREPARE_FS_ARGS} && \
-    npx pnpm install -r                                                                                                              && \
-    npx pnpm --filter "*" build                                                                                                      && \
-    rm -rf node_modules                                                                                                              && \
-    npm install                                                                                                                      && \
-    npx pnpm fetch --prod                                                                                                            && \
-    npx pnpm install -r --offline --prod                                                                                             && \
-    clean-modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
+# Prepare filesystem for OPA slim variant if requested, then install and build.
+# Slim builds use --prefer-offline because the package.json swap diverges from the
+# lockfile, requiring pnpm to re-resolve metadata. Standard builds use --offline
+# for full determinism since the lockfile matches exactly.
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    if [ "$WORKER_JS_PREPARE_FS_ARGS" = "--slim" ]; then \
+      echo "Building OPA slim variant: preparing slim filesystem" && \
+      ./workers/javascript/scripts/prepare-fs-for-build.sh --working-dir workers/javascript --slim && \
+      PNPM_INSTALL_FLAG="--prefer-offline"; \
+    else \
+      echo "Building standard variant: using full dependencies" && \
+      PNPM_INSTALL_FLAG="--offline --frozen-lockfile"; \
+    fi && \
+    . $HOME/.bashrc && \
+    pnpm install -r $PNPM_INSTALL_FLAG && \
+    pnpm --filter "${FLEET_PACKAGE}"... build && \
+    pnpm install -r $PNPM_INSTALL_FLAG && \
+    pnpm --filter "${FLEET_PACKAGE}" deploy --prod /deploy && \
+    npx clean-modules --directory /deploy/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
 
 # Install build the deasync binding for this architecture
 RUN --mount=type=cache,target=/root/.npm \
+    npm install -g node-gyp                                                                                                                   && \
     git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblocksteam/deasync.git                                           && \
     cd deasync                                                                                                                                && \
     npm install                                                                                                                               && \
     node-gyp configure                                                                                                                        && \
     node-gyp build                                                                                                                            && \
-    mkdir -p ../workers/javascript/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build                                   && \
-    cp build/Release/deasync.node ../workers/javascript/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node
+    mkdir -p /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build                                                 && \
+    cp build/Release/deasync.node /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node
 
 ############
 ## PARENT ##
@@ -183,8 +196,7 @@ COPY              --from=orchestrator_and_golang_worker /go/src/github.com/super
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/buckets.minimal.json     /app/orchestrator/buckets.json
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/flags.json               /app/orchestrator/flags.json
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/workers/golang/worker.go /app/worker.go/bin
-COPY              --from=workers                        /workers/javascript/node_modules                                  /app/worker.js/node_modules
-COPY              --from=workers                        /workers/javascript/packages                                      /app/worker.js/packages
+COPY              --from=workers                        /deploy                                                           /app/worker.js
 COPY              --from=workers                        /s6/                                                              /
 COPY              --chmod=755                           /workers/python                                                   /app/worker.py
 COPY                                                    s6-rc.d/                                                          /etc/s6-overlay/s6-rc.d/

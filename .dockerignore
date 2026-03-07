@@ -1,7 +1,8 @@
 orchestrator
 Dockerfile
 coverage/
-clients/
+clients/**
+!clients/typescript/package.json
 tmp/
 
 .air

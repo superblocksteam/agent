@@ -8,4 +8,4 @@ export SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN="${SUPERBLOCKS_AGENT_REDIS_KVSTORE_
 export SUPERBLOCKS_AGENT_REDIS_TOKEN="${SUPERBLOCKS_AGENT_REDIS_TOKEN:-${SUPERBLOCKS_AGENT_REDIS_PASSWORD}}"
 
 echo "{\"level\":\"info\",\"ts\":$(date +%s%3N),\"msg\":\"starting component worker.js\",\"component\":\"s6\"}"
-node /app/worker.js/packages/fleets/all/dist/src/index.js
+node /app/worker.js/dist/src/index.js

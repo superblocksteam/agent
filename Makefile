@@ -165,9 +165,7 @@ test-e2e:
 
 .PHONY: test-ts-client
 test-ts-client:
-	cd clients/typescript \
-	  && pnpm install \
-	  && pnpm jest
+	@pnpm --filter @superblocksteam/agent-sdk test
 
 .PHONY: checkout
 checkout:

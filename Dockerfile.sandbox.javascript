@@ -5,12 +5,11 @@
 ARG NODE_VERSION=20.19.5
 ARG TRANSPORT_GRPC_PORT=50051
 ARG EMSDK_VERSION=3.1.65
-ARG PNPM_VERSION=10.19.0
+
 
 # Builder stage
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION} AS builder
 
-ARG PNPM_VERSION
 ARG EMSDK_VERSION
 
 WORKDIR /app
@@ -32,26 +31,47 @@ RUN git clone https://github.com/emscripten-core/emsdk.git /emsdk && \
 ENV PATH="/emsdk:/emsdk/upstream/emscripten:${PATH}"
 ENV EMSDK=/emsdk
 
-# Install pnpm
-RUN --mount=type=cache,target=/root/.npm npm install -g pnpm@${PNPM_VERSION}
+# Install pnpm and node-gyp (needed by native packages: lz4, cpu-features, node-expat)
+ARG PNPM_VERSION=10.29.2
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    wget -qO- https://get.pnpm.io/install.sh | PNPM_VERSION=${PNPM_VERSION} ENV="$HOME/.bashrc" SHELL="$(which bash)" bash - && \
+    . $HOME/.bashrc && \
+    pnpm add -g node-gyp
 
-# Copy the javascript workspace
-COPY workers/javascript/ ./workers/javascript/
-COPY workers/ephemeral/javascript-plugins-sandbox/ ./workers/ephemeral/javascript-plugins-sandbox/
+# Copy lockfile + root config for pnpm fetch cache layer
+COPY pnpm-workspace.yaml package.json .npmrc pnpm-lock.yaml ./
 
 # NPM_TOKEN is used by .npmrc for GitHub Packages auth (interpolated by pnpm)
 ARG NPM_TOKEN
 
-# Install dependencies
-WORKDIR /app/workers/javascript
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+# Fetch all dependencies into the pnpm store (cached on lockfile change)
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    . $HOME/.bashrc && pnpm fetch
 
-# Build all packages in dependency order
-RUN pnpm --filter javascript-plugins-sandbox... run build
+# Copy source files (layer invalidated on source change, but deps are cached above)
+COPY workers/javascript/ ./workers/javascript/
+COPY workers/ephemeral/javascript-plugins-sandbox/ ./workers/ephemeral/javascript-plugins-sandbox/
+COPY types/gen/js/ ./types/gen/js/
+COPY mocks/ ./mocks/
+COPY clients/typescript/package.json ./clients/typescript/package.json
+
+# Install dependencies from the cached store
+RUN . $HOME/.bashrc && pnpm install --offline --frozen-lockfile
+
+# Build in two phases for injectWorkspacePackages: workspace deps are copied
+# (not symlinked) at install time, so build outputs need a re-install to
+# propagate to consumers' node_modules.
+# Phase 1: Build all transitive deps of the sandbox (plugins, worker.js, etc.)
+# Phase 2: Re-install to inject build outputs, then build the sandbox itself
+RUN . $HOME/.bashrc && \
+    pnpm --filter 'javascript-plugins-sandbox^...' run build && \
+    pnpm install --offline --frozen-lockfile && \
+    pnpm --filter javascript-plugins-sandbox run build && \
+    pnpm install --offline --frozen-lockfile
 
 # Deploy javascript-plugins-sandbox with all its dependencies to a self-contained directory
-# --legacy is needed for pnpm v10+ when not using inject-workspace-packages
-RUN pnpm --filter javascript-plugins-sandbox deploy --legacy --prod /deploy
+RUN . $HOME/.bashrc && pnpm --filter javascript-plugins-sandbox deploy --prod /deploy && \
+    npx clean-modules --directory /deploy/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
 
 # Copy generated protobuf types to the deployed dist
 RUN cp -r /app/workers/ephemeral/javascript-plugins-sandbox/src/types /deploy/dist/

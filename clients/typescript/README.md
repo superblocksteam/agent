@@ -9,7 +9,7 @@
 First, ensure you have installed the Superblocks client library:
 
 ```bash
-npm install @superblocksteam/agent-sdk
+pnpm add @superblocksteam/agent-sdk
 ```
 
 ## Initialization

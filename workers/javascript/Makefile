@@ -16,28 +16,38 @@ K8S_NAMESPACE = worker
 K8S_CONFIG = ~/.kube/config
 HELM_EXTRA_ARGS =
 
-PACKAGE=*
+PACKAGE=
 PNPM_OPTIONS=--no-bail
+
+# Default filter matches the old workers/javascript workspace scope.
+# Override with PACKAGE=<name> for single-package operations.
+PNPM_FILTER=$(if $(PACKAGE),--filter "$(PACKAGE)",--filter '{./packages/**}' --filter '{../ephemeral/**}')
 
 
 .PHONY: build
 build: deps
-	@npx pnpm $(PNPM_OPTIONS) --filter "$(PACKAGE)" build
+ifdef PACKAGE
+	@pnpm $(PNPM_OPTIONS) $(PNPM_FILTER) build
+else
+	@pnpm $(PNPM_OPTIONS) --filter '{./packages/**}' build
+	@pnpm install --dir "$$(git rev-parse --show-toplevel)"
+	@pnpm $(PNPM_OPTIONS) --filter '{../ephemeral/**}' --if-present build
+endif
 
 .PHONY: fmt
 fmt: deps
-	@npx pnpm $(PNPM_OPTIONS) --filter "$(PACKAGE)" lint:fix
+	@pnpm $(PNPM_OPTIONS) $(PNPM_FILTER) lint:fix
 
 .PHONY: check
 check: build typecheck lint
 
 .PHONY: typecheck
 typecheck:
-	@npx pnpm $(PNPM_OPTIONS) --filter "$(PACKAGE)" typecheck
+	@pnpm $(PNPM_OPTIONS) $(PNPM_FILTER) typecheck
 
 .PHONY: lint
 lint:
-	@npx pnpm run --filter "$(PACKAGE)" --if-present lint:fix
+	@pnpm run $(PNPM_FILTER) --if-present lint:fix
 
 .PHONY: redis
 redis:
@@ -45,7 +55,7 @@ redis:
 
 .PHONY: deps
 deps:
-	@scripts/install-worker-dependencies.sh
+	@pnpm install --dir "$$(git rev-parse --show-toplevel)"
 
 .PHONY: jaeger
 jaeger:
@@ -66,7 +76,7 @@ jaeger:
 
 .PHONY: up
 up: deps build
-	@npx pnpm --filter @superblocks/fleet.all start
+	@pnpm --filter @superblocks/fleet.all start
 
 .PHONY: clean
 clean:
@@ -85,7 +95,7 @@ test: test-unit
 
 .PHONY: test-unit
 test-unit:
-	@pnpm --stream --no-bail --filter "$(PACKAGE)" test
+	@pnpm --stream --no-bail $(PNPM_FILTER) test
 
 .PHONY: test-integration
 test-integration:

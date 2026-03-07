@@ -18,30 +18,30 @@ deps:
 
 .PHONY: build
 build: clean deps
-	@npm run build
+	@pnpm run build
 
 .PHONY: typecheck
 typecheck:
-	@npm run typecheck
+	@pnpm run typecheck
 
 .PHONY: check
 check: build typecheck lint
 
 .PHONY: lint
 lint:
-	@npm run lint:fix
+	@pnpm run lint:fix
 
 .PHONY: up
 up: deps build
-	@npm run start
+	@pnpm run start
 
 .PHONY: clean
 clean:
-	@npm run clean
+	@pnpm run clean
 
 .PHONY: test-unit
 test-unit: build
-	@npm run test:coverage
+	@pnpm run test:coverage
 
 .PHONY: test
 test: build test-unit

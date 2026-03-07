@@ -1,0 +1,25 @@
+{
+  "name": "superblocks-orchestrator",
+  "private": true,
+  "packageManager": "pnpm@10.29.2",
+  "engines": {
+    "node": "20.19.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "bcrypt",
+      "couchbase",
+      "cpu-features",
+      "deasync",
+      "esbuild",
+      "grpc-tools",
+      "lz4",
+      "nice-napi",
+      "node-expat",
+      "oracledb",
+      "protobufjs",
+      "ssh2"
+    ]
+  }
+}
