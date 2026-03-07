@@ -8,28 +8,33 @@ WORKDIR /go/src/github.com/superblocksteam/agent
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy everything in and compile
-# There may be cache optimizations we can make
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
 COPY . .
 
-RUN dpkg --add-architecture amd64 \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    dpkg --add-architecture amd64 \
     && apt-get update \
     && apt-get install -y --no-install-recommends build-essential gcc
 
 # Build our binary.
 # TODO: build arm binary
-RUN GOOS=linux GOARCH=${GO_ARCH} make build-go SERVICE_NAME="worker.go"                     \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOOS=linux GOARCH=${GO_ARCH} make build-go SERVICE_NAME="worker.go"                     \
                                                GO_BUILD_ROOT_DIRECTORY="./workers/golang"   \
                                                EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"
 
 # Build the final image
 FROM ghcr.io/superblocksteam/debian:trixie-20250811-slim
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends ca-certificates \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends ca-certificates
 
 # Copy in our compiled binary
 COPY --from=builder /go/src/github.com/superblocksteam/agent/workers/golang/worker.go /worker-go

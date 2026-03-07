@@ -18,9 +18,10 @@ WORKDIR /app
 ENV CI=true
 
 # Install build dependencies (including Java for closure compiler)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 make g++ git xz-utils default-jre-headless && \
-    rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends python3 make g++ git xz-utils default-jre-headless
 
 # Install emscripten for WASM compilation
 RUN git clone https://github.com/emscripten-core/emsdk.git /emsdk && \
@@ -32,7 +33,7 @@ ENV PATH="/emsdk:/emsdk/upstream/emscripten:${PATH}"
 ENV EMSDK=/emsdk
 
 # Install pnpm
-RUN npm install -g pnpm@${PNPM_VERSION}
+RUN --mount=type=cache,target=/root/.npm npm install -g pnpm@${PNPM_VERSION}
 
 # Copy the javascript workspace
 COPY workers/javascript/ ./workers/javascript/
@@ -43,7 +44,7 @@ ARG NPM_TOKEN
 
 # Install dependencies
 WORKDIR /app/workers/javascript
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 
 # Build all packages in dependency order
 RUN pnpm --filter javascript-plugins-sandbox... run build

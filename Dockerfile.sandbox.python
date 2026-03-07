@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.9.0
+
 # Python sandbox for ephemeral worker
 # Executes Python scripts in a sandboxed gRPC server
 
@@ -6,18 +8,19 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Install system dependencies (gcc, python-dev, linux-headers for psutil, cmake for cvxpy/qdldl)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     g++ \
     gcc \
     libopenblas-dev \
     linux-libc-dev \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+    python3-dev
 
 # Copy and install Python dependencies
 COPY workers/ephemeral/python-sandbox/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
 # Copy sandbox-specific source files
 COPY workers/ephemeral/python-sandbox/main.py ./

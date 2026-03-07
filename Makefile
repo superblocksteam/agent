@@ -221,8 +221,6 @@ clean:
 
 .PHONY: deploy-helm
 deploy-helm:
-
-	kubectl cluster-info
 	helm dependency build ./helm/orchestrator
 
 	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) orchestrator helm/orchestrator \
@@ -300,8 +298,6 @@ deploy-helm:
 HELM_TIMEOUT := "20m"
 .PHONY: deploy-helm-opa
 deploy-helm-opa:
-
-	kubectl cluster-info
 	helm repo add superblocks https://charts.superblocks.com/superblocks
 	helm repo update
 	helm dependency build ./helm/cloud-opa

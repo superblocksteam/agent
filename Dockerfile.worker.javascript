@@ -10,9 +10,10 @@ ARG EMSDK_VERSION
 WORKDIR /workers/javascript/
 
 # Install build dependencies
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends python3 make g++ git xz-utils && \
-  rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends python3 make g++ git xz-utils
 
 COPY ./workers/javascript/pnpm-workspace.yaml ./
 COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock.yaml ./
@@ -22,17 +23,20 @@ COPY ./workers/ephemeral/javascript-plugins-sandbox/package.json ../ephemeral/ja
 # NPM_TOKEN is used by .npmrc for GitHub Packages auth (interpolated by pnpm)
 ARG NPM_TOKEN
 
-RUN npm install -g clean-modules && \
-  npm install                  && \
-  npx pnpm fetch
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/root/.local/share/pnpm/store \
+    npm install -g clean-modules && \
+    npm install                  && \
+    npx pnpm fetch
 
 COPY ./workers/javascript/ ./
 COPY ./workers/ephemeral/javascript-plugins-sandbox/ ../ephemeral/javascript-plugins-sandbox/
 
 # Install Java (for closure compiler) and emscripten after pnpm fetch
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends default-jre-headless && \
-  rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends default-jre-headless
 
 RUN git clone https://github.com/emscripten-core/emsdk.git /emsdk && \
   cd /emsdk && \
@@ -42,16 +46,19 @@ RUN git clone https://github.com/emscripten-core/emsdk.git /emsdk && \
 ENV PATH="/emsdk:/emsdk/upstream/emscripten:${PATH}"
 ENV EMSDK=/emsdk
 
-RUN npx pnpm install -r                             && \
-  npx pnpm --filter "*" build                       && \
-  rm -rf node_modules                               && \
-  npm install                                       && \
-  npx pnpm fetch --prod                             && \
-  npx pnpm install -r --offline --prod              && \
-  clean-modules -y '!**/googleapis/**/docs/'           \
-  '!**/@superblocks/**/datasource/'
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/root/.local/share/pnpm/store \
+    npx pnpm install -r                             && \
+    npx pnpm --filter "*" build                     && \
+    rm -rf node_modules                             && \
+    npm install                                     && \
+    npx pnpm fetch --prod                           && \
+    npx pnpm install -r --offline --prod            && \
+    clean-modules -y '!**/googleapis/**/docs/'         \
+    '!**/@superblocks/**/datasource/'
 
-RUN npm install -g node-gyp                                                                                              && \
+RUN --mount=type=cache,target=/root/.npm \
+    npm install -g node-gyp                                                                                              && \
   git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblocksteam/deasync.git                        && \
   cd deasync                                                                                                             && \
   npm install                                                                                                            && \

@@ -16,18 +16,23 @@ ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /go/src/github.com/superblocksteam/orchestrator
 
 # Install dependencies
-RUN apt-get update && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y build-essential gcc
 
-# Copy everything in and compile
-# There may be cache optimizations we can make
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
 COPY . .
 
 # Build our binary.
 ARG SERVICE_VERSION
 ARG EXTRA_GO_OPTIONS
-RUN make build-go SERVICE_VERSION=${SERVICE_VERSION} EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    make build-go SERVICE_VERSION=${SERVICE_VERSION} EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}
 
 # Build the final image
 FROM ghcr.io/superblocksteam/ubuntu:24.04 AS base

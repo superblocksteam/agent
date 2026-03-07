@@ -38,9 +38,16 @@ ENV GOARCH=${TARGETARCH}
 
 WORKDIR /go/src/github.com/superblocksteam/agent
 
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
 COPY . .
 
-RUN apt-get update                                                                  && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    apt-get update                                                                  && \
     apt-get upgrade -y                                                              && \
     apt-get install -y build-essential gcc                                          && \
     make build-go SERVICE_NAME="orchestrator"                                          \
@@ -78,7 +85,9 @@ ADD --chmod=777 https://go.dev/dl/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz /tm
 
 COPY --chmod=777 scripts/s6.sh /tmp/s6.sh
 
-RUN set -e; apt-get update && apt-get install -y curl                                                                                && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    set -e; apt-get update && apt-get install -y curl                                                                                && \
     S6_ARCH=$(/tmp/s6.sh)                                                                                                            && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION_MAJOR}.x | bash -                                                     && \
     apt-get install -y nodejs=${NODE_VERSION}-1nodesource1 xz-utils git build-essential libssl-dev wget make ca-certificates clang   && \
@@ -95,16 +104,19 @@ ARG NPM_TOKEN
 COPY ./workers/javascript/package*.json ./workers/javascript/pnpm-lock*.yaml ./workers/javascript/.npmrc /workers/javascript/
 COPY ./workers/javascript/scripts/prepare-fs-for-build.sh /workers/javascript/scripts/
 
-RUN cd /workers/javascript                && \
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/root/.local/share/pnpm/store \
+    cd /workers/javascript                && \
     scripts/prepare-fs-for-build.sh --working-dir /workers/javascript ${WORKER_JS_PREPARE_FS_ARGS} && \
     npm install -g clean-modules node-gyp && \
     npm install                           && \
     npx pnpm fetch
 
 # Install Java (for closure compiler) and emscripten after pnpm fetch
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends default-jre-headless && \
-    rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends default-jre-headless
 
 RUN git clone https://github.com/emscripten-core/emsdk.git /emsdk && \
     cd /emsdk && \
@@ -116,7 +128,9 @@ ENV EMSDK=/emsdk
 
 COPY . .
 
-RUN cd /workers/javascript                                                                                                           && \
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/root/.local/share/pnpm/store \
+    cd /workers/javascript                                                                                                           && \
     scripts/prepare-fs-for-build.sh --working-dir /workers/javascript ${WORKER_JS_PREPARE_FS_ARGS} && \
     npx pnpm install -r                                                                                                              && \
     npx pnpm --filter "*" build                                                                                                      && \
@@ -127,7 +141,8 @@ RUN cd /workers/javascript                                                      
     clean-modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
 
 # Install build the deasync binding for this architecture
-RUN git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblocksteam/deasync.git                                           && \
+RUN --mount=type=cache,target=/root/.npm \
+    git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblocksteam/deasync.git                                           && \
     cd deasync                                                                                                                                && \
     npm install                                                                                                                               && \
     node-gyp configure                                                                                                                        && \
@@ -185,8 +200,11 @@ RUN src="/app/worker.py/${REQUIREMENTS_FILE}" && \
 #              bubble up index.ts files.
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-RUN cd /app/worker.py                                                                                                                            && \
-    uv pip install --system --no-cache-dir --upgrade pip "setuptools>=65,<82"                                                                     && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    --mount=type=cache,target=/root/.cache/uv \
+    cd /app/worker.py                                                                                                                            && \
+    uv pip install --system --upgrade pip "setuptools>=65,<82"                                                                                    && \
     apt-get update                                                                                                                               && \
     apt-get install -yqq --no-install-recommends lsb-release curl gpg                                                                            && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION_MAJOR}.x | bash -                                                                 && \
@@ -204,9 +222,7 @@ RUN cd /app/worker.py                                                           
     echo "deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list && \
     apt-get update                                                                                                                               && \
     ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18                                                                         && \
-    uv pip install --system --no-cache-dir -r ${REQUIREMENTS_FILE}                                                                               && \
-    rm -rf /var/lib/apt/lists/*                                                                                                                  && \
-    apt-get clean                                                                                                                                && \
+    uv pip install --system -r ${REQUIREMENTS_FILE}                                                                                              && \
     find /app/orchestrator/bin /etc/s6-overlay/s6-rc.d -type d -exec chmod 755 {} \;                                                             && \
     find /app/orchestrator/buckets.json /app/orchestrator/flags.json /etc/s6-overlay/s6-rc.d -type f -exec chmod g=u,o=u {} \;                   && \
     groupadd --gid 1000 superblocks                                                                                                              && \
