@@ -51,6 +51,15 @@ charts/
 **/__pycache__/
 
 /workers/ephemeral/task-manager/task-manager
+/workers/ephemeral/task-manager/task-manager-js
+/workers/ephemeral/task-manager/task-manager-py
+
+# Tilt local state
+.tilt-*
+
+# Core dumps (QEMU/compiler crashes during local dev)
+*.core
+/workers/javascript/packages/quickjs-emscripten/packages/**/core
 
 # Agent/MCP related
 .fastembed_cache/
