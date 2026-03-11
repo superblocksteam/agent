@@ -132,6 +132,11 @@ ephemeral-build-js-sandbox:
 		find node_modules/.pnpm -path "*/$${pkg}@*/node_modules/$${pkg}" -type d 2>/dev/null | xargs -I{} sh -c 'cd "{}" && npm rebuild' || true; \
 	done && \
 	pnpm --filter javascript-plugins-sandbox... build
+	@if [ -d $(JS_SANDBOX_DIR)/src/types ]; then \
+		echo "==> Copying protobuf types to JS sandbox dist..."; \
+		mkdir -p $(JS_SANDBOX_DIR)/dist/types && \
+		cp -R $(JS_SANDBOX_DIR)/src/types/. $(JS_SANDBOX_DIR)/dist/types/; \
+	fi
 
 JS_LOCKFILE = $(JS_WORKSPACE)/pnpm-lock.yaml
 
@@ -148,7 +153,8 @@ ephemeral-build-go: ephemeral-build-orchestrator ephemeral-build-task-manager
 	fi
 	@if [ -d $(JS_SANDBOX_DIR)/src/types ] && [ ! -d $(JS_SANDBOX_DIR)/dist/types ]; then \
 		echo "==> Copying protobuf types to JS sandbox dist..."; \
-		cp -r $(JS_SANDBOX_DIR)/src/types $(JS_SANDBOX_DIR)/dist/types; \
+		mkdir -p $(JS_SANDBOX_DIR)/dist/types && \
+		cp -R $(JS_SANDBOX_DIR)/src/types/. $(JS_SANDBOX_DIR)/dist/types/; \
 	fi
 	@echo ""
 	@echo "==> Build complete"

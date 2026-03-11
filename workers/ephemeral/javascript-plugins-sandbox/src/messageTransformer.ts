@@ -103,18 +103,11 @@ export class MessageTransformerImpl implements MessageTransformer {
   public nativeResponseToProto(response: ExecutionOutput): ProtoExecuteResponse;
   public nativeResponseToProto(response: MetadataResponse): ProtoTransportResponse.Data.Data;
   public nativeResponseToProto(response: NativeResponse): ProtoResponse {
-    switch (true) {
-      // NOTE: We use duck typing instead of `instanceof` because pnpm's
-      // `injectWorkspacePackages` copies workspace packages, which can result
-      // in multiple copies of `@superblocks/shared` in the dependency tree.
-      // When that happens, `instanceof ExecutionOutput` fails even though the
-      // object is structurally an ExecutionOutput.
-      case Array.isArray((response as ExecutionOutput).structuredLog):
-        return this.executionOutputToProto(response as ExecutionOutput);
-      default:
-        // MetadataResponse is a type alias (not a class), so we handle it as the default case
-        return this.metadataResponseToProto(response as MetadataResponse);
+    if (response instanceof ExecutionOutput) {
+      return this.executionOutputToProto(response);
     }
+    // MetadataResponse is a type alias (not a class), so we handle it as the default case
+    return this.metadataResponseToProto(response as MetadataResponse);
   }
 
   private protoToExecuteRequest(request: ProtoExecuteRequest): ExecuteRequest {
@@ -299,7 +292,6 @@ export class MessageTransformerImpl implements MessageTransformer {
     protoResponse.setOutput(outputOld);
 
     // Serialize per-integration-call diagnostics if present.
-    console.log('[MSG-TRANSFORMER-OUT] response.diagnostics:', response.diagnostics?.length ?? 'undefined');
     if (response.diagnostics && response.diagnostics.length > 0) {
       const protoDiagnostics = response.diagnostics.map((d) => {
         const proto = new ProtoIntegrationDiagnostic();

@@ -185,6 +185,28 @@ export interface IntegrationCallDiagnostic {
 }
 
 export class ExecutionOutput {
+  /**
+   * Custom instanceof check that works across duplicate copies of this class.
+   *
+   * pnpm's `injectWorkspacePackages` copies (rather than symlinks) workspace
+   * packages, which can produce multiple copies of `@superblocks/shared` in
+   * the dependency tree. When that happens, the default `instanceof` check
+   * fails because the prototype chains differ. This structural check ensures
+   * `instanceof ExecutionOutput` works regardless of which copy created the
+   * object.
+   *
+   * TODO: Remove this override once we switch to symlinked workspace packages
+   * by setting `force-legacy-deploy: true` and removing
+   * `injectWorkspacePackages: true` from pnpm-workspace.yaml.
+   */
+  static [Symbol.hasInstance](instance: unknown): instance is ExecutionOutput {
+    return (
+      instance !== null &&
+      typeof instance === 'object' &&
+      Array.isArray((instance as ExecutionOutput).structuredLog)
+    );
+  }
+
   error?: string;
   authError?: boolean;
   children?: string[];
