@@ -177,3 +177,35 @@ class OutputOld(_message.Message):
     request: str
     place_holders_info: _struct_pb2.Value
     def __init__(self, output: _Optional[_Union[_struct_pb2.Value, _Mapping]] = ..., log: _Optional[_Iterable[str]] = ..., request: _Optional[str] = ..., place_holders_info: _Optional[_Union[_struct_pb2.Value, _Mapping]] = ...) -> None: ...
+
+class IntegrationDiagnostic(_message.Message):
+    __slots__ = ("integration_id", "plugin_id", "input_truncated", "output_truncated", "start_ms", "end_ms", "duration_ms", "error", "sequence", "metadata")
+    INTEGRATION_ID_FIELD_NUMBER: _ClassVar[int]
+    PLUGIN_ID_FIELD_NUMBER: _ClassVar[int]
+    INPUT_TRUNCATED_FIELD_NUMBER: _ClassVar[int]
+    OUTPUT_TRUNCATED_FIELD_NUMBER: _ClassVar[int]
+    START_MS_FIELD_NUMBER: _ClassVar[int]
+    END_MS_FIELD_NUMBER: _ClassVar[int]
+    DURATION_MS_FIELD_NUMBER: _ClassVar[int]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    SEQUENCE_FIELD_NUMBER: _ClassVar[int]
+    METADATA_FIELD_NUMBER: _ClassVar[int]
+    integration_id: str
+    plugin_id: str
+    input_truncated: str
+    output_truncated: str
+    start_ms: int
+    end_ms: int
+    duration_ms: int
+    error: str
+    sequence: int
+    metadata: TraceMetadata
+    def __init__(self, integration_id: _Optional[str] = ..., plugin_id: _Optional[str] = ..., input_truncated: _Optional[str] = ..., output_truncated: _Optional[str] = ..., start_ms: _Optional[int] = ..., end_ms: _Optional[int] = ..., duration_ms: _Optional[int] = ..., error: _Optional[str] = ..., sequence: _Optional[int] = ..., metadata: _Optional[_Union[TraceMetadata, _Mapping]] = ...) -> None: ...
+
+class TraceMetadata(_message.Message):
+    __slots__ = ("label", "description")
+    LABEL_FIELD_NUMBER: _ClassVar[int]
+    DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
+    label: str
+    description: str
+    def __init__(self, label: _Optional[str] = ..., description: _Optional[str] = ...) -> None: ...

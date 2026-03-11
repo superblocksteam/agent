@@ -161,7 +161,7 @@ class ExecuteRequest(_message.Message):
     def __init__(self, options: _Optional[_Union[ExecuteRequest.Options, _Mapping]] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., definition: _Optional[_Union[Definition, _Mapping]] = ..., fetch: _Optional[_Union[ExecuteRequest.Fetch, _Mapping]] = ..., fetch_by_path: _Optional[_Union[ExecuteRequest.FetchByPath, _Mapping]] = ..., fetch_code: _Optional[_Union[ExecuteRequest.FetchCode, _Mapping]] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., mocks: _Optional[_Iterable[_Union[Mock, _Mapping]]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ...) -> None: ...
 
 class ExecuteV3Request(_message.Message):
-    __slots__ = ("application_id", "inputs", "view_mode", "profile", "commit_id", "branch_name", "entry_point", "files")
+    __slots__ = ("application_id", "inputs", "view_mode", "profile", "commit_id", "branch_name", "entry_point", "files", "include_diagnostics")
     class InputsEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -177,6 +177,7 @@ class ExecuteV3Request(_message.Message):
     BRANCH_NAME_FIELD_NUMBER: _ClassVar[int]
     ENTRY_POINT_FIELD_NUMBER: _ClassVar[int]
     FILES_FIELD_NUMBER: _ClassVar[int]
+    INCLUDE_DIAGNOSTICS_FIELD_NUMBER: _ClassVar[int]
     application_id: str
     inputs: _containers.MessageMap[str, _struct_pb2.Value]
     view_mode: ViewMode
@@ -185,7 +186,8 @@ class ExecuteV3Request(_message.Message):
     branch_name: str
     entry_point: str
     files: _containers.RepeatedCompositeFieldContainer[ExecuteRequest.File]
-    def __init__(self, application_id: _Optional[str] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ..., entry_point: _Optional[str] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ...) -> None: ...
+    include_diagnostics: bool
+    def __init__(self, application_id: _Optional[str] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ..., entry_point: _Optional[str] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ..., include_diagnostics: bool = ...) -> None: ...
 
 class Definition(_message.Message):
     __slots__ = ("api", "integrations", "metadata", "stores")
@@ -226,7 +228,7 @@ class StatusRequest(_message.Message):
     def __init__(self, execution: _Optional[str] = ...) -> None: ...
 
 class AwaitResponse(_message.Message):
-    __slots__ = ("execution", "output", "errors", "status", "performance", "events")
+    __slots__ = ("execution", "output", "errors", "status", "performance", "events", "diagnostics")
     class Status(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         STATUS_UNSPECIFIED: _ClassVar[AwaitResponse.Status]
@@ -241,13 +243,15 @@ class AwaitResponse(_message.Message):
     STATUS_FIELD_NUMBER: _ClassVar[int]
     PERFORMANCE_FIELD_NUMBER: _ClassVar[int]
     EVENTS_FIELD_NUMBER: _ClassVar[int]
+    DIAGNOSTICS_FIELD_NUMBER: _ClassVar[int]
     execution: str
     output: _event_pb2.Output
     errors: _containers.RepeatedCompositeFieldContainer[_errors_pb2.Error]
     status: AwaitResponse.Status
     performance: _event_pb2.Performance
     events: _containers.RepeatedCompositeFieldContainer[_event_pb2.Event]
-    def __init__(self, execution: _Optional[str] = ..., output: _Optional[_Union[_event_pb2.Output, _Mapping]] = ..., errors: _Optional[_Iterable[_Union[_errors_pb2.Error, _Mapping]]] = ..., status: _Optional[_Union[AwaitResponse.Status, str]] = ..., performance: _Optional[_Union[_event_pb2.Performance, _Mapping]] = ..., events: _Optional[_Iterable[_Union[_event_pb2.Event, _Mapping]]] = ...) -> None: ...
+    diagnostics: _containers.RepeatedCompositeFieldContainer[_event_pb2.IntegrationDiagnostic]
+    def __init__(self, execution: _Optional[str] = ..., output: _Optional[_Union[_event_pb2.Output, _Mapping]] = ..., errors: _Optional[_Iterable[_Union[_errors_pb2.Error, _Mapping]]] = ..., status: _Optional[_Union[AwaitResponse.Status, str]] = ..., performance: _Optional[_Union[_event_pb2.Performance, _Mapping]] = ..., events: _Optional[_Iterable[_Union[_event_pb2.Event, _Mapping]]] = ..., diagnostics: _Optional[_Iterable[_Union[_event_pb2.IntegrationDiagnostic, _Mapping]]] = ...) -> None: ...
 
 class AsyncResponse(_message.Message):
     __slots__ = ("execution", "error")

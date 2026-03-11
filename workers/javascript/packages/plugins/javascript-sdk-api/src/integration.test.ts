@@ -82,7 +82,11 @@ if (__sb_api.integrations) {
   }
 }
 
-async function __sb_executeQuery(integrationId, request) {
+// bindings is accepted for positional alignment with the SDK's QueryExecutor
+// signature: (request, bindings?, metadata?). Language plugins like Python use
+// bindings; JavaScript does not, but the parameter must be present so that
+// metadata (the 4th positional arg) lands in the correct slot.
+async function __sb_executeQuery(integrationId, request, bindings, metadata) {
   if (typeof __sb_integrationExecutor !== "function") {
     throw new Error("Integration operations require an integration executor (not available in this execution context)");
   }
@@ -90,7 +94,8 @@ async function __sb_executeQuery(integrationId, request) {
   return __sb_integrationExecutor({
     integrationId: integrationId,
     pluginId: pluginId,
-    actionConfiguration: request
+    actionConfiguration: request,
+    metadata: metadata
   });
 }
 
@@ -386,11 +391,13 @@ describe('sdk-api integration tests (real executeApi)', () => {
       );
 
       expect(result).toEqual([{ id: 1 }]);
-      expect(mockIntegrationExecutor).toHaveBeenCalledWith({
-        integrationId: 'pg-uuid-real',
-        pluginId: 'postgres',
-        actionConfiguration: expect.objectContaining({ body: 'SELECT 1' })
-      });
+      expect(mockIntegrationExecutor).toHaveBeenCalledWith(
+        expect.objectContaining({
+          integrationId: 'pg-uuid-real',
+          pluginId: 'postgres',
+          actionConfiguration: expect.objectContaining({ body: 'SELECT 1' })
+        })
+      );
     });
 
     it('resolves pluginId from real api() + salesforce() declarations', async () => {
@@ -440,6 +447,47 @@ describe('sdk-api integration tests (real executeApi)', () => {
         })
       );
       expect(mockIntegrationExecutor.mock.calls[0][0].actionConfiguration).toBeDefined();
+    });
+
+    it('passes metadata through __sb_executeQuery to the executor bridge', async () => {
+      const mockIntegrationExecutor = jest.fn().mockResolvedValue({ ok: true });
+
+      // Build a bundle whose run() calls executeQuery with metadata (4th arg).
+      // The SDK's QueryExecutor signature is (request, bindings?, metadata?),
+      // which the wrapper maps to __sb_executeQuery(id, request, bindings, metadata).
+      const bundle = `
+        module.exports = { default: {
+          name: 'test-metadata',
+          inputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          outputSchema: { safeParse: function(v) { return { success: true, data: v }; } },
+          integrations: [{ key: 'db', pluginId: 'postgres', id: 'meta-db' }],
+          run: async function(ctx) {
+            var schema = { safeParse: function(v) { return { success: true, data: v }; } };
+            // ctx.integrations.db.query calls executeQuery(integrationId, request, bindings, metadata)
+            // We simulate this by calling __sb_executeQuery directly with metadata.
+            return await __sb_executeQuery(
+              'meta-db',
+              { body: 'SELECT 1' },
+              undefined,
+              { label: 'fetch users', description: 'loads the user table' }
+            );
+          }
+        }};`;
+
+      await evaluateWrapper(
+        buildWrapper(bundle),
+        {
+          __sb_execute: executeApi,
+          __sb_integrationExecutor: mockIntegrationExecutor
+        }
+      );
+
+      expect(mockIntegrationExecutor).toHaveBeenCalledTimes(1);
+      const call = mockIntegrationExecutor.mock.calls[0][0];
+      expect(call.metadata).toEqual({
+        label: 'fetch users',
+        description: 'loads the user table'
+      });
     });
 
     it('propagates integration executor errors as thrown exceptions', async () => {

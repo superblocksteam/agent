@@ -90,16 +90,22 @@ func OutputFromOutputOldJSON(jsonBytes []byte) (*Output, error) {
 // diagnosticsJSON is the JSON shape of the diagnostics array written by the
 // JS worker alongside the standard output fields. It maps to the proto
 // IntegrationDiagnostic message.
+type diagnosticMetadataJSON struct {
+	Label       string `json:"label,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
 type diagnosticJSON struct {
-	IntegrationId string `json:"integrationId"`
-	PluginId      string `json:"pluginId"`
-	Input         string `json:"input"`
-	Output        string `json:"output"`
-	StartMs       int64  `json:"startMs"`
-	EndMs         int64  `json:"endMs"`
-	DurationMs    int64  `json:"durationMs"`
-	Error         string `json:"error"`
-	Sequence      int32  `json:"sequence"`
+	IntegrationId string                  `json:"integrationId"`
+	PluginId      string                  `json:"pluginId"`
+	Input         string                  `json:"input"`
+	Output        string                  `json:"output"`
+	StartMs       int64                   `json:"startMs"`
+	EndMs         int64                   `json:"endMs"`
+	DurationMs    int64                   `json:"durationMs"`
+	Error         string                  `json:"error"`
+	Sequence      int32                   `json:"sequence"`
+	Metadata      *diagnosticMetadataJSON `json:"metadata,omitempty"`
 }
 
 // diagnosticsWrapper wraps just the diagnostics field from the worker JSON
@@ -117,7 +123,7 @@ func DiagnosticsFromOutputJSON(jsonBytes []byte) []*IntegrationDiagnostic {
 	}
 	result := make([]*IntegrationDiagnostic, 0, len(wrapper.Diagnostics))
 	for _, d := range wrapper.Diagnostics {
-		result = append(result, &IntegrationDiagnostic{
+		diag := &IntegrationDiagnostic{
 			IntegrationId:   d.IntegrationId,
 			PluginId:        d.PluginId,
 			InputTruncated:  d.Input,
@@ -127,7 +133,14 @@ func DiagnosticsFromOutputJSON(jsonBytes []byte) []*IntegrationDiagnostic {
 			DurationMs:      d.DurationMs,
 			Error:           d.Error,
 			Sequence:        d.Sequence,
-		})
+		}
+		if d.Metadata != nil {
+			diag.Metadata = &TraceMetadata{
+				Label:       d.Metadata.Label,
+				Description: d.Metadata.Description,
+			}
+		}
+		result = append(result, diag)
 	}
 	return result
 }

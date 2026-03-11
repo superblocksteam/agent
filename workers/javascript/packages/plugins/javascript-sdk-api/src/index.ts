@@ -112,18 +112,27 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
     // Build the integration executor bridge.
     // This wraps context.integrationExecutor (a GrpcIntegrationExecutor) as a
     // plain async function that can be passed through the VM2 sandbox boundary.
-    // The wrapper script calls this with {integrationId, pluginId, actionConfiguration}.
+    // The wrapper script calls this with
+    // {integrationId, pluginId, actionConfiguration, metadata}.
     //
-    // When diagnostics are enabled, the bridge captures timing and truncated
-    // input/output for each call. This runs in the host (outside the VM2
-    // sandbox) so timing is accurate.
+    // When diagnostics are enabled, the bridge captures timing, truncated
+    // input/output, and metadata for each call. This runs in the host
+    // (outside the VM2 sandbox) so timing is accurate.
     const integrationExecutorBridge = context.integrationExecutor
-      ? async (params: { integrationId: string; pluginId: string; actionConfiguration?: Record<string, unknown> }) => {
+      ? async (params: {
+          integrationId: string;
+          pluginId: string;
+          actionConfiguration?: Record<string, unknown>;
+          metadata?: { label?: string; description?: string };
+        }) => {
           const startMs = includeDiagnostics ? Date.now() : 0;
           let callOutput: unknown;
           let callError = '';
           try {
-            const result = await context.integrationExecutor!.executeIntegration(params);
+            // Strip metadata before sending to the integration transport;
+            // it is only used for diagnostics on the host side.
+            const { metadata: _metadata, ...executionParams } = params;
+            const result = await context.integrationExecutor!.executeIntegration(executionParams);
             if (result.error) {
               throw new IntegrationError(result.error, ErrorCode.INTEGRATION_SYNTAX, {
                 pluginName: this.pluginName
@@ -146,7 +155,8 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
                 endMs,
                 durationMs: endMs - startMs,
                 error: callError,
-                sequence: diagnostics.length
+                sequence: diagnostics.length,
+                metadata: params.metadata
               });
             }
           }

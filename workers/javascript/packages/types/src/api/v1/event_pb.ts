@@ -809,6 +809,13 @@ export class IntegrationDiagnostic extends Message<IntegrationDiagnostic> {
    */
   sequence = 0;
 
+  /**
+   * Optional user-supplied metadata for this call (label, description).
+   *
+   * @generated from field: api.v1.TraceMetadata metadata = 10;
+   */
+  metadata?: TraceMetadata;
+
   constructor(data?: PartialMessage<IntegrationDiagnostic>) {
     super();
     proto3.util.initPartial(data, this);
@@ -826,6 +833,7 @@ export class IntegrationDiagnostic extends Message<IntegrationDiagnostic> {
     { no: 7, name: "duration_ms", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
     { no: 8, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 9, name: "sequence", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 10, name: "metadata", kind: "message", T: TraceMetadata },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): IntegrationDiagnostic {
@@ -842,6 +850,55 @@ export class IntegrationDiagnostic extends Message<IntegrationDiagnostic> {
 
   static equals(a: IntegrationDiagnostic | PlainMessage<IntegrationDiagnostic> | undefined, b: IntegrationDiagnostic | PlainMessage<IntegrationDiagnostic> | undefined): boolean {
     return proto3.util.equals(IntegrationDiagnostic, a, b);
+  }
+}
+
+/**
+ * User-supplied metadata attached to an integration call for diagnostics.
+ *
+ * @generated from message api.v1.TraceMetadata
+ */
+export class TraceMetadata extends Message<TraceMetadata> {
+  /**
+   * Short human-readable label for this call (e.g., "Fetch active users").
+   *
+   * @generated from field: string label = 1;
+   */
+  label = "";
+
+  /**
+   * Longer description of what this call does.
+   *
+   * @generated from field: string description = 2;
+   */
+  description = "";
+
+  constructor(data?: PartialMessage<TraceMetadata>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.TraceMetadata";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "label", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "description", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): TraceMetadata {
+    return new TraceMetadata().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): TraceMetadata {
+    return new TraceMetadata().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): TraceMetadata {
+    return new TraceMetadata().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: TraceMetadata | PlainMessage<TraceMetadata> | undefined, b: TraceMetadata | PlainMessage<TraceMetadata> | undefined): boolean {
+    return proto3.util.equals(TraceMetadata, a, b);
   }
 }
 

@@ -413,6 +413,11 @@ export class IntegrationDiagnostic extends jspb.Message {
     getSequence(): number;
     setSequence(value: number): IntegrationDiagnostic;
 
+    hasMetadata(): boolean;
+    clearMetadata(): void;
+    getMetadata(): TraceMetadata | undefined;
+    setMetadata(value?: TraceMetadata): IntegrationDiagnostic;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): IntegrationDiagnostic.AsObject;
     static toObject(includeInstance: boolean, msg: IntegrationDiagnostic): IntegrationDiagnostic.AsObject;
@@ -434,6 +439,30 @@ export namespace IntegrationDiagnostic {
         durationMs: number,
         error: string,
         sequence: number,
+        metadata?: TraceMetadata.AsObject,
+    }
+}
+
+export class TraceMetadata extends jspb.Message { 
+    getLabel(): string;
+    setLabel(value: string): TraceMetadata;
+    getDescription(): string;
+    setDescription(value: string): TraceMetadata;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): TraceMetadata.AsObject;
+    static toObject(includeInstance: boolean, msg: TraceMetadata): TraceMetadata.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: TraceMetadata, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): TraceMetadata;
+    static deserializeBinaryFromReader(message: TraceMetadata, reader: jspb.BinaryReader): TraceMetadata;
+}
+
+export namespace TraceMetadata {
+    export type AsObject = {
+        label: string,
+        description: string,
     }
 }
 

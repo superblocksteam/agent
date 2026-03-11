@@ -182,6 +182,11 @@ export interface IntegrationCallDiagnostic {
   error: string;
   /** 0-based ordinal indicating call order within the execution. */
   sequence: number;
+  /** Optional user-supplied metadata for this call. */
+  metadata?: {
+    label?: string;
+    description?: string;
+  };
 }
 
 export class ExecutionOutput {

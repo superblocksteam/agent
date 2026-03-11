@@ -71,7 +71,7 @@ if (__sb_api.integrations) {
   }
 }
 
-async function __sb_executeQuery(integrationId, request) {
+async function __sb_executeQuery(integrationId, request, bindings, metadata) {
   if (typeof __sb_integrationExecutor !== "function") {
     throw new Error("Integration operations require an integration executor (not available in this execution context)");
   }
@@ -79,7 +79,8 @@ async function __sb_executeQuery(integrationId, request) {
   return __sb_integrationExecutor({
     integrationId: integrationId,
     pluginId: pluginId,
-    actionConfiguration: request
+    actionConfiguration: request,
+    metadata: metadata
   });
 }
 

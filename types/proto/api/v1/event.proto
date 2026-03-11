@@ -186,4 +186,14 @@ message IntegrationDiagnostic {
   string error = 8;
   // 0-based ordinal indicating call order within the execution.
   int32 sequence = 9;
+  // Optional user-supplied metadata for this call (label, description).
+  TraceMetadata metadata = 10;
+}
+
+// User-supplied metadata attached to an integration call for diagnostics.
+message TraceMetadata {
+  // Short human-readable label for this call (e.g., "Fetch active users").
+  string label = 1;
+  // Longer description of what this call does.
+  string description = 2;
 }

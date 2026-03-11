@@ -13,7 +13,7 @@ import { Duration } from 'google-protobuf/google/protobuf/duration_pb';
 import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb';
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 import { Variables } from './types/api/v1/blocks_pb';
-import { IntegrationDiagnostic as ProtoIntegrationDiagnostic, OutputOld } from './types/api/v1/event_pb';
+import { IntegrationDiagnostic as ProtoIntegrationDiagnostic, TraceMetadata as ProtoTraceMetadata, OutputOld } from './types/api/v1/event_pb';
 import { MetadataResponse as ApiMetadataResponse } from './types/api/v1/service_pb';
 import { Error as ProtoError } from './types/common/v1/errors_pb';
 import { Plugin as AdlsPlugin } from './types/plugins/adls/v1/plugin_pb';
@@ -304,6 +304,12 @@ export class MessageTransformerImpl implements MessageTransformer {
         proto.setDurationMs(d.durationMs);
         if (d.error) proto.setError(d.error);
         proto.setSequence(d.sequence);
+        if (d.metadata) {
+          const metaProto = new ProtoTraceMetadata();
+          if (d.metadata.label) metaProto.setLabel(d.metadata.label);
+          if (d.metadata.description) metaProto.setDescription(d.metadata.description);
+          proto.setMetadata(metaProto);
+        }
         return proto;
       });
       protoResponse.setDiagnosticsList(protoDiagnostics);

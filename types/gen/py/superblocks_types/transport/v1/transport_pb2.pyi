@@ -111,7 +111,7 @@ class Request(_message.Message):
         class Data(_message.Message):
             __slots__ = ("props", "d_config", "a_config", "quotas")
             class Props(_message.Message):
-                __slots__ = ("action_configuration", "datasource_configuration", "redacted_datasource_configuration", "execution_id", "step_name", "environment", "binding_keys", "variables", "fileServerUrl", "files", "render", "version", "use_wasm_bindings_sandbox", "jwt_token", "profile", "integrations_callback_url")
+                __slots__ = ("action_configuration", "datasource_configuration", "redacted_datasource_configuration", "execution_id", "step_name", "environment", "binding_keys", "variables", "fileServerUrl", "files", "render", "version", "use_wasm_bindings_sandbox", "jwt_token", "profile", "integrations_callback_url", "include_diagnostics")
                 class Binding(_message.Message):
                     __slots__ = ("key", "type")
                     KEY_FIELD_NUMBER: _ClassVar[int]
@@ -163,6 +163,7 @@ class Request(_message.Message):
                 JWT_TOKEN_FIELD_NUMBER: _ClassVar[int]
                 PROFILE_FIELD_NUMBER: _ClassVar[int]
                 INTEGRATIONS_CALLBACK_URL_FIELD_NUMBER: _ClassVar[int]
+                INCLUDE_DIAGNOSTICS_FIELD_NUMBER: _ClassVar[int]
                 action_configuration: _struct_pb2.Struct
                 datasource_configuration: _struct_pb2.Struct
                 redacted_datasource_configuration: _struct_pb2.Struct
@@ -179,7 +180,8 @@ class Request(_message.Message):
                 jwt_token: str
                 profile: _common_pb2.Profile
                 integrations_callback_url: str
-                def __init__(self, action_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., datasource_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., redacted_datasource_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., execution_id: _Optional[str] = ..., step_name: _Optional[str] = ..., environment: _Optional[str] = ..., binding_keys: _Optional[_Iterable[_Union[Request.Data.Data.Props.Binding, _Mapping]]] = ..., variables: _Optional[_Mapping[str, Variable]] = ..., fileServerUrl: _Optional[str] = ..., files: _Optional[_Iterable[_Union[Request.Data.Data.Props.File, _Mapping]]] = ..., render: bool = ..., version: _Optional[str] = ..., use_wasm_bindings_sandbox: bool = ..., jwt_token: _Optional[str] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., integrations_callback_url: _Optional[str] = ...) -> None: ...
+                include_diagnostics: bool
+                def __init__(self, action_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., datasource_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., redacted_datasource_configuration: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., execution_id: _Optional[str] = ..., step_name: _Optional[str] = ..., environment: _Optional[str] = ..., binding_keys: _Optional[_Iterable[_Union[Request.Data.Data.Props.Binding, _Mapping]]] = ..., variables: _Optional[_Mapping[str, Variable]] = ..., fileServerUrl: _Optional[str] = ..., files: _Optional[_Iterable[_Union[Request.Data.Data.Props.File, _Mapping]]] = ..., render: bool = ..., version: _Optional[str] = ..., use_wasm_bindings_sandbox: bool = ..., jwt_token: _Optional[str] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., integrations_callback_url: _Optional[str] = ..., include_diagnostics: bool = ...) -> None: ...
             class Quota(_message.Message):
                 __slots__ = ("size", "duration")
                 SIZE_FIELD_NUMBER: _ClassVar[int]
