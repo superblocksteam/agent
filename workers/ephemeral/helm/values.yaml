@@ -98,9 +98,9 @@ sandbox:
       pullPolicy: IfNotPresent
     resources:
       limits:
-        memory: 2Gi
+        memory: 4Gi
       requests:
-        cpu: 100m
+        cpu: 150m
         memory: 700Mi
     port: 50051
     # Additional args/env for the python sandbox
@@ -112,9 +112,9 @@ sandbox:
       pullPolicy: IfNotPresent
     resources:
       limits:
-        memory: 2Gi
+        memory: 4Gi
       requests:
-        cpu: 100m
+        cpu: 150m
         memory: 700Mi
     port: 50051
     # Additional args/env for the javascript sandbox

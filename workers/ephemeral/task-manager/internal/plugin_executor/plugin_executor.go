@@ -150,11 +150,12 @@ func (p *pluginExecutor) Execute(
 
 	logger := p.logger.With(
 		zap.String(observability.OBS_TAG_CORRELATION_ID, constants.ExecutionID(ctx)),
+		zap.String(observability.OBS_TAG_PLUGIN_NAME, pluginName),
 	)
 
 	plug, err := p.getPlugin(pluginName)
 	if err != nil {
-		logger.Error("unknown/unsupported plugin", zap.String("plugin", pluginName), zap.Error(err))
+		logger.Error("unknown/unsupported plugin", zap.Error(err))
 		return nil, &commonErr.InternalError{Err: err}
 	}
 
