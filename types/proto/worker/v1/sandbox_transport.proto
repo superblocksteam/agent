@@ -54,6 +54,8 @@ message ExecuteResponse {
   optional google.protobuf.Timestamp startTime = 5;
   google.protobuf.Duration executionTime = 6;
   repeated StructuredLog structuredLog = 7;
+  // Per-integration-call diagnostics captured when include_diagnostics was set.
+  repeated api.v1.IntegrationDiagnostic diagnostics = 8;
 }
 
 message StreamRequest {

@@ -974,6 +974,126 @@ var _ interface {
 	ErrorName() string
 } = OutputOldValidationError{}
 
+// Validate checks the field values on IntegrationDiagnostic with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *IntegrationDiagnostic) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on IntegrationDiagnostic with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// IntegrationDiagnosticMultiError, or nil if none found.
+func (m *IntegrationDiagnostic) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *IntegrationDiagnostic) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for IntegrationId
+
+	// no validation rules for PluginId
+
+	// no validation rules for InputTruncated
+
+	// no validation rules for OutputTruncated
+
+	// no validation rules for StartMs
+
+	// no validation rules for EndMs
+
+	// no validation rules for DurationMs
+
+	// no validation rules for Error
+
+	// no validation rules for Sequence
+
+	if len(errors) > 0 {
+		return IntegrationDiagnosticMultiError(errors)
+	}
+
+	return nil
+}
+
+// IntegrationDiagnosticMultiError is an error wrapping multiple validation
+// errors returned by IntegrationDiagnostic.ValidateAll() if the designated
+// constraints aren't met.
+type IntegrationDiagnosticMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m IntegrationDiagnosticMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m IntegrationDiagnosticMultiError) AllErrors() []error { return m }
+
+// IntegrationDiagnosticValidationError is the validation error returned by
+// IntegrationDiagnostic.Validate if the designated constraints aren't met.
+type IntegrationDiagnosticValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e IntegrationDiagnosticValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e IntegrationDiagnosticValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e IntegrationDiagnosticValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e IntegrationDiagnosticValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e IntegrationDiagnosticValidationError) ErrorName() string {
+	return "IntegrationDiagnosticValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e IntegrationDiagnosticValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sIntegrationDiagnostic.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = IntegrationDiagnosticValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = IntegrationDiagnosticValidationError{}
+
 // Validate checks the field values on Event_Data with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.

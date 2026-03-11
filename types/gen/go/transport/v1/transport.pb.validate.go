@@ -2110,6 +2110,8 @@ func (m *Request_Data_Data_Props) validate(all bool) error {
 
 	// no validation rules for IntegrationsCallbackUrl
 
+	// no validation rules for IncludeDiagnostics
+
 	if len(errors) > 0 {
 		return Request_Data_Data_PropsMultiError(errors)
 	}

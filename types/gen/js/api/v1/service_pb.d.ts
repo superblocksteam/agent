@@ -411,6 +411,8 @@ export class ExecuteV3Request extends jspb.Message {
     getFilesList(): Array<ExecuteRequest.File>;
     setFilesList(value: Array<ExecuteRequest.File>): ExecuteV3Request;
     addFiles(value?: ExecuteRequest.File, index?: number): ExecuteRequest.File;
+    getIncludeDiagnostics(): boolean;
+    setIncludeDiagnostics(value: boolean): ExecuteV3Request;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ExecuteV3Request.AsObject;
@@ -433,6 +435,7 @@ export namespace ExecuteV3Request {
         branchName?: string,
         entryPoint?: string,
         filesList: Array<ExecuteRequest.File.AsObject>,
+        includeDiagnostics: boolean,
     }
 }
 
@@ -556,6 +559,10 @@ export class AwaitResponse extends jspb.Message {
     getEventsList(): Array<api_v1_event_pb.Event>;
     setEventsList(value: Array<api_v1_event_pb.Event>): AwaitResponse;
     addEvents(value?: api_v1_event_pb.Event, index?: number): api_v1_event_pb.Event;
+    clearDiagnosticsList(): void;
+    getDiagnosticsList(): Array<api_v1_event_pb.IntegrationDiagnostic>;
+    setDiagnosticsList(value: Array<api_v1_event_pb.IntegrationDiagnostic>): AwaitResponse;
+    addDiagnostics(value?: api_v1_event_pb.IntegrationDiagnostic, index?: number): api_v1_event_pb.IntegrationDiagnostic;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): AwaitResponse.AsObject;
@@ -575,6 +582,7 @@ export namespace AwaitResponse {
         status: AwaitResponse.Status,
         performance?: api_v1_event_pb.Performance.AsObject,
         eventsList: Array<api_v1_event_pb.Event.AsObject>,
+        diagnosticsList: Array<api_v1_event_pb.IntegrationDiagnostic.AsObject>,
     }
 
     export enum Status {

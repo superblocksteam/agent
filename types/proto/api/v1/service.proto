@@ -411,6 +411,10 @@ message ExecuteV3Request {
 
   // Optional file payloads for filepicker inputs.
   repeated ExecuteRequest.File files = 8;
+
+  // When true, the response will include per-integration-call diagnostic records
+  // with truncated input/output and timing data.
+  bool include_diagnostics = 9;
 }
 
 message Definition {
@@ -475,6 +479,12 @@ message AwaitResponse {
    * A log of the cuncurrent events that happened during this API's execution.
    */
   repeated api.v1.Event events = 6;
+
+  /*
+   * Per-integration-call diagnostic records. Only populated when the request
+   * sets include_diagnostics = true.
+   */
+  repeated api.v1.IntegrationDiagnostic diagnostics = 7;
 }
 
 message AsyncResponse {

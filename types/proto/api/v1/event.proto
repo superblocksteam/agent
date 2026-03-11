@@ -164,3 +164,26 @@ message OutputOld {
   string request = 3;
   google.protobuf.Value place_holders_info = 4;
 }
+
+// Per-integration-call diagnostic record for SDK API execution.
+// Captured when include_diagnostics is set on the request.
+message IntegrationDiagnostic {
+  // The integration ID (UUID) that was called.
+  string integration_id = 1;
+  // The plugin type (e.g. "postgres", "restapi").
+  string plugin_id = 2;
+  // Truncated JSON of the action configuration sent to the integration (capped at 10KB).
+  string input_truncated = 3;
+  // Truncated JSON of the integration response (capped at 10KB).
+  string output_truncated = 4;
+  // Unix epoch milliseconds when the call started.
+  int64 start_ms = 5;
+  // Unix epoch milliseconds when the call ended.
+  int64 end_ms = 6;
+  // Wall-clock duration in milliseconds.
+  int64 duration_ms = 7;
+  // Error message if the integration call failed, empty otherwise.
+  string error = 8;
+  // 0-based ordinal indicating call order within the execution.
+  int32 sequence = 9;
+}

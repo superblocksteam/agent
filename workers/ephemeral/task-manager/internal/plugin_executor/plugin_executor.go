@@ -453,5 +453,23 @@ func (*pluginExecutor) executeResponseToOutputMap(response *workerv1.ExecuteResp
 		outputMap["placeholdersInfo"] = response.GetOutput().GetPlaceHoldersInfo().AsInterface()
 	}
 
+	if diags := response.GetDiagnostics(); len(diags) > 0 {
+		diagSlice := make([]map[string]any, 0, len(diags))
+		for _, d := range diags {
+			diagSlice = append(diagSlice, map[string]any{
+				"integrationId": d.GetIntegrationId(),
+				"pluginId":      d.GetPluginId(),
+				"input":         d.GetInputTruncated(),
+				"output":        d.GetOutputTruncated(),
+				"startMs":       d.GetStartMs(),
+				"endMs":         d.GetEndMs(),
+				"durationMs":    d.GetDurationMs(),
+				"error":         d.GetError(),
+				"sequence":      d.GetSequence(),
+			})
+		}
+		outputMap["diagnostics"] = diagSlice
+	}
+
 	return outputMap
 }

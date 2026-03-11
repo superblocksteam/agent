@@ -3814,7 +3814,8 @@ proto.api.v1.ExecuteV3Request.toObject = function(includeInstance, msg) {
     branchName: jspb.Message.getFieldWithDefault(msg, 6, ""),
     entryPoint: jspb.Message.getFieldWithDefault(msg, 7, ""),
     filesList: jspb.Message.toObjectList(msg.getFilesList(),
-    proto.api.v1.ExecuteRequest.File.toObject, includeInstance)
+    proto.api.v1.ExecuteRequest.File.toObject, includeInstance),
+    includeDiagnostics: jspb.Message.getBooleanFieldWithDefault(msg, 9, false)
   };
 
   if (includeInstance) {
@@ -3886,6 +3887,10 @@ proto.api.v1.ExecuteV3Request.deserializeBinaryFromReader = function(msg, reader
       var value = new proto.api.v1.ExecuteRequest.File;
       reader.readMessage(value,proto.api.v1.ExecuteRequest.File.deserializeBinaryFromReader);
       msg.addFiles(value);
+      break;
+    case 9:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setIncludeDiagnostics(value);
       break;
     default:
       reader.skipField();
@@ -3969,6 +3974,13 @@ proto.api.v1.ExecuteV3Request.serializeBinaryToWriter = function(message, writer
       8,
       f,
       proto.api.v1.ExecuteRequest.File.serializeBinaryToWriter
+    );
+  }
+  f = message.getIncludeDiagnostics();
+  if (f) {
+    writer.writeBool(
+      9,
+      f
     );
   }
 };
@@ -4213,6 +4225,24 @@ proto.api.v1.ExecuteV3Request.prototype.addFiles = function(opt_value, opt_index
  */
 proto.api.v1.ExecuteV3Request.prototype.clearFilesList = function() {
   return this.setFilesList([]);
+};
+
+
+/**
+ * optional bool include_diagnostics = 9;
+ * @return {boolean}
+ */
+proto.api.v1.ExecuteV3Request.prototype.getIncludeDiagnostics = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 9, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api.v1.ExecuteV3Request} returns this
+ */
+proto.api.v1.ExecuteV3Request.prototype.setIncludeDiagnostics = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 9, value);
 };
 
 
@@ -4907,7 +4937,7 @@ proto.api.v1.StatusRequest.prototype.setExecution = function(value) {
  * @private {!Array<number>}
  * @const
  */
-proto.api.v1.AwaitResponse.repeatedFields_ = [3,6];
+proto.api.v1.AwaitResponse.repeatedFields_ = [3,6,7];
 
 
 
@@ -4947,7 +4977,9 @@ proto.api.v1.AwaitResponse.toObject = function(includeInstance, msg) {
     status: jspb.Message.getFieldWithDefault(msg, 4, 0),
     performance: (f = msg.getPerformance()) && api_v1_event_pb.Performance.toObject(includeInstance, f),
     eventsList: jspb.Message.toObjectList(msg.getEventsList(),
-    api_v1_event_pb.Event.toObject, includeInstance)
+    api_v1_event_pb.Event.toObject, includeInstance),
+    diagnosticsList: jspb.Message.toObjectList(msg.getDiagnosticsList(),
+    api_v1_event_pb.IntegrationDiagnostic.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -5011,6 +5043,11 @@ proto.api.v1.AwaitResponse.deserializeBinaryFromReader = function(msg, reader) {
       var value = new api_v1_event_pb.Event;
       reader.readMessage(value,api_v1_event_pb.Event.deserializeBinaryFromReader);
       msg.addEvents(value);
+      break;
+    case 7:
+      var value = new api_v1_event_pb.IntegrationDiagnostic;
+      reader.readMessage(value,api_v1_event_pb.IntegrationDiagnostic.deserializeBinaryFromReader);
+      msg.addDiagnostics(value);
       break;
     default:
       reader.skipField();
@@ -5085,6 +5122,14 @@ proto.api.v1.AwaitResponse.serializeBinaryToWriter = function(message, writer) {
       6,
       f,
       api_v1_event_pb.Event.serializeBinaryToWriter
+    );
+  }
+  f = message.getDiagnosticsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      7,
+      f,
+      api_v1_event_pb.IntegrationDiagnostic.serializeBinaryToWriter
     );
   }
 };
@@ -5282,6 +5327,44 @@ proto.api.v1.AwaitResponse.prototype.addEvents = function(opt_value, opt_index) 
  */
 proto.api.v1.AwaitResponse.prototype.clearEventsList = function() {
   return this.setEventsList([]);
+};
+
+
+/**
+ * repeated IntegrationDiagnostic diagnostics = 7;
+ * @return {!Array<!proto.api.v1.IntegrationDiagnostic>}
+ */
+proto.api.v1.AwaitResponse.prototype.getDiagnosticsList = function() {
+  return /** @type{!Array<!proto.api.v1.IntegrationDiagnostic>} */ (
+    jspb.Message.getRepeatedWrapperField(this, api_v1_event_pb.IntegrationDiagnostic, 7));
+};
+
+
+/**
+ * @param {!Array<!proto.api.v1.IntegrationDiagnostic>} value
+ * @return {!proto.api.v1.AwaitResponse} returns this
+*/
+proto.api.v1.AwaitResponse.prototype.setDiagnosticsList = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 7, value);
+};
+
+
+/**
+ * @param {!proto.api.v1.IntegrationDiagnostic=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.api.v1.IntegrationDiagnostic}
+ */
+proto.api.v1.AwaitResponse.prototype.addDiagnostics = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 7, opt_value, proto.api.v1.IntegrationDiagnostic, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api.v1.AwaitResponse} returns this
+ */
+proto.api.v1.AwaitResponse.prototype.clearDiagnosticsList = function() {
+  return this.setDiagnosticsList([]);
 };
 
 

@@ -111,6 +111,10 @@ export class ExecuteResponse extends jspb.Message {
     getStructuredlogList(): Array<StructuredLog>;
     setStructuredlogList(value: Array<StructuredLog>): ExecuteResponse;
     addStructuredlog(value?: StructuredLog, index?: number): StructuredLog;
+    clearDiagnosticsList(): void;
+    getDiagnosticsList(): Array<api_v1_event_pb.IntegrationDiagnostic>;
+    setDiagnosticsList(value: Array<api_v1_event_pb.IntegrationDiagnostic>): ExecuteResponse;
+    addDiagnostics(value?: api_v1_event_pb.IntegrationDiagnostic, index?: number): api_v1_event_pb.IntegrationDiagnostic;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ExecuteResponse.AsObject;
@@ -131,6 +135,7 @@ export namespace ExecuteResponse {
         starttime?: google_protobuf_timestamp_pb.Timestamp.AsObject,
         executiontime?: google_protobuf_duration_pb.Duration.AsObject,
         structuredlogList: Array<StructuredLog.AsObject>,
+        diagnosticsList: Array<api_v1_event_pb.IntegrationDiagnostic.AsObject>,
     }
 }
 

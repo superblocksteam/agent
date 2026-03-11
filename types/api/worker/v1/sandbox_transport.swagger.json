@@ -129,6 +129,10 @@
         "integrationsCallbackUrl": {
           "type": "string",
           "description": "Optional per-execution URL for integration callbacks. Used by the\ntask-manager integration executor to proxy integration calls."
+        },
+        "includeDiagnostics": {
+          "type": "boolean",
+          "description": "When true, the worker should capture per-integration-call diagnostics\n(timing, truncated input/output) and include them in the output."
         }
       }
     },
@@ -592,8 +596,62 @@
             "type": "object",
             "$ref": "#/definitions/v1StructuredLog"
           }
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1IntegrationDiagnostic"
+          },
+          "description": "Per-integration-call diagnostics captured when include_diagnostics was set."
         }
       }
+    },
+    "v1IntegrationDiagnostic": {
+      "type": "object",
+      "properties": {
+        "integrationId": {
+          "type": "string",
+          "description": "The integration ID (UUID) that was called."
+        },
+        "pluginId": {
+          "type": "string",
+          "description": "The plugin type (e.g. \"postgres\", \"restapi\")."
+        },
+        "inputTruncated": {
+          "type": "string",
+          "description": "Truncated JSON of the action configuration sent to the integration (capped at 10KB)."
+        },
+        "outputTruncated": {
+          "type": "string",
+          "description": "Truncated JSON of the integration response (capped at 10KB)."
+        },
+        "startMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Unix epoch milliseconds when the call started."
+        },
+        "endMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Unix epoch milliseconds when the call ended."
+        },
+        "durationMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Wall-clock duration in milliseconds."
+        },
+        "error": {
+          "type": "string",
+          "description": "Error message if the integration call failed, empty otherwise."
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "int32",
+          "description": "0-based ordinal indicating call order within the execution."
+        }
+      },
+      "description": "Per-integration-call diagnostic record for SDK API execution.\nCaptured when include_diagnostics is set on the request."
     },
     "v1Observability": {
       "type": "object",

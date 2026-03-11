@@ -50,6 +50,7 @@ export class ExecutionContext {
   kvStore?: KVStore;
   integrationExecutor?: IntegrationExecutor;
   useWasmBindingsSandbox?: boolean;
+  includeDiagnostics?: boolean;
 
   outputs: { [key: string]: ExecutionOutput };
   preparedStatementContext: unknown[];
@@ -67,6 +68,7 @@ export class ExecutionContext {
     this.outputs = context && context.outputs ? _.cloneDeep(context.outputs) : {};
     this.preparedStatementContext = context && context.preparedStatementContext ? _.cloneDeep(context.preparedStatementContext) : [];
     this.useWasmBindingsSandbox = context?.useWasmBindingsSandbox;
+    this.includeDiagnostics = context?.includeDiagnostics;
     this.kvStore = context?.kvStore;
     this.integrationExecutor = context?.integrationExecutor;
     this.variables = context?.variables ? _.cloneDeep(context.variables) : undefined;
@@ -157,6 +159,31 @@ export interface StructuredLog {
 // It's controlled by hasRawRequest of the Plugin
 export type RawRequest = string | undefined;
 
+/**
+ * Per-integration-call diagnostic record captured during SDK API execution.
+ * Only populated when include_diagnostics is set on the request.
+ */
+export interface IntegrationCallDiagnostic {
+  /** The integration ID (UUID) that was called. */
+  integrationId: string;
+  /** The plugin type (e.g. "postgres", "restapi"). */
+  pluginId: string;
+  /** Truncated JSON of the action configuration sent to the integration (capped at 10KB). */
+  input: string;
+  /** Truncated JSON of the integration response (capped at 10KB). */
+  output: string;
+  /** Unix epoch milliseconds when the call started. */
+  startMs: number;
+  /** Unix epoch milliseconds when the call ended. */
+  endMs: number;
+  /** Wall-clock duration in milliseconds. */
+  durationMs: number;
+  /** Error message if the integration call failed, empty otherwise. */
+  error: string;
+  /** 0-based ordinal indicating call order within the execution. */
+  sequence: number;
+}
+
 export class ExecutionOutput {
   error?: string;
   authError?: boolean;
@@ -169,6 +196,7 @@ export class ExecutionOutput {
   request: RawRequest;
   placeholdersInfo?: PlaceholdersInfo;
   integrationErrorCode?: Code;
+  diagnostics?: IntegrationCallDiagnostic[];
 
   constructor() {
     this.output = {};
@@ -187,6 +215,7 @@ export class ExecutionOutput {
     instance.output = obj.output;
     instance.request = obj.request;
     instance.startTimeUtc = obj.startTimeUtc;
+    instance.diagnostics = obj.diagnostics;
 
     return instance;
   }

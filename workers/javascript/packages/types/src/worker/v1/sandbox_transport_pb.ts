@@ -6,7 +6,7 @@
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Duration, Message, proto3, Struct, Timestamp } from "@bufbuild/protobuf";
 import { Request_Data_Data_Props, Request_Data_Data_Quota, Request_Data_Pinned } from "../../transport/v1/transport_pb";
-import { OutputOld } from "../../api/v1/event_pb";
+import { IntegrationDiagnostic, OutputOld } from "../../api/v1/event_pb";
 import { Error } from "../../common/v1/errors_pb";
 
 /**
@@ -164,6 +164,13 @@ export class ExecuteResponse extends Message<ExecuteResponse> {
    */
   structuredLog: StructuredLog[] = [];
 
+  /**
+   * Per-integration-call diagnostics captured when include_diagnostics was set.
+   *
+   * @generated from field: repeated api.v1.IntegrationDiagnostic diagnostics = 8;
+   */
+  diagnostics: IntegrationDiagnostic[] = [];
+
   constructor(data?: PartialMessage<ExecuteResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -179,6 +186,7 @@ export class ExecuteResponse extends Message<ExecuteResponse> {
     { no: 5, name: "startTime", kind: "message", T: Timestamp, opt: true },
     { no: 6, name: "executionTime", kind: "message", T: Duration },
     { no: 7, name: "structuredLog", kind: "message", T: StructuredLog, repeated: true },
+    { no: 8, name: "diagnostics", kind: "message", T: IntegrationDiagnostic, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteResponse {

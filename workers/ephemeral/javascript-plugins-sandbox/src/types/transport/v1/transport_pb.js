@@ -2356,7 +2356,8 @@ proto.transport.v1.Request.Data.Data.Props.toObject = function(includeInstance, 
     useWasmBindingsSandbox: jspb.Message.getBooleanFieldWithDefault(msg, 13, false),
     jwtToken: jspb.Message.getFieldWithDefault(msg, 14, ""),
     profile: (f = msg.getProfile()) && common_v1_common_pb.Profile.toObject(includeInstance, f),
-    integrationsCallbackUrl: jspb.Message.getFieldWithDefault(msg, 16, "")
+    integrationsCallbackUrl: jspb.Message.getFieldWithDefault(msg, 16, ""),
+    includeDiagnostics: jspb.Message.getBooleanFieldWithDefault(msg, 17, false)
   };
 
   if (includeInstance) {
@@ -2464,6 +2465,10 @@ proto.transport.v1.Request.Data.Data.Props.deserializeBinaryFromReader = functio
     case 16:
       var value = /** @type {string} */ (reader.readString());
       msg.setIntegrationsCallbackUrl(value);
+      break;
+    case 17:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setIncludeDiagnostics(value);
       break;
     default:
       reader.skipField();
@@ -2606,6 +2611,13 @@ proto.transport.v1.Request.Data.Data.Props.serializeBinaryToWriter = function(me
   if (f.length > 0) {
     writer.writeString(
       16,
+      f
+    );
+  }
+  f = message.getIncludeDiagnostics();
+  if (f) {
+    writer.writeBool(
+      17,
       f
     );
   }
@@ -3572,6 +3584,24 @@ proto.transport.v1.Request.Data.Data.Props.prototype.getIntegrationsCallbackUrl 
  */
 proto.transport.v1.Request.Data.Data.Props.prototype.setIntegrationsCallbackUrl = function(value) {
   return jspb.Message.setProto3StringField(this, 16, value);
+};
+
+
+/**
+ * optional bool include_diagnostics = 17;
+ * @return {boolean}
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.getIncludeDiagnostics = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 17, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.transport.v1.Request.Data.Data.Props} returns this
+ */
+proto.transport.v1.Request.Data.Data.Props.prototype.setIncludeDiagnostics = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 17, value);
 };
 
 

@@ -4,6 +4,10 @@
  * Executes TypeScript-based APIs defined with @superblocksteam/sdk-api.
  * Bridges the ESM sdk-api package into the VM2 sandbox by injecting
  * `executeApi` and an integration executor bridge as sandbox globals.
+ *
+ * When `context.includeDiagnostics` is true, the bridge captures per-call
+ * timing, truncated input/output, and error data for each integration call.
+ * These records are attached to the ExecutionOutput as `diagnostics`.
  */
 import {
   ErrorCode,
@@ -11,6 +15,7 @@ import {
   ExecutionOutput,
   getTreePathToDiskPath,
   IntegrationError,
+  IntegrationCallDiagnostic,
   LanguageActionConfiguration,
   LanguagePlugin,
   PluginExecutionProps
@@ -18,6 +23,35 @@ import {
 import { buildRequireRoot } from './buildRequireRoot';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { executeCode } = require('@superblocksteam/javascript/bootstrap');
+
+/** Maximum byte length for truncated JSON in diagnostic records. */
+const DIAGNOSTICS_MAX_BYTES = 10_240;
+
+/** Maximum number of diagnostic records per execution to prevent unbounded growth. */
+const DIAGNOSTICS_MAX_ENTRIES = 100;
+
+/**
+ * Truncates a value's JSON representation to the specified byte limit.
+ *
+ * @param value - The value to serialize and truncate
+ * @param maxBytes - Maximum byte length of the resulting string
+ * @returns Truncated JSON string, or empty string for null/undefined
+ */
+function truncateJson(value: unknown, maxBytes: number): string {
+  if (value == null) return '';
+  try {
+    const json = JSON.stringify(value);
+    if (Buffer.byteLength(json, 'utf8') <= maxBytes) return json;
+    // Encode to a buffer and slice at the byte boundary to avoid
+    // cutting in the middle of multi-byte characters.
+    const buf = Buffer.from(json, 'utf8');
+    return buf.subarray(0, maxBytes - 15).toString('utf8') + '...[truncated]';
+  } catch {
+    const str = String(value);
+    const buf = Buffer.from(str, 'utf8');
+    return buf.subarray(0, maxBytes).toString('utf8');
+  }
+}
 
 /**
  * Dynamically imports the ESM @superblocksteam/sdk-api package.
@@ -72,19 +106,50 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
     // Load the ESM sdk-api package and extract executeApi.
     const sdkApi = await getSdkApi();
 
+    const includeDiagnostics = Boolean(context.includeDiagnostics);
+    const diagnostics: IntegrationCallDiagnostic[] = [];
+
     // Build the integration executor bridge.
     // This wraps context.integrationExecutor (a GrpcIntegrationExecutor) as a
     // plain async function that can be passed through the VM2 sandbox boundary.
     // The wrapper script calls this with {integrationId, pluginId, actionConfiguration}.
+    //
+    // When diagnostics are enabled, the bridge captures timing and truncated
+    // input/output for each call. This runs in the host (outside the VM2
+    // sandbox) so timing is accurate.
     const integrationExecutorBridge = context.integrationExecutor
       ? async (params: { integrationId: string; pluginId: string; actionConfiguration?: Record<string, unknown> }) => {
-          const result = await context.integrationExecutor!.executeIntegration(params);
-          if (result.error) {
-            throw new IntegrationError(result.error, ErrorCode.INTEGRATION_SYNTAX, {
-              pluginName: this.pluginName
-            });
+          const startMs = includeDiagnostics ? Date.now() : 0;
+          let callOutput: unknown;
+          let callError = '';
+          try {
+            const result = await context.integrationExecutor!.executeIntegration(params);
+            if (result.error) {
+              throw new IntegrationError(result.error, ErrorCode.INTEGRATION_SYNTAX, {
+                pluginName: this.pluginName
+              });
+            }
+            callOutput = result.output;
+            return result.output;
+          } catch (e) {
+            callError = (e as Error).message || String(e);
+            throw e;
+          } finally {
+            if (includeDiagnostics && diagnostics.length < DIAGNOSTICS_MAX_ENTRIES) {
+              const endMs = Date.now();
+              diagnostics.push({
+                integrationId: params.integrationId,
+                pluginId: params.pluginId,
+                input: truncateJson(params.actionConfiguration, DIAGNOSTICS_MAX_BYTES),
+                output: truncateJson(callOutput, DIAGNOSTICS_MAX_BYTES),
+                startMs,
+                endMs,
+                durationMs: endMs - startMs,
+                error: callError,
+                sequence: diagnostics.length
+              });
+            }
           }
-          return result.output;
         }
       : undefined;
 
@@ -126,7 +191,11 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
     });
 
     try {
-      return await Promise.race([runPromise, timeoutPromise]);
+      const execOutput = await Promise.race([runPromise, timeoutPromise]);
+      if (includeDiagnostics && diagnostics.length > 0) {
+        execOutput.diagnostics = diagnostics;
+      }
+      return execOutput;
     } catch (err) {
       if (err instanceof IntegrationError) {
         throw err;

@@ -360,6 +360,8 @@ export namespace Request {
                 setProfile(value?: common_v1_common_pb.Profile): Props;
                 getIntegrationsCallbackUrl(): string;
                 setIntegrationsCallbackUrl(value: string): Props;
+                getIncludeDiagnostics(): boolean;
+                setIncludeDiagnostics(value: boolean): Props;
 
                 serializeBinary(): Uint8Array;
                 toObject(includeInstance?: boolean): Props.AsObject;
@@ -390,6 +392,7 @@ export namespace Request {
                     jwtToken: string,
                     profile?: common_v1_common_pb.Profile.AsObject,
                     integrationsCallbackUrl: string,
+                    includeDiagnostics: boolean,
                 }
 
 

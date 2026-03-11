@@ -140,6 +140,7 @@ export class JsLanguageStepExecutor implements Closer {
     pluginProps.redactedContext.variables = pluginProps.variables ?? {};
     pluginProps.context.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
     pluginProps.redactedContext.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
+    pluginProps.context.includeDiagnostics = pluginProps.includeDiagnostics;
     pluginProps.version = request.props.version;
 
     pluginProps.actionConfiguration = this._convertActionConfig(pluginProps.actionConfiguration, observabilityTags);

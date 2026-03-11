@@ -87,6 +87,51 @@ func OutputFromOutputOldJSON(jsonBytes []byte) (*Output, error) {
 	return o, nil
 }
 
+// diagnosticsJSON is the JSON shape of the diagnostics array written by the
+// JS worker alongside the standard output fields. It maps to the proto
+// IntegrationDiagnostic message.
+type diagnosticJSON struct {
+	IntegrationId string `json:"integrationId"`
+	PluginId      string `json:"pluginId"`
+	Input         string `json:"input"`
+	Output        string `json:"output"`
+	StartMs       int64  `json:"startMs"`
+	EndMs         int64  `json:"endMs"`
+	DurationMs    int64  `json:"durationMs"`
+	Error         string `json:"error"`
+	Sequence      int32  `json:"sequence"`
+}
+
+// diagnosticsWrapper wraps just the diagnostics field from the worker JSON
+// so we can parse it independently from the output fields.
+type diagnosticsWrapper struct {
+	Diagnostics []diagnosticJSON `json:"diagnostics"`
+}
+
+// DiagnosticsFromOutputJSON extracts integration diagnostic records from the
+// raw worker output JSON. Returns nil when no diagnostics are present.
+func DiagnosticsFromOutputJSON(jsonBytes []byte) []*IntegrationDiagnostic {
+	var wrapper diagnosticsWrapper
+	if err := json.Unmarshal(jsonBytes, &wrapper); err != nil || len(wrapper.Diagnostics) == 0 {
+		return nil
+	}
+	result := make([]*IntegrationDiagnostic, 0, len(wrapper.Diagnostics))
+	for _, d := range wrapper.Diagnostics {
+		result = append(result, &IntegrationDiagnostic{
+			IntegrationId:   d.IntegrationId,
+			PluginId:        d.PluginId,
+			InputTruncated:  d.Input,
+			OutputTruncated: d.Output,
+			StartMs:         d.StartMs,
+			EndMs:           d.EndMs,
+			DurationMs:      d.DurationMs,
+			Error:           d.Error,
+			Sequence:        d.Sequence,
+		})
+	}
+	return result
+}
+
 func (o *Output) ToOld() *OutputOld {
 	var logsCombined []string
 	for _, log := range o.GetStdout() {

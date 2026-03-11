@@ -65,6 +65,76 @@ func TestOutputFromOutputOldJSON(t *testing.T) {
 	})
 }
 
+func TestDiagnosticsFromOutputJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns nil when no diagnostics field", func(t *testing.T) {
+		json := `{"output":{},"log":[]}`
+		result := DiagnosticsFromOutputJSON([]byte(json))
+		assert.Nil(t, result)
+	})
+
+	t.Run("returns nil for empty diagnostics array", func(t *testing.T) {
+		json := `{"output":{},"log":[],"diagnostics":[]}`
+		result := DiagnosticsFromOutputJSON([]byte(json))
+		assert.Nil(t, result)
+	})
+
+	t.Run("returns nil for invalid JSON", func(t *testing.T) {
+		result := DiagnosticsFromOutputJSON([]byte(`{invalid`))
+		assert.Nil(t, result)
+	})
+
+	t.Run("parses single diagnostic entry", func(t *testing.T) {
+		json := `{
+			"output":{},
+			"log":[],
+			"diagnostics":[{
+				"integrationId":"int-123",
+				"pluginId":"postgres",
+				"input":"{\"query\":\"SELECT 1\"}",
+				"output":"{\"rows\":[]}",
+				"startMs":1700000000000,
+				"endMs":1700000000050,
+				"durationMs":50,
+				"error":"",
+				"sequence":0
+			}]
+		}`
+		result := DiagnosticsFromOutputJSON([]byte(json))
+		require.Len(t, result, 1)
+		assert.Equal(t, "int-123", result[0].IntegrationId)
+		assert.Equal(t, "postgres", result[0].PluginId)
+		assert.Equal(t, `{"query":"SELECT 1"}`, result[0].InputTruncated)
+		assert.Equal(t, `{"rows":[]}`, result[0].OutputTruncated)
+		assert.Equal(t, int64(1700000000000), result[0].StartMs)
+		assert.Equal(t, int64(1700000000050), result[0].EndMs)
+		assert.Equal(t, int64(50), result[0].DurationMs)
+		assert.Equal(t, "", result[0].Error)
+		assert.Equal(t, int32(0), result[0].Sequence)
+	})
+
+	t.Run("parses multiple diagnostic entries with error", func(t *testing.T) {
+		json := `{
+			"output":{},
+			"log":[],
+			"diagnostics":[
+				{"integrationId":"a","pluginId":"postgres","input":"{}","output":"{}","startMs":100,"endMs":150,"durationMs":50,"error":"","sequence":0},
+				{"integrationId":"b","pluginId":"restapi","input":"{}","output":"","startMs":200,"endMs":300,"durationMs":100,"error":"connection refused","sequence":1}
+			]
+		}`
+		result := DiagnosticsFromOutputJSON([]byte(json))
+		require.Len(t, result, 2)
+		assert.Equal(t, "a", result[0].IntegrationId)
+		assert.Equal(t, "postgres", result[0].PluginId)
+		assert.Equal(t, int32(0), result[0].Sequence)
+		assert.Equal(t, "b", result[1].IntegrationId)
+		assert.Equal(t, "restapi", result[1].PluginId)
+		assert.Equal(t, "connection refused", result[1].Error)
+		assert.Equal(t, int32(1), result[1].Sequence)
+	})
+}
+
 func TestOutputFromOutputOld(t *testing.T) {
 	t.Parallel()
 

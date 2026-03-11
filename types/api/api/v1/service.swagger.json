@@ -5701,6 +5701,14 @@
             "$ref": "#/definitions/v1Event"
           },
           "description": "A log of the cuncurrent events that happened during this API's execution."
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1IntegrationDiagnostic"
+          },
+          "description": "Per-integration-call diagnostic records. Only populated when the request\nsets include_diagnostics = true."
         }
       }
     },
@@ -6349,6 +6357,10 @@
             "$ref": "#/definitions/v1ExecuteRequestFile"
           },
           "description": "Optional file payloads for filepicker inputs."
+        },
+        "includeDiagnostics": {
+          "type": "boolean",
+          "description": "When true, the response will include per-integration-call diagnostic records\nwith truncated input/output and timing data."
         }
       },
       "description": "ExecuteV3Request is a minimal, opinionated request for API 2.0 execution.\nUnlike ExecuteRequest, it always requires JWT authentication and only\nsupports fetch-by-ID (no inline definitions). Uses FetchCode for API 2.0\ncode delivery."
@@ -6562,6 +6574,52 @@
           "type": "string"
         }
       }
+    },
+    "v1IntegrationDiagnostic": {
+      "type": "object",
+      "properties": {
+        "integrationId": {
+          "type": "string",
+          "description": "The integration ID (UUID) that was called."
+        },
+        "pluginId": {
+          "type": "string",
+          "description": "The plugin type (e.g. \"postgres\", \"restapi\")."
+        },
+        "inputTruncated": {
+          "type": "string",
+          "description": "Truncated JSON of the action configuration sent to the integration (capped at 10KB)."
+        },
+        "outputTruncated": {
+          "type": "string",
+          "description": "Truncated JSON of the integration response (capped at 10KB)."
+        },
+        "startMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Unix epoch milliseconds when the call started."
+        },
+        "endMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Unix epoch milliseconds when the call ended."
+        },
+        "durationMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Wall-clock duration in milliseconds."
+        },
+        "error": {
+          "type": "string",
+          "description": "Error message if the integration call failed, empty otherwise."
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "int32",
+          "description": "0-based ordinal indicating call order within the execution."
+        }
+      },
+      "description": "Per-integration-call diagnostic record for SDK API execution.\nCaptured when include_diagnostics is set on the request."
     },
     "v1ListFilesConfig": {
       "type": "object",
@@ -7207,6 +7265,9 @@
         },
         "snowflakepostgres": {
           "$ref": "#/definitions/pluginssnowflakepostgresv1Plugin"
+        },
+        "snowflakecortex": {
+          "$ref": "#/definitions/pluginsrestapiintegrationv1Plugin"
         }
       }
     },

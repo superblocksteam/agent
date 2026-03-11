@@ -188,6 +188,11 @@ func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*a
 		BranchName: req.BranchName,
 		EntryPoint: req.EntryPoint,
 	}
+
+	if req.GetIncludeDiagnostics() {
+		ctx = constants.WithIncludeDiagnostics(ctx, true)
+	}
+
 	return s.await(ctx, &apiv1.ExecuteRequest{
 		Inputs: req.GetInputs(),
 		Files:  req.GetFiles(),
@@ -232,6 +237,7 @@ func (s *server) Await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *apiv1.AwaitResponse, err error) {
 	var events []*apiv1.Event
 	var output *apiv1.Output
+	var diagnostics []*apiv1.IntegrationDiagnostic
 	var failures []*commonv1.Error
 	var mutex sync.Mutex
 	var execution string
@@ -279,6 +285,7 @@ func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 			return nil, nil
 		}
 
+		diagnostics = done.Diagnostics
 		return done.Output, nil
 	}, nil); err != nil {
 		return nil, err
@@ -293,11 +300,12 @@ func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 	}
 
 	return &apiv1.AwaitResponse{
-		Execution: execution,
-		Status:    apiv1.AwaitResponse_STATUS_COMPLETED,
-		Events:    events,
-		Output:    output,
-		Errors:    failures,
+		Execution:   execution,
+		Status:      apiv1.AwaitResponse_STATUS_COMPLETED,
+		Events:      events,
+		Output:      output,
+		Errors:      failures,
+		Diagnostics: diagnostics,
 	}, respErr
 }
 
@@ -754,7 +762,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	// Code-mode direct execution: bypass the block executor entirely.
 	// Bundle was fetched in Fetch(); generate wrapper script and dispatch to JS worker.
 	if fetchCode := req.GetFetchCode(); fetchCode != nil {
-		return s.executeCodeMode(ctx, fetchCode, result, rawResult, req, useAgentKey, send)
+		return s.executeCodeMode(ctx, fetchCode, result, rawResult, req, useAgentKey, send, constants.IncludeDiagnostics(ctx))
 	}
 
 	viewMode := getViewMode(req)
@@ -920,6 +928,7 @@ func (s *server) executeCodeMode(
 	req *apiv1.ExecuteRequest,
 	useAgentKey bool,
 	send func(*apiv1.StreamResponse) error,
+	includeDiagnostics bool,
 ) (*executor.Done, error) {
 	logger := s.Logger.With(
 		zap.String("execution_path", "api-2.0"),
@@ -1063,6 +1072,7 @@ func (s *server) executeCodeMode(
 			JwtToken:                jwtToken,
 			Profile:                 fetchCode.GetProfile(),
 			IntegrationsCallbackUrl: s.IntegrationsCallbackUrl,
+			IncludeDiagnostics:      includeDiagnostics,
 		},
 		AConfig: &structpb.Struct{
 			Fields: map[string]*structpb.Value{
@@ -1081,6 +1091,7 @@ func (s *server) executeCodeMode(
 	// the normal path. When the worker failed, the store may still contain
 	// stdout/stderr captured before the error, which is valuable for debugging.
 	var output apiv1.Output
+	var diagnostics []*apiv1.IntegrationDiagnostic
 	var storeErr error
 	if outputKey != "" {
 		values, readErr := s.Store.Read(ctx, outputKey)
@@ -1097,7 +1108,8 @@ func (s *server) executeCodeMode(
 				storeErr = fmt.Errorf("unexpected store value type %T", values[0])
 			}
 			if raw != "" {
-				parsed, jsonErr := apiv1.OutputFromOutputOldJSON([]byte(raw))
+				rawBytes := []byte(raw)
+				parsed, jsonErr := apiv1.OutputFromOutputOldJSON(rawBytes)
 				if jsonErr != nil {
 					storeErr = fmt.Errorf("could not unmarshal worker output: %w", jsonErr)
 				} else {
@@ -1109,6 +1121,11 @@ func (s *server) executeCodeMode(
 					if output.RequestV2 != nil {
 						output.RequestV2.Summary = ""
 					}
+				}
+
+				// Extract integration diagnostics from the worker output if requested.
+				if includeDiagnostics {
+					diagnostics = apiv1.DiagnosticsFromOutputJSON(rawBytes)
 				}
 			}
 		}
@@ -1169,8 +1186,9 @@ func (s *server) executeCodeMode(
 	output.Stderr = nil
 
 	return &executor.Done{
-		Output: &output,
-		Last:   "api-2.0",
+		Output:      &output,
+		Last:        "api-2.0",
+		Diagnostics: diagnostics,
 	}, nil
 }
 

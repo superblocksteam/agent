@@ -579,6 +579,14 @@ export class Request_Data_Data_Props extends Message<Request_Data_Data_Props> {
    */
   integrationsCallbackUrl = "";
 
+  /**
+   * When true, the worker should capture per-integration-call diagnostics
+   * (timing, truncated input/output) and include them in the output.
+   *
+   * @generated from field: bool include_diagnostics = 17;
+   */
+  includeDiagnostics = false;
+
   constructor(data?: PartialMessage<Request_Data_Data_Props>) {
     super();
     proto3.util.initPartial(data, this);
@@ -603,6 +611,7 @@ export class Request_Data_Data_Props extends Message<Request_Data_Data_Props> {
     { no: 14, name: "jwt_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 15, name: "profile", kind: "message", T: Profile },
     { no: 16, name: "integrations_callback_url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 17, name: "include_diagnostics", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Request_Data_Data_Props {

@@ -243,6 +243,7 @@ export class PluginsRouter {
     }
     pluginProps.context.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
     pluginProps.redactedContext.useWasmBindingsSandbox = pluginProps.useWasmBindingsSandbox;
+    pluginProps.context.includeDiagnostics = pluginProps.includeDiagnostics;
     pluginProps.version = request.props.version;
 
     this.convertPluginConfigTypesInPlace(pluginName, pluginProps);

@@ -712,7 +712,7 @@ proto.worker.v1.ExecuteRequest.prototype.setIntegrationExecutorAddress = functio
  * @private {!Array<number>}
  * @const
  */
-proto.worker.v1.ExecuteResponse.repeatedFields_ = [4,7];
+proto.worker.v1.ExecuteResponse.repeatedFields_ = [4,7,8];
 
 
 
@@ -752,7 +752,9 @@ proto.worker.v1.ExecuteResponse.toObject = function(includeInstance, msg) {
     starttime: (f = msg.getStarttime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
     executiontime: (f = msg.getExecutiontime()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f),
     structuredlogList: jspb.Message.toObjectList(msg.getStructuredlogList(),
-    proto.worker.v1.StructuredLog.toObject, includeInstance)
+    proto.worker.v1.StructuredLog.toObject, includeInstance),
+    diagnosticsList: jspb.Message.toObjectList(msg.getDiagnosticsList(),
+    api_v1_event_pb.IntegrationDiagnostic.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -821,6 +823,11 @@ proto.worker.v1.ExecuteResponse.deserializeBinaryFromReader = function(msg, read
       var value = new proto.worker.v1.StructuredLog;
       reader.readMessage(value,proto.worker.v1.StructuredLog.deserializeBinaryFromReader);
       msg.addStructuredlog(value);
+      break;
+    case 8:
+      var value = new api_v1_event_pb.IntegrationDiagnostic;
+      reader.readMessage(value,api_v1_event_pb.IntegrationDiagnostic.deserializeBinaryFromReader);
+      msg.addDiagnostics(value);
       break;
     default:
       reader.skipField();
@@ -903,6 +910,14 @@ proto.worker.v1.ExecuteResponse.serializeBinaryToWriter = function(message, writ
       7,
       f,
       proto.worker.v1.StructuredLog.serializeBinaryToWriter
+    );
+  }
+  f = message.getDiagnosticsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      8,
+      f,
+      api_v1_event_pb.IntegrationDiagnostic.serializeBinaryToWriter
     );
   }
 };
@@ -1146,6 +1161,44 @@ proto.worker.v1.ExecuteResponse.prototype.addStructuredlog = function(opt_value,
  */
 proto.worker.v1.ExecuteResponse.prototype.clearStructuredlogList = function() {
   return this.setStructuredlogList([]);
+};
+
+
+/**
+ * repeated api.v1.IntegrationDiagnostic diagnostics = 8;
+ * @return {!Array<!proto.api.v1.IntegrationDiagnostic>}
+ */
+proto.worker.v1.ExecuteResponse.prototype.getDiagnosticsList = function() {
+  return /** @type{!Array<!proto.api.v1.IntegrationDiagnostic>} */ (
+    jspb.Message.getRepeatedWrapperField(this, api_v1_event_pb.IntegrationDiagnostic, 8));
+};
+
+
+/**
+ * @param {!Array<!proto.api.v1.IntegrationDiagnostic>} value
+ * @return {!proto.worker.v1.ExecuteResponse} returns this
+*/
+proto.worker.v1.ExecuteResponse.prototype.setDiagnosticsList = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 8, value);
+};
+
+
+/**
+ * @param {!proto.api.v1.IntegrationDiagnostic=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.api.v1.IntegrationDiagnostic}
+ */
+proto.worker.v1.ExecuteResponse.prototype.addDiagnostics = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 8, opt_value, proto.api.v1.IntegrationDiagnostic, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.worker.v1.ExecuteResponse} returns this
+ */
+proto.worker.v1.ExecuteResponse.prototype.clearDiagnosticsList = function() {
+  return this.setDiagnosticsList([]);
 };
 
 

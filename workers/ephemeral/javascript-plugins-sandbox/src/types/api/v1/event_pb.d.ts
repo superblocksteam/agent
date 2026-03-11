@@ -393,6 +393,50 @@ export namespace OutputOld {
     }
 }
 
+export class IntegrationDiagnostic extends jspb.Message { 
+    getIntegrationId(): string;
+    setIntegrationId(value: string): IntegrationDiagnostic;
+    getPluginId(): string;
+    setPluginId(value: string): IntegrationDiagnostic;
+    getInputTruncated(): string;
+    setInputTruncated(value: string): IntegrationDiagnostic;
+    getOutputTruncated(): string;
+    setOutputTruncated(value: string): IntegrationDiagnostic;
+    getStartMs(): number;
+    setStartMs(value: number): IntegrationDiagnostic;
+    getEndMs(): number;
+    setEndMs(value: number): IntegrationDiagnostic;
+    getDurationMs(): number;
+    setDurationMs(value: number): IntegrationDiagnostic;
+    getError(): string;
+    setError(value: string): IntegrationDiagnostic;
+    getSequence(): number;
+    setSequence(value: number): IntegrationDiagnostic;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): IntegrationDiagnostic.AsObject;
+    static toObject(includeInstance: boolean, msg: IntegrationDiagnostic): IntegrationDiagnostic.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: IntegrationDiagnostic, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): IntegrationDiagnostic;
+    static deserializeBinaryFromReader(message: IntegrationDiagnostic, reader: jspb.BinaryReader): IntegrationDiagnostic;
+}
+
+export namespace IntegrationDiagnostic {
+    export type AsObject = {
+        integrationId: string,
+        pluginId: string,
+        inputTruncated: string,
+        outputTruncated: string,
+        startMs: number,
+        endMs: number,
+        durationMs: number,
+        error: string,
+        sequence: number,
+    }
+}
+
 export enum BlockStatus {
     BLOCK_STATUS_UNSPECIFIED = 0,
     BLOCK_STATUS_SUCCEEDED = 1,

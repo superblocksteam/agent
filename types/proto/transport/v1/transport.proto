@@ -112,6 +112,9 @@ message Request {
         // Optional per-execution URL for integration callbacks. Used by the
         // task-manager integration executor to proxy integration calls.
         string integrations_callback_url = 16;
+        // When true, the worker should capture per-integration-call diagnostics
+        // (timing, truncated input/output) and include them in the output.
+        bool include_diagnostics = 17;
       }
 
       message Quota {

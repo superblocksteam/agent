@@ -1756,7 +1756,7 @@ func TestExecuteCodeMode(t *testing.T) {
 				"bundle": structpb.NewStringValue("module.exports = { run: function(ctx) { return ctx; } };"),
 			},
 		}
-		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, send)
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, send, false)
 		require.NoError(t, err)
 		require.NotNil(t, done)
 		assert.Equal(t, "api-2.0", done.Last)
@@ -1822,7 +1822,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
 			sentEvents = append(sentEvents, resp)
 			return nil
-		})
+		}, false)
 		require.NoError(t, err)
 		require.NotNil(t, done)
 		require.NotNil(t, done.Output)
@@ -1871,7 +1871,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
 			sentEvents = append(sentEvents, resp)
 			return nil
-		})
+		}, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "missing bundle")
 		assert.Nil(t, done)
@@ -1915,7 +1915,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
 			sentEvents = append(sentEvents, resp)
 			return nil
-		})
+		}, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "worker crashed")
 		assert.Nil(t, done)
@@ -1978,7 +1978,7 @@ func TestExecuteCodeMode(t *testing.T) {
 
 		_, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error {
 			return nil
-		})
+		}, false)
 		require.NoError(t, err)
 
 		applied := workeroptions.Apply(capturedOpts...)
@@ -2041,7 +2041,7 @@ func TestExecuteCodeMode(t *testing.T) {
 
 		_, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error {
 			return nil
-		})
+		}, false)
 		require.NoError(t, err)
 
 		applied := workeroptions.Apply(capturedOpts...)
@@ -2084,7 +2084,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
 			sentEvents = append(sentEvents, resp)
 			return nil
-		})
+		}, false)
 		assert.Error(t, err)
 		assert.True(t, sberror.IsAuthorizationError(err), "missing JWT should return auth error, not internal")
 		assert.Contains(t, err.Error(), "user id")
@@ -2129,7 +2129,7 @@ func TestExecuteCodeMode(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 
-		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
 		require.NoError(t, err)
 		require.NotNil(t, done)
 
@@ -2183,7 +2183,7 @@ func TestExecuteCodeMode(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 
-		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
 		require.NoError(t, err)
 		require.NotNil(t, done)
 
@@ -2213,7 +2213,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, nil, req, false, func(resp *apiv1.StreamResponse) error {
 			sentEvents = append(sentEvents, resp)
 			return nil
-		})
+		}, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "nil rawResult")
 		assert.Nil(t, done)
@@ -2253,7 +2253,7 @@ func TestExecuteCodeMode(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 
-		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "redis connection failed")
 		assert.Nil(t, done)
@@ -2294,7 +2294,7 @@ func TestExecuteCodeMode(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 
-		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected store value type int")
 		assert.Nil(t, done)
@@ -2334,7 +2334,7 @@ func TestExecuteCodeMode(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 
-		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil })
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "could not unmarshal worker output")
 		assert.Nil(t, done)
@@ -2386,7 +2386,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
 			sentEvents = append(sentEvents, resp)
 			return nil
-		})
+		}, false)
 
 		require.NoError(t, err, "should succeed with structured errors, not return a Go error")
 		require.NotNil(t, done)
@@ -2453,7 +2453,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
 			sentEvents = append(sentEvents, resp)
 			return nil
-		})
+		}, false)
 
 		assert.Error(t, err, "should return Go error when no useful output to recover")
 		assert.Contains(t, err.Error(), "sandbox OOM killed")
@@ -2504,7 +2504,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
 			sentEvents = append(sentEvents, resp)
 			return nil
-		})
+		}, false)
 
 		assert.Error(t, err, "should fall back to sendError when both worker and store fail")
 		assert.Contains(t, err.Error(), "worker timeout")
@@ -2549,7 +2549,7 @@ func TestExecuteCodeMode(t *testing.T) {
 		}
 
 		sendErr := errors.New("stream closed")
-		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return sendErr })
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return sendErr }, false)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, sendErr)
 		assert.Nil(t, done)

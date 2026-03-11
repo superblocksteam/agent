@@ -275,15 +275,19 @@ export abstract class BasePlugin {
         profileId,
         profile
       });
-      if (innerOutput instanceof ExecutionOutput) {
+      // Use duck-typing instead of instanceof because pnpm workspace linking
+      // can produce multiple copies of the ExecutionOutput class.
+      if (innerOutput && Array.isArray((innerOutput as ExecutionOutput).structuredLog)) {
         if (innerOutput === mutableOutput) {
           // This is a developer warning because `mutableOutput` is not returnable
           throw new TypeError(`Plugin ${this.name()} is duplicating its output`);
         }
-        mutableOutput.error = innerOutput.error;
-        mutableOutput.log = mutableOutput.log.concat(innerOutput.log);
-        mutableOutput.structuredLog = mutableOutput.structuredLog.concat(innerOutput.structuredLog);
-        mutableOutput.output = innerOutput.output;
+        const typedOutput = innerOutput as ExecutionOutput;
+        mutableOutput.error = typedOutput.error;
+        mutableOutput.log = mutableOutput.log.concat(typedOutput.log);
+        mutableOutput.structuredLog = mutableOutput.structuredLog.concat(typedOutput.structuredLog);
+        mutableOutput.output = typedOutput.output;
+        mutableOutput.diagnostics = typedOutput.diagnostics;
       }
     } catch (e) {
       mutableOutput.executionTime = Date.now() - startTime.getTime();

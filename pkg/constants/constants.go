@@ -24,6 +24,7 @@ const (
 	ContextKeyAgentVersion
 	ContextKeyEventType
 	ContextKeyRequestUsesJwtAuth
+	ContextKeyIncludeDiagnostics
 	// TODO(frank): Add other context keys here.
 
 	HeaderAgentKey       = "x-superblocks-agent-key"
@@ -90,6 +91,17 @@ func GetRequestUsesJwtAuth(ctx context.Context) (bool, error) {
 		return false, errors.New("could not get requestUsesJwtAuth")
 	}
 	return requestUsesJwtAuth, nil
+}
+
+func WithIncludeDiagnostics(ctx context.Context, include bool) context.Context {
+	return context.WithValue(ctx, ContextKeyIncludeDiagnostics, include)
+}
+
+func IncludeDiagnostics(ctx context.Context) bool {
+	if v, ok := ctx.Value(ContextKeyIncludeDiagnostics).(bool); ok {
+		return v
+	}
+	return false
 }
 
 // NOTE(frank): This was added because we record a metric in the individual implementations

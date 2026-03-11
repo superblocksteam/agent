@@ -67,6 +67,7 @@ type Done struct {
 	Output           *apiv1.Output
 	Last             string
 	GarbageCollector gc.GC
+	Diagnostics      []*apiv1.IntegrationDiagnostic
 }
 
 type execution struct {

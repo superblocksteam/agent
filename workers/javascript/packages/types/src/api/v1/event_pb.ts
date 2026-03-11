@@ -739,3 +739,109 @@ export class OutputOld extends Message<OutputOld> {
   }
 }
 
+/**
+ * Per-integration-call diagnostic record for SDK API execution.
+ * Captured when include_diagnostics is set on the request.
+ *
+ * @generated from message api.v1.IntegrationDiagnostic
+ */
+export class IntegrationDiagnostic extends Message<IntegrationDiagnostic> {
+  /**
+   * The integration ID (UUID) that was called.
+   *
+   * @generated from field: string integration_id = 1;
+   */
+  integrationId = "";
+
+  /**
+   * The plugin type (e.g. "postgres", "restapi").
+   *
+   * @generated from field: string plugin_id = 2;
+   */
+  pluginId = "";
+
+  /**
+   * Truncated JSON of the action configuration sent to the integration (capped at 10KB).
+   *
+   * @generated from field: string input_truncated = 3;
+   */
+  inputTruncated = "";
+
+  /**
+   * Truncated JSON of the integration response (capped at 10KB).
+   *
+   * @generated from field: string output_truncated = 4;
+   */
+  outputTruncated = "";
+
+  /**
+   * Unix epoch milliseconds when the call started.
+   *
+   * @generated from field: int64 start_ms = 5;
+   */
+  startMs = protoInt64.zero;
+
+  /**
+   * Unix epoch milliseconds when the call ended.
+   *
+   * @generated from field: int64 end_ms = 6;
+   */
+  endMs = protoInt64.zero;
+
+  /**
+   * Wall-clock duration in milliseconds.
+   *
+   * @generated from field: int64 duration_ms = 7;
+   */
+  durationMs = protoInt64.zero;
+
+  /**
+   * Error message if the integration call failed, empty otherwise.
+   *
+   * @generated from field: string error = 8;
+   */
+  error = "";
+
+  /**
+   * 0-based ordinal indicating call order within the execution.
+   *
+   * @generated from field: int32 sequence = 9;
+   */
+  sequence = 0;
+
+  constructor(data?: PartialMessage<IntegrationDiagnostic>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.IntegrationDiagnostic";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "integration_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "plugin_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "input_truncated", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "output_truncated", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "start_ms", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 6, name: "end_ms", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 7, name: "duration_ms", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 8, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 9, name: "sequence", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): IntegrationDiagnostic {
+    return new IntegrationDiagnostic().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): IntegrationDiagnostic {
+    return new IntegrationDiagnostic().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): IntegrationDiagnostic {
+    return new IntegrationDiagnostic().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: IntegrationDiagnostic | PlainMessage<IntegrationDiagnostic> | undefined, b: IntegrationDiagnostic | PlainMessage<IntegrationDiagnostic> | undefined): boolean {
+    return proto3.util.equals(IntegrationDiagnostic, a, b);
+  }
+}
+

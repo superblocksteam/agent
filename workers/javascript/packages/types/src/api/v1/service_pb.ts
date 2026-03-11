@@ -8,7 +8,7 @@ import { Message, proto3, Struct, Value } from "@bufbuild/protobuf";
 import { Api } from "./api_pb";
 import { Metadata, Profile, UserType } from "../../common/v1/common_pb";
 import { Stores } from "../../store/v1/store_pb";
-import { Event, Output, Performance } from "./event_pb";
+import { Event, IntegrationDiagnostic, Output, Performance } from "./event_pb";
 import { Error } from "../../common/v1/errors_pb";
 import { Metadata as Metadata$1 } from "../../plugins/couchbase/v1/plugin_pb";
 import { Metadata as Metadata$2 } from "../../plugins/kafka/v1/plugin_pb";
@@ -747,6 +747,14 @@ export class ExecuteV3Request extends Message<ExecuteV3Request> {
    */
   files: ExecuteRequest_File[] = [];
 
+  /**
+   * When true, the response will include per-integration-call diagnostic records
+   * with truncated input/output and timing data.
+   *
+   * @generated from field: bool include_diagnostics = 9;
+   */
+  includeDiagnostics = false;
+
   constructor(data?: PartialMessage<ExecuteV3Request>) {
     super();
     proto3.util.initPartial(data, this);
@@ -763,6 +771,7 @@ export class ExecuteV3Request extends Message<ExecuteV3Request> {
     { no: 6, name: "branch_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 7, name: "entry_point", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 8, name: "files", kind: "message", T: ExecuteRequest_File, repeated: true },
+    { no: 9, name: "include_diagnostics", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteV3Request {
@@ -997,6 +1006,15 @@ export class AwaitResponse extends Message<AwaitResponse> {
    */
   events: Event[] = [];
 
+  /**
+   *
+   * Per-integration-call diagnostic records. Only populated when the request
+   * sets include_diagnostics = true.
+   *
+   * @generated from field: repeated api.v1.IntegrationDiagnostic diagnostics = 7;
+   */
+  diagnostics: IntegrationDiagnostic[] = [];
+
   constructor(data?: PartialMessage<AwaitResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -1011,6 +1029,7 @@ export class AwaitResponse extends Message<AwaitResponse> {
     { no: 4, name: "status", kind: "enum", T: proto3.getEnumType(AwaitResponse_Status) },
     { no: 5, name: "performance", kind: "message", T: Performance },
     { no: 6, name: "events", kind: "message", T: Event, repeated: true },
+    { no: 7, name: "diagnostics", kind: "message", T: IntegrationDiagnostic, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AwaitResponse {

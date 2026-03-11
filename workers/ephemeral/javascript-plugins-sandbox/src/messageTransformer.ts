@@ -13,7 +13,7 @@ import { Duration } from 'google-protobuf/google/protobuf/duration_pb';
 import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb';
 import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 import { Variables } from './types/api/v1/blocks_pb';
-import { OutputOld } from './types/api/v1/event_pb';
+import { IntegrationDiagnostic as ProtoIntegrationDiagnostic, OutputOld } from './types/api/v1/event_pb';
 import { MetadataResponse as ApiMetadataResponse } from './types/api/v1/service_pb';
 import { Error as ProtoError } from './types/common/v1/errors_pb';
 import { Plugin as AdlsPlugin } from './types/plugins/adls/v1/plugin_pb';
@@ -159,7 +159,8 @@ export class MessageTransformerImpl implements MessageTransformer {
             })),
             render: protoProps.getRender(),
             useWasmBindingsSandbox: protoProps.getUseWasmBindingsSandbox(),
-            version: protoProps.getVersion()
+            version: protoProps.getVersion(),
+            includeDiagnostics: protoProps.getIncludeDiagnostics()
           }
         : {},
       quotas: protoQuotas
@@ -296,6 +297,25 @@ export class MessageTransformerImpl implements MessageTransformer {
     }
 
     protoResponse.setOutput(outputOld);
+
+    // Serialize per-integration-call diagnostics if present.
+    console.log('[MSG-TRANSFORMER-OUT] response.diagnostics:', response.diagnostics?.length ?? 'undefined');
+    if (response.diagnostics && response.diagnostics.length > 0) {
+      const protoDiagnostics = response.diagnostics.map((d) => {
+        const proto = new ProtoIntegrationDiagnostic();
+        proto.setIntegrationId(d.integrationId);
+        proto.setPluginId(d.pluginId);
+        if (d.input) proto.setInputTruncated(d.input);
+        if (d.output) proto.setOutputTruncated(d.output);
+        proto.setStartMs(d.startMs);
+        proto.setEndMs(d.endMs);
+        proto.setDurationMs(d.durationMs);
+        if (d.error) proto.setError(d.error);
+        proto.setSequence(d.sequence);
+        return proto;
+      });
+      protoResponse.setDiagnosticsList(protoDiagnostics);
+    }
 
     return protoResponse;
   }
