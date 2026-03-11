@@ -13,6 +13,9 @@ from src.superblocks import loads
 from superblocks_types.worker.v1 import sandbox_variable_store_pb2 as variable_store_pb2
 from superblocks_types.worker.v1 import sandbox_variable_store_pb2_grpc as variable_store_pb2_grpc
 
+MAX_RECEIVE_MESSAGE_LENGTH = 500 * 1024 * 1024  # 500MB, matches max FilePicker upload size
+MAX_SEND_MESSAGE_LENGTH = 30_000_000  # matches task-manager grpc.msg.req.max default
+
 
 class VariableClient(KVStore):
     """Client for accessing variables via gRPC to the orchestrator."""
@@ -26,7 +29,13 @@ class VariableClient(KVStore):
 
     def connect(self):
         if self.channel is None and self.address:
-            self.channel = grpc.insecure_channel(self.address)
+            self.channel = grpc.insecure_channel(
+                self.address,
+                options=[
+                    ("grpc.max_receive_message_length", MAX_RECEIVE_MESSAGE_LENGTH),
+                    ("grpc.max_send_message_length", MAX_SEND_MESSAGE_LENGTH),
+                ],
+            )
             self.stub = variable_store_pb2_grpc.SandboxVariableStoreServiceStub(self.channel)
 
     def read(self, keys: list[str]) -> Tuple[List[Any], int]:
@@ -136,11 +145,24 @@ class VariableClient(KVStore):
                 execution_id=self.execution_id,
                 path=path,
             ))
-            if resp.error:
-                raise Exception(f"Failed to fetch file: {resp.error}")
-            return resp.contents
+        except grpc.RpcError as e:
+            status_code = e.code() if hasattr(e, "code") else "UNKNOWN"
+            details = e.details() if hasattr(e, "details") else str(e)
+            error(
+                f"gRPC error fetching file {path}",
+                status_code=str(status_code),
+                details=details,
+                execution_id=self.execution_id,
+            )
+            raise Exception(
+                f"Error fetching file {path}: gRPC {status_code}: {details}"
+            )
         except Exception as e:
             raise Exception(f"Error fetching file {path}: {e}")
+
+        if resp.error:
+            raise Exception(f"Failed to fetch file {path}: {resp.error}")
+        return resp.contents
 
     def delete(self, keys: str) -> None:
         pass

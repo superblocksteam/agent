@@ -143,6 +143,7 @@ func init() {
 	// gRPC message size settings
 	pflag.Int("grpc.msg.req.max", 30000000, "Max message size in bytes to be received by the grpc server as a request. Default 30mb.")
 	pflag.Int("grpc.msg.res.max", 100000000, "Max message size in bytes to be sent by the grpc server response. Default 100mb.")
+	pflag.Int("filepicker.max.size", 524288000, "Max file size in bytes for FilePicker uploads. Default 500mb.")
 
 	// Health check settings
 	pflag.Bool("health.enabled", false, "Whether to enable health checks.")
@@ -560,12 +561,13 @@ func main() {
 	}
 
 	// Create variable store gRPC server (created early so it can be passed to JobSandboxPlugin)
+	// Uses filepicker.max.size for send limit because FetchFile responses can be up to 500MB.
 	var variableStoreGrpcRunnable *internalstore.VariableStoreGRPC
 	{
 		grpcServer := grpc.NewServer(
 			grpc.UnaryInterceptor(ipfiltermiddleware.IpFilterInterceptor(ipFilterManager, logger, ipFilterDisabled)),
 			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
-			grpc.MaxSendMsgSize(viper.GetInt("grpc.msg.res.max")),
+			grpc.MaxSendMsgSize(viper.GetInt("filepicker.max.size")),
 			grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		)
 
@@ -609,9 +611,9 @@ func main() {
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 			grpc.WithDefaultCallOptions(
-				// note that gateway uses the opposite of grpc direction.
-				// grpc send max (response) is gateway receive max
-				grpc.MaxCallRecvMsgSize(viper.GetInt("grpc.msg.res.max")),
+				// Gateway proxies the variable store which includes FetchFile,
+				// so it must accept responses up to filepicker.max.size.
+				grpc.MaxCallRecvMsgSize(viper.GetInt("filepicker.max.size")),
 				grpc.MaxCallSendMsgSize(viper.GetInt("grpc.msg.req.max")),
 			),
 		}

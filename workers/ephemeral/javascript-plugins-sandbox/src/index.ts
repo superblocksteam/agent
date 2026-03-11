@@ -127,20 +127,32 @@ function createSandboxTransportService(
 
 // Start server
 function main() {
+  const channelOptions: grpc.ChannelOptions = {
+    'grpc.max_receive_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
+    'grpc.max_send_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE
+  };
+
   const variableStoreClient = new SandboxVariableStoreServiceClient(
     SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS,
-    grpc.credentials.createInsecure()
+    grpc.credentials.createInsecure(),
+    channelOptions
   );
 
+  // Streaming proxy: client sends step output (large) and receives Empty.
   const streamingClient = new SandboxStreamingProxyServiceClient(
     SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS,
-    grpc.credentials.createInsecure()
+    grpc.credentials.createInsecure(),
+    {
+      'grpc.max_send_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
+      'grpc.max_receive_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE
+    }
   );
 
   const integrationExecutorClient = SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS
     ? new SandboxIntegrationExecutorServiceClient(
         SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS,
-        grpc.credentials.createInsecure()
+        grpc.credentials.createInsecure(),
+        channelOptions
       )
     : undefined;
 

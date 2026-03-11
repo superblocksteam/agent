@@ -3,11 +3,16 @@
 import json
 from unittest.mock import MagicMock, patch
 
+import grpc
 import pytest
 
 from src.store.kvstore import KV
 from src.superblocks import Object
-from src.variables.variable_client import VariableClient
+from src.variables.variable_client import (
+    MAX_RECEIVE_MESSAGE_LENGTH,
+    MAX_SEND_MESSAGE_LENGTH,
+    VariableClient,
+)
 
 
 class TestVariableClient:
@@ -34,7 +39,13 @@ class TestVariableClient:
 
         client.connect()
 
-        mock_channel.assert_called_once_with("localhost:50052")
+        mock_channel.assert_called_once_with(
+            "localhost:50052",
+            options=[
+                ("grpc.max_receive_message_length", MAX_RECEIVE_MESSAGE_LENGTH),
+                ("grpc.max_send_message_length", MAX_SEND_MESSAGE_LENGTH),
+            ],
+        )
         MockStub.assert_called_once_with(mock_channel_instance)
         assert client.channel == mock_channel_instance
         assert client.stub == mock_stub_instance
@@ -238,6 +249,58 @@ class TestVariableClient:
         client.flush()
 
         mock_stub.SetVariables.assert_not_called()
+
+
+class TestVariableClientFetchFile:
+    @pytest.fixture
+    def client(self):
+        c = VariableClient("localhost:50052", "test-execution-id")
+        c.stub = MagicMock()
+        return c
+
+    def test_fetch_file_success(self, client):
+        """Test successful file fetch."""
+        mock_response = MagicMock()
+        mock_response.error = ""
+        mock_response.contents = b"file-contents"
+        client.stub.FetchFile.return_value = mock_response
+
+        result = client.fetch_file("/tmp/some-file")
+
+        assert result == b"file-contents"
+
+    def test_fetch_file_application_error(self, client):
+        """Test fetch_file raises on application-level error from server."""
+        mock_response = MagicMock()
+        mock_response.error = "no file context for execution"
+        client.stub.FetchFile.return_value = mock_response
+
+        with pytest.raises(Exception, match="Failed to fetch file /tmp/some-file: no file context for execution"):
+            client.fetch_file("/tmp/some-file")
+
+    def test_fetch_file_not_connected(self):
+        """Test fetch_file raises when client not connected."""
+        client = VariableClient("localhost:50052", "test-execution-id")
+
+        with pytest.raises(Exception, match="Variable client not connected"):
+            client.fetch_file("/tmp/some-file")
+
+    def test_fetch_file_grpc_resource_exhausted(self, client):
+        """Test fetch_file handles RESOURCE_EXHAUSTED (message too large)."""
+        rpc_error = grpc.RpcError()
+        rpc_error.code = lambda: grpc.StatusCode.RESOURCE_EXHAUSTED
+        rpc_error.details = lambda: "Received message larger than max (5000000 vs. 4194304)"
+        client.stub.FetchFile.side_effect = rpc_error
+
+        with pytest.raises(Exception, match="gRPC StatusCode.RESOURCE_EXHAUSTED"):
+            client.fetch_file("/tmp/some-file")
+
+    def test_fetch_file_generic_exception(self, client):
+        """Test fetch_file handles non-gRPC exceptions."""
+        client.stub.FetchFile.side_effect = RuntimeError("unexpected error")
+
+        with pytest.raises(Exception, match="Error fetching file /tmp/some-file: unexpected error"):
+            client.fetch_file("/tmp/some-file")
 
 
 class TestVariableClientErrorHandling:
