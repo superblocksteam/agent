@@ -365,6 +365,20 @@ func (p *pluginExecutor) buildKvPair(
 ) (*store.KV, error) {
 
 	outputMap := p.executeResponseToOutputMap(message, executionErr)
+
+	// Debug: log diagnostics metadata presence before KV store write.
+	if diags, ok := outputMap["diagnostics"].([]map[string]any); ok {
+		for i, d := range diags {
+			meta, hasMeta := d["metadata"]
+			logger.Debug("task-manager: diagnostic before KV write",
+				zap.Int("index", i),
+				zap.Any("integration_id", d["integrationId"]),
+				zap.Bool("has_metadata", hasMeta),
+				zap.Any("metadata", meta),
+			)
+		}
+	}
+
 	jsonData, err := json.Marshal(outputMap)
 	if err != nil {
 		logger.Error("failed to marshal output map", zap.Error(err))

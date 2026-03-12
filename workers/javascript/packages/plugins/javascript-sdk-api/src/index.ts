@@ -204,6 +204,10 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       const execOutput = await Promise.race([runPromise, timeoutPromise]);
       if (includeDiagnostics && diagnostics.length > 0) {
         execOutput.diagnostics = diagnostics;
+        console.debug('[sdk-api] attaching diagnostics:', diagnostics.length, 'entries');
+        diagnostics.forEach((d, i) => {
+          console.debug(`[sdk-api] diagnostic[${i}]: integration=${d.integrationId} has_metadata=${!!d.metadata} metadata=${JSON.stringify(d.metadata)}`);
+        });
       }
       return execOutput;
     } catch (err) {

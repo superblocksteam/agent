@@ -1126,6 +1126,18 @@ func (s *server) executeCodeMode(
 				// Extract integration diagnostics from the worker output if requested.
 				if includeDiagnostics {
 					diagnostics = apiv1.DiagnosticsFromOutputJSON(rawBytes)
+					logger.Debug("extracted diagnostics from worker output",
+						zap.Int("count", len(diagnostics)),
+						zap.Int("raw_bytes_len", len(rawBytes)),
+					)
+					for i, d := range diagnostics {
+						logger.Debug("diagnostic entry",
+							zap.Int("index", i),
+							zap.String("integration_id", d.GetIntegrationId()),
+							zap.Bool("has_metadata", d.GetMetadata() != nil),
+							zap.String("metadata_label", d.GetMetadata().GetLabel()),
+						)
+					}
 				}
 			}
 		}
