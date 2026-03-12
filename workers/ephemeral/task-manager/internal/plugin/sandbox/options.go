@@ -24,6 +24,8 @@ type Options struct {
 	IntegrationExecutorAddress string
 	KvStore                    store.Store
 	IpFilterSetter             IpFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
+
+	DrainCompleteCh <-chan struct{}
 }
 
 type Option func(*Options)
@@ -79,6 +81,12 @@ func WithKvStore(kvStore store.Store) Option {
 func WithIpFilterSetter(ipFilterSetter IpFilterSetter) Option {
 	return func(o *Options) {
 		o.IpFilterSetter = ipFilterSetter
+	}
+}
+
+func WithDrainCompleteCh(ch <-chan struct{}) Option {
+	return func(o *Options) {
+		o.DrainCompleteCh = ch
 	}
 }
 

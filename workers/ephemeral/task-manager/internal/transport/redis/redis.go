@@ -68,6 +68,9 @@ type redisTransport struct {
 	// Ephemeral mode: process only one message and exit
 	ephemeral bool
 
+	// drainCompleteCh is closed after in-flight requests finish.
+	drainCompleteCh chan struct{}
+
 	run.ForwardCompatibility
 }
 
@@ -119,7 +122,8 @@ func NewRedisTransport(options *Options) *redisTransport {
 		context: ctx,
 		cancel:  cancel,
 
-		ephemeral: options.Ephemeral,
+		ephemeral:       options.Ephemeral,
+		drainCompleteCh: options.DrainCompleteCh,
 	}
 }
 
@@ -491,6 +495,13 @@ func (rt *redisTransport) Close(ctx context.Context) error {
 	rt.logger.Info("closing redis transport", zap.Error(ctx.Err()))
 	rt.alive.Store(false)
 	rt.cancel()
+
+	// Always signal that draining is complete so listeners can safely shut down
+	defer func() {
+		if rt.drainCompleteCh != nil {
+			close(rt.drainCompleteCh)
+		}
+	}()
 
 	for rt.executionPool.Load() < rt.executionPoolSize {
 		select {

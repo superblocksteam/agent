@@ -128,6 +128,16 @@ func TestWithEphemeral(t *testing.T) {
 	}
 }
 
+func TestWithDrainCompleteCh(t *testing.T) {
+	ch := make(chan struct{})
+	close(ch)
+
+	opts := NewOptions(WithDrainCompleteCh(ch))
+	if opts.DrainCompleteCh != ch {
+		t.Errorf("DrainCompleteCh = %v, want %v", opts.DrainCompleteCh, ch)
+	}
+}
+
 func TestOptionsChaining(t *testing.T) {
 	logger := zap.NewNop()
 	provider := mocks.NewFileContextProvider(t)

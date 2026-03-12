@@ -125,7 +125,6 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
           actionConfiguration?: Record<string, unknown>;
           metadata?: { label?: string; description?: string };
         }) => {
-          console.log(`[sdk-api bridge] integration=${params.integrationId} has_metadata=${!!params.metadata} metadata=${JSON.stringify(params.metadata)} keys=${Object.keys(params)}`);
           const startMs = includeDiagnostics ? Date.now() : 0;
           let callOutput: unknown;
           let callError = '';
@@ -205,10 +204,6 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       const execOutput = await Promise.race([runPromise, timeoutPromise]);
       if (includeDiagnostics && diagnostics.length > 0) {
         execOutput.diagnostics = diagnostics;
-        console.log('[sdk-api] attaching diagnostics:', diagnostics.length, 'entries');
-        diagnostics.forEach((d, i) => {
-          console.log(`[sdk-api] diagnostic[${i}]: integration=${d.integrationId} has_metadata=${!!d.metadata} metadata=${JSON.stringify(d.metadata)}`);
-        });
       }
       return execOutput;
     } catch (err) {

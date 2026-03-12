@@ -25,6 +25,11 @@ type Options struct {
 	FileContextProvider redisstore.FileContextProvider
 	Ephemeral           bool
 	AgentKey            string // Agent key for file server authentication
+
+	// DrainCompleteCh is closed when in-flight requests have finished.
+	// Enables graceful shutdown: SandboxPlugin waits for this before tearing down.
+	// When nil, nothing is signaled (e.g. tests).
+	DrainCompleteCh chan struct{}
 }
 
 // Option is a function that modifies Options
@@ -111,6 +116,14 @@ func WithEphemeral(value bool) Option {
 func WithAgentKey(value string) Option {
 	return func(o *Options) {
 		o.AgentKey = value
+	}
+}
+
+// WithDrainCompleteCh sets the channel to close when drain is complete.
+// Transport closes this after waiting for in-flight requests.
+func WithDrainCompleteCh(ch chan struct{}) Option {
+	return func(o *Options) {
+		o.DrainCompleteCh = ch
 	}
 }
 

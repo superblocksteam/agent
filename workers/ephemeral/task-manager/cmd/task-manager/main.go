@@ -359,6 +359,10 @@ func main() {
 		logger.Warn("IP filtering is disabled")
 	}
 
+	// Drain coordination: transport closes this when in-flight requests finish.
+	// SandboxPlugin.Close blocks until then before deleting the sandbox.
+	drainCompleteCh := make(chan struct{})
+
 	// Configure sandbox plugin options
 	sandboxOptions := []sandbox.Option{
 		sandbox.WithSandboxId(id),
@@ -366,6 +370,7 @@ func main() {
 		sandbox.WithKvStore(storeClient),
 		sandbox.WithVariableStoreAddress(variableStoreGrpcAddress),
 		sandbox.WithIntegrationExecutorAddress(integrationExecutorAddress),
+		sandbox.WithDrainCompleteCh(drainCompleteCh),
 	}
 
 	// Determine sandbox mode: static address (existing sandbox process e.g. Docker Compose) or dynamic Jobs (Kubernetes)
@@ -712,6 +717,7 @@ func main() {
 		redis.WithFileContextProvider(variableStoreGrpcRunnable),
 		redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
 		redis.WithAgentKey(viper.GetString("superblocks.key")),
+		redis.WithDrainCompleteCh(drainCompleteCh),
 	))
 
 	logger.Info("redis transport configured",
@@ -722,16 +728,18 @@ func main() {
 		zap.Duration("sandbox_timeout", viper.GetDuration("sandbox.timeout")),
 	)
 
-	var g run.Group
+	g := run.New(
+		run.WithSyncShutdown(),
+	)
 
 	g.Always(process.New())
 	g.Add(viper.GetBool("health.enabled"), healthChecker)
-	g.Always(streamingProxyService)
-	g.Add(integrationExecutorEnabled, integrationExecutorService)
+	g.Always(transportRunnable)
+	g.Always(sandboxPlugin)
 	g.Always(variableStoreGrpcRunnable)
 	g.Always(variableStoreHttpRunnable)
-	g.Always(sandboxPlugin)
-	g.Always(transportRunnable)
+	g.Always(streamingProxyService)
+	g.Add(integrationExecutorEnabled, integrationExecutorService)
 	g.Always(tracerRunnable)
 	g.Always(meterRunnable)
 

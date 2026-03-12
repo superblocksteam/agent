@@ -81,6 +81,10 @@ type SandboxPlugin struct {
 	// Tracks the number of executions to determine warm vs cold start.
 	executionCount atomic.Int64
 
+	// drainCompleteCh allows dependent services to sequence their shutdown with the sandbox plugin.
+	// Close blocks until this is closed before tearing down (deleting sandbox).
+	drainCompleteCh <-chan struct{}
+
 	run.ForwardCompatibility
 }
 
@@ -109,6 +113,7 @@ func NewSandboxPlugin(options ...Option) (*SandboxPlugin, error) {
 		ipFilterSetter:             opts.IpFilterSetter,
 		internalCtx:                ctx,
 		internalCancel:             cancel,
+		drainCompleteCh:            opts.DrainCompleteCh,
 	}
 
 	return p, nil
@@ -287,11 +292,21 @@ func (p *SandboxPlugin) connectToSandbox(address string) (*grpc.ClientConn, work
 
 // Close cleans up any resources - closes connection and deletes sandbox Job.
 // Called when the worker is shutting down.
-func (p *SandboxPlugin) Close(context.Context) error {
+// Blocks until drainCompleteCh is closed before tearing down so dependent services can complete their shutdown.
+func (p *SandboxPlugin) Close(ctx context.Context) error {
+	p.internalCancel()
+
+	if p.drainCompleteCh != nil {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-p.drainCompleteCh:
+			// Drain complete, proceed with teardown
+		}
+	}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
-	p.internalCancel()
 
 	if p.conn != nil {
 		_ = p.conn.Close()

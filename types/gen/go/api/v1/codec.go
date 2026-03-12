@@ -3,7 +3,6 @@ package v1
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -120,12 +119,7 @@ type diagnosticsWrapper struct {
 func DiagnosticsFromOutputJSON(jsonBytes []byte) []*IntegrationDiagnostic {
 	var wrapper diagnosticsWrapper
 	if err := json.Unmarshal(jsonBytes, &wrapper); err != nil || len(wrapper.Diagnostics) == 0 {
-		fmt.Printf("[codec] DiagnosticsFromOutputJSON: unmarshal err=%v count=%d\n", err, len(wrapper.Diagnostics))
 		return nil
-	}
-	fmt.Printf("[codec] DiagnosticsFromOutputJSON: found %d diagnostics\n", len(wrapper.Diagnostics))
-	for i, d := range wrapper.Diagnostics {
-		fmt.Printf("[codec] diagnostic[%d]: integration=%s has_metadata=%v metadata=%+v\n", i, d.IntegrationId, d.Metadata != nil, d.Metadata)
 	}
 	result := make([]*IntegrationDiagnostic, 0, len(wrapper.Diagnostics))
 	for _, d := range wrapper.Diagnostics {
