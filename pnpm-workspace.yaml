@@ -52,3 +52,5 @@ allowBuilds:
   - ssh2
 blockExoticSubdeps: true
 minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@superblocksteam/sdk-api'

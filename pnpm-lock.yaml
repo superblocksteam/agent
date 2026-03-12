@@ -280,8 +280,8 @@ importers:
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/salesforce
       '@superblocksteam/sdk-api':
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: 0.0.3-metadata.0
+        version: 0.0.3-metadata.0
       '@superblocksteam/smtp':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/smtp
@@ -1968,8 +1968,8 @@ importers:
         specifier: workspace:*
         version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
       '@superblocksteam/sdk-api':
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: 0.0.3-metadata.0
+        version: 0.0.3-metadata.0
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0
@@ -6180,8 +6180,8 @@ packages:
     resolution: {directory: workers/javascript/packages/plugins/salesforce, type: directory}
     engines: {node: 20.19.5}
 
-  '@superblocksteam/sdk-api@0.0.2':
-    resolution: {integrity: sha512-pQ8xO0G29NcytnAwJFVhYDPhdPp3k2R148IM2y8fwI4xsoFuW7uDCBH4wIgTBgssRxKUmWRZw4dJbEoG9QmmOQ==, tarball: https://npm.pkg.github.com/download/@superblocksteam/sdk-api/0.0.2/8633cccf29907be5c0e57110094b08cbd0beaa1a}
+  '@superblocksteam/sdk-api@0.0.3-metadata.0':
+    resolution: {integrity: sha512-uoMJkzWtqGeb5VeCIesq5vZvhz0Y+lIe3yci4LUSusmcRcDuSsvMDv+y+U84xYOHmVo/ro/utY0VOOTNHmIJXw==, tarball: https://npm.pkg.github.com/download/@superblocksteam/sdk-api/0.0.3-metadata.0/76af0a3767655a88bc850244b1a8c25d60e2ac4f}
     engines: {node: '>=20', npm: '>=10.x'}
 
   '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp':
@@ -6200,8 +6200,8 @@ packages:
     resolution: {directory: workers/javascript/packages/plugins/superblocks-ocr, type: directory}
     engines: {node: 20.19.5}
 
-  '@superblocksteam/types@1.91.0':
-    resolution: {integrity: sha512-2Wk4lDqmrYAyT6yGoWeD+xZa/tsJmoKr83jFusGV9Mi5eV4ebCN+ZtKg3QdPMOZEq6PgdRcY1+fhleopuDbl0g==, tarball: https://npm.pkg.github.com/download/@superblocksteam/types/1.91.0/0581c3fb1a146a00d9187d698b52daf8eb882a7a}
+  '@superblocksteam/types@1.196.0':
+    resolution: {integrity: sha512-EpYK9lCfy0NBnKIdK0lB/SXLX/oztAcG5+Xi+YLYeePP89P6lyUIWbMI6WfzHyYAM4+6c7tKiL+Of1ZtC6HgMA==, tarball: https://npm.pkg.github.com/download/@superblocksteam/types/1.196.0/7aaf21f7e5e72b3c5e077eb8ce2f41df27221cf0}
 
   '@superblocksteam/types@file:workers/javascript/packages/types':
     resolution: {directory: workers/javascript/packages/types, type: directory}
@@ -14270,7 +14270,7 @@ snapshots:
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
-      '@superblocksteam/sdk-api': 0.0.2
+      '@superblocksteam/sdk-api': 0.0.3-metadata.0
     transitivePeerDependencies:
       - aws-crt
       - bufferutil
@@ -14286,7 +14286,7 @@ snapshots:
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
-      '@superblocksteam/sdk-api': 0.0.2
+      '@superblocksteam/sdk-api': 0.0.3-metadata.0
     transitivePeerDependencies:
       - aws-crt
       - bufferutil
@@ -14617,9 +14617,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/sdk-api@0.0.2':
+  '@superblocksteam/sdk-api@0.0.3-metadata.0':
     dependencies:
-      '@superblocksteam/types': 1.91.0
+      '@superblocksteam/types': 1.196.0
       zod: 3.23.8
 
   '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp(ws@8.18.0)':
@@ -14679,7 +14679,7 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/types@1.91.0':
+  '@superblocksteam/types@1.196.0':
     dependencies:
       '@bufbuild/protobuf': 1.3.0
 
