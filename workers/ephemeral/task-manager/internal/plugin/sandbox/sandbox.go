@@ -181,10 +181,10 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 		sandboxDeadCh = p.sandboxManager.WatchSandboxPod(ctx, p.sandboxInfo.Name)
 
 		logger = logger.With(
-			zap.String("sandbox_id", p.sandboxId),
 			zap.String("job", sandboxInfo.Name),
-			zap.String("address", sandboxInfo.Address),
+			zap.String("sandbox_pod", sandboxInfo.Id),
 			zap.String("sandbox_ip", sandboxInfo.Ip),
+			zap.String("address", sandboxInfo.Address),
 		)
 		logger.Info("sandbox plugin initialized (dynamic mode)")
 	default:
@@ -196,7 +196,7 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 	if err != nil {
 		// Cleanup the job if we can't connect (only in dynamic mode)
 		if p.sandboxInfo != nil && p.sandboxManager != nil {
-			_ = p.sandboxManager.DeleteSandbox(ctx, p.sandboxInfo.Id)
+			_ = p.sandboxManager.DeleteSandbox(ctx, p.sandboxInfo.Name)
 		}
 		return fmt.Errorf("failed to connect to sandbox: %w", err)
 	}
@@ -207,6 +207,8 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 	logger.Info("successfully connected to sandbox, sandbox is ready for plugin executions")
 	p.sandboxReady.Store(true)
 	p.notifyReadyChannels()
+
+	p.monitorConnectionState(conn, logger)
 
 	select {
 	case err := <-sandboxDeadCh:
@@ -221,6 +223,38 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+func (p *SandboxPlugin) monitorConnectionState(conn *grpc.ClientConn, logger *zap.Logger) {
+	go func() {
+		state := conn.GetState()
+		for p.internalCtx.Err() == nil {
+			if conn.WaitForStateChange(p.internalCtx, state) {
+				prevState := state
+				state = conn.GetState()
+				sandboxmetrics.AddCounter(p.internalCtx, sandboxmetrics.SandboxConnectionStateTransitions,
+					sandboxmetrics.AttrConnectionStateFrom.String(prevState.String()),
+					sandboxmetrics.AttrConnectionStateTo.String(state.String()),
+				)
+				if state == connectivity.TransientFailure {
+					logger.Warn("sandbox gRPC connection entered transient failure",
+						zap.String("from_state", prevState.String()),
+						zap.String("to_state", state.String()),
+					)
+				} else if prevState == connectivity.TransientFailure && state == connectivity.Ready {
+					logger.Info("sandbox gRPC connection recovered to ready",
+						zap.String("from_state", prevState.String()),
+						zap.String("to_state", state.String()),
+					)
+				} else {
+					logger.Debug("sandbox gRPC connection state changed",
+						zap.String("from_state", prevState.String()),
+						zap.String("to_state", state.String()),
+					)
+				}
+			}
+		}
+	}()
 }
 
 // connectToSandbox creates a gRPC connection to the sandbox pod
@@ -270,13 +304,13 @@ func (p *SandboxPlugin) Close(context.Context) error {
 		defer cancel()
 
 		start := time.Now()
-		if err := p.sandboxManager.DeleteSandbox(ctx, p.sandboxInfo.Id); err != nil {
+		if err := p.sandboxManager.DeleteSandbox(ctx, p.sandboxInfo.Name); err != nil {
 			sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxTeardownDuration, time.Since(start).Seconds(),
 				sandboxmetrics.AttrResult.String("failed"),
 			)
 			p.logger.Warn("failed to delete sandbox job",
 				zap.String("job", p.sandboxInfo.Name),
-				zap.String("sandbox_id", p.sandboxInfo.Id),
+				zap.String("pod", p.sandboxInfo.Id),
 				zap.Error(err),
 			)
 			return err
@@ -289,7 +323,7 @@ func (p *SandboxPlugin) Close(context.Context) error {
 		p.logger.Info(
 			"deleted sandbox job",
 			zap.String("name", p.sandboxInfo.Name),
-			zap.String("sandbox_id", p.sandboxInfo.Id),
+			zap.String("pod", p.sandboxInfo.Id),
 		)
 		p.sandboxInfo = nil
 	}

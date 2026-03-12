@@ -104,12 +104,14 @@ func (m *K8sJobManager) CreateSandbox(ctx context.Context, sandboxId string) (*s
 		zap.String("job", jobName),
 		zap.String("sandbox_id", sandboxId),
 		zap.String("image", m.image),
+		zap.Bool("ephemeral", m.ephemeral),
 	)
 
 	createdJob, err := m.clientset.BatchV1().Jobs(m.namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCreationDuration, time.Since(start).Seconds(),
 			sandboxmetrics.AttrLanguage.String(m.language),
+			sandboxmetrics.AttrEphemeral.Bool(m.ephemeral),
 			sandboxmetrics.AttrResult.String("failed"),
 		)
 		return nil, fmt.Errorf("failed to create sandbox job: %w", err)
@@ -124,6 +126,7 @@ func (m *K8sJobManager) CreateSandbox(ctx context.Context, sandboxId string) (*s
 	if err != nil {
 		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCreationDuration, time.Since(start).Seconds(),
 			sandboxmetrics.AttrLanguage.String(m.language),
+			sandboxmetrics.AttrEphemeral.Bool(m.ephemeral),
 			sandboxmetrics.AttrResult.String("failed"),
 		)
 		// Cleanup the job if we failed to get a ready pod.
@@ -135,6 +138,7 @@ func (m *K8sJobManager) CreateSandbox(ctx context.Context, sandboxId string) (*s
 
 	sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCreationDuration, time.Since(start).Seconds(),
 		sandboxmetrics.AttrLanguage.String(m.language),
+		sandboxmetrics.AttrEphemeral.Bool(m.ephemeral),
 		sandboxmetrics.AttrResult.String("succeeded"),
 	)
 

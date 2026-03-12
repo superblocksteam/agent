@@ -48,6 +48,9 @@ var (
 	// SandboxExecutionsTotal counts total sandbox executions with warm/cold start labels.
 	SandboxExecutionsTotal metric.Int64Counter
 
+	// SandboxConnectionStateTransitions counts gRPC connection state changes to sandbox
+	SandboxConnectionStateTransitions metric.Int64Counter
+
 	// Gauges (UpDownCounters)
 
 	// SandboxExecutionPoolSize reports the configured maximum size of the execution pool.
@@ -201,6 +204,15 @@ func registerWithMeter(meter metric.Meter) error {
 		return err
 	}
 
+	SandboxConnectionStateTransitions, err = meter.Int64Counter(
+		"sandbox_connection_state_transitions_total",
+		metric.WithDescription("gRPC connection state transitions to sandbox (for correlating with connection loss)"),
+		metric.WithUnit("{transition}"),
+	)
+	if err != nil {
+		return err
+	}
+
 	// Gauges
 
 	SandboxExecutionPoolSize, err = meter.Int64Gauge(
@@ -332,8 +344,11 @@ func buildMetricsURL(baseURL string) string {
 
 // Common attribute keys for sandbox metrics.
 var (
-	AttrLanguage  = attribute.Key("language")
-	AttrPlugin    = attribute.Key("plugin_name")
-	AttrResult    = attribute.Key("result")
-	AttrWarmStart = attribute.Key("warm_start")
+	AttrConnectionStateFrom = attribute.Key("from_state")
+	AttrConnectionStateTo   = attribute.Key("to_state")
+	AttrEphemeral           = attribute.Key("ephemeral")
+	AttrLanguage            = attribute.Key("language")
+	AttrPlugin              = attribute.Key("plugin_name")
+	AttrResult              = attribute.Key("result")
+	AttrWarmStart           = attribute.Key("warm_start")
 )

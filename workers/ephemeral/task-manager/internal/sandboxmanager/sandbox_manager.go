@@ -14,6 +14,6 @@ type SandboxInfo struct {
 
 type SandboxManager interface {
 	CreateSandbox(ctx context.Context, sandboxId string) (*SandboxInfo, error)
-	DeleteSandbox(ctx context.Context, sandboxId string) error
+	DeleteSandbox(ctx context.Context, jobName string) error
 	WatchSandboxPod(ctx context.Context, jobName string) <-chan error
 }
