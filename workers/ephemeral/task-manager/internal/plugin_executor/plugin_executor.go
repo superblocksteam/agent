@@ -370,7 +370,7 @@ func (p *pluginExecutor) buildKvPair(
 	if diags, ok := outputMap["diagnostics"].([]map[string]any); ok {
 		for i, d := range diags {
 			meta, hasMeta := d["metadata"]
-			logger.Debug("task-manager: diagnostic before KV write",
+			logger.Info("task-manager: diagnostic before KV write",
 				zap.Int("index", i),
 				zap.Any("integration_id", d["integrationId"]),
 				zap.Bool("has_metadata", hasMeta),

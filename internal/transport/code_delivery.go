@@ -155,6 +155,7 @@ if (__sb_api.integrations) {
 // bindings is used by language plugins (e.g. Python) for variable injection;
 // it must remain as a positional parameter so metadata lands in the correct slot.
 async function __sb_executeQuery(integrationId, request, bindings, metadata) {
+  console.log("[wrapper] __sb_executeQuery called: integrationId=" + integrationId + " has_metadata=" + !!metadata + " metadata=" + JSON.stringify(metadata) + " args.length=" + arguments.length);
   if (typeof __sb_integrationExecutor !== "function") {
     throw new Error("Integration operations require an integration executor (not available in this execution context)");
   }

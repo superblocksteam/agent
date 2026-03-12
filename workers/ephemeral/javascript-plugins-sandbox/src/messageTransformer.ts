@@ -293,9 +293,9 @@ export class MessageTransformerImpl implements MessageTransformer {
 
     // Serialize per-integration-call diagnostics if present.
     if (response.diagnostics && response.diagnostics.length > 0) {
-      console.debug('[sandbox] serializing diagnostics:', response.diagnostics.length, 'entries');
+      console.log('[sandbox] serializing diagnostics:', response.diagnostics.length, 'entries');
       response.diagnostics.forEach((d, i) => {
-        console.debug(`[sandbox] diagnostic[${i}]: integration=${d.integrationId} has_metadata=${!!d.metadata} metadata=${JSON.stringify(d.metadata)}`);
+        console.log(`[sandbox] diagnostic[${i}]: integration=${d.integrationId} has_metadata=${!!d.metadata} metadata=${JSON.stringify(d.metadata)}`);
       });
       const protoDiagnostics = response.diagnostics.map((d) => {
         const proto = new ProtoIntegrationDiagnostic();
