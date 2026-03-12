@@ -2,6 +2,7 @@ import * as http from 'node:http';
 import { describe, it, beforeAll, afterAll, beforeEach, expect } from '@jest/globals';
 import { ExecutionContext } from '@superblocks/shared';
 import JavascriptWasmPlugin from './index';
+import { executeWithWorkerInput } from './test-utils';
 
 /**
  * Tests for the orchestrator file fetching path (mode without sandbox file fetching).
@@ -46,6 +47,14 @@ describe('fetchFromController (controller file fetching path)', () => {
 
   beforeAll(async () => {
     plugin = new JavascriptWasmPlugin();
+    plugin.configure({
+      connectionPoolIdleTimeoutMs: 60_000,
+      javascriptExecutionTimeoutMs: '1_200_000',
+      pythonExecutionTimeoutMs: '',
+      restApiExecutionTimeoutMs: 300_000,
+      restApiMaxContentLengthBytes: 50_000_000,
+      workflowFetchAndExecuteFunc: null
+    });
     await plugin.init();
 
     // Create a simple HTTP server that simulates the controller file server
@@ -103,7 +112,7 @@ describe('fetchFromController (controller file fetching path)', () => {
     const store = new MockKVStore();
     const fileServerUrl = `http://127.0.0.1:${serverPort}/files`;
 
-    const result = await plugin.executeInWorker({
+    const result = await executeWithWorkerInput(plugin, {
       context: {
         globals: {
           $fileServerUrl: fileServerUrl,
@@ -147,7 +156,7 @@ describe('fetchFromController (controller file fetching path)', () => {
     const store = new MockKVStore();
     const fileServerUrl = `http://127.0.0.1:${serverPort}/files`;
 
-    const result = await plugin.executeInWorker({
+    const result = await executeWithWorkerInput(plugin, {
       context: {
         globals: {
           $fileServerUrl: fileServerUrl,
@@ -199,7 +208,7 @@ describe('fetchFromController (controller file fetching path)', () => {
     const store = new MockKVStore();
     const fileServerUrl = `http://127.0.0.1:${serverPort}/files`;
 
-    const result = await plugin.executeInWorker({
+    const result = await executeWithWorkerInput(plugin, {
       context: {
         globals: {
           $fileServerUrl: fileServerUrl,
@@ -241,7 +250,7 @@ describe('fetchFromController (controller file fetching path)', () => {
     const store = new MockKVStore();
     const fileServerUrl = `http://127.0.0.1:${serverPort}/files`;
 
-    const result = await plugin.executeInWorker({
+    const result = await executeWithWorkerInput(plugin, {
       context: {
         globals: {
           $fileServerUrl: fileServerUrl,
@@ -282,7 +291,7 @@ describe('fetchFromController (controller file fetching path)', () => {
     const store = new MockKVStore();
     const fileServerUrl = `http://127.0.0.1:${serverPort}/files`;
 
-    const result = await plugin.executeInWorker({
+    const result = await executeWithWorkerInput(plugin, {
       context: {
         globals: {
           $fileServerUrl: fileServerUrl,
@@ -325,7 +334,7 @@ describe('fetchFromController (controller file fetching path)', () => {
     const store = new MockKVStore();
     const fileServerUrl = `http://127.0.0.1:${serverPort}/files`;
 
-    const result = await plugin.executeInWorker({
+    const result = await executeWithWorkerInput(plugin, {
       context: {
         globals: {
           $fileServerUrl: fileServerUrl,

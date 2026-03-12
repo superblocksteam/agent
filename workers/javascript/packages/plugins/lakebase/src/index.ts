@@ -141,7 +141,7 @@ export default class LakebasePlugin extends DatabasePluginPooled<Client, Lakebas
       normalizedUrl = `https://${normalizedUrl}`;
     }
     normalizedUrl = normalizedUrl.replace(/\/$/, '');
-    
+
     const tokenUrl = `${normalizedUrl}/oidc/v1/token`;
 
     const body = new URLSearchParams({
@@ -156,7 +156,7 @@ export default class LakebasePlugin extends DatabasePluginPooled<Client, Lakebas
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${basicAuth}`
+        Authorization: `Basic ${basicAuth}`
       },
       body: body.toString()
     });
@@ -217,10 +217,9 @@ export default class LakebasePlugin extends DatabasePluginPooled<Client, Lakebas
     let password: string;
 
     // connectionType comes as string from UI but proto enum is numeric
-    const connectionType = typeof connection.connectionType === 'string' 
-      ? parseInt(connection.connectionType, 10) 
-      : connection.connectionType;
-    
+    const connectionType =
+      typeof connection.connectionType === 'string' ? parseInt(connection.connectionType, 10) : connection.connectionType;
+
     switch (connectionType) {
       case LakebasePluginV1.Plugin_ConnectionType.OAUTH_M2M: {
         const clientId = connection.oauthClientId;

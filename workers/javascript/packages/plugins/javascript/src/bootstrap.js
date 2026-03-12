@@ -5,7 +5,7 @@ const {
   buildVariables,
   decodeBytestringsExecutionContext,
   ExecutionOutput,
-  VariableClient
+  VariableClientImpl
 } = require('@superblocks/shared');
 const deasync = require('deasync');
 const { EventEmitter } = require('events');
@@ -341,7 +341,7 @@ module.exports.executeCode = async (workerData) => {
     };
 
     if (context.variables && typeof context.variables === 'object') {
-      variableClient = new VariableClient(context.kvStore);
+      variableClient = new VariableClientImpl(context.kvStore);
       const builtVariables = await buildVariables(context.variables, variableClient);
       for (const [k, v] of Object.entries(builtVariables)) {
         execGlobalContext[k] = v;

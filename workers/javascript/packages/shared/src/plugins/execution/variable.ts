@@ -1,6 +1,6 @@
 import { toVmValue, hostFunction, hostGetter } from '@superblocks/wasm-sandbox-js';
 import { decodeBytestrings } from '../../utils';
-import { VariableClient } from './utils';
+import { VariableClient } from './types';
 
 export enum VariableType {
   Simple = 'TYPE_SIMPLE',

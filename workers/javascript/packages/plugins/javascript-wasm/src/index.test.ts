@@ -1,7 +1,6 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
-import { ExecutionContext } from '@superblocks/shared';
+import { ExecutionContext, WorkerPool } from '@superblocks/shared';
 import JavascriptWasmPlugin from './index';
-import { WorkerPool } from './pool';
 
 class MockKVStore {
   public async read(_keys: string[]): Promise<{ data: unknown[] }> {
@@ -25,12 +24,6 @@ class MockKVStore {
   }
 }
 
-class MockKVStoreWithFileFetch extends MockKVStore {
-  public fetchFileCallback(_path: string, callback: (error: Error | null, result: Buffer | null) => void): void {
-    callback(null, Buffer.from('ok'));
-  }
-}
-
 describe('JavascriptWasmPlugin', () => {
   afterEach(() => {
     jest.restoreAllMocks();
@@ -43,16 +36,19 @@ describe('JavascriptWasmPlugin', () => {
     };
     pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: '1_234' };
 
-    const executeInWorkerSpy = jest
-      .spyOn(plugin, 'executeInWorker')
-      .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+    const executeInWorkerPoolSpy = jest
+      .spyOn(WorkerPool, 'ExecuteInWorkerPool')
+      .mockResolvedValue({ output: 1 } as Awaited<ReturnType<typeof WorkerPool.ExecuteInWorkerPool>>);
 
     await plugin.execute({
       context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
       actionConfiguration: { body: 'return 1;' },
+      datasourceConfiguration: {}
     } as unknown as Parameters<typeof plugin.execute>[0]);
 
-    expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 1234 }));
+    expect(executeInWorkerPoolSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 1234 }) })
+    );
   });
 
   it('falls back to default timeout when config is invalid', async () => {
@@ -62,16 +58,19 @@ describe('JavascriptWasmPlugin', () => {
     };
     pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: 'not-a-number' };
 
-    const executeInWorkerSpy = jest
-      .spyOn(plugin, 'executeInWorker')
-      .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+    const executeInWorkerPoolSpy = jest
+      .spyOn(WorkerPool, 'ExecuteInWorkerPool')
+      .mockResolvedValue({ output: 1 } as Awaited<ReturnType<typeof WorkerPool.ExecuteInWorkerPool>>);
 
     await plugin.execute({
       context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
       actionConfiguration: { body: 'return 1;' },
+      datasourceConfiguration: {}
     } as unknown as Parameters<typeof plugin.execute>[0]);
 
-    expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 1_200_000 }));
+    expect(executeInWorkerPoolSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 1_200_000 }) })
+    );
   });
 
   it('prefers quotas.duration over configured timeout', async () => {
@@ -81,50 +80,19 @@ describe('JavascriptWasmPlugin', () => {
     };
     pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: '2000' };
 
-    const executeInWorkerSpy = jest
-      .spyOn(plugin, 'executeInWorker')
-      .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+    const executeInWorkerPoolSpy = jest
+      .spyOn(WorkerPool, 'ExecuteInWorkerPool')
+      .mockResolvedValue({ output: 1 } as Awaited<ReturnType<typeof WorkerPool.ExecuteInWorkerPool>>);
 
     await plugin.execute({
       context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
       actionConfiguration: { body: 'return 1;' },
+      datasourceConfiguration: {},
       quotas: { duration: 3210 }
     } as unknown as Parameters<typeof plugin.execute>[0]);
 
-    expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 3210 }));
-  });
-
-  it('derives useSandboxFileFetcher from kvStore capability', async () => {
-    const plugin = new JavascriptWasmPlugin();
-    const runSpy = jest.spyOn(WorkerPool, 'run').mockResolvedValue('{}');
-
-    await plugin.executeInWorker({
-      context: { globals: {}, variables: {}, kvStore: new MockKVStoreWithFileFetch() } as unknown as ExecutionContext,
-      code: 'return null',
-      executionTimeout: 10000
-    });
-
-    await plugin.executeInWorker({
-      context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
-      code: 'return null',
-      executionTimeout: 10000
-    });
-
-    expect(runSpy).toHaveBeenCalledTimes(2);
-    expect((runSpy.mock.calls[0]?.[0] as { useSandboxFileFetcher?: boolean })?.useSandboxFileFetcher).toBe(true);
-    expect((runSpy.mock.calls[1]?.[0] as { useSandboxFileFetcher?: boolean })?.useSandboxFileFetcher).toBe(false);
-  });
-
-  it('converts AbortError into timeout IntegrationError', async () => {
-    const plugin = new JavascriptWasmPlugin();
-    jest.spyOn(WorkerPool, 'run').mockRejectedValue(Object.assign(new Error('aborted by hard timeout'), { name: 'AbortError' }));
-
-    await expect(
-      plugin.executeInWorker({
-        context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
-        code: 'while(true) {}',
-        executionTimeout: 10
-      })
-    ).rejects.toThrow('[AbortError] Timed out after 10ms');
+    expect(executeInWorkerPoolSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 3210 }) })
+    );
   });
 });

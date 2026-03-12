@@ -1,7 +1,8 @@
 import { RelayDelegate } from '../../relay';
 import { ExecutionContext, ExecutionParam } from '../../types/api';
 import { AgentCredentials } from '../auth';
-import { RequestFiles } from '../files';
+import { RequestFile, RequestFiles } from '../files';
+import type { MessagePort } from 'worker_threads';
 
 export type ProcessInput = {
   context: ExecutionContext;
@@ -38,6 +39,14 @@ export type FetchAndExecuteProps = {
   commitId?: string;
 };
 
+export interface VariableClient {
+  read: (keys: string[]) => Promise<{ data: unknown[] }>;
+  write: (key: string, value: string) => Promise<void>;
+  writeBuffer: (key: string, value: unknown) => void;
+  fetchFileCallback: (path: string, callback: (error: Error | null, result: Buffer | null) => void) => void;
+  flush: () => Promise<void>;
+}
+
 export interface FileFetcherClient {
   fetchFileCallback?: (path: string, callback: (error: Error | null, result: Buffer | null) => void) => void;
 }
@@ -62,3 +71,15 @@ export interface SandboxFileFetcher {
 }
 
 export type FileFetcher = ControllerFileFetcher | SandboxFileFetcher;
+
+export type WorkerTaskInput = {
+  context: ExecutionContext;
+  code: string;
+  files?: RequestFile[];
+  executionTimeout: number;
+  useSandboxFileFetcher?: boolean;
+};
+
+export type WorkerInput = WorkerTaskInput & {
+  port: MessagePort;
+};

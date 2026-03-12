@@ -1,6 +1,5 @@
-import type { QuickJSContext, QuickJSRuntime } from 'quickjs-emscripten-core';
-import { createEventLoop, EventLoop } from './event-loop';
 import { INTERNAL_WRAPPER_LINES, adjustErrorLineNumbers, createErrorFromQuickJS } from './error';
+import { createEventLoop, EventLoop } from './event-loop';
 import { registerGlobalAtob } from './globals/atob';
 import { registerGlobalBuffer } from './globals/buffer';
 import { CommonLibrary, registerCommonLazyLibrary } from './globals/common-libraries';
@@ -8,6 +7,7 @@ import { registerGlobalConsole } from './globals/console';
 import { registerGlobalSetTimeout } from './globals/timers';
 import { createMarshaller, Marshaller, HostGetterWrapper } from './marshal';
 import { getQuickJS } from './quickjs';
+import type { QuickJSContext, QuickJSRuntime } from 'quickjs-emscripten-core';
 
 type SandboxLimits = {
   /**
@@ -92,12 +92,12 @@ type ConsoleLogger = Pick<Console, 'log' | 'warn' | 'error'>;
 const defaultSandboxOptions: Required<SandboxOptions> = {
   limits: {
     stackBytes: 1024 * 1024, // 1 MiB
-    memoryBytes: undefined,
+    memoryBytes: undefined
   },
   enableAtob: false,
   enableBuffer: false,
   enableTimers: false,
-  globalLibraries: [],
+  globalLibraries: []
 };
 
 const defaultEvaluateOptions: Required<SandboxEvaluateOptions> = {
@@ -230,7 +230,7 @@ class SandboxImpl implements Sandbox {
 
     const opts: Required<SandboxEvaluateOptions> = {
       ...defaultEvaluateOptions,
-      ...options,
+      ...options
     };
 
     // Set up deadline for this evaluation

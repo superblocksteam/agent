@@ -479,9 +479,9 @@ export type LakebaseDatasourceConfiguration = {
     oauthWorkspaceUrl?: string;
   };
 } & AuthenticatedDatasourceConfig & {
-  authTypeField?: string;
-  oauthType?: IntegrationAuthType.OAUTH2_TOKEN_EXCHANGE;
-};
+    authTypeField?: string;
+    oauthType?: IntegrationAuthType.OAUTH2_TOKEN_EXCHANGE;
+  };
 
 // Snowflake Postgres is Snowflake's Postgres-compatible database endpoint
 export type SnowflakePostgresDatasourceConfiguration = {

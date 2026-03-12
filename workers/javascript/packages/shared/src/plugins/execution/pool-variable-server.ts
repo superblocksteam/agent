@@ -1,5 +1,5 @@
 import { MessageChannel, MessagePort } from 'worker_threads';
-import { KVStore } from '@superblocks/shared';
+import { KVStore } from '../../types';
 
 interface VariableMessage {
   id: number;
@@ -11,20 +11,11 @@ interface VariableMessage {
   path?: string;
 }
 
-/**
- * Extended KVStore interface that includes the fetchFileCallback method.
- * This method is only available when running under a sandbox worker,
- * where the KVStore is a GrpcKvStore instance.
- */
-interface KVStoreWithFileFetch extends KVStore {
-  fetchFileCallback?: (path: string, callback: (error: Error | null, result: Buffer | null) => void) => void;
-}
-
-export class VariableServer {
+export class PoolVariableServer {
   #serverPort: MessagePort;
   #clientPort: MessagePort;
 
-  constructor(kvStore: KVStoreWithFileFetch) {
+  constructor(kvStore: KVStore) {
     const { port1, port2 } = new MessageChannel();
     this.#serverPort = port1;
     this.#clientPort = port2;

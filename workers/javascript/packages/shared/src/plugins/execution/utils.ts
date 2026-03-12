@@ -11,14 +11,14 @@ import {
   ExecutionContext,
   ExecutionOutput,
   isReadableFile,
-  KVStore,
   Property,
   ResolvedActionConfigurationProperty
 } from '../../types';
 import { RequestFile, RequestFiles } from '../files';
 import { extractMustacheStrings, FlatContext } from './mustache';
-import { FileFetcher, ProcessInput } from './types';
+import { FileFetcher, ProcessInput, VariableClient } from './types';
 import { buildVariables } from './variable';
+import { VariableClientImpl } from './variable-client';
 import { nodeVMWithContext } from './vm';
 
 function shouldUseWasmBindingsSandbox(context: ExecutionContext): boolean {
@@ -209,13 +209,7 @@ export const resolveAllBindings = async (
 ): Promise<Record<string, unknown>> => {
   if (shouldUseWasmBindingsSandbox(context)) {
     const useSandboxFileFetcher = Boolean((context.kvStore as unknown as { fetchFileCallback?: unknown } | undefined)?.fetchFileCallback);
-    return resolveAllBindingsWasm(
-      unresolvedValue,
-      context,
-      filePaths,
-      escapeStrings,
-      useSandboxFileFetcher
-    );
+    return resolveAllBindingsWasm(unresolvedValue, context, filePaths, escapeStrings, useSandboxFileFetcher);
   }
   return resolveAllBindingsVm2(unresolvedValue, context, filePaths, escapeStrings);
 };
@@ -280,7 +274,7 @@ const resolveAllBindingsWasm = async (
 
   let variableClient: VariableClient | undefined;
   if (context.kvStore && (context.variables || useSandboxFileFetcher)) {
-    variableClient = new VariableClient(context.kvStore);
+    variableClient = new VariableClientImpl(context.kvStore);
   }
   if (context.variables && typeof context.variables === 'object' && variableClient !== undefined) {
     const builtVariables = await buildVariables(context.variables, variableClient);
@@ -392,11 +386,7 @@ const resolveAllBindingsWasm = async (
  * This replaces the VM2 approach of using $prepareGlobalObjectForFiles inside the VM.
  * Instead, we prepare the file objects in the host before passing them to the WASM sandbox.
  */
-function prepareGlobalsWithFileMethods(
-  globals: Record<string, unknown>,
-  filePaths: Record<string, string>,
-  fetcher: FileFetcher,
-): void {
+function prepareGlobalsWithFileMethods(globals: Record<string, unknown>, filePaths: Record<string, string>, fetcher: FileFetcher): void {
   Object.entries(filePaths).forEach(([treePath, diskPath]) => {
     if (!diskPath) return;
 
@@ -481,7 +471,7 @@ export const resolveAllBindingsVm2 = async (
   // TODO: remove when we fully evaluate bindings on orchestrator
   let variableClient: VariableClient;
   if (context.variables && typeof context.variables === 'object') {
-    variableClient = new VariableClient(context.kvStore!);
+    variableClient = new VariableClientImpl(context.kvStore!);
     const builtVariables = await buildVariables(context.variables, variableClient);
     for (const [k, v] of Object.entries(builtVariables)) {
       vm.setGlobal(k, v);
@@ -782,38 +772,3 @@ export const buildContextFromBindings = (bindingPathToValue: Record<string, unkn
   }
   return Object.entries(globalContext).map((entry) => [entry[0], entry[1]]);
 };
-
-export class VariableClient {
-  #kvStore: KVStore;
-  #writableBuffer: { key: string; value: unknown }[] = [];
-
-  constructor(kvStore: KVStore) {
-    this.#kvStore = kvStore;
-  }
-
-  async read(keys: string[]): ReturnType<KVStore['read']> {
-    return await this.#kvStore.read(keys);
-  }
-
-  async write(key: string, value: string): Promise<void> {
-    await this.#kvStore.write(key, value);
-  }
-
-  writeBuffer(key: string, value: unknown): void {
-    this.#writableBuffer.push({ key: key, value: value });
-  }
-
-  fetchFileCallback(path: string, callback: (error: Error | null, result: Buffer | null) => void): void {
-    if (this.#kvStore.fetchFileCallback === undefined || typeof this.#kvStore.fetchFileCallback !== 'function') {
-      throw new Error(
-        'KVStore does not implement fetchFileCallback. useSandboxFileFetcher was enabled but the underlying kvStore lacks file fetching support.'
-      );
-    }
-
-    this.#kvStore.fetchFileCallback(path, callback);
-  }
-
-  async flush(): Promise<void> {
-    await this.#kvStore.writeMany(this.#writableBuffer);
-  }
-}

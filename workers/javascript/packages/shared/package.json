@@ -60,6 +60,7 @@
     "moment": "2.29.4",
     "mustache": "4.2.0",
     "pino": "6.11.0",
+    "piscina": "^3.2.0",
     "prom-client": "14.2.0",
     "ssh2": "1.15.0",
     "tunnel-ssh": "5.1.1",

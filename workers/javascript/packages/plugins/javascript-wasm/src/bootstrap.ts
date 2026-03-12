@@ -1,11 +1,17 @@
 import * as http from 'node:http';
 import { format, promisify } from 'node:util';
-import { buildVariables, decodeBytestringsExecutionContext, ExecutionOutput, getTreePathToDiskPath, serialize } from '@superblocks/shared';
+import {
+  buildVariables,
+  decodeBytestringsExecutionContext,
+  ExecutionOutput,
+  getTreePathToDiskPath,
+  PoolVariableClient,
+  serialize,
+  type WorkerInput
+} from '@superblocks/shared';
 import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
 import deasync from 'deasync';
 import _ from 'lodash';
-import { VariableClient } from './variable-client';
-import type { WorkerInput } from './worker-types';
 import type { Sandbox, SandboxOptions } from '@superblocks/wasm-sandbox-js';
 
 /**
@@ -81,7 +87,7 @@ interface ControllerFileFetcher {
  */
 interface SandboxFileFetcher {
   type: 'sandbox';
-  variableClient: VariableClient;
+  variableClient: PoolVariableClient;
 }
 
 type FileFetcher = ControllerFileFetcher | SandboxFileFetcher;
@@ -182,7 +188,7 @@ async function handleTask(workerData: WorkerInput): Promise<string> {
 
   const ret = new ExecutionOutput();
   const filePaths = getTreePathToDiskPath(context.globals, files ?? []);
-  const variableClient = new VariableClient(port);
+  const variableClient = new PoolVariableClient(port);
 
   try {
     // Determine file fetcher based on worker mode

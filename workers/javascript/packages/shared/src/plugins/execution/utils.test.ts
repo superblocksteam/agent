@@ -2,7 +2,8 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext } from '../../types';
 import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
 import * as vm from './vm';
-import { resolveAllBindings, serialize, VariableClient } from './utils';
+import { resolveAllBindings, serialize } from './utils';
+import { VariableClientImpl } from './variable-client';
 
 class MockKVStore {
   private _store: { [key: string]: unknown } = {};
@@ -282,7 +283,7 @@ describe('utils', () => {
     it('should throw when fetchFileCallback is called but kvStore does not implement it', () => {
       const kvStore = new MockKVStore();
       // Intentionally omit fetchFileCallback to simulate misconfiguration
-      const client = new VariableClient(kvStore);
+      const client = new VariableClientImpl(kvStore);
 
       expect(() => {
         client.fetchFileCallback('/some/path', (_err, _result) => {});

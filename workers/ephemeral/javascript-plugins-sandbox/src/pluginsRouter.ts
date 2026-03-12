@@ -7,7 +7,6 @@ import {
   PLUGIN_ID_TO_PROTO_ACTION_CONFIGURATION_OBJECT_CALLABLE,
   PLUGIN_ID_TO_PROTO_DATASOURCE_CONFIGURATION_OBJECT_CALLABLE
 } from '@superblocks/shared';
-import { GrpcIntegrationExecutor } from './grpcIntegrationExecutor';
 import {
   BindingKeyAndType,
   BindingType,
@@ -33,6 +32,7 @@ import {
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 import { Value } from 'google-protobuf/google/protobuf/struct_pb';
 import P from 'pino';
+import { GrpcIntegrationExecutor } from './grpcIntegrationExecutor';
 import { SandboxStreamRequest } from './messageTransformer';
 import { SandboxIntegrationExecutorServiceClient } from './types/worker/v1/sandbox_integration_executor_grpc_pb';
 import { SandboxStreamingProxyServiceClient } from './types/worker/v1/sandbox_streaming_proxy_grpc_pb';

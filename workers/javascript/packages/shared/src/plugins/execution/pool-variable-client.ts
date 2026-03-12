@@ -1,4 +1,5 @@
 import { MessagePort } from 'worker_threads';
+import { VariableClient } from './types';
 
 interface VariableMessage {
   id: number;
@@ -14,7 +15,7 @@ interface WriteBufferEntry {
 // Callback type for fetchFile operations - called directly from message handler for deasync compatibility
 type FetchFileCallback = (error: Error | null, result: Buffer | null) => void;
 
-export class VariableClient {
+export class PoolVariableClient implements VariableClient {
   private port: MessagePort;
   private nextId = 0;
   private pendingResolvers: Record<number, (message: VariableMessage) => void> = {};

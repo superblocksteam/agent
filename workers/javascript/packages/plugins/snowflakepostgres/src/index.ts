@@ -149,7 +149,10 @@ export default class SnowflakePostgresPlugin extends DatabasePluginPooled<Client
           connectionString = `${connectionString}${separator}application_name=${SNOWFLAKE_APPLICATION_NAME}`;
         }
         // Remove any sslmode from the URL — we control SSL via the ssl option
-        connectionString = connectionString.replace(/[?&]sslmode=[^&]*/g, '').replace(/\?&/, '?').replace(/\?$/, '');
+        connectionString = connectionString
+          .replace(/[?&]sslmode=[^&]*/g, '')
+          .replace(/\?&/, '?')
+          .replace(/\?$/, '');
         client = new Client({
           connectionString,
           ssl: { rejectUnauthorized: false }

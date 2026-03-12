@@ -17,6 +17,7 @@ import { MessageTransformer, MessageTransformerImpl, NativeRequest, NativeRespon
 import { ALL_PLUGINS, loadPlugins } from './pluginsLoader';
 import { PluginsRouter } from './pluginsRouter';
 import { Response as ProtoTransportResponse } from './types/transport/v1/transport_pb';
+import { SandboxIntegrationExecutorServiceClient } from './types/worker/v1/sandbox_integration_executor_grpc_pb';
 import { SandboxStreamingProxyServiceClient } from './types/worker/v1/sandbox_streaming_proxy_grpc_pb';
 import { ISandboxTransportServiceServer, SandboxTransportServiceService } from './types/worker/v1/sandbox_transport_grpc_pb';
 import {
@@ -27,7 +28,6 @@ import {
   StreamRequest as ProtoStreamRequest,
   TestRequest as ProtoTestRequest
 } from './types/worker/v1/sandbox_transport_pb';
-import { SandboxIntegrationExecutorServiceClient } from './types/worker/v1/sandbox_integration_executor_grpc_pb';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
 
 function createSandboxTransportService(

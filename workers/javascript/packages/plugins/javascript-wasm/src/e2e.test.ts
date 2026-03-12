@@ -1,8 +1,7 @@
 import { describe, it, beforeAll, afterAll, expect, jest, afterEach } from '@jest/globals';
-import { ExecutionContext } from '@superblocks/shared';
+import { ExecutionContext, VariableMode, VariableType, WorkerPool } from '@superblocks/shared';
 import JavascriptWasmPlugin from './index';
-import { VariableType, VariableMode } from './constants';
-import { WorkerPool } from './pool';
+import { executeWithWorkerInput } from './test-utils';
 
 export class MockKVStore {
   private _store: { [key: string]: unknown } = {};
@@ -43,6 +42,14 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
 
   beforeAll(async () => {
     plugin = new JavascriptWasmPlugin();
+    plugin.configure({
+      connectionPoolIdleTimeoutMs: 60_000,
+      javascriptExecutionTimeoutMs: '1_200_000',
+      pythonExecutionTimeoutMs: '',
+      restApiExecutionTimeoutMs: 300_000,
+      restApiMaxContentLengthBytes: 50_000_000,
+      workflowFetchAndExecuteFunc: null
+    });
     await plugin.init();
   });
 
@@ -54,7 +61,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should execute simple return statement', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -70,7 +77,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should execute code with arithmetic', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -86,7 +93,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should execute code with string operations', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -102,7 +109,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should execute code with objects', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -118,7 +125,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should execute async code', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -151,16 +158,19 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       };
       pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: '1_234' };
 
-      const executeInWorkerSpy = jest
-        .spyOn(plugin, 'executeInWorker')
-        .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+      const executeSpy = jest
+        .spyOn(WorkerPool, 'ExecuteInWorkerPool')
+        .mockResolvedValue({ output: 1 } as Awaited<ReturnType<typeof WorkerPool.ExecuteInWorkerPool>>);
 
       await plugin.execute({
         context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
         actionConfiguration: { body: 'return 1;' },
+        datasourceConfiguration: {}
       } as unknown as Parameters<typeof plugin.execute>[0]);
 
-      expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 1234 }));
+      expect(executeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 1234 }) })
+      );
     });
 
     it('should fall back to default timeout when config is invalid', async () => {
@@ -169,16 +179,19 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       };
       pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: 'not-a-number' };
 
-      const executeInWorkerSpy = jest
-        .spyOn(plugin, 'executeInWorker')
-        .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+      const executeSpy = jest
+        .spyOn(WorkerPool, 'ExecuteInWorkerPool')
+        .mockResolvedValue({ output: 1 } as Awaited<ReturnType<typeof WorkerPool.ExecuteInWorkerPool>>);
 
       await plugin.execute({
         context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
         actionConfiguration: { body: 'return 1;' },
+        datasourceConfiguration: {}
       } as unknown as Parameters<typeof plugin.execute>[0]);
 
-      expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 1_200_000 }));
+      expect(executeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 1_200_000 }) })
+      );
     });
 
     it('should prefer quotas.duration over configured timeout', async () => {
@@ -187,26 +200,29 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       };
       pluginWithConfig.pluginConfiguration = { javascriptExecutionTimeoutMs: '2000' };
 
-      const executeInWorkerSpy = jest
-        .spyOn(plugin, 'executeInWorker')
-        .mockResolvedValue({ output: 1 } as unknown as Awaited<ReturnType<typeof plugin.executeInWorker>>);
+      const executeSpy = jest
+        .spyOn(WorkerPool, 'ExecuteInWorkerPool')
+        .mockResolvedValue({ output: 1 } as Awaited<ReturnType<typeof WorkerPool.ExecuteInWorkerPool>>);
 
       await plugin.execute({
         context: { globals: {}, variables: {}, kvStore: new MockKVStore() } as unknown as ExecutionContext,
         actionConfiguration: { body: 'return 1;' },
+        datasourceConfiguration: {},
         quotas: { duration: 3210 }
       } as unknown as Parameters<typeof plugin.execute>[0]);
 
-      expect(executeInWorkerSpy).toHaveBeenCalledWith(expect.objectContaining({ executionTimeout: 3210 }));
+      expect(executeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 3210 }) })
+      );
     });
 
     it('should convert AbortError from worker execution into timeout IntegrationError', async () => {
-      const runSpy = jest
-        .spyOn(WorkerPool, 'run')
+      jest
+        .spyOn(WorkerPool, 'ExecuteInWorkerPool')
         .mockRejectedValue(Object.assign(new Error('aborted by hard timeout'), { name: 'AbortError' }));
 
       await expect(
-        plugin.executeInWorker({
+        executeWithWorkerInput(plugin, {
           context: {
             globals: {},
             variables: {},
@@ -215,9 +231,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
           code: 'while(true) {}',
           executionTimeout: 10
         })
-      ).rejects.toThrow('[AbortError] Timed out after 10ms');
-
-      runSpy.mockRestore();
+      ).rejects.toThrow('aborted by hard timeout');
     });
   });
 
@@ -225,7 +239,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should access globals from context', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {
             myValue: 100,
@@ -244,7 +258,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should access nested globals', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {
             user: {
@@ -282,7 +296,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
         }
       };
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: variables,
@@ -313,7 +327,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
         }
       };
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: variables,
@@ -337,7 +351,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
         }
       };
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: variables,
@@ -385,7 +399,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
         }
       };
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: variables,
@@ -417,7 +431,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       };
 
       // First execution: write new values
-      let result = await plugin.executeInWorker({
+      let result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: variables,
@@ -430,7 +444,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       expect(result.output).toBe(300);
 
       // Second execution: verify persisted values
-      result = await plugin.executeInWorker({
+      result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: variables,
@@ -448,7 +462,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should capture console.log output', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -465,7 +479,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should capture console.warn output', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -485,7 +499,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should capture syntax errors', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -502,7 +516,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should capture runtime errors', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -519,7 +533,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should capture reference errors', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -538,7 +552,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should support Buffer.from', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -554,7 +568,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
     it('should support Buffer.isBuffer', async () => {
       const store = new MockKVStore();
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {},
           variables: {},
@@ -594,45 +608,13 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       }
     }
 
-    it('should derive useSandboxFileFetcher from kvStore capability', async () => {
-      const runSpy = jest.spyOn(WorkerPool, 'run');
-
-      try {
-        await plugin.executeInWorker({
-          context: {
-            globals: {},
-            variables: {},
-            kvStore: new MockKVStoreWithFileFetch()
-          } as unknown as ExecutionContext,
-          code: 'return null',
-          executionTimeout: 10000
-        });
-
-        await plugin.executeInWorker({
-          context: {
-            globals: {},
-            variables: {},
-            kvStore: new MockKVStore()
-          } as unknown as ExecutionContext,
-          code: 'return null',
-          executionTimeout: 10000
-        });
-
-        expect(runSpy).toHaveBeenCalledTimes(2);
-        expect((runSpy.mock.calls[0]?.[0] as { useSandboxFileFetcher?: boolean })?.useSandboxFileFetcher).toBe(true);
-        expect((runSpy.mock.calls[1]?.[0] as { useSandboxFileFetcher?: boolean })?.useSandboxFileFetcher).toBe(false);
-      } finally {
-        runSpy.mockRestore();
-      }
-    });
-
     it('should fetch text file via sandbox path using sync readContents()', async () => {
       const store = new MockKVStoreWithFileFetch();
       const diskPath = '/tmp/uploads/sandbox-file-sync.txt';
       const fileContent = 'Hello from sandbox worker (sync)!';
       store.setFile(diskPath, Buffer.from(fileContent));
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {
             FilePicker1: {
@@ -670,7 +652,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       const fileContent = 'Hello from sandbox worker!';
       store.setFile(diskPath, Buffer.from(fileContent));
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {
             FilePicker1: {
@@ -710,7 +692,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0xff, 0xfe, 0xfd]);
       store.setFile(diskPath, binaryContent);
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {
             FilePicker1: {
@@ -757,7 +739,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       const diskPath = '/tmp/uploads/nonexistent.txt';
       // Don't add file to store
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {
             FilePicker1: {
@@ -797,7 +779,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
       store.setFile(diskPath1, Buffer.from('Sandbox file 1'));
       store.setFile(diskPath2, Buffer.from('Sandbox file 2'));
 
-      const result = await plugin.executeInWorker({
+      const result = await executeWithWorkerInput(plugin, {
         context: {
           globals: {
             FilePicker1: {

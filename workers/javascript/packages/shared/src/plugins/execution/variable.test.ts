@@ -1,8 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
-import { buildVariables } from '@superblocks/shared';
-import { VariableType, VariableMode } from './constants';
-import { VariableClient } from './variable-client';
-import { VariableServer } from './variable-server';
+import { buildVariables, VariableType, VariableMode } from './variable';
+import { PoolVariableClient } from './pool-variable-client';
+import { PoolVariableServer } from './pool-variable-server';
 
 export class MockKVStore {
   private _store: { [key: string]: unknown } = {};
@@ -81,8 +80,8 @@ describe('Test simple variables', () => {
     await store.write('aaaa', { ok: 1 });
     await store.write('bbbb', { ok: 2 });
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -112,8 +111,8 @@ describe('Test simple variables', () => {
     await store.write('aaaa', 1000);
     await store.write('bbbb', 2000);
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -155,8 +154,8 @@ describe('Test simple variables', () => {
     await store.write('aaaa', '123');
     await store.write('bbbb', '456');
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -204,8 +203,8 @@ describe('Test simple variables', () => {
 
     const store = new MockKVStore();
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -246,8 +245,8 @@ describe('Test advanced variables', () => {
     await store.write('aaaa', { ok: 1 });
     await store.write('bbbb', { ok: 2 });
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -277,8 +276,8 @@ describe('Test advanced variables', () => {
     await store.write('aaaa', 1000);
     await store.write('bbbb', 2000);
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -311,8 +310,8 @@ describe('Test advanced variables', () => {
     await store.write('aaaa', '123');
     await store.write('bbbb', '456');
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -360,8 +359,8 @@ describe('Test advanced variables', () => {
 
     const store = new MockKVStore();
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -400,8 +399,8 @@ describe('Test native variables', () => {
     await store.write('aaaa', { ok: 1 });
     await store.write('bbbb', { ok: 2 });
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const built: Record<string, any> = await buildVariables(input, variableClient as any);
@@ -436,13 +435,13 @@ export class MockKVStoreWithFileFetch extends MockKVStore {
 }
 
 describe('Test fetchFile (sandbox worker path)', () => {
-  it('should fetch file successfully via VariableClient', async () => {
+  it('should fetch file successfully via PoolVariableClient', async () => {
     const store = new MockKVStoreWithFileFetch();
     const fileContent = Buffer.from('hello world');
     store.setFile('/tmp/test.txt', fileContent);
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     const result = await new Promise<Buffer>((resolve, reject) => {
       variableClient.fetchFileCallback('/tmp/test.txt', (err, data) => {
@@ -461,8 +460,8 @@ describe('Test fetchFile (sandbox worker path)', () => {
   it('should handle file not found error', async () => {
     const store = new MockKVStoreWithFileFetch();
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     await expect(
       new Promise<Buffer>((resolve, reject) => {
@@ -483,8 +482,8 @@ describe('Test fetchFile (sandbox worker path)', () => {
     const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0xff, 0xfe, 0xfd]);
     store.setFile('/tmp/binary.bin', binaryContent);
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     const result = await new Promise<Buffer>((resolve, reject) => {
       variableClient.fetchFileCallback('/tmp/binary.bin', (err, data) => {
@@ -504,8 +503,8 @@ describe('Test fetchFile (sandbox worker path)', () => {
     // Use MockKVStore without fetchFileCallback (simulates mode without sandbox file fetching)
     const store = new MockKVStore();
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     await expect(
       new Promise<Buffer>((resolve, reject) => {
@@ -530,8 +529,8 @@ describe('Test fetchFile (sandbox worker path)', () => {
       }
     })();
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     const result = await new Promise<{ err: Error | null; data: Buffer | null }>((resolve) => {
       variableClient.fetchFileCallback('/some/path', (err, data) => {
@@ -553,8 +552,8 @@ describe('Test variable transport error handling', () => {
     const store = new FlakyReadKVStore();
     await store.write('ok-key', { ok: true });
 
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     await expect(variableClient.read(['ok-key'])).rejects.toThrow('read failed once');
     await expect(variableClient.read(['ok-key'])).resolves.toEqual({ data: [{ ok: true }] });
@@ -565,8 +564,8 @@ describe('Test variable transport error handling', () => {
 
   it('should propagate writeStore errors', async () => {
     const store = new FailingWriteKVStore();
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     await expect(variableClient.write('some-key', 'value')).rejects.toThrow('write failed');
 
@@ -576,8 +575,8 @@ describe('Test variable transport error handling', () => {
 
   it('should propagate writeStoreMany errors', async () => {
     const store = new FailingWriteManyKVStore();
-    const variableServer = new VariableServer(store);
-    const variableClient = new VariableClient(variableServer.clientPort());
+    const variableServer = new PoolVariableServer(store);
+    const variableClient = new PoolVariableClient(variableServer.clientPort());
 
     variableClient.writeBuffer('some-key', 'value');
     await expect(variableClient.flush()).rejects.toThrow('writeMany failed');
