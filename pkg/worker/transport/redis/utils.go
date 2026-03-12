@@ -75,6 +75,8 @@ func UnwrapRedisProtoMessages[T proto.Message](messages []redis.XMessage, zero f
 }
 
 func SendWorkerMessage(ctx context.Context, redisClient *redis.Client, stream string, inbox string, bucket string, pluginName string, reqData *transportv1.Request_Data_Data) (string, error) {
+	carrier := tracer.Propagate(ctx)
+
 	return redisClient.XAdd(ctx, &redis.XAddArgs{
 		Stream:     stream,
 		NoMkStream: true,
@@ -88,7 +90,10 @@ func SendWorkerMessage(ctx context.Context, redisClient *redis.Client, stream st
 						Name:    pluginName,
 						Version: "v0.0.1", // NOTE(frank): The version is meaningless here!
 						Event:   string(worker.EventFromContext(ctx)),
-						Carrier: tracer.Propagate(ctx),
+						Carrier: carrier, // Deprecated: kept for legacy JS workers.
+						Observability: &transportv1.Observability{
+							Baggage: carrier,
+						},
 					},
 					Data: reqData,
 				},

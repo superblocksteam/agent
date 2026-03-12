@@ -25,13 +25,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ExecutionFileContext stores file fetching context for an execution
+// ExecutionFileContext stores file fetching context for an execution.
 type ExecutionFileContext struct {
 	FileServerURL           string
 	AgentKey                string
 	JwtToken                string
 	Profile                 *commonv1.Profile
 	IntegrationsCallbackUrl string
+	// TraceCarrier holds W3C trace context propagated from the orchestrator
+	// via the Redis Stream message. It is injected as gRPC metadata when
+	// the integration executor calls back to the orchestrator, linking the
+	// integration query trace to the parent SDK API execution trace.
+	TraceCarrier map[string]string
 }
 
 type FileContextProvider interface {

@@ -18,6 +18,8 @@ import (
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -364,12 +366,18 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 	// Forward both auth headers as outgoing gRPC metadata to the orchestrator.
 	// The server validates Authorization (Auth0 JWT) and uses
 	// x-superblocks-authorization for additional org/user context.
-	//
 	md := metadata.Pairs(
 		"authorization", "Bearer "+authorizationToken,
 		constants.HeaderSuperblocksJwt, "Bearer "+superblocksToken,
 	)
-	outCtx := metadata.NewOutgoingContext(ctx, md)
+
+	// Restore trace context from the carrier stored when the execution started.
+	// This links the integration query trace to the parent SDK API execution.
+	outCtx := ctx
+	if carrier := fileCtx.TraceCarrier; len(carrier) > 0 {
+		outCtx = otel.GetTextMapPropagator().Extract(ctx, propagation.MapCarrier(carrier))
+	}
+	outCtx = metadata.NewOutgoingContext(outCtx, md)
 
 	resp, err := client.Await(outCtx, &apiv1.ExecuteRequest{
 		Request: &apiv1.ExecuteRequest_Definition{

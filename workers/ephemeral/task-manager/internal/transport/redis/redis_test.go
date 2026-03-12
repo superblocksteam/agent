@@ -496,8 +496,8 @@ func TestExecutionContextLifecycleRefCountedCleanup(t *testing.T) {
 		},
 	}
 
-	transport.setupExecutionContext("exec-1", props)
-	transport.setupExecutionContext("exec-1", props)
+	transport.setupExecutionContext("exec-1", props, nil)
+	transport.setupExecutionContext("exec-1", props, nil)
 
 	if got := provider.setFileCount["exec-1"]; got != 2 {
 		t.Fatalf("SetFileContext calls = %d, want 2", got)
@@ -529,8 +529,8 @@ func TestExecutionContextLifecycleCleanupIsolatedByExecution(t *testing.T) {
 	propsA := &transportv1.Request_Data_Data_Props{ExecutionId: "exec-a", FileServerUrl: "http://files-a"}
 	propsB := &transportv1.Request_Data_Data_Props{ExecutionId: "exec-b", FileServerUrl: "http://files-b"}
 
-	transport.setupExecutionContext("exec-a", propsA)
-	transport.setupExecutionContext("exec-b", propsB)
+	transport.setupExecutionContext("exec-a", propsA, nil)
+	transport.setupExecutionContext("exec-b", propsB, nil)
 
 	transport.teardownExecutionContext("exec-a")
 	if got := provider.cleanupCount["exec-a"]; got != 1 {
@@ -558,7 +558,7 @@ func TestExecutionContextLifecycleInitializesZeroValueState(t *testing.T) {
 		FileServerUrl: "http://files",
 	}
 
-	transport.setupExecutionContext("exec-1", props)
+	transport.setupExecutionContext("exec-1", props, nil)
 	transport.teardownExecutionContext("exec-1")
 
 	if transport.executionContextLock == nil {
@@ -588,7 +588,7 @@ func TestSetupExecutionContextStoresIntegrationsCallbackUrl(t *testing.T) {
 		IntegrationsCallbackUrl: "orchestrator-pr.internal:9000",
 	}
 
-	transport.setupExecutionContext("exec-1", props)
+	transport.setupExecutionContext("exec-1", props, nil)
 
 	fileCtx := provider.GetFileContext("exec-1")
 	if fileCtx == nil {
@@ -613,7 +613,7 @@ func TestExecutionContextLifecycleNoCleanupInterleavingWithNewSetup(t *testing.T
 		FileServerUrl: "http://files",
 	}
 
-	transport.setupExecutionContext("exec-1", props)
+	transport.setupExecutionContext("exec-1", props, nil)
 
 	teardownDone := make(chan struct{})
 	go func() {
@@ -630,7 +630,7 @@ func TestExecutionContextLifecycleNoCleanupInterleavingWithNewSetup(t *testing.T
 	setupDone := make(chan struct{})
 	go func() {
 		defer close(setupDone)
-		transport.setupExecutionContext("exec-1", props)
+		transport.setupExecutionContext("exec-1", props, nil)
 	}()
 
 	select {

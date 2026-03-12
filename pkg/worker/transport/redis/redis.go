@@ -9,6 +9,7 @@ import (
 
 	redis "github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/errors"
 	metricsPkg "github.com/superblocksteam/agent/pkg/metrics"
 	"github.com/superblocksteam/agent/pkg/observability"
+	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	"github.com/superblocksteam/agent/pkg/pluginparser"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
@@ -161,8 +163,9 @@ func (t *transport) PreDelete(ctx context.Context, plugin string, d *structpb.St
 	return res, err
 }
 
-// consume is a helper function that will subscribe to a topic and
-// consume messages from it until the context is canceled.
+// consume subscribes to a Redis Pub/Sub topic and forwards messages to the
+// provided channel until the context is canceled. Span events are added to
+// the parent span (from ctx) so stream message activity is visible in traces.
 func (t *transport) consume(ctx context.Context, topic string, stream chan<- string) error {
 	pubsub := t.options.redis.Subscribe(ctx, topic)
 
@@ -171,14 +174,15 @@ func (t *transport) consume(ctx context.Context, topic string, stream chan<- str
 		return err
 	}
 
+	span := trace.SpanFromContext(ctx)
+
 	switch v := message.(type) {
 	case *redis.Subscription:
-		// We want to make sure we are subscribed to the topic before continuing.
-		// Waiting for the subscription to be confirmed is the way the documentation
-		// suggests we do this. However, since we can also receive messages from this
-		// channel, we need to make sure we handle it.
+		span.AddEvent("stream.subscribed", trace.WithAttributes(attribute.String("stream.topic", topic)))
 	case *redis.Message:
+		span.AddEvent("stream.subscribed", trace.WithAttributes(attribute.String("stream.topic", topic)))
 		stream <- v.Payload
+		span.AddEvent("stream.message_received")
 	}
 
 	go func() {
@@ -219,7 +223,9 @@ func (t *transport) consume(ctx context.Context, topic string, stream chan<- str
 	return nil
 }
 
-// TODO(frank): this method could be cleaned up
+// handleEvent dispatches a request to a worker via Redis Streams and waits
+// for the response. The entire round-trip is wrapped in a trace span with
+// events marking each phase boundary (send, ack, response, process).
 func (t *transport) handleEvent(
 	ctx context.Context,
 	pluginName string,
@@ -233,140 +239,164 @@ func (t *transport) handleEvent(
 ) {
 	settings := options.Apply(opts...)
 	bucket, stream := t.Remote(ctx, pluginName, settings.OrganizationPlan, settings.OrgId)
+	event := string(worker.EventFromContext(ctx))
+	executionID := constants.ExecutionID(ctx)
 
-	logger := t.options.logger.With(
-		zap.String("stream", stream),
-		zap.String(observability.OBS_TAG_CORRELATION_ID, constants.ExecutionID(ctx)),
-		zap.String("bucket", bucket),
-	)
+	type handleEventResult struct {
+		perf *transportv1.Performance
+		resp *transportv1.Response
+		key  string
+	}
 
-	inbox, err := t.inbox()
-	if err != nil {
-		logger.Error("could not generate inbox uuid", zap.Error(err))
+	result, err := tracer.Observe(ctx, "worker.dispatch", map[string]any{
+		observability.OBS_TAG_PLUGIN_NAME:    pluginName,
+		observability.OBS_TAG_PLUGIN_EVENT:   event,
+		observability.OBS_TAG_CORRELATION_ID: executionID,
+		"worker.bucket":                      bucket,
+		"worker.stream":                      stream,
+	}, func(ctx context.Context, span trace.Span) (*handleEventResult, error) {
+		logger := t.options.logger.With(
+			zap.String("stream", stream),
+			zap.String(observability.OBS_TAG_CORRELATION_ID, executionID),
+			zap.String("bucket", bucket),
+		)
+
+		inbox, err := t.inbox()
+		if err != nil {
+			logger.Error("could not generate inbox uuid", zap.Error(err))
+			return nil, err
+		}
+
+		logger = logger.With(zap.String("inbox", inbox))
+		span.SetAttributes(attribute.String("worker.inbox", inbox))
+
+		if stream := settings.Stream; stream != nil {
+			pubsubCtx, pubsubCancel := context.WithCancel(ctx)
+			defer pubsubCancel()
+
+			if err := t.consume(pubsubCtx, inbox, stream); err != nil {
+				return nil, err
+			}
+		}
+
+		defer t.purge(ctx, inbox)
+
+		reqStartMicro := time.Now().UnixNano() / 1000
+
+		messageID, err := SendWorkerMessage(ctx, t.options.redis, stream, inbox, bucket, pluginName, reqData)
+		if err != nil {
+			if err == redis.Nil {
+				logger.Error("stream does not exist", zap.Error(err))
+			} else {
+				logger.Error("could not send request to worker", zap.Error(err))
+			}
+			return nil, &errors.InternalError{}
+		}
+
+		span.AddEvent("message_sent")
+		defer t.purge(ctx, stream, messageID)
+
+		if _, err := t.options.redis.XRead(ctx, &redis.XReadArgs{
+			Streams: []string{inbox, redisAckID},
+			Count:   1,
+			Block:   t.options.heartbeatInterval,
+		}).Result(); err != nil {
+			logger.Error("did not receive ack from worker", zap.Error(err), zap.Duration("timeout", t.options.heartbeatInterval))
+			metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(errors.CodeTransportWorkerNoAck)))
+			return nil, &errors.InternalError{}
+		}
+
+		span.AddEvent("ack_received")
+		t.options.logger.Debug("received ack from worker", zap.String("inbox", inbox))
+
+		var timeout time.Duration
+		{
+			switch worker.EventFromContext(ctx) {
+			case worker.EventExecute, worker.EventStream:
+				if value := constants.RemainingDuration(ctx); value == nil {
+					timeout = t.options.timeout
+				} else {
+					timeout = *value + (time.Second * 10)
+				}
+			case worker.EventMetadata:
+				timeout = t.options.metadataTimeout
+			default:
+				timeout = 30 * time.Second
+			}
+		}
+
+		data, err := t.options.redis.XRead(ctx, &redis.XReadArgs{
+			Streams: []string{inbox, redisResponseID},
+			Count:   1,
+			Block:   timeout,
+		}).Result()
+
+		if err != nil {
+			if err == redis.Nil {
+				logger.Error("timeout occurred while waiting for a worker to send a response", zap.Error(err), zap.Duration("timeout", timeout))
+				return nil, errors.IntegrationError(
+					fmt.Errorf("Timed out after %v", timeout),
+					commonv1.Code_CODE_INTEGRATION_QUERY_TIMEOUT,
+				)
+			}
+			logger.Error("there was an issue waiting for a worker to send a response", zap.Error(err))
+			return nil, &errors.InternalError{}
+		}
+
+		span.AddEvent("response_received")
+		logger.Debug("received response from worker", zap.String("inbox", inbox))
+
+		perf, resp, key, err := t.process(data, inbox, reqData, opts...)
+
+		span.AddEvent("response_processed")
+
+		var estimate int64
+		{
+			value := ctx.Value(worker.ContextKeyEstimate)
+			if value == nil {
+				estimate = 0
+			} else if ui32, ok := value.(*uint32); ok {
+				estimate = int64(*ui32)
+			}
+		}
+
+		if perf != nil {
+			perf.Error = err != nil
+
+			metricsPkg.Observe(ctx, perf,
+				reqStartMicro,
+				estimate,
+				&metrics.StepMetricLabels{
+					PluginName:  pluginName,
+					Bucket:      bucket,
+					PluginEvent: event,
+					ApiType:     constants.ApiType(ctx),
+				},
+			)
+
+			// Performance timings as attributes for quick inspection.
+			// The worker creates child spans for each phase with real timing.
+			if perf.PluginExecution != nil {
+				span.SetAttributes(attribute.Float64("worker.perf.plugin_execution_us", perf.PluginExecution.Value))
+			}
+			if perf.QueueRequest != nil {
+				span.SetAttributes(attribute.Float64("worker.perf.queue_request_us", perf.QueueRequest.Value))
+			}
+		}
+
+		if err != nil {
+			logger.Error("failed to process worker response", zap.Error(err))
+			return &handleEventResult{perf: perf, resp: resp, key: key}, err
+		}
+
+		return &handleEventResult{perf: perf, resp: resp, key: key}, nil
+	}, nil)
+
+	if result == nil {
 		return nil, nil, "", err
 	}
 
-	logger = logger.With(zap.String("inbox", inbox))
-
-	if stream := settings.Stream; stream != nil {
-		pubsubCtx, pubsubCancel := context.WithCancel(ctx)
-		defer pubsubCancel()
-
-		if err := t.consume(pubsubCtx, inbox, stream); err != nil {
-			return nil, nil, "", err
-		}
-	}
-
-	defer t.purge(ctx, inbox)
-
-	reqStartMicro := time.Now().UnixNano() / 1000
-
-	// The command returns the ID of the added entry. The ID is the one
-	// auto-generated if * is passed as ID argument, otherwise the command
-	// just returns the same ID specified by the user during insertion.
-	messageID, err := SendWorkerMessage(ctx, t.options.redis, stream, inbox, bucket, pluginName, reqData)
-	if err != nil {
-		if err == redis.Nil {
-			logger.Error("stream does not exist", zap.Error(err))
-		} else {
-			logger.Error("could not send request to worker", zap.Error(err))
-		}
-
-		return nil, nil, "", &errors.InternalError{}
-	}
-
-	defer t.purge(ctx, stream, messageID)
-
-	if _, err := t.options.redis.XRead(ctx, &redis.XReadArgs{
-		Streams: []string{inbox, redisAckID},
-		Count:   1,
-		Block:   t.options.heartbeatInterval,
-	}).Result(); err != nil {
-		logger.Error("did not receive ack from worker", zap.Error(err), zap.Duration("timeout", t.options.heartbeatInterval))
-		metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(errors.CodeTransportWorkerNoAck)))
-		return nil, nil, "", &errors.InternalError{}
-	}
-
-	t.options.logger.Debug("received ack from worker", zap.String("inbox", inbox))
-
-	// A step is allowed to run for as long as the API is allowed to run for.
-	// If for some reason the remaining duration is nil, we'll use the old default.
-	var timeout time.Duration
-	{
-		switch worker.EventFromContext(ctx) {
-		case worker.EventExecute, worker.EventStream:
-			if value := constants.RemainingDuration(ctx); value == nil {
-				timeout = t.options.timeout
-			} else {
-				// NOTE(frank): We want to give time for the system to correctly propogate a potential quota violation.
-				//              For example, if we have 5 seconds left, we want the worker to timeout and propogate the
-				//              the quota error. Hence, we need to allow for an arbitrary unknown amount of time for the
-				//              worker to send the reponse.
-				timeout = *value + (time.Second * 10)
-			}
-		case worker.EventMetadata:
-			timeout = t.options.metadataTimeout
-		default:
-			timeout = 30 * time.Second
-		}
-	}
-
-	data, err := t.options.redis.XRead(ctx, &redis.XReadArgs{
-		Streams: []string{inbox, redisResponseID},
-		Count:   1,
-		Block:   timeout,
-	}).Result()
-
-	if err != nil {
-		if err == redis.Nil {
-			logger.Error("timeout occurred while waiting for a worker to send a response", zap.Error(err), zap.Duration("timeout", timeout))
-			// Return a proper timeout error instead of generic internal error
-			return nil, nil, "", errors.IntegrationError(
-				fmt.Errorf("Timed out after %v", timeout),
-				commonv1.Code_CODE_INTEGRATION_QUERY_TIMEOUT,
-			)
-		} else {
-			logger.Error("there was an issue waiting for a worker to send a response", zap.Error(err))
-		}
-
-		return nil, nil, "", &errors.InternalError{}
-	}
-
-	logger.Debug("received response from worker", zap.String("inbox", inbox))
-
-	perf, resp, key, err := t.process(data, inbox, reqData, opts...)
-
-	var estimate int64
-	{
-		value := ctx.Value(worker.ContextKeyEstimate)
-		if value == nil {
-			estimate = 0
-		} else if ui32, ok := value.(*uint32); ok {
-			estimate = int64(*ui32)
-		}
-	}
-
-	if perf != nil {
-		perf.Error = err != nil
-
-		// NOTE(frank): This needs to be in the caller of worker.Client.
-		metricsPkg.Observe(ctx, perf,
-			reqStartMicro,
-			estimate,
-			&metrics.StepMetricLabels{
-				PluginName:  pluginName,
-				Bucket:      bucket,
-				PluginEvent: string(worker.EventFromContext(ctx)),
-				ApiType:     constants.ApiType(ctx),
-			},
-		)
-	}
-
-	if err != nil {
-		logger.Error("failed to process worker response", zap.Error(err))
-	}
-
-	return perf, resp, key, err
+	return result.perf, result.resp, result.key, err
 }
 
 func (t *transport) purge(ctx context.Context, keyOrStream string, ids ...string) {

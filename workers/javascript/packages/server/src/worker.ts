@@ -228,6 +228,19 @@ export class Worker implements Closer {
     try {
       _logger.debug('executing request');
 
+      const executeRequest = request.data?.data as ExecuteRequest | undefined;
+      const spanAttributes: Record<string, string> = {
+        'plugin.name': request.data?.pinned?.name || '',
+        'plugin.event': request.data?.pinned?.event || '',
+        'worker.bucket': request.data?.pinned?.bucket || ''
+      };
+      if (executeRequest?.props?.executionId) {
+        spanAttributes['execution.id'] = executeRequest.props.executionId;
+      }
+      if (executeRequest?.props?.stepName) {
+        spanAttributes['step.name'] = executeRequest.props.stepName;
+      }
+
       result.data.data = await ctx.with(
         propagation.extract(ROOT_CONTEXT, request.data?.pinned?.carrier || {}),
         async (): Promise<Response> =>
@@ -235,7 +248,8 @@ export class Worker implements Closer {
             getTracer(),
             `execute.step.${request.data.pinned.name}`,
             SpanKind.INTERNAL,
-            async (): Promise<Response> => await this._executeStep(request, perf)
+            async (): Promise<Response> => await this._executeStep(request, perf),
+            spanAttributes
           )
       );
 

@@ -174,6 +174,9 @@ func TestSendWorkerMessage(t *testing.T) {
 						Version: "v0.0.1", // NOTE(frank): The version is meaningless here!
 						Event:   string(worker.EventExecute),
 						Carrier: map[string]string{},
+						Observability: &transportv1.Observability{
+							Baggage: map[string]string{},
+						},
 					},
 					Data: &transportv1.Request_Data_Data{},
 				},

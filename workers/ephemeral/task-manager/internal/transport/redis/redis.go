@@ -320,7 +320,7 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 	)
 
 	executionID := pluginProps.GetExecutionId()
-	rt.setupExecutionContext(executionID, pluginProps)
+	rt.setupExecutionContext(executionID, pluginProps, requestMeta.GetObservability().GetBaggage())
 	defer rt.teardownExecutionContext(executionID)
 
 	// Clear sensitive fields from Props before they are forwarded to the sandbox.
@@ -397,7 +397,7 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 	}
 }
 
-func (rt *redisTransport) setupExecutionContext(executionID string, pluginProps *transportv1.Request_Data_Data_Props) {
+func (rt *redisTransport) setupExecutionContext(executionID string, pluginProps *transportv1.Request_Data_Data_Props, traceCarrier map[string]string) {
 	if executionID == "" || rt.fileContextProvider == nil {
 		return
 	}
@@ -418,6 +418,7 @@ func (rt *redisTransport) setupExecutionContext(executionID string, pluginProps 
 			JwtToken:                pluginProps.GetJwtToken(),
 			Profile:                 pluginProps.GetProfile(),
 			IntegrationsCallbackUrl: pluginProps.GetIntegrationsCallbackUrl(),
+			TraceCarrier:            traceCarrier,
 		},
 	)
 

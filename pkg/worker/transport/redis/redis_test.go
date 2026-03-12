@@ -178,6 +178,9 @@ func TestExecute(t *testing.T) {
 							Version: "v0.0.1",
 							Event:   test.event,
 							Carrier: tracer.Propagate(ctx),
+							Observability: &transportv1.Observability{
+								Baggage: tracer.Propagate(ctx),
+							},
 						},
 						Data: test.data,
 					},
