@@ -133,6 +133,31 @@ describe('Sandbox', () => {
       }
     });
 
+    it('supports globals with shared references', async () => {
+      const sandbox = await createSandbox();
+      try {
+        const shared = { value: 21 };
+        sandbox.setGlobals({ pair: { left: shared, right: shared } });
+
+        const result = await sandbox.evaluate('pair.left.value + pair.right.value');
+        expect(result).toBe(42);
+      } finally {
+        sandbox.dispose();
+      }
+    });
+
+    it('throws when injecting cyclic globals', async () => {
+      const sandbox = await createSandbox();
+      try {
+        const obj: { self?: unknown } = {};
+        obj.self = obj;
+
+        expect(() => sandbox.setGlobals({ obj })).toThrow(/cyclic/i);
+      } finally {
+        sandbox.dispose();
+      }
+    });
+
     it('can be called multiple times to add more globals', async () => {
       const sandbox = await createSandbox();
       try {
@@ -305,6 +330,21 @@ describe('Sandbox', () => {
         sandbox.setGlobals({ getFullName: hostFunction(getFullName) });
         const result = await sandbox.evaluate("getFullName({ first: 'Ada', last: 'Lovelace' })");
         expect(result).toBe('Ada Lovelace');
+      } finally {
+        sandbox.dispose();
+      }
+    });
+
+    it('supports functions that receive object arguments with shared references', async () => {
+      const sandbox = await createSandbox();
+      try {
+        const sumCounts = (value: { left: { count: number }; right: { count: number } }) => value.left.count + value.right.count;
+        sandbox.setGlobals({ sumCounts: hostFunction(sumCounts) });
+
+        const result = await sandbox.evaluate(
+          '(()=>{ const shared = { count: 21 }; return sumCounts({ left: shared, right: shared }); })()'
+        );
+        expect(result).toBe(42);
       } finally {
         sandbox.dispose();
       }
@@ -1038,6 +1078,20 @@ describe('Sandbox', () => {
       try {
         const expression = '(()=>{ const obj = {}; obj.self = obj; return obj; })()';
         await expect(sandbox.evaluate(expression)).rejects.toThrow(/cyclic|circular|gc_obj_list/i);
+      } finally {
+        sandbox.dispose();
+      }
+    });
+
+    it('supports returning objects with shared references', async () => {
+      const sandbox = await createSandbox();
+      try {
+        const expression = '(()=>{ const shared = { count: 21 }; return { left: shared, right: shared }; })()';
+        const result = await sandbox.evaluate(expression);
+        expect(result).toEqual({
+          left: { count: 21 },
+          right: { count: 21 }
+        });
       } finally {
         sandbox.dispose();
       }

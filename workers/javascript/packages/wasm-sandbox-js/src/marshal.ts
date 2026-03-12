@@ -256,12 +256,14 @@ type FromVmHelpers = {
   /** Only provided when Buffer support is enabled */
   isBuffer?: (handle: QuickJSHandle) => boolean;
   getObjectKeys: (handle: QuickJSHandle) => string[];
-  /** WeakSet of visited objects to detect cycles during extraction from VM */
-  visitedSet: QuickJSHandle;
-  /** Helper to check membership in the visited set */
-  weakSetHas: (visited: QuickJSHandle, handle: QuickJSHandle) => boolean;
-  /** Helper to add to the visited set */
-  weakSetAdd: (visited: QuickJSHandle, handle: QuickJSHandle) => void;
+  /** WeakSet of objects on the current extraction path */
+  ancestorSet: QuickJSHandle;
+  /** Helper to check membership in the ancestor set */
+  weakSetHas: (ancestors: QuickJSHandle, handle: QuickJSHandle) => boolean;
+  /** Helper to add to the ancestor set */
+  weakSetAdd: (ancestors: QuickJSHandle, handle: QuickJSHandle) => void;
+  /** Helper to remove from the ancestor set */
+  weakSetDelete: (ancestors: QuickJSHandle, handle: QuickJSHandle) => void;
 };
 
 export type MarshallerOptions = {
@@ -288,14 +290,14 @@ export type Marshaller = {
  * @param ctx - The QuickJS context
  * @param hostValue - The host value to marshal into the VM
  * @param helpers - Helper functions for host-to-VM conversion including extractValue, eventLoop, and optional createBuffer
- * @param seen - Internal set of visited host objects/arrays used for cycle detection (injected for recursion)
+ * @param ancestors - Internal set of host objects/arrays on the current recursion path (injected for recursion)
  * @returns A QuickJSHandle representing the value in the VM. Caller owns the returned handle.
  */
 export function marshalToVm(
   ctx: QuickJSContext,
   hostValue: unknown,
   helpers: ToVmHelpers,
-  seen: WeakSet<object> = new WeakSet()
+  ancestors: WeakSet<object> = new WeakSet()
 ): QuickJSHandle {
   // Primitives - static handles have static lifetime, safe to return
   if (hostValue === null) return ctx.null;
@@ -343,15 +345,15 @@ export function marshalToVm(
 
   // Arrays
   if (Array.isArray(hostValue)) {
-    if (seen.has(hostValue)) {
+    if (ancestors.has(hostValue)) {
       throw new Error('Cannot marshal cyclic structures');
     }
-    seen.add(hostValue);
+    ancestors.add(hostValue);
 
     const arr = ctx.newArray();
     try {
       for (let i = 0; i < hostValue.length; i++) {
-        const elemHandle = marshalToVm(ctx, hostValue[i], helpers, seen);
+        const elemHandle = marshalToVm(ctx, hostValue[i], helpers, ancestors);
         ctx.setProp(arr, i, elemHandle);
         elemHandle.dispose();
       }
@@ -359,46 +361,51 @@ export function marshalToVm(
     } catch (err) {
       arr.dispose();
       throw err;
+    } finally {
+      ancestors.delete(hostValue);
     }
   }
 
   // Objects (including class instances with prototype methods)
   if (typeof hostValue === 'object') {
-    if (seen.has(hostValue)) {
+    if (ancestors.has(hostValue)) {
       throw new Error('Cannot marshal cyclic structures');
     }
-    seen.add(hostValue);
-
-    // Check for custom marshalling method (similar to toJSON for JSON.stringify)
-    const customMarshal = (hostValue as Record<symbol, unknown>)[toVmValue];
-    if (typeof customMarshal === 'function') {
-      return marshalToVm(ctx, customMarshal.call(hostValue), helpers, seen);
-    }
-
-    const obj = ctx.newObject();
+    ancestors.add(hostValue);
     try {
-      for (const [key, val] of Object.entries(hostValue)) {
-        if (val instanceof HostGetterWrapper) {
-          // Define a getter property that calls the host function on each access
-          // Use a fresh cycle detector for each access (similar to host function calls)
-          ctx.defineProp(obj, key, {
-            enumerable: true,
-            configurable: true,
-            get() {
-              const result = val.fn();
-              return marshalToVm(ctx, result, helpers);
-            }
-          });
-        } else {
-          const valHandle = marshalToVm(ctx, val, helpers, seen);
-          ctx.setProp(obj, key, valHandle);
-          valHandle.dispose();
-        }
+      // Check for custom marshalling method (similar to toJSON for JSON.stringify)
+      const customMarshal = (hostValue as Record<symbol, unknown>)[toVmValue];
+      if (typeof customMarshal === 'function') {
+        return marshalToVm(ctx, customMarshal.call(hostValue), helpers, ancestors);
       }
-      return obj;
-    } catch (err) {
-      obj.dispose();
-      throw err;
+
+      const obj = ctx.newObject();
+      try {
+        for (const [key, val] of Object.entries(hostValue)) {
+          if (val instanceof HostGetterWrapper) {
+            // Define a getter property that calls the host function on each access
+            // Use a fresh cycle detector for each access (similar to host function calls)
+            ctx.defineProp(obj, key, {
+              enumerable: true,
+              configurable: true,
+              get() {
+                const result = val.fn();
+                return marshalToVm(ctx, result, helpers);
+              }
+            });
+          } else {
+            const valHandle = marshalToVm(ctx, val, helpers, ancestors);
+            ctx.setProp(obj, key, valHandle);
+            valHandle.dispose();
+          }
+        }
+        return obj;
+      } catch (err) {
+        obj.dispose();
+        throw err;
+      }
+    } finally {
+      ancestors.delete(hostValue);
     }
   }
 
@@ -435,7 +442,7 @@ function extractValidArrayIndex(key: string, length: number): number | null {
  * @returns The extracted host value
  */
 export function marshalFromVm(ctx: QuickJSContext, handle: QuickJSHandle, helpers: FromVmHelpers): unknown {
-  const { isArray, isDate, isBuffer, getObjectKeys, visitedSet, weakSetAdd, weakSetHas } = helpers;
+  const { isArray, isDate, isBuffer, getObjectKeys, ancestorSet, weakSetAdd, weakSetDelete, weakSetHas } = helpers;
 
   const type = ctx.typeof(handle);
 
@@ -466,100 +473,103 @@ export function marshalFromVm(ctx: QuickJSContext, handle: QuickJSHandle, helper
       return new Date(timestamp);
     }
 
-    // Detect cycles using a WeakSet of visited objects.
-    if (weakSetHas(visitedSet, handle)) {
+    // Detect cycles using the current recursion path.
+    if (weakSetHas(ancestorSet, handle)) {
       throw new Error('Cannot serialize cyclic structures');
     }
-    weakSetAdd(visitedSet, handle);
-
-    // Check for toJSON method (mimics JSON.stringify behavior)
-    // We call toJSON() inside the VM (where the method exists), then return an object
-    // with a toJSON method that returns the extracted value. This preserves the
-    // serialization behavior so that when the caller calls JSON.stringify, it will
-    // produce the same result as if JSON.stringify were called inside the VM.
-    const toJsonHandle = ctx.getProp(handle, 'toJSON');
-    const toJsonType = ctx.typeof(toJsonHandle);
-    if (toJsonType === 'function') {
-      const result = ctx.callFunction(toJsonHandle, handle, []);
-      toJsonHandle.dispose();
-      if (result.error) {
-        result.error.dispose();
-        // If toJSON throws, fall through to normal object handling
+    weakSetAdd(ancestorSet, handle);
+    try {
+      // Check for toJSON method (mimics JSON.stringify behavior)
+      // We call toJSON() inside the VM (where the method exists), then return an object
+      // with a toJSON method that returns the extracted value. This preserves the
+      // serialization behavior so that when the caller calls JSON.stringify, it will
+      // produce the same result as if JSON.stringify were called inside the VM.
+      const toJsonHandle = ctx.getProp(handle, 'toJSON');
+      const toJsonType = ctx.typeof(toJsonHandle);
+      if (toJsonType === 'function') {
+        const result = ctx.callFunction(toJsonHandle, handle, []);
+        toJsonHandle.dispose();
+        if (result.error) {
+          result.error.dispose();
+          // If toJSON throws, fall through to normal object handling
+        } else {
+          try {
+            const extractedValue = marshalFromVm(ctx, result.value, helpers);
+            // Return a wrapper that preserves the toJSON behavior for the caller
+            return { toJSON: () => extractedValue };
+          } finally {
+            result.value.dispose();
+          }
+        }
       } else {
+        toJsonHandle.dispose();
+      }
+
+      // Check for Buffer first (before array, since Buffer extends Uint8Array)
+      if (isBuffer?.(handle)) {
+        // Bulk extract bytes: read Buffer's underlying ArrayBuffer once, then copy the view into a Node.js Buffer.
+        // We intentionally copy (not share) because the VM and its allocations are about to be disposed.
+        const bufferHandle = ctx.getProp(handle, 'buffer');
+        const byteOffsetHandle = ctx.getProp(handle, 'byteOffset');
+        const byteLengthHandle = ctx.getProp(handle, 'byteLength');
+
+        const byteOffset = ctx.getNumber(byteOffsetHandle);
+        const byteLength = ctx.getNumber(byteLengthHandle);
+
+        byteOffsetHandle.dispose();
+        byteLengthHandle.dispose();
+
+        const arrayBufferView = ctx.getArrayBuffer(bufferHandle);
+        bufferHandle.dispose();
         try {
-          const extractedValue = marshalFromVm(ctx, result.value, helpers);
-          // Return a wrapper that preserves the toJSON behavior for the caller
-          return { toJSON: () => extractedValue };
+          const slice = arrayBufferView.value.subarray(byteOffset, byteOffset + byteLength);
+          return Buffer.from(slice);
         } finally {
-          result.value.dispose();
+          arrayBufferView.dispose();
         }
       }
-    } else {
-      toJsonHandle.dispose();
-    }
 
-    // Check for Buffer first (before array, since Buffer extends Uint8Array)
-    if (isBuffer?.(handle)) {
-      // Bulk extract bytes: read Buffer's underlying ArrayBuffer once, then copy the view into a Node.js Buffer.
-      // We intentionally copy (not share) because the VM and its allocations are about to be disposed.
-      const bufferHandle = ctx.getProp(handle, 'buffer');
-      const byteOffsetHandle = ctx.getProp(handle, 'byteOffset');
-      const byteLengthHandle = ctx.getProp(handle, 'byteLength');
+      // Check for array
+      // We use Object.keys to get only defined indices, avoiding CPU/memory exhaustion
+      // from sparse arrays with huge length but few elements (e.g., `a = []; a[1e9] = 1`)
+      if (isArray(handle)) {
+        const lengthHandle = ctx.getProp(handle, 'length');
+        const length = ctx.getNumber(lengthHandle);
+        lengthHandle.dispose();
 
-      const byteOffset = ctx.getNumber(byteOffsetHandle);
-      const byteLength = ctx.getNumber(byteLengthHandle);
+        const keys = getObjectKeys(handle);
+        const arr: unknown[] = [];
+        arr.length = length; // Preserve original length (keeps array sparse if it was sparse)
 
-      byteOffsetHandle.dispose();
-      byteLengthHandle.dispose();
+        for (const key of keys) {
+          const index = extractValidArrayIndex(key, length);
+          if (index === null) continue;
 
-      const arrayBufferView = ctx.getArrayBuffer(bufferHandle);
-      bufferHandle.dispose();
-      try {
-        const slice = arrayBufferView.value.subarray(byteOffset, byteOffset + byteLength);
-        return Buffer.from(slice);
-      } finally {
-        arrayBufferView.dispose();
+          const elemHandle = ctx.getProp(handle, index);
+          try {
+            arr[index] = marshalFromVm(ctx, elemHandle, helpers);
+          } finally {
+            elemHandle.dispose();
+          }
+        }
+        return arr;
       }
-    }
 
-    // Check for array
-    // We use Object.keys to get only defined indices, avoiding CPU/memory exhaustion
-    // from sparse arrays with huge length but few elements (e.g., `a = []; a[1e9] = 1`)
-    if (isArray(handle)) {
-      const lengthHandle = ctx.getProp(handle, 'length');
-      const length = ctx.getNumber(lengthHandle);
-      lengthHandle.dispose();
-
+      // Regular object - get keys and recursively extract
       const keys = getObjectKeys(handle);
-      const arr: unknown[] = [];
-      arr.length = length; // Preserve original length (keeps array sparse if it was sparse)
-
+      const obj: Record<string, unknown> = {};
       for (const key of keys) {
-        const index = extractValidArrayIndex(key, length);
-        if (index === null) continue;
-
-        const elemHandle = ctx.getProp(handle, index);
+        const valHandle = ctx.getProp(handle, key);
         try {
-          arr[index] = marshalFromVm(ctx, elemHandle, helpers);
+          obj[key] = marshalFromVm(ctx, valHandle, helpers);
         } finally {
-          elemHandle.dispose();
+          valHandle.dispose();
         }
       }
-      return arr;
+      return obj;
+    } finally {
+      weakSetDelete(ancestorSet, handle);
     }
-
-    // Regular object - get keys and recursively extract
-    const keys = getObjectKeys(handle);
-    const obj: Record<string, unknown> = {};
-    for (const key of keys) {
-      const valHandle = ctx.getProp(handle, key);
-      try {
-        obj[key] = marshalFromVm(ctx, valHandle, helpers);
-      } finally {
-        valHandle.dispose();
-      }
-    }
-    return obj;
   }
 
   // Functions are not supported for extraction.
@@ -602,6 +612,7 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
   const vmWeakSetPrototype = ctx.getProp(vmWeakSetCtor, 'prototype');
   const vmWeakSetHasFn = ctx.getProp(vmWeakSetPrototype, 'has');
   const vmWeakSetAddFn = ctx.getProp(vmWeakSetPrototype, 'add');
+  const vmWeakSetDeleteFn = ctx.getProp(vmWeakSetPrototype, 'delete');
 
   // Buffer support handles (only if enabled)
   let vmBufferHandle: QuickJSHandle | undefined;
@@ -734,7 +745,7 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
     return result.value;
   };
 
-  const createVisitedSet = (): QuickJSHandle => {
+  const createAncestorSet = (): QuickJSHandle => {
     const result = ctx.evalCode('new WeakSet()', '<weakset>', { type: 'global', strict: false });
     if (result.error) {
       const errorDump = ctx.dump(result.error);
@@ -744,8 +755,8 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
     return result.value;
   };
 
-  const weakSetHas = (visited: QuickJSHandle, handle: QuickJSHandle): boolean => {
-    const result = ctx.callFunction(vmWeakSetHasFn, visited, [handle]);
+  const weakSetHas = (ancestors: QuickJSHandle, handle: QuickJSHandle): boolean => {
+    const result = ctx.callFunction(vmWeakSetHasFn, ancestors, [handle]);
     if (result.error) {
       result.error.dispose();
       return false;
@@ -755,8 +766,8 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
     return exists;
   };
 
-  const weakSetAdd = (visited: QuickJSHandle, handle: QuickJSHandle): void => {
-    const result = ctx.callFunction(vmWeakSetAddFn, visited, [handle]);
+  const weakSetAdd = (ancestors: QuickJSHandle, handle: QuickJSHandle): void => {
+    const result = ctx.callFunction(vmWeakSetAddFn, ancestors, [handle]);
     if (result.error) {
       const errorDump = ctx.dump(result.error);
       result.error.dispose();
@@ -765,15 +776,25 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
     result.value.dispose();
   };
 
-  const baseFromVmHelpers = { isArray, isDate, isBuffer, getObjectKeys, weakSetHas, weakSetAdd } as const;
+  const weakSetDelete = (ancestors: QuickJSHandle, handle: QuickJSHandle): void => {
+    const result = ctx.callFunction(vmWeakSetDeleteFn, ancestors, [handle]);
+    if (result.error) {
+      const errorDump = ctx.dump(result.error);
+      result.error.dispose();
+      throw new Error(`Failed to untrack object after cycle detection: ${JSON.stringify(errorDump)}`);
+    }
+    result.value.dispose();
+  };
+
+  const baseFromVmHelpers = { isArray, isDate, isBuffer, getObjectKeys, weakSetHas, weakSetAdd, weakSetDelete } as const;
 
   const extractValue = (handle: QuickJSHandle): unknown => {
-    const visitedSet = createVisitedSet();
+    const ancestorSet = createAncestorSet();
     try {
-      const helpers: FromVmHelpers = { ...baseFromVmHelpers, visitedSet };
+      const helpers: FromVmHelpers = { ...baseFromVmHelpers, ancestorSet };
       return marshalFromVm(ctx, handle, helpers);
     } finally {
-      visitedSet.dispose();
+      ancestorSet.dispose();
     }
   };
 
@@ -788,6 +809,7 @@ export function createMarshaller(ctx: QuickJSContext, options: MarshallerOptions
     vmIsDateFn.dispose();
     vmDateConstructorFn.dispose();
     vmDateHandle.dispose();
+    vmWeakSetDeleteFn.dispose();
     vmWeakSetAddFn.dispose();
     vmWeakSetHasFn.dispose();
     vmWeakSetPrototype.dispose();
