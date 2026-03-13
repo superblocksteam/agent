@@ -163,9 +163,17 @@ function main() {
   });
 
   const messageTransformer = new MessageTransformerImpl();
+  // @grpc/grpc-js recognizes keepalive_time/timeout/permit_without_calls for
+  // server→client pings. min_recv_ping_interval_without_data_ms is a C-core
+  // option that @grpc/grpc-js silently ignores today; it is included here so
+  // the setting takes effect automatically if the library adds enforcement.
   const server = new grpc.Server({
     'grpc.max_receive_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
-    'grpc.max_send_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE
+    'grpc.max_send_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
+    'grpc.keepalive_time_ms': 10000,
+    'grpc.keepalive_timeout_ms': 5000,
+    'grpc.keepalive_permit_without_calls': 1,
+    'grpc.http2.min_recv_ping_interval_without_data_ms': 5000
   });
   server.addService(
     SandboxTransportServiceService,

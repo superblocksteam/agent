@@ -19,6 +19,10 @@ async def serve():
         options=[
             ("grpc.max_receive_message_length", SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_REQUEST_SIZE),
             ("grpc.max_send_message_length", SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_RESPONSE_SIZE),
+            ("grpc.keepalive_time_ms", 10000),
+            ("grpc.keepalive_timeout_ms", 5000),
+            ("grpc.keepalive_permit_without_calls", 1),
+            ("grpc.http2.min_recv_ping_interval_without_data_ms", 5000),
         ],
     )
     transport_pb2_grpc.add_SandboxTransportServiceServicer_to_server(
