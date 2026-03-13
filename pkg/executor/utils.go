@@ -97,6 +97,39 @@ func ResolveTemplate[T any](ctx *apictx.Context, sandbox engine.Sandbox, logger 
 	return &typed, nil
 }
 
+// PrimaryPluginFromIntegrations returns the dominant plugin name from an
+// integrations map. For single-plugin APIs it returns the plugin ID (e.g.
+// "postgres"); for multi-plugin APIs it returns "multi"; when no integrations
+// are declared it returns "unknown".
+func PrimaryPluginFromIntegrations(integrations map[string]*structpb.Struct) string {
+	if len(integrations) == 0 {
+		return "unknown"
+	}
+
+	seen := map[string]struct{}{}
+	for _, cfg := range integrations {
+		if cfg == nil {
+			continue
+		}
+		if f := cfg.GetFields()["pluginId"]; f != nil {
+			if id := f.GetStringValue(); id != "" {
+				seen[strings.ToLower(id)] = struct{}{}
+			}
+		}
+	}
+
+	switch len(seen) {
+	case 0:
+		return "unknown"
+	case 1:
+		for name := range seen {
+			return name
+		}
+	}
+
+	return "multi"
+}
+
 // evaluateParameters evaluates the 'parameters' field in a SQL action configuration.
 // It expects a JavaScript expression that evaluates to an array, e.g. "[params.userId, params.status]".
 // The resulting array is set as 'preparedStatementContext' in the action config.
@@ -188,7 +221,9 @@ func Execute(ctx context.Context, options *Options, send func(*apiv1.StreamRespo
 
 	go execution.Run(ctx)
 
-	metrics.AddApiExecutionEvent(ctx, "started", utils.ApiType(options.Api))
+	pluginAttr := attribute.String("plugin_name", PrimaryPluginFromIntegrations(options.Integrations))
+
+	metrics.AddApiExecutionEvent(ctx, "started", utils.ApiType(options.Api), pluginAttr)
 
 	defer func() {
 		var status string
@@ -200,7 +235,7 @@ func Execute(ctx context.Context, options *Options, send func(*apiv1.StreamRespo
 			}
 		}
 
-		metrics.AddApiExecutionEvent(ctx, status, utils.ApiType(options.Api))
+		metrics.AddApiExecutionEvent(ctx, status, utils.ApiType(options.Api), pluginAttr)
 	}()
 
 	var internalError error

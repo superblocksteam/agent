@@ -18,6 +18,7 @@ import (
 	"github.com/superblocksteam/agent/internal/fetch"
 	"github.com/superblocksteam/agent/internal/flags"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
+	"github.com/superblocksteam/agent/internal/metrics"
 	internalutils "github.com/superblocksteam/agent/internal/utils"
 	"github.com/superblocksteam/agent/pkg/constants"
 	apictx "github.com/superblocksteam/agent/pkg/context"
@@ -929,12 +930,45 @@ func (s *server) executeCodeMode(
 	useAgentKey bool,
 	send func(*apiv1.StreamResponse) error,
 	includeDiagnostics bool,
-) (*executor.Done, error) {
+) (done *executor.Done, retErr error) {
+	startTime := time.Now()
+
 	logger := s.Logger.With(
 		zap.String("execution_path", "api-2.0"),
 		zap.String("organizationId", result.GetApi().GetMetadata().GetOrganization()),
 	)
 	executionID := constants.ExecutionID(ctx)
+
+	// Extract labels for SDK API metrics.
+	_, orgIdForMetrics := getOrganizationPlanAndIdFromContext(ctx)
+	pluginName := extractPrimaryPluginName(result)
+	viewMode := viewModeLabel(getViewMode(req))
+
+	// Track whether the worker reported an error, even when partial output is
+	// recovered and retErr is nil. This prevents misclassifying worker failures
+	// with partial output as succeeded.
+	var workerFailed bool
+
+	defer func() {
+		durationMicro := float64(time.Since(startTime).Microseconds())
+		resultLabel := "succeeded"
+		errorCode := ""
+		if retErr != nil {
+			resultLabel = "failed"
+			errorCode = classifySdkApiError(retErr)
+		} else if workerFailed {
+			resultLabel = "failed"
+			errorCode = "partial_error"
+		}
+
+		metrics.RecordSdkApiExecution(ctx, durationMicro, &metrics.SdkApiMetricLabels{
+			PluginName: pluginName,
+			Result:     resultLabel,
+			ErrorCode:  errorCode,
+			OrgId:      orgIdForMetrics,
+			ViewMode:   viewMode,
+		})
+	}()
 
 	sendError := func(err error) (*executor.Done, error) {
 		commonErr := sberror.ToCommonV1(err)
@@ -1086,6 +1120,9 @@ func (s *server) executeCodeMode(
 
 	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
 	_, outputKey, workerErr := s.Worker.Execute(ctx, "javascriptsdkapi", workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
+	if workerErr != nil {
+		workerFailed = true
+	}
 
 	// Read the worker output from the store. When the worker succeeded this is
 	// the normal path. When the worker failed, the store may still contain
@@ -1190,6 +1227,50 @@ func (s *server) executeCodeMode(
 		Last:        "api-2.0",
 		Diagnostics: diagnostics,
 	}, nil
+}
+
+// extractPrimaryPluginName returns the dominant plugin name from the API
+// definition's integration declarations. Delegates to the shared
+// executor.PrimaryPluginFromIntegrations helper.
+func extractPrimaryPluginName(def *apiv1.Definition) string {
+	return executor.PrimaryPluginFromIntegrations(def.GetIntegrations())
+}
+
+// viewModeLabel converts a ViewMode enum to a short label for metrics.
+func viewModeLabel(vm apiv1.ViewMode) string {
+	switch vm {
+	case apiv1.ViewMode_VIEW_MODE_DEPLOYED:
+		return "deployed"
+	case apiv1.ViewMode_VIEW_MODE_PREVIEW:
+		return "preview"
+	default:
+		return "editor"
+	}
+}
+
+// classifySdkApiError maps an error to a short error_code label for metrics.
+func classifySdkApiError(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	if ie, ok := sberror.IsIntegrationError(err); ok {
+		if ie.Code() == commonv1.Code_CODE_INTEGRATION_QUERY_TIMEOUT {
+			return "timeout"
+		}
+		return "integration_error"
+	}
+	if _, ok := sberror.IsQuotaError(err); ok {
+		return "quota"
+	}
+	if sberror.IsAuthorizationError(err) {
+		return "auth"
+	}
+	if errors.Is(err, context.DeadlineExceeded) || strings.Contains(err.Error(), "Timed out") {
+		return "timeout"
+	}
+
+	return "internal"
 }
 
 func encodeWorkerJWTContext(superblocksJWT, authorizationJWT string) string {

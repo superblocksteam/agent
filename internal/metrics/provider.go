@@ -119,6 +119,7 @@ func NewProvider(ctx context.Context, opts ProviderOptions) (*Provider, error) {
 func histogramViews() []sdkmetric.Option {
 	// Define views for histograms with custom buckets
 	bigBucketHistograms := []string{
+		"sdk_api_execution_duration_microseconds",
 		"superblocks_step_overhead_microseconds",
 		"superblocks_step_plugin_duration_microseconds",
 		"superblocks_step_total_duration_microseconds",

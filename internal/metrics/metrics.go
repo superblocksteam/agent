@@ -37,6 +37,15 @@ type StepMetricLabels struct {
 	ExecutionMode string // "sandboxed" or "legacy" (empty defaults to "legacy")
 }
 
+// SdkApiMetricLabels contains labels for SDK API (v3/execute code-mode) metrics.
+type SdkApiMetricLabels struct {
+	PluginName string // primary integration plugin (e.g. "postgres", or "multi" for multiple)
+	Result     string // "succeeded" or "failed"
+	ErrorCode  string // error classification: "timeout", "quota", "auth", "integration_error", "internal", ""
+	OrgId      string // organization ID
+	ViewMode   string // "deployed" or "editor"
+}
+
 // ToAttributes converts StepMetricLabels to OTEL attributes.
 func (l *StepMetricLabels) ToAttributes() []attribute.KeyValue {
 	executionMode := l.ExecutionMode
@@ -51,6 +60,17 @@ func (l *StepMetricLabels) ToAttributes() []attribute.KeyValue {
 		attribute.String("plugin_event", l.PluginEvent),
 		attribute.String("plugin_name", l.PluginName),
 		attribute.String("result", l.Result),
+	}
+}
+
+// ToAttributes converts SdkApiMetricLabels to OTEL attributes.
+func (l *SdkApiMetricLabels) ToAttributes() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("plugin_name", l.PluginName),
+		attribute.String("result", l.Result),
+		attribute.String("error_code", l.ErrorCode),
+		attribute.String("org_id", l.OrgId),
+		attribute.String("view_mode", l.ViewMode),
 	}
 }
 
@@ -80,6 +100,10 @@ var (
 	// Gauges (synchronous gauges for "last value" semantics)
 	ComputeUnitsRemainingMillisTotal metric.Int64Gauge
 	ComputeUnitsPerWeekMillisTotal   metric.Int64Gauge
+
+	// SDK API (code-mode) metrics
+	SdkApiExecutionDuration metric.Float64Histogram
+	SdkApiExecutionsTotal   metric.Int64Counter
 
 	// Histograms
 	StepEstimateErrorPercentage metric.Float64Histogram
@@ -296,6 +320,23 @@ func RegisterMetrics(meter metric.Meter) error {
 		return err
 	}
 
+	// SDK API (code-mode) metrics
+	SdkApiExecutionDuration, err = meter.Float64Histogram(
+		"sdk_api_execution_duration_microseconds",
+		metric.WithDescription("End-to-end latency of SDK API (v3/execute code-mode) requests in microseconds."),
+	)
+	if err != nil {
+		return err
+	}
+
+	SdkApiExecutionsTotal, err = meter.Int64Counter(
+		"sdk_api_executions_total",
+		metric.WithDescription("Total number of SDK API (v3/execute code-mode) executions."),
+	)
+	if err != nil {
+		return err
+	}
+
 	// Histograms
 	StepEstimateErrorPercentage, err = meter.Float64Histogram(
 		"superblocks_step_estimate_error_percentage",
@@ -420,11 +461,14 @@ func RecordGauge(ctx context.Context, gauge metric.Int64Gauge, value int64, attr
 // AddApiExecutionEvent increments the ApiExecutionEventsTotal counter and shadow counter.
 // eventType should be "started", "succeeded", or "failed".
 // apiType should be "api" or "workflow".
-func AddApiExecutionEvent(ctx context.Context, eventType, apiType string) {
-	AddCounter(ctx, ApiExecutionEventsTotal,
+// Additional OTEL attributes can be passed to enrich the metric (e.g. plugin_name).
+func AddApiExecutionEvent(ctx context.Context, eventType, apiType string, extraAttrs ...attribute.KeyValue) {
+	attrs := []attribute.KeyValue{
 		attribute.String("event", eventType),
 		attribute.String("type", apiType),
-	)
+	}
+	attrs = append(attrs, extraAttrs...)
+	AddCounter(ctx, ApiExecutionEventsTotal, attrs...)
 
 	// Update shadow counters for metrics that need to be read
 	if eventType == "succeeded" && apiType == "api" {
@@ -436,6 +480,17 @@ func AddApiExecutionEvent(ctx context.Context, eventType, apiType string) {
 	} else if eventType == "failed" && apiType == "workflow" {
 		apiExecutionEventsFailedWorkflow.Add(1)
 	}
+}
+
+// RecordSdkApiExecution records both the duration histogram and counter for
+// a single SDK API (code-mode) execution.
+func RecordSdkApiExecution(ctx context.Context, durationMicro float64, labels *SdkApiMetricLabels) {
+	if labels == nil {
+		return
+	}
+	attrs := labels.ToAttributes()
+	RecordHistogram(ctx, SdkApiExecutionDuration, durationMicro, attrs...)
+	AddCounter(ctx, SdkApiExecutionsTotal, attrs...)
 }
 
 // GetApiExecutionEventCount returns the count for a specific event/type combination.

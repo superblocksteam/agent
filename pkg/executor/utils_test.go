@@ -1742,3 +1742,75 @@ func TestEvaluateParameters(t *testing.T) {
 		})
 	}
 }
+
+func TestPrimaryPluginFromIntegrations(t *testing.T) {
+	for _, test := range []struct {
+		name         string
+		integrations map[string]*structpb.Struct
+		expected     string
+	}{
+		{
+			name:         "nil map returns unknown",
+			integrations: nil,
+			expected:     "unknown",
+		},
+		{
+			name:         "empty map returns unknown",
+			integrations: map[string]*structpb.Struct{},
+			expected:     "unknown",
+		},
+		{
+			name: "nil config entry returns unknown",
+			integrations: map[string]*structpb.Struct{
+				"abc": nil,
+			},
+			expected: "unknown",
+		},
+		{
+			name: "missing pluginId returns unknown",
+			integrations: map[string]*structpb.Struct{
+				"abc": {Fields: map[string]*structpb.Value{
+					"name": structpb.NewStringValue("my integration"),
+				}},
+			},
+			expected: "unknown",
+		},
+		{
+			name: "single plugin returns normalized name",
+			integrations: map[string]*structpb.Struct{
+				"abc": {Fields: map[string]*structpb.Value{
+					"pluginId": structpb.NewStringValue("Postgres"),
+				}},
+			},
+			expected: "postgres",
+		},
+		{
+			name: "same plugin with mixed case returns single name",
+			integrations: map[string]*structpb.Struct{
+				"abc": {Fields: map[string]*structpb.Value{
+					"pluginId": structpb.NewStringValue("POSTGRES"),
+				}},
+				"def": {Fields: map[string]*structpb.Value{
+					"pluginId": structpb.NewStringValue("postgres"),
+				}},
+			},
+			expected: "postgres",
+		},
+		{
+			name: "multiple distinct plugins returns multi",
+			integrations: map[string]*structpb.Struct{
+				"abc": {Fields: map[string]*structpb.Value{
+					"pluginId": structpb.NewStringValue("postgres"),
+				}},
+				"def": {Fields: map[string]*structpb.Value{
+					"pluginId": structpb.NewStringValue("restapi"),
+				}},
+			},
+			expected: "multi",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, PrimaryPluginFromIntegrations(test.integrations))
+		})
+	}
+}
