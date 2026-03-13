@@ -54,6 +54,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.37.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.60.0
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.37.0
+	go.opentelemetry.io/otel/log v0.14.0
 	go.opentelemetry.io/otel/metric v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0
 	go.opentelemetry.io/otel/sdk/log v0.14.0
@@ -113,7 +114,6 @@ require (
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/otel/log v0.14.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect

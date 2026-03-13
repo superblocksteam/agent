@@ -1,0 +1,26 @@
+{
+  "_source": "packages/telemetry/src/common/log-sanitizer.ts",
+  "_sync": "Run scripts/sync-ts-telemetry-contracts.sh to regenerate from TS source.",
+  "sanitize_message": [
+    {"input": "bearer eyJhbGciOiJIUzI1NiJ9", "expected": "bearer [REDACTED]"},
+    {"input": "Basic dXNlcjpwYXNzd29yZA==", "expected": "Basic [REDACTED]"},
+    {"input": "JWT eyJhbGciOiJIUzI1NiJ9", "expected": "JWT [REDACTED]"},
+    {"input": "token: abc123def456", "expected": "token: [REDACTED]"},
+    {"input": "api_key=sk-1234567890abcdef", "expected": "api_key=[REDACTED]"},
+    {"input": "access_token: abc123def456", "expected": "access_token: [REDACTED]"},
+    {"input": "refresh_token=xyz789abc123", "expected": "refresh_token=[REDACTED]"},
+    {"input": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U", "expected": "[JWT_REDACTED]"},
+    {"input": "sk-abcdefghijklmnopqrstuvwxyz012345678901234567890A", "expected": "[OPENAI_KEY_REDACTED]"},
+    {"input": "sk-ant-abc123def456ghi789jkl012mno345pqr678", "expected": "[ANTHROPIC_KEY_REDACTED]"},
+    {"input": "AKIAIOSFODNN7EXAMPLE", "expected": "[AWS_KEY_REDACTED]"},
+    {"input": "ghp_1234567890abcdefghijABCDEFGHIJ123456", "expected": "[GITHUB_TOKEN_REDACTED]"},
+    {"input": "sk-12345678901234567890123456789012ab", "expected": "[API_KEY_REDACTED]"},
+    {"input": "postgres://user:password@localhost:5432/db", "expected": "[CONNECTION_STRING_REDACTED]"},
+    {"input": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBg\n-----END PRIVATE KEY-----", "expected": "[PEM_KEY_REDACTED]"},
+    {"input": "just a normal log message", "expected": "just a normal log message"}
+  ],
+  "is_secret_field": {
+    "true": ["password", "db_password", "Authorization", "my-jwt-header", "x-api-key", "auth_token", "DB_SECRET"],
+    "false": ["user_email", "username", "status_code", "request_id", "message"]
+  }
+}

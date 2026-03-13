@@ -1,0 +1,43 @@
+{
+  "_source": "packages/telemetry/src/common/contracts/tier2-traces.ts",
+  "_sync": "Run scripts/sync-ts-telemetry-contracts.sh to regenerate from TS source.",
+  "forbidden_span_attributes": [
+    "api_key",
+    "api_name",
+    "api-name",
+    "auth_token",
+    "authorization",
+    "branch",
+    "code",
+    "cookie",
+    "db.query_text",
+    "db.query.text",
+    "db.statement",
+    "enduser.email",
+    "error.stack",
+    "exception.stacktrace",
+    "file_content",
+    "file_path",
+    "http.request.body",
+    "http.response.body",
+    "http.target",
+    "http.url",
+    "llmobs.input",
+    "llmobs.output",
+    "prompt",
+    "resource_name",
+    "resource-name",
+    "tool_input",
+    "tool_output",
+    "url.full",
+    "url.query",
+    "user_email",
+    "user-email",
+    "user.email",
+    "widget-type",
+    "x-api-key"
+  ],
+  "dropped_high_cardinality_attributes": [
+    "binding_keys"
+  ]
+}
