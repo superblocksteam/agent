@@ -16,6 +16,7 @@
 {{- $language := $v.language | required "language is required (python or javascript)" }}
 {{- $sandboxConfig := index $.Values.sandbox $language }}
 {{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
+{{- $tmShutdown := merge (index $v "shutdown" | default dict) (index $.Values.taskManager "shutdown" | default dict) }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
@@ -71,7 +72,7 @@ spec:
         {{- end }}
       spec:
         restartPolicy: Never
-        terminationGracePeriodSeconds: 60
+        terminationGracePeriodSeconds: {{ index $tmShutdown "terminationGracePeriodSeconds" | default 60 }}
         serviceAccountName: {{ printf "%s-task-manager" $fullname | trunc 63 | trimSuffix "-" }}
         {{- if $.Values.image.credentials }}
         imagePullSecrets:
@@ -157,6 +158,9 @@ spec:
           {{- end }}
           {{- end }}
           {{- end }}
+          # Shutdown configuration
+          - "--worker.shutdown.delay={{ index $tmShutdown "delay" | default 0 }}"
+          - "--worker.shutdown.max.jitter={{ index $tmShutdown "maxJitter" | default 0 }}"
           # gRPC configuration (variable store for sandbox)
           - "--variable.store.grpc.port={{ $.Values.variableStore.grpc.port }}"
           - "--variable.store.http.port={{ $.Values.variableStore.http.port }}"

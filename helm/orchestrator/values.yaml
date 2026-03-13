@@ -355,4 +355,8 @@ sandbox_workers:
       dial: 20s
   taskManager:
     probesEnabled: false
+    shutdown:
+      terminationGracePeriodSeconds: 600 # 10 minutes
+      delay: 1m
+      maxJitter: 5m
   fleets: {}

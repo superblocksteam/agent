@@ -25,11 +25,7 @@ type Options struct {
 	FileContextProvider redisstore.FileContextProvider
 	Ephemeral           bool
 	AgentKey            string // Agent key for file server authentication
-
-	// DrainCompleteCh is closed when in-flight requests have finished.
-	// Enables graceful shutdown: SandboxPlugin waits for this before tearing down.
-	// When nil, nothing is signaled (e.g. tests).
-	DrainCompleteCh chan struct{}
+	DrainCompleteCh     chan struct{}
 }
 
 // Option is a function that modifies Options

@@ -20,6 +20,10 @@
 #     keda:
 #       lagCount: "1"           # Target lag per pod for scaling
 #       activationLagCount: "1" # Minimum lag before scaling starts
+#     shutdown:
+#       terminationGracePeriodSeconds: 600
+#       delay: 1m
+#       maxJitter: 5m
 #   javascript-ba:
 #     language: javascript
 #     buckets:
@@ -45,6 +49,10 @@
 #             consumerGroup: ephemeral-javascript
 #             lagCount: "1"
 #             activationLagCount: "1"
+#     shutdown:
+#       terminationGracePeriodSeconds: 600
+#       delay: 1m
+#       maxJitter: 5m
 fleets: {}
 # Task Manager configuration
 taskManager:
@@ -84,6 +92,13 @@ taskManager:
       command:
         - cat
         - /tmp/worker_healthy
+  # Shutdown configuration - termination grace period and delay before draining the worker
+  shutdown:
+    terminationGracePeriodSeconds: 600 # 10 minutes
+    # Base delay before, after receiving a termination signal, before draining the worker.
+    delay: 1m
+    # Maximum jitter to add to the base delay.
+    maxJitter: 5m
 # Sandbox configurations (per language)
 sandbox:
   # Default gRPC port for sandbox pods (used in NetworkPolicy)

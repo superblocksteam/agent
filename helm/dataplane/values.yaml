@@ -214,6 +214,13 @@ sandbox_workers:
         command:
           - cat
           - /tmp/worker_healthy
+    # Shutdown configuration - termination grace period and delay before draining the worker
+    shutdown:
+      terminationGracePeriodSeconds: 600 # 10 minutes
+      # Base delay before, after receiving a termination signal, before draining the worker.
+      delay: 1m
+      # Maximum jitter to add to the base delay.
+      maxJitter: 5m
   # Sandbox configurations (per language)
   sandbox:
     # Default gRPC port for sandbox pods (used in NetworkPolicy)
