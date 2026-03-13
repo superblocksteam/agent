@@ -87,7 +87,7 @@ describe('requireRoot fix for @superblocksteam/sdk-api', () => {
       const result = await executeCode({
         context,
         code,
-        filePaths: {},
+        files: [],
         inheritedEnv: [],
         requireRoot: buildRequireRoot()
       });

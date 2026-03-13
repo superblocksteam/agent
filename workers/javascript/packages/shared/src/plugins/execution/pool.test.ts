@@ -58,8 +58,10 @@ function createInput(overrides?: Partial<WorkerTaskInput>): WorkerTaskInput {
 }
 
 describe('WorkerPool', () => {
+  const POOL_NAME = 'test';
+
   beforeAll(() => {
-    WorkerPool.configure({ filename: '/tmp/bootstrap.js' });
+    WorkerPool.configure({ name: POOL_NAME, filename: '/tmp/bootstrap.js' });
   });
 
   afterEach(() => {
@@ -72,6 +74,7 @@ describe('WorkerPool', () => {
       mockRun.mockResolvedValue('{"output":42}');
 
       const result = await WorkerPool.ExecuteInWorkerPool({
+        poolName: POOL_NAME,
         input: createInput()
       });
 
@@ -88,6 +91,7 @@ describe('WorkerPool', () => {
       });
 
       await WorkerPool.ExecuteInWorkerPool({
+        poolName: POOL_NAME,
         input: createInput()
       });
 
@@ -111,6 +115,7 @@ describe('WorkerPool', () => {
       });
 
       await WorkerPool.ExecuteInWorkerPool({
+        poolName: POOL_NAME,
         input: createInput({
           context: { globals: {}, variables: {}, kvStore } as unknown as ExecutionContext
         })
@@ -129,6 +134,7 @@ describe('WorkerPool', () => {
       });
 
       await WorkerPool.ExecuteInWorkerPool({
+        poolName: POOL_NAME,
         input: createInput()
       });
 
@@ -143,6 +149,7 @@ describe('WorkerPool', () => {
       mockRun.mockRejectedValue(abortErr);
 
       const err = await WorkerPool.ExecuteInWorkerPool({
+        poolName: POOL_NAME,
         input: createInput({ executionTimeout: 100 }),
         pluginName: 'javascript-wasm'
       }).catch((e) => e);
@@ -159,6 +166,7 @@ describe('WorkerPool', () => {
 
       await expect(
         WorkerPool.ExecuteInWorkerPool({
+          poolName: POOL_NAME,
           input: createInput()
         })
       ).rejects.toThrow('something else');
@@ -168,7 +176,7 @@ describe('WorkerPool', () => {
       const closeSpy = jest.spyOn(PoolVariableServer.prototype, 'close');
 
       mockRun.mockResolvedValue('{}');
-      await WorkerPool.ExecuteInWorkerPool({ input: createInput() });
+      await WorkerPool.ExecuteInWorkerPool({ poolName: POOL_NAME, input: createInput() });
       expect(closeSpy).toHaveBeenCalled();
       closeSpy.mockRestore();
     });
@@ -177,7 +185,7 @@ describe('WorkerPool', () => {
       const closeSpy = jest.spyOn(PoolVariableServer.prototype, 'close');
       mockRun.mockRejectedValue(new Error('worker failed'));
 
-      await expect(WorkerPool.ExecuteInWorkerPool({ input: createInput() })).rejects.toThrow('worker failed');
+      await expect(WorkerPool.ExecuteInWorkerPool({ poolName: POOL_NAME, input: createInput() })).rejects.toThrow('worker failed');
       expect(closeSpy).toHaveBeenCalled();
       closeSpy.mockRestore();
     });
@@ -186,6 +194,7 @@ describe('WorkerPool', () => {
       mockRun.mockResolvedValue('{}');
 
       await WorkerPool.ExecuteInWorkerPool({
+        poolName: POOL_NAME,
         input: createInput({
           code: 'return x;',
           executionTimeout: 3000,
@@ -209,7 +218,7 @@ describe('WorkerPool', () => {
       mockDestroy.mockResolvedValue(undefined);
       // No active tasks - shutdown should resolve when getTasksCount becomes 0
       // The interval checks every 1s; after destroy(), active tasks drain. We have 0.
-      const shutdownPromise = WorkerPool.shutdown();
+      const shutdownPromise = WorkerPool.shutdown(POOL_NAME);
       // Give the interval a chance to run
       await new Promise((r) => setTimeout(r, 1100));
       await shutdownPromise;

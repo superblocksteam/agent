@@ -25,26 +25,12 @@ interface JavascriptWasmPluginExecutionProps
 export default class JavascriptWasmPlugin extends LanguagePlugin {
   pluginName = 'JavaScriptWASM';
 
-  private parseExecutionTimeoutMs(): number {
-    // Accept numeric strings that may include separators (e.g. "1_200_000").
-    const raw = String(this.pluginConfiguration.javascriptExecutionTimeoutMs ?? '').replaceAll('_', '');
-    const parsed = Number(raw);
-
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-
-    // Fall back to the same timeout used by the plugin loader default
-    // (javascriptExecutionTimeoutMs = "1_200_000"), when config is missing/invalid.
-    return 1_200_000;
-  }
-
   async init(): Promise<void> {
-    WorkerPool.configure({ filename: bootstrapPath });
+    WorkerPool.configure({ name: this.pluginName, filename: bootstrapPath });
   }
 
   async shutdown(): Promise<void> {
-    await WorkerPool.shutdown();
+    await WorkerPool.shutdown(this.pluginName);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,6 +47,7 @@ export default class JavascriptWasmPlugin extends LanguagePlugin {
       }
 
       return await WorkerPool.ExecuteInWorkerPool({
+        poolName: this.pluginName,
         input: {
           context: context,
           code: actionConfiguration.body,

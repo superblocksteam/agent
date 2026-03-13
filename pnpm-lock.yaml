@@ -1855,6 +1855,9 @@ importers:
       deasync:
         specifier: 0.1.30
         version: 0.1.30
+      dotenv:
+        specifier: 'catalog:'
+        version: 16.4.5
       esprima:
         specifier: 4.0.1
         version: 4.0.1
@@ -14323,6 +14326,7 @@ snapshots:
       bcrypt: 5.1.1
       date-fns: 3.6.0
       deasync: 0.1.30
+      dotenv: 16.4.5
       esprima: 4.0.1
       jmespath: 0.16.0
       jsonwebtoken: 9.0.2
@@ -14357,6 +14361,7 @@ snapshots:
       bcrypt: 5.1.1
       date-fns: 3.6.0
       deasync: 0.1.30
+      dotenv: 16.4.5
       esprima: 4.0.1
       jmespath: 0.16.0
       jsonwebtoken: 9.0.2

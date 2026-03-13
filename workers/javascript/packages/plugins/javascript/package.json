@@ -34,6 +34,7 @@
     "date-fns": "3.6.0",
     "deasync": "0.1.30",
     "esprima": "4.0.1",
+    "dotenv": "catalog:",
     "jmespath": "0.16.0",
     "jsonwebtoken": "9.0.2",
     "lodash": "4.17.21",

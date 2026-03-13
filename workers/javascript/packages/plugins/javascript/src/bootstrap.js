@@ -5,6 +5,8 @@ const {
   buildVariables,
   decodeBytestringsExecutionContext,
   ExecutionOutput,
+  getTreePathToDiskPath,
+  PoolVariableClient,
   VariableClientImpl
 } = require('@superblocks/shared');
 const deasync = require('deasync');
@@ -268,27 +270,29 @@ function serialize(buffer, mode) {
   return buffer.toString('utf8');
 }
 
-function createFunctionForPreparingGlobalObjectForFiles(kvStore, filePaths) {
+function createFunctionForPreparingGlobalObjectForFiles(fileClient, filePaths) {
   return (globalObject) => {
     Object.entries(filePaths).forEach(([treePath, remotePath]) => {
       const readContentsAsync = async (mode) => {
-        if (!kvStore || typeof kvStore.fetchFile !== 'function') {
-           throw new Error('File fetching not available');
+        if (!fileClient || typeof fileClient.fetchFileCallback !== 'function') {
+          throw new Error('File fetching not available');
         }
 
-        const contents = await kvStore.fetchFile(remotePath);
+        const contents = await new Promise((resolve, reject) => {
+          fileClient.fetchFileCallback(remotePath, (err, result) => (err ? reject(err) : resolve(result)));
+        });
         return serialize(contents, mode);
       };
       // hide the implementation of the function
       readContentsAsync.toString = () => 'function readContentsAsync() { [native code] }';
 
       const readContents = (mode) => {
-        if (!kvStore || typeof kvStore.fetchFile !== 'function') {
+        if (!fileClient || typeof fileClient.fetchFileCallback !== 'function') {
           throw new Error('File fetching not available');
         }
 
         // Use the callback-based version for better deasync compatibility
-        const contents = deasync(kvStore.fetchFileCallback.bind(kvStore))(remotePath);
+        const contents = deasync(fileClient.fetchFileCallback.bind(fileClient))(remotePath);
         return serialize(contents, mode);
       };
       // hide the implementation of the function
@@ -324,11 +328,12 @@ const sharedCode = `
 `;
 
 module.exports.executeCode = async (workerData) => {
-  const { context, code, filePaths, inheritedEnv, requireRoot } = workerData;
+  const { context, code, files, inheritedEnv, requireRoot, port } = workerData;
 
   // Add 3 lines for the newline, module export declaration and the function call to create file objects
   const codeLineNumberOffset = sharedCode.split('\n').length + 3;
   const ret = new ExecutionOutput();
+  const filePaths = getTreePathToDiskPath(context.globals, files);
   let variableClient;
   let hasSourceMap = false;
   let sourceMapCtx = null;
@@ -341,7 +346,7 @@ module.exports.executeCode = async (workerData) => {
     };
 
     if (context.variables && typeof context.variables === 'object') {
-      variableClient = new VariableClientImpl(context.kvStore);
+      variableClient = port ? new PoolVariableClient(port) : new VariableClientImpl(context.kvStore);
       const builtVariables = await buildVariables(context.variables, variableClient);
       for (const [k, v] of Object.entries(builtVariables)) {
         execGlobalContext[k] = v;
@@ -352,7 +357,7 @@ module.exports.executeCode = async (workerData) => {
 
     decodeBytestringsExecutionContext(context, true);
 
-    const prepareGlobalObjectForFiles = createFunctionForPreparingGlobalObjectForFiles(context.kvStore, filePaths);
+    const prepareGlobalObjectForFiles = createFunctionForPreparingGlobalObjectForFiles(variableClient, filePaths);
 
     // Build environment for user script
     const userProcessEnv = {};
@@ -423,7 +428,12 @@ module.exports = async function() {
       stack = rewriteStackWithSourceMap(stack, sourceMapCtx.virtualFilename, sourceMapCtx.lookup);
     }
     ret.error = cleanStack(stack, codeLineNumberOffset, hasSourceMap) ?? defaultErrMsg;
+  } finally {
+    if (variableClient && port && typeof variableClient.close === 'function') {
+      variableClient.close();
+    }
   }
 
-  return ret;
+  // When invoked via WorkerPool (port provided), return JSON string for cross-thread serialization.
+  return port ? JSON.stringify(ret) : ret;
 };

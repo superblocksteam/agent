@@ -13,7 +13,6 @@ import {
   ErrorCode,
   EvaluationPair,
   ExecutionOutput,
-  getTreePathToDiskPath,
   IntegrationError,
   IntegrationCallDiagnostic,
   LanguageActionConfiguration,
@@ -170,7 +169,6 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
     };
 
     const requireRoot = buildRequireRoot();
-    const filePaths = getTreePathToDiskPath(context.globals ?? {}, files ?? []);
 
     const runPromise = executeCode({
       context: {
@@ -180,7 +178,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
         variables: context.variables ?? {}
       },
       code,
-      filePaths,
+      files,
       inheritedEnv: [],
       requireRoot
     });

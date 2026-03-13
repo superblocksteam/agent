@@ -15,7 +15,7 @@ describe('JavascriptSdkApiPlugin', () => {
     jest.clearAllMocks();
   });
 
-  it('passes computed filePaths from globals and files', async () => {
+  it('passes files directly to executeCode', async () => {
     const output = new ExecutionOutput();
     output.output = { ok: true };
     (executeCode as jest.Mock).mockResolvedValue(output);
@@ -56,8 +56,11 @@ describe('JavascriptSdkApiPlugin', () => {
 
     expect(executeCode).toHaveBeenCalledTimes(1);
     const call = (executeCode as jest.Mock).mock.calls[0][0];
-    expect(call.filePaths).toEqual({
-      'SampleFiles.files.0': '/tmp/upload-1'
-    });
+    expect(call.files).toEqual([
+      {
+        originalname: 'upload-1',
+        path: '/tmp/upload-1'
+      }
+    ]);
   });
 });

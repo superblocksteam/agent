@@ -9,20 +9,22 @@ import type { MessagePort } from 'worker_threads';
 /**
  * Buffer time (ms) added to the hard timeout (worker termination) beyond the soft timeout.
  *
- * The soft timeout (timeLimitMs in the sandbox) is a best-effort limit that handles most cases
- * cheaply by cleanly aborting execution. The hard timeout (AbortSignal to Piscina) terminates
- * the worker process, which is expensive because:
- * - The worker must be recreated
- * - A new sandbox must be initialized
- * - The WASM module must be reloaded
+ * The soft timeout is the execution timeout that is passed to the task as part of the WorkerTaskInput.
+ * This is treated as a best-effort timeout that the task can try to enforce as best it can. The hard
+ * timeout (AbortSignal to Piscina) terminates the worker process.
  *
  * This buffer gives the soft timeout a chance to handle the timeout gracefully before we
- * resort to terminating the worker. The hard timeout is still there as a safety net for
- * cases where the soft timeout can't preempt (e.g., stuck in host functions or native code).
+ * resort to terminating the worker. The hard timeout is here as a safety net for
+ * cases where the task is unable to enforce the soft timeout (e.g. can't preempt the task due to execution
+ * being stuck in native code, etc.).
  */
 const HARD_TIMEOUT_BUFFER_MS = 1000;
 
 export interface WorkerPoolConfig {
+  /**
+   * Unique name for this pool. Each caller uses its own named pool
+   */
+  name: string;
   /**
    * Absolute path to the worker file. The file must export a default function that accepts
    * the task payload and returns a serializable value (or Promise thereof).
@@ -35,75 +37,111 @@ export interface WorkerPoolConfig {
   execArgv?: string[];
 }
 
-export interface WorkerPoolRunOptions {
+export interface WorkerPoolExecuteOptions {
+  /**
+   * Name of the pool to use. Must match a name passed to configure().
+   */
+  poolName: string;
+  /**
+   * The task input.
+   */
+  input: WorkerTaskInput;
+  /**
+   * The name of the plugin that is executing the task.
+   */
+  pluginName?: string;
+  /**
+   * Options for the worker pool run.
+   */
+  options?: {
+    /**
+     * Override the exported function name. Can be used when the worker file exports multiple handlers
+     * (see Piscina "Multiple Workers in One File"). If omitted, uses the default export.
+     */
+    name?: string;
+  };
+}
+
+interface PoolEntry {
+  pool: Piscina;
+  activeTaskCount: number;
+  draining: boolean;
+}
+
+interface WorkerPoolRunOptions {
   signal: AbortSignal;
   /**
    * MessagePort to pass to the worker (used for IPC communication).
    */
   port: MessagePort;
   /**
-   * Override the worker file for this task. If omitted, uses the filename from configure().
-   */
-  filename?: string;
-  /**
-   * Override the exported function name. Can be used when the worker file exports multiple handlers
-   * (see Piscina "Multiple Workers in One File"). If omitted, uses the default export.
+   * Overrides the exported function name allowing the pool to
+   * execute the specified function instead of the default export.
    */
   name?: string;
 }
 
-export interface WorkerPoolExecuteOptions {
-  input: WorkerTaskInput;
-  options?: WorkerPoolRunOptions;
-  pluginName?: string;
-}
-
 export class WorkerPool {
-  private static _instance: WorkerPool;
-  private pool: Piscina;
-  private activeTaskCount: number;
+  private static _pools: Map<string, PoolEntry> = new Map();
 
-  private constructor(config: WorkerPoolConfig) {
-    const isTypeScript = config.filename.endsWith('.ts');
-
-    this.pool = new Piscina({
-      filename: config.filename,
-      // When worker is TypeScript, use @swc-node/register; allow config override
-      execArgv: config.execArgv ?? (isTypeScript ? ['--require', '@swc-node/register'] : undefined)
-    });
-    this.activeTaskCount = 0;
+  private static getOrCreatePool(name: string): PoolEntry {
+    const entry = this._pools.get(name);
+    if (!entry) {
+      throw new Error(`Unknown WorkerPool: '${name}'. WorkerPool with name '${name}' not configured.`);
+    }
+    return entry;
   }
 
   /**
-   * Initialize the pool. Must be called before run(). Call from the consumer that owns
-   * the worker file (e.g. JavascriptWasmPlugin passes its bootstrap path).
+   * Initialize a new named pool
    */
   public static configure(config: WorkerPoolConfig): void {
-    this._instance = new this(config);
-  }
+    const isTypeScript = config.filename.endsWith('.ts');
 
-  // shutdown waits for active tasks to finish
-  // active tasks include those being executed and those in thread pool queue
-  // k8s will kill this process after grace period
-  public static async shutdown(): Promise<void> {
-    return new Promise((resolve) => {
-      // SUPERBLOCKS_AGENT_EXECUTION_JS_TIMEOUT_MS set in .env so this will resolve eventually
-      // otherwise it will be killed when k8s pods is killed after grace period
-      const waitForActiveTaskToFinish = setInterval(function () {
-        if (WorkerPool.getTasksCount() == 0) {
-          clearInterval(waitForActiveTaskToFinish);
-          resolve();
-        }
-      }, 1000);
-      void this._instance.pool.destroy();
+    const pool = new Piscina({
+      filename: config.filename,
+      execArgv: config.execArgv ?? (isTypeScript ? ['--require', '@swc-node/register'] : undefined)
     });
+
+    this._pools.set(config.name, { pool, activeTaskCount: 0, draining: false });
   }
 
+  /**
+   * Shut down a pool (or all pools if no name given). Waits for active tasks to finish.
+   */
+  public static async shutdown(poolName?: string): Promise<void> {
+    const names = poolName ? [poolName] : [...this._pools.keys()];
+
+    for (const name of names) {
+      const entry = this._pools.get(name);
+      if (!entry) {
+        continue;
+      }
+
+      // Stop accepting new work immediately (new run() calls will reject)
+      entry.draining = true;
+
+      await new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (entry.activeTaskCount === 0) {
+            clearInterval(interval);
+            void entry.pool.destroy();
+            this._pools.delete(name);
+            resolve();
+          }
+        }, 1000);
+      });
+    }
+  }
+
+  /**
+   * Execute a task in the pool
+   */
   public static async ExecuteInWorkerPool(executeOptions: WorkerPoolExecuteOptions): Promise<ExecutionOutput> {
     const abortController = new AbortController();
     const { signal } = abortController;
 
-    const { input } = executeOptions;
+    const { input, poolName } = executeOptions;
     const softTimeout = input.executionTimeout;
     const hardTimeout = softTimeout + HARD_TIMEOUT_BUFFER_MS;
 
@@ -114,27 +152,15 @@ export class WorkerPool {
     const variableServer = new PoolVariableServer(input.context.kvStore!);
 
     try {
-      const outputJSON = await WorkerPool.run(
-        {
-          context: omit(input.context, 'kvStore'),
-          code: input.code,
-          executionTimeout: input.executionTimeout,
-          files: input.files,
-          useSandboxFileFetcher: Boolean(
-            (input.context.kvStore as unknown as { fetchFileCallback?: unknown } | undefined)?.fetchFileCallback
-          )
-        },
-        {
-          filename: executeOptions.options?.filename ?? undefined,
-          name: executeOptions.options?.name ?? undefined,
-          signal,
-          port: variableServer.clientPort()
-        }
-      );
+      const outputJSON = await WorkerPool.run(poolName, input, {
+        name: executeOptions.options?.name ?? undefined,
+        signal,
+        port: variableServer.clientPort()
+      });
       return ExecutionOutput.fromJSONString(outputJSON);
     } catch (err) {
       // Annotate the AbortError, which is triggered by the hard timeout (worker termination).
-      // This only fires if the soft timeout (inside the sandbox) failed to preempt execution.
+      // This fires if the task did not enforce the soft timeout.
       if ((err as Error).name === 'AbortError') {
         throw new IntegrationError(`[AbortError] Timed out after ${softTimeout}ms`, ErrorCode.INTEGRATION_QUERY_TIMEOUT, {
           pluginName: executeOptions.pluginName ?? undefined
@@ -142,49 +168,39 @@ export class WorkerPool {
       }
       throw err;
     } finally {
-      // Always attempt to clear timeout once the execution has completed.
       clearTimeout(timeoutWatcher);
       variableServer.close();
     }
   }
 
-  /**
-   * Execute a task in the pool. The worker receives WorkerInput (task payload + port).
-   *
-   * @param input - Task payload (context, code, etc.). The worker's default export receives
-   *   WorkerInput = { ...input, port }.
-   * @param options - signal, port (required), optional filename/name overrides.
-   */
-  private static async run(input: WorkerTaskInput, options: WorkerPoolRunOptions): Promise<string> {
+  private static async run(poolName: string, input: WorkerTaskInput, options: WorkerPoolRunOptions): Promise<string> {
     const { signal, port } = options;
-    const workerInput: WorkerInput = { ...input, port };
-    this._instance.activeTaskCount += 1;
+    const entry = this.getOrCreatePool(poolName);
+    if (entry.draining) {
+      throw new IntegrationError('WorkerPool is shutting down', ErrorCode.UNSPECIFIED);
+    }
+
+    const workerInput: WorkerInput = {
+      ...input,
+      context: omit(input.context, 'kvStore'),
+      useSandboxFileFetcher: Boolean((input.context.kvStore as unknown as { fetchFileCallback?: unknown } | undefined)?.fetchFileCallback),
+      port
+    };
+
+    entry.activeTaskCount += 1;
 
     try {
-      return await this.getPool().run(workerInput, {
-        filename: options.filename ?? undefined,
+      return await entry.pool.run(workerInput, {
         name: options.name ?? undefined,
         signal,
         transferList: [port]
       });
     } finally {
-      this._instance.activeTaskCount -= 1;
+      entry.activeTaskCount -= 1;
     }
   }
 
-  private static getPool(): Piscina {
-    if (!this._instance) {
-      throw Error('not initialized');
-    }
-
-    return this._instance.pool;
-  }
-
-  private static getTasksCount(): number {
-    if (!this._instance) {
-      throw Error('not initialized');
-    }
-
-    return this._instance.activeTaskCount;
+  static getTasksCount(): number {
+    return Array.from(this._pools.values()).reduce((sum, e) => sum + e.activeTaskCount, 0);
   }
 }

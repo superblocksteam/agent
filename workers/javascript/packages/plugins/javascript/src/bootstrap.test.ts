@@ -33,7 +33,7 @@ describe('bootstrap', () => {
 
         return [...result, 'test'];
             `;
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = ['AWS_DEFAULT_REGION', 'AWS_TOKEN_FILE', 'AWS_REGION'];
 
       const existingEnv = process.env;
@@ -45,7 +45,7 @@ describe('bootstrap', () => {
 
       const expectedOutput = ['AWS_DEFAULT_REGION', 'AWS_REGION', '/tmp/test_data/TestFunc', 'test'];
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       process.env = existingEnv;
 
@@ -76,12 +76,12 @@ describe('bootstrap', () => {
         globalResult = path.join('/tmp', 'test_data', name);
         return _.trim(globalResult);
             `;
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = [];
 
       const expectedOutput = '/tmp/test_data/TestFunc';
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.output).toEqual(expectedOutput);
@@ -164,14 +164,42 @@ describe('bootstrap', () => {
 
         return true;
             `;
-      // Pre-computed map of treePath -> remotePath (computed by task-manager in production)
-      const filePaths: Record<string, string> = {
-        'SampleFiles.files.0': '/tmp/00000000-0000-0000-0000-00000000000a',
-        'ExtraFiles.files.0': '/tmp/00000000-0000-0000-0000-000000000002'
+      // context.globals must include the file picker structure for getTreePathToDiskPath to find paths
+      context.globals = {
+        SampleFiles: {
+          files: [
+            {
+              $superblocksId: 'sb-id-001',
+              encoding: 'text',
+              extension: 'png',
+              name: 'SuperBlocks Image.png',
+              previewUrl: 'blob:https://website.hook/preview/00000000-0000-0000-0000-00000000000a',
+              size: 256,
+              type: 'image/png'
+            }
+          ]
+        },
+        ExtraFiles: {
+          files: [
+            {
+              $superblocksId: 'sb-id-003',
+              encoding: 'text',
+              extension: 'png',
+              name: 'SuperBlocks Image (2).png',
+              previewUrl: 'blob:https://website.hook/preview/00000000-0000-0000-0000-000000000002',
+              size: 512,
+              type: 'image/png'
+            }
+          ]
+        }
       };
+      const files: Array<{ originalname: string; path: string }> = [
+        { originalname: 'sb-id-001', path: '/tmp/00000000-0000-0000-0000-00000000000a' },
+        { originalname: 'sb-id-003', path: '/tmp/00000000-0000-0000-0000-000000000002' }
+      ];
       const inheritedEnv: string[] = [];
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.error).not.toBeDefined();
@@ -196,10 +224,10 @@ describe('bootstrap', () => {
 
         return [...result, 'test'];
             `;
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = [];
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.log.length).toEqual(0);
@@ -237,10 +265,10 @@ describe('bootstrap', () => {
         '// --- end bundle ---'
       ].join('\n');
 
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = [];
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.output).toEqual({});
@@ -278,10 +306,10 @@ describe('bootstrap', () => {
         '// --- end bundle ---'
       ].join('\n');
 
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = [];
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.error).toContain('apis/get-users.ts');
@@ -316,14 +344,14 @@ describe('bootstrap', () => {
 
         return [...result, 'test'];
             `;
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
 
       const expectedErr = `Error on line 4:
         console.log("Starting script...";
                                         ^
 SyntaxError: Unexpected token ';'`;
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths });
+      const result: ExecutionOutput = await executeCode({ context, code, files });
 
       expect(result).toBeDefined();
       expect(result.log.length).toEqual(0);
@@ -356,13 +384,13 @@ SyntaxError: Unexpected token ';'`;
 
         return [...result, 'test'];
             `;
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = [];
 
       const expectedErr = `Error on line 6:
 ReferenceError: userName is not defined`;
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.output).toEqual({});
@@ -383,12 +411,12 @@ ReferenceError: userName is not defined`;
       context.kvStore = mockStore as unknown as KVStore;
 
       const code = `throw 'string instead of error';`;
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = [];
 
       const expectedErr = 'string instead of error';
 
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.output).toEqual({});
@@ -409,13 +437,13 @@ ReferenceError: userName is not defined`;
         }
       };
       context.kvStore = mockStore as unknown as KVStore;
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = [];
 
       let code = `var nodeProcess = require('process');
         return Object.keys(nodeProcess.env);
             `;
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.output).toEqual({});
@@ -425,7 +453,7 @@ ReferenceError: userName is not defined`;
         console.log(nodeProcess.env);
         return Object.keys(nodeProcess.env);
             `;
-      const resultNode: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const resultNode: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(resultNode).toBeDefined();
       expect(resultNode.output).toEqual({});
@@ -444,13 +472,13 @@ ReferenceError: userName is not defined`;
         }
       };
       context.kvStore = mockStore as unknown as KVStore;
-      const filePaths: Record<string, string> = {};
+      const files: Array<{ originalname: string; path: string }> = [];
       const inheritedEnv: string[] = [];
 
       let code = `var childProc = require('child_process');
         console.log(childProc.execSync('env').toString());
             `;
-      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(result).toBeDefined();
       expect(result.output).toEqual({});
@@ -459,7 +487,7 @@ ReferenceError: userName is not defined`;
       code = `var childProc = require('node:child_process');
         console.log(childProc.execSync('env').toString());
             `;
-      const resultNode: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+      const resultNode: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
       expect(resultNode).toBeDefined();
       expect(resultNode.output).toEqual({});
@@ -542,13 +570,13 @@ ReferenceError: userName is not defined`;
           }
         };
         context.kvStore = mockStore as unknown as KVStore;
-        const filePaths: Record<string, string> = {};
+        const files: Array<{ originalname: string; path: string }> = [];
         const inheritedEnv: string[] = [];
 
         const code = `const childProc = ${importExpr};
         console.log(childProc.execSync('echo $HOME').toString());
             `;
-        const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+        const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
         expect(result).toBeDefined();
         expect(result.output).toEqual({});
@@ -591,10 +619,10 @@ ReferenceError: userName is not defined`;
         context.kvStore = mockStore as unknown as KVStore;
 
         const code = `return process.${restrictedProperty};`;
-        const filePaths: Record<string, string> = {};
+        const files: Array<{ originalname: string; path: string }> = [];
         const inheritedEnv: string[] = [];
 
-        const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+        const result: ExecutionOutput = await executeCode({ context, code, files, inheritedEnv });
 
         expect(result).toBeDefined();
         expect(result.output).not.toBeDefined();

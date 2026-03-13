@@ -76,6 +76,7 @@ export type WorkerTaskInput = {
   context: ExecutionContext;
   code: string;
   files?: RequestFile[];
+  inheritedEnv?: Array<string>;
   executionTimeout: number;
   useSandboxFileFetcher?: boolean;
 };

@@ -48,6 +48,20 @@ export abstract class LanguagePlugin extends BasePlugin {
     return ['body'];
   }
 
+  protected parseExecutionTimeoutMs(): number {
+    // Accept numeric strings that may include separators (e.g. "1_200_000").
+    const raw = String(this.pluginConfiguration.javascriptExecutionTimeoutMs ?? '').replaceAll('_', '');
+    const parsed = Number(raw);
+
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+
+    // Fall back to the same timeout used by the plugin loader default
+    // (javascriptExecutionTimeoutMs = "1_200_000"), when config is missing/invalid.
+    return 1_200_000;
+  }
+
   async metadata(datasourceConfiguration: DatasourceConfiguration): Promise<DatasourceMetadataDto> {
     return {};
   }
