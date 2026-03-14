@@ -720,6 +720,7 @@ func main() {
 		redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
 		redis.WithAgentKey(viper.GetString("superblocks.key")),
 		redis.WithDrainCompleteCh(drainCompleteCh),
+		redis.WithSandboxReady(func() bool { return sandboxPlugin.ConnectionReady() }),
 	))
 
 	logger.Info("redis transport configured",

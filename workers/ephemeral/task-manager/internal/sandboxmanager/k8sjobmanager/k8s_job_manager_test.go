@@ -126,7 +126,7 @@ func TestBuildJobSpec(t *testing.T) {
 			ephemeral: true,
 		},
 		{
-			name:      "non-ephemeral omits do-not-disrupt annotation",
+			name:      "non-ephemeral includes do-not-disrupt annotation",
 			language:  "javascript",
 			ephemeral: false,
 		},
@@ -152,11 +152,7 @@ func TestBuildJobSpec(t *testing.T) {
 			assert.Equal(t, "sandbox-test-123", job.Name)
 			assert.Equal(t, "test-ns", job.Namespace)
 
-			if test.ephemeral {
-				assert.Equal(t, "true", job.Spec.Template.ObjectMeta.Annotations["karpenter.sh/do-not-disrupt"])
-			} else {
-				assert.Empty(t, job.Spec.Template.ObjectMeta.Annotations)
-			}
+			assert.Equal(t, "true", job.Spec.Template.ObjectMeta.Annotations["karpenter.sh/do-not-disrupt"], "do-not-disrupt is always set on sandbox pods")
 
 			container := job.Spec.Template.Spec.Containers[0]
 

@@ -351,6 +351,17 @@ func (p *SandboxPlugin) ConnectionState() connectivity.State {
 	return p.conn.GetState()
 }
 
+// ConnectionReady returns true when the gRPC connection can be used for work.
+// We accept Idle (pre-first-RPC) and Ready; we reject TransientFailure and Shutdown
+// so the transport does not claim work when the sandbox is dead or unreachable.
+func (p *SandboxPlugin) ConnectionReady() bool {
+	if p.conn == nil {
+		return false
+	}
+	s := p.conn.GetState()
+	return s == connectivity.Ready || s == connectivity.Idle
+}
+
 func (p *SandboxPlugin) NotifyWhenReady(notifyCh chan<- bool) {
 	p.mu.Lock()
 	p.sandboxReadyNotifyCh = append(p.sandboxReadyNotifyCh, notifyCh)

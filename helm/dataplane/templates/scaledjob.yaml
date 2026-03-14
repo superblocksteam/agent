@@ -14,7 +14,7 @@
 {{- range $k, $v := .Values.sandbox_workers.fleets }}
 {{- $language := $v.language | required "language is required (python or javascript)" }}
 {{- $sandboxConfig := index $.Values.sandbox_workers.sandbox $language }}
-{{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
+{{- $podAnnotations := merge (deepCopy ($v.podAnnotations | default $.Values.podAnnotations | default dict)) (dict "karpenter.sh/do-not-disrupt" "true") }}
 {{- $tmShutdown := merge (index $v "shutdown" | default dict) (index $.Values.sandbox_workers.taskManager "shutdown" | default dict) }}
 ---
 apiVersion: keda.sh/v1alpha1

@@ -25,7 +25,16 @@ type Options struct {
 	FileContextProvider redisstore.FileContextProvider
 	Ephemeral           bool
 	AgentKey            string // Agent key for file server authentication
-	DrainCompleteCh     chan struct{}
+
+	// DrainCompleteCh is closed when in-flight requests have finished.
+	// Enables graceful shutdown: SandboxPlugin waits for this before tearing down.
+	// When nil, nothing is signaled (e.g. tests).
+	DrainCompleteCh chan struct{}
+
+	// SandboxReady, when non-nil, is checked before claiming work from Redis.
+	// When it returns false, the transport does not XReadGroup so work stays on the stream
+	// for other task-managers or until the sandbox is ready again.
+	SandboxReady func() bool
 }
 
 // Option is a function that modifies Options
@@ -120,6 +129,14 @@ func WithAgentKey(value string) Option {
 func WithDrainCompleteCh(ch chan struct{}) Option {
 	return func(o *Options) {
 		o.DrainCompleteCh = ch
+	}
+}
+
+// WithSandboxReady sets the predicate used to gate claiming work from Redis.
+// When non-nil and it returns false, the transport will not claim new messages.
+func WithSandboxReady(fn func() bool) Option {
+	return func(o *Options) {
+		o.SandboxReady = fn
 	}
 }
 

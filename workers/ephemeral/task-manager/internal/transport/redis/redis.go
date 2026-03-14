@@ -71,6 +71,9 @@ type redisTransport struct {
 	// drainCompleteCh is closed after in-flight requests finish.
 	drainCompleteCh chan struct{}
 
+	// When non-nil, pollOnce does not claim work from Redis when this returns false (sandbox dead/unreachable).
+	sandboxReady func() bool
+
 	run.ForwardCompatibility
 }
 
@@ -124,6 +127,7 @@ func NewRedisTransport(options *Options) *redisTransport {
 
 		ephemeral:       options.Ephemeral,
 		drainCompleteCh: options.DrainCompleteCh,
+		sandboxReady:    options.SandboxReady,
 	}
 }
 
@@ -238,6 +242,14 @@ func (rt *redisTransport) poll() error {
 // pollOnce reads messages from Redis and dispatches them for handling.
 // Returns (true, nil) if at least one message was handled.
 func (rt *redisTransport) pollOnce() (bool, error) {
+	if rt.sandboxReady != nil && !rt.sandboxReady() {
+		select {
+		case <-rt.context.Done():
+			return false, rt.context.Err()
+		case <-time.After(time.Second):
+		}
+		return false, nil
+	}
 	remaining := rt.executionPool.Load()
 	if remaining <= 0 {
 		for rt.executionPool.Load() <= 0 {

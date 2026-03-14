@@ -362,11 +362,8 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		"sandbox-id":   sandboxId,
 	}
 
-	var podAnnotations map[string]string
-	if m.ephemeral {
-		podAnnotations = map[string]string{
-			"karpenter.sh/do-not-disrupt": "true",
-		}
+	podAnnotations := map[string]string{
+		"karpenter.sh/do-not-disrupt": "true",
 	}
 
 	job := &batchv1.Job{
