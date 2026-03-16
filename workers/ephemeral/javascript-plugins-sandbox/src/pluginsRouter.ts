@@ -92,7 +92,9 @@ export class PluginsRouter {
     const originalLogger = plugin.logger;
 
     try {
-      plugin.attachLogger(plugin.logger.child({ ...observabilityTags }));
+      plugin.attachLogger(
+        this._logger.child({ pluginName, ...observabilityTags })
+      );
       return await plugin.setupAndExecute(pluginProps);
     } finally {
       plugin.attachLogger(originalLogger);
@@ -123,7 +125,9 @@ export class PluginsRouter {
     const originalLogger = plugin.logger;
 
     try {
-      plugin.attachLogger(plugin.logger.child({ ...observabilityTags }));
+      plugin.attachLogger(
+        this._logger.child({ pluginName, ...observabilityTags })
+      );
       await plugin.stream(
         {
           ...{ mutableOutput: new ExecutionOutput() },
