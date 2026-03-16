@@ -6621,6 +6621,14 @@
         "metadata": {
           "$ref": "#/definitions/v1TraceMetadata",
           "description": "Optional user-supplied metadata for this call (label, description)."
+        },
+        "inputWasTruncated": {
+          "type": "boolean",
+          "description": "True when the input field was truncated to fit within the byte limit."
+        },
+        "outputWasTruncated": {
+          "type": "boolean",
+          "description": "True when the output field was truncated to fit within the byte limit."
         }
       },
       "description": "Per-integration-call diagnostic record for SDK API execution.\nCaptured when include_diagnostics is set on the request."

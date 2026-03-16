@@ -187,6 +187,10 @@ export interface IntegrationCallDiagnostic {
     label?: string;
     description?: string;
   };
+  /** True when the input field was truncated to fit within the byte limit. */
+  inputWasTruncated?: boolean;
+  /** True when the output field was truncated to fit within the byte limit. */
+  outputWasTruncated?: boolean;
 }
 
 export class ExecutionOutput {

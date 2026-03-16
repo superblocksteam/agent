@@ -1964,6 +1964,9 @@ importers:
 
   workers/javascript/packages/plugins/javascript-sdk-api:
     dependencies:
+      '@mmkal/truncate-json':
+        specifier: ^1.6.0
+        version: 1.6.0
       '@superblocks/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -5360,6 +5363,10 @@ packages:
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
     hasBin: true
 
+  '@mmkal/truncate-json@1.6.0':
+    resolution: {integrity: sha512-/pnwlVp09F6hs4poFeqzmTAgN8nv5M0pAiDbr7/wtUgait+WS4yJdMGpQ3KtIRoGrkgaKsUWGk2hecg9X+ukeg==}
+    engines: {node: '>=14.18.0'}
+
   '@mole-inc/bin-wrapper@8.0.1':
     resolution: {integrity: sha512-sTGoeZnjI8N4KS+sW2AN95gDBErhAguvkw/tWdCjeM8bvxpz5lqrnd0vOJABA1A+Ic3zED7PYoLP/RANLgVotA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -8396,6 +8403,10 @@ packages:
     resolution: {integrity: sha512-pCcEwRi+TKpMlxAQObHDQ56KawURgyAf6jtIY046fJ5tIv3zDe/LEIubckAO8fj6JnAxLdmWkUfNyulQ2iKdEw==}
     engines: {node: '>=14.0.0'}
 
+  guess-json-indent@1.5.0:
+    resolution: {integrity: sha512-Lxk6NiGPsXgvv595qzeN9E75zwUiFssiooHGfVOMNzHUQQbZ9EhyvlGCpIxHqB7d0rnJ9oeDC5uzqfyILrNtpg==}
+    engines: {node: '>=14.18.0'}
+
   handlebars@4.7.7:
     resolution: {integrity: sha512-aAcXm5OAfE/8IXkcZvCepKU3VzW1/39Fb5ZuqMtgI/hT8X2YgoMvBY5dLhq/cpOvw7Lk1nK/UF71aLG/ZnVYRA==}
     engines: {node: '>=0.4.7'}
@@ -10372,6 +10383,14 @@ packages:
 
   streamx@2.23.0:
     resolution: {integrity: sha512-kn+e44esVfn2Fa/O0CPFcex27fjIL6MkVae0Mm6q+E6f0hWv578YCERbv+4m02cjxvDsPKLnmxral/rR6lBMAg==}
+
+  string-byte-length@1.6.0:
+    resolution: {integrity: sha512-h9KzyolUa+9q6yHPCGzvPOta0VpWqG0/x0o1on22PZL0t+8txWXl0JCkRG/Gvi58HnyDvT1YCzDH2bAOpEc++g==}
+    engines: {node: '>=14.18.0'}
+
+  string-byte-slice@1.6.0:
+    resolution: {integrity: sha512-CcfoSIJ1BowMW9d8bhfR/LbbwtpbK0VRaMcH6sUVa271GX7ONYPXOglWR7IAxzf9eCKXSHHRQPzCp+WXt+rsZg==}
+    engines: {node: '>=14.18.0'}
 
   string-length@4.0.2:
     resolution: {integrity: sha512-+l6rNN5fYHNhZZy41RXsYptCjA2Igmq4EG7kZAYFQI1E1VTXarr6ZPXBg6eq7Y6eK4FEhY6AJlyuFIb/v/S0VQ==}
@@ -13203,6 +13222,12 @@ snapshots:
       - encoding
       - supports-color
 
+  '@mmkal/truncate-json@1.6.0':
+    dependencies:
+      guess-json-indent: 1.5.0
+      string-byte-length: 1.6.0
+      string-byte-slice: 1.6.0
+
   '@mole-inc/bin-wrapper@8.0.1':
     dependencies:
       bin-check: 4.1.0
@@ -14271,6 +14296,7 @@ snapshots:
 
   '@superblocksteam/javascript-sdk-api@file:workers/javascript/packages/plugins/javascript-sdk-api(typescript@5.5.4)':
     dependencies:
+      '@mmkal/truncate-json': 1.6.0
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
       '@superblocksteam/sdk-api': 0.0.3-metadata.0
@@ -14287,6 +14313,7 @@ snapshots:
 
   '@superblocksteam/javascript-sdk-api@file:workers/javascript/packages/plugins/javascript-sdk-api(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)':
     dependencies:
+      '@mmkal/truncate-json': 1.6.0
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
       '@superblocksteam/sdk-api': 0.0.3-metadata.0
@@ -17425,6 +17452,8 @@ snapshots:
       - encoding
       - supports-color
 
+  guess-json-indent@1.5.0: {}
+
   handlebars@4.7.7:
     dependencies:
       minimist: 1.2.6
@@ -19627,6 +19656,10 @@ snapshots:
     transitivePeerDependencies:
       - bare-abort-controller
       - react-native-b4a
+
+  string-byte-length@1.6.0: {}
+
+  string-byte-slice@1.6.0: {}
 
   string-length@4.0.2:
     dependencies:

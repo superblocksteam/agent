@@ -112,6 +112,32 @@ func TestDiagnosticsFromOutputJSON(t *testing.T) {
 		assert.Equal(t, int64(50), result[0].DurationMs)
 		assert.Equal(t, "", result[0].Error)
 		assert.Equal(t, int32(0), result[0].Sequence)
+		assert.False(t, result[0].InputWasTruncated)
+		assert.False(t, result[0].OutputWasTruncated)
+	})
+
+	t.Run("parses truncation flags", func(t *testing.T) {
+		json := `{
+			"output":{},
+			"log":[],
+			"diagnostics":[{
+				"integrationId":"int-789",
+				"pluginId":"restapi",
+				"input":"{}",
+				"output":"{}",
+				"startMs":100,
+				"endMs":200,
+				"durationMs":100,
+				"error":"",
+				"sequence":0,
+				"inputWasTruncated":true,
+				"outputWasTruncated":false
+			}]
+		}`
+		result := DiagnosticsFromOutputJSON([]byte(json))
+		require.Len(t, result, 1)
+		assert.True(t, result[0].InputWasTruncated)
+		assert.False(t, result[0].OutputWasTruncated)
 	})
 
 	t.Run("parses multiple diagnostic entries with error", func(t *testing.T) {

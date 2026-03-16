@@ -20,6 +20,7 @@ import {
   PluginExecutionProps
 } from '@superblocks/shared';
 import { buildRequireRoot } from './buildRequireRoot';
+import { truncateJson } from './truncateJson';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { executeCode } = require('@superblocksteam/javascript/bootstrap');
 
@@ -27,30 +28,7 @@ const { executeCode } = require('@superblocksteam/javascript/bootstrap');
 const DIAGNOSTICS_MAX_BYTES = 10_240;
 
 /** Maximum number of diagnostic records per execution to prevent unbounded growth. */
-const DIAGNOSTICS_MAX_ENTRIES = 100;
-
-/**
- * Truncates a value's JSON representation to the specified byte limit.
- *
- * @param value - The value to serialize and truncate
- * @param maxBytes - Maximum byte length of the resulting string
- * @returns Truncated JSON string, or empty string for null/undefined
- */
-function truncateJson(value: unknown, maxBytes: number): string {
-  if (value == null) return '';
-  try {
-    const json = JSON.stringify(value);
-    if (Buffer.byteLength(json, 'utf8') <= maxBytes) return json;
-    // Encode to a buffer and slice at the byte boundary to avoid
-    // cutting in the middle of multi-byte characters.
-    const buf = Buffer.from(json, 'utf8');
-    return buf.subarray(0, maxBytes - 15).toString('utf8') + '...[truncated]';
-  } catch {
-    const str = String(value);
-    const buf = Buffer.from(str, 'utf8');
-    return buf.subarray(0, maxBytes).toString('utf8');
-  }
-}
+const DIAGNOSTICS_MAX_ENTRIES = 10_000;
 
 /**
  * Dynamically imports the ESM @superblocksteam/sdk-api package.
@@ -143,20 +121,42 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
             callError = (e as Error).message || String(e);
             throw e;
           } finally {
-            if (includeDiagnostics && diagnostics.length < DIAGNOSTICS_MAX_ENTRIES) {
-              const endMs = Date.now();
-              diagnostics.push({
-                integrationId: params.integrationId,
-                pluginId: params.pluginId,
-                input: truncateJson(params.actionConfiguration, DIAGNOSTICS_MAX_BYTES),
-                output: truncateJson(callOutput, DIAGNOSTICS_MAX_BYTES),
-                startMs,
-                endMs,
-                durationMs: endMs - startMs,
-                error: callError,
-                sequence: diagnostics.length,
-                metadata: params.metadata
-              });
+            if (includeDiagnostics) {
+              if (diagnostics.length >= DIAGNOSTICS_MAX_ENTRIES) {
+                this.logger.warn(
+                  `Diagnostics entry limit reached (${DIAGNOSTICS_MAX_ENTRIES}), dropping diagnostic for integration ${params.integrationId}`
+                );
+              } else {
+                const endMs = Date.now();
+                const input = truncateJson(params.actionConfiguration, DIAGNOSTICS_MAX_BYTES);
+                const output = truncateJson(callOutput, DIAGNOSTICS_MAX_BYTES);
+
+                if (input.truncated) {
+                  this.logger.info(
+                    `Diagnostic input truncated for integration ${params.integrationId}: originalBytes=${input.originalBytes}, limit=${DIAGNOSTICS_MAX_BYTES}`
+                  );
+                }
+                if (output.truncated) {
+                  this.logger.info(
+                    `Diagnostic output truncated for integration ${params.integrationId}: originalBytes=${output.originalBytes}, limit=${DIAGNOSTICS_MAX_BYTES}`
+                  );
+                }
+
+                diagnostics.push({
+                  integrationId: params.integrationId,
+                  pluginId: params.pluginId,
+                  input: input.json,
+                  output: output.json,
+                  startMs,
+                  endMs,
+                  durationMs: endMs - startMs,
+                  error: callError,
+                  sequence: diagnostics.length,
+                  metadata: params.metadata,
+                  inputWasTruncated: input.truncated,
+                  outputWasTruncated: output.truncated
+                });
+              }
             }
           }
         }

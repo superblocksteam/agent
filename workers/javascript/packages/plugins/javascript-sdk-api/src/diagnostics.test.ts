@@ -4,68 +4,133 @@
  * Validates the truncateJson helper and the diagnostic record serialization
  * format that the Go orchestrator parses via DiagnosticsFromOutputJSON.
  *
- * We avoid importing @superblocks/shared directly (it pulls in native modules
- * that aren't available in the Jest environment) and instead test the JSON
- * serialization contract between the worker and Go layers.
+ * We import truncateJson from its module (not from index.ts) so we avoid
+ * pulling in @superblocks/shared and other native deps in the Jest environment.
  */
-
-/**
- * Re-implementation of the plugin's truncateJson for isolated testing.
- * Must match the implementation in index.ts exactly.
- */
-function truncateJson(value: unknown, maxBytes: number): string {
-  if (value == null) return '';
-  try {
-    const json = JSON.stringify(value);
-    if (json.length <= maxBytes) return json;
-    return json.substring(0, maxBytes - 15) + '...[truncated]';
-  } catch {
-    return String(value).substring(0, maxBytes);
-  }
-}
+import { truncateJson } from './truncateJson';
 
 describe('truncateJson', () => {
   it('returns empty string for null', () => {
-    expect(truncateJson(null, 100)).toBe('');
+    const { json, truncated } = truncateJson(null, 100);
+    expect(json).toBe('');
+    expect(truncated).toBe(false);
   });
 
   it('returns empty string for undefined', () => {
-    expect(truncateJson(undefined, 100)).toBe('');
+    const { json, truncated } = truncateJson(undefined, 100);
+    expect(json).toBe('');
+    expect(truncated).toBe(false);
   });
 
   it('returns full JSON when within limit', () => {
-    expect(truncateJson({ key: 'value' }, 1000)).toBe('{"key":"value"}');
+    const { json, truncated } = truncateJson({ key: 'value' }, 1000);
+    expect(json).toBe('{"key":"value"}');
+    expect(truncated).toBe(false);
   });
 
-  it('truncates JSON exceeding the byte limit', () => {
-    const largeObj = { data: 'x'.repeat(200) };
-    const result = truncateJson(largeObj, 50);
-    expect(result.length).toBeLessThanOrEqual(50);
-    expect(result).toContain('...[truncated]');
+  it('returns valid truncated JSON when size exceeds limit', () => {
+    const largeObj = { a: 'one', b: 'two', c: 'three', d: 'x'.repeat(200) };
+    const { json, truncated, originalBytes } = truncateJson(largeObj, 50);
+    expect(truncated).toBe(true);
+    expect(originalBytes).toBeGreaterThan(50);
+    expect(() => JSON.parse(json)).not.toThrow();
+    expect(Buffer.byteLength(json, 'utf8')).toBeLessThanOrEqual(50);
   });
 
-  it('handles non-serializable values by falling back to String()', () => {
+  it('preserves leading properties when truncating objects', () => {
+    const obj = { first: 'kept', second: 'kept', third: 'x'.repeat(200) };
+    const { json } = truncateJson(obj, 40);
+    const parsed = JSON.parse(json);
+    expect(parsed.first).toBe('kept');
+  });
+
+  it('preserves leading items when truncating arrays', () => {
+    const arr = ['first', 'second', 'x'.repeat(200)];
+    const { json } = truncateJson(arr, 30);
+    const parsed = JSON.parse(json);
+    expect(parsed[0]).toBe('first');
+  });
+
+  it('handles non-serializable values by returning empty object JSON', () => {
     const circular: Record<string, unknown> = {};
     circular.self = circular;
-    const result = truncateJson(circular, 100);
-    expect(result).toBe('[object Object]');
+    const { json, truncated } = truncateJson(circular, 100);
+    expect(json).toBe('{}');
+    expect(truncated).toBe(true);
+    expect(() => JSON.parse(json)).not.toThrow();
   });
 
   it('preserves exact JSON for values at the limit', () => {
     // '{"a":"bc"}' is exactly 10 bytes
-    const result = truncateJson({ a: 'bc' }, 10);
-    expect(result).toBe('{"a":"bc"}');
+    const { json, truncated } = truncateJson({ a: 'bc' }, 10);
+    expect(json).toBe('{"a":"bc"}');
+    expect(truncated).toBe(false);
   });
 
-  it('truncates values just over the limit', () => {
-    // '{"a":"bcd"}' is 11 bytes, limit is 10
-    // substring(0, 10 - 15) = substring(0, -5) = "" so result is "...[truncated]"
-    const result = truncateJson({ a: 'bcd' }, 10);
-    expect(result).toContain('...[truncated]');
-    // With a reasonable limit, truncation stays near the limit
-    const result2 = truncateJson({ data: 'x'.repeat(100) }, 50);
-    expect(result2.length).toBeLessThanOrEqual(50);
-    expect(result2).toContain('...[truncated]');
+  it('reports originalBytes accurately', () => {
+    const obj = { payload: 'x'.repeat(500) };
+    const fullJson = JSON.stringify(obj);
+    const fullBytes = Buffer.byteLength(fullJson, 'utf8');
+
+    const { originalBytes, truncated } = truncateJson(obj, 100);
+    expect(truncated).toBe(true);
+    expect(originalBytes).toBe(fullBytes);
+  });
+
+  it('always returns valid JSON for any input', () => {
+    const inputs: unknown[] = [
+      42,
+      'hello',
+      true,
+      [1, 2, 3],
+      { nested: { deep: 'value' } },
+      { data: 'x'.repeat(10_000) },
+      ['a'.repeat(5_000), 'b'.repeat(5_000)],
+      { emoji: '\u{1F600}'.repeat(500) }
+    ];
+
+    for (const input of inputs) {
+      for (const limit of [10, 50, 100, 1_000, 100_000]) {
+        const { json } = truncateJson(input, limit);
+        if (json === '') continue;
+        expect(() => JSON.parse(json)).not.toThrow();
+      }
+    }
+  });
+
+  it('handles multi-byte characters without producing invalid JSON', () => {
+    const obj = { text: '\u{1F600}'.repeat(100) };
+    const { json } = truncateJson(obj, 50);
+    expect(() => JSON.parse(json)).not.toThrow();
+  });
+
+  it('works with deeply nested structures', () => {
+    const obj = {
+      level1: {
+        level2: {
+          level3: { a: 'short', b: 'x'.repeat(500) }
+        }
+      }
+    };
+    const { json, truncated } = truncateJson(obj, 80);
+    expect(truncated).toBe(true);
+    expect(() => JSON.parse(json)).not.toThrow();
+  });
+
+  it('enforces maxBytes when library returns oversized primitive (e.g. long string)', () => {
+    const longString = 'x'.repeat(25_000);
+    const { json, truncated, originalBytes } = truncateJson(longString, 100);
+    expect(truncated).toBe(true);
+    expect(originalBytes).toBeGreaterThan(100);
+    expect(Buffer.byteLength(json, 'utf8')).toBeLessThanOrEqual(100);
+    expect(() => JSON.parse(json)).not.toThrow();
+    // When the library cannot shrink a primitive it returns it unchanged; we then use
+    // a sentinel. When the library does truncate (e.g. string with "..."), we get that.
+    const parsed = JSON.parse(json);
+    const isSentinel = typeof parsed === 'object' && parsed.$truncated === true;
+    const isTruncatedString = typeof parsed === 'string' && parsed.length < 25_000;
+    expect(isSentinel || isTruncatedString).toBe(true);
+    if (isSentinel) expect(parsed.$originalBytes).toBe(originalBytes);
   });
 });
 
@@ -86,7 +151,9 @@ describe('diagnostics JSON serialization contract', () => {
         endMs: 1700000000050,
         durationMs: 50,
         error: '',
-        sequence: 0
+        sequence: 0,
+        inputWasTruncated: false,
+        outputWasTruncated: false
       },
       {
         integrationId: 'int-456',
@@ -97,7 +164,9 @@ describe('diagnostics JSON serialization contract', () => {
         endMs: 1700000000160,
         durationMs: 100,
         error: 'connection refused',
-        sequence: 1
+        sequence: 1,
+        inputWasTruncated: true,
+        outputWasTruncated: false
       }
     ];
 
@@ -123,10 +192,14 @@ describe('diagnostics JSON serialization contract', () => {
       endMs: 1700000000050,
       durationMs: 50,
       error: '',
-      sequence: 0
+      sequence: 0,
+      inputWasTruncated: false,
+      outputWasTruncated: false
     });
     expect(parsed.diagnostics[1].error).toBe('connection refused');
     expect(parsed.diagnostics[1].sequence).toBe(1);
+    expect(parsed.diagnostics[1].inputWasTruncated).toBe(true);
+    expect(parsed.diagnostics[1].outputWasTruncated).toBe(false);
   });
 
   it('omits diagnostics field when array is not set', () => {
@@ -140,8 +213,8 @@ describe('diagnostics JSON serialization contract', () => {
     expect(parsed.diagnostics).toBeUndefined();
   });
 
-  it('respects max entries limit (100)', () => {
-    const MAX_ENTRIES = 100;
+  it('respects max entries limit (10000)', () => {
+    const MAX_ENTRIES = 10_000;
     const diagnostics = Array.from({ length: MAX_ENTRIES + 10 }, (_, i) => ({
       integrationId: `int-${i}`,
       pluginId: 'postgres',
@@ -160,5 +233,48 @@ describe('diagnostics JSON serialization contract', () => {
     const parsed = JSON.parse(json);
     expect(parsed.diagnostics).toHaveLength(MAX_ENTRIES);
     expect(parsed.diagnostics[99].sequence).toBe(99);
+  });
+
+  it('truncated diagnostic fields remain valid JSON', () => {
+    const largeInput = { query: 'SELECT ' + 'x'.repeat(20_000) };
+    const largeOutput = { rows: Array.from({ length: 1000 }, (_, i) => ({ id: i })) };
+
+    const input = truncateJson(largeInput, 10_240);
+    const output = truncateJson(largeOutput, 10_240);
+
+    expect(input.truncated).toBe(true);
+    expect(output.truncated).toBe(true);
+    expect(() => JSON.parse(input.json)).not.toThrow();
+    expect(() => JSON.parse(output.json)).not.toThrow();
+
+    const diagnostic = {
+      integrationId: 'int-big',
+      pluginId: 'postgres',
+      input: input.json,
+      output: output.json,
+      startMs: 0,
+      endMs: 1,
+      durationMs: 1,
+      error: '',
+      sequence: 0,
+      inputWasTruncated: input.truncated,
+      outputWasTruncated: output.truncated
+    };
+
+    const json = JSON.stringify({ output: {}, log: [], diagnostics: [diagnostic] });
+    expect(() => JSON.parse(json)).not.toThrow();
+  });
+
+  it('truncated output preserves as much structure as possible', () => {
+    const largeOutput = {
+      rows: Array.from({ length: 100 }, (_, i) => ({ id: i, name: `user-${i}` }))
+    };
+    const { json, truncated } = truncateJson(largeOutput, 500);
+    expect(truncated).toBe(true);
+    const parsed = JSON.parse(json);
+    expect(parsed.rows).toBeDefined();
+    expect(parsed.rows.length).toBeGreaterThan(0);
+    expect(parsed.rows.length).toBeLessThan(100);
+    expect(parsed.rows[0]).toEqual({ id: 0, name: 'user-0' });
   });
 });

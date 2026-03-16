@@ -1043,6 +1043,10 @@ func (m *IntegrationDiagnostic) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for InputWasTruncated
+
+	// no validation rules for OutputWasTruncated
+
 	if len(errors) > 0 {
 		return IntegrationDiagnosticMultiError(errors)
 	}

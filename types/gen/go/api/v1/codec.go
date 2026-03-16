@@ -96,16 +96,18 @@ type diagnosticMetadataJSON struct {
 }
 
 type diagnosticJSON struct {
-	IntegrationId string                  `json:"integrationId"`
-	PluginId      string                  `json:"pluginId"`
-	Input         string                  `json:"input"`
-	Output        string                  `json:"output"`
-	StartMs       int64                   `json:"startMs"`
-	EndMs         int64                   `json:"endMs"`
-	DurationMs    int64                   `json:"durationMs"`
-	Error         string                  `json:"error"`
-	Sequence      int32                   `json:"sequence"`
-	Metadata      *diagnosticMetadataJSON `json:"metadata,omitempty"`
+	IntegrationId      string                  `json:"integrationId"`
+	PluginId           string                  `json:"pluginId"`
+	Input              string                  `json:"input"`
+	Output             string                  `json:"output"`
+	StartMs            int64                   `json:"startMs"`
+	EndMs              int64                   `json:"endMs"`
+	DurationMs         int64                   `json:"durationMs"`
+	Error              string                  `json:"error"`
+	Sequence           int32                   `json:"sequence"`
+	Metadata           *diagnosticMetadataJSON `json:"metadata,omitempty"`
+	InputWasTruncated  bool                    `json:"inputWasTruncated,omitempty"`
+	OutputWasTruncated bool                    `json:"outputWasTruncated,omitempty"`
 }
 
 // diagnosticsWrapper wraps just the diagnostics field from the worker JSON
@@ -124,15 +126,17 @@ func DiagnosticsFromOutputJSON(jsonBytes []byte) []*IntegrationDiagnostic {
 	result := make([]*IntegrationDiagnostic, 0, len(wrapper.Diagnostics))
 	for _, d := range wrapper.Diagnostics {
 		diag := &IntegrationDiagnostic{
-			IntegrationId:   d.IntegrationId,
-			PluginId:        d.PluginId,
-			InputTruncated:  d.Input,
-			OutputTruncated: d.Output,
-			StartMs:         d.StartMs,
-			EndMs:           d.EndMs,
-			DurationMs:      d.DurationMs,
-			Error:           d.Error,
-			Sequence:        d.Sequence,
+			IntegrationId:      d.IntegrationId,
+			PluginId:           d.PluginId,
+			InputTruncated:     d.Input,
+			OutputTruncated:    d.Output,
+			StartMs:            d.StartMs,
+			EndMs:              d.EndMs,
+			DurationMs:         d.DurationMs,
+			Error:              d.Error,
+			Sequence:           d.Sequence,
+			InputWasTruncated:  d.InputWasTruncated,
+			OutputWasTruncated: d.OutputWasTruncated,
 		}
 		if d.Metadata != nil {
 			diag.Metadata = &TraceMetadata{

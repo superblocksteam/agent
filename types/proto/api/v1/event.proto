@@ -188,6 +188,10 @@ message IntegrationDiagnostic {
   int32 sequence = 9;
   // Optional user-supplied metadata for this call (label, description).
   TraceMetadata metadata = 10;
+  // True when the input field was truncated to fit within the byte limit.
+  bool input_was_truncated = 11;
+  // True when the output field was truncated to fit within the byte limit.
+  bool output_was_truncated = 12;
 }
 
 // User-supplied metadata attached to an integration call for diagnostics.
