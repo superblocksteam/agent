@@ -259,6 +259,13 @@ func retrieveGetFileFunc(props *transportv1.Request_Data_Data_Props, headers map
 	}
 }
 
+func (p *javascriptPlugin) IsAvailable(ctx context.Context) plugin.PluginStatus {
+	return plugin.PluginStatus{
+		Available:        true,
+		DegradationState: plugin.DegradationState_NONE,
+	}
+}
+
 // Close implements plugin.Plugin
 func (p *javascriptPlugin) Close() {
 	// No-op - javascript plugin doesn't hold persistent resources

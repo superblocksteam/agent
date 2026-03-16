@@ -9,6 +9,7 @@ import (
 	"time"
 
 	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
+	"workers/ephemeral/task-manager/internal/plugin"
 	"workers/ephemeral/task-manager/internal/plugin_executor"
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 
@@ -71,8 +72,13 @@ type redisTransport struct {
 	// drainCompleteCh is closed after in-flight requests finish.
 	drainCompleteCh chan struct{}
 
-	// When non-nil, pollOnce does not claim work from Redis when this returns false (sandbox dead/unreachable).
-	sandboxReady func() bool
+	// Service degradation tracking, when in degraded mode the service
+	// will not claim any work from Redis
+	// After maxDegradedTime, the service will be shut down
+	serviceDegraded      bool
+	serviceDegradedTimer *time.Timer
+	degradedModeBackoff  time.Duration
+	maxDegradedTime      time.Duration
 
 	run.ForwardCompatibility
 }
@@ -125,9 +131,10 @@ func NewRedisTransport(options *Options) *redisTransport {
 		context: ctx,
 		cancel:  cancel,
 
-		ephemeral:       options.Ephemeral,
-		drainCompleteCh: options.DrainCompleteCh,
-		sandboxReady:    options.SandboxReady,
+		ephemeral:           options.Ephemeral,
+		drainCompleteCh:     options.DrainCompleteCh,
+		degradedModeBackoff: options.DegradedModeBackoff,
+		maxDegradedTime:     options.MaxDegradedTime,
 	}
 }
 
@@ -205,6 +212,78 @@ func (rt *redisTransport) ackMessage(inboxId string) error {
 	return err
 }
 
+func (rt *redisTransport) checkPluginsAvailable() bool {
+	pluginsStatus := rt.pluginExecutor.ArePluginsAvailable(rt.context)
+	if pluginsStatus.Available {
+		if err := rt.setDegradedMode(false); err != nil {
+			rt.logger.Error(
+				"error while setting degraded mode",
+				zap.Error(err),
+				zap.Bool("desired-degradation-mode", false),
+			)
+			return false
+		}
+
+		return true
+	}
+
+	rt.logger.Warn(
+		"plugins are not available",
+		zap.String("degradation-state", pluginsStatus.DegradationState.String()),
+		zap.Error(pluginsStatus.Error),
+	)
+
+	if pluginsStatus.DegradationState == plugin.DegradationState_FATAL {
+		// Notify transport that it should shut down
+		rt.logger.Error("plugins are not available, returned status is fatal, shutting down immediately")
+		rt.cancel()
+		return false
+	}
+
+	// Set degraded mode to true
+	if err := rt.setDegradedMode(true); err != nil {
+		rt.logger.Error(
+			"error while setting degraded mode",
+			zap.Error(err),
+			zap.Bool("desired-degradation-mode", true),
+		)
+	}
+
+	return false
+}
+
+func (rt *redisTransport) setDegradedMode(degraded bool) error {
+	if degraded == rt.serviceDegraded {
+		return nil
+	}
+
+	if degraded && !rt.serviceDegraded {
+		// Service is going into degraded mode, start timer for max degradation time before killing the service
+		rt.logger.Info("service entering degraded mode", zap.Duration("max-degraded-time", rt.maxDegradedTime))
+		rt.serviceDegradedTimer = time.AfterFunc(rt.maxDegradedTime, func() {
+			rt.logger.Error(
+				"service degraded for too long, shutting down",
+				zap.Duration("max-degraded-time", rt.maxDegradedTime),
+			)
+			rt.cancel()
+		})
+	} else if !degraded && rt.serviceDegradedTimer != nil {
+		// Try to clear the degraded timer
+		if ok := rt.serviceDegradedTimer.Stop(); !ok {
+			return fmt.Errorf(
+				"failed to stop degraded timer, max degradation time has already passed: max degradation time is %s",
+				rt.maxDegradedTime,
+			)
+		}
+
+		rt.logger.Info("service recovering from degraded mode")
+		rt.serviceDegradedTimer = nil
+	}
+
+	rt.serviceDegraded = degraded
+	return nil
+}
+
 // poll is the main polling loop.
 func (rt *redisTransport) poll() error {
 	if !rt.initialized {
@@ -242,14 +321,15 @@ func (rt *redisTransport) poll() error {
 // pollOnce reads messages from Redis and dispatches them for handling.
 // Returns (true, nil) if at least one message was handled.
 func (rt *redisTransport) pollOnce() (bool, error) {
-	if rt.sandboxReady != nil && !rt.sandboxReady() {
+	if !rt.checkPluginsAvailable() {
 		select {
 		case <-rt.context.Done():
 			return false, rt.context.Err()
-		case <-time.After(time.Second):
+		case <-time.After(rt.degradedModeBackoff):
 		}
 		return false, nil
 	}
+
 	remaining := rt.executionPool.Load()
 	if remaining <= 0 {
 		for rt.executionPool.Load() <= 0 {

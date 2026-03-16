@@ -183,6 +183,9 @@ queue:
     read: 5m
     write: 10s
     pool: 5m
+  degradedMode:
+    backoff: 1s
+    maxTime: 10m
 # Redis kvstore configuration
 kvstore:
   deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)

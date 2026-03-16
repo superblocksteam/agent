@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"workers/ephemeral/task-manager/internal/plugin"
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 	mocks "workers/ephemeral/task-manager/mocks/internal_/plugin_executor"
 	mocksstore "workers/ephemeral/task-manager/mocks/internal_/store/redis"
@@ -159,6 +160,9 @@ func TestPluginInvocationAfterPollingMessage(t *testing.T) {
 			mockFileContextProvider.On("SetFileContext", "exec-123", &redisstore.ExecutionFileContext{}).Return()
 			mockFileContextProvider.On("CleanupExecution", "exec-123").Return()
 
+			mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+				Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
+
 			if tc.method == "Execute" {
 				mockPluginExecutor.On(tc.method, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 			} else {
@@ -197,6 +201,9 @@ func TestEmptyExecutionPoolSkipsPolling(t *testing.T) {
 
 	// Manually reduce pool to test that pollOnce waits when pool is empty
 	transport.executionPool.Store(0)
+
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
 
 	// With pool empty, pollOnce should wait on workerReturned channel
 	// We simulate a worker returning and restoring one free slot.
@@ -315,6 +322,9 @@ func TestClosingProperlyDrainsRequests(t *testing.T) {
 
 	mockFileContextProvider.On("SetFileContext", "exec-123", &redisstore.ExecutionFileContext{}).Return()
 	mockFileContextProvider.On("CleanupExecution", "exec-123").Return()
+
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
 
 	mockPluginExecutor.
 		On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
@@ -703,4 +713,172 @@ func TestSendResult(t *testing.T) {
 
 	err := transport.sendResult(response, "testInbox")
 	assert.NoError(t, err)
+}
+
+func TestPollDoesNotReadFromStreamWhenPluginsUnavailable(t *testing.T) {
+	redisClient, redisMock := redismock.NewClientMock()
+	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
+
+	transport := NewRedisTransport(&Options{
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
+		DegradedModeBackoff: 10 * time.Millisecond,
+		MaxDegradedTime:     time.Hour,
+	})
+
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Return(plugin.PluginStatus{Available: false, DegradationState: plugin.DegradationState_TRANSIENT})
+
+	_, err := transport.pollOnce()
+	assert.NoError(t, err)
+
+	assert.NoError(t, redisMock.ExpectationsWereMet())
+}
+
+func TestTransportShutsDownWhenPluginsReturnFatal(t *testing.T) {
+	redisClient, redisMock := redismock.NewClientMock()
+	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
+
+	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
+
+	readyCh := make(chan bool, 1)
+	readyCh <- true
+	var readyRecv <-chan bool = readyCh
+	mockPluginExecutor.On("PluginsReady", mock.Anything).Return(readyRecv)
+
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Return(plugin.PluginStatus{Available: false, DegradationState: plugin.DegradationState_FATAL})
+
+	transport := NewRedisTransport(&Options{
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
+		DegradedModeBackoff: 10 * time.Millisecond,
+		MaxDegradedTime:     time.Hour,
+	})
+
+	runDone := make(chan error, 1)
+	go func() {
+		runDone <- transport.Run(context.Background())
+	}()
+
+	select {
+	case err := <-runDone:
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, context.Canceled)
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("Run did not return within timeout after FATAL degradation")
+	}
+
+	assert.NoError(t, redisMock.ExpectationsWereMet())
+}
+
+func TestTransportShutsDownAfterMaxDegradedTime(t *testing.T) {
+	redisClient, redisMock := redismock.NewClientMock()
+	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
+
+	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
+
+	readyCh := make(chan bool, 1)
+	readyCh <- true
+	var readyRecv <-chan bool = readyCh
+	mockPluginExecutor.On("PluginsReady", mock.Anything).Return(readyRecv)
+
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Return(plugin.PluginStatus{Available: false, DegradationState: plugin.DegradationState_TRANSIENT})
+
+	transport := NewRedisTransport(&Options{
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
+		DegradedModeBackoff: 10 * time.Millisecond,
+		MaxDegradedTime:     50 * time.Millisecond,
+	})
+
+	runDone := make(chan error, 1)
+	go func() {
+		runDone <- transport.Run(context.Background())
+	}()
+
+	select {
+	case err := <-runDone:
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, context.Canceled)
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("Run did not return within timeout after max degraded time")
+	}
+
+	assert.NoError(t, redisMock.ExpectationsWereMet())
+}
+
+func TestTransportReadsFromStreamAfterRecoveringFromDegradedMode(t *testing.T) {
+	redisClient, redisMock := redismock.NewClientMock()
+	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
+
+	transport := NewRedisTransport(&Options{
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       10,
+		FileContextProvider: mockFileContextProvider,
+		DegradedModeBackoff: 10 * time.Millisecond,
+		MaxDegradedTime:     time.Hour,
+	})
+
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Once().
+		Return(plugin.PluginStatus{Available: false, DegradationState: plugin.DegradationState_TRANSIENT})
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
+
+	// First pollOnce: plugins unavailable -> enters degraded mode, no XReadGroup
+	_, err := transport.pollOnce()
+	assert.NoError(t, err)
+	assert.True(t, transport.serviceDegraded, "transport should be in degraded mode after first pollOnce")
+
+	// Second pollOnce: plugins available -> recovers and reads from stream
+	redisMock.ExpectXReadGroup(&redis.XReadGroupArgs{
+		Streams:  []string{"stream1", ">"},
+		Group:    "group1",
+		Consumer: "worker1",
+		Count:    10,
+		Block:    5 * time.Second,
+	}).SetErr(redis.Nil)
+
+	_, err = transport.pollOnce()
+	assert.NoError(t, err)
+	assert.False(t, transport.serviceDegraded, "transport should have recovered from degraded mode")
+
+	assert.NoError(t, redisMock.ExpectationsWereMet())
 }

@@ -86,6 +86,7 @@ type mockPlugin struct {
 	testFunc            func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct, actionConfig *structpb.Struct) error
 	preDeleteFn         func(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error
 	notifyWhenReadyFunc func(notifyCh chan<- bool)
+	isAvailableFunc     func(ctx context.Context) plugin.PluginStatus
 }
 
 func (m *mockPlugin) Name() string {
@@ -131,6 +132,13 @@ func (m *mockPlugin) NotifyWhenReady(notifyCh chan<- bool) {
 	if m.notifyWhenReadyFunc != nil {
 		m.notifyWhenReadyFunc(notifyCh)
 	}
+}
+
+func (m *mockPlugin) IsAvailable(ctx context.Context) plugin.PluginStatus {
+	if m.isAvailableFunc != nil {
+		return m.isAvailableFunc(ctx)
+	}
+	return plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE}
 }
 
 // Verify mockPlugin implements Plugin interface
@@ -308,6 +316,145 @@ func TestPluginsReady_SamePluginRegisteredTwice_DeduplicatedByInstance(t *testin
 	}
 	if !v {
 		t.Errorf("PluginsReady() = %v, want true", v)
+	}
+}
+
+func TestArePluginsAvailable_NoPlugins_ReturnsAvailable(t *testing.T) {
+	t.Parallel()
+
+	executor := newTestExecutor()
+	ctx := context.Background()
+
+	status := executor.ArePluginsAvailable(ctx)
+
+	if !status.Available {
+		t.Errorf("ArePluginsAvailable() Available = false, want true")
+	}
+	if status.DegradationState != plugin.DegradationState_NONE {
+		t.Errorf("ArePluginsAvailable() DegradationState = %v, want NONE", status.DegradationState)
+	}
+	if status.Error != nil {
+		t.Errorf("ArePluginsAvailable() Error = %v, want nil", status.Error)
+	}
+}
+
+func TestArePluginsAvailable_SinglePluginAvailable_ReturnsAvailable(t *testing.T) {
+	t.Parallel()
+
+	executor := newTestExecutor()
+	executor.RegisterPlugin("python", &mockPlugin{name: "python"})
+
+	ctx := context.Background()
+	status := executor.ArePluginsAvailable(ctx)
+
+	if !status.Available {
+		t.Errorf("ArePluginsAvailable() Available = false, want true")
+	}
+	if status.DegradationState != plugin.DegradationState_NONE {
+		t.Errorf("ArePluginsAvailable() DegradationState = %v, want NONE", status.DegradationState)
+	}
+	if status.Error != nil {
+		t.Errorf("ArePluginsAvailable() Error = %v, want nil", status.Error)
+	}
+}
+
+func TestArePluginsAvailable_MultiplePluginsAllAvailable_ReturnsAvailable(t *testing.T) {
+	t.Parallel()
+
+	executor := newTestExecutor()
+	executor.RegisterPlugin("python", &mockPlugin{name: "python"})
+	executor.RegisterPlugin("javascript", &mockPlugin{name: "javascript"})
+
+	ctx := context.Background()
+	status := executor.ArePluginsAvailable(ctx)
+
+	if !status.Available {
+		t.Errorf("ArePluginsAvailable() Available = false, want true")
+	}
+	if status.DegradationState != plugin.DegradationState_NONE {
+		t.Errorf("ArePluginsAvailable() DegradationState = %v, want NONE", status.DegradationState)
+	}
+	if status.Error != nil {
+		t.Errorf("ArePluginsAvailable() Error = %v, want nil", status.Error)
+	}
+}
+
+func TestArePluginsAvailable_MultiplePluginsOneTransient_ReturnsTransient(t *testing.T) {
+	t.Parallel()
+
+	transientErr := errors.New("health check failed")
+	executor := newTestExecutor()
+	executor.RegisterPlugin("python", &mockPlugin{name: "python"})
+	executor.RegisterPlugin("javascript", &mockPlugin{
+		name: "javascript",
+		isAvailableFunc: func(ctx context.Context) plugin.PluginStatus {
+			return plugin.PluginStatus{
+				Available:        false,
+				DegradationState: plugin.DegradationState_TRANSIENT,
+				Error:            transientErr,
+			}
+		},
+	})
+
+	ctx := context.Background()
+	status := executor.ArePluginsAvailable(ctx)
+
+	if status.Available {
+		t.Errorf("ArePluginsAvailable() Available = true, want false")
+	}
+	if status.DegradationState != plugin.DegradationState_TRANSIENT {
+		t.Errorf("ArePluginsAvailable() DegradationState = %v, want TRANSIENT", status.DegradationState)
+	}
+	if status.Error == nil {
+		t.Fatal("ArePluginsAvailable() Error = nil, want error")
+	}
+}
+
+func TestArePluginsAvailable_MultiplePluginsFatalAndTransient_ReturnsFatal(t *testing.T) {
+	t.Parallel()
+
+	fatalErr := errors.New("sandbox is dead")
+	transientErr := errors.New("connection not ready")
+	executor := newTestExecutor()
+	executor.RegisterPlugin("python", &mockPlugin{
+		name: "python",
+		isAvailableFunc: func(ctx context.Context) plugin.PluginStatus {
+			return plugin.PluginStatus{
+				Available:        false,
+				DegradationState: plugin.DegradationState_FATAL,
+				Error:            fatalErr,
+			}
+		},
+	})
+	executor.RegisterPlugin("javascript", &mockPlugin{
+		name: "javascript",
+		isAvailableFunc: func(ctx context.Context) plugin.PluginStatus {
+			return plugin.PluginStatus{
+				Available:        false,
+				DegradationState: plugin.DegradationState_TRANSIENT,
+				Error:            transientErr,
+			}
+		},
+	})
+
+	ctx := context.Background()
+	status := executor.ArePluginsAvailable(ctx)
+
+	if status.Available {
+		t.Errorf("ArePluginsAvailable() Available = true, want false")
+	}
+	if status.DegradationState != plugin.DegradationState_FATAL {
+		t.Errorf("ArePluginsAvailable() DegradationState = %v, want FATAL (worst state wins)", status.DegradationState)
+	}
+	if status.Error == nil {
+		t.Fatal("ArePluginsAvailable() Error = nil, want joined errors")
+	}
+	// errors.Join includes both errors
+	if !errors.Is(status.Error, fatalErr) {
+		t.Errorf("ArePluginsAvailable() Error should contain fatalErr: %v", status.Error)
+	}
+	if !errors.Is(status.Error, transientErr) {
+		t.Errorf("ArePluginsAvailable() Error should contain transientErr: %v", status.Error)
 	}
 }
 

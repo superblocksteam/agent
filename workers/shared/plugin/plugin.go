@@ -9,6 +9,35 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+type DegradationState int
+
+const (
+	DegradationState_UNSPECIFIED DegradationState = iota
+	DegradationState_NONE
+	DegradationState_TRANSIENT
+	DegradationState_FATAL
+)
+
+func (d DegradationState) String() string {
+	switch d {
+	case DegradationState_UNSPECIFIED:
+		return "UNSPECIFIED"
+	case DegradationState_NONE:
+		return "NONE"
+	case DegradationState_TRANSIENT:
+		return "TRANSIENT"
+	case DegradationState_FATAL:
+		return "FATAL"
+	}
+	return "UNKNOWN"
+}
+
+type PluginStatus struct {
+	Available        bool
+	DegradationState DegradationState
+	Error            error
+}
+
 // Plugin defines the interface for code execution plugins.
 // Both the golang and ephemeral workers implement this interface.
 type Plugin interface {
@@ -42,4 +71,7 @@ type Plugin interface {
 
 	// Ready returns a channel that reports true when the plugin is ready to execute code.
 	NotifyWhenReady(notifyCh chan<- bool)
+
+	// IsAvailable returns the availability status of the plugin.
+	IsAvailable(ctx context.Context) PluginStatus
 }

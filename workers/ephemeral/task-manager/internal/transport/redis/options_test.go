@@ -24,6 +24,12 @@ func TestNewOptionsDefaults(t *testing.T) {
 	if opts.MessageCount != 10 {
 		t.Errorf("MessageCount = %v, want 10", opts.MessageCount)
 	}
+	if opts.DegradedModeBackoff != 1*time.Second {
+		t.Errorf("DegradedModeBackoff = %v, want 1s", opts.DegradedModeBackoff)
+	}
+	if opts.MaxDegradedTime != 10*time.Minute {
+		t.Errorf("MaxDegradedTime = %v, want 10m", opts.MaxDegradedTime)
+	}
 }
 
 func TestWithRedisClient(t *testing.T) {
@@ -138,6 +144,22 @@ func TestWithDrainCompleteCh(t *testing.T) {
 	}
 }
 
+func TestWithDegradedModeBackoff(t *testing.T) {
+	duration := 10 * time.Second
+	opts := NewOptions(WithDegradedModeBackoff(duration))
+	if opts.DegradedModeBackoff != duration {
+		t.Errorf("DegradedModeBackoff = %v, want %v", opts.DegradedModeBackoff, duration)
+	}
+}
+
+func TestWithMaxDegradedTime(t *testing.T) {
+	duration := 10 * time.Minute
+	opts := NewOptions(WithMaxDegradedTime(duration))
+	if opts.MaxDegradedTime != duration {
+		t.Errorf("MaxDegradedTime = %v, want %v", opts.MaxDegradedTime, duration)
+	}
+}
+
 func TestOptionsChaining(t *testing.T) {
 	logger := zap.NewNop()
 	provider := mocks.NewFileContextProvider(t)
@@ -151,6 +173,8 @@ func TestOptionsChaining(t *testing.T) {
 		WithFileContextProvider(provider),
 		WithEphemeral(true),
 		WithLogger(logger),
+		WithDegradedModeBackoff(30*time.Second),
+		WithMaxDegradedTime(5*time.Minute),
 	)
 
 	if opts.WorkerId != "worker-1" {
@@ -176,6 +200,12 @@ func TestOptionsChaining(t *testing.T) {
 	}
 	if opts.Logger != logger {
 		t.Error("Logger was not set correctly")
+	}
+	if opts.DegradedModeBackoff != 30*time.Second {
+		t.Errorf("DegradedModeBackoff = %v, want 30s", opts.DegradedModeBackoff)
+	}
+	if opts.MaxDegradedTime != 5*time.Minute {
+		t.Errorf("MaxDegradedTime = %v, want 5m", opts.MaxDegradedTime)
 	}
 }
 

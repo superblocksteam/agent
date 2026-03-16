@@ -3,11 +3,11 @@ package sandbox
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"testing"
 	"time"
 
+	"workers/ephemeral/task-manager/internal/plugin"
 	"workers/ephemeral/task-manager/internal/sandboxmanager"
 
 	"github.com/stretchr/testify/require"
@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -221,105 +222,10 @@ func TestConnectionModeConstants(t *testing.T) {
 	}
 }
 
-func TestSandboxPlugin_Run_ReturnsContextError_WhenSandboxDeadChannelSendsContextError(t *testing.T) {
-	addr, cleanup := startSandboxGrpcServer(t)
-	t.Cleanup(cleanup)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
-
-	mgr := &mockSandboxManager{
-		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
-			return &sandboxmanager.SandboxInfo{
-				Name:    "sandbox-test",
-				Id:      "test-id",
-				Ip:      "127.0.0.1",
-				Address: addr,
-			}, nil
-		},
-		watchFunc: func(ctx context.Context, _ string) <-chan error {
-			ch := make(chan error, 1)
-			go func() {
-				<-ctx.Done()
-				ch <- ctx.Err()
-				close(ch)
-			}()
-			return ch
-		},
-	}
-
-	p, err := NewSandboxPlugin(
-		WithConnectionMode(SandboxConnectionModeDynamic),
-		WithSandboxManager(mgr),
-		WithSandboxId("test-sandbox"),
-		WithLogger(zap.NewNop()),
-	)
-	require.NoError(t, err)
-
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- p.Run(ctx)
-	}()
-
-	// Give Run time to create sandbox and connect.
-	time.Sleep(200 * time.Millisecond)
-	cancel()
-
-	err = <-errCh
-	require.Error(t, err)
-	require.ErrorIs(t, err, context.Canceled)
-}
-
-func TestSandboxPlugin_Run_ReturnsWrappedError_WhenSandboxDeadChannelSendsNonContextError(t *testing.T) {
-	addr, cleanup := startSandboxGrpcServer(t)
-	t.Cleanup(cleanup)
-
-	ctx := context.Background()
-	podDeletedErr := fmt.Errorf("sandbox pod deleted: sandbox-test-abc123")
-
-	mgr := &mockSandboxManager{
-		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
-			return &sandboxmanager.SandboxInfo{
-				Name:    "sandbox-test",
-				Id:      "test-id",
-				Ip:      "127.0.0.1",
-				Address: addr,
-			}, nil
-		},
-		watchFunc: func(context.Context, string) <-chan error {
-			ch := make(chan error, 1)
-			go func() {
-				time.Sleep(100 * time.Millisecond)
-				ch <- podDeletedErr
-				close(ch)
-			}()
-			return ch
-		},
-	}
-
-	p, err := NewSandboxPlugin(
-		WithConnectionMode(SandboxConnectionModeDynamic),
-		WithSandboxManager(mgr),
-		WithSandboxId("test-sandbox"),
-		WithLogger(zap.NewNop()),
-	)
-	require.NoError(t, err)
-
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- p.Run(ctx)
-	}()
-
-	gotErr := <-errCh
-	require.Error(t, gotErr)
-	require.ErrorIs(t, gotErr, podDeletedErr)
-	require.Contains(t, gotErr.Error(), "sandbox pod is no longer available")
-}
-
 func TestSandboxPlugin_NotifyWhenReady_NotifiesWhenSandboxBecomesReady(t *testing.T) {
 	t.Parallel()
 
-	addr, cleanup := startSandboxGrpcServer(t)
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
 	t.Cleanup(cleanup)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -375,7 +281,7 @@ func TestSandboxPlugin_NotifyWhenReady_NotifiesWhenSandboxBecomesReady(t *testin
 func TestSandboxPlugin_NotifyWhenReady_NotifiesImmediatelyWhenAlreadyReady(t *testing.T) {
 	t.Parallel()
 
-	addr, cleanup := startSandboxGrpcServer(t)
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
 	t.Cleanup(cleanup)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -427,7 +333,7 @@ func TestSandboxPlugin_NotifyWhenReady_NotifiesImmediatelyWhenAlreadyReady(t *te
 func TestSandboxPlugin_NotifyWhenReady_DoesNotBlockWhenChannelNeverRead(t *testing.T) {
 	t.Parallel()
 
-	addr, cleanup := startSandboxGrpcServer(t)
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
 	t.Cleanup(cleanup)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -480,7 +386,7 @@ func TestSandboxPlugin_NotifyWhenReady_DoesNotBlockWhenChannelNeverRead(t *testi
 func TestSandboxPlugin_NotifyWhenReady_GoroutinesCleanedUpOnClose(t *testing.T) {
 	t.Parallel()
 
-	addr, cleanup := startSandboxGrpcServer(t)
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
 	t.Cleanup(cleanup)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -536,6 +442,295 @@ func TestSandboxPlugin_NotifyWhenReady_GoroutinesCleanedUpOnClose(t *testing.T) 
 	<-closeDone
 }
 
+func TestSandboxPlugin_IsAvailable_SandboxDead_ReturnsFatal(t *testing.T) {
+	t.Parallel()
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress("localhost:50051"),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	p.sandboxDead.Store(true)
+
+	status := p.IsAvailable(context.Background())
+
+	require.False(t, status.Available)
+	require.Equal(t, plugin.DegradationState_FATAL, status.DegradationState)
+	require.Error(t, status.Error)
+	require.Contains(t, status.Error.Error(), "sandbox is dead")
+}
+
+func TestSandboxPlugin_IsAvailable_ConnectionNotReady_ReturnsTransient(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+
+	client := workerv1.NewSandboxTransportServiceClient(conn)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	p.conn = conn
+	p.client = client
+
+	// Close conn to put it in Shutdown; connectionReady will return false
+	require.NoError(t, conn.Close())
+
+	status := p.IsAvailable(context.Background())
+
+	require.False(t, status.Available)
+	require.Equal(t, plugin.DegradationState_TRANSIENT, status.DegradationState)
+	require.Error(t, status.Error)
+	require.Contains(t, status.Error.Error(), "connection not ready")
+}
+
+func TestSandboxPlugin_IsAvailable_HealthSucceeds_ReturnsAvailable(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
+	t.Cleanup(cleanup)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: addr,
+			}, nil
+		},
+		watchFunc: func(ctx context.Context, _ string) <-chan error {
+			ch := make(chan error)
+			go func() {
+				<-ctx.Done()
+				close(ch)
+			}()
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	go func() {
+		_ = p.Run(ctx)
+	}()
+
+	time.Sleep(500 * time.Millisecond)
+
+	status := p.IsAvailable(context.Background())
+
+	require.True(t, status.Available)
+	require.Equal(t, plugin.DegradationState_NONE, status.DegradationState)
+	require.NoError(t, status.Error)
+}
+
+func TestSandboxPlugin_IsAvailable_HealthFails_ReturnsTransient(t *testing.T) {
+	t.Parallel()
+
+	// Unimplemented server returns error for Health RPC
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+
+	client := workerv1.NewSandboxTransportServiceClient(conn)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	p.conn = conn
+	p.client = client
+
+	// Conn is Idle; connectionReady returns true. Health RPC fails with Unimplemented.
+	status := p.IsAvailable(context.Background())
+
+	require.False(t, status.Available)
+	require.Equal(t, plugin.DegradationState_TRANSIENT, status.DegradationState)
+	require.Error(t, status.Error)
+	require.Contains(t, status.Error.Error(), "health check failed")
+}
+
+func TestConnectToSandbox_HealthSucceeds_ReturnsConnAndClient(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	conn, client, err := p.connectToSandbox(ctx, addr)
+	require.NoError(t, err)
+	defer func() { _ = conn.Close() }()
+
+	require.NotNil(t, conn)
+	require.NotNil(t, client)
+
+	// Verify Health works
+	_, err = client.Health(ctx, &workerv1.HealthRequest{})
+	require.NoError(t, err)
+}
+
+func TestConnectToSandbox_HealthFails_TimesOutWithError(t *testing.T) {
+	t.Parallel()
+
+	// Server does not implement Health (returns Unimplemented)
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	t.Cleanup(cancel)
+
+	conn, client, err := p.connectToSandbox(ctx, addr)
+	require.Error(t, err)
+	require.Nil(t, conn)
+	require.Nil(t, client)
+	require.Contains(t, err.Error(), "sandbox did not become ready")
+}
+
+func TestConnectToSandbox_ContextCancelled_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServer(t)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	conn, client, err := p.connectToSandbox(ctx, addr)
+	require.Error(t, err)
+	require.Nil(t, conn)
+	require.Nil(t, client)
+	require.ErrorIs(t, err, context.Canceled)
+}
+
+func TestMonitorSandboxStatus_ErrorOnChannel_SetsSandboxDead(t *testing.T) {
+	t.Parallel()
+
+	sandboxDeadCh := make(chan error, 1)
+	sandboxDeadCh <- errors.New("pod evicted")
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress("localhost:50051"),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	p.monitorSandboxStatus(sandboxDeadCh, zap.NewNop())
+
+	// Give the goroutine time to process
+	time.Sleep(50 * time.Millisecond)
+
+	require.True(t, p.sandboxDead.Load())
+}
+
+func TestMonitorSandboxStatus_ContextCancelled_ExitsWithoutSettingSandboxDead(t *testing.T) {
+	t.Parallel()
+
+	sandboxDeadCh := make(chan error)
+	defer close(sandboxDeadCh)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress("localhost:50051"),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	p.monitorSandboxStatus(sandboxDeadCh, zap.NewNop())
+
+	// Cancel context before any error is sent on sandboxDeadCh
+	p.internalCancel()
+
+	// Give the goroutine time to exit
+	time.Sleep(50 * time.Millisecond)
+
+	require.False(t, p.sandboxDead.Load())
+}
+
+func TestMonitorSandboxStatus_ChannelClosed_SetsSandboxDead(t *testing.T) {
+	t.Parallel()
+
+	sandboxDeadCh := make(chan error)
+	close(sandboxDeadCh)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress("localhost:50051"),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	p.monitorSandboxStatus(sandboxDeadCh, zap.NewNop())
+
+	// Receive from closed chan returns zero value; goroutine sets sandboxDead and returns
+	time.Sleep(50 * time.Millisecond)
+
+	require.True(t, p.sandboxDead.Load())
+}
+
+// healthOKServer implements Health and returns READY.
+type healthOKServer struct {
+	workerv1.UnimplementedSandboxTransportServiceServer
+}
+
+func (healthOKServer) Health(context.Context, *workerv1.HealthRequest) (*workerv1.HealthResponse, error) {
+	return &workerv1.HealthResponse{Status: workerv1.HealthResponse_STATUS_READY}, nil
+}
+
 // startSandboxGrpcServer starts a minimal gRPC server that implements SandboxTransportService
 // and returns the address (caller must call the returned cleanup function)
 func startSandboxGrpcServer(t *testing.T) (addr string, cleanup func()) {
@@ -546,6 +741,26 @@ func startSandboxGrpcServer(t *testing.T) (addr string, cleanup func()) {
 
 	grpcServer := grpc.NewServer()
 	workerv1.RegisterSandboxTransportServiceServer(grpcServer, &workerv1.UnimplementedSandboxTransportServiceServer{})
+
+	go func() {
+		_ = grpcServer.Serve(lis)
+	}()
+
+	return lis.Addr().String(), func() {
+		grpcServer.GracefulStop()
+		_ = lis.Close()
+	}
+}
+
+// startSandboxGrpcServerWithHealth starts a gRPC server that implements Health and returns READY.
+func startSandboxGrpcServerWithHealth(t *testing.T) (addr string, cleanup func()) {
+	t.Helper()
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	grpcServer := grpc.NewServer()
+	workerv1.RegisterSandboxTransportServiceServer(grpcServer, &healthOKServer{})
 
 	go func() {
 		_ = grpcServer.Serve(lis)

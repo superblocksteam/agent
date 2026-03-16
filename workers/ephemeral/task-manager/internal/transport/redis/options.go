@@ -31,10 +31,10 @@ type Options struct {
 	// When nil, nothing is signaled (e.g. tests).
 	DrainCompleteCh chan struct{}
 
-	// SandboxReady, when non-nil, is checked before claiming work from Redis.
-	// When it returns false, the transport does not XReadGroup so work stays on the stream
-	// for other task-managers or until the sandbox is ready again.
-	SandboxReady func() bool
+	// DegradedModeBackoff is the backoff duration between failed plugin availability checks.
+	DegradedModeBackoff time.Duration
+	// MaxDegradedTime is the maximum time the service will stay in degraded mode before shutting down.
+	MaxDegradedTime time.Duration
 }
 
 // Option is a function that modifies Options
@@ -132,20 +132,28 @@ func WithDrainCompleteCh(ch chan struct{}) Option {
 	}
 }
 
-// WithSandboxReady sets the predicate used to gate claiming work from Redis.
-// When non-nil and it returns false, the transport will not claim new messages.
-func WithSandboxReady(fn func() bool) Option {
+// WithDegradedModeBackoff sets the backoff duration between failed plugin availability checks.
+func WithDegradedModeBackoff(value time.Duration) Option {
 	return func(o *Options) {
-		o.SandboxReady = fn
+		o.DegradedModeBackoff = value
+	}
+}
+
+// WithMaxDegradedTime sets the maximum time the service will stay in degraded mode before shutting down.
+func WithMaxDegradedTime(value time.Duration) Option {
+	return func(o *Options) {
+		o.MaxDegradedTime = value
 	}
 }
 
 // NewOptions creates Options with the given options applied
 func NewOptions(opts ...Option) *Options {
 	options := &Options{
-		ExecutionPool: 50,
-		BlockDuration: 5 * time.Second,
-		MessageCount:  10,
+		ExecutionPool:       50,
+		BlockDuration:       5 * time.Second,
+		MessageCount:        10,
+		DegradedModeBackoff: 1 * time.Second,
+		MaxDegradedTime:     10 * time.Minute,
 	}
 	for _, opt := range opts {
 		opt(options)

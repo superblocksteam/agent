@@ -74,6 +74,8 @@ func init() {
 	pflag.String("transport.redis.servername", "", "The server name used to verify the hostname returned by the TLS handshake.")
 	pflag.Duration("transport.redis.block.duration", 5*time.Second, "The maximum duration to block for a message.")
 	pflag.Int("transport.redis.max.messages", 10, "The maximum number of messages to process at once.")
+	pflag.Duration("transport.redis.degraded.mode.backoff", 1*time.Second, "The backoff duration between failed plugin availability checks.")
+	pflag.Duration("transport.redis.degraded.mode.max.time", 10*time.Minute, "The maximum time the service will stay in degraded mode before shutting down.")
 
 	// Store Redis settings (uses same Redis as transport by default)
 	pflag.String("store.redis.host", "", "The store redis host (defaults to transport.redis.host).")
@@ -720,7 +722,8 @@ func main() {
 		redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
 		redis.WithAgentKey(viper.GetString("superblocks.key")),
 		redis.WithDrainCompleteCh(drainCompleteCh),
-		redis.WithSandboxReady(func() bool { return sandboxPlugin.ConnectionReady() }),
+		redis.WithDegradedModeBackoff(viper.GetDuration("transport.redis.degraded.mode.backoff")),
+		redis.WithMaxDegradedTime(viper.GetDuration("transport.redis.degraded.mode.max.time")),
 	))
 
 	logger.Info("redis transport configured",

@@ -7,6 +7,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	plugin "workers/shared/plugin"
+
 	structpb "google.golang.org/protobuf/types/known/structpb"
 
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
@@ -85,6 +87,52 @@ func (_c *JavascriptPlugin_Execute_Call) Return(_a0 *v1.ExecuteResponse, _a1 err
 }
 
 func (_c *JavascriptPlugin_Execute_Call) RunAndReturn(run func(context.Context, *v1.RequestMetadata, *transportv1.Request_Data_Data_Props, *transportv1.Request_Data_Data_Quota, *transportv1.Request_Data_Pinned) (*v1.ExecuteResponse, error)) *JavascriptPlugin_Execute_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsAvailable provides a mock function with given fields: ctx
+func (_m *JavascriptPlugin) IsAvailable(ctx context.Context) plugin.PluginStatus {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsAvailable")
+	}
+
+	var r0 plugin.PluginStatus
+	if rf, ok := ret.Get(0).(func(context.Context) plugin.PluginStatus); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(plugin.PluginStatus)
+	}
+
+	return r0
+}
+
+// JavascriptPlugin_IsAvailable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsAvailable'
+type JavascriptPlugin_IsAvailable_Call struct {
+	*mock.Call
+}
+
+// IsAvailable is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *JavascriptPlugin_Expecter) IsAvailable(ctx interface{}) *JavascriptPlugin_IsAvailable_Call {
+	return &JavascriptPlugin_IsAvailable_Call{Call: _e.mock.On("IsAvailable", ctx)}
+}
+
+func (_c *JavascriptPlugin_IsAvailable_Call) Run(run func(ctx context.Context)) *JavascriptPlugin_IsAvailable_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *JavascriptPlugin_IsAvailable_Call) Return(_a0 plugin.PluginStatus) *JavascriptPlugin_IsAvailable_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *JavascriptPlugin_IsAvailable_Call) RunAndReturn(run func(context.Context) plugin.PluginStatus) *JavascriptPlugin_IsAvailable_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -2,14 +2,19 @@ package redis
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"workers/ephemeral/task-manager/internal/plugin"
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
+	pluginmocks "workers/ephemeral/task-manager/mocks/internal_/plugin_executor"
 	mocks "workers/ephemeral/task-manager/mocks/internal_/store/redis"
 
 	r "github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/mock"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
 )
@@ -278,10 +283,15 @@ func TestPollOnceIgnoresStaleWorkerReturnedSignals(t *testing.T) {
 	executionPool := &atomic.Int64{}
 	executionPool.Store(0)
 
+	mockPluginExecutor := pluginmocks.NewPluginExecutor(t)
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
+
 	transport := &redisTransport{
 		context:        ctx,
 		executionPool:  executionPool,
 		workerReturned: make(chan int64, 1),
+		pluginExecutor: mockPluginExecutor,
 	}
 	transport.workerReturned <- 99 // stale wake-up while pool is still empty
 
@@ -308,6 +318,200 @@ func TestPollOnceIgnoresStaleWorkerReturnedSignals(t *testing.T) {
 	case <-time.After(500 * time.Millisecond):
 		t.Fatal("pollOnce did not return after pool capacity became available")
 	}
+}
+
+func TestCheckPluginsAvailable(t *testing.T) {
+	t.Run("available_true_calls_setDegradedMode_false_returns_true", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		mockPluginExecutor := pluginmocks.NewPluginExecutor(t)
+		mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+			Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
+
+		transport := &redisTransport{
+			context:        ctx,
+			logger:         zap.NewNop(),
+			pluginExecutor: mockPluginExecutor,
+		}
+
+		got := transport.checkPluginsAvailable()
+		if !got {
+			t.Error("checkPluginsAvailable() = false, want true")
+		}
+	})
+
+	t.Run("available_false_transient_sets_degraded_returns_false", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		mockPluginExecutor := pluginmocks.NewPluginExecutor(t)
+		mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+			Return(plugin.PluginStatus{Available: false, DegradationState: plugin.DegradationState_TRANSIENT})
+
+		transport := &redisTransport{
+			context:             ctx,
+			logger:              zap.NewNop(),
+			pluginExecutor:      mockPluginExecutor,
+			maxDegradedTime:     time.Hour,
+			degradedModeBackoff: 10 * time.Millisecond,
+		}
+
+		got := transport.checkPluginsAvailable()
+		if got {
+			t.Error("checkPluginsAvailable() = true, want false")
+		}
+		if !transport.serviceDegraded {
+			t.Error("serviceDegraded = false, want true")
+		}
+	})
+
+	t.Run("available_false_fatal_cancels_context_returns_false", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		mockPluginExecutor := pluginmocks.NewPluginExecutor(t)
+		mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+			Return(plugin.PluginStatus{Available: false, DegradationState: plugin.DegradationState_FATAL})
+
+		transport := &redisTransport{
+			context:             ctx,
+			logger:              zap.NewNop(),
+			pluginExecutor:      mockPluginExecutor,
+			cancel:              cancel,
+			degradedModeBackoff: 10 * time.Millisecond,
+		}
+
+		got := transport.checkPluginsAvailable()
+		if got {
+			t.Error("checkPluginsAvailable() = true, want false")
+		}
+		select {
+		case <-ctx.Done():
+			// expected: cancel was invoked
+		case <-time.After(100 * time.Millisecond):
+			t.Error("context not cancelled after FATAL degradation state")
+		}
+	})
+
+	t.Run("available_true_setDegradedMode_fails_returns_false", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		mockPluginExecutor := pluginmocks.NewPluginExecutor(t)
+		mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+			Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
+
+		transport := &redisTransport{
+			context:         ctx,
+			logger:          zap.NewNop(),
+			pluginExecutor:  mockPluginExecutor,
+			serviceDegraded: true,
+			maxDegradedTime: time.Millisecond,
+		}
+		transport.serviceDegradedTimer = time.AfterFunc(transport.maxDegradedTime, cancel)
+		time.Sleep(5 * time.Millisecond) // ensure timer has fired
+
+		got := transport.checkPluginsAvailable()
+		if got {
+			t.Error("checkPluginsAvailable() = true, want false (setDegradedMode should have failed)")
+		}
+	})
+}
+
+func TestSetDegradedMode(t *testing.T) {
+	t.Run("no_op_when_already_degraded", func(t *testing.T) {
+		transport := &redisTransport{
+			logger:          zap.NewNop(),
+			serviceDegraded: true,
+		}
+
+		err := transport.setDegradedMode(true)
+		if err != nil {
+			t.Errorf("setDegradedMode(true) error = %v", err)
+		}
+		if transport.serviceDegradedTimer != nil {
+			t.Error("serviceDegradedTimer should remain nil when no transition")
+		}
+	})
+
+	t.Run("no_op_when_already_not_degraded", func(t *testing.T) {
+		transport := &redisTransport{
+			logger:          zap.NewNop(),
+			serviceDegraded: false,
+		}
+
+		err := transport.setDegradedMode(false)
+		if err != nil {
+			t.Errorf("setDegradedMode(false) error = %v", err)
+		}
+	})
+
+	t.Run("transition_to_degraded_starts_timer", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		transport := &redisTransport{
+			context:         ctx,
+			logger:          zap.NewNop(),
+			serviceDegraded: false,
+			maxDegradedTime: time.Hour,
+		}
+
+		err := transport.setDegradedMode(true)
+		if err != nil {
+			t.Errorf("setDegradedMode(true) error = %v", err)
+		}
+		if !transport.serviceDegraded {
+			t.Error("serviceDegraded = false, want true")
+		}
+		if transport.serviceDegradedTimer == nil {
+			t.Error("serviceDegradedTimer should be set")
+		}
+		// Clean up: stop timer to avoid cancel being called
+		transport.serviceDegradedTimer.Stop()
+	})
+
+	t.Run("recover_from_degraded_stops_timer", func(t *testing.T) {
+		transport := &redisTransport{
+			logger:               zap.NewNop(),
+			serviceDegraded:      true,
+			maxDegradedTime:      time.Hour,
+			serviceDegradedTimer: time.AfterFunc(time.Hour, func() {}),
+		}
+
+		err := transport.setDegradedMode(false)
+		if err != nil {
+			t.Errorf("setDegradedMode(false) error = %v", err)
+		}
+		if transport.serviceDegraded {
+			t.Error("serviceDegraded = true, want false")
+		}
+		if transport.serviceDegradedTimer != nil {
+			t.Error("serviceDegradedTimer should be nil after recovery")
+		}
+	})
+
+	t.Run("recover_fails_when_timer_already_fired", func(t *testing.T) {
+		_, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		transport := &redisTransport{
+			logger:               zap.NewNop(),
+			serviceDegraded:      true,
+			maxDegradedTime:      time.Millisecond,
+			serviceDegradedTimer: time.AfterFunc(time.Millisecond, cancel),
+		}
+		time.Sleep(5 * time.Millisecond) // ensure timer has fired
+
+		err := transport.setDegradedMode(false)
+		if err == nil {
+			t.Error("setDegradedMode(false) expected error when timer already fired")
+		}
+		if err != nil && !strings.Contains(err.Error(), "failed to stop") {
+			t.Errorf("error message should mention failed to stop: %v", err)
+		}
+	})
 }
 
 func TestRedisTransportFields(t *testing.T) {

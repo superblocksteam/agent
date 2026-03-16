@@ -192,6 +192,12 @@ spec:
           {{- if $.Values.sandbox_workers.queue.timeout.pool }}
           - "--transport.redis.timeout.pool={{ $.Values.sandbox_workers.queue.timeout.pool }}"
           {{- end }}
+          {{- if $.Values.sandbox_workers.queue.degradedMode.backoff }}
+          - "--transport.redis.degraded.mode.backoff={{ $.Values.sandbox_workers.queue.degradedMode.backoff }}"
+          {{- end }}
+          {{- if $.Values.sandbox_workers.queue.degradedMode.maxTime }}
+          - "--transport.redis.degraded.mode.max.time={{ $.Values.sandbox_workers.queue.degradedMode.maxTime }}"
+          {{- end }}
           # Redis store
           - "--store.redis.host={{ $.Values.sandbox_workers.kvstore.host }}"
           - "--store.redis.port={{ $.Values.sandbox_workers.kvstore.port }}"

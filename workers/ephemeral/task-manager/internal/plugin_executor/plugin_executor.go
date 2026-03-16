@@ -28,6 +28,8 @@ type PluginExecutor interface {
 	RegisterPlugin(name string, plugin plugin.Plugin) error
 	ListPlugins() []string
 	PluginsReady(ctx context.Context) <-chan bool
+	ArePluginsAvailable(ctx context.Context) plugin.PluginStatus
+
 	Execute(
 		ctx context.Context,
 		pluginName string,
@@ -112,6 +114,26 @@ func (p *pluginExecutor) PluginsReady(ctx context.Context) <-chan bool {
 	}()
 
 	return readyCh
+}
+
+func (p *pluginExecutor) ArePluginsAvailable(ctx context.Context) plugin.PluginStatus {
+	status := plugin.PluginStatus{
+		Available:        true,
+		DegradationState: plugin.DegradationState_NONE,
+	}
+
+	for _, plug := range p.plugins {
+		plugStatus := plug.IsAvailable(ctx)
+		if !plugStatus.Available {
+			status.Available = false
+			status.Error = errors.Join(status.Error, plugStatus.Error)
+			if plugStatus.DegradationState > status.DegradationState {
+				status.DegradationState = plugStatus.DegradationState
+			}
+		}
+	}
+
+	return status
 }
 
 func (p *pluginExecutor) getPlugin(pluginName string) (plugin.Plugin, error) {

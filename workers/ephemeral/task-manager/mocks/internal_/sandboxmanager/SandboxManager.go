@@ -81,9 +81,9 @@ func (_c *SandboxManager_CreateSandbox_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// DeleteSandbox provides a mock function with given fields: ctx, sandboxId
-func (_m *SandboxManager) DeleteSandbox(ctx context.Context, sandboxId string) error {
-	ret := _m.Called(ctx, sandboxId)
+// DeleteSandbox provides a mock function with given fields: ctx, jobName
+func (_m *SandboxManager) DeleteSandbox(ctx context.Context, jobName string) error {
+	ret := _m.Called(ctx, jobName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteSandbox")
@@ -91,7 +91,7 @@ func (_m *SandboxManager) DeleteSandbox(ctx context.Context, sandboxId string) e
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, sandboxId)
+		r0 = rf(ctx, jobName)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -106,12 +106,12 @@ type SandboxManager_DeleteSandbox_Call struct {
 
 // DeleteSandbox is a helper method to define mock.On call
 //   - ctx context.Context
-//   - sandboxId string
-func (_e *SandboxManager_Expecter) DeleteSandbox(ctx interface{}, sandboxId interface{}) *SandboxManager_DeleteSandbox_Call {
-	return &SandboxManager_DeleteSandbox_Call{Call: _e.mock.On("DeleteSandbox", ctx, sandboxId)}
+//   - jobName string
+func (_e *SandboxManager_Expecter) DeleteSandbox(ctx interface{}, jobName interface{}) *SandboxManager_DeleteSandbox_Call {
+	return &SandboxManager_DeleteSandbox_Call{Call: _e.mock.On("DeleteSandbox", ctx, jobName)}
 }
 
-func (_c *SandboxManager_DeleteSandbox_Call) Run(run func(ctx context.Context, sandboxId string)) *SandboxManager_DeleteSandbox_Call {
+func (_c *SandboxManager_DeleteSandbox_Call) Run(run func(ctx context.Context, jobName string)) *SandboxManager_DeleteSandbox_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})

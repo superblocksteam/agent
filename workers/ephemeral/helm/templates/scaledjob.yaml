@@ -214,6 +214,12 @@ spec:
           {{- if $.Values.queue.timeout.pool }}
           - "--transport.redis.timeout.pool={{ $.Values.queue.timeout.pool }}"
           {{- end }}
+          {{- if $.Values.queue.degradedMode.backoff }}
+          - "--transport.redis.degraded.mode.backoff={{ $.Values.queue.degradedMode.backoff }}"
+          {{- end }}
+          {{- if $.Values.queue.degradedMode.maxTime }}
+          - "--transport.redis.degraded.mode.max.time={{ $.Values.queue.degradedMode.maxTime }}"
+          {{- end }}
           # Redis store
           - "--store.redis.host={{ $.Values.kvstore.host }}"
           - "--store.redis.port={{ $.Values.kvstore.port }}"

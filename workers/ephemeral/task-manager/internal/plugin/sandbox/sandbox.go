@@ -30,6 +30,13 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+const (
+	// The delay between Health RPC retries when establishing initial connection to the sandbox
+	sandboxHealthBackoff = 500 * time.Millisecond
+	// The maximum time to wait for the sandbox to respond to the initial Health check during startup
+	sandboxHealthTimeout = 5 * time.Minute
+)
+
 // IpFilterSetter allows setting IP filters on the variable store
 type IpFilterSetter interface {
 	AddAllowedIps(ips ...string)
@@ -63,12 +70,16 @@ type SandboxPlugin struct {
 	// Sandbox manager for creating/deleting sandboxes
 	sandboxManager sandboxmanager.SandboxManager
 	sandboxInfo    *sandboxmanager.SandboxInfo
+	sandboxDead    atomic.Bool
 
 	// IP filter for the variable store - only accept connections from sandbox
 	ipFilterSetter IpFilterSetter
 
 	// Mutex for cleanup
 	mu sync.Mutex
+
+	// Protects conn and client; written once in Run() after connect, read by IsAvailable/Execute/ConnectionState
+	connMu sync.RWMutex
 
 	// Bool and slice of channels for notifying when the plugin is ready for executions
 	sandboxReady         atomic.Bool
@@ -197,7 +208,7 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 	}
 
 	// Connect to the sandbox
-	conn, client, err := p.connectToSandbox(p.sandboxAddress)
+	conn, client, err := p.connectToSandbox(ctx, p.sandboxAddress)
 	if err != nil {
 		// Cleanup the job if we can't connect (only in dynamic mode)
 		if p.sandboxInfo != nil && p.sandboxManager != nil {
@@ -206,28 +217,39 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to connect to sandbox: %w", err)
 	}
 
+	p.connMu.Lock()
 	p.conn = conn
 	p.client = client
+	p.connMu.Unlock()
 
 	logger.Info("successfully connected to sandbox, sandbox is ready for plugin executions")
 	p.sandboxReady.Store(true)
 	p.notifyReadyChannels()
 
+	p.monitorSandboxStatus(sandboxDeadCh, logger)
 	p.monitorConnectionState(conn, logger)
 
-	select {
-	case err := <-sandboxDeadCh:
-		if err != nil {
-			if err != ctx.Err() {
-				return fmt.Errorf("sandbox pod is no longer available: %w", err)
-			}
-			return ctx.Err()
-		}
+	<-ctx.Done()
+	return ctx.Err()
+}
 
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+func (p *SandboxPlugin) monitorSandboxStatus(sandboxDeadCh <-chan error, logger *zap.Logger) {
+	go func() {
+		for p.internalCtx.Err() == nil {
+			select {
+			case err := <-sandboxDeadCh:
+				if err != nil && err != p.internalCtx.Err() {
+					logger = logger.With(zap.Error(err))
+				}
+
+				logger.Warn("sandbox pod is dead, can no longer be used for plugin executions")
+				p.sandboxDead.Store(true)
+				return
+			case <-p.internalCtx.Done():
+				return
+			}
+		}
+	}()
 }
 
 func (p *SandboxPlugin) monitorConnectionState(conn *grpc.ClientConn, logger *zap.Logger) {
@@ -263,7 +285,7 @@ func (p *SandboxPlugin) monitorConnectionState(conn *grpc.ClientConn, logger *za
 }
 
 // connectToSandbox creates a gRPC connection to the sandbox pod
-func (p *SandboxPlugin) connectToSandbox(address string) (*grpc.ClientConn, workerv1.SandboxTransportServiceClient, error) {
+func (p *SandboxPlugin) connectToSandbox(ctx context.Context, address string) (*grpc.ClientConn, workerv1.SandboxTransportServiceClient, error) {
 	keepaliveParams := keepalive.ClientParameters{
 		Time:                10 * time.Second,
 		Timeout:             5 * time.Second,
@@ -287,7 +309,28 @@ func (p *SandboxPlugin) connectToSandbox(address string) (*grpc.ClientConn, work
 	}
 
 	client := workerv1.NewSandboxTransportServiceClient(conn)
-	return conn, client, nil
+
+	// Block until sandbox responds to health check
+	healthCtx, cancel := context.WithTimeout(ctx, sandboxHealthTimeout)
+	defer cancel()
+
+	for healthCtx.Err() == nil {
+		_, err := client.Health(healthCtx, &workerv1.HealthRequest{})
+		if err == nil {
+			return conn, client, nil
+		}
+
+		p.logger.Debug("sandbox health check failed, retrying after backoff", zap.Error(err), zap.Duration("backoff", sandboxHealthBackoff))
+		select {
+		case <-healthCtx.Done():
+			continue
+		case <-time.After(sandboxHealthBackoff):
+			continue
+		}
+	}
+
+	_ = conn.Close()
+	return nil, nil, fmt.Errorf("sandbox did not become ready within %s: %w", sandboxHealthTimeout, healthCtx.Err())
 }
 
 // Close cleans up any resources - closes connection and deletes sandbox Job.
@@ -308,11 +351,13 @@ func (p *SandboxPlugin) Close(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	p.connMu.Lock()
 	if p.conn != nil {
 		_ = p.conn.Close()
 		p.conn = nil
 		p.client = nil
 	}
+	p.connMu.Unlock()
 
 	if p.sandboxInfo != nil && p.sandboxManager != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -347,19 +392,14 @@ func (p *SandboxPlugin) Close(ctx context.Context) error {
 }
 
 // ConnectionState returns the underlying gRPC connection state for health checking
+// This method should be deprecated once we remove the health checker
 func (p *SandboxPlugin) ConnectionState() connectivity.State {
-	return p.conn.GetState()
-}
-
-// ConnectionReady returns true when the gRPC connection can be used for work.
-// We accept Idle (pre-first-RPC) and Ready; we reject TransientFailure and Shutdown
-// so the transport does not claim work when the sandbox is dead or unreachable.
-func (p *SandboxPlugin) ConnectionReady() bool {
+	p.connMu.RLock()
+	defer p.connMu.RUnlock()
 	if p.conn == nil {
-		return false
+		return connectivity.TransientFailure
 	}
-	s := p.conn.GetState()
-	return s == connectivity.Ready || s == connectivity.Idle
+	return p.conn.GetState()
 }
 
 func (p *SandboxPlugin) NotifyWhenReady(notifyCh chan<- bool) {
@@ -388,6 +428,65 @@ func (p *SandboxPlugin) notifyReadyChannels() {
 	}
 
 	p.sandboxReadyNotifyCh = nil
+}
+
+func (p *SandboxPlugin) IsAvailable(ctx context.Context) plugin.PluginStatus {
+	// Check if the sandbox is alive
+	if p.sandboxDead.Load() {
+		return plugin.PluginStatus{
+			Available:        false,
+			DegradationState: plugin.DegradationState_FATAL,
+			Error:            fmt.Errorf("sandbox is dead, cannot be used for plugin executions"),
+		}
+	}
+
+	// Check that we have a valid connection to the sandbox
+	p.connMu.RLock()
+	defer p.connMu.RUnlock()
+
+	if !p.connectionReady() {
+		return plugin.PluginStatus{
+			Available:        false,
+			DegradationState: plugin.DegradationState_TRANSIENT,
+			Error:            fmt.Errorf("sandbox connection not ready, current state: %s", p.connectionState()),
+		}
+	}
+
+	// Check that the sandbox is responding by calling the health endpoint
+	timeoutCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	if _, err := p.client.Health(timeoutCtx, &workerv1.HealthRequest{}); err != nil {
+		return plugin.PluginStatus{
+			Available:        false,
+			DegradationState: plugin.DegradationState_TRANSIENT,
+			Error:            fmt.Errorf("sandbox health check failed: %w", err),
+		}
+	}
+
+	return plugin.PluginStatus{
+		Available:        true,
+		DegradationState: plugin.DegradationState_NONE,
+	}
+}
+
+// connectionReady returns true when the gRPC connection can be used for work.
+// We accept Idle (pre-first-RPC) and Ready; we reject TransientFailure and Shutdown.
+// The second return value is the connection state string for error messages.
+func (p *SandboxPlugin) connectionReady() bool {
+	if p.conn == nil {
+		return false
+	}
+
+	s := p.conn.GetState()
+	return s == connectivity.Ready || s == connectivity.Idle
+}
+
+func (p *SandboxPlugin) connectionState() string {
+	if p.conn == nil {
+		return "not connected"
+	}
+	return p.conn.GetState().String()
 }
 
 // Execute runs code in the sandbox

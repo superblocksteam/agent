@@ -24,6 +24,52 @@ func (_m *PluginExecutor) EXPECT() *PluginExecutor_Expecter {
 	return &PluginExecutor_Expecter{mock: &_m.Mock}
 }
 
+// ArePluginsAvailable provides a mock function with given fields: ctx
+func (_m *PluginExecutor) ArePluginsAvailable(ctx context.Context) plugin.PluginStatus {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ArePluginsAvailable")
+	}
+
+	var r0 plugin.PluginStatus
+	if rf, ok := ret.Get(0).(func(context.Context) plugin.PluginStatus); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(plugin.PluginStatus)
+	}
+
+	return r0
+}
+
+// PluginExecutor_ArePluginsAvailable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ArePluginsAvailable'
+type PluginExecutor_ArePluginsAvailable_Call struct {
+	*mock.Call
+}
+
+// ArePluginsAvailable is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *PluginExecutor_Expecter) ArePluginsAvailable(ctx interface{}) *PluginExecutor_ArePluginsAvailable_Call {
+	return &PluginExecutor_ArePluginsAvailable_Call{Call: _e.mock.On("ArePluginsAvailable", ctx)}
+}
+
+func (_c *PluginExecutor_ArePluginsAvailable_Call) Run(run func(ctx context.Context)) *PluginExecutor_ArePluginsAvailable_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *PluginExecutor_ArePluginsAvailable_Call) Return(_a0 plugin.PluginStatus) *PluginExecutor_ArePluginsAvailable_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *PluginExecutor_ArePluginsAvailable_Call) RunAndReturn(run func(context.Context) plugin.PluginStatus) *PluginExecutor_ArePluginsAvailable_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Execute provides a mock function with given fields: ctx, pluginName, reqData, pinned, perf
 func (_m *PluginExecutor) Execute(ctx context.Context, pluginName string, reqData *v1.Request_Data_Data, pinned *v1.Request_Data_Pinned, perf *v1.Performance) (*v1.Response_Data_Data, error) {
 	ret := _m.Called(ctx, pluginName, reqData, pinned, perf)
