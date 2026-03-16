@@ -15,7 +15,7 @@ from textwrap import indent
 from traceback import extract_tb
 from typing import Optional
 
-from src.constants import get_env_var
+from src.constants import RESERVED_CONTEXT_KEYS, get_env_var
 from src.log import error
 from src.restricted import ALLOW_BUILTINS, restricted_environment
 from src.superblocks import Object, Reader, encode_bytestring_as_json
@@ -103,8 +103,11 @@ class Executor:
 
         my_module = module_from_spec(spec)
 
-        # Copy the context variables into the scope
+        # Copy the context variables into the scope.
+        # Skip reserved keys so they don't shadow user variables.
         for k in context.keys():
+            if k in RESERVED_CONTEXT_KEYS:
+                continue
             my_module.__dict__[k] = context[k]
 
         # Set up variable client if address provided

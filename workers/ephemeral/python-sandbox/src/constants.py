@@ -29,6 +29,10 @@ STREAM_PROPERTIES = [
 
 STORE_PROPERTY = "context"
 
+# Context keys that are system-reserved and must not be exposed to user code.
+# These overwrite user variables with the same name (e.g. "version" from API transport).
+RESERVED_CONTEXT_KEYS = frozenset({"version"})
+
 
 class ContextCategory(str, Enum):
     CONTEXT_GLOBAL = "context.global"

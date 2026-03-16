@@ -8,7 +8,8 @@ import pytest
 
 from src.executor import Executor
 from src.superblocks import Object
-from src.variables.variable import SimpleVariable, AdvancedVariable
+from src.variables.constants import VariableMode, VariableType
+from src.variables.variable import AdvancedVariable, SimpleVariable
 from src.variables.variable_client import VariableClient
 
 
@@ -75,6 +76,47 @@ class TestExecutor:
             context=context,
         )
         assert json.loads(result) == 42
+
+    def test_system_version_not_leaked_to_user_scope(self, executor):
+        """System 'version' from API transport must not leak into user scope when globals has no version."""
+        context = Object({
+            "globals": {},
+            "outputs": {},
+            "version": "v2",
+        })
+        result, stdout, stderr = executor.run(
+            code="return version",
+            context=context,
+        )
+
+        assert result == ""
+        assert any("__EXCEPTION__" in line for line in stderr)
+        assert "name 'version' is not defined" in " ".join(stderr).lower()
+
+    def test_user_version_superblocks_variable_not_shadowed_by_system(self, executor):
+        """When user defines 'version' as a Superblocks Variable, their value must be used, not system API version."""
+        var_client = MagicMock(spec=VariableClient)
+        var_client.read.return_value = (["23.1.0"], 0)
+        variables = {
+            "version": {
+                "key": "version",
+                "type": VariableType.NATIVE,
+                "mode": VariableMode.READ,
+            },
+        }
+        context = Object({
+            "globals": {},
+            "outputs": {},
+            "version": "v2",
+        })
+        result, stdout, stderr = executor.run(
+            code="return version",
+            context=context,
+            variable_client=var_client,
+            variables=variables,
+        )
+        assert json.loads(result) == "23.1.0"
+        assert stderr == []
 
     def test_stdout_capture(self, executor):
         """Test that stdout is captured."""
