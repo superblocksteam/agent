@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -15,8 +17,11 @@ import (
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/auth/types"
 	"github.com/superblocksteam/agent/pkg/clients"
+	"github.com/superblocksteam/agent/pkg/constants"
+	v1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
+	"google.golang.org/grpc/metadata"
 )
 
 func TestCheckAuth(t *testing.T) {
@@ -274,62 +279,112 @@ func TestCheckAuth(t *testing.T) {
 
 func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 	clock := clockwork.NewFakeClock()
+	makeJWT := func(t *testing.T, claims jwt.MapClaims) string {
+		t.Helper()
+
+		token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-secret"))
+		if err != nil {
+			t.Fatalf("failed to sign test jwt: %v", err)
+		}
+		return token
+	}
+	newContextWithSuperblocksJWT := func(t *testing.T, idpToken string) context.Context {
+		t.Helper()
+
+		superblocksJWT := makeJWT(t, jwt.MapClaims{
+			idpAccessTokenClaimKey: idpToken,
+		})
+		return metadata.NewIncomingContext(
+			context.Background(),
+			metadata.New(map[string]string{
+				constants.HeaderSuperblocksJwt: "Bearer " + superblocksJWT,
+			}),
+		)
+	}
+	validIdpToken := makeJWT(t, jwt.MapClaims{
+		"exp": clock.Now().Add(time.Hour).Unix(),
+	})
+	expiredIdpToken := makeJWT(t, jwt.MapClaims{
+		"exp": clock.Now().Add(-time.Hour).Unix(),
+	})
 
 	testCases := []struct {
 		name        string
+		ctx         context.Context
 		authConfig  map[string]any
 		cachedToken string
 		fetchErr    error
 		expected    *types.CheckAuthResponse
 	}{
 		{
-			name: "valid cached token",
+			name: "cached opaque token",
 			authConfig: map[string]any{
-				"clientId":     "clientId",
-				"clientSecret": "clientSecret",
-				"tokenUrl":     "tokenUrl",
-				"authUrl":      "authUrl",
-				"audience":     "audience",
-				"scope":        "scope",
-				"tokenScope":   "datasource",
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
 			},
-			cachedToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjk5OTk5OTk5OTl9.K7BXzRQZpuTb1hMGYwF7yQGRyXb1_prtBJHt7NqdhJU",
+			cachedToken: "databricks-access-token",
 			expected: &types.CheckAuthResponse{
 				Authenticated: true,
 				Cookies:       []*http.Cookie{},
 			},
 		},
 		{
-			name: "no cached token",
+			name: "valid identity provider token with no cached token",
 			authConfig: map[string]any{
-				"clientId":     "clientId",
-				"clientSecret": "clientSecret",
-				"tokenUrl":     "tokenUrl",
-				"authUrl":      "authUrl",
-				"audience":     "audience",
-				"scope":        "scope",
-				"tokenScope":   "datasource",
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
 			},
-			cachedToken: "",
-			fetchErr:    errors.New("no cached token"),
+			ctx:      newContextWithSuperblocksJWT(t, validIdpToken),
+			fetchErr: errors.New("no cached token"),
+			expected: &types.CheckAuthResponse{
+				Authenticated: true,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+		{
+			name: "expired identity provider token with no cached token",
+			authConfig: map[string]any{
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
+			},
+			ctx:      newContextWithSuperblocksJWT(t, expiredIdpToken),
+			fetchErr: errors.New("no cached token"),
 			expected: &types.CheckAuthResponse{
 				Authenticated: false,
 				Cookies:       []*http.Cookie{},
 			},
 		},
 		{
-			name: "invalid cached token",
+			name: "token fetch error and no identity provider token",
 			authConfig: map[string]any{
-				"clientId":     "clientId",
-				"clientSecret": "clientSecret",
-				"tokenUrl":     "tokenUrl",
-				"authUrl":      "authUrl",
-				"audience":     "audience",
-				"scope":        "scope",
-				"tokenScope":   "datasource",
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
 			},
-			cachedToken: "invalid-token",
-			fetchErr:    errors.New("invalid token"),
+			fetchErr: errors.New("invalid token"),
 			expected: &types.CheckAuthResponse{
 				Authenticated: false,
 				Cookies:       []*http.Cookie{},
@@ -342,11 +397,14 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 			anyConfigurationId := "any-configuration-id"
 			anyPluginId := "any-plugin-id"
 
-			anyCtx := context.Background()
+			anyCtx := tc.ctx
+			if anyCtx == nil {
+				anyCtx = context.Background()
+			}
 			dataSourceConfig := DatasourceConfig(authTypeOauthTokenExchange, tc.authConfig)
 
 			mockTokenFetcher := &mocks.OAuthCodeTokenFetcher{}
-			mockTokenFetcher.On("Fetch", anyCtx, authTypeOauthTokenExchange, mock.Anything, anyIntegrationId, anyConfigurationId, anyPluginId).Return(tc.cachedToken, "id-token", tc.fetchErr)
+			mockTokenFetcher.On("Fetch", mock.Anything, authTypeOauthTokenExchange, mock.Anything, anyIntegrationId, anyConfigurationId, anyPluginId).Return(tc.cachedToken, "id-token", tc.fetchErr)
 			tm := &tokenManager{
 				OAuthCodeTokenFetcher: mockTokenFetcher,
 				clock:                 clock,

@@ -153,10 +153,25 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 		}
 
 		authenticated = false
-		if cachedToken, _, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, integrationId, configurationId, pluginId); err == nil {
-			if valid, _ := t.isValidJwt(cachedToken, v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_UNSPECIFIED, log); valid {
+		if cachedToken, _, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, integrationId, configurationId, pluginId); err == nil && cachedToken != "" {
+			// Token cache expiry is enforced by the fetcher/cacher, so an opaque
+			// exchanged token is still sufficient to consider the datasource
+			// authenticated here.
+			authenticated = true
+			break
+		}
+
+		switch authConfigProto.GetSubjectTokenSource() {
+		case v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER:
+			subjectToken, err := t.getIdentityProviderAccessToken(ctx)
+			if err != nil {
+				break
+			}
+			if valid, _ := t.isValidJwt(subjectToken, authConfigProto.GetSubjectTokenSource(), log); valid {
 				authenticated = true
 			}
+		case v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN:
+			authenticated = authConfigProto.GetSubjectTokenSourceStaticToken() != ""
 		}
 	case authTypeFirebase:
 		if cookieValue == "" {
