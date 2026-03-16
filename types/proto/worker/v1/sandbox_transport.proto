@@ -19,6 +19,7 @@ service SandboxTransportService {
   rpc Metadata(MetadataRequest) returns (transport.v1.Response.Data.Data);
   rpc Test(TestRequest) returns (google.protobuf.Empty);
   rpc PreDelete(PreDeleteRequest) returns (google.protobuf.Empty);
+  rpc Health(HealthRequest) returns (HealthResponse);
 }
 
 message RequestMetadata {
@@ -82,6 +83,17 @@ message TestRequest {
 message PreDeleteRequest {
   RequestMetadata metadata = 1;
   google.protobuf.Struct datasourceConfig = 2;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_READY = 1;
+  }
+
+  Status status = 1;
 }
 
 message StructuredLog {

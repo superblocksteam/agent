@@ -77,7 +77,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1HealthResponse"
+              "$ref": "#/definitions/commonv1HealthResponse"
             }
           },
           "default": {
@@ -3299,6 +3299,30 @@
         "oauthTokenExchange": {
           "$ref": "#/definitions/AuthNothing",
           "title": "NOTE: @joeyagreco - we tried json_name here and sadly it does not work because the schema generator/convertor in the monorepo uses the ts type"
+        }
+      }
+    },
+    "commonv1HealthResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "uptime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "version": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/v1Pool"
+        },
+        "stream": {
+          "$ref": "#/definitions/v1Pool"
+        },
+        "id": {
+          "type": "string"
         }
       }
     },
@@ -6534,30 +6558,6 @@
         },
         "appRole": {
           "$ref": "#/definitions/AuthAppRole"
-        }
-      }
-    },
-    "v1HealthResponse": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "type": "string"
-        },
-        "uptime": {
-          "type": "string",
-          "format": "int64"
-        },
-        "version": {
-          "type": "string"
-        },
-        "store": {
-          "$ref": "#/definitions/v1Pool"
-        },
-        "stream": {
-          "$ref": "#/definitions/v1Pool"
-        },
-        "id": {
-          "type": "string"
         }
       }
     },

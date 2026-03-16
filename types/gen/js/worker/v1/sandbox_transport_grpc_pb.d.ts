@@ -20,6 +20,7 @@ interface ISandboxTransportServiceService extends grpc.ServiceDefinition<grpc.Un
     metadata: ISandboxTransportServiceService_IMetadata;
     test: ISandboxTransportServiceService_ITest;
     preDelete: ISandboxTransportServiceService_IPreDelete;
+    health: ISandboxTransportServiceService_IHealth;
 }
 
 interface ISandboxTransportServiceService_IExecute extends grpc.MethodDefinition<worker_v1_sandbox_transport_pb.ExecuteRequest, worker_v1_sandbox_transport_pb.ExecuteResponse> {
@@ -67,6 +68,15 @@ interface ISandboxTransportServiceService_IPreDelete extends grpc.MethodDefiniti
     responseSerialize: grpc.serialize<google_protobuf_empty_pb.Empty>;
     responseDeserialize: grpc.deserialize<google_protobuf_empty_pb.Empty>;
 }
+interface ISandboxTransportServiceService_IHealth extends grpc.MethodDefinition<worker_v1_sandbox_transport_pb.HealthRequest, worker_v1_sandbox_transport_pb.HealthResponse> {
+    path: "/worker.v1.SandboxTransportService/Health";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<worker_v1_sandbox_transport_pb.HealthRequest>;
+    requestDeserialize: grpc.deserialize<worker_v1_sandbox_transport_pb.HealthRequest>;
+    responseSerialize: grpc.serialize<worker_v1_sandbox_transport_pb.HealthResponse>;
+    responseDeserialize: grpc.deserialize<worker_v1_sandbox_transport_pb.HealthResponse>;
+}
 
 export const SandboxTransportServiceService: ISandboxTransportServiceService;
 
@@ -76,6 +86,7 @@ export interface ISandboxTransportServiceServer extends grpc.UntypedServiceImple
     metadata: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.MetadataRequest, transport_v1_transport_pb.Response.Data.Data>;
     test: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.TestRequest, google_protobuf_empty_pb.Empty>;
     preDelete: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.PreDeleteRequest, google_protobuf_empty_pb.Empty>;
+    health: grpc.handleUnaryCall<worker_v1_sandbox_transport_pb.HealthRequest, worker_v1_sandbox_transport_pb.HealthResponse>;
 }
 
 export interface ISandboxTransportServiceClient {
@@ -94,6 +105,9 @@ export interface ISandboxTransportServiceClient {
     preDelete(request: worker_v1_sandbox_transport_pb.PreDeleteRequest, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
     preDelete(request: worker_v1_sandbox_transport_pb.PreDeleteRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
     preDelete(request: worker_v1_sandbox_transport_pb.PreDeleteRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
+    health(request: worker_v1_sandbox_transport_pb.HealthRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.HealthResponse) => void): grpc.ClientUnaryCall;
+    health(request: worker_v1_sandbox_transport_pb.HealthRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.HealthResponse) => void): grpc.ClientUnaryCall;
+    health(request: worker_v1_sandbox_transport_pb.HealthRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.HealthResponse) => void): grpc.ClientUnaryCall;
 }
 
 export class SandboxTransportServiceClient extends grpc.Client implements ISandboxTransportServiceClient {
@@ -113,4 +127,7 @@ export class SandboxTransportServiceClient extends grpc.Client implements ISandb
     public preDelete(request: worker_v1_sandbox_transport_pb.PreDeleteRequest, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
     public preDelete(request: worker_v1_sandbox_transport_pb.PreDeleteRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
     public preDelete(request: worker_v1_sandbox_transport_pb.PreDeleteRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: google_protobuf_empty_pb.Empty) => void): grpc.ClientUnaryCall;
+    public health(request: worker_v1_sandbox_transport_pb.HealthRequest, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.HealthResponse) => void): grpc.ClientUnaryCall;
+    public health(request: worker_v1_sandbox_transport_pb.HealthRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.HealthResponse) => void): grpc.ClientUnaryCall;
+    public health(request: worker_v1_sandbox_transport_pb.HealthRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: worker_v1_sandbox_transport_pb.HealthResponse) => void): grpc.ClientUnaryCall;
 }

@@ -61,6 +61,9 @@ class SandboxTransportServicer(transport_pb2_grpc.SandboxTransportServiceService
     def PreDelete(self, request, context) -> None:
         pass
 
+    def Health(self, request, context) -> transport_pb2.HealthResponse:
+        return transport_pb2.HealthResponse(status=transport_pb2.HealthResponse.STATUS_READY)
+
     def _execution_output_to_proto(self, output: dict) -> transport_pb2.ExecuteResponse:
         """Convert an ExecutionOutput-like dict to ExecuteResponse proto."""
         output_old = self._create_output_old(output)

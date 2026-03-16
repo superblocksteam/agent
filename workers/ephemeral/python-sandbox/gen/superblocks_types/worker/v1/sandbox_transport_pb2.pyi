@@ -100,6 +100,22 @@ class PreDeleteRequest(_message.Message):
     datasourceConfig: _struct_pb2.Struct
     def __init__(self, metadata: _Optional[_Union[RequestMetadata, _Mapping]] = ..., datasourceConfig: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ...) -> None: ...
 
+class HealthRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class HealthResponse(_message.Message):
+    __slots__ = ("status",)
+    class Status(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+        __slots__ = ()
+        STATUS_UNSPECIFIED: _ClassVar[HealthResponse.Status]
+        STATUS_READY: _ClassVar[HealthResponse.Status]
+    STATUS_UNSPECIFIED: HealthResponse.Status
+    STATUS_READY: HealthResponse.Status
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    status: HealthResponse.Status
+    def __init__(self, status: _Optional[_Union[HealthResponse.Status, str]] = ...) -> None: ...
+
 class StructuredLog(_message.Message):
     __slots__ = ("message", "level")
     class Level(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):

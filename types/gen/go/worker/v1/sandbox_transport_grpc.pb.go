@@ -26,6 +26,7 @@ const (
 	SandboxTransportService_Metadata_FullMethodName  = "/worker.v1.SandboxTransportService/Metadata"
 	SandboxTransportService_Test_FullMethodName      = "/worker.v1.SandboxTransportService/Test"
 	SandboxTransportService_PreDelete_FullMethodName = "/worker.v1.SandboxTransportService/PreDelete"
+	SandboxTransportService_Health_FullMethodName    = "/worker.v1.SandboxTransportService/Health"
 )
 
 // SandboxTransportServiceClient is the client API for SandboxTransportService service.
@@ -37,6 +38,7 @@ type SandboxTransportServiceClient interface {
 	Metadata(ctx context.Context, in *MetadataRequest, opts ...grpc.CallOption) (*v1.Response_Data_Data, error)
 	Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PreDelete(ctx context.Context, in *PreDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
 
 type sandboxTransportServiceClient struct {
@@ -92,6 +94,15 @@ func (c *sandboxTransportServiceClient) PreDelete(ctx context.Context, in *PreDe
 	return out, nil
 }
 
+func (c *sandboxTransportServiceClient) Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
+	out := new(HealthResponse)
+	err := c.cc.Invoke(ctx, SandboxTransportService_Health_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SandboxTransportServiceServer is the server API for SandboxTransportService service.
 // All implementations should embed UnimplementedSandboxTransportServiceServer
 // for forward compatibility
@@ -101,6 +112,7 @@ type SandboxTransportServiceServer interface {
 	Metadata(context.Context, *MetadataRequest) (*v1.Response_Data_Data, error)
 	Test(context.Context, *TestRequest) (*emptypb.Empty, error)
 	PreDelete(context.Context, *PreDeleteRequest) (*emptypb.Empty, error)
+	Health(context.Context, *HealthRequest) (*HealthResponse, error)
 }
 
 // UnimplementedSandboxTransportServiceServer should be embedded to have forward compatible implementations.
@@ -121,6 +133,9 @@ func (UnimplementedSandboxTransportServiceServer) Test(context.Context, *TestReq
 }
 func (UnimplementedSandboxTransportServiceServer) PreDelete(context.Context, *PreDeleteRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PreDelete not implemented")
+}
+func (UnimplementedSandboxTransportServiceServer) Health(context.Context, *HealthRequest) (*HealthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Health not implemented")
 }
 
 // UnsafeSandboxTransportServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -224,6 +239,24 @@ func _SandboxTransportService_PreDelete_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SandboxTransportService_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HealthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxTransportServiceServer).Health(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxTransportService_Health_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxTransportServiceServer).Health(ctx, req.(*HealthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SandboxTransportService_ServiceDesc is the grpc.ServiceDesc for SandboxTransportService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -250,6 +283,10 @@ var SandboxTransportService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PreDelete",
 			Handler:    _SandboxTransportService_PreDelete_Handler,
+		},
+		{
+			MethodName: "Health",
+			Handler:    _SandboxTransportService_Health_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

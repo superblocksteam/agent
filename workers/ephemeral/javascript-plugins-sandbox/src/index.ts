@@ -23,6 +23,8 @@ import { ISandboxTransportServiceServer, SandboxTransportServiceService } from '
 import {
   ExecuteRequest as ProtoExecuteRequest,
   ExecuteResponse as ProtoExecuteResponse,
+  HealthRequest as ProtoHealthRequest,
+  HealthResponse as ProtoHealthResponse,
   MetadataRequest as ProtoMetadataRequest,
   PreDeleteRequest as ProtoPreDeleteRequest,
   StreamRequest as ProtoStreamRequest,
@@ -121,6 +123,15 @@ function createSandboxTransportService(
       const pluginName = call.request.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: PreDeleteRequest = messageTransformer.protoRequestToNative(call.request) as PreDeleteRequest;
       void handleEvent(pluginsRouter.handlePreDeleteEvent.bind(pluginsRouter), pluginName, nativeRequest, callback, undefined);
+    },
+
+    health(
+      call: grpc.ServerUnaryCall<ProtoHealthRequest, ProtoHealthResponse>,
+      callback: grpc.sendUnaryData<ProtoHealthResponse>
+    ) {
+      const response = new ProtoHealthResponse();
+      response.setStatus(ProtoHealthResponse.Status.STATUS_READY);
+      callback(null, response);
     }
   };
 }

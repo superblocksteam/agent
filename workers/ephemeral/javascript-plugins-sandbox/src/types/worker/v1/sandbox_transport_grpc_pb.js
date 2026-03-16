@@ -55,6 +55,28 @@ function deserialize_worker_v1_ExecuteResponse(buffer_arg) {
   return worker_v1_sandbox_transport_pb.ExecuteResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_worker_v1_HealthRequest(arg) {
+  if (!(arg instanceof worker_v1_sandbox_transport_pb.HealthRequest)) {
+    throw new Error('Expected argument of type worker.v1.HealthRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_worker_v1_HealthRequest(buffer_arg) {
+  return worker_v1_sandbox_transport_pb.HealthRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_worker_v1_HealthResponse(arg) {
+  if (!(arg instanceof worker_v1_sandbox_transport_pb.HealthResponse)) {
+    throw new Error('Expected argument of type worker.v1.HealthResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_worker_v1_HealthResponse(buffer_arg) {
+  return worker_v1_sandbox_transport_pb.HealthResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_worker_v1_MetadataRequest(arg) {
   if (!(arg instanceof worker_v1_sandbox_transport_pb.MetadataRequest)) {
     throw new Error('Expected argument of type worker.v1.MetadataRequest');
@@ -156,6 +178,17 @@ var SandboxTransportServiceService = exports.SandboxTransportServiceService = {
     requestDeserialize: deserialize_worker_v1_PreDeleteRequest,
     responseSerialize: serialize_google_protobuf_Empty,
     responseDeserialize: deserialize_google_protobuf_Empty,
+  },
+  health: {
+    path: '/worker.v1.SandboxTransportService/Health',
+    requestStream: false,
+    responseStream: false,
+    requestType: worker_v1_sandbox_transport_pb.HealthRequest,
+    responseType: worker_v1_sandbox_transport_pb.HealthResponse,
+    requestSerialize: serialize_worker_v1_HealthRequest,
+    requestDeserialize: deserialize_worker_v1_HealthRequest,
+    responseSerialize: serialize_worker_v1_HealthResponse,
+    responseDeserialize: deserialize_worker_v1_HealthResponse,
   },
 };
 

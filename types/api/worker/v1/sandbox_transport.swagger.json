@@ -607,6 +607,14 @@
         }
       }
     },
+    "v1HealthResponseStatus": {
+      "type": "string",
+      "enum": [
+        "STATUS_UNSPECIFIED",
+        "STATUS_READY"
+      ],
+      "default": "STATUS_UNSPECIFIED"
+    },
     "v1IntegrationDiagnostic": {
       "type": "object",
       "properties": {
@@ -869,6 +877,14 @@
         }
       },
       "title": "Execute request sent to workers"
+    },
+    "workerv1HealthResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1HealthResponseStatus"
+        }
+      }
     }
   }
 }

@@ -415,6 +415,94 @@ export class PreDeleteRequest extends Message<PreDeleteRequest> {
 }
 
 /**
+ * @generated from message worker.v1.HealthRequest
+ */
+export class HealthRequest extends Message<HealthRequest> {
+  constructor(data?: PartialMessage<HealthRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "worker.v1.HealthRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): HealthRequest {
+    return new HealthRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): HealthRequest {
+    return new HealthRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): HealthRequest {
+    return new HealthRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: HealthRequest | PlainMessage<HealthRequest> | undefined, b: HealthRequest | PlainMessage<HealthRequest> | undefined): boolean {
+    return proto3.util.equals(HealthRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message worker.v1.HealthResponse
+ */
+export class HealthResponse extends Message<HealthResponse> {
+  /**
+   * @generated from field: worker.v1.HealthResponse.Status status = 1;
+   */
+  status = HealthResponse_Status.UNSPECIFIED;
+
+  constructor(data?: PartialMessage<HealthResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "worker.v1.HealthResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(HealthResponse_Status) },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): HealthResponse {
+    return new HealthResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): HealthResponse {
+    return new HealthResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): HealthResponse {
+    return new HealthResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: HealthResponse | PlainMessage<HealthResponse> | undefined, b: HealthResponse | PlainMessage<HealthResponse> | undefined): boolean {
+    return proto3.util.equals(HealthResponse, a, b);
+  }
+}
+
+/**
+ * @generated from enum worker.v1.HealthResponse.Status
+ */
+export enum HealthResponse_Status {
+  /**
+   * @generated from enum value: STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: STATUS_READY = 1;
+   */
+  READY = 1,
+}
+// Retrieve enum metadata with: proto3.getEnumType(HealthResponse_Status)
+proto3.util.setEnumType(HealthResponse_Status, "worker.v1.HealthResponse.Status", [
+  { no: 0, name: "STATUS_UNSPECIFIED" },
+  { no: 1, name: "STATUS_READY" },
+]);
+
+/**
  * @generated from message worker.v1.StructuredLog
  */
 export class StructuredLog extends Message<StructuredLog> {

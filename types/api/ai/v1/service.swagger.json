@@ -29,7 +29,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1HealthResponse"
+              "$ref": "#/definitions/commonv1HealthResponse"
             }
           },
           "default": {
@@ -92,7 +92,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1HealthResponse"
+              "$ref": "#/definitions/commonv1HealthResponse"
             }
           },
           "default": {
@@ -226,6 +226,30 @@
         }
       }
     },
+    "commonv1HealthResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "uptime": {
+          "type": "string",
+          "format": "int64"
+        },
+        "version": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/v1Pool"
+        },
+        "stream": {
+          "$ref": "#/definitions/v1Pool"
+        },
+        "id": {
+          "type": "string"
+        }
+      }
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -272,30 +296,6 @@
         },
         "overrides": {
           "$ref": "#/definitions/v1Overrides"
-        }
-      }
-    },
-    "v1HealthResponse": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "type": "string"
-        },
-        "uptime": {
-          "type": "string",
-          "format": "int64"
-        },
-        "version": {
-          "type": "string"
-        },
-        "store": {
-          "$ref": "#/definitions/v1Pool"
-        },
-        "stream": {
-          "$ref": "#/definitions/v1Pool"
-        },
-        "id": {
-          "type": "string"
         }
       }
     },
