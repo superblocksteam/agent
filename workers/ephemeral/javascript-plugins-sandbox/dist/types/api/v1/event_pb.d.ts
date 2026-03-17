@@ -417,10 +417,6 @@ export class IntegrationDiagnostic extends jspb.Message {
     clearMetadata(): void;
     getMetadata(): TraceMetadata | undefined;
     setMetadata(value?: TraceMetadata): IntegrationDiagnostic;
-    getInputWasTruncated(): boolean;
-    setInputWasTruncated(value: boolean): IntegrationDiagnostic;
-    getOutputWasTruncated(): boolean;
-    setOutputWasTruncated(value: boolean): IntegrationDiagnostic;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): IntegrationDiagnostic.AsObject;
@@ -444,8 +440,6 @@ export namespace IntegrationDiagnostic {
         error: string,
         sequence: number,
         metadata?: TraceMetadata.AsObject,
-        inputWasTruncated: boolean,
-        outputWasTruncated: boolean,
     }
 }
 
