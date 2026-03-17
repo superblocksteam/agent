@@ -8,6 +8,7 @@ import (
 
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/auth/types"
+	"github.com/superblocksteam/agent/pkg/constants"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/jsonutils"
 	"github.com/superblocksteam/agent/pkg/observability"
@@ -27,9 +28,23 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 	requestCookies := GetCookies(ctx)
 	responseCookies := []*http.Cookie{}
 
-	authType := integration.Fields["authType"].GetStringValue()
+	rawAuthType := integration.Fields["authType"].GetStringValue()
+	authTypeField := integration.Fields["authTypeField"].GetStringValue()
+	authType := getAuthTypeFromDatasourceConfiguration(log, integration)
+	normalizedAuthType := normalizeAuthType(authType)
 	authConfig := integration.Fields["authConfig"].GetStructValue()
-	log = log.With(zap.String("authType", authType))
+	log = log.With(
+		zap.String("authType", authType),
+		zap.String("authTypeField", authTypeField),
+		zap.String("configurationId", configurationId),
+		zap.String("integrationId", integrationId),
+		zap.String("normalizedAuthType", normalizedAuthType),
+		zap.String("pluginId", pluginId),
+		zap.String("rawAuthType", rawAuthType),
+	)
+	if normalizedAuthType == "" && authConfig != nil && len(authConfig.Fields) > 0 {
+		log.Warn("check-auth could not resolve auth type")
+	}
 
 	authTokenScope := ""
 	if integration.Fields["authConfig"].GetStructValue() != nil {
@@ -61,7 +76,7 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 	var idTokenCookieValue string
 	var idTokenExp time.Time
 
-	switch authType {
+	switch normalizedAuthType {
 	case authTypeBasic, authTypeOauthImplicit:
 		authenticated = cookieValue != ""
 	case authTypeOauthPassword:
@@ -152,26 +167,63 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 			return nil, &sberrors.InternalError{Err: err}
 		}
 
+		cachedTokenHit := false
+		cachedTokenLookupError := ""
+		idpTokenExtracted := false
+		subjectTokenSource := authConfigProto.GetSubjectTokenSource().String()
+		subjectTokenValid := false
+		subjectTokenValidationError := ""
+		validateSubjectToken := false
+
 		authenticated = false
 		if cachedToken, _, err := t.OAuthCodeTokenFetcher.Fetch(ctx, authType, authConfigProto, integrationId, configurationId, pluginId); err == nil && cachedToken != "" {
 			// Token cache expiry is enforced by the fetcher/cacher, so an opaque
 			// exchanged token is still sufficient to consider the datasource
 			// authenticated here.
+			cachedTokenHit = true
 			authenticated = true
 			break
+		} else if err != nil {
+			cachedTokenLookupError = err.Error()
 		}
 
 		switch authConfigProto.GetSubjectTokenSource() {
 		case v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER:
 			subjectToken, err := t.getIdentityProviderAccessToken(ctx)
 			if err != nil {
+				log.Warn("could not extract identity provider token for check-auth", zap.Error(err))
 				break
 			}
-			if valid, _ := t.isValidJwt(subjectToken, authConfigProto.GetSubjectTokenSource(), log); valid {
-				authenticated = true
+			idpTokenExtracted = true
+			validateSubjectToken = t.flags.GetValidateSubjectTokenDuringOboFlowEnabled(constants.OrganizationID(ctx))
+			if validateSubjectToken {
+				if valid, err := t.isValidJwt(subjectToken, authConfigProto.GetSubjectTokenSource(), log); !valid {
+					if err != nil {
+						subjectTokenValidationError = err.Error()
+					}
+					break
+				}
+				subjectTokenValid = true
 			}
+			authenticated = true
 		case v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_STATIC_TOKEN:
 			authenticated = authConfigProto.GetSubjectTokenSourceStaticToken() != ""
+		}
+		if !authenticated {
+			fields := []zap.Field{
+				zap.Bool("cachedTokenHit", cachedTokenHit),
+				zap.Bool("idpTokenExtracted", idpTokenExtracted),
+				zap.String("subjectTokenSource", subjectTokenSource),
+				zap.Bool("subjectTokenValid", subjectTokenValid),
+				zap.Bool("validateSubjectToken", validateSubjectToken),
+			}
+			if cachedTokenLookupError != "" {
+				fields = append(fields, zap.String("cachedTokenLookupError", cachedTokenLookupError))
+			}
+			if subjectTokenValidationError != "" {
+				fields = append(fields, zap.String("subjectTokenValidationError", subjectTokenValidationError))
+			}
+			log.Warn("check-auth token exchange unauthenticated", fields...)
 		}
 	case authTypeFirebase:
 		if cookieValue == "" {

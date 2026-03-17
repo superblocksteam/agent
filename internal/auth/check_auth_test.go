@@ -16,12 +16,14 @@ import (
 	"github.com/superblocksteam/agent/internal/auth/mocks"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/auth/types"
+	flagsmocks "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/constants"
 	v1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestCheckAuth(t *testing.T) {
@@ -301,20 +303,16 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 			}),
 		)
 	}
-	validIdpToken := makeJWT(t, jwt.MapClaims{
-		"exp": clock.Now().Add(time.Hour).Unix(),
-	})
-	expiredIdpToken := makeJWT(t, jwt.MapClaims{
-		"exp": clock.Now().Add(-time.Hour).Unix(),
-	})
-
 	testCases := []struct {
-		name        string
-		ctx         context.Context
-		authConfig  map[string]any
-		cachedToken string
-		fetchErr    error
-		expected    *types.CheckAuthResponse
+		name             string
+		ctx              context.Context
+		authConfig       map[string]any
+		cachedToken      string
+		dataSourceConfig *structpb.Struct
+		fetchErr         error
+		fetchAuthType    string
+		validateFlag     *bool
+		expected         *types.CheckAuthResponse
 	}{
 		{
 			name: "cached opaque token",
@@ -335,7 +333,7 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 			},
 		},
 		{
-			name: "valid identity provider token with no cached token",
+			name: "normalized oauthTokenExchange auth type accepted",
 			authConfig: map[string]any{
 				"clientId":           "clientId",
 				"clientSecret":       "clientSecret",
@@ -346,15 +344,27 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
 				"tokenScope":         "datasource",
 			},
-			ctx:      newContextWithSuperblocksJWT(t, validIdpToken),
-			fetchErr: errors.New("no cached token"),
+			ctx: newContextWithSuperblocksJWT(t, "okta-opaque-access-token"),
+			dataSourceConfig: DatasourceConfig("oauthTokenExchange", map[string]any{
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
+			}),
+			fetchAuthType: "oauthTokenExchange",
+			fetchErr:      errors.New("no cached token"),
+			validateFlag:  boolPtr(false),
 			expected: &types.CheckAuthResponse{
 				Authenticated: true,
 				Cookies:       []*http.Cookie{},
 			},
 		},
 		{
-			name: "expired identity provider token with no cached token",
+			name: "authTypeField resolves oauth token exchange",
 			authConfig: map[string]any{
 				"clientId":           "clientId",
 				"clientSecret":       "clientSecret",
@@ -365,15 +375,116 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
 				"tokenScope":         "datasource",
 			},
-			ctx:      newContextWithSuperblocksJWT(t, expiredIdpToken),
-			fetchErr: errors.New("no cached token"),
+			ctx: newContextWithSuperblocksJWT(t, "okta-opaque-access-token"),
+			dataSourceConfig: DatasourceConfigWithAuthTypeField(
+				"connectionType",
+				authTypeOauthTokenExchange,
+				map[string]any{
+					"clientId":           "clientId",
+					"clientSecret":       "clientSecret",
+					"tokenUrl":           "tokenUrl",
+					"authUrl":            "authUrl",
+					"audience":           "audience",
+					"scope":              "scope",
+					"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+					"tokenScope":         "datasource",
+				},
+			),
+			fetchErr:     errors.New("no cached token"),
+			validateFlag: boolPtr(false),
+			expected: &types.CheckAuthResponse{
+				Authenticated: true,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+		{
+			name: "flag off: opaque IdP token accepted",
+			authConfig: map[string]any{
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
+			},
+			ctx:          newContextWithSuperblocksJWT(t, "okta-opaque-access-token"),
+			fetchErr:     errors.New("no cached token"),
+			validateFlag: boolPtr(false),
+			expected: &types.CheckAuthResponse{
+				Authenticated: true,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+		{
+			name: "flag off: valid JWT IdP token accepted",
+			authConfig: map[string]any{
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
+			},
+			ctx: newContextWithSuperblocksJWT(t, makeJWT(t, jwt.MapClaims{
+				"exp": clock.Now().Add(time.Hour).Unix(),
+			})),
+			fetchErr:     errors.New("no cached token"),
+			validateFlag: boolPtr(false),
+			expected: &types.CheckAuthResponse{
+				Authenticated: true,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+		{
+			name: "flag on: valid JWT IdP token accepted",
+			authConfig: map[string]any{
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
+			},
+			ctx: newContextWithSuperblocksJWT(t, makeJWT(t, jwt.MapClaims{
+				"exp": clock.Now().Add(time.Hour).Unix(),
+			})),
+			fetchErr:     errors.New("no cached token"),
+			validateFlag: boolPtr(true),
+			expected: &types.CheckAuthResponse{
+				Authenticated: true,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+		{
+			name: "flag on: expired JWT IdP token rejected",
+			authConfig: map[string]any{
+				"clientId":           "clientId",
+				"clientSecret":       "clientSecret",
+				"tokenUrl":           "tokenUrl",
+				"authUrl":            "authUrl",
+				"audience":           "audience",
+				"scope":              "scope",
+				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
+				"tokenScope":         "datasource",
+			},
+			ctx: newContextWithSuperblocksJWT(t, makeJWT(t, jwt.MapClaims{
+				"exp": clock.Now().Add(-time.Hour).Unix(),
+			})),
+			fetchErr:     errors.New("no cached token"),
+			validateFlag: boolPtr(true),
 			expected: &types.CheckAuthResponse{
 				Authenticated: false,
 				Cookies:       []*http.Cookie{},
 			},
 		},
 		{
-			name: "token fetch error and no identity provider token",
+			name: "no identity provider token in context",
 			authConfig: map[string]any{
 				"clientId":           "clientId",
 				"clientSecret":       "clientSecret",
@@ -384,7 +495,8 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 				"subjectTokenSource": int32(v1.OAuth_AuthorizationCodeFlow_SUBJECT_TOKEN_SOURCE_LOGIN_IDENTITY_PROVIDER),
 				"tokenScope":         "datasource",
 			},
-			fetchErr: errors.New("invalid token"),
+			fetchErr:     errors.New("invalid token"),
+			validateFlag: boolPtr(false),
 			expected: &types.CheckAuthResponse{
 				Authenticated: false,
 				Cookies:       []*http.Cookie{},
@@ -401,13 +513,27 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 			if anyCtx == nil {
 				anyCtx = context.Background()
 			}
-			dataSourceConfig := DatasourceConfig(authTypeOauthTokenExchange, tc.authConfig)
+			dataSourceConfig := tc.dataSourceConfig
+			if dataSourceConfig == nil {
+				dataSourceConfig = DatasourceConfig(authTypeOauthTokenExchange, tc.authConfig)
+			}
+			fetchAuthType := tc.fetchAuthType
+			if fetchAuthType == "" {
+				fetchAuthType = authTypeOauthTokenExchange
+			}
 
 			mockTokenFetcher := &mocks.OAuthCodeTokenFetcher{}
-			mockTokenFetcher.On("Fetch", mock.Anything, authTypeOauthTokenExchange, mock.Anything, anyIntegrationId, anyConfigurationId, anyPluginId).Return(tc.cachedToken, "id-token", tc.fetchErr)
+			mockTokenFetcher.On("Fetch", mock.Anything, fetchAuthType, mock.Anything, anyIntegrationId, anyConfigurationId, anyPluginId).Return(tc.cachedToken, "id-token", tc.fetchErr)
+
+			mockFlags := flagsmocks.NewFlags(t)
+			if tc.validateFlag != nil {
+				mockFlags.On("GetValidateSubjectTokenDuringOboFlowEnabled", mock.Anything).Return(*tc.validateFlag).Maybe()
+			}
+
 			tm := &tokenManager{
 				OAuthCodeTokenFetcher: mockTokenFetcher,
 				clock:                 clock,
+				flags:                 mockFlags,
 				logger:                zaptest.NewLogger(t),
 			}
 
@@ -418,4 +544,18 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func boolPtr(b bool) *bool { return &b }
+
+func DatasourceConfigWithAuthTypeField(authTypeField string, authType string, authConfig map[string]interface{}) *structpb.Struct {
+	s, err := structpb.NewStruct(map[string]interface{}{
+		"authConfig":    authConfig,
+		"authTypeField": authTypeField,
+		authTypeField:   authType,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
