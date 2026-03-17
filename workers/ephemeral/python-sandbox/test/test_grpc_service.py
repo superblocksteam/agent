@@ -1,8 +1,9 @@
 """Tests for the gRPC service."""
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import grpc
 import pytest
 from google.protobuf import json_format
 
@@ -432,3 +433,273 @@ return result
 
         assert _exit_code_from_response(response) == 0, _stderr_from_response(response)
         assert _result_from_response(response) == ["item1", "item2", "item3"]
+
+
+class TestSystemErrorClassification:
+    """Tests that system failures (gRPC errors) return gRPC error codes,
+    while user code errors return OK-with-error-body."""
+
+    @pytest.fixture
+    def servicer(self):
+        return SandboxTransportServicer()
+
+    @pytest.fixture
+    def mock_context(self):
+        ctx = MagicMock()
+        ctx.set_code = MagicMock()
+        ctx.set_details = MagicMock()
+        return ctx
+
+    @staticmethod
+    def _make_rpc_error(status_code, details_msg):
+        err = grpc.RpcError()
+        err.code = lambda: status_code
+        err.details = lambda: details_msg
+        return err
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
+    async def test_grpc_error_returns_internal_status(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """gRPC errors from variable reads should set INTERNAL status, not OK-with-error."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = "exec-123"
+        request.variable_store_address = "localhost:50052"
+        mock_message_to_dict.return_value = _plugin_props("return x", execution_id="exec-123")
+        mock_message_to_dict.return_value["bindingKeys"] = [
+            {"type": "global", "key": "x"},
+        ]
+        mock_message_to_dict.return_value["actionConfiguration"] = {
+            "body": "return x",
+            "x": True,
+        }
+
+        rpc_error = self._make_rpc_error(grpc.StatusCode.UNAVAILABLE, "Connection refused")
+
+        with patch.object(VariableClient, "connect"):
+            with patch.object(VariableClient, "read", side_effect=rpc_error):
+                with patch.object(VariableClient, "close") as mock_close:
+                    response = await servicer.Execute(request, mock_context)
+
+        # gRPC error status set on context
+        mock_context.set_code.assert_called_once_with(grpc.StatusCode.INTERNAL)
+        mock_context.set_details.assert_called_once()
+        assert "Connection refused" in mock_context.set_details.call_args[0][0]
+        # Response body has no error (error is at transport level)
+        assert response.error.message == ""
+        # Connection still cleaned up
+        mock_close.assert_called_once_with("done")
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
+    async def test_user_code_error_returns_ok_with_error_body(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """User code errors (syntax, runtime) should return OK-with-error-body, not gRPC error."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = ""
+        request.variable_store_address = ""
+        mock_message_to_dict.return_value = _plugin_props("raise ValueError('bad input')")
+
+        response = await servicer.Execute(request, mock_context)
+
+        # gRPC status NOT set (OK response with error in body)
+        mock_context.set_code.assert_not_called()
+        # Error is in the response body
+        assert _exit_code_from_response(response) == 1
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
+    async def test_grpc_deadline_exceeded_returns_internal_status(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """DEADLINE_EXCEEDED from variable store should surface as INTERNAL."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = "exec-456"
+        request.variable_store_address = "localhost:50052"
+        mock_message_to_dict.return_value = _plugin_props("return x", execution_id="exec-456")
+        mock_message_to_dict.return_value["bindingKeys"] = [
+            {"type": "global", "key": "x"},
+        ]
+        mock_message_to_dict.return_value["actionConfiguration"] = {
+            "body": "return x",
+            "x": True,
+        }
+
+        rpc_error = self._make_rpc_error(grpc.StatusCode.DEADLINE_EXCEEDED, "Deadline exceeded")
+
+        with patch.object(VariableClient, "connect"):
+            with patch.object(VariableClient, "read", side_effect=rpc_error):
+                with patch.object(VariableClient, "close"):
+                    await servicer.Execute(request, mock_context)
+
+        mock_context.set_code.assert_called_once_with(grpc.StatusCode.INTERNAL)
+        assert "Deadline exceeded" in mock_context.set_details.call_args[0][0]
+
+    @pytest.mark.asyncio
+    @patch("src.service.error")
+    @patch("src.service.json_format.MessageToDict")
+    async def test_grpc_error_logs_structured_context(
+        self, mock_message_to_dict, mock_log_error, servicer, mock_context
+    ):
+        """System errors should log with structured context (status_code, details, execution_id)."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = "exec-789"
+        request.variable_store_address = "localhost:50052"
+        mock_message_to_dict.return_value = _plugin_props("return x", execution_id="exec-789")
+        mock_message_to_dict.return_value["bindingKeys"] = [
+            {"type": "global", "key": "x"},
+        ]
+        mock_message_to_dict.return_value["actionConfiguration"] = {
+            "body": "return x",
+            "x": True,
+        }
+
+        rpc_error = self._make_rpc_error(grpc.StatusCode.RESOURCE_EXHAUSTED, "Message too large")
+
+        with patch.object(VariableClient, "connect"):
+            with patch.object(VariableClient, "read", side_effect=rpc_error):
+                with patch.object(VariableClient, "close"):
+                    await servicer.Execute(request, mock_context)
+
+        mock_log_error.assert_called_once()
+        call_kwargs = mock_log_error.call_args[1]
+        assert call_kwargs["status_code"] == str(grpc.StatusCode.RESOURCE_EXHAUSTED)
+        assert call_kwargs["details"] == "Message too large"
+        assert call_kwargs["execution_id"] == "exec-789"
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
+    async def test_close_runs_on_user_code_error(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """Verify kv_store.close() is called even when user code raises."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = ""
+        request.variable_store_address = "localhost:50052"
+        mock_message_to_dict.return_value = _plugin_props("raise RuntimeError('boom')")
+
+        with patch.object(VariableClient, "connect"):
+            with patch.object(VariableClient, "close") as mock_close:
+                await servicer.Execute(request, mock_context)
+
+        mock_close.assert_called_once_with("done")
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
+    async def test_close_runs_on_success(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """Verify kv_store.close() is called on successful execution."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = ""
+        request.variable_store_address = "localhost:50052"
+        mock_message_to_dict.return_value = _plugin_props("return 42")
+
+        with patch.object(VariableClient, "connect"):
+            with patch.object(VariableClient, "close") as mock_close:
+                response = await servicer.Execute(request, mock_context)
+
+        assert _result_from_response(response) == 42
+        mock_close.assert_called_once_with("done")
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
+    async def test_connect_failure_returns_ok_with_error(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """connect() failure is not a gRPC error -- should return OK-with-error-body."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = ""
+        request.variable_store_address = "localhost:50052"
+        mock_message_to_dict.return_value = _plugin_props("return 1")
+
+        with patch.object(VariableClient, "connect", side_effect=OSError("Connection refused")):
+            with patch.object(VariableClient, "close") as mock_close:
+                response = await servicer.Execute(request, mock_context)
+
+        # Not a gRPC error, so no INTERNAL status
+        mock_context.set_code.assert_not_called()
+        # Error in response body
+        assert _exit_code_from_response(response) == 1
+        assert "Connection refused" in response.error.message
+        # close() still called
+        mock_close.assert_called_once_with("done")
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
+    async def test_grpc_error_during_native_var_read(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """gRPC error during the second read() call (native vars) also surfaces as INTERNAL."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = "exec-native"
+        request.variable_store_address = "localhost:50052"
+        props = _plugin_props("return x", execution_id="exec-native")
+        props["bindingKeys"] = [{"type": "global", "key": "x"}]
+        props["actionConfiguration"] = {"body": "return x", "x": True}
+        props["variables"] = {
+            "nativeVar": {"key": "nv", "type": "TYPE_NATIVE", "mode": "MODE_READ"},
+        }
+        mock_message_to_dict.return_value = props
+
+        rpc_error = self._make_rpc_error(grpc.StatusCode.UNAVAILABLE, "Gone")
+        call_count = 0
+
+        def read_side_effect(keys):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                # First read (context vars) succeeds
+                return [42], 2
+            # Second read (native vars) fails
+            raise rpc_error
+
+        with patch.object(VariableClient, "connect"):
+            with patch.object(VariableClient, "read", side_effect=read_side_effect):
+                with patch.object(VariableClient, "close"):
+                    with patch.object(VariableClient, "flush"):
+                        await servicer.Execute(request, mock_context)
+
+        mock_context.set_code.assert_called_once_with(grpc.StatusCode.INTERNAL)
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
+    async def test_grpc_error_without_code_attribute(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """RpcError missing code()/details() should still set INTERNAL with fallback."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = "exec-bare"
+        request.variable_store_address = "localhost:50052"
+        mock_message_to_dict.return_value = _plugin_props("return x", execution_id="exec-bare")
+        mock_message_to_dict.return_value["bindingKeys"] = [
+            {"type": "global", "key": "x"},
+        ]
+        mock_message_to_dict.return_value["actionConfiguration"] = {
+            "body": "return x",
+            "x": True,
+        }
+
+        bare_error = grpc.RpcError()
+        if hasattr(bare_error, "code"):
+            delattr(bare_error, "code")
+        if hasattr(bare_error, "details"):
+            delattr(bare_error, "details")
+
+        with patch.object(VariableClient, "connect"):
+            with patch.object(VariableClient, "read", side_effect=bare_error):
+                with patch.object(VariableClient, "close"):
+                    await servicer.Execute(request, mock_context)
+
+        mock_context.set_code.assert_called_once_with(grpc.StatusCode.INTERNAL)

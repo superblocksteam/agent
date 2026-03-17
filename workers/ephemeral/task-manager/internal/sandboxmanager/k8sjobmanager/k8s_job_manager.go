@@ -6,6 +6,7 @@ package k8sjobmanager
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -61,6 +62,8 @@ type K8sJobManager struct {
 	zone string
 	// Labels from the parent task-manager pod for pod affinity matching
 	ownerPodLabels map[string]string
+	// Environment variables to set in the sandbox pod from the task-manager's environment
+	executionEnvInclusionList []string
 }
 
 // NewSandboxJobManager creates a new SandboxJobManager
@@ -89,6 +92,7 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		resources:                   opts.BuildResourceRequirements(),
 		zone:                        opts.Zone,
 		ownerPodLabels:              opts.OwnerPodLabels,
+		executionEnvInclusionList:   opts.ExecutionEnvInclusionList,
 	}
 }
 
@@ -452,6 +456,24 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS",
 			Value: fmt.Sprintf("%s:%d", m.podIP, m.integrationExecutorGrpcPort),
 		})
+	}
+
+	// Copy environment variables from the inclusion list (task-manager env → sandbox pod)
+	if len(m.executionEnvInclusionList) > 0 {
+		container := &job.Spec.Template.Spec.Containers[0]
+		for _, name := range m.executionEnvInclusionList {
+			trimmedName := strings.TrimSpace(name)
+			if trimmedName == "" {
+				continue
+			}
+
+			if value, ok := os.LookupEnv(trimmedName); ok {
+				container.Env = append(container.Env, corev1.EnvVar{
+					Name:  trimmedName,
+					Value: value,
+				})
+			}
+		}
 	}
 
 	// Set runtime class if specified (for gVisor)

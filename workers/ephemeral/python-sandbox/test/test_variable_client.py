@@ -308,22 +308,103 @@ class TestVariableClientErrorHandling:
     def client(self):
         return VariableClient("localhost:50052", "test-execution-id")
 
+    @staticmethod
+    def _make_rpc_error(status_code, details_msg):
+        err = grpc.RpcError()
+        err.code = lambda: status_code
+        err.details = lambda: details_msg
+        return err
+
+    @patch("src.variables.variable_client.error")
     @patch("src.variables.variable_client.variable_store_pb2.GetVariablesRequest")
-    def test_read_handles_exception(self, MockRequest, client, capsys):
-        """Test that read handles exceptions gracefully."""
+    def test_read_raises_on_grpc_unavailable(self, MockRequest, mock_error, client):
+        """Test that read propagates UNAVAILABLE and logs structured error."""
         mock_stub = MagicMock()
-        mock_stub.GetVariables.side_effect = Exception("Connection error")
+        rpc_error = self._make_rpc_error(grpc.StatusCode.UNAVAILABLE, "Connection refused")
+        mock_stub.GetVariables.side_effect = rpc_error
         client.stub = mock_stub
 
-        values, size = client.read(["my_key"])
+        with pytest.raises(grpc.RpcError) as exc_info:
+            client.read(["my_key"])
 
-        assert values == [None]
-        assert size == 0
+        # The exact same exception object is re-raised (not wrapped)
+        assert exc_info.value is rpc_error
+        # Structured logging called with context
+        mock_error.assert_called_once()
+        call_args = mock_error.call_args
+        assert call_args[0][0] == "gRPC error reading variables"
+        assert call_args[1]["status_code"] == str(grpc.StatusCode.UNAVAILABLE)
+        assert call_args[1]["details"] == "Connection refused"
+        assert call_args[1]["execution_id"] == "test-execution-id"
+        assert call_args[1]["keys"] == ["my_key"]
+
+    @patch("src.variables.variable_client.error")
+    @patch("src.variables.variable_client.variable_store_pb2.GetVariablesRequest")
+    def test_read_raises_on_grpc_deadline_exceeded(self, MockRequest, mock_error, client):
+        """Test that read propagates DEADLINE_EXCEEDED (timeout to task-manager)."""
+        mock_stub = MagicMock()
+        rpc_error = self._make_rpc_error(grpc.StatusCode.DEADLINE_EXCEEDED, "Deadline exceeded")
+        mock_stub.GetVariables.side_effect = rpc_error
+        client.stub = mock_stub
+
+        with pytest.raises(grpc.RpcError) as exc_info:
+            client.read(["var1", "var2"])
+
+        assert exc_info.value is rpc_error
+        assert mock_error.call_args[1]["status_code"] == str(grpc.StatusCode.DEADLINE_EXCEEDED)
+        assert mock_error.call_args[1]["keys"] == ["var1", "var2"]
+
+    @patch("src.variables.variable_client.error")
+    @patch("src.variables.variable_client.variable_store_pb2.GetVariablesRequest")
+    def test_read_raises_on_grpc_resource_exhausted(self, MockRequest, mock_error, client):
+        """Test that read propagates RESOURCE_EXHAUSTED (response too large)."""
+        mock_stub = MagicMock()
+        rpc_error = self._make_rpc_error(
+            grpc.StatusCode.RESOURCE_EXHAUSTED,
+            "Received message larger than max (5000000 vs. 4194304)",
+        )
+        mock_stub.GetVariables.side_effect = rpc_error
+        client.stub = mock_stub
+
+        with pytest.raises(grpc.RpcError) as exc_info:
+            client.read(["big_var"])
+
+        assert exc_info.value is rpc_error
+
+    @patch("src.variables.variable_client.error")
+    @patch("src.variables.variable_client.variable_store_pb2.GetVariablesRequest")
+    def test_read_raises_on_generic_exception(self, MockRequest, mock_error, client):
+        """Test that read propagates non-gRPC exceptions with logging."""
+        mock_stub = MagicMock()
+        original_err = RuntimeError("Connection error")
+        mock_stub.GetVariables.side_effect = original_err
+        client.stub = mock_stub
+
+        with pytest.raises(RuntimeError, match="Connection error") as exc_info:
+            client.read(["my_key"])
+
+        assert exc_info.value is original_err
+        mock_error.assert_called_once_with("Error reading variables: Connection error")
+
+    @patch("src.variables.variable_client.error")
+    @patch("src.variables.variable_client.variable_store_pb2.GetVariablesRequest")
+    def test_read_does_not_print_to_stdout(self, MockRequest, mock_error, client, capsys):
+        """Test that read uses structured error(), never print()."""
+        mock_stub = MagicMock()
+        mock_stub.GetVariables.side_effect = self._make_rpc_error(
+            grpc.StatusCode.INTERNAL, "server error"
+        )
+        client.stub = mock_stub
+
+        with pytest.raises(grpc.RpcError):
+            client.read(["key"])
+
         captured = capsys.readouterr()
-        assert "Error getting variables" in captured.out
+        assert captured.out == ""
+        assert captured.err == ""
 
     @patch("src.variables.variable_client.variable_store_pb2.SetVariableRequest")
-    def test_write_handles_exception(self, MockRequest, client):
+    def test_write_raises_on_exception(self, MockRequest, client):
         """Test that write re-raises on exception."""
         mock_stub = MagicMock()
         mock_stub.SetVariable.side_effect = Exception("Connection error")
@@ -332,23 +413,58 @@ class TestVariableClientErrorHandling:
         with pytest.raises(Exception, match="Connection error"):
             client.write("my_key", 123)
 
+    @patch("src.variables.variable_client.error")
     @patch("src.variables.variable_client.variable_store_pb2.GetVariablesRequest")
-    def test_read_many_handles_exception(self, MockRequest, client, capsys):
-        """Test that read handles exceptions gracefully for multiple keys."""
+    def test_read_many_raises_on_grpc_error(self, MockRequest, mock_error, client):
+        """Test that read propagates gRPC errors for multiple keys with all keys in log."""
         mock_stub = MagicMock()
-        mock_stub.GetVariables.side_effect = Exception("Connection error")
+        rpc_error = self._make_rpc_error(grpc.StatusCode.INTERNAL, "Internal server error")
+        mock_stub.GetVariables.side_effect = rpc_error
         client.stub = mock_stub
 
-        values, size = client.read(["key1", "key2"])
+        with pytest.raises(grpc.RpcError):
+            client.read(["key1", "key2", "key3"])
 
-        assert values == [None, None]
-        assert size == 0
-        captured = capsys.readouterr()
-        assert "Error getting variables" in captured.out
+        assert mock_error.call_args[1]["keys"] == ["key1", "key2", "key3"]
+
+    @patch("src.variables.variable_client.error")
+    @patch("src.variables.variable_client.variable_store_pb2.GetVariablesRequest")
+    def test_read_grpc_error_without_code_attribute(self, MockRequest, mock_error, client):
+        """Test hasattr guard: RpcError missing code() falls back to UNKNOWN."""
+        mock_stub = MagicMock()
+        bare_error = grpc.RpcError()
+        # Don't set code or details -- test the hasattr fallback
+        if hasattr(bare_error, "code"):
+            delattr(bare_error, "code")
+        if hasattr(bare_error, "details"):
+            delattr(bare_error, "details")
+        mock_stub.GetVariables.side_effect = bare_error
+        client.stub = mock_stub
+
+        with pytest.raises(grpc.RpcError):
+            client.read(["key"])
+
+        assert mock_error.call_args[1]["status_code"] == "UNKNOWN"
 
     @patch("src.variables.variable_client.variable_store_pb2.SetVariablesRequest")
-    def test_flush_handles_exception(self, MockRequest, client, caplog):
-        """Test that flush handles exceptions gracefully (logs, buffer unchanged)."""
+    def test_flush_swallows_grpc_error(self, MockRequest, client, caplog):
+        """Test that flush swallows grpc.RpcError (best-effort write, not propagated)."""
+        mock_stub = MagicMock()
+        rpc_error = grpc.RpcError()
+        rpc_error.code = lambda: grpc.StatusCode.UNAVAILABLE
+        rpc_error.details = lambda: "Connection refused"
+        mock_stub.SetVariables.side_effect = rpc_error
+        client.stub = mock_stub
+        client.write_buffer("key1", 123)
+
+        client.flush()  # Should not raise even for grpc.RpcError
+
+        assert "Error flushing variables" in caplog.text
+        assert len(client.buffer) == 1
+
+    @patch("src.variables.variable_client.variable_store_pb2.SetVariablesRequest")
+    def test_flush_handles_generic_exception(self, MockRequest, client, caplog):
+        """Test that flush handles generic exceptions gracefully (logs, buffer unchanged)."""
         mock_stub = MagicMock()
         mock_stub.SetVariables.side_effect = Exception("Connection error")
         client.stub = mock_stub

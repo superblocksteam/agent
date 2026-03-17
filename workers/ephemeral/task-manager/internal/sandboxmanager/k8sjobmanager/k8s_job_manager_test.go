@@ -183,6 +183,69 @@ func TestBuildJobSpec(t *testing.T) {
 	}
 }
 
+func TestBuildJobSpecExecutionEnvInclusionList(t *testing.T) {
+	t.Setenv("EXECUTION_ENV_FOO", "value-from-task-manager")
+	t.Setenv("EXECUTION_ENV_BAR", "another-value")
+
+	m := &K8sJobManager{
+		namespace:                 "test-ns",
+		image:                     "sandbox:latest",
+		port:                      50051,
+		podIP:                     "10.0.0.1",
+		variableStoreGrpcPort:     50050,
+		variableStoreHttpPort:     8080,
+		streamingProxyGrpcPort:    50053,
+		ttlSecondsAfterFinished:   60,
+		language:                  "javascript",
+		ephemeral:                 false,
+		logger:                    zap.NewNop(),
+		executionEnvInclusionList: []string{"EXECUTION_ENV_FOO", "EXECUTION_ENV_BAR", "EXECUTION_ENV_NOT_SET", "  "},
+	}
+
+	job := m.buildJobSpec("sandbox-test-123", "test-123", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	envByName := make(map[string]string)
+	for _, env := range container.Env {
+		envByName[env.Name] = env.Value
+	}
+
+	assert.Equal(t, "value-from-task-manager", envByName["EXECUTION_ENV_FOO"])
+	assert.Equal(t, "another-value", envByName["EXECUTION_ENV_BAR"])
+	assert.NotContains(t, envByName, "EXECUTION_ENV_NOT_SET")
+}
+
+func TestBuildJobSpecExecutionEnvInclusionListEmpty(t *testing.T) {
+	t.Setenv("EXECUTION_ENV_FOO", "value-from-task-manager")
+	t.Setenv("EXECUTION_ENV_BAR", "another-value")
+
+	m := &K8sJobManager{
+		namespace:                 "test-ns",
+		image:                     "sandbox:latest",
+		port:                      50051,
+		podIP:                     "10.0.0.1",
+		variableStoreGrpcPort:     50050,
+		variableStoreHttpPort:     8080,
+		streamingProxyGrpcPort:    50053,
+		ttlSecondsAfterFinished:   60,
+		language:                  "javascript",
+		ephemeral:                 false,
+		logger:                    zap.NewNop(),
+		executionEnvInclusionList: nil,
+	}
+
+	job := m.buildJobSpec("sandbox-test-123", "test-123", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	// Only built-in env vars, no execution env inclusion list vars
+	names := make([]string, 0, len(container.Env))
+	for _, env := range container.Env {
+		names = append(names, env.Name)
+	}
+	assert.NotContains(t, names, "EXECUTION_ENV_FOO")
+	assert.NotContains(t, names, "EXECUTION_ENV_BAR")
+}
+
 func TestBuildJobSpecZonePreference(t *testing.T) {
 	for _, test := range []struct {
 		name               string

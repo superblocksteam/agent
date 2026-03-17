@@ -3,6 +3,7 @@ package k8sjobmanager
 import (
 	"time"
 
+	"github.com/superblocksteam/agent/pkg/utils"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -82,6 +83,10 @@ type Options struct {
 	ResourceRequestsMemory string
 	ResourceLimitsCPU      string
 	ResourceLimitsMemory   string
+
+	// ExecutionEnvInclusionList is a list of env var names to set in the
+	// sandbox pod from the task-manager's environment.
+	ExecutionEnvInclusionList []string
 }
 
 // Option is a functional option for Options
@@ -266,6 +271,13 @@ func WithResourceLimitsCPU(cpu string) Option {
 func WithResourceLimitsMemory(mem string) Option {
 	return func(o *Options) {
 		o.ResourceLimitsMemory = mem
+	}
+}
+
+// WithExecutionEnvInclusionList sets the env vars to set in the sandbox pod
+func WithExecutionEnvInclusionList(envVars []string) Option {
+	return func(o *Options) {
+		o.ExecutionEnvInclusionList = utils.NewSet[string](envVars...).ToSlice()
 	}
 }
 

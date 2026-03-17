@@ -310,6 +310,8 @@ export class MessageTransformerImpl implements MessageTransformer {
           if (d.metadata.description) metaProto.setDescription(d.metadata.description);
           proto.setMetadata(metaProto);
         }
+        if (d.inputWasTruncated) proto.setInputWasTruncated(d.inputWasTruncated);
+        if (d.outputWasTruncated) proto.setOutputWasTruncated(d.outputWasTruncated);
         return proto;
       });
       protoResponse.setDiagnosticsList(protoDiagnostics);

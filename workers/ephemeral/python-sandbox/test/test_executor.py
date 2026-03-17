@@ -1,4 +1,4 @@
-"""Tests for the Executor class."""
+"""Tests for the Executor and ForkingExecutor classes."""
 
 import json
 import os
@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.executor import Executor
+from src.executor import Executor, ForkingExecutor
 from src.superblocks import Object
 from src.variables.constants import VariableMode, VariableType
 from src.variables.variable import AdvancedVariable, SimpleVariable
@@ -266,15 +266,14 @@ class TestEnvironmentRestriction:
     def test_environment_is_restricted(self, executor):
         """Test that environment variables are restricted during execution."""
         os.environ["TEST_SECRET"] = "secret_value"
-        os.environ["SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST"] = ""
-
-        result, stdout, stderr = executor.run(
-            code="""
+        with patch("src.executor.SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST", []):
+            result, stdout, stderr = executor.run(
+                code="""
 import os
 return dict(os.environ)
 """,
-            context=Object({}),
-        )
+                context=Object({}),
+            )
 
         env_dict = json.loads(result)
         assert "TEST_SECRET" not in env_dict
@@ -282,15 +281,181 @@ return dict(os.environ)
     def test_allowed_env_vars_are_present(self, executor):
         """Test that allowed environment variables are present."""
         os.environ["ALLOWED_VAR"] = "allowed_value"
-        os.environ["SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST"] = "ALLOWED_VAR"
-
-        result, stdout, stderr = executor.run(
-            code="""
+        with patch("src.executor.SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST", ["ALLOWED_VAR"]):
+            result, stdout, stderr = executor.run(
+                code="""
 import os
 return dict(os.environ)
 """,
-            context=Object({}),
-        )
+                context=Object({}),
+            )
 
         env_dict = json.loads(result)
         assert env_dict.get("ALLOWED_VAR") == "allowed_value"
+
+
+class TestForkingExecutor:
+    """Tests for ForkingExecutor — mirrors TestExecutor but runs each execution
+    in a forked child process."""
+
+    @pytest.fixture
+    def executor(self):
+        return ForkingExecutor()
+
+    def test_simple_return(self, executor):
+        result, stdout, stderr = executor.run(
+            code="return 1 + 1",
+            context=Object({}),
+        )
+        assert json.loads(result) == 2
+        assert stderr == []
+
+    def test_return_string(self, executor):
+        result, stdout, stderr = executor.run(
+            code='return "hello world"',
+            context=Object({}),
+        )
+        assert json.loads(result) == "hello world"
+
+    def test_return_dict(self, executor):
+        result, stdout, stderr = executor.run(
+            code='return {"foo": "bar", "num": 123}',
+            context=Object({}),
+        )
+        assert json.loads(result) == {"foo": "bar", "num": 123}
+
+    def test_return_list(self, executor):
+        result, stdout, stderr = executor.run(
+            code="return [1, 2, 3, 4, 5]",
+            context=Object({}),
+        )
+        assert json.loads(result) == [1, 2, 3, 4, 5]
+
+    def test_return_none(self, executor):
+        result, stdout, stderr = executor.run(
+            code="return None",
+            context=Object({}),
+        )
+        assert json.loads(result) is None
+
+    def test_context_access(self, executor):
+        context = Object({"foo": 10, "bar": 20})
+        result, stdout, stderr = executor.run(
+            code="return foo + bar",
+            context=context,
+        )
+        assert json.loads(result) == 30
+
+    def test_stdout_capture(self, executor):
+        result, stdout, stderr = executor.run(
+            code='print("hello")\nprint("world")\nreturn 123',
+            context=Object({}),
+        )
+        assert json.loads(result) == 123
+        assert "hello" in stdout
+        assert "world" in stdout
+
+    def test_runtime_error(self, executor):
+        result, stdout, stderr = executor.run(
+            code="return undefined_variable",
+            context=Object({}),
+        )
+        assert result == ""
+        assert any("__EXCEPTION__" in line for line in stderr)
+
+    def test_isolation_between_executions(self, executor):
+        """Each forked execution is isolated: globals set in one run don't bleed
+        into the next."""
+        executor.run(
+            code="import sys; sys.modules['__main__'].LEAKED = True",
+            context=Object({}),
+        )
+        result, _, _ = executor.run(
+            code="return getattr(__import__('sys').modules.get('__main__'), 'LEAKED', False)",
+            context=Object({}),
+        )
+        assert json.loads(result) is False
+
+    def test_concurrent_executions(self, executor):
+        """Multiple concurrent forks produce independent, correct results."""
+        import concurrent.futures
+
+        def run(n):
+            return executor.run(code=f"return {n} * 2", context=Object({}))
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+            futures = [pool.submit(run, i) for i in range(8)]
+            results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+        values = sorted(json.loads(r[0]) for r in results)
+        assert values == sorted(i * 2 for i in range(8))
+
+    def test_timeout_returns_duration_quota_error(self, executor):
+        """Child killed after timeout_ms returns 'DurationQuotaError' without hanging."""
+        import time
+
+        start = time.monotonic()
+        result, stdout, stderr = executor.run(
+            code="import time\ntime.sleep(30)\nreturn 'done'",
+            context=Object({}),
+            timeout_ms=300,
+        )
+        elapsed = time.monotonic() - start
+
+        assert result == "DurationQuotaError"
+        assert stdout == []
+        assert stderr == []
+        # Should complete well within the sleep duration.
+        assert elapsed < 5
+
+    def test_timeout_not_triggered_when_fast(self, executor):
+        """A generous timeout doesn't interfere with a fast execution."""
+        result, stdout, stderr = executor.run(
+            code="return 42",
+            context=Object({}),
+            timeout_ms=10_000,
+        )
+        assert json.loads(result) == 42
+        assert stderr == []
+
+    def test_default_timeout_applies(self):
+        """When no explicit timeout_ms is given, the default kicks in."""
+        import time
+
+        executor = ForkingExecutor()
+        with patch("src.executor.SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_DEFAULT_TIMEOUT_MS", 300):
+            start = time.monotonic()
+            result, stdout, stderr = executor.run(
+                code="import time\ntime.sleep(30)\nreturn 'done'",
+                context=Object({}),
+            )
+            elapsed = time.monotonic() - start
+
+        assert result == "DurationQuotaError"
+        assert elapsed < 5
+
+    def test_grandchild_cleanup(self, executor):
+        """Subprocesses spawned by user code are terminated before the child exits."""
+        import sys
+        import time
+
+        result, stdout, stderr = executor.run(
+            code=(
+                "import subprocess, sys, os\n"
+                f"p = subprocess.Popen(['{sys.executable}', '-c', 'import time; time.sleep(60)'])\n"
+                "return p.pid"
+            ),
+            context=Object({}),
+            timeout_ms=5_000,
+        )
+        grandchild_pid = json.loads(result)
+        assert isinstance(grandchild_pid, int)
+        assert stderr == []
+
+        time.sleep(0.5)
+        try:
+            os.kill(grandchild_pid, 0)
+            alive = True
+        except OSError:
+            alive = False
+        assert not alive, f"Grandchild process {grandchild_pid} is still running after cleanup"

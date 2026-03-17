@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import grpc
 from google.protobuf import duration_pb2, json_format, struct_pb2, timestamp_pb2
 
 from src.log import error
@@ -32,15 +33,32 @@ class SandboxTransportServicer(transport_pb2_grpc.SandboxTransportServiceService
 
         try:
             kv_store.connect()
+            # quotas.duration is an int32 in proto3 (0 = unset). Guard with
+            # isinstance so tests passing MagicMock for request don't crash.
+            _duration = request.quotas.duration
+            timeout_ms = _duration if isinstance(_duration, int) and _duration > 0 else None
             # Execute the request
             execution_output, stdout, stderr = await self.plugin.execute(
                 plugin_props=json_format.MessageToDict(request.props),
                 variable_client=kv_store,
+                timeout_ms=timeout_ms,
             )
 
             execute_response = self._execution_output_to_proto(execution_output)
             execute_response.structuredLog.extend(self._create_structured_logs(stdout, stderr))
             return execute_response
+        except grpc.RpcError as e:
+            status_code = e.code() if hasattr(e, "code") else grpc.StatusCode.INTERNAL
+            details = e.details() if hasattr(e, "details") else str(e)
+            error(
+                "System error during Python execution",
+                status_code=str(status_code),
+                details=details,
+                execution_id=request.props.execution_id,
+            )
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"System error: {details}")
+            return transport_pb2.ExecuteResponse()
         except Exception as e:
             error(f"Error executing Python script: {e}", exc_info=True)
             return self._execution_output_to_proto({

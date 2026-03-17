@@ -15,6 +15,7 @@ import (
 	commonErr "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	"github.com/superblocksteam/agent/pkg/store"
+	"github.com/superblocksteam/agent/pkg/utils"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
@@ -24,7 +25,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -35,6 +35,16 @@ const (
 	sandboxHealthBackoff = 500 * time.Millisecond
 	// The maximum time to wait for the sandbox to respond to the initial Health check during startup
 	sandboxHealthTimeout = 5 * time.Minute
+
+	// Execute RPC retry: attempts and backoff for transient gRPC failures.
+	sandboxExecuteMaxAttempts = 3
+	sandboxExecuteBackoff     = 100 * time.Millisecond
+)
+
+// Transient gRPC codes that may succeed on retry (connection blips, resource exhaustion).
+var transientExecuteCodeSet = utils.NewSet[codes.Code](
+	codes.Unavailable,
+	codes.ResourceExhausted,
 )
 
 // IpFilterSetter allows setting IP filters on the variable store
@@ -284,18 +294,11 @@ func (p *SandboxPlugin) monitorConnectionState(conn *grpc.ClientConn, logger *za
 	}()
 }
 
-// connectToSandbox creates a gRPC connection to the sandbox pod
+// connectToSandbox creates a gRPC connection to the sandbox pod.
 func (p *SandboxPlugin) connectToSandbox(ctx context.Context, address string) (*grpc.ClientConn, workerv1.SandboxTransportServiceClient, error) {
-	keepaliveParams := keepalive.ClientParameters{
-		Time:                10 * time.Second,
-		Timeout:             5 * time.Second,
-		PermitWithoutStream: true,
-	}
-
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithKeepaliveParams(keepaliveParams),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			MinConnectTimeout: 5 * time.Second,
 		}),
@@ -497,7 +500,16 @@ func (p *SandboxPlugin) Execute(
 	quotas *transportv1.Request_Data_Data_Quota,
 	pinned *transportv1.Request_Data_Pinned,
 ) (*workerv1.ExecuteResponse, error) {
+
 	pluginAttr := sandboxmetrics.AttrPlugin.String(requestMeta.GetPluginName())
+	req := &workerv1.ExecuteRequest{
+		Metadata:                   requestMeta,
+		Props:                      props,
+		Quotas:                     quotas,
+		Pinned:                     pinned,
+		VariableStoreAddress:       p.variableStoreAddress,
+		IntegrationExecutorAddress: p.integrationExecutorAddress,
+	}
 
 	codeExecStart := time.Now()
 	resp, err := tracer.Observe(
@@ -505,13 +517,14 @@ func (p *SandboxPlugin) Execute(
 		fmt.Sprintf("sandbox.%s.execute", requestMeta.GetPluginName()),
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.ExecuteResponse, error) {
-			return p.client.Execute(ctx, &workerv1.ExecuteRequest{
-				Metadata:                   requestMeta,
-				Props:                      props,
-				Quotas:                     quotas,
-				Pinned:                     pinned,
-				VariableStoreAddress:       p.variableStoreAddress,
-				IntegrationExecutorAddress: p.integrationExecutorAddress,
+			return DoWithRetry(ctx, p.logger, sandboxExecuteMaxAttempts, sandboxExecuteBackoff, func() (*workerv1.ExecuteResponse, error) {
+				return p.client.Execute(ctx, req)
+			}, func(err error) bool {
+				st, ok := status.FromError(err)
+				if !ok {
+					return false
+				}
+				return transientExecuteCodeSet.Contains(st.Code())
 			})
 		},
 		nil,

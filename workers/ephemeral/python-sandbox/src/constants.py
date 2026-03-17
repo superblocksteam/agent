@@ -124,3 +124,27 @@ SUPERBLOCKS_PYTHON_EXECUTION_IMPORT_DENY_LIST = get_env_var(
 SUPERBLOCKS_PYTHON_EXECUTION_BUILTINS_DENY_LIST = get_env_var(
     "SUPERBLOCKS_PYTHON_EXECUTION_BUILTINS_DENY_LIST", default=[], as_type=list
 )
+
+# Default execution timeout (ms) when no duration quota is set.  Matches the
+# legacy Python worker's 2-minute default so runaway scripts can't leak
+# forked processes indefinitely.
+SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_DEFAULT_TIMEOUT_MS = get_env_var(
+    "SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_DEFAULT_TIMEOUT_MS", default=120_000, as_type=int
+)
+
+# When True, each execution is isolated in a forked child process.
+# Required when the sandbox process is long-lived and handles multiple concurrent
+# executions (e.g. OPA/non-ephemeral mode). In ephemeral K8s Job mode each pod
+# handles exactly one execution so forking is unnecessary.
+SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_FORK_EXECUTION = get_env_var(
+    "SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_FORK_EXECUTION", default=False, as_type=bool
+)
+
+# UID/GID for spawned child processes. Dropping to an unprivileged user limits
+# the blast radius of user-supplied code, matching the Python worker's behaviour.
+SUPERBLOCKS_WORKER_SUBPROCESS_UID = get_env_var(
+    "SUPERBLOCKS_WORKER_SUBPROCESS_UID", default=1000, as_type=int
+)
+SUPERBLOCKS_WORKER_SUBPROCESS_GID = get_env_var(
+    "SUPERBLOCKS_WORKER_SUBPROCESS_GID", default=1000, as_type=int
+)

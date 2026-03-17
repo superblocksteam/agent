@@ -56,9 +56,20 @@ class VariableClient(KVStore):
             size_in_bytes = sum(len(v) for v in resp.values)
 
             return result, size_in_bytes
+        except grpc.RpcError as e:
+            status_code = e.code() if hasattr(e, "code") else "UNKNOWN"
+            details = e.details() if hasattr(e, "details") else str(e)
+            error(
+                f"gRPC error reading variables",
+                status_code=str(status_code),
+                details=details,
+                execution_id=self.execution_id,
+                keys=keys,
+            )
+            raise
         except Exception as e:
-            print(f"Error getting variables: {e}")
-            return [None] * len(keys), 0
+            error(f"Error reading variables: {e}")
+            raise
 
     def write(self, key: str, value: Any, expiration_seconds: Optional[int] = None) -> int:
         """Set a variable in the store."""

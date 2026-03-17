@@ -467,6 +467,16 @@ func main() {
 			tolerations = append(tolerations, toleration)
 		}
 
+		// Parse execution env inclusion list (comma-separated env var names to copy to sandbox)
+		executionEnvInclusionList := utils.NewSet[string]()
+		if raw := os.Getenv("SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST"); raw != "" {
+			for _, s := range strings.Split(raw, ",") {
+				if t := strings.TrimSpace(s); t != "" {
+					executionEnvInclusionList.Add(t)
+				}
+			}
+		}
+
 		jobManagerOptions := []k8sjobmanager.Option{
 			k8sjobmanager.WithClientset(k8sClient),
 			k8sjobmanager.WithNamespace(namespace),
@@ -491,6 +501,7 @@ func main() {
 			k8sjobmanager.WithResourceLimitsMemory(viper.GetString("sandbox.resources.limits.memory")),
 			k8sjobmanager.WithZone(sandboxZone),
 			k8sjobmanager.WithOwnerPodLabels(ownerPodLabels),
+			k8sjobmanager.WithExecutionEnvInclusionList(executionEnvInclusionList.ToSlice()),
 		}
 
 		if viper.GetBool("integration.executor.enabled") {

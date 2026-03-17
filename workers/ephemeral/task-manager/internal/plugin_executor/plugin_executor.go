@@ -480,15 +480,17 @@ func (*pluginExecutor) executeResponseToOutputMap(response *workerv1.ExecuteResp
 		diagSlice := make([]map[string]any, 0, len(diags))
 		for _, d := range diags {
 			diagMap := map[string]any{
-				"integrationId": d.GetIntegrationId(),
-				"pluginId":      d.GetPluginId(),
-				"input":         d.GetInputTruncated(),
-				"output":        d.GetOutputTruncated(),
-				"startMs":       d.GetStartMs(),
-				"endMs":         d.GetEndMs(),
-				"durationMs":    d.GetDurationMs(),
-				"error":         d.GetError(),
-				"sequence":      d.GetSequence(),
+				"integrationId":      d.GetIntegrationId(),
+				"pluginId":           d.GetPluginId(),
+				"input":              d.GetInputTruncated(),
+				"output":             d.GetOutputTruncated(),
+				"startMs":            d.GetStartMs(),
+				"endMs":              d.GetEndMs(),
+				"durationMs":         d.GetDurationMs(),
+				"error":              d.GetError(),
+				"sequence":           d.GetSequence(),
+				"inputWasTruncated":  d.GetInputWasTruncated(),
+				"outputWasTruncated": d.GetOutputWasTruncated(),
 			}
 			if m := d.GetMetadata(); m != nil {
 				diagMap["metadata"] = map[string]any{

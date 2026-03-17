@@ -3113,7 +3113,9 @@ proto.api.v1.IntegrationDiagnostic.toObject = function(includeInstance, msg) {
     durationMs: jspb.Message.getFieldWithDefault(msg, 7, 0),
     error: jspb.Message.getFieldWithDefault(msg, 8, ""),
     sequence: jspb.Message.getFieldWithDefault(msg, 9, 0),
-    metadata: (f = msg.getMetadata()) && proto.api.v1.TraceMetadata.toObject(includeInstance, f)
+    metadata: (f = msg.getMetadata()) && proto.api.v1.TraceMetadata.toObject(includeInstance, f),
+    inputWasTruncated: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
+    outputWasTruncated: jspb.Message.getBooleanFieldWithDefault(msg, 12, false)
   };
 
   if (includeInstance) {
@@ -3190,6 +3192,14 @@ proto.api.v1.IntegrationDiagnostic.deserializeBinaryFromReader = function(msg, r
       var value = new proto.api.v1.TraceMetadata;
       reader.readMessage(value,proto.api.v1.TraceMetadata.deserializeBinaryFromReader);
       msg.setMetadata(value);
+      break;
+    case 11:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setInputWasTruncated(value);
+      break;
+    case 12:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setOutputWasTruncated(value);
       break;
     default:
       reader.skipField();
@@ -3289,6 +3299,20 @@ proto.api.v1.IntegrationDiagnostic.serializeBinaryToWriter = function(message, w
       10,
       f,
       proto.api.v1.TraceMetadata.serializeBinaryToWriter
+    );
+  }
+  f = message.getInputWasTruncated();
+  if (f) {
+    writer.writeBool(
+      11,
+      f
+    );
+  }
+  f = message.getOutputWasTruncated();
+  if (f) {
+    writer.writeBool(
+      12,
+      f
     );
   }
 };
@@ -3492,6 +3516,41 @@ proto.api.v1.IntegrationDiagnostic.prototype.hasMetadata = function() {
   return jspb.Message.getField(this, 10) != null;
 };
 
+
+/**
+ * optional bool input_was_truncated = 11;
+ * @return {boolean}
+ */
+proto.api.v1.IntegrationDiagnostic.prototype.getInputWasTruncated = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 11, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api.v1.IntegrationDiagnostic} returns this
+ */
+proto.api.v1.IntegrationDiagnostic.prototype.setInputWasTruncated = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 11, value);
+};
+
+
+/**
+ * optional bool output_was_truncated = 12;
+ * @return {boolean}
+ */
+proto.api.v1.IntegrationDiagnostic.prototype.getOutputWasTruncated = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 12, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api.v1.IntegrationDiagnostic} returns this
+ */
+proto.api.v1.IntegrationDiagnostic.prototype.setOutputWasTruncated = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 12, value);
+};
 
 
 

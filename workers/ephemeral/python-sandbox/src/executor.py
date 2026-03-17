@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import multiprocessing
+import multiprocessing.connection
 import os
+import tempfile
 from contextlib import redirect_stderr, redirect_stdout
 from functools import partial
 from importlib.util import module_from_spec, spec_from_loader
@@ -15,7 +18,16 @@ from textwrap import indent
 from traceback import extract_tb
 from typing import Optional
 
-from src.constants import RESERVED_CONTEXT_KEYS, get_env_var
+import psutil
+
+from src.constants import (
+    RESERVED_CONTEXT_KEYS,
+    SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST,
+    SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_DEFAULT_TIMEOUT_MS,
+    SUPERBLOCKS_WORKER_SUBPROCESS_GID,
+    SUPERBLOCKS_WORKER_SUBPROCESS_UID,
+    get_env_var,
+)
 from src.log import error
 from src.restricted import ALLOW_BUILTINS, restricted_environment
 from src.superblocks import Object, Reader, encode_bytestring_as_json
@@ -32,6 +44,7 @@ class Executor:
         variable_client: Optional[VariableClient] = None,
         variables: dict = {},
         superblocks_files: Optional[dict] = None,
+        timeout_ms: Optional[int] = None,
     ) -> tuple[str, list[str], list[str]]:
         """
         Run Python code directly.
@@ -40,7 +53,7 @@ class Executor:
         since we're running in the same process.
 
         Returns:
-            Tuple of (result_json, stdout_lines, stderr_lines, exit_code)
+            Tuple of (result_json, stdout_lines, stderr_lines)
         """
         result, stdout_data, stderr_data = self._execute(
             code,
@@ -237,12 +250,170 @@ class Executor:
             return f"__EXCEPTION__Error: {error} "
 
     def _build_sandbox_environment(self) -> dict[str, str]:
-        """Build environment variables for sandboxed execution."""
-        allowed_vars = get_env_var(
-            "SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST", default=[], as_type=list, unset=False
-        )
+        """Build environment variables for sandboxed execution.
+
+        Uses the module-level constant rather than re-reading from os.environ,
+        because get_env_var(..., unset=True) removes the config var at import
+        time.  The customer env vars themselves (the ones *listed* in the
+        inclusion list) are still present in os.environ.
+        """
         return {
             env_var: os.environ.get(env_var, "")
-            for env_var in allowed_vars
+            for env_var in SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST
             if env_var and env_var in os.environ
         }
+
+
+def _run_in_child(
+    conn: multiprocessing.connection.Connection,
+    code: str,
+    context,
+    var_address: Optional[str],
+    var_execution_id: Optional[str],
+    variables: dict,
+    superblocks_files: dict,
+) -> None:
+    """Execute code in a forked child process and send results over a connection.
+
+    Uses the forkserver start method: a daemon is forked from the parent before
+    gRPC starts any threads (see main.py). Each execution is then forked from
+    that clean daemon. This gives fork-like startup speed (warm COW module
+    memory, no interpreter re-import) without inheriting gRPC polling threads
+    or asyncio state from the live server, avoiding the deadlocks that make
+    plain fork unsafe in a gRPC+asyncio process.
+    """
+    from src.variables.variable_client import VariableClient
+
+    # Drop to an unprivileged user inside a per-execution temp directory, matching
+    # the isolation the Python worker applies in its forked children.
+    try:
+        execution_dir = tempfile.mkdtemp()
+        os.chdir(execution_dir)
+        os.chown(execution_dir, SUPERBLOCKS_WORKER_SUBPROCESS_UID, SUPERBLOCKS_WORKER_SUBPROCESS_GID)
+        os.setgid(SUPERBLOCKS_WORKER_SUBPROCESS_GID)
+        os.setuid(SUPERBLOCKS_WORKER_SUBPROCESS_UID)
+    except Exception:
+        pass
+
+    var_client = None
+    try:
+        if var_address:
+            var_client = VariableClient(address=var_address, execution_id=var_execution_id)
+            var_client.connect()
+
+        result, stdout_lines, stderr_lines = Executor().run(
+            code=code,
+            context=context,
+            variable_client=var_client,
+            variables=variables,
+            superblocks_files=superblocks_files,
+        )
+
+        conn.send({"result": result, "stdout": stdout_lines, "stderr": stderr_lines})
+    except Exception as e:
+        conn.send({"result": "", "stdout": [], "stderr": [f"__EXCEPTION__{e}"]})
+    finally:
+        if var_client:
+            var_client.close("done")
+        conn.close()
+        # Kill any subprocesses spawned by user code so they don't outlive the
+        # child, matching the Python worker's cleanup in its forked children.
+        try:
+            for proc in psutil.process_iter():
+                if proc.ppid() == os.getpid():
+                    proc.terminate()
+        except Exception:
+            pass
+
+
+class ForkingExecutor:
+    """Executes each invocation in an isolated child process via forkserver.
+
+    Intended for long-lived sandbox processes (non-ephemeral / OPA mode) where
+    the same sandbox handles multiple concurrent executions. Each call forks a
+    child from a pre-started forkserver daemon, runs the user code there, and
+    returns results via a multiprocessing pipe.
+
+    forkserver (not fork or spawn) is used deliberately:
+    - fork of a live gRPC+asyncio server risks dead threads in the child
+      permanently holding locks (malloc, asyncio, gRPC polling), causing
+      crashes. GRPC_ENABLE_FORK_SUPPORT=1 covers gRPC threads but not other
+      Python thread-local state.
+    - spawn starts a fresh interpreter for every execution, paying ~80ms of
+      module re-import overhead per request.
+    - forkserver forks a daemon before the gRPC server starts (main.py). The
+      daemon has warm module memory (fast COW copies, no re-import) but no live
+      threads. Each execution is forked from that clean daemon: fork-like speed
+      without fork-threading deadlocks.
+    """
+
+    def run(
+        self,
+        code: str,
+        context,
+        variable_client: Optional["VariableClient"] = None,
+        variables: dict = {},
+        superblocks_files: Optional[dict] = None,
+        timeout_ms: Optional[int] = None,
+    ) -> tuple[str, list[str], list[str]]:
+        # Extract connection params before spawning — the VariableClient gRPC
+        # channel cannot be pickled and must not cross the process boundary.
+        var_address = variable_client.address if variable_client else None
+        var_execution_id = variable_client.execution_id if variable_client else None
+
+        parent_conn, child_conn = multiprocessing.Pipe(duplex=False)
+
+        process = multiprocessing.get_context("forkserver").Process(
+            target=_run_in_child,
+            args=(
+                child_conn,
+                code,
+                context,
+                var_address,
+                var_execution_id,
+                variables or {},
+                superblocks_files or {},
+            ),
+        )
+        process.start()
+        child_conn.close()
+
+        effective_timeout_ms = timeout_ms if timeout_ms else SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_DEFAULT_TIMEOUT_MS
+        timeout_secs = effective_timeout_ms / 1000.0 if effective_timeout_ms else None
+        timed_out = False
+        data: Optional[dict] = None
+
+        try:
+            # poll() lets us honour the duration quota without blocking forever.
+            # timeout_secs is None only if the default is explicitly disabled (0).
+            if timeout_secs is not None and not parent_conn.poll(timeout_secs):
+                timed_out = True
+                process.terminate()
+            else:
+                try:
+                    data = parent_conn.recv()
+                except EOFError:
+                    data = {
+                        "result": "",
+                        "stdout": [],
+                        "stderr": ["__EXCEPTION__Child process terminated before sending results"],
+                    }
+        finally:
+            parent_conn.close()
+
+        process.join()
+
+        if timed_out:
+            # Match the Python worker: return the sentinel so callers can surface
+            # "DurationQuotaError" rather than a generic execution error.
+            return "DurationQuotaError", [], []
+
+        result = (data or {}).get("result", "")
+        stdout_lines = (data or {}).get("stdout", [])
+        stderr_lines = (data or {}).get("stderr", [])
+
+        # Surface non-zero exits that didn't already report an error (e.g. SIGKILL).
+        if process.exitcode not in (0, None) and not stderr_lines:
+            stderr_lines = [f"__EXCEPTION__Process exited with code {process.exitcode}"]
+
+        return result, stdout_lines, stderr_lines

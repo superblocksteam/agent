@@ -1,18 +1,24 @@
+import asyncio
 import json
 from datetime import datetime
-from src.executor import Executor
+from typing import Optional
+
+from src.constants import SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_FORK_EXECUTION
+from src.executor import Executor, ForkingExecutor
 from src.props_reader import PluginPropsReader
 from src.utils import get_tree_path_to_disk_path
 from src.variables.variable_client import VariableClient
 
+
 class PythonPlugin:
     def __init__(self):
-        self.executor = Executor()
+        self.executor = ForkingExecutor() if SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_FORK_EXECUTION else Executor()
 
     async def execute(
         self,
         plugin_props: dict,
         variable_client: VariableClient,
+        timeout_ms: Optional[int] = None,
     ) -> tuple[dict, list[str], list[str]]:
 
         startDatetime = datetime.utcnow().timestamp()
@@ -29,12 +35,16 @@ class PythonPlugin:
             props["context"]["globals"], props["files"]
         )
 
-        result, stdout_lines, stderr_lines = self.executor.run(
+        # Run in a thread so the asyncio event loop remains free to process other
+        # concurrent gRPC requests while the executor (and any forked child) runs.
+        result, stdout_lines, stderr_lines = await asyncio.to_thread(
+            self.executor.run,
             code=code,
             context=props["context"],
             variable_client=variable_client,
             variables=props["context"]["variables"],
             superblocks_files=superblocks_files,
+            timeout_ms=timeout_ms,
         )
 
         output = {
@@ -46,11 +56,14 @@ class PythonPlugin:
             ),
         }
 
-        try:
-            json_output = json.loads(result)
-            output.update({"output": json_output})
-        except json.JSONDecodeError as e:
-            output.update({"error": e})
+        if result == "DurationQuotaError":
+            output.update({"error": "DurationQuotaError"})
+        else:
+            try:
+                json_output = json.loads(result)
+                output.update({"output": json_output})
+            except json.JSONDecodeError as e:
+                output.update({"error": e})
 
         error_logs = []
         for err_log in stderr_lines:
