@@ -22,9 +22,7 @@ jobs:
           node-version-file: .nvmrc
       - run: corepack enable && corepack prepare pnpm@10.29.2 --activate
       - run: make deps
-      - run: pnpm install
-        env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: pnpm install --filter mocks
       - uses: pre-commit/action@v3.0.1
       - uses: azure/setup-helm@v4
         with:
@@ -34,7 +32,7 @@ jobs:
       - run: make check
         working-directory: workers/javascript
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.AGENT_RELEASE_PAT }}
       - uses: actions/setup-python@v5
         with:
           python-version-file: ./workers/python/.python-version
@@ -75,7 +73,7 @@ jobs:
           npx pnpm --no-bail --filter "@superblocksteam/*" --filter "!@superblocksteam/gsheets" test -- --testPathIgnorePatterns "(e2e|integration|local).test.ts"
         working-directory: workers/javascript
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.AGENT_RELEASE_PAT }}
       - uses: codecov/codecov-action@v4
         with:
           name: ${{ github.job }}
