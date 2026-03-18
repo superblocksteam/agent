@@ -64,7 +64,7 @@ taskManager:
     limits:
       memory: 512Mi
     requests:
-      cpu: 100m
+      cpu: 200m
       memory: 128Mi
   # Additional args to pass to the task-manager
   extraArgs: []
@@ -115,7 +115,7 @@ sandbox:
       limits:
         memory: 4Gi
       requests:
-        cpu: 150m
+        cpu: 300m
         memory: 700Mi
     port: 50051
     # Additional args/env for the python sandbox
@@ -129,7 +129,7 @@ sandbox:
       limits:
         memory: 4Gi
       requests:
-        cpu: 150m
+        cpu: 300m
         memory: 700Mi
     port: 50051
     # Additional args/env for the javascript sandbox
