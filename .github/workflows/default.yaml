@@ -7,9 +7,6 @@ on:
 jobs:
   check:
     runs-on: blacksmith-2vcpu-ubuntu-2204
-    permissions:
-      contents: read
-      packages: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -35,7 +32,7 @@ jobs:
       - run: make check
         working-directory: workers/javascript
         env:
-          NPM_TOKEN: ${{ github.token }}
+          NPM_TOKEN: ${{ secrets.AGENT_RELEASE_PAT }}
       - uses: actions/setup-python@v5
         with:
           python-version-file: ./workers/python/.python-version
@@ -64,9 +61,6 @@ jobs:
   test-js:
     runs-on: blacksmith-8vcpu-ubuntu-2204
     timeout-minutes: 30
-    permissions:
-      contents: read
-      packages: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -79,7 +73,7 @@ jobs:
           npx pnpm --no-bail --filter "@superblocksteam/*" --filter "!@superblocksteam/gsheets" test -- --testPathIgnorePatterns "(e2e|integration|local).test.ts"
         working-directory: workers/javascript
         env:
-          NPM_TOKEN: ${{ github.token }}
+          NPM_TOKEN: ${{ secrets.AGENT_RELEASE_PAT }}
       - uses: codecov/codecov-action@v4
         with:
           name: ${{ github.job }}
