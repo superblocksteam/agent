@@ -1,6 +1,8 @@
 ---
 # CI environment configuration for ephemeral workers in Kind
 # Uses KEDA ScaledJob to process Redis stream messages
+externalSecrets:
+  enabled: false
 fleets:
   # Python ephemeral worker fleet
   python-ba:

@@ -78,6 +78,39 @@ image:
     registry: ghcr.io
     username: '<override>'
     password: '<override>'
+externalSecrets:
+  enabled: false
+  refreshInterval: 1h
+  secretStoreRef:
+    name: "aws-secrets-manager"
+    kind: "ClusterSecretStore"
+  # Configure remote refs for each secret when externalSecrets.enabled is true.
+  # Set remoteRef.key to the AWS Secrets Manager path for each value.
+  agentKey:
+    data:
+      - secretKey: key
+        remoteRef:
+          key: ""
+  queueRedis:
+    data:
+      - secretKey: token
+        remoteRef:
+          key: ""
+  kvstoreRedis:
+    data:
+      - secretKey: token
+        remoteRef:
+          key: ""
+  tunnelPrivateKeyRSA:
+    data:
+      - secretKey: key
+        remoteRef:
+          key: ""
+  tunnelPrivateKeyEd25519:
+    data:
+      - secretKey: key
+        remoteRef:
+          key: ""
 tolerations: {}
 nodeSelector: {}
 runtimeClassName: null

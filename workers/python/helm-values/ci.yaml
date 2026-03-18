@@ -2,6 +2,8 @@
 x-shared: &shared
   events: execute
 environment: ci
+externalSecrets:
+  enabled: false
 service:
   tls:
     insecure: true

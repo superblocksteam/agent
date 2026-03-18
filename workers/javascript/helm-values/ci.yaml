@@ -8,6 +8,8 @@ x-exec-pool-proc-shared: &execPoolProcShared
       pool:
         size: 8
 environment: ci
+externalSecrets:
+  enabled: false
 service:
   logLevel: debug
   tls:

@@ -138,6 +138,37 @@ launchdarkly:
   apikey: '<override>'
 secrets:
   encryptionKey: '<override>'
+externalSecrets:
+  enabled: false
+  refreshInterval: 1h
+  secretStoreRef:
+    name: "aws-secrets-manager"
+    kind: "ClusterSecretStore"
+  # Configure remote refs for each secret when externalSecrets.enabled is true.
+  # Set remoteRef.key to the AWS Secrets Manager path for each value.
+  superblocksKey:
+    data:
+      - secretKey: key
+        remoteRef:
+          key: ""
+  redis:
+    data:
+      - secretKey: store
+        remoteRef:
+          key: ""
+      - secretKey: transport
+        remoteRef:
+          key: ""
+  launchdarkly:
+    data:
+      - secretKey: apikey
+        remoteRef:
+          key: ""
+  secretsEncryption:
+    data:
+      - secretKey: key
+        remoteRef:
+          key: ""
 bindings:
   # Enable WASM sandbox for bindings evaluation.
   # LaunchDarkly takes priority when configured; this is used as fallback.
