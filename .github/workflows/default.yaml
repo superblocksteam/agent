@@ -17,6 +17,10 @@ jobs:
           buf_user: frankgrecojr
           buf_api_token: ${{ secrets.BUF_APIKEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable && corepack prepare pnpm@10.29.2 --activate
       - run: make deps
       - uses: pre-commit/action@v3.0.1
       - uses: azure/setup-helm@v4
@@ -24,10 +28,6 @@ jobs:
           version: "v3.9.0"
       - run: helm repo add bitnami https://charts.bitnami.com/bitnami
       - run: make helm-template
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-      - run: corepack enable && corepack prepare pnpm@10.29.2 --activate
       - run: make check
         working-directory: workers/javascript
       - uses: actions/setup-python@v5
@@ -63,6 +63,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+      - run: corepack enable && corepack prepare pnpm@10.29.2 --activate
       - run: |
           make build
           npx pnpm --filter @superblocks/worker.js test:unit
