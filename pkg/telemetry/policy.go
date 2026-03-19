@@ -60,6 +60,12 @@ func DefaultCloudPremPolicy() TelemetryPolicy {
 	}
 }
 
+func DefaultOnPremPolicy() TelemetryPolicy {
+	p := DefaultCloudPolicy()
+	p.DeploymentType = DeploymentTypeOnPrem
+	return p
+}
+
 func clonePolicy(policy TelemetryPolicy) TelemetryPolicy {
 	cloned := policy
 	if policy.Tiers != nil {
@@ -135,7 +141,7 @@ func clonePartialTier3Content(src *PartialTier3ContentPolicy) *PartialTier3Conte
 
 func validatePolicy(policy TelemetryPolicy) error {
 	switch policy.DeploymentType {
-	case DeploymentTypeCloud, DeploymentTypeCloudPrem:
+	case DeploymentTypeCloud, DeploymentTypeCloudPrem, DeploymentTypeOnPrem:
 	default:
 		return fmt.Errorf("invalid deployment type: %q", policy.DeploymentType)
 	}

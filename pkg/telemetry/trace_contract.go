@@ -85,11 +85,21 @@ var cloudPremTraceContract = traceContract{
 	},
 }
 
+// onPremTraceContract allows all spans. Defined separately from cloudTraceContract
+// so on-prem filtering can be tuned independently in the future.
+var onPremTraceContract = traceContract{
+	patterns: []spanPattern{{prefix: "", wildcard: true}},
+}
+
 func getTraceContract(dt DeploymentType) traceContract {
-	if dt == DeploymentTypeCloudPrem {
+	switch dt {
+	case DeploymentTypeCloudPrem:
 		return cloudPremTraceContract
+	case DeploymentTypeOnPrem:
+		return onPremTraceContract
+	default:
+		return cloudTraceContract
 	}
-	return cloudTraceContract
 }
 
 // matches returns true if spanName is allowed by the contract.

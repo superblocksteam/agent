@@ -119,6 +119,18 @@ func TestFilteringProcessorCloudPremDropsHealthRouteEvenIfContractMatches(t *tes
 	assert.Len(t, collector.spans, 0)
 }
 
+func TestFilteringProcessorOnPremAllowsAllSpans(t *testing.T) {
+	collector := &collectingProcessor{}
+	proc := NewFilteringSpanProcessor(collector, DeploymentTypeOnPrem)
+
+	// on-prem uses wildcard-all contract — arbitrary span names should pass
+	for _, name := range []string{"some.internal.span", "plugin.postgres", "custom.thing", "HTTP GET /foo"} {
+		span := makeSpan(t, name)
+		proc.OnEnd(span)
+	}
+	assert.Len(t, collector.spans, 4)
+}
+
 func TestFilteringProcessorShutdownDelegates(t *testing.T) {
 	collector := &collectingProcessor{}
 	proc := NewFilteringSpanProcessor(collector, DeploymentTypeCloud)

@@ -16,6 +16,12 @@ func TestDefaultPolicies(t *testing.T) {
 	require.NoError(t, validatePolicy(cloudPrem))
 	assert.False(t, cloudPrem.Tiers[Tier1Local].ExportEnabled)
 	assert.True(t, cloudPrem.Tiers[Tier2Operational].ExportEnabled)
+
+	onPrem := DefaultOnPremPolicy()
+	require.NoError(t, validatePolicy(onPrem))
+	assert.Equal(t, DeploymentTypeOnPrem, onPrem.DeploymentType)
+	assert.True(t, onPrem.Tiers[Tier1Local].ExportEnabled)
+	assert.True(t, onPrem.Tiers[Tier2Operational].ExportEnabled)
 }
 
 func TestValidatePolicyRejectsInvalidSampleRate(t *testing.T) {

@@ -11,7 +11,6 @@
     "typecheck": "npx tsc"
   },
   "dependencies": {
-    "@mmkal/truncate-json": "^1.6.0",
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/javascript": "workspace:*",
     "@superblocksteam/sdk-api": "0.0.3-metadata.0"

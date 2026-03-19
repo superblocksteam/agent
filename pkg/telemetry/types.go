@@ -15,7 +15,8 @@ type DeploymentType string
 
 const (
 	DeploymentTypeCloud     DeploymentType = "cloud"
-	DeploymentTypeCloudPrem DeploymentType = "cloud_prem"
+	DeploymentTypeCloudPrem DeploymentType = "cloud-prem"
+	DeploymentTypeOnPrem    DeploymentType = "on-prem"
 )
 
 type TelemetryTier string

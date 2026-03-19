@@ -353,6 +353,10 @@ spec:
         affinity:
           {{- toYaml . | nindent 10 }}
         {{- end }}
+        {{- with $v.topologySpreadConstraints | default $.Values.topologySpreadConstraints }}
+        topologySpreadConstraints:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         {{- with $v.tolerations | default $.Values.tolerations }}
         tolerations:
           {{- toYaml . | nindent 10 }}

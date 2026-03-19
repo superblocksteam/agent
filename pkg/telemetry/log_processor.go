@@ -39,7 +39,8 @@ func GetLoggingPolicy(policy TelemetryPolicy) LoggingPolicyConfig {
 		}
 	}
 
-	if policy.DeploymentType == DeploymentTypeCloudPrem {
+	switch policy.DeploymentType {
+	case DeploymentTypeCloudPrem:
 		return LoggingPolicyConfig{
 			ExportMode:    LogExportModeWarnAndAbove,
 			LocalMaxLevel: "debug",
@@ -49,6 +50,15 @@ func GetLoggingPolicy(policy TelemetryPolicy) LoggingPolicyConfig {
 				regexp.MustCompile(`(?i)(\bapi[_\s]?key[:\s=]+)[a-zA-Z0-9\-._~+/]+=*`),
 			},
 			ForbiddenFields: cloneStringSet(secretFields),
+			MaxBodyBytes:    defaultMaxBodyBytes,
+		}
+	case DeploymentTypeOnPrem:
+		// Same as cloud for now: export info-and-above, no redaction.
+		return LoggingPolicyConfig{
+			ExportMode:      LogExportModeInfoAndAbove,
+			LocalMaxLevel:   "debug",
+			RedactPatterns:  nil,
+			ForbiddenFields: map[string]struct{}{},
 			MaxBodyBytes:    defaultMaxBodyBytes,
 		}
 	}

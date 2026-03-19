@@ -270,6 +270,7 @@ externalSecrets:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+topologySpreadConstraints: []
 podAnnotations: {}
 # Network isolation configuration
 # Blocks sandbox from accessing internal infrastructure via iptables

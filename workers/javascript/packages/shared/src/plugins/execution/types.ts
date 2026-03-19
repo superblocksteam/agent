@@ -83,4 +83,5 @@ export type WorkerTaskInput = {
 
 export type WorkerInput = WorkerTaskInput & {
   port: MessagePort;
+  integrationPort?: MessagePort;
 };

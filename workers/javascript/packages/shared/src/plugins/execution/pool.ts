@@ -1,7 +1,8 @@
 import { omit } from 'lodash';
 import Piscina from 'piscina';
 import { ErrorCode, IntegrationError } from '../../errors';
-import { ExecutionOutput } from '../../types';
+import { ExecutionOutput, IntegrationExecutor } from '../../types';
+import { PoolIntegrationExecutorServer } from './pool-integration-executor-server';
 import { PoolVariableServer } from './pool-variable-server';
 import type { WorkerInput, WorkerTaskInput } from './types';
 import type { MessagePort } from 'worker_threads';
@@ -60,6 +61,17 @@ export interface WorkerPoolExecuteOptions {
      */
     name?: string;
   };
+  /**
+   * When provided, a MessagePort-based proxy is created so the worker thread
+   * can call executeIntegration on the main thread's gRPC client.
+   * Diagnostics are captured on the main thread and attached to the output.
+   */
+  integrationExecutor?: IntegrationExecutor;
+  /**
+   * When true (and integrationExecutor is set), per-call diagnostic records
+   * are collected and attached to the ExecutionOutput.
+   */
+  includeDiagnostics?: boolean;
 }
 
 interface PoolEntry {
@@ -71,9 +83,13 @@ interface PoolEntry {
 interface WorkerPoolRunOptions {
   signal: AbortSignal;
   /**
-   * MessagePort to pass to the worker (used for IPC communication).
+   * MessagePort to pass to the worker (used for KV store IPC).
    */
   port: MessagePort;
+  /**
+   * Optional MessagePort for integration executor IPC.
+   */
+  integrationPort?: MessagePort;
   /**
    * Overrides the exported function name allowing the pool to
    * execute the specified function instead of the default export.
@@ -151,16 +167,29 @@ export class WorkerPool {
 
     const variableServer = new PoolVariableServer(input.context.kvStore!);
 
+    let integrationServer: PoolIntegrationExecutorServer | undefined;
+    if (executeOptions.integrationExecutor) {
+      integrationServer = new PoolIntegrationExecutorServer(executeOptions.integrationExecutor, executeOptions.includeDiagnostics ?? false);
+    }
+
     try {
       const outputJSON = await WorkerPool.run(poolName, input, {
         name: executeOptions.options?.name ?? undefined,
         signal,
-        port: variableServer.clientPort()
+        port: variableServer.clientPort(),
+        integrationPort: integrationServer?.clientPort()
       });
-      return ExecutionOutput.fromJSONString(outputJSON);
+      const result = ExecutionOutput.fromJSONString(outputJSON);
+
+      if (integrationServer) {
+        const diagnostics = integrationServer.diagnostics();
+        if (diagnostics.length > 0) {
+          result.diagnostics = diagnostics;
+        }
+      }
+
+      return result;
     } catch (err) {
-      // Annotate the AbortError, which is triggered by the hard timeout (worker termination).
-      // This fires if the task did not enforce the soft timeout.
       if ((err as Error).name === 'AbortError') {
         throw new IntegrationError(`[AbortError] Timed out after ${softTimeout}ms`, ErrorCode.INTEGRATION_QUERY_TIMEOUT, {
           pluginName: executeOptions.pluginName ?? undefined
@@ -170,11 +199,12 @@ export class WorkerPool {
     } finally {
       clearTimeout(timeoutWatcher);
       variableServer.close();
+      integrationServer?.close();
     }
   }
 
   private static async run(poolName: string, input: WorkerTaskInput, options: WorkerPoolRunOptions): Promise<string> {
-    const { signal, port } = options;
+    const { signal, port, integrationPort } = options;
     const entry = this.getOrCreatePool(poolName);
     if (entry.draining) {
       throw new IntegrationError('WorkerPool is shutting down', ErrorCode.UNSPECIFIED);
@@ -182,10 +212,16 @@ export class WorkerPool {
 
     const workerInput: WorkerInput = {
       ...input,
-      context: omit(input.context, 'kvStore'),
+      context: omit(input.context, 'kvStore', 'integrationExecutor'),
       useSandboxFileFetcher: Boolean((input.context.kvStore as unknown as { fetchFileCallback?: unknown } | undefined)?.fetchFileCallback),
-      port
+      port,
+      integrationPort
     };
+
+    const transferList: MessagePort[] = [port];
+    if (integrationPort) {
+      transferList.push(integrationPort);
+    }
 
     entry.activeTaskCount += 1;
 
@@ -193,7 +229,7 @@ export class WorkerPool {
       return await entry.pool.run(workerInput, {
         name: options.name ?? undefined,
         signal,
-        transferList: [port]
+        transferList
       });
     } finally {
       entry.activeTaskCount -= 1;

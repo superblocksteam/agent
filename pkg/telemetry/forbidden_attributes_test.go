@@ -17,6 +17,13 @@ type tier2TracesJSON struct {
 	DroppedHighCardinalityAttributes []string `json:"dropped_high_cardinality_attributes"`
 }
 
+func TestForbiddenAttributesOnPremIsNoop(t *testing.T) {
+	onPrem := getSpanSanitizationConfig(DeploymentTypeOnPrem)
+
+	assert.Empty(t, onPrem.forbiddenAttributes, "on-prem should strip no attributes")
+	assert.Empty(t, onPrem.droppedAttributes, "on-prem should drop no attributes")
+}
+
 func TestForbiddenAttributesCloudPremIsSuperset(t *testing.T) {
 	cloudPrem := getSpanSanitizationConfig(DeploymentTypeCloudPrem)
 	cloud := getSpanSanitizationConfig(DeploymentTypeCloud)

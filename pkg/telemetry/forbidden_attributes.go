@@ -81,6 +81,12 @@ func getSpanSanitizationConfig(dt DeploymentType) spanSanitizationConfig {
 			forbiddenAttributes: forbiddenTier2SpanAttributes,
 			droppedAttributes:   droppedHighCardinalityAttributes,
 		}
+	case DeploymentTypeOnPrem:
+		// No sanitization: pass spans through untouched to preserve existing OPA observability behavior.
+		return spanSanitizationConfig{
+			forbiddenAttributes: map[string]struct{}{},
+			droppedAttributes:   map[string]struct{}{},
+		}
 	default:
 		// Cloud: only strip things that should never leave the SDK
 		return spanSanitizationConfig{

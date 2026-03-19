@@ -35,6 +35,13 @@ func TestGetLoggingPolicy(t *testing.T) {
 	logPolicy = GetLoggingPolicy(policy)
 	assert.Equal(t, LogExportModeInfoAndAbove, logPolicy.ExportMode)
 	assert.Equal(t, defaultMaxBodyBytes, logPolicy.MaxBodyBytes)
+
+	policy = DefaultOnPremPolicy()
+	logPolicy = GetLoggingPolicy(policy)
+	assert.Equal(t, LogExportModeInfoAndAbove, logPolicy.ExportMode)
+	assert.Nil(t, logPolicy.RedactPatterns)
+	assert.Empty(t, logPolicy.ForbiddenFields)
+	assert.Equal(t, defaultMaxBodyBytes, logPolicy.MaxBodyBytes)
 }
 
 func TestPolicyAwareLogProcessorLocalOnlyBlocks(t *testing.T) {
