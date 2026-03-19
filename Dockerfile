@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1.9.0
+# check=skip=SecretsUsedInArgOrEnv
 
 # List all build-time variables with their default values
 # They need to be redefined in each stage to be used in that stage
 ARG DEBIAN_TRIXIE_VERSION=20250811
-ARG GO_VERSION=1.25.1
+ARG GO_VERSION=1.25.5
 ARG PYTHON_VERSION=3.10.18
 ARG NODE_VERSION_MAJOR=20
 ARG NODE_VERSION=20.19.5
@@ -58,6 +59,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     make build-go SERVICE_NAME="worker.go"                                             \
     SERVICE_VERSION=${SERVICE_VERSION}                                   \
     GO_BUILD_ROOT_DIRECTORY=./workers/golang                             \
+    EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}                                 \
+    EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"                     && \
+    make build-go SERVICE_NAME="task-manager"                                          \
+    SERVICE_VERSION=${SERVICE_VERSION}                                   \
+    GO_BUILD_ROOT_DIRECTORY=./workers/ephemeral/task-manager             \
     EXTRA_GO_OPTIONS=${EXTRA_GO_OPTIONS}                                 \
     EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"
 
@@ -150,7 +156,14 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm --filter "${FLEET_PACKAGE}"... build && \
     pnpm install -r $PNPM_INSTALL_FLAG && \
     pnpm --filter "${FLEET_PACKAGE}" deploy --prod /deploy && \
-    npx clean-modules --directory /deploy/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
+    npx clean-modules --directory /deploy/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/' && \
+    pnpm --filter 'javascript-plugins-sandbox^...' build && \
+    pnpm install -r $PNPM_INSTALL_FLAG && \
+    pnpm --filter javascript-plugins-sandbox build && \
+    pnpm install -r $PNPM_INSTALL_FLAG && \
+    pnpm --filter javascript-plugins-sandbox deploy --prod /deploy-sandbox-js && \
+    cp -r workers/ephemeral/javascript-plugins-sandbox/src/types /deploy-sandbox-js/dist/ && \
+    npx clean-modules --directory /deploy-sandbox-js/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
 
 # Install build the deasync binding for this architecture
 RUN --mount=type=cache,target=/root/.npm \
@@ -161,7 +174,9 @@ RUN --mount=type=cache,target=/root/.npm \
     node-gyp configure                                                                                                                        && \
     node-gyp build                                                                                                                            && \
     mkdir -p /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build                                                 && \
-    cp build/Release/deasync.node /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node
+    cp build/Release/deasync.node /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node               && \
+    mkdir -p /deploy-sandbox-js/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build                                    && \
+    cp build/Release/deasync.node /deploy-sandbox-js/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node
 
 ############
 ## PARENT ##
@@ -192,15 +207,17 @@ LABEL org.opencontainers.image.version=${EXTERNAL_TAG}
 LABEL org.opencontainers.image.created=${IMAGE_CREATED}
 LABEL io.snyk.containers.image.dockerfile="/Dockerfile"
 
-COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/orchestrator             /app/orchestrator/bin
-COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/buckets.minimal.json     /app/orchestrator/buckets.json
-COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/flags.json               /app/orchestrator/flags.json
-COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/workers/golang/worker.go /app/worker.go/bin
-COPY              --from=workers                        /deploy                                                           /app/worker.js
-COPY              --from=workers                        /s6/                                                              /
-COPY              --chmod=755                           /workers/python                                                   /app/worker.py
-COPY                                                    s6-rc.d/                                                          /etc/s6-overlay/s6-rc.d/
-COPY                                                    redis-opa/config/                                                 /etc/redis/
+COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/orchestrator                              /app/orchestrator/bin
+COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/buckets.minimal.json                     /app/orchestrator/buckets.json
+COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/flags.json                               /app/orchestrator/flags.json
+COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/workers/golang/worker.go                 /app/worker.go/bin
+COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/workers/ephemeral/task-manager/task-manager /app/task-manager/bin
+COPY              --from=workers                        /deploy                                                                           /app/worker.js
+COPY              --from=workers                        /deploy-sandbox-js                                                                /app/sandbox-js
+COPY              --from=workers                        /s6/                                                                              /
+COPY              --chmod=755                           /workers/python                                                                   /app/worker.py
+COPY                                                    s6-rc.d/                                                                          /etc/s6-overlay/s6-rc.d/
+COPY                                                    redis-opa/config/                                                                 /etc/redis/
 
 # Overwrite default requirements.txt file with the contents of the desired requirements file
 RUN src="/app/worker.py/${REQUIREMENTS_FILE}" && \
@@ -235,14 +252,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update                                                                                                                               && \
     ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18                                                                         && \
     uv pip install --system -r ${REQUIREMENTS_FILE}                                                                                              && \
-    find /app/orchestrator/bin /etc/s6-overlay/s6-rc.d -type d -exec chmod 755 {} \;                                                             && \
+    find /app/orchestrator/bin /app/task-manager/bin /etc/s6-overlay/s6-rc.d -type d -exec chmod 755 {} \;                                   && \
     find /app/orchestrator/buckets.json /app/orchestrator/flags.json /etc/s6-overlay/s6-rc.d -type f -exec chmod g=u,o=u {} \;                   && \
     groupadd --gid 1000 superblocks                                                                                                              && \
     useradd --uid 1000 --gid superblocks --shell /bin/bash --create-home superblocks
 
 # Remove package managers as they include the cross-spawn dependency
 RUN rm -rf /app/worker.js/node_modules/pnpm && \
-rm -rf /usr/lib/node_modules/npm
+    rm -rf /app/sandbox-js/node_modules/pnpm && \
+    rm -rf /usr/lib/node_modules/npm
 
 
 COPY --chmod=755 debian_testing.sources /etc/apt/sources.list.d/debian_testing.sources
