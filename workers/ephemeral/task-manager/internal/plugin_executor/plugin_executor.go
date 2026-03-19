@@ -21,6 +21,8 @@ import (
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // PluginExecutor manages plugin execution
@@ -238,9 +240,11 @@ func (p *pluginExecutor) Execute(
 	}
 
 	if err != nil {
-		if _, isQuotaErr := commonErr.IsQuotaError(err); isQuotaErr || err == context.DeadlineExceeded {
+		if p.isQuotaError(timedCtx, err) {
 			output.StructuredLog = nil
-			output.Output.Log = nil
+			if output.Output != nil {
+				output.Output.Log = nil
+			}
 			err = errors.New("DurationQuotaError")
 		}
 
@@ -376,6 +380,22 @@ func (p *pluginExecutor) PreDelete(ctx context.Context, pluginName string, reqDa
 	err = plug.PreDelete(ctx, requestMeta, reqData.GetDConfig())
 
 	return nil, err
+}
+
+func (p *pluginExecutor) isQuotaError(timedCtx context.Context, err error) bool {
+	if _, isQuotaErr := commonErr.IsQuotaError(err); isQuotaErr {
+		return true
+	}
+
+	if timedCtx.Err() == context.DeadlineExceeded {
+		if grpcStatus, ok := status.FromError(err); ok {
+			return grpcStatus.Code() == codes.DeadlineExceeded
+		}
+
+		return err == context.DeadlineExceeded
+	}
+
+	return false
 }
 
 func (p *pluginExecutor) buildKvPair(

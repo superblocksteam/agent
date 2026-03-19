@@ -15,6 +15,8 @@ import (
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -847,6 +849,26 @@ func TestExecuteWithNilOutput(t *testing.T) {
 	}
 }
 
+func TestExecuteResponseToOutputMapWithNilOutput(t *testing.T) {
+	// executeResponseToOutputMap is called via buildKvPair when the plugin returns (nil, err).
+	// Ensure it returns successfully when response has nil Output (no panic).
+	var p *pluginExecutor
+	result := p.executeResponseToOutputMap(&workerv1.ExecuteResponse{}, nil)
+	if result == nil {
+		t.Fatal("executeResponseToOutputMap returned nil map")
+	}
+	// With nil Output, output/log/request should be zero values (nil or empty)
+	if _, ok := result["output"]; !ok {
+		t.Error("result missing output key")
+	}
+	if _, ok := result["log"]; !ok {
+		t.Error("result missing log key")
+	}
+	if _, ok := result["children"]; !ok {
+		t.Error("result missing children key")
+	}
+}
+
 func TestExecuteWithStdoutStderr(t *testing.T) {
 	executor := newTestExecutor()
 
@@ -940,6 +962,8 @@ func TestExecuteWithDeadlineExceeded(t *testing.T) {
 	mock := &mockPlugin{
 		name: "python",
 		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			// Block until quota timeout fires, then return ctx.Err() (context.DeadlineExceeded).
+			<-ctx.Done()
 			return &workerv1.ExecuteResponse{
 				Output: &apiv1.OutputOld{
 					Log: []string{"should be cleared", "[ERROR] should be cleared"},
@@ -954,18 +978,23 @@ func TestExecuteWithDeadlineExceeded(t *testing.T) {
 						Message: "should be cleared",
 					},
 				},
-			}, context.DeadlineExceeded
+			}, ctx.Err()
 		},
 	}
 
 	executor.RegisterPlugin("python", mock)
 
 	ctx := context.Background()
-	reqData := &transportv1.Request_Data_Data{}
+	quotaDurationMs := int32(100)
+	reqData := &transportv1.Request_Data_Data{
+		Quotas: &transportv1.Request_Data_Data_Quota{
+			Duration: quotaDurationMs,
+		},
+	}
 
 	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
 
-	// DeadlineExceeded should be converted to DurationQuotaError and stored in result.Err
+	// DeadlineExceeded from quota timeout should be converted to DurationQuotaError and stored in result.Err
 	if err != nil {
 		t.Errorf("Execute() should not return error directly, got %v", err)
 	}
@@ -1036,6 +1065,87 @@ func TestExecuteQuotaDurationCancelsBlockingPlugin(t *testing.T) {
 	// Execution must complete in roughly the quota duration, not hang forever.
 	if elapsed > 5*time.Second {
 		t.Errorf("Execute() took %v; quota timeout of %dms should have cancelled it", elapsed, quotaDurationMs)
+	}
+}
+
+func TestExecuteGrpcDeadlineExceededFromQuotaIsDurationQuotaError(t *testing.T) {
+	// Simulates the sandbox plugin returning a gRPC error with code DeadlineExceeded
+	// when the quota timeout fires.
+	executor := newTestExecutor()
+
+	mock := &mockPlugin{
+		name: "python",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			<-ctx.Done()
+			// Sandbox returns gRPC status with DeadlineExceeded, not raw context.DeadlineExceeded.
+			return &workerv1.ExecuteResponse{
+				Output:        &apiv1.OutputOld{},
+				StructuredLog: []*workerv1.StructuredLog{},
+			}, status.Error(codes.DeadlineExceeded, "context deadline exceeded")
+		},
+	}
+
+	executor.RegisterPlugin("python", mock)
+
+	ctx := context.Background()
+	quotaDurationMs := int32(100)
+	reqData := &transportv1.Request_Data_Data{
+		Quotas: &transportv1.Request_Data_Data_Quota{
+			Duration: quotaDurationMs,
+		},
+	}
+
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
+
+	if err != nil {
+		t.Errorf("Execute() should not return error directly, got %v", err)
+	}
+	if result == nil {
+		t.Fatal("Execute() returned nil result")
+	}
+	if result.Err == nil {
+		t.Fatal("Execute() result should have DurationQuotaError in Err field")
+	}
+	if result.Err.Message != "DurationQuotaError" {
+		t.Errorf("Execute() result.Err.Message = %v, want DurationQuotaError", result.Err.Message)
+	}
+	if result.Err.Name != "QuotaError" {
+		t.Errorf("Execute() result.Err.Name = %v, want QuotaError", result.Err.Name)
+	}
+}
+
+func TestExecuteGrpcDeadlineExceededWithNilOutputDoesNotPanic(t *testing.T) {
+	executor := newTestExecutor()
+
+	mock := &mockPlugin{
+		name: "python",
+		executeFunc: func(ctx context.Context, _ *workerv1.RequestMetadata, _ *transportv1.Request_Data_Data_Props, _ *transportv1.Request_Data_Data_Quota, _ *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			<-ctx.Done()
+			// Simulate gRPC timeout: sandbox returns (nil, gRPCError).
+			return nil, status.Error(codes.DeadlineExceeded, "context deadline exceeded")
+		},
+	}
+
+	executor.RegisterPlugin("python", mock)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{
+		Quotas: &transportv1.Request_Data_Data_Quota{Duration: 50},
+	}
+
+	result, err := executor.Execute(ctx, "python", reqData, nil, nil)
+
+	if err != nil {
+		t.Errorf("Execute() should not return error directly, got %v", err)
+	}
+	if result == nil {
+		t.Fatal("Execute() returned nil result")
+	}
+	if result.Err == nil {
+		t.Fatal("Execute() result should have DurationQuotaError in Err field")
+	}
+	if result.Err.Message != "DurationQuotaError" {
+		t.Errorf("Execute() result.Err.Message = %v, want DurationQuotaError", result.Err.Message)
 	}
 }
 
