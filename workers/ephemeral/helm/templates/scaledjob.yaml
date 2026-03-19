@@ -10,6 +10,11 @@
 #
 # Network isolation is enforced via Kubernetes NetworkPolicy on sandbox Jobs.
 # Task-manager has full internal network access; sandbox Jobs are restricted.
+#
+# Task-manager container resources: chart defaults are deep-copied, then
+# mergeOverwrite applies per-fleet ($v.taskManager).resources (fleet wins).
+# (Sprig merge also gives precedence to the right-hand map in `a | merge b`;
+# swapping operands inverts precedence—do not "fix" without re-checking output.)
 # =============================================================================
 {{- $fullname := include "sandbox_workers.fullname" . }}
 {{- range $k, $v := .Values.fleets }}
@@ -84,7 +89,9 @@ spec:
           image: "{{ (($v.taskManager).image).repository | default $.Values.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.taskManager.image.tag }}"
           imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
           resources:
-            {{- toYaml (deepCopy ($.Values.taskManager.resources | default dict) | merge (($v.taskManager).resources | default dict)) | nindent 12 }}
+            {{- $taskManagerResources := deepCopy ($.Values.taskManager.resources | default dict) }}
+            {{- $_ := mergeOverwrite $taskManagerResources (($v.taskManager).resources | default dict) }}
+            {{- toYaml $taskManagerResources | nindent 12 }}
           {{- if $.Values.taskManager.probesEnabled }}
           {{- with (($v.taskManager).startupProbe) | default $.Values.taskManager.startupProbe }}
           startupProbe:
