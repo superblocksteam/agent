@@ -1,63 +1,1095 @@
 {
 	"info": {
 		"_postman_id": "javascriptsdkapi-e2e",
-		"name": "JavaScript SDK API - Ephemeral Worker E2E",
-		"description": "Tests for javascriptsdkapi plugin execution via ephemeral workers. Run with POSTMAN_ENV=ci-ephemeral.",
+		"name": "JavaScript SDK API - E2E",
+		"description": "E2E tests for the javascriptsdkapi plugin. Covers basic execution, multi-step pipelines, control flow, error handling, variables, inputs, and mixed plugin steps.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "execute api with javascriptsdkapi step",
-			"event": [
+			"name": "basic",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"assert status\", () => {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"assert javascriptsdkapi block output\", () => {",
-							"    const response = pm.response.json();",
-							"    pm.expect(response.output).to.not.be.undefined;",
-							"    pm.expect(response.output.result).to.eql({ pluginName: \"javascriptsdkapi\", received: true });",
-							"});"
+					"name": "return object",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('returns correct object', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output).to.not.be.undefined;",
+									"    pm.expect(body.output.result).to.eql({ pluginName: 'javascriptsdkapi', received: true });",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
 						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "X-Superblocks-Authorization",
-						"value": "Bearer {{superblocks_jwt}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"options\": {\n        \"includeEventOutputs\": true,\n        \"includeEvents\": false\n    },\n    \"inputs\": {},\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"JavascriptSdkApiTest\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"VARS_BLOCK\",\n                    \"variables\": {\n                        \"items\": []\n                    }\n                },\n                {\n                    \"name\": \"BLOCK_STEP_JAVASCRIPTSDKAPI\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return (function(){return {pluginName:'javascriptsdkapi',received:true};})();\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiReturnObject\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return { pluginName: 'javascriptsdkapi', received: true };\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
 						}
 					}
 				},
-				"url": {
-					"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
-					"protocol": "{{orchestrator_scheme}}",
-					"host": [
-						"{{orchestrator_host}}"
+				{
+					"name": "return string",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('returns string', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql('hello from sdkapi');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
 					],
-					"port": "{{orchestrator_port}}",
-					"path": [
-						"v2",
-						"execute"
-					]
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiReturnString\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return 'hello from sdkapi';\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "return number",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('returns number', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql(42);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiReturnNumber\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return 42;\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "return array",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('returns array', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql([1, 2, 3]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiReturnArray\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return [1, 2, 3];\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "return null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('returns null (no result key)', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output).to.not.be.undefined;",
+									"    pm.expect(body.output.result).to.be.undefined;",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiReturnNull\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return null;\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "async await (setTimeout)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('async execution works', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql('async done');",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiAsync\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return await new Promise(resolve => setTimeout(() => resolve('async done'), 100));\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "console.log captured in stdout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('stdout captured', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.stdout).to.be.an('array');",
+									"    pm.expect(body.output.stdout.length).to.be.gte(1);",
+									"    pm.expect(body.output.stdout[0]).to.eql('hello from sdkapi log');",
+									"    pm.expect(body.output.result).to.eql('done');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiConsoleLog\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"console.log('hello from sdkapi log'); return 'done';\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
 				}
-			},
-			"response": []
+			]
+		},
+		{
+			"name": "errors",
+			"item": [
+				{
+					"name": "throw Error propagates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('error propagated', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output).to.be.undefined;",
+									"    pm.expect(body.errors).to.be.an('array');",
+									"    pm.expect(body.errors.length).to.be.gte(1);",
+									"    pm.expect(body.errors[0].message).to.contain('sdkapi boom');",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiThrow\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"throw new Error('sdkapi boom');\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "syntax error propagates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('syntax error propagated', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.errors).to.be.an('array');",
+									"    pm.expect(body.errors.length).to.be.gte(1);",
+									"    pm.expect(body.errors[0].name).to.eql('IntegrationError');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiSyntaxError\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return {{{invalid syntax;\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "multi-step pipeline",
+			"item": [
+				{
+					"name": "step references previous step output",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('second step sees first step output', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql({ from: 'Step2', got: 'hello' });",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiMultiStep\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return 'hello';\"\n                        }\n                    }\n                },\n                {\n                    \"name\": \"Step2\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return { from: 'Step2', got: Step1.output };\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "three-step chain",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('chain produces accumulated result', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql(6);",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiThreeStepChain\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return 1;\"\n                        }\n                    }\n                },\n                {\n                    \"name\": \"Step2\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return Step1.output + 2;\"\n                        }\n                    }\n                },\n                {\n                    \"name\": \"Step3\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return Step2.output * 2;\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "variables",
+			"item": [
+				{
+					"name": "SDK API step reads variable",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('step reads variable value', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql('MY_VAR_VALUE');",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiVariables\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"VarsBlock\",\n                    \"variables\": {\n                        \"items\": [\n                            {\n                                \"key\": \"MY_VAR\",\n                                \"value\": \"{{ \\\"MY_VAR_VALUE\\\" }}\",\n                                \"type\": \"TYPE_ADVANCED\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return await MY_VAR.get();\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "inputs",
+			"item": [
+				{
+					"name": "SDK API step reads input",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('step reads input', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql({ name: 'test-user', age: 30 });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"inputs\": {\n        \"UserData\": { \"name\": \"test-user\", \"age\": 30 }\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiInputs\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return UserData;\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "control flow",
+			"item": [
+				{
+					"name": "conditional (if branch)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('if branch executed', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql('if branch');",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiConditionalIf\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Step1\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return 10;\"\n                        }\n                    }\n                },\n                {\n                    \"name\": \"Cond1\",\n                    \"conditional\": {\n                        \"if\": {\n                            \"condition\": \"{{ Step1.output > 5 }}\",\n                            \"blocks\": [\n                                {\n                                    \"name\": \"IfStep\",\n                                    \"step\": {\n                                        \"javascriptsdkapi\": {\n                                            \"body\": \"return 'if branch';\"\n                                        }\n                                    }\n                                }\n                            ]\n                        },\n                        \"else\": {\n                            \"blocks\": [\n                                {\n                                    \"name\": \"ElseStep\",\n                                    \"step\": {\n                                        \"javascriptsdkapi\": {\n                                            \"body\": \"return 'else branch';\"\n                                        }\n                                    }\n                                }\n                            ]\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "loop (for range)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('loop completes', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiLoop\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Loop1\",\n                    \"loop\": {\n                        \"type\": \"TYPE_FOR\",\n                        \"range\": \"{{ 5 }}\",\n                        \"blocks\": [\n                            {\n                                \"name\": \"LoopStep\",\n                                \"step\": {\n                                    \"javascriptsdkapi\": {\n                                        \"body\": \"return 'iteration';\"\n                                    }\n                                }\n                            }\n                        ]\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "try/catch (catch branch)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('catch branch executed after throw', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql('caught');",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiTryCatch\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"TC1\",\n                    \"tryCatch\": {\n                        \"try\": {\n                            \"blocks\": [\n                                {\n                                    \"name\": \"TryStep\",\n                                    \"step\": {\n                                        \"javascriptsdkapi\": {\n                                            \"body\": \"throw new Error('intentional');\"\n                                        }\n                                    }\n                                }\n                            ]\n                        },\n                        \"catch\": {\n                            \"blocks\": [\n                                {\n                                    \"name\": \"CatchStep\",\n                                    \"step\": {\n                                        \"javascriptsdkapi\": {\n                                            \"body\": \"return 'caught';\"\n                                        }\n                                    }\n                                }\n                            ]\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "parallel (wait all)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('parallel produces aggregated result by path', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"    pm.expect(body.output.result).to.eql({ PathA: 'from A', PathB: 'from B' });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiParallel\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"Par1\",\n                    \"parallel\": {\n                        \"wait\": \"WAIT_ALL\",\n                        \"static\": {\n                            \"paths\": {\n                                \"PathA\": {\n                                    \"blocks\": [\n                                        {\n                                            \"name\": \"ParStepA\",\n                                            \"step\": {\n                                                \"javascriptsdkapi\": {\n                                                    \"body\": \"return 'from A';\"\n                                                }\n                                            }\n                                        }\n                                    ]\n                                },\n                                \"PathB\": {\n                                    \"blocks\": [\n                                        {\n                                            \"name\": \"ParStepB\",\n                                            \"step\": {\n                                                \"javascriptsdkapi\": {\n                                                    \"body\": \"return 'from B';\"\n                                                }\n                                            }\n                                        }\n                                    ]\n                                }\n                            }\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "mixed steps",
+			"item": [
+				{
+					"name": "javascript then javascriptsdkapi",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('SDK API reads JS step output', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql({ source: 'sdkapi', jsValue: 'from javascript' });",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiMixed\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"JsStep\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return 'from javascript';\"\n                        }\n                    }\n                },\n                {\n                    \"name\": \"SdkApiStep\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return { source: 'sdkapi', jsValue: JsStep.output };\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				},
+				{
+					"name": "javascriptsdkapi then javascript",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('JS reads SDK API step output', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result).to.eql({ source: 'javascript', sdkValue: 'from sdkapi' });",
+									"    pm.expect(body.status).to.eql('STATUS_COMPLETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Superblocks-Authorization",
+								"value": "Bearer {{superblocks_jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": { \"includeEventOutputs\": true },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000002\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"SdkApiMixedReverse\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"SdkApiStep\",\n                    \"step\": {\n                        \"javascriptsdkapi\": {\n                            \"body\": \"return 'from sdkapi';\"\n                        }\n                    }\n                },\n                {\n                    \"name\": \"JsStep\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return { source: 'javascript', sdkValue: SdkApiStep.output };\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v2", "execute"]
+						}
+					}
+				}
+			]
+		}
+		,{
+			"name": "v3 (FetchCode)",
+			"item": [
+				{
+					"name": "v3 basic return + user context",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status is 200', () => pm.response.to.have.status(200));",
+									"pm.test('SDK API executed via FetchCode path', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output).to.not.be.undefined;",
+									"    pm.expect(body.output.result).to.be.an('object');",
+									"    pm.expect(body.output.result.sdkapi).to.eql('ok');",
+									"    pm.expect(body.output.result.from).to.eql('fetchcode');",
+									"    const user = body.output.result.user;",
+									"    pm.expect(user).to.be.an('object');",
+									"    pm.expect(user.userId).to.be.a('string').and.to.have.length.greaterThan(0);",
+									"    pm.expect(user.groups).to.be.an('array');",
+									"    pm.expect(user.customClaims).to.be.an('object');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"applicationId\": \"00000000-0000-0000-0000-000000000001\", \"inputs\": {}}"},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v3", "execute"]
+						}
+					}
+				},
+				{
+					"name": "v3 async/await",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status is 200', () => pm.response.to.have.status(200));",
+									"pm.test('async/await resolves correctly', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result.sdkapi).to.eql('ok');",
+									"    pm.expect(body.output.result.from).to.eql('fetchcode-async');",
+									"    pm.expect(body.output.result.value).to.eql(42);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"applicationId\": \"00000000-0000-0000-0000-000000000102\", \"inputs\": {}}"},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v3", "execute"]
+						}
+					}
+				},
+				{
+					"name": "v3 input handling",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status is 200', () => pm.response.to.have.status(200));",
+									"pm.test('inputs are passed to the bundle', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result.sdkapi).to.eql('ok');",
+									"    pm.expect(body.output.result.from).to.eql('fetchcode-input');",
+									"    pm.expect(body.output.result.received).to.be.an('object');",
+									"    pm.expect(body.output.result.received.greeting).to.eql('hello from v3');",
+									"    pm.expect(body.output.result.received.count).to.eql(7);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"applicationId\": \"00000000-0000-0000-0000-000000000103\", \"inputs\": {\"greeting\": \"hello from v3\", \"count\": 7}}"},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v3", "execute"]
+						}
+					}
+				},
+				{
+					"name": "v3 console.log captured",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status is 200', () => pm.response.to.have.status(200));",
+									"pm.test('execution succeeds with console output', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result.sdkapi).to.eql('ok');",
+									"    pm.expect(body.output.result.from).to.eql('fetchcode-console');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"applicationId\": \"00000000-0000-0000-0000-000000000104\", \"inputs\": {}}"},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v3", "execute"]
+						}
+					}
+				},
+				{
+					"name": "v3 throw Error propagation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status is 200', () => pm.response.to.have.status(200));",
+									"pm.test('error message is propagated', () => {",
+									"    const body = pm.response.json();",
+									"    const text = JSON.stringify(body);",
+									"    pm.expect(text).to.include('v3 deliberate error');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"applicationId\": \"00000000-0000-0000-0000-000000000101\", \"inputs\": {}}"},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v3", "execute"]
+						}
+					}
+				},
+				{
+					"name": "v3 file upload (readContentsAsync)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status is 200', () => pm.response.to.have.status(200));",
+									"pm.test('file contents read via readContentsAsync', () => {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.output.result.sdkapi).to.eql('ok');",
+									"    pm.expect(body.output.result.from).to.eql('fetchcode-file-upload');",
+									"    pm.expect(body.output.result.contents).to.eql('hello from v3 file upload');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"applicationId\": \"00000000-0000-0000-0000-000000000004\", \"inputs\": {\"SampleFiles\": {\"files\": [{\"$superblocksId\": \"upload-1\", \"name\": \"demo.txt\", \"extension\": \"txt\", \"type\": \"text/plain\", \"encoding\": \"text\", \"size\": 25}]}}, \"files\": [{\"originalName\": \"upload-1\", \"buffer\": \"aGVsbG8gZnJvbSB2MyBmaWxlIHVwbG9hZA==\", \"encoding\": \"text\", \"mimeType\": \"text/plain\", \"size\": \"25\"}]}"},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v3", "execute"]
+						}
+					}
+				},
+				{
+					"name": "v3 integration call (db.execute)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status is 200', () => pm.response.to.have.status(200));",
+									"",
+									"const body = pm.response.json();",
+									"const fullBody = JSON.stringify(body);",
+									"",
+									"pm.test('no Buffer.from(undefined) signature', () => {",
+									"    pm.expect(fullBody).to.not.include('Received undefined');",
+									"});",
+									"",
+									"pm.test('no integration query failure wrapper', () => {",
+									"    pm.expect(fullBody).to.not.match(/Integration\\s+\".*\"\\s+failed\\s+during\\s+\"query\"/i);",
+									"    pm.expect(fullBody).to.not.match(/\\[EXECUTION_ERROR\\]/i);",
+									"});",
+									"",
+									"pm.test('no Buffer-related execution errors', () => {",
+									"    const errors = Array.isArray(body.errors) ? body.errors : [];",
+									"    const errorText = JSON.stringify(errors);",
+									"    pm.expect(errorText).to.not.include('Received undefined');",
+									"    pm.expect(errorText).to.not.match(/Integration\\s+\".*\"\\s+failed\\s+during\\s+\"query\"/i);",
+									"});",
+									"",
+									"pm.test('response has structured output', () => {",
+									"    pm.expect(body.output).to.be.an('object');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"applicationId\": \"00000000-0000-0000-0000-000000000003\", \"inputs\": {\"orderId\": 42}}"},
+						"url": {
+							"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+							"protocol": "{{orchestrator_scheme}}",
+							"host": ["{{orchestrator_host}}"],
+							"port": "{{orchestrator_port}}",
+							"path": ["v3", "execute"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.request.headers.has('X-Superblocks-Authorization')) {",
+					"    pm.request.headers.add({",
+					"        key: 'X-Superblocks-Authorization',",
+					"        value: `Bearer ${pm.environment.get('superblocks_jwt')}`",
+					"    });",
+					"}"
+				]
+			}
 		}
 	]
 }

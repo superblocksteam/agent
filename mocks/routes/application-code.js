@@ -31,10 +31,26 @@ module.exports = [
               return res.status(200).json({ bundle });
             }
 
-            // Return a minimal esbuild-style CommonJS bundle exporting a CompiledApi shape.
-            // The orchestrator wraps this and sends to javascriptsdkapi worker via executeApi().
-            // Bundle accesses __sb_context.user (a sandbox global set by the wrapper).
-            // Include integrations:[] so sdk-api executeApi doesn't crash on [...api.integrations].
+            if (req.params.applicationId === '00000000-0000-0000-0000-000000000101') {
+              const bundle = 'module.exports={default:{name:"fetchcode-error-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){throw new Error("v3 deliberate error");}}};';
+              return res.status(200).json({ bundle });
+            }
+
+            if (req.params.applicationId === '00000000-0000-0000-0000-000000000102') {
+              const bundle = 'module.exports={default:{name:"fetchcode-async-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){var a=await Promise.resolve(21);var b=await Promise.resolve(21);return {sdkapi:"ok",from:"fetchcode-async",value:a+b};}}};';
+              return res.status(200).json({ bundle });
+            }
+
+            if (req.params.applicationId === '00000000-0000-0000-0000-000000000103') {
+              const bundle = 'module.exports={default:{name:"fetchcode-input-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){return {sdkapi:"ok",from:"fetchcode-input",received:input};}}};';
+              return res.status(200).json({ bundle });
+            }
+
+            if (req.params.applicationId === '00000000-0000-0000-0000-000000000104') {
+              const bundle = 'module.exports={default:{name:"fetchcode-console-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){console.log("v3-log-marker",{timestamp:Date.now()});return {sdkapi:"ok",from:"fetchcode-console"};}}};';
+              return res.status(200).json({ bundle });
+            }
+
             const bundle = 'module.exports={default:{name:"fetchcode-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){return {sdkapi:"ok",from:"fetchcode",user:ctx.user};}}};';
 
             return res.status(200).json({ bundle });
