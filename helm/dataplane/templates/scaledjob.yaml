@@ -29,7 +29,18 @@ spec:
   failedJobsHistoryLimit: {{ $v.keda.failedJobsHistoryLimit | default $.Values.sandbox_workers.keda.failedJobsHistoryLimit }}
   maxReplicaCount: {{ $v.keda.maxReplicaCount | default $.Values.sandbox_workers.keda.maxReplicaCount }}
   minReplicaCount: {{ $v.keda.minReplicaCount | default $.Values.sandbox_workers.keda.minReplicaCount }}
-  {{- if or $v.keda.triggers $.Values.sandbox_workers.keda.triggers }}
+  {{- if $.Release.IsInstall }}
+  # On first install the Redis streams don't exist yet — the task-manager
+  # pods create them. Use a cron trigger to bootstrap minReplicaCount pods
+  # so the streams get created; subsequent upgrades switch to redis-streams.
+  triggers:
+    - type: cron
+      metadata:
+        timezone: UTC
+        start: "0 0 * * *"
+        end: "59 23 * * *"
+        desiredReplicas: {{ $v.keda.minReplicaCount | default $.Values.sandbox_workers.keda.minReplicaCount | quote }}
+  {{- else if or $v.keda.triggers $.Values.sandbox_workers.keda.triggers }}
   triggers:
     {{- toYaml ($v.keda.triggers | default $.Values.sandbox_workers.keda.triggers) | nindent 4 }}
   {{- else }}
