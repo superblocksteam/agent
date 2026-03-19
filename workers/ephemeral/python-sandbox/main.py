@@ -17,8 +17,6 @@ from src.service import SandboxTransportServicer
 
 async def serve():
     """Start the gRPC server."""
-    # No server keepalive: sandbox never needs to detect a dead client.
-    # Client (task-manager) keepalive handles connection liveness.
     server = grpc.aio.server(
         options=[
             ("grpc.max_receive_message_length", SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_REQUEST_SIZE),

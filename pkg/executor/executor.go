@@ -463,13 +463,14 @@ func (e *execution) Run(ctx context.Context) {
 	if e.resolver.shouldUseWorkerForControlFlowBindings() {
 		e.resolver.createSandboxFunc = func() engine.Sandbox {
 			return workerengine.Sandbox(&workerengine.Options{
-				Worker:        e.Worker,
-				Store:         e.Store,
-				ExecutionID:   e.id,
-				FileServerURL: e.FileServerUrl,
+				AfterFunc: internalutils.EngineAfterFuncWorker,
 				CtxFunc: func(c context.Context) context.Context {
 					return constants.WithRemainingDuration(c, e.resolver.timeLeftOnApi())
 				},
+				ExecutionID:   e.id,
+				FileServerURL: e.FileServerUrl,
+				Store:         e.Store,
+				Worker:        e.Worker,
 			})
 		}
 	} else {

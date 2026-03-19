@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,33 @@ import (
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 )
+
+// afterFuncSpy counts AfterFunc invocations and records the last error.
+// Use to assert the bindings metric is produced exactly once per resolution.
+type afterFuncSpy struct {
+	mu        sync.Mutex
+	callCount int
+	lastErr   error
+}
+
+func (s *afterFuncSpy) fn(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.callCount++
+	s.lastErr = err
+}
+
+func (s *afterFuncSpy) assertCalledOnce(t *testing.T, expectErr bool) {
+	t.Helper()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	assert.Equal(t, 1, s.callCount, "AfterFunc should be called exactly once")
+	if expectErr {
+		assert.Error(t, s.lastErr)
+	} else {
+		assert.NoError(t, s.lastErr)
+	}
+}
 
 // outputJSON builds a JSON string in the format the JS worker actually writes to the
 // KV store. The worker uses the legacy "output" field name (matching OutputOld in
@@ -118,6 +146,8 @@ func TestFailed(t *testing.T) {
 func TestResultBoolean(t *testing.T) {
 	t.Parallel()
 	_, _, opts := setupMocks(t, "key-bool", outputJSON(t, structpb.NewBoolValue(true)))
+	spy := new(afterFuncSpy)
+	opts.AfterFunc = spy.fn
 
 	s := Sandbox(opts)
 	e, _ := s.Engine(context.Background())
@@ -126,6 +156,8 @@ func TestResultBoolean(t *testing.T) {
 	result, err := v.Result()
 	require.NoError(t, err)
 	assert.Equal(t, true, result)
+
+	spy.assertCalledOnce(t, false)
 }
 
 func TestResultBooleanFalse(t *testing.T) {
@@ -477,11 +509,13 @@ func TestWorkerExecuteError(t *testing.T) {
 	mockWorker.On("Execute", mock.Anything, "javascriptwasm", mock.Anything).
 		Return((*transportv1.Performance)(nil), "", errors.New("worker exploded"))
 
+	spy := new(afterFuncSpy)
 	opts := &Options{
-		Worker:        mockWorker,
-		Store:         mockStore,
+		AfterFunc:     spy.fn,
 		ExecutionID:   "test-exec-id",
 		FileServerURL: "http://localhost:8080",
+		Store:         mockStore,
+		Worker:        mockWorker,
 	}
 
 	s := Sandbox(opts)
@@ -493,6 +527,8 @@ func TestWorkerExecuteError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "binding evaluation failed")
 	assert.Contains(t, err.Error(), "worker exploded")
+
+	spy.assertCalledOnce(t, true)
 }
 
 func TestStoreReadError(t *testing.T) {
@@ -507,11 +543,13 @@ func TestStoreReadError(t *testing.T) {
 	mockStore.On("Read", mock.Anything, "key-store-err").
 		Return([]interface{}(nil), errors.New("redis down"))
 
+	spy := new(afterFuncSpy)
 	opts := &Options{
-		Worker:        mockWorker,
-		Store:         mockStore,
+		AfterFunc:     spy.fn,
 		ExecutionID:   "test-exec-id",
 		FileServerURL: "http://localhost:8080",
+		Store:         mockStore,
+		Worker:        mockWorker,
 	}
 
 	s := Sandbox(opts)
@@ -522,6 +560,8 @@ func TestStoreReadError(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to read result from store")
+
+	spy.assertCalledOnce(t, true)
 }
 
 func TestStoreReadEmptyResult(t *testing.T) {
@@ -593,6 +633,28 @@ func TestCtxFuncIsApplied(t *testing.T) {
 }
 
 type ctxKeyForTest string
+
+func TestAfterFuncCalledOnceWhenResultAndJsonBothCalled(t *testing.T) {
+	t.Parallel()
+	_, _, opts := setupMocks(t, "key-both", outputJSON(t, structpb.NewNumberValue(42)))
+	spy := new(afterFuncSpy)
+	opts.AfterFunc = spy.fn
+
+	s := Sandbox(opts)
+	e, _ := s.Engine(context.Background())
+	v := e.Resolve(context.Background(), "{{ 42 }}", nil)
+
+	r, err := v.Result()
+	require.NoError(t, err)
+	assert.Equal(t, int32(42), r)
+
+	j, err := v.JSON()
+	require.NoError(t, err)
+	assert.Equal(t, "42", j)
+
+	// AfterFunc must be called exactly once despite both Result() and JSON() being invoked.
+	spy.assertCalledOnce(t, false)
+}
 
 func TestPluginNameIsJavascriptwasm(t *testing.T) {
 	t.Parallel()

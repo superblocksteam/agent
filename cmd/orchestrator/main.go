@@ -41,6 +41,7 @@ import (
 	signatureReconcilerSigner "github.com/superblocksteam/agent/internal/signature/reconciler/signer"
 	signatureReconcilerWatcher "github.com/superblocksteam/agent/internal/signature/reconciler/watcher"
 	"github.com/superblocksteam/agent/internal/transport"
+	internalutils "github.com/superblocksteam/agent/internal/utils"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/crypto"
@@ -337,6 +338,7 @@ func main() {
 		}
 
 		intakeLogger = l
+		internalutils.SetBindingResolutionLogger(intakeLogger)
 	}
 
 	var intakeHttpClient clients.IntakeClient

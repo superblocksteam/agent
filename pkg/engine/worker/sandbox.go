@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	pkgengine "github.com/superblocksteam/agent/pkg/engine"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
@@ -26,12 +27,14 @@ var (
 
 // Options holds the dependencies needed to execute JavaScript via the worker.
 type Options struct {
-	Worker        pkgworker.Client
-	Store         store.Store
+	// AfterFunc is called after each binding resolution completes (success or failure).
+	// Use internalutils.EngineAfterFuncWorker to record bindings_total metrics.
+	AfterFunc     func(error)
+	CtxFunc       func(context.Context) context.Context
 	ExecutionID   string
 	FileServerURL string
-	// CtxFunc returns a context with an appropriate deadline for worker calls.
-	CtxFunc func(context.Context) context.Context
+	Store         store.Store
+	Worker        pkgworker.Client
 }
 
 // Sandbox returns a new worker-backed engine.Sandbox.
@@ -93,8 +96,18 @@ func (e *engine) Close() {
 // execute sends a JavaScript expression to the worker for evaluation and
 // returns the raw *structpb.Value result. The asBoolean flag controls whether
 // the expression is wrapped in !!() for JavaScript-native truthiness coercion.
-func (e *engine) execute(ctx context.Context, expression string, variables map[string]*transportv1.Variable, asBoolean bool) (*structpb.Value, error) {
+// onComplete is called with the evaluation error (nil on success) before returning,
+// mirroring the JS engine's AfterFunc. Callers should pass a callback that uses
+// sync.Once so it records at most once even when Result() and JSON() both call execute.
+func (e *engine) execute(ctx context.Context, expression string, variables map[string]*transportv1.Variable, asBoolean bool, onComplete func(error)) (*structpb.Value, error) {
 	opts := e.sandbox.options
+
+	var evalErr error
+	defer func() {
+		if onComplete != nil {
+			onComplete(evalErr)
+		}
+	}()
 
 	// Build the JavaScript code. When the caller needs a boolean, wrap with
 	// !!() so truthiness coercion happens in JavaScript, matching the V8
@@ -110,6 +123,7 @@ func (e *engine) execute(ctx context.Context, expression string, variables map[s
 		"body": jsCode,
 	})
 	if err != nil {
+		evalErr = err
 		return nil, fmt.Errorf("failed to create action configuration: %w", err)
 	}
 
@@ -137,13 +151,15 @@ func (e *engine) execute(ctx context.Context, expression string, variables map[s
 		},
 	)
 	if err != nil {
-		return nil, sberrors.BindingError(fmt.Errorf("binding evaluation failed: %w", err))
+		evalErr = sberrors.BindingError(fmt.Errorf("binding evaluation failed: %w", err))
+		return nil, evalErr
 	}
 
 	// Fetch the result from the KV store.
 	values, err := opts.Store.Read(ctx, key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read result from store: %w", err)
+		evalErr = fmt.Errorf("failed to read result from store: %w", err)
+		return nil, evalErr
 	}
 
 	if len(values) == 0 || values[0] == nil {
@@ -157,11 +173,13 @@ func (e *engine) execute(ctx context.Context, expression string, variables map[s
 	case []byte:
 		raw = string(value)
 	default:
-		return nil, fmt.Errorf("failed to parse output payload: unexpected type %T", values[0])
+		evalErr = fmt.Errorf("failed to parse output payload: unexpected type %T", values[0])
+		return nil, evalErr
 	}
 
 	result, err := parseOutputResult(raw)
 	if err != nil {
+		evalErr = err
 		return nil, err
 	}
 
@@ -198,22 +216,37 @@ func parseOutputResult(raw string) (*structpb.Value, error) {
 // is called. This allows ResultOptions (like AsBoolean) to influence the
 // JavaScript code that is executed (e.g., wrapping with !!()).
 type value struct {
-	engine     *engine
-	ctx        context.Context
-	expression string
-	variables  map[string]*transportv1.Variable
-	err        error
+	engine           *engine
+	ctx              context.Context
+	expression       string
+	variables        map[string]*transportv1.Variable
+	err              error
+	recordMetricOnce sync.Once
+}
+
+// recordMetric invokes the sandbox AfterFunc for this resolution. Uses sync.Once
+// so we only record once even if both Result() and JSON() are called on the same value.
+// Values from Failed() have no engine, so we skip the callback in that case.
+func (v *value) recordMetric(err error) {
+	v.recordMetricOnce.Do(func() {
+		if v.engine != nil && v.engine.sandbox != nil {
+			if f := v.engine.sandbox.options.AfterFunc; f != nil {
+				f(err)
+			}
+		}
+	})
 }
 
 func (v *value) Result(options ...pkgengine.ResultOption) (any, error) {
 	if v.err != nil {
+		v.recordMetric(v.err)
 		return nil, v.err
 	}
 
 	applied := pkgengine.Apply(options...)
 
 	// Execute the expression, wrapping in !!() if a boolean is needed.
-	result, err := v.engine.execute(v.ctx, v.expression, v.variables, applied.AsBoolean)
+	result, err := v.engine.execute(v.ctx, v.expression, v.variables, applied.AsBoolean, v.recordMetric)
 	if err != nil {
 		return nil, err
 	}
@@ -261,10 +294,11 @@ func (v *value) Result(options ...pkgengine.ResultOption) (any, error) {
 
 func (v *value) JSON() (string, error) {
 	if v.err != nil {
+		v.recordMetric(v.err)
 		return "", v.err
 	}
 
-	result, err := v.engine.execute(v.ctx, v.expression, v.variables, false)
+	result, err := v.engine.execute(v.ctx, v.expression, v.variables, false, v.recordMetric)
 	if err != nil {
 		return "", err
 	}
