@@ -37,14 +37,18 @@ export class PoolIntegrationExecutorClient {
     metadata?: { label?: string; description?: string };
   }): Promise<unknown> {
     const id = this.nextId++;
-    this.port.postMessage({
+    const metadata = this.#sanitizeMetadataForPostMessage(params.metadata) as
+      | { label?: string; description?: string }
+      | undefined;
+    const message = {
       id,
       type: 'executeIntegration',
       integrationId: params.integrationId,
       pluginId: params.pluginId,
       actionConfiguration: params.actionConfiguration,
-      metadata: params.metadata
-    });
+      metadata
+    } as const;
+    this.port.postMessage(message);
     const response = await this.awaitResponse(id);
     return response.body?.output;
   }
@@ -59,6 +63,16 @@ export class PoolIntegrationExecutorClient {
         }
       };
     });
+  }
+
+  #sanitizeMetadataForPostMessage<T>(value: T): T {
+    if (value === undefined) {
+      return value;
+    }
+
+    // The SDK runtime can pass metadata as a proxy-like wrapper object that
+    // fails structured clone even though its fields are plain values.
+    return JSON.parse(JSON.stringify(value)) as T;
   }
 
   close(): void {
