@@ -2,17 +2,17 @@
 
 ## Organization Standards
 
-Load Superblocks engineering-wide standards (communication policy, security, observability, architecture) from the `engineering` repository. Repo-specific instructions below override org-wide when in conflict.
+Load Superblocks engineering-wide standards (communication policy, security, observability, architecture) from the `workspace` repository. Repo-specific instructions below override org-wide when in conflict.
 
 Use the GitHub MCP server's `get_file_contents` tool:
 - owner: `superblocksteam`
-- repo: `engineering`
-- path: `AGENTS.md`
+- repo: `workspace`
+- path: `repos/AGENTS.md`
 
 If MCP is unavailable, fetch via CLI:
 
 ```bash
-gh api repos/superblocksteam/engineering/contents/AGENTS.md -H "Accept: application/vnd.github.raw"
+gh api repos/superblocksteam/workspace/contents/repos/AGENTS.md -H "Accept: application/vnd.github.raw"
 ```
 
 ---
