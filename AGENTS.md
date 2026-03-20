@@ -12,7 +12,7 @@ Use the GitHub MCP server's `get_file_contents` tool:
 If MCP is unavailable, fetch via CLI:
 
 ```bash
-gh api repos/superblocksteam/engineering/contents/AGENTS.md --jq '.content' | base64 -d
+gh api repos/superblocksteam/engineering/contents/AGENTS.md -H "Accept: application/vnd.github.raw"
 ```
 
 ---
