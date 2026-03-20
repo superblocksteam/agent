@@ -8,9 +8,11 @@ import (
 
 var SUPERBLOCKS_PLUGINS_SET = utils.NewSet(
 	"adls",
+	"aivenkafka",
 	"athena",
 	"bigquery",
 	"cockroachdb",
+	"confluent",
 	"cosmosdb",
 	"couchbase",
 	"databricks",
@@ -18,14 +20,17 @@ var SUPERBLOCKS_PLUGINS_SET = utils.NewSet(
 	"email",
 	"gcs",
 	"graphql",
+	"graphqlintegration",
 	"gsheets",
 	"javascript",
 	"javascriptsdkapi",
 	"javascriptwasm",
 	"kafka",
 	"kinesis",
+	"lakebase",
 	"mariadb",
 	"mongodb",
+	"msk",
 	"mssql",
 	"mysql",
 	"openai",
@@ -34,6 +39,7 @@ var SUPERBLOCKS_PLUGINS_SET = utils.NewSet(
 	"postgres",
 	"python",
 	"redis",
+	"redpanda",
 	"redshift",
 	"restapi",
 	"restapiintegration",
@@ -42,7 +48,8 @@ var SUPERBLOCKS_PLUGINS_SET = utils.NewSet(
 	"salesforce",
 	"smtp",
 	"snowflake",
-	"workflow", // Note: this plugin may be obsolete (workflow steps should be handled in the orchestrator)
+	"snowflakepostgres",
+	"workflow",
 )
 
 func ParsePlugins(inputPlugins []string) *utils.Set[string] {

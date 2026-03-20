@@ -204,11 +204,17 @@ export abstract class ApiPlugin extends BasePlugin {
     // @ts-ignore
     Readable.fromWeb(body).pipe(decoder);
 
+    // Collect all in-flight send() promises and await them before resolving.
+    // Without this, the trigger step can complete before Redis has delivered
+    // all SSE events to the orchestrator, causing data events to be lost.
     await new Promise<void>((resolve, reject) => {
+      const pending: Promise<void>[] = [];
       decoder.on('data', ({ data }: MessageEvent) => {
-        send(JSON.stringify({ data })).catch(reject);
+        pending.push(send(JSON.stringify({ data })).catch(reject));
       });
-      decoder.once('end', resolve);
+      decoder.once('end', () => {
+        Promise.all(pending).then(() => resolve(), reject);
+      });
       decoder.once('error', reject);
     });
   }

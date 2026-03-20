@@ -53,6 +53,8 @@
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/smtp": "workspace:*",
     "@superblocksteam/snowflake": "workspace:*",
+    "@superblocksteam/snowflakepostgres": "workspace:*",
+    "@superblocksteam/lakebase": "workspace:*",
     "@superblocksteam/superblocks-ocr": "workspace:*",
     "@superblocksteam/workflow": "workspace:*",
     "google-protobuf": "catalog:",

@@ -19,6 +19,7 @@ import sb_javascriptsdkapi from '@superblocksteam/javascript-sdk-api';
 import sb_javascriptwasm from '@superblocksteam/javascript-wasm';
 import sb_kafka from '@superblocksteam/kafka';
 import sb_kinesis from '@superblocksteam/kinesis';
+import sb_lakebase from '@superblocksteam/lakebase';
 import sb_mariadb from '@superblocksteam/mariadb';
 import sb_mongodb from '@superblocksteam/mongodb';
 import sb_mssql from '@superblocksteam/mssql';
@@ -35,6 +36,7 @@ import sb_s3 from '@superblocksteam/s3';
 import sb_salesforce from '@superblocksteam/salesforce';
 import sb_smtp from '@superblocksteam/smtp';
 import sb_snowflake from '@superblocksteam/snowflake';
+import sb_snowflakepostgres from '@superblocksteam/snowflakepostgres';
 import sb_superblocks_ocr from '@superblocksteam/superblocks-ocr';
 import sb_workflow from '@superblocksteam/workflow';
 import { Gauge, Registry } from 'prom-client';
@@ -59,6 +61,7 @@ export const ALL_PLUGINS: Record<string, BasePlugin> = {
   gsheets: new sb_gsheets(),
   kafka: kafka,
   kinesis: new sb_kinesis(),
+  lakebase: new sb_lakebase(),
   confluent: kafka,
   msk: kafka,
   redpanda: kafka,
@@ -80,6 +83,7 @@ export const ALL_PLUGINS: Record<string, BasePlugin> = {
   javascriptsdkapi: javascriptsdkapi,
   smtp: new sb_smtp(),
   snowflake: new sb_snowflake(),
+  snowflakepostgres: new sb_snowflakepostgres(),
   ocr: new sb_superblocks_ocr(),
   workflow: new sb_workflow(),
   redis: redis,

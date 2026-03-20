@@ -237,6 +237,9 @@ importers:
       '@superblocksteam/kinesis':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/kinesis
+      '@superblocksteam/lakebase':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/lakebase
       '@superblocksteam/mariadb':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/mariadb
@@ -288,6 +291,9 @@ importers:
       '@superblocksteam/snowflake':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/snowflake
+      '@superblocksteam/snowflakepostgres':
+        specifier: workspace:*
+        version: link:../../javascript/packages/plugins/snowflakepostgres
       '@superblocksteam/superblocks-ocr':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/superblocks-ocr
@@ -417,7 +423,7 @@ importers:
         version: file:workers/javascript/packages/plugins/kinesis(ws@8.18.0)
       '@superblocksteam/lakebase':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/lakebase
+        version: file:workers/javascript/packages/plugins/lakebase(ws@8.18.0)
       '@superblocksteam/mariadb':
         specifier: workspace:*
         version: file:workers/javascript/packages/plugins/mariadb(ws@8.18.0)
@@ -468,7 +474,7 @@ importers:
         version: file:workers/javascript/packages/plugins/snowflake(asn1.js@5.4.1)(ws@8.18.0)
       '@superblocksteam/snowflakepostgres':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/snowflakepostgres
+        version: file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.18.0)
       '@superblocksteam/superblocks-ocr':
         specifier: workspace:*
         version: file:workers/javascript/packages/plugins/superblocks-ocr(ws@8.18.0)
@@ -684,7 +690,7 @@ importers:
         version: file:workers/javascript/packages/plugins/kinesis(ws@8.18.0)
       '@superblocksteam/lakebase':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/lakebase
+        version: file:workers/javascript/packages/plugins/lakebase(ws@8.18.0)
       '@superblocksteam/mariadb':
         specifier: workspace:*
         version: file:workers/javascript/packages/plugins/mariadb(ws@8.18.0)
@@ -735,7 +741,7 @@ importers:
         version: file:workers/javascript/packages/plugins/snowflake(asn1.js@5.4.1)(ws@8.18.0)
       '@superblocksteam/snowflakepostgres':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/snowflakepostgres
+        version: file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.18.0)
       '@superblocksteam/superblocks-ocr':
         specifier: workspace:*
         version: file:workers/javascript/packages/plugins/superblocks-ocr(ws@8.18.0)
@@ -14436,7 +14442,7 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/lakebase@file:workers/javascript/packages/plugins/lakebase':
+  '@superblocksteam/lakebase@file:workers/javascript/packages/plugins/lakebase(ws@8.18.0)':
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
@@ -14681,7 +14687,7 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/snowflakepostgres@file:workers/javascript/packages/plugins/snowflakepostgres':
+  '@superblocksteam/snowflakepostgres@file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.18.0)':
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
