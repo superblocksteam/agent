@@ -34,6 +34,7 @@ import { Value } from 'google-protobuf/google/protobuf/struct_pb';
 import P from 'pino';
 import { GrpcIntegrationExecutor } from './grpcIntegrationExecutor';
 import { SandboxStreamRequest } from './messageTransformer';
+import { TaskManagerClientError } from './taskManagerClientError';
 import { SandboxIntegrationExecutorServiceClient } from './types/worker/v1/sandbox_integration_executor_grpc_pb';
 import { SandboxStreamingProxyServiceClient } from './types/worker/v1/sandbox_streaming_proxy_grpc_pb';
 import { SendRequest, UntilRequest } from './types/worker/v1/sandbox_streaming_proxy_pb';
@@ -309,7 +310,7 @@ export class PluginsRouter {
 
         this._streamingClient.send(request, (error) => {
           if (error) {
-            reject(error);
+            reject(new TaskManagerClientError('streaming-proxy', error));
             return;
           }
           resolve();
@@ -330,7 +331,7 @@ export class PluginsRouter {
 
         this._streamingClient.until(request, (error) => {
           if (error) {
-            reject(error);
+            reject(new TaskManagerClientError('streaming-proxy', error));
             return;
           }
           resolve();

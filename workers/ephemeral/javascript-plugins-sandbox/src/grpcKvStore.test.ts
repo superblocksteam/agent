@@ -1,7 +1,11 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import http from 'http';
 import { EventEmitter } from 'events';
+import http from 'http';
+
+import * as grpc from '@grpc/grpc-js';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+
 import { GrpcKvStore } from './grpcKvStore';
+import { TaskManagerClientError } from './taskManagerClientError';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
 import {
   GetVariablesRequest,
@@ -90,7 +94,7 @@ describe('GrpcKvStore', () => {
       });
     }
 
-    it('should reject on gRPC error', async () => {
+    it('should reject on gRPC error with TaskManagerClientError', async () => {
       const grpcError = new Error('gRPC connection failed');
 
       mockClient.getVariables.mockImplementation(
@@ -99,7 +103,28 @@ describe('GrpcKvStore', () => {
         }
       );
 
-      await expect(store.read(['key1'])).rejects.toThrow('gRPC connection failed');
+      await expect(store.read(['key1'])).rejects.toMatchObject({
+        name: 'TaskManagerClientError',
+        message: 'variable-store: gRPC connection failed',
+        subsystem: 'variable-store'
+      });
+    });
+
+    it('should reject with original error when gRPC PERMISSION_DENIED', async () => {
+      const metadata = new grpc.Metadata();
+      const permDenied = Object.assign(new Error('7 PERMISSION_DENIED: blocked'), {
+        code: grpc.status.PERMISSION_DENIED,
+        details: 'blocked',
+        metadata
+      });
+
+      mockClient.getVariables.mockImplementation(
+        (request: GetVariablesRequest, callback: (error: Error | null, response: unknown) => void) => {
+          callback(permDenied, null);
+        }
+      );
+
+      await expect(store.read(['key1'])).rejects.toBe(permDenied);
     });
   });
 
@@ -171,7 +196,7 @@ describe('GrpcKvStore', () => {
       });
     }
 
-    it('should reject on gRPC error', async () => {
+    it('should reject on gRPC error with TaskManagerClientError', async () => {
       const grpcError = new Error('Write failed');
 
       mockClient.setVariable.mockImplementation(
@@ -180,7 +205,27 @@ describe('GrpcKvStore', () => {
         }
       );
 
-      await expect(store.write('key', 'value')).rejects.toThrow('Write failed');
+      await expect(store.write('key', 'value')).rejects.toMatchObject({
+        name: 'TaskManagerClientError',
+        message: 'variable-store: Write failed'
+      });
+    });
+
+    it('should reject with original error when gRPC PERMISSION_DENIED', async () => {
+      const metadata = new grpc.Metadata();
+      const permDenied = Object.assign(new Error('7 PERMISSION_DENIED: blocked'), {
+        code: grpc.status.PERMISSION_DENIED,
+        details: 'blocked',
+        metadata
+      });
+
+      mockClient.setVariable.mockImplementation(
+        (request: SetVariableRequest, callback: (error: Error | null, response: SetVariableResponse | null) => void) => {
+          callback(permDenied, null);
+        }
+      );
+
+      await expect(store.write('key', 'value')).rejects.toBe(permDenied);
     });
   });
 
@@ -242,7 +287,7 @@ describe('GrpcKvStore', () => {
       });
     }
 
-    it('should reject on gRPC error', async () => {
+    it('should reject on gRPC error with TaskManagerClientError', async () => {
       const grpcError = new Error('Batch write failed');
 
       mockClient.setVariables.mockImplementation(
@@ -251,7 +296,27 @@ describe('GrpcKvStore', () => {
         }
       );
 
-      await expect(store.writeMany([{ key: 'k', value: 'v' }])).rejects.toThrow('Batch write failed');
+      await expect(store.writeMany([{ key: 'k', value: 'v' }])).rejects.toMatchObject({
+        name: 'TaskManagerClientError',
+        message: 'variable-store: Batch write failed'
+      });
+    });
+
+    it('should reject with original error when gRPC PERMISSION_DENIED', async () => {
+      const metadata = new grpc.Metadata();
+      const permDenied = Object.assign(new Error('7 PERMISSION_DENIED: blocked'), {
+        code: grpc.status.PERMISSION_DENIED,
+        details: 'blocked',
+        metadata
+      });
+
+      mockClient.setVariables.mockImplementation(
+        (request: SetVariablesRequest, callback: (error: Error | null, response: SetVariablesResponse | null) => void) => {
+          callback(permDenied, null);
+        }
+      );
+
+      await expect(store.writeMany([{ key: 'k', value: 'v' }])).rejects.toBe(permDenied);
     });
   });
 
@@ -301,7 +366,10 @@ describe('GrpcKvStore', () => {
         return mockRequest;
       });
 
-      await expect(store.fetchFile('/path/to/file')).rejects.toThrow('Connection refused');
+      await expect(store.fetchFile('/path/to/file')).rejects.toMatchObject({
+        name: 'TaskManagerClientError',
+        message: 'variable-store: Connection refused'
+      });
     });
 
     it('should reject when response contains an error message', async () => {
@@ -320,7 +388,10 @@ describe('GrpcKvStore', () => {
         return mockRequest;
       });
 
-      await expect(store.fetchFile('/nonexistent/file')).rejects.toThrow('File not found');
+      await expect(store.fetchFile('/nonexistent/file')).rejects.toMatchObject({
+        name: 'TaskManagerClientError',
+        message: 'variable-store: File not found'
+      });
     });
 
     it('should reject on non-200 status code', async () => {
@@ -337,7 +408,10 @@ describe('GrpcKvStore', () => {
         return mockRequest;
       });
 
-      await expect(store.fetchFile('/path/to/file')).rejects.toThrow('HTTP 500: Internal Server Error');
+      await expect(store.fetchFile('/path/to/file')).rejects.toMatchObject({
+        name: 'TaskManagerClientError',
+        message: 'variable-store: HTTP 500: Internal Server Error'
+      });
     });
   });
 
@@ -382,7 +456,9 @@ describe('GrpcKvStore', () => {
       });
 
       store.fetchFileCallback('/path/to/file', (error, result) => {
-        expect(error).toBe(httpError);
+        expect(error).toBeInstanceOf(TaskManagerClientError);
+        expect(error?.message).toBe('variable-store: Connection lost');
+        expect((error as TaskManagerClientError).cause).toBe(httpError);
         expect(result).toBeNull();
         done();
       });
@@ -405,8 +481,8 @@ describe('GrpcKvStore', () => {
       });
 
       store.fetchFileCallback('/path/to/file', (error, result) => {
-        expect(error).toBeInstanceOf(Error);
-        expect(error?.message).toBe('Access denied');
+        expect(error).toBeInstanceOf(TaskManagerClientError);
+        expect(error?.message).toBe('variable-store: Access denied');
         expect(result).toBeNull();
         done();
       });

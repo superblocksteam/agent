@@ -16,6 +16,7 @@ import logger from './logger';
 import { MessageTransformer, MessageTransformerImpl, NativeRequest, NativeResponse, ProtoResponse } from './messageTransformer';
 import { ALL_PLUGINS, loadPlugins } from './pluginsLoader';
 import { PluginsRouter } from './pluginsRouter';
+import { isGrpcPermissionDenied, isGrpcServiceError, TaskManagerClientError } from './taskManagerClientError';
 import { Response as ProtoTransportResponse } from './types/transport/v1/transport_pb';
 import { SandboxIntegrationExecutorServiceClient } from './types/worker/v1/sandbox_integration_executor_grpc_pb';
 import { SandboxStreamingProxyServiceClient } from './types/worker/v1/sandbox_streaming_proxy_grpc_pb';
@@ -62,6 +63,20 @@ function createSandboxTransportService(
         callback(null, protoResponse);
       })
       .catch((err) => {
+        if (isGrpcPermissionDenied(err)) {
+          callback({
+            code: grpc.status.PERMISSION_DENIED,
+            message: err.message
+          });
+          return;
+        }
+        if (err instanceof TaskManagerClientError || isGrpcServiceError(err)) {
+          callback({
+            code: grpc.status.INTERNAL,
+            message: err instanceof Error ? err.message : String(err)
+          });
+          return;
+        }
         if (err instanceof IntegrationError) {
           callback({
             code: grpc.status.INVALID_ARGUMENT,
@@ -125,10 +140,7 @@ function createSandboxTransportService(
       void handleEvent(pluginsRouter.handlePreDeleteEvent.bind(pluginsRouter), pluginName, nativeRequest, callback, undefined);
     },
 
-    health(
-      call: grpc.ServerUnaryCall<ProtoHealthRequest, ProtoHealthResponse>,
-      callback: grpc.sendUnaryData<ProtoHealthResponse>
-    ) {
+    health(call: grpc.ServerUnaryCall<ProtoHealthRequest, ProtoHealthResponse>, callback: grpc.sendUnaryData<ProtoHealthResponse>) {
       const response = new ProtoHealthResponse();
       response.setStatus(ProtoHealthResponse.Status.STATUS_READY);
       callback(null, response);

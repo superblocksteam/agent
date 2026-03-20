@@ -142,7 +142,9 @@ const performanceTest = async (worker: WorkerAPI, kvStore: KVStore, plugin: stri
 };
 
 describe('load', () => {
-  jest.setTimeout(120000);
+  // At minimum 10 RPS, 1500 requests takes 150s. Give ample headroom so the
+  // RPS assertion—not the timeout—is the performance gate.
+  jest.setTimeout(300000);
 
   const logger = pino();
 

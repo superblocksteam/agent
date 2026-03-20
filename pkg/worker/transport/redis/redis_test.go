@@ -427,6 +427,25 @@ func TestProcess(t *testing.T) {
 			err:   errors.StepDurationQuotaError("", 0),
 		},
 		{
+			name: "internal error",
+			data: []redis.XStream{
+				{
+					Stream: "inbox.1234",
+					Messages: []redis.XMessage{
+						{
+							ID: "does_not_matter",
+							Values: map[string]any{
+								"data": `{"data": {"data": {"key": "key", "err": {"message": "InternalError"}}}}`,
+							},
+						},
+					},
+				},
+			},
+			inbox: "inbox.1234",
+			key:   "key",
+			err:   &errors.InternalError{},
+		},
+		{
 			name: "other error",
 			data: []redis.XStream{
 				{

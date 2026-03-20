@@ -193,7 +193,11 @@ function push() {
 
   echo " [INFO] Temporarily copying excluded files into the staged destination."
   for path in "${exclude[@]}"; do
-    __do cp -r "${internal}/${path}" "${tmp}"/dest/"${path}"
+    if [[ -e "${internal}/${path}" ]]; then
+      __do cp -r "${internal}/${path}" "${tmp}"/dest/"${path}"
+    else
+      echo " [WARN] Excluded path '${path}' does not exist at last_synced_commit; skipping copy."
+    fi
   done
 
   echo " [INFO] Applying the patch."

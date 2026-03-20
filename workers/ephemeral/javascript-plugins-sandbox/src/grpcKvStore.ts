@@ -1,6 +1,7 @@
 import http from 'http';
 import { MaybeError } from '@superblocks/shared';
 import { IO, KVStore, KVStoreTx, WriteOps, Wrapped } from '@superblocks/worker.js';
+import { isGrpcPermissionDenied, TaskManagerClientError } from './taskManagerClientError';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
 import { GetVariablesRequest, SetVariableRequest, SetVariablesRequest, KeyValue } from './types/worker/v1/sandbox_variable_store_pb';
 
@@ -38,7 +39,7 @@ export class GrpcKvStore implements KVStore {
 
       this.client.getVariables(request, (error, response) => {
         if (error) {
-          reject(error);
+          reject(isGrpcPermissionDenied(error) ? error : new TaskManagerClientError('variable-store', error));
           return;
         }
 
@@ -71,7 +72,7 @@ export class GrpcKvStore implements KVStore {
 
       this.client.setVariable(request, (error) => {
         if (error) {
-          reject(error);
+          reject(isGrpcPermissionDenied(error) ? error : new TaskManagerClientError('variable-store', error));
           return;
         }
         resolve({ data: undefined });
@@ -94,7 +95,7 @@ export class GrpcKvStore implements KVStore {
 
       this.client.setVariables(request, (error) => {
         if (error) {
-          reject(error);
+          reject(isGrpcPermissionDenied(error) ? error : new TaskManagerClientError('variable-store', error));
           return;
         }
         resolve({ data: undefined });
@@ -110,7 +111,7 @@ export class GrpcKvStore implements KVStore {
     return new Promise((resolve, reject) => {
       this.fetchFileCallback(path, (error, result) => {
         if (error) {
-          reject(error);
+          reject(error instanceof TaskManagerClientError ? error : new TaskManagerClientError('variable-store', error));
         } else {
           resolve(result!);
         }
@@ -132,14 +133,19 @@ export class GrpcKvStore implements KVStore {
 
     const req = http.request(url.toString(), options, (response: http.IncomingMessage) => {
       if (response.statusCode !== 200) {
-        return callback(new Error(`HTTP ${response.statusCode}: Internal Server Error`), null);
+        return callback(
+          new TaskManagerClientError('variable-store', new Error(`HTTP ${response.statusCode}: Internal Server Error`)),
+          null
+        );
       }
 
       const chunks: Buffer[] = [];
       response.on('data', (chunk) => {
         chunks.push(Buffer.from(chunk));
       });
-      response.on('error', (error) => callback(error, null));
+      response.on('error', (error) =>
+        callback(error instanceof TaskManagerClientError ? error : new TaskManagerClientError('variable-store', error), null)
+      );
       response.on('end', () => {
         try {
           const responseBody = Buffer.concat(chunks as unknown as Uint8Array[]).toString('utf8');
@@ -147,7 +153,7 @@ export class GrpcKvStore implements KVStore {
 
           // Check for error field in response
           if (jsonResponse.error) {
-            return callback(new Error(jsonResponse.error), null);
+            return callback(new TaskManagerClientError('variable-store', new Error(String(jsonResponse.error))), null);
           }
 
           // Decode base64 contents to Buffer
@@ -155,16 +161,19 @@ export class GrpcKvStore implements KVStore {
             const contents = Buffer.from(jsonResponse.contents, 'base64');
             callback(null, contents);
           } else {
-            callback(new Error('Response missing contents field'), null);
+            callback(new TaskManagerClientError('variable-store', new Error('Response missing contents field')), null);
           }
         } catch (error) {
-          callback(error instanceof Error ? error : new Error('Failed to parse response'), null);
+          callback(
+            new TaskManagerClientError('variable-store', error instanceof Error ? error : new Error('Failed to parse response')),
+            null
+          );
         }
       });
     });
 
     req.on('error', (error) => {
-      callback(error, null);
+      callback(error instanceof TaskManagerClientError ? error : new TaskManagerClientError('variable-store', error), null);
     });
 
     req.end();

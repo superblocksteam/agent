@@ -224,7 +224,7 @@ deploy-helm:
 	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) orchestrator helm/orchestrator \
 		--debug \
 		--create-namespace \
-		--values helm/orchestrator/$(ENVIRONMENT).yaml \
+		--values helm/orchestrator/overrides/$(ENVIRONMENT).yaml \
 		--set sandbox_workers.deploy=false \
 		--set worker_go.image.tag=$(IMAGE_TAG) \
 		--set worker_go.queue.host=$(HELM_QUEUE_HOST) \
@@ -263,7 +263,7 @@ deploy-helm:
 		--debug \
 		--force \
 		--create-namespace \
-		--values helm/orchestrator/$(ENVIRONMENT).yaml \
+		--values helm/orchestrator/overrides/$(ENVIRONMENT).yaml \
 		--set server.deploy=false \
 		--set queue.deploy=false \
 		--set worker_go.deploy=false \

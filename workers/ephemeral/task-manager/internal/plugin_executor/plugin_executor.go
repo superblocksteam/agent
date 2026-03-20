@@ -248,9 +248,16 @@ func (p *pluginExecutor) Execute(
 			err = errors.New("DurationQuotaError")
 		}
 
+		if p.isInternalError(err) {
+			logger.Error("plugin execution failed with internal error", zap.Error(err))
+			err = errors.New("InternalError")
+		}
+
 		resp.Err = commonErr.ToCommonV1(err)
 		if resp.Err.Message == "DurationQuotaError" || resp.Err.Message == "QuotaError" {
 			resp.Err.Name = "QuotaError"
+		} else if resp.Err.Message == "InternalError" {
+			resp.Err.Name = "InternalError"
 		} else {
 			resp.Err.Name = "IntegrationError"
 		}
@@ -396,6 +403,14 @@ func (p *pluginExecutor) isQuotaError(timedCtx context.Context, err error) bool 
 	}
 
 	return false
+}
+
+func (*pluginExecutor) isInternalError(err error) bool {
+	if err == nil {
+		return false
+	}
+	st, ok := status.FromError(err)
+	return ok && st.Code() == codes.Internal
 }
 
 func (p *pluginExecutor) buildKvPair(

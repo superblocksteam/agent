@@ -467,6 +467,8 @@ func (t *transport) process(data []redis.XStream, inbox string, reqData *transpo
 			} else {
 				err = errors.StepDurationQuotaError(reqData.GetProps().GetStepName(), reqData.GetQuotas().GetDuration()/1000)
 			}
+		case "InternalError":
+			err = &errors.InternalError{}
 		default:
 			err = errors.IntegrationError(e.New(msg.Data.Data.Err.Message), commonv1.Code_CODE_UNSPECIFIED)
 		}

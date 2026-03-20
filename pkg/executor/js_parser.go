@@ -31,6 +31,7 @@ var (
 		"File",
 		"FormData",
 		"Headers",
+		"Intl",
 		"MessageChannel",
 		"MessageEvent",
 		"MessagePort",
