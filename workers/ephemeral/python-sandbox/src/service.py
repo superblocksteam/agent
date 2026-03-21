@@ -48,7 +48,7 @@ class SandboxTransportServicer(transport_pb2_grpc.SandboxTransportServiceService
             execute_response.structuredLog.extend(self._create_structured_logs(stdout, stderr))
             return execute_response
         except grpc.RpcError as e:
-            status_code = e.code() if hasattr(e, "code") else grpc.StatusCode.INTERNAL
+            status_code = e.code() if hasattr(e, "code") else grpc.StatusCode.UNKNOWN
             details = e.details() if hasattr(e, "details") else str(e)
             error(
                 "System error during Python execution",
@@ -56,8 +56,11 @@ class SandboxTransportServicer(transport_pb2_grpc.SandboxTransportServiceService
                 details=details,
                 execution_id=request.props.execution_id,
             )
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(f"System error: {details}")
+            if status_code == grpc.StatusCode.PERMISSION_DENIED:
+                context.set_code(grpc.StatusCode.PERMISSION_DENIED)
+            else:
+                context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(details)
             return transport_pb2.ExecuteResponse()
         except Exception as e:
             error(f"Error executing Python script: {e}", exc_info=True)

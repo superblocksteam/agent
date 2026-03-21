@@ -1115,72 +1115,94 @@ func TestExecuteGrpcDeadlineExceededFromQuotaIsDurationQuotaError(t *testing.T) 
 	}
 }
 
-func TestExecuteGrpcInternalErrorStoredAsInternalError(t *testing.T) {
-	executor := newTestExecutor()
+func TestExecuteInfraGrpcCodesStoredAsInternalError(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		code codes.Code
+	}{
+		{name: "Aborted", code: codes.Aborted},
+		{name: "Internal", code: codes.Internal},
+		{name: "ResourceExhausted", code: codes.ResourceExhausted},
+		{name: "Unavailable", code: codes.Unavailable},
+		{name: "Unknown", code: codes.Unknown},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			executor := newTestExecutor()
+			code := tc.code
+			mock := &mockPlugin{
+				name: "javascript",
+				executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+					return nil, status.Error(code, "infra detail")
+				},
+			}
 
-	internalDetail := "variable-store: connection refused"
-	mock := &mockPlugin{
-		name: "javascript",
-		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
-			return nil, status.Error(codes.Internal, internalDetail)
-		},
-	}
+			executor.RegisterPlugin("javascript", mock)
 
-	executor.RegisterPlugin("javascript", mock)
+			ctx := context.Background()
+			reqData := &transportv1.Request_Data_Data{}
 
-	ctx := context.Background()
-	reqData := &transportv1.Request_Data_Data{}
+			result, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
 
-	result, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
-
-	if err != nil {
-		t.Errorf("Execute() should not return error directly, got %v", err)
-	}
-	if result == nil {
-		t.Fatal("Execute() returned nil result")
-	}
-	if result.Err == nil {
-		t.Fatal("Execute() result should have Err set")
-	}
-	if result.Err.Message != "InternalError" {
-		t.Errorf("Execute() result.Err.Message = %q, want InternalError", result.Err.Message)
-	}
-	if result.Err.Name != "InternalError" {
-		t.Errorf("Execute() result.Err.Name = %q, want InternalError", result.Err.Name)
+			if err != nil {
+				t.Errorf("Execute() should not return error directly, got %v", err)
+			}
+			if result == nil {
+				t.Fatal("Execute() returned nil result")
+			}
+			if result.Err == nil {
+				t.Fatal("Execute() result should have Err set")
+			}
+			if result.Err.Message != "InternalError" {
+				t.Errorf("Execute() result.Err.Message = %q, want InternalError", result.Err.Message)
+			}
+			if result.Err.Name != "InternalError" {
+				t.Errorf("Execute() result.Err.Name = %q, want InternalError", result.Err.Name)
+			}
+		})
 	}
 }
 
-func TestExecuteWrappedGrpcInternalErrorStoredAsInternalError(t *testing.T) {
-	executor := newTestExecutor()
+func TestExecuteWrappedGrpcInfraCodeStoredAsInternalError(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		code codes.Code
+	}{
+		{name: "Internal", code: codes.Internal},
+		{name: "Unavailable", code: codes.Unavailable},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			executor := newTestExecutor()
+			code := tc.code
+			mock := &mockPlugin{
+				name: "javascript",
+				executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+					return nil, fmt.Errorf("sandbox: %w", status.Error(code, "underlying"))
+				},
+			}
 
-	mock := &mockPlugin{
-		name: "javascript",
-		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
-			return nil, fmt.Errorf("sandbox: %w", status.Error(codes.Internal, "underlying"))
-		},
-	}
+			executor.RegisterPlugin("javascript", mock)
 
-	executor.RegisterPlugin("javascript", mock)
+			ctx := context.Background()
+			reqData := &transportv1.Request_Data_Data{}
 
-	ctx := context.Background()
-	reqData := &transportv1.Request_Data_Data{}
+			result, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
 
-	result, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
-
-	if err != nil {
-		t.Errorf("Execute() should not return error directly, got %v", err)
-	}
-	if result == nil {
-		t.Fatal("Execute() returned nil result")
-	}
-	if result.Err == nil {
-		t.Fatal("Execute() result should have Err set")
-	}
-	if result.Err.Message != "InternalError" {
-		t.Errorf("Execute() result.Err.Message = %q, want InternalError", result.Err.Message)
-	}
-	if result.Err.Name != "InternalError" {
-		t.Errorf("Execute() result.Err.Name = %q, want InternalError", result.Err.Name)
+			if err != nil {
+				t.Errorf("Execute() should not return error directly, got %v", err)
+			}
+			if result == nil {
+				t.Fatal("Execute() returned nil result")
+			}
+			if result.Err == nil {
+				t.Fatal("Execute() result should have Err set")
+			}
+			if result.Err.Message != "InternalError" {
+				t.Errorf("Execute() result.Err.Message = %q, want InternalError", result.Err.Message)
+			}
+			if result.Err.Name != "InternalError" {
+				t.Errorf("Execute() result.Err.Name = %q, want InternalError", result.Err.Name)
+			}
+		})
 	}
 }
 

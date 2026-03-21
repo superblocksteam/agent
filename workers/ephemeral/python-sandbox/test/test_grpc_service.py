@@ -494,6 +494,35 @@ class TestSystemErrorClassification:
 
     @pytest.mark.asyncio
     @patch("src.service.json_format.MessageToDict")
+    async def test_grpc_permission_denied_returns_permission_denied_status(
+        self, mock_message_to_dict, servicer, mock_context
+    ):
+        """PERMISSION_DENIED from variable store maps to gRPC PERMISSION_DENIED (parity with JS)."""
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = "exec-denied"
+        request.variable_store_address = "localhost:50052"
+        mock_message_to_dict.return_value = _plugin_props("return x", execution_id="exec-denied")
+        mock_message_to_dict.return_value["bindingKeys"] = [
+            {"type": "global", "key": "x"},
+        ]
+        mock_message_to_dict.return_value["actionConfiguration"] = {
+            "body": "return x",
+            "x": True,
+        }
+
+        rpc_error = self._make_rpc_error(grpc.StatusCode.PERMISSION_DENIED, "blocked")
+
+        with patch.object(VariableClient, "connect"):
+            with patch.object(VariableClient, "read", side_effect=rpc_error):
+                with patch.object(VariableClient, "close"):
+                    await servicer.Execute(request, mock_context)
+
+        mock_context.set_code.assert_called_once_with(grpc.StatusCode.PERMISSION_DENIED)
+        assert "blocked" in mock_context.set_details.call_args[0][0]
+
+    @pytest.mark.asyncio
+    @patch("src.service.json_format.MessageToDict")
     async def test_user_code_error_returns_ok_with_error_body(
         self, mock_message_to_dict, servicer, mock_context
     ):

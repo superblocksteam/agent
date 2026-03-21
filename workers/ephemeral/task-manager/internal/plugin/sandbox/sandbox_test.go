@@ -7,16 +7,19 @@ import (
 	"testing"
 	"time"
 
-	"workers/ephemeral/task-manager/internal/plugin"
-	"workers/ephemeral/task-manager/internal/sandboxmanager"
-
 	"github.com/stretchr/testify/require"
+	commonErr "github.com/superblocksteam/agent/pkg/errors"
+	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
+	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+
+	"workers/ephemeral/task-manager/internal/plugin"
+	"workers/ephemeral/task-manager/internal/sandboxmanager"
 )
 
 func TestNewSandboxPlugin_StaticMode(t *testing.T) {
@@ -629,6 +632,107 @@ func TestConnectToSandbox_HealthFails_TimesOutWithError(t *testing.T) {
 	require.Contains(t, err.Error(), "sandbox did not become ready")
 }
 
+func TestSandboxPlugin_Metadata_GrpcInternal_ReturnsInternalErrorWithWrappedMessage(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServerWithMetadataStatus(t, codes.Internal, "sandbox blew up")
+	t.Cleanup(cleanup)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	p.conn = conn
+	p.client = workerv1.NewSandboxTransportServiceClient(conn)
+
+	_, err = p.Metadata(context.Background(), &workerv1.RequestMetadata{}, nil, nil)
+	require.Error(t, err)
+
+	var internalErr *commonErr.InternalError
+	require.ErrorAs(t, err, &internalErr)
+	require.NotNil(t, internalErr.Err)
+	require.Equal(t, "sandbox blew up", internalErr.Err.Error())
+}
+
+func TestSandboxPlugin_Metadata_GrpcInfraCodes_ReturnsEmptyInternalError(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name string
+		code codes.Code
+	}{
+		{name: "Aborted", code: codes.Aborted},
+		{name: "ResourceExhausted", code: codes.ResourceExhausted},
+		{name: "Unavailable", code: codes.Unavailable},
+		{name: "Unknown", code: codes.Unknown},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			addr, cleanup := startSandboxGrpcServerWithMetadataStatus(t, tc.code, "do not leak this detail")
+			t.Cleanup(cleanup)
+
+			conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			require.NoError(t, err)
+			t.Cleanup(func() { _ = conn.Close() })
+
+			p, err := NewSandboxPlugin(
+				WithConnectionMode(SandboxConnectionModeStatic),
+				WithSandboxAddress(addr),
+				WithSandboxId("test-sandbox"),
+				WithLogger(zap.NewNop()),
+			)
+			require.NoError(t, err)
+			p.conn = conn
+			p.client = workerv1.NewSandboxTransportServiceClient(conn)
+
+			_, err = p.Metadata(context.Background(), &workerv1.RequestMetadata{}, nil, nil)
+			require.Error(t, err)
+
+			var internalErr *commonErr.InternalError
+			require.ErrorAs(t, err, &internalErr)
+			require.Nil(t, internalErr.Err)
+			require.Equal(t, "InternalError", internalErr.Error())
+		})
+	}
+}
+
+func TestSandboxPlugin_Metadata_GrpcInvalidArgument_ReturnsIntegrationError(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServerWithMetadataStatus(t, codes.InvalidArgument, "bad config")
+	t.Cleanup(cleanup)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	p.conn = conn
+	p.client = workerv1.NewSandboxTransportServiceClient(conn)
+
+	_, err = p.Metadata(context.Background(), &workerv1.RequestMetadata{}, nil, nil)
+	require.Error(t, err)
+
+	var v1Err *commonv1.Error
+	require.ErrorAs(t, err, &v1Err)
+	require.Equal(t, "IntegrationError", v1Err.Name)
+	require.Equal(t, "bad config", v1Err.Message)
+}
+
 func TestConnectToSandbox_ContextCancelled_ReturnsError(t *testing.T) {
 	t.Parallel()
 
@@ -731,6 +835,17 @@ func (healthOKServer) Health(context.Context, *workerv1.HealthRequest) (*workerv
 	return &workerv1.HealthResponse{Status: workerv1.HealthResponse_STATUS_READY}, nil
 }
 
+// metadataStatusTestServer implements Health (OK) and Metadata returning a fixed gRPC status.
+type metadataStatusTestServer struct {
+	healthOKServer
+	code codes.Code
+	msg  string
+}
+
+func (s *metadataStatusTestServer) Metadata(context.Context, *workerv1.MetadataRequest) (*transportv1.Response_Data_Data, error) {
+	return nil, status.Error(s.code, s.msg)
+}
+
 // startSandboxGrpcServer starts a minimal gRPC server that implements SandboxTransportService
 // and returns the address (caller must call the returned cleanup function)
 func startSandboxGrpcServer(t *testing.T) (addr string, cleanup func()) {
@@ -741,6 +856,26 @@ func startSandboxGrpcServer(t *testing.T) (addr string, cleanup func()) {
 
 	grpcServer := grpc.NewServer()
 	workerv1.RegisterSandboxTransportServiceServer(grpcServer, &workerv1.UnimplementedSandboxTransportServiceServer{})
+
+	go func() {
+		_ = grpcServer.Serve(lis)
+	}()
+
+	return lis.Addr().String(), func() {
+		grpcServer.GracefulStop()
+		_ = lis.Close()
+	}
+}
+
+// startSandboxGrpcServerWithMetadataStatus starts a server with Health OK and Metadata failing with the given status.
+func startSandboxGrpcServerWithMetadataStatus(t *testing.T, code codes.Code, msg string) (addr string, cleanup func()) {
+	t.Helper()
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	grpcServer := grpc.NewServer()
+	workerv1.RegisterSandboxTransportServiceServer(grpcServer, &metadataStatusTestServer{code: code, msg: msg})
 
 	go func() {
 		_ = grpcServer.Serve(lis)

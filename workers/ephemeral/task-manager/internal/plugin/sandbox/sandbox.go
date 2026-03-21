@@ -19,6 +19,7 @@ import (
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -42,9 +43,19 @@ const (
 )
 
 // Transient gRPC codes that may succeed on retry (connection blips, resource exhaustion).
-var transientExecuteCodeSet = utils.NewSet[codes.Code](
-	codes.Unavailable,
-	codes.ResourceExhausted,
+var (
+	transientExecuteCodeSet = utils.NewSet[codes.Code](
+		codes.Unavailable,
+		codes.ResourceExhausted,
+	)
+
+	infraErrorGrpcCodes = utils.NewSet[codes.Code](
+		codes.Aborted,
+		codes.Internal,
+		codes.ResourceExhausted,
+		codes.Unavailable,
+		codes.Unknown,
+	)
 )
 
 // IpFilterSetter allows setting IP filters on the variable store
@@ -299,6 +310,7 @@ func (p *SandboxPlugin) connectToSandbox(ctx context.Context, address string) (*
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			MinConnectTimeout: 5 * time.Second,
 		}),
@@ -610,6 +622,8 @@ func (p *SandboxPlugin) Metadata(
 		grpcErr, err := p.errorMessageFromGrpcError(err)
 		if grpcErr.Code() == codes.Internal {
 			return nil, &commonErr.InternalError{Err: err}
+		} else if infraErrorGrpcCodes.Contains(grpcErr.Code()) {
+			return nil, &commonErr.InternalError{}
 		}
 
 		v1Err := commonErr.ToCommonV1(err)

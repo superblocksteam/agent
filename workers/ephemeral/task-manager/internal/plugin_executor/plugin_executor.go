@@ -25,6 +25,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	infraErrorGrpcCodes = utils.NewSet[codes.Code](
+		codes.Aborted,
+		codes.Internal,
+		codes.ResourceExhausted,
+		codes.Unavailable,
+		codes.Unknown,
+	)
+)
+
 // PluginExecutor manages plugin execution
 type PluginExecutor interface {
 	RegisterPlugin(name string, plugin plugin.Plugin) error
@@ -410,7 +420,7 @@ func (*pluginExecutor) isInternalError(err error) bool {
 		return false
 	}
 	st, ok := status.FromError(err)
-	return ok && st.Code() == codes.Internal
+	return ok && infraErrorGrpcCodes.Contains(st.Code())
 }
 
 func (p *pluginExecutor) buildKvPair(
