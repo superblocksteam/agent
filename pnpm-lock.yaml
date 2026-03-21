@@ -283,8 +283,8 @@ importers:
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/salesforce
       '@superblocksteam/sdk-api':
-        specifier: 0.0.3-metadata.0
-        version: 0.0.3-metadata.0
+        specifier: 0.0.4
+        version: 0.0.4
       '@superblocksteam/smtp':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/smtp
@@ -1977,8 +1977,8 @@ importers:
         specifier: workspace:*
         version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
       '@superblocksteam/sdk-api':
-        specifier: 0.0.3-metadata.0
-        version: 0.0.3-metadata.0
+        specifier: 0.0.4
+        version: 0.0.4
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0
@@ -6196,8 +6196,8 @@ packages:
     resolution: {directory: workers/javascript/packages/plugins/salesforce, type: directory}
     engines: {node: 20.19.5}
 
-  '@superblocksteam/sdk-api@0.0.3-metadata.0':
-    resolution: {integrity: sha512-uoMJkzWtqGeb5VeCIesq5vZvhz0Y+lIe3yci4LUSusmcRcDuSsvMDv+y+U84xYOHmVo/ro/utY0VOOTNHmIJXw==, tarball: https://npm.pkg.github.com/download/@superblocksteam/sdk-api/0.0.3-metadata.0/76af0a3767655a88bc850244b1a8c25d60e2ac4f}
+  '@superblocksteam/sdk-api@0.0.4':
+    resolution: {integrity: sha512-c+Jlm2BdNO3YjnQ50IQGlvslgy/xIYgnndxJ8mN7LiAp745ewX5EMeHKCj/HIBFenoR2FSkxDeEqceeYtedFLA==, tarball: https://registry.npmjs.org/@superblocksteam/sdk-api/-/sdk-api-0.0.4.tgz}
     engines: {node: '>=20', npm: '>=10.x'}
 
   '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp':
@@ -6217,7 +6217,7 @@ packages:
     engines: {node: 20.19.5}
 
   '@superblocksteam/types@1.196.0':
-    resolution: {integrity: sha512-EpYK9lCfy0NBnKIdK0lB/SXLX/oztAcG5+Xi+YLYeePP89P6lyUIWbMI6WfzHyYAM4+6c7tKiL+Of1ZtC6HgMA==, tarball: https://npm.pkg.github.com/download/@superblocksteam/types/1.196.0/7aaf21f7e5e72b3c5e077eb8ce2f41df27221cf0}
+    resolution: {integrity: sha512-EpYK9lCfy0NBnKIdK0lB/SXLX/oztAcG5+Xi+YLYeePP89P6lyUIWbMI6WfzHyYAM4+6c7tKiL+Of1ZtC6HgMA==, tarball: https://registry.npmjs.org/@superblocksteam/types/-/types-1.196.0.tgz}
 
   '@superblocksteam/types@file:workers/javascript/packages/types':
     resolution: {directory: workers/javascript/packages/types, type: directory}
@@ -14305,7 +14305,7 @@ snapshots:
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
-      '@superblocksteam/sdk-api': 0.0.3-metadata.0
+      '@superblocksteam/sdk-api': 0.0.4
     transitivePeerDependencies:
       - aws-crt
       - bufferutil
@@ -14321,7 +14321,7 @@ snapshots:
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
-      '@superblocksteam/sdk-api': 0.0.3-metadata.0
+      '@superblocksteam/sdk-api': 0.0.4
     transitivePeerDependencies:
       - aws-crt
       - bufferutil
@@ -14654,7 +14654,7 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/sdk-api@0.0.3-metadata.0':
+  '@superblocksteam/sdk-api@0.0.4':
     dependencies:
       '@superblocksteam/types': 1.196.0
       zod: 3.23.8
