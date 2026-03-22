@@ -301,7 +301,6 @@ function createFunctionForPreparingGlobalObjectForFiles(fileClient, filePaths) {
       const file = _.get(globalObject, treePath);
       _.set(globalObject, treePath, {
         ...file,
-        $superblocksId: undefined,
         previewUrl: undefined,
         readContentsAsync,
         readContents,

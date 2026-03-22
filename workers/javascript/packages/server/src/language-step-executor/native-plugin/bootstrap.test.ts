@@ -102,6 +102,15 @@ describe('bootstrap', () => {
             previewUrl: 'blob:https://website.hook/preview/00000000-0000-0000-0000-00000000000a',
             size: 256,
             type: 'image/png'
+          },
+          {
+            $superblocksId: 'sb-id-002',
+            encoding: 'text',
+            extension: 'png',
+            path: '/tmp/00000000-0000-0000-0000-000000000001',
+            previewUrl: 'blob:https://website.hook/preview/00000000-0000-0000-0000-000000000001',
+            size: 128,
+            type: 'image/png'
           }
         ]
       });
@@ -151,8 +160,12 @@ describe('bootstrap', () => {
               throw new Error("Failed to add 'readContentsAsync' method to file picker object");
             }
 
-            if (file.$superblocksId !== undefined || file.previewUrl !== undefined) {
-              throw new Error('Failed to clear Superblocks ID and preview URL from file picker object');
+            if (file.previewUrl !== undefined) {
+              throw new Error('Failed to clear preview URL from file picker object');
+            }
+
+            if (file.$superblocksId === undefined) {
+              throw new Error('$superblocksId should be preserved on file picker object');
             }
 
             if (file.name !== expectedNames[i]) {
@@ -309,7 +322,7 @@ ReferenceError: userName is not defined`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: Array<string> = [];
 
-      const expectedErr = `Error on line 34:
+      const expectedErr = `Error on line 35:
 VMError: Cannot find module 'process'`;
 
       let code = `var nodeProcess = require('process');
@@ -321,7 +334,7 @@ VMError: Cannot find module 'process'`;
       expect(result.output).toEqual({});
       expect(result.error).toEqual(expectedErr);
 
-      const expectedErrNode = `Error on line 4:
+      const expectedErrNode = `Error on line 5:
 VMError: Cannot find module 'node:process'`;
 
       code = `console.log('hello'); var nodeProcess = require('node:process');
@@ -350,7 +363,7 @@ VMError: Cannot find module 'node:process'`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: Array<string> = [];
 
-      const expectedErr = `Error on line 34:
+      const expectedErr = `Error on line 35:
 VMError: Cannot find module 'child_process'`;
 
       let code = `var childProc = require('child_process');
@@ -362,7 +375,7 @@ VMError: Cannot find module 'child_process'`;
       expect(result.output).toEqual({});
       expect(result.error).toEqual(expectedErr);
 
-      const expectedErrNode = `Error on line 4:
+      const expectedErrNode = `Error on line 5:
 VMError: Cannot find module 'node:child_process'`;
 
       code = `var childProc = require('node:child_process');

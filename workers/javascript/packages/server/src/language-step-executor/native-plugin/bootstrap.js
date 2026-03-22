@@ -101,7 +101,6 @@ module.exports = async function() {
       const file = _.get(global, treePath);
       _.set(global, treePath, {
         ...file,
-        $superblocksId: undefined,
         previewUrl: undefined,
         readContentsAsync: async (mode) => {
           const contents = await require('util').promisify(fetchFromController)(diskPath);

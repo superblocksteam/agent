@@ -148,8 +148,12 @@ describe('bootstrap', () => {
               throw new Error("Failed to add 'readContentsAsync' method to file picker object");
             }
 
-            if (file.$superblocksId !== undefined || file.previewUrl !== undefined) {
-              throw new Error('Failed to clear Superblocks ID and preview URL from file picker object');
+            if (file.previewUrl !== undefined) {
+              throw new Error('Failed to clear preview URL from file picker object');
+            }
+
+            if (file.$superblocksId === undefined) {
+              throw new Error('$superblocksId should be preserved on file picker object');
             }
 
             if (file.name !== expectedNames[i]) {
