@@ -2,38 +2,18 @@
 
 ## Organization Standards
 
-Fetch Superblocks engineering standards:
+Load Superblocks engineering-wide standards (communication policy, security, observability, architecture) from the `workspace` repository. Repo-specific instructions below override org-wide when in conflict.
+
+Use the GitHub MCP server's `get_file_contents` tool:
+- owner: `superblocksteam`
+- repo: `workspace`
+- path: `repos/AGENTS.md`
+
+If MCP is unavailable, fetch via CLI:
 
 ```bash
-gh api repos/superblocksteam/engineering/contents/AGENTS.md --jq '.content' | base64 -d
+gh api repos/superblocksteam/workspace/contents/repos/AGENTS.md -H "Accept: application/vnd.github.raw"
 ```
-
-### When to Fetch
-
-| Trigger | Action |
-|---------|--------|
-| **Adding observability** (logs, metrics, traces) | Fetch for detailed guidelines |
-| **Cross-repo work** | Fetch for architecture overview |
-| **Security-sensitive changes** (secrets, auth, input validation) | Fetch for security practices |
-| **Fetch fails** (offline, no auth) | Continue with summary below |
-| **Conflict** | Repo-specific rules override org-wide |
-
-### Key Org-Wide Rules (summary)
-
-**Language**:
-- ❌ Never use "whitelist" or "blacklist"
-- ✅ Use "allowlist" and "denylist"
-
-**Ordering**: Lists/arrays SHOULD be sorted alphabetically unless order is semantically meaningful.
-
-**Communication** (CRITICAL):
-- ❌ NEVER post public comments (`gh pr comment`, `gh issue comment`, Slack, Linear)
-- ✅ Provide draft responses for user to post themselves
-
-**Observability** (metrics > spans > logs for cost):
-- Use METRICS for high-frequency operations
-- Use SPANS for request tracing
-- Use LOGS for errors/unexpected states only (WARN/ERROR level in prod)
 
 ---
 
