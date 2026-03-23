@@ -17,6 +17,7 @@ func TestParse(t *testing.T) {
 	for _, test := range []struct {
 		name        string
 		err         error
+		fullMethod  string
 		expected    error
 		description string
 	}{
@@ -62,9 +63,51 @@ func TestParse(t *testing.T) {
 			expected:    status.New(codes.InvalidArgument, "IntegrationOAuthError").Err(),
 			description: "IntegrationOAuthError should return a gRPC status with InvalidArgument code",
 		},
+		{
+			name:        "worker unavailable error on v3 returns Unavailable",
+			err:         &sberrors.WorkerUnavailableError{},
+			fullMethod:  "/api.v1.ExecutorService/ExecuteV3",
+			expected:    status.New(codes.Unavailable, (&sberrors.WorkerUnavailableError{}).Error()).Err(),
+			description: "worker unavailable error on ExecuteV3 should return Unavailable (503)",
+		},
+		{
+			name:        "worker unavailable error with cause on v3 returns Unavailable",
+			err:         &sberrors.WorkerUnavailableError{Err: errors.New("no ack within 10s")},
+			fullMethod:  "/api.v1.ExecutorService/ExecuteV3",
+			expected:    status.New(codes.Unavailable, (&sberrors.WorkerUnavailableError{Err: errors.New("no ack within 10s")}).Error()).Err(),
+			description: "worker unavailable error with cause on ExecuteV3 should return Unavailable (503)",
+		},
+		{
+			name:        "worker unavailable error via string match on v3 returns Unavailable",
+			err:         errors.New("WorkerUnavailableError: no workers available"),
+			fullMethod:  "/api.v1.ExecutorService/ExecuteV3",
+			expected:    status.New(codes.Unavailable, "WorkerUnavailableError: no workers available").Err(),
+			description: "string WorkerUnavailableError on ExecuteV3 should return Unavailable (503)",
+		},
+		{
+			name:        "worker unavailable error on v2 returns Internal",
+			err:         &sberrors.WorkerUnavailableError{},
+			fullMethod:  "/api.v1.ExecutorService/Await",
+			expected:    status.New(codes.Internal, (&sberrors.WorkerUnavailableError{}).Error()).Err(),
+			description: "worker unavailable error on Await (v2) should return Internal (500)",
+		},
+		{
+			name:        "worker unavailable error on v2 with cause returns Internal",
+			err:         &sberrors.WorkerUnavailableError{Err: errors.New("no ack within 10s")},
+			fullMethod:  "/api.v1.ExecutorService/Await",
+			expected:    status.New(codes.Internal, (&sberrors.WorkerUnavailableError{Err: errors.New("no ack within 10s")}).Error()).Err(),
+			description: "worker unavailable error with cause on Await (v2) should return Internal (500)",
+		},
+		{
+			name:        "worker unavailable error via string match on v2 returns Internal",
+			err:         errors.New("WorkerUnavailableError: no workers available"),
+			fullMethod:  "/api.v1.ExecutorService/Await",
+			expected:    status.New(codes.Internal, "WorkerUnavailableError: no workers available").Err(),
+			description: "string WorkerUnavailableError on Await (v2) should return Internal (500)",
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			result := parse(test.err)
+			result := parse(test.err, test.fullMethod)
 			if test.expected == nil {
 				if result != nil {
 					t.Errorf("%s: Expected result to be nil, but got %v", test.description, result)

@@ -321,6 +321,34 @@ func (e *InternalError) Error() string {
 	return "InternalError: " + e.Err.Error()
 }
 
+type WorkerUnavailableError struct {
+	Err error
+}
+
+func (e *WorkerUnavailableError) Error() string {
+	if e.Err == nil {
+		return "WorkerUnavailableError: no workers available to handle request"
+	}
+
+	return "WorkerUnavailableError: " + e.Err.Error()
+}
+
+func (e *WorkerUnavailableError) Is(target error) bool {
+	if _, ok := target.(*WorkerUnavailableError); ok {
+		return true
+	}
+	return errors.Is(e.Err, target)
+}
+
+func IsWorkerUnavailableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	var typed *WorkerUnavailableError
+	return errors.As(err, &typed)
+}
+
 type healthCheckError struct {
 	msg string
 }

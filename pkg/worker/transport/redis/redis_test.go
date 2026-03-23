@@ -198,6 +198,72 @@ func TestExecute(t *testing.T) {
 	}
 }
 
+func TestAckTimeoutReturnsWorkerUnavailableError(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	buckets, _ := load([]byte(`{"analysis":"ba","error":"be","custom":[]}`))
+	client, clientMock := redismock.NewClientMock()
+
+	mockFlags := &mocks.Flags{}
+	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+
+	ctx := context.Background()
+	carrier := tracer.Propagate(ctx)
+	reqData := &transportv1.Request_Data_Data{}
+	stream := "agent.main.bucket.ba.plugin.javascript.event.execute"
+
+	tnspt := &transport{
+		flags: mockFlags,
+		options: &Options{
+			buckets:           buckets,
+			redis:             client,
+			logger:            zap.NewNop(),
+			heartbeatInterval: 1,
+		},
+		inbox: func() (string, error) {
+			return "test-inbox", nil
+		},
+	}
+
+	clientMock.ExpectXAdd(&redis.XAddArgs{
+		Stream:     stream,
+		NoMkStream: true,
+		Values: map[string]any{
+			"data": &transportv1.Request{
+				Inbox: "test-inbox",
+				Topic: "test-inbox",
+				Data: &transportv1.Request_Data{
+					Pinned: &transportv1.Request_Data_Pinned{
+						Bucket:  "ba",
+						Name:    "javascript",
+						Version: "v0.0.1",
+						Event:   "execute",
+						Carrier: carrier,
+						Observability: &transportv1.Observability{
+							Baggage: carrier,
+						},
+					},
+					Data: reqData,
+				},
+			},
+		},
+	}).SetVal("1-0")
+
+	clientMock.ExpectXRead(&redis.XReadArgs{
+		Streams: []string{"test-inbox", "0-0"},
+		Count:   1,
+		Block:   1,
+	}).SetErr(redis.Nil)
+
+	clientMock.ExpectDel("test-inbox").SetVal(1)
+	clientMock.ExpectXDel(stream, "1-0").SetVal(1)
+
+	_, _, err := tnspt.Execute(ctx, "javascript", reqData)
+	require.Error(t, err)
+	assert.True(t, errors.IsWorkerUnavailableError(err), "expected WorkerUnavailableError, got %T: %v", err, err)
+}
+
 func TestProcess(t *testing.T) {
 	for _, test := range []struct {
 		name        string

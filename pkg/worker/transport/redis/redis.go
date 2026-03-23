@@ -301,9 +301,11 @@ func (t *transport) handleEvent(
 			Count:   1,
 			Block:   t.options.heartbeatInterval,
 		}).Result(); err != nil {
-			logger.Error("did not receive ack from worker", zap.Error(err), zap.Duration("timeout", t.options.heartbeatInterval))
+			logger.Warn("did not receive ack from worker", zap.Error(err), zap.Duration("timeout", t.options.heartbeatInterval))
 			metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(errors.CodeTransportWorkerNoAck)))
-			return nil, &errors.InternalError{}
+			return nil, &errors.WorkerUnavailableError{
+				Err: fmt.Errorf("no worker acknowledged request within %s", t.options.heartbeatInterval),
+			}
 		}
 
 		span.AddEvent("ack_received")

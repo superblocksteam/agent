@@ -19,17 +19,17 @@ import (
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
-		return resp, parse(err)
+		return resp, parse(err, info.FullMethod)
 	}
 }
 
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		return parse(handler(srv, stream))
+		return parse(handler(srv, stream), info.FullMethod)
 	}
 }
 
-func parse(err error) error {
+func parse(err error, fullMethod string) error {
 	if err == nil {
 		return nil
 	}
@@ -82,6 +82,15 @@ func parse(err error) error {
 	if errors.Is(err, sberrors.ErrNotFound) || strings.Contains(err.Error(), "NotFoundError") {
 		metrics.AddCounter(ctx, metrics.TransportErrorsTotal, attribute.String("code", codes.NotFound.String()))
 		return status.New(codes.NotFound, err.Error()).Err()
+	}
+
+	if sberrors.IsWorkerUnavailableError(err) || strings.Contains(err.Error(), "WorkerUnavailableError") {
+		if strings.HasSuffix(fullMethod, "/ExecuteV3") {
+			metrics.AddCounter(ctx, metrics.TransportErrorsTotal, attribute.String("code", codes.Unavailable.String()))
+			return status.New(codes.Unavailable, err.Error()).Err()
+		}
+		metrics.AddCounter(ctx, metrics.TransportErrorsTotal, attribute.String("code", codes.Internal.String()))
+		return status.New(codes.Internal, err.Error()).Err()
 	}
 
 	if errors.Is(err, sberrors.ErrInternal) || strings.Contains(err.Error(), "InternalError") {

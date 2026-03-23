@@ -1,0 +1,88 @@
+{
+	"info": {
+		"_postman_id": "worker-unavailable-tests",
+		"name": "Worker Unavailable Tests",
+		"description": "Tests to verify that the orchestrator returns WorkerUnavailableError when no worker acknowledges a request within the ACK timeout. On v2 (Await) this surfaces as HTTP 500; on v3 (ExecuteV3) it surfaces as HTTP 503.\n\nPrerequisite: the targeted worker containers must be stopped before running this collection so the Redis stream exists but has no active consumers.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Python step returns 500 with WorkerUnavailableError (v2)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"returns HTTP 500 Internal Server Error\", () => {",
+							"    pm.response.to.have.status(500);",
+							"});",
+							"",
+							"pm.test(\"response body contains WorkerUnavailableError\", () => {",
+							"    const body = pm.response.text();",
+							"    pm.expect(body).to.include(\"WorkerUnavailableError\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json"},
+					{"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"WorkerUnavailableTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"python\":{\"body\":\"return 'should never execute'\"}}}]}}}"
+				},
+				"url": {
+					"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+					"protocol": "{{orchestrator_scheme}}",
+					"host": ["{{orchestrator_host}}"],
+					"port": "{{orchestrator_port}}",
+					"path": ["v2", "execute"]
+				}
+			}
+		},
+		{
+			"name": "JavaScript step returns 500 with WorkerUnavailableError (v2)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"returns HTTP 500 Internal Server Error\", () => {",
+							"    pm.response.to.have.status(500);",
+							"});",
+							"",
+							"pm.test(\"response body contains WorkerUnavailableError\", () => {",
+							"    const body = pm.response.text();",
+							"    pm.expect(body).to.include(\"WorkerUnavailableError\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json"},
+					{"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000002\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"WorkerUnavailableJSTest\"},\"blocks\":[{\"name\":\"test\",\"step\":{\"javascript\":{\"body\":\"return 'should never execute'\"}}}]}}}"
+				},
+				"url": {
+					"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+					"protocol": "{{orchestrator_scheme}}",
+					"host": ["{{orchestrator_host}}"],
+					"port": "{{orchestrator_port}}",
+					"path": ["v2", "execute"]
+				}
+			}
+		}
+	]
+}

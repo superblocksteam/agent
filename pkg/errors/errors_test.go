@@ -177,6 +177,66 @@ func TestIsInternalError(t *testing.T) {
 	}
 }
 
+func TestWorkerUnavailableError(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name          string
+		err           *WorkerUnavailableError
+		expectedError string
+	}{
+		{
+			name:          "nil cause",
+			err:           &WorkerUnavailableError{},
+			expectedError: "WorkerUnavailableError: no workers available to handle request",
+		},
+		{
+			name:          "with cause",
+			err:           &WorkerUnavailableError{Err: errors.New("no ack within 10s")},
+			expectedError: "WorkerUnavailableError: no ack within 10s",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			assert.EqualError(t, test.err, test.expectedError)
+		})
+	}
+}
+
+func TestIsWorkerUnavailableError(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "typed error",
+			err:      &WorkerUnavailableError{},
+			expected: true,
+		},
+		{
+			name:     "typed error with cause",
+			err:      &WorkerUnavailableError{Err: errors.New("no workers available")},
+			expected: true,
+		},
+		{
+			name:     "different error type",
+			err:      &InternalError{},
+			expected: false,
+		},
+		{
+			name:     "nil",
+			err:      nil,
+			expected: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, IsWorkerUnavailableError(test.err))
+		})
+	}
+}
+
 func TestIsIntegrationOAuthError(t *testing.T) {
 	for _, test := range []struct {
 		name           string
