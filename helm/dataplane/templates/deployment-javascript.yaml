@@ -1,3 +1,4 @@
+{{- if .Values.worker_js.deploy }}
 {{- range $k, $v := .Values.worker_js.fleets }}
 {{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
 ---
@@ -186,4 +187,5 @@ spec:
         {{- toYaml . | nindent 6 }}
       {{- end }}
       {{- end }}
+{{- end }}
 {{- end }}
