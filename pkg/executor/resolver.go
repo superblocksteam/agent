@@ -907,6 +907,12 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 		)
 	}
 
+	if err != nil && errors.Is(err, sberrors.ErrInternal) {
+		metrics.AddCounter(ctx.Context, metrics.ExecuteInfrastructureErrorsTotal,
+			attribute.String("plugin_name", req.Plugin),
+		)
+	}
+
 	return perf, key, err
 }
 

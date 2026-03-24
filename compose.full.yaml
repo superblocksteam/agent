@@ -83,7 +83,8 @@ services:
     # the first try.
     entrypoint: [bash, -c, 'if ! timeout 30 bash -c ''while ! rpk -X brokers=kafka:9092 topic list; do sleep 1; done''; then exit 1; fi; rpk -X brokers=kafka:9092 topic create metadata.cloud && rpk -X brokers=kafka:9092 topic create intake.metadata.dymamo && rpk -X brokers=kafka:9092 topic create intake.metadata.vector && rpk -X brokers=kafka:9092 topic create events']
   localstack:
-    image: localstack/localstack:latest
+    # Pinned: LocalStack 2026.03+ (incl. :latest) requires a LocalStack Cloud auth token. 4.14.x does not.
+    image: localstack/localstack:4.14.0
     environment:
       - SERVICES=kinesis,s3
     ports:

@@ -77,21 +77,22 @@ func (l *SdkApiMetricLabels) ToAttributes() []attribute.KeyValue {
 // Global OTEL metric instruments.
 var (
 	// Counters
-	BlocksTotal                metric.Int64Counter
-	BlocksLoopForeverTotal     metric.Int64Counter
-	BlocksLoopIterationsTotal  metric.Int64Counter
-	BlocksParallelPathsTotal   metric.Int64Counter
-	BlocksStreamEventsTotal    metric.Int64Counter
-	VariablesTotal             metric.Int64Counter
-	KafkaConsumedMessagesTotal metric.Int64Counter
-	BindingsTotal              metric.Int64Counter
-	ApiExecutionEventsTotal    metric.Int64Counter
-	ApiFetchRequestsTotal      metric.Int64Counter
-	TransportErrorsTotal       metric.Int64Counter
-	QuotaErrorsTotal           metric.Int64Counter
-	TrackedErrorsTotal         metric.Int64Counter
-	SecretsCacheLookupsTotal   metric.Int64Counter
-	IntegrationErrorsTotal     metric.Int64Counter
+	BlocksTotal                      metric.Int64Counter
+	BlocksLoopForeverTotal           metric.Int64Counter
+	BlocksLoopIterationsTotal        metric.Int64Counter
+	BlocksParallelPathsTotal         metric.Int64Counter
+	BlocksStreamEventsTotal          metric.Int64Counter
+	VariablesTotal                   metric.Int64Counter
+	KafkaConsumedMessagesTotal       metric.Int64Counter
+	BindingsTotal                    metric.Int64Counter
+	ApiExecutionEventsTotal          metric.Int64Counter
+	ApiFetchRequestsTotal            metric.Int64Counter
+	TransportErrorsTotal             metric.Int64Counter
+	QuotaErrorsTotal                 metric.Int64Counter
+	TrackedErrorsTotal               metric.Int64Counter
+	SecretsCacheLookupsTotal         metric.Int64Counter
+	ExecuteInfrastructureErrorsTotal metric.Int64Counter
+	IntegrationErrorsTotal           metric.Int64Counter
 
 	// UpDownCounters (for values that can increase or decrease)
 	StreamBufferCapacityTotal metric.Int64UpDownCounter
@@ -273,6 +274,14 @@ func RegisterMetrics(meter metric.Meter) error {
 	SecretsCacheLookupsTotal, err = meter.Int64Counter(
 		"secrets_cache_lookups_total",
 		metric.WithDescription("The total number of cache lookups."),
+	)
+	if err != nil {
+		return err
+	}
+
+	ExecuteInfrastructureErrorsTotal, err = meter.Int64Counter(
+		"execute_infrastructure_errors_total",
+		metric.WithDescription("Worker execute requests that failed with InternalError (infrastructure failures)."),
 	)
 	if err != nil {
 		return err
