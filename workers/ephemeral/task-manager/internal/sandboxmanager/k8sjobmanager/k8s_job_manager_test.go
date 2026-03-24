@@ -155,6 +155,14 @@ func TestBuildJobSpec(t *testing.T) {
 			assert.Equal(t, "true", job.Spec.Template.ObjectMeta.Annotations["karpenter.sh/do-not-disrupt"], "do-not-disrupt is always set on sandbox pods")
 
 			container := job.Spec.Template.Spec.Containers[0]
+			readinessProbe := container.ReadinessProbe
+
+			require.NotNil(t, readinessProbe, "expected readiness probe to be configured")
+			require.NotNil(t, readinessProbe.ProbeHandler.TCPSocket, "expected readiness probe to use TCP socket")
+			assert.Equal(t, int32(m.port), readinessProbe.ProbeHandler.TCPSocket.Port.IntVal)
+			assert.Equal(t, int32(1), readinessProbe.InitialDelaySeconds)
+			assert.Equal(t, int32(1), readinessProbe.PeriodSeconds)
+			assert.Equal(t, int32(1), readinessProbe.TimeoutSeconds)
 
 			// Check integration executor env var presence.
 			var found bool

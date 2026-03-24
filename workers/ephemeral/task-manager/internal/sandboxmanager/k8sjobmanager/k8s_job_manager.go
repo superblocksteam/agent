@@ -435,14 +435,16 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 							Resources: m.resources,
 							// Readiness probe: only mark Ready when gRPC server is listening.
 							// Prevents task-manager from connecting before sandbox has bound to port 50051.
+							// With lazy plugin imports, JS-API sandbox starts in ~730ms and JS sandbox
+							// in ~880ms, so a 1s initial delay catches most startups on the first probe.
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									TCPSocket: &corev1.TCPSocketAction{
 										Port: intstr.FromInt32(int32(m.port)),
 									},
 								},
-								InitialDelaySeconds: 2,
-								PeriodSeconds:       2,
+								InitialDelaySeconds: 1,
+								PeriodSeconds:       1,
 								TimeoutSeconds:      1,
 							},
 						},
