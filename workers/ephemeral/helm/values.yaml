@@ -236,10 +236,8 @@ observability:
     url: ""
   tracing:
     url: ""
-    batchTimeout: 1s
-    exportTimeout: 15s
-    maxExportBatchSize: 1000
-    maxQueueSize: 5000
+telemetry:
+  deploymentType: "cloud"
 # Superblocks configuration
 superblocks:
   key: <override>

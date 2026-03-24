@@ -29,17 +29,16 @@ import (
 	httpserver "github.com/superblocksteam/agent/pkg/http"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/log"
-	"github.com/superblocksteam/agent/pkg/observability/obsup"
-	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	"github.com/superblocksteam/agent/pkg/pluginparser"
+	pkgrun "github.com/superblocksteam/agent/pkg/run"
 	"github.com/superblocksteam/agent/pkg/run/signaldelay"
 	"github.com/superblocksteam/agent/pkg/store"
 	redisstore "github.com/superblocksteam/agent/pkg/store/redis"
+	"github.com/superblocksteam/agent/pkg/telemetry"
 	"github.com/superblocksteam/agent/pkg/utils"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -156,12 +155,10 @@ func init() {
 	pflag.Duration("health.check.interval", 5*time.Second, "The interval for health checks.")
 
 	// OpenTelemetry settings
+	pflag.String("agent.environment", "*", "Environment to register the agent under.")
 	pflag.String("otel.collector.http.url", "http://127.0.0.1:4318", "The OTLP HTTP collector URL for traces.")
+	pflag.String("telemetry.deployment.type", "cloud", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
 	pflag.String("otel.metrics.collector.http.url", "", "The OTLP HTTP collector URL for metrics. Falls back to otel.collector.http.url if empty.")
-	pflag.Duration("otel.batcher.batch.timeout", 1*time.Second, "The maximum delay allowed for a BatchSpanProcessor before it will export any held span.")
-	pflag.Duration("otel.batcher.export.timeout", 15*time.Second, "The amount of time a BatchSpanProcessor waits for an exporter to export before abandoning the export.")
-	pflag.Int("otel.batcher.export.batch.max", 1000, "The maximum export batch size allowed for a BatchSpanProcessor.")
-	pflag.Int("otel.batcher.export.queue.max", 5000, "The maximum queue size allowed for a BatchSpanProcessor.")
 
 	// Superblocks settings
 	pflag.String("superblocks.key", "dev-agent-key", "The superblocks agent key.")
@@ -185,6 +182,7 @@ func init() {
 	viper.SetEnvPrefix("SUPERBLOCKS_WORKER_SANDBOX")
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	_ = viper.BindEnv("telemetry.deployment.type", "SUPERBLOCKS_DEPLOYMENT_TYPE")
 
 	if path := viper.GetString("config.path"); path != "" {
 		viper.SetConfigFile(path)
@@ -225,45 +223,56 @@ func main() {
 		serviceLabel = fmt.Sprintf("%s.ephemeral", serviceLabel)
 	}
 
-	var logger *zap.Logger
+	var intakeLogger *zap.Logger
 	{
 		l, err := log.Logger(&log.Options{
 			Level: viper.GetString("log.level"),
 			InitialFields: map[string]any{
 				observability.OBS_TAG_WORKER_ID: id,
-				observability.OBS_TAG_COMPONENT: serviceLabel,
 			},
 		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not create logger: %s", err)
 			os.Exit(1)
 		}
-		logger = l
+		intakeLogger = l
 	}
 
 	var tracerRunnable run.Runnable
 	var meterRunnable run.Runnable
+	var telInstance *telemetry.Instance
 	{
-		t, err := tracer.Prepare(logger, obsup.Options{
-			ServiceName:    serviceLabel,
-			ServiceVersion: version,
-			OtlpUrl:        viper.GetString("otel.collector.http.url"),
-			BatchOptions: []trace.BatchSpanProcessorOption{
-				trace.WithMaxQueueSize(viper.GetInt("otel.batcher.export.queue.max")),
-				trace.WithMaxExportBatchSize(viper.GetInt("otel.batcher.export.batch.max")),
-				trace.WithExportTimeout(viper.GetDuration("otel.batcher.export.timeout")),
-				trace.WithBatchTimeout(viper.GetDuration("otel.batcher.batch.timeout")),
-			},
-			Headers: map[string]string{
-				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
-			},
-		})
-		if err != nil {
-			logger.Error("could not create tracer", zap.Error(err))
+		var policy telemetry.TelemetryPolicy
+		switch telemetry.DeploymentType(viper.GetString("telemetry.deployment.type")) {
+		case telemetry.DeploymentTypeCloud:
+			policy = telemetry.DefaultCloudPolicy()
+		case telemetry.DeploymentTypeCloudPrem:
+			policy = telemetry.DefaultCloudPremPolicy()
+		case telemetry.DeploymentTypeOnPrem:
+			policy = telemetry.DefaultOnPremPolicy()
+		default:
+			fmt.Fprintf(os.Stderr, "invalid telemetry.deployment.type %q: valid values are %q, %q, and %q\n", viper.GetString("telemetry.deployment.type"), telemetry.DeploymentTypeCloud, telemetry.DeploymentTypeCloudPrem, telemetry.DeploymentTypeOnPrem)
 			os.Exit(1)
 		}
 
-		tracerRunnable = t.Runnable
+		var err error
+		telInstance, err = telemetry.Init(context.Background(), telemetry.Config{
+			ServiceName:    serviceLabel,
+			ServiceVersion: version,
+			Environment:    viper.GetString("agent.environment"),
+			OTLPURL:        viper.GetString("otel.collector.http.url"),
+			Headers: map[string]string{
+				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
+			},
+			MetricsEnabled: false,
+			LogsEnabled:    true,
+		}, policy, intakeLogger)
+		if err != nil {
+			intakeLogger.Error("could not initialize telemetry", zap.Error(err))
+			os.Exit(1)
+		}
+
+		tracerRunnable = pkgrun.Telemetry(telInstance)
 
 		metricsURL := viper.GetString("otel.metrics.collector.http.url")
 		if metricsURL == "" {
@@ -279,15 +288,33 @@ func main() {
 			os.Getenv("FLEET_NAME"),
 		)
 		if err != nil {
-			logger.Error("could not create meter provider", zap.Error(err))
+			intakeLogger.Error("could not create meter provider", zap.Error(err))
 			os.Exit(1)
 		}
 		meterRunnable = sandboxmetrics.NewRunnable(mp)
 
 		if err := sandboxmetrics.RegisterMetrics(); err != nil {
-			logger.Error("could not register sandbox metrics", zap.Error(err))
+			intakeLogger.Error("could not register sandbox metrics", zap.Error(err))
 			os.Exit(1)
 		}
+	}
+
+	var logger *zap.Logger
+	{
+		l, err := log.Logger(&log.Options{
+			Level: viper.GetString("log.level"),
+			InitialFields: map[string]any{
+				observability.OBS_TAG_WORKER_ID: id,
+				observability.OBS_TAG_COMPONENT: serviceLabel,
+			},
+			LoggerProvider: telInstance.LoggerProvider,
+			ServiceName:    serviceLabel,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "could not create logger: %s", err)
+			os.Exit(1)
+		}
+		logger = l
 	}
 
 	hostname := os.Getenv("POD_IP")
