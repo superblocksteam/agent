@@ -173,6 +173,7 @@ func TestLoggerWithLoggerProvider(t *testing.T) {
 	logger, err := Logger(&Options{
 		Level:          "debug",
 		LoggerProvider: provider,
+		ServiceName:    "test",
 	})
 	require.NoError(t, err)
 
@@ -201,6 +202,7 @@ func TestLoggerWithLoggerProviderMultipleLevels(t *testing.T) {
 	logger, err := Logger(&Options{
 		Level:          "debug",
 		LoggerProvider: provider,
+		ServiceName:    "test",
 	})
 	require.NoError(t, err)
 
@@ -240,6 +242,7 @@ func TestLoggerWithLoggerProviderAndEmitters(t *testing.T) {
 		Level:          "debug",
 		Emitters:       []emitter.Emitter{mockEmitter},
 		LoggerProvider: provider,
+		ServiceName:    "test",
 	})
 	require.NoError(t, err)
 
@@ -275,6 +278,7 @@ func TestLoggerWithLoggerProviderInitialFields(t *testing.T) {
 			"environment": "testing",
 		},
 		LoggerProvider: provider,
+		ServiceName:    "test",
 	})
 	require.NoError(t, err)
 
@@ -296,6 +300,23 @@ func TestLoggerWithInvalidLevel(t *testing.T) {
 		Level: "invalid-level",
 	})
 	require.Error(t, err, "expected error for invalid log level")
+}
+
+func TestLoggerWithLoggerProviderMissingServiceName(t *testing.T) {
+	t.Parallel()
+
+	processor := &testProcessor{}
+	provider := sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(processor),
+	)
+	defer provider.Shutdown(context.Background())
+
+	_, err := Logger(&Options{
+		Level:          "debug",
+		LoggerProvider: provider,
+		// ServiceName intentionally omitted
+	})
+	require.Error(t, err)
 }
 
 func TestLoggerWithLoggerProviderNilProvider(t *testing.T) {

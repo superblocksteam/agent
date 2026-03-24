@@ -44,6 +44,7 @@ superblocks:
   # Set to false to disable ALL remote telemetry for compliance requirements (e.g., data residency).
   # Only local console logging will be enabled when this is false.
   telemetry:
+    deploymentType: "on-prem"
     remoteEnabled: true
   workers:
     python:

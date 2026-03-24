@@ -68,7 +68,6 @@ import (
 	"github.com/superblocksteam/agent/pkg/observability/emitter/event"
 	"github.com/superblocksteam/agent/pkg/observability/emitter/remote"
 	"github.com/superblocksteam/agent/pkg/observability/log"
-	"github.com/superblocksteam/agent/pkg/observability/obsup"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
 	pkgrun "github.com/superblocksteam/agent/pkg/run"
 	runfx "github.com/superblocksteam/agent/pkg/run/fx"
@@ -76,6 +75,7 @@ import (
 	secretsoptions "github.com/superblocksteam/agent/pkg/secrets/options"
 	"github.com/superblocksteam/agent/pkg/store"
 	redisstore "github.com/superblocksteam/agent/pkg/store/redis"
+	"github.com/superblocksteam/agent/pkg/telemetry"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	redistransport "github.com/superblocksteam/agent/pkg/worker/transport/redis"
@@ -107,6 +107,7 @@ func init() {
 	systemruntime.GOMAXPROCS(systemruntime.NumCPU())
 
 	pflag.Bool("telemetry.remote.enabled", true, "Enable/disable all remote telemetry (OTEL traces/logs, audit logs, remote logs, events). When false, only local console logging is enabled.")
+	pflag.String("telemetry.deployment.type", "cloud", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
 	pflag.Bool("zen", false, "go easy on the log fields")
 	pflag.String("file.server.url", "http://localhost:8080/v2/files", "the url to send to workers by which it can access orchestrators file server endpoint")
 	pflag.Bool("test", false, "Are we in test mode?")
@@ -165,10 +166,6 @@ func init() {
 	pflag.String("superblocks.key", "dev-agent-key", "")
 	pflag.Bool("fetch.use_agent_key", false, "Whether to include agent key header when fetching API definitions. Enable after server supports it.")
 	pflag.String("otel.collector.http.url", "https://traces.intake.superblocks.com/v1/traces", "")
-	pflag.Duration("otel.batcher.batch_timeout", 1*time.Second, "The maximum delay allowed for a BatchSpanProcessor before it will export any held span.")
-	pflag.Duration("otel.batcher.export_timeout", 15*time.Second, "The amount of time a BatchSpanProcessor waits for an exporter to export before abandoning the export.")
-	pflag.Int("otel.batcher.max_export_batch_size", 1000, "The maximum export batch size allowed for a BatchSpanProcessor.")
-	pflag.Int("otel.batcher.max_queue_size", 5000, "The maximum queue size allowed for a BatchSpanProcessor.")
 	pflag.String("buckets.config", "buckets.json", "")
 	pflag.Duration("block.parallel.setting.jitter", 2*time.Millisecond, "")
 	pflag.Int("block.stream.setting.buffer_size", 100, "")
@@ -228,6 +225,7 @@ func init() {
 	viper.SetEnvPrefix("SUPERBLOCKS_ORCHESTRATOR")
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	_ = viper.BindEnv("telemetry.deployment.type", "SUPERBLOCKS_DEPLOYMENT_TYPE")
 
 	if path := viper.GetString("config.path"); path != "" {
 		viper.SetConfigFile(path)
@@ -408,12 +406,35 @@ func main() {
 	}
 
 	// Set up OTEL tracer/logs before creating the main logger so we can include OTEL log export
-	var tracerResult *tracer.PrepareResult
+	var telInstance *telemetry.Instance
 	{
+		var policy telemetry.TelemetryPolicy
+		switch telemetry.DeploymentType(viper.GetString("telemetry.deployment.type")) {
+		case telemetry.DeploymentTypeCloud:
+			policy = telemetry.DefaultCloudPolicy()
+		case telemetry.DeploymentTypeCloudPrem:
+			policy = telemetry.DefaultCloudPremPolicy()
+		case telemetry.DeploymentTypeOnPrem:
+			policy = telemetry.DefaultOnPremPolicy()
+		default:
+			fmt.Fprintf(os.Stderr, "invalid telemetry.deployment.type %q: valid values are %q, %q, and %q\n", viper.GetString("telemetry.deployment.type"), telemetry.DeploymentTypeCloud, telemetry.DeploymentTypeCloudPrem, telemetry.DeploymentTypeOnPrem)
+			os.Exit(1)
+		}
+
 		var err error
-		tracerResult, err = tracer.Prepare(intakeLogger, obsup.OptionsFromConfig(viper.GetViper(), "orchestrator", version))
+		telInstance, err = telemetry.Init(ctx, telemetry.Config{
+			ServiceName:    "orchestrator",
+			ServiceVersion: version,
+			Environment:    viper.GetString("agent.environment"),
+			OTLPURL:        viper.GetString("otel.collector.http.url"),
+			Headers: map[string]string{
+				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
+			},
+			MetricsEnabled: false, // internal/metrics handles Prometheus + OTLP metrics
+			LogsEnabled:    true,
+		}, policy, intakeLogger)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "could not create tracer: %s", err)
+			fmt.Fprintf(os.Stderr, "could not initialize telemetry: %s", err)
 			os.Exit(1)
 		}
 	}
@@ -437,7 +458,8 @@ func main() {
 				remoteEmitter,
 			},
 			Zen:            viper.GetBool("zen"),
-			LoggerProvider: tracerResult.LoggerProvider,
+			LoggerProvider: telInstance.LoggerProvider,
+			ServiceName:    "orchestrator",
 		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not create logger: %s", err)
@@ -1075,7 +1097,7 @@ func main() {
 	g.Add(viper.GetBool("emitter.remote.enabled"), remoteEmitter)
 
 	g.Always(metricsRunnable)
-	g.Always(tracerResult.Runnable)
+	g.Always(pkgrun.Telemetry(telInstance))
 	g.Always(auditEmitter)
 	g.Always(eventEmitter)
 	g.Always(workerClient)

@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -18,6 +19,7 @@ type Options struct {
 	Emitters       []emitter.Emitter
 	Zen            bool
 	LoggerProvider *sdklog.LoggerProvider
+	ServiceName    string
 }
 
 func Logger(options *Options) (*zap.Logger, error) {
@@ -63,7 +65,10 @@ func Logger(options *Options) (*zap.Logger, error) {
 
 		// Add OTEL log exporter core if LoggerProvider is configured
 		if options.LoggerProvider != nil {
-			otelCore := otelzap.NewCore("orchestrator", otelzap.WithLoggerProvider(options.LoggerProvider))
+			if options.ServiceName == "" {
+				return nil, fmt.Errorf("log.Options.ServiceName is required when LoggerProvider is set")
+			}
+			otelCore := otelzap.NewCore(options.ServiceName, otelzap.WithLoggerProvider(options.LoggerProvider))
 			cores = append(cores, otelCore.With(initial))
 		}
 	}

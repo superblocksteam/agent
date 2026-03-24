@@ -141,6 +141,8 @@ spec:
         {{- end }}
         - name: SUPERBLOCKS_ORCHESTRATOR_TELEMETRY_REMOTE_ENABLED
           value: {{ .Values.superblocks.telemetry.remoteEnabled | quote }}
+        - name: SUPERBLOCKS_DEPLOYMENT_TYPE
+          value: {{ .Values.superblocks.telemetry.deploymentType | quote }}
         {{- if .Values.extraEnv }}
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
         {{- end }}
