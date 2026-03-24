@@ -1,5 +1,6 @@
 """Tests for the Executor and ForkingExecutor classes."""
 
+import asyncio
 import json
 import os
 from unittest.mock import MagicMock, patch
@@ -17,6 +18,71 @@ class TestExecutor:
     @pytest.fixture
     def executor(self):
         return Executor()
+
+    def test_asyncio_run_in_user_code_on_worker_thread(self, executor):
+        """asyncio.run in user code without a host running loop (e.g. asyncio.to_thread worker)."""
+        code = """
+import asyncio
+async def f():
+    return 42
+return asyncio.run(f())
+"""
+        result, stdout, stderr = executor.run(
+            code=code.strip(),
+            context=Object({}),
+        )
+        assert json.loads(result) == 42
+        assert stderr == []
+
+    @pytest.mark.asyncio
+    async def test_asyncio_run_in_user_code_via_to_thread_like_plugin(self, executor):
+        """Same threading model as PythonPlugin.execute (asyncio.to_thread + executor.run)."""
+        code = """
+import asyncio
+async def f():
+    return 42
+return asyncio.run(f())
+"""
+        result, stdout, stderr = await asyncio.to_thread(
+            executor.run,
+            code=code.strip(),
+            context=Object({}),
+        )
+        assert json.loads(result) == 42
+        assert stderr == []
+
+    @pytest.mark.asyncio
+    async def test_asyncio_run_directly_in_async_context(self, executor):
+        """Exercises nest_asyncio.apply() — executor.run from a coroutine (running loop in thread)."""
+        code = """
+import asyncio
+async def f():
+    return 42
+return asyncio.run(f())
+"""
+        result, _, stderr = executor.run(
+            code=code.strip(),
+            context=Object({}),
+        )
+        assert json.loads(result) == 42
+        assert stderr == []
+
+    @pytest.mark.asyncio
+    async def test_sync_user_code_after_nest_asyncio_may_apply(self, executor):
+        """Sync executions still work after nest_asyncio.apply() may have patched the loop."""
+        code_async = """
+import asyncio
+async def f():
+    return 0
+return asyncio.run(f())
+"""
+        executor.run(code=code_async.strip(), context=Object({}))
+        result, _, stderr = executor.run(
+            code="return 1 + 1",
+            context=Object({}),
+        )
+        assert json.loads(result) == 2
+        assert stderr == []
 
     def test_simple_return(self, executor):
         """Test basic script execution with a simple return."""

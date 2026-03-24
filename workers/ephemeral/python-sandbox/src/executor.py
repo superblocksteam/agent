@@ -179,6 +179,22 @@ class Executor:
         # Set restricted builtins
         my_module.__dict__["__builtins__"] = ALLOW_BUILTINS
 
+        # Allow asyncio.run() in user code when this thread already has a running event
+        # loop (otherwise asyncio.run raises). Do not call nest_asyncio.apply() when there
+        # is no running loop.
+        try:
+            import asyncio
+            import nest_asyncio
+        except ImportError:
+            pass
+        else:
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                pass
+            else:
+                nest_asyncio.apply()
+
         result = ""
         with redirect_stdout(StringIO()) as std_out:
             with redirect_stderr(StringIO()) as std_err:
