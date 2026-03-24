@@ -62,6 +62,8 @@ type K8sJobManager struct {
 	zone string
 	// Labels from the parent task-manager pod for pod affinity matching
 	ownerPodLabels map[string]string
+	// Explicit plugin IDs to load in the sandbox process (e.g. "javascriptsdkapi")
+	workerPlugins string
 	// Environment variables to set in the sandbox pod from the task-manager's environment
 	executionEnvInclusionList []string
 }
@@ -92,6 +94,7 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		resources:                   opts.BuildResourceRequirements(),
 		zone:                        opts.Zone,
 		ownerPodLabels:              opts.OwnerPodLabels,
+		workerPlugins:               strings.TrimSpace(opts.WorkerPlugins),
 		executionEnvInclusionList:   opts.ExecutionEnvInclusionList,
 	}
 }
@@ -455,6 +458,15 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS",
 			Value: fmt.Sprintf("%s:%d", m.podIP, m.integrationExecutorGrpcPort),
+		})
+	}
+
+	// Pass selected plugins to the sandbox so it only loads what this worker needs.
+	if m.workerPlugins != "" {
+		container := &job.Spec.Template.Spec.Containers[0]
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS",
+			Value: m.workerPlugins,
 		})
 	}
 

@@ -9,12 +9,14 @@ import {
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_INTEGRATION_EXECUTOR_ADDRESS,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS,
-  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS
+  SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS,
+  SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS
 } from './env';
 import { GrpcKvStore } from './grpcKvStore';
 import logger from './logger';
 import { MessageTransformer, MessageTransformerImpl, NativeRequest, NativeResponse, ProtoResponse } from './messageTransformer';
-import { ALL_PLUGINS, loadPlugins } from './pluginsLoader';
+import { parsePluginSelection } from './pluginSelection';
+import { ALL_PLUGIN_IDS, loadPlugins } from './pluginsLoader';
 import { PluginsRouter } from './pluginsRouter';
 import { isGrpcPermissionDenied, isGrpcServiceError, TaskManagerClientError } from './taskManagerClientError';
 import { Response as ProtoTransportResponse } from './types/transport/v1/transport_pb';
@@ -149,7 +151,7 @@ function createSandboxTransportService(
 }
 
 // Start server
-function main() {
+async function main() {
   const channelOptions: grpc.ChannelOptions = {
     'grpc.max_receive_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
     'grpc.max_send_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE
@@ -180,7 +182,14 @@ function main() {
     : undefined;
 
   const pluginsRouter = new PluginsRouter(logger, streamingClient, integrationExecutorClient);
-  const plugins = loadPlugins(Object.keys(ALL_PLUGINS));
+  const enabledPluginIds = parsePluginSelection(SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS, ALL_PLUGIN_IDS);
+  const plugins = await loadPlugins(enabledPluginIds);
+  logger.info(
+    {
+      plugins: Object.keys(plugins)
+    },
+    'Loaded sandbox plugins'
+  );
   Object.entries(plugins).forEach(([pluginId, plugin]) => {
     pluginsRouter.registerPlugin(pluginId, plugin);
   });
@@ -210,4 +219,7 @@ function main() {
   });
 }
 
-main();
+main().catch((err) => {
+  console.error('Fatal startup error:', err);
+  process.exit(1);
+});

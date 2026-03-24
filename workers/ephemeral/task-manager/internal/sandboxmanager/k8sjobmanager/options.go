@@ -84,6 +84,10 @@ type Options struct {
 	ResourceLimitsCPU      string
 	ResourceLimitsMemory   string
 
+	// WorkerPlugins is the resolved, comma-separated list of worker plugin IDs
+	// configured for this task-manager (e.g. "javascriptsdkapi" or "javascriptsdkapi,javascript").
+	WorkerPlugins string
+
 	// ExecutionEnvInclusionList is a list of env var names to set in the
 	// sandbox pod from the task-manager's environment.
 	ExecutionEnvInclusionList []string
@@ -271,6 +275,13 @@ func WithResourceLimitsCPU(cpu string) Option {
 func WithResourceLimitsMemory(mem string) Option {
 	return func(o *Options) {
 		o.ResourceLimitsMemory = mem
+	}
+}
+
+// WithWorkerPlugins sets the plugin selector string to pass to sandbox pods.
+func WithWorkerPlugins(plugins string) Option {
+	return func(o *Options) {
+		o.WorkerPlugins = plugins
 	}
 }
 

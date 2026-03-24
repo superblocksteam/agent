@@ -413,11 +413,24 @@ ephemeral-down: ephemeral-kill-all ephemeral-deps-down
 	@rm -f $(EPHEMERAL_LOG_DIR)/*.pid
 	@echo "==> Ephemeral stack stopped"
 
+# ---------------------------------------------------------------------------
+# Benchmarks
+# ---------------------------------------------------------------------------
+
+BENCH_ITERATIONS ?= 5
+
+.PHONY: ephemeral-bench-sandbox-startup
+ephemeral-bench-sandbox-startup: ephemeral-build-js-sandbox
+	@bash $(JS_SANDBOX_DIR)/bench-sandbox-startup.sh $(BENCH_ITERATIONS)
+
+# ---------------------------------------------------------------------------
+
 .PHONY: ephemeral-help
 ephemeral-help:
 	@echo "Ephemeral Worker Development (from orchestrator repo)"
 	@echo "  make ephemeral-up           Kill, rebuild, start all (background)"
 	@echo "  make ephemeral-build-js-sandbox  Force rebuild JS sandbox (after merge/pnpm install)"
+	@echo "  make ephemeral-bench-sandbox-startup  Benchmark sandbox startup latency"
 	@echo "  make ephemeral-status       Check what is running"
 	@echo "  make ephemeral-logs         Tail all logs"
 	@echo "  make ephemeral-down         Stop everything"

@@ -528,6 +528,7 @@ func main() {
 			k8sjobmanager.WithResourceLimitsMemory(viper.GetString("sandbox.resources.limits.memory")),
 			k8sjobmanager.WithZone(sandboxZone),
 			k8sjobmanager.WithOwnerPodLabels(ownerPodLabels),
+			k8sjobmanager.WithWorkerPlugins(strings.Join(plugins.ToSlice(), ",")),
 			k8sjobmanager.WithExecutionEnvInclusionList(executionEnvInclusionList.ToSlice()),
 		}
 

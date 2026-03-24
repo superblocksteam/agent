@@ -246,6 +246,59 @@ func TestBuildJobSpecExecutionEnvInclusionListEmpty(t *testing.T) {
 	assert.NotContains(t, names, "EXECUTION_ENV_BAR")
 }
 
+func TestBuildJobSpecWorkerPluginsEnv(t *testing.T) {
+	m := &K8sJobManager{
+		namespace:               "test-ns",
+		image:                   "sandbox:latest",
+		port:                    50051,
+		podIP:                   "10.0.0.1",
+		variableStoreGrpcPort:   50050,
+		variableStoreHttpPort:   8080,
+		streamingProxyGrpcPort:  50053,
+		ttlSecondsAfterFinished: 60,
+		language:                "javascript",
+		ephemeral:               true,
+		logger:                  zap.NewNop(),
+		workerPlugins:           "javascriptsdkapi",
+	}
+
+	job := m.buildJobSpec("sandbox-test-plugins", "plugins-test-1", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	envByName := make(map[string]string)
+	for _, env := range container.Env {
+		envByName[env.Name] = env.Value
+	}
+
+	assert.Equal(t, "javascriptsdkapi", envByName["SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS"])
+}
+
+func TestBuildJobSpecWorkerPluginsEnvNotSet(t *testing.T) {
+	m := &K8sJobManager{
+		namespace:               "test-ns",
+		image:                   "sandbox:latest",
+		port:                    50051,
+		podIP:                   "10.0.0.1",
+		variableStoreGrpcPort:   50050,
+		variableStoreHttpPort:   8080,
+		streamingProxyGrpcPort:  50053,
+		ttlSecondsAfterFinished: 60,
+		language:                "javascript",
+		ephemeral:               true,
+		logger:                  zap.NewNop(),
+	}
+
+	job := m.buildJobSpec("sandbox-test-plugins-unset", "plugins-test-2", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	names := make([]string, 0, len(container.Env))
+	for _, env := range container.Env {
+		names = append(names, env.Name)
+	}
+
+	assert.NotContains(t, names, "SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS")
+}
+
 func TestBuildJobSpecZonePreference(t *testing.T) {
 	for _, test := range []struct {
 		name               string

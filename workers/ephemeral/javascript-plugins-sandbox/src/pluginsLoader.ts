@@ -1,104 +1,120 @@
+/**
+ * Lazy plugin loader.
+ *
+ * Plugins are loaded on demand via dynamic `import()` so that only the
+ * modules required by the configured `SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS`
+ * are ever resolved.  This avoids paying the startup cost of heavy native
+ * modules (mongodb, mssql, oracledb, …) when the sandbox only needs a
+ * small subset of plugins.
+ */
+
 import { trace } from '@opentelemetry/api';
 import { BasePlugin, ConnectionPoolCoordinator, PluginConfiguration } from '@superblocks/shared';
 import { secrets } from '@superblocks/worker.js';
-
-import sb_adls from '@superblocksteam/adls';
-import sb_athena from '@superblocksteam/athena';
-import sb_bigquery from '@superblocksteam/bigquery';
-import sb_cockroachdb from '@superblocksteam/cockroachdb';
-import sb_cosmosdb from '@superblocksteam/cosmosdb';
-import sb_couchbase from '@superblocksteam/couchbase';
-import sb_databricks from '@superblocksteam/databricks';
-import sb_dynamodb from '@superblocksteam/dynamodb';
-import sb_email from '@superblocksteam/email';
-import sb_gcs from '@superblocksteam/gcs';
-import sb_graphql from '@superblocksteam/graphql';
-import sb_gsheets from '@superblocksteam/gsheets';
-import sb_javascript from '@superblocksteam/javascript';
-import sb_javascriptsdkapi from '@superblocksteam/javascript-sdk-api';
-import sb_javascriptwasm from '@superblocksteam/javascript-wasm';
-import sb_kafka from '@superblocksteam/kafka';
-import sb_kinesis from '@superblocksteam/kinesis';
-import sb_lakebase from '@superblocksteam/lakebase';
-import sb_mariadb from '@superblocksteam/mariadb';
-import sb_mongodb from '@superblocksteam/mongodb';
-import sb_mssql from '@superblocksteam/mssql';
-import sb_mysql from '@superblocksteam/mysql';
-import sb_openai from '@superblocksteam/openai';
-import sb_oracledb from '@superblocksteam/oracledb';
-import sb_postgres from '@superblocksteam/postgres';
-import sb_redis from '@superblocksteam/redis';
-import sb_redshift from '@superblocksteam/redshift';
-import sb_restapi from '@superblocksteam/restapi';
-import sb_restapiintegration from '@superblocksteam/restapiintegration';
-import sb_rockset from '@superblocksteam/rockset';
-import sb_s3 from '@superblocksteam/s3';
-import sb_salesforce from '@superblocksteam/salesforce';
-import sb_smtp from '@superblocksteam/smtp';
-import sb_snowflake from '@superblocksteam/snowflake';
-import sb_snowflakepostgres from '@superblocksteam/snowflakepostgres';
-import sb_superblocks_ocr from '@superblocksteam/superblocks-ocr';
-import sb_workflow from '@superblocksteam/workflow';
 import { Gauge, Registry } from 'prom-client';
 
-const kafka = new sb_kafka();
-const graphql = new sb_graphql();
-const restapiintegration = new sb_restapiintegration();
-const redis = new sb_redis();
-const javascriptsdkapi = new sb_javascriptsdkapi();
-const secretStore = secrets();
+// ---------------------------------------------------------------------------
+// Plugin factory registry
+// ---------------------------------------------------------------------------
 
-export const ALL_PLUGINS: Record<string, BasePlugin> = {
-  athena: new sb_athena(),
-  bigquery: new sb_bigquery(),
-  cockroachdb: new sb_cockroachdb(),
-  dynamodb: new sb_dynamodb(),
-  email: new sb_email(),
-  gcs: new sb_gcs(),
-  // graphql and graphqlintegration have same action config / datasource configs
-  graphql: graphql,
-  graphqlintegration: graphql,
-  gsheets: new sb_gsheets(),
-  kafka: kafka,
-  kinesis: new sb_kinesis(),
-  lakebase: new sb_lakebase(),
-  confluent: kafka,
-  msk: kafka,
-  redpanda: kafka,
-  aivenkafka: kafka,
-  javascript: new sb_javascript(),
-  javascriptwasm: new sb_javascriptwasm(),
-  mariadb: new sb_mariadb(),
-  mongodb: new sb_mongodb(),
-  mssql: new sb_mssql(),
-  mysql: new sb_mysql(secretStore),
-  openai: new sb_openai(),
-  postgres: new sb_postgres(secretStore),
-  redshift: new sb_redshift(),
-  restapi: new sb_restapi(),
-  restapiintegration: restapiintegration,
-  rockset: new sb_rockset(),
-  s3: new sb_s3(),
-  salesforce: new sb_salesforce(),
-  javascriptsdkapi: javascriptsdkapi,
-  smtp: new sb_smtp(),
-  snowflake: new sb_snowflake(),
-  snowflakepostgres: new sb_snowflakepostgres(),
-  ocr: new sb_superblocks_ocr(),
-  workflow: new sb_workflow(),
-  redis: redis,
-  cosmosdb: new sb_cosmosdb(),
-  adls: new sb_adls(),
-  databricks: new sb_databricks(),
-  couchbase: new sb_couchbase(),
-  oracledb: new sb_oracledb()
+type PluginFactory = () => Promise<BasePlugin>;
+
+/**
+ * Returns a factory that lazily creates a shared singleton.
+ * Multiple plugin IDs that share the same underlying instance (e.g. kafka,
+ * confluent, msk, redpanda, aivenkafka) all point to the same shared factory
+ * so the module is imported and constructed at most once.
+ */
+function shared(factory: () => Promise<BasePlugin>): PluginFactory {
+  let pending: Promise<BasePlugin> | undefined;
+  return () => {
+    if (!pending) {
+      pending = factory();
+    }
+    return pending;
+  };
+}
+
+const sharedKafka = shared(async () => {
+  const mod = await import('@superblocksteam/kafka');
+  return new mod.default();
+});
+
+const sharedGraphql = shared(async () => {
+  const mod = await import('@superblocksteam/graphql');
+  return new mod.default();
+});
+
+const sharedRestapiintegration = shared(async () => {
+  const mod = await import('@superblocksteam/restapiintegration');
+  return new mod.default();
+});
+
+const sharedRedis = shared(async () => {
+  const mod = await import('@superblocksteam/redis');
+  return new mod.default();
+});
+
+const sharedJavascriptsdkapi = shared(async () => {
+  const mod = await import('@superblocksteam/javascript-sdk-api');
+  return new mod.default();
+});
+
+/**
+ * Registry mapping every known plugin ID to a lazy factory.
+ * The factory is only called for plugins that are actually selected.
+ */
+const PLUGIN_FACTORIES: Record<string, PluginFactory> = {
+  athena: async () => { const m = await import('@superblocksteam/athena'); return new m.default(); },
+  bigquery: async () => { const m = await import('@superblocksteam/bigquery'); return new m.default(); },
+  cockroachdb: async () => { const m = await import('@superblocksteam/cockroachdb'); return new m.default(); },
+  dynamodb: async () => { const m = await import('@superblocksteam/dynamodb'); return new m.default(); },
+  email: async () => { const m = await import('@superblocksteam/email'); return new m.default(); },
+  gcs: async () => { const m = await import('@superblocksteam/gcs'); return new m.default(); },
+  graphql: sharedGraphql,
+  graphqlintegration: sharedGraphql,
+  gsheets: async () => { const m = await import('@superblocksteam/gsheets'); return new m.default(); },
+  kafka: sharedKafka,
+  kinesis: async () => { const m = await import('@superblocksteam/kinesis'); return new m.default(); },
+  lakebase: async () => { const m = await import('@superblocksteam/lakebase'); return new m.default(); },
+  confluent: sharedKafka,
+  msk: sharedKafka,
+  redpanda: sharedKafka,
+  aivenkafka: sharedKafka,
+  javascript: async () => { const m = await import('@superblocksteam/javascript'); return new m.default(); },
+  javascriptwasm: async () => { const m = await import('@superblocksteam/javascript-wasm'); return new m.default(); },
+  mariadb: async () => { const m = await import('@superblocksteam/mariadb'); return new m.default(); },
+  mongodb: async () => { const m = await import('@superblocksteam/mongodb'); return new m.default(); },
+  mssql: async () => { const m = await import('@superblocksteam/mssql'); return new m.default(); },
+  mysql: async () => { const m = await import('@superblocksteam/mysql'); const secretStore = secrets(); return new m.default(secretStore); },
+  openai: async () => { const m = await import('@superblocksteam/openai'); return new m.default(); },
+  postgres: async () => { const m = await import('@superblocksteam/postgres'); const secretStore = secrets(); return new m.default(secretStore); },
+  redshift: async () => { const m = await import('@superblocksteam/redshift'); return new m.default(); },
+  restapi: async () => { const m = await import('@superblocksteam/restapi'); return new m.default(); },
+  restapiintegration: sharedRestapiintegration,
+  rockset: async () => { const m = await import('@superblocksteam/rockset'); return new m.default(); },
+  s3: async () => { const m = await import('@superblocksteam/s3'); return new m.default(); },
+  salesforce: async () => { const m = await import('@superblocksteam/salesforce'); return new m.default(); },
+  javascriptsdkapi: sharedJavascriptsdkapi,
+  smtp: async () => { const m = await import('@superblocksteam/smtp'); return new m.default(); },
+  snowflake: async () => { const m = await import('@superblocksteam/snowflake'); return new m.default(); },
+  snowflakepostgres: async () => { const m = await import('@superblocksteam/snowflakepostgres'); return new m.default(); },
+  ocr: async () => { const m = await import('@superblocksteam/superblocks-ocr'); return new m.default(); },
+  workflow: async () => { const m = await import('@superblocksteam/workflow'); return new m.default(); },
+  redis: sharedRedis,
+  cosmosdb: async () => { const m = await import('@superblocksteam/cosmosdb'); return new m.default(); },
+  adls: async () => { const m = await import('@superblocksteam/adls'); return new m.default(); },
+  databricks: async () => { const m = await import('@superblocksteam/databricks'); return new m.default(); },
+  couchbase: async () => { const m = await import('@superblocksteam/couchbase'); return new m.default(); },
+  oracledb: async () => { const m = await import('@superblocksteam/oracledb'); return new m.default(); },
 };
 
-export const LANG_PLUGINS: Record<string, BasePlugin> = {
-  javascript: new sb_javascript(),
-  javascriptwasm: new sb_javascriptwasm(),
-  javascriptsdkapi: javascriptsdkapi
-};
+/** All known plugin IDs. Used to validate selections without importing any plugin module. */
+export const ALL_PLUGIN_IDS: string[] = Object.keys(PLUGIN_FACTORIES);
+
+// ---------------------------------------------------------------------------
+// Metrics (lightweight — no plugin imports)
+// ---------------------------------------------------------------------------
 
 const tracer = trace.getTracer('sandbox-javascript', '0.0.1');
 
@@ -121,7 +137,17 @@ const poolConnectionsBusyGauge = new Gauge({
   registers: [registry]
 });
 
-export function loadPlugins(plugins: string[]): Record<string, BasePlugin> {
+// ---------------------------------------------------------------------------
+// Plugin loader
+// ---------------------------------------------------------------------------
+
+/**
+ * Dynamically imports and initialises only the requested plugins.
+ *
+ * @param pluginIds - IDs to load (output of {@link parsePluginSelection}).
+ * @returns Map of plugin ID to configured, initialised plugin instance.
+ */
+export async function loadPlugins(pluginIds: string[]): Promise<Record<string, BasePlugin>> {
   const connectionPoolCoordinator = new ConnectionPoolCoordinator({
     maxConnections: 1000,
     maxConnectionsPerKey: 5,
@@ -143,21 +169,40 @@ export function loadPlugins(plugins: string[]): Record<string, BasePlugin> {
   };
 
   const loadedPlugins: Record<string, BasePlugin> = {};
-  for (const pluginId of plugins) {
-    if (pluginId in ALL_PLUGINS) {
-      const plugin = ALL_PLUGINS[pluginId];
+
+  // Group plugin IDs by their underlying factory so that shared instances
+  // (e.g. kafka/confluent/msk) are only imported, configured, and
+  // initialised once.
+  const factoryToIds = new Map<PluginFactory, string[]>();
+  for (const pluginId of pluginIds) {
+    if (pluginId in PLUGIN_FACTORIES) {
+      const factory = PLUGIN_FACTORIES[pluginId];
+      const ids = factoryToIds.get(factory);
+      if (ids) {
+        ids.push(pluginId);
+      } else {
+        factoryToIds.set(factory, [pluginId]);
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from(factoryToIds.entries()).map(async ([factory, ids]) => {
+      const plugin = await factory();
       plugin.configure(configuration);
 
       try {
         plugin.init();
       } catch (_) {
-        // Empty catch block for plugins that don't implement init
+        // Some plugins don't implement init
       }
 
       plugin.attachConnectionPool(connectionPoolCoordinator);
-      loadedPlugins[pluginId] = plugin;
-    }
-  }
+      for (const id of ids) {
+        loadedPlugins[id] = plugin;
+      }
+    })
+  );
 
   return loadedPlugins;
 }
