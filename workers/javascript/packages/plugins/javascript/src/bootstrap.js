@@ -390,6 +390,7 @@ module.exports.executeCode = async (workerData) => {
       eval: false,
       require: requireOpts,
       sandbox: {
+        crypto: require('crypto'),
         ...context.globals,
         ...context.outputs,
         $superblocksFiles: filePaths ?? {},

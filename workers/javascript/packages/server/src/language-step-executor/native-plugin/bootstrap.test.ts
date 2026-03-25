@@ -89,6 +89,59 @@ describe('bootstrap', () => {
       expect(result.error).not.toBeDefined();
     });
 
+    it('should expose crypto as a global', async () => {
+      const mockStore = new MockKVStore();
+      await mockStore.write('name', 'TestFunc');
+      const context: ExecutionContext = new ExecutionContext();
+      context.variables = {
+        name: {
+          key: 'name',
+          type: VariableType.Native,
+          mode: 'read'
+        }
+      };
+      context.kvStore = mockStore as unknown as KVStore;
+
+      const code = `return typeof crypto.randomUUID === 'function';`;
+      const filePaths: Record<string, string> = {};
+      const inheritedEnv: Array<string> = [];
+
+      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(result).toBeDefined();
+      expect(result.error).not.toBeDefined();
+      expect(result.output).toEqual(true);
+    });
+
+    it('should prefer user-defined crypto global over built-in crypto', async () => {
+      const mockStore = new MockKVStore();
+      await mockStore.write('name', 'TestFunc');
+      const context: ExecutionContext = new ExecutionContext();
+      context.variables = {
+        name: {
+          key: 'name',
+          type: VariableType.Native,
+          mode: 'read'
+        }
+      };
+      context.globals = {
+        crypto: {
+          randomUUID: () => 'user-defined-uuid'
+        }
+      };
+      context.kvStore = mockStore as unknown as KVStore;
+
+      const code = `return crypto.randomUUID();`;
+      const filePaths: Record<string, string> = {};
+      const inheritedEnv: Array<string> = [];
+
+      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(result).toBeDefined();
+      expect(result.error).not.toBeDefined();
+      expect(result.output).toEqual('user-defined-uuid');
+    });
+
     it('updates file picker objects with readContents methods', async () => {
       const mockStore = new MockKVStore();
       await mockStore.write('SampleFiles', {

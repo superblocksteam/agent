@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { NodeVM } from 'vm2';
 import {
   ENV_VAR_AWS_DEFAULT_REGION,
@@ -36,7 +37,7 @@ export function nodeVMWithContext(
   const vm = new NodeVM({
     console: 'redirect',
     timeout: timeout,
-    sandbox: { ...context.globals, ...context.outputs, $superblocksFiles: fileTreeToDisk },
+    sandbox: { crypto, ...context.globals, ...context.outputs, $superblocksFiles: fileTreeToDisk },
     require: {
       builtin: ['*', '-child_process', '-process'],
       external: extLibs

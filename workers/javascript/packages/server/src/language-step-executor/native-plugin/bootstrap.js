@@ -172,7 +172,7 @@ module.exports.executeCode = async (workerData) => {
         builtin: ['*', '-child_process', '-process'],
         external: true
       },
-      sandbox: { ...context.globals, ...context.outputs, $superblocksFiles: filePaths },
+      sandbox: { crypto: require('crypto'), ...context.globals, ...context.outputs, $superblocksFiles: filePaths },
       wasm: false
     });
     addLogListenersToVM(vm, ret);
