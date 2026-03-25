@@ -640,24 +640,12 @@ func (e *execution) Finish(ctx *apictx.Context, perf *transportv1.Performance, e
 	var performance *apiv1.Performance
 	{
 		if perf != nil {
-			performance = new(apiv1.Performance)
-
-			if start, ok := ctx.Context.Value(ctxKeyStartTime).(int64); ok {
-				performance.Start = start
-				performance.Finish = e.now().UnixMilli()
-				performance.Total = performance.Finish - performance.Start
-
+			startMs, ok := ctx.Context.Value(ctxKeyStartTime).(int64)
+			if ok {
+				performance = BuildPerformance(startMs, e.now().UnixMilli(), perf)
 			}
 
-			if perf != nil && perf.PluginExecution != nil {
-				performance.Execution = int64(perf.PluginExecution.Value) / 1000 // NOTE(frank): the worker will return this value in microseconds
-				performance.Overhead = performance.Total - performance.Execution
-
-				if performance.Overhead < 0 {
-					// NOTE(frank): This would be a bug but I don't want to propogate this to the client.
-					performance.Overhead = 0
-				}
-
+			if performance != nil && perf.PluginExecution != nil {
 				if ctx.Type == apiv1.BlockType_BLOCK_TYPE_STEP && e.Api.GetMetadata().GetId() != "" {
 					// NOTE(frank): We should batch these and write once per API
 					go func() {

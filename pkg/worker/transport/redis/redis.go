@@ -372,9 +372,30 @@ func (t *transport) handleEvent(
 
 		if perf != nil {
 			perf.Error = err != nil
+			queueRequestStartMicroForMetrics := reqStartMicro
 
+			// Compute dispatch latency (queue wait time). The worker reports
+			// QueueRequest.End (when it dequeued the message in microseconds)
+			// but not the Start or Value. The orchestrator knows reqStartMicro
+			// (when it enqueued), so we can compute the delta here.
+			// Guard against clock skew between orchestrator and worker hosts
+			// which could produce a negative delta.
+			if perf.QueueRequest != nil && perf.QueueRequest.End > 0 {
+				if delta := perf.QueueRequest.End - float64(reqStartMicro); delta >= 0 {
+					perf.QueueRequest.Start = float64(reqStartMicro)
+					if delta > 0 {
+						perf.QueueRequest.Value = delta
+					}
+				} else {
+					// If clocks are skewed (worker dequeues "before" enqueue on our clock),
+					// avoid surfacing negative queue timings in metrics/attributes.
+					queueRequestStartMicroForMetrics = 0
+					perf.QueueRequest.Start = 0
+					perf.QueueRequest.Value = 0
+				}
+			}
 			metricsPkg.Observe(ctx, perf,
-				reqStartMicro,
+				queueRequestStartMicroForMetrics,
 				estimate,
 				&metrics.StepMetricLabels{
 					PluginName:  pluginName,

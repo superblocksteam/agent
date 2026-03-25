@@ -970,8 +970,16 @@ func (s *server) executeCodeMode(
 		})
 	}()
 
+	// workerPerf/workerEndTime are set after worker execution and allow us to
+	// surface dispatch/queue timings even on terminal error paths.
+	var workerPerf *transportv1.Performance
+	workerEndTime := startTime
 	sendError := func(err error) (*executor.Done, error) {
 		commonErr := sberror.ToCommonV1(err)
+		var perf *apiv1.Performance
+		if workerPerf != nil {
+			perf = executor.BuildPerformance(startTime.UnixMilli(), workerEndTime.UnixMilli(), workerPerf)
+		}
 		_ = send(&apiv1.StreamResponse{
 			Execution: executionID,
 			Event: &apiv1.Event{
@@ -979,7 +987,8 @@ func (s *server) executeCodeMode(
 				Type: apiv1.BlockType_BLOCK_TYPE_STEP,
 				Event: &apiv1.Event_End_{
 					End: &apiv1.Event_End{
-						Error: commonErr,
+						Error:       commonErr,
+						Performance: perf,
 					},
 				},
 			},
@@ -1119,7 +1128,8 @@ func (s *server) executeCodeMode(
 	}
 
 	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
-	_, outputKey, workerErr := s.Worker.Execute(ctx, "javascriptsdkapi", workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
+	workerPerf, outputKey, workerErr := s.Worker.Execute(ctx, "javascriptsdkapi", workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
+	workerEndTime = time.Now()
 	if workerErr != nil {
 		workerFailed = true
 	}
@@ -1199,6 +1209,33 @@ func (s *server) executeCodeMode(
 	} else {
 		for _, msg := range output.Stderr {
 			responseErrors = append(responseErrors, &commonv1.Error{Message: msg})
+		}
+	}
+
+	// Build and send an Event_End with performance data so v3/execute
+	// responses include the same dispatch/queue timing as v2/execute.
+	if apiPerformance := executor.BuildPerformance(startTime.UnixMilli(), workerEndTime.UnixMilli(), workerPerf); apiPerformance != nil {
+		blockStatus := apiv1.BlockStatus_BLOCK_STATUS_SUCCEEDED
+		if workerFailed {
+			blockStatus = apiv1.BlockStatus_BLOCK_STATUS_ERRORED
+		}
+
+		endEvent := &apiv1.Event_End{
+			Performance: apiPerformance,
+			Status:      blockStatus,
+		}
+		event := &apiv1.Event{
+			Name:  result.GetApi().GetMetadata().GetName(),
+			Type:  apiv1.BlockType_BLOCK_TYPE_STEP,
+			Event: &apiv1.Event_End_{End: endEvent},
+		}
+		response := &apiv1.StreamResponse{
+			Execution: executionID,
+			Event:     event,
+		}
+
+		if sendErr := send(response); sendErr != nil {
+			logger.Error("could not send performance event", zap.Error(sendErr))
 		}
 	}
 

@@ -2229,7 +2229,9 @@ func TestExecuteCodeMode(t *testing.T) {
 		mockStore := &storemock.Store{}
 		outputKey := "read-error-key"
 		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
-			Return(nil, outputKey, nil)
+			Return(&transportv1.Performance{
+				QueueRequest: &transportv1.Performance_Observable{Value: 2_000},
+			}, outputKey, nil)
 		mockStore.On("Read", mock.Anything, outputKey).Return(nil, errors.New("redis connection failed"))
 		mockStore.On("Delete", mock.Anything, outputKey).Return(nil)
 
@@ -2253,10 +2255,18 @@ func TestExecuteCodeMode(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 
-		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		}, false)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "redis connection failed")
 		assert.Nil(t, done)
+		require.Len(t, sentEvents, 1)
+		require.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetError())
+		require.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetPerformance())
+		assert.Equal(t, int64(2), sentEvents[0].GetEvent().GetEnd().GetPerformance().GetCustom()["queue_request_ms"])
 
 		mockWorker.AssertExpectations(t)
 		mockStore.AssertExpectations(t)
@@ -2474,7 +2484,9 @@ func TestExecuteCodeMode(t *testing.T) {
 
 		workerErr := errors.New("worker timeout")
 		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
-			Return(nil, outputKey, workerErr)
+			Return(&transportv1.Performance{
+				QueueRequest: &transportv1.Performance_Observable{Value: 1_500},
+			}, outputKey, workerErr)
 		mockStore.On("Read", mock.Anything, outputKey).Return(nil, errors.New("redis unavailable"))
 		mockStore.On("Delete", mock.Anything, outputKey).Return(nil)
 
@@ -2511,6 +2523,8 @@ func TestExecuteCodeMode(t *testing.T) {
 		assert.Nil(t, done)
 		require.Len(t, sentEvents, 1)
 		assert.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetError())
+		require.NotNil(t, sentEvents[0].GetEvent().GetEnd().GetPerformance())
+		assert.Equal(t, int64(1), sentEvents[0].GetEvent().GetEnd().GetPerformance().GetCustom()["queue_request_ms"])
 
 		mockWorker.AssertExpectations(t)
 		mockStore.AssertExpectations(t)
@@ -2553,6 +2567,202 @@ func TestExecuteCodeMode(t *testing.T) {
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, sendErr)
 		assert.Nil(t, done)
+
+		mockWorker.AssertExpectations(t)
+	})
+}
+
+func TestExecuteCodeModePerformanceEvent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("sends End event with performance before response on success", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		outputKey := "perf-success-output-key"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{"ok":true}}`}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(&transportv1.Performance{
+				PluginExecution: &transportv1.Performance_Observable{Value: 20_000}, // 20ms
+				QueueRequest:    &transportv1.Performance_Observable{Value: 1_500},  // 1.5ms -> 1ms
+			}, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger:  zap.NewNop(),
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, "exec-code-mode-perf-success")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function(ctx) { return ctx; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		}, false)
+		require.NoError(t, err)
+		require.NotNil(t, done)
+		require.Len(t, sentEvents, 2)
+
+		endEvent := sentEvents[0].GetEvent().GetEnd()
+		require.NotNil(t, endEvent, "first event should be Event_End")
+		assert.Equal(t, apiv1.BlockStatus_BLOCK_STATUS_SUCCEEDED, endEvent.GetStatus())
+		require.NotNil(t, endEvent.GetPerformance())
+		assert.Equal(t, int64(1), endEvent.GetPerformance().GetCustom()["queue_request_ms"])
+
+		responseEvent := sentEvents[1].GetEvent().GetResponse()
+		require.NotNil(t, responseEvent, "second event should be Event_Response")
+		assert.Empty(t, responseEvent.GetErrors())
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("marks End status errored when worker fails but output is recovered", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		outputKey := "perf-error-output-key"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{
+			Key:   outputKey,
+			Value: `{"output":{"partial":"ok"},"error":"runtime failed"}`,
+		}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(&transportv1.Performance{
+				PluginExecution: &transportv1.Performance_Observable{Value: 5_000},
+			}, outputKey, errors.New("worker failed"))
+
+		s := &server{
+			Config: &Config{
+				Logger:  zap.NewNop(),
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, "exec-code-mode-perf-error")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function(ctx) { return ctx; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var sentEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			sentEvents = append(sentEvents, resp)
+			return nil
+		}, false)
+		require.NoError(t, err, "worker failures with recoverable output should return structured response errors")
+		require.NotNil(t, done)
+		require.Len(t, sentEvents, 2)
+
+		endEvent := sentEvents[0].GetEvent().GetEnd()
+		require.NotNil(t, endEvent)
+		assert.Equal(t, apiv1.BlockStatus_BLOCK_STATUS_ERRORED, endEvent.GetStatus())
+		assert.NotNil(t, endEvent.GetPerformance())
+
+		responseEvent := sentEvents[1].GetEvent().GetResponse()
+		require.NotNil(t, responseEvent)
+		assert.NotEmpty(t, responseEvent.GetErrors())
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("continues when sending performance End event fails", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		outputKey := "perf-send-fail-output-key"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{"ok":true}}`}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(&transportv1.Performance{
+				PluginExecution: &transportv1.Performance_Observable{Value: 10_000},
+			}, outputKey, nil)
+
+		s := &server{
+			Config: &Config{
+				Logger:  zap.NewNop(),
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, "exec-code-mode-perf-send-fail")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function(ctx) { return ctx; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		var responseEvents []*apiv1.StreamResponse
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(resp *apiv1.StreamResponse) error {
+			if resp.GetEvent().GetEnd() != nil {
+				return errors.New("drop end event")
+			}
+			responseEvents = append(responseEvents, resp)
+			return nil
+		}, false)
+		require.NoError(t, err)
+		require.NotNil(t, done)
+		require.Len(t, responseEvents, 1, "response event should still be sent even if End event send fails")
+		require.NotNil(t, responseEvents[0].GetEvent().GetResponse())
 
 		mockWorker.AssertExpectations(t)
 	})

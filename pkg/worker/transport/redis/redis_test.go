@@ -4,6 +4,7 @@ import (
 	"context"
 	e "errors"
 	"testing"
+	"time"
 
 	"github.com/go-redis/redismock/v9"
 	redis "github.com/redis/go-redis/v9"
@@ -14,6 +15,7 @@ import (
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
@@ -979,4 +981,168 @@ func TestObserveInfrastructureError(t *testing.T) {
 
 	observeInfrastructureError(ctx, span, "javascript", "execute", "ba", "process_response", errors.IntegrationError(e.New("boom"), commonv1.Code_CODE_UNSPECIFIED))
 	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount(), "non-internal errors must not increment infrastructure metric")
+}
+
+func TestExecuteComputesQueueRequestTimingFromEnqueueAndDequeue(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	buildTransport := func(t *testing.T) (*transport, redismock.ClientMock) {
+		t.Helper()
+
+		buckets, err := load([]byte(`{"analysis":"ba","error":"be","custom":[]}`))
+		require.NoError(t, err)
+
+		client, clientMock := redismock.NewClientMock()
+		clientMock.MatchExpectationsInOrder(false)
+
+		mockFlags := &mocks.Flags{}
+		mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+		mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+
+		tnspt := &transport{
+			flags: mockFlags,
+			options: &Options{
+				buckets:           buckets,
+				redis:             client,
+				logger:            zap.NewNop(),
+				heartbeatInterval: time.Millisecond,
+				timeout:           time.Second,
+			},
+			inbox: func() (string, error) {
+				return "timing-inbox", nil
+			},
+		}
+
+		return tnspt, clientMock
+	}
+
+	buildResponseJSON := func(t *testing.T, endMicro float64) string {
+		t.Helper()
+		wrapped := utils.BinaryProtoWrapper[*transportv1.Response]{
+			Message: &transportv1.Response{
+				Data: &transportv1.Response_Data{
+					Pinned: &transportv1.Performance{
+						QueueRequest: &transportv1.Performance_Observable{
+							End: endMicro,
+						},
+					},
+					Data: &transportv1.Response_Data_Data{
+						Key: "worker-output-key",
+					},
+				},
+			},
+		}
+		raw, err := wrapped.MarshalBinary()
+		require.NoError(t, err)
+		return string(raw)
+	}
+
+	for _, tc := range []struct {
+		name          string
+		endOffsetMicr int64
+		wantValueZero bool
+	}{
+		{
+			name:          "positive delta sets queue request value",
+			endOffsetMicr: int64(60 * time.Second / time.Microsecond),
+			wantValueZero: false,
+		},
+		{
+			name:          "negative delta is clamped to zero",
+			endOffsetMicr: -int64(60 * time.Second / time.Microsecond),
+			wantValueZero: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tnspt, clientMock := buildTransport(t)
+			ctx := context.Background()
+			stream := "agent.main.bucket.ba.plugin.javascript.event.execute"
+
+			enqueueBaseMicro := time.Now().UnixNano() / 1000
+			queueEndMicro := float64(enqueueBaseMicro + tc.endOffsetMicr)
+			reqData := &transportv1.Request_Data_Data{}
+			carrier := tracer.Propagate(ctx)
+
+			clientMock.ExpectXAdd(&redis.XAddArgs{
+				Stream:     stream,
+				NoMkStream: true,
+				Values: map[string]any{
+					"data": &transportv1.Request{
+						Inbox: "timing-inbox",
+						Topic: "timing-inbox",
+						Data: &transportv1.Request_Data{
+							Pinned: &transportv1.Request_Data_Pinned{
+								Bucket:  "ba",
+								Name:    "javascript",
+								Version: "v0.0.1",
+								Event:   "execute",
+								Carrier: carrier,
+								Observability: &transportv1.Observability{
+									Baggage: carrier,
+								},
+							},
+							Data: reqData,
+						},
+					},
+				},
+			}).SetVal("1-0")
+
+			clientMock.ExpectXRead(&redis.XReadArgs{
+				Streams: []string{"timing-inbox", redisAckID},
+				Count:   1,
+				Block:   time.Millisecond,
+			}).SetVal([]redis.XStream{
+				{
+					Stream: "timing-inbox",
+					Messages: []redis.XMessage{
+						{
+							ID: "ack-1",
+							Values: map[string]any{
+								"data": "{}",
+							},
+						},
+					},
+				},
+			})
+
+			clientMock.ExpectXRead(&redis.XReadArgs{
+				Streams: []string{"timing-inbox", redisResponseID},
+				Count:   1,
+				Block:   time.Second,
+			}).SetVal([]redis.XStream{
+				{
+					Stream: "timing-inbox",
+					Messages: []redis.XMessage{
+						{
+							ID: "resp-1",
+							Values: map[string]any{
+								"data": buildResponseJSON(t, queueEndMicro),
+							},
+						},
+					},
+				},
+			})
+
+			clientMock.ExpectDel("timing-inbox").SetVal(1)
+			clientMock.ExpectXDel(stream, "1-0").SetVal(1)
+
+			perf, _, err := tnspt.Execute(ctx, "javascript", reqData)
+			require.NoError(t, err)
+			require.NotNil(t, perf)
+			require.NotNil(t, perf.QueueRequest)
+			assert.Equal(t, queueEndMicro, perf.QueueRequest.End)
+			if tc.wantValueZero {
+				assert.Equal(t, float64(0), perf.QueueRequest.Start)
+				assert.Equal(t, float64(0), perf.QueueRequest.Value)
+			} else {
+				assert.Greater(t, perf.QueueRequest.Start, float64(0))
+				assert.Greater(t, perf.QueueRequest.Value, float64(0))
+				assert.InDelta(t, perf.QueueRequest.End-perf.QueueRequest.Start, perf.QueueRequest.Value, 1.0)
+			}
+
+			require.Eventually(t, func() bool {
+				return clientMock.ExpectationsWereMet() == nil
+			}, time.Second, 10*time.Millisecond)
+		})
+	}
 }
