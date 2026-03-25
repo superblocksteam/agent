@@ -19,7 +19,8 @@ async function loadSdkApi(): Promise<{
   api: (...args: unknown[]) => unknown;
   postgres: (id: string) => { pluginId: string; id: string };
   salesforce: (id: string) => { pluginId: string; id: string };
-  z: { object: (...args: unknown[]) => unknown; string: () => unknown; number: () => unknown };
+  z: { object: (...args: unknown[]) => unknown; string: () => unknown; number: () => unknown; array: (schema: unknown) => unknown };
+  readableFileSchema: unknown;
 }> {
   return await import('@superblocksteam/sdk-api') as never;
 }
@@ -133,7 +134,8 @@ describe('sdk-api integration tests (real executeApi)', () => {
   let api: (...args: unknown[]) => unknown;
   let postgres: (id: string) => { pluginId: string; id: string };
   let salesforce: (id: string) => { pluginId: string; id: string };
-  let z: { object: (...args: unknown[]) => unknown; string: () => { uuid: () => unknown }; number: () => { min: (n: number) => unknown } };
+  let z: { object: (...args: unknown[]) => unknown; string: () => { uuid: () => unknown }; number: () => { min: (n: number) => unknown }; array: (schema: unknown) => unknown };
+  let readableFileSchema: unknown;
 
   beforeAll(async () => {
     const sdkApi = await loadSdkApi();
@@ -142,6 +144,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
     postgres = sdkApi.postgres;
     salesforce = sdkApi.salesforce;
     z = sdkApi.z as never;
+    readableFileSchema = sdkApi.readableFileSchema;
   });
 
   describe('happy path: validated input → run → validated output', () => {
@@ -606,6 +609,79 @@ describe('sdk-api integration tests (real executeApi)', () => {
           }
         )
       ).rejects.toThrow('Output validation failed');
+    });
+  });
+
+  describe('file helpers (readableFileSchema / readContentsAsync)', () => {
+    it('readableFileSchema is exported and defined', () => {
+      expect(readableFileSchema).toBeDefined();
+    });
+
+    it('readableFileSchema validates a file object with readContentsAsync', () => {
+      const mockFile = {
+        name: 'test.txt',
+        type: 'text/plain',
+        $superblocksId: 'upload-abc',
+        size: 100,
+        extension: 'txt',
+        readContentsAsync: async () => 'file contents',
+        readContents: () => 'file contents'
+      };
+
+      const schema = readableFileSchema as { safeParse: (v: unknown) => { success: boolean; data?: unknown; error?: unknown } };
+      const result = schema.safeParse(mockFile);
+      expect(result.success).toBe(true);
+    });
+
+    it('readableFileSchema rejects a file object missing readContentsAsync', () => {
+      const badFile = {
+        name: 'test.txt',
+        $superblocksId: 'upload-abc'
+        // missing readContentsAsync and readContents
+      };
+
+      const schema = readableFileSchema as { safeParse: (v: unknown) => { success: boolean; error?: unknown } };
+      const result = schema.safeParse(badFile);
+      expect(result.success).toBe(false);
+    });
+
+    it('executes an API that uses readableFileSchema and calls readContentsAsync', async () => {
+      const mockFileContent = 'Hello from the uploaded file!';
+
+      const compiledApi = api({
+        name: 'file-reader',
+        input: z.object({ files: z.array(readableFileSchema as never) }),
+        output: z.object({ content: z.string() }),
+        integrations: {},
+        async run(_ctx: unknown, input: { files: Array<{ readContentsAsync: () => Promise<string> }> }) {
+          const content = await input.files[0].readContentsAsync();
+          return { content };
+        }
+      });
+
+      const result = await (executeApi as Function)(compiledApi, {
+        input: {
+          files: [{
+            name: 'demo.txt',
+            type: 'text/plain',
+            $superblocksId: 'upload-123',
+            size: mockFileContent.length,
+            extension: 'txt',
+            readContentsAsync: async () => mockFileContent,
+            readContents: () => mockFileContent
+          }]
+        },
+        integrations: [],
+        executionId: 'test-file-read',
+        env: {},
+        user: TEST_USER,
+        executeQuery: jest.fn()
+      });
+
+      expect(result).toEqual({
+        success: true,
+        output: { content: mockFileContent }
+      });
     });
   });
 });
