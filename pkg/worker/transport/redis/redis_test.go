@@ -264,7 +264,372 @@ func TestAckTimeoutReturnsWorkerUnavailableError(t *testing.T) {
 	assert.True(t, errors.IsWorkerUnavailableError(err), "expected WorkerUnavailableError, got %T: %v", err, err)
 }
 
+func TestExecuteSendFailureReturnsInternalErrorAndRecordsInfrastructureMetric(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	buckets, _ := load([]byte(`{"analysis":"ba","error":"be","custom":[]}`))
+	client, clientMock := redismock.NewClientMock()
+
+	mockFlags := &mocks.Flags{}
+	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{}
+	stream := "agent.main.bucket.ba.plugin.javascript.event.execute"
+
+	tnspt := &transport{
+		flags: mockFlags,
+		options: &Options{
+			buckets:           buckets,
+			redis:             client,
+			logger:            zap.NewNop(),
+			heartbeatInterval: 1,
+			timeout:           1,
+		},
+		inbox: func() (string, error) {
+			return "test-inbox", nil
+		},
+	}
+
+	clientMock.ExpectXAdd(&redis.XAddArgs{
+		Stream:     stream,
+		NoMkStream: true,
+		Values: map[string]any{
+			"data": &transportv1.Request{
+				Inbox: "test-inbox",
+				Topic: "test-inbox",
+				Data: &transportv1.Request_Data{
+					Pinned: &transportv1.Request_Data_Pinned{
+						Bucket:  "ba",
+						Name:    "javascript",
+						Version: "v0.0.1",
+						Event:   "execute",
+						Carrier: tracer.Propagate(ctx),
+						Observability: &transportv1.Observability{
+							Baggage: tracer.Propagate(ctx),
+						},
+					},
+					Data: reqData,
+				},
+			},
+		},
+	}).SetErr(e.New("xadd failed"))
+
+	_, _, err := tnspt.Execute(ctx, "javascript", reqData)
+	require.Error(t, err)
+	assert.IsType(t, &errors.InternalError{}, err)
+	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount())
+	assert.NoError(t, clientMock.ExpectationsWereMet())
+}
+
+func TestExecuteSendRedisNilFailureReturnsInternalErrorAndRecordsInfrastructureMetric(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	buckets, _ := load([]byte(`{"analysis":"ba","error":"be","custom":[]}`))
+	client, clientMock := redismock.NewClientMock()
+
+	mockFlags := &mocks.Flags{}
+	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{}
+	stream := "agent.main.bucket.ba.plugin.javascript.event.execute"
+
+	tnspt := &transport{
+		flags: mockFlags,
+		options: &Options{
+			buckets:           buckets,
+			redis:             client,
+			logger:            zap.NewNop(),
+			heartbeatInterval: 1,
+			timeout:           1,
+		},
+		inbox: func() (string, error) {
+			return "test-inbox", nil
+		},
+	}
+
+	clientMock.ExpectXAdd(&redis.XAddArgs{
+		Stream:     stream,
+		NoMkStream: true,
+		Values: map[string]any{
+			"data": &transportv1.Request{
+				Inbox: "test-inbox",
+				Topic: "test-inbox",
+				Data: &transportv1.Request_Data{
+					Pinned: &transportv1.Request_Data_Pinned{
+						Bucket:  "ba",
+						Name:    "javascript",
+						Version: "v0.0.1",
+						Event:   "execute",
+						Carrier: tracer.Propagate(ctx),
+						Observability: &transportv1.Observability{
+							Baggage: tracer.Propagate(ctx),
+						},
+					},
+					Data: reqData,
+				},
+			},
+		},
+	}).SetErr(redis.Nil)
+
+	_, _, err := tnspt.Execute(ctx, "javascript", reqData)
+	require.Error(t, err)
+	assert.IsType(t, &errors.InternalError{}, err)
+	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount())
+	assert.NoError(t, clientMock.ExpectationsWereMet())
+}
+
+func TestExecuteReadResponseFailureReturnsInternalErrorAndRecordsInfrastructureMetric(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	buckets, _ := load([]byte(`{"analysis":"ba","error":"be","custom":[]}`))
+	client, clientMock := redismock.NewClientMock()
+
+	mockFlags := &mocks.Flags{}
+	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{}
+	stream := "agent.main.bucket.ba.plugin.javascript.event.execute"
+
+	tnspt := &transport{
+		flags: mockFlags,
+		options: &Options{
+			buckets:           buckets,
+			redis:             client,
+			logger:            zap.NewNop(),
+			heartbeatInterval: 1,
+			timeout:           1,
+		},
+		inbox: func() (string, error) {
+			return "test-inbox", nil
+		},
+	}
+
+	carrier := tracer.Propagate(ctx)
+	clientMock.ExpectXAdd(&redis.XAddArgs{
+		Stream:     stream,
+		NoMkStream: true,
+		Values: map[string]any{
+			"data": &transportv1.Request{
+				Inbox: "test-inbox",
+				Topic: "test-inbox",
+				Data: &transportv1.Request_Data{
+					Pinned: &transportv1.Request_Data_Pinned{
+						Bucket:  "ba",
+						Name:    "javascript",
+						Version: "v0.0.1",
+						Event:   "execute",
+						Carrier: carrier,
+						Observability: &transportv1.Observability{
+							Baggage: carrier,
+						},
+					},
+					Data: reqData,
+				},
+			},
+		},
+	}).SetVal("1-0")
+
+	clientMock.ExpectXRead(&redis.XReadArgs{
+		Streams: []string{"test-inbox", "0-0"},
+		Count:   1,
+		Block:   1,
+	}).SetVal([]redis.XStream{{
+		Stream: "test-inbox",
+		Messages: []redis.XMessage{{
+			ID:     "0-0",
+			Values: map[string]any{"data": "ack"},
+		}},
+	}})
+
+	clientMock.ExpectXRead(&redis.XReadArgs{
+		Streams: []string{"test-inbox", "0-1"},
+		Count:   1,
+		Block:   1,
+	}).SetErr(e.New("xread failed"))
+
+	_, _, err := tnspt.Execute(ctx, "javascript", reqData)
+	require.Error(t, err)
+	assert.IsType(t, &errors.InternalError{}, err)
+	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount())
+	assert.NoError(t, clientMock.ExpectationsWereMet())
+}
+
+func TestExecuteReadResponseTimeoutReturnsIntegrationTimeoutAndNoInfrastructureMetric(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	buckets, _ := load([]byte(`{"analysis":"ba","error":"be","custom":[]}`))
+	client, clientMock := redismock.NewClientMock()
+
+	mockFlags := &mocks.Flags{}
+	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{}
+	stream := "agent.main.bucket.ba.plugin.javascript.event.execute"
+
+	tnspt := &transport{
+		flags: mockFlags,
+		options: &Options{
+			buckets:           buckets,
+			redis:             client,
+			logger:            zap.NewNop(),
+			heartbeatInterval: 1,
+			timeout:           1,
+		},
+		inbox: func() (string, error) {
+			return "test-inbox", nil
+		},
+	}
+
+	carrier := tracer.Propagate(ctx)
+	clientMock.ExpectXAdd(&redis.XAddArgs{
+		Stream:     stream,
+		NoMkStream: true,
+		Values: map[string]any{
+			"data": &transportv1.Request{
+				Inbox: "test-inbox",
+				Topic: "test-inbox",
+				Data: &transportv1.Request_Data{
+					Pinned: &transportv1.Request_Data_Pinned{
+						Bucket:  "ba",
+						Name:    "javascript",
+						Version: "v0.0.1",
+						Event:   "execute",
+						Carrier: carrier,
+						Observability: &transportv1.Observability{
+							Baggage: carrier,
+						},
+					},
+					Data: reqData,
+				},
+			},
+		},
+	}).SetVal("1-0")
+
+	clientMock.ExpectXRead(&redis.XReadArgs{
+		Streams: []string{"test-inbox", "0-0"},
+		Count:   1,
+		Block:   1,
+	}).SetVal([]redis.XStream{{
+		Stream: "test-inbox",
+		Messages: []redis.XMessage{{
+			ID:     "0-0",
+			Values: map[string]any{"data": "ack"},
+		}},
+	}})
+
+	clientMock.ExpectXRead(&redis.XReadArgs{
+		Streams: []string{"test-inbox", "0-1"},
+		Count:   1,
+		Block:   1,
+	}).SetErr(redis.Nil)
+
+	_, _, err := tnspt.Execute(ctx, "javascript", reqData)
+	require.Error(t, err)
+
+	integrationErr, ok := errors.IsIntegrationError(err)
+	require.True(t, ok, "expected IntegrationError, got %T: %v", err, err)
+	assert.Equal(t, commonv1.Code_CODE_INTEGRATION_QUERY_TIMEOUT, integrationErr.Code())
+	assert.Equal(t, 0.0, metrics.GetExecuteInfrastructureErrorCount())
+	assert.NoError(t, clientMock.ExpectationsWereMet())
+}
+
+func TestExecuteProcessInternalErrorRecordsInfrastructureMetric(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	buckets, _ := load([]byte(`{"analysis":"ba","error":"be","custom":[]}`))
+	client, clientMock := redismock.NewClientMock()
+
+	mockFlags := &mocks.Flags{}
+	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{}
+	stream := "agent.main.bucket.ba.plugin.javascript.event.execute"
+
+	tnspt := &transport{
+		flags: mockFlags,
+		options: &Options{
+			buckets:           buckets,
+			redis:             client,
+			logger:            zap.NewNop(),
+			heartbeatInterval: 1,
+			timeout:           1,
+		},
+		inbox: func() (string, error) {
+			return "test-inbox", nil
+		},
+	}
+
+	carrier := tracer.Propagate(ctx)
+	clientMock.ExpectXAdd(&redis.XAddArgs{
+		Stream:     stream,
+		NoMkStream: true,
+		Values: map[string]any{
+			"data": &transportv1.Request{
+				Inbox: "test-inbox",
+				Topic: "test-inbox",
+				Data: &transportv1.Request_Data{
+					Pinned: &transportv1.Request_Data_Pinned{
+						Bucket:  "ba",
+						Name:    "javascript",
+						Version: "v0.0.1",
+						Event:   "execute",
+						Carrier: carrier,
+						Observability: &transportv1.Observability{
+							Baggage: carrier,
+						},
+					},
+					Data: reqData,
+				},
+			},
+		},
+	}).SetVal("1-0")
+
+	clientMock.ExpectXRead(&redis.XReadArgs{
+		Streams: []string{"test-inbox", "0-0"},
+		Count:   1,
+		Block:   1,
+	}).SetVal([]redis.XStream{{
+		Stream: "test-inbox",
+		Messages: []redis.XMessage{{
+			ID:     "0-0",
+			Values: map[string]any{"data": "ack"},
+		}},
+	}})
+
+	clientMock.ExpectXRead(&redis.XReadArgs{
+		Streams: []string{"test-inbox", "0-1"},
+		Count:   1,
+		Block:   1,
+	}).SetVal([]redis.XStream{{
+		Stream: "test-inbox",
+		Messages: []redis.XMessage{{
+			ID: "0-1",
+			Values: map[string]any{
+				"data": `{"data":{"data":{"key":"result-key","err":{"message":"InternalError"}}}}`,
+			},
+		}},
+	}})
+
+	_, _, err := tnspt.Execute(ctx, "javascript", reqData)
+	require.Error(t, err)
+	assert.IsType(t, &errors.InternalError{}, err)
+	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount())
+	assert.NoError(t, clientMock.ExpectationsWereMet())
+}
+
 func TestProcess(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
 	for _, test := range []struct {
 		name        string
 		data        []redis.XStream
@@ -600,4 +965,24 @@ func TestProcess(t *testing.T) {
 			assert.Equal(t, resp.String(), test.expectedMsg.String(), test.name)
 		}
 	}
+}
+
+func TestObserveInfrastructureError(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	tnspt := &transport{
+		options: &Options{
+			logger: zap.NewNop(),
+		},
+	}
+
+	ctx := context.Background()
+	_, span := tracer.Tracer().Start(ctx, "test.observe.infrastructure.error")
+	defer span.End()
+
+	tnspt.observeInfrastructureError(ctx, span, "javascript", "execute", "ba", "process_response", &errors.InternalError{})
+	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount())
+
+	tnspt.observeInfrastructureError(ctx, span, "javascript", "execute", "ba", "process_response", errors.IntegrationError(e.New("boom"), commonv1.Code_CODE_UNSPECIFIED))
+	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount(), "non-internal errors must not increment infrastructure metric")
 }

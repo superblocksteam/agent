@@ -25,6 +25,7 @@ var (
 	apiExecutionEventsFailedApi         atomic.Int64
 	apiExecutionEventsSucceededWorkflow atomic.Int64
 	apiExecutionEventsFailedWorkflow    atomic.Int64
+	executeInfrastructureErrorsTotal    atomic.Int64
 )
 
 // StepMetricLabels contains labels for step-related metrics.
@@ -133,6 +134,7 @@ func ResetForTesting() {
 	apiExecutionEventsFailedApi.Store(0)
 	apiExecutionEventsSucceededWorkflow.Store(0)
 	apiExecutionEventsFailedWorkflow.Store(0)
+	executeInfrastructureErrorsTotal.Store(0)
 }
 
 // SetupForTesting initializes metrics with a no-op meter provider for testing.
@@ -147,6 +149,7 @@ func SetupForTesting() func() {
 	apiExecutionEventsFailedApi.Store(0)
 	apiExecutionEventsSucceededWorkflow.Store(0)
 	apiExecutionEventsFailedWorkflow.Store(0)
+	executeInfrastructureErrorsTotal.Store(0)
 
 	// Register metrics with nil instruments - the helper functions handle nil gracefully
 	initiated = true
@@ -491,6 +494,13 @@ func AddApiExecutionEvent(ctx context.Context, eventType, apiType string, extraA
 	}
 }
 
+// AddExecuteInfrastructureError increments execute infrastructure error metrics.
+// This should be called when a worker request fails with InternalError.
+func AddExecuteInfrastructureError(ctx context.Context, extraAttrs ...attribute.KeyValue) {
+	AddCounter(ctx, ExecuteInfrastructureErrorsTotal, extraAttrs...)
+	executeInfrastructureErrorsTotal.Add(1)
+}
+
 // RecordSdkApiExecution records both the duration histogram and counter for
 // a single SDK API (code-mode) execution.
 func RecordSdkApiExecution(ctx context.Context, durationMicro float64, labels *SdkApiMetricLabels) {
@@ -515,4 +525,9 @@ func GetApiExecutionEventCount(eventType, apiType string) float64 {
 		return float64(apiExecutionEventsFailedWorkflow.Load())
 	}
 	return 0
+}
+
+// GetExecuteInfrastructureErrorCount returns the total infrastructure error count.
+func GetExecuteInfrastructureErrorCount() float64 {
+	return float64(executeInfrastructureErrorsTotal.Load())
 }

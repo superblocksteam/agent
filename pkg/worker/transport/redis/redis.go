@@ -290,7 +290,9 @@ func (t *transport) handleEvent(
 			} else {
 				logger.Error("could not send request to worker", zap.Error(err))
 			}
-			return nil, &errors.InternalError{}
+			internalErr := &errors.InternalError{}
+			t.observeInfrastructureError(ctx, span, pluginName, event, bucket, "send_request", internalErr)
+			return nil, internalErr
 		}
 
 		span.AddEvent("message_sent")
@@ -342,7 +344,9 @@ func (t *transport) handleEvent(
 				)
 			}
 			logger.Error("there was an issue waiting for a worker to send a response", zap.Error(err))
-			return nil, &errors.InternalError{}
+			internalErr := &errors.InternalError{}
+			t.observeInfrastructureError(ctx, span, pluginName, event, bucket, "read_response", internalErr)
+			return nil, internalErr
 		}
 
 		span.AddEvent("response_received")
@@ -387,6 +391,7 @@ func (t *transport) handleEvent(
 		}
 
 		if err != nil {
+			t.observeInfrastructureError(ctx, span, pluginName, event, bucket, "process_response", err)
 			logger.Error("failed to process worker response", zap.Error(err))
 			return &handleEventResult{perf: perf, resp: resp, key: key}, err
 		}
@@ -399,6 +404,43 @@ func (t *transport) handleEvent(
 	}
 
 	return result.perf, result.resp, result.key, err
+}
+
+// observeInfrastructureError emits the infrastructure error metric and enriches
+// the current span when the failure is classified as InternalError.
+func (t *transport) observeInfrastructureError(
+	ctx context.Context,
+	span trace.Span,
+	pluginName string,
+	event string,
+	bucket string,
+	stage string,
+	err error,
+) {
+	var internalErr *errors.InternalError
+	if !e.As(err, &internalErr) {
+		return
+	}
+
+	metricAttrs := []attribute.KeyValue{
+		attribute.String("plugin_name", pluginName),
+		attribute.String("plugin_event", event),
+		attribute.String("bucket", bucket),
+	}
+	metrics.AddExecuteInfrastructureError(ctx, metricAttrs...)
+
+	span.SetAttributes(
+		attribute.String("error.type", "InternalError"),
+		attribute.String("worker.error.class", "infrastructure"),
+		attribute.String("worker.error.stage", stage),
+	)
+	span.AddEvent("worker.infrastructure_error",
+		trace.WithAttributes(
+			attribute.String("error.type", "InternalError"),
+			attribute.String("worker.error.class", "infrastructure"),
+			attribute.String("worker.error.stage", stage),
+		),
+	)
 }
 
 func (t *transport) purge(ctx context.Context, keyOrStream string, ids ...string) {
