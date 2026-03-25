@@ -291,7 +291,7 @@ func (t *transport) handleEvent(
 				logger.Error("could not send request to worker", zap.Error(err))
 			}
 			internalErr := &errors.InternalError{}
-			t.observeInfrastructureError(ctx, span, pluginName, event, bucket, "send_request", internalErr)
+			observeInfrastructureError(ctx, span, pluginName, event, bucket, "send_request", internalErr)
 			return nil, internalErr
 		}
 
@@ -304,7 +304,11 @@ func (t *transport) handleEvent(
 			Block:   t.options.heartbeatInterval,
 		}).Result(); err != nil {
 			logger.Warn("did not receive ack from worker", zap.Error(err), zap.Duration("timeout", t.options.heartbeatInterval))
-			metrics.AddCounter(ctx, metrics.TrackedErrorsTotal, attribute.String("code", strconv.Itoa(errors.CodeTransportWorkerNoAck)))
+			metrics.AddCounter(ctx, metrics.TrackedErrorsTotal,
+				attribute.String("code", strconv.Itoa(errors.CodeTransportWorkerNoAck)),
+				attribute.String("plugin_name", pluginName),
+				attribute.String("bucket", bucket),
+			)
 			return nil, &errors.WorkerUnavailableError{
 				Err: fmt.Errorf("no worker acknowledged request within %s", t.options.heartbeatInterval),
 			}
@@ -345,7 +349,7 @@ func (t *transport) handleEvent(
 			}
 			logger.Error("there was an issue waiting for a worker to send a response", zap.Error(err))
 			internalErr := &errors.InternalError{}
-			t.observeInfrastructureError(ctx, span, pluginName, event, bucket, "read_response", internalErr)
+			observeInfrastructureError(ctx, span, pluginName, event, bucket, "read_response", internalErr)
 			return nil, internalErr
 		}
 
@@ -391,7 +395,7 @@ func (t *transport) handleEvent(
 		}
 
 		if err != nil {
-			t.observeInfrastructureError(ctx, span, pluginName, event, bucket, "process_response", err)
+			observeInfrastructureError(ctx, span, pluginName, event, bucket, "process_response", err)
 			logger.Error("failed to process worker response", zap.Error(err))
 			return &handleEventResult{perf: perf, resp: resp, key: key}, err
 		}
@@ -408,7 +412,7 @@ func (t *transport) handleEvent(
 
 // observeInfrastructureError emits the infrastructure error metric and enriches
 // the current span when the failure is classified as InternalError.
-func (t *transport) observeInfrastructureError(
+func observeInfrastructureError(
 	ctx context.Context,
 	span trace.Span,
 	pluginName string,
@@ -429,15 +433,14 @@ func (t *transport) observeInfrastructureError(
 	}
 	metrics.AddExecuteInfrastructureError(ctx, metricAttrs...)
 
+	// Keep stable attributes on the span for filtering/indexing; emit stage on the
+	// event timeline to avoid duplicating the full attribute payload.
 	span.SetAttributes(
 		attribute.String("error.type", "InternalError"),
 		attribute.String("worker.error.class", "infrastructure"),
-		attribute.String("worker.error.stage", stage),
 	)
 	span.AddEvent("worker.infrastructure_error",
 		trace.WithAttributes(
-			attribute.String("error.type", "InternalError"),
-			attribute.String("worker.error.class", "infrastructure"),
 			attribute.String("worker.error.stage", stage),
 		),
 	)

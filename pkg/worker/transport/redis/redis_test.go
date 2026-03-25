@@ -970,19 +970,13 @@ func TestProcess(t *testing.T) {
 func TestObserveInfrastructureError(t *testing.T) {
 	defer metrics.SetupForTesting()()
 
-	tnspt := &transport{
-		options: &Options{
-			logger: zap.NewNop(),
-		},
-	}
-
 	ctx := context.Background()
 	_, span := tracer.Tracer().Start(ctx, "test.observe.infrastructure.error")
 	defer span.End()
 
-	tnspt.observeInfrastructureError(ctx, span, "javascript", "execute", "ba", "process_response", &errors.InternalError{})
+	observeInfrastructureError(ctx, span, "javascript", "execute", "ba", "process_response", &errors.InternalError{})
 	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount())
 
-	tnspt.observeInfrastructureError(ctx, span, "javascript", "execute", "ba", "process_response", errors.IntegrationError(e.New("boom"), commonv1.Code_CODE_UNSPECIFIED))
+	observeInfrastructureError(ctx, span, "javascript", "execute", "ba", "process_response", errors.IntegrationError(e.New("boom"), commonv1.Code_CODE_UNSPECIFIED))
 	assert.Equal(t, 1.0, metrics.GetExecuteInfrastructureErrorCount(), "non-internal errors must not increment infrastructure metric")
 }
