@@ -146,7 +146,7 @@ cat-docker:
 .PHONY: fmt
 fmt: fmt-go
 	@yamlfmt .
-	@buf format -w
+	@buf format -w types/proto
 
 .PHONY: generate
 generate:

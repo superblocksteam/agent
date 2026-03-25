@@ -121,6 +121,7 @@
         {
           default = pkgs.mkShell {
             packages = [
+              pkgs.buf
               corepackPackage
               goPackage
               pkgs.go-mockery

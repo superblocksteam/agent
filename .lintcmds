@@ -1,3 +1,5 @@
 # Go format + YAML format + buf format, then fail if anything changed
 make fmt
 git diff --exit-code
+# GitHub Actions workflow validation
+actionlint -shellcheck=""
