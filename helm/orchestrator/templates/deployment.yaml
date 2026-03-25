@@ -62,6 +62,7 @@ spec:
         - "--grpc.msg.res.max={{ .Values.service.grpc.maxMsgRes | int64 }}"
         - "--superblocks.url={{ .Values.superblocks.url }}"
         - "--otel.collector.http.url={{ .Values.observability.tracing.exporter.scheme }}://{{ .Values.observability.tracing.exporter.host }}:{{ .Values.observability.tracing.exporter.port }}{{ .Values.observability.tracing.exporter.path }}"
+        - "--telemetry.deployment.type={{ .Values.telemetry.deploymentType }}"
         - "--store.redis.tls={{ .Values.kvstore.enable_tls }}"
         - "--store.redis.host={{ .Values.kvstore.host }}"
         - "--store.redis.servername={{ .Values.kvstore.servername | default .Values.kvstore.host }}"

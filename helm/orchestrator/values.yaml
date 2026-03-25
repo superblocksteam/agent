@@ -83,6 +83,8 @@ service:
   ports:
     http: 8080
     grpc: 8081
+telemetry:
+  deploymentType: "cloud"
 observability:
   logs:
     intake:
@@ -217,6 +219,8 @@ worker_go:
       bucket: BE
   superblocks:
     key: <override>
+  telemetry:
+    deploymentType: "cloud"
   !!merge <<: *tolerations
   !!merge <<: *selector
 worker_py:

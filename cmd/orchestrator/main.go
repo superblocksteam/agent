@@ -107,7 +107,7 @@ func init() {
 	systemruntime.GOMAXPROCS(systemruntime.NumCPU())
 
 	pflag.Bool("telemetry.remote.enabled", true, "Enable/disable all remote telemetry (OTEL traces/logs, audit logs, remote logs, events). When false, only local console logging is enabled.")
-	pflag.String("telemetry.deployment.type", "cloud", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
+	pflag.String("telemetry.deployment.type", "on-prem", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
 	pflag.Bool("zen", false, "go easy on the log fields")
 	pflag.String("file.server.url", "http://localhost:8080/v2/files", "the url to send to workers by which it can access orchestrators file server endpoint")
 	pflag.Bool("test", false, "Are we in test mode?")

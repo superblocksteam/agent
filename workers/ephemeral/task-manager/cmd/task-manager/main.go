@@ -157,7 +157,7 @@ func init() {
 	// OpenTelemetry settings
 	pflag.String("agent.environment", "*", "Environment to register the agent under.")
 	pflag.String("otel.collector.http.url", "http://127.0.0.1:4318", "The OTLP HTTP collector URL for traces.")
-	pflag.String("telemetry.deployment.type", "cloud", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
+	pflag.String("telemetry.deployment.type", "on-prem", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
 	pflag.String("otel.metrics.collector.http.url", "", "The OTLP HTTP collector URL for metrics. Falls back to otel.collector.http.url if empty.")
 
 	// Superblocks settings

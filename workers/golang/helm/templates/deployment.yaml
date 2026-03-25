@@ -40,27 +40,8 @@ spec:
           {{- toYaml (deepCopy ($.Values.resources | default dict) | merge ($v.resources)) | nindent 10 }}
         args:
         - "--log.level={{ $.Values.service.logLevel }}"
-        - "--emitter.remote.intake={{ $.Values.observability.logging.url }}"
-        - "--emitter.remote.enabled={{ $.Values.observability.logging.enabled }}"
-        {{- if $.Values.observability.logging.maxFlushDuration }}
-        - "--emitter.remote.flush.max.duration={{ $.Values.observability.logging.maxFlushDuration }}"
-        {{- end }}
-        {{- if $.Values.observability.logging.maxFlushItems }}
-        - "--emitter.remote.flush.max.items={{ $.Values.observability.logging.maxFlushItems }}"
-        {{- end }}
         - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"
-        {{- if $.Values.observability.tracing.batchTimeout }}
-        - "--otel.batcher.batch.timeout={{ $.Values.observability.tracing.batchTimeout }}"
-        {{- end }}
-        {{- if $.Values.observability.tracing.exportTimeout }}
-        - "--otel.batcher.export.timeout={{ $.Values.observability.tracing.exportTimeout }}"
-        {{- end }}
-        {{- if $.Values.observability.tracing.maxExportBatchSize }}
-        - "--otel.batcher.export.batch.max={{ $.Values.observability.tracing.maxBatchSize }}"
-        {{- end }}
-        {{- if $.Values.observability.tracing.maxQueueSize }}
-        - "--otel.batcher.export.queue.max={{ $.Values.observability.tracing.maxQueueSize }}"
-        {{- end }}
+        - "--telemetry.deployment.type={{ $.Values.telemetry.deploymentType }}"
         - "--store.redis.host={{ $.Values.kvstore.host }}"
         - "--store.redis.servername={{ $.Values.kvstore.servername }}"
         - "--store.redis.port={{ $.Values.kvstore.port }}"

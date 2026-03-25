@@ -10,10 +10,9 @@ resources:
 # Set to a little below the memory limit
 goMemLimit: 2750MiB
 fleets: {} # TODO(frank): Add good documention.
+telemetry:
+  deploymentType: "cloud"
 observability:
-  logging:
-    url: https://logs.intake.superblocks.com
-    enabled: false
   tracing:
     url: https://traces.intake.superblocks.com
 superblocks:

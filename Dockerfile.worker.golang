@@ -3,6 +3,7 @@
 FROM ghcr.io/superblocksteam/golang:1.25.5-trixie AS builder
 
 ARG GO_ARCH=amd64
+ARG SERVICE_VERSION=v0.0.0
 
 WORKDIR /go/src/github.com/superblocksteam/agent
 
@@ -24,6 +25,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=linux GOARCH=${GO_ARCH} make build-go SERVICE_NAME="worker.go"                     \
+                                               SERVICE_VERSION=${SERVICE_VERSION}             \
                                                GO_BUILD_ROOT_DIRECTORY="./workers/golang"   \
                                                EXTRA_LD_FLAGS="-s -w -extldflags '-dynamic'"
 
