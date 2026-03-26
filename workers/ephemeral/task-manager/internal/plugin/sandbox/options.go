@@ -26,6 +26,10 @@ type Options struct {
 	IpFilterSetter             IpFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
 
 	DrainCompleteCh <-chan struct{}
+
+	// Max gRPC message sizes for sandbox transport calls.
+	GrpcMaxRequestSize  int
+	GrpcMaxResponseSize int
 }
 
 type Option func(*Options)
@@ -87,6 +91,18 @@ func WithIpFilterSetter(ipFilterSetter IpFilterSetter) Option {
 func WithDrainCompleteCh(ch <-chan struct{}) Option {
 	return func(o *Options) {
 		o.DrainCompleteCh = ch
+	}
+}
+
+func WithGrpcMaxRequestSize(size int) Option {
+	return func(o *Options) {
+		o.GrpcMaxRequestSize = size
+	}
+}
+
+func WithGrpcMaxResponseSize(size int) Option {
+	return func(o *Options) {
+		o.GrpcMaxResponseSize = size
 	}
 }
 

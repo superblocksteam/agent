@@ -25,7 +25,7 @@
     "@bufbuild/protobuf": "1.2.0",
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/types": "workspace:*",
-    "lodash": "4.17.21"
+    "lodash": "4.17.23"
   },
   "devDependencies": {
     "@swc/cli": "catalog:",

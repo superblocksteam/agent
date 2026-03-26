@@ -25,7 +25,7 @@
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/types": "workspace:*",
     "axios": "1.8.3",
-    "lodash": "4.17.21"
+    "lodash": "4.17.23"
   },
   "devDependencies": {
     "@types/jest": "29.5.14",

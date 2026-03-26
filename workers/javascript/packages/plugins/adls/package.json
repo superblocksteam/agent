@@ -43,7 +43,7 @@
     "eslint-plugin-import": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "jest": "catalog:",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "prettier": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:"

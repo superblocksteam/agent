@@ -21,9 +21,9 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "minimist": "1.2.6",
-    "snowflake-sdk": "2.0.3"
+    "snowflake-sdk": "2.0.4"
   },
   "devDependencies": {
     "@swc/cli": "catalog:",

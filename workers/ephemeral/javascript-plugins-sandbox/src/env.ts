@@ -36,7 +36,7 @@ envs.addAll([
   },
   {
     name: 'SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE',
-    defaultValue: '100000000' // ~100MB
+    defaultValue: '524288000' // 500MB
   },
   {
     name: 'SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS',

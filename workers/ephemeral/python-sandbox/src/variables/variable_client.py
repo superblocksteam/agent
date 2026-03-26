@@ -13,8 +13,8 @@ from src.superblocks import loads
 from superblocks_types.worker.v1 import sandbox_variable_store_pb2 as variable_store_pb2
 from superblocks_types.worker.v1 import sandbox_variable_store_pb2_grpc as variable_store_pb2_grpc
 
-MAX_RECEIVE_MESSAGE_LENGTH = 500 * 1024 * 1024  # 500MB, matches max FilePicker upload size
-MAX_SEND_MESSAGE_LENGTH = 30_000_000  # matches task-manager grpc.msg.req.max default
+MAX_RECEIVE_MESSAGE_LENGTH = 500 * 1024 * 1024  # 500MB, supports large variable-store read responses
+MAX_SEND_MESSAGE_LENGTH = 30_000_000  # ~30MB request cap for write/get requests sent to variable-store
 
 
 class VariableClient(KVStore):

@@ -10,6 +10,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	defaultSandboxGrpcMaxRequestSize  = 30 * 1024 * 1024
+	defaultSandboxGrpcMaxResponseSize = 500 * 1024 * 1024
+)
+
 // Options configures the SandboxJobManager
 type Options struct {
 	// Kubernetes client
@@ -91,6 +96,10 @@ type Options struct {
 	// ExecutionEnvInclusionList is a list of env var names to set in the
 	// sandbox pod from the task-manager's environment.
 	ExecutionEnvInclusionList []string
+
+	// Sandbox transport gRPC max message sizes (bytes).
+	GrpcMaxRequestSize  int
+	GrpcMaxResponseSize int
 }
 
 // Option is a functional option for Options
@@ -292,6 +301,20 @@ func WithExecutionEnvInclusionList(envVars []string) Option {
 	}
 }
 
+// WithGrpcMaxRequestSize sets sandbox transport gRPC max request size.
+func WithGrpcMaxRequestSize(size int) Option {
+	return func(o *Options) {
+		o.GrpcMaxRequestSize = size
+	}
+}
+
+// WithGrpcMaxResponseSize sets sandbox transport gRPC max response size.
+func WithGrpcMaxResponseSize(size int) Option {
+	return func(o *Options) {
+		o.GrpcMaxResponseSize = size
+	}
+}
+
 // BuildResourceRequirements constructs a corev1.ResourceRequirements from the string fields.
 // Empty strings are skipped, so only explicitly configured values are set.
 func (o *Options) BuildResourceRequirements() corev1.ResourceRequirements {
@@ -330,6 +353,8 @@ func NewOptions(opts ...Option) *Options {
 		VariableStoreHttpPort:   8080,
 		TTLSecondsAfterFinished: 60,
 		PodReadyTimeout:         2 * time.Minute,
+		GrpcMaxRequestSize:      defaultSandboxGrpcMaxRequestSize,
+		GrpcMaxResponseSize:     defaultSandboxGrpcMaxResponseSize,
 	}
 	for _, opt := range opts {
 		opt(o)

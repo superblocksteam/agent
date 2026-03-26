@@ -23,7 +23,7 @@
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/types": "workspace:*",
     "couchbase": "4.2.9",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "minimist": "1.2.6",
     "ssh2": "1.15.0"
   },

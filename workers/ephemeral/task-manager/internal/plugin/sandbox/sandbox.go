@@ -37,6 +37,13 @@ const (
 	// The maximum time to wait for the sandbox to respond to the initial Health check during startup
 	sandboxHealthTimeout = 5 * time.Minute
 
+	// gRPC transport hard cap between task-manager and sandbox.
+	// Keep this aligned with the Redis object-size hard cap class so
+	// task-manager can enforce quotas when pushing to KV store.
+	sandboxGrpcMsgMaxSize = 500 * 1024 * 1024
+	// Default request/send cap stays small; response/recv cap can be large.
+	sandboxGrpcRequestMaxSize = 30 * 1024 * 1024
+
 	// Execute RPC retry: attempts and backoff for transient gRPC failures.
 	sandboxExecuteMaxAttempts = 3
 	sandboxExecuteBackoff     = 100 * time.Millisecond
@@ -84,6 +91,10 @@ type SandboxPlugin struct {
 
 	// Integration executor address to pass to sandbox
 	integrationExecutorAddress string
+
+	// Sandbox transport gRPC hard caps.
+	grpcMaxRequestSize  int
+	grpcMaxResponseSize int
 
 	// Store for reading context bindings from Redis
 	store store.Store
@@ -146,6 +157,8 @@ func NewSandboxPlugin(options ...Option) (*SandboxPlugin, error) {
 		internalCtx:                ctx,
 		internalCancel:             cancel,
 		drainCompleteCh:            opts.DrainCompleteCh,
+		grpcMaxRequestSize:         opts.GrpcMaxRequestSize,
+		grpcMaxResponseSize:        opts.GrpcMaxResponseSize,
 	}
 
 	return p, nil
@@ -316,6 +329,15 @@ func (p *SandboxPlugin) monitorConnectionState(conn *grpc.ClientConn, logger *za
 
 // connectToSandbox creates a gRPC connection to the sandbox pod.
 func (p *SandboxPlugin) connectToSandbox(ctx context.Context, address string) (*grpc.ClientConn, workerv1.SandboxTransportServiceClient, error) {
+	maxRecvSize := p.grpcMaxResponseSize
+	if maxRecvSize <= 0 {
+		maxRecvSize = sandboxGrpcMsgMaxSize
+	}
+	maxSendSize := p.grpcMaxRequestSize
+	if maxSendSize <= 0 {
+		maxSendSize = sandboxGrpcRequestMaxSize
+	}
+
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -324,8 +346,8 @@ func (p *SandboxPlugin) connectToSandbox(ctx context.Context, address string) (*
 			MinConnectTimeout: 5 * time.Second,
 		}),
 		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(100*1024*1024),
-			grpc.MaxCallSendMsgSize(30*1024*1024),
+			grpc.MaxCallRecvMsgSize(maxRecvSize),
+			grpc.MaxCallSendMsgSize(maxSendSize),
 		),
 	)
 	if err != nil {

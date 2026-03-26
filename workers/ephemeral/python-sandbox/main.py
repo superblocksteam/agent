@@ -8,8 +8,8 @@ import grpc
 
 from superblocks_types.worker.v1 import sandbox_transport_pb2_grpc as transport_pb2_grpc
 from src.constants import (
-    SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
-    SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
+    SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
+    SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
     SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT,
 )
 from src.service import SandboxTransportServicer
@@ -19,8 +19,8 @@ async def serve():
     """Start the gRPC server."""
     server = grpc.aio.server(
         options=[
-            ("grpc.max_receive_message_length", SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_REQUEST_SIZE),
-            ("grpc.max_send_message_length", SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_MAX_RESPONSE_SIZE),
+            ("grpc.max_receive_message_length", SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE),
+            ("grpc.max_send_message_length", SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE),
         ],
     )
     transport_pb2_grpc.add_SandboxTransportServiceServicer_to_server(

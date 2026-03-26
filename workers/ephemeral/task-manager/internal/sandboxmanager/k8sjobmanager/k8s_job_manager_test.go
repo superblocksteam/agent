@@ -47,6 +47,8 @@ func TestNewSandboxJobManager(t *testing.T) {
 			WithEphemeral(true),
 			WithZone("us-west-2a"),
 			WithOwnerPodLabels(ownerPodLabels),
+			WithGrpcMaxRequestSize(123456789),
+			WithGrpcMaxResponseSize(987654321),
 		)
 
 		m := NewSandboxJobManager(opts)
@@ -72,6 +74,8 @@ func TestNewSandboxJobManager(t *testing.T) {
 		assert.True(t, m.ephemeral)
 		assert.Equal(t, "us-west-2a", m.zone)
 		assert.Equal(t, ownerPodLabels, m.ownerPodLabels)
+		assert.Equal(t, 123456789, m.grpcMaxRequestSize)
+		assert.Equal(t, 987654321, m.grpcMaxResponseSize)
 	})
 
 	t.Run("uses default option values", func(t *testing.T) {
@@ -85,6 +89,8 @@ func TestNewSandboxJobManager(t *testing.T) {
 		assert.Equal(t, int32(60), m.ttlSecondsAfterFinished)
 		assert.Equal(t, 2*time.Minute, m.podReadyTimeout)
 		assert.Equal(t, 0, m.integrationExecutorGrpcPort)
+		assert.Equal(t, 30*1024*1024, m.grpcMaxRequestSize)
+		assert.Equal(t, 500*1024*1024, m.grpcMaxResponseSize)
 	})
 }
 
@@ -144,6 +150,8 @@ func TestBuildJobSpec(t *testing.T) {
 				language:                    test.language,
 				integrationExecutorGrpcPort: test.integrationExecutorGrpcPort,
 				ephemeral:                   test.ephemeral,
+				grpcMaxRequestSize:          30_000_000,
+				grpcMaxResponseSize:         500 * 1024 * 1024,
 				logger:                      zap.NewNop(),
 			}
 
@@ -187,6 +195,18 @@ func TestBuildJobSpec(t *testing.T) {
 			assert.Equal(t, test.language, job.Labels["language"])
 			assert.Equal(t, fmt.Sprintf("%t", test.ephemeral), job.Labels["ephemeral"])
 			assert.Equal(t, fmt.Sprintf("%t", test.ephemeral), job.Spec.Template.Labels["ephemeral"])
+
+			var requestCap, responseCap string
+			for _, env := range container.Env {
+				switch env.Name {
+				case "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE":
+					requestCap = env.Value
+				case "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE":
+					responseCap = env.Value
+				}
+			}
+			assert.Equal(t, "30000000", requestCap)
+			assert.Equal(t, "524288000", responseCap)
 		})
 	}
 }

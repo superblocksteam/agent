@@ -401,6 +401,10 @@ func main() {
 		sandbox.WithKvStore(storeClient),
 		sandbox.WithVariableStoreAddress(variableStoreGrpcAddress),
 		sandbox.WithIntegrationExecutorAddress(integrationExecutorAddress),
+		sandbox.WithGrpcMaxRequestSize(viper.GetInt("grpc.msg.req.max")),
+		// Response hard cap is aligned with large object handling class so
+		// task-manager can receive full sandbox output and enforce quota at KV write.
+		sandbox.WithGrpcMaxResponseSize(viper.GetInt("filepicker.max.size")),
 		sandbox.WithDrainCompleteCh(drainCompleteCh),
 	}
 
@@ -530,6 +534,8 @@ func main() {
 			k8sjobmanager.WithOwnerPodLabels(ownerPodLabels),
 			k8sjobmanager.WithWorkerPlugins(strings.Join(plugins.ToSlice(), ",")),
 			k8sjobmanager.WithExecutionEnvInclusionList(executionEnvInclusionList.ToSlice()),
+			k8sjobmanager.WithGrpcMaxRequestSize(viper.GetInt("grpc.msg.req.max")),
+			k8sjobmanager.WithGrpcMaxResponseSize(viper.GetInt("filepicker.max.size")),
 		}
 
 		if viper.GetBool("integration.executor.enabled") {

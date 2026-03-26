@@ -22,7 +22,7 @@
   "dependencies": {
     "@superblocks/shared": "workspace:*",
         "@superblocksteam/types": "workspace:*",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "minimist": "1.2.6",
     "mongodb": "4.17.0",
     "ssh2": "1.15.0"

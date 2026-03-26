@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-        "lodash": "^4.17.21",
+        "lodash": "^4.17.23",
     "mariadb": "2.5.6",
     "minimist": "1.2.6"
   },

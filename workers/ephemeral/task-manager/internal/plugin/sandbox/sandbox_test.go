@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
@@ -471,7 +472,7 @@ func TestSandboxPlugin_IsAvailable_SandboxDead_ReturnsFatal(t *testing.T) {
 func TestSandboxPlugin_IsAvailable_ConnectionNotReady_ReturnsTransient(t *testing.T) {
 	t.Parallel()
 
-	addr, cleanup := startSandboxGrpcServer(t)
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
 	t.Cleanup(cleanup)
 
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -757,6 +758,38 @@ func TestConnectToSandbox_ContextCancelled_ReturnsError(t *testing.T) {
 	require.Nil(t, conn)
 	require.Nil(t, client)
 	require.ErrorIs(t, err, context.Canceled)
+}
+
+func TestSandboxPlugin_connectToSandbox_UsesConfiguredMsgSizeLimits(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
+	t.Cleanup(cleanup)
+
+	const requestLimit = 12345
+	const responseLimit = 67890
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+		WithGrpcMaxRequestSize(requestLimit),
+		WithGrpcMaxResponseSize(responseLimit),
+	)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Cleanup(cancel)
+
+	conn, client, err := p.connectToSandbox(ctx, addr)
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+	require.NotNil(t, client)
+	t.Cleanup(func() { _ = conn.Close() })
+
+	state := conn.GetState()
+	require.True(t, state == connectivity.Ready || state == connectivity.Idle)
 }
 
 func TestMonitorSandboxStatus_ErrorOnChannel_SetsSandboxDead(t *testing.T) {

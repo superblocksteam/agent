@@ -29,7 +29,7 @@
     "base64url": "3.0.1",
     "deasync": "0.1.30",
     "esprima": "4.0.1",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "moment": "2.30.1",
     "vm2": "^3.10.5",
     "xmlbuilder2": "3.1.1"

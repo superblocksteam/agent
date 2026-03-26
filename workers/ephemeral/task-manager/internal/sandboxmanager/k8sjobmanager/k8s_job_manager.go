@@ -66,6 +66,9 @@ type K8sJobManager struct {
 	workerPlugins string
 	// Environment variables to set in the sandbox pod from the task-manager's environment
 	executionEnvInclusionList []string
+	// gRPC transport hard caps passed to sandbox pods.
+	grpcMaxRequestSize  int
+	grpcMaxResponseSize int
 }
 
 // NewSandboxJobManager creates a new SandboxJobManager
@@ -96,6 +99,8 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		ownerPodLabels:              opts.OwnerPodLabels,
 		workerPlugins:               strings.TrimSpace(opts.WorkerPlugins),
 		executionEnvInclusionList:   opts.ExecutionEnvInclusionList,
+		grpcMaxRequestSize:          opts.GrpcMaxRequestSize,
+		grpcMaxResponseSize:         opts.GrpcMaxResponseSize,
 	}
 }
 
@@ -350,6 +355,41 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 	// Streaming proxy address - task manager's Pod IP + gRPC port
 	streamingProxyAddress := fmt.Sprintf("%s:%d", m.podIP, m.streamingProxyGrpcPort)
 
+	sandboxEnv := []corev1.EnvVar{
+		{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_SANDBOX_ID",
+			Value: sandboxId,
+		},
+		{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT",
+			Value: fmt.Sprintf("%d", m.port),
+		},
+		{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS",
+			Value: variableStoreAddress,
+		},
+		{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS",
+			Value: variableStoreHttpAddress,
+		},
+		{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS",
+			Value: streamingProxyAddress,
+		},
+		{
+			Name:  "EXECUTION_ID",
+			Value: sandboxId,
+		},
+		{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE",
+			Value: fmt.Sprintf("%d", m.grpcMaxRequestSize),
+		},
+		{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE",
+			Value: fmt.Sprintf("%d", m.grpcMaxResponseSize),
+		},
+	}
+
 	containerName := fmt.Sprintf("%s-sandbox", language)
 	labels := map[string]string{
 		"component":    "worker.sandbox",
@@ -399,32 +439,7 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 							Name:            containerName,
 							Image:           m.image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Env: []corev1.EnvVar{
-								{
-									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_SANDBOX_ID",
-									Value: sandboxId,
-								},
-								{
-									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT",
-									Value: fmt.Sprintf("%d", m.port),
-								},
-								{
-									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS",
-									Value: variableStoreAddress,
-								},
-								{
-									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS",
-									Value: variableStoreHttpAddress,
-								},
-								{
-									Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS",
-									Value: streamingProxyAddress,
-								},
-								{
-									Name:  "EXECUTION_ID",
-									Value: sandboxId,
-								},
-							},
+							Env:             sandboxEnv,
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "grpc",

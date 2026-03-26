@@ -24,7 +24,7 @@
     "@superblocks/wasm-sandbox-js": "workspace:*",
     "deasync": "0.1.29",
     "esprima": "4.0.1",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.23"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",

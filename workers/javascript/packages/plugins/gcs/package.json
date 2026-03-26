@@ -21,7 +21,7 @@
   "dependencies": {
     "@google-cloud/storage": "^6.9.2",
     "@superblocks/shared": "workspace:*",
-    "lodash": "4.17.21"
+    "lodash": "4.17.23"
   },
   "devDependencies": {
     "@swc/cli": "catalog:",

@@ -25,7 +25,7 @@
     "@aws-sdk/lib-storage": "3.758.0",
     "@aws-sdk/s3-request-presigner": "3.758.0",
     "@superblocks/shared": "workspace:*",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "minimist": "1.2.6"
   },
   "devDependencies": {

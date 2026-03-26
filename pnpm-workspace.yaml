@@ -8,7 +8,9 @@ packages:
   - 'mocks'
   - 'types/gen/js'
 overrides:
+  "@smithy/config-resolver": "^4.4.0"
   prettier: "3.3.3"
+  qs: "^6.14.2"
 catalog:
   '@jest/globals': '29.7.0'
   '@swc/cli': '0.6.0'

@@ -23,7 +23,7 @@
     "@sendgrid/helpers": "8.0.0",
     "@sendgrid/mail": "8.1.4",
     "@superblocks/shared": "workspace:*",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "minimist": "1.2.6"
   },
   "devDependencies": {
