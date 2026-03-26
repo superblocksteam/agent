@@ -43,6 +43,10 @@ var (
 	// (the actual code execution time, excluding overhead).
 	SandboxCodeExecutionDuration metric.Float64Histogram
 
+	// SandboxLifecycleDuration measures task-manager lifecycle operations that are
+	// not part of plugin request handling (e.g., sandbox connect and teardown).
+	SandboxLifecycleDuration metric.Float64Histogram
+
 	// Counters
 
 	// SandboxExecutionsTotal counts total sandbox executions with warm/cold start labels.
@@ -193,6 +197,15 @@ func registerWithMeter(meter metric.Meter) error {
 		return err
 	}
 
+	SandboxLifecycleDuration, err = meter.Float64Histogram(
+		"sandbox_lifecycle_duration_seconds",
+		metric.WithDescription("Time for sandbox lifecycle operations handled by task-manager"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return err
+	}
+
 	// Counters
 
 	SandboxExecutionsTotal, err = meter.Int64Counter(
@@ -247,6 +260,7 @@ func histogramViews() []sdkmetric.Option {
 	durationHistograms := []string{
 		"sandbox_execution_duration_seconds",
 		"sandbox_code_execution_duration_seconds",
+		"sandbox_lifecycle_duration_seconds",
 	}
 
 	views := make([]sdkmetric.Option, 0)
@@ -349,6 +363,7 @@ var (
 	AttrEphemeral           = attribute.Key("ephemeral")
 	AttrLanguage            = attribute.Key("language")
 	AttrPlugin              = attribute.Key("plugin_name")
+	AttrOperation           = attribute.Key("operation")
 	AttrResult              = attribute.Key("result")
 	AttrWarmStart           = attribute.Key("warm_start")
 )

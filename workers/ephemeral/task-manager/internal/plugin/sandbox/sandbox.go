@@ -229,14 +229,23 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 	}
 
 	// Connect to the sandbox
+	connectStart := time.Now()
 	conn, client, err := p.connectToSandbox(ctx, p.sandboxAddress)
 	if err != nil {
+		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxLifecycleDuration, time.Since(connectStart).Seconds(),
+			sandboxmetrics.AttrOperation.String("connect"),
+			sandboxmetrics.AttrResult.String("failed"),
+		)
 		// Cleanup the job if we can't connect (only in dynamic mode)
 		if p.sandboxInfo != nil && p.sandboxManager != nil {
 			_ = p.sandboxManager.DeleteSandbox(ctx, p.sandboxInfo.Name)
 		}
 		return fmt.Errorf("failed to connect to sandbox: %w", err)
 	}
+	sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxLifecycleDuration, time.Since(connectStart).Seconds(),
+		sandboxmetrics.AttrOperation.String("connect"),
+		sandboxmetrics.AttrResult.String("succeeded"),
+	)
 
 	p.connMu.Lock()
 	p.conn = conn

@@ -7,6 +7,7 @@ SERVICE_VERSION  = $(shell git rev-parse HEAD 2>/dev/null || echo "dev")
 # Go settings
 GO_BINARY_NAME   = task-manager
 PACKAGES         = $(shell go list ./... | grep -v /mocks | grep -v /gen | grep -v /integration_test)
+TEST_PACKAGES    = $(shell go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./... | grep -v '^$$' | grep -v /mocks | grep -v /gen | grep -v /integration_test)
 
 # Docker settings
 GIT_REPO_DIR     = $(shell git rev-parse --show-toplevel)
@@ -44,7 +45,7 @@ test:
 
 test-coverage:
 	@echo "==> Running tests with coverage..."
-	@bash -c "set -e; set -o pipefail; go test -v -count=1 -race -covermode=atomic -coverprofile=coverage.out $(PACKAGES) | $(COLORIZE)"
+	@bash -c "set -e; set -o pipefail; go test -v -count=1 -race -covermode=atomic -coverprofile=coverage.out $(TEST_PACKAGES) | $(COLORIZE)"
 
 test-short:
 	@echo "==> Running short tests..."

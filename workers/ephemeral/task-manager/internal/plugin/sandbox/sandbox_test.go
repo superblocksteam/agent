@@ -12,12 +12,14 @@ import (
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
+	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
 	"workers/ephemeral/task-manager/internal/plugin"
 	"workers/ephemeral/task-manager/internal/sandboxmanager"
 )
@@ -824,6 +826,106 @@ func TestMonitorSandboxStatus_ChannelClosed_SetsSandboxDead(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	require.True(t, p.sandboxDead.Load())
+}
+
+func TestRun_RecordsLifecycleConnectMetricOnSuccess(t *testing.T) {
+	addr, cleanup := startSandboxGrpcServerWithHealth(t)
+	t.Cleanup(cleanup)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: addr,
+			}, nil
+		},
+		watchFunc: func(ctx context.Context, _ string) <-chan error {
+			ch := make(chan error)
+			go func() {
+				<-ctx.Done()
+				close(ch)
+			}()
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	// Ensure instrumentation path is enabled by setting a non-nil histogram.
+	hist, histErr := metricnoop.NewMeterProvider().
+		Meter("test").
+		Float64Histogram("sandbox_lifecycle_duration_seconds")
+	require.NoError(t, histErr)
+	prevHist := sandboxmetrics.SandboxLifecycleDuration
+	t.Cleanup(func() {
+		sandboxmetrics.SandboxLifecycleDuration = prevHist
+	})
+	sandboxmetrics.SandboxLifecycleDuration = hist
+
+	runErrCh := make(chan error, 1)
+	go func() {
+		runErrCh <- p.Run(ctx)
+	}()
+
+	time.Sleep(300 * time.Millisecond)
+	cancel()
+	<-runErrCh
+}
+
+func TestRun_RecordsLifecycleConnectMetricOnFailure(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Cleanup(cancel)
+
+	mgr := &mockSandboxManager{
+		createFunc: func(context.Context, string) (*sandboxmanager.SandboxInfo, error) {
+			// Unreachable address causes connectToSandbox to fail quickly.
+			return &sandboxmanager.SandboxInfo{
+				Name:    "sandbox-test",
+				Id:      "test-id",
+				Ip:      "127.0.0.1",
+				Address: "127.0.0.1:1",
+			}, nil
+		},
+		watchFunc: func(context.Context, string) <-chan error {
+			ch := make(chan error)
+			close(ch)
+			return ch
+		},
+	}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	// Ensure failure path records into a non-nil histogram.
+	hist, metricErr := metricnoop.NewMeterProvider().
+		Meter("test").
+		Float64Histogram("sandbox_lifecycle_duration_seconds")
+	require.NoError(t, metricErr)
+	prevHist := sandboxmetrics.SandboxLifecycleDuration
+	t.Cleanup(func() {
+		sandboxmetrics.SandboxLifecycleDuration = prevHist
+	})
+	sandboxmetrics.SandboxLifecycleDuration = hist
+
+	runErr := p.Run(ctx)
+	require.Error(t, runErr)
+	require.Contains(t, runErr.Error(), "failed to connect to sandbox")
 }
 
 // healthOKServer implements Health and returns READY.
