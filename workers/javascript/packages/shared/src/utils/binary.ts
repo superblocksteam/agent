@@ -52,5 +52,9 @@ export function extractResponseData(dataBuffer: Buffer, mineTypeString: string, 
         return dataBuffer.toJSON();
       }
     }
+    default:
+      // Proto3 enum defaults can produce "" (empty string) when the field
+      // is not set. Fall back to TEXT to avoid silently returning undefined.
+      return decodeResponseText(dataBuffer, encoding);
   }
 }

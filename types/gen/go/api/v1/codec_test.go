@@ -161,6 +161,71 @@ func TestDiagnosticsFromOutputJSON(t *testing.T) {
 	})
 }
 
+func TestOutputUnmarshalJSON_PrimitiveOutputValues(t *testing.T) {
+	t.Parallel()
+
+	t.Run("string output", func(t *testing.T) {
+		var o Output
+		require.NoError(t, o.UnmarshalJSON([]byte(`{"output":"Hello from S3 getObject","log":[]}`)))
+		require.NotNil(t, o.Result)
+		assert.Equal(t, "Hello from S3 getObject", o.Result.GetStringValue())
+	})
+
+	t.Run("number output", func(t *testing.T) {
+		var o Output
+		require.NoError(t, o.UnmarshalJSON([]byte(`{"output":42,"log":[]}`)))
+		require.NotNil(t, o.Result)
+		assert.Equal(t, float64(42), o.Result.GetNumberValue())
+	})
+
+	t.Run("boolean output", func(t *testing.T) {
+		var o Output
+		require.NoError(t, o.UnmarshalJSON([]byte(`{"output":true,"log":[]}`)))
+		require.NotNil(t, o.Result)
+		assert.True(t, o.Result.GetBoolValue())
+	})
+
+	t.Run("null output", func(t *testing.T) {
+		var o Output
+		require.NoError(t, o.UnmarshalJSON([]byte(`{"output":null,"log":[]}`)))
+		// null output is acceptable as nil Result
+		assert.Nil(t, o.Result)
+	})
+
+	t.Run("array output", func(t *testing.T) {
+		var o Output
+		require.NoError(t, o.UnmarshalJSON([]byte(`{"output":[1,2,3],"log":[]}`)))
+		require.NotNil(t, o.Result)
+		assert.NotNil(t, o.Result.GetListValue())
+		assert.Len(t, o.Result.GetListValue().GetValues(), 3)
+	})
+
+	t.Run("object output (baseline)", func(t *testing.T) {
+		var o Output
+		require.NoError(t, o.UnmarshalJSON([]byte(`{"output":{"key":"value"},"log":[]}`)))
+		require.NotNil(t, o.Result)
+		assert.Equal(t, "value", o.Result.GetStructValue().GetFields()["key"].GetStringValue())
+	})
+}
+
+func TestOutputFromOutputOldJSON_PrimitiveOutputValues(t *testing.T) {
+	t.Parallel()
+
+	t.Run("string output preserved", func(t *testing.T) {
+		o, err := OutputFromOutputOldJSON([]byte(`{"output":"file contents here","log":[]}`))
+		require.NoError(t, err)
+		require.NotNil(t, o.Result)
+		assert.Equal(t, "file contents here", o.Result.GetStringValue())
+	})
+
+	t.Run("number output preserved", func(t *testing.T) {
+		o, err := OutputFromOutputOldJSON([]byte(`{"output":99.5,"log":[]}`))
+		require.NoError(t, err)
+		require.NotNil(t, o.Result)
+		assert.Equal(t, 99.5, o.Result.GetNumberValue())
+	})
+}
+
 func TestOutputFromOutputOld(t *testing.T) {
 	t.Parallel()
 
