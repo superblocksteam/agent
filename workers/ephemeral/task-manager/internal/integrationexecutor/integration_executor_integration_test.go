@@ -42,6 +42,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 
 	profile := &commonv1.Profile{Name: strPtr("prod")}
 	testJWT := makeTestJWT(testOrgID)
+	const origin = "https://app.superblocks.com"
 
 	fake := &fakeOrchestratorServer{
 		response: &apiv1.AwaitResponse{
@@ -52,7 +53,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 	orchestratorAddr := startFakeOrchestrator(t, fake)
 
 	fileContexts := map[string]*redisstore.ExecutionFileContext{
-		"exec-123": {JwtToken: makeWorkerJWTContext(testJWT, testJWT), Profile: profile},
+		"exec-123": {JwtToken: makeWorkerJWTContext(testJWT, testJWT, origin), Profile: profile},
 	}
 
 	// Start the IntegrationExecutorService on a random port.
@@ -129,6 +130,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 
 		// Verify the orchestrator received the JWT with Bearer prefix in metadata.
 		assert.Equal(t, "Bearer "+testJWT, fake.lastJwtToken)
+		assert.Equal(t, origin, fake.lastOrigin)
 
 		// Verify the orchestrator received an inline Definition.
 		def := fake.lastRequest.GetDefinition()

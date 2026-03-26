@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -1032,6 +1033,7 @@ func (s *server) executeCodeMode(
 	// execution. The downstream integration fetch expects:
 	// - Authorization: Auth0 bearer token
 	// - X-Superblocks-Authorization: Superblocks bearer token
+	// - Origin: browser origin for OAuth exchanges that derive redirect URIs
 	//
 	// For code-mode executions we pass both through the existing JwtToken field
 	// using a compact, backward-compatible encoding understood by the ephemeral
@@ -1046,7 +1048,16 @@ func (s *server) executeCodeMode(
 		if vals := md.Get("authorization"); len(vals) > 0 {
 			authorizationJwt = strings.TrimPrefix(vals[0], "Bearer ")
 		}
-		jwtToken = encodeWorkerJWTContext(superblocksJwt, authorizationJwt)
+		var origin string
+		if vals := md.Get("origin"); len(vals) > 0 {
+			normalizedOrigin, originErr := normalizeWorkerOrigin(vals[0])
+			if originErr != nil {
+				logger.Warn("ignoring invalid origin header for worker callback context", zap.Error(originErr))
+			} else {
+				origin = normalizedOrigin
+			}
+		}
+		jwtToken = encodeWorkerJWTContext(superblocksJwt, authorizationJwt, origin)
 	}
 
 	if err := validateExecuteFileBindings(req.GetInputs(), req.GetFiles()); err != nil {
@@ -1326,15 +1337,60 @@ func classifySdkApiError(err error) string {
 	return "internal"
 }
 
-func encodeWorkerJWTContext(superblocksJWT, authorizationJWT string) string {
+func encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin string) string {
 	superblocksJWT = strings.TrimSpace(strings.TrimPrefix(superblocksJWT, "Bearer "))
 	authorizationJWT = strings.TrimSpace(strings.TrimPrefix(authorizationJWT, "Bearer "))
+	origin = strings.TrimSpace(origin)
 
 	if superblocksJWT == "" || authorizationJWT == "" {
 		return ""
 	}
 
-	return "sbjwt=" + superblocksJWT + "\nauthjwt=" + authorizationJWT
+	if origin == "" {
+		return "sbjwt=" + superblocksJWT + "\nauthjwt=" + authorizationJWT
+	}
+
+	return "sbjwt=" + superblocksJWT + "\nauthjwt=" + authorizationJWT + "\norigin=" + origin
+}
+
+func normalizeWorkerOrigin(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", nil
+	}
+	if strings.ContainsAny(raw, "\r\n") {
+		return "", errors.New("origin must not contain control characters")
+	}
+
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("invalid origin: %w", err)
+	}
+	if !parsed.IsAbs() {
+		return "", errors.New("origin must be absolute")
+	}
+	switch parsed.Scheme {
+	case "http", "https":
+	default:
+		return "", fmt.Errorf("unsupported origin scheme %q", parsed.Scheme)
+	}
+	if parsed.Host == "" {
+		return "", errors.New("origin host is empty")
+	}
+	if parsed.User != nil {
+		return "", errors.New("origin must not include user info")
+	}
+	if parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", errors.New("origin must not include query or fragment")
+	}
+	if parsed.Path != "" && parsed.Path != "/" {
+		return "", errors.New("origin must not include path")
+	}
+
+	return (&url.URL{
+		Scheme: parsed.Scheme,
+		Host:   parsed.Host,
+	}).String(), nil
 }
 
 func (s *server) Status(ctx context.Context, req *apiv1.StatusRequest) (*apiv1.AwaitResponse, error) {

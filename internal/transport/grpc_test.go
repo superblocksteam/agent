@@ -1453,6 +1453,102 @@ func TestExecuteV3PropagatesIntegrationsCallbackUrlToWorkerProps(t *testing.T) {
 	mockWorker.AssertExpectations(t)
 }
 
+func TestExecuteV3PacksOriginIntoWorkerJWTContext(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	const origin = "https://app.superblocks.com"
+	const superblocksJWT = "superblocks-jwt"
+	const authorizationJWT = "authorization-jwt"
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+	memStore := store.Memory()
+
+	outputKey := "output-key-v3-origin-context"
+	require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{"ok":true}}`}))
+
+	var capturedJwtToken string
+	mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.MatchedBy(func(data *transportv1.Request_Data_Data) bool {
+		capturedJwtToken = data.GetProps().GetJwtToken()
+		return true
+	}), mock.Anything, mock.Anything).Return(nil, outputKey, nil)
+
+	fetcher.On(
+		"FetchApiCode",
+		mock.Anything,
+		"app-with-origin",
+		"",
+		"",
+		"",
+		mock.Anything,
+	).Return(&fetch.ApiCodeBundle{
+		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+	}, nil)
+
+	s := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         memStore,
+		Worker:        mockWorker,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+	})
+
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "app-with-origin",
+	}
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+	ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(
+		constants.HeaderSuperblocksJwt, "Bearer "+superblocksJWT,
+		"authorization", "Bearer "+authorizationJWT,
+		"origin", origin,
+	))
+
+	_, err := s.ExecuteV3(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin), capturedJwtToken)
+
+	fetcher.AssertExpectations(t)
+	mockWorker.AssertExpectations(t)
+}
+
+func TestNormalizeWorkerOrigin(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name    string
+		input   string
+		want    string
+		wantErr string
+	}{
+		{name: "empty", input: "", want: ""},
+		{name: "https origin", input: "https://app.superblocks.com", want: "https://app.superblocks.com"},
+		{name: "http origin with port", input: "http://localhost:3000", want: "http://localhost:3000"},
+		{name: "trailing slash normalized", input: "https://app.superblocks.com/", want: "https://app.superblocks.com"},
+		{name: "reject path", input: "https://app.superblocks.com/oauth/callback", wantErr: "must not include path"},
+		{name: "reject query", input: "https://app.superblocks.com?foo=bar", wantErr: "must not include query or fragment"},
+		{name: "reject fragment", input: "https://app.superblocks.com#frag", wantErr: "must not include query or fragment"},
+		{name: "reject user info", input: "https://user@app.superblocks.com", wantErr: "must not include user info"},
+		{name: "reject control characters", input: "https://app.superblocks.com\nauthjwt=stolen", wantErr: "must not contain control characters"},
+		{name: "reject unsupported scheme", input: "javascript:alert(1)", wantErr: "unsupported origin scheme"},
+		{name: "reject relative", input: "/relative", wantErr: "must be absolute"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := normalizeWorkerOrigin(test.input)
+			if test.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.wantErr)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
 func TestExecuteV3RejectsMissingReferencedFilePayload(t *testing.T) {
 	t.Parallel()
 	defer metrics.SetupForTesting()()

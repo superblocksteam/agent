@@ -34,6 +34,7 @@ import (
 const (
 	workerJWTContextSuperblocksPrefix   = "sbjwt="
 	workerJWTContextAuthorizationPrefix = "authjwt="
+	workerJWTContextOriginPrefix        = "origin="
 	maxOrchestratorClientCacheSize      = 128
 )
 
@@ -325,9 +326,18 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
 	}
 
-	superblocksToken, authorizationToken := parseWorkerJWTContext(fileCtx.JwtToken)
+	superblocksToken, authorizationToken, origin := parseWorkerJWTContext(fileCtx.JwtToken)
 	if superblocksToken == "" && authorizationToken == "" {
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
+	}
+	if origin != "" {
+		normalizedOrigin, originErr := normalizeWorkerOrigin(origin)
+		if originErr != nil {
+			s.logger.Warn("ignoring invalid origin in worker callback context", zap.Error(originErr))
+			origin = ""
+		} else {
+			origin = normalizedOrigin
+		}
 	}
 
 	orgID, err := extractOrgIDFromJWT(superblocksToken)
@@ -370,6 +380,9 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		"authorization", "Bearer "+authorizationToken,
 		constants.HeaderSuperblocksJwt, "Bearer "+superblocksToken,
 	)
+	if origin != "" {
+		md.Set("origin", origin)
+	}
 
 	// Restore trace context from the carrier stored when the execution started.
 	// This links the integration query trace to the parent SDK API execution.
@@ -560,10 +573,10 @@ func extractOrgIDFromJWT(jwtToken string) (string, error) {
 	return claims.OrgID, nil
 }
 
-func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken string) {
+func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken, origin string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return "", ""
+		return "", "", ""
 	}
 
 	lines := strings.Split(raw, "\n")
@@ -575,12 +588,56 @@ func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken str
 		}
 		if strings.HasPrefix(line, workerJWTContextAuthorizationPrefix) {
 			authorizationToken = strings.TrimSpace(strings.TrimPrefix(line, workerJWTContextAuthorizationPrefix))
+			continue
+		}
+		if strings.HasPrefix(line, workerJWTContextOriginPrefix) {
+			origin = strings.TrimSpace(strings.TrimPrefix(line, workerJWTContextOriginPrefix))
 		}
 	}
 
-	if superblocksToken != "" || authorizationToken != "" {
-		return superblocksToken, authorizationToken
+	if superblocksToken != "" || authorizationToken != "" || origin != "" {
+		return superblocksToken, authorizationToken, origin
 	}
 
-	return "", ""
+	return "", "", ""
+}
+
+func normalizeWorkerOrigin(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", nil
+	}
+	if strings.ContainsAny(raw, "\r\n") {
+		return "", errors.New("origin must not contain control characters")
+	}
+
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("invalid origin: %w", err)
+	}
+	if !parsed.IsAbs() {
+		return "", errors.New("origin must be absolute")
+	}
+	switch parsed.Scheme {
+	case "http", "https":
+	default:
+		return "", fmt.Errorf("unsupported origin scheme %q", parsed.Scheme)
+	}
+	if parsed.Host == "" {
+		return "", errors.New("origin host is empty")
+	}
+	if parsed.User != nil {
+		return "", errors.New("origin must not include user info")
+	}
+	if parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", errors.New("origin must not include query or fragment")
+	}
+	if parsed.Path != "" && parsed.Path != "/" {
+		return "", errors.New("origin must not include path")
+	}
+
+	return (&url.URL{
+		Scheme: parsed.Scheme,
+		Host:   parsed.Host,
+	}).String(), nil
 }

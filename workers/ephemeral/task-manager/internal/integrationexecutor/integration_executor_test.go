@@ -33,7 +33,15 @@ func makeTestJWT(orgID string) string {
 	return header + "." + payload + ".fakesig"
 }
 
-func makeWorkerJWTContext(superblocksJWT, authorizationJWT string) string {
+func makeWorkerJWTContext(superblocksJWT, authorizationJWT string, origin ...string) string {
+	if len(origin) > 0 && origin[0] != "" {
+		return fmt.Sprintf("%s%s\n%s%s\n%s%s",
+			workerJWTContextSuperblocksPrefix, superblocksJWT,
+			workerJWTContextAuthorizationPrefix, authorizationJWT,
+			workerJWTContextOriginPrefix, origin[0],
+		)
+	}
+
 	return fmt.Sprintf("%s%s\n%s%s",
 		workerJWTContextSuperblocksPrefix, superblocksJWT,
 		workerJWTContextAuthorizationPrefix, authorizationJWT,
@@ -54,6 +62,7 @@ type fakeOrchestratorServer struct {
 	apiv1.UnimplementedExecutorServiceServer
 
 	lastAuthorization string
+	lastOrigin        string
 	lastRequest       *apiv1.ExecuteRequest
 	lastJwtToken      string
 	response          *apiv1.AwaitResponse
@@ -66,6 +75,9 @@ func (f *fakeOrchestratorServer) Await(ctx context.Context, req *apiv1.ExecuteRe
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		if vals := md.Get("authorization"); len(vals) > 0 {
 			f.lastAuthorization = vals[0]
+		}
+		if vals := md.Get("origin"); len(vals) > 0 {
+			f.lastOrigin = vals[0]
 		}
 		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
 			f.lastJwtToken = vals[0]
@@ -194,6 +206,7 @@ func TestExecuteIntegration(t *testing.T) {
 		wantOutput         *structpb.Value
 		wantError          string
 		wantJwt            string
+		wantOrigin         string
 		wantOrg            string
 		wantProfile        *commonv1.Profile
 	}{
@@ -214,6 +227,38 @@ func TestExecuteIntegration(t *testing.T) {
 			wantOrg:     testOrgID,
 			wantProfile: profileTest,
 			wantOutput:  outputValue,
+		},
+		{
+			name: "forwards origin metadata when present",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT, "https://app.superblocks.com")},
+			},
+			wantJwt:    "Bearer " + validJWT,
+			wantOrigin: "https://app.superblocks.com",
+			wantOrg:    testOrgID,
+			wantOutput: outputValue,
+		},
+		{
+			name: "drops invalid origin metadata when present",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT, "https://app.superblocks.com/oauth/callback")},
+			},
+			wantJwt:    "Bearer " + validJWT,
+			wantOrigin: "",
+			wantOrg:    testOrgID,
+			wantOutput: outputValue,
 		},
 		{
 			name: "profile falls back to parent execution",
@@ -437,6 +482,7 @@ func TestExecuteIntegration(t *testing.T) {
 			// Verify both authorization and x-superblocks-authorization carry the JWT.
 			assert.Equal(t, test.wantJwt, fake.lastAuthorization)
 			assert.Equal(t, test.wantJwt, fake.lastJwtToken)
+			assert.Equal(t, test.wantOrigin, fake.lastOrigin)
 
 			// Verify the Await request uses an inline Definition.
 			def := fake.lastRequest.GetDefinition()
@@ -526,40 +572,53 @@ func TestExtractOrgIDFromJWT(t *testing.T) {
 
 func TestParseWorkerJWTContext(t *testing.T) {
 	for _, test := range []struct {
-		name      string
-		input     string
-		wantSuper string
-		wantAuth  string
+		name       string
+		input      string
+		wantSuper  string
+		wantAuth   string
+		wantOrigin string
 	}{
 		{
-			name:      "empty input",
-			input:     "",
-			wantSuper: "",
-			wantAuth:  "",
+			name:       "empty input",
+			input:      "",
+			wantSuper:  "",
+			wantAuth:   "",
+			wantOrigin: "",
 		},
 		{
-			name:      "no recognized prefixes",
-			input:     "foo=bar\nanother=line",
-			wantSuper: "",
-			wantAuth:  "",
+			name:       "no recognized prefixes",
+			input:      "foo=bar\nanother=line",
+			wantSuper:  "",
+			wantAuth:   "",
+			wantOrigin: "",
 		},
 		{
-			name:      "extracts both tokens",
-			input:     makeWorkerJWTContext("sb-token", "auth-token"),
-			wantSuper: "sb-token",
-			wantAuth:  "auth-token",
+			name:       "extracts both tokens",
+			input:      makeWorkerJWTContext("sb-token", "auth-token"),
+			wantSuper:  "sb-token",
+			wantAuth:   "auth-token",
+			wantOrigin: "",
 		},
 		{
-			name:      "extracts prefixed tokens with whitespace",
-			input:     "  " + workerJWTContextSuperblocksPrefix + "  sb-token \n " + workerJWTContextAuthorizationPrefix + " auth-token  ",
-			wantSuper: "sb-token",
-			wantAuth:  "auth-token",
+			name:       "extracts tokens and origin",
+			input:      makeWorkerJWTContext("sb-token", "auth-token", "https://app.superblocks.com"),
+			wantSuper:  "sb-token",
+			wantAuth:   "auth-token",
+			wantOrigin: "https://app.superblocks.com",
+		},
+		{
+			name:       "extracts prefixed tokens with whitespace",
+			input:      "  " + workerJWTContextSuperblocksPrefix + "  sb-token \n " + workerJWTContextAuthorizationPrefix + " auth-token  \n " + workerJWTContextOriginPrefix + " https://app.superblocks.com  ",
+			wantSuper:  "sb-token",
+			wantAuth:   "auth-token",
+			wantOrigin: "https://app.superblocks.com",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			gotSuper, gotAuth := parseWorkerJWTContext(test.input)
+			gotSuper, gotAuth, gotOrigin := parseWorkerJWTContext(test.input)
 			assert.Equal(t, test.wantSuper, gotSuper)
 			assert.Equal(t, test.wantAuth, gotAuth)
+			assert.Equal(t, test.wantOrigin, gotOrigin)
 		})
 	}
 }
