@@ -2237,3 +2237,211 @@ func TestGetCachedOauthToken(t *testing.T) {
 		})
 	}
 }
+
+func TestAddTokenIfNeeded_IdpTokenPassthrough(t *testing.T) {
+	makeIdpToken := func(t *testing.T, clock clockwork.Clock, expOffset time.Duration) string {
+		t.Helper()
+		claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"exp": clock.Now().Add(expOffset).Unix(),
+			"sub": "idp-user",
+		})
+		signed, err := claims.SignedString([]byte("test-secret"))
+		require.NoError(t, err)
+		return signed
+	}
+
+	makeSuperblocksJwt := func(t *testing.T, idpToken string) string {
+		t.Helper()
+		claims := jwt.MapClaims{
+			"exp": time.Now().Add(5 * time.Minute).Unix(),
+		}
+		if idpToken != "" {
+			claims[idpAccessTokenClaimKey] = idpToken
+		}
+		signed, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-secret"))
+		require.NoError(t, err)
+		return signed
+	}
+
+	makeCtx := func(superblocksJwt string, apiType string) context.Context {
+		md := metadata.New(map[string]string{})
+		if superblocksJwt != "" {
+			md.Set(constants.HeaderSuperblocksJwt, fmt.Sprintf("Bearer %s", superblocksJwt))
+		}
+		ctx := metadata.NewIncomingContext(context.Background(), md)
+		return constants.WithApiType(ctx, apiType)
+	}
+
+	makeTm := func(t *testing.T, clock clockwork.Clock) *tokenManager {
+		t.Helper()
+		mockFlags := flagsmocks.NewFlags(t)
+		mockFlags.On("GetValidateSubjectTokenDuringOboFlowEnabled", mock.Anything).Return(false).Maybe()
+		return &tokenManager{
+			clock:  clock,
+			logger: zap.NewNop(),
+			flags:  mockFlags,
+		}
+	}
+
+	t.Run("happy path - valid idp token", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		idpToken := makeIdpToken(t, clock, 5*time.Minute)
+		sbJwt := makeSuperblocksJwt(t, idpToken)
+		ctx := makeCtx(sbJwt, constants.ApiTypeApi)
+		tm := makeTm(t, clock)
+
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   authTypeOauthIdpTokenPassthrough,
+			"authConfig": map[string]any{},
+		})
+
+		tp, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.NoError(t, err)
+		assert.Equal(t, idpToken, tp.Token)
+		assert.Equal(t, "oauth", tp.BindingName)
+		assert.Equal(t, idpToken, ds.GetFields()["authConfig"].GetStructValue().GetFields()["authToken"].GetStringValue())
+	})
+
+	t.Run("happy path - ApiTypeUnknown supported", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		idpToken := makeIdpToken(t, clock, 5*time.Minute)
+		sbJwt := makeSuperblocksJwt(t, idpToken)
+		ctx := makeCtx(sbJwt, constants.ApiTypeUnknown)
+		tm := makeTm(t, clock)
+
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   authTypeOauthIdpTokenPassthrough,
+			"authConfig": map[string]any{},
+		})
+
+		tp, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.NoError(t, err)
+		assert.Equal(t, idpToken, tp.Token)
+	})
+
+	t.Run("unsupported api type - scheduled job", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		idpToken := makeIdpToken(t, clock, 5*time.Minute)
+		sbJwt := makeSuperblocksJwt(t, idpToken)
+		ctx := makeCtx(sbJwt, constants.ApiTypeScheduledJob)
+		tm := makeTm(t, clock)
+
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   authTypeOauthIdpTokenPassthrough,
+			"authConfig": map[string]any{},
+		})
+
+		_, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.EqualError(t, err, `IntegrationOAuthError: OAuth2 - "IdP Token Passthrough" could not find a user JWT
+
+Auth method can't be used headlessly, like in Workflows or Scheduled Jobs.`)
+	})
+
+	t.Run("unsupported api type - workflow", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		idpToken := makeIdpToken(t, clock, 5*time.Minute)
+		sbJwt := makeSuperblocksJwt(t, idpToken)
+		ctx := makeCtx(sbJwt, constants.ApiTypeWorkflow)
+		tm := makeTm(t, clock)
+
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   authTypeOauthIdpTokenPassthrough,
+			"authConfig": map[string]any{},
+		})
+
+		_, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.EqualError(t, err, `IntegrationOAuthError: OAuth2 - "IdP Token Passthrough" could not find a user JWT
+
+Auth method can't be used headlessly, like in Workflows or Scheduled Jobs.`)
+	})
+
+	t.Run("missing superblocks jwt", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		ctx := makeCtx("", constants.ApiTypeApi)
+		tm := makeTm(t, clock)
+
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   authTypeOauthIdpTokenPassthrough,
+			"authConfig": map[string]any{},
+		})
+
+		_, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.EqualError(t, err, `IntegrationOAuthError: OAuth2 - "IdP Token Passthrough" could not find a user JWT
+
+Auth method can't be used headlessly, like in Workflows or Scheduled Jobs.`)
+	})
+
+	t.Run("missing federated_token claim", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		sbJwt := makeSuperblocksJwt(t, "") // no idp token in claims
+		ctx := makeCtx(sbJwt, constants.ApiTypeApi)
+		tm := makeTm(t, clock)
+
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   authTypeOauthIdpTokenPassthrough,
+			"authConfig": map[string]any{},
+		})
+
+		_, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.EqualError(t, err, `IntegrationOAuthError: OAuth2 - "IdP Token Passthrough" could not find identity provider token
+
+Please log in using a valid OIDC-based SSO provider. Ensure your Auth0/Okta configuration is forwarding the identity provider token to Superblocks.`)
+	})
+
+	t.Run("expired idp token", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		idpToken := makeIdpToken(t, clock, 5*time.Minute)
+		sbJwt := makeSuperblocksJwt(t, idpToken)
+		ctx := makeCtx(sbJwt, constants.ApiTypeApi)
+
+		// Advance clock past the IdP token's expiry
+		clock.Advance(time.Hour)
+		tm := makeTm(t, clock)
+
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   authTypeOauthIdpTokenPassthrough,
+			"authConfig": map[string]any{},
+		})
+
+		_, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.EqualError(t, err, `IntegrationOAuthError: OAuth2 - "IdP Token Passthrough" identity provider token expired
+
+Refresh your browser and follow prompts to reauthenticate with SSO.`)
+	})
+
+	t.Run("opaque (non-JWT) idp token - passes without expiry check", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		sbJwt := makeSuperblocksJwt(t, "opaque-access-token-not-a-jwt")
+		ctx := makeCtx(sbJwt, constants.ApiTypeApi)
+		tm := makeTm(t, clock)
+
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   authTypeOauthIdpTokenPassthrough,
+			"authConfig": map[string]any{},
+		})
+
+		tp, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.NoError(t, err)
+		assert.Equal(t, "opaque-access-token-not-a-jwt", tp.Token)
+		assert.Equal(t, "oauth", tp.BindingName)
+	})
+
+	t.Run("normalizeAuthType maps proto string", func(t *testing.T) {
+		clock := clockwork.NewFakeClock()
+		idpToken := makeIdpToken(t, clock, 5*time.Minute)
+		sbJwt := makeSuperblocksJwt(t, idpToken)
+		ctx := makeCtx(sbJwt, constants.ApiTypeApi)
+		tm := makeTm(t, clock)
+
+		// Use proto-style camelCase auth type (as would come from proto-based integrations)
+		ds, _ := structpb.NewStruct(map[string]any{
+			"authType":   "oauthIdpTokenPassthrough",
+			"authConfig": map[string]any{},
+		})
+
+		tp, err := tm.AddTokenIfNeeded(ctx, ds, nil, nil, "ds-id", "config-id", "restapiintegration")
+		assert.NoError(t, err)
+		assert.Equal(t, idpToken, tp.Token)
+		assert.Equal(t, "oauth", tp.BindingName)
+	})
+}

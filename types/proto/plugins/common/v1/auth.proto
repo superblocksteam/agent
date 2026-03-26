@@ -137,5 +137,6 @@ message Auth {
 
     // NOTE: @joeyagreco - we tried json_name here and sadly it does not work because the schema generator/convertor in the monorepo uses the ts type
     Nothing oauth_token_exchange = 6;
+    Nothing oauth_idp_token_passthrough = 7;
   }
 }

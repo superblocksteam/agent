@@ -19,12 +19,14 @@ const (
 )
 
 const (
-	OauthTokenExchange OAuth2AuthType = "oauth-token-exchange"
+	OauthTokenExchange       OAuth2AuthType = "oauth-token-exchange"
+	OauthIdpTokenPassthrough OAuth2AuthType = "oauth-idp-token-passthrough"
 )
 
 var (
 	authTypeDisplayName = map[OAuth2AuthType]string{
-		OauthTokenExchange: "On-Behalf-Of Token Exchange",
+		OauthTokenExchange:       "On-Behalf-Of Token Exchange",
+		OauthIdpTokenPassthrough: "IdP Token Passthrough",
 	}
 
 	ErrNoAuthorizationJwtFound = OAuth2Error(
@@ -82,6 +84,24 @@ var (
 	ErrTokenUriServerInvalidResponse = OAuth2Error(
 		OauthTokenExchange,
 		fmt.Errorf("token exchange failed\n"),
+	)
+
+	ErrIdpPassthroughNoJwt = OAuth2Error(
+		OauthIdpTokenPassthrough,
+		fmt.Errorf("could not find a user JWT\n"),
+		fmt.Errorf("Auth method can't be used headlessly, like in Workflows or Scheduled Jobs."),
+	)
+
+	ErrIdpPassthroughNoIdpToken = OAuth2Error(
+		OauthIdpTokenPassthrough,
+		fmt.Errorf("could not find identity provider token\n"),
+		fmt.Errorf("Please log in using a valid OIDC-based SSO provider. Ensure your Auth0/Okta configuration is forwarding the identity provider token to Superblocks."),
+	)
+
+	ErrIdpPassthroughTokenExpired = OAuth2Error(
+		OauthIdpTokenPassthrough,
+		fmt.Errorf("identity provider token expired\n"),
+		fmt.Errorf("Refresh your browser and follow prompts to reauthenticate with SSO."),
 	)
 
 	SubjectTokenErrorMap = map[pluginscommon.OAuth_AuthorizationCodeFlow_SubjectTokenSource]map[OAuth2ErrorType]error{

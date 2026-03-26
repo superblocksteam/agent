@@ -546,6 +546,97 @@ func TestCheckAuth_OauthTokenExchange(t *testing.T) {
 	}
 }
 
+func TestCheckAuth_IdpTokenPassthrough(t *testing.T) {
+	clock := clockwork.NewFakeClock()
+
+	makeJWT := func(t *testing.T, claims jwt.MapClaims) string {
+		t.Helper()
+		token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-secret"))
+		if err != nil {
+			t.Fatalf("failed to sign test jwt: %v", err)
+		}
+		return token
+	}
+
+	makeCtx := func(superblocksJwt string, apiType string) context.Context {
+		md := metadata.New(map[string]string{})
+		if superblocksJwt != "" {
+			md.Set(constants.HeaderSuperblocksJwt, "Bearer "+superblocksJwt)
+		}
+		ctx := metadata.NewIncomingContext(context.Background(), md)
+		return constants.WithApiType(ctx, apiType)
+	}
+
+	idpToken := makeJWT(t, jwt.MapClaims{
+		"exp": clock.Now().Add(time.Hour).Unix(),
+		"sub": "idp-user",
+	})
+	sbJwtWithIdp := makeJWT(t, jwt.MapClaims{
+		"exp":                  clock.Now().Add(5 * time.Minute).Unix(),
+		idpAccessTokenClaimKey: idpToken,
+	})
+	sbJwtWithoutIdp := makeJWT(t, jwt.MapClaims{
+		"exp": clock.Now().Add(5 * time.Minute).Unix(),
+	})
+
+	testCases := []struct {
+		name          string
+		ctx           context.Context
+		authenticated bool
+	}{
+		{
+			name:          "valid IdP token — authenticated",
+			ctx:           makeCtx(sbJwtWithIdp, constants.ApiTypeApi),
+			authenticated: true,
+		},
+		{
+			name:          "valid IdP token with ApiTypeUnknown — authenticated",
+			ctx:           makeCtx(sbJwtWithIdp, constants.ApiTypeUnknown),
+			authenticated: true,
+		},
+		{
+			name:          "missing federated_token claim — not authenticated",
+			ctx:           makeCtx(sbJwtWithoutIdp, constants.ApiTypeApi),
+			authenticated: false,
+		},
+		{
+			name:          "missing superblocks JWT — not authenticated",
+			ctx:           makeCtx("", constants.ApiTypeApi),
+			authenticated: false,
+		},
+		{
+			name:          "workflow API type — not authenticated",
+			ctx:           makeCtx(sbJwtWithIdp, constants.ApiTypeWorkflow),
+			authenticated: false,
+		},
+		{
+			name:          "scheduled job API type — not authenticated",
+			ctx:           makeCtx(sbJwtWithIdp, constants.ApiTypeScheduledJob),
+			authenticated: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockFlags := flagsmocks.NewFlags(t)
+			mockFlags.On("GetValidateSubjectTokenDuringOboFlowEnabled", mock.Anything).Return(false).Maybe()
+
+			tm := &tokenManager{
+				clock:  clock,
+				flags:  mockFlags,
+				logger: zaptest.NewLogger(t),
+			}
+
+			ds := DatasourceConfig(authTypeOauthIdpTokenPassthrough, map[string]any{})
+			response, err := tm.CheckAuth(tc.ctx, ds, "integration-id", "config-id", "restapiintegration")
+
+			assert.NoError(t, err)
+			assert.Equal(t, tc.authenticated, response.Authenticated)
+			assert.Empty(t, response.Cookies)
+		})
+	}
+}
+
 func boolPtr(b bool) *bool { return &b }
 
 func DatasourceConfigWithAuthTypeField(authTypeField string, authType string, authConfig map[string]interface{}) *structpb.Struct {

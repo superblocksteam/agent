@@ -271,6 +271,8 @@ func IntegrationOAuthError(err ...error) error {
 	return &integrationOAuthError{errors.Join(err...)}
 }
 
+func (e *integrationOAuthError) Unwrap() error { return e.err }
+
 func (e *integrationOAuthError) Error() string {
 	if e.err == nil {
 		return "IntegrationOAuthError"

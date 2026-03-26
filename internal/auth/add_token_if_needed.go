@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,17 +25,18 @@ import (
 
 // https://github.com/superblocksteam/superblocks/blob/cc5e43b49acd26537704bc113d2f53fbbb167f29/packages/shared/src/types/datasource/auth.ts#L68C1-L78
 const (
-	authTypeOauthClientCreds   = "oauth-client-cred"
-	authTypeOauthPassword      = "oauth-pword"
-	AuthTypeOauthCode          = "oauth-code"
-	authTypeOauthImplicit      = "oauth-implicit"
-	authTypeOauthTokenExchange = "oauth-token-exchange"
-	authTypeBasic              = "basic"
-	authTypeBearer             = "bearer"
-	authTypeTokenPrefixed      = "token-prefixed"
-	authTypeApiKey             = "api-key"
-	authTypeApiKeyForm         = "api-key-form"
-	authTypeFirebase           = "Firebase"
+	authTypeOauthClientCreds         = "oauth-client-cred"
+	authTypeOauthPassword            = "oauth-pword"
+	AuthTypeOauthCode                = "oauth-code"
+	authTypeOauthImplicit            = "oauth-implicit"
+	authTypeOauthTokenExchange       = "oauth-token-exchange"
+	authTypeOauthIdpTokenPassthrough = "oauth-idp-token-passthrough"
+	authTypeBasic                    = "basic"
+	authTypeBearer                   = "bearer"
+	authTypeTokenPrefixed            = "token-prefixed"
+	authTypeApiKey                   = "api-key"
+	authTypeApiKeyForm               = "api-key-form"
+	authTypeFirebase                 = "Firebase"
 
 	apiKeyMethodHeader     = "header"
 	apiKeyMethodQueryParam = "query-param"
@@ -68,6 +70,8 @@ func normalizeAuthType(s string) string {
 	case "oauthTokenExchange":
 		// salesforce integration will send this because it's proto based and proto does not support hyphens
 		return authTypeOauthTokenExchange
+	case "oauthIdpTokenPassthrough":
+		return authTypeOauthIdpTokenPassthrough
 	default:
 		return s
 	}
@@ -214,6 +218,16 @@ func (t *tokenManager) AddTokenIfNeeded(
 		if userEmail, ok := jwtvalidator.GetUserEmail(ctx); ok && userEmail != "" {
 			authConfig.Fields["userEmail"] = structpb.NewStringValue(userEmail)
 		}
+
+		tokenPayload.BindingName = "oauth"
+	case authTypeOauthIdpTokenPassthrough:
+		tokenPayload.Token, err = t.passthroughIdpToken(ctx)
+		if err != nil {
+			log.Error("error getting idp passthrough token", zap.Error(err))
+			return
+		}
+
+		authConfig.Fields["authToken"] = structpb.NewStringValue(tokenPayload.Token)
 
 		tokenPayload.BindingName = "oauth"
 	case authTypeOauthImplicit:
@@ -649,6 +663,47 @@ func (t *tokenManager) getIdentityProviderAccessToken(ctx context.Context) (stri
 	idpAccessToken, ok := claims[idpAccessTokenClaimKey].(string)
 	if !ok {
 		return "", sberrors.IntegrationOAuthError(oauth.ErrNoIdentityProviderJwtFound)
+	}
+
+	return idpAccessToken, nil
+}
+
+func (t *tokenManager) passthroughIdpToken(ctx context.Context) (string, error) {
+	log := observability.ZapLogger(ctx, t.logger)
+
+	if apiType := constants.ApiType(ctx); !supportedApiTypesIdpTokenForwarding[apiType] {
+		log.Error("idp token passthrough is not supported for the api type", zap.String("apiType", apiType))
+		return "", sberrors.IntegrationOAuthError(oauth.ErrIdpPassthroughNoJwt)
+	}
+
+	// Reuse the shared JWT extraction logic from getIdentityProviderAccessToken,
+	// mapping its token-exchange errors to passthrough-specific variants.
+	idpAccessToken, err := t.getIdentityProviderAccessToken(ctx)
+	if err != nil {
+		switch {
+		case errors.Is(err, oauth.ErrNoAuthorizationJwtFound):
+			return "", sberrors.IntegrationOAuthError(oauth.ErrIdpPassthroughNoJwt)
+		default:
+			return "", sberrors.IntegrationOAuthError(oauth.ErrIdpPassthroughNoIdpToken)
+		}
+	}
+
+	if idpAccessToken == "" {
+		return "", sberrors.IntegrationOAuthError(oauth.ErrIdpPassthroughNoIdpToken)
+	}
+
+	// Best-effort expiry validation: only enforced when the IdP token is a
+	// parseable JWT with an "exp" claim. Opaque tokens skip this check.
+	if idpClaims, err := getClaimsFromJwt(idpAccessToken); err == nil {
+		if exp, ok := idpClaims["exp"]; ok {
+			if expFloat, ok := exp.(float64); ok {
+				expiry := int64(expFloat)
+				if t.clock.Now().Unix() > expiry {
+					log.Error("idp token is expired", zap.Int64("expiry", expiry))
+					return "", sberrors.IntegrationOAuthError(oauth.ErrIdpPassthroughTokenExpired)
+				}
+			}
+		}
 	}
 
 	return idpAccessToken, nil

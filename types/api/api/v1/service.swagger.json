@@ -3299,6 +3299,9 @@
         "oauthTokenExchange": {
           "$ref": "#/definitions/AuthNothing",
           "title": "NOTE: @joeyagreco - we tried json_name here and sadly it does not work because the schema generator/convertor in the monorepo uses the ts type"
+        },
+        "oauthIdpTokenPassthrough": {
+          "$ref": "#/definitions/AuthNothing"
         }
       }
     },

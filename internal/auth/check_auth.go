@@ -225,6 +225,12 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 			}
 			log.Warn("check-auth token exchange unauthenticated", fields...)
 		}
+	case authTypeOauthIdpTokenPassthrough:
+		if _, err := t.passthroughIdpToken(ctx); err != nil {
+			log.Warn("could not validate idp passthrough token for check-auth", zap.Error(err))
+			break
+		}
+		authenticated = true
 	case authTypeFirebase:
 		if cookieValue == "" {
 			useFallback := false
