@@ -285,8 +285,8 @@ importers:
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/salesforce
       '@superblocksteam/sdk-api':
-        specifier: 0.0.5
-        version: 0.0.5
+        specifier: 0.0.6
+        version: 0.0.6
       '@superblocksteam/smtp':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/smtp
@@ -1979,8 +1979,8 @@ importers:
         specifier: workspace:*
         version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
       '@superblocksteam/sdk-api':
-        specifier: 0.0.5
-        version: 0.0.5
+        specifier: 0.0.6
+        version: 0.0.6
     devDependencies:
       '@swc/cli':
         specifier: 0.6.0
@@ -6226,8 +6226,8 @@ packages:
     resolution: {directory: workers/javascript/packages/plugins/salesforce, type: directory}
     engines: {node: 20.19.5}
 
-  '@superblocksteam/sdk-api@0.0.5':
-    resolution: {integrity: sha512-WyJqTh62O4R+qSfv7IIc/t7f9tjPmskTbfLXG48mkok7Ce/n0SqBSK/2c5ndPiAD6BbHywkCJEqelef0qMSkRg==}
+  '@superblocksteam/sdk-api@0.0.6':
+    resolution: {integrity: sha512-wImai+SqgJHnPeqT4sEE0EcQ4PT01ekoPLxUupr5fW9yjtZrUVGDHIGJ1kgtmZT/qbL84KNWS8KliDUTpjjNCA==, tarball: https://npm.pkg.github.com/download/@superblocksteam/sdk-api/0.0.6/0432642b1753e3926ac7993a8ecc8ecd952e8cf3}
     engines: {node: '>=20', npm: '>=10.x'}
 
   '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp':
@@ -14395,7 +14395,7 @@ snapshots:
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
-      '@superblocksteam/sdk-api': 0.0.5
+      '@superblocksteam/sdk-api': 0.0.6
     transitivePeerDependencies:
       - aws-crt
       - bufferutil
@@ -14411,7 +14411,7 @@ snapshots:
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
-      '@superblocksteam/sdk-api': 0.0.5
+      '@superblocksteam/sdk-api': 0.0.6
     transitivePeerDependencies:
       - aws-crt
       - bufferutil
@@ -14744,7 +14744,7 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/sdk-api@0.0.5':
+  '@superblocksteam/sdk-api@0.0.6':
     dependencies:
       '@superblocksteam/types': 1.196.0
       zod: 3.23.8
