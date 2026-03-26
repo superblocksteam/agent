@@ -24,6 +24,7 @@ import (
 
 	"github.com/superblocksteam/agent/internal/fetch"
 	fetchmocks "github.com/superblocksteam/agent/internal/fetch/mocks"
+	flagsmock "github.com/superblocksteam/agent/internal/flags/mock"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"github.com/superblocksteam/agent/pkg/constants"
 	sberror "github.com/superblocksteam/agent/pkg/errors"
@@ -38,6 +39,7 @@ import (
 	kinesis "github.com/superblocksteam/agent/types/gen/go/plugins/kinesis/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	authv1 "github.com/superblocksteam/agent/types/gen/go/auth/v1"
@@ -1681,6 +1683,135 @@ func TestExecuteV3CleansMaterializedFilesOnVariableWriteError(t *testing.T) {
 func TestExecuteCodeMode(t *testing.T) {
 	t.Parallel()
 
+	t.Run("logs routing decision and dispatches to sdk api wasm plugin when flagged", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+		outputJSON := `{"output":{"ok":true}}`
+		outputKey := "output-key-wasm-route"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+		mockFlags := flagsmock.NewFlags(t)
+		mockFlags.On("GetSdkApiUseWasmWorkerEnabled", "ENTERPRISE", "org-wasm").Return(true).Once()
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapiwasm", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, outputKey, nil).
+			Once()
+
+		core, observedLogs := observer.New(zap.InfoLevel)
+		logger := zap.New(core)
+
+		s := &server{
+			Config: &Config{
+				Logger:  logger,
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+				Flags:   mockFlags,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+		ctx = jwt_validator.WithOrganizationID(ctx, "org-wasm")
+		ctx = constants.WithExecutionID(ctx, "exec-code-mode-wasm")
+
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function() { return true; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
+		require.NoError(t, err)
+		require.NotNil(t, done)
+
+		entries := observedLogs.FilterMessage("resolved SDK API code-mode worker route").All()
+		require.Len(t, entries, 1)
+		assert.Equal(t, true, entries[0].ContextMap()["sdk_api_wasm_worker"])
+		assert.Equal(t, "javascriptsdkapiwasm", entries[0].ContextMap()["sdk_api_worker_plugin_name"])
+
+		mockWorker.AssertExpectations(t)
+		mockFlags.AssertExpectations(t)
+	})
+
+	t.Run("logs routing decision at debug when not routed and diagnostics are disabled", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+		outputJSON := `{"output":{"ok":true}}`
+		outputKey := "output-key-v8-route"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+		mockFlags := flagsmock.NewFlags(t)
+		mockFlags.On("GetSdkApiUseWasmWorkerEnabled", "ENTERPRISE", "org-v8").Return(false).Once()
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, outputKey, nil).
+			Once()
+
+		core, observedLogs := observer.New(zap.DebugLevel)
+		logger := zap.New(core)
+
+		s := &server{
+			Config: &Config{
+				Logger:  logger,
+				Store:   memStore,
+				Worker:  mockWorker,
+				Fetcher: fetcher,
+				Flags:   mockFlags,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "test@example.com")
+		ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+		ctx = jwt_validator.WithOrganizationID(ctx, "org-v8")
+		ctx = constants.WithExecutionID(ctx, "exec-code-mode-v8")
+
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-1", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{Name: "code-mode"},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function() { return true; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
+		require.NoError(t, err)
+		require.NotNil(t, done)
+
+		entries := observedLogs.FilterMessage("resolved SDK API code-mode worker route").All()
+		require.Len(t, entries, 1)
+		assert.Equal(t, zap.DebugLevel, entries[0].Level)
+		assert.Equal(t, false, entries[0].ContextMap()["sdk_api_wasm_worker"])
+		assert.Equal(t, "javascriptsdkapi", entries[0].ContextMap()["sdk_api_worker_plugin_name"])
+
+		mockWorker.AssertExpectations(t)
+		mockFlags.AssertExpectations(t)
+	})
+
 	t.Run("dispatches wrapper+bundle to worker and returns output", func(t *testing.T) {
 		t.Parallel()
 		defer metrics.SetupForTesting()()
@@ -2569,6 +2700,54 @@ func TestExecuteCodeMode(t *testing.T) {
 		assert.Nil(t, done)
 
 		mockWorker.AssertExpectations(t)
+	})
+}
+
+func TestGetSdkApiWorkerPluginName(t *testing.T) {
+	t.Parallel()
+
+	t.Run("defaults to sdk api plugin when flags are not configured", func(t *testing.T) {
+		t.Parallel()
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+			},
+		}
+
+		assert.Equal(t, "javascriptsdkapi", s.getSdkApiWorkerPluginName("ENTERPRISE", "org-1"))
+	})
+
+	t.Run("routes to wasm plugin when sdk api wasm flag is enabled", func(t *testing.T) {
+		t.Parallel()
+
+		mockFlags := flagsmock.NewFlags(t)
+		mockFlags.On("GetSdkApiUseWasmWorkerEnabled", "ENTERPRISE", "org-2").Return(true).Once()
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Flags:  mockFlags,
+			},
+		}
+
+		assert.Equal(t, "javascriptsdkapiwasm", s.getSdkApiWorkerPluginName("ENTERPRISE", "org-2"))
+	})
+
+	t.Run("uses sdk api plugin when sdk api wasm flag is disabled", func(t *testing.T) {
+		t.Parallel()
+
+		mockFlags := flagsmock.NewFlags(t)
+		mockFlags.On("GetSdkApiUseWasmWorkerEnabled", "FREE", "org-3").Return(false).Once()
+
+		s := &server{
+			Config: &Config{
+				Logger: zap.NewNop(),
+				Flags:  mockFlags,
+			},
+		}
+
+		assert.Equal(t, "javascriptsdkapi", s.getSdkApiWorkerPluginName("FREE", "org-3"))
 	})
 }
 

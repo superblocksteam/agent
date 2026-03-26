@@ -232,6 +232,24 @@ func (_m *Flags) GetPureJsUseWasmSandboxEnabled(tier string, orgId string) bool 
 	return r0
 }
 
+// GetSdkApiUseWasmWorkerEnabled provides a mock function with given fields: tier, orgId
+func (_m *Flags) GetSdkApiUseWasmWorkerEnabled(tier string, orgId string) bool {
+	ret := _m.Called(tier, orgId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSdkApiUseWasmWorkerEnabled")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
+		r0 = rf(tier, orgId)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // GetStepDurationByOrg provides a mock function with given fields: _a0
 func (_m *Flags) GetStepDurationByOrg(_a0 string) int {
 	ret := _m.Called(_a0)

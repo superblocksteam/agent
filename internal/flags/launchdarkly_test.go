@@ -91,3 +91,40 @@ func TestGetApiTimeoutByOrgTier(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSdkApiUseWasmWorkerEnabled(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name     string
+		tier     string
+		orgId    string
+		fallback bool
+		expected bool
+	}{
+		{
+			name:     "enabled",
+			tier:     "ENTERPRISE",
+			orgId:    "org-1",
+			fallback: false,
+			expected: true,
+		},
+		{
+			name:     "disabled",
+			tier:     "FREE",
+			orgId:    "org-2",
+			fallback: true,
+			expected: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			mockFlagsClient := flagsclient.NewMockFlagsClient(t)
+			mockFlagsClient.On("GetBoolVariation", "sdk-api.wasm_worker.enabled", test.tier, test.orgId, test.fallback).
+				Return(test.expected).
+				Once()
+
+			client := LaunchDarkly(mockFlagsClient, options.WithSdkApiWasmWorkerEnabled(test.fallback))
+			assert.Equal(t, test.expected, client.GetSdkApiUseWasmWorkerEnabled(test.tier, test.orgId))
+		})
+	}
+}

@@ -37,6 +37,7 @@ type Flags interface {
 	GetGoWorkerEnabled(tier string, orgId string) bool
 	GetJsBindingsUseWasmBindingsSandboxEnabled(tier string, orgId string) bool
 	GetPureJsUseWasmSandboxEnabled(tier string, orgId string) bool
+	GetSdkApiUseWasmWorkerEnabled(tier string, orgId string) bool
 
 	GetEphemeralEnabledPlugins(tier string, orgId string) []string
 	GetEphemeralSupportedEvents(tier string, orgId string) []string

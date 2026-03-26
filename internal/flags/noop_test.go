@@ -75,6 +75,37 @@ func TestGetGoWorkerEnabled_ReturnsValueFromOptions(t *testing.T) {
 	}
 }
 
+func TestGetSdkApiUseWasmWorkerEnabled_ReturnsValueFromOptions(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name     string
+		expected bool
+	}{
+		{
+			name:     "disabled",
+			expected: false,
+		},
+		{
+			name:     "enabled",
+			expected: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			flags := &noopFlags{
+				options: options.Options{
+					SdkApiWasmWorkerEnabled: test.expected,
+				},
+			}
+
+			var anyStr, anyOtherStr string
+			actual := flags.GetSdkApiUseWasmWorkerEnabled(anyStr, anyOtherStr)
+
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
 func TestGetEphemeralEnabledPlugins_ReturnsValueFromOptions(t *testing.T) {
 	t.Parallel()
 
@@ -223,6 +254,7 @@ func TestNoopFlagsConstructor(t *testing.T) {
 				DefaultGoWorkerEnabled:          false,
 				DefaultEphemeralEnabledPlugins:  []string{},
 				DefaultEphemeralSupportedEvents: []string{},
+				SdkApiWasmWorkerEnabled:         false,
 				Logger:                          zap.NewNop(),
 				Config:                          nil,
 			},
@@ -248,6 +280,7 @@ func TestNoopFlagsConstructor(t *testing.T) {
 				DefaultGoWorkerEnabled:          true,
 				DefaultEphemeralEnabledPlugins:  []string{},
 				DefaultEphemeralSupportedEvents: []string{},
+				SdkApiWasmWorkerEnabled:         false,
 				Logger:                          zap.NewNop(),
 				Config:                          nil,
 			},

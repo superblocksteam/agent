@@ -215,6 +215,7 @@ func init() {
 	pflag.Bool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled", true, "Whether or not to validate subject tokens during OBO flow.")
 	pflag.Bool("bindings.wasm_sandbox.enabled", false, "Enable WASM sandbox for bindings evaluation. LaunchDarkly takes priority if configured.")
 	pflag.Bool("purejs.wasm_sandbox.enabled", false, "Enable WASM sandbox for pure JS step execution. LaunchDarkly takes priority if configured.")
+	pflag.Bool("sdkapi.wasm_worker.enabled", false, "Enable WASM worker routing for SDK API code-mode execution. LaunchDarkly takes priority if configured.")
 
 	// This pflag setup allows the stdlib flag package to be used with viper.
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -540,6 +541,9 @@ func main() {
 
 		pureJsWasmSandboxEnabled := viper.GetBool("purejs.wasm_sandbox.enabled")
 		options = append(options, flagoptions.WithPureJsWasmSandboxEnabled(pureJsWasmSandboxEnabled))
+
+		sdkApiWasmWorkerEnabled := viper.GetBool("sdkapi.wasm_worker.enabled")
+		options = append(options, flagoptions.WithSdkApiWasmWorkerEnabled(sdkApiWasmWorkerEnabled))
 
 		if viper.GetBool("quotas.enabled") {
 			internalFlagsClient := internalflagsclient.NewLaunchDarklyClient(viper.GetString("launchdarkly.apikey"), internalOptions...)

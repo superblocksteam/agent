@@ -89,6 +89,10 @@ func (flags *noopFlags) GetPureJsUseWasmSandboxEnabled(string, string) bool {
 	return flags.options.PureJsWasmSandboxEnabled
 }
 
+func (flags *noopFlags) GetSdkApiUseWasmWorkerEnabled(string, string) bool {
+	return flags.options.SdkApiWasmWorkerEnabled
+}
+
 func (flags *noopFlags) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
 	return flags.options.DefaultEphemeralEnabledPlugins
 }

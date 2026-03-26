@@ -65,6 +65,11 @@ import (
 // VisitorOrganizationID is the organization ID when a JWT is not required and not provided.
 const VisitorOrganizationID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
+const (
+	sdkApiPluginName     = "javascriptsdkapi"
+	sdkApiWasmPluginName = "javascriptsdkapiwasm"
+)
+
 type server struct {
 	*Config
 	apiv1.UnimplementedExecutorServiceServer
@@ -1128,7 +1133,18 @@ func (s *server) executeCodeMode(
 	}
 
 	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
-	workerPerf, outputKey, workerErr := s.Worker.Execute(ctx, "javascriptsdkapi", workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
+	sdkApiWorkerPluginName := s.getSdkApiWorkerPluginName(orgPlan, orgId)
+	sdkApiWasmRouted := sdkApiWorkerPluginName == sdkApiWasmPluginName
+	logger = logger.With(
+		zap.Bool("sdk_api_wasm_worker", sdkApiWasmRouted),
+		zap.String("sdk_api_worker_plugin_name", sdkApiWorkerPluginName),
+	)
+	if includeDiagnostics || sdkApiWasmRouted {
+		logger.Info("resolved SDK API code-mode worker route")
+	} else {
+		logger.Debug("resolved SDK API code-mode worker route")
+	}
+	workerPerf, outputKey, workerErr := s.Worker.Execute(ctx, sdkApiWorkerPluginName, workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
 	workerEndTime = time.Now()
 	if workerErr != nil {
 		workerFailed = true
@@ -1990,4 +2006,22 @@ func getOrganizationPlanAndIdFromContext(ctx context.Context) (orgPlan string, o
 	}
 
 	return orgPlan, orgId
+}
+
+// getSdkApiWorkerPluginName is the single source of truth for selecting the
+// code-mode SDK API worker plugin by organization context.
+func (s *server) getSdkApiWorkerPluginName(orgPlan, orgId string) string {
+	if s.shouldRouteSdkApiToWasmWorker(orgPlan, orgId) {
+		return sdkApiWasmPluginName
+	}
+
+	return sdkApiPluginName
+}
+
+func (s *server) shouldRouteSdkApiToWasmWorker(orgPlan, orgId string) bool {
+	if s.Flags == nil {
+		return false
+	}
+
+	return s.Flags.GetSdkApiUseWasmWorkerEnabled(orgPlan, orgId)
 }
