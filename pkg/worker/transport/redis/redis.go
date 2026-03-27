@@ -185,42 +185,78 @@ func (t *transport) consume(ctx context.Context, topic string, stream chan<- str
 		span.AddEvent("stream.message_received")
 	}
 
-	go func() {
+	msgCh := pubsub.Channel(
+		redis.WithChannelSize(cap(stream)),
+		redis.WithChannelHealthCheckInterval(5*time.Second), // TODO(frank): we can propogate this to a flag if needed.
+		redis.WithChannelSendTimeout(60*time.Second),
+	)
 
-		msgCh := pubsub.Channel(
-			redis.WithChannelSize(cap(stream)),
-			redis.WithChannelHealthCheckInterval(5*time.Second), // TODO(frank): we can propogate this to a flag if needed.
-			redis.WithChannelSendTimeout(60*time.Second),
-		)
+	go forward(ctx, msgCh, stream, func() {
+		t.options.logger.Debug("unsubscribing from topic", zap.String("topic", topic))
 
-		for {
-			select {
-			case msg := <-msgCh:
-				if msg == nil {
-					continue
-				}
-
-				stream <- msg.Payload
-				metrics.AddUpDownCounter(ctx, metrics.StreamBufferItemsTotal, 1)
-			case <-ctx.Done():
-
-				t.options.logger.Debug("unsubscribing from topic", zap.String("topic", topic))
-
-				if err := pubsub.Unsubscribe(ctx, topic); err != nil {
-					t.options.logger.Error("could not unsubscribe from topic", zap.String("topic", topic), zap.Error(err))
-				}
-				if err := pubsub.Close(); err != nil {
-					t.options.logger.Error("could not close pubsub after unsubscribe", zap.String("topic", topic), zap.Error(err))
-				}
-
-				close(stream)
-				return
-			}
-
+		if err := pubsub.Unsubscribe(ctx, topic); err != nil {
+			t.options.logger.Error("could not unsubscribe from topic", zap.String("topic", topic), zap.Error(err))
 		}
-	}()
+		if err := pubsub.Close(); err != nil {
+			t.options.logger.Error("could not close pubsub after unsubscribe", zap.String("topic", topic), zap.Error(err))
+		}
+	})
 
 	return nil
+}
+
+// forward reads messages from source and writes their payloads to dest until
+// ctx is canceled. After cancellation it calls cleanup, drains any remaining
+// buffered messages from source, and closes dest.
+//
+// Draining prevents a race where fast-completing streams lose data events
+// because ctx.Done() wins the select over buffered messages.
+func forward(ctx context.Context, source <-chan *redis.Message, dest chan<- string, cleanup func()) {
+	for {
+		select {
+		case msg, ok := <-source:
+			if !ok {
+				if cleanup != nil {
+					cleanup()
+				}
+				close(dest)
+				return
+			}
+			if msg == nil {
+				continue
+			}
+
+			dest <- msg.Payload
+			metrics.AddUpDownCounter(ctx, metrics.StreamBufferItemsTotal, 1)
+		case <-ctx.Done():
+			if cleanup != nil {
+				cleanup()
+			}
+
+			// Drain any messages that were buffered in the source
+			// channel before we closed the subscription. Without this,
+			// fast-completing streams (e.g. mock upstreams) can lose
+			// data events that arrived between the worker publishing
+			// them and the orchestrator cancelling the subscription.
+			for {
+				select {
+				case msg, ok := <-source:
+					if !ok {
+						close(dest)
+						return
+					}
+					if msg == nil {
+						continue
+					}
+					dest <- msg.Payload
+					metrics.AddUpDownCounter(ctx, metrics.StreamBufferItemsTotal, 1)
+				default:
+					close(dest)
+					return
+				}
+			}
+		}
+	}
 }
 
 // handleEvent dispatches a request to a worker via Redis Streams and waits
