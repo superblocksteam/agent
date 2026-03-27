@@ -17,18 +17,22 @@ jobs:
           buf_user: frankgrecojr
           buf_api_token: ${{ secrets.BUF_APIKEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable && corepack prepare pnpm@10.29.2 --activate
       - run: make deps
+      - run: pnpm install --filter mocks
       - uses: pre-commit/action@v3.0.1
       - uses: azure/setup-helm@v4
         with:
           version: "v3.9.0"
       - run: helm repo add bitnami https://charts.bitnami.com/bitnami
       - run: make helm-template
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
       - run: make check
         working-directory: workers/javascript
+        env:
+          NPM_TOKEN: ${{ secrets.AGENT_RELEASE_PAT }}
       - uses: actions/setup-python@v5
         with:
           python-version-file: ./workers/python/.python-version
@@ -62,11 +66,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+      - run: corepack enable && corepack prepare pnpm@10.29.2 --activate
       - run: |
           make build
           npx pnpm --filter @superblocks/worker.js test:unit
           npx pnpm --no-bail --filter "@superblocksteam/*" --filter "!@superblocksteam/gsheets" test -- --testPathIgnorePatterns "(e2e|integration|local).test.ts"
         working-directory: workers/javascript
+        env:
+          NPM_TOKEN: ${{ secrets.AGENT_RELEASE_PAT }}
       - uses: codecov/codecov-action@v4
         with:
           name: ${{ github.job }}
