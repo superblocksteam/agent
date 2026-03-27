@@ -26,6 +26,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/crypto/signature"
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
+	workerengine "github.com/superblocksteam/agent/pkg/engine/worker"
 	sberror "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/executor"
 	"github.com/superblocksteam/agent/pkg/executor/options"
@@ -1911,21 +1912,49 @@ func transformCommonQuotaErrorToError(err *commonv1.Error) error {
 	return nil
 }
 
+func (s *server) shouldUseWorkerSandboxForDatasourceBindings(ctx context.Context) bool {
+	if s.Worker == nil || s.Store == nil || s.Flags == nil {
+		return false
+	}
+
+	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
+	return s.Flags.GetPureJsUseWasmSandboxEnabled(orgPlan, orgId)
+}
+
 // client must call sandbox.Close() and garbage.Run
 func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfileName string, integrationConfigs map[string]*structpb.Struct) (*apictx.Context, engine.Sandbox, gc.GC, error) {
+	useWorkerSandbox := s.shouldUseWorkerSandboxForDatasourceBindings(ctx)
+	// Keep the store used by the engine explicit so GC and variable initialization
+	// always operate on the same backing store.
+	engineStore := st
+
 	var sandbox engine.Sandbox
 	{
-		sandbox = javascript.Sandbox(ctx, &javascript.Options{
-			Logger:    s.Logger,
-			Store:     st,
-			AfterFunc: internalutils.EngineAfterFunc,
-		})
+		if useWorkerSandbox {
+			executionID := constants.ExecutionID(ctx)
+			// shouldUseWorkerSandboxForDatasourceBindings() guarantees s.Store != nil.
+			engineStore = s.Store
+			sandbox = workerengine.Sandbox(&workerengine.Options{
+				AfterFunc:     internalutils.EngineAfterFuncWorker,
+				CtxFunc:       func(c context.Context) context.Context { return c },
+				ExecutionID:   executionID,
+				FileServerURL: s.FileServerUrl,
+				Store:         engineStore,
+				Worker:        s.Worker,
+			})
+		} else {
+			sandbox = javascript.Sandbox(ctx, &javascript.Options{
+				Logger:    s.Logger,
+				Store:     st,
+				AfterFunc: internalutils.EngineAfterFunc,
+			})
+		}
 	}
 
 	var garbage gc.GC
 	{
 		garbage = gc.New(&gc.Options{
-			Store: st,
+			Store: engineStore,
 		})
 	}
 
@@ -1975,7 +2004,7 @@ func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfil
 
 		sbctxWithVariables, err := executor.Variables(sbctx, &apiv1.Variables{
 			Items: variables,
-		}, sandbox, s.Logger, garbage, st)
+		}, sandbox, s.Logger, garbage, engineStore)
 		if err != nil {
 			s.Logger.Error("could not initialize variables", zap.Error(err))
 			return nil, nil, nil, err

@@ -1227,7 +1227,7 @@ func TestGetOrCreateOrchestratorClientReuseKeyedByAddress(t *testing.T) {
 
 	_, err = svc.getOrCreateOrchestratorClient(targetA)
 	require.NoError(t, err)
-	assert.Equal(t, connA, svc.orchestratorConns[keyA], "same address should reuse connection")
+	assert.Same(t, connA, svc.orchestratorConns[keyA], "same address should reuse connection")
 
 	targetB := orchestratorDialTarget{Address: addrB, UseTLS: false}
 	keyB := targetB.cacheKey()
@@ -1237,7 +1237,7 @@ func TestGetOrCreateOrchestratorClientReuseKeyedByAddress(t *testing.T) {
 
 	assert.NotNil(t, connA)
 	assert.NotNil(t, connB)
-	assert.NotEqual(t, connA, connB, "different addresses should use different connections")
+	assert.NotSame(t, connA, connB, "different addresses should use different connections")
 	assert.Len(t, svc.orchestratorConns, 2)
 	assert.Len(t, svc.orchestratorClients, 2)
 }

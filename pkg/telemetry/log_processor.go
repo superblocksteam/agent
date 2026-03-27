@@ -84,6 +84,16 @@ func NewPolicyAwareLogProcessor(policy LoggingPolicyConfig, delegate sdklog.Proc
 	}
 }
 
+func (p *PolicyAwareLogProcessor) Enabled(ctx context.Context, param sdklog.EnabledParameters) bool {
+	if p.policy.ExportMode == LogExportModeLocalOnly {
+		return false
+	}
+	if !shouldExportSeverity(param.Severity, p.policy.ExportMode) {
+		return false
+	}
+	return p.delegate.Enabled(ctx, param)
+}
+
 func (p *PolicyAwareLogProcessor) OnEmit(ctx context.Context, record *sdklog.Record) error {
 	if p.policy.ExportMode == LogExportModeLocalOnly {
 		return nil

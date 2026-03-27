@@ -16,6 +16,8 @@ type recordingProcessor struct {
 	records []sdklog.Record
 }
 
+func (p *recordingProcessor) Enabled(context.Context, sdklog.EnabledParameters) bool { return true }
+
 func (p *recordingProcessor) OnEmit(_ context.Context, record *sdklog.Record) error {
 	p.records = append(p.records, record.Clone())
 	return nil

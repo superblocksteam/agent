@@ -143,6 +143,10 @@ type testProcessor struct {
 	recordCount int32
 }
 
+func (p *testProcessor) Enabled(context.Context, sdklog.EnabledParameters) bool {
+	return true
+}
+
 func (p *testProcessor) OnEmit(ctx context.Context, record *sdklog.Record) error {
 	atomic.AddInt32(&p.recordCount, 1)
 	return nil

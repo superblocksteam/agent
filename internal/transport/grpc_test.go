@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	flagsmocks "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/internal/metrics"
 
 	"github.com/superblocksteam/agent/pkg/secrets"
@@ -476,9 +477,12 @@ func TestTestAuthorizationRequired(t *testing.T) {
 
 			// Mock Worker TestConnection
 			mockWorker.On("TestConnection", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+			// getSbctx may initialize variables via worker-backed bindings sandbox.
+			mockWorker.On("Execute", mock.Anything, "javascriptwasm", mock.Anything, mock.Anything).
+				Return((*transportv1.Performance)(nil), "bindings-result", nil).Maybe()
 
 			defer metrics.SetupForTesting()()
-			server := NewServer(&Config{
+			svc := NewServer(&Config{
 				TokenManager:  tm,
 				Logger:        zap.NewNop(),
 				Store:         store.Memory(),
@@ -486,6 +490,8 @@ func TestTestAuthorizationRequired(t *testing.T) {
 				Fetcher:       fetcher,
 				SecretManager: secrets.NewSecretManager(),
 			})
+			serverImpl := svc.(*server)
+			require.NoError(t, serverImpl.Store.Write(ctx, store.Pair("bindings-result", `{"output":true}`)))
 
 			req := &apiv1.TestRequest{
 				IntegrationType: "gsheets",
@@ -496,7 +502,7 @@ func TestTestAuthorizationRequired(t *testing.T) {
 				},
 			}
 
-			_, err := server.Test(ctx, req)
+			_, err := svc.Test(ctx, req)
 
 			if tc.expectError {
 				require.Error(t, err)
@@ -511,6 +517,243 @@ func TestTestAuthorizationRequired(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetSbctx_UsesWorkerSandboxWhenWorkerAvailable(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = constants.WithExecutionID(ctx, "exec-id")
+	ctx = jwt_validator.WithOrganizationType(ctx, "enterprise")
+	ctx = jwt_validator.WithOrganizationID(ctx, "org-123")
+
+	mockWorker := &worker.MockClient{}
+	mockFlags := &flagsmocks.Flags{}
+	memStore := store.Memory()
+	fetcher := &fetchmocks.Fetcher{}
+	mockFlags.On("GetPureJsUseWasmSandboxEnabled", "enterprise", "org-123").Return(true).Once()
+	mockWorker.On("Execute", mock.Anything, "javascriptwasm", mock.Anything, mock.Anything).
+		Return((*transportv1.Performance)(nil), "bindings-result", nil).Once()
+	require.NoError(t, memStore.Write(ctx, store.Pair("bindings-result", `{"output":true}`)))
+
+	// No secret stores needed for this test path.
+	fetcher.On("FetchIntegrations", mock.Anything, mock.Anything, mock.Anything).
+		Return(&integrationv1.GetIntegrationsResponse{}, nil).Once()
+
+	srv := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         memStore,
+		Worker:        mockWorker,
+		Flags:         mockFlags,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		Secrets:       nil,
+	}).(*server)
+
+	sbctx, sandbox, garbage, err := srv.getSbctx(
+		ctx,
+		memStore,
+		"production",
+		map[string]*structpb.Struct{
+			"anonymous": {},
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, sbctx)
+	require.NotNil(t, sandbox)
+	require.NotNil(t, garbage)
+
+	defer sandbox.Close()
+	defer func() { _ = garbage.Run(context.Background()) }()
+
+	// Assert worker-backed behavior by exercising a resolve and verifying worker Execute was used.
+	mockWorker.On("Execute", mock.Anything, "javascriptwasm", mock.Anything, mock.Anything).
+		Return((*transportv1.Performance)(nil), "worker-result", nil).Once()
+	require.NoError(t, memStore.Write(ctx, store.Pair("worker-result", `{"output":1}`)))
+
+	engineInstance, err := sandbox.Engine(ctx)
+	require.NoError(t, err)
+	defer engineInstance.Close()
+	v := engineInstance.Resolve(ctx, "{{ 1 }}", sbctx.Variables)
+	result, err := v.Result()
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), result)
+	mockWorker.AssertExpectations(t)
+	mockFlags.AssertExpectations(t)
+	fetcher.AssertExpectations(t)
+}
+
+func TestGetSbctx_UsesServerStoreForWorkerSandboxVariableInitialization(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = constants.WithExecutionID(ctx, "exec-id")
+	ctx = jwt_validator.WithOrganizationType(ctx, "enterprise")
+	ctx = jwt_validator.WithOrganizationID(ctx, "org-123")
+
+	requestStore := store.Memory()
+	serverStore := store.Memory()
+	mockWorker := &worker.MockClient{}
+	mockFlags := &flagsmocks.Flags{}
+	fetcher := &fetchmocks.Fetcher{}
+
+	mockFlags.On("GetPureJsUseWasmSandboxEnabled", "enterprise", "org-123").Return(true).Once()
+	mockWorker.On("Execute", mock.Anything, "javascriptwasm", mock.Anything, mock.Anything).
+		Return((*transportv1.Performance)(nil), "bindings-result", nil).Once()
+	require.NoError(t, serverStore.Write(ctx, store.Pair("bindings-result", `{"output":true}`)))
+
+	fetcher.On("FetchIntegrations", mock.Anything, mock.Anything, mock.Anything).
+		Return(&integrationv1.GetIntegrationsResponse{}, nil).Once()
+
+	srv := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         serverStore,
+		Worker:        mockWorker,
+		Flags:         mockFlags,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		Secrets:       nil,
+	}).(*server)
+
+	sbctx, sandbox, garbage, err := srv.getSbctx(
+		ctx,
+		requestStore,
+		"production",
+		map[string]*structpb.Struct{
+			"anonymous": {},
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, sbctx)
+	require.NotNil(t, sandbox)
+	require.NotNil(t, garbage)
+
+	defer sandbox.Close()
+	defer func() { _ = garbage.Run(context.Background()) }()
+
+	mockWorker.AssertExpectations(t)
+	mockFlags.AssertExpectations(t)
+	fetcher.AssertExpectations(t)
+}
+
+func TestGetSbctx_FallsBackToJavascriptSandboxWhenWorkerUnavailable(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+
+	memStore := store.Memory()
+	fetcher := &fetchmocks.Fetcher{}
+	fetcher.On("FetchIntegrations", mock.Anything, mock.Anything, mock.Anything).
+		Return(&integrationv1.GetIntegrationsResponse{}, nil).Once()
+
+	srv := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         memStore,
+		Worker:        nil,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		Secrets:       nil,
+	}).(*server)
+
+	sbctx, sandbox, garbage, err := srv.getSbctx(
+		ctx,
+		memStore,
+		"production",
+		map[string]*structpb.Struct{
+			"anonymous": {},
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, sbctx)
+	require.NotNil(t, sandbox)
+	require.NotNil(t, garbage)
+
+	defer sandbox.Close()
+	defer func() { _ = garbage.Run(context.Background()) }()
+
+	// Fallback path should not go through worker execution for variable initialization.
+	// No Execute expectations are set on a worker mock in this test; successful local evaluation
+	// confirms fallback behavior is operational.
+
+	engineInstance, err := sandbox.Engine(ctx)
+	require.NoError(t, err)
+	defer engineInstance.Close()
+
+	v := engineInstance.Resolve(ctx, "{{ 1 + 1 }}", sbctx.Variables)
+	result, err := v.Result()
+	require.NoError(t, err)
+	assert.Equal(t, int32(2), result)
+
+	fetcher.AssertExpectations(t)
+}
+
+func TestShouldUseWorkerSandboxForDatasourceBindings(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns false when worker is nil", func(t *testing.T) {
+		mockFlags := &flagsmocks.Flags{}
+		srv := &server{Config: &Config{
+			Worker: nil,
+			Flags:  mockFlags,
+		}}
+
+		assert.False(t, srv.shouldUseWorkerSandboxForDatasourceBindings(context.Background()))
+		mockFlags.AssertNotCalled(t, "GetPureJsUseWasmSandboxEnabled", mock.Anything, mock.Anything)
+	})
+
+	t.Run("returns false when flags are nil", func(t *testing.T) {
+		srv := &server{Config: &Config{
+			Worker: &worker.MockClient{},
+			Store:  store.Memory(),
+			Flags:  nil,
+		}}
+
+		assert.False(t, srv.shouldUseWorkerSandboxForDatasourceBindings(context.Background()))
+	})
+
+	t.Run("returns false when store is nil", func(t *testing.T) {
+		mockFlags := &flagsmocks.Flags{}
+		srv := &server{Config: &Config{
+			Worker: &worker.MockClient{},
+			Store:  nil,
+			Flags:  mockFlags,
+		}}
+
+		assert.False(t, srv.shouldUseWorkerSandboxForDatasourceBindings(context.Background()))
+		mockFlags.AssertNotCalled(t, "GetPureJsUseWasmSandboxEnabled", mock.Anything, mock.Anything)
+	})
+
+	t.Run("returns true when flag is enabled for org", func(t *testing.T) {
+		mockFlags := &flagsmocks.Flags{}
+		ctx := jwt_validator.WithOrganizationType(context.Background(), "enterprise")
+		ctx = jwt_validator.WithOrganizationID(ctx, "org-123")
+
+		mockFlags.On("GetPureJsUseWasmSandboxEnabled", "enterprise", "org-123").Return(true).Once()
+		srv := &server{Config: &Config{
+			Worker: &worker.MockClient{},
+			Store:  store.Memory(),
+			Flags:  mockFlags,
+		}}
+
+		assert.True(t, srv.shouldUseWorkerSandboxForDatasourceBindings(ctx))
+		mockFlags.AssertExpectations(t)
+	})
+
+	t.Run("returns false when flag is disabled for org", func(t *testing.T) {
+		mockFlags := &flagsmocks.Flags{}
+		ctx := jwt_validator.WithOrganizationType(context.Background(), "enterprise")
+		ctx = jwt_validator.WithOrganizationID(ctx, "org-123")
+
+		mockFlags.On("GetPureJsUseWasmSandboxEnabled", "enterprise", "org-123").Return(false).Once()
+		srv := &server{Config: &Config{
+			Worker: &worker.MockClient{},
+			Store:  store.Memory(),
+			Flags:  mockFlags,
+		}}
+
+		assert.False(t, srv.shouldUseWorkerSandboxForDatasourceBindings(ctx))
+		mockFlags.AssertExpectations(t)
+	})
 }
 
 // TestInlineDefinitionAuthorizationRequired ensures that endpoints accepting ExecuteRequest
@@ -1176,7 +1419,7 @@ func TestMetadata(t *testing.T) {
 			tm.On("AddTokenIfNeeded", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(types.TokenPayload{}, nil)
 
 			mockWorker := &worker.MockClient{}
-			mockWorker.On("Metadata", ctx, tc.pluginId, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedMetadataResp, tc.expectedMetadataErr)
+			mockWorker.On("Metadata", mock.Anything, tc.pluginId, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedMetadataResp, tc.expectedMetadataErr)
 
 			fetcher := &fetchmocks.Fetcher{}
 			fetcher.On("FetchIntegration", ctx, tc.integrationId, mock.Anything).Return(&fetch.Integration{
@@ -1185,7 +1428,7 @@ func TestMetadata(t *testing.T) {
 			fetcher.On("FetchIntegrations", mock.Anything, mock.Anything, mock.Anything).Return(new(integrationv1.GetIntegrationsResponse), nil)
 
 			defer metrics.SetupForTesting()()
-			server := NewServer(&Config{
+			services := NewServer(&Config{
 				TokenManager:  tm,
 				Logger:        zap.NewNop(),
 				Store:         store.Memory(),
@@ -1194,14 +1437,15 @@ func TestMetadata(t *testing.T) {
 				SecretManager: secrets.NewSecretManager(),
 			})
 
-			resp, err := server.Metadata(ctx, tc.req)
-			if err != nil {
+			resp, err := services.Metadata(ctx, tc.req)
+			if tc.expectedMetadataErr != nil {
+				require.Error(t, err)
 				assert.Equal(t, err, sberror.ToIntegrationError(tc.expectedMetadataErr))
 				_, ok := sberror.IsIntegrationError(err)
 				assert.Equal(t, ok, true)
-			} else {
-				assert.Equal(t, tc.err, err)
+				return
 			}
+			require.NoError(t, err)
 
 			if tc.expectedMetadataResp.GetData().GetData().GetGSheetsNextPageToken() == testToken {
 				assert.Equal(t, resp.GetGSheetsNextPageToken(), testToken)
