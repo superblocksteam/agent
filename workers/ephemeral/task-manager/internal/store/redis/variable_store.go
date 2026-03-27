@@ -2,13 +2,9 @@ package redis
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
 	"strings"
 	"sync"
 
@@ -37,6 +33,24 @@ type ExecutionFileContext struct {
 	// the integration executor calls back to the orchestrator, linking the
 	// integration query trace to the parent SDK API execution trace.
 	TraceCarrier map[string]string
+	// FileRefs holds lightweight metadata about uploaded files from the parent
+	// execution. These are references (originalname, encoding, mimetype, and
+	// the file server path) — not the raw bytes. When a nested integration
+	// execution needs file data, the integration executor fetches the buffer
+	// on demand from the file server using FileServerURL.
+	FileRefs []FileRef
+}
+
+// FileRef is a lightweight reference to an uploaded file on the orchestrator's
+// file server. It carries only metadata; the actual content is fetched lazily.
+type FileRef struct {
+	OriginalName string
+	Encoding     string
+	MimeType     string
+	Size         int64
+	// Path is the orchestrator-local file path, used as the file server
+	// location parameter to fetch the content on demand.
+	Path string
 }
 
 type FileContextProvider interface {
@@ -515,7 +529,7 @@ func (s *VariableStoreGRPC) FetchFile(ctx context.Context, req *workerv1.FetchFi
 			}
 
 			// Fetch file from orchestrator's file server
-			contents, err := s.fetchFromFileServer(ctx, fileCtx.FileServerURL, fileCtx.AgentKey, req.Path)
+			contents, err := FetchFileFromServer(ctx, fileCtx.FileServerURL, fileCtx.AgentKey, req.Path)
 			if err != nil {
 				s.logger.Error("failed to fetch file from server",
 					zap.String("path", req.Path),
@@ -528,76 +542,6 @@ func (s *VariableStoreGRPC) FetchFile(ctx context.Context, req *workerv1.FetchFi
 		nil,
 	)
 	return resp, err
-}
-
-// fetchFromFileServer fetches file contents from the orchestrator's file server
-func (s *VariableStoreGRPC) fetchFromFileServer(ctx context.Context, fileServerURL, agentKey, remotePath string) ([]byte, error) {
-	// Build request URL
-	reqURL := fmt.Sprintf("%s?location=%s", fileServerURL, remotePath)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// Sanitize agent key for header
-	sanitizedKey := strings.ReplaceAll(agentKey, "/", "__")
-	sanitizedKey = strings.ReplaceAll(sanitizedKey, "+", "--")
-	req.Header.Set("x-superblocks-agent-key", sanitizedKey)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch file: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("file server returned status %d", resp.StatusCode)
-	}
-
-	// Read response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	// Handle v2 file server format (JSON lines with base64 data)
-	if strings.Contains(fileServerURL, "v2") {
-		return s.parseV2FileResponse(body)
-	}
-
-	return body, nil
-}
-
-// parseV2FileResponse parses the v2 file server response format (JSON lines with base64 data)
-func (*VariableStoreGRPC) parseV2FileResponse(body []byte) ([]byte, error) {
-	lines := strings.Split(string(body), "\n")
-	var result []byte
-
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-
-		var obj struct {
-			Result struct {
-				Data string `json:"data"`
-			} `json:"result"`
-		}
-
-		if err := json.Unmarshal([]byte(line), &obj); err != nil {
-			continue
-		}
-
-		decoded, err := base64.StdEncoding.DecodeString(obj.Result.Data)
-		if err != nil {
-			continue
-		}
-
-		result = append(result, decoded...)
-	}
-
-	return result, nil
 }
 
 // extractIP extracts the IP address from an address string (IP:port format)

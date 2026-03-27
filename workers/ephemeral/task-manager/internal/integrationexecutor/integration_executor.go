@@ -9,8 +9,11 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
+
+	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 
 	"github.com/superblocksteam/agent/pkg/constants"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
@@ -392,6 +395,18 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 	}
 	outCtx = metadata.NewOutgoingContext(outCtx, md)
 
+	// Lazily resolve file references: fetch content from the orchestrator's
+	// file server only when the execution context carries uploaded files.
+	// This avoids sending raw buffers through Redis; only lightweight metadata
+	// travels with the transport message.
+	var files []*apiv1.ExecuteRequest_File
+	if len(fileCtx.FileRefs) > 0 {
+		files, err = s.resolveFileRefs(ctx, fileCtx)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to resolve uploaded files: %v", err)
+		}
+	}
+
 	resp, err := client.Await(outCtx, &apiv1.ExecuteRequest{
 		Request: &apiv1.ExecuteRequest_Definition{
 			Definition: &apiv1.Definition{
@@ -408,6 +423,7 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 				},
 			},
 		},
+		Files:    files,
 		Profile:  profile,
 		ViewMode: req.GetViewMode(),
 	})
@@ -462,6 +478,29 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		ExecutionId: resp.GetExecution(),
 		Output:      resp.GetOutput().GetResult(),
 	}, nil
+}
+
+// resolveFileRefs fetches file content from the orchestrator's file server for
+// each FileRef in the execution context. This is the lazy half of the by-ref
+// pattern: metadata travels with the Redis transport message, content is
+// fetched on demand only when a nested integration actually needs files.
+func (s *IntegrationExecutorService) resolveFileRefs(ctx context.Context, fileCtx *redisstore.ExecutionFileContext) ([]*apiv1.ExecuteRequest_File, error) {
+	files := make([]*apiv1.ExecuteRequest_File, 0, len(fileCtx.FileRefs))
+	for _, ref := range fileCtx.FileRefs {
+		buf, err := redisstore.FetchFileFromServer(ctx, fileCtx.FileServerURL, fileCtx.AgentKey, ref.Path)
+		if err != nil {
+			return nil, fmt.Errorf("file %q: %w", ref.OriginalName, err)
+		}
+
+		files = append(files, &apiv1.ExecuteRequest_File{
+			OriginalName: ref.OriginalName,
+			Buffer:       buf,
+			Encoding:     ref.Encoding,
+			MimeType:     ref.MimeType,
+			Size:         strconv.FormatInt(ref.Size, 10),
+		})
+	}
+	return files, nil
 }
 
 func resolveEffectiveOrchestratorAddress(defaultAddress, overrideAddress string) (orchestratorDialTarget, error) {

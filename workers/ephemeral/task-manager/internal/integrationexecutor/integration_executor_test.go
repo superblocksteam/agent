@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
@@ -209,6 +211,7 @@ func TestExecuteIntegration(t *testing.T) {
 		wantOrigin         string
 		wantOrg            string
 		wantProfile        *commonv1.Profile
+		wantFiles          []*apiv1.ExecuteRequest_File
 	}{
 		{
 			name: "happy path",
@@ -227,6 +230,29 @@ func TestExecuteIntegration(t *testing.T) {
 			wantOrg:     testOrgID,
 			wantProfile: profileTest,
 			wantOutput:  outputValue,
+		},
+		{
+			name: "files lazily fetched from file server and forwarded to Await",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-files",
+				IntegrationId:       "int-1",
+				PluginId:            "s3",
+				ActionConfiguration: actionConfig,
+				ViewMode:            apiv1.ViewMode_VIEW_MODE_EDIT,
+			},
+			// contexts is set dynamically below (needs file server URL)
+			wantJwt: "Bearer " + validJWT,
+			wantOrg: testOrgID,
+			wantFiles: []*apiv1.ExecuteRequest_File{
+				{
+					OriginalName: "activate.sh-375-1772482012190",
+					Buffer:       []byte("#!/bin/bash\necho hello"),
+					Encoding:     "7bit",
+					MimeType:     "application/x-sh",
+					Size:         "22",
+				},
+			},
+			wantOutput: outputValue,
 		},
 		{
 			name: "forwards origin metadata when present",
@@ -453,6 +479,37 @@ func TestExecuteIntegration(t *testing.T) {
 
 			orchestratorAddr := startFakeOrchestrator(t, fake)
 
+			// For the lazy file server test: spin up a fake HTTP file server
+			// that returns file content by path, then wire it into the context.
+			if test.contexts == nil {
+				fileServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					location := r.URL.Query().Get("location")
+					if location == "/tmp/activate.sh" {
+						w.Write([]byte("#!/bin/bash\necho hello"))
+						return
+					}
+					http.NotFound(w, r)
+				}))
+				t.Cleanup(fileServer.Close)
+
+				test.contexts = map[string]*redisstore.ExecutionFileContext{
+					"exec-files": {
+						JwtToken:      makeWorkerJWTContext(validJWT, validJWT),
+						FileServerURL: fileServer.URL,
+						AgentKey:      "test-key",
+						FileRefs: []redisstore.FileRef{
+							{
+								OriginalName: "activate.sh-375-1772482012190",
+								Encoding:     "7bit",
+								MimeType:     "application/x-sh",
+								Size:         22,
+								Path:         "/tmp/activate.sh",
+							},
+						},
+					},
+				}
+			}
+
 			svc := &IntegrationExecutorService{
 				logger:              zap.NewNop(),
 				orchestratorAddress: orchestratorAddr,
@@ -501,6 +558,20 @@ func TestExecuteIntegration(t *testing.T) {
 
 			if test.wantProfile != nil {
 				assert.Equal(t, test.wantProfile.GetName(), fake.lastRequest.GetProfile().GetName())
+			}
+
+			if test.wantFiles != nil {
+				require.Len(t, fake.lastRequest.GetFiles(), len(test.wantFiles))
+				for i, wf := range test.wantFiles {
+					got := fake.lastRequest.GetFiles()[i]
+					assert.Equal(t, wf.GetOriginalName(), got.GetOriginalName())
+					assert.Equal(t, wf.GetBuffer(), got.GetBuffer())
+					assert.Equal(t, wf.GetEncoding(), got.GetEncoding())
+					assert.Equal(t, wf.GetMimeType(), got.GetMimeType())
+					assert.Equal(t, wf.GetSize(), got.GetSize())
+				}
+			} else {
+				assert.Empty(t, fake.lastRequest.GetFiles(), "no files should be forwarded when context has none")
 			}
 		})
 	}
@@ -1207,6 +1278,120 @@ func TestEvictOldestOrchestratorClientLockedContinuesWhenCloseFails(t *testing.T
 	assert.Empty(t, svc.orchestratorClientKeys)
 	assert.Empty(t, svc.orchestratorClients)
 	assert.Empty(t, svc.orchestratorConns)
+}
+
+func TestExecuteIntegrationFileServerFailureReturnsError(t *testing.T) {
+	validJWT := makeTestJWT(testOrgID)
+
+	fileServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(fileServer.Close)
+
+	fake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "exec-id",
+			Output:    &apiv1.Output{Result: structpb.NewNullValue()},
+		},
+	}
+	orchestratorAddr := startFakeOrchestrator(t, fake)
+
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: orchestratorAddr,
+		fileContextProvider: &mockFileContextProvider{
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {
+					JwtToken:      makeWorkerJWTContext(validJWT, validJWT),
+					FileServerURL: fileServer.URL,
+					AgentKey:      "key",
+					FileRefs: []redisstore.FileRef{
+						{OriginalName: "broken.txt", Path: "/tmp/missing"},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := svc.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:         "exec-1",
+		IntegrationId:       "int-1",
+		PluginId:            "s3",
+		ActionConfiguration: &structpb.Struct{Fields: map[string]*structpb.Value{}},
+	})
+	require.Error(t, err)
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.Internal, st.Code())
+	assert.Contains(t, st.Message(), "failed to resolve uploaded files")
+	assert.Nil(t, fake.lastRequest, "request should not reach orchestrator when file fetch fails")
+}
+
+func TestExecuteIntegrationMultipleFiles(t *testing.T) {
+	validJWT := makeTestJWT(testOrgID)
+
+	fileServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		location := r.URL.Query().Get("location")
+		switch location {
+		case "/tmp/file-a":
+			w.Write([]byte("content-a"))
+		case "/tmp/file-b":
+			w.Write([]byte("content-b"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(fileServer.Close)
+
+	outputValue, err := structpb.NewValue(map[string]any{"ok": true})
+	require.NoError(t, err)
+
+	fake := &fakeOrchestratorServer{
+		response: &apiv1.AwaitResponse{
+			Execution: "multi-exec",
+			Output:    &apiv1.Output{Result: outputValue},
+		},
+	}
+	orchestratorAddr := startFakeOrchestrator(t, fake)
+
+	svc := &IntegrationExecutorService{
+		logger:              zap.NewNop(),
+		orchestratorAddress: orchestratorAddr,
+		fileContextProvider: &mockFileContextProvider{
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-multi": {
+					JwtToken:      makeWorkerJWTContext(validJWT, validJWT),
+					FileServerURL: fileServer.URL,
+					AgentKey:      "key",
+					FileRefs: []redisstore.FileRef{
+						{OriginalName: "a.txt", Encoding: "7bit", MimeType: "text/plain", Size: 9, Path: "/tmp/file-a"},
+						{OriginalName: "b.bin", Encoding: "binary", MimeType: "application/octet-stream", Size: 9, Path: "/tmp/file-b"},
+					},
+				},
+			},
+		},
+	}
+
+	resp, err := svc.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{
+		ExecutionId:         "exec-multi",
+		IntegrationId:       "int-1",
+		PluginId:            "s3",
+		ActionConfiguration: &structpb.Struct{Fields: map[string]*structpb.Value{}},
+	})
+	require.NoError(t, err)
+	assert.Empty(t, resp.GetError())
+
+	require.Len(t, fake.lastRequest.GetFiles(), 2)
+
+	assert.Equal(t, "a.txt", fake.lastRequest.GetFiles()[0].GetOriginalName())
+	assert.Equal(t, []byte("content-a"), fake.lastRequest.GetFiles()[0].GetBuffer())
+	assert.Equal(t, "text/plain", fake.lastRequest.GetFiles()[0].GetMimeType())
+	assert.Equal(t, "9", fake.lastRequest.GetFiles()[0].GetSize())
+
+	assert.Equal(t, "b.bin", fake.lastRequest.GetFiles()[1].GetOriginalName())
+	assert.Equal(t, []byte("content-b"), fake.lastRequest.GetFiles()[1].GetBuffer())
+	assert.Equal(t, "application/octet-stream", fake.lastRequest.GetFiles()[1].GetMimeType())
+	assert.Equal(t, "9", fake.lastRequest.GetFiles()[1].GetSize())
 }
 
 func TestGetOrCreateOrchestratorClientReuseKeyedByAddress(t *testing.T) {

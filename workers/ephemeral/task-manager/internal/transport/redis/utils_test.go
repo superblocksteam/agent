@@ -3,6 +3,9 @@ package redis
 import (
 	"testing"
 
+	redisstore "workers/ephemeral/task-manager/internal/store/redis"
+
+	"github.com/stretchr/testify/assert"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 )
@@ -226,5 +229,88 @@ func TestComputeAllowedKeys_ExecutionIDFormat(t *testing.T) {
 	}
 	if got[1] != expectedOutput {
 		t.Errorf("expected output key %q, got %q", expectedOutput, got[1])
+	}
+}
+
+func TestTransportFilesToFileRefs(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		input []*transportv1.Request_Data_Data_Props_File
+		want  []redisstore.FileRef
+	}{
+		{
+			name:  "nil input returns nil",
+			input: nil,
+			want:  nil,
+		},
+		{
+			name:  "empty input returns nil",
+			input: []*transportv1.Request_Data_Data_Props_File{},
+			want:  nil,
+		},
+		{
+			name: "skips entries with empty path",
+			input: []*transportv1.Request_Data_Data_Props_File{
+				{Originalname: "readme.txt", Encoding: "7bit", Mimetype: "text/plain"},
+			},
+			want: nil,
+		},
+		{
+			name:  "skips nil entries",
+			input: []*transportv1.Request_Data_Data_Props_File{nil},
+			want:  nil,
+		},
+		{
+			name: "converts entries with path",
+			input: []*transportv1.Request_Data_Data_Props_File{
+				{
+					Originalname: "activate.sh-375-1772482012190",
+					Encoding:     "7bit",
+					Mimetype:     "application/x-sh",
+					Size:         22,
+					Path:         "/tmp/execute-v3-upload-abc123",
+				},
+			},
+			want: []redisstore.FileRef{
+				{
+					OriginalName: "activate.sh-375-1772482012190",
+					Encoding:     "7bit",
+					MimeType:     "application/x-sh",
+					Size:         22,
+					Path:         "/tmp/execute-v3-upload-abc123",
+				},
+			},
+		},
+		{
+			name: "mixed entries: with and without path",
+			input: []*transportv1.Request_Data_Data_Props_File{
+				{Originalname: "no-path.txt", Encoding: "7bit", Mimetype: "text/plain"},
+				{
+					Originalname: "has-path.bin",
+					Encoding:     "binary",
+					Mimetype:     "application/octet-stream",
+					Size:         3,
+					Path:         "/tmp/execute-v3-upload-def456",
+				},
+			},
+			want: []redisstore.FileRef{
+				{
+					OriginalName: "has-path.bin",
+					Encoding:     "binary",
+					MimeType:     "application/octet-stream",
+					Size:         3,
+					Path:         "/tmp/execute-v3-upload-def456",
+				},
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got := transportFilesToFileRefs(test.input)
+			if test.want == nil {
+				assert.Nil(t, got)
+				return
+			}
+			assert.Equal(t, test.want, got)
+		})
 	}
 }

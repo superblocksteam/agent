@@ -515,6 +515,7 @@ func (rt *redisTransport) setupExecutionContext(executionID string, pluginProps 
 			Profile:                 pluginProps.GetProfile(),
 			IntegrationsCallbackUrl: pluginProps.GetIntegrationsCallbackUrl(),
 			TraceCarrier:            traceCarrier,
+			FileRefs:                transportFilesToFileRefs(pluginProps.GetFiles()),
 		},
 	)
 
@@ -614,6 +615,34 @@ func (rt *redisTransport) notifyWorkerReturned(busyWorkersRemaining int64) {
 	case rt.workerReturned <- busyWorkersRemaining:
 	default:
 	}
+}
+
+// transportFilesToFileRefs extracts lightweight file metadata from transport-
+// layer Props_File entries. Only entries with a non-empty Path are kept; the
+// path is the orchestrator-local file location that the file server can serve.
+func transportFilesToFileRefs(files []*transportv1.Request_Data_Data_Props_File) []redisstore.FileRef {
+	if len(files) == 0 {
+		return nil
+	}
+
+	out := make([]redisstore.FileRef, 0, len(files))
+	for _, f := range files {
+		if f == nil || f.GetPath() == "" {
+			continue
+		}
+		out = append(out, redisstore.FileRef{
+			OriginalName: f.GetOriginalname(),
+			Encoding:     f.GetEncoding(),
+			MimeType:     f.GetMimetype(),
+			Size:         f.GetSize(),
+			Path:         f.GetPath(),
+		})
+	}
+
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // Name implements run.Runnable
