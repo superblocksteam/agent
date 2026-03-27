@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-    "axios": "1.8.3",
+    "axios": "1.13.5",
     "base64url": "3.0.1",
     "deasync": "0.1.30",
     "esprima": "4.0.1",
