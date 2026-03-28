@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 - Re-expose `crypto` as a global so JavaScript code can use APIs like `crypto.randomUUID()` without explicitly requiring the module
 
+## v1.36.1
+- Fix available plugins in on-premise agent (removed `javascriptsdkapi`)
+
 ## v1.36.0
 - Fix `check-auth` failures for `oauth-token-exchange` integrations
 - Upgrade `vm2` to latest version (`v3.10.5`)
