@@ -37,7 +37,10 @@ describe('code-mode wrapper contract', () => {
     run:async function(ctx){return {sdkapi:"ok",input:ctx.input};}
   }};`;
 
-  function buildWrapper(bundle: string, inputs = '{}', executionId = '"test-exec"', user = '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}') {
+  function buildWrapper(bundle: string, inputs = '{}', executionId = '"test-exec"', user = '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}', exportName = '') {
+    const exportAlias = exportName
+      ? `\nmodule.exports.default = module.exports[${JSON.stringify(exportName)}];\nif (!module.exports.default || typeof module.exports.default.run !== "function") {\n  throw new Error("code-mode bundle does not export a valid CompiledApi named " + ${JSON.stringify(exportName)});\n}\n`
+      : '';
     return `"use strict";
 var module = { exports: {} };
 var exports = module.exports;
@@ -51,8 +54,18 @@ var __sb_executionId = ${executionId};
 // --- begin bundle ---
 ${bundle}
 // --- end bundle ---
-
-var __sb_api = module.exports.default || module.exports;
+${exportAlias}
+var __sb_api = module.exports.default;
+if (!__sb_api || typeof __sb_api.run !== "function") {
+  var __sb_keys = Object.keys(module.exports);
+  for (var __sb_ki = 0; __sb_ki < __sb_keys.length; __sb_ki++) {
+    var __sb_candidate = module.exports[__sb_keys[__sb_ki]];
+    if (__sb_candidate && typeof __sb_candidate.run === "function") {
+      __sb_api = __sb_candidate;
+      break;
+    }
+  }
+}
 if (!__sb_api || typeof __sb_api.run !== "function") {
   throw new Error("code-mode bundle does not export a valid CompiledApi (missing run function)");
 }
@@ -158,6 +171,132 @@ return __sb_result.output;
         __sb_integrationExecutor: mockIntegrationExecutor
       })
     ).rejects.toThrow('does not export a valid CompiledApi');
+  });
+
+  it('resolves CompiledApi from named export when default is absent', async () => {
+    const namedExportBundle = `module.exports.MyApi = {
+      inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      run:async function(ctx){return {named:"export",input:ctx.input};}
+    };`;
+
+    mockExecuteApi.mockResolvedValue({ success: true, output: { named: 'export' } });
+
+    const result = await evaluateWrapper(buildWrapper(namedExportBundle, '{"key":"val"}'), {
+      __sb_execute: mockExecuteApi,
+      __sb_integrationExecutor: mockIntegrationExecutor
+    });
+
+    expect(result).toEqual({ named: 'export' });
+    expect(mockExecuteApi).toHaveBeenCalledTimes(1);
+    const [api] = mockExecuteApi.mock.calls[0];
+    expect(typeof api.run).toBe('function');
+  });
+
+  it('prefers default export over named exports (server wraps with exportName)', async () => {
+    // When the server receives exportName, it wraps the bundle so module.exports.default
+    // is exactly the requested API. This simulates that happy path with two APIs.
+    const serverWrappedBundle = `module.exports.CreateUser = {
+      inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      run:async function(ctx){return {api:"CreateUser"};}
+    };
+    module.exports.DeleteUser = {
+      inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      run:async function(ctx){return {api:"DeleteUser"};}
+    };
+    // Server wraps the requested export as default
+    module.exports.default = module.exports.DeleteUser;`;
+
+    mockExecuteApi.mockResolvedValue({ success: true, output: { api: 'DeleteUser' } });
+
+    const result = await evaluateWrapper(buildWrapper(serverWrappedBundle), {
+      __sb_execute: mockExecuteApi,
+      __sb_integrationExecutor: mockIntegrationExecutor
+    });
+
+    expect(result).toEqual({ api: 'DeleteUser' });
+    const [api] = mockExecuteApi.mock.calls[0];
+    expect(typeof api.run).toBe('function');
+    // Verify it picked the correct API (DeleteUser), not the first one (CreateUser)
+    expect(await api.run({})).toEqual({ api: 'DeleteUser' });
+  });
+
+  it('falls back to first named CompiledApi when default is absent (multi-export)', async () => {
+    // Without server-side exportName wrapping, the scan picks the first match.
+    const multiExportBundle = `module.exports.CreateUser = {
+      inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      run:async function(ctx){return {api:"CreateUser"};}
+    };
+    module.exports.DeleteUser = {
+      inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      run:async function(ctx){return {api:"DeleteUser"};}
+    };`;
+
+    mockExecuteApi.mockResolvedValue({ success: true, output: { api: 'CreateUser' } });
+
+    const result = await evaluateWrapper(buildWrapper(multiExportBundle), {
+      __sb_execute: mockExecuteApi,
+      __sb_integrationExecutor: mockIntegrationExecutor
+    });
+
+    expect(result).toEqual({ api: 'CreateUser' });
+    const [api] = mockExecuteApi.mock.calls[0];
+    // Without exportName, the scan picks the first export (CreateUser)
+    expect(await api.run({})).toEqual({ api: 'CreateUser' });
+  });
+
+  it('selects the correct API via exportName when multiple APIs share a file', async () => {
+    const multiExportBundle = `module.exports.CreateUser = {
+      inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      run:async function(ctx){return {api:"CreateUser"};}
+    };
+    module.exports.DeleteUser = {
+      inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      run:async function(ctx){return {api:"DeleteUser"};}
+    };`;
+
+    mockExecuteApi.mockImplementation(async (api: { run: (ctx: unknown) => Promise<unknown> }) => {
+      const result = await api.run({});
+      return { success: true, output: result };
+    });
+
+    const result = await evaluateWrapper(
+      buildWrapper(multiExportBundle, '{}', '"test-exec"', '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}', 'DeleteUser'),
+      {
+        __sb_execute: mockExecuteApi,
+        __sb_integrationExecutor: mockIntegrationExecutor
+      }
+    );
+
+    expect(result).toEqual({ api: 'DeleteUser' });
+    expect(mockExecuteApi).toHaveBeenCalledTimes(1);
+    const [api] = mockExecuteApi.mock.calls[0];
+    expect(await api.run({})).toEqual({ api: 'DeleteUser' });
+  });
+
+  it('throws when exportName does not match any bundle export (typo or server bug)', async () => {
+    const multiExportBundle = `module.exports.CreateUser = {
+      inputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      outputSchema:{safeParse:function(v){return{success:true,data:v}}},
+      run:async function(ctx){return {api:"CreateUser"};}
+    };`;
+
+    await expect(
+      evaluateWrapper(
+        buildWrapper(multiExportBundle, '{}', '"test-exec"', '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}', 'NonExistentApi'),
+        {
+          __sb_execute: mockExecuteApi,
+          __sb_integrationExecutor: mockIntegrationExecutor
+        }
+      )
+    ).rejects.toThrow('does not export a valid CompiledApi named NonExistentApi');
+    expect(mockExecuteApi).not.toHaveBeenCalled();
   });
 
   it('defaults pluginId to empty for unknown integrationId', async () => {

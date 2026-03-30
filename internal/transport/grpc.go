@@ -195,6 +195,7 @@ func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*a
 		CommitId:   req.CommitId,
 		BranchName: req.BranchName,
 		EntryPoint: req.EntryPoint,
+		ExportName: req.ExportName,
 	}
 
 	if req.GetIncludeDiagnostics() {
@@ -1024,7 +1025,7 @@ func (s *server) executeCodeMode(
 		return sendError(sberror.AuthorizationError(err))
 	}
 
-	wrapperScript, err := generateWrapperScript(user, req.GetInputs(), bundle, executionID)
+	wrapperScript, err := generateWrapperScript(user, req.GetInputs(), bundle, executionID, fetchCode.GetExportName())
 	if err != nil {
 		logger.Error("could not generate wrapper script", zap.Error(err))
 		return sendError(err)

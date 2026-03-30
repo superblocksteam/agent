@@ -322,6 +322,10 @@ message ExecuteRequest {
     optional string branch_name = 5;
     // The entry point path relative to the application root (e.g. "server/apis/GetUsers/api.ts").
     optional string entry_point = 6;
+    // The named export to isolate from the entry point file (e.g. "CreateUser").
+    // When set, the server wraps that export as the default so the bundle contains
+    // exactly one CompiledApi. Required for multi-API-per-file entry points.
+    optional string export_name = 7;
   }
 
   /*
@@ -415,6 +419,11 @@ message ExecuteV3Request {
   // When true, the response will include per-integration-call diagnostic records
   // with truncated input/output and timing data.
   bool include_diagnostics = 9;
+
+  // The named export to isolate from the entry point file (e.g. "CreateUser").
+  // When set, the server wraps that export as the default so the bundle contains
+  // exactly one CompiledApi. Required for multi-API-per-file entry points.
+  optional string export_name = 10;
 }
 
 message Definition {

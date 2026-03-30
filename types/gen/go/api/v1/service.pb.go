@@ -423,6 +423,8 @@ type ExecuteV3Request struct {
 	// When true, the response will include per-integration-call diagnostic records
 	// with truncated input/output and timing data.
 	IncludeDiagnostics bool `protobuf:"varint,9,opt,name=include_diagnostics,json=includeDiagnostics,proto3" json:"include_diagnostics,omitempty"`
+	// The named export to isolate from the entry point file (e.g. "CreateUser").
+	ExportName *string `protobuf:"bytes,10,opt,name=export_name,json=exportName,proto3,oneof" json:"export_name,omitempty"`
 }
 
 func (x *ExecuteV3Request) Reset() {
@@ -518,6 +520,13 @@ func (x *ExecuteV3Request) GetIncludeDiagnostics() bool {
 		return x.IncludeDiagnostics
 	}
 	return false
+}
+
+func (x *ExecuteV3Request) GetExportName() string {
+	if x != nil && x.ExportName != nil {
+		return *x.ExportName
+	}
+	return ""
 }
 
 type Definition struct {
@@ -2394,6 +2403,8 @@ type ExecuteRequest_FetchCode struct {
 	BranchName *string     `protobuf:"bytes,5,opt,name=branch_name,json=branchName,proto3,oneof" json:"branch_name,omitempty"`
 	// The entry point path relative to the application root (e.g. "server/apis/GetUsers/api.ts").
 	EntryPoint *string `protobuf:"bytes,6,opt,name=entry_point,json=entryPoint,proto3,oneof" json:"entry_point,omitempty"`
+	// The named export to isolate from the entry point file (e.g. "CreateUser").
+	ExportName *string `protobuf:"bytes,7,opt,name=export_name,json=exportName,proto3,oneof" json:"export_name,omitempty"`
 }
 
 func (x *ExecuteRequest_FetchCode) Reset() {
@@ -2466,6 +2477,13 @@ func (x *ExecuteRequest_FetchCode) GetBranchName() string {
 func (x *ExecuteRequest_FetchCode) GetEntryPoint() string {
 	if x != nil && x.EntryPoint != nil {
 		return *x.EntryPoint
+	}
+	return ""
+}
+
+func (x *ExecuteRequest_FetchCode) GetExportName() string {
+	if x != nil && x.ExportName != nil {
+		return *x.ExportName
 	}
 	return ""
 }

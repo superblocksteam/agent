@@ -59,7 +59,7 @@ type Options struct {
 type Fetcher interface {
 	FetchApi(context context.Context, request *apiv1.ExecuteRequest_Fetch, useAgentKey bool) (*apiv1.Definition, *structpb.Struct, error)
 	FetchApiByPath(context context.Context, request *apiv1.ExecuteRequest_FetchByPath, useAgentKey bool) (*apiv1.Definition, *structpb.Struct, error)
-	FetchApiCode(ctx context.Context, applicationId string, entryPoint string, commitId string, branchName string, useAgentKey bool) (*ApiCodeBundle, error)
+	FetchApiCode(ctx context.Context, applicationId string, entryPoint string, exportName string, commitId string, branchName string, useAgentKey bool) (*ApiCodeBundle, error)
 	FetchScheduledJobs(context.Context) (*transportv1.FetchScheduleJobResp, *structpb.Struct, error)
 	FetchIntegrationMetadata(context.Context, string) (*integrationv1.GetIntegrationResponse, error)
 	FetchIntegration(context context.Context, integrationId string, profile *commonv1.Profile) (*Integration, error)
@@ -130,10 +130,11 @@ func (f *fetcher) FetchApiByPath(ctx context.Context, options *apiv1.ExecuteRequ
 	return f.handleFetchApiResponse(ctx, resp, err, logger)
 }
 
-func (f *fetcher) FetchApiCode(ctx context.Context, applicationId string, entryPoint string, commitId string, branchName string, useAgentKey bool) (*ApiCodeBundle, error) {
+func (f *fetcher) FetchApiCode(ctx context.Context, applicationId string, entryPoint string, exportName string, commitId string, branchName string, useAgentKey bool) (*ApiCodeBundle, error) {
 	logger := utils.ContexualLogger(ctx, f.logger.With(
 		zap.String("application_id", applicationId),
 		zap.String("entry_point", entryPoint),
+		zap.String("export_name", exportName),
 		zap.String("commit_id", commitId),
 	))
 
@@ -146,6 +147,9 @@ func (f *fetcher) FetchApiCode(ctx context.Context, applicationId string, entryP
 	query := url.Values{}
 	if entryPoint != "" {
 		query.Set("entryPoint", entryPoint)
+	}
+	if exportName != "" {
+		query.Set("exportName", exportName)
 	}
 	if commitId != "" {
 		query.Set("commitId", commitId)

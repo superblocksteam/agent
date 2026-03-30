@@ -143,7 +143,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 		}
 		bundle := "module.exports = { default: { run: async function() { return 'hello'; }, inputSchema: {}, outputSchema: {} } };"
 
-		script, err := generateWrapperScript(user, inputs, bundle, "exec-123")
+		script, err := generateWrapperScript(user, inputs, bundle, "exec-123", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, `"userId":"u-1"`)
 		assert.Contains(t, script, `"email":"user@example.com"`)
@@ -162,7 +162,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("handles nil inputs", func(t *testing.T) {
 		t.Parallel()
-		script, err := generateWrapperScript(defaultUser, nil, "var x = 1;", "exec-1")
+		script, err := generateWrapperScript(defaultUser, nil, "var x = 1;", "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, "{}")
 		assert.Contains(t, script, "var x = 1;")
@@ -170,7 +170,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("handles empty inputs", func(t *testing.T) {
 		t.Parallel()
-		script, err := generateWrapperScript(defaultUser, map[string]*structpb.Value{}, "var x = 1;", "exec-1")
+		script, err := generateWrapperScript(defaultUser, map[string]*structpb.Value{}, "var x = 1;", "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, "{}")
 	})
@@ -183,7 +183,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 			CustomClaims: map[string]interface{}{},
 		}
 
-		script, err := generateWrapperScript(user, nil, "bundle", "exec-1")
+		script, err := generateWrapperScript(user, nil, "bundle", "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, `"userId":"u-1"`)
 		assert.NotContains(t, script, `"name"`)
@@ -196,7 +196,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 		t.Parallel()
 		bundle := "module.exports = { default: { run: async function(ctx) { return ctx; }, inputSchema: {}, outputSchema: {} } };"
 
-		script, err := generateWrapperScript(defaultUser, nil, bundle, "exec-1")
+		script, err := generateWrapperScript(defaultUser, nil, bundle, "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, "__sb_execute")
 		assert.Contains(t, script, "__sb_result")
@@ -209,14 +209,24 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("validates CompiledApi shape", func(t *testing.T) {
 		t.Parallel()
-		script, err := generateWrapperScript(defaultUser, nil, "// empty bundle", "exec-1")
+		script, err := generateWrapperScript(defaultUser, nil, "// empty bundle", "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, `does not export a valid CompiledApi`)
 	})
 
+	t.Run("scans named exports when default is absent", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1", "")
+		require.NoError(t, err)
+		assert.Contains(t, script, "Object.keys(module.exports)",
+			"wrapper should iterate named exports when default is missing")
+		assert.Contains(t, script, `typeof __sb_candidate.run === "function"`,
+			"wrapper should check each named export for a run function")
+	})
+
 	t.Run("includes executeQuery bridge for integrations", func(t *testing.T) {
 		t.Parallel()
-		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1")
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, "__sb_executeQuery")
 		assert.Contains(t, script, "__sb_integrationExecutor")
@@ -240,14 +250,14 @@ func TestGenerateWrapperScript(t *testing.T) {
 					}),
 				},
 			}),
-		}, "bundle", "exec-1")
+		}, "bundle", "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, "$prepareGlobalObjectForFiles(__sb_context.inputs)")
 	})
 
 	t.Run("builds pluginId lookup map from api.integrations", func(t *testing.T) {
 		t.Parallel()
-		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1")
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, "__sb_pluginIdMap",
 			"wrapper should build a map from integrationId to pluginId using api.integrations")
@@ -270,7 +280,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 			"flag":   structpb.NewBoolValue(true),
 		}
 
-		script, err := generateWrapperScript(defaultUser, inputs, "bundle", "exec-1")
+		script, err := generateWrapperScript(defaultUser, inputs, "bundle", "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, `"key":"value"`)
 		assert.Contains(t, script, `"flag":true`)
@@ -280,7 +290,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 		t.Parallel()
 		bundle := "const msg = `hello ${name}`; module.exports = { default: { run: () => msg, inputSchema: {}, outputSchema: {} } };"
 
-		script, err := generateWrapperScript(defaultUser, nil, bundle, "exec-1")
+		script, err := generateWrapperScript(defaultUser, nil, bundle, "exec-1", "")
 		require.NoError(t, err)
 		assert.Contains(t, script, "hello ${name}")
 		assert.Contains(t, script, "__sb_execute")
@@ -288,14 +298,14 @@ func TestGenerateWrapperScript(t *testing.T) {
 
 	t.Run("escapes special characters in executionID", func(t *testing.T) {
 		t.Parallel()
-		script, err := generateWrapperScript(defaultUser, nil, "bundle", `exec-"special"`)
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", `exec-"special"`, "")
 		require.NoError(t, err)
 		assert.Contains(t, script, `exec-\"special\"`)
 	})
 
 	t.Run("error handling extracts cause and issues from error details", func(t *testing.T) {
 		t.Parallel()
-		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1")
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1", "")
 		require.NoError(t, err)
 
 		// The wrapper must surface details.cause so callers see the
@@ -315,6 +325,32 @@ func TestGenerateWrapperScript(t *testing.T) {
 			"error code should not be prefixed into the human-readable message")
 	})
 
+	t.Run("aliases named export as default when exportName is provided", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1", "GetOrders")
+		require.NoError(t, err)
+		assert.Contains(t, script, `module.exports.default = module.exports["GetOrders"]`,
+			"wrapper should alias the named export as default so the correct API is selected")
+	})
+
+	t.Run("does not inject export alias when exportName is empty", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1", "")
+		require.NoError(t, err)
+		assert.NotContains(t, script, `module.exports.default = module.exports[`,
+			"wrapper should not inject export alias when exportName is empty")
+	})
+
+	t.Run("throws when exportName does not match any bundle export", func(t *testing.T) {
+		t.Parallel()
+		script, err := generateWrapperScript(defaultUser, nil, "bundle", "exec-1", "NonExistent")
+		require.NoError(t, err)
+		assert.Contains(t, script, `"NonExistent"`,
+			"wrapper should reference the requested export name in the guard")
+		assert.Contains(t, script, `does not export a valid CompiledApi named`,
+			"wrapper should throw a specific error when the named export is missing")
+	})
+
 	t.Run("returns error when user context cannot be marshaled", func(t *testing.T) {
 		t.Parallel()
 		user := &userContext{
@@ -322,7 +358,7 @@ func TestGenerateWrapperScript(t *testing.T) {
 			CustomClaims: map[string]interface{}{"chan": make(chan int)},
 		}
 
-		script, err := generateWrapperScript(user, nil, "bundle", "exec-1")
+		script, err := generateWrapperScript(user, nil, "bundle", "exec-1", "")
 		assert.Empty(t, script)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "marshal user context")

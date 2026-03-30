@@ -64,7 +64,17 @@ var __sb_executionId = ${executionId};
 ${bundle}
 // --- end bundle ---
 
-var __sb_api = module.exports.default || module.exports;
+var __sb_api = module.exports.default;
+if (!__sb_api || typeof __sb_api.run !== "function") {
+  var __sb_keys = Object.keys(module.exports);
+  for (var __sb_ki = 0; __sb_ki < __sb_keys.length; __sb_ki++) {
+    var __sb_candidate = module.exports[__sb_keys[__sb_ki]];
+    if (__sb_candidate && typeof __sb_candidate.run === "function") {
+      __sb_api = __sb_candidate;
+      break;
+    }
+  }
+}
 if (!__sb_api || typeof __sb_api.run !== "function") {
   throw new Error("code-mode bundle does not export a valid CompiledApi (missing run function)");
 }

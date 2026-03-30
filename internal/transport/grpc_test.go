@@ -1524,6 +1524,7 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 					return true
 				}),
 				"", // entryPoint is empty for code-mode
+				"", // exportName
 				mock.MatchedBy(func(commitId string) bool {
 					assert.Equal(t, expectedCommitId, commitId, "commitId must propagate correctly")
 					return true
@@ -1585,6 +1586,7 @@ func TestExecuteV3ForwardsFilesToCodeModeWorker(t *testing.T) {
 		"FetchApiCode",
 		mock.Anything,
 		"app-with-files",
+		"",
 		"",
 		"",
 		"",
@@ -1668,6 +1670,7 @@ func TestExecuteV3PropagatesIntegrationsCallbackUrlToWorkerProps(t *testing.T) {
 		"",
 		"",
 		"",
+		"",
 		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
@@ -1722,6 +1725,7 @@ func TestExecuteV3PacksOriginIntoWorkerJWTContext(t *testing.T) {
 		"FetchApiCode",
 		mock.Anything,
 		"app-with-origin",
+		"",
 		"",
 		"",
 		"",
@@ -1807,6 +1811,7 @@ func TestExecuteV3RejectsMissingReferencedFilePayload(t *testing.T) {
 		"",
 		"",
 		"",
+		"",
 		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
@@ -1871,6 +1876,7 @@ func TestExecuteV3RejectsDuplicateFileOriginalNames(t *testing.T) {
 		"FetchApiCode",
 		mock.Anything,
 		"app-with-files",
+		"",
 		"",
 		"",
 		"",
@@ -1952,6 +1958,7 @@ func TestExecuteV3CleansMaterializedFilesOnVariableWriteError(t *testing.T) {
 		"FetchApiCode",
 		mock.Anything,
 		"app-with-files",
+		"",
 		"",
 		"",
 		"",
@@ -3303,7 +3310,7 @@ func TestAwaitCodeModeErrorsPromotedToAwaitResponse(t *testing.T) {
 	outputKey := "output-key-await-error"
 	require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
 
-	fetcher.On("FetchApiCode", mock.Anything, "app-await", "", "", "", true).
+	fetcher.On("FetchApiCode", mock.Anything, "app-await", "", "", "", "", true).
 		Return(&fetch.ApiCodeBundle{Bundle: "throw new Error('oops');"}, nil)
 
 	mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).

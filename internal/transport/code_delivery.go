@@ -88,7 +88,7 @@ func toUserGroups(groups []*authv1.Claims_RbacGroupObject) []string {
 // The executionID is forwarded so the sdk-api can include it in logs and traces.
 // User context is embedded in the wrapper as __sb_user so the API's run() function
 // can access user identity (e.g., for authorization checks or audit logging).
-func generateWrapperScript(user *userContext, inputs map[string]*structpb.Value, bundle string, executionID string) (string, error) {
+func generateWrapperScript(user *userContext, inputs map[string]*structpb.Value, bundle string, executionID string, exportName string) (string, error) {
 	userJSON, err := json.Marshal(user)
 	if err != nil {
 		return "", fmt.Errorf("could not marshal user context: %w", err)
@@ -104,11 +104,29 @@ func generateWrapperScript(user *userContext, inputs map[string]*structpb.Value,
 		return "", fmt.Errorf("could not marshal executionID: %w", err)
 	}
 
+	// When the caller specifies an exportName (e.g. a file with multiple named
+	// api() exports), we alias that named export as module.exports.default so
+	// the wrapper picks the correct API instead of scanning for the first match.
+	exportNameAlias := ""
+	if exportName != "" {
+		exportNameJSON, jsonErr := json.Marshal(exportName)
+		if jsonErr != nil {
+			return "", fmt.Errorf("could not marshal exportName: %w", jsonErr)
+		}
+		exportNameAlias = fmt.Sprintf("\nmodule.exports.default = module.exports[%s];\nif (!module.exports.default || typeof module.exports.default.run !== \"function\") {\n  throw new Error(\"code-mode bundle does not export a valid CompiledApi named \" + %s);\n}\n", string(exportNameJSON), string(exportNameJSON))
+	}
+
 	// The wrapper sets up the execution context and concatenates the bundle.
 	// The bundle is an esbuild CommonJS output that populates module.exports.
 	// After the bundle executes, module.exports.default is a CompiledApi object
 	// (with inputSchema, outputSchema, run). We pass it to __sb_execute (sdk-api's
 	// executeApi function, injected by the plugin via context.globals).
+	//
+	// When exportName is provided, the alias above ensures module.exports.default
+	// points to the requested API. Otherwise, when the bundle uses named exports
+	// instead of a default export (e.g. `export const MyApi = api({...})`),
+	// module.exports.default is undefined and we scan module.exports for the
+	// first value whose .run is a function (a CompiledApi-shaped object).
 	//
 	// __sb_integrationExecutor is also injected by the plugin; it bridges
 	// integration operations back through GrpcIntegrationExecutor → task-manager.
@@ -131,8 +149,19 @@ var __sb_executionId = %s;
 // --- begin bundle ---
 %s
 // --- end bundle ---
-
-var __sb_api = module.exports.default || module.exports;
+%s
+var __sb_api = module.exports.default;
+if (!__sb_api || typeof __sb_api.run !== "function") {
+  // No valid default export — scan named exports for a CompiledApi (has .run).
+  var __sb_keys = Object.keys(module.exports);
+  for (var __sb_ki = 0; __sb_ki < __sb_keys.length; __sb_ki++) {
+    var __sb_candidate = module.exports[__sb_keys[__sb_ki]];
+    if (__sb_candidate && typeof __sb_candidate.run === "function") {
+      __sb_api = __sb_candidate;
+      break;
+    }
+  }
+}
 if (!__sb_api || typeof __sb_api.run !== "function") {
   throw new Error("code-mode bundle does not export a valid CompiledApi (missing run function)");
 }
@@ -191,7 +220,7 @@ if (!__sb_result.success) {
   throw new Error(__sb_msg);
 }
 return __sb_result.output;
-`, string(userJSON), string(inputsJSON), string(executionIDJSON), bundle)
+`, string(userJSON), string(inputsJSON), string(executionIDJSON), bundle, exportNameAlias)
 
 	return script, nil
 }

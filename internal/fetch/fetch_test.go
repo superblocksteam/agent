@@ -1570,6 +1570,7 @@ func TestFetchApiCode(t *testing.T) {
 		name            string
 		applicationId   string
 		entryPoint      string
+		exportName      string
 		commitId        string
 		branchName      string
 		metadata        map[string]string
@@ -1768,7 +1769,7 @@ func TestFetchApiCode(t *testing.T) {
 			}
 			ctx := metadata.NewIncomingContext(context.Background(), md)
 
-			bundle, err := f.FetchApiCode(ctx, test.applicationId, test.entryPoint, test.commitId, test.branchName, test.useAgentKey)
+			bundle, err := f.FetchApiCode(ctx, test.applicationId, test.entryPoint, test.exportName, test.commitId, test.branchName, test.useAgentKey)
 
 			if test.expectError {
 				assert.Error(t, err)

@@ -729,7 +729,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		}
 		fetcher := &fetchmocks.Fetcher{}
 		fetchErr := fmt.Errorf("server error")
-		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "abc", "", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "abc", "", false).
 			Return(nil, fetchErr)
 		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
 		require.Error(t, err)
@@ -744,7 +744,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 		fetcher := &fetchmocks.Fetcher{}
-		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
 			Return(&fetch.ApiCodeBundle{Bundle: ""}, nil)
 		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
 		require.Error(t, err)
@@ -759,7 +759,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 		fetcher := &fetchmocks.Fetcher{}
-		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
 			Return(&fetch.ApiCodeBundle{Bundle: "const x = 1;"}, nil)
 		def, rawDef, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
 		require.NoError(t, err)
@@ -779,7 +779,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 		fetcher := &fetchmocks.Fetcher{}
-		fetcher.On("FetchApiCode", mock.Anything, "app-2", "", "commit-123", "main", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-2", "", "", "commit-123", "main", false).
 			Return(&fetch.ApiCodeBundle{Bundle: "code"}, nil)
 		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
 		require.NoError(t, err)
@@ -793,7 +793,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 		fetcher := &fetchmocks.Fetcher{}
-		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
 			Return(nil, nil)
 		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
 		require.Error(t, err)

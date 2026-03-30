@@ -313,7 +313,7 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 		if fc.GetId() == "" {
 			return nil, nil, fmt.Errorf("missing applicationId in FetchCode request")
 		}
-		bundle, err := fetcher.FetchApiCode(ctx, fc.GetId(), fc.GetEntryPoint(), fc.GetCommitId(), fc.GetBranchName(), useAgentKey)
+		bundle, err := fetcher.FetchApiCode(ctx, fc.GetId(), fc.GetEntryPoint(), fc.GetExportName(), fc.GetCommitId(), fc.GetBranchName(), useAgentKey)
 		if err != nil {
 			metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))
 			return nil, nil, err
