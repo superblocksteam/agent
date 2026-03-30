@@ -38,6 +38,7 @@ const (
 	workerJWTContextSuperblocksPrefix   = "sbjwt="
 	workerJWTContextAuthorizationPrefix = "authjwt="
 	workerJWTContextOriginPrefix        = "origin="
+	workerJWTContextCookiePrefix        = "cookie="
 	maxOrchestratorClientCacheSize      = 128
 )
 
@@ -329,7 +330,7 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
 	}
 
-	superblocksToken, authorizationToken, origin := parseWorkerJWTContext(fileCtx.JwtToken)
+	superblocksToken, authorizationToken, origin, cookie := parseWorkerJWTContext(fileCtx.JwtToken)
 	if superblocksToken == "" && authorizationToken == "" {
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
 	}
@@ -376,15 +377,21 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Errorf(codes.InvalidArgument, "invalid step configuration: %v", err)
 	}
 
-	// Forward both auth headers as outgoing gRPC metadata to the orchestrator.
-	// The server validates Authorization (Auth0 JWT) and uses
-	// x-superblocks-authorization for additional org/user context.
+	// Forward auth headers and browser cookies as outgoing gRPC metadata to
+	// the orchestrator. The server validates Authorization (Auth0 JWT) and
+	// uses x-superblocks-authorization for additional org/user context.
+	// Cookies carry per-user auth tokens (basic, oauth-implicit, firebase)
+	// that the orchestrator's GetCookies(ctx) reads during integration
+	// resolution.
 	md := metadata.Pairs(
 		"authorization", "Bearer "+authorizationToken,
 		constants.HeaderSuperblocksJwt, "Bearer "+superblocksToken,
 	)
 	if origin != "" {
 		md.Set("origin", origin)
+	}
+	if cookie != "" {
+		md.Set("cookie", cookie)
 	}
 
 	// Restore trace context from the carrier stored when the execution started.
@@ -612,10 +619,10 @@ func extractOrgIDFromJWT(jwtToken string) (string, error) {
 	return claims.OrgID, nil
 }
 
-func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken, origin string) {
+func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken, origin, cookie string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return "", "", ""
+		return "", "", "", ""
 	}
 
 	lines := strings.Split(raw, "\n")
@@ -631,14 +638,15 @@ func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken, or
 		}
 		if strings.HasPrefix(line, workerJWTContextOriginPrefix) {
 			origin = strings.TrimSpace(strings.TrimPrefix(line, workerJWTContextOriginPrefix))
+			continue
+		}
+		if strings.HasPrefix(line, workerJWTContextCookiePrefix) {
+			cookie = strings.TrimPrefix(line, workerJWTContextCookiePrefix)
+			continue
 		}
 	}
 
-	if superblocksToken != "" || authorizationToken != "" || origin != "" {
-		return superblocksToken, authorizationToken, origin
-	}
-
-	return "", "", ""
+	return superblocksToken, authorizationToken, origin, cookie
 }
 
 func normalizeWorkerOrigin(raw string) (string, error) {

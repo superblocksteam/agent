@@ -65,6 +65,7 @@ type fakeOrchestratorServer struct {
 
 	lastAuthorization string
 	lastOrigin        string
+	lastCookie        string
 	lastRequest       *apiv1.ExecuteRequest
 	lastJwtToken      string
 	response          *apiv1.AwaitResponse
@@ -83,6 +84,9 @@ func (f *fakeOrchestratorServer) Await(ctx context.Context, req *apiv1.ExecuteRe
 		}
 		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
 			f.lastJwtToken = vals[0]
+		}
+		if vals := md.Get("cookie"); len(vals) > 0 {
+			f.lastCookie = vals[0]
 		}
 	}
 
@@ -209,6 +213,7 @@ func TestExecuteIntegration(t *testing.T) {
 		wantError          string
 		wantJwt            string
 		wantOrigin         string
+		wantCookie         string
 		wantOrg            string
 		wantProfile        *commonv1.Profile
 		wantFiles          []*apiv1.ExecuteRequest_File
@@ -267,6 +272,22 @@ func TestExecuteIntegration(t *testing.T) {
 			},
 			wantJwt:    "Bearer " + validJWT,
 			wantOrigin: "https://app.superblocks.com",
+			wantOrg:    testOrgID,
+			wantOutput: outputValue,
+		},
+		{
+			name: "forwards cookie metadata when present",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: workerJWTContextSuperblocksPrefix + validJWT + "\n" + workerJWTContextAuthorizationPrefix + validJWT + "\n" + workerJWTContextCookiePrefix + "basic.ds123-token=abc123"},
+			},
+			wantJwt:    "Bearer " + validJWT,
+			wantCookie: "basic.ds123-token=abc123",
 			wantOrg:    testOrgID,
 			wantOutput: outputValue,
 		},
@@ -540,6 +561,7 @@ func TestExecuteIntegration(t *testing.T) {
 			assert.Equal(t, test.wantJwt, fake.lastAuthorization)
 			assert.Equal(t, test.wantJwt, fake.lastJwtToken)
 			assert.Equal(t, test.wantOrigin, fake.lastOrigin)
+			assert.Equal(t, test.wantCookie, fake.lastCookie)
 
 			// Verify the Await request uses an inline Definition.
 			def := fake.lastRequest.GetDefinition()
@@ -648,6 +670,7 @@ func TestParseWorkerJWTContext(t *testing.T) {
 		wantSuper  string
 		wantAuth   string
 		wantOrigin string
+		wantCookie string
 	}{
 		{
 			name:       "empty input",
@@ -655,6 +678,7 @@ func TestParseWorkerJWTContext(t *testing.T) {
 			wantSuper:  "",
 			wantAuth:   "",
 			wantOrigin: "",
+			wantCookie: "",
 		},
 		{
 			name:       "no recognized prefixes",
@@ -662,6 +686,7 @@ func TestParseWorkerJWTContext(t *testing.T) {
 			wantSuper:  "",
 			wantAuth:   "",
 			wantOrigin: "",
+			wantCookie: "",
 		},
 		{
 			name:       "extracts both tokens",
@@ -669,6 +694,7 @@ func TestParseWorkerJWTContext(t *testing.T) {
 			wantSuper:  "sb-token",
 			wantAuth:   "auth-token",
 			wantOrigin: "",
+			wantCookie: "",
 		},
 		{
 			name:       "extracts tokens and origin",
@@ -676,6 +702,7 @@ func TestParseWorkerJWTContext(t *testing.T) {
 			wantSuper:  "sb-token",
 			wantAuth:   "auth-token",
 			wantOrigin: "https://app.superblocks.com",
+			wantCookie: "",
 		},
 		{
 			name:       "extracts prefixed tokens with whitespace",
@@ -683,13 +710,87 @@ func TestParseWorkerJWTContext(t *testing.T) {
 			wantSuper:  "sb-token",
 			wantAuth:   "auth-token",
 			wantOrigin: "https://app.superblocks.com",
+			wantCookie: "",
+		},
+		{
+			name:       "extracts cookie",
+			input:      workerJWTContextSuperblocksPrefix + "sb-token\n" + workerJWTContextAuthorizationPrefix + "auth-token\n" + workerJWTContextCookiePrefix + "basic.ds123-token=abc123",
+			wantSuper:  "sb-token",
+			wantAuth:   "auth-token",
+			wantOrigin: "",
+			wantCookie: "basic.ds123-token=abc123",
+		},
+		{
+			name:       "extracts all fields including cookie",
+			input:      workerJWTContextSuperblocksPrefix + "sb-token\n" + workerJWTContextAuthorizationPrefix + "auth-token\n" + workerJWTContextOriginPrefix + "https://app.superblocks.com\n" + workerJWTContextCookiePrefix + "basic.ds123-token=abc123; firebase.proj1-token=xyz",
+			wantSuper:  "sb-token",
+			wantAuth:   "auth-token",
+			wantOrigin: "https://app.superblocks.com",
+			wantCookie: "basic.ds123-token=abc123; firebase.proj1-token=xyz",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			gotSuper, gotAuth, gotOrigin := parseWorkerJWTContext(test.input)
+			gotSuper, gotAuth, gotOrigin, gotCookie := parseWorkerJWTContext(test.input)
 			assert.Equal(t, test.wantSuper, gotSuper)
 			assert.Equal(t, test.wantAuth, gotAuth)
 			assert.Equal(t, test.wantOrigin, gotOrigin)
+			assert.Equal(t, test.wantCookie, gotCookie)
+		})
+	}
+}
+
+func TestParseWorkerJWTContextRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	// Simulate the exact format produced by encodeWorkerJWTContext in the
+	// orchestrator (internal/transport/grpc.go). This verifies the contract
+	// between encoder and parser across module boundaries.
+	for _, test := range []struct {
+		name    string
+		sbjwt   string
+		authjwt string
+		origin  string
+		cookie  string
+	}{
+		{
+			name:    "tokens only",
+			sbjwt:   "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.superblocks",
+			authjwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.auth0",
+		},
+		{
+			name:    "tokens and origin",
+			sbjwt:   "sb-token",
+			authjwt: "auth-token",
+			origin:  "https://app.superblocks.com",
+		},
+		{
+			name:    "tokens and cookie",
+			sbjwt:   "sb-token",
+			authjwt: "auth-token",
+			cookie:  "basic.ds123-token=dXNlcjpwYXNz",
+		},
+		{
+			name:    "all fields",
+			sbjwt:   "sb-token",
+			authjwt: "auth-token",
+			origin:  "https://app.superblocks.com",
+			cookie:  "basic.ds123-token=dXNlcjpwYXNz; firebase.proj1-token=eyJhbGciOiJSUzI1NiJ9; firebase.proj1-userId=uid123",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			encoded := workerJWTContextSuperblocksPrefix + test.sbjwt + "\n" + workerJWTContextAuthorizationPrefix + test.authjwt
+			if test.origin != "" {
+				encoded += "\n" + workerJWTContextOriginPrefix + test.origin
+			}
+			if test.cookie != "" {
+				encoded += "\n" + workerJWTContextCookiePrefix + test.cookie
+			}
+
+			gotSbjwt, gotAuthjwt, gotOrigin, gotCookie := parseWorkerJWTContext(encoded)
+			assert.Equal(t, test.sbjwt, gotSbjwt)
+			assert.Equal(t, test.authjwt, gotAuthjwt)
+			assert.Equal(t, test.origin, gotOrigin)
+			assert.Equal(t, test.cookie, gotCookie)
 		})
 	}
 }

@@ -1031,15 +1031,16 @@ func (s *server) executeCodeMode(
 		return sendError(err)
 	}
 
-	// Extract both JWT variants from gRPC metadata for proxied integration
-	// execution. The downstream integration fetch expects:
+	// Extract JWT variants and browser cookies from gRPC metadata for proxied
+	// integration execution. The downstream integration fetch expects:
 	// - Authorization: Auth0 bearer token
 	// - X-Superblocks-Authorization: Superblocks bearer token
 	// - Origin: browser origin for OAuth exchanges that derive redirect URIs
+	// - Cookie: per-user auth tokens (basic, oauth-implicit, firebase)
 	//
-	// For code-mode executions we pass both through the existing JwtToken field
-	// using a compact, backward-compatible encoding understood by the ephemeral
-	// task-manager integration executor.
+	// For code-mode executions we pass all of these through the existing
+	// JwtToken field using a compact, backward-compatible encoding understood
+	// by the ephemeral task-manager integration executor.
 	var jwtToken string
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		var superblocksJwt string
@@ -1059,7 +1060,11 @@ func (s *server) executeCodeMode(
 				origin = normalizedOrigin
 			}
 		}
-		jwtToken = encodeWorkerJWTContext(superblocksJwt, authorizationJwt, origin)
+		var cookie string
+		if vals := md.Get("cookie"); len(vals) > 0 {
+			cookie = vals[0]
+		}
+		jwtToken = encodeWorkerJWTContext(superblocksJwt, authorizationJwt, origin, cookie)
 	}
 
 	if err := validateExecuteFileBindings(req.GetInputs(), req.GetFiles()); err != nil {
@@ -1339,20 +1344,29 @@ func classifySdkApiError(err error) string {
 	return "internal"
 }
 
-func encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin string) string {
+func encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, cookie string) string {
 	superblocksJWT = strings.TrimSpace(strings.TrimPrefix(superblocksJWT, "Bearer "))
 	authorizationJWT = strings.TrimSpace(strings.TrimPrefix(authorizationJWT, "Bearer "))
 	origin = strings.TrimSpace(origin)
+	cookie = strings.TrimSpace(cookie)
+	cookie = strings.ReplaceAll(cookie, "\n", "")
+	cookie = strings.ReplaceAll(cookie, "\r", "")
 
-	if superblocksJWT == "" || authorizationJWT == "" {
-		return ""
+	var parts []string
+	if superblocksJWT != "" {
+		parts = append(parts, "sbjwt="+superblocksJWT)
+	}
+	if authorizationJWT != "" {
+		parts = append(parts, "authjwt="+authorizationJWT)
+	}
+	if origin != "" {
+		parts = append(parts, "origin="+origin)
+	}
+	if cookie != "" {
+		parts = append(parts, "cookie="+cookie)
 	}
 
-	if origin == "" {
-		return "sbjwt=" + superblocksJWT + "\nauthjwt=" + authorizationJWT
-	}
-
-	return "sbjwt=" + superblocksJWT + "\nauthjwt=" + authorizationJWT + "\norigin=" + origin
+	return strings.Join(parts, "\n")
 }
 
 func normalizeWorkerOrigin(raw string) (string, error) {

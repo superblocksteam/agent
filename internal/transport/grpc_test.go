@@ -1756,10 +1756,179 @@ func TestExecuteV3PacksOriginIntoWorkerJWTContext(t *testing.T) {
 
 	_, err := s.ExecuteV3(ctx, req)
 	require.NoError(t, err)
-	assert.Equal(t, encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin), capturedJwtToken)
+	assert.Equal(t, encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, ""), capturedJwtToken)
 
 	fetcher.AssertExpectations(t)
 	mockWorker.AssertExpectations(t)
+}
+
+func TestExecuteV3PacksCookieIntoWorkerJWTContext(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	const origin = "https://app.superblocks.com"
+	const superblocksJWT = "superblocks-jwt"
+	const authorizationJWT = "authorization-jwt"
+	const cookieHeader = "basic.ds123-token=abc123; firebase.proj1-token=xyz"
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+	memStore := store.Memory()
+
+	outputKey := "output-key-v3-cookie-context"
+	require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{"ok":true}}`}))
+
+	var capturedJwtToken string
+	mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.MatchedBy(func(data *transportv1.Request_Data_Data) bool {
+		capturedJwtToken = data.GetProps().GetJwtToken()
+		return true
+	}), mock.Anything, mock.Anything).Return(nil, outputKey, nil)
+
+	fetcher.On(
+		"FetchApiCode",
+		mock.Anything,
+		"app-with-cookie",
+		"",
+		"",
+		"",
+		mock.Anything,
+	).Return(&fetch.ApiCodeBundle{
+		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+	}, nil)
+
+	s := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         memStore,
+		Worker:        mockWorker,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+	})
+
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "app-with-cookie",
+	}
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+	ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(
+		constants.HeaderSuperblocksJwt, "Bearer "+superblocksJWT,
+		"authorization", "Bearer "+authorizationJWT,
+		"origin", origin,
+		"cookie", cookieHeader,
+	))
+
+	_, err := s.ExecuteV3(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, cookieHeader), capturedJwtToken)
+	assert.Contains(t, capturedJwtToken, "cookie="+cookieHeader)
+
+	fetcher.AssertExpectations(t)
+	mockWorker.AssertExpectations(t)
+}
+
+func TestEncodeWorkerJWTContext(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name       string
+		sbjwt      string
+		authjwt    string
+		origin     string
+		cookie     string
+		wantEmpty  bool
+		wantResult string
+	}{
+		{
+			name:      "empty JWTs and no cookie returns empty",
+			sbjwt:     "",
+			authjwt:   "",
+			wantEmpty: true,
+		},
+		{
+			name:       "missing authjwt encodes sbjwt only",
+			sbjwt:      "sb",
+			authjwt:    "",
+			wantResult: "sbjwt=sb",
+		},
+		{
+			name:       "empty JWTs with cookie encodes cookie only",
+			sbjwt:      "",
+			authjwt:    "",
+			cookie:     "basic.ds1-token=abc123",
+			wantResult: "cookie=basic.ds1-token=abc123",
+		},
+		{
+			name:       "basic tokens only",
+			sbjwt:      "sb-token",
+			authjwt:    "auth-token",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token",
+		},
+		{
+			name:       "with origin",
+			sbjwt:      "sb-token",
+			authjwt:    "auth-token",
+			origin:     "https://app.superblocks.com",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token\norigin=https://app.superblocks.com",
+		},
+		{
+			name:       "with cookie",
+			sbjwt:      "sb-token",
+			authjwt:    "auth-token",
+			cookie:     "basic.ds1-token=abc123",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token\ncookie=basic.ds1-token=abc123",
+		},
+		{
+			name:       "all fields",
+			sbjwt:      "sb-token",
+			authjwt:    "auth-token",
+			origin:     "https://app.superblocks.com",
+			cookie:     "basic.ds1-token=abc123; firebase.proj1-token=xyz",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token\norigin=https://app.superblocks.com\ncookie=basic.ds1-token=abc123; firebase.proj1-token=xyz",
+		},
+		{
+			name:       "cookie newline injection stripped",
+			sbjwt:      "sb-token",
+			authjwt:    "auth-token",
+			cookie:     "evil\nsbjwt=attacker-token",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token\ncookie=evilsbjwt=attacker-token",
+		},
+		{
+			name:       "cookie carriage return injection stripped",
+			sbjwt:      "sb-token",
+			authjwt:    "auth-token",
+			cookie:     "evil\r\nsbjwt=attacker-token",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token\ncookie=evilsbjwt=attacker-token",
+		},
+		{
+			name:       "strips Bearer prefix from JWTs",
+			sbjwt:      "Bearer sb-token",
+			authjwt:    "Bearer auth-token",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token",
+		},
+		{
+			name:       "empty cookie not appended",
+			sbjwt:      "sb-token",
+			authjwt:    "auth-token",
+			cookie:     "",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token",
+		},
+		{
+			name:       "whitespace-only cookie not appended",
+			sbjwt:      "sb-token",
+			authjwt:    "auth-token",
+			cookie:     "   ",
+			wantResult: "sbjwt=sb-token\nauthjwt=auth-token",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			result := encodeWorkerJWTContext(test.sbjwt, test.authjwt, test.origin, test.cookie)
+			if test.wantEmpty {
+				assert.Empty(t, result)
+			} else {
+				assert.Equal(t, test.wantResult, result)
+			}
+		})
+	}
 }
 
 func TestNormalizeWorkerOrigin(t *testing.T) {
