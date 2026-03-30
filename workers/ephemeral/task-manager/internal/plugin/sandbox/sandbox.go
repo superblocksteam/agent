@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -63,7 +65,31 @@ var (
 		codes.Unavailable,
 		codes.Unknown,
 	)
+	grpcMaxMessageExceededPattern = regexp.MustCompile(`(?i)trying to send message larger than max \((\d+) vs\. (\d+)\)`)
 )
+
+func grpcTransportSizeExceeded(err error) (int64, int64, bool) {
+	st, ok := status.FromError(err)
+	if !ok || st.Code() != codes.ResourceExhausted {
+		return 0, 0, false
+	}
+
+	matches := grpcMaxMessageExceededPattern.FindStringSubmatch(st.Message())
+	if len(matches) != 3 {
+		return 0, 0, false
+	}
+
+	attemptedSize, err := strconv.ParseInt(matches[1], 10, 64)
+	if err != nil {
+		return 0, 0, false
+	}
+	maxSize, err := strconv.ParseInt(matches[2], 10, 64)
+	if err != nil {
+		return 0, 0, false
+	}
+
+	return attemptedSize, maxSize, true
+}
 
 // IpFilterSetter allows setting IP filters on the variable store
 type IpFilterSetter interface {
@@ -563,6 +589,9 @@ func (p *SandboxPlugin) Execute(
 			return DoWithRetry(ctx, p.logger, sandboxExecuteMaxAttempts, sandboxExecuteBackoff, func() (*workerv1.ExecuteResponse, error) {
 				return p.client.Execute(ctx, req)
 			}, func(err error) bool {
+				if _, _, ok := grpcTransportSizeExceeded(err); ok {
+					return false
+				}
 				st, ok := status.FromError(err)
 				if !ok {
 					return false
@@ -589,6 +618,12 @@ func (p *SandboxPlugin) Execute(
 	)
 
 	if err != nil {
+		if attemptedSize, maxSize, ok := grpcTransportSizeExceeded(err); ok {
+			return nil, commonErr.NewQuotaError(
+				fmt.Sprintf("value size (%d) exceeds max size (%d)", attemptedSize, maxSize),
+				"transport_response_size_exceeded",
+			)
+		}
 		return nil, err
 	}
 

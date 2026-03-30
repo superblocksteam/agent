@@ -16,6 +16,7 @@ import (
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -79,6 +80,15 @@ func (m *mockStore) Key(prefix, suffix string) (string, error) {
 
 // Verify mockStore implements Store interface
 var _ store.Store = (*mockStore)(nil)
+
+type failingWriteStore struct {
+	*mockStore
+	writeErr error
+}
+
+func (m *failingWriteStore) Write(ctx context.Context, kvs ...*store.KV) error {
+	return m.writeErr
+}
 
 // mockPlugin implements plugin.Plugin for testing
 type mockPlugin struct {
@@ -1112,6 +1122,256 @@ func TestExecuteGrpcDeadlineExceededFromQuotaIsDurationQuotaError(t *testing.T) 
 	}
 	if result.Err.Name != "QuotaError" {
 		t.Errorf("Execute() result.Err.Name = %v, want QuotaError", result.Err.Name)
+	}
+}
+
+func TestIsDurationQuotaError_AlreadyDurationQuotaQuotaKind(t *testing.T) {
+	executor := &pluginExecutor{}
+
+	err := commonErr.NewQuotaError(
+		"The duration of block Step1 has exceeded its limit of 5 seconds. Contact support to increase this quota.",
+		"language_step_duration_exceeded",
+	)
+
+	got := executor.isDurationQuotaError(context.Background(), err)
+	if !got {
+		t.Fatal("isDurationQuotaError() = false, want true for duration quota kind")
+	}
+}
+
+func TestIsDurationQuotaError_NonDurationQuotaKindReturnsFalse(t *testing.T) {
+	executor := &pluginExecutor{}
+
+	err := commonErr.NewQuotaError(
+		"value size (600000000) exceeds max size (524288000)",
+		"step_size_exceeded",
+	)
+
+	got := executor.isDurationQuotaError(context.Background(), err)
+	if got {
+		t.Fatal("isDurationQuotaError() = true, want false for non-duration quota kind")
+	}
+}
+
+func TestExecuteGrpcResourceExhaustedQuotaErrorPreservedAsQuotaError(t *testing.T) {
+	executor := newTestExecutor()
+
+	mock := &mockPlugin{
+		name: "javascript",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return nil, commonErr.NewQuotaError("value size (600000000) exceeds max size (524288000)", "transport_response_size_exceeded")
+		},
+	}
+
+	executor.RegisterPlugin("javascript", mock)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{}
+
+	result, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
+
+	if err != nil {
+		t.Errorf("Execute() should not return error directly, got %v", err)
+	}
+	if result == nil {
+		t.Fatal("Execute() returned nil result")
+	}
+	if result.Err == nil {
+		t.Fatal("Execute() result should have Err set")
+	}
+	if result.Err.Name != "QuotaError" {
+		t.Errorf("Execute() result.Err.Name = %q, want QuotaError", result.Err.Name)
+	}
+	if result.Err.Message != "value size (600000000) exceeds max size (524288000)" {
+		t.Errorf("Execute() result.Err.Message = %q, want %q", result.Err.Message, "value size (600000000) exceeds max size (524288000)")
+	}
+}
+
+func TestExecutePluginSizeQuotaErrorClearsOutputBeforeStore(t *testing.T) {
+	mockStore := newMockStore()
+	executor := NewPluginExecutor(&Options{
+		Logger: zap.NewNop(),
+		Store:  mockStore,
+	})
+
+	mock := &mockPlugin{
+		name: "javascript",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Output: &apiv1.OutputOld{
+					Output: structpb.NewStringValue(strings.Repeat("x", 1024)),
+					Log:    []string{"plugin log line"},
+				},
+				StructuredLog: []*workerv1.StructuredLog{
+					{
+						Level:   workerv1.StructuredLog_LEVEL_INFO,
+						Message: "plugin log line",
+					},
+				},
+			}, commonErr.NewQuotaError("value size (600000000) exceeds max size (524288000)", "step_size_exceeded")
+		},
+	}
+
+	executor.RegisterPlugin("javascript", mock)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{
+		Props: &transportv1.Request_Data_Data_Props{
+			ExecutionId: "test-size-quota",
+		},
+	}
+
+	result, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
+	if err != nil {
+		t.Fatalf("Execute() should not return error directly, got %v", err)
+	}
+	if result == nil {
+		t.Fatal("Execute() returned nil result")
+	}
+	if result.Err == nil {
+		t.Fatal("Execute() should store quota error in result.Err")
+	}
+	if result.Err.Name != "QuotaError" {
+		t.Fatalf("Execute() result.Err.Name = %q, want QuotaError", result.Err.Name)
+	}
+
+	storedValue, exists := mockStore.data[result.Key]
+	if !exists {
+		t.Fatalf("stored output not found for key %s", result.Key)
+	}
+	storedStr, ok := storedValue.(string)
+	if !ok {
+		t.Fatalf("stored output type = %T, want string", storedValue)
+	}
+
+	if strings.Contains(storedStr, strings.Repeat("x", 32)) {
+		t.Fatalf("stored output still contains oversized payload")
+	}
+	if !strings.Contains(storedStr, "\"output\":null") {
+		t.Fatalf("stored output should have null output when size quota error occurs, got: %s", storedStr)
+	}
+	if !strings.Contains(storedStr, "\"error\":\"value size (600000000) exceeds max size (524288000)\"") {
+		t.Fatalf("stored output should include quota error message, got: %s", storedStr)
+	}
+}
+
+func TestExecutePluginSizeQuotaErrorStoreWriteFailureLogsCouldNotWrite(t *testing.T) {
+	writeErr := errors.New("store write failed")
+	storeWithWriteFailure := &failingWriteStore{
+		mockStore: newMockStore(),
+		writeErr:  writeErr,
+	}
+	logCore, observedLogs := observer.New(zap.ErrorLevel)
+	executor := NewPluginExecutor(&Options{
+		Logger: zap.New(logCore),
+		Store:  storeWithWriteFailure,
+	})
+
+	mock := &mockPlugin{
+		name: "javascript",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Output: &apiv1.OutputOld{
+					Output: structpb.NewStringValue(strings.Repeat("x", 1024)),
+				},
+			}, commonErr.NewQuotaError("value size (600000000) exceeds max size (524288000)", "step_size_exceeded")
+		},
+	}
+	executor.RegisterPlugin("javascript", mock)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{
+		Props: &transportv1.Request_Data_Data_Props{
+			ExecutionId: "test-size-quota-store-failure",
+		},
+	}
+
+	result, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
+	if !errors.Is(err, writeErr) {
+		t.Fatalf("Execute() error = %v, want %v", err, writeErr)
+	}
+	if result == nil {
+		t.Fatal("Execute() returned nil result")
+	}
+	if result.Err == nil || result.Err.Name != "QuotaError" {
+		t.Fatalf("Execute() should preserve quota error in result.Err, got %#v", result.Err)
+	}
+
+	foundCouldNotWrite := false
+	foundUnexpectedWrite := false
+	for _, entry := range observedLogs.All() {
+		if entry.Message == "could not write output to store" {
+			foundCouldNotWrite = true
+		}
+		if entry.Message == "unexpected error: failed to write output to store" {
+			foundUnexpectedWrite = true
+		}
+	}
+
+	if !foundCouldNotWrite {
+		t.Fatal(`expected log message "could not write output to store"`)
+	}
+	if foundUnexpectedWrite {
+		t.Fatal(`did not expect log message "unexpected error: failed to write output to store"`)
+	}
+}
+
+func TestExecutePluginSizeQuotaErrorNilOutputStoreWriteFailureLogsCouldNotWrite(t *testing.T) {
+	writeErr := errors.New("store write failed")
+	storeWithWriteFailure := &failingWriteStore{
+		mockStore: newMockStore(),
+		writeErr:  writeErr,
+	}
+	logCore, observedLogs := observer.New(zap.ErrorLevel)
+	executor := NewPluginExecutor(&Options{
+		Logger: zap.New(logCore),
+		Store:  storeWithWriteFailure,
+	})
+
+	mock := &mockPlugin{
+		name: "javascript",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Output: nil,
+			}, commonErr.NewQuotaError("value size (600000000) exceeds max size (524288000)", "step_size_exceeded")
+		},
+	}
+	executor.RegisterPlugin("javascript", mock)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{
+		Props: &transportv1.Request_Data_Data_Props{
+			ExecutionId: "test-size-quota-nil-output-store-failure",
+		},
+	}
+
+	result, err := executor.Execute(ctx, "javascript", reqData, nil, nil)
+	if !errors.Is(err, writeErr) {
+		t.Fatalf("Execute() error = %v, want %v", err, writeErr)
+	}
+	if result == nil {
+		t.Fatal("Execute() returned nil result")
+	}
+	if result.Err == nil || result.Err.Name != "QuotaError" {
+		t.Fatalf("Execute() should preserve quota error in result.Err, got %#v", result.Err)
+	}
+
+	foundCouldNotWrite := false
+	foundUnexpectedWrite := false
+	for _, entry := range observedLogs.All() {
+		if entry.Message == "could not write output to store" {
+			foundCouldNotWrite = true
+		}
+		if entry.Message == "unexpected error: failed to write output to store" {
+			foundUnexpectedWrite = true
+		}
+	}
+
+	if !foundCouldNotWrite {
+		t.Fatal(`expected log message "could not write output to store"`)
+	}
+	if foundUnexpectedWrite {
+		t.Fatal(`did not expect log message "unexpected error: failed to write output to store"`)
 	}
 }
 

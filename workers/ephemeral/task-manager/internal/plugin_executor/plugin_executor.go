@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
@@ -33,6 +34,10 @@ var (
 		codes.Unavailable,
 		codes.Unknown,
 	)
+)
+
+const (
+	durationQuotaErrorKind = "language_step_duration_exceeded"
 )
 
 // PluginExecutor manages plugin execution
@@ -249,13 +254,21 @@ func (p *pluginExecutor) Execute(
 		err = output.GetError()
 	}
 
+	pluginReturnedSizeQuotaError := false
 	if err != nil {
-		if p.isQuotaError(timedCtx, err) {
+		if p.isDurationQuotaError(timedCtx, err) {
 			output.StructuredLog = nil
 			if output.Output != nil {
 				output.Output.Log = nil
 			}
 			err = errors.New("DurationQuotaError")
+		}
+		if p.isSizeQuotaError(err) {
+			pluginReturnedSizeQuotaError = true
+			if output.Output != nil {
+				// Match KV-store quota behavior: drop oversized output and persist only error/log metadata.
+				output.Output.Output = nil
+			}
 		}
 
 		if p.isInternalError(err) {
@@ -264,7 +277,7 @@ func (p *pluginExecutor) Execute(
 		}
 
 		resp.Err = commonErr.ToCommonV1(err)
-		if resp.Err.Message == "DurationQuotaError" || resp.Err.Message == "QuotaError" {
+		if _, isQuotaErr := commonErr.IsQuotaError(err); isQuotaErr || resp.Err.Message == "DurationQuotaError" || resp.Err.Message == "QuotaError" {
 			resp.Err.Name = "QuotaError"
 		} else if resp.Err.Message == "InternalError" {
 			resp.Err.Name = "InternalError"
@@ -301,7 +314,11 @@ func (p *pluginExecutor) Execute(
 				return resp, kvErr
 			}
 		} else {
-			logger.Error("unexpected error: failed to write output to store", zap.Error(kvErr))
+			if pluginReturnedSizeQuotaError {
+				logger.Error("could not write output to store", zap.Error(kvErr))
+			} else {
+				logger.Error("unexpected error: failed to write output to store", zap.Error(kvErr))
+			}
 			return resp, kvErr
 		}
 	}
@@ -399,9 +416,16 @@ func (p *pluginExecutor) PreDelete(ctx context.Context, pluginName string, reqDa
 	return nil, err
 }
 
-func (p *pluginExecutor) isQuotaError(timedCtx context.Context, err error) bool {
-	if _, isQuotaErr := commonErr.IsQuotaError(err); isQuotaErr {
-		return true
+func (p *pluginExecutor) isDurationQuotaError(timedCtx context.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if quotaErr, isQuotaErr := commonErr.IsQuotaError(err); isQuotaErr {
+		if typedQuotaErr, ok := quotaErr.(*commonErr.QuotaError); ok && typedQuotaErr.Kind == durationQuotaErrorKind {
+			return true
+		}
+		return false
 	}
 
 	if timedCtx.Err() == context.DeadlineExceeded {
@@ -413,6 +437,20 @@ func (p *pluginExecutor) isQuotaError(timedCtx context.Context, err error) bool 
 	}
 
 	return false
+}
+
+func (*pluginExecutor) isSizeQuotaError(err error) bool {
+	quotaErr, isQuotaErr := commonErr.IsQuotaError(err)
+	if !isQuotaErr {
+		return false
+	}
+
+	typedQuotaErr, ok := quotaErr.(*commonErr.QuotaError)
+	if !ok {
+		return false
+	}
+
+	return strings.HasSuffix(typedQuotaErr.Kind, "_size_exceeded")
 }
 
 func (*pluginExecutor) isInternalError(err error) bool {

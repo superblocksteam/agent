@@ -3,6 +3,7 @@ package sandbox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -792,6 +793,179 @@ func TestSandboxPlugin_connectToSandbox_UsesConfiguredMsgSizeLimits(t *testing.T
 	require.True(t, state == connectivity.Ready || state == connectivity.Idle)
 }
 
+func TestSandboxPlugin_Execute_DoesNotRetryTransportMaxSizeResourceExhausted(t *testing.T) {
+	t.Parallel()
+
+	const maxSize = 524288000
+	attempts := 0
+
+	server := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			attempts++
+			return nil, status.Error(codes.ResourceExhausted, fmt.Sprintf("trying to send message larger than max (600000000 vs. %d)", maxSize))
+		},
+	}
+
+	addr, cleanup := startSandboxGrpcServerWithServer(t, server)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Cleanup(cancel)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	p.conn = conn
+	p.client = workerv1.NewSandboxTransportServiceClient(conn)
+
+	_, err = p.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.Error(t, err)
+	require.Equal(t, 1, attempts)
+
+	quotaErr, ok := commonErr.IsQuotaError(err)
+	require.True(t, ok)
+	require.Equal(t, "QuotaError: value size (600000000) exceeds max size (524288000)", quotaErr.Error())
+}
+
+func TestSandboxPlugin_Execute_RetriesGenericResourceExhausted(t *testing.T) {
+	t.Parallel()
+
+	attempts := 0
+	server := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			attempts++
+			if attempts < 3 {
+				return nil, status.Error(codes.ResourceExhausted, "transient resource pressure")
+			}
+			return &workerv1.ExecuteResponse{}, nil
+		},
+	}
+
+	addr, cleanup := startSandboxGrpcServerWithServer(t, server)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Cleanup(cancel)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	p.conn = conn
+	p.client = workerv1.NewSandboxTransportServiceClient(conn)
+
+	resp, err := p.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, 3, attempts)
+}
+
+func TestSandboxPlugin_Execute_RetriesGenericResourceExhaustedReturnsErrorAfterMaxAttempts(t *testing.T) {
+	t.Parallel()
+
+	attempts := 0
+	server := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			attempts++
+			return nil, status.Error(codes.ResourceExhausted, "transient resource pressure")
+		},
+	}
+
+	addr, cleanup := startSandboxGrpcServerWithServer(t, server)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Cleanup(cancel)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	p.conn = conn
+	p.client = workerv1.NewSandboxTransportServiceClient(conn)
+
+	resp, err := p.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Equal(t, sandboxExecuteMaxAttempts, attempts)
+
+	_, isQuotaErr := commonErr.IsQuotaError(err)
+	require.False(t, isQuotaErr, "generic ResourceExhausted should not be remapped to QuotaError")
+
+	st, ok := status.FromError(err)
+	require.True(t, ok, "expected gRPC status error after retry exhaustion")
+	require.Equal(t, codes.ResourceExhausted, st.Code())
+	require.Equal(t, "transient resource pressure", st.Message())
+}
+
+func TestTransportSizeResourceExhaustedPattern(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name       string
+		err        error
+		wantMatch  bool
+		wantActual int64
+		wantMax    int64
+	}{
+		{
+			name:       "matches canonical message",
+			err:        status.Error(codes.ResourceExhausted, "trying to send message larger than max (600000000 vs. 524288000)"),
+			wantMatch:  true,
+			wantActual: 600000000,
+			wantMax:    524288000,
+		},
+		{
+			name:       "matches case-insensitive message",
+			err:        status.Error(codes.ResourceExhausted, "Trying to send message larger than max (42 vs. 24)"),
+			wantMatch:  true,
+			wantActual: 42,
+			wantMax:    24,
+		},
+		{
+			name:      "non resource exhausted does not match",
+			err:       status.Error(codes.Internal, "trying to send message larger than max (1 vs. 1)"),
+			wantMatch: false,
+		},
+		{
+			name:      "different message does not match",
+			err:       status.Error(codes.ResourceExhausted, "generic resource exhausted"),
+			wantMatch: false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, max, ok := grpcTransportSizeExceeded(tc.err)
+			require.Equal(t, tc.wantMatch, ok)
+			if tc.wantMatch {
+				require.Equal(t, tc.wantActual, actual)
+				require.Equal(t, tc.wantMax, max)
+			}
+		})
+	}
+}
+
 func TestMonitorSandboxStatus_ErrorOnChannel_SetsSandboxDead(t *testing.T) {
 	t.Parallel()
 
@@ -970,6 +1144,15 @@ func (healthOKServer) Health(context.Context, *workerv1.HealthRequest) (*workerv
 	return &workerv1.HealthResponse{Status: workerv1.HealthResponse_STATUS_READY}, nil
 }
 
+type executeFuncServer struct {
+	healthOKServer
+	executeFunc func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error)
+}
+
+func (s *executeFuncServer) Execute(ctx context.Context, req *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+	return s.executeFunc(ctx, req)
+}
+
 // metadataStatusTestServer implements Health (OK) and Metadata returning a fixed gRPC status.
 type metadataStatusTestServer struct {
 	healthOKServer
@@ -1031,6 +1214,25 @@ func startSandboxGrpcServerWithHealth(t *testing.T) (addr string, cleanup func()
 
 	grpcServer := grpc.NewServer()
 	workerv1.RegisterSandboxTransportServiceServer(grpcServer, &healthOKServer{})
+
+	go func() {
+		_ = grpcServer.Serve(lis)
+	}()
+
+	return lis.Addr().String(), func() {
+		grpcServer.GracefulStop()
+		_ = lis.Close()
+	}
+}
+
+func startSandboxGrpcServerWithServer(t *testing.T, server workerv1.SandboxTransportServiceServer) (addr string, cleanup func()) {
+	t.Helper()
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	grpcServer := grpc.NewServer()
+	workerv1.RegisterSandboxTransportServiceServer(grpcServer, server)
 
 	go func() {
 		_ = grpcServer.Serve(lis)
