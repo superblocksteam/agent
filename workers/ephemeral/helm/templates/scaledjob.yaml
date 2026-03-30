@@ -134,7 +134,7 @@ spec:
           - "--sandbox.namespace={{ $.Release.Namespace }}"
           - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
           - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox.port }}"
-          - "--sandbox.ttl={{ $.Values.sandboxJob.ttlSecondsAfterFinished | default 60 }}"
+          - "--sandbox.ttl={{ $.Values.sandboxJob.ttlSecondsAfterFinished }}"
           {{- if or $.Values.sandbox.runtimeClassName $.Values.runtimeClassName }}
           - "--sandbox.runtimeClass={{ $.Values.sandbox.runtimeClassName | default $.Values.runtimeClassName }}"
           {{- end }}

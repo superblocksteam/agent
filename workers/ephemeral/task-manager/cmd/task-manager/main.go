@@ -110,7 +110,7 @@ func init() {
 	pflag.String("sandbox.namespace", "", "Kubernetes namespace for sandbox Jobs (defaults to current namespace from POD_NAMESPACE env).")
 	pflag.String("sandbox.image", "", "Container image for the sandbox.")
 	pflag.Int("sandbox.port", 50051, "gRPC port for sandbox container.")
-	pflag.Int("sandbox.ttl", 60, "TTL in seconds for completed sandbox Jobs.")
+	pflag.Int("sandbox.ttl", 0, "TTL in seconds for completed sandbox Jobs.")
 	pflag.String("sandbox.runtimeClass", "", "RuntimeClass for sandbox Jobs (e.g., 'gvisor').")
 	pflag.StringSlice("sandbox.imagePullSecrets", []string{}, "Image pull secret names for sandbox pods (comma-separated).")
 	pflag.StringToString("sandbox.nodeSelector", map[string]string{}, "Node selector for sandbox pods (e.g., 'key=value,key2=value2').")

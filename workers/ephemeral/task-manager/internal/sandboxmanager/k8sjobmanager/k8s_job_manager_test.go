@@ -86,7 +86,7 @@ func TestNewSandboxJobManager(t *testing.T) {
 		assert.Equal(t, 50051, m.port)
 		assert.Equal(t, 50050, m.variableStoreGrpcPort)
 		assert.Equal(t, 8080, m.variableStoreHttpPort)
-		assert.Equal(t, int32(60), m.ttlSecondsAfterFinished)
+		assert.Equal(t, int32(0), m.ttlSecondsAfterFinished)
 		assert.Equal(t, 2*time.Minute, m.podReadyTimeout)
 		assert.Equal(t, 0, m.integrationExecutorGrpcPort)
 		assert.Equal(t, 30*1024*1024, m.grpcMaxRequestSize)
@@ -146,7 +146,7 @@ func TestBuildJobSpec(t *testing.T) {
 				variableStoreGrpcPort:       50050,
 				variableStoreHttpPort:       8080,
 				streamingProxyGrpcPort:      50053,
-				ttlSecondsAfterFinished:     60,
+				ttlSecondsAfterFinished:     0,
 				language:                    test.language,
 				integrationExecutorGrpcPort: test.integrationExecutorGrpcPort,
 				ephemeral:                   test.ephemeral,
@@ -223,7 +223,7 @@ func TestBuildJobSpecExecutionEnvInclusionList(t *testing.T) {
 		variableStoreGrpcPort:     50050,
 		variableStoreHttpPort:     8080,
 		streamingProxyGrpcPort:    50053,
-		ttlSecondsAfterFinished:   60,
+		ttlSecondsAfterFinished:   0,
 		language:                  "javascript",
 		ephemeral:                 false,
 		logger:                    zap.NewNop(),
@@ -255,7 +255,7 @@ func TestBuildJobSpecExecutionEnvInclusionListEmpty(t *testing.T) {
 		variableStoreGrpcPort:     50050,
 		variableStoreHttpPort:     8080,
 		streamingProxyGrpcPort:    50053,
-		ttlSecondsAfterFinished:   60,
+		ttlSecondsAfterFinished:   0,
 		language:                  "javascript",
 		ephemeral:                 false,
 		logger:                    zap.NewNop(),
@@ -283,7 +283,7 @@ func TestBuildJobSpecWorkerPluginsEnv(t *testing.T) {
 		variableStoreGrpcPort:   50050,
 		variableStoreHttpPort:   8080,
 		streamingProxyGrpcPort:  50053,
-		ttlSecondsAfterFinished: 60,
+		ttlSecondsAfterFinished: 0,
 		language:                "javascript",
 		ephemeral:               true,
 		logger:                  zap.NewNop(),
@@ -310,7 +310,7 @@ func TestBuildJobSpecWorkerPluginsEnvNotSet(t *testing.T) {
 		variableStoreGrpcPort:   50050,
 		variableStoreHttpPort:   8080,
 		streamingProxyGrpcPort:  50053,
-		ttlSecondsAfterFinished: 60,
+		ttlSecondsAfterFinished: 0,
 		language:                "javascript",
 		ephemeral:               true,
 		logger:                  zap.NewNop(),
@@ -353,7 +353,7 @@ func TestBuildJobSpecZonePreference(t *testing.T) {
 				variableStoreGrpcPort:   50050,
 				variableStoreHttpPort:   8080,
 				streamingProxyGrpcPort:  50053,
-				ttlSecondsAfterFinished: 60,
+				ttlSecondsAfterFinished: 0,
 				language:                "javascript",
 				zone:                    test.zone,
 				logger:                  zap.NewNop(),
@@ -393,7 +393,7 @@ func TestBuildJobSpecZoneDoesNotMutateNodeSelector(t *testing.T) {
 		variableStoreGrpcPort:   50050,
 		variableStoreHttpPort:   8080,
 		streamingProxyGrpcPort:  50053,
-		ttlSecondsAfterFinished: 60,
+		ttlSecondsAfterFinished: 0,
 		language:                "javascript",
 		zone:                    "us-east-1b",
 		nodeSelector:            nodeSelector,
@@ -440,7 +440,7 @@ func TestBuildJobSpecPodAffinity(t *testing.T) {
 				variableStoreGrpcPort:   50050,
 				variableStoreHttpPort:   8080,
 				streamingProxyGrpcPort:  50053,
-				ttlSecondsAfterFinished: 60,
+				ttlSecondsAfterFinished: 0,
 				language:                "javascript",
 				ownerPodLabels:          test.ownerPodLabels,
 				logger:                  zap.NewNop(),
@@ -473,7 +473,7 @@ func TestBuildJobSpecCombinedAffinity(t *testing.T) {
 		variableStoreGrpcPort:   50050,
 		variableStoreHttpPort:   8080,
 		streamingProxyGrpcPort:  50053,
-		ttlSecondsAfterFinished: 60,
+		ttlSecondsAfterFinished: 0,
 		language:                "javascript",
 		zone:                    "us-west-2a",
 		ownerPodLabels:          map[string]string{"role": "task-manager"},

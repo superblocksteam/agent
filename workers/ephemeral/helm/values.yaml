@@ -137,8 +137,8 @@ sandbox:
 # Sandbox Job configuration
 # Task-manager creates sandbox Jobs dynamically for each execution
 sandboxJob:
-  # Auto-delete job 60s after completion (success or failure)
-  ttlSecondsAfterFinished: 60
+  # Auto-delete job immediately after completion (success or failure)
+  ttlSecondsAfterFinished: 0
   # No restart attempts on failure
   backoffLimit: 0
 # KEDA ScaledJob configuration
@@ -146,7 +146,7 @@ keda:
   pollingInterval: 5
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
-  ttlSecondsAfterFinished: 30 # Auto-cleanup completed pods after 30 seconds
+  ttlSecondsAfterFinished: 0 # Auto-cleanup completed pods immediately
   maxReplicaCount: 100
   minReplicaCount: 0
   # Scaling strategy: "default", "custom", or "accurate"

@@ -351,7 +351,7 @@ func NewOptions(opts ...Option) *Options {
 		Port:                    50051,
 		VariableStoreGrpcPort:   50050,
 		VariableStoreHttpPort:   8080,
-		TTLSecondsAfterFinished: 60,
+		TTLSecondsAfterFinished: 0,
 		PodReadyTimeout:         2 * time.Minute,
 		GrpcMaxRequestSize:      defaultSandboxGrpcMaxRequestSize,
 		GrpcMaxResponseSize:     defaultSandboxGrpcMaxResponseSize,
