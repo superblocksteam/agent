@@ -1791,6 +1791,7 @@ func TestExecuteV3PacksCookieIntoWorkerJWTContext(t *testing.T) {
 		"",
 		"",
 		"",
+		"",
 		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
