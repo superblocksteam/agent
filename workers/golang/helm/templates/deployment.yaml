@@ -8,7 +8,11 @@ metadata:
   labels:
     {{- include "worker.labels" $v | nindent 4 }}
 spec:
-  replicas: {{ $v.replicas | default 1 }}
+  {{- if hasKey $v "replicas" }}
+  replicas: {{ $v.replicas }}
+  {{- else }}
+  replicas: 1
+  {{- end }}
   selector:
     matchLabels:
       {{- include "worker.labels" $v | nindent 6 }}

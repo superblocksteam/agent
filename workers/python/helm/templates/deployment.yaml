@@ -8,7 +8,19 @@ metadata:
   labels:
     {{- include "worker.labels" $v | nindent 4 }}
 spec:
-  replicas: {{ $v.autoscaling.min | default $.Values.autoscaling.min | default 1 }}
+  {{- if hasKey $v "autoscaling" }}
+  {{- if hasKey $v.autoscaling "min" }}
+  replicas: {{ $v.autoscaling.min }}
+  {{- else if hasKey $.Values.autoscaling "min" }}
+  replicas: {{ $.Values.autoscaling.min }}
+  {{- else }}
+  replicas: 1
+  {{- end }}
+  {{- else if hasKey $.Values.autoscaling "min" }}
+  replicas: {{ $.Values.autoscaling.min }}
+  {{- else }}
+  replicas: 1
+  {{- end }}
   selector:
     matchLabels:
       {{- include "worker.labels" $v | nindent 6 }}

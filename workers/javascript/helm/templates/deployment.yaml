@@ -11,7 +11,15 @@ spec:
   {{- if $v.disabled }}
   replicas: 0
   {{- else }}
-  replicas: {{ ($v.autoscaling).min | default 1 }}
+  {{- if hasKey $v "autoscaling" }}
+  {{- if hasKey $v.autoscaling "min" }}
+  replicas: {{ $v.autoscaling.min }}
+  {{- else }}
+  replicas: 1
+  {{- end }}
+  {{- else }}
+  replicas: 1
+  {{- end }}
   {{- end }}
   selector:
     matchLabels:
