@@ -209,11 +209,7 @@ export class ExecutionOutput {
    * `injectWorkspacePackages: true` from pnpm-workspace.yaml.
    */
   static [Symbol.hasInstance](instance: unknown): instance is ExecutionOutput {
-    return (
-      instance !== null &&
-      typeof instance === 'object' &&
-      Array.isArray((instance as ExecutionOutput).structuredLog)
-    );
+    return instance !== null && typeof instance === 'object' && Array.isArray((instance as ExecutionOutput).structuredLog);
   }
 
   error?: string;

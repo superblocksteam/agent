@@ -65,48 +65,146 @@ const sharedJavascriptsdkapi = shared(async () => {
  * The factory is only called for plugins that are actually selected.
  */
 const PLUGIN_FACTORIES: Record<string, PluginFactory> = {
-  athena: async () => { const m = await import('@superblocksteam/athena'); return new m.default(); },
-  bigquery: async () => { const m = await import('@superblocksteam/bigquery'); return new m.default(); },
-  cockroachdb: async () => { const m = await import('@superblocksteam/cockroachdb'); return new m.default(); },
-  dynamodb: async () => { const m = await import('@superblocksteam/dynamodb'); return new m.default(); },
-  email: async () => { const m = await import('@superblocksteam/email'); return new m.default(); },
-  gcs: async () => { const m = await import('@superblocksteam/gcs'); return new m.default(); },
+  athena: async () => {
+    const m = await import('@superblocksteam/athena');
+    return new m.default();
+  },
+  bigquery: async () => {
+    const m = await import('@superblocksteam/bigquery');
+    return new m.default();
+  },
+  cockroachdb: async () => {
+    const m = await import('@superblocksteam/cockroachdb');
+    return new m.default();
+  },
+  dynamodb: async () => {
+    const m = await import('@superblocksteam/dynamodb');
+    return new m.default();
+  },
+  email: async () => {
+    const m = await import('@superblocksteam/email');
+    return new m.default();
+  },
+  gcs: async () => {
+    const m = await import('@superblocksteam/gcs');
+    return new m.default();
+  },
   graphql: sharedGraphql,
   graphqlintegration: sharedGraphql,
-  gsheets: async () => { const m = await import('@superblocksteam/gsheets'); return new m.default(); },
+  gsheets: async () => {
+    const m = await import('@superblocksteam/gsheets');
+    return new m.default();
+  },
   kafka: sharedKafka,
-  kinesis: async () => { const m = await import('@superblocksteam/kinesis'); return new m.default(); },
-  lakebase: async () => { const m = await import('@superblocksteam/lakebase'); return new m.default(); },
+  kinesis: async () => {
+    const m = await import('@superblocksteam/kinesis');
+    return new m.default();
+  },
+  lakebase: async () => {
+    const m = await import('@superblocksteam/lakebase');
+    return new m.default();
+  },
   confluent: sharedKafka,
   msk: sharedKafka,
   redpanda: sharedKafka,
   aivenkafka: sharedKafka,
-  javascript: async () => { const m = await import('@superblocksteam/javascript'); return new m.default(); },
-  javascriptwasm: async () => { const m = await import('@superblocksteam/javascript-wasm'); return new m.default(); },
-  mariadb: async () => { const m = await import('@superblocksteam/mariadb'); return new m.default(); },
-  mongodb: async () => { const m = await import('@superblocksteam/mongodb'); return new m.default(); },
-  mssql: async () => { const m = await import('@superblocksteam/mssql'); return new m.default(); },
-  mysql: async () => { const m = await import('@superblocksteam/mysql'); const secretStore = secrets(); return new m.default(secretStore); },
-  openai: async () => { const m = await import('@superblocksteam/openai'); return new m.default(); },
-  postgres: async () => { const m = await import('@superblocksteam/postgres'); const secretStore = secrets(); return new m.default(secretStore); },
-  redshift: async () => { const m = await import('@superblocksteam/redshift'); return new m.default(); },
-  restapi: async () => { const m = await import('@superblocksteam/restapi'); return new m.default(); },
+  javascript: async () => {
+    const m = await import('@superblocksteam/javascript');
+    return new m.default();
+  },
+  javascriptwasm: async () => {
+    const m = await import('@superblocksteam/javascript-wasm');
+    return new m.default();
+  },
+  mariadb: async () => {
+    const m = await import('@superblocksteam/mariadb');
+    return new m.default();
+  },
+  mongodb: async () => {
+    const m = await import('@superblocksteam/mongodb');
+    return new m.default();
+  },
+  mssql: async () => {
+    const m = await import('@superblocksteam/mssql');
+    return new m.default();
+  },
+  mysql: async () => {
+    const m = await import('@superblocksteam/mysql');
+    const secretStore = secrets();
+    return new m.default(secretStore);
+  },
+  openai: async () => {
+    const m = await import('@superblocksteam/openai');
+    return new m.default();
+  },
+  postgres: async () => {
+    const m = await import('@superblocksteam/postgres');
+    const secretStore = secrets();
+    return new m.default(secretStore);
+  },
+  redshift: async () => {
+    const m = await import('@superblocksteam/redshift');
+    return new m.default();
+  },
+  restapi: async () => {
+    const m = await import('@superblocksteam/restapi');
+    return new m.default();
+  },
   restapiintegration: sharedRestapiintegration,
-  rockset: async () => { const m = await import('@superblocksteam/rockset'); return new m.default(); },
-  s3: async () => { const m = await import('@superblocksteam/s3'); return new m.default(); },
-  salesforce: async () => { const m = await import('@superblocksteam/salesforce'); return new m.default(); },
+  rockset: async () => {
+    const m = await import('@superblocksteam/rockset');
+    return new m.default();
+  },
+  s3: async () => {
+    const m = await import('@superblocksteam/s3');
+    return new m.default();
+  },
+  salesforce: async () => {
+    const m = await import('@superblocksteam/salesforce');
+    return new m.default();
+  },
   javascriptsdkapi: sharedJavascriptsdkapi,
-  smtp: async () => { const m = await import('@superblocksteam/smtp'); return new m.default(); },
-  snowflake: async () => { const m = await import('@superblocksteam/snowflake'); return new m.default(); },
-  snowflakepostgres: async () => { const m = await import('@superblocksteam/snowflakepostgres'); return new m.default(); },
-  ocr: async () => { const m = await import('@superblocksteam/superblocks-ocr'); return new m.default(); },
-  workflow: async () => { const m = await import('@superblocksteam/workflow'); return new m.default(); },
+  smtp: async () => {
+    const m = await import('@superblocksteam/smtp');
+    return new m.default();
+  },
+  snowflake: async () => {
+    const m = await import('@superblocksteam/snowflake');
+    return new m.default();
+  },
+  snowflakepostgres: async () => {
+    const m = await import('@superblocksteam/snowflakepostgres');
+    return new m.default();
+  },
+  ocr: async () => {
+    const m = await import('@superblocksteam/superblocks-ocr');
+    return new m.default();
+  },
+  workflow: async () => {
+    const m = await import('@superblocksteam/workflow');
+    return new m.default();
+  },
   redis: sharedRedis,
-  cosmosdb: async () => { const m = await import('@superblocksteam/cosmosdb'); return new m.default(); },
-  adls: async () => { const m = await import('@superblocksteam/adls'); return new m.default(); },
-  databricks: async () => { const m = await import('@superblocksteam/databricks'); return new m.default(); },
-  couchbase: async () => { const m = await import('@superblocksteam/couchbase'); return new m.default(); },
-  oracledb: async () => { const m = await import('@superblocksteam/oracledb'); return new m.default(); },
+  cosmosdb: async () => {
+    const m = await import('@superblocksteam/cosmosdb');
+    return new m.default();
+  },
+  adls: async () => {
+    const m = await import('@superblocksteam/adls');
+    return new m.default();
+  },
+  databricks: async () => {
+    const m = await import('@superblocksteam/databricks');
+    return new m.default();
+  },
+  couchbase: async () => {
+    const m = await import('@superblocksteam/couchbase');
+    return new m.default();
+  },
+  oracledb: async () => {
+    const m = await import('@superblocksteam/oracledb');
+    return new m.default();
+  }
 };
 
 /** All known plugin IDs. Used to validate selections without importing any plugin module. */

@@ -37,9 +37,7 @@ export class PoolIntegrationExecutorClient {
     metadata?: { label?: string; description?: string };
   }): Promise<unknown> {
     const id = this.nextId++;
-    const metadata = this.#sanitizeMetadataForPostMessage(params.metadata) as
-      | { label?: string; description?: string }
-      | undefined;
+    const metadata = this.#sanitizeMetadataForPostMessage(params.metadata) as { label?: string; description?: string } | undefined;
     const message = {
       id,
       type: 'executeIntegration',
