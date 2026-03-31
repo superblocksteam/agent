@@ -12,6 +12,7 @@ x-worker-python-fleet-shared: &worker_python_fleet_shared
   events: execute
   autoscaling:
     disable: false
+    min: 0
   package: python
 x-worker-javascript-process-worker: &worker_javascript_process_worker
   worker:
@@ -212,10 +213,10 @@ worker_go:
   deploy: false
   fleets:
     main.ba.golang.all:
-      replicas: 10
+      replicas: 0
       bucket: BA
     main.be.golang.all:
-      replicas: 5
+      replicas: 0
       bucket: BE
   superblocks:
     key: <override>
@@ -231,6 +232,7 @@ worker_py:
   fleets:
     main.test.python.execute:
       !!merge <<: *worker_python_fleet_shared
+      disabled: true
       bucket: test
       group: eleven
     main.b1.python.execute:
@@ -273,7 +275,7 @@ worker_js:
         requests:
           memory: 400Mi
       autoscaling:
-        min: 1
+        min: 0
     main.ba.javascript.shared.execute:
       !!merge <<: *worker_javascript_process_worker
       bucket: BA
@@ -281,6 +283,8 @@ worker_js:
       group: two
       package: non-lang
       events: execute
+      autoscaling:
+        min: 0
     main.be.javascript.shared.execute:
       !!merge <<: *worker_javascript_process_worker
       bucket: BE
@@ -289,7 +293,7 @@ worker_js:
       package: non-lang
       events: execute
       autoscaling:
-        min: 1
+        min: 0
     main.ba.javascript.execute:
       async: false
       events: execute
@@ -299,7 +303,7 @@ worker_js:
       package: javascript
       serviceRate: 1
       autoscaling:
-        min: 1
+        min: 0
     main.be.javascript.execute:
       async: false
       events: execute
@@ -310,6 +314,7 @@ worker_js:
       serviceRate: 1
       autoscaling:
         disable: true
+        min: 0
     main.test.javascript.execute:
       async: false
       events: execute
@@ -320,6 +325,7 @@ worker_js:
       serviceRate: 100
       autoscaling:
         disable: true
+      disabled: true
     main.b1.javascript.execute:
       async: false
       events: execute
@@ -329,7 +335,7 @@ worker_js:
       package: javascript
       serviceRate: 100
       autoscaling:
-        min: 1
+        min: 0
     main.b2.javascript.execute:
       async: false
       events: execute
@@ -339,7 +345,7 @@ worker_js:
       package: javascript
       serviceRate: 20
       autoscaling:
-        min: 1
+        min: 0
     main.b3.javascript.execute:
       async: false
       events: execute
@@ -349,7 +355,7 @@ worker_js:
       package: javascript
       serviceRate: 3
       autoscaling:
-        min: 1
+        min: 0
     main.b4.javascript.execute:
       async: false
       events: execute
@@ -359,7 +365,7 @@ worker_js:
       package: javascript
       serviceRate: 0.2
       autoscaling:
-        min: 1
+        min: 0
 sandbox_workers:
   deploy: false
   disableNodeSelector: true

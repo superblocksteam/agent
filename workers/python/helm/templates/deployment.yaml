@@ -8,7 +8,9 @@ metadata:
   labels:
     {{- include "worker.labels" $v | nindent 4 }}
 spec:
-  {{- if hasKey $v "autoscaling" }}
+  {{- if $v.disabled }}
+  replicas: 0
+  {{- else if hasKey $v "autoscaling" }}
   {{- if hasKey $v.autoscaling "min" }}
   replicas: {{ $v.autoscaling.min }}
   {{- else if hasKey $.Values.autoscaling "min" }}
