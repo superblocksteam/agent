@@ -57,7 +57,7 @@ spec:
     {{- end }}
   {{- end }}
   scalingStrategy:
-    {{- toYaml ($v.keda.scalingStrategy | default $.Values.keda.scalingStrategy | default (dict "strategy" "accurate")) | nindent 4 }}
+    {{- toYaml ($v.keda.scalingStrategy | default $.Values.keda.scalingStrategy) | nindent 4 }}
   jobTargetRef:
     parallelism: 1
     completions: 1

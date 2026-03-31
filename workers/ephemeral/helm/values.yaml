@@ -149,10 +149,9 @@ keda:
   ttlSecondsAfterFinished: 0 # Auto-cleanup completed pods immediately
   maxReplicaCount: 100
   minReplicaCount: 0
-  # Scaling strategy: "default", "custom", or "accurate"
-  # "accurate" provides more precise scaling based on pending jobs
   scalingStrategy:
-    strategy: accurate
+    strategy: default
+    multipleScalersCalculation: "sum"
   # Scaling triggers - typically Redis stream length
   triggers: []
   # Example:
