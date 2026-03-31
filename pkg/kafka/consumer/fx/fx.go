@@ -8,6 +8,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/superblocksteam/agent/pkg/utils"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -50,7 +51,7 @@ func ProvideOptions(logger *zap.Logger, config Config, handler Handler) *consume
 		Handler:        handler,
 		Logger:         logger,
 		MetricsCounter: metrics.KafkaConsumedMessagesTotal,
-		Topics:         viper.GetStringSlice("kafka.topics"),
+		Topics:         utils.GetStringSlice("kafka.topics"),
 		Workers:        viper.GetInt("kafka.consumer.workers"),
 		Config:         config,
 	}

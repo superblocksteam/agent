@@ -3,8 +3,60 @@ package utils
 import (
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestGetStringSlice(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		raw      []string
+		expected []string
+	}{
+		{
+			name:     "already split values are preserved",
+			raw:      []string{"a", "b", "c"},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "comma-separated string is split",
+			raw:      []string{"a,b,c"},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "mixed split and unsplit",
+			raw:      []string{"a,b", "c"},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "whitespace is trimmed",
+			raw:      []string{" a , b , c "},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "empty strings are filtered",
+			raw:      []string{"a,,b", "", "c"},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			name:     "empty input returns nil",
+			raw:      []string{},
+			expected: nil,
+		},
+		{
+			name:     "single value",
+			raw:      []string{"only"},
+			expected: []string{"only"},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			key := "test.stringslice." + test.name
+			viper.Set(key, test.raw)
+			actual := GetStringSlice(key)
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
 
 func TestGetStringMapString(t *testing.T) {
 	for _, test := range []struct {

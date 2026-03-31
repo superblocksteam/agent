@@ -195,24 +195,13 @@ func init() {
 func main() {
 	pflag.Parse()
 
-	// Viper's GetStringSlice does not split comma-separated env vars; it returns one element.
-	// Expand "javascript,javascriptsdkapi" into ["javascript", "javascriptsdkapi"].
-	pluginRaw := viper.GetStringSlice("worker.plugins")
-	var pluginList []string
-	for _, s := range pluginRaw {
-		for _, p := range strings.Split(s, ",") {
-			if t := strings.TrimSpace(p); t != "" {
-				pluginList = append(pluginList, t)
-			}
-		}
-	}
-	plugins := pluginparser.ParsePlugins(pluginList)
+	plugins := pluginparser.ParsePlugins(utils.GetStringSlice("worker.plugins"))
 	if plugins.IsEmpty() {
 		fmt.Fprintf(os.Stderr, "no plugins specified")
 		os.Exit(1)
 	}
 
-	events := utils.NewSet(viper.GetStringSlice("worker.events")...)
+	events := utils.NewSet(utils.GetStringSlice("worker.events")...)
 	if events.IsEmpty() {
 		fmt.Fprintf(os.Stderr, "no events specified")
 		os.Exit(1)
@@ -520,7 +509,7 @@ func main() {
 			k8sjobmanager.WithRuntimeClassName(viper.GetString("sandbox.runtimeClass")),
 			k8sjobmanager.WithNodeSelector(nodeSelector),
 			k8sjobmanager.WithTolerations(tolerations),
-			k8sjobmanager.WithImagePullSecrets(viper.GetStringSlice("sandbox.imagePullSecrets")),
+			k8sjobmanager.WithImagePullSecrets(utils.GetStringSlice("sandbox.imagePullSecrets")),
 			k8sjobmanager.WithLogger(logger),
 			k8sjobmanager.WithOwnerPodName(ownerPodName),
 			k8sjobmanager.WithOwnerPodUID(ownerPodUID),
@@ -578,12 +567,12 @@ func main() {
 	)
 
 	// Generate stream keys
-	streamKeys := viper.GetStringSlice("worker.stream.keys")
+	streamKeys := utils.GetStringSlice("worker.stream.keys")
 	if len(streamKeys) == 0 {
 		streamKeys = redis.StreamKeys(
 			pluginExec.ListPlugins(),
 			viper.GetString("worker.group"),
-			viper.GetStringSlice("worker.buckets"),
+			utils.GetStringSlice("worker.buckets"),
 			events.ToSlice(),
 			viper.GetBool("worker.sandbox.streams.separate"),
 		)

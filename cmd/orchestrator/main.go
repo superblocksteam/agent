@@ -522,8 +522,8 @@ func main() {
 			flagoptions.WithLogger(logger),
 			flagoptions.WithDefaultApiTimeout(viper.GetFloat64("quotas.default.api_timeout")),
 			flagoptions.WithDefaultGoWorkerEnabled(viper.GetBool("worker.go.enabled")),
-			flagoptions.WithDefaultEphemeralEnabledPlugins(viper.GetStringSlice("worker.ephemeral.plugins.enabled")...),
-			flagoptions.WithDefaultEphemeralSupportedEvents(viper.GetStringSlice("worker.ephemeral.supported.events")...),
+			flagoptions.WithDefaultEphemeralEnabledPlugins(utils.GetStringSlice("worker.ephemeral.plugins.enabled")...),
+			flagoptions.WithDefaultEphemeralSupportedEvents(utils.GetStringSlice("worker.ephemeral.supported.events")...),
 			flagoptions.WithDefaultWorkflowPluginInheritanceEnabled(viper.GetBool("agent.plugins.workflow.inherit_parameters.enabled")),
 			flagoptions.WithDefaultValidateSubjectTokenDuringOboFlowEnabled(viper.GetBool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled")),
 		}
@@ -554,8 +554,8 @@ func main() {
 
 		logger.Info(
 			"Initialized flags client with default values",
-			zap.Strings("ephemeral_enabled_plugins", viper.GetStringSlice("worker.ephemeral.plugins.enabled")),
-			zap.Strings("ephemeral_supported_events", viper.GetStringSlice("worker.ephemeral.supported.events")),
+			zap.Strings("ephemeral_enabled_plugins", utils.GetStringSlice("worker.ephemeral.plugins.enabled")),
+			zap.Strings("ephemeral_supported_events", utils.GetStringSlice("worker.ephemeral.supported.events")),
 		)
 	}
 
@@ -969,7 +969,7 @@ func main() {
 				handler = cors.New(cors.Options{
 					AllowOriginFunc:     func(string) bool { return true },
 					AllowedMethods:      []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
-					AllowedHeaders:      viper.GetStringSlice("cors.headers"),
+					AllowedHeaders:      utils.GetStringSlice("cors.headers"),
 					AllowCredentials:    true,
 					AllowPrivateNetwork: true,
 					MaxAge:              300,
