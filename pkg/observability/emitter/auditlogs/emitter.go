@@ -233,6 +233,12 @@ func (l *audit) extractAuditLogFromFields(fields map[string]interface{}) (*agent
 	if ok {
 		auditLog.Target = target
 	}
+	if targetName, ok := fields["targetName"].(string); ok {
+		auditLog.TargetName = &targetName
+	} else if exportName, ok := fields["exportName"].(string); ok {
+		// Backward compatibility for previously emitted field name.
+		auditLog.TargetName = &exportName
+	}
 
 	start, ok := fields["start"].(int64)
 	if ok {

@@ -2230,7 +2230,12 @@ func TestExecuteCodeMode(t *testing.T) {
 		ctx = constants.WithExecutionID(ctx, "exec-audit-success")
 		ctx = constants.WithApiStartTime(ctx, 1700000000000)
 
-		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-audit-1", CommitId: strPtr("abc")}
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{
+			Id:         "app-audit-1",
+			CommitId:   strPtr("abc"),
+			EntryPoint: strPtr("server/apis/mock.ts"),
+			ExportName: strPtr("ListOrders"),
+		}
 		requesterType := v1.UserType_USER_TYPE_EXTERNAL
 		result := &apiv1.Definition{
 			Api: &apiv1.Api{
@@ -2265,7 +2270,8 @@ func TestExecuteCodeMode(t *testing.T) {
 		assert.Equal(t, "exec-audit-success", startCtx["auditLogId"])
 		assert.Equal(t, "app-audit-1", startCtx["entityId"])
 		assert.Equal(t, "app-audit-1", startCtx["applicationId"])
-		assert.Equal(t, "api-audit-1", startCtx["target"])
+		assert.Equal(t, "server/apis/mock.ts", startCtx["target"])
+		assert.Equal(t, "ListOrders", startCtx["targetName"])
 		assert.Equal(t, "org-from-context", startCtx["organizationId"])
 		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_APPLICATION.String(), startCtx["entityType"])
 		assert.Equal(t, "requester@example.com", startCtx["source"])

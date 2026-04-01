@@ -955,7 +955,7 @@ func (s *server) executeCodeMode(
 	// recovered and retErr is nil.
 	var workerFailed bool
 
-	auditFields := buildCodeModeAuditFields(ctx, fetchCode, result, executionID, auditStartMs)
+	auditFields := buildCodeModeAuditFields(ctx, fetchCode, result, executionID, auditStartMs, orgIdFromContext)
 	logger.Info("audit log: api start", auditFields...)
 
 	defer func() {
@@ -1322,22 +1322,30 @@ func buildCodeModeAuditFields(
 	result *apiv1.Definition,
 	executionID string,
 	auditStartMs int64,
+	orgIDFromContext string,
 ) []zap.Field {
-	_, orgID := getOrganizationPlanAndIdFromContext(ctx)
+	orgID := orgIDFromContext
 	if orgID == "" {
 		orgID = result.GetApi().GetMetadata().GetOrganization()
+	}
+	target := fetchCode.GetEntryPoint()
+	if target == "" {
+		target = result.GetApi().GetMetadata().GetId()
 	}
 
 	auditFields := []zap.Field{
 		zap.Bool("audit", true),
 		zap.String("auditLogId", executionID),
 		zap.Bool("isDeployed", fetchCode.GetViewMode() == apiv1.ViewMode_VIEW_MODE_DEPLOYED),
-		zap.String("target", result.GetApi().GetMetadata().GetId()),
+		zap.String("target", target),
 		zap.Int64("start", auditStartMs),
 		zap.String("entityId", fetchCode.GetId()),
 		zap.String("applicationId", fetchCode.GetId()),
 		zap.String("organizationId", orgID),
 		zap.String("entityType", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_APPLICATION.String()),
+	}
+	if exportName := fetchCode.GetExportName(); exportName != "" {
+		auditFields = append(auditFields, zap.String("targetName", exportName))
 	}
 
 	if requester := result.GetMetadata().GetRequester(); requester != "" {
