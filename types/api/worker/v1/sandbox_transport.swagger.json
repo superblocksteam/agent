@@ -669,6 +669,10 @@
         "outputWasTruncated": {
           "type": "boolean",
           "description": "True when the output field was truncated to fit within the byte limit."
+        },
+        "errorCode": {
+          "type": "string",
+          "description": "Error classification code (e.g. \"INTEGRATION_QUERY_TIMEOUT\", \"INTEGRATION_NETWORK\").\nEmpty when the call succeeded or when the error was not classified."
         }
       },
       "description": "Per-integration-call diagnostic record for SDK API execution.\nCaptured when include_diagnostics is set on the request."

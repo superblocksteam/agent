@@ -889,6 +889,10 @@ func (m *ExecuteV3Request) validate(all bool) error {
 		// no validation rules for EntryPoint
 	}
 
+	if m.ExportName != nil {
+		// no validation rules for ExportName
+	}
+
 	if len(errors) > 0 {
 		return ExecuteV3RequestMultiError(errors)
 	}
@@ -5255,6 +5259,10 @@ func (m *ExecuteRequest_FetchCode) validate(all bool) error {
 
 	if m.EntryPoint != nil {
 		// no validation rules for EntryPoint
+	}
+
+	if m.ExportName != nil {
+		// no validation rules for ExportName
 	}
 
 	if len(errors) > 0 {
