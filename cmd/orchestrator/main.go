@@ -108,6 +108,10 @@ func init() {
 
 	pflag.Bool("telemetry.remote.enabled", true, "Enable/disable all remote telemetry (OTEL traces/logs, audit logs, remote logs, events). When false, only local console logging is enabled.")
 	pflag.String("telemetry.deployment.type", "on-prem", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
+	pflag.Int("telemetry.batch.max.queue.size", 0, "Max spans queued for export (0 = library default 2048).")
+	pflag.Int("telemetry.batch.max.export.batch.size", 0, "Max spans per export batch (0 = SDK default 512).")
+	pflag.Duration("telemetry.batch.timeout", 0, "Flush partial batch after this duration (0 = SDK default 5s).")
+	pflag.Duration("telemetry.batch.export.timeout", 0, "Per-export-call timeout (0 = library default 30s).")
 	pflag.Bool("zen", false, "go easy on the log fields")
 	pflag.String("file.server.url", "http://localhost:8080/v2/files", "the url to send to workers by which it can access orchestrators file server endpoint")
 	pflag.Bool("test", false, "Are we in test mode?")
@@ -227,6 +231,10 @@ func init() {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	_ = viper.BindEnv("telemetry.deployment.type", "SUPERBLOCKS_DEPLOYMENT_TYPE")
+	_ = viper.BindEnv("telemetry.batch.max.queue.size", "SUPERBLOCKS_TELEMETRY_MAX_QUEUE_SIZE")
+	_ = viper.BindEnv("telemetry.batch.max.export.batch.size", "SUPERBLOCKS_TELEMETRY_MAX_EXPORT_BATCH_SIZE")
+	_ = viper.BindEnv("telemetry.batch.timeout", "SUPERBLOCKS_TELEMETRY_BATCH_TIMEOUT")
+	_ = viper.BindEnv("telemetry.batch.export.timeout", "SUPERBLOCKS_TELEMETRY_EXPORT_TIMEOUT")
 
 	if path := viper.GetString("config.path"); path != "" {
 		viper.SetConfigFile(path)
@@ -433,6 +441,12 @@ func main() {
 			},
 			MetricsEnabled: false, // internal/metrics handles Prometheus + OTLP metrics
 			LogsEnabled:    true,
+			Batch: telemetry.BatchConfig{
+				MaxQueueSize:       viper.GetInt("telemetry.batch.max.queue.size"),
+				MaxExportBatchSize: viper.GetInt("telemetry.batch.max.export.batch.size"),
+				BatchTimeout:       viper.GetDuration("telemetry.batch.timeout"),
+				ExportTimeout:      viper.GetDuration("telemetry.batch.export.timeout"),
+			},
 		}, policy, intakeLogger)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not initialize telemetry: %s", err)

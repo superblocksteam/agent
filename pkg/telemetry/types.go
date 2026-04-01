@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"time"
 
 	otellog "go.opentelemetry.io/otel/log"
 	otelmetric "go.opentelemetry.io/otel/metric"
@@ -86,6 +87,29 @@ type PartialTierConfig struct {
 	SampleRate    *float64
 }
 
+// BatchConfig controls the trace batch processor and resilient exporter.
+// Zero values preserve existing defaults — callers only set fields they want to override.
+type BatchConfig struct {
+	// MaxQueueSize is the maximum number of spans queued for export.
+	// Consumed by ResilientExporter. Default: 2048.
+	MaxQueueSize int
+
+	// MaxExportBatchSize is the maximum number of spans exported in a single batch.
+	// Consumed by OTel SDK BatchSpanProcessor. Default: 512 (SDK default).
+	MaxExportBatchSize int
+
+	// BatchTimeout is how long the processor waits before flushing a partial batch.
+	// Consumed by OTel SDK BatchSpanProcessor. Default: 5s (SDK default).
+	BatchTimeout time.Duration
+
+	// ExportTimeout is the per-export-call timeout for span exports.
+	// Configures the OTel SDK BatchSpanProcessor export timeout (WithExportTimeout),
+	// which is the effective deadline passed to ExportSpans. Also used by
+	// ResilientExporter as a fallback when the incoming context has no deadline.
+	// Default: 30s.
+	ExportTimeout time.Duration
+}
+
 type Config struct {
 	ServiceName    string
 	ServiceVersion string
@@ -96,6 +120,8 @@ type Config struct {
 
 	MetricsEnabled bool
 	LogsEnabled    bool
+
+	Batch BatchConfig
 }
 
 type Instance struct {

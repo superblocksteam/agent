@@ -158,6 +158,10 @@ func init() {
 	pflag.String("agent.environment", "*", "Environment to register the agent under.")
 	pflag.String("otel.collector.http.url", "http://127.0.0.1:4318", "The OTLP HTTP collector URL for traces.")
 	pflag.String("telemetry.deployment.type", "on-prem", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
+	pflag.Int("telemetry.batch.max.queue.size", 0, "Max spans queued for export (0 = library default 2048).")
+	pflag.Int("telemetry.batch.max.export.batch.size", 0, "Max spans per export batch (0 = SDK default 512).")
+	pflag.Duration("telemetry.batch.timeout", 0, "Flush partial batch after this duration (0 = SDK default 5s).")
+	pflag.Duration("telemetry.batch.export.timeout", 0, "Per-export-call timeout (0 = library default 30s).")
 	pflag.String("otel.metrics.collector.http.url", "", "The OTLP HTTP collector URL for metrics. Falls back to otel.collector.http.url if empty.")
 
 	// Superblocks settings
@@ -183,6 +187,10 @@ func init() {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	_ = viper.BindEnv("telemetry.deployment.type", "SUPERBLOCKS_DEPLOYMENT_TYPE")
+	_ = viper.BindEnv("telemetry.batch.max.queue.size", "SUPERBLOCKS_TELEMETRY_MAX_QUEUE_SIZE")
+	_ = viper.BindEnv("telemetry.batch.max.export.batch.size", "SUPERBLOCKS_TELEMETRY_MAX_EXPORT_BATCH_SIZE")
+	_ = viper.BindEnv("telemetry.batch.timeout", "SUPERBLOCKS_TELEMETRY_BATCH_TIMEOUT")
+	_ = viper.BindEnv("telemetry.batch.export.timeout", "SUPERBLOCKS_TELEMETRY_EXPORT_TIMEOUT")
 
 	if path := viper.GetString("config.path"); path != "" {
 		viper.SetConfigFile(path)
@@ -255,6 +263,12 @@ func main() {
 			},
 			MetricsEnabled: false,
 			LogsEnabled:    true,
+			Batch: telemetry.BatchConfig{
+				MaxQueueSize:       viper.GetInt("telemetry.batch.max.queue.size"),
+				MaxExportBatchSize: viper.GetInt("telemetry.batch.max.export.batch.size"),
+				BatchTimeout:       viper.GetDuration("telemetry.batch.timeout"),
+				ExportTimeout:      viper.GetDuration("telemetry.batch.export.timeout"),
+			},
 		}, policy, intakeLogger)
 		if err != nil {
 			intakeLogger.Error("could not initialize telemetry", zap.Error(err))

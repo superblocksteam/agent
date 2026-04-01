@@ -202,12 +202,29 @@ func newTraceProvider(
 
 		sanitizing := NewSanitizingExporter(exporter, deploymentType)
 		resilient := NewResilientExporter(ResilientExporterConfig{
-			Delegate: sanitizing,
+			Delegate:      sanitizing,
+			MaxQueueSize:  cfg.Batch.MaxQueueSize,
+			ExportTimeout: cfg.Batch.ExportTimeout,
 			OnDrop: func(count int, reason DropReason) {
 				logger.Warn("dropped spans", zap.Int("count", count), zap.String("reason", string(reason)))
 			},
 		})
-		batcher := sdktrace.NewBatchSpanProcessor(resilient)
+
+		var bspOpts []sdktrace.BatchSpanProcessorOption
+		if cfg.Batch.MaxExportBatchSize > 0 {
+			bspOpts = append(bspOpts, sdktrace.WithMaxExportBatchSize(cfg.Batch.MaxExportBatchSize))
+		}
+		if cfg.Batch.BatchTimeout > 0 {
+			bspOpts = append(bspOpts, sdktrace.WithBatchTimeout(cfg.Batch.BatchTimeout))
+		}
+		// ExportTimeout is applied to the BatchSpanProcessor so it controls the
+		// deadline passed to ExportSpans. The ResilientExporter only enforces its
+		// own timeout when no deadline is present on the incoming context, so
+		// this is the effective place to configure per-export timeouts.
+		if cfg.Batch.ExportTimeout > 0 {
+			bspOpts = append(bspOpts, sdktrace.WithExportTimeout(cfg.Batch.ExportTimeout))
+		}
+		batcher := sdktrace.NewBatchSpanProcessor(resilient, bspOpts...)
 		filtering := NewFilteringSpanProcessor(batcher, deploymentType)
 		traceOpts = append(traceOpts, sdktrace.WithSpanProcessor(filtering))
 		return sdktrace.NewTracerProvider(traceOpts...), resilient, nil

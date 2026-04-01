@@ -2,7 +2,10 @@ package telemetry
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -211,6 +214,66 @@ func TestInitExportDisabled(t *testing.T) {
 	assert.NotNil(t, instance.GetTracer(""))
 	assert.NotNil(t, instance.GetMeter(""))
 	assert.NotNil(t, instance.GetLogger(""))
+}
+
+func TestInitDefaultBatchConfig(t *testing.T) {
+	resetSingletonForTest()
+	t.Setenv("CI", "")
+
+	// An httptest server acts as the OTLP endpoint so newTraceProvider takes
+	// the export-enabled path and actually constructs the ResilientExporter and
+	// BatchSpanProcessor where BatchConfig is applied.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	// Zero-value BatchConfig should produce a functional instance — the
+	// ResilientExporter uses its built-in defaults (maxQueueSize=2048,
+	// exportTimeout=30s) and the BatchSpanProcessor uses SDK defaults.
+	instance, err := Init(context.Background(), Config{
+		ServiceName:    "svc",
+		ServiceVersion: "1.0.0",
+		Environment:    "test",
+		OTLPURL:        srv.URL,
+	}, DefaultCloudPolicy(), nil)
+	require.NoError(t, err)
+	defer instance.Shutdown(context.Background())
+
+	assert.NotNil(t, instance.TracerProvider)
+	assert.NotNil(t, instance.GetTracer(""))
+}
+
+func TestInitCustomBatchConfig(t *testing.T) {
+	resetSingletonForTest()
+	t.Setenv("CI", "")
+
+	// An httptest server acts as the OTLP endpoint so the BatchConfig wiring
+	// path in newTraceProvider is exercised.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	// Non-zero BatchConfig values should flow through to the ResilientExporter
+	// and BatchSpanProcessor without error.
+	instance, err := Init(context.Background(), Config{
+		ServiceName:    "svc",
+		ServiceVersion: "1.0.0",
+		Environment:    "test",
+		OTLPURL:        srv.URL,
+		Batch: BatchConfig{
+			MaxQueueSize:       4096,
+			MaxExportBatchSize: 1024,
+			BatchTimeout:       10 * time.Second,
+			ExportTimeout:      60 * time.Second,
+		},
+	}, DefaultCloudPolicy(), nil)
+	require.NoError(t, err)
+	defer instance.Shutdown(context.Background())
+
+	assert.NotNil(t, instance.TracerProvider)
+	assert.NotNil(t, instance.GetTracer(""))
 }
 
 func resetSingletonForTest() {

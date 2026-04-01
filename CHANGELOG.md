@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Re-expose `crypto` as a global so JavaScript code can use APIs like `crypto.randomUUID()` without explicitly requiring the module
+- Expose batch processor settings (`SUPERBLOCKS_TELEMETRY_MAX_QUEUE_SIZE`, `SUPERBLOCKS_TELEMETRY_MAX_EXPORT_BATCH_SIZE`, `SUPERBLOCKS_TELEMETRY_BATCH_TIMEOUT`, `SUPERBLOCKS_TELEMETRY_EXPORT_TIMEOUT`) as operator-tunable env vars
 
 ## v1.36.1
 - Fix available plugins in on-premise agent (removed `javascriptsdkapi`)

@@ -87,6 +87,33 @@ metrics.Gauge("queue_depth").Set(telemetry.Labels{"queue": "worker"}, 3)
 
 Gauge values are bounded in-memory using TTL + max-entry eviction to avoid unbounded growth.
 
+## Batch Processor Configuration
+
+The `BatchConfig` struct on `telemetry.Config` controls the trace batch processor
+and resilient exporter. All fields default to zero, which preserves the existing
+hardcoded defaults.
+
+| Field | Type | Default | Component | Env Var |
+|-------|------|---------|-----------|---------|
+| `MaxQueueSize` | `int` | 2048 | `ResilientExporter` | `SUPERBLOCKS_TELEMETRY_MAX_QUEUE_SIZE` |
+| `MaxExportBatchSize` | `int` | 512 (SDK) | `BatchSpanProcessor` | `SUPERBLOCKS_TELEMETRY_MAX_EXPORT_BATCH_SIZE` |
+| `BatchTimeout` | `time.Duration` | 5s (SDK) | `BatchSpanProcessor` | `SUPERBLOCKS_TELEMETRY_BATCH_TIMEOUT` |
+| `ExportTimeout` | `time.Duration` | 30s | `BatchSpanProcessor` / `ResilientExporter` (fallback) | `SUPERBLOCKS_TELEMETRY_EXPORT_TIMEOUT` |
+
+Zero-value fields are ignored for queue/batch sizing and timeout: `ResilientExporter`
+applies its own defaults (2048, 30s) and `BatchSpanProcessor` uses OTel SDK defaults
+(512, 5s) when no options are passed. `ExportTimeout` configures the per-export timeout
+on `BatchSpanProcessor` (`WithExportTimeout`) and is also used by `ResilientExporter` as
+a fallback deadline when the incoming context has no deadline already.
+
+Note: setting `MaxQueueSize` to a value smaller than `MaxExportBatchSize` (or smaller
+than the SDK default of 512 when `MaxExportBatchSize` is not set) will cause the
+`ResilientExporter` to drop every batch immediately, as the batch will be larger than
+the queue. Set both together or leave both at zero.
+
+The library does not read environment variables directly — services wire env vars via
+viper pflags and pass them through `telemetry.Config.Batch`.
+
 ## Testing
 
 Use `InitTestTelemetry` for deterministic telemetry tests with no network calls:
