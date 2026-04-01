@@ -159,6 +159,69 @@ func TestDiagnosticsFromOutputJSON(t *testing.T) {
 		assert.Equal(t, "connection refused", result[1].Error)
 		assert.Equal(t, int32(1), result[1].Sequence)
 	})
+
+	t.Run("parses errorCode from diagnostic entry", func(t *testing.T) {
+		json := `{
+			"output":{},
+			"log":[],
+			"diagnostics":[{
+				"integrationId":"int-timeout",
+				"pluginId":"snowflake",
+				"input":"{}",
+				"output":"",
+				"startMs":1700000000000,
+				"endMs":1700000060000,
+				"durationMs":60000,
+				"error":"Network error: Could not reach Snowflake backend",
+				"errorCode":"INTEGRATION_QUERY_TIMEOUT",
+				"sequence":0
+			}]
+		}`
+		result := DiagnosticsFromOutputJSON([]byte(json))
+		require.Len(t, result, 1)
+		assert.Equal(t, "int-timeout", result[0].IntegrationId)
+		assert.Equal(t, "snowflake", result[0].PluginId)
+		assert.Equal(t, "Network error: Could not reach Snowflake backend", result[0].Error)
+		assert.Equal(t, "INTEGRATION_QUERY_TIMEOUT", result[0].ErrorCode)
+	})
+
+	t.Run("different errorCodes produce different diagnostic records", func(t *testing.T) {
+		json := `{
+			"output":{},
+			"log":[],
+			"diagnostics":[
+				{"integrationId":"a","pluginId":"snowflake","input":"{}","output":"","startMs":100,"endMs":200,"durationMs":100,"error":"timeout","errorCode":"INTEGRATION_QUERY_TIMEOUT","sequence":0},
+				{"integrationId":"b","pluginId":"restapi","input":"{}","output":"","startMs":200,"endMs":300,"durationMs":100,"error":"connection refused","errorCode":"INTEGRATION_NETWORK","sequence":1},
+				{"integrationId":"c","pluginId":"postgres","input":"{}","output":"{}","startMs":300,"endMs":350,"durationMs":50,"error":"","errorCode":"","sequence":2}
+			]
+		}`
+		result := DiagnosticsFromOutputJSON([]byte(json))
+		require.Len(t, result, 3)
+		assert.Equal(t, "INTEGRATION_QUERY_TIMEOUT", result[0].ErrorCode)
+		assert.Equal(t, "INTEGRATION_NETWORK", result[1].ErrorCode)
+		assert.Equal(t, "", result[2].ErrorCode)
+	})
+
+	t.Run("errorCode defaults to empty when not present in JSON", func(t *testing.T) {
+		json := `{
+			"output":{},
+			"log":[],
+			"diagnostics":[{
+				"integrationId":"int-no-code",
+				"pluginId":"postgres",
+				"input":"{}",
+				"output":"{}",
+				"startMs":100,
+				"endMs":150,
+				"durationMs":50,
+				"error":"some error",
+				"sequence":0
+			}]
+		}`
+		result := DiagnosticsFromOutputJSON([]byte(json))
+		require.Len(t, result, 1)
+		assert.Equal(t, "", result[0].ErrorCode)
+	})
 }
 
 func TestOutputUnmarshalJSON_PrimitiveOutputValues(t *testing.T) {

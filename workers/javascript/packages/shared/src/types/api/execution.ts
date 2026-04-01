@@ -41,7 +41,7 @@ export interface IntegrationExecutor {
     integrationId: string;
     pluginId: string;
     actionConfiguration?: Record<string, unknown>;
-  }): Promise<{ executionId: string; output: unknown; error?: string }>;
+  }): Promise<{ executionId: string; output: unknown; error?: string; errorCode?: string }>;
 }
 
 export class ExecutionContext {
@@ -180,6 +180,8 @@ export interface IntegrationCallDiagnostic {
   durationMs: number;
   /** Error message if the integration call failed, empty otherwise. */
   error: string;
+  /** Error classification code (e.g. "INTEGRATION_QUERY_TIMEOUT", "INTEGRATION_NETWORK"). Empty when the call succeeded or when the error was not classified. */
+  errorCode: string;
   /** 0-based ordinal indicating call order within the execution. */
   sequence: number;
   /** Optional user-supplied metadata for this call. */

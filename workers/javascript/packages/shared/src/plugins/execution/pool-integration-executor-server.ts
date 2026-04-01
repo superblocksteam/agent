@@ -40,6 +40,7 @@ export class PoolIntegrationExecutorServer {
         const startMs = includeDiagnostics ? Date.now() : 0;
         let callOutput: unknown;
         let callError = '';
+        let callErrorCode = '';
 
         try {
           const result = await executor.executeIntegration({
@@ -51,6 +52,7 @@ export class PoolIntegrationExecutorServer {
           if (result.error) {
             callOutput = undefined;
             callError = result.error;
+            callErrorCode = result.errorCode ?? '';
             this.#trySend(port1, { id: message.id, error: result.error });
           } else {
             callOutput = result.output;
@@ -58,10 +60,15 @@ export class PoolIntegrationExecutorServer {
           }
         } catch (error) {
           callError = error instanceof Error ? error.message : String(error);
+          // Preserve error classification when the executor throws an
+          // IntegrationError (or any error with a string `code` property).
+          if (error instanceof Error && typeof (error as Error & { code?: unknown }).code === 'string') {
+            callErrorCode = (error as Error & { code: string }).code;
+          }
           this.#trySend(port1, { id: message.id, error: callError });
         } finally {
           if (includeDiagnostics) {
-            this.#recordDiagnostic(message, startMs, callOutput, callError);
+            this.#recordDiagnostic(message, startMs, callOutput, callError, callErrorCode);
           }
         }
       })();
@@ -77,7 +84,7 @@ export class PoolIntegrationExecutorServer {
     }
   }
 
-  #recordDiagnostic(message: IntegrationExecutorRequest, startMs: number, callOutput: unknown, callError: string): void {
+  #recordDiagnostic(message: IntegrationExecutorRequest, startMs: number, callOutput: unknown, callError: string, callErrorCode: string): void {
     if (this.#diagnostics.length >= DIAGNOSTICS_MAX_ENTRIES) {
       return;
     }
@@ -95,6 +102,7 @@ export class PoolIntegrationExecutorServer {
       endMs,
       durationMs: endMs - startMs,
       error: callError,
+      errorCode: callErrorCode,
       sequence: this.#diagnostics.length,
       metadata: message.metadata,
       inputWasTruncated: input.truncated,

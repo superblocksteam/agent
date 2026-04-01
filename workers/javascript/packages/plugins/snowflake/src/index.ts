@@ -181,6 +181,14 @@ export default class SnowflakePlugin extends DatabasePluginPooled<Snowflake, Sno
 
     const message = `${initialMessage}: ${error.message}`;
 
+    // The Snowflake SDK surfaces timeout errors as "Network error. Could not
+    // reach Snowflake." which is misleading.  Detect this pattern and map it
+    // to a query-timeout error code so downstream consumers (including AI
+    // error summaries) treat it correctly.
+    if (this.isTimeoutError(error)) {
+      return new IntegrationError(message, ErrorCode.INTEGRATION_QUERY_TIMEOUT, { pluginName: this.pluginName });
+    }
+
     const errorMap: Record<string, ErrorCode> = {
       'Network error': ErrorCode.INTEGRATION_NETWORK,
       'Syntax error': ErrorCode.INTEGRATION_SYNTAX,
@@ -195,5 +203,41 @@ export default class SnowflakePlugin extends DatabasePluginPooled<Snowflake, Sno
     }
 
     return new IntegrationError(message, ErrorCode.UNSPECIFIED, { pluginName: this.pluginName, stack: error.stack });
+  }
+
+  /**
+   * Detect whether an error thrown by the Snowflake SDK is actually a timeout.
+   *
+   * The SDK converts connection/statement timeouts into a generic
+   * "Network error. Could not reach Snowflake." message, but the underlying
+   * cause chain preserves explicit timeout indicators (ETIMEDOUT, etc.).
+   * We walk the full error chain checking both `message` and `code` at every
+   * level for unambiguous timeout signals.
+   */
+  private isTimeoutError(error: Error): boolean {
+    const timeoutPattern = /timed?\s*out|ETIMEDOUT|ESOCKETTIMEDOUT|ECONNABORTED/i;
+
+    // Collect all text signals from the error and its cause chain.
+    // We check message AND code at every level so that e.g.
+    // { message: "connect failed", code: "ETIMEDOUT" } is still caught.
+    const textsToCheck: string[] = [];
+    const topCode = (error as Error & { code?: string }).code;
+    if (error.message) textsToCheck.push(error.message);
+    if (topCode) textsToCheck.push(topCode);
+
+    // Walk the cause chain (supports arbitrarily nested causes)
+    let current: { message?: string; code?: string; cause?: unknown } | undefined =
+      (error as Error & { cause?: { message?: string; code?: string; cause?: unknown } }).cause;
+    const maxDepth = 5; // guard against circular references
+    for (let depth = 0; current && depth < maxDepth; depth++) {
+      if (current.message) textsToCheck.push(current.message);
+      if (current.code) textsToCheck.push(current.code);
+      current = current.cause as { message?: string; code?: string; cause?: unknown } | undefined;
+    }
+
+    // Test each text individually to avoid cross-boundary false positives
+    // (e.g. "invalid datetime" + "output format" joining into "…datetime output…"
+    // which would falsely match `timed?\s*out`)
+    return textsToCheck.some((text) => timeoutPattern.test(text));
   }
 }

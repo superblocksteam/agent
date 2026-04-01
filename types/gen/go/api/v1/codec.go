@@ -104,6 +104,7 @@ type diagnosticJSON struct {
 	EndMs              int64                   `json:"endMs"`
 	DurationMs         int64                   `json:"durationMs"`
 	Error              string                  `json:"error"`
+	ErrorCode          string                  `json:"errorCode,omitempty"`
 	Sequence           int32                   `json:"sequence"`
 	Metadata           *diagnosticMetadataJSON `json:"metadata,omitempty"`
 	InputWasTruncated  bool                    `json:"inputWasTruncated,omitempty"`
@@ -134,6 +135,7 @@ func DiagnosticsFromOutputJSON(jsonBytes []byte) []*IntegrationDiagnostic {
 			EndMs:              d.EndMs,
 			DurationMs:         d.DurationMs,
 			Error:              d.Error,
+			ErrorCode:          d.ErrorCode,
 			Sequence:           d.Sequence,
 			InputWasTruncated:  d.InputWasTruncated,
 			OutputWasTruncated: d.OutputWasTruncated,

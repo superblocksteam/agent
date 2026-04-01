@@ -24,7 +24,9 @@ export class Snowflake {
 
     // here we set timeout globally
     // maximum amount of time to keep the connection alive with no response (ms)
-    connectionOptions.timeout = 10000;
+    // Increased from 10s to 60s to accommodate Snowflake warehouse cold-start
+    // scenarios that can take 20-30s to resume from suspended state.
+    connectionOptions.timeout = 60000;
     // number of retries
     connectionOptions.sfRetryMaxLoginRetries = 2;
     this.sdkConnection = createConnection(connectionOptions);

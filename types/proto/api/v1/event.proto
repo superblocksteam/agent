@@ -192,6 +192,9 @@ message IntegrationDiagnostic {
   bool input_was_truncated = 11;
   // True when the output field was truncated to fit within the byte limit.
   bool output_was_truncated = 12;
+  // Error classification code (e.g. "INTEGRATION_QUERY_TIMEOUT", "INTEGRATION_NETWORK").
+  // Empty when the call succeeded or when the error was not classified.
+  string error_code = 13;
 }
 
 // User-supplied metadata attached to an integration call for diagnostics.

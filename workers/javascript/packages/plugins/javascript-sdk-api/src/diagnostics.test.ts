@@ -151,6 +151,7 @@ describe('diagnostics JSON serialization contract', () => {
         endMs: 1700000000050,
         durationMs: 50,
         error: '',
+        errorCode: '',
         sequence: 0,
         inputWasTruncated: false,
         outputWasTruncated: false
@@ -164,6 +165,7 @@ describe('diagnostics JSON serialization contract', () => {
         endMs: 1700000000160,
         durationMs: 100,
         error: 'connection refused',
+        errorCode: 'INTEGRATION_NETWORK',
         sequence: 1,
         inputWasTruncated: true,
         outputWasTruncated: false
@@ -192,14 +194,55 @@ describe('diagnostics JSON serialization contract', () => {
       endMs: 1700000000050,
       durationMs: 50,
       error: '',
+      errorCode: '',
       sequence: 0,
       inputWasTruncated: false,
       outputWasTruncated: false
     });
     expect(parsed.diagnostics[1].error).toBe('connection refused');
+    expect(parsed.diagnostics[1].errorCode).toBe('INTEGRATION_NETWORK');
     expect(parsed.diagnostics[1].sequence).toBe(1);
     expect(parsed.diagnostics[1].inputWasTruncated).toBe(true);
     expect(parsed.diagnostics[1].outputWasTruncated).toBe(false);
+  });
+
+  it('includes errorCode in diagnostic records for error classification', () => {
+    const diagnostics = [
+      {
+        integrationId: 'int-timeout',
+        pluginId: 'snowflake',
+        input: '{}',
+        output: '',
+        startMs: 1700000000000,
+        endMs: 1700000060000,
+        durationMs: 60000,
+        error: 'Network error: Could not reach Snowflake backend',
+        errorCode: 'INTEGRATION_QUERY_TIMEOUT',
+        sequence: 0,
+        inputWasTruncated: false,
+        outputWasTruncated: false
+      },
+      {
+        integrationId: 'int-ok',
+        pluginId: 'postgres',
+        input: '{}',
+        output: '{}',
+        startMs: 1700000060000,
+        endMs: 1700000060050,
+        durationMs: 50,
+        error: '',
+        errorCode: '',
+        sequence: 1,
+        inputWasTruncated: false,
+        outputWasTruncated: false
+      }
+    ];
+
+    const json = JSON.stringify({ output: {}, log: [], diagnostics });
+    const parsed = JSON.parse(json);
+
+    expect(parsed.diagnostics[0].errorCode).toBe('INTEGRATION_QUERY_TIMEOUT');
+    expect(parsed.diagnostics[1].errorCode).toBe('');
   });
 
   it('omits diagnostics field when array is not set', () => {

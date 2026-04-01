@@ -648,6 +648,9 @@ type IntegrationDiagnostic struct {
 	InputWasTruncated bool `protobuf:"varint,11,opt,name=input_was_truncated,json=inputWasTruncated,proto3" json:"input_was_truncated,omitempty"`
 	// True when the output field was truncated to fit within the byte limit.
 	OutputWasTruncated bool `protobuf:"varint,12,opt,name=output_was_truncated,json=outputWasTruncated,proto3" json:"output_was_truncated,omitempty"`
+	// Error classification code (e.g. "INTEGRATION_QUERY_TIMEOUT", "INTEGRATION_NETWORK").
+	// Empty when the call succeeded or when the error was not classified.
+	ErrorCode string `protobuf:"bytes,13,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
 }
 
 func (x *IntegrationDiagnostic) Reset() {
@@ -764,6 +767,13 @@ func (x *IntegrationDiagnostic) GetOutputWasTruncated() bool {
 		return x.OutputWasTruncated
 	}
 	return false
+}
+
+func (x *IntegrationDiagnostic) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
 }
 
 // User-supplied metadata attached to an integration call for diagnostics.
