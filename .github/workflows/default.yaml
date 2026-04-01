@@ -6,7 +6,7 @@ on:
       - "**"
 jobs:
   check:
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    runs-on: namespace-profile-2x4
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -37,7 +37,7 @@ jobs:
           CHECK=true make fmt
         working-directory: workers/python
   test-go:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: namespace-profile-4x8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -55,7 +55,7 @@ jobs:
           flags: test-go
           token: ${{ secrets.CODECOV_TOKEN }}
   test-js:
-    runs-on: blacksmith-8vcpu-ubuntu-2204
+    runs-on: namespace-profile-8x16
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +75,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: workers/javascript
   test-py:
-    runs-on: blacksmith-8vcpu-ubuntu-2204
+    runs-on: namespace-profile-8x16
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
