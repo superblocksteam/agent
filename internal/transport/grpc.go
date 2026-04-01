@@ -47,6 +47,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/validation"
 	"github.com/superblocksteam/agent/pkg/worker"
 	workeroptions "github.com/superblocksteam/agent/pkg/worker/options"
+	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
@@ -940,22 +941,31 @@ func (s *server) executeCodeMode(
 	includeDiagnostics bool,
 ) (done *executor.Done, retErr error) {
 	startTime := time.Now()
-
+	orgPlan, orgIdFromContext := getOrganizationPlanAndIdFromContext(ctx)
 	logger := s.Logger.With(
 		zap.String("execution_path", "api-2.0"),
 		zap.String("organizationId", result.GetApi().GetMetadata().GetOrganization()),
 	)
 	executionID := constants.ExecutionID(ctx)
+	auditStartMs := startTime.UnixMilli()
+	if start, ok := ctx.Value(constants.ContextKeyApiStartTime).(int64); ok && start > 0 {
+		auditStartMs = start
+	}
+	// Track whether the worker reported an error, even when partial output is
+	// recovered and retErr is nil.
+	var workerFailed bool
+
+	auditFields := buildCodeModeAuditFields(ctx, fetchCode, result, executionID, auditStartMs)
+	logger.Info("audit log: api start", auditFields...)
+
+	defer func() {
+		endFields := buildCodeModeAuditEndFields(auditFields, retErr, workerFailed)
+		logger.Info("audit log: api execute end", endFields...)
+	}()
 
 	// Extract labels for SDK API metrics.
-	_, orgIdForMetrics := getOrganizationPlanAndIdFromContext(ctx)
 	pluginName := extractPrimaryPluginName(result)
 	viewMode := viewModeLabel(getViewMode(req))
-
-	// Track whether the worker reported an error, even when partial output is
-	// recovered and retErr is nil. This prevents misclassifying worker failures
-	// with partial output as succeeded.
-	var workerFailed bool
 
 	defer func() {
 		durationMicro := float64(time.Since(startTime).Microseconds())
@@ -973,7 +983,7 @@ func (s *server) executeCodeMode(
 			PluginName: pluginName,
 			Result:     resultLabel,
 			ErrorCode:  errorCode,
-			OrgId:      orgIdForMetrics,
+			OrgId:      orgIdFromContext,
 			ViewMode:   viewMode,
 		})
 	}()
@@ -1150,8 +1160,7 @@ func (s *server) executeCodeMode(
 		},
 	}
 
-	orgPlan, orgId := getOrganizationPlanAndIdFromContext(ctx)
-	sdkApiWorkerPluginName := s.getSdkApiWorkerPluginName(orgPlan, orgId)
+	sdkApiWorkerPluginName := s.getSdkApiWorkerPluginName(orgPlan, orgIdFromContext)
 	sdkApiWasmRouted := sdkApiWorkerPluginName == sdkApiWasmPluginName
 	logger = logger.With(
 		zap.Bool("sdk_api_wasm_worker", sdkApiWasmRouted),
@@ -1162,7 +1171,7 @@ func (s *server) executeCodeMode(
 	} else {
 		logger.Debug("resolved SDK API code-mode worker route")
 	}
-	workerPerf, outputKey, workerErr := s.Worker.Execute(ctx, sdkApiWorkerPluginName, workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgId))
+	workerPerf, outputKey, workerErr := s.Worker.Execute(ctx, sdkApiWorkerPluginName, workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgIdFromContext))
 	workerEndTime = time.Now()
 	if workerErr != nil {
 		workerFailed = true
@@ -1305,6 +1314,73 @@ func (s *server) executeCodeMode(
 // executor.PrimaryPluginFromIntegrations helper.
 func extractPrimaryPluginName(def *apiv1.Definition) string {
 	return executor.PrimaryPluginFromIntegrations(def.GetIntegrations())
+}
+
+func buildCodeModeAuditFields(
+	ctx context.Context,
+	fetchCode *apiv1.ExecuteRequest_FetchCode,
+	result *apiv1.Definition,
+	executionID string,
+	auditStartMs int64,
+) []zap.Field {
+	_, orgID := getOrganizationPlanAndIdFromContext(ctx)
+	if orgID == "" {
+		orgID = result.GetApi().GetMetadata().GetOrganization()
+	}
+
+	auditFields := []zap.Field{
+		zap.Bool("audit", true),
+		zap.String("auditLogId", executionID),
+		zap.Bool("isDeployed", fetchCode.GetViewMode() == apiv1.ViewMode_VIEW_MODE_DEPLOYED),
+		zap.String("target", result.GetApi().GetMetadata().GetId()),
+		zap.Int64("start", auditStartMs),
+		zap.String("entityId", fetchCode.GetId()),
+		zap.String("applicationId", fetchCode.GetId()),
+		zap.String("organizationId", orgID),
+		zap.String("entityType", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_APPLICATION.String()),
+	}
+
+	if requester := result.GetMetadata().GetRequester(); requester != "" {
+		auditFields = append(auditFields, zap.String("source", requester))
+	} else if userEmail, ok := jwt_validator.GetUserEmail(ctx); ok && userEmail != "" {
+		auditFields = append(auditFields, zap.String("source", userEmail))
+	}
+
+	switch result.GetMetadata().GetRequesterType() {
+	case commonv1.UserType_USER_TYPE_SUPERBLOCKS:
+		auditFields = append(auditFields, zap.String("userType", commonv1.UserType_USER_TYPE_SUPERBLOCKS.String()))
+	case commonv1.UserType_USER_TYPE_EXTERNAL:
+		auditFields = append(auditFields, zap.String("userType", commonv1.UserType_USER_TYPE_EXTERNAL.String()))
+	default:
+		if userType, ok := jwt_validator.GetUserType(ctx); ok {
+			switch userType {
+			case "superblocks":
+				auditFields = append(auditFields, zap.String("userType", commonv1.UserType_USER_TYPE_SUPERBLOCKS.String()))
+			case "external":
+				auditFields = append(auditFields, zap.String("userType", commonv1.UserType_USER_TYPE_EXTERNAL.String()))
+			}
+		}
+	}
+
+	return auditFields
+}
+
+func buildCodeModeAuditEndFields(
+	auditFields []zap.Field,
+	retErr error,
+	workerFailed bool,
+) []zap.Field {
+	status := agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_SUCCESS
+	endFields := append([]zap.Field{}, auditFields...)
+	if retErr != nil {
+		status = agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED
+		endFields = append(endFields, zap.String("error", retErr.Error()))
+	} else if workerFailed {
+		status = agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED
+	}
+
+	endFields = append(endFields, zap.String("status", status.String()), zap.Int64("end", time.Now().UnixMilli()))
+	return endFields
 }
 
 // viewModeLabel converts a ViewMode enum to a short label for metrics.

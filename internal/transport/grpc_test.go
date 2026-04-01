@@ -33,6 +33,7 @@ import (
 	storemock "github.com/superblocksteam/agent/pkg/store/mock"
 	"github.com/superblocksteam/agent/pkg/worker"
 	workeroptions "github.com/superblocksteam/agent/pkg/worker/options"
+	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	v1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
@@ -2199,6 +2200,189 @@ func TestExecuteV3CleansMaterializedFilesOnVariableWriteError(t *testing.T) {
 // and dispatches the combined wrapper+bundle script directly to the JS worker.
 func TestExecuteCodeMode(t *testing.T) {
 	t.Parallel()
+
+	t.Run("emits audit start and success end logs with expected fields", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+		outputJSON := `{"output":{"ok":true}}`
+		outputKey := "output-key-audit-success"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, outputKey, nil).
+			Once()
+
+		core, observedLogs := observer.New(zap.InfoLevel)
+		logger := zap.New(core)
+		s := &server{
+			Config: &Config{
+				Logger: logger,
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "audit-user@example.com")
+		ctx = jwt_validator.WithOrganizationID(ctx, "org-from-context")
+		ctx = constants.WithExecutionID(ctx, "exec-audit-success")
+		ctx = constants.WithApiStartTime(ctx, 1700000000000)
+
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-audit-1", CommitId: strPtr("abc")}
+		requesterType := v1.UserType_USER_TYPE_EXTERNAL
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{
+					Id:           "api-audit-1",
+					Name:         "code-mode",
+					Organization: "org-audit-1",
+				},
+			},
+			Metadata: &apiv1.Definition_Metadata{
+				Requester:     "requester@example.com",
+				RequesterType: &requesterType,
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function() { return true; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
+		require.NoError(t, err)
+		require.NotNil(t, done)
+
+		startLogs := observedLogs.FilterMessage("audit log: api start").All()
+		require.Len(t, startLogs, 1)
+		startCtx := startLogs[0].ContextMap()
+		assert.Equal(t, true, startCtx["audit"])
+		assert.Equal(t, "exec-audit-success", startCtx["auditLogId"])
+		assert.Equal(t, "app-audit-1", startCtx["entityId"])
+		assert.Equal(t, "app-audit-1", startCtx["applicationId"])
+		assert.Equal(t, "api-audit-1", startCtx["target"])
+		assert.Equal(t, "org-from-context", startCtx["organizationId"])
+		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_APPLICATION.String(), startCtx["entityType"])
+		assert.Equal(t, "requester@example.com", startCtx["source"])
+		assert.Equal(t, v1.UserType_USER_TYPE_EXTERNAL.String(), startCtx["userType"])
+		assert.Equal(t, int64(1700000000000), startCtx["start"])
+
+		endLogs := observedLogs.FilterMessage("audit log: api execute end").All()
+		require.Len(t, endLogs, 1)
+		endCtx := endLogs[0].ContextMap()
+		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_SUCCESS.String(), endCtx["status"])
+		_, hasEnd := endCtx["end"]
+		assert.True(t, hasEnd)
+
+		mockWorker.AssertExpectations(t)
+	})
+
+	t.Run("emits failed audit end log when code-mode execution fails", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		core, observedLogs := observer.New(zap.InfoLevel)
+		logger := zap.New(core)
+		s := &server{
+			Config: &Config{
+				Logger: logger,
+				Store:  store.Memory(),
+				Worker: &worker.MockClient{},
+			},
+		}
+
+		ctx := constants.WithExecutionID(context.Background(), "exec-audit-failure")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-audit-2", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{
+					Id:           "api-audit-2",
+					Name:         "code-mode",
+					Organization: "org-audit-2",
+				},
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, nil, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
+		require.Error(t, err)
+		assert.Nil(t, done)
+
+		endLogs := observedLogs.FilterMessage("audit log: api execute end").All()
+		require.Len(t, endLogs, 1)
+		endCtx := endLogs[0].ContextMap()
+		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED.String(), endCtx["status"])
+		assert.Contains(t, endCtx["error"], "missing bundle")
+		_, hasEnd := endCtx["end"]
+		assert.True(t, hasEnd)
+	})
+
+	t.Run("emits failed audit end log when worker fails but partial output is recovered", func(t *testing.T) {
+		t.Parallel()
+		defer metrics.SetupForTesting()()
+
+		mockWorker := &worker.MockClient{}
+		memStore := store.Memory()
+		outputJSON := `{"output":{"ok":true},"error":"runtime error"}`
+		outputKey := "output-key-audit-partial"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, outputKey, errors.New("worker failed")).
+			Once()
+
+		core, observedLogs := observer.New(zap.InfoLevel)
+		logger := zap.New(core)
+		s := &server{
+			Config: &Config{
+				Logger: logger,
+				Store:  memStore,
+				Worker: mockWorker,
+			},
+		}
+
+		ctx := jwt_validator.WithUserEmail(context.Background(), "audit-user@example.com")
+		ctx = context.WithValue(ctx, jwt_validator.ContextKeyUserId, "user-1")
+		ctx = constants.WithExecutionID(ctx, "exec-audit-partial")
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-audit-3", CommitId: strPtr("abc")}
+		result := &apiv1.Definition{
+			Api: &apiv1.Api{
+				Metadata: &v1.Metadata{
+					Id:           "api-audit-3",
+					Name:         "code-mode",
+					Organization: "org-audit-3",
+				},
+			},
+		}
+		rawResult := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"bundle": structpb.NewStringValue("module.exports = { run: function() { return true; } };"),
+			},
+		}
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
+		}
+
+		done, err := s.executeCodeMode(ctx, fetchCode, result, rawResult, req, false, func(*apiv1.StreamResponse) error { return nil }, false)
+		require.NoError(t, err)
+		require.NotNil(t, done)
+
+		endLogs := observedLogs.FilterMessage("audit log: api execute end").All()
+		require.Len(t, endLogs, 1)
+		endCtx := endLogs[0].ContextMap()
+		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED.String(), endCtx["status"])
+		_, hasEnd := endCtx["end"]
+		assert.True(t, hasEnd)
+
+		mockWorker.AssertExpectations(t)
+	})
 
 	t.Run("logs routing decision and dispatches to sdk api wasm plugin when flagged", func(t *testing.T) {
 		t.Parallel()
