@@ -1,4 +1,5 @@
 /orchestrator
+.direnv/
 tmp/
 coverage.out
 **/node_modules
