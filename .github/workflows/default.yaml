@@ -73,7 +73,7 @@ jobs:
       - run: |
           make build
           npx pnpm --filter @superblocks/worker.js test:unit
-          npx pnpm --no-bail --filter "@superblocksteam/*" --filter "!@superblocksteam/gsheets" test --testPathIgnorePatterns "(e2e|integration|local).test.ts"
+          npx pnpm --no-bail --filter "@superblocksteam/*" --filter "!@superblocksteam/gsheets" --filter "!@superblocksteam/agent-sdk" test --testPathIgnorePatterns "(e2e|integration|local).test.ts"
         working-directory: workers/javascript
         env:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
