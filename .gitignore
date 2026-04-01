@@ -62,7 +62,11 @@ charts/
 *.core
 /workers/javascript/packages/quickjs-emscripten/packages/**/core
 
+# Build-time generated bundles
+**/src/bundles/sdk-api.iife.js
+
 # Agent/MCP related
 .fastembed_cache/
 .sisyphus/
 .serena/
+.claude/

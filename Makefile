@@ -200,6 +200,15 @@ test-e2e-worker-unavailable:
 test-e2e-v3-execute-regression:
 	postman collection run --color on --verbose ./postman/v3_execute_regression_collection.json -e ./postman/environments/$(POSTMAN_ENV).json --env-var orchestrator_scheme=http --env-var orchestrator_host=127.0.0.1 --env-var orchestrator_port=8080 --env-var application_id=00000000-0000-0000-0000-000000000003 --env-var entry_point=server/apis/GetOrderById/api.ts --env-var order_id=30000 --env-var view_mode=editor --env-var profile_id=00000000-0000-0000-0000-000000000001 --env-var profile_name=default --env-var profile_key=default
 
+.PHONY: bench-wasm-sandbox
+bench-wasm-sandbox:
+	cd workers/javascript && NODE_OPTIONS=--experimental-vm-modules npx jest --verbose --no-coverage --runInBand sandbox.bench
+	cd workers/javascript && NODE_OPTIONS=--experimental-vm-modules npx jest --verbose --no-coverage --runInBand --testPathPattern 'packages/plugins/javascript-sdk-api-wasm/src/sandbox.bench'
+
+.PHONY: test-e2e-wasm-sdkapi
+test-e2e-wasm-sdkapi:
+	./scripts/e2e-wasm-sdkapi-smoke.sh
+
 .PHONY: test-integration
 test-integration: deps kafka
 	@gotestsum $(GOTESTSUM_OPTIONS) -- -count=1 -timeout 30s -covermode=atomic -coverprofile=coverage-integration.out -coverpkg=./... $(INTEGRATION_TEST_PACKAGES)

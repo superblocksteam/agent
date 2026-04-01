@@ -1,36 +1,35 @@
 {
-  "name": "@superblocks/wasm-sandbox-js",
-  "private": true,
+  "name": "@superblocksteam/javascript-sdk-api-wasm",
   "version": "0.0.1",
-  "description": "WASM-based sandbox for secure JavaScript evaluation using QuickJS",
+  "type": "commonjs",
+  "description": "Superblocks SDK API Plugin (WASM runtime)",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "engines": {
     "node": "20.19.5"
   },
   "scripts": {
-    "build": "pnpm run clean && tsc",
-    "clean": "rimraf ./dist *tsbuildinfo",
+    "bundle:sdk-api": "node scripts/bundle-sdk-api.mjs",
+    "build": "swc src -d dist && pnpm run bundle:sdk-api",
+    "clean": "rimraf ./dist *tsbuildinfo src/bundles/sdk-api.iife.js",
     "lint": "eslint . --ext ts --max-warnings 0 --cache --cache-strategy content --cache-location ~/.cache/eslint/",
     "lint:fix": "eslint . --ext ts --fix --cache --cache-strategy content --cache-location ~/.cache/eslint/",
     "typecheck": "tsc --noEmit",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand",
-    "bench": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern sandbox.bench --runInBand --no-coverage"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand"
   },
   "dependencies": {
-    "quickjs-emscripten-core": "workspace:*",
-    "@jitl/quickjs-wasmfile-release-sync": "workspace:*",
-    "lodash": "^4.17.23",
-    "moment": "2.29.4"
+    "@superblocks/shared": "workspace:*",
+    "@superblocks/wasm-sandbox-js": "workspace:*"
   },
   "devDependencies": {
-    "@jitl/quickjs-wasmfile-debug-sync": "workspace:*",
-    "@jest/globals": "^29.7.0",
+    "@superblocksteam/sdk-api": "0.0.6",
+    "@swc/cli": "catalog:",
+    "@swc/core": "catalog:",
     "@types/jest": "catalog:",
-    "@types/lodash": "catalog:",
     "@types/node": "catalog:",
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@typescript-eslint/parser": "catalog:",
+    "esbuild": "^0.25.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
@@ -39,7 +38,7 @@
     "jest": "catalog:",
     "prettier": "catalog:",
     "rimraf": "catalog:",
-    "ts-jest": "^29.1.0",
+    "ts-jest": "catalog:",
     "typescript": "catalog:"
   }
 }

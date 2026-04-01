@@ -129,6 +129,31 @@ services:
     depends_on:
       - redis
       - javascriptsdkapi-ephemeral-sandbox
+  # ============================================================================
+  # JavaScript SDK API WASM Ephemeral Workers (API 2.0 code-mode via QuickJS WASM)
+  # ============================================================================
+  javascriptsdkapiwasm-ephemeral-sandbox:
+    !!merge <<: *javascript-sandbox-base
+    container_name: javascriptsdkapiwasm-ephemeral-sandbox
+    environment:
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS: javascriptsdkapiwasm-ephemeral:50050
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS: javascriptsdkapiwasm-ephemeral:8080
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_STREAMING_PROXY_ADDRESS: javascriptsdkapiwasm-ephemeral:50052
+  javascriptsdkapiwasm-ephemeral:
+    !!merge <<: *task-manager-base
+    container_name: javascriptsdkapiwasm-ephemeral
+    environment:
+      !!merge <<: *task-manager-environment
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: javascriptsdkapiwasm
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_EVENTS: execute metadata test pre_delete
+      SUPERBLOCKS_WORKER_SANDBOX_WORKER_BUCKETS: BA BE B1 B2
+      SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS: javascriptsdkapiwasm-ephemeral-sandbox:50051
+      SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_GRPC_ADDRESS: javascriptsdkapiwasm-ephemeral:50050
+      SUPERBLOCKS_WORKER_SANDBOX_VARIABLE_STORE_HTTP_PORT: 8080
+      SUPERBLOCKS_WORKER_SANDBOX_STREAMING_PROXY_GRPC_PORT: 50052
+    depends_on:
+      - redis
+      - javascriptsdkapiwasm-ephemeral-sandbox
 networks:
   default:
     name: orchestrator_default

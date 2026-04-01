@@ -1,3 +1,13 @@
+/**
+ * Common library definitions for the QuickJS WASM sandbox.
+ *
+ * Libraries are pre-built, self-contained bundles loaded into the QuickJS
+ * runtime via evalCode. Each library must:
+ * 1. Have no external imports/requires
+ * 2. Assign its exported value to the expected global name
+ *
+ * lodash and moment ship UMD/IIFE bundles natively.
+ */
 import { readFileSync } from 'fs';
 import * as path from 'path';
 import { registerGlobalLazyLibrary } from './libraries';
@@ -15,7 +25,6 @@ type CommonLibraryDefinition = {
 
 function loadLibrarySource(packageName: string, relativePath: string): string {
   try {
-    // Use require.resolve which works in most Node.js environments
     const packageJsonPath = require.resolve(`${packageName}/package.json`);
     const packageDir = path.dirname(packageJsonPath);
     return readFileSync(path.join(packageDir, relativePath), 'utf8');
@@ -24,42 +33,46 @@ function loadLibrarySource(packageName: string, relativePath: string): string {
   }
 }
 
-// Lazy-load library sources to avoid reading files at module load time
-let cachedDefinitions: Record<CommonLibrary, CommonLibraryDefinition> | null = null;
+/** Per-library cache. Libraries are loaded individually on first use. */
+const cachedDefinitions = new Map<CommonLibrary, CommonLibraryDefinition>();
 
-function getCommonLibraryDefinitions(): Record<CommonLibrary, CommonLibraryDefinition> {
-  if (cachedDefinitions) {
-    return cachedDefinitions;
+function getLibraryDefinition(library: CommonLibrary): CommonLibraryDefinition {
+  const cached = cachedDefinitions.get(library);
+  if (cached) {
+    return cached;
   }
 
-  cachedDefinitions = {
-    lodash: {
-      source: loadLibrarySource('lodash', 'lodash.min.js'),
-      globalName: '_',
-      librarySourceFileName: 'lodash.min.js'
-    },
-    moment: {
-      source: loadLibrarySource('moment', 'min/moment.min.js'),
-      globalName: 'moment',
-      librarySourceFileName: 'min/moment.min.js'
-    }
-  };
+  let definition: CommonLibraryDefinition;
+  switch (library) {
+    case 'lodash':
+      definition = {
+        source: loadLibrarySource('lodash', 'lodash.min.js'),
+        globalName: '_',
+        librarySourceFileName: 'lodash.min.js'
+      };
+      break;
+    case 'moment':
+      definition = {
+        source: loadLibrarySource('moment', 'min/moment.min.js'),
+        globalName: 'moment',
+        librarySourceFileName: 'min/moment.min.js'
+      };
+      break;
+    default:
+      throw new Error(`Unknown common library "${library}". Known libraries: ${commonLibraries.join(', ')}`);
+  }
 
-  return cachedDefinitions;
+  cachedDefinitions.set(library, definition);
+  return definition;
 }
 
-// Any library added here must provide a single, self contained bundle that:
-// 1) has no external imports/requires, and
-// 2) assigns its exported value to the expected global name.
-// If the package does not ship such an artifact, build one (e.g. rollup/webpack
-// IIFE/UMD target that writes to the global) and point `source` at that output.
+/**
+ * Registers a common library as a lazy-loaded global in the QuickJS context.
+ *
+ * @param ctx - The QuickJS context
+ * @param library - The library to register ('lodash' or 'moment')
+ */
 export function registerCommonLazyLibrary(ctx: QuickJSContext, library: CommonLibrary) {
-  const definitions = getCommonLibraryDefinitions();
-  const definition = definitions[library];
-
-  if (!definition) {
-    throw new Error(`Unknown common library "${library}". Known libraries: ${commonLibraries.join(', ')}`);
-  }
-
-  registerGlobalLazyLibrary(ctx, definition.source, definition.globalName, `"<loader:${library}>"`, definition.librarySourceFileName);
+  const definition = getLibraryDefinition(library);
+  registerGlobalLazyLibrary(ctx, definition.source, definition.globalName, `loader:${library}`, definition.librarySourceFileName);
 }

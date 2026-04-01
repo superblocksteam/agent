@@ -4,6 +4,7 @@ import { registerGlobalAtob } from './globals/atob';
 import { registerGlobalBuffer } from './globals/buffer';
 import { CommonLibrary, registerCommonLazyLibrary } from './globals/common-libraries';
 import { registerGlobalConsole } from './globals/console';
+import { registerGlobalLibrary, registerGlobalLazyLibrary } from './globals/libraries';
 import { registerGlobalSetTimeout } from './globals/timers';
 import { createMarshaller, Marshaller, HostGetterWrapper } from './marshal';
 import { getQuickJS } from './quickjs';
@@ -20,6 +21,26 @@ type SandboxLimits = {
    */
   memoryBytes?: number;
 };
+
+/**
+ * A custom library or script to register in the sandbox.
+ *
+ * Libraries are self-contained JavaScript source evaluated inside QuickJS.
+ * They can be loaded eagerly (at sandbox creation) or lazily (on first access
+ * via a global getter).
+ */
+export interface SandboxLibrary {
+  /** JavaScript source code (must be self-contained, no imports). */
+  source: string;
+  /** File name used in error stack traces. */
+  fileName: string;
+  /**
+   * If provided, installs a lazy getter on this global name that evaluates
+   * the source on first access. If omitted, source is evaluated eagerly
+   * during sandbox creation.
+   */
+  lazyGlobalName?: string;
+}
 
 /**
  * Options for creating a sandbox.
@@ -47,6 +68,12 @@ export interface SandboxOptions {
    * Common libraries to automatically expose as globals (lodash, moment).
    */
   globalLibraries?: CommonLibrary[];
+  /**
+   * Additional libraries or scripts to register in the sandbox.
+   * Evaluated after built-in globalLibraries. Use this to extend the sandbox
+   * with plugin-specific libraries without modifying wasm-sandbox-js.
+   */
+  libraries?: SandboxLibrary[];
 }
 
 /**
@@ -97,7 +124,8 @@ const defaultSandboxOptions: Required<SandboxOptions> = {
   enableAtob: false,
   enableBuffer: false,
   enableTimers: false,
-  globalLibraries: []
+  globalLibraries: [],
+  libraries: []
 };
 
 const defaultEvaluateOptions: Required<SandboxEvaluateOptions> = {
@@ -425,6 +453,14 @@ export async function createSandbox(options: SandboxOptions = {}): Promise<Sandb
   }
   if (opts.globalLibraries.includes('moment')) {
     registerCommonLazyLibrary(ctx, 'moment');
+  }
+  // Register custom libraries provided via the `libraries` option.
+  for (const lib of opts.libraries ?? []) {
+    if (lib.lazyGlobalName) {
+      registerGlobalLazyLibrary(ctx, lib.source, lib.lazyGlobalName, `loader:${lib.fileName}`, lib.fileName);
+    } else {
+      registerGlobalLibrary(ctx, lib.source, lib.fileName);
+    }
   }
 
   return new SandboxImpl(runtime, ctx, eventLoop, marshaller);

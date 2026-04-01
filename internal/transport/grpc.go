@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1035,11 +1036,18 @@ func (s *server) executeCodeMode(
 		return sendError(sberror.AuthorizationError(err))
 	}
 
-	wrapperScript, err := generateWrapperScript(user, req.GetInputs(), bundle, executionID, fetchCode.GetExportName())
+	wrapperGenStart := time.Now()
+	wrapperScript, err := tracer.Observe[string](ctx, "code_mode.wrapper_gen", map[string]any{
+		"execution_id":      executionID,
+		"bundle_size_bytes": strconv.Itoa(len(bundle)),
+	}, func(ctx context.Context, _ trace.Span) (string, error) {
+		return generateWrapperScript(user, req.GetInputs(), bundle, executionID, fetchCode.GetExportName())
+	}, nil)
 	if err != nil {
 		logger.Error("could not generate wrapper script", zap.Error(err))
 		return sendError(err)
 	}
+	logger.Debug("code-mode phase timing", zap.String("phase", "wrapper_gen"), zap.Duration("duration", time.Since(wrapperGenStart)))
 
 	// Extract JWT variants and browser cookies from gRPC metadata for proxied
 	// integration execution. The downstream integration fetch expects:
@@ -1106,32 +1114,43 @@ func (s *server) executeCodeMode(
 		return sendError(err)
 	}
 
-	for inputName, inputValue := range req.GetInputs() {
-		if inputName == "" || inputValue == nil {
-			continue
-		}
+	varPersistStart := time.Now()
+	if _, err = tracer.Observe[any](ctx, "code_mode.variable_persist", map[string]any{
+		"execution_id":      executionID,
+		"bundle_size_bytes": strconv.Itoa(len(bundle)),
+		"num_inputs":        strconv.Itoa(len(req.GetInputs())),
+	}, func(ctx context.Context, _ trace.Span) (any, error) {
+		for inputName, inputValue := range req.GetInputs() {
+			if inputName == "" || inputValue == nil {
+				continue
+			}
 
-		serializedInputValue, marshalErr := json.Marshal(inputValue.AsInterface())
-		if marshalErr != nil {
-			logger.Error("could not serialize code-mode input variable", zap.String("input_name", inputName), zap.Error(marshalErr))
-			return sendError(marshalErr)
-		}
+			serializedInputValue, marshalErr := json.Marshal(inputValue.AsInterface())
+			if marshalErr != nil {
+				logger.Error("could not serialize code-mode input variable", zap.String("input_name", inputName), zap.Error(marshalErr))
+				return nil, marshalErr
+			}
 
-		storeKey := fmt.Sprintf("%s.code_mode.input.%s", executionID, inputName)
-		if writeErr := s.Store.Write(ctx, &store.KV{
-			Key:   storeKey,
-			Value: string(serializedInputValue),
-		}); writeErr != nil {
-			logger.Error("could not persist code-mode input variable", zap.String("input_name", inputName), zap.Error(writeErr))
-			return sendError(writeErr)
+			storeKey := fmt.Sprintf("%s.code_mode.input.%s", executionID, inputName)
+			if writeErr := s.Store.Write(ctx, &store.KV{
+				Key:   storeKey,
+				Value: string(serializedInputValue),
+			}); writeErr != nil {
+				logger.Error("could not persist code-mode input variable", zap.String("input_name", inputName), zap.Error(writeErr))
+				return nil, writeErr
+			}
+			tempVariableStoreKeys = append(tempVariableStoreKeys, storeKey)
+			propsVariables[inputName] = &transportv1.Variable{
+				Key:  storeKey,
+				Type: apiv1.Variables_TYPE_NATIVE,
+				Mode: apiv1.Variables_MODE_READ,
+			}
 		}
-		tempVariableStoreKeys = append(tempVariableStoreKeys, storeKey)
-		propsVariables[inputName] = &transportv1.Variable{
-			Key:  storeKey,
-			Type: apiv1.Variables_TYPE_NATIVE,
-			Mode: apiv1.Variables_MODE_READ,
-		}
+		return nil, nil
+	}, nil); err != nil {
+		return sendError(err)
 	}
+	logger.Debug("code-mode phase timing", zap.String("phase", "variable_persist"), zap.Duration("duration", time.Since(varPersistStart)))
 
 	workerData := &transportv1.Request_Data_Data{
 		Props: &transportv1.Request_Data_Data_Props{
@@ -1171,8 +1190,23 @@ func (s *server) executeCodeMode(
 	} else {
 		logger.Debug("resolved SDK API code-mode worker route")
 	}
-	workerPerf, outputKey, workerErr := s.Worker.Execute(ctx, sdkApiWorkerPluginName, workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgIdFromContext))
+	workerDispatchStart := time.Now()
+	type workerResult struct {
+		perf      *transportv1.Performance
+		outputKey string
+	}
+	wr, workerErr := tracer.Observe[workerResult](ctx, "code_mode.worker_dispatch", map[string]any{
+		"execution_id":      executionID,
+		"bundle_size_bytes": strconv.Itoa(len(bundle)),
+		"plugin_name":       sdkApiWorkerPluginName,
+	}, func(ctx context.Context, _ trace.Span) (workerResult, error) {
+		perf, oKey, wErr := s.Worker.Execute(ctx, sdkApiWorkerPluginName, workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgIdFromContext))
+		return workerResult{perf: perf, outputKey: oKey}, wErr
+	}, nil)
+	workerPerf = wr.perf
+	outputKey = wr.outputKey
 	workerEndTime = time.Now()
+	logger.Debug("code-mode phase timing", zap.String("phase", "worker_dispatch"), zap.Duration("duration", time.Since(workerDispatchStart)))
 	if workerErr != nil {
 		workerFailed = true
 	}
@@ -1183,43 +1217,61 @@ func (s *server) executeCodeMode(
 	var output apiv1.Output
 	var diagnostics []*apiv1.IntegrationDiagnostic
 	var storeErr error
+	outputRetrieveStart := time.Now()
+	type outputResult struct {
+		output      *apiv1.Output
+		diagnostics []*apiv1.IntegrationDiagnostic
+	}
 	if outputKey != "" {
-		values, readErr := s.Store.Read(ctx, outputKey)
-		if readErr != nil {
-			storeErr = readErr
-		} else if len(values) > 0 && values[0] != nil {
-			var raw string
-			switch v := values[0].(type) {
-			case string:
-				raw = v
-			case []byte:
-				raw = string(v)
-			default:
-				storeErr = fmt.Errorf("unexpected store value type %T", values[0])
+		or, storeObsErr := tracer.Observe[outputResult](ctx, "code_mode.output_retrieval", map[string]any{
+			"execution_id":      executionID,
+			"bundle_size_bytes": strconv.Itoa(len(bundle)),
+		}, func(ctx context.Context, _ trace.Span) (outputResult, error) {
+			var res outputResult
+			values, readErr := s.Store.Read(ctx, outputKey)
+			if readErr != nil {
+				return res, readErr
 			}
-			if raw != "" {
-				rawBytes := []byte(raw)
-				parsed, jsonErr := apiv1.OutputFromOutputOldJSON(rawBytes)
-				if jsonErr != nil {
-					storeErr = fmt.Errorf("could not unmarshal worker output: %w", jsonErr)
-				} else {
-					output = *parsed
+			if len(values) > 0 && values[0] != nil {
+				var raw string
+				switch v := values[0].(type) {
+				case string:
+					raw = v
+				case []byte:
+					raw = string(v)
+				default:
+					return res, fmt.Errorf("unexpected store value type %T", values[0])
+				}
+				if raw != "" {
+					rawBytes := []byte(raw)
+					parsed, jsonErr := apiv1.OutputFromOutputOldJSON(rawBytes)
+					if jsonErr != nil {
+						return res, fmt.Errorf("could not unmarshal worker output: %w", jsonErr)
+					}
+					res.output = parsed
 					// SDK API (FetchCode) output: omit request to avoid exposing the full
 					// bundled code in the response. Clear Request and RequestV2.Summary
 					// but preserve RequestV2.Metadata (e.g. placeHoldersInfo).
-					output.Request = ""
-					if output.RequestV2 != nil {
-						output.RequestV2.Summary = ""
+					res.output.Request = ""
+					if res.output.RequestV2 != nil {
+						res.output.RequestV2.Summary = ""
+					}
+
+					// Extract integration diagnostics from the worker output if requested.
+					if includeDiagnostics {
+						res.diagnostics = apiv1.DiagnosticsFromOutputJSON(rawBytes)
 					}
 				}
-
-				// Extract integration diagnostics from the worker output if requested.
-				if includeDiagnostics {
-					diagnostics = apiv1.DiagnosticsFromOutputJSON(rawBytes)
-				}
 			}
+			return res, nil
+		}, nil)
+		if or.output != nil {
+			output = *or.output
 		}
+		diagnostics = or.diagnostics
+		storeErr = storeObsErr
 	}
+	logger.Debug("code-mode phase timing", zap.String("phase", "output_retrieval"), zap.Duration("duration", time.Since(outputRetrieveStart)))
 
 	// When the worker succeeded but we can't read the output, that's a hard
 	// error — we have no result to return.

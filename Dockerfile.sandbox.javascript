@@ -71,10 +71,20 @@ RUN . $HOME/.bashrc && \
 
 # Deploy javascript-plugins-sandbox with all its dependencies to a self-contained directory
 RUN . $HOME/.bashrc && pnpm --filter javascript-plugins-sandbox deploy --prod /deploy && \
-    npx clean-modules --directory /deploy/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
+    npx clean-modules --directory /deploy/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/' && \
+    mkdir -p /deploy/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles && \
+    if [ ! -f /deploy/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js ]; then \
+      cp /app/workers/javascript/packages/plugins/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js \
+        /deploy/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js; \
+    fi
 
 # Copy generated protobuf types to the deployed dist
 RUN cp -r /app/workers/ephemeral/javascript-plugins-sandbox/src/types /deploy/dist/
+
+# The sdk-api IIFE bundle must be present in the deployed sdk-api-wasm plugin.
+# Fail the build if it's missing — a silent absence causes runtime crashes.
+RUN test -f /deploy/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js \
+    || (echo "ERROR: sdk-api.iife.js bundle missing from javascript-sdk-api-wasm dist" && exit 1)
 
 # Production stage
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION}-bookworm-slim

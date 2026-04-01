@@ -842,6 +842,78 @@ describe('Sandbox', () => {
     });
   });
 
+  describe('custom libraries (SandboxLibrary)', () => {
+    it('eagerly evaluates a library when lazyGlobalName is not set', async () => {
+      const sandbox = await createSandbox({
+        libraries: [
+          { source: 'globalThis.myLib = { version: 42 };', fileName: 'my-lib.js' }
+        ]
+      });
+      try {
+        const result = await sandbox.evaluate('myLib.version');
+        expect(result).toBe(42);
+      } finally {
+        sandbox.dispose();
+      }
+    });
+
+    it('lazily evaluates a library when lazyGlobalName is set', async () => {
+      const sandbox = await createSandbox({
+        libraries: [
+          {
+            source: 'globalThis.lazyVal = { loaded: true };',
+            fileName: 'lazy-lib.js',
+            lazyGlobalName: 'lazyVal'
+          }
+        ]
+      });
+      try {
+        const result = await sandbox.evaluate('lazyVal.loaded');
+        expect(result).toBe(true);
+      } finally {
+        sandbox.dispose();
+      }
+    });
+
+    it('supports multiple custom libraries', async () => {
+      const sandbox = await createSandbox({
+        libraries: [
+          { source: 'globalThis.libA = "a";', fileName: 'a.js' },
+          { source: 'globalThis.libB = "b";', fileName: 'b.js' }
+        ]
+      });
+      try {
+        const result = await sandbox.evaluate('libA + libB');
+        expect(result).toBe('ab');
+      } finally {
+        sandbox.dispose();
+      }
+    });
+
+    it('custom libraries work alongside globalLibraries', async () => {
+      const sandbox = await createSandbox({
+        globalLibraries: ['lodash'],
+        libraries: [
+          { source: 'globalThis.custom = { sum: function(a) { return _.sum(a); } };', fileName: 'custom.js' }
+        ]
+      });
+      try {
+        const result = await sandbox.evaluate('custom.sum([1, 2, 3])');
+        expect(result).toBe(6);
+      } finally {
+        sandbox.dispose();
+      }
+    });
+
+    it('throws on invalid library source', async () => {
+      await expect(createSandbox({
+        libraries: [
+          { source: 'this is not valid javascript {{{', fileName: 'bad.js' }
+        ]
+      })).rejects.toThrow();
+    });
+  });
+
   describe('console logger', () => {
     it('routes console calls to the provided logger', async () => {
       const log = jest.fn();

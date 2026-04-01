@@ -1,149 +1,21 @@
-import * as http from 'node:http';
-import { format, promisify } from 'node:util';
+import { format } from 'node:util';
 import {
   buildVariables,
   decodeBytestringsExecutionContext,
   ExecutionOutput,
   getTreePathToDiskPath,
   PoolVariableClient,
-  serialize,
+  type FileFetcher,
   type WorkerInput
 } from '@superblocks/shared';
+import { prepareGlobalsWithFileMethods } from '@superblocks/shared/dist/src/plugins/execution/worker-file-utils';
 import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
-import deasync from 'deasync';
-import _ from 'lodash';
 import type { Sandbox, SandboxOptions } from '@superblocks/wasm-sandbox-js';
 
-/**
- * Fetch file from the controller (mode without sandbox file fetching).
- * Uses fileServerUrl and agentKey from context.globals.
- */
-function fetchFromController(
-  fileServerUrl: string,
-  agentKey: string,
-  location: string,
-  callback: (err: Error | null, result: Buffer | null) => void
-): void {
-  const url = new URL(fileServerUrl);
-  url.searchParams.set('location', location);
-  http.get(
-    url.toString(),
-    {
-      headers: { 'x-superblocks-agent-key': agentKey }
-    },
-    (response) => {
-      if (response.statusCode != 200) {
-        return callback(new Error('Internal Server Error'), null);
-      }
-      const chunks: Buffer[] = [];
-      let chunkStrings = '';
-      response.on('data', (chunk: Buffer) => {
-        if (fileServerUrl.includes('v2')) {
-          const serialized = serialize(chunk);
-          chunkStrings += serialized;
-        } else {
-          chunks.push(chunk);
-        }
-      });
-      response.on('error', (err) => callback(err, null));
-      response.on('end', () => {
-        if (fileServerUrl.includes('v2')) {
-          const processed = chunkStrings
-            .split('\n')
-            .filter((str) => str.length > 0)
-            .map((str) => {
-              const json = JSON.parse(str);
-              const data = json.result?.data;
-              if (data == null) {
-                throw new Error('fetchFile response missing data');
-              }
-              return Buffer.from(data, 'base64');
-            });
-          // Cast needed: TS 5.6+ made Uint8Array generic, causing type incompatibility with Buffer
-          callback(null, Buffer.concat(processed as unknown as Uint8Array[]));
-        } else {
-          // Cast needed: TS 5.6+ made Uint8Array generic, causing type incompatibility with Buffer
-          // even though Buffer extends Uint8Array at runtime. Fixed in @types/node@25+ (Node 25).
-          callback(null, Buffer.concat(chunks as unknown as Uint8Array[]));
-        }
-      });
-    }
-  );
-}
-
-/**
- * File fetcher configuration for workers without sandbox file fetching.
- * Uses the controller's file server with agent key authentication.
- */
-interface ControllerFileFetcher {
-  type: 'controller';
-  fileServerUrl: string;
-  agentKey: string;
-}
-
-/**
- * File fetcher configuration for sandbox workers.
- * Uses the VariableClient to proxy file fetching through the KVStore (GrpcKvStore).
- */
-interface SandboxFileFetcher {
-  type: 'sandbox';
-  variableClient: PoolVariableClient;
-}
-
-type FileFetcher = ControllerFileFetcher | SandboxFileFetcher;
-
-function prepareGlobalsWithFileMethods(globals: Record<string, unknown>, filePaths: Record<string, string>, fetcher: FileFetcher): void {
-  Object.entries(filePaths).forEach(([treePath, diskPath]) => {
-    if (!diskPath) return;
-
-    let readContentsAsync: (mode?: 'raw' | 'binary' | 'text' | unknown) => Promise<string | Buffer>;
-    let readContents: (mode?: 'raw' | 'binary' | 'text' | unknown) => string | Buffer;
-
-    if (fetcher.type === 'controller') {
-      // Old worker: fetch from controller
-      readContentsAsync = async (mode?: 'raw' | 'binary' | 'text' | unknown): Promise<string | Buffer> => {
-        const contents = await promisify(fetchFromController)(fetcher.fileServerUrl, fetcher.agentKey, diskPath);
-        return serialize(contents, mode);
-      };
-
-      readContents = (mode?: 'raw' | 'binary' | 'text' | unknown): string | Buffer => {
-        const contents = deasync(fetchFromController)(fetcher.fileServerUrl, fetcher.agentKey, diskPath);
-        return serialize(contents, mode);
-      };
-    } else {
-      // Sandbox worker: fetch via VariableClient (proxied through KVStore/GrpcKvStore)
-      const { variableClient } = fetcher;
-      const fetchFileCallback = (path: string, cb: (err: Error | null, result: Buffer | null) => void): void => {
-        variableClient.fetchFileCallback(path, cb);
-      };
-
-      readContentsAsync = async (mode?: 'raw' | 'binary' | 'text' | unknown): Promise<string | Buffer> => {
-        const contents = await promisify(fetchFileCallback)(diskPath);
-        return serialize(contents, mode);
-      };
-
-      readContents = (mode?: 'raw' | 'binary' | 'text' | unknown): string | Buffer => {
-        const contents = deasync(fetchFileCallback)(diskPath);
-        return serialize(contents, mode);
-      };
-    }
-
-    const file = _.get(globals, treePath) as object | undefined;
-    // Leaving $superblocksId set because it's required by our S3.
-    _.set(globals, treePath, {
-      ...file,
-      previewUrl: undefined,
-      readContentsAsync: wasmSandbox.hostFunction(readContentsAsync),
-      readContents: wasmSandbox.hostFunction(readContents)
-    });
-  });
-}
-
-// Sandbox configuration (constant for worker lifetime)
+// Sandbox configuration (constant for worker lifetime).
 const sandboxOptions: SandboxOptions = {
   enableBuffer: true,
   enableAtob: true,
-  // when this plugin is used to resolve bindings, these libraries need to be available
   globalLibraries: ['lodash', 'moment']
 };
 
@@ -194,10 +66,9 @@ async function handleTask(workerData: WorkerInput): Promise<string> {
     // Determine file fetcher based on worker mode
     let fileFetcher: FileFetcher;
     if (useSandboxFileFetcher) {
-      // Sandbox worker: fetch files via VariableClient (proxied through KVStore/GrpcKvStore)
       fileFetcher = {
         type: 'sandbox',
-        variableClient
+        client: variableClient
       };
     } else {
       // Old worker: use controller for file fetching
@@ -238,7 +109,7 @@ async function handleTask(workerData: WorkerInput): Promise<string> {
     decodeBytestringsExecutionContext(context, true);
 
     // Prepare file picker methods as host functions
-    prepareGlobalsWithFileMethods(globals, filePaths, fileFetcher);
+    prepareGlobalsWithFileMethods(globals, filePaths, fileFetcher, wasmSandbox.hostFunction);
 
     // Set up console logger to capture logs for this task
     sandbox.setConsole({

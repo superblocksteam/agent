@@ -143,6 +143,24 @@ var __sb_context = {
 };
 if (typeof $prepareGlobalObjectForFiles === "function") {
   $prepareGlobalObjectForFiles(__sb_context.inputs);
+} else if (typeof $superblocksFiles === "object" && $superblocksFiles !== null) {
+  // WASM sandbox: file methods are on globals (set by host-side prepareGlobalsWithFileMethods).
+  // Copy them to __sb_context.inputs so the SDK API run(ctx, input) sees them.
+  (function copyFileMethods(target, globals, paths) {
+    for (var tp in paths) {
+      var parts = tp.split(".");
+      var gObj = globals, tObj = target;
+      for (var i = 0; i < parts.length - 1; i++) {
+        gObj = gObj && gObj[parts[i]];
+        tObj = tObj && tObj[parts[i]];
+      }
+      var last = parts[parts.length - 1];
+      if (gObj && gObj[last] && tObj && tObj[last]) {
+        if (typeof gObj[last].readContentsAsync === "function") tObj[last].readContentsAsync = gObj[last].readContentsAsync;
+        if (typeof gObj[last].readContents === "function") tObj[last].readContents = gObj[last].readContents;
+      }
+    }
+  })(__sb_context.inputs, globalThis, $superblocksFiles);
 }
 var __sb_executionId = %s;
 

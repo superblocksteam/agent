@@ -164,6 +164,10 @@ const PLUGIN_FACTORIES: Record<string, PluginFactory> = {
     return new m.default();
   },
   javascriptsdkapi: sharedJavascriptsdkapi,
+  javascriptsdkapiwasm: async () => {
+    const m = await import('@superblocksteam/javascript-sdk-api-wasm');
+    return new m.default();
+  },
   smtp: async () => {
     const m = await import('@superblocksteam/smtp');
     return new m.default();
