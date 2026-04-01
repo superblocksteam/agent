@@ -25,6 +25,9 @@ jobs:
           buf_api_token: ${{ secrets.BUF_APIKEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - run: make deps
+      - run: pnpm install
+        env:
+          NPM_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
       - uses: pre-commit/action@v3.0.1
       - uses: azure/setup-helm@v4
         with:
@@ -69,6 +72,8 @@ jobs:
           npx pnpm --filter @superblocks/worker.js test:unit
           npx pnpm --no-bail --filter "@superblocksteam/*" --filter "!@superblocksteam/gsheets" test -- --testPathIgnorePatterns "(e2e|integration|local).test.ts"
         working-directory: workers/javascript
+        env:
+          NPM_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
       - uses: codecov/codecov-action@v4
         with:
           name: ${{ github.job }}
