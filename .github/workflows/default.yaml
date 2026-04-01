@@ -12,6 +12,13 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: .go-version
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ./workers/python/.python-version
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
       - uses: bufbuild/buf-setup-action@v1.35.1
         with:
           buf_user: frankgrecojr
@@ -24,14 +31,8 @@ jobs:
           version: "v3.9.0"
       - run: helm repo add bitnami https://charts.bitnami.com/bitnami
       - run: make helm-template
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
       - run: make check
         working-directory: workers/javascript
-      - uses: actions/setup-python@v5
-        with:
-          python-version-file: ./workers/python/.python-version
       - run: |
           make deps-dev
           CHECK=true make fmt
@@ -59,6 +60,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
