@@ -1499,6 +1499,138 @@ func TestFetchDefinitionFromRequestFailsWhenFetchedIntegrationHasNoConfiguration
 	assert.Contains(t, err.Error(), "integration-1")
 }
 
+func TestFetchDefinitionFromRequestInjectsConfigurationId(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+	configurationId := "config-abc-123"
+	innerConfig, err := structpb.NewStruct(map[string]interface{}{
+		"authType": "oauth2-code",
+		"authConfig": map[string]interface{}{
+			"clientId":   "my-client-id",
+			"tokenScope": "datasource",
+		},
+	})
+	require.NoError(t, err)
+
+	req := &apiv1.ExecuteRequest{
+		ViewMode: apiv1.ViewMode_VIEW_MODE_EDIT,
+		Profile: &commonv1.Profile{
+			Name: &profileName,
+		},
+		Request: &apiv1.ExecuteRequest_Definition{
+			Definition: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:   "api-id",
+						Name: "Test API",
+					},
+					Blocks: []*apiv1.Block{
+						{
+							Name: "Step1",
+							Config: &apiv1.Block_Step{
+								Step: &apiv1.Step{
+									Integration: "integration-1",
+								},
+							},
+						},
+					},
+				},
+				Integrations: map[string]*structpb.Struct{},
+			},
+		},
+	}
+
+	mockFetcher := fetchmocks.NewFetcher(t)
+	mockFetcher.On("ValidateProfile", mock.Anything, mock.Anything).Return(nil)
+	mockFetcher.On(
+		"FetchIntegrations",
+		mock.Anything,
+		mock.MatchedBy(func(fetchReq *integrationv1.GetIntegrationsRequest) bool {
+			return fetchReq.GetProfile().GetName() == profileName
+		}),
+		false,
+	).Return(&integrationv1.GetIntegrationsResponse{
+		Data: []*integrationv1.Integration{
+			{
+				Id: "integration-1",
+				Configurations: []*integrationv1.Configuration{
+					{
+						Id:            configurationId,
+						Configuration: innerConfig,
+					},
+				},
+			},
+		},
+	}, nil)
+
+	def, _, err := fetchDefinitionFromRequest(context.Background(), req, mockFetcher, false, zap.NewNop())
+	require.NoError(t, err)
+
+	integrationStruct := def.Integrations["integration-1"]
+	require.NotNil(t, integrationStruct)
+
+	idField, ok := integrationStruct.GetFields()["id"]
+	require.True(t, ok, "expected 'id' field to be injected into integration config struct")
+	assert.Equal(t, configurationId, idField.GetStringValue())
+
+	assert.Equal(t, "oauth2-code", integrationStruct.GetFields()["authType"].GetStringValue())
+}
+
+func TestFetchDefinitionFromRequestPreservesExistingConfigurationId(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+	existingConfigId := "existing-config-id"
+	innerConfig, err := structpb.NewStruct(map[string]interface{}{
+		"id":       existingConfigId,
+		"authType": "oauth2-code",
+	})
+	require.NoError(t, err)
+
+	req := &apiv1.ExecuteRequest{
+		ViewMode: apiv1.ViewMode_VIEW_MODE_EDIT,
+		Profile: &commonv1.Profile{
+			Name: &profileName,
+		},
+		Request: &apiv1.ExecuteRequest_Definition{
+			Definition: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:   "api-id",
+						Name: "Test API",
+					},
+					Blocks: []*apiv1.Block{
+						{
+							Name: "Step1",
+							Config: &apiv1.Block_Step{
+								Step: &apiv1.Step{
+									Integration: "integration-1",
+								},
+							},
+						},
+					},
+				},
+				Integrations: map[string]*structpb.Struct{
+					"integration-1": innerConfig,
+				},
+			},
+		},
+	}
+
+	mockFetcher := fetchmocks.NewFetcher(t)
+	mockFetcher.On("ValidateProfile", mock.Anything, mock.Anything).Return(nil)
+
+	def, _, err := fetchDefinitionFromRequest(context.Background(), req, mockFetcher, false, zap.NewNop())
+	require.NoError(t, err)
+
+	integrationStruct := def.Integrations["integration-1"]
+	require.NotNil(t, integrationStruct)
+
+	idField := integrationStruct.GetFields()["id"]
+	assert.Equal(t, existingConfigId, idField.GetStringValue())
+}
+
 func TestFindParametersExpression(t *testing.T) {
 	t.Parallel()
 

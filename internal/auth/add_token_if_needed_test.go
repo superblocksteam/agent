@@ -798,6 +798,159 @@ func TestAddTokenIfNeeded_OauthCode(t *testing.T) {
 	}
 }
 
+func TestAddTokenIfNeeded_OauthCode_InjectsAuthorizationHeader(t *testing.T) {
+	t.Parallel()
+
+	clock := clockwork.NewFakeClock()
+	tm := &tokenManager{
+		OAuthClient: &oauth.OAuthClient{
+			Clock:  clock,
+			Logger: zap.NewNop(),
+		},
+		clock:  clock,
+		logger: zap.NewNop(),
+	}
+
+	dsConfig := DatasourceConfig(AuthTypeOauthCode, map[string]interface{}{
+		"clientId": "clientId",
+		"scope":    "scope",
+	})
+	dsConfigRedacted := DatasourceConfig(AuthTypeOauthCode, map[string]interface{}{
+		"clientId": "clientId",
+		"scope":    "scope",
+	})
+
+	ctx := ctxWithCookie("oauth-code.clientId-109264468-token=my-access-token")
+
+	tokenPayload, err := tm.AddTokenIfNeeded(ctx, dsConfig, dsConfigRedacted, nil, "", "", "")
+	require.NoError(t, err)
+	assert.Equal(t, "my-access-token", tokenPayload.Token)
+	assert.Equal(t, "oauth", tokenPayload.BindingName)
+
+	headers := dsConfig.GetFields()["headers"].GetListValue().AsSlice()
+	require.Len(t, headers, 1)
+	header := headers[0].(map[string]interface{})
+	assert.Equal(t, "Authorization", header["key"])
+	assert.Equal(t, "Bearer my-access-token", header["value"])
+
+	redactedHeaders := dsConfigRedacted.GetFields()["headers"].GetListValue().AsSlice()
+	require.Len(t, redactedHeaders, 1)
+	redactedHeader := redactedHeaders[0].(map[string]interface{})
+	assert.Equal(t, "Authorization", redactedHeader["key"])
+	assert.Equal(t, "Bearer <redacted>", redactedHeader["value"])
+}
+
+func TestAddTokenIfNeeded_OauthCode_SkipsHeaderWhenAlreadyDefined(t *testing.T) {
+	t.Parallel()
+
+	clock := clockwork.NewFakeClock()
+	tm := &tokenManager{
+		OAuthClient: &oauth.OAuthClient{
+			Clock:  clock,
+			Logger: zap.NewNop(),
+		},
+		clock:  clock,
+		logger: zap.NewNop(),
+	}
+
+	dsConfig := DatasourceConfigWithHeaders(AuthTypeOauthCode, map[string]interface{}{
+		"clientId": "clientId",
+		"scope":    "scope",
+	}, []map[string]interface{}{
+		{"key": "Authorization", "value": "{{ oauth.token }}"},
+		{"key": "IdToken", "value": "{{ oauth.idToken }}"},
+	})
+	dsConfigRedacted := DatasourceConfigWithHeaders(AuthTypeOauthCode, map[string]interface{}{
+		"clientId": "clientId",
+		"scope":    "scope",
+	}, []map[string]interface{}{
+		{"key": "Authorization", "value": "{{ oauth.token }}"},
+		{"key": "IdToken", "value": "{{ oauth.idToken }}"},
+	})
+
+	ctx := ctxWithCookie("oauth-code.clientId-109264468-token=my-access-token")
+
+	tokenPayload, err := tm.AddTokenIfNeeded(ctx, dsConfig, dsConfigRedacted, nil, "", "", "")
+	require.NoError(t, err)
+	assert.Equal(t, "my-access-token", tokenPayload.Token)
+
+	headers := dsConfig.GetFields()["headers"].GetListValue().AsSlice()
+	require.Len(t, headers, 2, "should NOT add a third Authorization header when one already exists")
+	assert.Equal(t, "Authorization", headers[0].(map[string]interface{})["key"])
+	assert.Equal(t, "{{ oauth.token }}", headers[0].(map[string]interface{})["value"])
+	assert.Equal(t, "IdToken", headers[1].(map[string]interface{})["key"])
+
+	redactedHeaders := dsConfigRedacted.GetFields()["headers"].GetListValue().AsSlice()
+	require.Len(t, redactedHeaders, 2, "should NOT add a third Authorization header to the redacted config")
+	assert.Equal(t, "Authorization", redactedHeaders[0].(map[string]interface{})["key"])
+	assert.Equal(t, "{{ oauth.token }}", redactedHeaders[0].(map[string]interface{})["value"])
+}
+
+func TestAddTokenIfNeeded_OauthCode_NoHeaderWhenNoToken(t *testing.T) {
+	t.Parallel()
+
+	clock := clockwork.NewFakeClock()
+	fetcherCacher := &mocks.FetcherCacher{}
+	httpMock := &mocks.HttpClient{}
+
+	serverClient := clients.NewServerClient(&clients.ServerClientOptions{
+		URL:    "https://google.com",
+		Client: httpMock,
+		Headers: map[string]string{
+			"x-superblocks-agent-id": "bar",
+		},
+		SuperblocksAgentKey: "foo",
+	})
+
+	oauthClient := &oauth.OAuthClient{
+		HttpClient:    httpMock,
+		FetcherCacher: fetcherCacher,
+		Clock:         clock,
+		Logger:        zap.NewNop(),
+	}
+
+	oauthCodeTokenFetcher := oauth.NewOAuthCodeTokenFetcher(oauthClient, fetcherCacher, serverClient)
+
+	tm := &tokenManager{
+		OAuthClient:           oauthClient,
+		OAuthCodeTokenFetcher: oauthCodeTokenFetcher,
+		clock:                 clock,
+		logger:                zap.NewNop(),
+	}
+
+	dsConfig := DatasourceConfig(AuthTypeOauthCode, map[string]interface{}{
+		"tokenUrl":               "tokenUrl",
+		"clientId":               "clientId",
+		"clientSecret":           "clientSecret",
+		"tokenScope":             "datasource",
+		"refreshTokenFromServer": true,
+	})
+
+	fetcherCacher.On("FetchSharedToken", AuthTypeOauthCode, mock.Anything, oauth.TokenTypeAccess, "datasourceId", "configurationId").Return("", nil)
+	fetcherCacher.On("FetchSharedToken", AuthTypeOauthCode, mock.Anything, oauth.TokenTypeId, "datasourceId", "configurationId").Return("", nil)
+	httpMock.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: 400,
+		Body:       io.NopCloser(strings.NewReader(`{"error": "invalid_grant"}`)),
+	}, nil)
+
+	_, err := tm.AddTokenIfNeeded(
+		ctxWithCookie(""),
+		dsConfig,
+		nil,
+		nil,
+		"datasourceId",
+		"configurationId",
+		"gsheets",
+	)
+	assert.Error(t, err)
+
+	headersVal := dsConfig.GetFields()["headers"]
+	if headersVal != nil {
+		headers := headersVal.GetListValue().AsSlice()
+		assert.Empty(t, headers, "should not inject Authorization header when token resolution fails")
+	}
+}
+
 type args struct {
 	authType                  string
 	authConfig                map[string]any
@@ -1905,6 +2058,22 @@ func DatasourceConfig(authType string, authConfig map[string]interface{}) *struc
 	s, err := structpb.NewStruct(map[string]interface{}{
 		"authType":   authType,
 		"authConfig": authConfig,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+func DatasourceConfigWithHeaders(authType string, authConfig map[string]interface{}, headers []map[string]interface{}) *structpb.Struct {
+	headerSlice := make([]interface{}, len(headers))
+	for i, h := range headers {
+		headerSlice[i] = h
+	}
+	s, err := structpb.NewStruct(map[string]interface{}{
+		"authType":   authType,
+		"authConfig": authConfig,
+		"headers":    headerSlice,
 	})
 	if err != nil {
 		panic(err)

@@ -203,6 +203,11 @@ func (t *tokenManager) AddTokenIfNeeded(
 			}
 		}
 
+		if tokenPayload.Token != "" && !hasHeader(datasourceConfig, authorizationHeaderKey) {
+			t.addHeader(ctx, datasourceConfig, authorizationHeaderKey, fmt.Sprintf("%s%s", bearerHeaderPrefix, tokenPayload.Token))
+			t.addHeader(ctx, redactedDatasourceConfig, authorizationHeaderKey, fmt.Sprintf("%s%s", bearerHeaderPrefix, RedactedSecret))
+		}
+
 		tokenPayload.BindingName = "oauth"
 	case authTypeOauthTokenExchange:
 		tokenPayload.Token, err = t.exchangeOauthTokenForToken(ctx, authType, authConfig, datasourceId, configurationId, pluginId)
@@ -555,6 +560,24 @@ func (t *tokenManager) getOauthCodeToken(ctx context.Context, authType string, a
 	}
 
 	return token, idToken, nil
+}
+
+func hasHeader(datasourceConfig *structpb.Struct, key string) bool {
+	if datasourceConfig == nil {
+		return false
+	}
+	headers := datasourceConfig.Fields["headers"].GetListValue()
+	if headers == nil {
+		return false
+	}
+	for _, v := range headers.GetValues() {
+		if s := v.GetStructValue(); s != nil {
+			if strings.EqualFold(s.Fields["key"].GetStringValue(), key) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (t *tokenManager) addHeader(ctx context.Context, datasourceConfig *structpb.Struct, key string, val string) {

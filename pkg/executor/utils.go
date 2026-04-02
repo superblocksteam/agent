@@ -443,7 +443,15 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 			if len(integration.Configurations) == 0 || integration.Configurations[0] == nil || integration.Configurations[0].GetConfiguration() == nil {
 				return nil, nil, fmt.Errorf("integration %q has no accessible configurations", integration.GetId())
 			}
-			def.Integrations[integration.Id] = integration.Configurations[0].Configuration
+			cfg := integration.Configurations[0]
+			inner := cfg.GetConfiguration()
+			if cfg.GetId() != "" {
+				if inner.Fields == nil {
+					inner.Fields = map[string]*structpb.Value{}
+				}
+				inner.Fields["id"] = structpb.NewStringValue(cfg.GetId())
+			}
+			def.Integrations[integration.Id] = inner
 			fetchedConfigs[integration.GetId()] = true
 		}
 
