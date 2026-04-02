@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -9,18 +10,27 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/stretchr/testify/require"
-
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/superblocksteam/agent/pkg/testutils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 )
+
+type executeV3CaptureServer struct {
+	apiv1.UnimplementedExecutorServiceServer
+	req *apiv1.ExecuteV3Request
+}
+
+func (s *executeV3CaptureServer) ExecuteV3(_ context.Context, req *apiv1.ExecuteV3Request) (*apiv1.AwaitResponse, error) {
+	s.req = req
+	return &apiv1.AwaitResponse{}, nil
+}
 
 func TestHackUntilWeHaveGoKit(t *testing.T) {
 	for _, test := range []struct {
@@ -388,6 +398,71 @@ func TestHackUntilWeHaveGoKit(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGrpcGatewayExecuteV3PreservesExportNameFromJsonBody(t *testing.T) {
+	server := &executeV3CaptureServer{}
+	mux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.HTTPBodyMarshaler{
+			Marshaler: &runtime.JSONPb{
+				MarshalOptions: protojson.MarshalOptions{
+					UseProtoNames:   false,
+					EmitUnpopulated: false,
+					AllowPartial:    true,
+				},
+				UnmarshalOptions: protojson.UnmarshalOptions{
+					DiscardUnknown: true,
+				},
+			},
+		}),
+	)
+	require.NoError(t, apiv1.RegisterExecutorServiceHandlerServer(context.Background(), mux, server))
+
+	body := `{"applicationId":"c25dd4d6-789e-40c9-a480-af09dee0c0c3","inputs":{"status":null},"viewMode":"editor","entryPoint":"server/apis/mock.ts","exportName":"ListOrders","profile":{"id":"861212e5-45ec-4f82-8881-79653b4baab5","name":"Staging"},"includeDiagnostics":true}`
+	req := httptest.NewRequest(http.MethodPost, "http://localhost/v3/execute", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	mux.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code, rr.Body.String())
+	require.NotNil(t, server.req)
+	assert.Equal(t, "c25dd4d6-789e-40c9-a480-af09dee0c0c3", server.req.GetApplicationId())
+	assert.Equal(t, "server/apis/mock.ts", server.req.GetEntryPoint())
+	assert.Equal(t, "ListOrders", server.req.GetExportName())
+	assert.Equal(t, "861212e5-45ec-4f82-8881-79653b4baab5", server.req.GetProfile().GetId())
+	assert.Equal(t, "Staging", server.req.GetProfile().GetName())
+	assert.True(t, server.req.GetIncludeDiagnostics())
+}
+
+func TestExecuteV3ProtojsonUnmarshalIncludesExportName(t *testing.T) {
+	var req apiv1.ExecuteV3Request
+	body := `{"applicationId":"c25dd4d6-789e-40c9-a480-af09dee0c0c3","inputs":{"status":null},"viewMode":"VIEW_MODE_EDIT","entryPoint":"server/apis/mock.ts","exportName":"ListOrders","profile":{"id":"861212e5-45ec-4f82-8881-79653b4baab5","name":"Staging"},"includeDiagnostics":true}`
+
+	err := protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}.Unmarshal([]byte(body), &req)
+
+	require.NoError(t, err)
+	assert.Equal(t, "server/apis/mock.ts", req.GetEntryPoint())
+	assert.Equal(t, "ListOrders", req.GetExportName())
+}
+
+func TestExecuteV3ProtojsonMarshalIncludesExportName(t *testing.T) {
+	exportName := "ListOrders"
+	entryPoint := "server/apis/mock.ts"
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "c25dd4d6-789e-40c9-a480-af09dee0c0c3",
+		ViewMode:      apiv1.ViewMode_VIEW_MODE_EDIT,
+		EntryPoint:    &entryPoint,
+		ExportName:    &exportName,
+	}
+
+	data, err := protojson.Marshal(req)
+
+	require.NoError(t, err)
+	assert.Contains(t, string(data), `"entryPoint":"server/apis/mock.ts"`)
+	assert.Contains(t, string(data), `"exportName":"ListOrders"`)
 }
 
 func TestInjectViewModeIntoBody(t *testing.T) {

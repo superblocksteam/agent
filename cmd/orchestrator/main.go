@@ -962,6 +962,7 @@ func main() {
 				grpc.MaxCallSendMsgSize(viper.GetInt("grpc.msg.res.max")),
 			),
 		}
+		grpcEndpoint := fmt.Sprintf("%s:%d", viper.GetString("grpc.bind"), viper.GetInt("grpc.port"))
 
 		for _, register := range []func(context.Context, *runtime.ServeMux, string, []grpc.DialOption) error{
 			apiv1.RegisterExecutorServiceHandlerFromEndpoint,
@@ -971,12 +972,11 @@ func main() {
 			secretsv1.RegisterStoreServiceHandlerFromEndpoint,
 			securityv1.RegisterSignatureServiceHandlerFromEndpoint,
 		} {
-			if err := register(ctx, mux, fmt.Sprintf("%s:%d", viper.GetString("grpc.bind"), viper.GetInt("grpc.port")), opts); err != nil {
+			if err := register(ctx, mux, grpcEndpoint, opts); err != nil {
 				fmt.Fprintln(os.Stderr, err.Error())
 				os.Exit(1)
 			}
 		}
-
 		var handler http.Handler
 		{
 			if viper.GetBool("handle.cors") {
