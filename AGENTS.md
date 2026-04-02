@@ -64,97 +64,13 @@ go generate ./...                                # Generate mocks
 
 ## Code Style
 
-### Import Order
-
-Group with blank lines: stdlib → external → internal (`github.com/superblocksteam/agent/...`)
-
-```go
-import (
-    "context"
-    "fmt"
-
-    "github.com/stretchr/testify/assert"
-    "go.uber.org/zap"
-
-    "github.com/superblocksteam/agent/pkg/store"
-)
-```
-
 ### Error Handling
 
-Use custom error types from `pkg/errors`. Pattern:
-
-```go
-type customError struct {
-    err error
-}
-
-func CustomError(err ...error) error {
-    return &customError{errors.Join(err...)}
-}
-
-func (e *customError) Error() string {
-    if e.err == nil {
-        return "CustomError"
-    }
-    return "CustomError: " + e.err.Error()
-}
-
-func IsCustomError(err error) bool {
-    var typed *customError
-    return errors.As(err, &typed)
-}
-```
-
-- Wrap with context: `fmt.Errorf("context: %w", err)`
-- Check with: `errors.Is()`, `errors.As()`
-- Log with: `logger.Error("msg", zap.Error(err))`
+Use custom error types from `pkg/errors`. Wrap with `fmt.Errorf("context: %w", err)`. Check with `errors.Is()`/`errors.As()`. Never swallow errors.
 
 ### Testing
 
-Table-driven tests with `testify/assert`:
-
-```go
-func TestSomething(t *testing.T) {
-    for _, test := range []struct {
-        name     string
-        input    string
-        expected string
-        wantErr  bool
-    }{
-        {name: "happy path", input: "test", expected: "result"},
-        {name: "error case", input: "bad", wantErr: true},
-    } {
-        t.Run(test.name, func(t *testing.T) {
-            result, err := FunctionUnderTest(test.input)
-            if test.wantErr {
-                assert.Error(t, err)
-                return
-            }
-            assert.NoError(t, err)
-            assert.Equal(t, test.expected, result)
-        })
-    }
-}
-```
-
-Generate mocks: `//go:generate mockery --name=Interface --output ./mock`
-
-### Functional Options Pattern
-
-```go
-type Option func(*options)
-
-func WithLogger(logger *zap.Logger) Option {
-    return func(o *options) { o.logger = logger }
-}
-
-func New(opts ...Option) *Component {
-    o := &options{/* defaults */}
-    for _, opt := range opts { opt(o) }
-    return &Component{options: o}
-}
-```
+Table-driven tests with `testify/assert`. Generate mocks: `//go:generate mockery`. Run: `make test-unit`.
 
 ### Naming Conventions
 
@@ -162,18 +78,6 @@ func New(opts ...Option) *Component {
 - Implementations: Descriptive lowercase (`redisStore`, `httpFetcher`)
 - Mocks: `*_mock.go` or `mock/` subdirectory
 - Tests: `*_test.go` same package
-
-### Context
-
-Always first parameter. Use for cancellation, timeouts, request-scoped values.
-
-### Logging
-
-Structured logging with zap:
-
-```go
-logger.Info("message", zap.String("key", value), zap.Error(err))
-```
 
 ### Protobuf
 
@@ -202,3 +106,7 @@ Prefix: `SUPERBLOCKS_ORCHESTRATOR_`
 | `LOG_LEVEL` | debug/info/warn/error |
 | `STORE_REDIS_HOST` | Redis for KV store |
 | `TRANSPORT_REDIS_HOST` | Redis for worker transport |
+
+## Evolving This File
+
+Each line should represent non-discoverable information. If you get something right without being told, the line is noise; propose removing it. If you encounter a non-obvious trap, propose adding it.
