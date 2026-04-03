@@ -136,7 +136,7 @@ export function getMetadataQuery(database: string, schema?: string, dbNameQuoted
       LEFT JOIN ${database}."INFORMATION_SCHEMA"."TABLES" AS t ON t.TABLE_NAME = c.TABLE_NAME`;
   }
   if (schema) {
-    query += ` WHERE c.TABLE_SCHEMA ILIKE '${schema}'`;
+    query += ` WHERE UPPER(c.TABLE_SCHEMA) = UPPER('${schema}')`;
   } else {
     query += ` WHERE c.TABLE_SCHEMA != 'INFORMATION_SCHEMA' `;
   }

@@ -29,6 +29,8 @@ export class Snowflake {
     connectionOptions.timeout = 60000;
     // number of retries
     connectionOptions.sfRetryMaxLoginRetries = 2;
+    // Identify the client application in Snowflake's query history / monitoring
+    connectionOptions.application = 'Superblocks';
     this.sdkConnection = createConnection(connectionOptions);
   }
 
