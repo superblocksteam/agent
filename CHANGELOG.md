@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 -
 
+## v1.37.1
+- Set `SERVICE_VERSION` build argument in on-premise agent build
+
 ## v1.37.0
 - Add support for executing Apps 3.0 APIs (`javascriptsdkapi` plugins). These are "code-mode" APIs i.e. backend APIs written entirely in JavaScript (no API DSL), with support for (internally) calling the agent to execute integrations.
 - Set Snowflake application connection identifier to "Superblocks" for Snowflake integrations
