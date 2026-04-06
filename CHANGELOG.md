@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+-
+
+## v1.37.0
+- Add support for executing Apps 3.0 APIs (`javascriptsdkapi` plugins). These are "code-mode" APIs i.e. backend APIs written entirely in JavaScript (no API DSL), with support for (internally) calling the agent to execute integrations.
+- Set Snowflake application connection identifier to "Superblocks" for Snowflake integrations
+- Fix Snowflake integration to not perform wildcard matches on schema name when performing metadata lookup
+- Inject oauth token into `Authorization` header (if not present) when rendering datasource configs using oauth-code auth type
+- Fix parsing of CORS headers, when set via `SUPERBLOCKS_ORCHESTRATOR_CORS_HEADERS` env var, and provided as comma separated list
 - Re-expose `crypto` as a global so JavaScript code can use APIs like `crypto.randomUUID()` without explicitly requiring the module
 - Expose batch processor settings (`SUPERBLOCKS_TELEMETRY_MAX_QUEUE_SIZE`, `SUPERBLOCKS_TELEMETRY_MAX_EXPORT_BATCH_SIZE`, `SUPERBLOCKS_TELEMETRY_BATCH_TIMEOUT`, `SUPERBLOCKS_TELEMETRY_EXPORT_TIMEOUT`) as operator-tunable env vars
 
