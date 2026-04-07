@@ -1,0 +1,4 @@
+# https://github.com/rhysd/actionlint/blob/main/docs/config.md#configuration
+self-hosted-runner:
+  labels:
+    - namespace-profile-*

@@ -84,7 +84,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: workers/javascript
   test-py:
-    runs-on: namespace-profile-4x8
+    runs-on: namespace-profile-1x2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
