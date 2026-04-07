@@ -261,7 +261,13 @@ func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 		return nil
 	})
 
-	if output, err = tracer.Observe(ctx, "execute.api.await", nil, func(spanCtx context.Context, span trace.Span) (*apiv1.Output, error) {
+	// execute.path tags execute.api.await: sdk_api (code-mode) vs legacy block executor
+	awaitTags := map[string]any{"execute.path": "legacy"}
+	if req.GetFetchCode() != nil {
+		awaitTags["execute.path"] = "sdk_api"
+	}
+
+	if output, err = tracer.Observe(ctx, "execute.api.await", awaitTags, func(spanCtx context.Context, span trace.Span) (*apiv1.Output, error) {
 		done, err := s.stream(spanCtx, req, func(resp *apiv1.StreamResponse) error {
 			execution = resp.Execution
 
