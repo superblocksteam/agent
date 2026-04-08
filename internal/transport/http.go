@@ -59,36 +59,69 @@ var (
 	}
 )
 
-// injectViewModeIntoBody injects the view_mode query parameter into the request body for inline definitions.
-// This is necessary because gRPC-Gateway's "body: *" annotation ignores query parameters for top-level fields.
-func injectViewModeIntoBody(r *http.Request) error {
-	viewModeParam := r.URL.Query().Get("view_mode")
-	if viewModeParam == "" {
-		return nil
+// viewModeStringToNumeric converts a lowercase viewMode string ("editor",
+// "preview", "deployed") to its numeric protobuf equivalent.  Returns the
+// numeric value and true on success, or 0 and false for unrecognised strings.
+func viewModeStringToNumeric(s string) (int, bool) {
+	switch s {
+	case "editor":
+		return 1, true // VIEW_MODE_EDIT
+	case "preview":
+		return 2, true // VIEW_MODE_PREVIEW
+	case "deployed":
+		return 3, true // VIEW_MODE_DEPLOYED
+	default:
+		return 0, false
 	}
+}
 
+// injectViewModeIntoBody reads the JSON request body and performs two
+// normalizations:
+//
+//  1. If a "view_mode" query parameter is present and the body contains an
+//     inline "definition", inject the numeric view_mode into the body (v2 path).
+//  2. If the body's "viewMode" field is a lowercase string ("deployed", etc.),
+//     convert it to its numeric protobuf equivalent so that protojson can
+//     unmarshal it correctly (v3 path).  Without this conversion, protojson
+//     silently defaults to VIEW_MODE_UNSPECIFIED (0), causing isDeployed to
+//     always be false in audit logs.
+func injectViewModeIntoBody(r *http.Request) error {
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read request body: %w", err)
 	}
 	r.Body.Close()
 
-	var bodyMap map[string]interface{}
-	if len(bodyBytes) > 0 {
-		if err := json.Unmarshal(bodyBytes, &bodyMap); err != nil {
-			return fmt.Errorf("failed to parse request body as JSON: %w", err)
-		}
-	} else {
-		bodyMap = make(map[string]interface{})
+	if len(bodyBytes) == 0 {
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		return nil
 	}
 
-	// Only inject for inline definition requests
-	if def, hasDefinition := bodyMap["definition"]; hasDefinition && def != nil {
-		viewModeInt, err := strconv.Atoi(viewModeParam)
-		if err != nil {
-			return fmt.Errorf("invalid view_mode value: %s", viewModeParam)
+	var bodyMap map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &bodyMap); err != nil {
+		// Not valid JSON — leave untouched so downstream returns a proper error.
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		return nil
+	}
+
+	// (1) v2 inline definition: inject view_mode from query params.
+	viewModeParam := r.URL.Query().Get("view_mode")
+	if viewModeParam != "" {
+		if def, hasDefinition := bodyMap["definition"]; hasDefinition && def != nil {
+			viewModeInt, err := strconv.Atoi(viewModeParam)
+			if err != nil {
+				return fmt.Errorf("invalid view_mode value: %s", viewModeParam)
+			}
+			bodyMap["view_mode"] = viewModeInt
 		}
-		bodyMap["view_mode"] = viewModeInt
+	}
+
+	// (2) Normalize string viewMode in the body to numeric (v3 path, also
+	//     safe for v2 — if viewMode is already numeric this is a no-op).
+	if vm, ok := bodyMap["viewMode"].(string); ok {
+		if num, known := viewModeStringToNumeric(vm); known {
+			bodyMap["viewMode"] = num
+		}
 	}
 
 	newBodyBytes, err := json.Marshal(bodyMap)
@@ -127,16 +160,9 @@ func HackUntilWeHaveGoKit(h http.Handler) http.Handler {
 		}
 		if viewMode := r.URL.Query().Get(fetch.QueryParamViewMode); viewMode != "" {
 			values.Del(fetch.QueryParamViewMode)
-			var enumValue string
-			switch viewMode {
-			case "editor":
-				enumValue = "1" // VIEW_MODE_EDIT
-			case "preview":
-				enumValue = "2" // VIEW_MODE_PREVIEW
-			case "deployed":
-				enumValue = "3" // VIEW_MODE_DEPLOYED
-			default:
-				enumValue = viewMode
+			enumValue := viewMode
+			if num, ok := viewModeStringToNumeric(viewMode); ok {
+				enumValue = strconv.Itoa(num)
 			}
 			values.Set(TransformedViewModeQueryParam, enumValue)
 			values.Set(TransformedFetchByPathViewModeQueryParam, enumValue)
@@ -189,7 +215,7 @@ func HackUntilWeHaveGoKit(h http.Handler) http.Handler {
 				h.ServeHTTP(&rawResponseWriter{w}, r)
 				return
 			}
-		} else if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/v2/execute") {
+		} else if r.Method == http.MethodPost && (strings.Contains(r.URL.Path, "/v2/execute") || strings.Contains(r.URL.Path, "/v3/execute")) {
 			if err := injectViewModeIntoBody(r); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
