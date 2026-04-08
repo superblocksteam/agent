@@ -267,11 +267,14 @@ autoscaling:
   customMetrics: []
   # - type: External
   #   external:
-  #     metricName: nginx.net.request_per_s
-  #     metricSelector:
-  #       matchLabels:
+  #     metric:
+  #       name: nginx.net.request_per_s
+  #       selector:
+  #         matchLabels:
   #           kube_container_name: nginx
-  #     targetAverageValue: 123
+  #     target:
+  #       type: AverageValue
+  #       averageValue: "123"
 # Please adjust these values as needed depending on your workloads. We recommend allocating
 # minimally the following to prevent CPU throttling and Out of Memory errors under load.
 resources:
