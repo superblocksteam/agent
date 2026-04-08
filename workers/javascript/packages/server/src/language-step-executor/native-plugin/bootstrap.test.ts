@@ -268,7 +268,7 @@ describe('bootstrap', () => {
       const filePaths: Record<string, string> = {};
       const inheritedEnv: Array<string> = [];
 
-      const expectedErr = `Error on line 61:
+      const expectedErr = `Error on line 31:
 Error: variables not defined`;
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
@@ -319,6 +319,31 @@ SyntaxError: Unexpected token ';'`;
       expect(result.log.length).toEqual(0);
       expect(result.output).toEqual({});
       expect(result.error).toEqual(expectedErr);
+    });
+
+    it('should extract message from thrown plain object instead of [object Object]', async () => {
+      const mockStore = new MockKVStore();
+      await mockStore.write('name', 'TestFunc');
+      const context: ExecutionContext = new ExecutionContext();
+      context.variables = {
+        name: {
+          key: 'name',
+          type: VariableType.Native,
+          mode: 'read'
+        }
+      };
+      context.kvStore = mockStore as unknown as KVStore;
+
+      const code = `throw { message: "bad thing" };`;
+      const filePaths: Record<string, string> = {};
+      const inheritedEnv: Array<string> = [];
+
+      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(result).toBeDefined();
+      expect(result.output).toEqual({});
+      expect(result.error).toContain('bad thing');
+      expect(result.error).not.toContain('[object Object]');
     });
 
     it('should throw runtime error', async () => {

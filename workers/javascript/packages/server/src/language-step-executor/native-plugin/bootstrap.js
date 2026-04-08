@@ -3,42 +3,12 @@ const { EventEmitter } = require('events');
 const { addLogListenersToVM } = require('@superblocks/shared');
 const { NodeVM } = require('vm2');
 const { decodeBytestringsExecutionContext } = require('./bytestring');
+const { cleanStack } = require('./clean-stack');
 const { ExecutionOutput } = require('./executionOutput');
 const { buildVariables } = require('./variable');
 const { VariableClient } = require('./variableClient');
 
 const eventEmitter = new EventEmitter();
-
-function cleanStack(stack, lineOffset) {
-  const extractPathRegex = /\s+at.*[(\s](.*)\)?/;
-
-  const errorLines = stack.replace(/\\/g, '/').split('\n');
-
-  // Find error line number
-  let errorLineNumber = parseInt(errorLines[0].split(':').pop() ?? '');
-
-  const errorStack = errorLines
-    .filter((line) => {
-      const pathMatches = line.match(extractPathRegex);
-      /*
-       Some error stacks have the erroring line number set in a stack line after the error message.
-       For example, ReferenceError stacks show up as the following, where the second line contains
-       the erroring line number and character/column number at the end in that order:
-
-       ReferenceError: y is not defined
-          at ...:67:1
-      */
-      if (isNaN(errorLineNumber) && pathMatches) {
-        const lineSplit = line.split(':');
-        errorLineNumber = parseInt(lineSplit[lineSplit.length - 2]);
-      }
-      return !pathMatches && !line.startsWith('/');
-    })
-    .filter((line) => line.trim() !== '')
-    .join('\n');
-
-  return isNaN(errorLineNumber) ? errorStack : `Error on line ${errorLineNumber - lineOffset}:\n${errorStack}`;
-}
 
 const sharedCode = `
 module.exports = async function() {
@@ -190,7 +160,8 @@ module.exports.executeCode = async (workerData) => {
     }
   } catch (err) {
     eventEmitter.removeAllListeners();
-    ret.error = cleanStack(err.stack, codeLineNumberOffset);
+    const defaultErrMsg = (err && typeof err === 'object' && 'message' in err) ? err.message : String(err);
+    ret.error = cleanStack(err.stack, codeLineNumberOffset) ?? defaultErrMsg;
   }
 
   return ret;

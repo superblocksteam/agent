@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
--
+- Fix JavaScript worker error messages being truncated to just `Error on line N:` with an empty body when the error stack contains only frame lines (no message prefix)
 
 ## v1.37.1
 - Set `SERVICE_VERSION` build argument in on-premise agent build
