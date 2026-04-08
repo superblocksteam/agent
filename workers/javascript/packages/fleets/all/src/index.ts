@@ -1,5 +1,4 @@
 import { run, secrets } from '@superblocks/worker.js';
-
 import sb_adls from '@superblocksteam/adls';
 import sb_athena from '@superblocksteam/athena';
 import sb_bigquery from '@superblocksteam/bigquery';

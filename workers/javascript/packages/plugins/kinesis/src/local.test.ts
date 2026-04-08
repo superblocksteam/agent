@@ -6,9 +6,9 @@ import {
   KinesisDatasourceConfiguration,
   KinesisActionConfiguration
 } from '@superblocks/shared';
-import KinesisPlugin from '.';
-
 import { KinesisPluginV1 as Plugin } from '@superblocksteam/types';
+
+import KinesisPlugin from '.';
 
 // THESE TESTS SHOULD ONLY EVER BE RUN LOCALLY, NOT IN CI
 

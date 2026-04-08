@@ -4,9 +4,6 @@
   "description": "Fleet that handles the Javascript plugin.",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "engines": {
-    "node": "20.19.5"
-  },
   "scripts": {
     "start": "nodemon",
     "clean": "rm -rf ./dist *tsbuildinfo",
@@ -14,6 +11,12 @@
     "lint": "eslint . --ext ts",
     "lint:fix": "eslint . --ext ts --fix",
     "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@superblocks/worker.js": "workspace:*",
+    "@superblocksteam/javascript": "workspace:*",
+    "ion-js": "5.2.1",
+    "jsbi": "4.3.0"
   },
   "devDependencies": {
     "@swc/cli": "catalog:",
@@ -25,15 +28,11 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
     "nodemon": "3.1.4",
     "ts-node": "10.9.2",
     "typescript": "catalog:"
   },
-  "dependencies": {
-    "@superblocks/worker.js": "workspace:*",
-    "@superblocksteam/javascript": "workspace:*",
-    "ion-js": "5.2.1",
-    "jsbi": "4.3.0"
+  "engines": {
+    "node": "20.19.5"
   }
 }

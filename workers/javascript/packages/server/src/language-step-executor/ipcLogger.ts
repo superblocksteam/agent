@@ -1,5 +1,6 @@
 import { Closer, MaybeError } from '@superblocks/shared';
 import P from 'pino';
+
 import { EgressIpcChannel, IngressIpcChannel, IPC_COMMAND_TYPE } from './ipcTypes';
 
 interface logCommand {

@@ -8,11 +8,12 @@ import {
   RelayDelegate
 } from '@superblocks/shared';
 import { CouchbasePluginV1, PluginCommonV1 } from '@superblocksteam/types';
-import { Cluster, connect } from 'couchbase';
-import { Client as ssh2Client } from 'ssh2';
-import { cloneDeep } from 'lodash';
-import CouchbasePlugin from '.';
 import { SQLExecution } from '@superblocksteam/types/dist/src/plugins/common/v1/plugin_pb';
+import { Cluster, connect } from 'couchbase';
+import { cloneDeep } from 'lodash';
+import { Client as ssh2Client } from 'ssh2';
+
+import CouchbasePlugin from '.';
 
 jest.setTimeout(20000);
 

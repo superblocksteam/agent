@@ -1,4 +1,5 @@
 import rockset, { MainApi as RocksetClient } from '@rockset/client';
+
 import { EnvEnum, RegionEnum, UserEvent } from '../types';
 import { sleep } from './time';
 

@@ -63,6 +63,16 @@ var (
 	// SandboxExecutionPoolInUse reports the number of currently active executions.
 	SandboxExecutionPoolInUse metric.Int64UpDownCounter
 
+	// SandboxPoolConfiguredSandboxes reports the number of sandboxes in the pool (static or dynamic).
+	SandboxPoolConfiguredSandboxes metric.Int64Gauge
+
+	// SandboxPoolEventsTotal counts pool lifecycle events (replacement skips, pick misses, etc.).
+	// Use bounded attribute values only (see AttrPoolEvent).
+	SandboxPoolEventsTotal metric.Int64Counter
+
+	// SandboxPoolSandboxReadyDuration measures wall time from runPlugin start until the sandbox is ready for dispatch.
+	SandboxPoolSandboxReadyDuration metric.Float64Histogram
+
 	mu        sync.Mutex
 	initiated bool
 )
@@ -246,6 +256,33 @@ func registerWithMeter(meter metric.Meter) error {
 		return err
 	}
 
+	SandboxPoolConfiguredSandboxes, err = meter.Int64Gauge(
+		"sandbox_pool_configured_sandboxes",
+		metric.WithDescription("Number of sandboxes configured for this task-manager worker pool"),
+		metric.WithUnit("{sandbox}"),
+	)
+	if err != nil {
+		return err
+	}
+
+	SandboxPoolEventsTotal, err = meter.Int64Counter(
+		"sandbox_pool_events_total",
+		metric.WithDescription("Sandbox pool lifecycle events (bounded event label)"),
+		metric.WithUnit("{event}"),
+	)
+	if err != nil {
+		return err
+	}
+
+	SandboxPoolSandboxReadyDuration, err = meter.Float64Histogram(
+		"sandbox_pool_sandbox_ready_duration_seconds",
+		metric.WithDescription("Time from pool sandbox start until sandbox plugin reports ready"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return err
+	}
+
 	initiated = true
 	return nil
 }
@@ -261,6 +298,7 @@ func histogramViews() []sdkmetric.Option {
 		"sandbox_execution_duration_seconds",
 		"sandbox_code_execution_duration_seconds",
 		"sandbox_lifecycle_duration_seconds",
+		"sandbox_pool_sandbox_ready_duration_seconds",
 	}
 
 	views := make([]sdkmetric.Option, 0)
@@ -310,6 +348,14 @@ func AddUpDownCounter(ctx context.Context, counter metric.Int64UpDownCounter, va
 	if counter != nil {
 		counter.Add(ctx, value, metric.WithAttributes(attrs...))
 	}
+}
+
+// RecordPoolEvent increments sandbox_pool_events_total with bounded labels (event + connection_mode).
+func RecordPoolEvent(ctx context.Context, event string, connectionMode string) {
+	AddCounter(ctx, SandboxPoolEventsTotal,
+		AttrPoolEvent.String(event),
+		AttrPoolConnectionMode.String(connectionMode),
+	)
 }
 
 // meterProviderRunnable wraps a MeterProvider as a run.Runnable so it
@@ -364,6 +410,18 @@ var (
 	AttrLanguage            = attribute.Key("language")
 	AttrPlugin              = attribute.Key("plugin_name")
 	AttrOperation           = attribute.Key("operation")
+	AttrPoolConnectionMode  = attribute.Key("connection_mode") // static | dynamic
+	AttrPoolEvent           = attribute.Key("event")
 	AttrResult              = attribute.Key("result")
 	AttrWarmStart           = attribute.Key("warm_start")
+)
+
+// Pool event values for sandbox_pool_events_total (bounded cardinality).
+const (
+	PoolEventPickNoReadySandbox            = "pick_no_ready_sandbox"
+	PoolEventReplaceCreateFailed           = "replace_create_failed"
+	PoolEventReplaceSkippedAlreadyReplaced = "replace_skipped_already_replaced"
+	PoolEventReplaceSkippedNotFound        = "replace_skipped_not_found"
+	PoolEventReplaceSkippedStatic          = "replace_skipped_static"
+	PoolEventRetryReplaceFailed            = "retry_replace_failed"
 )

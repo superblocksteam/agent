@@ -13,6 +13,7 @@ import {
   PluginExecutionProps
 } from '@superblocks/shared';
 import { sample } from 'lodash';
+
 import GraphQLPlugin from '.';
 
 const plugin = new GraphQLPlugin();

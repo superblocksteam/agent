@@ -1,16 +1,18 @@
+import path from 'path';
+
 import {
-    ExecutionContext,
-    ExecutionOutput,
-    IntegrationError,
-    PluginExecutionProps,
-    RelayDelegate,
-    SalesforceActionConfiguration,
-    SalesforceDatasourceConfiguration
+  ExecutionContext,
+  ExecutionOutput,
+  IntegrationError,
+  PluginExecutionProps,
+  RelayDelegate,
+  SalesforceActionConfiguration,
+  SalesforceDatasourceConfiguration
 } from '@superblocks/shared';
 import { SalesforcePluginV1 } from '@superblocksteam/types';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
-import path from 'path';
+
 import SalesforcePlugin from '.';
 
 // THESE TESTS SHOULD ONLY BE RUN
@@ -218,7 +220,7 @@ runTests('Salesforce Plugin E2E Tests', () => {
 
   test('getAvailableObjects filtering', async () => {
     const session = await (plugin as any)._getSession(buildDatasourceConfiguration(token));
-    
+
     // Get the raw sobjects data to compare against our filtered results
     const url = `${(session as any).instanceUrl}/services/data/${(session as any).apiVersion}/sobjects/`;
     const rawResp = await axios.get(url, {
@@ -226,17 +228,17 @@ runTests('Salesforce Plugin E2E Tests', () => {
         Authorization: `Bearer ${(session as any).accessToken}`
       }
     });
-    
+
     const allObjects = rawResp.data.sobjects || [];
     const filteredObjects = await session.getAvailableObjects();
-    
+
     const expectedFilteredObjects = allObjects
       .filter((obj: any) => obj.queryable !== false)
       .filter((obj: any) => obj.deprecatedAndHidden !== true)
       .filter((obj: any) => obj.associateEntityType === null)
       .map((obj: any) => obj.name)
       .sort();
-    
+
     expect(filteredObjects.sort()).toEqual(expectedFilteredObjects);
   });
 

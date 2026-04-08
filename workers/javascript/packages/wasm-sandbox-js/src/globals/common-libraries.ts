@@ -10,8 +10,10 @@
  */
 import { readFileSync } from 'fs';
 import * as path from 'path';
-import { registerGlobalLazyLibrary } from './libraries';
+
 import type { QuickJSContext } from 'quickjs-emscripten-core';
+
+import { registerGlobalLazyLibrary } from './libraries';
 
 const commonLibraries = ['lodash', 'moment'] as const;
 

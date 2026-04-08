@@ -1,0 +1,92 @@
+{
+	"info": {
+		"_postman_id": "ssh-tunnel-tests",
+		"name": "SSH Tunnel Integration Tests",
+		"description": "Tests that SSH tunnel keys are forwarded to integration fleet sandboxes.\n\nThe sandbox NetworkPolicy blocks private IPs (SSRF protection), so the\nSSH connection to the cluster-internal sshd cannot complete. These tests\nverify the key forwarding pipeline: orchestrator → Redis stream →\ntask-manager → sandbox env vars → plugin execution attempt.\n\nA successful result is STATUS_COMPLETED with an InternalError (connection\ntimed out / refused), proving the sandbox received the key and attempted\nthe SSH tunnel.\n\nRequires:\n- Integration fleet with SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST\n- workers-tunnel-private-key-rsa K8s Secret mounted on integration fleet task-manager",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "SSH tunnel key forwarded to integration fleet sandbox",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"",
+							"pm.test(\"execution completed (sandbox received and processed the request)\", () => {",
+							"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
+							"});",
+							"",
+							"pm.test(\"sandbox attempted SSH tunnel (response took >5s, not instant failure)\", () => {",
+							"    pm.expect(pm.response.responseTime).to.be.above(5000);",
+							"});",
+							"",
+							"pm.test(\"error is InternalError (connection blocked by NetworkPolicy, not auth failure)\", () => {",
+							"    pm.expect(response.errors).to.be.an('array').with.length.gte(1);",
+							"    pm.expect(response.errors[0].message).to.equal('InternalError');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json"},
+					{"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000099\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"SSHTunnelPostgresTest\"},\"blocks\":[{\"name\":\"BLOCK_STEP_POSTGRES\",\"step\":{\"integration\":\"postgres\",\"postgres\":{\"body\":\"SELECT 42 AS value;\"}}}]},\"integrations\":{\"postgres\":{\"connectionType\":\"fields\",\"endpoint\":{\"host\":\"tunnel-postgres.superblocks.svc.cluster.local\",\"port\":5432},\"connection\":{\"useSsl\":false,\"useSelfSignedSsl\":false},\"authentication\":{\"username\":\"testuser\",\"password\":\"testpass\",\"custom\":{\"databaseName\":{\"value\":\"testdb\"}}},\"tunnel\":{\"enabled\":true,\"authMethod\":1,\"host\":\"tunnel-sshd.superblocks.svc.cluster.local\",\"port\":22,\"username\":\"tunnel\"}}}}}"
+				},
+				"url": {
+					"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+					"protocol": "{{orchestrator_scheme}}",
+					"host": ["{{orchestrator_host}}"],
+					"port": "{{orchestrator_port}}",
+					"path": ["v2", "execute"]
+				}
+			}
+		},
+		{
+			"name": "SSH tunnel with unreachable bastion returns error",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"",
+							"pm.test(\"execution completed with error\", () => {",
+							"    pm.expect(response.status).to.equal(\"STATUS_COMPLETED\");",
+							"    pm.expect(response.errors).to.be.an('array').with.length.gte(1);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json"},
+					{"key": "X-Superblocks-Authorization", "value": "Bearer {{superblocks_jwt}}"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"options\":{\"includeEventOutputs\":true},\"definition\":{\"api\":{\"metadata\":{\"id\":\"00000000-0000-0000-0000-000000000098\",\"organization\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"SSHTunnelBadHostTest\"},\"blocks\":[{\"name\":\"BLOCK_STEP_POSTGRES\",\"step\":{\"integration\":\"postgres\",\"postgres\":{\"body\":\"SELECT 1;\"}}}]},\"integrations\":{\"postgres\":{\"connectionType\":\"fields\",\"endpoint\":{\"host\":\"tunnel-postgres.superblocks.svc.cluster.local\",\"port\":5432},\"connection\":{\"useSsl\":false,\"useSelfSignedSsl\":false},\"authentication\":{\"username\":\"testuser\",\"password\":\"testpass\",\"custom\":{\"databaseName\":{\"value\":\"testdb\"}}},\"tunnel\":{\"enabled\":true,\"authMethod\":1,\"host\":\"nonexistent-bastion.superblocks.svc.cluster.local\",\"port\":22,\"username\":\"tunnel\"}}}}}"
+				},
+				"url": {
+					"raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+					"protocol": "{{orchestrator_scheme}}",
+					"host": ["{{orchestrator_host}}"],
+					"port": "{{orchestrator_port}}",
+					"path": ["v2", "execute"]
+				}
+			}
+		}
+	]
+}

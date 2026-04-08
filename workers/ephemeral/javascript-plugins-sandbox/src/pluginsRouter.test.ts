@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+
 import { PluginsRouter } from './pluginsRouter';
 
 const createMockLogger = () => ({
@@ -64,4 +65,3 @@ describe('PluginsRouter', () => {
     expect(pluginProps.redactedContext.preparedStatementContext).toEqual([2]);
   });
 });
-

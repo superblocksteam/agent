@@ -1,4 +1,5 @@
 import { isString } from 'lodash';
+
 import { PositionedSegment, StringSegment } from './types';
 
 const DATA_BIND_REGEX = /{{([\s\S]*?)}}/;

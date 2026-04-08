@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { RedisClientType } from '@redis/client';
 import { RelayDelegate } from '@superblocks/shared';
 import { default as pino } from 'pino';
+
 import { PluginProps } from '../../../plugin-property/plugin-props';
 import { GC } from '../../../store/gc';
 import { Redis, RedisTx } from '../../../store/redis';
@@ -124,7 +125,7 @@ describe('variables', () => {
     expect(completed.err).not.toBeDefined();
 
     const output = await kvStore.read([completed.key]);
-    logger.info({data: output.data[0]}, "data");
+    logger.info({ data: output.data[0] }, 'data');
     // @ts-ignore
     expect(output.data[0].output).toEqual(90);
     // @ts-ignore

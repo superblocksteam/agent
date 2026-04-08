@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { IntegrationError } from '@superblocks/shared';
 import { Connection } from 'snowflake-sdk';
+
 import { ExecuteOptions } from './ExecuteOptions';
 
 const CALL_EXECUTE_ERROR_MESSAGE = 'Statement not executed yet - call the execute() method';

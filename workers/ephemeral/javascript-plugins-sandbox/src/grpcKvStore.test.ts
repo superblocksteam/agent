@@ -46,9 +46,18 @@ describe('GrpcKvStore', () => {
       {
         name: 'should read multiple keys and parse JSON values',
         keys: ['key1', 'key2', 'key3'],
-        mockResponseValues: [JSON.stringify('value1'), JSON.stringify({ nested: { deep: 'value' } }), JSON.stringify(123), JSON.stringify([1, 2, 3])],
+        mockResponseValues: [
+          JSON.stringify('value1'),
+          JSON.stringify({ nested: { deep: 'value' } }),
+          JSON.stringify(123),
+          JSON.stringify([1, 2, 3])
+        ],
         expectedData: ['value1', { nested: { deep: 'value' } }, 123, [1, 2, 3]],
-        expectedBytesRead: JSON.stringify('value1').length + JSON.stringify({ nested: { deep: 'value' } }).length + JSON.stringify(123).length + JSON.stringify([1, 2, 3]).length
+        expectedBytesRead:
+          JSON.stringify('value1').length +
+          JSON.stringify({ nested: { deep: 'value' } }).length +
+          JSON.stringify(123).length +
+          JSON.stringify([1, 2, 3]).length
       },
       {
         name: 'should handle empty keys array',
@@ -70,7 +79,7 @@ describe('GrpcKvStore', () => {
         mockResponseValues: [JSON.stringify(null)],
         expectedData: [null],
         expectedBytesRead: JSON.stringify(null).length
-      },
+      }
     ];
 
     for (const { name, keys, mockResponseValues, expectedData, expectedBytesRead } of readTestCases) {
@@ -251,7 +260,7 @@ describe('GrpcKvStore', () => {
           { key: 'num', serializedValue: JSON.stringify(42) },
           { key: 'arr', serializedValue: JSON.stringify([1, 2]) },
           { key: 'obj', serializedValue: JSON.stringify({ complex: 'object' }) },
-          { key: 'nullKey', serializedValue: JSON.stringify(null) },
+          { key: 'nullKey', serializedValue: JSON.stringify(null) }
         ]
       },
       {

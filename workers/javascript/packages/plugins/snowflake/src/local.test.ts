@@ -1,9 +1,10 @@
 import { RelayDelegate } from '@superblocks/shared';
 import { DUMMY_EXECUTION_CONTEXT, PluginExecutionProps } from '@superblocks/shared';
 import { ExecutionOutput, SnowflakeDatasourceConfiguration, SnowflakeActionConfiguration } from '@superblocks/shared';
+
+import SnowflakePlugin from '.';
 import { Snowflake } from './Snowflake';
 import { connectionOptionsFromDatasourceConfiguration } from './util';
-import SnowflakePlugin from '.';
 
 // THESE TESTS SHOULD ONLY EVER BE RUN LOCALLY, NOT IN CI
 

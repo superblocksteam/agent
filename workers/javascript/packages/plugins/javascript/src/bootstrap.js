@@ -186,10 +186,7 @@ function prepareSourceMapLookup(codeToExecute) {
   const bundleEndIdx = codeToExecute.indexOf(BUNDLE_END_MARKER, bundleBeginIdx);
   if (bundleEndIdx === -1) return null;
 
-  const bundle = codeToExecute.substring(
-    bundleBeginIdx + BUNDLE_BEGIN_MARKER.length + 1,
-    bundleEndIdx
-  );
+  const bundle = codeToExecute.substring(bundleBeginIdx + BUNDLE_BEGIN_MARKER.length + 1, bundleEndIdx);
   const sourceMapJson = extractInlineSourceMap(bundle);
   if (!sourceMapJson) return null;
 
@@ -303,7 +300,7 @@ function createFunctionForPreparingGlobalObjectForFiles(fileClient, filePaths) {
         ...file,
         previewUrl: undefined,
         readContentsAsync,
-        readContents,
+        readContents
       });
     });
   };
@@ -341,7 +338,7 @@ module.exports.executeCode = async (workerData) => {
     const execGlobalContext = {
       ...context.globals,
       ...context.outputs,
-      $superblocksFiles: filePaths ?? {},
+      $superblocksFiles: filePaths ?? {}
     };
 
     if (context.variables && typeof context.variables === 'object') {
@@ -393,7 +390,7 @@ module.exports.executeCode = async (workerData) => {
         crypto: require('crypto'),
         ...context.globals,
         ...context.outputs,
-        $superblocksFiles: filePaths ?? {},
+        $superblocksFiles: filePaths ?? {}
       },
       wasm: false
     });

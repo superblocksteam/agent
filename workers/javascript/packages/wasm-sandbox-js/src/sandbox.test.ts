@@ -1,6 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { createSandbox, Sandbox } from './sandbox';
+
 import { toVmValue, hostFunction, hostGetter } from './marshal';
+import { createSandbox, Sandbox } from './sandbox';
 
 describe('Sandbox', () => {
   describe('basic expressions', () => {
@@ -124,9 +125,7 @@ describe('Sandbox', () => {
           nested: { value: { deep: 42 } },
           deepArray: [{ flag: false }, { flag: true }]
         });
-        const result = await sandbox.evaluate(
-          '[globalNull, typeof globalUndefined, nested.value.deep, deepArray[1].flag]'
-        );
+        const result = await sandbox.evaluate('[globalNull, typeof globalUndefined, nested.value.deep, deepArray[1].flag]');
         expect(result).toEqual([null, 'undefined', 42, true]);
       } finally {
         sandbox.dispose();
@@ -302,9 +301,7 @@ describe('Sandbox', () => {
           return { count: key === 'a' ? 10 : 20 };
         };
         sandbox.setGlobals({ fetchValue: hostFunction(fetchValue) });
-        const result = await sandbox.evaluate(
-          '(await fetchValue("a")).count + (await fetchValue("b")).count'
-        );
+        const result = await sandbox.evaluate('(await fetchValue("a")).count + (await fetchValue("b")).count');
         expect(result).toBe(30);
       } finally {
         sandbox.dispose();
@@ -387,9 +384,7 @@ describe('Sandbox', () => {
       try {
         const counter = new Counter(10);
         sandbox.setGlobals({ counter });
-        const result = await sandbox.evaluate(
-          '(() => { counter.increment(); counter.increment(); return counter.getValue(); })()'
-        );
+        const result = await sandbox.evaluate('(() => { counter.increment(); counter.increment(); return counter.getValue(); })()');
         expect(result).toBe(12);
       } finally {
         sandbox.dispose();
@@ -996,9 +991,9 @@ describe('Sandbox', () => {
     it('errors when setTimeout is used without enabling timers', async () => {
       const sandbox = await createSandbox();
       try {
-        await expect(
-          sandbox.evaluate("new Promise(resolve => setTimeout(() => resolve('never'), 5))")
-        ).rejects.toThrow(/setTimeout.*not defined/i);
+        await expect(sandbox.evaluate("new Promise(resolve => setTimeout(() => resolve('never'), 5))")).rejects.toThrow(
+          /setTimeout.*not defined/i
+        );
       } finally {
         sandbox.dispose();
       }
@@ -1041,9 +1036,9 @@ describe('Sandbox', () => {
     it('respects custom time limit', async () => {
       const sandbox = await createSandbox();
       try {
-        await expect(
-          sandbox.evaluate('(function() { while (true) {} })()', { timeLimitMs: 10 })
-        ).rejects.toThrow(/interrupt|deadline|time/i);
+        await expect(sandbox.evaluate('(function() { while (true) {} })()', { timeLimitMs: 10 })).rejects.toThrow(
+          /interrupt|deadline|time/i
+        );
       } finally {
         sandbox.dispose();
       }
@@ -1181,9 +1176,7 @@ describe('Sandbox', () => {
     it('surfaces thrown objects by stringifying them', async () => {
       const sandbox = await createSandbox();
       try {
-        await expect(sandbox.evaluate("(()=>{ throw {reason: 'nope', code: 400}; })()")).rejects.toThrow(
-          /"reason":"nope"/
-        );
+        await expect(sandbox.evaluate("(()=>{ throw {reason: 'nope', code: 400}; })()")).rejects.toThrow(/"reason":"nope"/);
       } finally {
         sandbox.dispose();
       }
@@ -1369,9 +1362,7 @@ describe('Sandbox', () => {
       try {
         const hostDate = new Date('2024-06-15T12:30:45.123Z');
         sandbox.setGlobals({ myDate: hostDate });
-        const result = await sandbox.evaluate(
-          '[myDate.getUTCFullYear(), myDate.getUTCMonth(), myDate.getUTCDate(), myDate.getUTCHours()]'
-        );
+        const result = await sandbox.evaluate('[myDate.getUTCFullYear(), myDate.getUTCMonth(), myDate.getUTCDate(), myDate.getUTCHours()]');
         expect(result).toEqual([2024, 5, 15, 12]); // Month is 0-indexed
       } finally {
         sandbox.dispose();
@@ -1500,9 +1491,7 @@ describe('Sandbox', () => {
       try {
         const startDate = new Date('2024-06-15T00:00:00.000Z');
         sandbox.setGlobals({ startDate });
-        const result = (await sandbox.evaluate(
-          'new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000)'
-        )) as Date;
+        const result = (await sandbox.evaluate('new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000)')) as Date;
         expect(result).toBeInstanceOf(Date);
         expect(result.toISOString()).toBe('2024-06-22T00:00:00.000Z');
       } finally {
@@ -1520,9 +1509,9 @@ describe('Sandbox', () => {
 
         // Verify host Object.prototype is unaffected
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        expect((({} as any).pwned)).toBeUndefined();
+        expect(({} as any).pwned).toBeUndefined();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        expect((({} as any).alsoPwned)).toBeUndefined();
+        expect(({} as any).alsoPwned).toBeUndefined();
       } finally {
         sandbox.dispose();
       }
@@ -1565,9 +1554,7 @@ describe('Sandbox', () => {
 
       await expect(sandbox.evaluate('1 + 1')).rejects.toThrow('Sandbox has been disposed');
       expect(() => sandbox.setGlobals({ a: 1 })).toThrow('Sandbox has been disposed');
-      expect(() => sandbox.setConsole({ log: jest.fn(), warn: jest.fn(), error: jest.fn() })).toThrow(
-        'Sandbox has been disposed'
-      );
+      expect(() => sandbox.setConsole({ log: jest.fn(), warn: jest.fn(), error: jest.fn() })).toThrow('Sandbox has been disposed');
     });
 
     it('is idempotent (can be called multiple times safely)', async () => {
@@ -1622,9 +1609,7 @@ describe('Sandbox', () => {
         const userCode = 'throw new Error("test")';
         const wrappedCode = `(async function() {\n${userCode}\n})()`;
 
-        await expect(
-          sandbox.evaluate(wrappedCode, { wrapperPrefixLines: 1, wrapperSuffixLines: 1 })
-        ).rejects.toThrow('test');
+        await expect(sandbox.evaluate(wrappedCode, { wrapperPrefixLines: 1, wrapperSuffixLines: 1 })).rejects.toThrow('test');
       } finally {
         sandbox.dispose();
       }

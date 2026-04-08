@@ -1,9 +1,10 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { ExecutionContext } from '../../types';
 import * as wasmSandbox from '@superblocks/wasm-sandbox-js';
-import * as vm from './vm';
+
+import { ExecutionContext } from '../../types';
 import { resolveAllBindings, serialize } from './utils';
 import { VariableClientImpl } from './variable-client';
+import * as vm from './vm';
 
 class MockKVStore {
   private _store: { [key: string]: unknown } = {};
@@ -52,7 +53,7 @@ describe('utils', () => {
 
       // The result keys are the expressions extracted from mustache tags.
       // If input is '{{ foo }}', the expression is 'foo'.
-      expect(result).toEqual({ 'foo': 'bar' });
+      expect(result).toEqual({ foo: 'bar' });
     });
 
     it('should resolve multiple bindings', async () => {
@@ -63,8 +64,8 @@ describe('utils', () => {
       const result = await resolveAllBindings('{{ a }} + {{ b }}', context, {}, false);
 
       expect(result).toEqual({
-        'a': 1,
-        'b': 2,
+        a: 1,
+        b: 2
       });
     });
 
@@ -75,7 +76,7 @@ describe('utils', () => {
       const result = await resolveAllBindings('{{ x * 2 }}', context, {}, false);
 
       expect(result).toEqual({
-        'x * 2': 20,
+        'x * 2': 20
       });
     });
 
@@ -86,7 +87,7 @@ describe('utils', () => {
       const result = await resolveAllBindings('{{ arr[0] }}', context, {}, false);
 
       expect(result).toEqual({
-        'arr[0]': 1,
+        'arr[0]': 1
       });
     });
 
@@ -97,7 +98,7 @@ describe('utils', () => {
       const result = await resolveAllBindings('{{ obj.key }}', context, {}, false);
 
       expect(result).toEqual({
-        'obj.key': 'value',
+        'obj.key': 'value'
       });
     });
 
@@ -200,12 +201,7 @@ describe('utils', () => {
       });
 
       const filePaths = { 'FilePicker1.files.0': '/remote/file/path' };
-      const result = await resolveAllBindings(
-        '{{ FilePicker1.files[0].readContents("text") }}',
-        context,
-        filePaths,
-        false
-      );
+      const result = await resolveAllBindings('{{ FilePicker1.files[0].readContents("text") }}', context, filePaths, false);
 
       expect(result['FilePicker1.files[0].readContents("text")']).toBe(mockContent);
     });
@@ -234,12 +230,7 @@ describe('utils', () => {
       });
 
       const filePaths = { 'FilePicker1.files.0': '/async/file/path' };
-      const result = await resolveAllBindings(
-        '{{ await FilePicker1.files[0].readContentsAsync("text") }}',
-        context,
-        filePaths,
-        false
-      );
+      const result = await resolveAllBindings('{{ await FilePicker1.files[0].readContentsAsync("text") }}', context, filePaths, false);
 
       expect(result['await FilePicker1.files[0].readContentsAsync("text")']).toBe(mockContent);
     });
@@ -271,7 +262,7 @@ describe('utils', () => {
     });
 
     it('should detect binary data when mode is unknown', () => {
-      const buffer = Buffer.from([0xFF, 0xFF, 0xFF]);
+      const buffer = Buffer.from([0xff, 0xff, 0xff]);
       const result = serialize(buffer);
       // \u{FFFD} logic check: buffer with invalid utf8 should return base64
       // Buffer.from([0xFF]).toString('utf8') produces replacement char \uFFFD

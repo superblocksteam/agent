@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
-import { createSandbox } from '../sandbox';
+
 import { hostFunction } from '../marshal';
+import { createSandbox } from '../sandbox';
 
 describe('globals/buffer', () => {
   describe('Buffer.from with strings', () => {

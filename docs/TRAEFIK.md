@@ -13,8 +13,8 @@ This configures the docker engine as a provider for Traefik, and allows the load
 To deploy using custom certificate, using the provided default configuration, run `compose.traefik.yaml`.
 The following environmental variables MUST be supplied to the command:
 
-* SUPERBLOCKS_AGENT_KEY
-* SUPERBLOCKS_AGENT_DOMAIN - This must match any certificate CN
+- SUPERBLOCKS_AGENT_KEY
+- SUPERBLOCKS_AGENT_DOMAIN - This must match any certificate CN
 
 ```bash
 SUPERBLOCKS_AGENT_KEY=<my-key> SUPERBLOCKS_AGENT_DOMAIN=<my-domain> docker compose -f 'compose.traefik.yaml` up
@@ -22,9 +22,9 @@ SUPERBLOCKS_AGENT_KEY=<my-key> SUPERBLOCKS_AGENT_DOMAIN=<my-domain> docker compo
 
 In addition, the following files and directories must be available in the working directory where the compose file is run:
 
-* tls.yaml
-* traefik.yaml
-* certs/
+- tls.yaml
+- traefik.yaml
+- certs/
 
 Sample files are provided in this repository.
 The `certs/` directory should contain the custom certificates that are to be used. The configuration in `tls.yaml` must reference the correct filenames in the `certs/` directory.

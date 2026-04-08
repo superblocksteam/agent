@@ -1,6 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { RedisClientType } from '@redis/client';
 import pino from 'pino';
+
 import { TimeoutError } from '../../../errors';
 import { StepPerformance } from '../../../performance/types';
 import { MockKVStore } from '../../../store/mock';

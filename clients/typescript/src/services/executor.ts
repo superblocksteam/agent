@@ -1,8 +1,10 @@
+import { platform, release, type } from 'os';
+
 import * as grpc from '@grpc/grpc-js';
 import { credentials } from '@grpc/grpc-js';
 import { JavaScriptValue, Value } from 'google-protobuf/google/protobuf/struct_pb';
-import { platform, release, type } from 'os';
 import pino from 'pino';
+
 import { version } from '../../package.json';
 import { mapParams } from '../resources/api';
 import { ApiConfig, ExecutionError, ExecutionEvent, ExecutionOutput, Function, JsonValue, Mock, Result } from '../types';

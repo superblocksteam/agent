@@ -2,6 +2,7 @@ import { RedisClientType } from '@redis/client';
 import { ActionConfiguration, Closer, DatasourceConfiguration, DatasourceMetadataDto, ExecutionOutput } from '@superblocks/shared';
 import { Options as PoolOptions } from 'generic-pool';
 import { Logger } from 'pino';
+
 import { PluginProps } from '../src/plugin-property/plugin-props';
 import { StepPerformanceImpl } from './performance/step';
 import { StepPerformance } from './performance/types';

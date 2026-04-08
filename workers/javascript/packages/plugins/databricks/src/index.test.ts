@@ -1,6 +1,7 @@
 import { DBSQLClient } from '@databricks/sql';
 import { DatabricksDatasourceConfiguration } from '@superblocks/shared';
 import { DatabricksPluginV1 } from '@superblocksteam/types';
+
 import DatabricksPlugin from './index';
 
 // mock the databricks client
@@ -18,7 +19,7 @@ describe('DatabricksPlugin', () => {
     // use fake timers to control setTimeout
     jest.useFakeTimers();
     plugin = new DatabricksPlugin();
-    
+
     // Mock logger
     plugin.logger = {
       debug: jest.fn(),
@@ -26,7 +27,7 @@ describe('DatabricksPlugin', () => {
       warn: jest.fn(),
       error: jest.fn()
     } as any;
-    
+
     mockClient = new DBSQLClient() as jest.Mocked<DBSQLClient>;
 
     // setup default mocks
@@ -92,15 +93,12 @@ describe('DatabricksPlugin', () => {
 
   describe('Unity Catalog API Methods', () => {
     const baseUrl = 'https://test.databricks.com';
-    const headers = { 'Authorization': 'Bearer test-token' };
+    const headers = { Authorization: 'Bearer test-token' };
 
     describe('fetchAllCatalogs', () => {
       test('should successfully fetch catalogs', async () => {
         const mockCatalogsResponse = {
-          catalogs: [
-            { name: 'catalog1' },
-            { name: 'catalog2' }
-          ]
+          catalogs: [{ name: 'catalog1' }, { name: 'catalog2' }]
         };
 
         mockFetch.mockResolvedValueOnce({
@@ -126,8 +124,7 @@ describe('DatabricksPlugin', () => {
           statusText: 'Unauthorized'
         } as Response);
 
-        await expect((plugin as any).fetchAllCatalogs(baseUrl, headers))
-          .rejects.toThrow('Failed to fetch catalogs: Unauthorized');
+        await expect((plugin as any).fetchAllCatalogs(baseUrl, headers)).rejects.toThrow('Failed to fetch catalogs: Unauthorized');
       });
 
       test('should return empty array when no catalogs', async () => {
@@ -168,17 +165,19 @@ describe('DatabricksPlugin', () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
-            json: () => Promise.resolve({
-              schemas: [{ name: 'schema1', catalog_name: 'catalog1' }]
-            })
+            json: () =>
+              Promise.resolve({
+                schemas: [{ name: 'schema1', catalog_name: 'catalog1' }]
+              })
           } as Response)
           .mockResolvedValueOnce({
             ok: false,
             statusText: 'Not Found'
           } as Response);
 
-        await expect((plugin as any).fetchAllSchemas(baseUrl, headers, catalogs))
-          .rejects.toThrow('Failed to fetch schemas for catalog catalog2: Not Found');
+        await expect((plugin as any).fetchAllSchemas(baseUrl, headers, catalogs)).rejects.toThrow(
+          'Failed to fetch schemas for catalog catalog2: Not Found'
+        );
       });
     });
 
@@ -188,7 +187,7 @@ describe('DatabricksPlugin', () => {
           { name: 'schema1', catalog_name: 'catalog1' },
           { name: 'schema2', catalog_name: 'catalog1' }
         ];
-        
+
         const mockTablesResponse = {
           tables: [
             {
@@ -216,20 +215,16 @@ describe('DatabricksPlugin', () => {
 
       test('should handle pagination in table responses', async () => {
         const schemas = [{ name: 'schema1', catalog_name: 'catalog1' }];
-        
+
         // Mock first page
         const firstPageResponse = {
-          tables: [
-            { name: 'table1', columns: [{ name: 'id', type_name: 'INT' }] }
-          ],
+          tables: [{ name: 'table1', columns: [{ name: 'id', type_name: 'INT' }] }],
           next_page_token: 'token123'
         };
-        
+
         // Mock second page
         const secondPageResponse = {
-          tables: [
-            { name: 'table2', columns: [{ name: 'name', type_name: 'STRING' }] }
-          ]
+          tables: [{ name: 'table2', columns: [{ name: 'name', type_name: 'STRING' }] }]
         };
 
         mockFetch
@@ -259,17 +254,19 @@ describe('DatabricksPlugin', () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
-            json: () => Promise.resolve({
-              tables: [{ name: 'table1', columns: [] }]
-            })
+            json: () =>
+              Promise.resolve({
+                tables: [{ name: 'table1', columns: [] }]
+              })
           } as Response)
           .mockResolvedValueOnce({
             ok: false,
             statusText: 'Not Found'
           } as Response);
 
-        await expect((plugin as any).fetchAllTablesWithColumns(baseUrl, headers, schemas))
-          .rejects.toThrow('Failed to fetch tables for schema catalog1.schema2: Not Found');
+        await expect((plugin as any).fetchAllTablesWithColumns(baseUrl, headers, schemas)).rejects.toThrow(
+          'Failed to fetch tables for schema catalog1.schema2: Not Found'
+        );
       });
 
       test('should filter out unsupported table types', async () => {
@@ -277,17 +274,18 @@ describe('DatabricksPlugin', () => {
 
         mockFetch.mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            tables: [
-              { name: 'managed_table', table_type: 'MANAGED', columns: [] },
-              { name: 'external_table', table_type: 'EXTERNAL', columns: [] },
-              { name: 'view_table', table_type: 'VIEW', columns: [] },
-              { name: 'materialized_view_table', table_type: 'MATERIALIZED_VIEW', columns: [] },
-              { name: 'unsupported_table', table_type: 'STREAMING_TABLE', columns: [] },
-              { name: 'another_unsupported', table_type: 'FOREIGN', columns: [] },
-              { name: 'no_type_table', columns: [] } // table without table_type should be included
-            ]
-          })
+          json: () =>
+            Promise.resolve({
+              tables: [
+                { name: 'managed_table', table_type: 'MANAGED', columns: [] },
+                { name: 'external_table', table_type: 'EXTERNAL', columns: [] },
+                { name: 'view_table', table_type: 'VIEW', columns: [] },
+                { name: 'materialized_view_table', table_type: 'MATERIALIZED_VIEW', columns: [] },
+                { name: 'unsupported_table', table_type: 'STREAMING_TABLE', columns: [] },
+                { name: 'another_unsupported', table_type: 'FOREIGN', columns: [] },
+                { name: 'no_type_table', columns: [] } // table without table_type should be included
+              ]
+            })
         } as Response);
 
         const result = await (plugin as any).fetchAllTablesWithColumns(baseUrl, headers, schemas);
@@ -295,7 +293,7 @@ describe('DatabricksPlugin', () => {
         expect(result).toHaveLength(5); // Only allowed types + no type
         expect(result.map((t: any) => t.name)).toEqual([
           'schema1.managed_table',
-          'schema1.external_table', 
+          'schema1.external_table',
           'schema1.view_table',
           'schema1.materialized_view_table',
           'schema1.no_type_table'
@@ -344,8 +342,9 @@ describe('DatabricksPlugin', () => {
           statusText: 'Bad Request'
         } as Response);
 
-        await expect((plugin as any).getM2MAccessToken(baseUrl, mockDatasourceConfig))
-          .rejects.toThrow('Failed to get an access token for machine-to-machine, received a status: 400 - Bad Request');
+        await expect((plugin as any).getM2MAccessToken(baseUrl, mockDatasourceConfig)).rejects.toThrow(
+          'Failed to get an access token for machine-to-machine, received a status: 400 - Bad Request'
+        );
       });
 
       test('should handle missing access_token in response', async () => {
@@ -354,8 +353,9 @@ describe('DatabricksPlugin', () => {
           json: () => Promise.resolve({})
         } as Response);
 
-        await expect((plugin as any).getM2MAccessToken(baseUrl, mockDatasourceConfig))
-          .rejects.toThrow('Failed to find access token in OAuth response');
+        await expect((plugin as any).getM2MAccessToken(baseUrl, mockDatasourceConfig)).rejects.toThrow(
+          'Failed to find access token in OAuth response'
+        );
       });
 
       test('should throw error when client ID is missing', async () => {
@@ -369,8 +369,9 @@ describe('DatabricksPlugin', () => {
           })
         };
 
-        await expect((plugin as any).getM2MAccessToken(baseUrl, configMissingClientId))
-          .rejects.toThrow('M2M authentication requires oauthClientId and oauthClientSecret');
+        await expect((plugin as any).getM2MAccessToken(baseUrl, configMissingClientId)).rejects.toThrow(
+          'M2M authentication requires oauthClientId and oauthClientSecret'
+        );
       });
 
       test('should throw error when client secret is missing', async () => {
@@ -384,8 +385,9 @@ describe('DatabricksPlugin', () => {
           })
         };
 
-        await expect((plugin as any).getM2MAccessToken(baseUrl, configMissingClientSecret))
-          .rejects.toThrow('M2M authentication requires oauthClientId and oauthClientSecret');
+        await expect((plugin as any).getM2MAccessToken(baseUrl, configMissingClientSecret)).rejects.toThrow(
+          'M2M authentication requires oauthClientId and oauthClientSecret'
+        );
       });
 
       test('should include scope in token request', async () => {
@@ -400,7 +402,7 @@ describe('DatabricksPlugin', () => {
 
         const fetchCall = mockFetch.mock.calls[0];
         const requestBody = fetchCall[1]?.body as string;
-        
+
         expect(requestBody).toContain('scope=all-apis');
         expect(requestBody).toContain('grant_type=client_credentials');
         expect(requestBody).toContain('client_id=test-client-id');
@@ -413,8 +415,7 @@ describe('DatabricksPlugin', () => {
           json: () => Promise.reject(new Error('Invalid JSON'))
         } as Response);
 
-        await expect((plugin as any).getM2MAccessToken(baseUrl, mockDatasourceConfig))
-          .rejects.toThrow('Invalid JSON');
+        await expect((plugin as any).getM2MAccessToken(baseUrl, mockDatasourceConfig)).rejects.toThrow('Invalid JSON');
       });
     });
   });
@@ -436,33 +437,36 @@ describe('DatabricksPlugin', () => {
       // Mock catalogs response
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          catalogs: [{ name: 'main' }]
-        })
+        json: () =>
+          Promise.resolve({
+            catalogs: [{ name: 'main' }]
+          })
       } as Response);
 
       // Mock schemas response
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          schemas: [{ name: 'default', catalog_name: 'main' }]
-        })
+        json: () =>
+          Promise.resolve({
+            schemas: [{ name: 'default', catalog_name: 'main' }]
+          })
       } as Response);
 
       // Mock tables response
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          tables: [
-            {
-              name: 'users',
-              columns: [
-                { name: 'id', type_name: 'INT' },
-                { name: 'email', type_name: 'STRING' }
-              ]
-            }
-          ]
-        })
+        json: () =>
+          Promise.resolve({
+            tables: [
+              {
+                name: 'users',
+                columns: [
+                  { name: 'id', type_name: 'INT' },
+                  { name: 'email', type_name: 'STRING' }
+                ]
+              }
+            ]
+          })
       } as Response);
 
       const result = await plugin.metadata(mockDatasourceConfig);
@@ -512,10 +516,7 @@ describe('DatabricksPlugin', () => {
 
       const result = await plugin.metadata(m2mConfig);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://test.databricks.com/oidc/v1/token',
-        expect.objectContaining({ method: 'POST' })
-      );
+      expect(mockFetch).toHaveBeenCalledWith('https://test.databricks.com/oidc/v1/token', expect.objectContaining({ method: 'POST' }));
       expect(result.dbSchema?.tables).toEqual([]);
     });
 
@@ -551,39 +552,44 @@ describe('DatabricksPlugin', () => {
       // Mock catalogs response - 2 catalogs
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          catalogs: [{ name: 'catalog1' }, { name: 'catalog2' }]
-        })
+        json: () =>
+          Promise.resolve({
+            catalogs: [{ name: 'catalog1' }, { name: 'catalog2' }]
+          })
       } as Response);
 
       // Mock schemas response - both catalogs have schemas
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            schemas: [{ name: 'schema1', catalog_name: 'catalog1' }]
-          })
+          json: () =>
+            Promise.resolve({
+              schemas: [{ name: 'schema1', catalog_name: 'catalog1' }]
+            })
         } as Response)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            schemas: [{ name: 'schema2', catalog_name: 'catalog2' }]
-          })
+          json: () =>
+            Promise.resolve({
+              schemas: [{ name: 'schema2', catalog_name: 'catalog2' }]
+            })
         } as Response);
 
       // Mock tables response - only first schema has tables
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            tables: [{ name: 'table1', columns: [] }]
-          })
+          json: () =>
+            Promise.resolve({
+              tables: [{ name: 'table1', columns: [] }]
+            })
         } as Response)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            tables: [] // Empty tables for second schema
-          })
+          json: () =>
+            Promise.resolve({
+              tables: [] // Empty tables for second schema
+            })
         } as Response);
 
       const result = await plugin.metadata(mockDatasourceConfig);
@@ -600,17 +606,17 @@ describe('DatabricksPlugin', () => {
         statusText: 'Unauthorized'
       } as Response);
 
-      await expect(plugin.metadata(mockDatasourceConfig))
-        .rejects.toThrow('Failed to connect to Databricks');
+      await expect(plugin.metadata(mockDatasourceConfig)).rejects.toThrow('Failed to connect to Databricks');
     });
 
     test('should handle schema fetch failure', async () => {
       // Mock successful catalogs response
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          catalogs: [{ name: 'main' }]
-        })
+        json: () =>
+          Promise.resolve({
+            catalogs: [{ name: 'main' }]
+          })
       } as Response);
 
       // Mock failed schemas response
@@ -619,25 +625,26 @@ describe('DatabricksPlugin', () => {
         statusText: 'Forbidden'
       } as Response);
 
-      await expect(plugin.metadata(mockDatasourceConfig))
-        .rejects.toThrow('Failed to connect to Databricks');
+      await expect(plugin.metadata(mockDatasourceConfig)).rejects.toThrow('Failed to connect to Databricks');
     });
 
     test('should handle table fetch failure', async () => {
       // Mock successful catalogs response
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          catalogs: [{ name: 'main' }]
-        })
+        json: () =>
+          Promise.resolve({
+            catalogs: [{ name: 'main' }]
+          })
       } as Response);
 
       // Mock successful schemas response
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          schemas: [{ name: 'default', catalog_name: 'main' }]
-        })
+        json: () =>
+          Promise.resolve({
+            schemas: [{ name: 'default', catalog_name: 'main' }]
+          })
       } as Response);
 
       // Mock failed tables response
@@ -646,15 +653,13 @@ describe('DatabricksPlugin', () => {
         statusText: 'Not Found'
       } as Response);
 
-      await expect(plugin.metadata(mockDatasourceConfig))
-        .rejects.toThrow('Failed to connect to Databricks');
+      await expect(plugin.metadata(mockDatasourceConfig)).rejects.toThrow('Failed to connect to Databricks');
     });
 
     test('should handle network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(plugin.metadata(mockDatasourceConfig))
-        .rejects.toThrow('Failed to connect to Databricks');
+      await expect(plugin.metadata(mockDatasourceConfig)).rejects.toThrow('Failed to connect to Databricks');
     });
 
     test('should handle empty catalogs response', async () => {
@@ -672,24 +677,25 @@ describe('DatabricksPlugin', () => {
 
   describe('Column and Data Type Handling', () => {
     const baseUrl = 'https://test.databricks.com';
-    const headers = { 'Authorization': 'Bearer test-token' };
+    const headers = { Authorization: 'Bearer test-token' };
 
     test('should handle columns with type_name field', async () => {
       const schemas = [{ name: 'schema1', catalog_name: 'catalog1' }];
-      
+
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          tables: [
-            {
-              name: 'table1',
-              columns: [
-                { name: 'id', type_name: 'BIGINT' },
-                { name: 'name', type_name: 'STRING' }
-              ]
-            }
-          ]
-        })
+        json: () =>
+          Promise.resolve({
+            tables: [
+              {
+                name: 'table1',
+                columns: [
+                  { name: 'id', type_name: 'BIGINT' },
+                  { name: 'name', type_name: 'STRING' }
+                ]
+              }
+            ]
+          })
       } as Response);
 
       const result = await (plugin as any).fetchAllTablesWithColumns(baseUrl, headers, schemas);
@@ -700,20 +706,21 @@ describe('DatabricksPlugin', () => {
 
     test('should handle columns with data_type field as fallback', async () => {
       const schemas = [{ name: 'schema1', catalog_name: 'catalog1' }];
-      
+
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          tables: [
-            {
-              name: 'table1',
-              columns: [
-                { name: 'id', data_type: 'INTEGER' },
-                { name: 'created_at', data_type: 'TIMESTAMP' }
-              ]
-            }
-          ]
-        })
+        json: () =>
+          Promise.resolve({
+            tables: [
+              {
+                name: 'table1',
+                columns: [
+                  { name: 'id', data_type: 'INTEGER' },
+                  { name: 'created_at', data_type: 'TIMESTAMP' }
+                ]
+              }
+            ]
+          })
       } as Response);
 
       const result = await (plugin as any).fetchAllTablesWithColumns(baseUrl, headers, schemas);
@@ -724,19 +731,18 @@ describe('DatabricksPlugin', () => {
 
     test('should handle columns with both type_name and data_type (prefer type_name)', async () => {
       const schemas = [{ name: 'schema1', catalog_name: 'catalog1' }];
-      
+
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          tables: [
-            {
-              name: 'table1',
-              columns: [
-                { name: 'id', type_name: 'BIGINT', data_type: 'INTEGER' }
-              ]
-            }
-          ]
-        })
+        json: () =>
+          Promise.resolve({
+            tables: [
+              {
+                name: 'table1',
+                columns: [{ name: 'id', type_name: 'BIGINT', data_type: 'INTEGER' }]
+              }
+            ]
+          })
       } as Response);
 
       const result = await (plugin as any).fetchAllTablesWithColumns(baseUrl, headers, schemas);
@@ -746,14 +752,15 @@ describe('DatabricksPlugin', () => {
 
     test('should handle tables with no columns', async () => {
       const schemas = [{ name: 'schema1', catalog_name: 'catalog1' }];
-      
+
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          tables: [
-            { name: 'empty_table' } // No columns field
-          ]
-        })
+        json: () =>
+          Promise.resolve({
+            tables: [
+              { name: 'empty_table' } // No columns field
+            ]
+          })
       } as Response);
 
       const result = await (plugin as any).fetchAllTablesWithColumns(baseUrl, headers, schemas);
@@ -764,14 +771,13 @@ describe('DatabricksPlugin', () => {
 
     test('should handle tables with empty columns array', async () => {
       const schemas = [{ name: 'schema1', catalog_name: 'catalog1' }];
-      
+
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          tables: [
-            { name: 'empty_table', columns: [] }
-          ]
-        })
+        json: () =>
+          Promise.resolve({
+            tables: [{ name: 'empty_table', columns: [] }]
+          })
       } as Response);
 
       const result = await (plugin as any).fetchAllTablesWithColumns(baseUrl, headers, schemas);
@@ -783,12 +789,12 @@ describe('DatabricksPlugin', () => {
 
   describe('Batching and Concurrency', () => {
     const baseUrl = 'https://test.databricks.com';
-    const headers = { 'Authorization': 'Bearer test-token' };
+    const headers = { Authorization: 'Bearer test-token' };
 
     test('should process catalogs in batches', async () => {
       // Create 15 catalogs to test batching (CONCURRENCY = 10)
       const catalogs = Array.from({ length: 15 }, (_, i) => ({ name: `catalog${i + 1}` }));
-      
+
       // Mock all schema responses
       mockFetch.mockImplementation(() =>
         Promise.resolve({
@@ -804,12 +810,12 @@ describe('DatabricksPlugin', () => {
     });
 
     test('should process schemas in batches', async () => {
-      // Create 25 schemas to test batching (CONCURRENCY = 10)  
-      const schemas = Array.from({ length: 25 }, (_, i) => ({ 
-        name: `schema${i + 1}`, 
-        catalog_name: 'catalog1' 
+      // Create 25 schemas to test batching (CONCURRENCY = 10)
+      const schemas = Array.from({ length: 25 }, (_, i) => ({
+        name: `schema${i + 1}`,
+        catalog_name: 'catalog1'
       }));
-      
+
       // Mock all table responses
       mockFetch.mockImplementation(() =>
         Promise.resolve({
@@ -827,7 +833,7 @@ describe('DatabricksPlugin', () => {
 
   describe('fetchWithRetry', () => {
     const testUrl = 'https://test.databricks.com/api/2.1/unity-catalog/test';
-    const testOptions = { method: 'GET', headers: { 'Authorization': 'Bearer test' } };
+    const testOptions = { method: 'GET', headers: { Authorization: 'Bearer test' } };
 
     test('should succeed on first attempt without retry', async () => {
       const mockResponse = {
@@ -835,7 +841,7 @@ describe('DatabricksPlugin', () => {
         status: 200,
         json: () => Promise.resolve({ data: 'test' })
       } as Response;
-      
+
       mockFetch.mockResolvedValueOnce(mockResponse);
 
       const result = await (plugin as any).fetchWithRetry(testUrl, testOptions);
@@ -852,29 +858,25 @@ describe('DatabricksPlugin', () => {
         headers: new Map()
       } as any;
       mock429Response.headers.get = jest.fn().mockReturnValue(null);
-      
+
       const mockSuccessResponse = {
         ok: true,
         status: 200,
         json: () => Promise.resolve({ data: 'test' })
       } as Response;
 
-      mockFetch
-        .mockResolvedValueOnce(mock429Response)
-        .mockResolvedValueOnce(mockSuccessResponse);
+      mockFetch.mockResolvedValueOnce(mock429Response).mockResolvedValueOnce(mockSuccessResponse);
 
       const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
-      
+
       // Advance timers to handle the retry delay
       await jest.advanceTimersByTimeAsync(2000);
-      
+
       const result = await fetchPromise;
 
       expect(result).toBe(mockSuccessResponse);
       expect(mockFetch).toHaveBeenCalledTimes(2);
-      expect(plugin.logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Rate limited (429), retrying in')
-      );
+      expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Rate limited (429), retrying in'));
     });
 
     test('should respect Retry-After header on 429', async () => {
@@ -884,30 +886,26 @@ describe('DatabricksPlugin', () => {
         headers: new Map()
       } as any;
       mock429Response.headers.get = jest.fn().mockReturnValue('5'); // 5 seconds
-      
+
       const mockSuccessResponse = {
         ok: true,
         status: 200,
         json: () => Promise.resolve({ data: 'test' })
       } as Response;
 
-      mockFetch
-        .mockResolvedValueOnce(mock429Response)
-        .mockResolvedValueOnce(mockSuccessResponse);
+      mockFetch.mockResolvedValueOnce(mock429Response).mockResolvedValueOnce(mockSuccessResponse);
 
       const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
-      
+
       // Advance by the exact Retry-After time
       await jest.advanceTimersByTimeAsync(5000);
-      
+
       const result = await fetchPromise;
 
       expect(result).toBe(mockSuccessResponse);
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(mock429Response.headers.get).toHaveBeenCalledWith('Retry-After');
-      expect(plugin.logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('retrying in 5000ms')
-      );
+      expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('retrying in 5000ms'));
     });
 
     test('should throw after max retries on 429', async () => {
@@ -922,7 +920,7 @@ describe('DatabricksPlugin', () => {
 
       // Start the fetch
       const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions, 2);
-      
+
       // Advance all timers and wait for promise resolution
       const result = Promise.all([
         expect(fetchPromise).rejects.toMatchObject({
@@ -930,7 +928,7 @@ describe('DatabricksPlugin', () => {
         }),
         jest.runAllTimersAsync()
       ]);
-      
+
       await result;
       expect(mockFetch).toHaveBeenCalledTimes(3); // initial + 2 retries
     });
@@ -943,53 +941,43 @@ describe('DatabricksPlugin', () => {
         json: () => Promise.resolve({ data: 'test' })
       } as Response;
 
-      mockFetch
-        .mockRejectedValueOnce(networkError)
-        .mockResolvedValueOnce(mockSuccessResponse);
+      mockFetch.mockRejectedValueOnce(networkError).mockResolvedValueOnce(mockSuccessResponse);
 
       const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
-      
+
       // Advance timers for retry delay
       await jest.advanceTimersByTimeAsync(1000);
-      
+
       const result = await fetchPromise;
 
       expect(result).toBe(mockSuccessResponse);
       expect(mockFetch).toHaveBeenCalledTimes(2);
-      expect(plugin.logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Fetch error, retrying in 1000ms')
-      );
+      expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Fetch error, retrying in 1000ms'));
     });
 
     test('should handle timeout with AbortError', async () => {
       const abortError = new Error('This operation was aborted');
       abortError.name = 'AbortError';
-      
+
       const mockSuccessResponse = {
         ok: true,
         status: 200,
         json: () => Promise.resolve({ data: 'test' })
       } as Response;
 
-      mockFetch
-        .mockRejectedValueOnce(abortError)
-        .mockResolvedValueOnce(mockSuccessResponse);
+      mockFetch.mockRejectedValueOnce(abortError).mockResolvedValueOnce(mockSuccessResponse);
 
       const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
-      
+
       // Advance timers for retry delay
       await jest.advanceTimersByTimeAsync(1000);
-      
+
       const result = await fetchPromise;
 
       expect(result).toBe(mockSuccessResponse);
       expect(mockFetch).toHaveBeenCalledTimes(2);
-      expect(plugin.logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Request timeout after')
-      );
-      expect(plugin.logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Retrying after timeout')
-      );
+      expect(plugin.logger.error).toHaveBeenCalledWith(expect.stringContaining('Request timeout after'));
+      expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Retrying after timeout'));
     });
 
     test('should throw after max retries on timeout', async () => {
@@ -1000,7 +988,7 @@ describe('DatabricksPlugin', () => {
 
       // Start the fetch
       const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions, 2);
-      
+
       // Advance all timers and wait for promise resolution
       const result = Promise.all([
         expect(fetchPromise).rejects.toMatchObject({
@@ -1008,7 +996,7 @@ describe('DatabricksPlugin', () => {
         }),
         jest.runAllTimersAsync()
       ]);
-      
+
       await result;
       expect(mockFetch).toHaveBeenCalledTimes(3); // initial + 2 retries
       expect(plugin.logger.error).toHaveBeenCalledTimes(3);
@@ -1022,23 +1010,20 @@ describe('DatabricksPlugin', () => {
         json: () => Promise.resolve({ data: 'test' })
       } as Response;
 
-      mockFetch
-        .mockRejectedValueOnce(networkError)
-        .mockRejectedValueOnce(networkError)
-        .mockResolvedValueOnce(mockSuccessResponse);
+      mockFetch.mockRejectedValueOnce(networkError).mockRejectedValueOnce(networkError).mockResolvedValueOnce(mockSuccessResponse);
 
       const fetchPromise = (plugin as any).fetchWithRetry(testUrl, testOptions);
-      
+
       // First retry: 1000ms
       await jest.advanceTimersByTimeAsync(1000);
       // Second retry: 2000ms (exponential backoff)
       await jest.advanceTimersByTimeAsync(2000);
-      
+
       const result = await fetchPromise;
 
       expect(result).toBe(mockSuccessResponse);
       expect(mockFetch).toHaveBeenCalledTimes(3);
-      
+
       // Check that retry delays increased
       const warnCalls = (plugin.logger.warn as jest.Mock).mock.calls;
       expect(warnCalls[0][0]).toContain('retrying in 1000ms');
@@ -1051,7 +1036,7 @@ describe('DatabricksPlugin', () => {
       mockFetch.mockRejectedValueOnce(otherError);
 
       await expect((plugin as any).fetchWithRetry(testUrl, testOptions)).rejects.toThrow('some other error');
-      
+
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(plugin.logger.warn).not.toHaveBeenCalled();
     });

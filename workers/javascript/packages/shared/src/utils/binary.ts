@@ -1,5 +1,6 @@
 import iconv from 'iconv-lite';
 import MIMEType from 'whatwg-mimetype';
+
 import { ActionResponseType } from '../types';
 
 const TEXT_MIME_TYPES = new Set([

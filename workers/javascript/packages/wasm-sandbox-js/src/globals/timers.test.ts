@@ -1,7 +1,8 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { getQuickJS } from '../quickjs';
 import type { QuickJSWASMModule } from 'quickjs-emscripten-core';
+
 import { createEventLoop } from '../event-loop';
+import { getQuickJS } from '../quickjs';
 import { registerGlobalSetTimeout } from './timers';
 
 describe('globals/timers', () => {
@@ -34,7 +35,7 @@ describe('globals/timers', () => {
     const errorDump = ctx.dump(result.error);
     const message =
       typeof errorDump === 'object' && errorDump !== null
-        ? (errorDump as { message?: string }).message ?? JSON.stringify(errorDump)
+        ? ((errorDump as { message?: string }).message ?? JSON.stringify(errorDump))
         : String(errorDump);
     expect(message).toMatch(/Callback must be a function/);
     result.error?.dispose();

@@ -11,6 +11,7 @@ import {
   Property
 } from '@superblocks/shared';
 import { AxiosRequestConfig } from 'axios';
+
 import RestApiPlugin from '.';
 
 const plugin = new RestApiPlugin();
@@ -48,11 +49,41 @@ describe('RestApiPlugin', () => {
 
   describe('execute calls executeRequest with expected params', () => {
     it.each([
-      { name: 'verboseHTTP: true, doNotFailOnError: true', verboseOutput: true, doNotFailOnError: true, expectedOutput: true, expectedFailOnError: false },
-      { name: 'verboseHTTP: false, doNotFailOnError: false', verboseOutput: false, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
-      { name: 'verboseHTTP: undefined, doNotFailOnError: true', verboseOutput: undefined, doNotFailOnError: true, expectedOutput: false, expectedFailOnError: false },
-      { name: 'verboseHTTP: undefined, doNotFailOnError: false', verboseOutput: undefined, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
-      { name: 'verboseHTTP: undefined, doNotFailOnError: undefined', verboseOutput: undefined, doNotFailOnError: undefined, expectedOutput: false, expectedFailOnError: true }
+      {
+        name: 'verboseHTTP: true, doNotFailOnError: true',
+        verboseOutput: true,
+        doNotFailOnError: true,
+        expectedOutput: true,
+        expectedFailOnError: false
+      },
+      {
+        name: 'verboseHTTP: false, doNotFailOnError: false',
+        verboseOutput: false,
+        doNotFailOnError: false,
+        expectedOutput: false,
+        expectedFailOnError: true
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: true',
+        verboseOutput: undefined,
+        doNotFailOnError: true,
+        expectedOutput: false,
+        expectedFailOnError: false
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: false',
+        verboseOutput: undefined,
+        doNotFailOnError: false,
+        expectedOutput: false,
+        expectedFailOnError: true
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: undefined',
+        verboseOutput: undefined,
+        doNotFailOnError: undefined,
+        expectedOutput: false,
+        expectedFailOnError: true
+      }
     ])('called with $name', async ({ verboseOutput, doNotFailOnError, expectedOutput, expectedFailOnError }) => {
       const spy = jest.spyOn(plugin, 'executeRequest').mockImplementation(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

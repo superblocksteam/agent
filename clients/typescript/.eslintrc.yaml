@@ -7,7 +7,6 @@ env:
 plugins:
   - '@typescript-eslint'
   - import
-  - prettier
 
 parser: '@typescript-eslint/parser'
 parserOptions:
@@ -23,7 +22,6 @@ extends:
   - plugin:@typescript-eslint/recommended-requiring-type-checking
   - plugin:import/typescript
   - prettier
-  - plugin:prettier/recommended
 
 settings:
   import/parsers:
@@ -39,9 +37,6 @@ ignorePatterns:
 
 rules:
   # Custom Configurations
-
-  'prettier/prettier':
-    - error
 
   '@typescript-eslint/array-type':
     - error
@@ -163,17 +158,6 @@ rules:
     - ignore:
         - '@jsii/check-node/run' # @jsii/check-node uses an export map, which import/resolver does not (yet) support (https://github.com/import-js/eslint-plugin-import/issues/1868)
         - worker_threads # This isn't supported in all node versions (import is always guarded)
-
-  'import/order':
-    - error
-    - alphabetize:
-        order: asc
-        caseInsensitive: true
-      groups:
-        - [builtin, external]
-        - [parent, sibling]
-        - [index, unknown]
-      newlines-between: always
 
   'no-alert':
     - error

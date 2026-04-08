@@ -1,3 +1,5 @@
+import path from 'path';
+
 import { DBSQLClient } from '@databricks/sql';
 import {
   DatabricksDatasourceConfiguration,
@@ -13,12 +15,10 @@ import {
   Table,
   TableType
 } from '@superblocks/shared';
-import path from 'path';
-
 import { DatabricksPluginV1 as Plugin } from '@superblocksteam/types';
-
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
+
 import DatabricksPlugin from '.';
 
 jest.setTimeout(20000);
@@ -134,33 +134,30 @@ runTests('Databricks Plugin', () => {
   it('get metadata using Unity Catalog API', async () => {
     jest.setTimeout(60000);
     const res = await plugin.metadata(datasourceConfiguration);
-    
+
     // Validate basic structure - Unity Catalog should return at least some schemas and tables
     expect(res.dbSchema?.schemas).toBeDefined();
     expect(Array.isArray(res.dbSchema?.schemas)).toBe(true);
     expect(res.dbSchema?.tables).toBeDefined();
     expect(Array.isArray(res.dbSchema?.tables)).toBe(true);
-    
+
     // Check if our test catalog exists
-    const testCatalogSchemas = res.dbSchema?.schemas.filter(schema => schema.name === DATABRICKS_CATALOG);
+    const testCatalogSchemas = res.dbSchema?.schemas.filter((schema) => schema.name === DATABRICKS_CATALOG);
     if (testCatalogSchemas && testCatalogSchemas.length > 0) {
       // If test catalog exists, look for our test table
-      const testTables = res.dbSchema?.tables.filter((table) => 
-        table.schema === DATABRICKS_CATALOG && 
-        table.name.includes('orders')
-      );
-      
+      const testTables = res.dbSchema?.tables.filter((table) => table.schema === DATABRICKS_CATALOG && table.name.includes('orders'));
+
       if (testTables && testTables.length > 0) {
         // Validate the structure of at least one table
         const testTable = testTables[0];
         expect(testTable.name).toContain('orders');
         expect(testTable.schema).toBe(DATABRICKS_CATALOG);
         expect(Array.isArray(testTable.columns)).toBe(true);
-        
+
         // Check for expected columns if they exist
-        const idColumn = testTable.columns.find(col => col.name === 'id');
-        const userIdColumn = testTable.columns.find(col => col.name === 'user_id');
-        
+        const idColumn = testTable.columns.find((col) => col.name === 'id');
+        const userIdColumn = testTable.columns.find((col) => col.name === 'user_id');
+
         if (idColumn) {
           expect(idColumn.type).toMatch(/INT|INTEGER/i);
         }
@@ -169,7 +166,7 @@ runTests('Databricks Plugin', () => {
         }
       }
     }
-    
+
     console.log(`Found ${res.dbSchema?.schemas.length} schemas and ${res.dbSchema?.tables.length} tables`);
   });
 

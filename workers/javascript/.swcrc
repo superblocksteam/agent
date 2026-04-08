@@ -1,14 +1,14 @@
 {
-    "$schema": "https://json.schemastore.org/swcrc",
-    "jsc": {
-      "parser": {
-        "syntax": "typescript",
-        "decorators": true
-      },
-      "target": "es2022"
+  "$schema": "https://json.schemastore.org/swcrc",
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true
     },
-    "module": {
-      "type": "commonjs"
-    },
-    "sourceMaps": true
+    "target": "es2022"
+  },
+  "module": {
+    "type": "commonjs"
+  },
+  "sourceMaps": true
 }

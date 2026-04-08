@@ -1,13 +1,13 @@
-import { KinesisActionConfiguration, KinesisDatasourceConfiguration } from '@superblocks/shared';
 import { expect, it } from '@jest/globals';
+import { KinesisActionConfiguration, KinesisDatasourceConfiguration } from '@superblocks/shared';
+import { KinesisPluginV1 as Plugin } from '@superblocksteam/types';
+
 import {
   actionConfigurationToRecords,
   acGetToGetShardIteratorCommand,
   getKinesisClientConfigFromDatasourceConfig,
   configFromShardIteratorType
 } from './utils';
-
-import { KinesisPluginV1 as Plugin } from '@superblocksteam/types';
 
 describe('actionConfigurationToRecords happy path', () => {
   it.each([

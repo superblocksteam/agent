@@ -1,4 +1,5 @@
 import { createConnection, configure, ConnectionOptions, ConfigureOptions } from 'snowflake-sdk';
+
 import { ExecuteOptions } from './ExecuteOptions';
 import { Statement } from './Statement';
 

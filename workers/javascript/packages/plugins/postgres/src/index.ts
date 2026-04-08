@@ -22,6 +22,7 @@ import {
 import { isEmpty } from 'lodash';
 import { Client, Notification } from 'pg';
 import { Client as ssh2Client } from 'ssh2';
+
 import { DEFAULT_SCHEMA_QUERY, KEYS_QUERY, PRIMARY_KEY_QUERY, SET_SEARCH_PATH, SQL_SINGLE_TABLE_METADATA, TABLE_QUERY } from './queries';
 
 const TEST_CONNECTION_TIMEOUT = 20000;

@@ -1,3 +1,5 @@
+import path from 'path';
+
 import {
   AthenaActionConfiguration,
   AthenaDatasourceConfiguration,
@@ -11,7 +13,7 @@ import {
 import { AthenaPluginV1, SQLExecution } from '@superblocksteam/types';
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
-import path from 'path';
+
 import AthenaPlugin from '.';
 
 // THESE TESTS SHOULD ONLY BE RUN

@@ -1,4 +1,5 @@
 import _ from 'lodash';
+
 import { StoreHandler } from './handlers';
 
 export function StreamProperty() {

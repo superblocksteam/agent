@@ -1,6 +1,7 @@
 import { context, SpanKind, SpanStatusCode, trace, Tracer } from '@opentelemetry/api';
 import _, { isEmpty } from 'lodash';
 import P from 'pino';
+
 import { ErrorCode, ForbiddenError, IntegrationError, UnauthorizedError } from '../../errors';
 import { RelayDelegate } from '../../relay';
 import {

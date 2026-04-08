@@ -1,4 +1,5 @@
 import { cloneDeep } from 'lodash';
+
 import { PostgresPlugin, RestApiIntegrationPlugin } from '../plugins';
 import { PostgresDatasourceConfiguration, Property, RestApiDatasourceConfiguration } from '../types';
 import { MASKED_SECRET, maskSecrets, unmaskSecrets } from './configuration';

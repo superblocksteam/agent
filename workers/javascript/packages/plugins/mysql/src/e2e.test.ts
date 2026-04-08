@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+
 import {
   ActionConfiguration,
   ClientWrapper,
@@ -18,6 +19,7 @@ import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
 import { Connection, createConnection } from 'mariadb';
 import { Client as ssh2Client } from 'ssh2';
+
 import MySqlPlugin from '.';
 
 jest.setTimeout(20000);
@@ -297,7 +299,9 @@ describe.each(tunnelInputs)('MySQL Test', (useTunnel) => {
       escapeStrings: false
     });
 
-    expect(resolvedConfig.resolved).toEqual("SELECT * FROM public.mytable as mt WHERE mt.name NOT LIKE '?' AND LENGTH(mt.name) > LENGTH(?);");
+    expect(resolvedConfig.resolved).toEqual(
+      "SELECT * FROM public.mytable as mt WHERE mt.name NOT LIKE '?' AND LENGTH(mt.name) > LENGTH(?);"
+    );
     expect(resolvedConfig.placeholdersInfo?.['?']?.value).toEqual('"Frank Basil"');
 
     newProps.actionConfiguration.body = resolvedConfig.resolved as string;

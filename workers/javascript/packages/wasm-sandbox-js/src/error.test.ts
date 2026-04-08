@@ -1,12 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
+
+import { INTERNAL_WRAPPER_LINES, adjustErrorLineNumbers, adjustStackTrace, errorValueToMessage, createErrorFromQuickJS } from './error';
 import { createSandbox } from './sandbox';
-import {
-  INTERNAL_WRAPPER_LINES,
-  adjustErrorLineNumbers,
-  adjustStackTrace,
-  errorValueToMessage,
-  createErrorFromQuickJS
-} from './error';
 
 describe('error utilities', () => {
   describe('INTERNAL_WRAPPER_LINES', () => {
@@ -385,9 +380,7 @@ describe('error position adjustment integration', () => {
     try {
       const userCode = 'badVar';
       const wrapped = `(async function() {\n${userCode}\n})()`;
-      await expect(
-        sandbox.evaluate(wrapped, { wrapperPrefixLines: 1, wrapperSuffixLines: 1 })
-      ).rejects.toThrow(/badVar.*not defined/i);
+      await expect(sandbox.evaluate(wrapped, { wrapperPrefixLines: 1, wrapperSuffixLines: 1 })).rejects.toThrow(/badVar.*not defined/i);
     } finally {
       sandbox.dispose();
     }

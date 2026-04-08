@@ -449,7 +449,28 @@ func TestSandboxPlugin_NotifyWhenReady_GoroutinesCleanedUpOnClose(t *testing.T) 
 	<-closeDone
 }
 
-func TestSandboxPlugin_IsAvailable_SandboxDead_ReturnsFatal(t *testing.T) {
+func TestSandboxPlugin_IsAvailable_SandboxDead_Dynamic_ReturnsFatal(t *testing.T) {
+	t.Parallel()
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(&mockSandboxManager{}),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+
+	p.sandboxDead.Store(true)
+
+	status := p.IsAvailable(context.Background())
+
+	require.False(t, status.Available)
+	require.Equal(t, plugin.DegradationState_FATAL, status.DegradationState)
+	require.Error(t, status.Error)
+	require.Contains(t, status.Error.Error(), "sandbox is dead")
+}
+
+func TestSandboxPlugin_IsAvailable_SandboxDead_Static_ReturnsTransient(t *testing.T) {
 	t.Parallel()
 
 	p, err := NewSandboxPlugin(
@@ -465,9 +486,9 @@ func TestSandboxPlugin_IsAvailable_SandboxDead_ReturnsFatal(t *testing.T) {
 	status := p.IsAvailable(context.Background())
 
 	require.False(t, status.Available)
-	require.Equal(t, plugin.DegradationState_FATAL, status.DegradationState)
+	require.Equal(t, plugin.DegradationState_TRANSIENT, status.DegradationState)
 	require.Error(t, status.Error)
-	require.Contains(t, status.Error.Error(), "sandbox is dead")
+	require.Contains(t, status.Error.Error(), "static mode")
 }
 
 func TestSandboxPlugin_IsAvailable_ConnectionNotReady_ReturnsTransient(t *testing.T) {

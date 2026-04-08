@@ -11,7 +11,7 @@ omit = [
   "test_e2e/*",
   "*/_BaseEnum.py",
   "*/_DictDeserializable.py",
-  "superblocks_types/*",
+  "superblocks_types/*"
 ]
 
 [tool.ruff.lint]
@@ -19,8 +19,8 @@ omit = [
 ignore = ["E731"]
 exclude = ["superblocks_types/*"]
 select = [
-    # isort
-    "I001"
+  # isort
+  "I001"
 ]
 
 [tool.ruff.format]

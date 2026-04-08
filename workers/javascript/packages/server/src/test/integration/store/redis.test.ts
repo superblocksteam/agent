@@ -1,7 +1,9 @@
 import { randomUUID } from 'crypto';
+
 import { describe, it } from '@jest/globals';
 import { RedisClientType } from '@redis/client';
 import pino from 'pino';
+
 import { Redis, RedisTx } from '../../../store/redis';
 import { KVStoreTx, IO, Wrapped, KVStore } from '../../../types';
 import { client, REDIS_CLIENT_TYPE } from '../../utils';

@@ -14,6 +14,7 @@ import (
 	redis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/pkg/worker"
 	v1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
@@ -441,19 +442,23 @@ func TestEphemeralModeTransport(t *testing.T) {
 	mockPluginExecutor := mocks.NewPluginExecutor(t)
 	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
 
+	const wantPool = int64(15)
+
 	transport := NewRedisTransport(&Options{
 		RedisClient:         redisClient,
 		StreamKeys:          []string{"stream1"},
 		WorkerId:            "worker1",
 		ConsumerGroup:       "group1",
 		BlockDuration:       5 * time.Second,
-		MessageCount:        1,
+		MessageCount:        100,
 		PluginExecutor:      mockPluginExecutor,
 		Logger:              zap.NewNop(),
-		ExecutionPool:       15,
+		ExecutionPool:       wantPool,
 		FileContextProvider: mockFileContextProvider,
 		Ephemeral:           true,
 	})
+	assert.Equal(t, int64(100), transport.messageCount, "constructor copies Options.MessageCount before init overrides ephemeral")
+
 	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
 
 	// init() waits for PluginsReady before proceeding
@@ -466,8 +471,102 @@ func TestEphemeralModeTransport(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, transport.ephemeral)
-	assert.Equal(t, int64(1), transport.executionPool.Load())
-	assert.Equal(t, int64(1), transport.executionPoolSize)
+	assert.Equal(t, int64(1), transport.messageCount, "ephemeral forces one message per XReadGroup batch")
+	assert.Equal(t, wantPool, transport.executionPool.Load())
+	assert.Equal(t, wantPool, transport.executionPoolSize)
+}
+
+func TestEphemeralPollOnceUsesXReadGroupCountOne(t *testing.T) {
+	redisClient, redisMock := redismock.NewClientMock()
+	mockPluginExecutor := mocks.NewPluginExecutor(t)
+	mockFileContextProvider := mocksstore.NewFileContextProvider(t)
+
+	transport := NewRedisTransport(&Options{
+		RedisClient:         redisClient,
+		StreamKeys:          []string{"stream1"},
+		WorkerId:            "worker1",
+		ConsumerGroup:       "group1",
+		BlockDuration:       5 * time.Second,
+		MessageCount:        50,
+		PluginExecutor:      mockPluginExecutor,
+		Logger:              zap.NewNop(),
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
+		Ephemeral:           true,
+	})
+
+	redisMock.ExpectXGroupCreateMkStream("stream1", "group1", "0").SetVal("OK")
+	readyCh := make(chan bool, 1)
+	readyCh <- true
+	var readyRecv <-chan bool = readyCh
+	mockPluginExecutor.On("PluginsReady", mock.Anything).Return(readyRecv)
+
+	require.NoError(t, transport.init())
+	assert.Equal(t, int64(1), transport.messageCount)
+
+	req := &v1.Request{
+		Inbox: "someInbox",
+		Data: &v1.Request_Data{
+			Data: &v1.Request_Data_Data{
+				Props: &v1.Request_Data_Data_Props{
+					ExecutionId: "exec-123",
+				},
+			},
+			Pinned: &v1.Request_Data_Pinned{
+				Name:  "python",
+				Event: string(worker.EventExecute),
+			},
+		},
+	}
+	byteEncoded, _ := protojson.Marshal(req)
+	stringEncoded := string(byteEncoded)
+
+	redisMock.ExpectXReadGroup(&redis.XReadGroupArgs{
+		Streams:  []string{"stream1", ">"},
+		Group:    "group1",
+		Consumer: "worker1",
+		Count:    1,
+		Block:    5 * time.Second,
+	}).SetVal([]redis.XStream{
+		{
+			Stream: "stream1",
+			Messages: []redis.XMessage{
+				{
+					ID: "someId",
+					Values: map[string]any{
+						"data": stringEncoded,
+					},
+				},
+			},
+		},
+	})
+
+	redisMock.ExpectXAck("stream1", "group1", "someId").SetVal(1)
+	redisMock.ExpectXAdd(&redis.XAddArgs{
+		Stream: "someInbox",
+		ID:     INBOX_ACK_MESSAGE_ID,
+		Values: map[string]any{
+			"data": "ack",
+		},
+	}).SetVal("someId")
+	redisMock.ExpectXAdd(&redis.XAddArgs{
+		Stream:     "someInbox",
+		ID:         INBOX_DATA_MESSAGE_ID,
+		Values:     mock.Anything,
+		NoMkStream: true,
+	}).SetVal("someId")
+
+	mockFileContextProvider.On("SetFileContext", "exec-123", &redisstore.ExecutionFileContext{}).Return()
+	mockFileContextProvider.On("CleanupExecution", "exec-123").Return()
+
+	mockPluginExecutor.On("ArePluginsAvailable", mock.Anything).
+		Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
+
+	mockPluginExecutor.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+
+	_, err := transport.pollOnce()
+	time.Sleep(100 * time.Millisecond)
+	assert.NoError(t, err)
 }
 
 func TestInitWaitsForPluginExecutorReady(t *testing.T) {

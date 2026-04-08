@@ -57,8 +57,8 @@ jest.mock('@superblocks/shared', () => {
 import { Client } from 'pg';
 jest.mock('pg');
 
-import { KEYS_QUERY, TABLE_QUERY } from './queries';
 import LakebasePlugin from '.';
+import { KEYS_QUERY, TABLE_QUERY } from './queries';
 
 const plugin: LakebasePlugin = new LakebasePlugin();
 

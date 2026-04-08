@@ -1,4 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
+
 import { Shim } from './shim';
 
 describe('Shim.convertDatasourceConfig', () => {

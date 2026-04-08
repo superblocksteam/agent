@@ -13,9 +13,7 @@ describe('JavascriptSdkApiPlugin', () => {
     const output = new ExecutionOutput();
     output.output = { ok: true };
 
-    const executeSpy = jest
-      .spyOn(WorkerPool, 'ExecuteInWorkerPool')
-      .mockResolvedValue(output);
+    const executeSpy = jest.spyOn(WorkerPool, 'ExecuteInWorkerPool').mockResolvedValue(output);
 
     const context = new ExecutionContext();
     context.globals = {
@@ -67,9 +65,7 @@ describe('JavascriptSdkApiPlugin', () => {
     const output = new ExecutionOutput();
     output.output = {};
 
-    const executeSpy = jest
-      .spyOn(WorkerPool, 'ExecuteInWorkerPool')
-      .mockResolvedValue(output);
+    const executeSpy = jest.spyOn(WorkerPool, 'ExecuteInWorkerPool').mockResolvedValue(output);
 
     const mockExecutor = {
       executeIntegration: jest.fn()
@@ -129,9 +125,9 @@ describe('JavascriptSdkApiPlugin', () => {
     context.kvStore = { read: async () => ({ data: [] }), write: async () => undefined, writeMany: async () => undefined } as never;
 
     const plugin = new JavascriptSdkApiPlugin();
-    await expect(
-      plugin.execute({ actionConfiguration: { body: 'return 1;' } as never, context: context as never } as never)
-    ).rejects.toBe(integrationErr);
+    await expect(plugin.execute({ actionConfiguration: { body: 'return 1;' } as never, context: context as never } as never)).rejects.toBe(
+      integrationErr
+    );
   });
 
   it('wraps non-IntegrationError from WorkerPool', async () => {

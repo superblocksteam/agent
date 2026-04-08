@@ -26,6 +26,7 @@ export const withJitter = (min, max): number => Math.floor(Math.random() * (max 
 
 import { Span, SpanKind, SpanStatusCode, Tracer } from '@opentelemetry/api';
 import { Logger } from 'pino';
+
 import { RedisMessage } from './types';
 
 export function isKVStoreTx(x: unknown): boolean {

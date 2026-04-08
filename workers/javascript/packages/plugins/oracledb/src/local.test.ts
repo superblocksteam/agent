@@ -1,3 +1,5 @@
+import path from 'path';
+
 import {
   DUMMY_EXECUTION_CONTEXT,
   DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS,
@@ -13,10 +15,7 @@ import {
   Table,
   TableType
 } from '@superblocks/shared';
-import path from 'path';
-
 import { OracleDbPluginV1 as Plugin, PluginCommonV1 } from '@superblocksteam/types';
-
 import * as dotenv from 'dotenv';
 import { cloneDeep, merge } from 'lodash';
 import OracleDB from 'oracledb';

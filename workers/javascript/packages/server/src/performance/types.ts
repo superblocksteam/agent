@@ -1,5 +1,6 @@
 import { OBS_TAG_EVENT_TYPE, OBS_TAG_PLUGIN_EVENT, OBS_TAG_PLUGIN_NAME, OBS_TAG_RESOURCE_TYPE } from '@superblocks/shared';
 import { Logger } from 'pino';
+
 import { KVStore, KVStoreTx, TxProcessFunc, Wrapped } from '../types';
 
 /**

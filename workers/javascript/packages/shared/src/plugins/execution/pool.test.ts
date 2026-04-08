@@ -1,8 +1,9 @@
 import { describe, it, expect, jest, beforeAll, afterEach } from '@jest/globals';
+
 import { ErrorCode, IntegrationError } from '../../errors';
 import { ExecutionContext, ExecutionOutput } from '../../types';
-import { PoolVariableServer } from './pool-variable-server';
 import { WorkerPool } from './pool';
+import { PoolVariableServer } from './pool-variable-server';
 import type { WorkerTaskInput } from './types';
 
 const mockRun = jest.fn<(input: unknown, options: unknown) => Promise<string>>();
@@ -121,10 +122,7 @@ describe('WorkerPool', () => {
         })
       });
 
-      expect(mockRun).toHaveBeenCalledWith(
-        expect.objectContaining({ useSandboxFileFetcher: true }),
-        expect.any(Object)
-      );
+      expect(mockRun).toHaveBeenCalledWith(expect.objectContaining({ useSandboxFileFetcher: true }), expect.any(Object));
     });
 
     it('sets useSandboxFileFetcher false when kvStore lacks fetchFileCallback', async () => {
@@ -138,10 +136,7 @@ describe('WorkerPool', () => {
         input: createInput()
       });
 
-      expect(mockRun).toHaveBeenCalledWith(
-        expect.objectContaining({ useSandboxFileFetcher: false }),
-        expect.any(Object)
-      );
+      expect(mockRun).toHaveBeenCalledWith(expect.objectContaining({ useSandboxFileFetcher: false }), expect.any(Object));
     });
 
     it('converts AbortError to IntegrationError with timeout message', async () => {

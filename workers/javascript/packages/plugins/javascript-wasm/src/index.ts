@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+
 import {
   ErrorCode,
   EvaluationPair,
@@ -17,8 +18,10 @@ import { tokenize } from 'esprima';
 const bootstrapExt = __filename.endsWith('.ts') ? '.ts' : '.js';
 const bootstrapPath = path.join(__dirname, `bootstrap${bootstrapExt}`);
 
-interface JavascriptWasmPluginExecutionProps
-  extends PluginExecutionProps<JavascriptDatasourceConfiguration, JavascriptActionConfiguration> {
+interface JavascriptWasmPluginExecutionProps extends PluginExecutionProps<
+  JavascriptDatasourceConfiguration,
+  JavascriptActionConfiguration
+> {
   quotas?: Record<string, number>;
 }
 

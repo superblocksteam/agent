@@ -1,4 +1,5 @@
 import path from 'path';
+
 import {
   DUMMY_EXECUTION_CONTEXT,
   ExecutionOutput,
@@ -11,6 +12,7 @@ import {
 } from '@superblocks/shared';
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
+
 import SuperblocksOcrPlugin from '.';
 
 // RUN: `npm run env:secrets:fetch:plugins` to fetch the latest plugin credentials

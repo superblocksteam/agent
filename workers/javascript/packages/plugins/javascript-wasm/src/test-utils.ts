@@ -1,5 +1,6 @@
-import type JavascriptWasmPlugin from './index';
 import type { ExecutionContext, RequestFile } from '@superblocks/shared';
+
+import type JavascriptWasmPlugin from './index';
 
 /**
  * Test helper: execute with the same input shape as the old executeInWorker.

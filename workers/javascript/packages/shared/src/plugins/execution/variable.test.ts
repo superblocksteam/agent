@@ -1,7 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
-import { buildVariables, VariableType, VariableMode } from './variable';
+
 import { PoolVariableClient } from './pool-variable-client';
 import { PoolVariableServer } from './pool-variable-server';
+import { buildVariables, VariableType, VariableMode } from './variable';
 
 export class MockKVStore {
   private _store: { [key: string]: unknown } = {};

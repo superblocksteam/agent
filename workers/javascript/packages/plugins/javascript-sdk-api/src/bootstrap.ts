@@ -1,4 +1,5 @@
 import { ErrorCode, IntegrationError, PoolIntegrationExecutorClient, type WorkerInput } from '@superblocks/shared';
+
 import { buildRequireRoot } from './buildRequireRoot';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -36,11 +37,7 @@ export = async function handleTask(workerData: WorkerInput): Promise<string> {
         try {
           return await integrationClient!.executeIntegration(params);
         } catch (e) {
-          throw new IntegrationError(
-            (e as Error).message,
-            ErrorCode.INTEGRATION_SYNTAX,
-            { pluginName: 'JavaScript SDK API' }
-          );
+          throw new IntegrationError((e as Error).message, ErrorCode.INTEGRATION_SYNTAX, { pluginName: 'JavaScript SDK API' });
         }
       }
     : undefined;

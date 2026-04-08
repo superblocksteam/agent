@@ -1,5 +1,6 @@
-import type { EventLoop } from './event-loop';
 import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten-core';
+
+import type { EventLoop } from './event-loop';
 
 /**
  * Symbol used to define custom marshalling behavior when injecting objects into the VM.

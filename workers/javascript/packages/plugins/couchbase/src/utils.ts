@@ -1,6 +1,5 @@
 import { CouchbaseDatasourceConfiguration } from '@superblocks/shared';
 import { SSHTunnelConfig } from '@superblocks/shared';
-
 import { ConnectOptions } from 'couchbase';
 
 export function getConnectionStringFromDatasourceConfiguration(

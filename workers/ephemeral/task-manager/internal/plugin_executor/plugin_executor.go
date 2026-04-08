@@ -139,7 +139,12 @@ func (p *pluginExecutor) ArePluginsAvailable(ctx context.Context) plugin.PluginS
 		DegradationState: plugin.DegradationState_NONE,
 	}
 
+	uniquePlugins := utils.NewSet[plugin.Plugin]()
 	for _, plug := range p.plugins {
+		uniquePlugins.Add(plug)
+	}
+
+	for _, plug := range uniquePlugins.ToSlice() {
 		plugStatus := plug.IsAvailable(ctx)
 		if !plugStatus.Available {
 			status.Available = false

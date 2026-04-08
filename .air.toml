@@ -5,19 +5,9 @@ tmp_dir = ".air"
 [build]
 cmd = "make build-go EXTRA_GO_OPTIONS='-cover'"
 delay = 1000
-exclude_dir = [
-   "assets",
-   "configs",
-   "deploy",
-   "scripts",
-   "postman",
-   "mocks",
-   "vegeta",
-   "clients",
-   "workers",
-]
-exclude_file = [ ".air.toml", ".air.opa.tom.", "Dockerfile", "Makefile" ]
-exclude_regex = [ "_test.go" ]
+exclude_dir = ["assets", "configs", "deploy", "scripts", "postman", "mocks", "vegeta", "clients", "workers"]
+exclude_file = [".air.toml", ".air.opa.tom.", "Dockerfile", "Makefile"]
+exclude_regex = ["_test.go"]
 exclude_unchanged = false
 follow_symlink = false
 full_bin = """ \
@@ -64,8 +54,8 @@ full_bin = """ \
         --worker.ephemeral.supported.events=${SUPERBLOCKS_WORKER_EPHEMERAL_EVENTS:-execute}  # SUPERBLOCKS_ORCHESTRATOR_QUOTAS_ENABLED=false also disables LD configs
 
     """
-include_dir = [  ]
-include_ext = [ "go", "tpl", "tmpl", "json", "mod", "sum", "toml" ]
+include_dir = []
+include_ext = ["go", "tpl", "tmpl", "json", "mod", "sum", "toml"]
 kill_delay = 2000
 log = "build-errors.log"
 send_interrupt = true

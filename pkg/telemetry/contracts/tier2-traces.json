@@ -37,7 +37,5 @@
     "widget-type",
     "x-api-key"
   ],
-  "dropped_high_cardinality_attributes": [
-    "binding_keys"
-  ]
+  "dropped_high_cardinality_attributes": ["binding_keys"]
 }

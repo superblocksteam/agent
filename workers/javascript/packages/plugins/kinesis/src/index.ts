@@ -1,5 +1,4 @@
 import { KinesisClient, ListStreamsCommand, PutRecordsCommand, GetShardIteratorCommand, GetRecordsCommand } from '@aws-sdk/client-kinesis';
-
 import {
   BasePlugin,
   PluginExecutionProps,

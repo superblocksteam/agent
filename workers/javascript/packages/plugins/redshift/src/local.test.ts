@@ -1,6 +1,8 @@
 import path from 'path';
+
 import { RedshiftDatasourceConfiguration } from '@superblocks/shared';
 import * as dotenv from 'dotenv';
+
 import RedshiftPlugin from '.';
 
 jest.setTimeout(90000);

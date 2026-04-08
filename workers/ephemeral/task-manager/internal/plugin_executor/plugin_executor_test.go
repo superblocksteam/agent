@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -329,6 +330,29 @@ func TestPluginsReady_SamePluginRegisteredTwice_DeduplicatedByInstance(t *testin
 	}
 	if !v {
 		t.Errorf("PluginsReady() = %v, want true", v)
+	}
+}
+
+func TestArePluginsAvailable_SamePluginRegisteredTwice_DeduplicatedByInstance(t *testing.T) {
+	t.Parallel()
+
+	var isAvailableCalls atomic.Int32
+	executor := newTestExecutor()
+	mock := &mockPlugin{
+		name: "shared",
+		isAvailableFunc: func(ctx context.Context) plugin.PluginStatus {
+			isAvailableCalls.Add(1)
+			return plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE}
+		},
+	}
+	executor.RegisterPlugin("python", mock)
+	executor.RegisterPlugin("javascript", mock)
+
+	ctx := context.Background()
+	executor.ArePluginsAvailable(ctx)
+
+	if isAvailableCalls.Load() != 1 {
+		t.Errorf("IsAvailable() call count = %d, want 1", isAvailableCalls.Load())
 	}
 }
 

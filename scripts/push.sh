@@ -14,10 +14,11 @@ function _usage() {
   echo ""
   echo "    -f, --force         Enable the force option; use with care."
   echo "    -v, --verbose       Enable verbose output."
-  echo "    -d, --dry           Dry run."
+  echo "    -d, --dry           Dry run (skip all commands; use --check instead)."
+  echo "    --check             Verify the patch applies to the mirror repo; no commit or push."
   echo "    -e, --exclude       Exclude a path from the patch when applying."
   echo "    -p, --push          Push the changes to the destination repository."
-  echo "    -d, --destination   The fully qualified url for the destination repository."
+  echo "    --destination       The fully qualified url for the destination repository."
   echo "    -h, --help          Display this help message."
   return
 }
@@ -38,6 +39,7 @@ function _do() {
 
   if [[ "$dry" -eq 1 ]]; then
     "$@"
+    return $?
   fi
 
   return 0
@@ -48,6 +50,7 @@ function push() {
   local verbose=1
   local dry=1
   local push=1
+  local check=1
   local exclude=()
   local destination="https://github.com/superblocksteam/agent"
   local tag="superblocksteam/agent"
@@ -64,6 +67,10 @@ function push() {
         ;;
       -d|--dry)
         dry=0
+        shift
+        ;;
+      --check)
+        check=0
         shift
         ;;
       -e|--exclude)
@@ -115,12 +122,12 @@ function push() {
     echo " [WARN] The force option has been enabled; use with care."
   fi
 
-  if [[ "$(git rev-parse --show-toplevel)" != "$(pwd)" ]]; then
-    echo "[FATAL] This scripts must be run from the root of the git repository."
+  if ! toplevel=$(git rev-parse --show-toplevel 2>/dev/null); then
+    echo "[FATAL] Not inside a git repository."
     exit 1
-  else
-    echo "[DEBUG] Verified that we are in the root of the git repository."
   fi
+  cd "${toplevel}" || exit 1
+  echo "[DEBUG] Verified that we are in the root of the git repository."
 
   if [[ $(git diff --stat) != '' && "$force" -eq 1 ]]; then
     echo "[FATAL] The repository must not be dirty."
@@ -201,6 +208,17 @@ function push() {
   done
 
   echo " [INFO] Applying the patch."
+  if [[ "$check" -eq 0 ]]; then
+    if ! __do git apply --check --whitespace=nowarn "${tmp}"/code.patch; then
+      popd
+      __do git -C "${internal}" checkout --quiet "${head}"
+      exit 1
+    fi
+    popd
+    __do git -C "${internal}" checkout --quiet "${head}"
+    echo " [INFO] Patch check succeeded; skipping commit and push."
+    exit 0
+  fi
   __do git apply --whitespace=nowarn "${tmp}"/code.patch
 
   echo " [INFO] Removing excluded files from the staged destination."
@@ -233,7 +251,7 @@ function push() {
   popd
 
   echo " [INFO] Updating the tag on the source repository."
-  __do git checkout --quiet main
+  __do git checkout --quiet "${head}"
   __do git tag -f "${tag}"
 
   echo " [INFO] Pushing the updated tag to the source repository."

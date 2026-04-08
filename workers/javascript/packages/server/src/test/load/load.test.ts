@@ -1,8 +1,10 @@
 import { randomUUID } from 'crypto';
+
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { RedisClientType } from '@redis/client';
 import { RelayDelegate } from '@superblocks/shared';
 import pino from 'pino';
+
 import { PluginProps } from '../../plugin-property/plugin-props';
 import { Redis } from '../../store/redis';
 import { KVStore, WorkerAPI } from '../../types';

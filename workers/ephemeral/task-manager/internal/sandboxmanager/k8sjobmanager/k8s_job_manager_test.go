@@ -243,6 +243,71 @@ func TestBuildJobSpecExecutionEnvInclusionList(t *testing.T) {
 	assert.NotContains(t, envByName, "EXECUTION_ENV_NOT_SET")
 }
 
+func TestBuildJobSpecTunnelKeysForwardedViaInclusionList(t *testing.T) {
+	t.Setenv("SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA", "rsa-key-material")
+	t.Setenv("SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519", "ed25519-key-material")
+
+	m := &K8sJobManager{
+		namespace:               "test-ns",
+		image:                   "sandbox:latest",
+		port:                    50051,
+		podIP:                   "10.0.0.1",
+		variableStoreGrpcPort:   50050,
+		variableStoreHttpPort:   8080,
+		streamingProxyGrpcPort:  50053,
+		ttlSecondsAfterFinished: 0,
+		language:                "javascript",
+		ephemeral:               false,
+		logger:                  zap.NewNop(),
+		executionEnvInclusionList: []string{
+			"SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA",
+			"SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519",
+		},
+	}
+
+	job := m.buildJobSpec("sandbox-test-tunnel", "test-tunnel", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	envByName := make(map[string]string)
+	for _, env := range container.Env {
+		envByName[env.Name] = env.Value
+	}
+
+	assert.Equal(t, "rsa-key-material", envByName["SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA"])
+	assert.Equal(t, "ed25519-key-material", envByName["SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519"])
+}
+
+func TestBuildJobSpecTunnelKeysNotForwardedWithoutInclusionList(t *testing.T) {
+	t.Setenv("SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA", "rsa-key-material")
+	t.Setenv("SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519", "ed25519-key-material")
+
+	m := &K8sJobManager{
+		namespace:                 "test-ns",
+		image:                     "sandbox:latest",
+		port:                      50051,
+		podIP:                     "10.0.0.1",
+		variableStoreGrpcPort:     50050,
+		variableStoreHttpPort:     8080,
+		streamingProxyGrpcPort:    50053,
+		ttlSecondsAfterFinished:   0,
+		language:                  "javascript",
+		ephemeral:                 false,
+		logger:                    zap.NewNop(),
+		executionEnvInclusionList: nil,
+	}
+
+	job := m.buildJobSpec("sandbox-test-no-tunnel", "test-no-tunnel", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	names := make([]string, 0, len(container.Env))
+	for _, env := range container.Env {
+		names = append(names, env.Name)
+	}
+
+	assert.NotContains(t, names, "SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA")
+	assert.NotContains(t, names, "SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519")
+}
+
 func TestBuildJobSpecExecutionEnvInclusionListEmpty(t *testing.T) {
 	t.Setenv("EXECUTION_ENV_FOO", "value-from-task-manager")
 	t.Setenv("EXECUTION_ENV_BAR", "another-value")

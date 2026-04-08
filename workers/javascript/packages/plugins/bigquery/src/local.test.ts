@@ -1,4 +1,5 @@
 import { BigqueryDatasourceConfiguration, RelayDelegate } from '@superblocks/shared';
+
 import BigqueryPlugin from '.';
 
 const plugin: BigqueryPlugin = new BigqueryPlugin();

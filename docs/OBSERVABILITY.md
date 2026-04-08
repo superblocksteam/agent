@@ -13,6 +13,7 @@ SUPERBLOCKS_ORCHESTRATOR_TELEMETRY_REMOTE_ENABLED=false
 ```
 
 This disables:
+
 - **OTEL traces and logs** (falls back to stdout via `stdouttrace`)
 - **Remote logs** (emitter to `logs.intake.superblocks.com`)
 - **Audit logs** (emitter to metadata intake)
@@ -25,13 +26,13 @@ Local console logging and Prometheus metrics (`/metrics` on port `9090`) remain 
 
 For finer-grained control, disable specific telemetry components independently:
 
-| Environment Variable | Default | Description |
-|---|---|---|
+| Environment Variable                               | Default                                           | Description                                                                                            |
+| -------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL` | `https://traces.intake.superblocks.com/v1/traces` | OTLP HTTP endpoint for traces, logs, and metrics. Set to `""` to disable (traces fall back to stdout). |
-| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_ENABLED` | `true` | Remote log emission to `logs.intake.superblocks.com`. |
-| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_AUDIT_ENABLED` | `true` | Audit log emission. |
-| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_EVENT_ENABLED` | `true` | Event emission. |
-| `SUPERBLOCKS_ORCHESTRATOR_EVENTS_CLOUD_ENABLED` | `false` | Cloud event listener (gRPC). |
+| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_ENABLED`  | `true`                                            | Remote log emission to `logs.intake.superblocks.com`.                                                  |
+| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_AUDIT_ENABLED`   | `true`                                            | Audit log emission.                                                                                    |
+| `SUPERBLOCKS_ORCHESTRATOR_EMITTER_EVENT_ENABLED`   | `true`                                            | Event emission.                                                                                        |
+| `SUPERBLOCKS_ORCHESTRATOR_EVENTS_CLOUD_ENABLED`    | `false`                                           | Cloud event listener (gRPC).                                                                           |
 
 Example -- disable only OTEL traces while keeping logs and events:
 
@@ -52,6 +53,7 @@ The agent derives the logs endpoint (`/v1/logs`) and metrics endpoint (`/v1/metr
 ### What Remains Active
 
 Even with all remote telemetry disabled:
+
 - **Prometheus metrics** are served at `/metrics` on the metrics port (default `9090`). These are pull-based and do not send data externally.
 - **Local console logs** continue to write to stdout/stderr.
 
@@ -75,8 +77,8 @@ Most spans contain the following sets of attributes, which DataDog calls tags, w
          api-name    the name of the api
          api-type    the type of the api
 organization-name    the name of the organization
-  organization-id    the identifier of the organization 
-organization-tier    the tier of the organization 
+  organization-id    the identifier of the organization
+organization-tier    the tier of the organization
    correlation-id    the unique id that persists for all logs and spans for an execution
           profile    the profile selected for the execution
     resource-name    the name of the resource the span is observing

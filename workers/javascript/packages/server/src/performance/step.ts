@@ -1,4 +1,5 @@
 import { Logger } from 'pino';
+
 import { Wrapped } from '../types';
 import { Observable, StepPerformance, StepMetricLabels, Overhead, PerformanceAPI } from './types';
 import { elapsed } from './utils';

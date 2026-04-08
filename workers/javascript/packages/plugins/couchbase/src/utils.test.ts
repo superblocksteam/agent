@@ -1,5 +1,5 @@
-import { CouchbaseDatasourceConfiguration, SSHTunnelConfig } from '@superblocks/shared';
 import { expect, it } from '@jest/globals';
+import { CouchbaseDatasourceConfiguration, SSHTunnelConfig } from '@superblocks/shared';
 
 import { getConnectionOptionsFromDatasourceConfiguration, getConnectionStringFromDatasourceConfiguration } from './utils';
 

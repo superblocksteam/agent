@@ -1,7 +1,8 @@
+import { delimiter } from 'path';
+
 import { S3Client } from '@aws-sdk/client-s3';
 // NOTE: (joey) we import like this so we can mock some stuff in the test that we otherwise couldn't
 import * as s3Client from '@aws-sdk/client-s3';
-
 import {
   ExecutionOutput,
   S3ActionConfiguration,
@@ -11,8 +12,8 @@ import {
   DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS,
   AWSAuthType
 } from '@superblocks/shared';
+
 import S3Plugin from '.';
-import { delimiter } from 'path';
 
 let plugin: S3Plugin;
 

@@ -7,6 +7,7 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { SEMRESATTRS_SERVICE_NAME, SEMRESATTRS_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { AGENT_KEY_HEADER, EnvStore, OBS_TAG_WORKER_ID, buildSuperblocksDomainURL } from '@superblocks/shared';
 import dotenv from 'dotenv';
+
 import {
   SUPERBLOCKS_AGENT_BUCKET,
   SUPERBLOCKS_AGENT_DOMAIN,

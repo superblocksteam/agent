@@ -1,8 +1,9 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import { Value } from 'google-protobuf/google/protobuf/struct_pb';
+
 import { GrpcIntegrationExecutor } from './grpcIntegrationExecutor';
 import { SandboxIntegrationExecutorServiceClient } from './types/worker/v1/sandbox_integration_executor_grpc_pb';
 import { ExecuteIntegrationRequest } from './types/worker/v1/sandbox_integration_executor_pb';
-import { Value } from 'google-protobuf/google/protobuf/struct_pb';
 
 const createMockClient = () => ({
   executeIntegration: jest.fn()

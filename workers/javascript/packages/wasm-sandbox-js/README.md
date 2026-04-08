@@ -67,6 +67,7 @@ try {
 Creates a sandbox for evaluating JavaScript expressions.
 
 **Parameters:**
+
 - `options?: SandboxOptions` - Configuration options
   - `limits?: { stackBytes?: number; memoryBytes?: number }` - Resource limits
   - `enableBuffer?: boolean` - Enable Buffer API polyfill
@@ -89,13 +90,13 @@ try {
   sandbox.setConsole({
     log: (...args) => console.log('[sandbox]', ...args),
     warn: (...args) => console.warn('[sandbox]', ...args),
-    error: (...args) => console.error('[sandbox]', ...args),
+    error: (...args) => console.error('[sandbox]', ...args)
   });
 
   // Inject globals
   sandbox.setGlobals({
     user: { name: 'Alice' },
-    fetchData: hostFunction(async (url) => fetch(url).then(r => r.json()))
+    fetchData: hostFunction(async (url) => fetch(url).then((r) => r.json()))
   });
 
   // Evaluate expressions
@@ -117,7 +118,7 @@ Set the console logger for this sandbox. Can be called multiple times to change 
 sandbox.setConsole({
   log: (...args) => myLogger.info(...args),
   warn: (...args) => myLogger.warn(...args),
-  error: (...args) => myLogger.error(...args),
+  error: (...args) => myLogger.error(...args)
 });
 ```
 
@@ -135,6 +136,7 @@ sandbox.setGlobals({ config: { debug: true } }); // Both user and config are ava
 Evaluate a single expression and return its result.
 
 **Parameters:**
+
 - `expression: string` - JavaScript expression to evaluate
 - `options?: SandboxEvaluateOptions`
   - `timeLimitMs?: number` - Execution time limit in milliseconds (default: 10 seconds)
@@ -184,6 +186,7 @@ await sandbox.evaluate('fetchUser("123")');
 ```
 
 **Important:** When the sandbox calls a host function:
+
 - `this` is bound to `undefined` (use arrow functions or `.bind()` if you need context)
 - Arguments are extracted from the VM and passed to the host function
 - Return values (including Promises) are marshalled back to the VM
@@ -198,10 +201,14 @@ import { toVmValue, hostFunction } from '@superblocks/wasm-sandbox-js';
 
 class Counter {
   private value = 0;
-  
-  increment() { this.value++; }
-  getValue() { return this.value; }
-  
+
+  increment() {
+    this.value++;
+  }
+  getValue() {
+    return this.value;
+  }
+
   [toVmValue]() {
     return {
       increment: hostFunction(this.increment.bind(this)),
@@ -296,6 +303,7 @@ try {
 `timeLimitMs` is a **soft, best-effort** limit enforced inside the sandbox. For the most reliable protection against hangs (including host-side work that cannot be preempted), run evaluation in a **dedicated Worker thread** and have the parent terminate it if the deadline passes.
 
 Recommended pattern:
+
 - Set `timeLimitMs` (fast failure in the common case)
 - Also enforce a **hard wall-clock timeout** in the parent and call `worker.terminate()` on expiry
 - Recreate the worker after termination (do not reuse a timed-out worker)

@@ -3,6 +3,7 @@ import { expect, it } from '@jest/globals';
 import { ErrorCode } from '@superblocks/shared';
 import { KafkaV1, KafkaV1 as Plugin } from '@superblocksteam/types';
 import { CompressionTypes, EachMessagePayload, Kafka, Partitioners, logLevel } from 'kafkajs';
+
 import { client, fromKafkaJS, producerConfig, sasl, toKafkaJS, transformAcks, transformCompression, validateKafkaOperation } from './index';
 
 jest.mock('kafkajs');

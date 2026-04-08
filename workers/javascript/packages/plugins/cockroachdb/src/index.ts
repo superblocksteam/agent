@@ -20,6 +20,7 @@ import {
 } from '@superblocks/shared';
 import { isEmpty } from 'lodash';
 import { Client, Notification } from 'pg';
+
 import { KeysQuery, TableQuery } from './queries';
 
 const TEST_CONNECTION_TIMEOUT = 5000;

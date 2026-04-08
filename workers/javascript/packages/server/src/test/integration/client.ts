@@ -1,8 +1,10 @@
 // This is deprecated code. This is mainly used only for E2E testing now.
 import { randomUUID } from 'crypto';
+
 import { RedisClientType } from '@redis/client';
 import _ from 'lodash';
 import { Logger } from 'pino';
+
 import { InternalError, TimeoutError } from '../../errors';
 import { StepPerformanceImpl } from '../../performance/step';
 import { StepPerformance } from '../../performance/types';

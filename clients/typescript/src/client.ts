@@ -1,8 +1,9 @@
+import { log } from '@grpc/grpc-js/build/src/logging';
+import pino from 'pino';
+
 import { ExecutorService } from './services/executor';
 import { ApiConfig, ClientConfig } from './types';
 import { merge } from './utils/merge';
-import pino from 'pino';
-import { log } from '@grpc/grpc-js/build/src/logging';
 
 const DEFAULT_API_CONFIG: ApiConfig = {
   viewMode: 'editor'

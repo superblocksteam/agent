@@ -17,8 +17,8 @@
  * (likely in `sandbox.ts` or `marshal.ts`) that needs to be fixed.
  */
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { TestQuickJSWASMModule, newQuickJSWASMModuleFromVariant } from 'quickjs-emscripten-core';
 import DEBUG_SYNC from '@jitl/quickjs-wasmfile-debug-sync';
+import { TestQuickJSWASMModule, newQuickJSWASMModuleFromVariant } from 'quickjs-emscripten-core';
 
 type CreateSandbox = (typeof import('./sandbox'))['createSandbox'];
 type HostFunction = (typeof import('./marshal'))['hostFunction'];
@@ -159,9 +159,7 @@ describe('Sandbox leak checks', () => {
     const sandbox = await createSandbox({ enableBuffer: true });
     try {
       expect(await sandbox.evaluate('Array.from(Buffer.from("hello"))')).toEqual([104, 101, 108, 108, 111]);
-      expect(await sandbox.evaluate('Array.from(Buffer.from("aGVsbG8=", "base64"))')).toEqual([
-        104, 101, 108, 108, 111
-      ]);
+      expect(await sandbox.evaluate('Array.from(Buffer.from("aGVsbG8=", "base64"))')).toEqual([104, 101, 108, 108, 111]);
       expect(await sandbox.evaluate('Array.from(Buffer.from([1, 2, 3]))')).toEqual([1, 2, 3]);
       expect(await sandbox.evaluate('Buffer.isBuffer(Buffer.from("test"))')).toBe(true);
     } finally {
@@ -267,9 +265,9 @@ describe('Sandbox leak checks', () => {
             throw new Error(`Failed to process user: ${user.name}`);
           };
           sandbox.setGlobals({ processUser: hostFunction(processUser) });
-          await expect(
-            sandbox.evaluate("processUser({ name: 'Bob', roles: ['admin', 'editor'] })")
-          ).rejects.toThrow('Failed to process user: Bob');
+          await expect(sandbox.evaluate("processUser({ name: 'Bob', roles: ['admin', 'editor'] })")).rejects.toThrow(
+            'Failed to process user: Bob'
+          );
         } finally {
           sandbox.dispose();
         }
@@ -360,9 +358,9 @@ describe('Sandbox leak checks', () => {
             throw new Error(`Async failed for user: ${user.name}`);
           };
           sandbox.setGlobals({ asyncProcessUser: hostFunction(asyncProcessUser) });
-          await expect(
-            sandbox.evaluate("asyncProcessUser({ name: 'Charlie', permissions: ['read', 'write'] })")
-          ).rejects.toThrow('Async failed for user: Charlie');
+          await expect(sandbox.evaluate("asyncProcessUser({ name: 'Charlie', permissions: ['read', 'write'] })")).rejects.toThrow(
+            'Async failed for user: Charlie'
+          );
         } finally {
           sandbox.dispose();
         }

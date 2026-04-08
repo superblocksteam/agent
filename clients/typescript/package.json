@@ -2,24 +2,21 @@
   "name": "@superblocksteam/agent-sdk",
   "version": "0.1.2",
   "description": "Superblocks Typescript Client",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "keywords": [],
+  "license": "apache 2.0",
+  "author": "",
   "files": [
     "/dist"
   ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "pnpm install && pnpm run lint && pnpm run prettier && tsc && cp -r src/types-js dist/types-js",
+    "build": "pnpm install && pnpm run lint && pnpm run fmt && tsc && cp -r src/types-js dist/types-js",
     "test": "jest",
     "lint": "eslint --fix",
-    "prettier": "prettier --write 'src/**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
-    "prettier:check": "prettier --check 'src/**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
   },
-  "engines": {
-    "node": "^20.19.5"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "apache 2.0",
   "dependencies": {
     "@grpc/grpc-js": "1.11.1",
     "google-protobuf": "catalog:",
@@ -37,11 +34,13 @@
     "grpc-tools": "1.12.4",
     "grpc_tools_node_protoc_ts": "5.3.3",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "ts-jest": "catalog:",
     "ts-loader": "^9.5.1",
     "ts-node": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "^7.11.0"
+  },
+  "engines": {
+    "node": "^20.19.5"
   }
 }

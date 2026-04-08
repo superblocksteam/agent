@@ -1,3 +1,5 @@
+import type { QuickJSContext, QuickJSRuntime } from 'quickjs-emscripten-core';
+
 import { INTERNAL_WRAPPER_LINES, adjustErrorLineNumbers, createErrorFromQuickJS } from './error';
 import { createEventLoop, EventLoop } from './event-loop';
 import { registerGlobalAtob } from './globals/atob';
@@ -8,7 +10,6 @@ import { registerGlobalLibrary, registerGlobalLazyLibrary } from './globals/libr
 import { registerGlobalSetTimeout } from './globals/timers';
 import { createMarshaller, Marshaller, HostGetterWrapper } from './marshal';
 import { getQuickJS } from './quickjs';
-import type { QuickJSContext, QuickJSRuntime } from 'quickjs-emscripten-core';
 
 type SandboxLimits = {
   /**

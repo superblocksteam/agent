@@ -1,6 +1,7 @@
 import Ajv, { ValidateFunction } from 'ajv';
 import ajvErrors from 'ajv-errors';
 import addFormats from 'ajv-formats';
+
 import { BadRequestError } from '../errors';
 
 export const ajv = new Ajv({ coerceTypes: true, allErrors: true, allowUnionTypes: true });

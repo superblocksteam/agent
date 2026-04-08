@@ -1,8 +1,10 @@
 import { randomUUID } from 'crypto';
+
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { RedisClientType } from '@redis/client';
 import { RelayDelegate } from '@superblocks/shared';
 import { default as pino } from 'pino';
+
 import { InternalError } from '../../../errors';
 import { PluginProps } from '../../../plugin-property/plugin-props';
 import { GC } from '../../../store/gc';

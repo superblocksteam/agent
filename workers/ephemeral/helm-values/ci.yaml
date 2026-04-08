@@ -4,6 +4,44 @@
 externalSecrets:
   enabled: false
 fleets:
+  # Integration fleet: handles non-code plugins (postgres, restapi, s3, etc.)
+  integration-javascript:
+    language: javascript
+    consumerGroup: sandbox-integration
+    ephemeral: false
+    plugins:
+      - postgres
+    events:
+      - execute
+      - metadata
+      - test
+      - pre_delete
+    streams:
+      - agent.main.bucket.BA.plugin.postgres.event.execute
+      - agent.main.bucket.BE.plugin.postgres.event.execute
+    taskManager:
+      extraEnv:
+        - name: SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA
+          valueFrom:
+            secretKeyRef:
+              name: sandbox-workers-tunnel-private-key-rsa
+              key: key
+              optional: true
+        - name: SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST
+          value: "SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA"
+    keda:
+      pollingInterval: 1
+      minReplicaCount: 1
+      maxReplicaCount: 3
+      triggers:
+        - type: redis-streams
+          metadata:
+            address: redis-master.superblocks.svc.cluster.local:6379
+            stream: agent.main.bucket.BA.plugin.postgres.event.execute
+            consumerGroup: sandbox-integration
+            lagCount: "1"
+          authenticationRef:
+            name: sandbox-workers-redis-trigger-auth
   # Python ephemeral worker fleet
   python-ba:
     language: python

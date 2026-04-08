@@ -1,5 +1,6 @@
 import { ErrorCode, RelayDelegate, SmtpActionConfiguration, SmtpDatasourceConfiguration } from '@superblocks/shared';
 import { SmtpPluginV1 } from '@superblocksteam/types';
+
 import SmtpPlugin from '.';
 import { EmailOutput, buildPropsWithActionConfiguration } from './test.util';
 

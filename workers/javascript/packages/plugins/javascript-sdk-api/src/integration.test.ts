@@ -15,23 +15,22 @@
 
 // Dynamic import of the ESM sdk-api package (same approach as the plugin)
 async function loadSdkApi(): Promise<{
-  executeApi: (...args: unknown[]) => Promise<{ success: boolean; output?: unknown; error?: { code: string; message: string; details?: unknown } }>;
+  executeApi: (
+    ...args: unknown[]
+  ) => Promise<{ success: boolean; output?: unknown; error?: { code: string; message: string; details?: unknown } }>;
   api: (...args: unknown[]) => unknown;
   postgres: (id: string) => { pluginId: string; id: string };
   salesforce: (id: string) => { pluginId: string; id: string };
   z: { object: (...args: unknown[]) => unknown; string: () => unknown; number: () => unknown; array: (schema: unknown) => unknown };
   readableFileSchema: unknown;
 }> {
-  return await import('@superblocksteam/sdk-api') as never;
+  return (await import('@superblocksteam/sdk-api')) as never;
 }
 
 /**
  * Evaluates a wrapper script with injected globals, simulating the VM2 sandbox.
  */
-function evaluateWrapper(
-  wrapperScript: string,
-  globals: Record<string, unknown> = {}
-): Promise<unknown> {
+function evaluateWrapper(wrapperScript: string, globals: Record<string, unknown> = {}): Promise<unknown> {
   const globalNames = Object.keys(globals);
   const globalValues = Object.values(globals);
 
@@ -45,11 +44,7 @@ function evaluateWrapper(
  * Builds a wrapper script matching what generateWrapperScript produces in Go.
  * integrations is always [] because code-mode resolves them lazily via executeQuery.
  */
-function buildWrapper(
-  bundle: string,
-  inputs = '{}',
-  executionId = '"integration-test"'
-) {
+function buildWrapper(bundle: string, inputs = '{}', executionId = '"integration-test"') {
   return `"use strict";
 var module = { exports: {} };
 var exports = module.exports;
@@ -144,7 +139,12 @@ describe('sdk-api integration tests (real executeApi)', () => {
   let api: (...args: unknown[]) => unknown;
   let postgres: (id: string) => { pluginId: string; id: string };
   let salesforce: (id: string) => { pluginId: string; id: string };
-  let z: { object: (...args: unknown[]) => unknown; string: () => { uuid: () => unknown }; number: () => { min: (n: number) => unknown }; array: (schema: unknown) => unknown };
+  let z: {
+    object: (...args: unknown[]) => unknown;
+    string: () => { uuid: () => unknown };
+    number: () => { min: (n: number) => unknown };
+    array: (schema: unknown) => unknown;
+  };
   let readableFileSchema: unknown;
 
   beforeAll(async () => {
@@ -227,14 +227,14 @@ describe('sdk-api integration tests (real executeApi)', () => {
         }
       });
 
-      const result = await (executeApi as Function)(compiledApi, {
+      const result = (await (executeApi as Function)(compiledApi, {
         input: { name: 12345 }, // number instead of string
         integrations: [],
         executionId: 'test-input-fail',
         env: {},
         user: TEST_USER,
         executeQuery: jest.fn()
-      }) as { success: boolean; error?: { code: string } };
+      })) as { success: boolean; error?: { code: string } };
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe('INPUT_VALIDATION');
@@ -251,14 +251,14 @@ describe('sdk-api integration tests (real executeApi)', () => {
         }
       });
 
-      const result = await (executeApi as Function)(compiledApi, {
+      const result = (await (executeApi as Function)(compiledApi, {
         input: {}, // missing requiredField
         integrations: [],
         executionId: 'test-input-missing',
         env: {},
         user: TEST_USER,
         executeQuery: jest.fn()
-      }) as { success: boolean; error?: { code: string } };
+      })) as { success: boolean; error?: { code: string } };
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe('INPUT_VALIDATION');
@@ -277,14 +277,14 @@ describe('sdk-api integration tests (real executeApi)', () => {
         }
       });
 
-      const result = await (executeApi as Function)(compiledApi, {
+      const result = (await (executeApi as Function)(compiledApi, {
         input: {},
         integrations: [],
         executionId: 'test-output-fail',
         env: {},
         user: TEST_USER,
         executeQuery: jest.fn()
-      }) as { success: boolean; error?: { code: string } };
+      })) as { success: boolean; error?: { code: string } };
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe('OUTPUT_VALIDATION');
@@ -303,14 +303,14 @@ describe('sdk-api integration tests (real executeApi)', () => {
         }
       });
 
-      const result = await (executeApi as Function)(compiledApi, {
+      const result = (await (executeApi as Function)(compiledApi, {
         input: {},
         integrations: [],
         executionId: 'test-run-error',
         env: {},
         user: TEST_USER,
         executeQuery: jest.fn()
-      }) as { success: boolean; error?: { code: string; message: string } };
+      })) as { success: boolean; error?: { code: string; message: string } };
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe('EXECUTION_ERROR');
@@ -340,23 +340,23 @@ describe('sdk-api integration tests (real executeApi)', () => {
           }
         }};`;
 
-      const result = await evaluateWrapper(
-        buildWrapper(bundle),
-        {
-          __sb_execute: executeApi,
-          __sb_integrationExecutor: mockIntegrationExecutor
-        }
-      );
+      const result = await evaluateWrapper(buildWrapper(bundle), {
+        __sb_execute: executeApi,
+        __sb_integrationExecutor: mockIntegrationExecutor
+      });
 
-      expect(result).toEqual({ users: [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }] });
+      expect(result).toEqual({
+        users: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' }
+        ]
+      });
 
       // Verify the integration executor was called with the right params
       expect(mockIntegrationExecutor).toHaveBeenCalledTimes(1);
       const call = mockIntegrationExecutor.mock.calls[0][0];
       expect(call.integrationId).toBe('Production DB');
-      expect(call.actionConfiguration).toEqual(
-        expect.objectContaining({ body: 'SELECT * FROM users' })
-      );
+      expect(call.actionConfiguration).toEqual(expect.objectContaining({ body: 'SELECT * FROM users' }));
     });
 
     it('resolves pluginId from real api() + postgres() declarations', async () => {
@@ -376,9 +376,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
       }) as { integrations: Array<{ key: string; pluginId: string; id: string }> };
 
       // Verify the real api() function produces the expected shape
-      expect(compiledApi.integrations).toEqual([
-        { key: 'db', pluginId: 'postgres', id: 'pg-uuid-real' }
-      ]);
+      expect(compiledApi.integrations).toEqual([{ key: 'db', pluginId: 'postgres', id: 'pg-uuid-real' }]);
 
       // Now serialize as a CJS bundle (what esbuild would produce) and run through the wrapper.
       // We inline the integrations array from the real CompiledApi.
@@ -395,13 +393,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
           }
         }};`;
 
-      const result = await evaluateWrapper(
-        buildWrapper(bundle),
-        {
-          __sb_execute: executeApi,
-          __sb_integrationExecutor: mockIntegrationExecutor
-        }
-      );
+      const result = await evaluateWrapper(buildWrapper(bundle), {
+        __sb_execute: executeApi,
+        __sb_integrationExecutor: mockIntegrationExecutor
+      });
 
       expect(result).toEqual([{ id: 1 }]);
       expect(mockIntegrationExecutor).toHaveBeenCalledWith(
@@ -427,9 +422,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
         }
       }) as { integrations: Array<{ key: string; pluginId: string; id: string }> };
 
-      expect(compiledApi.integrations).toEqual([
-        { key: 'sf', pluginId: 'salesforce', id: 'sf-uuid-real' }
-      ]);
+      expect(compiledApi.integrations).toEqual([{ key: 'sf', pluginId: 'salesforce', id: 'sf-uuid-real' }]);
 
       const integrationsJSON = JSON.stringify(compiledApi.integrations);
       const bundle = `
@@ -444,13 +437,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
           }
         }};`;
 
-      const result = await evaluateWrapper(
-        buildWrapper(bundle),
-        {
-          __sb_execute: executeApi,
-          __sb_integrationExecutor: mockIntegrationExecutor
-        }
-      );
+      const result = await evaluateWrapper(buildWrapper(bundle), {
+        __sb_execute: executeApi,
+        __sb_integrationExecutor: mockIntegrationExecutor
+      });
 
       expect(result).toEqual([{ Id: '001xx000003NGsY' }]);
       expect(mockIntegrationExecutor).toHaveBeenCalledWith(
@@ -487,13 +477,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
           }
         }};`;
 
-      await evaluateWrapper(
-        buildWrapper(bundle),
-        {
-          __sb_execute: executeApi,
-          __sb_integrationExecutor: mockIntegrationExecutor
-        }
-      );
+      await evaluateWrapper(buildWrapper(bundle), {
+        __sb_execute: executeApi,
+        __sb_integrationExecutor: mockIntegrationExecutor
+      });
 
       expect(mockIntegrationExecutor).toHaveBeenCalledTimes(1);
       const call = mockIntegrationExecutor.mock.calls[0][0];
@@ -504,9 +491,7 @@ describe('sdk-api integration tests (real executeApi)', () => {
     });
 
     it('propagates integration executor errors as thrown exceptions', async () => {
-      const mockIntegrationExecutor = jest.fn().mockRejectedValue(
-        new Error('Connection refused')
-      );
+      const mockIntegrationExecutor = jest.fn().mockRejectedValue(new Error('Connection refused'));
 
       const bundle = `
         module.exports = { default: {
@@ -520,13 +505,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
         }};`;
 
       await expect(
-        evaluateWrapper(
-          buildWrapper(bundle),
-          {
-            __sb_execute: executeApi,
-            __sb_integrationExecutor: mockIntegrationExecutor
-          }
-        )
+        evaluateWrapper(buildWrapper(bundle), {
+          __sb_execute: executeApi,
+          __sb_integrationExecutor: mockIntegrationExecutor
+        })
       ).rejects.toThrow(/Integration.*failed|Connection refused/);
     });
   });
@@ -555,13 +537,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
           }
         }};`;
 
-      const result = await evaluateWrapper(
-        buildWrapper(bundle, '{"name":"Alice"}'),
-        {
-          __sb_execute: executeApi,
-          __sb_integrationExecutor: jest.fn()
-        }
-      );
+      const result = await evaluateWrapper(buildWrapper(bundle, '{"name":"Alice"}'), {
+        __sb_execute: executeApi,
+        __sb_integrationExecutor: jest.fn()
+      });
 
       expect(result).toEqual({ greeting: 'Hello, Alice!' });
     });
@@ -611,13 +590,10 @@ describe('sdk-api integration tests (real executeApi)', () => {
         }};`;
 
       await expect(
-        evaluateWrapper(
-          buildWrapper(bundle, '{}'),
-          {
-            __sb_execute: executeApi,
-            __sb_integrationExecutor: jest.fn()
-          }
-        )
+        evaluateWrapper(buildWrapper(bundle, '{}'), {
+          __sb_execute: executeApi,
+          __sb_integrationExecutor: jest.fn()
+        })
       ).rejects.toThrow('Output validation failed');
     });
   });
@@ -671,15 +647,17 @@ describe('sdk-api integration tests (real executeApi)', () => {
 
       const result = await (executeApi as Function)(compiledApi, {
         input: {
-          files: [{
-            name: 'demo.txt',
-            type: 'text/plain',
-            $superblocksId: 'upload-123',
-            size: mockFileContent.length,
-            extension: 'txt',
-            readContentsAsync: async () => mockFileContent,
-            readContents: () => mockFileContent
-          }]
+          files: [
+            {
+              name: 'demo.txt',
+              type: 'text/plain',
+              $superblocksId: 'upload-123',
+              size: mockFileContent.length,
+              extension: 'txt',
+              readContentsAsync: async () => mockFileContent,
+              readContents: () => mockFileContent
+            }
+          ]
         },
         integrations: [],
         executionId: 'test-file-read',

@@ -1,4 +1,5 @@
 import { BaseBulkEditProvider, ExecutionOutput, SQLQueryEnum, measureQueryTime } from '@superblocks/shared';
+
 import { DEFAULT_SCHEMA_QUERY, KEYS_QUERY, PRIMARY_KEY_QUERY, SQL_SINGLE_TABLE_METADATA, TABLE_QUERY } from './queries';
 
 export class OracleDbBulkEditProvider extends BaseBulkEditProvider {

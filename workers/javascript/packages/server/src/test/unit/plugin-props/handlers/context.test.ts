@@ -1,5 +1,6 @@
 import { describe, it } from '@jest/globals';
 import { ExecutionContext } from '@superblocks/shared';
+
 import { contextHandler, WriteOp } from '../../../../plugin-property/handlers';
 import { PluginProps } from '../../../../plugin-property/plugin-props';
 import { BindingType } from '../../../../types';

@@ -61,14 +61,9 @@
         "url": {
           "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
           "protocol": "{{orchestrator_scheme}}",
-          "host": [
-            "{{orchestrator_host}}"
-          ],
+          "host": ["{{orchestrator_host}}"],
           "port": "{{orchestrator_port}}",
-          "path": [
-            "v3",
-            "execute"
-          ]
+          "path": ["v3", "execute"]
         }
       }
     },
@@ -114,14 +109,9 @@
         "url": {
           "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
           "protocol": "{{orchestrator_scheme}}",
-          "host": [
-            "{{orchestrator_host}}"
-          ],
+          "host": ["{{orchestrator_host}}"],
           "port": "{{orchestrator_port}}",
-          "path": [
-            "v3",
-            "execute"
-          ]
+          "path": ["v3", "execute"]
         }
       }
     },
@@ -167,14 +157,9 @@
         "url": {
           "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
           "protocol": "{{orchestrator_scheme}}",
-          "host": [
-            "{{orchestrator_host}}"
-          ],
+          "host": ["{{orchestrator_host}}"],
           "port": "{{orchestrator_port}}",
-          "path": [
-            "v3",
-            "execute"
-          ]
+          "path": ["v3", "execute"]
         }
       }
     },
@@ -221,14 +206,9 @@
         "url": {
           "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
           "protocol": "{{orchestrator_scheme}}",
-          "host": [
-            "{{orchestrator_host}}"
-          ],
+          "host": ["{{orchestrator_host}}"],
           "port": "{{orchestrator_port}}",
-          "path": [
-            "v3",
-            "execute"
-          ]
+          "path": ["v3", "execute"]
         }
       }
     }

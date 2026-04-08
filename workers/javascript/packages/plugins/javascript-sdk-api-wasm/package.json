@@ -34,9 +34,7 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "rimraf": "catalog:",
     "ts-jest": "catalog:",
     "typescript": "catalog:"

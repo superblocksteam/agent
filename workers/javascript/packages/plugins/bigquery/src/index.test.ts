@@ -1,6 +1,7 @@
 import { BigQuery } from '@google-cloud/bigquery';
 import { DUMMY_EXECUTE_COMMON_PARAMETERS, DUMMY_GOOGLE_SERVICE_ACCOUNT, ExecutionOutput } from '@superblocks/shared';
 import { OAuth2Client } from 'google-auth-library';
+
 import BigqueryPlugin from '.';
 
 jest.mock('@google-cloud/bigquery');
@@ -39,33 +40,29 @@ const DUMMY_ROWS = [
   }
 ];
 
-
-
 const DUMMY_METADATA_DATASET_ROWS = [
-
   {
-    "dataset": "SuperblocksFancyDataset"
+    dataset: 'SuperblocksFancyDataset'
   }
-
-]
+];
 
 const DUMMY_METADATA_TABLE_ROWS = [
   {
-    "column_name": "first_name",
-    "data_type": "STRING",
-    "table_name": "TheBestTable"
+    column_name: 'first_name',
+    data_type: 'STRING',
+    table_name: 'TheBestTable'
   },
   {
-    "column_name": "last_name",
-    "data_type": "STRING",
-    "table_name": "TheBestTable"
+    column_name: 'last_name',
+    data_type: 'STRING',
+    table_name: 'TheBestTable'
   },
   {
-    "column_name": "age",
-    "data_type": "INT64",
-    "table_name": "TheBestTable"
+    column_name: 'age',
+    data_type: 'INT64',
+    table_name: 'TheBestTable'
   }
-]
+];
 
 const EXPECTED_METADATA = {
   dbSchema: {
@@ -76,7 +73,7 @@ const EXPECTED_METADATA = {
         columns: [
           { name: 'first_name', type: 'STRING' },
           { name: 'last_name', type: 'STRING' },
-          { name: 'age', type: 'INT64' },
+          { name: 'age', type: 'INT64' }
         ]
       }
     ]
@@ -126,7 +123,10 @@ describe('bigquery execute', () => {
 describe('bigquery metadata', () => {
   test('metadata: happy path scenario', async () => {
     const createQueryJobMock = jest.fn();
-    const getQueryResultsMock = jest.fn().mockReturnValueOnce([DUMMY_METADATA_DATASET_ROWS]).mockReturnValueOnce([DUMMY_METADATA_TABLE_ROWS]);
+    const getQueryResultsMock = jest
+      .fn()
+      .mockReturnValueOnce([DUMMY_METADATA_DATASET_ROWS])
+      .mockReturnValueOnce([DUMMY_METADATA_TABLE_ROWS]);
     const jobMock = { getQueryResults: getQueryResultsMock };
     createQueryJobMock.mockReturnValueOnce([jobMock]).mockReturnValueOnce([jobMock]);
     jest.spyOn(BigQuery.prototype, 'createQueryJob').mockImplementation(() => {
@@ -257,7 +257,8 @@ describe('bigquery workforce identity federation', () => {
       setCredentials: setCredentialsMock
     }));
 
-    const getQueryResultsMock = jest.fn()
+    const getQueryResultsMock = jest
+      .fn()
       .mockReturnValueOnce([DUMMY_METADATA_DATASET_ROWS])
       .mockReturnValueOnce([DUMMY_METADATA_TABLE_ROWS]);
     const jobMock = { getQueryResults: getQueryResultsMock };

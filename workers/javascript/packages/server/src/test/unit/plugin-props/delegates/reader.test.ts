@@ -1,5 +1,6 @@
 import { describe, it } from '@jest/globals';
 import { RelayDelegate } from '@superblocks/shared';
+
 import { PluginPropsReader } from '../../../../plugin-property/delegates/reader';
 import { MockKVStore } from '../../../../store/mock';
 import { BindingType } from '../../../../types';

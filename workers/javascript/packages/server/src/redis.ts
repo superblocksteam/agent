@@ -1,4 +1,5 @@
 import { RedisClientOptions, createClient } from '@redis/client';
+
 import { RedisConnectionOptions } from './types';
 
 /**

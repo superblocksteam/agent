@@ -16,8 +16,7 @@ const { executeCode } = require('@superblocksteam/javascript/bootstrap');
 function createMockKVStore(): KVStore {
   const store: Record<string, unknown> = {};
   return {
-    read: async (keys: string[]) =>
-      Promise.resolve({ data: keys.map((k) => store[k]) }),
+    read: async (keys: string[]) => Promise.resolve({ data: keys.map((k) => store[k]) }),
     write: async (key: string, value: unknown) => {
       store[key] = value;
       return Promise.resolve();

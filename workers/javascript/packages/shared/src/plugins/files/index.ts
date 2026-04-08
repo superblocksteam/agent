@@ -1,8 +1,10 @@
 import { Buffer } from 'buffer';
 import { Readable } from 'stream';
+
 import axios from 'axios';
-import { AGENT_KEY_HEADER, ExecutionContext } from '../../types';
 import type { Request } from 'express';
+
+import { AGENT_KEY_HEADER, ExecutionContext } from '../../types';
 
 export type RequestFile = Request['file'];
 export type RequestFiles = Request['files'];

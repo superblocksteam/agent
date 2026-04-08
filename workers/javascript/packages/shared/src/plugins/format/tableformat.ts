@@ -1,4 +1,5 @@
 import _ from 'lodash';
+
 import { getNormalizedName } from './normalization';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

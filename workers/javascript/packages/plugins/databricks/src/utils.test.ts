@@ -1,7 +1,7 @@
 import { DatabricksDatasourceConfiguration, ErrorCode, IntegrationError } from '@superblocks/shared';
-import { getConnectionOptionsFromDatasourceConfiguration } from './utils';
-
 import { DatabricksPluginV1 } from '@superblocksteam/types';
+
+import { getConnectionOptionsFromDatasourceConfiguration } from './utils';
 describe('getConnectionOptionsFromDatasourceConfiguration', () => {
   it.each([
     {
@@ -139,12 +139,9 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         // authConfig missing
       };
 
-      expect(() =>
-        getConnectionOptionsFromDatasourceConfiguration(datasourceConfiguration as DatabricksDatasourceConfiguration)
-      ).toThrow(new IntegrationError(
-        'OAuth Token Exchange token expected but not present',
-        ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD
-      ));
+      expect(() => getConnectionOptionsFromDatasourceConfiguration(datasourceConfiguration as DatabricksDatasourceConfiguration)).toThrow(
+        new IntegrationError('OAuth Token Exchange token expected but not present', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD)
+      );
     });
 
     it('should throw error when OAuth Token Exchange has empty authToken', () => {
@@ -159,12 +156,9 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         }
       };
 
-      expect(() =>
-        getConnectionOptionsFromDatasourceConfiguration(datasourceConfiguration as DatabricksDatasourceConfiguration)
-      ).toThrow(new IntegrationError(
-        'OAuth Token Exchange token expected but not present',
-        ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD
-      ));
+      expect(() => getConnectionOptionsFromDatasourceConfiguration(datasourceConfiguration as DatabricksDatasourceConfiguration)).toThrow(
+        new IntegrationError('OAuth Token Exchange token expected but not present', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD)
+      );
     });
   });
 

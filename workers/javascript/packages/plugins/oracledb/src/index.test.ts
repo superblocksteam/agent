@@ -13,7 +13,6 @@ import {
   Table,
   TableType
 } from '@superblocks/shared';
-
 import { OracleDbPluginV1 } from '@superblocksteam/types';
 
 jest.mock('@superblocks/shared', () => {

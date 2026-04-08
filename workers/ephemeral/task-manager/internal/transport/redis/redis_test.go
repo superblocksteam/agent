@@ -161,6 +161,10 @@ func TestNewRedisTransportEphemeral(t *testing.T) {
 	if !transport.ephemeral {
 		t.Error("ephemeral should be true")
 	}
+	// Before init(), messageCount is still 10; init() sets messageCount to 1 for ephemeral (see TestEphemeralModeTransport).
+	if transport.messageCount != 10 {
+		t.Errorf("messageCount before init = %v, want 10", transport.messageCount)
+	}
 }
 
 func TestRedisTransportName(t *testing.T) {

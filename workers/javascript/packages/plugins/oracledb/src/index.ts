@@ -18,9 +18,9 @@ import {
   Table,
   TableType
 } from '@superblocks/shared';
-
 import { isEmpty } from 'lodash';
 import OracleDB, { BindParameters } from 'oracledb';
+
 import { OracleDbBulkEditProvider } from './bulkEdit';
 import { DEFAULT_SCHEMA_QUERY, KEYS_QUERY, TABLE_QUERY } from './queries';
 
@@ -130,13 +130,14 @@ export default class OracleDbPlugin extends SQLDatabasePluginPooled<OracleDB.Con
             args = [];
           }
           /* eslint-disable */
+          // prettier-ignore
           return (
             (
               // @ts-ignore
               (await client.executeMany(query, args as BindParameters[], {
                 maxRows: MAX_ROWS,
                 outFormat: OracleDB.OUT_FORMAT_OBJECT,
-                autoCommit: true
+                autoCommit: true,
               })) as Record<string, unknown>
             ).rows as Record<string, unknown>[]
           );
@@ -169,13 +170,14 @@ export default class OracleDbPlugin extends SQLDatabasePluginPooled<OracleDB.Con
           }
 
           /* eslint-disable */
+          // prettier-ignore
           return (
             (
               // @ts-ignore
               (await client.executeMany(query, args as BindParameters[], {
                 maxRows: MAX_ROWS,
                 outFormat: OracleDB.OUT_FORMAT_OBJECT,
-                autoCommit: true
+                autoCommit: true,
               })) as Record<string, unknown>
             ).rows as Record<string, unknown>[]
           );

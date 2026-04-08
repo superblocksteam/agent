@@ -1,13 +1,10 @@
 {
   "name": "@superblocks/wasm-sandbox-js",
-  "private": true,
   "version": "0.0.1",
+  "private": true,
   "description": "WASM-based sandbox for secure JavaScript evaluation using QuickJS",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "engines": {
-    "node": "20.19.5"
-  },
   "scripts": {
     "build": "pnpm run clean && tsc",
     "clean": "rimraf ./dist *tsbuildinfo",
@@ -18,14 +15,14 @@
     "bench": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern sandbox.bench --runInBand --no-coverage"
   },
   "dependencies": {
-    "quickjs-emscripten-core": "workspace:*",
     "@jitl/quickjs-wasmfile-release-sync": "workspace:*",
     "lodash": "^4.17.23",
-    "moment": "2.29.4"
+    "moment": "2.29.4",
+    "quickjs-emscripten-core": "workspace:*"
   },
   "devDependencies": {
-    "@jitl/quickjs-wasmfile-debug-sync": "workspace:*",
     "@jest/globals": "^29.7.0",
+    "@jitl/quickjs-wasmfile-debug-sync": "workspace:*",
     "@types/jest": "catalog:",
     "@types/lodash": "catalog:",
     "@types/node": "catalog:",
@@ -35,11 +32,12 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "rimraf": "catalog:",
     "ts-jest": "^29.1.0",
     "typescript": "catalog:"
+  },
+  "engines": {
+    "node": "20.19.5"
   }
 }

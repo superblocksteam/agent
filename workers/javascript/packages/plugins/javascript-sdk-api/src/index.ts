@@ -12,6 +12,7 @@
  * ExecutionOutput after the worker completes.
  */
 import * as path from 'node:path';
+
 import {
   ErrorCode,
   EvaluationPair,
@@ -45,12 +46,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
     return [];
   }
 
-  async execute({
-    context,
-    actionConfiguration,
-    files,
-    quotas
-  }: PluginExecutionProps): Promise<ExecutionOutput> {
+  async execute({ context, actionConfiguration, files, quotas }: PluginExecutionProps): Promise<ExecutionOutput> {
     const code = (actionConfiguration as LanguageActionConfiguration).body;
 
     if (!code) {
@@ -59,8 +55,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       return output;
     }
 
-    const executionTimeout =
-      quotas?.duration || Number(this.pluginConfiguration?.javascriptExecutionTimeoutMs ?? 30_000);
+    const executionTimeout = quotas?.duration || Number(this.pluginConfiguration?.javascriptExecutionTimeoutMs ?? 30_000);
 
     if (!context.kvStore) {
       const output = new ExecutionOutput();

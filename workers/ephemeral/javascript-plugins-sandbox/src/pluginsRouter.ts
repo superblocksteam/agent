@@ -32,6 +32,7 @@ import {
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 import { Value } from 'google-protobuf/google/protobuf/struct_pb';
 import P from 'pino';
+
 import { GrpcIntegrationExecutor } from './grpcIntegrationExecutor';
 import { SandboxStreamRequest } from './messageTransformer';
 import { TaskManagerClientError } from './taskManagerClientError';
@@ -93,9 +94,7 @@ export class PluginsRouter {
     const originalLogger = plugin.logger;
 
     try {
-      plugin.attachLogger(
-        this._logger.child({ pluginName, ...observabilityTags })
-      );
+      plugin.attachLogger(this._logger.child({ pluginName, ...observabilityTags }));
       return await plugin.setupAndExecute(pluginProps);
     } finally {
       plugin.attachLogger(originalLogger);
@@ -126,9 +125,7 @@ export class PluginsRouter {
     const originalLogger = plugin.logger;
 
     try {
-      plugin.attachLogger(
-        this._logger.child({ pluginName, ...observabilityTags })
-      );
+      plugin.attachLogger(this._logger.child({ pluginName, ...observabilityTags }));
       await plugin.stream(
         {
           ...{ mutableOutput: new ExecutionOutput() },
