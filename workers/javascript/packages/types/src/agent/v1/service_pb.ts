@@ -508,6 +508,16 @@ export class AuditLogRequest_AuditLog extends Message<AuditLogRequest_AuditLog> 
    */
   targetName?: string;
 
+  /**
+   * @generated from field: optional agent.v1.AuditLogRequest.AuditLog.IntegrationQueryContext integration_query_context = 16;
+   */
+  integrationQueryContext?: AuditLogRequest_AuditLog_IntegrationQueryContext;
+
+  /**
+   * @generated from field: agent.v1.AuditLogRequest.AuditLog.IntegrationQueryTiming integration_query_timing = 17;
+   */
+  integrationQueryTiming?: AuditLogRequest_AuditLog_IntegrationQueryTiming;
+
   constructor(data?: PartialMessage<AuditLogRequest_AuditLog>) {
     super();
     proto3.util.initPartial(data, this);
@@ -531,6 +541,8 @@ export class AuditLogRequest_AuditLog extends Message<AuditLogRequest_AuditLog> 
     { no: 13, name: "api_timing", kind: "message", T: AuditLogRequest_AuditLog_ApiTiming },
     { no: 14, name: "user_type", kind: "enum", T: proto3.getEnumType(UserType), opt: true },
     { no: 15, name: "targetName", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 16, name: "integration_query_context", kind: "message", T: AuditLogRequest_AuditLog_IntegrationQueryContext, opt: true },
+    { no: 17, name: "integration_query_timing", kind: "message", T: AuditLogRequest_AuditLog_IntegrationQueryTiming },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AuditLogRequest_AuditLog {
@@ -627,11 +639,17 @@ export enum AuditLogRequest_AuditLog_AuditLogEventType {
    * @generated from enum value: AUDIT_LOG_EVENT_TYPE_API_RUN = 1;
    */
   API_RUN = 1,
+
+  /**
+   * @generated from enum value: AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY = 2;
+   */
+  INTEGRATION_QUERY = 2,
 }
 // Retrieve enum metadata with: proto3.getEnumType(AuditLogRequest_AuditLog_AuditLogEventType)
 proto3.util.setEnumType(AuditLogRequest_AuditLog_AuditLogEventType, "agent.v1.AuditLogRequest.AuditLog.AuditLogEventType", [
   { no: 0, name: "AUDIT_LOG_EVENT_TYPE_UNSPECIFIED" },
   { no: 1, name: "AUDIT_LOG_EVENT_TYPE_API_RUN" },
+  { no: 2, name: "AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY" },
 ]);
 
 /**
@@ -711,6 +729,92 @@ export class AuditLogRequest_AuditLog_ApiTiming extends Message<AuditLogRequest_
 
   static equals(a: AuditLogRequest_AuditLog_ApiTiming | PlainMessage<AuditLogRequest_AuditLog_ApiTiming> | undefined, b: AuditLogRequest_AuditLog_ApiTiming | PlainMessage<AuditLogRequest_AuditLog_ApiTiming> | undefined): boolean {
     return proto3.util.equals(AuditLogRequest_AuditLog_ApiTiming, a, b);
+  }
+}
+
+/**
+ * @generated from message agent.v1.AuditLogRequest.AuditLog.IntegrationQueryContext
+ */
+export class AuditLogRequest_AuditLog_IntegrationQueryContext extends Message<AuditLogRequest_AuditLog_IntegrationQueryContext> {
+  /**
+   * @generated from field: string integration_id = 1;
+   */
+  integrationId = "";
+
+  /**
+   * @generated from field: optional string plugin_type = 2;
+   */
+  pluginType?: string;
+
+  constructor(data?: PartialMessage<AuditLogRequest_AuditLog_IntegrationQueryContext>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "agent.v1.AuditLogRequest.AuditLog.IntegrationQueryContext";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "integration_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "plugin_type", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AuditLogRequest_AuditLog_IntegrationQueryContext {
+    return new AuditLogRequest_AuditLog_IntegrationQueryContext().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AuditLogRequest_AuditLog_IntegrationQueryContext {
+    return new AuditLogRequest_AuditLog_IntegrationQueryContext().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AuditLogRequest_AuditLog_IntegrationQueryContext {
+    return new AuditLogRequest_AuditLog_IntegrationQueryContext().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AuditLogRequest_AuditLog_IntegrationQueryContext | PlainMessage<AuditLogRequest_AuditLog_IntegrationQueryContext> | undefined, b: AuditLogRequest_AuditLog_IntegrationQueryContext | PlainMessage<AuditLogRequest_AuditLog_IntegrationQueryContext> | undefined): boolean {
+    return proto3.util.equals(AuditLogRequest_AuditLog_IntegrationQueryContext, a, b);
+  }
+}
+
+/**
+ * @generated from message agent.v1.AuditLogRequest.AuditLog.IntegrationQueryTiming
+ */
+export class AuditLogRequest_AuditLog_IntegrationQueryTiming extends Message<AuditLogRequest_AuditLog_IntegrationQueryTiming> {
+  /**
+   * @generated from field: int64 start = 1;
+   */
+  start = protoInt64.zero;
+
+  /**
+   * @generated from field: optional int64 end = 2;
+   */
+  end?: bigint;
+
+  constructor(data?: PartialMessage<AuditLogRequest_AuditLog_IntegrationQueryTiming>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "agent.v1.AuditLogRequest.AuditLog.IntegrationQueryTiming";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "start", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 2, name: "end", kind: "scalar", T: 3 /* ScalarType.INT64 */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AuditLogRequest_AuditLog_IntegrationQueryTiming {
+    return new AuditLogRequest_AuditLog_IntegrationQueryTiming().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AuditLogRequest_AuditLog_IntegrationQueryTiming {
+    return new AuditLogRequest_AuditLog_IntegrationQueryTiming().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AuditLogRequest_AuditLog_IntegrationQueryTiming {
+    return new AuditLogRequest_AuditLog_IntegrationQueryTiming().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AuditLogRequest_AuditLog_IntegrationQueryTiming | PlainMessage<AuditLogRequest_AuditLog_IntegrationQueryTiming> | undefined, b: AuditLogRequest_AuditLog_IntegrationQueryTiming | PlainMessage<AuditLogRequest_AuditLog_IntegrationQueryTiming> | undefined): boolean {
+    return proto3.util.equals(AuditLogRequest_AuditLog_IntegrationQueryTiming, a, b);
   }
 }
 

@@ -110,6 +110,8 @@ message AuditLogRequest {
     ApiTiming api_timing = 13;
     optional common.v1.UserType user_type = 14;
     optional string targetName = 15;
+    optional IntegrationQueryContext integration_query_context = 16;
+    IntegrationQueryTiming integration_query_timing = 17;
 
     enum ApiRunStatus {
       API_RUN_STATUS_UNSPECIFIED = 0;
@@ -128,6 +130,7 @@ message AuditLogRequest {
     enum AuditLogEventType {
       AUDIT_LOG_EVENT_TYPE_UNSPECIFIED = 0;
       AUDIT_LOG_EVENT_TYPE_API_RUN = 1;
+      AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY = 2;
     }
 
     message ApiLocationContext {
@@ -135,6 +138,16 @@ message AuditLogRequest {
     }
 
     message ApiTiming {
+      int64 start = 1;
+      optional int64 end = 2;
+    }
+
+    message IntegrationQueryContext {
+      string integration_id = 1;
+      optional string plugin_type = 2;
+    }
+
+    message IntegrationQueryTiming {
       int64 start = 1;
       optional int64 end = 2;
     }

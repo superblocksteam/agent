@@ -184,10 +184,18 @@ func (l *audit) extractAuditLogFromFields(fields map[string]interface{}) (*agent
 	}
 
 	auditLog := &agentv1.AuditLogRequest_AuditLog{
-		Id:        id,
-		Type:      agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_API_RUN,
-		ApiTiming: &agentv1.AuditLogRequest_AuditLog_ApiTiming{},
-		AgentId:   &l.options.AgentId,
+		Id:      id,
+		Type:    agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_API_RUN,
+		AgentId: &l.options.AgentId,
+	}
+
+	if eventTypeString, ok := fields["type"].(string); ok {
+		switch eventTypeString {
+		case agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_API_RUN.String():
+			auditLog.Type = agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_API_RUN
+		case agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY.String():
+			auditLog.Type = agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY
+		}
 	}
 
 	entityId, ok := fields["entityId"].(string)
@@ -204,6 +212,8 @@ func (l *audit) extractAuditLogFromFields(fields map[string]interface{}) (*agent
 			auditLog.EntityType = agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_WORKFLOW
 		case agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_SCHEDULED_JOB.String():
 			auditLog.EntityType = agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_SCHEDULED_JOB
+		case agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_STEP.String():
+			auditLog.EntityType = agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_STEP
 		}
 	}
 
@@ -240,9 +250,11 @@ func (l *audit) extractAuditLogFromFields(fields map[string]interface{}) (*agent
 		auditLog.TargetName = &exportName
 	}
 
-	start, ok := fields["start"].(int64)
-	if ok {
-		auditLog.ApiTiming.Start = start
+	var apiTiming *agentv1.AuditLogRequest_AuditLog_ApiTiming
+	if auditLog.Type == agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_API_RUN {
+		if start, ok := fields["start"].(int64); ok {
+			apiTiming = &agentv1.AuditLogRequest_AuditLog_ApiTiming{Start: start}
+		}
 	}
 
 	organizationId, ok := fields["organizationId"].(string)
@@ -278,9 +290,32 @@ func (l *audit) extractAuditLogFromFields(fields map[string]interface{}) (*agent
 		auditLog.Error = &errorString
 	}
 
-	end, ok := fields["end"].(int64)
-	if ok {
-		auditLog.ApiTiming.End = &end
+	if apiTiming != nil {
+		if end, ok := fields["end"].(int64); ok {
+			apiTiming.End = &end
+		}
+		auditLog.ApiTiming = apiTiming
+	}
+
+	integrationId, hasIntegrationId := fields["integrationId"].(string)
+	pluginType, hasPluginType := fields["pluginType"].(string)
+	if hasIntegrationId || hasPluginType {
+		auditLog.IntegrationQueryContext = &agentv1.AuditLogRequest_AuditLog_IntegrationQueryContext{}
+		if hasIntegrationId {
+			auditLog.IntegrationQueryContext.IntegrationId = integrationId
+		}
+		if hasPluginType {
+			auditLog.IntegrationQueryContext.PluginType = &pluginType
+		}
+	}
+
+	if integrationQueryStart, ok := fields["integrationQueryStart"].(int64); ok {
+		auditLog.IntegrationQueryTiming = &agentv1.AuditLogRequest_AuditLog_IntegrationQueryTiming{
+			Start: integrationQueryStart,
+		}
+		if integrationQueryEnd, ok := fields["integrationQueryEnd"].(int64); ok {
+			auditLog.IntegrationQueryTiming.End = &integrationQueryEnd
+		}
 	}
 
 	return auditLog, true

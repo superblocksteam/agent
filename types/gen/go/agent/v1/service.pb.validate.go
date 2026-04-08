@@ -1331,6 +1331,35 @@ func (m *AuditLogRequest_AuditLog) validate(all bool) error {
 		}
 	}
 
+	if all {
+		switch v := interface{}(m.GetIntegrationQueryTiming()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AuditLogRequest_AuditLogValidationError{
+					field:  "IntegrationQueryTiming",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AuditLogRequest_AuditLogValidationError{
+					field:  "IntegrationQueryTiming",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetIntegrationQueryTiming()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AuditLogRequest_AuditLogValidationError{
+				field:  "IntegrationQueryTiming",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if m.AgentId != nil {
 		// no validation rules for AgentId
 	}
@@ -1382,6 +1411,39 @@ func (m *AuditLogRequest_AuditLog) validate(all bool) error {
 
 	if m.TargetName != nil {
 		// no validation rules for TargetName
+	}
+
+	if m.IntegrationQueryContext != nil {
+
+		if all {
+			switch v := interface{}(m.GetIntegrationQueryContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, AuditLogRequest_AuditLogValidationError{
+						field:  "IntegrationQueryContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, AuditLogRequest_AuditLogValidationError{
+						field:  "IntegrationQueryContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetIntegrationQueryContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return AuditLogRequest_AuditLogValidationError{
+					field:  "IntegrationQueryContext",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -1690,3 +1752,239 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = AuditLogRequest_AuditLog_ApiTimingValidationError{}
+
+// Validate checks the field values on
+// AuditLogRequest_AuditLog_IntegrationQueryContext with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *AuditLogRequest_AuditLog_IntegrationQueryContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// AuditLogRequest_AuditLog_IntegrationQueryContext with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in
+// AuditLogRequest_AuditLog_IntegrationQueryContextMultiError, or nil if none found.
+func (m *AuditLogRequest_AuditLog_IntegrationQueryContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AuditLogRequest_AuditLog_IntegrationQueryContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for IntegrationId
+
+	if m.PluginType != nil {
+		// no validation rules for PluginType
+	}
+
+	if len(errors) > 0 {
+		return AuditLogRequest_AuditLog_IntegrationQueryContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// AuditLogRequest_AuditLog_IntegrationQueryContextMultiError is an error
+// wrapping multiple validation errors returned by
+// AuditLogRequest_AuditLog_IntegrationQueryContext.ValidateAll() if the
+// designated constraints aren't met.
+type AuditLogRequest_AuditLog_IntegrationQueryContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AuditLogRequest_AuditLog_IntegrationQueryContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AuditLogRequest_AuditLog_IntegrationQueryContextMultiError) AllErrors() []error { return m }
+
+// AuditLogRequest_AuditLog_IntegrationQueryContextValidationError is the
+// validation error returned by
+// AuditLogRequest_AuditLog_IntegrationQueryContext.Validate if the designated
+// constraints aren't met.
+type AuditLogRequest_AuditLog_IntegrationQueryContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AuditLogRequest_AuditLog_IntegrationQueryContextValidationError) Field() string {
+	return e.field
+}
+
+// Reason function returns reason value.
+func (e AuditLogRequest_AuditLog_IntegrationQueryContextValidationError) Reason() string {
+	return e.reason
+}
+
+// Cause function returns cause value.
+func (e AuditLogRequest_AuditLog_IntegrationQueryContextValidationError) Cause() error {
+	return e.cause
+}
+
+// Key function returns key value.
+func (e AuditLogRequest_AuditLog_IntegrationQueryContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AuditLogRequest_AuditLog_IntegrationQueryContextValidationError) ErrorName() string {
+	return "AuditLogRequest_AuditLog_IntegrationQueryContextValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AuditLogRequest_AuditLog_IntegrationQueryContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAuditLogRequest_AuditLog_IntegrationQueryContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AuditLogRequest_AuditLog_IntegrationQueryContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AuditLogRequest_AuditLog_IntegrationQueryContextValidationError{}
+
+// Validate checks the field values on
+// AuditLogRequest_AuditLog_IntegrationQueryTiming with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *AuditLogRequest_AuditLog_IntegrationQueryTiming) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// AuditLogRequest_AuditLog_IntegrationQueryTiming with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in
+// AuditLogRequest_AuditLog_IntegrationQueryTimingMultiError, or nil if none found.
+func (m *AuditLogRequest_AuditLog_IntegrationQueryTiming) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AuditLogRequest_AuditLog_IntegrationQueryTiming) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Start
+
+	if m.End != nil {
+		// no validation rules for End
+	}
+
+	if len(errors) > 0 {
+		return AuditLogRequest_AuditLog_IntegrationQueryTimingMultiError(errors)
+	}
+
+	return nil
+}
+
+// AuditLogRequest_AuditLog_IntegrationQueryTimingMultiError is an error
+// wrapping multiple validation errors returned by
+// AuditLogRequest_AuditLog_IntegrationQueryTiming.ValidateAll() if the
+// designated constraints aren't met.
+type AuditLogRequest_AuditLog_IntegrationQueryTimingMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AuditLogRequest_AuditLog_IntegrationQueryTimingMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AuditLogRequest_AuditLog_IntegrationQueryTimingMultiError) AllErrors() []error { return m }
+
+// AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError is the
+// validation error returned by
+// AuditLogRequest_AuditLog_IntegrationQueryTiming.Validate if the designated
+// constraints aren't met.
+type AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError) Field() string {
+	return e.field
+}
+
+// Reason function returns reason value.
+func (e AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError) Reason() string {
+	return e.reason
+}
+
+// Cause function returns cause value.
+func (e AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError) ErrorName() string {
+	return "AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAuditLogRequest_AuditLog_IntegrationQueryTiming.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AuditLogRequest_AuditLog_IntegrationQueryTimingValidationError{}
