@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Duration, Message, proto3, Struct, Timestamp } from "@bufbuild/protobuf";
-import { Request_Data_Data_Props, Request_Data_Data_Quota, Request_Data_Pinned } from "../../transport/v1/transport_pb";
+import { Performance, Request_Data_Data_Props, Request_Data_Data_Quota, Request_Data_Pinned } from "../../transport/v1/transport_pb";
 import { IntegrationDiagnostic, OutputOld } from "../../api/v1/event_pb";
 import { Error } from "../../common/v1/errors_pb";
 
@@ -171,6 +171,13 @@ export class ExecuteResponse extends Message<ExecuteResponse> {
    */
   diagnostics: IntegrationDiagnostic[] = [];
 
+  /**
+   * Worker-side performance metrics (bootstrap timing, plugin execution, etc.).
+   *
+   * @generated from field: transport.v1.Performance performance = 9;
+   */
+  performance?: Performance;
+
   constructor(data?: PartialMessage<ExecuteResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -187,6 +194,7 @@ export class ExecuteResponse extends Message<ExecuteResponse> {
     { no: 6, name: "executionTime", kind: "message", T: Duration },
     { no: 7, name: "structuredLog", kind: "message", T: StructuredLog, repeated: true },
     { no: 8, name: "diagnostics", kind: "message", T: IntegrationDiagnostic, repeated: true },
+    { no: 9, name: "performance", kind: "message", T: Performance },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ExecuteResponse {

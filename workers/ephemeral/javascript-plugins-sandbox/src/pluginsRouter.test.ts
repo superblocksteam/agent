@@ -26,6 +26,86 @@ describe('PluginsRouter', () => {
     router = new PluginsRouter(logger as never, {} as never);
   });
 
+  it('copies bootstrap timing from output to perf and attaches perf to output', async () => {
+    const mockOutput = {
+      _bootstrapTiming: {
+        sdkImportMs: 12.5,
+        bridgeSetupMs: 8.3,
+        requireRootMs: 3.1,
+        codeExecutionMs: 25.7
+      }
+    };
+    const plugin = {
+      logger,
+      attachLogger: jest.fn(function (this: { logger: unknown }, nextLogger: unknown) {
+        this.logger = nextLogger;
+      }),
+      setupAndExecute: jest.fn(async () => mockOutput)
+    };
+    router.registerPlugin('postgres', plugin as never);
+
+    const result = await router.handleExecuteEvent(
+      'postgres',
+      {
+        props: {
+          actionConfiguration: {},
+          bindingKeys: [],
+          datasourceConfiguration: {},
+          executionId: 'exec-bt',
+          files: [],
+          redactedDatasourceConfiguration: {},
+          stepName: 'Step1',
+          version: 'v2',
+          $fileServerUrl: 'http://files',
+          $flagWorker: true
+        }
+      },
+      kvStore as never
+    );
+
+    // Verify bootstrap timing was converted from ms to µs on the perf object
+    const output = result as Record<string, unknown>;
+    const perf = output._performance as Record<string, { value: number }>;
+    expect(perf.bootstrapSdkImport).toEqual({ value: 12500 });
+    expect(perf.bootstrapBridgeSetup).toEqual({ value: 8300 });
+    expect(perf.bootstrapRequireRoot).toEqual({ value: 3100 });
+    expect(perf.bootstrapCodeExecution).toEqual({ value: 25700 });
+  });
+
+  it('does not set bootstrap timing when output lacks _bootstrapTiming', async () => {
+    const plugin = {
+      logger,
+      attachLogger: jest.fn(function (this: { logger: unknown }, nextLogger: unknown) {
+        this.logger = nextLogger;
+      }),
+      setupAndExecute: jest.fn(async () => ({}))
+    };
+    router.registerPlugin('postgres', plugin as never);
+
+    const result = await router.handleExecuteEvent(
+      'postgres',
+      {
+        props: {
+          actionConfiguration: {},
+          bindingKeys: [],
+          datasourceConfiguration: {},
+          executionId: 'exec-nobt',
+          files: [],
+          redactedDatasourceConfiguration: {},
+          stepName: 'Step1',
+          version: 'v2',
+          $fileServerUrl: 'http://files',
+          $flagWorker: true
+        }
+      },
+      kvStore as never
+    );
+
+    const output = result as Record<string, unknown>;
+    const perf = output._performance as Record<string, { value?: number }>;
+    expect(perf.bootstrapSdkImport.value).toBeUndefined();
+  });
+
   it('copies actionConfiguration.preparedStatementContext to execution contexts', async () => {
     const plugin = {
       logger,

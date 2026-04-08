@@ -378,6 +378,31 @@
         }
       }
     },
+    "PerformanceObservable": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "number",
+          "format": "double"
+        },
+        "end": {
+          "type": "number",
+          "format": "double"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        },
+        "bytes": {
+          "type": "number",
+          "format": "double"
+        },
+        "estimate": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
     "PropsBinding": {
       "type": "object",
       "properties": {
@@ -514,6 +539,45 @@
       "default": "NULL_VALUE",
       "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
     },
+    "transportv1Performance": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "boolean"
+        },
+        "pluginExecution": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "queueRequest": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "queueResponse": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "kvStoreFetch": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "kvStorePush": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "total": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "bootstrapSdkImport": {
+          "$ref": "#/definitions/PerformanceObservable",
+          "description": "Bootstrap phase breakdown for SDK API (code-mode) executions.\nPopulated by the javascriptsdkapi worker to attribute time within plugin_execution."
+        },
+        "bootstrapBridgeSetup": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "bootstrapRequireRoot": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "bootstrapCodeExecution": {
+          "$ref": "#/definitions/PerformanceObservable"
+        }
+      }
+    },
     "v1Broker": {
       "type": "object",
       "properties": {
@@ -604,6 +668,10 @@
             "$ref": "#/definitions/v1IntegrationDiagnostic"
           },
           "description": "Per-integration-call diagnostics captured when include_diagnostics was set."
+        },
+        "performance": {
+          "$ref": "#/definitions/transportv1Performance",
+          "description": "Worker-side performance metrics (bootstrap timing, plugin execution, etc.)."
         }
       }
     },

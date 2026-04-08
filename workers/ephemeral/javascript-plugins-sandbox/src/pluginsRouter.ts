@@ -95,7 +95,25 @@ export class PluginsRouter {
 
     try {
       plugin.attachLogger(this._logger.child({ pluginName, ...observabilityTags }));
-      return await plugin.setupAndExecute(pluginProps);
+      const output = await plugin.setupAndExecute(pluginProps);
+
+      // Copy worker-side bootstrap phase timing into the performance
+      // object so it flows back to the orchestrator via the Performance proto.
+      const bt = (output as unknown as Record<string, unknown>)._bootstrapTiming as
+        | { sdkImportMs: number; bridgeSetupMs: number; requireRootMs: number; codeExecutionMs: number }
+        | undefined;
+      if (bt) {
+        perf.bootstrapSdkImport = { value: bt.sdkImportMs * 1000 };
+        perf.bootstrapBridgeSetup = { value: bt.bridgeSetupMs * 1000 };
+        perf.bootstrapRequireRoot = { value: bt.requireRootMs * 1000 };
+        perf.bootstrapCodeExecution = { value: bt.codeExecutionMs * 1000 };
+      }
+
+      // Attach performance to the output so the message transformer can
+      // serialize it into the ExecuteResponse proto.
+      (output as unknown as Record<string, unknown>)._performance = perf;
+
+      return output;
     } finally {
       plugin.attachLogger(originalLogger);
     }

@@ -204,9 +204,17 @@ func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*a
 		ctx = constants.WithIncludeDiagnostics(ctx, true)
 	}
 
+	var options *apiv1.ExecuteRequest_Options
+	if req.GetViewMode() == apiv1.ViewMode_VIEW_MODE_EDIT {
+		options = &apiv1.ExecuteRequest_Options{
+			IncludeEvents: true,
+		}
+	}
+
 	return s.await(ctx, &apiv1.ExecuteRequest{
-		Inputs: req.GetInputs(),
-		Files:  req.GetFiles(),
+		Options: options,
+		Inputs:  req.GetInputs(),
+		Files:   req.GetFiles(),
 		Request: &apiv1.ExecuteRequest_FetchCode_{
 			FetchCode: fetchCode,
 		},
@@ -1021,6 +1029,11 @@ func (s *server) executeCodeMode(
 		return nil, err
 	}
 
+	// Span covers bundle extraction and user context extraction — the
+	// orchestrator setup between fetch return and the first phased span.
+	setupCtx, setupSpan := tracer.Tracer().Start(ctx, "code_mode.setup")
+	setupSpan.SetAttributes(attribute.String("execution_id", executionID))
+
 	bundle := ""
 	if rawResult != nil {
 		if f := rawResult.GetFields()["bundle"]; f != nil {
@@ -1032,15 +1045,21 @@ func (s *server) executeCodeMode(
 		if rawResult == nil {
 			detail = "nil rawResult"
 		}
+		setupSpan.SetAttributes(attribute.String("error", detail))
+		setupSpan.End()
 		logger.Error("missing bundle in rawResult", zap.String("detail", detail))
 		return sendError(fmt.Errorf("missing bundle in api-2.0 response: %s", detail))
 	}
+	setupSpan.SetAttributes(attribute.Int("bundle_size_bytes", len(bundle)))
 
-	user, err := extractUserContext(ctx)
+	user, err := extractUserContext(setupCtx)
 	if err != nil {
+		setupSpan.SetAttributes(attribute.String("error", err.Error()))
+		setupSpan.End()
 		logger.Error("could not extract user context", zap.Error(err))
 		return sendError(sberror.AuthorizationError(err))
 	}
+	setupSpan.End()
 
 	wrapperGenStart := time.Now()
 	wrapperScript, err := tracer.Observe[string](ctx, "code_mode.wrapper_gen", map[string]any{
@@ -1054,6 +1073,14 @@ func (s *server) executeCodeMode(
 		return sendError(err)
 	}
 	logger.Debug("code-mode phase timing", zap.String("phase", "wrapper_gen"), zap.Duration("duration", time.Since(wrapperGenStart)))
+
+	// Span covers JWT extraction, file validation, and file materialization —
+	// the request preparation between wrapper generation and variable persistence.
+	_, reqPrepSpan := tracer.Tracer().Start(ctx, "code_mode.request_prep")
+	reqPrepSpan.SetAttributes(
+		attribute.String("execution_id", executionID),
+		attribute.Int("num_files", len(req.GetFiles())),
+	)
 
 	// Extract JWT variants and browser cookies from gRPC metadata for proxied
 	// integration execution. The downstream integration fetch expects:
@@ -1092,6 +1119,8 @@ func (s *server) executeCodeMode(
 	}
 
 	if err := validateExecuteFileBindings(req.GetInputs(), req.GetFiles()); err != nil {
+		reqPrepSpan.SetAttributes(attribute.String("error", err.Error()))
+		reqPrepSpan.End()
 		logger.Error("invalid uploaded file bindings for code-mode", zap.Error(err))
 		return sendError(err)
 	}
@@ -1116,9 +1145,12 @@ func (s *server) executeCodeMode(
 
 	workerFiles, err = materializeExecuteFiles(req.GetFiles())
 	if err != nil {
+		reqPrepSpan.SetAttributes(attribute.String("error", err.Error()))
+		reqPrepSpan.End()
 		logger.Error("could not materialize uploaded files for code-mode", zap.Error(err))
 		return sendError(err)
 	}
+	reqPrepSpan.End()
 
 	varPersistStart := time.Now()
 	if _, err = tracer.Observe[any](ctx, "code_mode.variable_persist", map[string]any{
@@ -1205,8 +1237,22 @@ func (s *server) executeCodeMode(
 		"execution_id":      executionID,
 		"bundle_size_bytes": strconv.Itoa(len(bundle)),
 		"plugin_name":       sdkApiWorkerPluginName,
-	}, func(ctx context.Context, _ trace.Span) (workerResult, error) {
+	}, func(ctx context.Context, span trace.Span) (workerResult, error) {
 		perf, oKey, wErr := s.Worker.Execute(ctx, sdkApiWorkerPluginName, workerData, workeroptions.OrganizationPlan(orgPlan), workeroptions.OrgId(orgIdFromContext))
+		if perf != nil {
+			if bs := perf.GetBootstrapSdkImport(); bs != nil {
+				span.SetAttributes(attribute.Float64("bootstrap.sdk_import_us", bs.GetValue()))
+			}
+			if bs := perf.GetBootstrapBridgeSetup(); bs != nil {
+				span.SetAttributes(attribute.Float64("bootstrap.bridge_setup_us", bs.GetValue()))
+			}
+			if bs := perf.GetBootstrapRequireRoot(); bs != nil {
+				span.SetAttributes(attribute.Float64("bootstrap.require_root_us", bs.GetValue()))
+			}
+			if bs := perf.GetBootstrapCodeExecution(); bs != nil {
+				span.SetAttributes(attribute.Float64("bootstrap.code_execution_us", bs.GetValue()))
+			}
+		}
 		return workerResult{perf: perf, outputKey: oKey}, wErr
 	}, nil)
 	workerPerf = wr.perf

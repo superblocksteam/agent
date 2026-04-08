@@ -13,6 +13,10 @@ export class StepPerformanceImpl implements StepPerformance, PerformanceAPI<Step
   public kvStoreFetch: Observable = {};
   public kvStorePush: Observable = {};
   public bindings: Wrapped<void, number> = { data: 0 };
+  public bootstrapSdkImport: Observable = {};
+  public bootstrapBridgeSetup: Observable = {};
+  public bootstrapRequireRoot: Observable = {};
+  public bootstrapCodeExecution: Observable = {};
 
   constructor(perf?: Partial<StepPerformance>) {
     this.merge(perf);
@@ -36,6 +40,10 @@ export class StepPerformanceImpl implements StepPerformance, PerformanceAPI<Step
       this.kvStorePush = { ...this.kvStorePush, ...perf.kvStorePush };
       this.bindings.data = this.bindings.data += perf.bindings?.data || 0;
       this.error = perf.error || false;
+      this.bootstrapSdkImport = { ...this.bootstrapSdkImport, ...perf.bootstrapSdkImport };
+      this.bootstrapBridgeSetup = { ...this.bootstrapBridgeSetup, ...perf.bootstrapBridgeSetup };
+      this.bootstrapRequireRoot = { ...this.bootstrapRequireRoot, ...perf.bootstrapRequireRoot };
+      this.bootstrapCodeExecution = { ...this.bootstrapCodeExecution, ...perf.bootstrapCodeExecution };
     }
 
     return this.process();

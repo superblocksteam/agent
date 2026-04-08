@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 )
@@ -114,6 +115,50 @@ func TestBuildPerformance(t *testing.T) {
 			},
 			check: func(t *testing.T, r *BuildPerformanceResult) {
 				assert.Nil(t, r.perf.Custom, "custom should be nil when all values are zero")
+			},
+		},
+		{
+			name:     "bootstrap timing populated from transport fields",
+			startMs:  1000,
+			finishMs: 1100,
+			perf: &transportv1.Performance{
+				PluginExecution:        &transportv1.Performance_Observable{Value: 80_000},
+				BootstrapSdkImport:     &transportv1.Performance_Observable{Value: 25_000}, // 25ms
+				BootstrapBridgeSetup:   &transportv1.Performance_Observable{Value: 10_000}, // 10ms
+				BootstrapRequireRoot:   &transportv1.Performance_Observable{Value: 5_000},  // 5ms
+				BootstrapCodeExecution: &transportv1.Performance_Observable{Value: 40_000}, // 40ms
+			},
+			check: func(t *testing.T, r *BuildPerformanceResult) {
+				require.NotNil(t, r.perf.BootstrapTiming)
+				assert.Equal(t, int64(25), r.perf.BootstrapTiming.SdkImportMs)
+				assert.Equal(t, int64(10), r.perf.BootstrapTiming.BridgeSetupMs)
+				assert.Equal(t, int64(5), r.perf.BootstrapTiming.RequireRootMs)
+				assert.Equal(t, int64(40), r.perf.BootstrapTiming.CodeExecutionMs)
+			},
+		},
+		{
+			name:     "bootstrap timing nil when no bootstrap fields set",
+			startMs:  1000,
+			finishMs: 1050,
+			perf: &transportv1.Performance{
+				PluginExecution: &transportv1.Performance_Observable{Value: 30_000},
+			},
+			check: func(t *testing.T, r *BuildPerformanceResult) {
+				assert.Nil(t, r.perf.BootstrapTiming, "bootstrap timing should be nil when worker doesn't report it")
+			},
+		},
+		{
+			name:     "bootstrap timing nil when all bootstrap values are sub-millisecond",
+			startMs:  1000,
+			finishMs: 1050,
+			perf: &transportv1.Performance{
+				BootstrapSdkImport:     &transportv1.Performance_Observable{Value: 500}, // 0.5ms → 0
+				BootstrapBridgeSetup:   &transportv1.Performance_Observable{Value: 200}, // 0.2ms → 0
+				BootstrapRequireRoot:   &transportv1.Performance_Observable{Value: 100}, // 0.1ms → 0
+				BootstrapCodeExecution: &transportv1.Performance_Observable{Value: 900}, // 0.9ms → 0
+			},
+			check: func(t *testing.T, r *BuildPerformanceResult) {
+				assert.Nil(t, r.perf.BootstrapTiming, "bootstrap timing should be nil when all values truncate to zero")
 			},
 		},
 	} {

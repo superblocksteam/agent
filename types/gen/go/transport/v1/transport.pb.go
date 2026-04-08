@@ -45,6 +45,12 @@ type Performance struct {
 	KvStoreFetch    *Performance_Observable `protobuf:"bytes,5,opt,name=kv_store_fetch,json=kvStoreFetch,proto3" json:"kv_store_fetch,omitempty"`
 	KvStorePush     *Performance_Observable `protobuf:"bytes,6,opt,name=kv_store_push,json=kvStorePush,proto3" json:"kv_store_push,omitempty"`
 	Total           *Performance_Observable `protobuf:"bytes,7,opt,name=total,proto3" json:"total,omitempty"`
+	// Bootstrap phase breakdown for SDK API (code-mode) executions.
+	// Populated by the javascriptsdkapi worker to attribute time within plugin_execution.
+	BootstrapSdkImport     *Performance_Observable `protobuf:"bytes,8,opt,name=bootstrap_sdk_import,json=bootstrapSdkImport,proto3" json:"bootstrap_sdk_import,omitempty"`
+	BootstrapBridgeSetup   *Performance_Observable `protobuf:"bytes,9,opt,name=bootstrap_bridge_setup,json=bootstrapBridgeSetup,proto3" json:"bootstrap_bridge_setup,omitempty"`
+	BootstrapRequireRoot   *Performance_Observable `protobuf:"bytes,10,opt,name=bootstrap_require_root,json=bootstrapRequireRoot,proto3" json:"bootstrap_require_root,omitempty"`
+	BootstrapCodeExecution *Performance_Observable `protobuf:"bytes,11,opt,name=bootstrap_code_execution,json=bootstrapCodeExecution,proto3" json:"bootstrap_code_execution,omitempty"`
 }
 
 func (x *Performance) Reset() {
@@ -124,6 +130,34 @@ func (x *Performance) GetKvStorePush() *Performance_Observable {
 func (x *Performance) GetTotal() *Performance_Observable {
 	if x != nil {
 		return x.Total
+	}
+	return nil
+}
+
+func (x *Performance) GetBootstrapSdkImport() *Performance_Observable {
+	if x != nil {
+		return x.BootstrapSdkImport
+	}
+	return nil
+}
+
+func (x *Performance) GetBootstrapBridgeSetup() *Performance_Observable {
+	if x != nil {
+		return x.BootstrapBridgeSetup
+	}
+	return nil
+}
+
+func (x *Performance) GetBootstrapRequireRoot() *Performance_Observable {
+	if x != nil {
+		return x.BootstrapRequireRoot
+	}
+	return nil
+}
+
+func (x *Performance) GetBootstrapCodeExecution() *Performance_Observable {
+	if x != nil {
+		return x.BootstrapCodeExecution
 	}
 	return nil
 }
@@ -1524,7 +1558,7 @@ var file_transport_v1_transport_proto_rawDesc = []byte{
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x2f, 0x76, 0x31,
 	0x2f, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x17, 0x76, 0x61,
 	0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x2f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xdc, 0x04, 0x0a, 0x0b, 0x50, 0x65, 0x72, 0x66, 0x6f, 0x72,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xcc, 0x07, 0x0a, 0x0b, 0x50, 0x65, 0x72, 0x66, 0x6f, 0x72,
 	0x6d, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x4f, 0x0a, 0x10, 0x70,
 	0x6c, 0x75, 0x67, 0x69, 0x6e, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x18,
@@ -1554,7 +1588,30 @@ var file_transport_v1_transport_proto_rawDesc = []byte{
 	0x74, 0x61, 0x6c, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x74, 0x72, 0x61, 0x6e,
 	0x73, 0x70, 0x6f, 0x72, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65, 0x72, 0x66, 0x6f, 0x72, 0x6d,
 	0x61, 0x6e, 0x63, 0x65, 0x2e, 0x4f, 0x62, 0x73, 0x65, 0x72, 0x76, 0x61, 0x62, 0x6c, 0x65, 0x52,
-	0x05, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x1a, 0x7c, 0x0a, 0x0a, 0x4f, 0x62, 0x73, 0x65, 0x72, 0x76,
+	0x05, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x12, 0x56, 0x0a, 0x14, 0x62, 0x6f, 0x6f, 0x74, 0x73, 0x74,
+	0x72, 0x61, 0x70, 0x5f, 0x73, 0x64, 0x6b, 0x5f, 0x69, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x08,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x70, 0x6f, 0x72, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65, 0x72, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e,
+	0x4f, 0x62, 0x73, 0x65, 0x72, 0x76, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x12, 0x62, 0x6f, 0x6f, 0x74,
+	0x73, 0x74, 0x72, 0x61, 0x70, 0x53, 0x64, 0x6b, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x5a,
+	0x0a, 0x16, 0x62, 0x6f, 0x6f, 0x74, 0x73, 0x74, 0x72, 0x61, 0x70, 0x5f, 0x62, 0x72, 0x69, 0x64,
+	0x67, 0x65, 0x5f, 0x73, 0x65, 0x74, 0x75, 0x70, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24,
+	0x2e, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x70, 0x6f, 0x72, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65,
+	0x72, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x4f, 0x62, 0x73, 0x65, 0x72, 0x76,
+	0x61, 0x62, 0x6c, 0x65, 0x52, 0x14, 0x62, 0x6f, 0x6f, 0x74, 0x73, 0x74, 0x72, 0x61, 0x70, 0x42,
+	0x72, 0x69, 0x64, 0x67, 0x65, 0x53, 0x65, 0x74, 0x75, 0x70, 0x12, 0x5a, 0x0a, 0x16, 0x62, 0x6f,
+	0x6f, 0x74, 0x73, 0x74, 0x72, 0x61, 0x70, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x5f,
+	0x72, 0x6f, 0x6f, 0x74, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x74, 0x72, 0x61,
+	0x6e, 0x73, 0x70, 0x6f, 0x72, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65, 0x72, 0x66, 0x6f, 0x72,
+	0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x4f, 0x62, 0x73, 0x65, 0x72, 0x76, 0x61, 0x62, 0x6c, 0x65,
+	0x52, 0x14, 0x62, 0x6f, 0x6f, 0x74, 0x73, 0x74, 0x72, 0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x69,
+	0x72, 0x65, 0x52, 0x6f, 0x6f, 0x74, 0x12, 0x5e, 0x0a, 0x18, 0x62, 0x6f, 0x6f, 0x74, 0x73, 0x74,
+	0x72, 0x61, 0x70, 0x5f, 0x63, 0x6f, 0x64, 0x65, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x74, 0x72, 0x61, 0x6e, 0x73,
+	0x70, 0x6f, 0x72, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65, 0x72, 0x66, 0x6f, 0x72, 0x6d, 0x61,
+	0x6e, 0x63, 0x65, 0x2e, 0x4f, 0x62, 0x73, 0x65, 0x72, 0x76, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x16,
+	0x62, 0x6f, 0x6f, 0x74, 0x73, 0x74, 0x72, 0x61, 0x70, 0x43, 0x6f, 0x64, 0x65, 0x45, 0x78, 0x65,
+	0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x7c, 0x0a, 0x0a, 0x4f, 0x62, 0x73, 0x65, 0x72, 0x76,
 	0x61, 0x62, 0x6c, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x72, 0x74, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x01, 0x52, 0x05, 0x73, 0x74, 0x61, 0x72, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x65, 0x6e,
 	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x03, 0x65, 0x6e, 0x64, 0x12, 0x14, 0x0a, 0x05,
@@ -1901,53 +1958,57 @@ var file_transport_v1_transport_proto_depIdxs = []int32{
 	7,  // 3: transport.v1.Performance.kv_store_fetch:type_name -> transport.v1.Performance.Observable
 	7,  // 4: transport.v1.Performance.kv_store_push:type_name -> transport.v1.Performance.Observable
 	7,  // 5: transport.v1.Performance.total:type_name -> transport.v1.Performance.Observable
-	22, // 6: transport.v1.Variable.type:type_name -> api.v1.Variables.Type
-	23, // 7: transport.v1.Variable.mode:type_name -> api.v1.Variables.Mode
-	8,  // 8: transport.v1.Observability.baggage:type_name -> transport.v1.Observability.BaggageEntry
-	9,  // 9: transport.v1.Request.data:type_name -> transport.v1.Request.Data
-	18, // 10: transport.v1.Response.data:type_name -> transport.v1.Response.Data
-	24, // 11: transport.v1.Response.pinned:type_name -> common.v1.Error
-	25, // 12: transport.v1.Fetch.api:type_name -> api.v1.Api
-	21, // 13: transport.v1.Fetch.integrations:type_name -> transport.v1.Fetch.IntegrationsEntry
-	20, // 14: transport.v1.Fetch.metadata:type_name -> transport.v1.Fetch.Metadata
-	26, // 15: transport.v1.Fetch.stores:type_name -> store.v1.Stores
-	27, // 16: transport.v1.FetchScheduleJobResp.apis:type_name -> api.v1.Definition
-	10, // 17: transport.v1.Request.Data.pinned:type_name -> transport.v1.Request.Data.Pinned
-	11, // 18: transport.v1.Request.Data.data:type_name -> transport.v1.Request.Data.Data
-	12, // 19: transport.v1.Request.Data.Pinned.carrier:type_name -> transport.v1.Request.Data.Pinned.CarrierEntry
-	2,  // 20: transport.v1.Request.Data.Pinned.observability:type_name -> transport.v1.Observability
-	13, // 21: transport.v1.Request.Data.Data.props:type_name -> transport.v1.Request.Data.Data.Props
-	28, // 22: transport.v1.Request.Data.Data.d_config:type_name -> google.protobuf.Struct
-	28, // 23: transport.v1.Request.Data.Data.a_config:type_name -> google.protobuf.Struct
-	14, // 24: transport.v1.Request.Data.Data.quotas:type_name -> transport.v1.Request.Data.Data.Quota
-	28, // 25: transport.v1.Request.Data.Data.Props.action_configuration:type_name -> google.protobuf.Struct
-	28, // 26: transport.v1.Request.Data.Data.Props.datasource_configuration:type_name -> google.protobuf.Struct
-	28, // 27: transport.v1.Request.Data.Data.Props.redacted_datasource_configuration:type_name -> google.protobuf.Struct
-	15, // 28: transport.v1.Request.Data.Data.Props.binding_keys:type_name -> transport.v1.Request.Data.Data.Props.Binding
-	17, // 29: transport.v1.Request.Data.Data.Props.variables:type_name -> transport.v1.Request.Data.Data.Props.VariablesEntry
-	16, // 30: transport.v1.Request.Data.Data.Props.files:type_name -> transport.v1.Request.Data.Data.Props.File
-	29, // 31: transport.v1.Request.Data.Data.Props.profile:type_name -> common.v1.Profile
-	1,  // 32: transport.v1.Request.Data.Data.Props.VariablesEntry.value:type_name -> transport.v1.Variable
-	0,  // 33: transport.v1.Response.Data.pinned:type_name -> transport.v1.Performance
-	19, // 34: transport.v1.Response.Data.data:type_name -> transport.v1.Response.Data.Data
-	24, // 35: transport.v1.Response.Data.Data.err:type_name -> common.v1.Error
-	30, // 36: transport.v1.Response.Data.Data.db_schema:type_name -> api.v1.MetadataResponse.DatabaseSchemaMetadata
-	31, // 37: transport.v1.Response.Data.Data.buckets:type_name -> api.v1.MetadataResponse.BucketMetadata
-	32, // 38: transport.v1.Response.Data.Data.couchbase:type_name -> plugins.couchbase.v1.Metadata
-	33, // 39: transport.v1.Response.Data.Data.kafka:type_name -> plugins.kafka.v1.Metadata
-	34, // 40: transport.v1.Response.Data.Data.kinesis:type_name -> plugins.kinesis.v1.Metadata
-	35, // 41: transport.v1.Response.Data.Data.cosmosdb:type_name -> plugins.cosmosdb.v1.Plugin.Metadata
-	36, // 42: transport.v1.Response.Data.Data.adls:type_name -> plugins.adls.v1.Plugin.Metadata
-	37, // 43: transport.v1.Response.Data.Data.dynamodb:type_name -> google.protobuf.Any
-	28, // 44: transport.v1.Response.Data.Data.graphql:type_name -> google.protobuf.Struct
-	28, // 45: transport.v1.Response.Data.Data.open_api_spec:type_name -> google.protobuf.Struct
-	38, // 46: transport.v1.Response.Data.Data.salesforce:type_name -> plugins.salesforce.v1.Plugin.Metadata
-	28, // 47: transport.v1.Fetch.IntegrationsEntry.value:type_name -> google.protobuf.Struct
-	48, // [48:48] is the sub-list for method output_type
-	48, // [48:48] is the sub-list for method input_type
-	48, // [48:48] is the sub-list for extension type_name
-	48, // [48:48] is the sub-list for extension extendee
-	0,  // [0:48] is the sub-list for field type_name
+	7,  // 6: transport.v1.Performance.bootstrap_sdk_import:type_name -> transport.v1.Performance.Observable
+	7,  // 7: transport.v1.Performance.bootstrap_bridge_setup:type_name -> transport.v1.Performance.Observable
+	7,  // 8: transport.v1.Performance.bootstrap_require_root:type_name -> transport.v1.Performance.Observable
+	7,  // 9: transport.v1.Performance.bootstrap_code_execution:type_name -> transport.v1.Performance.Observable
+	22, // 10: transport.v1.Variable.type:type_name -> api.v1.Variables.Type
+	23, // 11: transport.v1.Variable.mode:type_name -> api.v1.Variables.Mode
+	8,  // 12: transport.v1.Observability.baggage:type_name -> transport.v1.Observability.BaggageEntry
+	9,  // 13: transport.v1.Request.data:type_name -> transport.v1.Request.Data
+	18, // 14: transport.v1.Response.data:type_name -> transport.v1.Response.Data
+	24, // 15: transport.v1.Response.pinned:type_name -> common.v1.Error
+	25, // 16: transport.v1.Fetch.api:type_name -> api.v1.Api
+	21, // 17: transport.v1.Fetch.integrations:type_name -> transport.v1.Fetch.IntegrationsEntry
+	20, // 18: transport.v1.Fetch.metadata:type_name -> transport.v1.Fetch.Metadata
+	26, // 19: transport.v1.Fetch.stores:type_name -> store.v1.Stores
+	27, // 20: transport.v1.FetchScheduleJobResp.apis:type_name -> api.v1.Definition
+	10, // 21: transport.v1.Request.Data.pinned:type_name -> transport.v1.Request.Data.Pinned
+	11, // 22: transport.v1.Request.Data.data:type_name -> transport.v1.Request.Data.Data
+	12, // 23: transport.v1.Request.Data.Pinned.carrier:type_name -> transport.v1.Request.Data.Pinned.CarrierEntry
+	2,  // 24: transport.v1.Request.Data.Pinned.observability:type_name -> transport.v1.Observability
+	13, // 25: transport.v1.Request.Data.Data.props:type_name -> transport.v1.Request.Data.Data.Props
+	28, // 26: transport.v1.Request.Data.Data.d_config:type_name -> google.protobuf.Struct
+	28, // 27: transport.v1.Request.Data.Data.a_config:type_name -> google.protobuf.Struct
+	14, // 28: transport.v1.Request.Data.Data.quotas:type_name -> transport.v1.Request.Data.Data.Quota
+	28, // 29: transport.v1.Request.Data.Data.Props.action_configuration:type_name -> google.protobuf.Struct
+	28, // 30: transport.v1.Request.Data.Data.Props.datasource_configuration:type_name -> google.protobuf.Struct
+	28, // 31: transport.v1.Request.Data.Data.Props.redacted_datasource_configuration:type_name -> google.protobuf.Struct
+	15, // 32: transport.v1.Request.Data.Data.Props.binding_keys:type_name -> transport.v1.Request.Data.Data.Props.Binding
+	17, // 33: transport.v1.Request.Data.Data.Props.variables:type_name -> transport.v1.Request.Data.Data.Props.VariablesEntry
+	16, // 34: transport.v1.Request.Data.Data.Props.files:type_name -> transport.v1.Request.Data.Data.Props.File
+	29, // 35: transport.v1.Request.Data.Data.Props.profile:type_name -> common.v1.Profile
+	1,  // 36: transport.v1.Request.Data.Data.Props.VariablesEntry.value:type_name -> transport.v1.Variable
+	0,  // 37: transport.v1.Response.Data.pinned:type_name -> transport.v1.Performance
+	19, // 38: transport.v1.Response.Data.data:type_name -> transport.v1.Response.Data.Data
+	24, // 39: transport.v1.Response.Data.Data.err:type_name -> common.v1.Error
+	30, // 40: transport.v1.Response.Data.Data.db_schema:type_name -> api.v1.MetadataResponse.DatabaseSchemaMetadata
+	31, // 41: transport.v1.Response.Data.Data.buckets:type_name -> api.v1.MetadataResponse.BucketMetadata
+	32, // 42: transport.v1.Response.Data.Data.couchbase:type_name -> plugins.couchbase.v1.Metadata
+	33, // 43: transport.v1.Response.Data.Data.kafka:type_name -> plugins.kafka.v1.Metadata
+	34, // 44: transport.v1.Response.Data.Data.kinesis:type_name -> plugins.kinesis.v1.Metadata
+	35, // 45: transport.v1.Response.Data.Data.cosmosdb:type_name -> plugins.cosmosdb.v1.Plugin.Metadata
+	36, // 46: transport.v1.Response.Data.Data.adls:type_name -> plugins.adls.v1.Plugin.Metadata
+	37, // 47: transport.v1.Response.Data.Data.dynamodb:type_name -> google.protobuf.Any
+	28, // 48: transport.v1.Response.Data.Data.graphql:type_name -> google.protobuf.Struct
+	28, // 49: transport.v1.Response.Data.Data.open_api_spec:type_name -> google.protobuf.Struct
+	38, // 50: transport.v1.Response.Data.Data.salesforce:type_name -> plugins.salesforce.v1.Plugin.Metadata
+	28, // 51: transport.v1.Fetch.IntegrationsEntry.value:type_name -> google.protobuf.Struct
+	52, // [52:52] is the sub-list for method output_type
+	52, // [52:52] is the sub-list for method input_type
+	52, // [52:52] is the sub-list for extension type_name
+	52, // [52:52] is the sub-list for extension extendee
+	0,  // [0:52] is the sub-list for field type_name
 }
 
 func init() { file_transport_v1_transport_proto_init() }

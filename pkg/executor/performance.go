@@ -55,5 +55,36 @@ func BuildPerformance(startMs, finishMs int64, transportPerf *transportv1.Perfor
 		perf.Custom = custom
 	}
 
+	// Map worker-reported bootstrap phase breakdown (microseconds) into
+	// the API-level BootstrapTiming (milliseconds).
+	if bs := buildBootstrapTiming(transportPerf); bs != nil {
+		perf.BootstrapTiming = bs
+	}
+
 	return perf
+}
+
+// buildBootstrapTiming converts transport-level bootstrap observables
+// (microseconds) into the API-level BootstrapTiming message (milliseconds).
+// Returns nil when no bootstrap fields are populated.
+func buildBootstrapTiming(tp *transportv1.Performance) *apiv1.Performance_BootstrapTiming {
+	usToMs := func(obs *transportv1.Performance_Observable) int64 {
+		if obs == nil {
+			return 0
+		}
+		return int64(obs.Value) / 1000
+	}
+
+	bt := &apiv1.Performance_BootstrapTiming{
+		SdkImportMs:     usToMs(tp.BootstrapSdkImport),
+		BridgeSetupMs:   usToMs(tp.BootstrapBridgeSetup),
+		RequireRootMs:   usToMs(tp.BootstrapRequireRoot),
+		CodeExecutionMs: usToMs(tp.BootstrapCodeExecution),
+	}
+
+	if bt.SdkImportMs == 0 && bt.BridgeSetupMs == 0 && bt.RequireRootMs == 0 && bt.CodeExecutionMs == 0 {
+		return nil
+	}
+
+	return bt
 }

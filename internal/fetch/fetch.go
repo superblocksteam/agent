@@ -21,6 +21,7 @@ import (
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
 	syncerv1 "github.com/superblocksteam/agent/types/gen/go/syncer/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
@@ -117,8 +118,15 @@ func (f *fetcher) FetchApiByPath(ctx context.Context, options *apiv1.ExecuteRequ
 
 	resp, err := tracer.Observe(ctx, "fetch.api_by_path", map[string]any{
 		observability.OBS_TAG_RESOURCE_ID: options.ApplicationId,
-	}, func(ctx context.Context, _ trace.Span) (*http.Response, error) {
-		return f.sendFetchApiByPathRequest(ctx, options, useAgentKey)
+	}, func(ctx context.Context, span trace.Span) (*http.Response, error) {
+		r, e := f.sendFetchApiByPathRequest(ctx, options, useAgentKey)
+		if r != nil {
+			span.SetAttributes(
+				attribute.Int("http.status_code", r.StatusCode),
+				attribute.Int64("response_content_length", r.ContentLength),
+			)
+		}
+		return r, e
 	}, nil)
 
 	if resp == nil {
@@ -155,47 +163,49 @@ func (f *fetcher) FetchApiCode(ctx context.Context, applicationId string, entryP
 		query.Set("commitId", commitId)
 	}
 
-	resp, err := tracer.Observe(ctx, "fetch.api_code", map[string]any{
+	bundle, err := tracer.Observe(ctx, "fetch.api_code", map[string]any{
 		observability.OBS_TAG_RESOURCE_ID: applicationId,
-	}, func(ctx context.Context, _ trace.Span) (*http.Response, error) {
-		return f.serverClient.GetApplicationCode(ctx, nil, headers, query, applicationId, branchName, commitId, useAgentKey)
+	}, func(ctx context.Context, span trace.Span) (*ApiCodeBundle, error) {
+		resp, httpErr := f.serverClient.GetApplicationCode(ctx, nil, headers, query, applicationId, branchName, commitId, useAgentKey)
+		if resp == nil {
+			logger.Error("could not fetch api code from superblocks: response is nil", zap.Error(httpErr))
+			return nil, sberrors.ErrInternal
+		}
+		defer resp.Body.Close()
+
+		span.SetAttributes(attribute.Int("http.status_code", respStatusCode(resp)))
+
+		if i, e := clients.Check(httpErr, resp); e != nil {
+			logger.Error(
+				"could not fetch api code from superblocks",
+				zap.NamedError("originalErr", httpErr),
+				zap.NamedError("internalError", i),
+				zap.NamedError("externalError", e),
+				zap.Int("resp.StatusCode", respStatusCode(resp)),
+				zap.String("resp.StatusCode.String", http.StatusText(respStatusCode(resp))),
+			)
+			return nil, e
+		}
+
+		respData, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			logger.Error("could not read fetch api code response body", zap.Error(readErr))
+			return nil, sberrors.ErrInternal
+		}
+		span.SetAttributes(attribute.Int("response_bytes", len(respData)))
+
+		var result struct {
+			Bundle string `json:"bundle"`
+		}
+		if jsonErr := json.Unmarshal(respData, &result); jsonErr != nil {
+			logger.Error("could not unmarshal api code response", zap.Error(jsonErr))
+			return nil, sberrors.ErrInternal
+		}
+
+		return &ApiCodeBundle{Bundle: result.Bundle}, nil
 	}, nil)
 
-	if resp == nil {
-		logger.Error("could not fetch api code from superblocks: response is nil", zap.Error(err))
-		return nil, sberrors.ErrInternal
-	}
-	defer resp.Body.Close()
-
-	if i, e := clients.Check(err, resp); e != nil {
-		logger.Error(
-			"could not fetch api code from superblocks",
-			zap.NamedError("originalErr", err),
-			zap.NamedError("internalError", i),
-			zap.NamedError("externalError", e),
-			zap.Int("resp.StatusCode", respStatusCode(resp)),
-			zap.String("resp.StatusCode.String", http.StatusText(respStatusCode(resp))),
-		)
-		return nil, e
-	}
-
-	respData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error("could not read fetch api code response body", zap.Error(err))
-		return nil, sberrors.ErrInternal
-	}
-
-	var result struct {
-		Bundle string `json:"bundle"`
-	}
-	if err := json.Unmarshal(respData, &result); err != nil {
-		logger.Error("could not unmarshal api code response", zap.Error(err))
-		return nil, sberrors.ErrInternal
-	}
-
-	return &ApiCodeBundle{
-		Bundle: result.Bundle,
-	}, nil
+	return bundle, err
 }
 
 func (f *fetcher) handleFetchApiResponse(ctx context.Context, resp *http.Response, err error, logger *zap.Logger) (*apiv1.Definition, *structpb.Struct, error) {

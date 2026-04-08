@@ -799,7 +799,8 @@ proto.worker.v1.ExecuteResponse.toObject = function(includeInstance, msg) {
     structuredlogList: jspb.Message.toObjectList(msg.getStructuredlogList(),
     proto.worker.v1.StructuredLog.toObject, includeInstance),
     diagnosticsList: jspb.Message.toObjectList(msg.getDiagnosticsList(),
-    api_v1_event_pb.IntegrationDiagnostic.toObject, includeInstance)
+    api_v1_event_pb.IntegrationDiagnostic.toObject, includeInstance),
+    performance: (f = msg.getPerformance()) && transport_v1_transport_pb.Performance.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -873,6 +874,11 @@ proto.worker.v1.ExecuteResponse.deserializeBinaryFromReader = function(msg, read
       var value = new api_v1_event_pb.IntegrationDiagnostic;
       reader.readMessage(value,api_v1_event_pb.IntegrationDiagnostic.deserializeBinaryFromReader);
       msg.addDiagnostics(value);
+      break;
+    case 9:
+      var value = new transport_v1_transport_pb.Performance;
+      reader.readMessage(value,transport_v1_transport_pb.Performance.deserializeBinaryFromReader);
+      msg.setPerformance(value);
       break;
     default:
       reader.skipField();
@@ -963,6 +969,14 @@ proto.worker.v1.ExecuteResponse.serializeBinaryToWriter = function(message, writ
       8,
       f,
       api_v1_event_pb.IntegrationDiagnostic.serializeBinaryToWriter
+    );
+  }
+  f = message.getPerformance();
+  if (f != null) {
+    writer.writeMessage(
+      9,
+      f,
+      transport_v1_transport_pb.Performance.serializeBinaryToWriter
     );
   }
 };
@@ -1244,6 +1258,43 @@ proto.worker.v1.ExecuteResponse.prototype.addDiagnostics = function(opt_value, o
  */
 proto.worker.v1.ExecuteResponse.prototype.clearDiagnosticsList = function() {
   return this.setDiagnosticsList([]);
+};
+
+
+/**
+ * optional transport.v1.Performance performance = 9;
+ * @return {?proto.transport.v1.Performance}
+ */
+proto.worker.v1.ExecuteResponse.prototype.getPerformance = function() {
+  return /** @type{?proto.transport.v1.Performance} */ (
+    jspb.Message.getWrapperField(this, transport_v1_transport_pb.Performance, 9));
+};
+
+
+/**
+ * @param {?proto.transport.v1.Performance|undefined} value
+ * @return {!proto.worker.v1.ExecuteResponse} returns this
+*/
+proto.worker.v1.ExecuteResponse.prototype.setPerformance = function(value) {
+  return jspb.Message.setWrapperField(this, 9, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.worker.v1.ExecuteResponse} returns this
+ */
+proto.worker.v1.ExecuteResponse.prototype.clearPerformance = function() {
+  return this.setPerformance(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.worker.v1.ExecuteResponse.prototype.hasPerformance = function() {
+  return jspb.Message.getField(this, 9) != null;
 };
 
 

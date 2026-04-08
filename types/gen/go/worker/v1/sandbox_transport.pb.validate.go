@@ -536,6 +536,35 @@ func (m *ExecuteResponse) validate(all bool) error {
 
 	}
 
+	if all {
+		switch v := interface{}(m.GetPerformance()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ExecuteResponseValidationError{
+					field:  "Performance",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ExecuteResponseValidationError{
+					field:  "Performance",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetPerformance()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ExecuteResponseValidationError{
+				field:  "Performance",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if m.StartTime != nil {
 
 		if all {

@@ -57,6 +57,8 @@ message ExecuteResponse {
   repeated StructuredLog structuredLog = 7;
   // Per-integration-call diagnostics captured when include_diagnostics was set.
   repeated api.v1.IntegrationDiagnostic diagnostics = 8;
+  // Worker-side performance metrics (bootstrap timing, plugin execution, etc.).
+  transport.v1.Performance performance = 9;
 }
 
 message StreamRequest {

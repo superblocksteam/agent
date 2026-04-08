@@ -27,7 +27,7 @@ import { Metadata as CouchbaseMetadata } from './types/plugins/couchbase/v1/plug
 import { Metadata as KafkaMetadata, Topic as KafkaTopic, Broker as KafkaBroker } from './types/plugins/kafka/v1/plugin_pb';
 import { Metadata as KinesisMetadata } from './types/plugins/kinesis/v1/plugin_pb';
 import { Plugin as SalesforcePlugin } from './types/plugins/salesforce/v1/plugin_pb';
-import { Response as ProtoTransportResponse } from './types/transport/v1/transport_pb';
+import { Performance as ProtoPerformance, Response as ProtoTransportResponse } from './types/transport/v1/transport_pb';
 import {
   ExecuteRequest as ProtoExecuteRequest,
   ExecuteResponse as ProtoExecuteResponse,
@@ -320,6 +320,27 @@ export class MessageTransformerImpl implements MessageTransformer {
         return proto;
       });
       protoResponse.setDiagnosticsList(protoDiagnostics);
+    }
+
+    // Serialize worker-side performance metrics (bootstrap timing etc.)
+    // into the proto response so they flow back to the orchestrator.
+    const perf = (response as unknown as Record<string, unknown>)._performance as
+      | { bootstrapSdkImport?: { value?: number }; bootstrapBridgeSetup?: { value?: number }; bootstrapRequireRoot?: { value?: number }; bootstrapCodeExecution?: { value?: number } }
+      | undefined;
+    if (perf) {
+      const protoPerf = new ProtoPerformance();
+      const setObs = (setter: (obs: ProtoPerformance.Observable) => void, val?: { value?: number }) => {
+        if (val?.value != null) {
+          const obs = new ProtoPerformance.Observable();
+          obs.setValue(val.value);
+          setter(obs);
+        }
+      };
+      setObs(protoPerf.setBootstrapSdkImport.bind(protoPerf), perf.bootstrapSdkImport);
+      setObs(protoPerf.setBootstrapBridgeSetup.bind(protoPerf), perf.bootstrapBridgeSetup);
+      setObs(protoPerf.setBootstrapRequireRoot.bind(protoPerf), perf.bootstrapRequireRoot);
+      setObs(protoPerf.setBootstrapCodeExecution.bind(protoPerf), perf.bootstrapCodeExecution);
+      protoResponse.setPerformance(protoPerf);
     }
 
     return protoResponse;

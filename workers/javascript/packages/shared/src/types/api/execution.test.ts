@@ -85,3 +85,59 @@ describe('ExecutionContext', () => {
     });
   });
 });
+
+describe('ExecutionOutput.fromJSONString', () => {
+  test('preserves _bootstrapTiming from JSON', () => {
+    const json = JSON.stringify({
+      output: { result: 'ok' },
+      log: [],
+      structuredLog: [],
+      bootstrapTiming: {
+        sdkImportMs: 10.5,
+        bridgeSetupMs: 2.1,
+        requireRootMs: 0.3,
+        codeExecutionMs: 50.0,
+        totalMs: 62.9,
+      },
+    });
+
+    const output = ExecutionOutput.fromJSONString(json);
+
+    expect(output.output).toEqual({ result: 'ok' });
+    const bt = (output as unknown as Record<string, unknown>)._bootstrapTiming;
+    expect(bt).toEqual({
+      sdkImportMs: 10.5,
+      bridgeSetupMs: 2.1,
+      requireRootMs: 0.3,
+      codeExecutionMs: 50.0,
+      totalMs: 62.9,
+    });
+  });
+
+  test('omits _bootstrapTiming when not in JSON', () => {
+    const json = JSON.stringify({
+      output: { result: 'ok' },
+      log: [],
+      structuredLog: [],
+    });
+
+    const output = ExecutionOutput.fromJSONString(json);
+
+    const bt = (output as unknown as Record<string, unknown>)._bootstrapTiming;
+    expect(bt).toBeUndefined();
+  });
+
+  test('omits _bootstrapTiming when bootstrapTiming is not an object', () => {
+    const json = JSON.stringify({
+      output: {},
+      log: [],
+      structuredLog: [],
+      bootstrapTiming: 'not-an-object',
+    });
+
+    const output = ExecutionOutput.fromJSONString(json);
+
+    const bt = (output as unknown as Record<string, unknown>)._bootstrapTiming;
+    expect(bt).toBeUndefined();
+  });
+});

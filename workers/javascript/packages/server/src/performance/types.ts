@@ -110,6 +110,14 @@ export interface StepPerformance extends PerformanceAPI<StepPerformance, StepMet
    * The number of referenced bindings.
    */
   bindings: Wrapped<void, number>;
+  /**
+   * Bootstrap phase breakdown for SDK API (code-mode) executions.
+   * Populated by the javascriptsdkapi worker to attribute time within plugin_execution.
+   */
+  bootstrapSdkImport: Observable;
+  bootstrapBridgeSetup: Observable;
+  bootstrapRequireRoot: Observable;
+  bootstrapCodeExecution: Observable;
 }
 
 export interface PerformanceAPI<T extends ApiPerformance | StepPerformance, U extends ApiMetricLabels | StepMetricLabels> {

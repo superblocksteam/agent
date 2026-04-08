@@ -56,6 +56,26 @@ export class Performance extends jspb.Message {
     getTotal(): Performance.Observable | undefined;
     setTotal(value?: Performance.Observable): Performance;
 
+    hasBootstrapSdkImport(): boolean;
+    clearBootstrapSdkImport(): void;
+    getBootstrapSdkImport(): Performance.Observable | undefined;
+    setBootstrapSdkImport(value?: Performance.Observable): Performance;
+
+    hasBootstrapBridgeSetup(): boolean;
+    clearBootstrapBridgeSetup(): void;
+    getBootstrapBridgeSetup(): Performance.Observable | undefined;
+    setBootstrapBridgeSetup(value?: Performance.Observable): Performance;
+
+    hasBootstrapRequireRoot(): boolean;
+    clearBootstrapRequireRoot(): void;
+    getBootstrapRequireRoot(): Performance.Observable | undefined;
+    setBootstrapRequireRoot(value?: Performance.Observable): Performance;
+
+    hasBootstrapCodeExecution(): boolean;
+    clearBootstrapCodeExecution(): void;
+    getBootstrapCodeExecution(): Performance.Observable | undefined;
+    setBootstrapCodeExecution(value?: Performance.Observable): Performance;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Performance.AsObject;
     static toObject(includeInstance: boolean, msg: Performance): Performance.AsObject;
@@ -75,6 +95,10 @@ export namespace Performance {
         kvStoreFetch?: Performance.Observable.AsObject,
         kvStorePush?: Performance.Observable.AsObject,
         total?: Performance.Observable.AsObject,
+        bootstrapSdkImport?: Performance.Observable.AsObject,
+        bootstrapBridgeSetup?: Performance.Observable.AsObject,
+        bootstrapRequireRoot?: Performance.Observable.AsObject,
+        bootstrapCodeExecution?: Performance.Observable.AsObject,
     }
 
 

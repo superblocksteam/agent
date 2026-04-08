@@ -116,6 +116,11 @@ export class ExecuteResponse extends jspb.Message {
     setDiagnosticsList(value: Array<api_v1_event_pb.IntegrationDiagnostic>): ExecuteResponse;
     addDiagnostics(value?: api_v1_event_pb.IntegrationDiagnostic, index?: number): api_v1_event_pb.IntegrationDiagnostic;
 
+    hasPerformance(): boolean;
+    clearPerformance(): void;
+    getPerformance(): transport_v1_transport_pb.Performance | undefined;
+    setPerformance(value?: transport_v1_transport_pb.Performance): ExecuteResponse;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ExecuteResponse.AsObject;
     static toObject(includeInstance: boolean, msg: ExecuteResponse): ExecuteResponse.AsObject;
@@ -136,6 +141,7 @@ export namespace ExecuteResponse {
         executiontime?: google_protobuf_duration_pb.Duration.AsObject,
         structuredlogList: Array<StructuredLog.AsObject>,
         diagnosticsList: Array<api_v1_event_pb.IntegrationDiagnostic.AsObject>,
+        performance?: transport_v1_transport_pb.Performance.AsObject,
     }
 }
 

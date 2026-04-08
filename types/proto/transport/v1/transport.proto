@@ -37,6 +37,13 @@ message Performance {
   Observable kv_store_fetch = 5;
   Observable kv_store_push = 6;
   Observable total = 7;
+
+  // Bootstrap phase breakdown for SDK API (code-mode) executions.
+  // Populated by the javascriptsdkapi worker to attribute time within plugin_execution.
+  Observable bootstrap_sdk_import = 8;
+  Observable bootstrap_bridge_setup = 9;
+  Observable bootstrap_require_root = 10;
+  Observable bootstrap_code_execution = 11;
 }
 
 message Variable {

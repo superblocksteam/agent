@@ -313,6 +313,11 @@ export namespace ExecuteRequest {
         getEntryPoint(): string | undefined;
         setEntryPoint(value: string): FetchCode;
 
+        hasExportName(): boolean;
+        clearExportName(): void;
+        getExportName(): string | undefined;
+        setExportName(value: string): FetchCode;
+
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): FetchCode.AsObject;
         static toObject(includeInstance: boolean, msg: FetchCode): FetchCode.AsObject;
@@ -331,6 +336,7 @@ export namespace ExecuteRequest {
             commitId?: string,
             branchName?: string,
             entryPoint?: string,
+            exportName?: string,
         }
     }
 
@@ -414,6 +420,11 @@ export class ExecuteV3Request extends jspb.Message {
     getIncludeDiagnostics(): boolean;
     setIncludeDiagnostics(value: boolean): ExecuteV3Request;
 
+    hasExportName(): boolean;
+    clearExportName(): void;
+    getExportName(): string | undefined;
+    setExportName(value: string): ExecuteV3Request;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): ExecuteV3Request.AsObject;
     static toObject(includeInstance: boolean, msg: ExecuteV3Request): ExecuteV3Request.AsObject;
@@ -436,6 +447,7 @@ export namespace ExecuteV3Request {
         entryPoint?: string,
         filesList: Array<ExecuteRequest.File.AsObject>,
         includeDiagnostics: boolean,
+        exportName?: string,
     }
 }
 

@@ -57,6 +57,29 @@ export class Performance extends Message<Performance> {
    */
   total?: Performance_Observable;
 
+  /**
+   * Bootstrap phase breakdown for SDK API (code-mode) executions.
+   * Populated by the javascriptsdkapi worker to attribute time within plugin_execution.
+   *
+   * @generated from field: transport.v1.Performance.Observable bootstrap_sdk_import = 8;
+   */
+  bootstrapSdkImport?: Performance_Observable;
+
+  /**
+   * @generated from field: transport.v1.Performance.Observable bootstrap_bridge_setup = 9;
+   */
+  bootstrapBridgeSetup?: Performance_Observable;
+
+  /**
+   * @generated from field: transport.v1.Performance.Observable bootstrap_require_root = 10;
+   */
+  bootstrapRequireRoot?: Performance_Observable;
+
+  /**
+   * @generated from field: transport.v1.Performance.Observable bootstrap_code_execution = 11;
+   */
+  bootstrapCodeExecution?: Performance_Observable;
+
   constructor(data?: PartialMessage<Performance>) {
     super();
     proto3.util.initPartial(data, this);
@@ -72,6 +95,10 @@ export class Performance extends Message<Performance> {
     { no: 5, name: "kv_store_fetch", kind: "message", T: Performance_Observable },
     { no: 6, name: "kv_store_push", kind: "message", T: Performance_Observable },
     { no: 7, name: "total", kind: "message", T: Performance_Observable },
+    { no: 8, name: "bootstrap_sdk_import", kind: "message", T: Performance_Observable },
+    { no: 9, name: "bootstrap_bridge_setup", kind: "message", T: Performance_Observable },
+    { no: 10, name: "bootstrap_require_root", kind: "message", T: Performance_Observable },
+    { no: 11, name: "bootstrap_code_execution", kind: "message", T: Performance_Observable },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Performance {
