@@ -42,18 +42,6 @@
             else
               builtins.trace "warning: invalid or missing ${label}; defaulting to ${fallback}" fallback;
 
-          packageJsonNodeVersion =
-            if builtins.pathExists ./package.json then
-              let
-                packageJsonText = builtins.replaceStrings [ "\n" "\r" ] [ " " " " ] (
-                  builtins.readFile ./package.json
-                );
-                nodeMatch = builtins.match ''.*"engines"[[:space:]]*:[[:space:]]*\{[^}]*"node"[[:space:]]*:[[:space:]]*"([^"]+)".*'' packageJsonText;
-              in
-              if nodeMatch != null then builtins.elemAt nodeMatch 0 else null
-            else
-              null;
-
           goVersion = readVersionOrFallback {
             path = ./.go-version;
             fallback = "1.25.5";
@@ -66,41 +54,6 @@
               pkgs.${goAttr}
             else
               builtins.trace "warning: unsupported Go version in .go-version: ${goVersion}; defaulting to go_1_25" pkgs.go_1_25;
-
-          fallbackNodeVersion = readVersionOrFallback {
-            path = ./.nvmrc;
-            fallback = "20.19.5";
-            label = ".nvmrc";
-            pattern = "[0-9]+(\\.[0-9]+(\\.[0-9]+)?)?.*";
-          };
-          nodeVersion =
-            if packageJsonNodeVersion != null then packageJsonNodeVersion else fallbackNodeVersion;
-          nodeMajorMatch = builtins.match "[^0-9]*([0-9]+).*" nodeVersion;
-          nodeMajor =
-            if nodeMajorMatch != null then
-              builtins.elemAt nodeMajorMatch 0
-            else
-              builtins.trace "warning: unsupported Node version for package.json/.nvmrc: ${nodeVersion}; defaulting to 20" "20";
-          nodePackages = {
-            "20" = pkgs.nodejs_20;
-            "22" = pkgs.nodejs_22;
-            "24" = pkgs.nodejs_24;
-          };
-          corepackPackages = {
-            "20" = pkgs.corepack_20;
-            "22" = pkgs.corepack_22;
-            "24" = pkgs.corepack_24;
-          };
-          nodePackage =
-            if builtins.hasAttr nodeMajor nodePackages then
-              nodePackages.${nodeMajor}
-            else
-              builtins.trace "warning: unsupported Node version for package.json/.nvmrc: ${nodeVersion}; defaulting to nodejs_20" pkgs.nodejs_20;
-          corepackPackage =
-            if builtins.hasAttr nodeMajor corepackPackages then
-              corepackPackages.${nodeMajor}
-            else
-              builtins.trace "warning: unsupported Node version for package.json/.nvmrc: ${nodeVersion}; defaulting to corepack_20" pkgs.corepack_20;
 
           pythonVersion = readVersionOrFallback {
             path = ./workers/python/.python-version;
@@ -122,11 +75,11 @@
           default = pkgs.mkShell {
             packages = [
               pkgs.buf
-              corepackPackage
+              pkgs.corepack_20
               goPackage
               pkgs.go-mockery
               pkgs.gotestsum
-              nodePackage
+              pkgs.nodejs_20
               pkgs.pprof
               pythonPackage
             ];
