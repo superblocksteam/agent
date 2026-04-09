@@ -18,7 +18,7 @@ function getSdkApi(): Promise<{ executeApi: (...args: unknown[]) => Promise<unkn
 }
 
 export = async function handleTask(workerData: WorkerInput): Promise<string> {
-  const { context, code, files, integrationPort, port } = workerData;
+  const { context, code, files, inheritedEnv, integrationPort, port } = workerData;
 
   const t0 = performance.now();
 
@@ -66,7 +66,7 @@ export = async function handleTask(workerData: WorkerInput): Promise<string> {
       },
       code,
       files,
-      inheritedEnv: [],
+      inheritedEnv,
       requireRoot,
       port
     });

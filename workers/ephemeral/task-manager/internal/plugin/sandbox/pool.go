@@ -643,10 +643,17 @@ func (p *SandboxPool) tryMarkPoolReady() {
 	p.notifyPoolReadyChannels()
 }
 
-// IsAvailable aggregates SandboxPlugin health across pool entries. An empty pool is treated as unavailable (FATAL).
-// Entries still warming (poolEntryNotReady) are skipped until runPlugin marks them ready. If any entry reports
-// available, the pool is available. Otherwise degradation is the worst among entries; dynamic mode may replace
-// FATAL sandboxes and start recovery timers for TRANSIENT sandboxes when sandboxRecoveryTimeout is set.
+// IsAvailable aggregates SandboxPlugin health across pool entries.
+//
+// An empty pool (zero plugins) is treated as unavailable with DegradationState_FATAL.
+//
+// For a non-empty pool, if any entry reports available, the pool is available (NONE). Otherwise the pool is
+// unavailable with DegradationState_TRANSIENT: replacements and new sandboxes are always attempted (replacePlugin
+// for per-entry FATAL, recovery timers when configured), so the aggregate is never FATAL. Prolonged TRANSIENT
+// degradation should be handled as needed by the caller/owner of the pool.
+//
+// Entries still warming (poolEntryNotReady) or reserved for dispatch (poolEntryReserved) are skipped until runPlugin
+// marks them ready; per-entry health still runs for other entries in the same call.
 func (p *SandboxPool) IsAvailable(ctx context.Context) plugin.PluginStatus {
 	p.mu.RLock()
 	if len(p.plugins) == 0 {
@@ -667,7 +674,6 @@ func (p *SandboxPool) IsAvailable(ctx context.Context) plugin.PluginStatus {
 
 	var errs error
 	anyAvailable := false
-	maxDeg := plugin.DegradationState_UNSPECIFIED
 
 	for i, id := range pluginIds {
 		entry := entries[i]
@@ -689,9 +695,6 @@ func (p *SandboxPool) IsAvailable(ctx context.Context) plugin.PluginStatus {
 
 		entry.status.Store(uint32(poolEntryUnavailable))
 		errs = errors.Join(errs, s.Error)
-		if s.DegradationState > maxDeg {
-			maxDeg = s.DegradationState
-		}
 
 		switch s.DegradationState {
 		case plugin.DegradationState_FATAL:
@@ -713,7 +716,7 @@ func (p *SandboxPool) IsAvailable(ctx context.Context) plugin.PluginStatus {
 
 	return plugin.PluginStatus{
 		Available:        false,
-		DegradationState: maxDeg,
+		DegradationState: plugin.DegradationState_TRANSIENT,
 		Error:            errs,
 	}
 }

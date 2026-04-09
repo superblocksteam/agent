@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext, ExecutionOutput, IntegrationError, WorkerPool } from '@superblocks/shared';
 
+jest.mock('./env', () => ({
+  SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST: ['CUSTOM_A', 'CUSTOM_B']
+}));
+
 import JavascriptSdkApiPlugin from './index';
 
 describe('JavascriptSdkApiPlugin', () => {
@@ -59,6 +63,7 @@ describe('JavascriptSdkApiPlugin', () => {
     ]);
     expect(call.poolName).toBe('JavaScript SDK API');
     expect(call.input.code).toBe('return true;');
+    expect(call.input.inheritedEnv).toEqual(['CUSTOM_A', 'CUSTOM_B']);
   });
 
   it('passes integrationExecutor and includeDiagnostics', async () => {

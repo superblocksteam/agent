@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Add support for inheriting environment variables in the Apps 3.0 API execution environment (via the `SB_EXECUTION_ENV_INCLUSION_LIST`/`SUPERBLOCKS_EXECUTION_ENV_INCLUSION_LIST` environment variable)
 - Fix JavaScript worker error messages being truncated to just `Error on line N:` with an empty body when the error stack contains only frame lines (no message prefix)
 
 ## v1.37.1

@@ -24,6 +24,8 @@ import {
   WorkerPool
 } from '@superblocks/shared';
 
+import { SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST } from './env';
+
 const bootstrapExt = __filename.endsWith('.ts') ? '.ts' : '.js';
 const bootstrapPath = path.join(__dirname, `bootstrap${bootstrapExt}`);
 
@@ -70,6 +72,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
           context,
           code,
           files,
+          inheritedEnv: SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST,
           executionTimeout
         },
         pluginName: this.pluginName,

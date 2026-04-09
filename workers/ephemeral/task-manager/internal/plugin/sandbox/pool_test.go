@@ -215,8 +215,8 @@ func TestSandboxPool_IsAvailable_emptyPoolIsFatal(t *testing.T) {
 	require.Error(t, st.Error)
 }
 
-// TestSandboxPool_IsAvailable_onlyNotReadySandboxes uses UNSPECIFIED degradation when every entry is still warming
-// (skipped in the loop), so we do not report NONE by accident.
+// TestSandboxPool_IsAvailable_onlyNotReadySandboxes reports TRANSIENT when every entry is still warming
+// (skipped in the loop), so the transport waits instead of treating the pool as fatally broken.
 func TestSandboxPool_IsAvailable_onlyNotReadySandboxes(t *testing.T) {
 	t.Parallel()
 
@@ -236,7 +236,7 @@ func TestSandboxPool_IsAvailable_onlyNotReadySandboxes(t *testing.T) {
 
 	st := p.IsAvailable(context.Background())
 	require.False(t, st.Available)
-	require.Equal(t, plugin.DegradationState_UNSPECIFIED, st.DegradationState)
+	require.Equal(t, plugin.DegradationState_TRANSIENT, st.DegradationState)
 }
 
 func TestSandboxPool_IsAvailable_skipsReservedEntry_doesNotResetToReady(t *testing.T) {
@@ -254,7 +254,81 @@ func TestSandboxPool_IsAvailable_skipsReservedEntry_doesNotResetToReady(t *testi
 	st := p.IsAvailable(context.Background())
 	require.False(t, st.Available)
 	require.Equal(t, uint32(poolEntryReserved), e0.status.Load(), "reserved status must not be overwritten by IsAvailable")
-	require.Equal(t, plugin.DegradationState_UNSPECIFIED, st.DegradationState)
+	require.Equal(t, plugin.DegradationState_TRANSIENT, st.DegradationState)
+}
+
+// TestSandboxPool_IsAvailable_fatalWithWarmingReturnsTransient covers replacement overlap: dead sandbox plus
+// warming entry; the pool still reports TRANSIENT (non-empty aggregate is never FATAL).
+func TestSandboxPool_IsAvailable_fatalWithWarmingReturnsTransient(t *testing.T) {
+	t.Parallel()
+
+	deadPlug, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(&mockSandboxManager{}),
+		WithSandboxId("dead-id"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	deadPlug.sandboxDead.Store(true)
+
+	deadEntry := &poolEntry{plug: deadPlug}
+	deadEntry.status.Store(uint32(poolEntryReady))
+
+	warming := &poolEntry{plug: mustTestSandboxPlugin(t, "warming")}
+	warming.status.Store(uint32(poolEntryNotReady))
+
+	p := &SandboxPool{
+		plugins: map[string]*poolEntry{
+			"dead":    deadEntry,
+			"warming": warming,
+		},
+		pluginOrder: []string{"dead", "warming"},
+		logger:      zap.NewNop(),
+	}
+
+	st := p.IsAvailable(context.Background())
+	require.False(t, st.Available)
+	require.Equal(t, plugin.DegradationState_TRANSIENT, st.DegradationState)
+	require.Error(t, st.Error)
+	require.Contains(t, st.Error.Error(), "sandbox is dead")
+}
+
+// TestSandboxPool_IsAvailable_allSandboxesDeadReturnsTransient ensures every evaluated sandbox can be dead
+// (dynamic FATAL per plugin) while the pool aggregate stays TRANSIENT so the transport does not shut down immediately.
+func TestSandboxPool_IsAvailable_allSandboxesDeadReturnsTransient(t *testing.T) {
+	t.Parallel()
+
+	mkDead := func(id string) *poolEntry {
+		plug, err := NewSandboxPlugin(
+			WithConnectionMode(SandboxConnectionModeDynamic),
+			WithSandboxManager(&mockSandboxManager{}),
+			WithSandboxId(id),
+			WithLogger(zap.NewNop()),
+		)
+		require.NoError(t, err)
+		plug.sandboxDead.Store(true)
+		e := &poolEntry{plug: plug}
+		e.status.Store(uint32(poolEntryReady))
+		return e
+	}
+
+	e0 := mkDead("dead-a")
+	e1 := mkDead("dead-b")
+
+	p := &SandboxPool{
+		plugins: map[string]*poolEntry{
+			"a": e0,
+			"b": e1,
+		},
+		pluginOrder: []string{"a", "b"},
+		logger:      zap.NewNop(),
+	}
+
+	st := p.IsAvailable(context.Background())
+	require.False(t, st.Available)
+	require.Equal(t, plugin.DegradationState_TRANSIENT, st.DegradationState)
+	require.Error(t, st.Error)
+	require.Contains(t, st.Error.Error(), "sandbox is dead")
 }
 
 // A reserved sandbox stays reserved while another entry is evaluated; the neighbor may become unavailable.
