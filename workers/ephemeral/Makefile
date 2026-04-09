@@ -158,6 +158,7 @@ deploy-orchestrator:
 		--env="SUPERBLOCKS_ORCHESTRATOR_SECRETS_ENCRYPTION_KEY=e2e_test_encryption_key_32bytes!" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_REGISTRATION_ENABLED=false" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_EVENTS_CLOUD_ENABLED=false" \
+		--env="SUPERBLOCKS_ORCHESTRATOR_TRANSPORT_REDIS_ACK_TIMEOUT=30s" \
 		-- \
 		--http.bind=0.0.0.0 \
 		--worker.ephemeral.plugins.enabled=python,javascript,javascriptwasm

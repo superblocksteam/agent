@@ -111,6 +111,10 @@ fleets:
             name: sandbox-workers-redis-trigger-auth
 # Task Manager image (built in CI)
 taskManager:
+  # Expose a stable Service so e2e tests can reach the HTTP gateway via DNS
+  # without relying on dynamic pod IPs. Disabled in production.
+  service:
+    enabled: true
   image:
     repository: ghcr.io/superblocksteam/task-manager
     pullPolicy: IfNotPresent

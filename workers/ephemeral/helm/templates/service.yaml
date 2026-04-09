@@ -1,0 +1,31 @@
+{{- if .Values.taskManager.service.enabled -}}
+{{- $fullname := include "sandbox_workers.fullname" . -}}
+# Service that provides a stable DNS name for task-manager pods.
+# Used by e2e tests to reach the task-manager's HTTP gateway without relying
+# on dynamic pod IPs.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-task-manager" $fullname | trunc 63 | trimSuffix "-" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
+spec:
+  # Headless: DNS returns pod IPs directly instead of a ClusterIP.
+  # This allows Calico to match the destination against the `role == 'task-manager'`
+  # pod selector in the sandbox egress NetworkPolicy, bypassing the private-range
+  # deny rule that would otherwise block traffic to a ClusterIP (10.x.x.x).
+  clusterIP: None
+  # Include Running-but-not-Ready pods in DNS. Task-manager pods may not have
+  # passed their readiness probe when tests start (the health file is written
+  # only after the sandbox gRPC connection is established). Without this,
+  # DNS returns NXDOMAIN until the first pod becomes Ready.
+  publishNotReadyAddresses: true
+  selector:
+    role: task-manager
+  ports:
+    - name: var-store-http
+      port: {{ .Values.variableStore.http.port }}
+      targetPort: {{ .Values.variableStore.http.port }}
+      protocol: TCP
+{{- end }}

@@ -57,6 +57,12 @@
       "enabled": true
     },
     {
+      "key": "task_manager_host",
+      "value": "sandbox-workers-task-manager.superblocks.svc.cluster.local:8080",
+      "type": "default",
+      "enabled": true
+    },
+    {
       "key": "RUN_DISABLED_TESTS",
       "value": "false",
       "type": "default",

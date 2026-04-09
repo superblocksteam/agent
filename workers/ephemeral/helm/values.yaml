@@ -59,6 +59,17 @@
 fleets: {}
 # Task Manager configuration
 taskManager:
+  # Expose a stable Kubernetes Service in front of task-manager pods.
+  # Disabled by default — production uses direct pod IPs via env vars.
+  # Enable in CI so e2e tests can reach the task-manager HTTP gateway via
+  # a predictable DNS name without relying on dynamic pod IPs.
+  #
+  # NOTE: This Service is headless (clusterIP: None) with publishNotReadyAddresses: true,
+  # which means DNS may return IPs for pods that are still starting up (sandbox not yet
+  # connected). Clients may get connection errors until pods are fully ready. This is
+  # intentional for CI test use; avoid enabling in production.
+  service:
+    enabled: false
   image:
     repository: ghcr.io/superblocksteam/task-manager
     tag: latest
