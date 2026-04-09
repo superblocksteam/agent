@@ -190,12 +190,14 @@ func TestApplyOptions_Overrides(t *testing.T) {
 	t.Parallel()
 
 	mgr := &mockSandboxManager{}
+	ipFilter := &mockIpFilterSetter{}
 	opts := ApplyOptions(
 		WithConnectionMode(SandboxConnectionModeDynamic),
 		WithSandboxManager(mgr),
 		WithSandboxId("my-sandbox"),
 		WithSandboxAddress("localhost:1234"),
 		WithVariableStoreAddress("localhost:5678"),
+		WithIpFilterSetter(ipFilter),
 	)
 
 	if opts.ConnectionMode != SandboxConnectionModeDynamic {
@@ -212,6 +214,9 @@ func TestApplyOptions_Overrides(t *testing.T) {
 	}
 	if opts.VariableStoreAddress != "localhost:5678" {
 		t.Errorf("VariableStoreAddress = %v, want localhost:5678", opts.VariableStoreAddress)
+	}
+	if opts.IpFilterSetter != ipFilter {
+		t.Error("IpFilterSetter should be set")
 	}
 }
 
@@ -447,6 +452,70 @@ func TestSandboxPlugin_NotifyWhenReady_GoroutinesCleanedUpOnClose(t *testing.T) 
 	}()
 
 	<-closeDone
+}
+
+func TestSandboxPlugin_Close_RemoveAllowedIps(t *testing.T) {
+	t.Parallel()
+
+	var deletedJob string
+	mgr := &mockSandboxManager{
+		deleteFunc: func(_ context.Context, sandboxId string) error {
+			deletedJob = sandboxId
+			return nil
+		},
+	}
+	ipFilter := &mockIpFilterSetter{}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(mgr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+		WithIpFilterSetter(ipFilter),
+	)
+	require.NoError(t, err)
+
+	p.sandboxInfo = &sandboxmanager.SandboxInfo{
+		Name:    "sandbox-job",
+		Id:      "pod-123",
+		Ip:      "10.20.30.40",
+		Address: "10.20.30.40:50051",
+	}
+
+	require.NoError(t, p.Close(context.Background()))
+
+	require.Equal(t, []string{"10.20.30.40"}, ipFilter.removed)
+	require.Equal(t, "sandbox-job", deletedJob)
+	require.Nil(t, p.sandboxInfo)
+}
+
+func TestSandboxPlugin_Close_RemoveAllowedIps_WithoutSandboxManager(t *testing.T) {
+	t.Parallel()
+
+	ipFilter := &mockIpFilterSetter{}
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeDynamic),
+		WithSandboxManager(&mockSandboxManager{}),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+		WithIpFilterSetter(ipFilter),
+	)
+	require.NoError(t, err)
+
+	// Simulate a plugin that has sandbox metadata but no manager (e.g. test double); IP must still be cleared.
+	p.sandboxManager = nil
+	p.sandboxInfo = &sandboxmanager.SandboxInfo{
+		Name:    "sandbox-job",
+		Id:      "pod-123",
+		Ip:      "10.20.30.41",
+		Address: "10.20.30.41:50051",
+	}
+
+	require.NoError(t, p.Close(context.Background()))
+
+	require.Equal(t, []string{"10.20.30.41"}, ipFilter.removed)
+	require.Nil(t, p.sandboxInfo)
 }
 
 func TestSandboxPlugin_IsAvailable_SandboxDead_Dynamic_ReturnsFatal(t *testing.T) {

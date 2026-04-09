@@ -259,6 +259,9 @@ func (rt *redisTransport) setDegradedMode(degraded bool) error {
 	if degraded && !rt.serviceDegraded {
 		// Service is going into degraded mode, start timer for max degradation time before killing the service
 		rt.logger.Info("service entering degraded mode", zap.Duration("max-degraded-time", rt.maxDegradedTime))
+		sandboxmetrics.RecordWorkerDegradedModeTransition(
+			rt.context, sandboxmetrics.DegradedModeTransitionEnter, rt.workerId, rt.ephemeral,
+		)
 		rt.serviceDegradedTimer = time.AfterFunc(rt.maxDegradedTime, func() {
 			rt.logger.Error(
 				"service degraded for too long, shutting down",
@@ -276,6 +279,9 @@ func (rt *redisTransport) setDegradedMode(degraded bool) error {
 		}
 
 		rt.logger.Info("service recovering from degraded mode")
+		sandboxmetrics.RecordWorkerDegradedModeTransition(
+			rt.context, sandboxmetrics.DegradedModeTransitionRecover, rt.workerId, rt.ephemeral,
+		)
 		rt.serviceDegradedTimer = nil
 	}
 

@@ -94,6 +94,7 @@ func grpcTransportSizeExceeded(err error) (int64, int64, bool) {
 // IpFilterSetter allows setting IP filters on the variable store
 type IpFilterSetter interface {
 	AddAllowedIps(ips ...string)
+	RemoveAllowedIps(ips ...string)
 }
 
 // SandboxPlugin executes code by forwarding to a gRPC sandbox server.
@@ -424,32 +425,39 @@ func (p *SandboxPlugin) Close(ctx context.Context) error {
 	}
 	p.connMu.Unlock()
 
-	if p.sandboxInfo != nil && p.sandboxManager != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		start := time.Now()
-		if err := p.sandboxManager.DeleteSandbox(ctx, p.sandboxInfo.Name); err != nil {
-			sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxTeardownDuration, time.Since(start).Seconds(),
-				sandboxmetrics.AttrResult.String("failed"),
-			)
-			p.logger.Warn("failed to delete sandbox job",
-				zap.String("job", p.sandboxInfo.Name),
-				zap.String("pod", p.sandboxInfo.Id),
-				zap.Error(err),
-			)
-			return err
+	if p.sandboxInfo != nil {
+		if p.ipFilterSetter != nil {
+			p.ipFilterSetter.RemoveAllowedIps(p.sandboxInfo.Ip)
 		}
 
-		sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxTeardownDuration, time.Since(start).Seconds(),
-			sandboxmetrics.AttrResult.String("succeeded"),
-		)
+		if p.sandboxManager != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 
-		p.logger.Info(
-			"deleted sandbox job",
-			zap.String("name", p.sandboxInfo.Name),
-			zap.String("pod", p.sandboxInfo.Id),
-		)
+			start := time.Now()
+			if err := p.sandboxManager.DeleteSandbox(ctx, p.sandboxInfo.Name); err != nil {
+				sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxTeardownDuration, time.Since(start).Seconds(),
+					sandboxmetrics.AttrResult.String("failed"),
+				)
+				p.logger.Warn("failed to delete sandbox job",
+					zap.String("job", p.sandboxInfo.Name),
+					zap.String("pod", p.sandboxInfo.Id),
+					zap.Error(err),
+				)
+				return err
+			}
+
+			sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxTeardownDuration, time.Since(start).Seconds(),
+				sandboxmetrics.AttrResult.String("succeeded"),
+			)
+
+			p.logger.Info(
+				"deleted sandbox job",
+				zap.String("name", p.sandboxInfo.Name),
+				zap.String("pod", p.sandboxInfo.Id),
+			)
+		}
+
 		p.sandboxInfo = nil
 	}
 

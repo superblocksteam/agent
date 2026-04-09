@@ -14,4 +14,5 @@ func TestRegisterMetricsWithMeter_RegistersLifecycleHistogram(t *testing.T) {
 	err := RegisterMetricsWithMeter(meter)
 	require.NoError(t, err)
 	assert.NotNil(t, SandboxLifecycleDuration)
+	assert.NotNil(t, WorkerDegradedModeTransitions)
 }

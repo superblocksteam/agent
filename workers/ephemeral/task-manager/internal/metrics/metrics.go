@@ -70,6 +70,10 @@ var (
 	// Use bounded attribute values only (see AttrPoolEvent).
 	SandboxPoolEventsTotal metric.Int64Counter
 
+	// WorkerDegradedModeTransitions counts Redis transport transitions into and out of degraded mode
+	// (plugins unavailable). Attributes: transition (enter|recover), worker_id, ephemeral.
+	WorkerDegradedModeTransitions metric.Int64Counter
+
 	// SandboxPoolSandboxReadyDuration measures wall time from runPlugin start until the sandbox is ready for dispatch.
 	SandboxPoolSandboxReadyDuration metric.Float64Histogram
 
@@ -274,6 +278,15 @@ func registerWithMeter(meter metric.Meter) error {
 		return err
 	}
 
+	WorkerDegradedModeTransitions, err = meter.Int64Counter(
+		"worker_degraded_mode_transitions_total",
+		metric.WithDescription("Redis transport worker transitions into or out of degraded mode (plugins unavailable)"),
+		metric.WithUnit("{transition}"),
+	)
+	if err != nil {
+		return err
+	}
+
 	SandboxPoolSandboxReadyDuration, err = meter.Float64Histogram(
 		"sandbox_pool_sandbox_ready_duration_seconds",
 		metric.WithDescription("Time from pool sandbox start until sandbox plugin reports ready"),
@@ -358,6 +371,21 @@ func RecordPoolEvent(ctx context.Context, event string, connectionMode string) {
 	)
 }
 
+// Degraded mode transition values for worker_degraded_mode_transitions_total (bounded cardinality).
+const (
+	DegradedModeTransitionEnter   = "enter"
+	DegradedModeTransitionRecover = "recover"
+)
+
+// RecordWorkerDegradedModeTransition increments worker_degraded_mode_transitions_total.
+func RecordWorkerDegradedModeTransition(ctx context.Context, transition string, workerID string, ephemeral bool) {
+	AddCounter(ctx, WorkerDegradedModeTransitions,
+		AttrEphemeral.Bool(ephemeral),
+		AttrDegradedModeTransition.String(transition),
+		AttrWorkerID.String(workerID),
+	)
+}
+
 // meterProviderRunnable wraps a MeterProvider as a run.Runnable so it
 // participates in the run group lifecycle and shuts down cleanly (os.Exit
 // skips deferred calls, so defer-based shutdown is unreliable).
@@ -404,16 +432,18 @@ func buildMetricsURL(baseURL string) string {
 
 // Common attribute keys for sandbox metrics.
 var (
-	AttrConnectionStateFrom = attribute.Key("from_state")
-	AttrConnectionStateTo   = attribute.Key("to_state")
-	AttrEphemeral           = attribute.Key("ephemeral")
-	AttrLanguage            = attribute.Key("language")
-	AttrPlugin              = attribute.Key("plugin_name")
-	AttrOperation           = attribute.Key("operation")
-	AttrPoolConnectionMode  = attribute.Key("connection_mode") // static | dynamic
-	AttrPoolEvent           = attribute.Key("event")
-	AttrResult              = attribute.Key("result")
-	AttrWarmStart           = attribute.Key("warm_start")
+	AttrConnectionStateFrom    = attribute.Key("from_state")
+	AttrConnectionStateTo      = attribute.Key("to_state")
+	AttrDegradedModeTransition = attribute.Key("transition") // enter | recover
+	AttrEphemeral              = attribute.Key("ephemeral")
+	AttrLanguage               = attribute.Key("language")
+	AttrPlugin                 = attribute.Key("plugin_name")
+	AttrOperation              = attribute.Key("operation")
+	AttrPoolConnectionMode     = attribute.Key("connection_mode") // static | dynamic
+	AttrPoolEvent              = attribute.Key("event")
+	AttrResult                 = attribute.Key("result")
+	AttrWarmStart              = attribute.Key("warm_start")
+	AttrWorkerID               = attribute.Key("worker_id")
 )
 
 // Pool event values for sandbox_pool_events_total (bounded cardinality).
