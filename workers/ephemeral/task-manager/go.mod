@@ -1,6 +1,6 @@
 module workers/ephemeral/task-manager
 
-go 1.25.5
+go 1.26.1
 
 require (
 	github.com/go-redis/redismock/v9 v9.2.0

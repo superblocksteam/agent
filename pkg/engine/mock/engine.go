@@ -7,9 +7,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 	engine "github.com/superblocksteam/agent/pkg/engine"
-
 	utils "github.com/superblocksteam/agent/pkg/utils"
-
 	v1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 )
 

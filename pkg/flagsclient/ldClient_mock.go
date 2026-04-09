@@ -5,7 +5,6 @@ package flagsclient
 import (
 	ldcontext "github.com/launchdarkly/go-sdk-common/v3/ldcontext"
 	ldvalue "github.com/launchdarkly/go-sdk-common/v3/ldvalue"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

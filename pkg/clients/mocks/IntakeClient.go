@@ -5,13 +5,10 @@ package mocks
 import (
 	context "context"
 	http "net/http"
-
-	event "github.com/cloudevents/sdk-go/v2/event"
-
-	mock "github.com/stretchr/testify/mock"
-
 	time "time"
 
+	event "github.com/cloudevents/sdk-go/v2/event"
+	mock "github.com/stretchr/testify/mock"
 	v1 "github.com/superblocksteam/agent/types/gen/go/syncer/v1"
 )
 

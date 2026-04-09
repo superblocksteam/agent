@@ -4,7 +4,7 @@
 # List all build-time variables with their default values
 # They need to be redefined in each stage to be used in that stage
 ARG DEBIAN_TRIXIE_VERSION=20250811
-ARG GO_VERSION=1.25.5
+ARG GO_VERSION=1.26.1
 ARG PYTHON_VERSION=3.10.18
 ARG NODE_VERSION_MAJOR=20
 ARG NODE_VERSION=20.19.5

@@ -1266,7 +1266,7 @@ func (s *server) executeCodeMode(
 	// Read the worker output from the store. When the worker succeeded this is
 	// the normal path. When the worker failed, the store may still contain
 	// stdout/stderr captured before the error, which is valuable for debugging.
-	var output apiv1.Output
+	output := &apiv1.Output{}
 	var diagnostics []*apiv1.IntegrationDiagnostic
 	var storeErr error
 	outputRetrieveStart := time.Now()
@@ -1318,7 +1318,7 @@ func (s *server) executeCodeMode(
 			return res, nil
 		}, nil)
 		if or.output != nil {
-			output = *or.output
+			output = or.output
 		}
 		diagnostics = or.diagnostics
 		storeErr = storeObsErr
@@ -1407,7 +1407,7 @@ func (s *server) executeCodeMode(
 	output.Stderr = nil
 
 	return &executor.Done{
-		Output:      &output,
+		Output:      output,
 		Last:        "api-2.0",
 		Diagnostics: diagnostics,
 	}, nil

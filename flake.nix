@@ -44,7 +44,7 @@
 
           goVersion = readVersionOrFallback {
             path = ./.go-version;
-            fallback = "1.25.5";
+            fallback = "1.26.1";
             label = ".go-version";
             pattern = "[0-9]+\\.[0-9]+\\.[0-9]+";
           };
@@ -53,7 +53,7 @@
             if builtins.hasAttr goAttr pkgs then
               pkgs.${goAttr}
             else
-              builtins.trace "warning: unsupported Go version in .go-version: ${goVersion}; defaulting to go_1_25" pkgs.go_1_25;
+              builtins.trace "warning: unsupported Go version in .go-version: ${goVersion}; defaulting to go_1_26" pkgs.go_1_26;
 
           pythonVersion = readVersionOrFallback {
             path = ./workers/python/.python-version;

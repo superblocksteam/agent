@@ -24,6 +24,10 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
+type runResult struct {
+	err error
+}
+
 const typesOfResources = 3
 
 var (
@@ -234,14 +238,12 @@ func testRunLoop(t *testing.T, args *args) {
 		}
 	}
 
+	resultCh := make(chan runResult, 1)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		err := args.reconciler.Run(ctx)
-		if err == nil {
-			t.Fatalf("err must not be nil, it must return only when ctx is canceled")
-		}
-		require.ErrorIs(t, err, ctx.Err())
+		resultCh <- runResult{err: err}
 	}()
 
 	if args.noTestLoop {
@@ -250,6 +252,9 @@ func testRunLoop(t *testing.T, args *args) {
 	}
 
 	wg.Wait()
+	result := <-resultCh
+	require.Error(t, result.err, "err must not be nil, it must return only when ctx is canceled")
+	require.ErrorIs(t, result.err, ctx.Err())
 }
 
 func verify(t *testing.T, args *args) {

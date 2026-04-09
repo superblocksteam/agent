@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -24,6 +25,17 @@ type serverClient struct {
 	timeout             *time.Duration
 	unmarshaler         *jsonpb.Unmarshaler
 	superblocksAgentKey string
+}
+
+type cancelOnCloseReadCloser struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (c *cancelOnCloseReadCloser) Close() error {
+	err := c.ReadCloser.Close()
+	c.cancel()
+	return err
 }
 
 type ServerClientOptions struct {
@@ -249,16 +261,27 @@ func (s *serverClient) sendRequest(ctx context.Context, timeout *time.Duration, 
 		timeout = s.timeout
 	}
 
-	ctx, _ = context.WithTimeout(ctx, *timeout)
+	ctx, cancel := context.WithTimeout(ctx, *timeout)
 
 	req, err := s.buildRequest(ctx, method, path, headers, query, body)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
 	resp, err := s.client.Do(req)
 	if err != nil {
+		cancel()
 		return nil, err
+	}
+
+	if resp != nil && resp.Body != nil {
+		resp.Body = &cancelOnCloseReadCloser{
+			ReadCloser: resp.Body,
+			cancel:     cancel,
+		}
+	} else {
+		cancel()
 	}
 
 	return resp, nil

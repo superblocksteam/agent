@@ -239,6 +239,7 @@ func TestSandboxThreadSafety(t *testing.T) {
 	}
 
 	var wg sync.WaitGroup
+	errCh := make(chan error, 1000)
 	defer wg.Wait()
 	for i := 0; i < 1000; i++ {
 		i := i
@@ -258,14 +259,20 @@ func TestSandboxThreadSafety(t *testing.T) {
 			a, err := engine.Resolve(ctx, code, nil).Result()
 			if err != nil {
 				if !(errors.Is(err, ErrEngineClosed) || errors.Is(err, ErrSandboxClosed)) {
-					t.Fatalf("unexpected error: %v", err)
+					errCh <- fmt.Errorf("unexpected error: %w", err)
 				}
 				return
 			}
 
-			require.NoErrorf(t, err, "i %d", i)
-			require.Equalf(t, int32(jsi), a, "i %d", i)
+			if a != int32(jsi) {
+				errCh <- fmt.Errorf("unexpected result for i %d: got %v want %d", i, a, jsi)
+			}
 		}()
+	}
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		require.NoError(t, err)
 	}
 }
 

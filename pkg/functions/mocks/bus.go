@@ -6,7 +6,6 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-
 	v1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 )
 

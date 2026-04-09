@@ -213,6 +213,14 @@ func New(ctx context.Context, options *Options) (Executor, error) {
 
 	// TODO(frank): I might need to merge this context with the gRPC context.
 	ctx, cancel := context.WithCancelCause(ctx)
+	// NewResolver takes ownership of this cancel func once initialization succeeds.
+	// If we return early before assigning ex.resolver, cancel here to avoid leaking
+	// the constructor-scoped context created for estimate() and resolver setup.
+	defer func() {
+		if ex.resolver == nil {
+			cancel(nil)
+		}
+	}()
 
 	estimates, err := ex.estimate(ctx, ex.Api)
 	if err != nil {

@@ -5,12 +5,10 @@ package mocks
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	slog "log/slog"
-
 	time "time"
 
+	mock "github.com/stretchr/testify/mock"
 	zap "go.uber.org/zap"
 )
 

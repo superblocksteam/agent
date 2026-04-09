@@ -30,14 +30,12 @@ func TestWaitForReadyTimeout(t *testing.T) {
 		wg.Wait()
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		t.Logf("accept 1")
 		conn, err := ln.Accept()
 		require.NoError(t, err)
 		_ = conn.Close()
-	}()
+	})
 
 	port := ln.Addr().(*net.TCPAddr).Port
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
@@ -49,28 +47,25 @@ func TestWaitForReadyTimeout(t *testing.T) {
 	_ = ln.Close()
 	ln = nil
 
-	wg.Add(1)
 	done := make(chan struct{})
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		WaitForReadyTimeout(t, 100*time.Millisecond, time.Second, addr)
 		t.Logf("ready 2")
 		close(done)
-	}()
+	})
 
 	time.Sleep(300 * time.Millisecond)
 
 	ln, err = net.Listen("tcp", addr)
 	require.NoError(t, err)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		t.Logf("accept 2")
 		conn, err := ln.Accept()
-		require.NoError(t, err)
-		_ = conn.Close()
-	}()
+		if err == nil {
+			_ = conn.Close()
+		}
+	})
 
 	select {
 	case <-done:

@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inject oauth token into `Authorization` header (if not present) when rendering datasource configs using oauth-code auth type
 - Fix parsing of CORS headers, when set via `SUPERBLOCKS_ORCHESTRATOR_CORS_HEADERS` env var, and provided as comma separated list
 - Re-expose `crypto` as a global so JavaScript code can use APIs like `crypto.randomUUID()` without explicitly requiring the module
+- Upgrade Go toolchain pins from 1.25.5 to 1.26.1 and update Docker Go builders to use the published 1.26.1 trixie image
 - Expose batch processor settings (`SUPERBLOCKS_TELEMETRY_MAX_QUEUE_SIZE`, `SUPERBLOCKS_TELEMETRY_MAX_EXPORT_BATCH_SIZE`, `SUPERBLOCKS_TELEMETRY_BATCH_TIMEOUT`, `SUPERBLOCKS_TELEMETRY_EXPORT_TIMEOUT`) as operator-tunable env vars
 
 ## v1.36.1

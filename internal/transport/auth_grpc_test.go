@@ -243,7 +243,7 @@ func TestRequestOauthPasswordToken(t *testing.T) {
 				"audience":      "clarks_audience",
 			},
 			authConfigAssertionFunc: func(actualAuthConfig *pluginscommonv1.OAuth_PasswordGrantFlow) bool {
-				return cmp.Equal(*actualAuthConfig, pluginscommonv1.OAuth_PasswordGrantFlow{
+				return cmp.Equal(actualAuthConfig, &pluginscommonv1.OAuth_PasswordGrantFlow{
 					Username:     "clarkkoala",
 					Password:     "iamakoala",
 					TokenUrl:     "https://clark.koala",

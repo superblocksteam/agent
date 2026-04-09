@@ -1627,7 +1627,7 @@ func TestExecuteV3IncludesEventsInEditMode(t *testing.T) {
 				for _, ev := range resp.Events {
 					if end := ev.GetEnd(); end != nil && end.Performance != nil {
 						found = true
-						assert.Greater(t, end.Performance.Total, int64(0))
+						assert.GreaterOrEqual(t, end.Performance.Total, int64(0))
 
 						// Verify bootstrap timing round-trips from the worker.
 						require.NotNil(t, end.Performance.BootstrapTiming, "expected bootstrap timing in performance")

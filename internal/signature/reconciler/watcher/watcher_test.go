@@ -62,19 +62,18 @@ func start(t *testing.T, args *args, server *httptest.Server, expectedErrMsg str
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
+	runErrCh := make(chan error, 1)
 
 	t.Cleanup(func() {
 		cancel()
 		wg.Wait()
+		err := <-runErrCh
+		require.True(t, errors.Is(err, context.Canceled), "unexpected Run error: %v", err)
 	})
-
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := watcher.Run(ctx)
-		if !errors.Is(err, context.Canceled) {
-			t.Fatalf("unexpected Run error: %v", err)
-		}
+		runErrCh <- watcher.Run(ctx)
 	}()
 
 	wg.Add(1)

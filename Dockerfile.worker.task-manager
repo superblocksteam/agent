@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.9.0
 
 # Build stage (using Debian for glibc compatibility with v8go)
-FROM golang:1.25 AS builder
+FROM ghcr.io/superblocksteam/golang:1.26.1-trixie AS builder
 
 WORKDIR /app
 

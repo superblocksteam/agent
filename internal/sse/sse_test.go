@@ -64,6 +64,8 @@ func verify(t *testing.T, args *args, expectedErr error) <-chan struct{} {
 	t.Cleanup(wg.Wait)
 
 	done := make(chan struct{})
+	parseErrCh := make(chan error, 1)
+	diffCh := make(chan string, 1)
 
 	wg.Add(1)
 	go func() {
@@ -72,28 +74,34 @@ func verify(t *testing.T, args *args, expectedErr error) <-chan struct{} {
 
 		err := Parse(args.log, args.reader, args.events)
 		if expectedErr == nil {
-			require.NoError(t, err)
-		} else {
-			t.Logf("error: %v", err)
-			require.ErrorIs(t, err, expectedErr)
+			parseErrCh <- err
+			return
 		}
+		parseErrCh <- err
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer close(done)
-
 		events := []Event{}
 		for event := range args.events {
 			events = append(events, event)
 		}
-		d := cmp.Diff(args.expect, events)
-		if d != "" {
-			t.Fatalf("expected events diff\n%s", d)
-		}
+		diffCh <- cmp.Diff(args.expect, events)
 	}()
 
+	err := <-parseErrCh
+	diff := <-diffCh
+	if expectedErr == nil {
+		require.NoError(t, err)
+	} else {
+		t.Logf("error: %v", err)
+		require.ErrorIs(t, err, expectedErr)
+	}
+	if diff != "" {
+		require.FailNowf(t, "unexpected events diff", "%s", diff)
+	}
+	close(done)
 	return done
 }
 
