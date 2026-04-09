@@ -3903,7 +3903,7 @@ proto.plugins.common.v1.AkeylessAuth.prototype.hasEmail = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.plugins.common.v1.Auth.oneofGroups_ = [[1,2,3,4,5,6]];
+proto.plugins.common.v1.Auth.oneofGroups_ = [[1,2,3,4,5,6,7]];
 
 /**
  * @enum {number}
@@ -3915,7 +3915,8 @@ proto.plugins.common.v1.Auth.MethodCase = {
   BASIC: 3,
   CLIENT_CREDENTIALS_FLOW: 4,
   KEY: 5,
-  OAUTH_TOKEN_EXCHANGE: 6
+  OAUTH_TOKEN_EXCHANGE: 6,
+  OAUTH_IDP_TOKEN_PASSTHROUGH: 7
 };
 
 /**
@@ -3961,7 +3962,8 @@ proto.plugins.common.v1.Auth.toObject = function(includeInstance, msg) {
     basic: (f = msg.getBasic()) && proto.plugins.common.v1.Basic.toObject(includeInstance, f),
     clientCredentialsFlow: (f = msg.getClientCredentialsFlow()) && proto.plugins.common.v1.OAuth.ClientCredentialsFlow.toObject(includeInstance, f),
     key: (f = msg.getKey()) && proto.plugins.common.v1.Azure.Key.toObject(includeInstance, f),
-    oauthTokenExchange: (f = msg.getOauthTokenExchange()) && proto.plugins.common.v1.Auth.Nothing.toObject(includeInstance, f)
+    oauthTokenExchange: (f = msg.getOauthTokenExchange()) && proto.plugins.common.v1.Auth.Nothing.toObject(includeInstance, f),
+    oauthIdpTokenPassthrough: (f = msg.getOauthIdpTokenPassthrough()) && proto.plugins.common.v1.Auth.Nothing.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -4027,6 +4029,11 @@ proto.plugins.common.v1.Auth.deserializeBinaryFromReader = function(msg, reader)
       var value = new proto.plugins.common.v1.Auth.Nothing;
       reader.readMessage(value,proto.plugins.common.v1.Auth.Nothing.deserializeBinaryFromReader);
       msg.setOauthTokenExchange(value);
+      break;
+    case 7:
+      var value = new proto.plugins.common.v1.Auth.Nothing;
+      reader.readMessage(value,proto.plugins.common.v1.Auth.Nothing.deserializeBinaryFromReader);
+      msg.setOauthIdpTokenPassthrough(value);
       break;
     default:
       reader.skipField();
@@ -4101,6 +4108,14 @@ proto.plugins.common.v1.Auth.serializeBinaryToWriter = function(message, writer)
   if (f != null) {
     writer.writeMessage(
       6,
+      f,
+      proto.plugins.common.v1.Auth.Nothing.serializeBinaryToWriter
+    );
+  }
+  f = message.getOauthIdpTokenPassthrough();
+  if (f != null) {
+    writer.writeMessage(
+      7,
       f,
       proto.plugins.common.v1.Auth.Nothing.serializeBinaryToWriter
     );
@@ -4428,6 +4443,43 @@ proto.plugins.common.v1.Auth.prototype.clearOauthTokenExchange = function() {
  */
 proto.plugins.common.v1.Auth.prototype.hasOauthTokenExchange = function() {
   return jspb.Message.getField(this, 6) != null;
+};
+
+
+/**
+ * optional Nothing oauth_idp_token_passthrough = 7;
+ * @return {?proto.plugins.common.v1.Auth.Nothing}
+ */
+proto.plugins.common.v1.Auth.prototype.getOauthIdpTokenPassthrough = function() {
+  return /** @type{?proto.plugins.common.v1.Auth.Nothing} */ (
+    jspb.Message.getWrapperField(this, proto.plugins.common.v1.Auth.Nothing, 7));
+};
+
+
+/**
+ * @param {?proto.plugins.common.v1.Auth.Nothing|undefined} value
+ * @return {!proto.plugins.common.v1.Auth} returns this
+*/
+proto.plugins.common.v1.Auth.prototype.setOauthIdpTokenPassthrough = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 7, proto.plugins.common.v1.Auth.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.plugins.common.v1.Auth} returns this
+ */
+proto.plugins.common.v1.Auth.prototype.clearOauthIdpTokenPassthrough = function() {
+  return this.setOauthIdpTokenPassthrough(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.plugins.common.v1.Auth.prototype.hasOauthIdpTokenPassthrough = function() {
+  return jspb.Message.getField(this, 7) != null;
 };
 
 

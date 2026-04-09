@@ -1,4 +1,5 @@
 import { StructuredLog } from '@superblocks/shared';
+
 import { SUPERBLOCKS_CONTROLLER_KEY, SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE, SUPERBLOCKS_WORKER_ID } from './env';
 
 const constructLog = (message: string, fields: Record<string, string>) => {

@@ -53,6 +53,9 @@
 #       terminationGracePeriodSeconds: 600
 #       delay: 1m
 #       maxJitter: 5m
+#     # Optional: override chart-wide sandbox.poolSize for this fleet only
+#     sandbox:
+#       poolSize: 3
 fleets: {}
 # Task Manager configuration
 taskManager:
@@ -103,6 +106,8 @@ taskManager:
 sandbox:
   # Default gRPC port for sandbox pods (used in NetworkPolicy)
   port: 50051
+  # Number of sandbox Jobs per task-manager pod (dynamic mode only; use 1 for static sandbox.address)
+  poolSize: 1
   # Runtime class for sandbox pods (e.g., gvisor for secure isolation)
   # Falls back to global runtimeClassName if not set
   runtimeClassName: ""
@@ -240,6 +245,10 @@ telemetry:
 # Superblocks configuration
 superblocks:
   key: <override>
+  # Platform-managed SSH tunnel private keys (only needed for integration fleets)
+  # Leave empty to omit the K8s Secret; set values when externalSecrets.enabled is false.
+  tunnelPrivateKeyRSA: ""
+  tunnelPrivateKeyEd25519: ""
 externalSecrets:
   enabled: false
   refreshInterval: 1h

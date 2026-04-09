@@ -139,7 +139,12 @@ func (p *pluginExecutor) ArePluginsAvailable(ctx context.Context) plugin.PluginS
 		DegradationState: plugin.DegradationState_NONE,
 	}
 
+	uniquePlugins := utils.NewSet[plugin.Plugin]()
 	for _, plug := range p.plugins {
+		uniquePlugins.Add(plug)
+	}
+
+	for _, plug := range uniquePlugins.ToSlice() {
 		plugStatus := plug.IsAvailable(ctx)
 		if !plugStatus.Available {
 			status.Available = false
@@ -222,6 +227,10 @@ func (p *pluginExecutor) Execute(
 			if perf.KvStorePush != nil {
 				parentPerf.KvStorePush = perf.KvStorePush
 			}
+			parentPerf.BootstrapSdkImport = perf.BootstrapSdkImport
+			parentPerf.BootstrapBridgeSetup = perf.BootstrapBridgeSetup
+			parentPerf.BootstrapRequireRoot = perf.BootstrapRequireRoot
+			parentPerf.BootstrapCodeExecution = perf.BootstrapCodeExecution
 		}()
 	}
 
@@ -249,6 +258,15 @@ func (p *pluginExecutor) Execute(
 	// If the plugin returns a nil result for the output, set to default/empty value
 	if output == nil {
 		output = &workerv1.ExecuteResponse{}
+	}
+
+	// Propagate bootstrap timing from the sandbox ExecuteResponse into the
+	// transport Performance so it flows back to the orchestrator.
+	if sp := output.GetPerformance(); sp != nil {
+		perf.BootstrapSdkImport = sp.GetBootstrapSdkImport()
+		perf.BootstrapBridgeSetup = sp.GetBootstrapBridgeSetup()
+		perf.BootstrapRequireRoot = sp.GetBootstrapRequireRoot()
+		perf.BootstrapCodeExecution = sp.GetBootstrapCodeExecution()
 	}
 	if err == nil && output.GetError() != nil {
 		err = output.GetError()

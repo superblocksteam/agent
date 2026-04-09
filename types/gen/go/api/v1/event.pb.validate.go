@@ -580,6 +580,35 @@ func (m *Performance) validate(all bool) error {
 
 	// no validation rules for Custom
 
+	if all {
+		switch v := interface{}(m.GetBootstrapTiming()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapTiming",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapTiming",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBootstrapTiming()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PerformanceValidationError{
+				field:  "BootstrapTiming",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return PerformanceMultiError(errors)
 	}
@@ -1942,6 +1971,117 @@ var _ interface {
 var _Event_End_Status_NotInLookup = map[BlockStatus]struct{}{
 	0: {},
 }
+
+// Validate checks the field values on Performance_BootstrapTiming with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *Performance_BootstrapTiming) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Performance_BootstrapTiming with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// Performance_BootstrapTimingMultiError, or nil if none found.
+func (m *Performance_BootstrapTiming) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Performance_BootstrapTiming) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for SdkImportMs
+
+	// no validation rules for BridgeSetupMs
+
+	// no validation rules for RequireRootMs
+
+	// no validation rules for CodeExecutionMs
+
+	if len(errors) > 0 {
+		return Performance_BootstrapTimingMultiError(errors)
+	}
+
+	return nil
+}
+
+// Performance_BootstrapTimingMultiError is an error wrapping multiple
+// validation errors returned by Performance_BootstrapTiming.ValidateAll() if
+// the designated constraints aren't met.
+type Performance_BootstrapTimingMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m Performance_BootstrapTimingMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m Performance_BootstrapTimingMultiError) AllErrors() []error { return m }
+
+// Performance_BootstrapTimingValidationError is the validation error returned
+// by Performance_BootstrapTiming.Validate if the designated constraints
+// aren't met.
+type Performance_BootstrapTimingValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e Performance_BootstrapTimingValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e Performance_BootstrapTimingValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e Performance_BootstrapTimingValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e Performance_BootstrapTimingValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e Performance_BootstrapTimingValidationError) ErrorName() string {
+	return "Performance_BootstrapTimingValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e Performance_BootstrapTimingValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPerformance_BootstrapTiming.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = Performance_BootstrapTimingValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = Performance_BootstrapTimingValidationError{}
 
 // Validate checks the field values on Output_Request with the rules defined in
 // the proto definition for this message. If any rules are violated, the first

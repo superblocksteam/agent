@@ -227,6 +227,7 @@ export class ExecutionOutput {
   integrationErrorCode?: Code;
   diagnostics?: IntegrationCallDiagnostic[];
 
+
   constructor() {
     this.output = {};
     this.log = [];
@@ -245,6 +246,12 @@ export class ExecutionOutput {
     instance.request = obj.request;
     instance.startTimeUtc = obj.startTimeUtc;
     instance.diagnostics = obj.diagnostics;
+
+    // Preserve bootstrap timing injected by the javascriptsdkapi Piscina
+    // worker so it can flow through to the Performance proto.
+    if (obj.bootstrapTiming != null && typeof obj.bootstrapTiming === 'object') {
+      (instance as unknown as Record<string, unknown>)._bootstrapTiming = obj.bootstrapTiming;
+    }
 
     return instance;
   }

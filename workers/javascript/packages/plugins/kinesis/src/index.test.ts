@@ -1,14 +1,13 @@
 import { KinesisClient, ListStreamsCommand, PutRecordsCommand } from '@aws-sdk/client-kinesis';
 // NOTE: (joey) we import like this so we can mock some stuff in the test that we otherwise couldn't
 import * as awsClient from '@aws-sdk/client-kinesis';
-
-import { KinesisPluginV1 as Plugin } from '@superblocksteam/types';
 import {
   DUMMY_EXECUTION_CONTEXT,
   DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS,
   KinesisDatasourceConfiguration,
   KinesisActionConfiguration
 } from '@superblocks/shared';
+import { KinesisPluginV1 as Plugin } from '@superblocksteam/types';
 
 import KinesisPlugin from '.';
 const plugin: KinesisPlugin = new KinesisPlugin();

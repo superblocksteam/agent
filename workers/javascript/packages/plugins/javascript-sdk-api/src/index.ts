@@ -12,6 +12,7 @@
  * ExecutionOutput after the worker completes.
  */
 import * as path from 'node:path';
+
 import {
   ErrorCode,
   EvaluationPair,
@@ -22,6 +23,8 @@ import {
   PluginExecutionProps,
   WorkerPool
 } from '@superblocks/shared';
+
+import { SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST } from './env';
 
 const bootstrapExt = __filename.endsWith('.ts') ? '.ts' : '.js';
 const bootstrapPath = path.join(__dirname, `bootstrap${bootstrapExt}`);
@@ -45,12 +48,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
     return [];
   }
 
-  async execute({
-    context,
-    actionConfiguration,
-    files,
-    quotas
-  }: PluginExecutionProps): Promise<ExecutionOutput> {
+  async execute({ context, actionConfiguration, files, quotas }: PluginExecutionProps): Promise<ExecutionOutput> {
     const code = (actionConfiguration as LanguageActionConfiguration).body;
 
     if (!code) {
@@ -59,8 +57,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
       return output;
     }
 
-    const executionTimeout =
-      quotas?.duration || Number(this.pluginConfiguration?.javascriptExecutionTimeoutMs ?? 30_000);
+    const executionTimeout = quotas?.duration || Number(this.pluginConfiguration?.javascriptExecutionTimeoutMs ?? 30_000);
 
     if (!context.kvStore) {
       const output = new ExecutionOutput();
@@ -75,6 +72,7 @@ export default class JavascriptSdkApiPlugin extends LanguagePlugin {
           context,
           code,
           files,
+          inheritedEnv: SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST,
           executionTimeout
         },
         pluginName: this.pluginName,

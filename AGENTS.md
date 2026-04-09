@@ -87,6 +87,12 @@ Table-driven tests with `testify/assert`. Generate mocks: `//go:generate mockery
 
 ---
 
+## Changelog
+
+The [`CHANGELOG.md`](CHANGELOG.md) documents customer-facing changes for the On-Premise Agent (OPA). When a PR changes behavior that ships in the OPA image (bug fixes, new features, configuration changes, dependency upgrades), add a line under `## vNext` describing the change at a high level. Skip the changelog for CI-only, test-only, or internal tooling changes that do not affect the OPA.
+
+---
+
 ## Pre-commit Hooks
 
 ```bash

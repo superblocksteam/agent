@@ -1,5 +1,6 @@
 import { Histogram as OtelHistogram } from '@opentelemetry/api';
 import { Histogram } from 'prom-client';
+
 import { toMetricLabels } from '../observability';
 
 export async function observe<T>(

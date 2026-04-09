@@ -11,12 +11,11 @@ import {
   PluginExecutionProps,
   SqlOperations
 } from '@superblocks/shared';
-
 import mssql from 'mssql';
 jest.mock('mssql');
 
-import { SQL_SINGLE_TABLE_METADATA } from './queries';
 import MicrosoftSQLPlugin from '.';
+import { SQL_SINGLE_TABLE_METADATA } from './queries';
 
 const plugin: MicrosoftSQLPlugin = new MicrosoftSQLPlugin();
 

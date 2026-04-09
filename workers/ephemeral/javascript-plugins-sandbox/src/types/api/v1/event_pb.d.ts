@@ -264,6 +264,11 @@ export class Performance extends jspb.Message {
     getCustomMap(): jspb.Map<string, number>;
     clearCustomMap(): void;
 
+    hasBootstrapTiming(): boolean;
+    clearBootstrapTiming(): void;
+    getBootstrapTiming(): Performance.BootstrapTiming | undefined;
+    setBootstrapTiming(value?: Performance.BootstrapTiming): Performance;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Performance.AsObject;
     static toObject(includeInstance: boolean, msg: Performance): Performance.AsObject;
@@ -283,7 +288,39 @@ export namespace Performance {
         overhead: number,
 
         customMap: Array<[string, number]>,
+        bootstrapTiming?: Performance.BootstrapTiming.AsObject,
     }
+
+
+    export class BootstrapTiming extends jspb.Message { 
+        getSdkImportMs(): number;
+        setSdkImportMs(value: number): BootstrapTiming;
+        getBridgeSetupMs(): number;
+        setBridgeSetupMs(value: number): BootstrapTiming;
+        getRequireRootMs(): number;
+        setRequireRootMs(value: number): BootstrapTiming;
+        getCodeExecutionMs(): number;
+        setCodeExecutionMs(value: number): BootstrapTiming;
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): BootstrapTiming.AsObject;
+        static toObject(includeInstance: boolean, msg: BootstrapTiming): BootstrapTiming.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: BootstrapTiming, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): BootstrapTiming;
+        static deserializeBinaryFromReader(message: BootstrapTiming, reader: jspb.BinaryReader): BootstrapTiming;
+    }
+
+    export namespace BootstrapTiming {
+        export type AsObject = {
+            sdkImportMs: number,
+            bridgeSetupMs: number,
+            requireRootMs: number,
+            codeExecutionMs: number,
+        }
+    }
+
 }
 
 export class Output extends jspb.Message { 
@@ -421,6 +458,8 @@ export class IntegrationDiagnostic extends jspb.Message {
     setInputWasTruncated(value: boolean): IntegrationDiagnostic;
     getOutputWasTruncated(): boolean;
     setOutputWasTruncated(value: boolean): IntegrationDiagnostic;
+    getErrorCode(): string;
+    setErrorCode(value: string): IntegrationDiagnostic;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): IntegrationDiagnostic.AsObject;
@@ -446,6 +485,7 @@ export namespace IntegrationDiagnostic {
         metadata?: TraceMetadata.AsObject,
         inputWasTruncated: boolean,
         outputWasTruncated: boolean,
+        errorCode: string,
     }
 }
 

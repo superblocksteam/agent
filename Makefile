@@ -137,7 +137,21 @@ tag-docker:
 
 .PHONY: push-docker
 push-docker:
-	@docker push $(IMAGE_REPOSITORY) --all-tags
+	@attempt=1; \
+	max_attempts=5; \
+	while [ $$attempt -le $$max_attempts ]; do \
+		if docker push $(IMAGE_REPOSITORY) --all-tags; then \
+			exit 0; \
+		fi; \
+		if [ $$attempt -eq $$max_attempts ]; then \
+			echo "docker push failed after $$max_attempts attempts"; \
+			exit 1; \
+		fi; \
+		sleep_seconds=$$((attempt * 5)); \
+		echo "docker push failed (attempt $$attempt/$$max_attempts), retrying in $$sleep_seconds seconds..."; \
+		sleep $$sleep_seconds; \
+		attempt=$$((attempt + 1)); \
+	done
 
 .PHONY: cat-docker
 cat-docker:
@@ -183,6 +197,10 @@ test-e2e-quotas:
 .PHONY: test-e2e-ephemeral-network
 test-e2e-ephemeral-network:
 	postman collection run --color on --verbose ./postman/ephemeral_network_isolation.json -e ./postman/environments/$(POSTMAN_ENV).json
+
+.PHONY: test-e2e-ssh-tunnel
+test-e2e-ssh-tunnel:
+	postman collection run --color on --verbose ./postman/ssh_tunnel_collection.json -e ./postman/environments/$(POSTMAN_ENV).json
 
 .PHONY: test-e2e-javascriptsdkapi
 test-e2e-javascriptsdkapi:
@@ -295,6 +313,8 @@ deploy-helm:
 		--set sandbox_workers.taskManager.image.tag="$(IMAGE_TAG)" \
 		--set sandbox_workers.sandbox.javascript.image.tag="$(IMAGE_TAG)" \
 		--set sandbox_workers.sandbox.python.image.tag="$(IMAGE_TAG)" \
+		--set sandbox_workers.superblocks.tunnelPrivateKeyRSA="$(HELM_WORKER_KEY_RSA)" \
+		--set sandbox_workers.superblocks.tunnelPrivateKeyEd25519="$(HELM_WORKER_KEY_ED25519)" \
 		--set queue.host="${HELM_QUEUE_HOST}" \
 		--set queue.token="${HELM_QUEUE_TOKEN}" \
 		--set kvstore.host="${HELM_KVSTORE_HOST}" \

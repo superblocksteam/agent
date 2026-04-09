@@ -34,9 +34,7 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "ts-jest": "29.2.3",
     "ts-node": "10.9.2",
     "typescript": "catalog:"

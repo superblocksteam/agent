@@ -16,6 +16,7 @@ import {
   RelayDelegate
 } from '@superblocks/shared';
 import _, { isString } from 'lodash';
+
 import { INTROSPECTION_QUERY } from './introspectionQuery';
 
 export interface RequestConfig {

@@ -3,6 +3,7 @@
 Policy-aware OpenTelemetry bootstrap for Go services in `github.com/superblocksteam/agent`.
 
 This package provides:
+
 - required telemetry policy initialization,
 - tier-aware export decisions (Tier 1/2/3),
 - resilient trace exporting (fire-and-forget behavior),

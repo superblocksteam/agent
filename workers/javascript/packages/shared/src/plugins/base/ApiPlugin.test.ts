@@ -1,5 +1,5 @@
-import { doesResponseImplementServerSideEvents, ApiPlugin } from './ApiPlugin';
 import { ActionResponseType, DatasourceMetadataDto, ExecutionOutput } from '../../types';
+import { doesResponseImplementServerSideEvents, ApiPlugin } from './ApiPlugin';
 import { PluginExecutionProps } from './BasePlugin';
 
 describe('doesResponseImplementServerSideEvents', () => {
@@ -80,11 +80,9 @@ describe('ApiPlugin.streamRequest', () => {
 
     try {
       let streamResolved = false;
-      const streamPromise = plugin
-        .streamRequest(ActionResponseType.RAW, new Request('http://test.local'), send)
-        .then(() => {
-          streamResolved = true;
-        });
+      const streamPromise = plugin.streamRequest(ActionResponseType.RAW, new Request('http://test.local'), send).then(() => {
+        streamResolved = true;
+      });
 
       // Allow the SSE stream to be consumed.
       await new Promise((r) => setTimeout(r, 50));
@@ -123,9 +121,9 @@ describe('ApiPlugin.streamRequest', () => {
     global.fetch = jest.fn().mockResolvedValue(makeSseResponse(events));
 
     try {
-      await expect(
-        plugin.streamRequest(ActionResponseType.RAW, new Request('http://test.local'), send)
-      ).rejects.toThrow('Redis publish failed');
+      await expect(plugin.streamRequest(ActionResponseType.RAW, new Request('http://test.local'), send)).rejects.toThrow(
+        'Redis publish failed'
+      );
     } finally {
       global.fetch = originalFetch;
     }

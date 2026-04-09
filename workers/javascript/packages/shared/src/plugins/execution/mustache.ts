@@ -1,4 +1,5 @@
 import Mustache from 'mustache';
+
 import { TokenLocation } from '../../types/api';
 
 // All variables are HTML-escaped by default in Mustache,

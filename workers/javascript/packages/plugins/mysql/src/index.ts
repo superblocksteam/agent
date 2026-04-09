@@ -26,6 +26,7 @@ import { groupBy, isEmpty } from 'lodash';
 // with MySQL databases
 import { Connection, createConnection } from 'mariadb';
 import { Client as ssh2Client } from 'ssh2';
+
 import { DEFAULT_SCHEMA_QUERY, KEYS_QUERY, PRIMARY_KEY_QUERY, SQL_SINGLE_TABLE_METADATA, TABLE_QUERY } from './queries';
 
 const TEST_CONNECTION_TIMEOUT = 5000;

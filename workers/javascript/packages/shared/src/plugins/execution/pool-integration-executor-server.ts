@@ -1,4 +1,5 @@
 import { MessageChannel, MessagePort } from 'worker_threads';
+
 import { IntegrationExecutor, IntegrationCallDiagnostic } from '../../types';
 import { truncateJson } from './truncate-json';
 

@@ -1,4 +1,5 @@
 import P from 'pino';
+
 import { KVStore } from '../types';
 
 export class GC {

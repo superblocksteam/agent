@@ -1,4 +1,5 @@
 import { constants } from 'http2';
+
 import { AsyncParser } from '@json2csv/node';
 import {
   BasePlugin,
@@ -18,7 +19,6 @@ import {
   UnauthorizedError
 } from '@superblocks/shared';
 import { SalesforcePluginV1 } from '@superblocksteam/types';
-
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 export const API_VERSION = 'v58.0';

@@ -5,15 +5,11 @@
       "on": true,
       "targets": [
         {
-          "values": [
-            "00000000-0000-0000-0000-300000000001"
-          ],
+          "values": ["00000000-0000-0000-0000-300000000001"],
           "variation": 1
         },
         {
-          "values": [
-            "00000000-0000-0000-0000-300000000111"
-          ],
+          "values": ["00000000-0000-0000-0000-300000000111"],
           "variation": 2
         }
       ],
@@ -25,10 +21,7 @@
               "contextKind": "user",
               "attribute": "tier",
               "op": "in",
-              "values": [
-                "FREE",
-                "TRIAL"
-              ],
+              "values": ["FREE", "TRIAL"],
               "negate": false
             }
           ]
@@ -40,10 +33,7 @@
               "contextKind": "user",
               "attribute": "tier",
               "op": "in",
-              "values": [
-                "PRO",
-                "ENTERPRISE"
-              ],
+              "values": ["PRO", "ENTERPRISE"],
               "negate": false
             }
           ]
@@ -53,13 +43,7 @@
         "variation": 0
       },
       "offVariation": 0,
-      "variations": [
-        100000,
-        10000,
-        1000000000,
-        20000,
-        40000
-      ],
+      "variations": [100000, 10000, 1000000000, 20000, 40000],
       "deleted": false
     },
     "agent.quota.org.step.rate.seconds": {
@@ -67,9 +51,7 @@
       "on": true,
       "targets": [
         {
-          "values": [
-            "00000000-0000-0000-0000-300000000112"
-          ],
+          "values": ["00000000-0000-0000-0000-300000000112"],
           "variation": 1
         }
       ],
@@ -77,9 +59,7 @@
         "variation": 0
       },
       "offVariation": 0,
-      "variations": [
-        1000, 10
-      ],
+      "variations": [1000, 10],
       "deleted": false
     },
     "agent.quota.api.step.rate.seconds": {
@@ -90,9 +70,7 @@
         "variation": 0
       },
       "offVariation": 0,
-      "variations": [
-        1000
-      ],
+      "variations": [1000],
       "deleted": false
     },
     "agent.quota.user.step.rate.seconds": {
@@ -103,9 +81,7 @@
         "variation": 0
       },
       "offVariation": 0,
-      "variations": [
-        1000
-      ],
+      "variations": [1000],
       "deleted": false
     },
     "agent.quota.org.step.duration.milliseconds": {
@@ -113,9 +89,7 @@
       "on": true,
       "targets": [
         {
-          "values": [
-            "00000000-0000-0000-0000-300000000001"
-          ],
+          "values": ["00000000-0000-0000-0000-300000000001"],
           "variation": 1
         }
       ],
@@ -123,10 +97,7 @@
         "variation": 0
       },
       "offVariation": 0,
-      "variations": [
-        5000,
-        500
-      ],
+      "variations": [5000, 500],
       "deleted": false
     },
     "agent.quota.org.stream.send.size.max": {
@@ -134,9 +105,7 @@
       "on": true,
       "targets": [
         {
-          "values": [
-            "00000000-0000-0000-0000-300000000001"
-          ],
+          "values": ["00000000-0000-0000-0000-300000000001"],
           "variation": 1
         }
       ],
@@ -144,10 +113,7 @@
         "variation": 0
       },
       "offVariation": 0,
-      "variations": [
-        5000,
-        5
-      ],
+      "variations": [5000, 5],
       "deleted": false
     },
     "agent.quota.minutes.rate.week": {
@@ -161,10 +127,7 @@
               "contextKind": "user",
               "attribute": "tier",
               "op": "in",
-              "values": [
-                "TRIAL",
-                "FREE"
-              ],
+              "values": ["TRIAL", "FREE"],
               "negate": false
             }
           ]
@@ -176,10 +139,7 @@
               "contextKind": "user",
               "attribute": "tier",
               "op": "in",
-              "values": [
-                "PRO",
-                "ENTERPRISE"
-              ],
+              "values": ["PRO", "ENTERPRISE"],
               "negate": false
             }
           ]
@@ -187,9 +147,7 @@
       ],
       "targets": [
         {
-          "values": [
-            "00000000-0000-0000-0000-300000000114"
-          ],
+          "values": ["00000000-0000-0000-0000-300000000114"],
           "variation": 2
         }
       ],
@@ -210,10 +168,7 @@
               "contextKind": "user",
               "attribute": "tier",
               "op": "in",
-              "values": [
-                "TRIAL",
-                "FREE"
-              ],
+              "values": ["TRIAL", "FREE"],
               "negate": false
             }
           ]
@@ -225,10 +180,7 @@
               "contextKind": "user",
               "attribute": "tier",
               "op": "in",
-              "values": [
-                "PRO",
-                "ENTERPRISE"
-              ],
+              "values": ["PRO", "ENTERPRISE"],
               "negate": false
             }
           ]
@@ -236,9 +188,7 @@
       ],
       "targets": [
         {
-          "values": [
-            "00000000-0000-0000-0000-000000000002"
-          ],
+          "values": ["00000000-0000-0000-0000-000000000002"],
           "variation": 2
         }
       ],
@@ -257,10 +207,7 @@
         "variation": 1
       },
       "offVariation": 0,
-      "variations": [
-        [],
-        ["javascriptsdkapi"]
-      ],
+      "variations": [[], ["javascriptsdkapi"]],
       "deleted": false
     },
     "agent.quota.api.parallel.pool.size.max": {
@@ -274,10 +221,7 @@
               "contextKind": "user",
               "attribute": "tier",
               "op": "in",
-              "values": [
-                "TRIAL",
-                "FREE"
-              ],
+              "values": ["TRIAL", "FREE"],
               "negate": false
             }
           ]

@@ -1,4 +1,5 @@
 import { describe, it } from '@jest/globals';
+
 import { FullPluginPropsBuilder } from '../../../../plugin-property/builder/builders';
 import { PluginPropsWriter } from '../../../../plugin-property/delegates/writer';
 import { MockKVStore } from '../../../../store/mock';

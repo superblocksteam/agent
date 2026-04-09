@@ -1,4 +1,5 @@
 import { default as pino } from 'pino';
+
 import { SUPERBLOCKS_WORKER_SANDBOX_LOG_LEVEL as level } from './env';
 
 export default pino({

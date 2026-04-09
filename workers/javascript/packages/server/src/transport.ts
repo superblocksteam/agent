@@ -1,5 +1,6 @@
 import { Closer, ConnectionPoolCoordinator, MaybeError } from '@superblocks/shared';
 import pino from 'pino';
+
 import {
   SUPERBLOCKS_CONNECTION_CACHE_MAX_CONCURRENT_CONNECTIONS,
   SUPERBLOCKS_CONNECTION_CACHE_MAX_CONNECTIONS_PER_DATASOURCE,

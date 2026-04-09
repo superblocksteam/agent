@@ -920,6 +920,12 @@ export class Auth extends Message<Auth> {
      */
     value: Auth_Nothing;
     case: "oauthTokenExchange";
+  } | {
+    /**
+     * @generated from field: plugins.common.v1.Auth.Nothing oauth_idp_token_passthrough = 7;
+     */
+    value: Auth_Nothing;
+    case: "oauthIdpTokenPassthrough";
   } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<Auth>) {
@@ -936,6 +942,7 @@ export class Auth extends Message<Auth> {
     { no: 4, name: "client_credentials_flow", kind: "message", T: OAuth_ClientCredentialsFlow, oneof: "method" },
     { no: 5, name: "key", kind: "message", T: Azure_Key, oneof: "method" },
     { no: 6, name: "oauth_token_exchange", kind: "message", T: Auth_Nothing, oneof: "method" },
+    { no: 7, name: "oauth_idp_token_passthrough", kind: "message", T: Auth_Nothing, oneof: "method" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Auth {

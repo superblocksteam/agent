@@ -2836,7 +2836,8 @@ proto.api.v1.ExecuteRequest.FetchCode.toObject = function(includeInstance, msg) 
     viewMode: jspb.Message.getFieldWithDefault(msg, 3, 0),
     commitId: jspb.Message.getFieldWithDefault(msg, 4, ""),
     branchName: jspb.Message.getFieldWithDefault(msg, 5, ""),
-    entryPoint: jspb.Message.getFieldWithDefault(msg, 6, "")
+    entryPoint: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    exportName: jspb.Message.getFieldWithDefault(msg, 7, "")
   };
 
   if (includeInstance) {
@@ -2897,6 +2898,10 @@ proto.api.v1.ExecuteRequest.FetchCode.deserializeBinaryFromReader = function(msg
     case 6:
       var value = /** @type {string} */ (reader.readString());
       msg.setEntryPoint(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setExportName(value);
       break;
     default:
       reader.skipField();
@@ -2967,6 +2972,13 @@ proto.api.v1.ExecuteRequest.FetchCode.serializeBinaryToWriter = function(message
   if (f != null) {
     writer.writeString(
       6,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 7));
+  if (f != null) {
+    writer.writeString(
+      7,
       f
     );
   }
@@ -3151,6 +3163,42 @@ proto.api.v1.ExecuteRequest.FetchCode.prototype.clearEntryPoint = function() {
  */
 proto.api.v1.ExecuteRequest.FetchCode.prototype.hasEntryPoint = function() {
   return jspb.Message.getField(this, 6) != null;
+};
+
+
+/**
+ * optional string export_name = 7;
+ * @return {string}
+ */
+proto.api.v1.ExecuteRequest.FetchCode.prototype.getExportName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api.v1.ExecuteRequest.FetchCode} returns this
+ */
+proto.api.v1.ExecuteRequest.FetchCode.prototype.setExportName = function(value) {
+  return jspb.Message.setField(this, 7, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api.v1.ExecuteRequest.FetchCode} returns this
+ */
+proto.api.v1.ExecuteRequest.FetchCode.prototype.clearExportName = function() {
+  return jspb.Message.setField(this, 7, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.ExecuteRequest.FetchCode.prototype.hasExportName = function() {
+  return jspb.Message.getField(this, 7) != null;
 };
 
 
@@ -3815,7 +3863,8 @@ proto.api.v1.ExecuteV3Request.toObject = function(includeInstance, msg) {
     entryPoint: jspb.Message.getFieldWithDefault(msg, 7, ""),
     filesList: jspb.Message.toObjectList(msg.getFilesList(),
     proto.api.v1.ExecuteRequest.File.toObject, includeInstance),
-    includeDiagnostics: jspb.Message.getBooleanFieldWithDefault(msg, 9, false)
+    includeDiagnostics: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
+    exportName: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
 
   if (includeInstance) {
@@ -3891,6 +3940,10 @@ proto.api.v1.ExecuteV3Request.deserializeBinaryFromReader = function(msg, reader
     case 9:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setIncludeDiagnostics(value);
+      break;
+    case 10:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setExportName(value);
       break;
     default:
       reader.skipField();
@@ -3980,6 +4033,13 @@ proto.api.v1.ExecuteV3Request.serializeBinaryToWriter = function(message, writer
   if (f) {
     writer.writeBool(
       9,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 10));
+  if (f != null) {
+    writer.writeString(
+      10,
       f
     );
   }
@@ -4243,6 +4303,42 @@ proto.api.v1.ExecuteV3Request.prototype.getIncludeDiagnostics = function() {
  */
 proto.api.v1.ExecuteV3Request.prototype.setIncludeDiagnostics = function(value) {
   return jspb.Message.setProto3BooleanField(this, 9, value);
+};
+
+
+/**
+ * optional string export_name = 10;
+ * @return {string}
+ */
+proto.api.v1.ExecuteV3Request.prototype.getExportName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api.v1.ExecuteV3Request} returns this
+ */
+proto.api.v1.ExecuteV3Request.prototype.setExportName = function(value) {
+  return jspb.Message.setField(this, 10, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api.v1.ExecuteV3Request} returns this
+ */
+proto.api.v1.ExecuteV3Request.prototype.clearExportName = function() {
+  return jspb.Message.setField(this, 10, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api.v1.ExecuteV3Request.prototype.hasExportName = function() {
+  return jspb.Message.getField(this, 10) != null;
 };
 
 

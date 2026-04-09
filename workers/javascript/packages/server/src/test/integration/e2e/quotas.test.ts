@@ -1,7 +1,9 @@
 import { randomUUID } from 'crypto';
+
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { RedisClientType } from '@redis/client';
 import { default as pino } from 'pino';
+
 import { Redis } from '../../../store/redis';
 import { WorkerAPIImpl } from '../../../test/integration/client';
 import { KVStore, WorkerAPI } from '../../../types';

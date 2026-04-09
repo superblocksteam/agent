@@ -1135,6 +1135,8 @@ func getRenderedConfig(
 func generateAuditLog(ctx context.Context, options *Options) []zap.Field {
 	auditLogId := uuid.New().String()
 	startTime := ctx.Value(constants.ContextKeyApiStartTime).(int64)
+	tags := options.Api.GetMetadata().GetTags()
+	inferredIntegrationID, inferredPluginType, inferredIntegrationAudit := inferIntegrationQueryAuditContext(options)
 
 	zapFields := []zap.Field{
 		zap.String("auditLogId", auditLogId),
@@ -1142,6 +1144,35 @@ func generateAuditLog(ctx context.Context, options *Options) []zap.Field {
 		zap.String("target", options.Api.GetMetadata().GetId()),
 		zap.String("organizationId", options.Api.GetMetadata().GetOrganization()),
 		zap.Int64("start", startTime),
+	}
+
+	// Integration query executions are routed through an inline SDK query
+	// definition; encode explicit audit semantics in metadata tags so they are
+	// emitted from the same orchestrator audit emitter path.
+	if tags["audit.event_type"] == "integration_query" || inferredIntegrationAudit {
+		integrationID := tags["audit.integration_id"]
+		if integrationID == "" {
+			integrationID = inferredIntegrationID
+		}
+		if integrationID == "" {
+			integrationID = options.Api.GetMetadata().GetId()
+		}
+		zapFields = append(zapFields,
+			zap.String("type", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY.String()),
+			zap.String("entityId", integrationID),
+			zap.String("entityType", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_STEP.String()),
+			zap.String("integrationId", integrationID),
+			zap.Int64("integrationQueryStart", startTime),
+			zap.String("source", "SDK API"),
+		)
+		pluginType := tags["audit.plugin_type"]
+		if pluginType == "" {
+			pluginType = inferredPluginType
+		}
+		if pluginType != "" {
+			zapFields = append(zapFields, zap.String("pluginType", pluginType))
+		}
+		return zapFields
 	}
 
 	if options.Requester != "" {
@@ -1175,6 +1206,37 @@ func generateAuditLog(ctx context.Context, options *Options) []zap.Field {
 		zap.String("entityType", triggerType.String()))
 
 	return zapFields
+}
+
+func inferIntegrationQueryAuditContext(options *Options) (integrationID string, pluginType string, ok bool) {
+	const sdkQueryPrefix = "sdk-query-"
+
+	api := options.Api
+	if api == nil || api.GetMetadata() == nil {
+		return "", "", false
+	}
+
+	targetID := api.GetMetadata().GetId()
+	if !strings.HasPrefix(targetID, sdkQueryPrefix) {
+		return "", "", false
+	}
+
+	integrationID = strings.TrimPrefix(targetID, sdkQueryPrefix)
+	if blocks := api.GetBlocks(); len(blocks) > 0 {
+		if step := blocks[0].GetStep(); step != nil {
+			if stepIntegrationID := step.GetIntegration(); stepIntegrationID != "" {
+				integrationID = stepIntegrationID
+			}
+			stepProto := step.ProtoReflect()
+			if configOneof := stepProto.Descriptor().Oneofs().ByName("config"); configOneof != nil {
+				if configField := stepProto.WhichOneof(configOneof); configField != nil {
+					pluginType = string(configField.Name())
+				}
+			}
+		}
+	}
+
+	return integrationID, pluginType, true
 }
 
 func emptyOutput(s store.Store) (string, error) {

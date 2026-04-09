@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { getQuickJS } from '../quickjs';
 import type { QuickJSWASMModule } from 'quickjs-emscripten-core';
+
+import { getQuickJS } from '../quickjs';
 import { registerGlobalLazyLibrary, registerGlobalLibrary } from './libraries';
 
 describe('globals/libraries', () => {
@@ -38,9 +39,7 @@ describe('globals/libraries', () => {
     const runtime = QuickJS.newRuntime();
     const ctx = runtime.newContext();
 
-    expect(() => registerGlobalLibrary(ctx, "throw new Error('boom')", '<lib-eager>')).toThrow(
-      /Failed to load <lib-eager>/
-    );
+    expect(() => registerGlobalLibrary(ctx, "throw new Error('boom')", '<lib-eager>')).toThrow(/Failed to load <lib-eager>/);
 
     ctx.dispose();
     runtime.dispose();
@@ -131,9 +130,7 @@ describe('globals/libraries', () => {
     }
     const dumped = ctx.dump(result.error);
     const message =
-      typeof dumped === 'object' && dumped !== null
-        ? (dumped as { message?: string }).message ?? JSON.stringify(dumped)
-        : String(dumped);
+      typeof dumped === 'object' && dumped !== null ? ((dumped as { message?: string }).message ?? JSON.stringify(dumped)) : String(dumped);
     expect(message).toMatch(/Failed to load <lazy-fail>:.*kaboom/);
     result.error?.dispose();
 

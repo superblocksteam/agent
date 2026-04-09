@@ -8,10 +8,7 @@
  */
 
 // Simulates how the worker evaluates the orchestrator's wrapper script
-function evaluateWrapper(
-  wrapperScript: string,
-  globals: Record<string, unknown> = {}
-): Promise<unknown> {
+function evaluateWrapper(wrapperScript: string, globals: Record<string, unknown> = {}): Promise<unknown> {
   // Inject globals into scope via function parameters
   const globalNames = Object.keys(globals);
   const globalValues = Object.values(globals);
@@ -37,7 +34,13 @@ describe('code-mode wrapper contract', () => {
     run:async function(ctx){return {sdkapi:"ok",input:ctx.input};}
   }};`;
 
-  function buildWrapper(bundle: string, inputs = '{}', executionId = '"test-exec"', user = '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}', exportName = '') {
+  function buildWrapper(
+    bundle: string,
+    inputs = '{}',
+    executionId = '"test-exec"',
+    user = '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}',
+    exportName = ''
+  ) {
     const exportAlias = exportName
       ? `\nmodule.exports.default = module.exports[${JSON.stringify(exportName)}];\nif (!module.exports.default || typeof module.exports.default.run !== "function") {\n  throw new Error("code-mode bundle does not export a valid CompiledApi named " + ${JSON.stringify(exportName)});\n}\n`
       : '';
@@ -157,9 +160,7 @@ return __sb_result.output;
   });
 
   it('throws when __sb_execute is not injected', async () => {
-    await expect(evaluateWrapper(buildWrapper(asyncBundle), {})).rejects.toThrow(
-      '__sb_execute (sdk-api executeApi) not injected'
-    );
+    await expect(evaluateWrapper(buildWrapper(asyncBundle), {})).rejects.toThrow('__sb_execute (sdk-api executeApi) not injected');
   });
 
   it('throws when bundle does not export a valid CompiledApi', async () => {
@@ -267,7 +268,13 @@ return __sb_result.output;
     });
 
     const result = await evaluateWrapper(
-      buildWrapper(multiExportBundle, '{}', '"test-exec"', '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}', 'DeleteUser'),
+      buildWrapper(
+        multiExportBundle,
+        '{}',
+        '"test-exec"',
+        '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}',
+        'DeleteUser'
+      ),
       {
         __sb_execute: mockExecuteApi,
         __sb_integrationExecutor: mockIntegrationExecutor
@@ -289,7 +296,13 @@ return __sb_result.output;
 
     await expect(
       evaluateWrapper(
-        buildWrapper(multiExportBundle, '{}', '"test-exec"', '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}', 'NonExistentApi'),
+        buildWrapper(
+          multiExportBundle,
+          '{}',
+          '"test-exec"',
+          '{"userId":"test-user","email":"test@example.com","groups":[],"customClaims":{}}',
+          'NonExistentApi'
+        ),
         {
           __sb_execute: mockExecuteApi,
           __sb_integrationExecutor: mockIntegrationExecutor
@@ -302,10 +315,12 @@ return __sb_result.output;
   it('defaults pluginId to empty for unknown integrationId', async () => {
     mockIntegrationExecutor.mockResolvedValue('ok');
 
-    mockExecuteApi.mockImplementation(async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
-      await req.executeQuery('unknown-integration', { action: 'test' });
-      return { success: true, output: 'done' };
-    });
+    mockExecuteApi.mockImplementation(
+      async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
+        await req.executeQuery('unknown-integration', { action: 'test' });
+        return { success: true, output: 'done' };
+      }
+    );
 
     await evaluateWrapper(buildWrapper(asyncBundle), {
       __sb_execute: mockExecuteApi,
@@ -392,10 +407,12 @@ return __sb_result.output;
   it('resolves pluginId from api.integrations when metadata is absent (real SDK path)', async () => {
     mockIntegrationExecutor.mockResolvedValue({ rows: [{ id: 1 }] });
 
-    mockExecuteApi.mockImplementation(async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
-      const queryResult = await req.executeQuery('pg-uuid-123', { body: 'SELECT 1' });
-      return { success: true, output: queryResult };
-    });
+    mockExecuteApi.mockImplementation(
+      async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
+        const queryResult = await req.executeQuery('pg-uuid-123', { body: 'SELECT 1' });
+        return { success: true, output: queryResult };
+      }
+    );
 
     const result = await evaluateWrapper(buildWrapper(bundleWithIntegrations), {
       __sb_execute: mockExecuteApi,
@@ -414,11 +431,13 @@ return __sb_result.output;
     mockIntegrationExecutor.mockResolvedValueOnce({ rows: [] });
     mockIntegrationExecutor.mockResolvedValueOnce('OK');
 
-    mockExecuteApi.mockImplementation(async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
-      const pgResult = await req.executeQuery('pg-uuid-123', { body: 'SELECT 1' });
-      const redisResult = await req.executeQuery('redis-uuid-456', { command: 'GET key' });
-      return { success: true, output: { pgResult, redisResult } };
-    });
+    mockExecuteApi.mockImplementation(
+      async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
+        const pgResult = await req.executeQuery('pg-uuid-123', { body: 'SELECT 1' });
+        const redisResult = await req.executeQuery('redis-uuid-456', { command: 'GET key' });
+        return { success: true, output: { pgResult, redisResult } };
+      }
+    );
 
     const result = await evaluateWrapper(buildWrapper(bundleWithIntegrations), {
       __sb_execute: mockExecuteApi,
@@ -439,10 +458,12 @@ return __sb_result.output;
   });
 
   it('throws when executeQuery called without integration executor', async () => {
-    mockExecuteApi.mockImplementation(async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
-      await req.executeQuery('some-integration', { action: 'test' });
-      return { success: true, output: 'done' };
-    });
+    mockExecuteApi.mockImplementation(
+      async (_api: unknown, req: { executeQuery: (id: string, request: Record<string, unknown>) => Promise<unknown> }) => {
+        await req.executeQuery('some-integration', { action: 'test' });
+        return { success: true, output: 'done' };
+      }
+    );
 
     await expect(
       evaluateWrapper(buildWrapper(asyncBundle), {

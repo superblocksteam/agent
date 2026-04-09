@@ -552,6 +552,19 @@
         },
         "total": {
           "$ref": "#/definitions/PerformanceObservable"
+        },
+        "bootstrapSdkImport": {
+          "$ref": "#/definitions/PerformanceObservable",
+          "description": "Bootstrap phase breakdown for SDK API (code-mode) executions.\nPopulated by the javascriptsdkapi worker to attribute time within plugin_execution."
+        },
+        "bootstrapBridgeSetup": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "bootstrapRequireRoot": {
+          "$ref": "#/definitions/PerformanceObservable"
+        },
+        "bootstrapCodeExecution": {
+          "$ref": "#/definitions/PerformanceObservable"
         }
       }
     },

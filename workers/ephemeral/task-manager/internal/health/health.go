@@ -9,7 +9,6 @@ import (
 	r "github.com/redis/go-redis/v9"
 	"github.com/superblocksteam/run"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/connectivity"
 )
 
 // DefaultHealthFilePath is the default path for the health file used by Kubernetes probes
@@ -20,22 +19,13 @@ type RedisChecker interface {
 	Ping(ctx context.Context) *r.StatusCmd
 }
 
-// SandboxChecker is an interface for checking sandbox gRPC connectivity
-type SandboxChecker interface {
-	ConnectionState() connectivity.State
-}
-
 // Checker provides file-based health checks for Kubernetes probes
 type Checker struct {
 	redis          RedisChecker
-	sandbox        SandboxChecker
 	logger         *zap.Logger
 	pingTimeout    time.Duration
 	healthFilePath string
 	checkInterval  time.Duration
-
-	// Sandbox connection tracking
-	sandboxEverConnected bool // true once sandbox has been Ready at least once
 
 	run.ForwardCompatibility
 }
@@ -45,7 +35,6 @@ var _ run.Runnable = (*Checker)(nil)
 // Options for creating a health Checker
 type Options struct {
 	Redis          RedisChecker
-	Sandbox        SandboxChecker
 	Logger         *zap.Logger
 	PingTimeout    time.Duration
 	HealthFilePath string        // Path for the health file (default: /tmp/worker_healthy)
@@ -71,7 +60,6 @@ func NewChecker(opts *Options) *Checker {
 
 	return &Checker{
 		redis:          opts.Redis,
-		sandbox:        opts.Sandbox,
 		logger:         opts.Logger,
 		pingTimeout:    pingTimeout,
 		healthFilePath: healthFilePath,
@@ -88,38 +76,6 @@ func (c *Checker) checkRedis() error {
 		return fmt.Errorf("redis ping failed: %w", err)
 	}
 	return nil
-}
-
-// checkSandbox checks if the sandbox gRPC connection is alive
-func (c *Checker) checkSandbox() error {
-	if c.sandbox == nil {
-		return nil
-	}
-
-	state := c.sandbox.ConnectionState()
-	switch state {
-	case connectivity.Ready:
-		// Mark that we've successfully connected at least once
-		c.sandboxEverConnected = true
-		return nil
-	case connectivity.Idle:
-		// Idle is healthy (connection pooling, will reconnect on demand)
-		return nil
-	case connectivity.Connecting:
-		// Still connecting, consider it healthy during startup
-		return nil
-	case connectivity.TransientFailure:
-		// Be lenient during initial connection attempts
-		if !c.sandboxEverConnected {
-			c.logger.Debug("sandbox connection in transient failure during initial connection, allowing")
-			return nil
-		}
-		return fmt.Errorf("sandbox connection in transient failure: %s", state.String())
-	case connectivity.Shutdown:
-		return fmt.Errorf("sandbox connection shutdown: %s", state.String())
-	default:
-		return fmt.Errorf("unexpected sandbox connection state marking unhealthy: %s", state.String())
-	}
 }
 
 // markHealthy creates the health file to indicate the worker is healthy
@@ -142,11 +98,6 @@ func (c *Checker) markUnhealthy() {
 func (c *Checker) updateHealthFile() {
 	if err := c.checkRedis(); err != nil {
 		c.logger.Error("redis check failed, marking unhealthy", zap.Error(err))
-		c.markUnhealthy()
-		return
-	}
-	if err := c.checkSandbox(); err != nil {
-		c.logger.Error("sandbox check failed, marking unhealthy", zap.Error(err))
 		c.markUnhealthy()
 		return
 	}

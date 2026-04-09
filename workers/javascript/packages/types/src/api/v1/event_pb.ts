@@ -541,6 +541,15 @@ export class Performance extends Message<Performance> {
    */
   custom: { [key: string]: bigint } = {};
 
+  /**
+   * Sub-phase breakdown of plugin_execution for SDK API (code-mode)
+   * executions. Populated when the worker reports bootstrap timing.
+   * All values are in milliseconds.
+   *
+   * @generated from field: api.v1.Performance.BootstrapTiming bootstrap_timing = 7;
+   */
+  bootstrapTiming?: Performance_BootstrapTiming;
+
   constructor(data?: PartialMessage<Performance>) {
     super();
     proto3.util.initPartial(data, this);
@@ -555,6 +564,7 @@ export class Performance extends Message<Performance> {
     { no: 4, name: "execution", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
     { no: 5, name: "overhead", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
     { no: 6, name: "custom", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 3 /* ScalarType.INT64 */} },
+    { no: 7, name: "bootstrap_timing", kind: "message", T: Performance_BootstrapTiming },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Performance {
@@ -571,6 +581,69 @@ export class Performance extends Message<Performance> {
 
   static equals(a: Performance | PlainMessage<Performance> | undefined, b: Performance | PlainMessage<Performance> | undefined): boolean {
     return proto3.util.equals(Performance, a, b);
+  }
+}
+
+/**
+ * @generated from message api.v1.Performance.BootstrapTiming
+ */
+export class Performance_BootstrapTiming extends Message<Performance_BootstrapTiming> {
+  /**
+   * Time to import the SDK API module.
+   *
+   * @generated from field: int64 sdk_import_ms = 1;
+   */
+  sdkImportMs = protoInt64.zero;
+
+  /**
+   * Time to set up the integration bridge.
+   *
+   * @generated from field: int64 bridge_setup_ms = 2;
+   */
+  bridgeSetupMs = protoInt64.zero;
+
+  /**
+   * Time to resolve the require root.
+   *
+   * @generated from field: int64 require_root_ms = 3;
+   */
+  requireRootMs = protoInt64.zero;
+
+  /**
+   * Time to execute the user's code.
+   *
+   * @generated from field: int64 code_execution_ms = 4;
+   */
+  codeExecutionMs = protoInt64.zero;
+
+  constructor(data?: PartialMessage<Performance_BootstrapTiming>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.v1.Performance.BootstrapTiming";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "sdk_import_ms", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 2, name: "bridge_setup_ms", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 3, name: "require_root_ms", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 4, name: "code_execution_ms", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Performance_BootstrapTiming {
+    return new Performance_BootstrapTiming().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Performance_BootstrapTiming {
+    return new Performance_BootstrapTiming().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Performance_BootstrapTiming {
+    return new Performance_BootstrapTiming().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: Performance_BootstrapTiming | PlainMessage<Performance_BootstrapTiming> | undefined, b: Performance_BootstrapTiming | PlainMessage<Performance_BootstrapTiming> | undefined): boolean {
+    return proto3.util.equals(Performance_BootstrapTiming, a, b);
   }
 }
 
@@ -816,6 +889,28 @@ export class IntegrationDiagnostic extends Message<IntegrationDiagnostic> {
    */
   metadata?: TraceMetadata;
 
+  /**
+   * True when the input field was truncated to fit within the byte limit.
+   *
+   * @generated from field: bool input_was_truncated = 11;
+   */
+  inputWasTruncated = false;
+
+  /**
+   * True when the output field was truncated to fit within the byte limit.
+   *
+   * @generated from field: bool output_was_truncated = 12;
+   */
+  outputWasTruncated = false;
+
+  /**
+   * Error classification code (e.g. "INTEGRATION_QUERY_TIMEOUT", "INTEGRATION_NETWORK").
+   * Empty when the call succeeded or when the error was not classified.
+   *
+   * @generated from field: string error_code = 13;
+   */
+  errorCode = "";
+
   constructor(data?: PartialMessage<IntegrationDiagnostic>) {
     super();
     proto3.util.initPartial(data, this);
@@ -834,6 +929,9 @@ export class IntegrationDiagnostic extends Message<IntegrationDiagnostic> {
     { no: 8, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 9, name: "sequence", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 10, name: "metadata", kind: "message", T: TraceMetadata },
+    { no: 11, name: "input_was_truncated", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 12, name: "output_was_truncated", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 13, name: "error_code", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): IntegrationDiagnostic {

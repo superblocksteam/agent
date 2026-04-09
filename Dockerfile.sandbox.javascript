@@ -96,8 +96,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT=${TRANSPORT_GRPC_PORT}
 
-# Set empty values for env vars required by @superblocks/worker.js at import time
-# These are not actually used by the sandbox at runtime
+# Env vars required by @superblocks/worker.js at import time.
+# SUPERBLOCKS_AGENT_KEY is never used at runtime.
+# Tunnel keys default to empty; for integration fleets the task-manager
+# injects real values via executionEnvInclusionList, overriding these defaults.
 ENV SUPERBLOCKS_AGENT_KEY=""
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA=""
 ENV SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519=""

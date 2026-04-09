@@ -120,6 +120,7 @@ All values crossing the sandbox boundary are **marshalled** (serialized and dese
 - **Buffers** - Copied as byte arrays (when `enableBuffer: true`)
 
 This means:
+
 - The sandbox cannot hold references to host objects
 - Mutations in the sandbox don't affect host objects
 - Prototype chains are not shared
@@ -129,6 +130,7 @@ This means:
 ### 3. No Implicit Globals
 
 The sandbox starts with a minimal global environment:
+
 - Basic JavaScript built-ins (`Object`, `Array`, `Promise`, etc.)
 - No `require`, `import`, `process`, `global`, `Buffer` (unless enabled), etc.
 - Libraries like `lodash` and `moment` are lazily loaded only if requested
@@ -157,14 +159,16 @@ Only expose the minimum functionality needed:
 
 ```typescript
 // ❌ Too permissive
-globals: { db: hostFunction(databaseClient) }
+globals: {
+  db: hostFunction(databaseClient);
+}
 
 // ✅ Expose specific operations
-globals: { 
+globals: {
   getUserById: hostFunction(async (id: string) => {
     // Validate ID, return only safe fields
     return await db.users.findOne({ id }, { fields: ['name', 'email'] });
-  })
+  });
 }
 ```
 
@@ -176,7 +180,7 @@ Validate all arguments from the sandbox:
 const readFile = hostFunction(async (path: string) => {
   // ❌ Vulnerable to path traversal
   return await fs.readFile(path);
-  
+
   // ✅ Validate and sanitize
   if (!isAllowedPath(path)) {
     throw new Error('Access denied');
@@ -207,7 +211,7 @@ const query = hostFunction(async (sql: string) => {
   } catch (err) {
     // ❌ Leaks internal details
     throw err;
-    
+
     // ✅ Generic error
     throw new Error('Query failed');
   }
@@ -236,11 +240,10 @@ If you discover a security vulnerability in this package, please report it to th
 
 This package's security depends on:
 
-| Dependency | Purpose | Security Impact |
-|------------|---------|-----------------|
-| `quickjs-emscripten` | WASM bindings for QuickJS | Critical - provides core isolation |
-| QuickJS | JavaScript interpreter | Critical - runs untrusted code |
-| Emscripten | WASM compilation toolchain | Critical - generates WASM binary |
+| Dependency           | Purpose                    | Security Impact                    |
+| -------------------- | -------------------------- | ---------------------------------- |
+| `quickjs-emscripten` | WASM bindings for QuickJS  | Critical - provides core isolation |
+| QuickJS              | JavaScript interpreter     | Critical - runs untrusted code     |
+| Emscripten           | WASM compilation toolchain | Critical - generates WASM binary   |
 
 Keep these dependencies updated to receive security patches.
-

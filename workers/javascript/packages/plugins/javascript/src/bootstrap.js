@@ -14,6 +14,7 @@ const { EventEmitter } = require('events');
 const _ = require('lodash');
 const path = require('path');
 const { NodeVM } = require('vm2');
+const { cleanStack } = require('./clean-stack');
 
 const eventEmitter = new EventEmitter();
 
@@ -186,10 +187,7 @@ function prepareSourceMapLookup(codeToExecute) {
   const bundleEndIdx = codeToExecute.indexOf(BUNDLE_END_MARKER, bundleBeginIdx);
   if (bundleEndIdx === -1) return null;
 
-  const bundle = codeToExecute.substring(
-    bundleBeginIdx + BUNDLE_BEGIN_MARKER.length + 1,
-    bundleEndIdx
-  );
+  const bundle = codeToExecute.substring(bundleBeginIdx + BUNDLE_BEGIN_MARKER.length + 1, bundleEndIdx);
   const sourceMapJson = extractInlineSourceMap(bundle);
   if (!sourceMapJson) return null;
 
@@ -197,61 +195,6 @@ function prepareSourceMapLookup(codeToExecute) {
   if (!lookup) return null;
 
   return { lookup, bundleStartLine, virtualFilename: path.join(__dirname, CODE_MODE_VM_FILENAME) };
-}
-
-function cleanStack(stack, lineOffset, sourceMapApplied) {
-  if (!stack) {
-    return undefined;
-  }
-
-  const extractPathRegex = /\s+at.*[(\s](.*)\)?/;
-
-  // When the source map has rewritten frames, extract the original source
-  // position from the first .ts/.tsx frame and use it directly (the line
-  // number already refers to the user's source, so no offset subtraction).
-  if (sourceMapApplied) {
-    const sourceMatch = stack.match(/([\w/.-]+\.tsx?):(\d+):\d+/);
-    if (sourceMatch) {
-      const sourcePath = sourceMatch[1];
-      const sourceLine = parseInt(sourceMatch[2], 10);
-      const errorLines = stack.replace(/\\/g, '/').split('\n');
-      const errorStack = errorLines
-        .filter((line) => {
-          const pathMatches = line.match(extractPathRegex);
-          return !pathMatches && !line.startsWith('/');
-        })
-        .filter((line) => line.trim() !== '')
-        .join('\n');
-      return `Error on line ${sourceLine} (${sourcePath}):\n${errorStack}`;
-    }
-  }
-
-  const errorLines = stack.replace(/\\/g, '/').split('\n');
-
-  // Find error line number
-  let errorLineNumber = parseInt(errorLines[0].split(':').pop() ?? '');
-
-  const errorStack = errorLines
-    .filter((line) => {
-      const pathMatches = line.match(extractPathRegex);
-      /*
-       Some error stacks have the erroring line number set in a stack line after the error message.
-       For example, ReferenceError stacks show up as the following, where the second line contains
-       the erroring line number and character/column number at the end in that order:
-
-       ReferenceError: y is not defined
-          at ...:67:1
-      */
-      if (isNaN(errorLineNumber) && pathMatches) {
-        const lineSplit = line.split(':');
-        errorLineNumber = parseInt(lineSplit[lineSplit.length - 2]);
-      }
-      return !pathMatches && !line.startsWith('/');
-    })
-    .filter((line) => line.trim() !== '')
-    .join('\n');
-
-  return isNaN(errorLineNumber) ? errorStack : `Error on line ${errorLineNumber - lineOffset}:\n${errorStack}`;
 }
 
 function serialize(buffer, mode) {
@@ -303,7 +246,7 @@ function createFunctionForPreparingGlobalObjectForFiles(fileClient, filePaths) {
         ...file,
         previewUrl: undefined,
         readContentsAsync,
-        readContents,
+        readContents
       });
     });
   };
@@ -341,7 +284,7 @@ module.exports.executeCode = async (workerData) => {
     const execGlobalContext = {
       ...context.globals,
       ...context.outputs,
-      $superblocksFiles: filePaths ?? {},
+      $superblocksFiles: filePaths ?? {}
     };
 
     if (context.variables && typeof context.variables === 'object') {
@@ -393,7 +336,7 @@ module.exports.executeCode = async (workerData) => {
         crypto: require('crypto'),
         ...context.globals,
         ...context.outputs,
-        $superblocksFiles: filePaths ?? {},
+        $superblocksFiles: filePaths ?? {}
       },
       wasm: false
     });
@@ -422,7 +365,7 @@ module.exports = async function() {
   } catch (err) {
     eventEmitter.removeAllListeners();
 
-    const defaultErrMsg = err instanceof Error ? err.message : String(err);
+    const defaultErrMsg = (err && typeof err === 'object' && 'message' in err) ? err.message : String(err);
     let stack = err instanceof Error ? err.stack : undefined;
     if (stack && sourceMapCtx) {
       stack = rewriteStackWithSourceMap(stack, sourceMapCtx.virtualFilename, sourceMapCtx.lookup);

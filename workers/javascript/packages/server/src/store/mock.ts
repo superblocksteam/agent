@@ -1,4 +1,5 @@
 import { MaybeError } from '@superblocks/shared';
+
 import { IO, KVStore, KVStoreTx, Wrapped } from '../types';
 
 export class MockKVStore implements KVStore {

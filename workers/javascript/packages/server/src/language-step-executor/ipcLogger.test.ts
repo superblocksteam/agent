@@ -1,4 +1,5 @@
 import { describe } from '@jest/globals';
+
 import { IpcLogCommitter, IpcLogger } from './ipcLogger';
 import { MockEgressIpcChannel, MockIngressIpcChannel } from './ipcMocks';
 import { IPC_COMMAND_TYPE } from './ipcTypes';

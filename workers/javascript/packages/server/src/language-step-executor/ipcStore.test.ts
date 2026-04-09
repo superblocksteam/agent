@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import P from 'pino';
+
 import { MockKVStore } from '../store/mock';
 import { MockEgressIpcChannel, MockIngressIpcChannel } from './ipcMocks';
 import { IpcStore, IpcStoreExecutor } from './ipcStore';

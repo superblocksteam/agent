@@ -1555,6 +1555,100 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 	}
 }
 
+func TestExecuteV3IncludesEventsInEditMode(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name         string
+		viewMode     apiv1.ViewMode
+		expectEvents bool
+	}{
+		{
+			name:         "EDIT mode includes events with performance",
+			viewMode:     apiv1.ViewMode_VIEW_MODE_EDIT,
+			expectEvents: true,
+		},
+		{
+			name:         "DEPLOYED mode omits events",
+			viewMode:     apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+			expectEvents: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			defer metrics.SetupForTesting()()
+
+			mockWorker := &worker.MockClient{}
+			fetcher := &fetchmocks.Fetcher{}
+			memStore := store.Memory()
+
+			outputKey := "output-key-events-test"
+			require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{"ok":true}}`}))
+
+			workerPerf := &transportv1.Performance{
+				PluginExecution:        &transportv1.Performance_Observable{Value: 50_000},
+				BootstrapSdkImport:     &transportv1.Performance_Observable{Value: 12_000}, // 12ms
+				BootstrapBridgeSetup:   &transportv1.Performance_Observable{Value: 8_000},  // 8ms
+				BootstrapRequireRoot:   &transportv1.Performance_Observable{Value: 3_000},  // 3ms
+				BootstrapCodeExecution: &transportv1.Performance_Observable{Value: 25_000}, // 25ms
+			}
+
+			mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+				Return(workerPerf, outputKey, nil)
+
+			fetcher.On("FetchApiCode", mock.Anything, "app-events", "", "", "", "main", mock.Anything).
+				Return(&fetch.ApiCodeBundle{
+					Bundle: `module.exports={default:{name:"test-api",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+				}, nil)
+
+			branchName := "main"
+			s := NewServer(&Config{
+				Logger:        zap.NewNop(),
+				Store:         memStore,
+				Worker:        mockWorker,
+				Fetcher:       fetcher,
+				SecretManager: secrets.NewSecretManager(),
+			})
+
+			ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+			ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+
+			resp, err := s.ExecuteV3(ctx, &apiv1.ExecuteV3Request{
+				ApplicationId: "app-events",
+				ViewMode:      test.viewMode,
+				BranchName:    &branchName,
+			})
+			require.NoError(t, err)
+
+			if test.expectEvents {
+				require.NotEmpty(t, resp.Events, "EDIT mode should include events")
+				// Find the Event_End with performance data.
+				var found bool
+				for _, ev := range resp.Events {
+					if end := ev.GetEnd(); end != nil && end.Performance != nil {
+						found = true
+						assert.Greater(t, end.Performance.Total, int64(0))
+
+						// Verify bootstrap timing round-trips from the worker.
+						require.NotNil(t, end.Performance.BootstrapTiming, "expected bootstrap timing in performance")
+						assert.Equal(t, int64(12), end.Performance.BootstrapTiming.SdkImportMs)
+						assert.Equal(t, int64(8), end.Performance.BootstrapTiming.BridgeSetupMs)
+						assert.Equal(t, int64(3), end.Performance.BootstrapTiming.RequireRootMs)
+						assert.Equal(t, int64(25), end.Performance.BootstrapTiming.CodeExecutionMs)
+						break
+					}
+				}
+				assert.True(t, found, "expected an Event_End with performance data")
+			} else {
+				assert.Empty(t, resp.Events, "DEPLOYED mode should not include events")
+			}
+
+			fetcher.AssertExpectations(t)
+			mockWorker.AssertExpectations(t)
+		})
+	}
+}
+
 func TestExecuteV3ForwardsFilesToCodeModeWorker(t *testing.T) {
 	t.Parallel()
 	defer metrics.SetupForTesting()()

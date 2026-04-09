@@ -1,3 +1,4 @@
+import { expect, it } from '@jest/globals';
 import {
   CouchbaseDatasourceConfiguration,
   CouchbaseActionConfiguration,
@@ -6,13 +7,7 @@ import {
   DUMMY_EXECUTION_CONTEXT,
   DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS
 } from '@superblocks/shared';
-import { expect, it } from '@jest/globals';
-
-import { Client as ssh2Client } from 'ssh2';
-
 import * as couchbaseClient from 'couchbase';
-
-import CouchbasePlugin from '.';
 import {
   CollectionManager,
   QueryMetaData,
@@ -30,6 +25,9 @@ import {
   GetOptions,
   RemoveOptions
 } from 'couchbase';
+import { Client as ssh2Client } from 'ssh2';
+
+import CouchbasePlugin from '.';
 
 jest.mock('couchbase');
 

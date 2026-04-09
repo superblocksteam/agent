@@ -2,9 +2,11 @@ import { ChildProcess, fork } from 'child_process';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { Closer, MaybeError } from '@superblocks/shared';
 import { Heap } from 'heap-js';
 import P from 'pino';
+
 import { SUPERBLOCKS_WORKER_EXECUTION_JS_TIMEOUT_MS, SUPERBLOCKS_WORKER_NODE_USER_ID } from '../env';
 import logger from '../logger';
 import { PluginProps } from '../plugin-property/plugin-props';

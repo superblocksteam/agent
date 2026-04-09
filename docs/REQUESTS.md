@@ -12,26 +12,25 @@ Note: This list shows requests made to Superblocks Cloud APIs that are required 
 
 Network requests made by Superblocks users as part of API steps, for example, requests made to an API using the `requests` library in Python steps or requests made by integrations that access public REST APIs, are also outbound calls made by the agent. These outbound calls are made at the discretion of agent operators.
 
-| Path                                                                            | Type     | Source | Target            | Description                                                                                 | Authentication                        |
-| ------------------------------------------------------------------------------- | -------- | ------ | ----------------- | ------------------------------------------------------------------------------------------- |-------------------------------------- |
-| [`/api/v1/agents/register`](#apiv1agentsregister)                             | `POST`   | Agent  | Superblocks Cloud | Route called to register an agent with Superblocks Cloud.                                          | Superblocks Agent Key      |
-| [`/api/v1/agents`](#apiv1agents)                             | `DELETE`   | Agent  | Superblocks Cloud | Route called to deregister an agent from the Superblocks Cloud (called during agent shutdown).                                          | Superblocks Agent Key      |
-| [`/api/v1/agents/healthcheck`](#apiv1agentshealthcheck)                             | `POST`   | Agent  | Superblocks Cloud | Route called to post health check information to Superblocks Cloud, including diagnostic and execution metrics (default: called on a 30s interval).                                          | Superblocks Agent Key      |
-| [`/api/v1/agents/datasource/:id`](#apiv1agentsdatasourceid) (DEPRECATED)                 | `POST`   | Agent  | Superblocks Cloud | Route called to get OAuth client information needed to perform OAuth Token exchanges. | Superblocks Agent Key + User JWT      |
-| [`/api/v1/integrations`](#apiv1integrations)                             | `GET`   | Agent  | Superblocks Cloud | Route called to fetch integration configurations from the Superblocks Cloud.                                          | Superblocks Agent Key + User JWT      |
-| [`/api/v1/agents/user/userToken`](#get)                             | `GET`   | Agent  | Superblocks Cloud | Route called to get the currently logged in user's OAuth2.0 access token from Superblocks Cloud. This is then send as an authorization header or query parameter in integration requests.                                        | Superblocks Agent Key + User JWT      |
-| [`/api/v1/agents/user/userToken`](#post)                             | `POST`   | Agent  | Superblocks Cloud | Route called after OAuth token exchanges are completed to cache access tokens generated for the use in Superblocks Cloud. Token caches ensures users do not have to login multiple time for an Integration.                                          | Superblocks Agent Key + User JWT      |
-| [`/api/v1/agents/user/userToken`](#delete)                             | `DELETE`   | Agent  | Superblocks Cloud | Route called to delete all of the user's OAuth2.0 access tokens that have been caches for Integrations. Initiated when developers use the `logoutIntegration()` function in frontend JS.                                          | Superblocks Agent Key + User JWT      |
-| [`/api/v1/agents/userToken`](#get-1)                             | `GET`   | Agent  | Superblocks Cloud | Route called to get a shared OAuth2.0 access token to use in Integration authentication.                                          | Superblocks Agent Key + User JWT + Org API Token      |
-| [`/api/v1/agents/userToken`](#post-1)                             | `POST`   | Agent  | Superblocks Cloud | Route called after a successful OAuth2.0 token exchanges to save shared access token for an Integration.                                          | Superblocks Agent Key + User JWT + Org API Token      |
-| [`/api/v1/oauth2/gsheets/refresh`](#apiv1oauth2gsheetsrefresh)                             | `POST`   | Agent  | Superblocks Cloud | Route called to refresh Google Sheet OAuth2.0 access tokens used by the Google Sheets integration.                                          | Superblocks Agent Key + User JWT + Org API Token      |
-| [`/api/v2/agents/audit`](https://github.com/superblocksteam/orchestrator/blob/2750269751ec48e93df3c42a46480d1bccb150f8/types/api/agent/v2/service.swagger.json#L22-L55)                             | `POST`   | Agent  | Superblocks Cloud | Route called to create audit log records in Superblocks Cloud for API executions.                                          | Superblocks Agent Key      |
-| [`/api/v2/agents/pending-jobs`](#apiv2agentspending-jobs)                       | `POST`   | Agent  | Superblocks Cloud | Route called to fetch deployed Scheduled Jobs that should be run by the agent based on their configured schedule. | Superblocks Agent Key                 |
-| [`/api/v3/apis/:apiId`](#apiv3apisapiid)                             | `GET`   | Agent  | Superblocks Cloud | Route called to fetch a API definition from Superblocks Cloud. For deployed APIs, definitions are fetched from the Global Edge Network by default, and round trip to the Superblocks Cloud only if unavailable. | Superblocks Agent Key + User JWT + Org API Token      |
-| [`/api/v3/apis/signatures`](#apiv3apissignatures)                             | `PUT`   | Agent  | Superblocks Cloud | When Agent Signing is enabled, this route is called to update the signature of an API when signatures are updated as a result of a re-signing job. | Superblocks Agent Key      |
-| [`/api/v2/applications/signatures`](#apiv2applicationssignatures)                             | `PUT`   | Agent  | Superblocks Cloud | When Agent Signing is enabled, this route is called to update the signature on an Application when signatures are updated as a result of a re-signing job.                                          | Superblocks Agent Key      |
-| [`/api/v2/keyrotations/claim-resources`](#apiv2keyrotationsclaim-resources)                             | `POST`   | Agent  | Superblocks Cloud | When Agent Signing is enabled, this route is called when a re-signing job is in progress to fetch a batch of resources (APIs and Applications) for the agent to re-sign.                                          | Superblocks Agent Key      |
-
+| Path                                                                                                                                                                    | Type     | Source | Target            | Description                                                                                                                                                                                                     | Authentication                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| [`/api/v1/agents/register`](#apiv1agentsregister)                                                                                                                       | `POST`   | Agent  | Superblocks Cloud | Route called to register an agent with Superblocks Cloud.                                                                                                                                                       | Superblocks Agent Key                            |
+| [`/api/v1/agents`](#apiv1agents)                                                                                                                                        | `DELETE` | Agent  | Superblocks Cloud | Route called to deregister an agent from the Superblocks Cloud (called during agent shutdown).                                                                                                                  | Superblocks Agent Key                            |
+| [`/api/v1/agents/healthcheck`](#apiv1agentshealthcheck)                                                                                                                 | `POST`   | Agent  | Superblocks Cloud | Route called to post health check information to Superblocks Cloud, including diagnostic and execution metrics (default: called on a 30s interval).                                                             | Superblocks Agent Key                            |
+| [`/api/v1/agents/datasource/:id`](#apiv1agentsdatasourceid) (DEPRECATED)                                                                                                | `POST`   | Agent  | Superblocks Cloud | Route called to get OAuth client information needed to perform OAuth Token exchanges.                                                                                                                           | Superblocks Agent Key + User JWT                 |
+| [`/api/v1/integrations`](#apiv1integrations)                                                                                                                            | `GET`    | Agent  | Superblocks Cloud | Route called to fetch integration configurations from the Superblocks Cloud.                                                                                                                                    | Superblocks Agent Key + User JWT                 |
+| [`/api/v1/agents/user/userToken`](#get)                                                                                                                                 | `GET`    | Agent  | Superblocks Cloud | Route called to get the currently logged in user's OAuth2.0 access token from Superblocks Cloud. This is then send as an authorization header or query parameter in integration requests.                       | Superblocks Agent Key + User JWT                 |
+| [`/api/v1/agents/user/userToken`](#post)                                                                                                                                | `POST`   | Agent  | Superblocks Cloud | Route called after OAuth token exchanges are completed to cache access tokens generated for the use in Superblocks Cloud. Token caches ensures users do not have to login multiple time for an Integration.     | Superblocks Agent Key + User JWT                 |
+| [`/api/v1/agents/user/userToken`](#delete)                                                                                                                              | `DELETE` | Agent  | Superblocks Cloud | Route called to delete all of the user's OAuth2.0 access tokens that have been caches for Integrations. Initiated when developers use the `logoutIntegration()` function in frontend JS.                        | Superblocks Agent Key + User JWT                 |
+| [`/api/v1/agents/userToken`](#get-1)                                                                                                                                    | `GET`    | Agent  | Superblocks Cloud | Route called to get a shared OAuth2.0 access token to use in Integration authentication.                                                                                                                        | Superblocks Agent Key + User JWT + Org API Token |
+| [`/api/v1/agents/userToken`](#post-1)                                                                                                                                   | `POST`   | Agent  | Superblocks Cloud | Route called after a successful OAuth2.0 token exchanges to save shared access token for an Integration.                                                                                                        | Superblocks Agent Key + User JWT + Org API Token |
+| [`/api/v1/oauth2/gsheets/refresh`](#apiv1oauth2gsheetsrefresh)                                                                                                          | `POST`   | Agent  | Superblocks Cloud | Route called to refresh Google Sheet OAuth2.0 access tokens used by the Google Sheets integration.                                                                                                              | Superblocks Agent Key + User JWT + Org API Token |
+| [`/api/v2/agents/audit`](https://github.com/superblocksteam/orchestrator/blob/2750269751ec48e93df3c42a46480d1bccb150f8/types/api/agent/v2/service.swagger.json#L22-L55) | `POST`   | Agent  | Superblocks Cloud | Route called to create audit log records in Superblocks Cloud for API executions.                                                                                                                               | Superblocks Agent Key                            |
+| [`/api/v2/agents/pending-jobs`](#apiv2agentspending-jobs)                                                                                                               | `POST`   | Agent  | Superblocks Cloud | Route called to fetch deployed Scheduled Jobs that should be run by the agent based on their configured schedule.                                                                                               | Superblocks Agent Key                            |
+| [`/api/v3/apis/:apiId`](#apiv3apisapiid)                                                                                                                                | `GET`    | Agent  | Superblocks Cloud | Route called to fetch a API definition from Superblocks Cloud. For deployed APIs, definitions are fetched from the Global Edge Network by default, and round trip to the Superblocks Cloud only if unavailable. | Superblocks Agent Key + User JWT + Org API Token |
+| [`/api/v3/apis/signatures`](#apiv3apissignatures)                                                                                                                       | `PUT`    | Agent  | Superblocks Cloud | When Agent Signing is enabled, this route is called to update the signature of an API when signatures are updated as a result of a re-signing job.                                                              | Superblocks Agent Key                            |
+| [`/api/v2/applications/signatures`](#apiv2applicationssignatures)                                                                                                       | `PUT`    | Agent  | Superblocks Cloud | When Agent Signing is enabled, this route is called to update the signature on an Application when signatures are updated as a result of a re-signing job.                                                      | Superblocks Agent Key                            |
+| [`/api/v2/keyrotations/claim-resources`](#apiv2keyrotationsclaim-resources)                                                                                             | `POST`   | Agent  | Superblocks Cloud | When Agent Signing is enabled, this route is called when a re-signing job is in progress to fetch a batch of resources (APIs and Applications) for the agent to re-sign.                                        | Superblocks Agent Key                            |
 
 #### `/api/v1/agents/register`
 
@@ -79,9 +78,7 @@ Network requests made by Superblocks users as part of API steps, for example, re
           }
         }
       },
-      "required": [
-        "pluginVersions"
-      ]
+      "required": ["pluginVersions"]
     },
     "SupportedPluginVersions": {
       "type": "object",
@@ -97,11 +94,7 @@ Network requests made by Superblocks users as part of API steps, for example, re
     },
     "AgentType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "AgentTags": {
       "type": "object",
@@ -122,10 +115,7 @@ Network requests made by Superblocks users as part of API steps, for example, re
           "type": "string"
         }
       },
-      "required": [
-        "algorithm",
-        "key"
-      ],
+      "required": ["algorithm", "key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -164,9 +154,7 @@ Network requests made by Superblocks users as part of API steps, for example, re
           "type": "string"
         }
       },
-      "required": [
-        "agent"
-      ],
+      "required": ["agent"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -246,10 +234,7 @@ Network requests made by Superblocks users as part of API steps, for example, re
           ]
         },
         "signingKeyId": {
-          "type": [
-            "null",
-            "string"
-          ]
+          "type": ["null", "string"]
         }
       },
       "required": [
@@ -273,24 +258,14 @@ Network requests made by Superblocks users as part of API steps, for example, re
     },
     "AgentStatus": {
       "type": "string",
-      "enum": [
-        "Active",
-        "Disconnected",
-        "Browser Unreachable",
-        "Pending Registration",
-        "Stale"
-      ]
+      "enum": ["Active", "Disconnected", "Browser Unreachable", "Pending Registration", "Stale"]
     },
     "SemVer": {
       "type": "string"
     },
     "AgentType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "AgentTags": {
       "type": "object",
@@ -311,10 +286,7 @@ Network requests made by Superblocks users as part of API steps, for example, re
           "type": "string"
         }
       },
-      "required": [
-        "algorithm",
-        "key"
-      ],
+      "required": ["algorithm", "key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -322,13 +294,7 @@ Network requests made by Superblocks users as part of API steps, for example, re
     },
     "BillingPlan": {
       "type": "string",
-      "enum": [
-        "TRIAL",
-        "FREE",
-        "STARTER",
-        "PRO",
-        "ENTERPRISE"
-      ]
+      "enum": ["TRIAL", "FREE", "STARTER", "PRO", "ENTERPRISE"]
     }
   }
 }
@@ -447,13 +413,7 @@ _None_
     },
     "AgentStatus": {
       "type": "string",
-      "enum": [
-        "Active",
-        "Disconnected",
-        "Browser Unreachable",
-        "Pending Registration",
-        "Stale"
-      ]
+      "enum": ["Active", "Disconnected", "Browser Unreachable", "Pending Registration", "Stale"]
     }
   }
 }
@@ -554,13 +514,7 @@ _None_
     },
     "AgentStatus": {
       "type": "string",
-      "enum": [
-        "Active",
-        "Disconnected",
-        "Browser Unreachable",
-        "Pending Registration",
-        "Stale"
-      ]
+      "enum": ["Active", "Disconnected", "Browser Unreachable", "Pending Registration", "Stale"]
     }
   }
 }
@@ -598,10 +552,7 @@ _None_
           "$ref": "#/definitions/Plugin"
         }
       },
-      "required": [
-        "datasource",
-        "plugin"
-      ],
+      "required": ["datasource", "plugin"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -665,11 +616,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "id",
-        "name",
-        "pluginId"
-      ],
+      "required": ["id", "name", "pluginId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -821,10 +768,7 @@ _None_
           "$ref": "#/definitions/AWSConfig"
         }
       },
-      "required": [
-        "overrideS3OutputLocation",
-        "databaseName"
-      ],
+      "required": ["overrideS3OutputLocation", "databaseName"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -832,12 +776,7 @@ _None_
     },
     "Connection_DateFolderType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ]
+      "enum": [0, 1, 2, 3]
     },
     "AWSConfig": {
       "type": "object",
@@ -1022,10 +961,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -1064,16 +1000,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -1178,22 +1108,11 @@ _None_
     },
     "SharedSSHAuthMethod": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ]
+      "enum": [0, 1, 2, 3]
     },
     "SSHAuthMethod": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "CosmosDbDatasourceConfiguration": {
       "type": "object",
@@ -1229,11 +1148,7 @@ _None_
           "$ref": "#/definitions/Azure"
         }
       },
-      "required": [
-        "host",
-        "port",
-        "databaseId"
-      ],
+      "required": ["host", "port", "databaseId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -1255,10 +1170,7 @@ _None_
                   "const": "key"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -1275,10 +1187,7 @@ _None_
                   "const": "clientCredentials"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -1302,9 +1211,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -1317,9 +1224,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "masterKey"
-      ],
+      "required": ["masterKey"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -1335,10 +1240,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "clientId",
-        "clientSecret"
-      ],
+      "required": ["clientId", "clientSecret"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -1412,11 +1314,7 @@ _None_
     },
     "AWSAuthType": {
       "type": "string",
-      "enum": [
-        "access-key",
-        "token-file",
-        "ec2-instance-metadata"
-      ]
+      "enum": ["access-key", "token-file", "ec2-instance-metadata"]
     },
     "EmailDatasourceConfiguration": {
       "type": "object",
@@ -1705,33 +1603,21 @@ _None_
           "type": "boolean"
         },
         "shareBasicAuthCreds": {
-          "type": [
-            "boolean",
-            "string"
-          ]
+          "type": ["boolean", "string"]
         }
       }
     },
     "TokenScope": {
       "type": "string",
-      "enum": [
-        "datasource",
-        "user"
-      ]
+      "enum": ["datasource", "user"]
     },
     "ApiKeyMethod": {
       "type": "string",
-      "enum": [
-        "header",
-        "query-param"
-      ]
+      "enum": ["header", "query-param"]
     },
     "ClientAuthMethod": {
       "type": "string",
-      "enum": [
-        "POST",
-        "BASIC"
-      ]
+      "enum": ["POST", "BASIC"]
     },
     "AuthType": {
       "anyOf": [
@@ -1764,18 +1650,11 @@ _None_
     },
     "GoogleSheetsAuthType": {
       "type": "string",
-      "enum": [
-        "oauth-code",
-        "service-account"
-      ]
+      "enum": ["oauth-code", "service-account"]
     },
     "NewAuthType": {
       "type": "string",
-      "enum": [
-        "passwordGrantFlow",
-        "authorizationCodeFlow",
-        "clientCredentialsFlow"
-      ]
+      "enum": ["passwordGrantFlow", "authorizationCodeFlow", "clientCredentialsFlow"]
     },
     "JavascriptDatasourceConfiguration": {
       "$ref": "#/definitions/LanguageDatasourceConfiguration"
@@ -1828,10 +1707,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -1867,16 +1743,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -1981,16 +1851,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -2063,10 +1927,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -2105,16 +1966,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -2216,9 +2071,7 @@ _None_
           }
         }
       },
-      "required": [
-        "bearerToken"
-      ]
+      "required": ["bearerToken"]
     },
     "PythonDatasourceConfiguration": {
       "$ref": "#/definitions/LanguageDatasourceConfiguration"
@@ -2257,10 +2110,7 @@ _None_
                   "const": "url"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -2277,10 +2127,7 @@ _None_
                   "const": "fields"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -2304,9 +2151,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "connectionType"
-      ],
+      "required": ["connectionType"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -2320,9 +2165,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "urlString"
-      ],
+      "required": ["urlString"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -2350,11 +2193,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "host",
-        "port",
-        "enableSsl"
-      ],
+      "required": ["host", "port", "enableSsl"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -2369,10 +2208,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -2411,16 +2247,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -2580,11 +2410,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "okta",
-            "key-pair"
-          ]
+          "enum": ["fields", "okta", "key-pair"]
         },
         "okta": {
           "type": "object",
@@ -2608,9 +2434,7 @@ _None_
               "type": "string"
             }
           },
-          "required": [
-            "privateKey"
-          ],
+          "required": ["privateKey"],
           "additionalProperties": {
             "not": true,
             "errorMessage": "extra property is ${0#}"
@@ -2659,16 +2483,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -2783,10 +2601,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -2822,16 +2637,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -2933,9 +2742,7 @@ _None_
           }
         }
       },
-      "required": [
-        "apiKey"
-      ]
+      "required": ["apiKey"]
     },
     "GoogleSheetsDatasourceConfiguration": {
       "$ref": "#/definitions/RestApiDatasourceConfiguration"
@@ -2987,10 +2794,7 @@ _None_
           "$ref": "#/definitions/SASL"
         }
       },
-      "required": [
-        "brokers",
-        "ssl"
-      ],
+      "required": ["brokers", "ssl"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3023,9 +2827,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "mechanism"
-      ],
+      "required": ["mechanism"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3033,13 +2835,7 @@ _None_
     },
     "SASL_Mechanism": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "SalesforceDatasourceConfiguration": {
       "type": "object",
@@ -3085,9 +2881,7 @@ _None_
           "$ref": "#/definitions/Auth"
         }
       },
-      "required": [
-        "instanceUrl"
-      ],
+      "required": ["instanceUrl"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3110,10 +2904,7 @@ _None_
                   "const": "passwordGrantFlow"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3130,10 +2921,7 @@ _None_
                   "const": "authorizationCodeFlow"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3150,10 +2938,7 @@ _None_
                   "const": "basic"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3170,10 +2955,7 @@ _None_
                   "const": "clientCredentialsFlow"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3191,10 +2973,7 @@ _None_
                   "const": "key"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3218,9 +2997,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "method"
-      ],
+      "required": ["method"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3251,15 +3028,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "clientId",
-        "clientSecret",
-        "tokenUrl",
-        "username",
-        "password",
-        "audience",
-        "scope"
-      ],
+      "required": ["clientId", "clientSecret", "tokenUrl", "username", "password", "audience", "scope"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3322,10 +3091,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "username",
-        "password"
-      ],
+      "required": ["username", "password"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3350,13 +3116,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "clientId",
-        "clientSecret",
-        "tokenUrl",
-        "audience",
-        "scope"
-      ],
+      "required": ["clientId", "clientSecret", "tokenUrl", "audience", "scope"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3399,12 +3159,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "host",
-        "port",
-        "username",
-        "password"
-      ],
+      "required": ["host", "port", "username", "password"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3441,10 +3196,7 @@ _None_
           "$ref": "#/definitions/Azure"
         }
       },
-      "required": [
-        "accountName",
-        "tenant"
-      ],
+      "required": ["accountName", "tenant"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3460,10 +3212,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -3478,9 +3227,7 @@ _None_
           "$ref": "#/definitions/DynamicWorkflowConfiguration"
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     },
     "Plugin_OracleDbConnection": {
       "type": "object",
@@ -3510,16 +3257,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "hostUrl",
-        "port",
-        "user",
-        "password",
-        "databaseService",
-        "useTcps",
-        "connectionType",
-        "connectionUrl"
-      ],
+      "required": ["hostUrl", "port", "user", "password", "databaseService", "useTcps", "connectionType", "connectionUrl"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3538,9 +3276,7 @@ _None_
           "$ref": "#/definitions/DynamicWorkflowConfiguration"
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3579,11 +3315,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "hostUrl",
-        "path",
-        "port"
-      ],
+      "required": ["hostUrl", "path", "port"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3591,11 +3323,7 @@ _None_
     },
     "Plugin_ConnectionType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "CouchbaseDatasourceConfiguration": {
       "type": "object",
@@ -3613,9 +3341,7 @@ _None_
           "$ref": "#/definitions/DynamicWorkflowConfiguration"
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3634,11 +3360,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "user",
-        "password",
-        "url"
-      ],
+      "required": ["user", "password", "url"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3693,9 +3415,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "configurationId"
-      ],
+      "required": ["configurationId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3717,10 +3437,7 @@ _None_
                   "const": "mock"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3737,10 +3454,7 @@ _None_
                   "const": "akeylessSecretsManager"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3757,10 +3471,7 @@ _None_
                   "const": "awsSecretsManager"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3777,10 +3488,7 @@ _None_
                   "const": "gcpSecretManager"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3797,10 +3505,7 @@ _None_
                   "const": "hashicorpVault"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3824,9 +3529,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3842,9 +3545,7 @@ _None_
           }
         }
       },
-      "required": [
-        "data"
-      ],
+      "required": ["data"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3884,10 +3585,7 @@ _None_
                   "const": "apiKey"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3904,10 +3602,7 @@ _None_
                   "const": "email"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -3931,9 +3626,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3949,10 +3642,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "accessId",
-        "accessKey"
-      ],
+      "required": ["accessId", "accessKey"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -3968,10 +3658,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "email",
-        "password"
-      ],
+      "required": ["email", "password"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4008,10 +3695,7 @@ _None_
                   "const": "static"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -4028,10 +3712,7 @@ _None_
                   "const": "assumeRole"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -4058,10 +3739,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "config",
-        "region"
-      ],
+      "required": ["config", "region"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4077,10 +3755,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "accessKeyId",
-        "secretAccessKey"
-      ],
+      "required": ["accessKeyId", "secretAccessKey"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4093,9 +3768,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "roleArn"
-      ],
+      "required": ["roleArn"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4111,9 +3784,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "projectId"
-      ],
+      "required": ["projectId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4140,9 +3811,7 @@ _None_
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "byteLength"
-                      ],
+                      "required": ["byteLength"],
                       "additionalProperties": {
                         "not": true,
                         "errorMessage": "extra property is ${0#}"
@@ -4158,13 +3827,7 @@ _None_
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "BYTES_PER_ELEMENT",
-                    "buffer",
-                    "byteLength",
-                    "byteOffset",
-                    "length"
-                  ],
+                  "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
                   "additionalProperties": {
                     "type": "number"
                   }
@@ -4174,10 +3837,7 @@ _None_
                   "const": "serviceAccount"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -4201,9 +3861,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4236,10 +3894,7 @@ _None_
           "description": "the path to the secrets"
         }
       },
-      "required": [
-        "address",
-        "version"
-      ],
+      "required": ["address", "version"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4261,10 +3916,7 @@ _None_
                   "const": "token"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -4281,10 +3933,7 @@ _None_
                   "const": "appRole"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -4308,9 +3957,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4326,10 +3973,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "roleId",
-        "secretId"
-      ],
+      "required": ["roleId", "secretId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4337,11 +3981,7 @@ _None_
     },
     "HashicorpVault_Version": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "AuthContext": {
       "type": "object",
@@ -4367,10 +4007,7 @@ _None_
         "not": true,
         "errorMessage": "extra property is ${0#}"
       },
-      "required": [
-        "key",
-        "value"
-      ]
+      "required": ["key", "value"]
     },
     "CreatorDto": {
       "type": "object",
@@ -4385,11 +4022,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "id",
-        "email",
-        "name"
-      ],
+      "required": ["id", "email", "name"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4437,10 +4070,7 @@ _None_
                 "$ref": "#/definitions/FormItemDisplay"
               }
             },
-            "required": [
-              "url",
-              "name"
-            ],
+            "required": ["url", "name"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -4482,17 +4112,7 @@ _None_
           "$ref": "#/definitions/ResponseTypeOverride"
         }
       },
-      "required": [
-        "id",
-        "name",
-        "type",
-        "moduleName",
-        "modulePath",
-        "iconLocation",
-        "responseType",
-        "hasRawRequest",
-        "actionTemplate"
-      ],
+      "required": ["id", "name", "type", "moduleName", "modulePath", "iconLocation", "responseType", "hasRawRequest", "actionTemplate"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4500,12 +4120,7 @@ _None_
     },
     "PluginType": {
       "type": "string",
-      "enum": [
-        "DB",
-        "API",
-        "JS",
-        "CODE"
-      ]
+      "enum": ["DB", "API", "JS", "CODE"]
     },
     "FormItemDisplay": {
       "type": "object",
@@ -4527,10 +4142,7 @@ _None_
     },
     "PluginResponseType": {
       "type": "string",
-      "enum": [
-        "TABLE",
-        "JSON"
-      ]
+      "enum": ["TABLE", "JSON"]
     },
     "FormTemplate": {
       "type": "object",
@@ -4542,9 +4154,7 @@ _None_
           }
         }
       },
-      "required": [
-        "sections"
-      ],
+      "required": ["sections"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4591,10 +4201,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "name",
-        "items"
-      ],
+      "required": ["name", "items"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4742,10 +4349,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -4753,10 +4357,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -4786,12 +4387,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4835,9 +4431,7 @@ _None_
               "type": "string"
             }
           },
-          "required": [
-            "filename"
-          ],
+          "required": ["filename"],
           "additionalProperties": {
             "not": true,
             "errorMessage": "extra property is ${0#}"
@@ -4847,10 +4441,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "key",
-        "value"
-      ],
+      "required": ["key", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4881,9 +4472,7 @@ _None_
           "$ref": "#/definitions/TooltipIconType"
         }
       },
-      "required": [
-        "markdownText"
-      ],
+      "required": ["markdownText"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -4891,25 +4480,15 @@ _None_
     },
     "TooltipIconType": {
       "type": "string",
-      "enum": [
-        "warning",
-        "info"
-      ]
+      "enum": ["warning", "info"]
     },
     "DisplayUnsupportedState": {
       "type": "string",
-      "enum": [
-        "hide",
-        "disable"
-      ]
+      "enum": ["hide", "disable"]
     },
     "AgentType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "FormItemTransformation": {
       "type": "string",
@@ -5011,10 +4590,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -5022,10 +4598,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -5047,23 +4620,13 @@ _None_
         },
         "type": {
           "type": "string",
-          "enum": [
-            "success",
-            "warning",
-            "info",
-            "error"
-          ]
+          "enum": ["success", "warning", "info", "error"]
         },
         "showIcon": {
           "type": "boolean"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -5165,10 +4728,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -5176,10 +4736,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -5218,12 +4775,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -5231,10 +4783,7 @@ _None_
     },
     "InputDataType": {
       "type": "string",
-      "enum": [
-        "NUMBER",
-        "PASSWORD"
-      ]
+      "enum": ["NUMBER", "PASSWORD"]
     },
     "DynamicInputFormItem": {
       "type": "object",
@@ -5332,10 +4881,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -5343,10 +4889,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -5376,12 +4919,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -5483,10 +5021,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -5494,10 +5029,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -5521,13 +5053,7 @@ _None_
           "$ref": "#/definitions/EditorLanguage"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "language",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "language", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -5535,13 +5061,7 @@ _None_
     },
     "EditorLanguage": {
       "type": "string",
-      "enum": [
-        "TEXT",
-        "SQL",
-        "JSON",
-        "JAVASCRIPT",
-        "PYTHON"
-      ]
+      "enum": ["TEXT", "SQL", "JSON", "JAVASCRIPT", "PYTHON"]
     },
     "DropdownFormItem": {
       "type": "object",
@@ -5639,10 +5159,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -5650,10 +5167,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -5689,13 +5203,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "options",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "options", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -5724,10 +5232,7 @@ _None_
         },
         "subTextPosition": {
           "type": "string",
-          "enum": [
-            "bottom",
-            "right"
-          ]
+          "enum": ["bottom", "right"]
         },
         "parentKey": {
           "type": "string"
@@ -5754,10 +5259,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "key",
-        "value"
-      ],
+      "required": ["key", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -5859,10 +5361,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -5870,10 +5369,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -5936,15 +5432,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "componentType",
-        "displayNameAccessor",
-        "keyAccessor",
-        "label",
-        "name",
-        "startVersion",
-        "valueAccessor"
-      ],
+      "required": ["componentType", "displayNameAccessor", "keyAccessor", "label", "name", "startVersion", "valueAccessor"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -6046,10 +5534,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -6057,10 +5542,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -6099,12 +5581,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -6206,10 +5683,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -6217,10 +5691,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -6259,13 +5730,7 @@ _None_
           }
         }
       },
-      "required": [
-        "buttonType",
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["buttonType", "componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -6273,10 +5738,7 @@ _None_
     },
     "ButtonType": {
       "type": "string",
-      "enum": [
-        "revokeOAuthTokens",
-        "connectOAuth"
-      ]
+      "enum": ["revokeOAuthTokens", "connectOAuth"]
     },
     "ExtraValues": {
       "type": "object",
@@ -6304,9 +5766,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "pluginId"
-      ]
+      "required": ["pluginId"]
     },
     "AuthorizationStateConfig": {
       "type": "string",
@@ -6408,10 +5868,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -6419,10 +5876,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -6446,13 +5900,7 @@ _None_
           }
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "options",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "options", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -6554,10 +6002,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -6565,10 +6010,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -6592,12 +6034,7 @@ _None_
           "$ref": "#/definitions/ValidateReduxPath"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -6613,10 +6050,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "true",
-        "false"
-      ],
+      "required": ["true", "false"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -6649,11 +6083,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "selector",
-        "validValue",
-        "errorMessage"
-      ],
+      "required": ["selector", "validValue", "errorMessage"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -6755,10 +6185,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -6766,10 +6193,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -6823,13 +6247,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion",
-        "valueAccessor"
-      ],
+      "required": ["componentType", "label", "name", "startVersion", "valueAccessor"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -6931,10 +6349,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -6942,10 +6357,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -6969,12 +6381,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -7076,10 +6483,7 @@ _None_
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "label",
-                    "value"
-                  ],
+                  "required": ["label", "value"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -7087,10 +6491,7 @@ _None_
                 }
               }
             },
-            "required": [
-              "value",
-              "children"
-            ],
+            "required": ["value", "children"],
             "additionalProperties": {
               "not": true,
               "errorMessage": "extra property is ${0#}"
@@ -7126,12 +6527,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "componentType",
-        "label",
-        "name",
-        "startVersion"
-      ],
+      "required": ["componentType", "label", "name", "startVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -7165,9 +6561,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "rowItems"
-      ],
+      "required": ["rowItems"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -7179,10 +6573,7 @@ _None_
     },
     "IntegrationKind": {
       "type": "string",
-      "enum": [
-        "SECRET",
-        "PLUGIN"
-      ]
+      "enum": ["SECRET", "PLUGIN"]
     },
     "ResponseTypeOverride": {
       "type": "object",
@@ -7199,10 +6590,7 @@ _None_
             "$ref": "#/definitions/PluginResponseType"
           }
         },
-        "required": [
-          "values",
-          "responseType"
-        ],
+        "required": ["values", "responseType"],
         "additionalProperties": {
           "not": true,
           "errorMessage": "extra property is ${0#}"
@@ -7283,17 +6671,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "configurations",
-        "created",
-        "id",
-        "isUserConfigured",
-        "kind",
-        "name",
-        "organizationId",
-        "pluginId",
-        "updated"
-      ],
+      "required": ["configurations", "created", "id", "isUserConfigured", "kind", "name", "organizationId", "pluginId", "updated"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -7301,10 +6679,7 @@ _None_
     },
     "IntegrationKind": {
       "type": "string",
-      "enum": [
-        "SECRET",
-        "PLUGIN"
-      ]
+      "enum": ["SECRET", "PLUGIN"]
     },
     "IntegrationConfigurationDto": {
       "type": "object",
@@ -7338,13 +6713,7 @@ _None_
           }
         }
       },
-      "required": [
-        "id",
-        "created",
-        "integrationId",
-        "configuration",
-        "isDefault"
-      ],
+      "required": ["id", "created", "integrationId", "configuration", "isDefault"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -7357,6 +6726,7 @@ _None_
 </details>
 
 #### `/api/v1/agents/user/userToken`
+
 ##### GET
 
 <details>
@@ -7389,12 +6759,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "authType",
-        "authConfig",
-        "tokenType",
-        "eagerRefreshThresholdMs"
-      ],
+      "required": ["authType", "authConfig", "tokenType", "eagerRefreshThresholdMs"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -7431,18 +6796,11 @@ _None_
     },
     "GoogleSheetsAuthType": {
       "type": "string",
-      "enum": [
-        "oauth-code",
-        "service-account"
-      ]
+      "enum": ["oauth-code", "service-account"]
     },
     "NewAuthType": {
       "type": "string",
-      "enum": [
-        "passwordGrantFlow",
-        "authorizationCodeFlow",
-        "clientCredentialsFlow"
-      ]
+      "enum": ["passwordGrantFlow", "authorizationCodeFlow", "clientCredentialsFlow"]
     },
     "AuthConfig": {
       "type": "object",
@@ -7560,10 +6918,7 @@ _None_
           "type": "boolean"
         },
         "shareBasicAuthCreds": {
-          "type": [
-            "boolean",
-            "string"
-          ]
+          "type": ["boolean", "string"]
         }
       }
     },
@@ -7617,33 +6972,19 @@ _None_
     },
     "TokenScope": {
       "type": "string",
-      "enum": [
-        "datasource",
-        "user"
-      ]
+      "enum": ["datasource", "user"]
     },
     "ApiKeyMethod": {
       "type": "string",
-      "enum": [
-        "header",
-        "query-param"
-      ]
+      "enum": ["header", "query-param"]
     },
     "ClientAuthMethod": {
       "type": "string",
-      "enum": [
-        "POST",
-        "BASIC"
-      ]
+      "enum": ["POST", "BASIC"]
     },
     "TokenType": {
       "type": "string",
-      "enum": [
-        "refresh",
-        "userId",
-        "token",
-        "id-token"
-      ]
+      "enum": ["refresh", "userId", "token", "id-token"]
     }
   }
 }
@@ -7707,9 +7048,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "tokenValue"
-      ],
+      "required": ["tokenValue"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -7831,10 +7170,7 @@ _None_
           "type": "boolean"
         },
         "shareBasicAuthCreds": {
-          "type": [
-            "boolean",
-            "string"
-          ]
+          "type": ["boolean", "string"]
         }
       }
     },
@@ -7888,24 +7224,15 @@ _None_
     },
     "TokenScope": {
       "type": "string",
-      "enum": [
-        "datasource",
-        "user"
-      ]
+      "enum": ["datasource", "user"]
     },
     "ApiKeyMethod": {
       "type": "string",
-      "enum": [
-        "header",
-        "query-param"
-      ]
+      "enum": ["header", "query-param"]
     },
     "ClientAuthMethod": {
       "type": "string",
-      "enum": [
-        "POST",
-        "BASIC"
-      ]
+      "enum": ["POST", "BASIC"]
     },
     "AuthType": {
       "anyOf": [
@@ -7938,27 +7265,15 @@ _None_
     },
     "GoogleSheetsAuthType": {
       "type": "string",
-      "enum": [
-        "oauth-code",
-        "service-account"
-      ]
+      "enum": ["oauth-code", "service-account"]
     },
     "NewAuthType": {
       "type": "string",
-      "enum": [
-        "passwordGrantFlow",
-        "authorizationCodeFlow",
-        "clientCredentialsFlow"
-      ]
+      "enum": ["passwordGrantFlow", "authorizationCodeFlow", "clientCredentialsFlow"]
     },
     "TokenType": {
       "type": "string",
-      "enum": [
-        "refresh",
-        "userId",
-        "token",
-        "id-token"
-      ]
+      "enum": ["refresh", "userId", "token", "id-token"]
     }
   }
 }
@@ -8010,6 +7325,7 @@ _None_
 </details>
 
 #### `/api/v1/agents/userToken`
+
 ##### GET
 
 <details>
@@ -8042,12 +7358,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "authType",
-        "authConfig",
-        "tokenType",
-        "eagerRefreshThresholdMs"
-      ],
+      "required": ["authType", "authConfig", "tokenType", "eagerRefreshThresholdMs"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -8084,18 +7395,11 @@ _None_
     },
     "GoogleSheetsAuthType": {
       "type": "string",
-      "enum": [
-        "oauth-code",
-        "service-account"
-      ]
+      "enum": ["oauth-code", "service-account"]
     },
     "NewAuthType": {
       "type": "string",
-      "enum": [
-        "passwordGrantFlow",
-        "authorizationCodeFlow",
-        "clientCredentialsFlow"
-      ]
+      "enum": ["passwordGrantFlow", "authorizationCodeFlow", "clientCredentialsFlow"]
     },
     "AuthConfig": {
       "type": "object",
@@ -8213,10 +7517,7 @@ _None_
           "type": "boolean"
         },
         "shareBasicAuthCreds": {
-          "type": [
-            "boolean",
-            "string"
-          ]
+          "type": ["boolean", "string"]
         }
       }
     },
@@ -8270,33 +7571,19 @@ _None_
     },
     "TokenScope": {
       "type": "string",
-      "enum": [
-        "datasource",
-        "user"
-      ]
+      "enum": ["datasource", "user"]
     },
     "ApiKeyMethod": {
       "type": "string",
-      "enum": [
-        "header",
-        "query-param"
-      ]
+      "enum": ["header", "query-param"]
     },
     "ClientAuthMethod": {
       "type": "string",
-      "enum": [
-        "POST",
-        "BASIC"
-      ]
+      "enum": ["POST", "BASIC"]
     },
     "TokenType": {
       "type": "string",
-      "enum": [
-        "refresh",
-        "userId",
-        "token",
-        "id-token"
-      ]
+      "enum": ["refresh", "userId", "token", "id-token"]
     }
   }
 }
@@ -8360,9 +7647,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "tokenValue"
-      ],
+      "required": ["tokenValue"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -8484,10 +7769,7 @@ _None_
           "type": "boolean"
         },
         "shareBasicAuthCreds": {
-          "type": [
-            "boolean",
-            "string"
-          ]
+          "type": ["boolean", "string"]
         }
       }
     },
@@ -8541,24 +7823,15 @@ _None_
     },
     "TokenScope": {
       "type": "string",
-      "enum": [
-        "datasource",
-        "user"
-      ]
+      "enum": ["datasource", "user"]
     },
     "ApiKeyMethod": {
       "type": "string",
-      "enum": [
-        "header",
-        "query-param"
-      ]
+      "enum": ["header", "query-param"]
     },
     "ClientAuthMethod": {
       "type": "string",
-      "enum": [
-        "POST",
-        "BASIC"
-      ]
+      "enum": ["POST", "BASIC"]
     },
     "AuthType": {
       "anyOf": [
@@ -8591,27 +7864,15 @@ _None_
     },
     "GoogleSheetsAuthType": {
       "type": "string",
-      "enum": [
-        "oauth-code",
-        "service-account"
-      ]
+      "enum": ["oauth-code", "service-account"]
     },
     "NewAuthType": {
       "type": "string",
-      "enum": [
-        "passwordGrantFlow",
-        "authorizationCodeFlow",
-        "clientCredentialsFlow"
-      ]
+      "enum": ["passwordGrantFlow", "authorizationCodeFlow", "clientCredentialsFlow"]
     },
     "TokenType": {
       "type": "string",
-      "enum": [
-        "refresh",
-        "userId",
-        "token",
-        "id-token"
-      ]
+      "enum": ["refresh", "userId", "token", "id-token"]
     }
   }
 }
@@ -8665,12 +7926,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "authType",
-        "authConfig",
-        "datasourceId",
-        "configurationId"
-      ],
+      "required": ["authType", "authConfig", "datasourceId", "configurationId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -8719,9 +7975,7 @@ _None_
           }
         }
       },
-      "required": [
-        "auditLogs"
-      ],
+      "required": ["auditLogs"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -8776,16 +8030,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "id",
-        "entityId",
-        "entityType",
-        "organizationId",
-        "isDeployed",
-        "source",
-        "target",
-        "type"
-      ],
+      "required": ["id", "entityId", "entityType", "organizationId", "isDeployed", "source", "target", "type"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -8793,28 +8038,15 @@ _None_
     },
     "AuditLogEntityType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "AuditLogEventType": {
       "type": "number",
-      "enum": [
-        0,
-        1
-      ]
+      "enum": [0, 1]
     },
     "ApiRunStatus": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "ApiLocationContext": {
       "type": "object",
@@ -8823,9 +8055,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "applicationId"
-      ],
+      "required": ["applicationId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -8841,9 +8071,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "start"
-      ],
+      "required": ["start"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -8851,11 +8079,7 @@ _None_
     },
     "UserType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     }
   }
 }
@@ -8897,9 +8121,7 @@ _None_
           }
         }
       },
-      "required": [
-        "apis"
-      ],
+      "required": ["apis"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -8933,21 +8155,14 @@ _None_
               }
             }
           },
-          "required": [
-            "secrets"
-          ],
+          "required": ["secrets"],
           "additionalProperties": {
             "not": true,
             "errorMessage": "extra property is ${0#}"
           }
         }
       },
-      "required": [
-        "api",
-        "integrations",
-        "metadata",
-        "stores"
-      ],
+      "required": ["api", "integrations", "metadata", "stores"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -9099,10 +8314,7 @@ _None_
           "$ref": "#/definitions/AWSConfig"
         }
       },
-      "required": [
-        "overrideS3OutputLocation",
-        "databaseName"
-      ],
+      "required": ["overrideS3OutputLocation", "databaseName"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -9110,12 +8322,7 @@ _None_
     },
     "Connection_DateFolderType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ]
+      "enum": [0, 1, 2, 3]
     },
     "AWSConfig": {
       "type": "object",
@@ -9300,10 +8507,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -9342,16 +8546,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -9456,22 +8654,11 @@ _None_
     },
     "SharedSSHAuthMethod": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ]
+      "enum": [0, 1, 2, 3]
     },
     "SSHAuthMethod": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "CosmosDbDatasourceConfiguration": {
       "type": "object",
@@ -9507,11 +8694,7 @@ _None_
           "$ref": "#/definitions/Azure"
         }
       },
-      "required": [
-        "host",
-        "port",
-        "databaseId"
-      ],
+      "required": ["host", "port", "databaseId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -9533,10 +8716,7 @@ _None_
                   "const": "key"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -9553,10 +8733,7 @@ _None_
                   "const": "clientCredentials"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -9580,9 +8757,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -9595,9 +8770,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "masterKey"
-      ],
+      "required": ["masterKey"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -9613,10 +8786,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "clientId",
-        "clientSecret"
-      ],
+      "required": ["clientId", "clientSecret"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -9690,11 +8860,7 @@ _None_
     },
     "AWSAuthType": {
       "type": "string",
-      "enum": [
-        "access-key",
-        "token-file",
-        "ec2-instance-metadata"
-      ]
+      "enum": ["access-key", "token-file", "ec2-instance-metadata"]
     },
     "EmailDatasourceConfiguration": {
       "type": "object",
@@ -9983,33 +9149,21 @@ _None_
           "type": "boolean"
         },
         "shareBasicAuthCreds": {
-          "type": [
-            "boolean",
-            "string"
-          ]
+          "type": ["boolean", "string"]
         }
       }
     },
     "TokenScope": {
       "type": "string",
-      "enum": [
-        "datasource",
-        "user"
-      ]
+      "enum": ["datasource", "user"]
     },
     "ApiKeyMethod": {
       "type": "string",
-      "enum": [
-        "header",
-        "query-param"
-      ]
+      "enum": ["header", "query-param"]
     },
     "ClientAuthMethod": {
       "type": "string",
-      "enum": [
-        "POST",
-        "BASIC"
-      ]
+      "enum": ["POST", "BASIC"]
     },
     "AuthType": {
       "anyOf": [
@@ -10042,18 +9196,11 @@ _None_
     },
     "GoogleSheetsAuthType": {
       "type": "string",
-      "enum": [
-        "oauth-code",
-        "service-account"
-      ]
+      "enum": ["oauth-code", "service-account"]
     },
     "NewAuthType": {
       "type": "string",
-      "enum": [
-        "passwordGrantFlow",
-        "authorizationCodeFlow",
-        "clientCredentialsFlow"
-      ]
+      "enum": ["passwordGrantFlow", "authorizationCodeFlow", "clientCredentialsFlow"]
     },
     "JavascriptDatasourceConfiguration": {
       "$ref": "#/definitions/LanguageDatasourceConfiguration"
@@ -10106,10 +9253,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -10145,16 +9289,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -10259,16 +9397,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -10341,10 +9473,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -10383,16 +9512,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -10494,9 +9617,7 @@ _None_
           }
         }
       },
-      "required": [
-        "bearerToken"
-      ]
+      "required": ["bearerToken"]
     },
     "PythonDatasourceConfiguration": {
       "$ref": "#/definitions/LanguageDatasourceConfiguration"
@@ -10535,10 +9656,7 @@ _None_
                   "const": "url"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -10555,10 +9673,7 @@ _None_
                   "const": "fields"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -10582,9 +9697,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "connectionType"
-      ],
+      "required": ["connectionType"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -10598,9 +9711,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "urlString"
-      ],
+      "required": ["urlString"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -10628,11 +9739,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "host",
-        "port",
-        "enableSsl"
-      ],
+      "required": ["host", "port", "enableSsl"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -10647,10 +9754,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -10689,16 +9793,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -10858,11 +9956,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "okta",
-            "key-pair"
-          ]
+          "enum": ["fields", "okta", "key-pair"]
         },
         "okta": {
           "type": "object",
@@ -10886,9 +9980,7 @@ _None_
               "type": "string"
             }
           },
-          "required": [
-            "privateKey"
-          ],
+          "required": ["privateKey"],
           "additionalProperties": {
             "not": true,
             "errorMessage": "extra property is ${0#}"
@@ -10937,16 +10029,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -11061,10 +10147,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -11100,16 +10183,10 @@ _None_
           "type": "object",
           "properties": {
             "useSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "useSelfSignedSsl": {
-              "type": [
-                "boolean",
-                "string"
-              ]
+              "type": ["boolean", "string"]
             },
             "ca": {
               "type": "string"
@@ -11211,9 +10288,7 @@ _None_
           }
         }
       },
-      "required": [
-        "apiKey"
-      ]
+      "required": ["apiKey"]
     },
     "GoogleSheetsDatasourceConfiguration": {
       "$ref": "#/definitions/RestApiDatasourceConfiguration"
@@ -11265,10 +10340,7 @@ _None_
           "$ref": "#/definitions/SASL"
         }
       },
-      "required": [
-        "brokers",
-        "ssl"
-      ],
+      "required": ["brokers", "ssl"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11301,9 +10373,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "mechanism"
-      ],
+      "required": ["mechanism"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11311,13 +10381,7 @@ _None_
     },
     "SASL_Mechanism": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "SalesforceDatasourceConfiguration": {
       "type": "object",
@@ -11363,9 +10427,7 @@ _None_
           "$ref": "#/definitions/Auth"
         }
       },
-      "required": [
-        "instanceUrl"
-      ],
+      "required": ["instanceUrl"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11388,10 +10450,7 @@ _None_
                   "const": "passwordGrantFlow"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -11408,10 +10467,7 @@ _None_
                   "const": "authorizationCodeFlow"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -11428,10 +10484,7 @@ _None_
                   "const": "basic"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -11448,10 +10501,7 @@ _None_
                   "const": "clientCredentialsFlow"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -11469,10 +10519,7 @@ _None_
                   "const": "key"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -11496,9 +10543,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "method"
-      ],
+      "required": ["method"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11529,15 +10574,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "clientId",
-        "clientSecret",
-        "tokenUrl",
-        "username",
-        "password",
-        "audience",
-        "scope"
-      ],
+      "required": ["clientId", "clientSecret", "tokenUrl", "username", "password", "audience", "scope"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11600,10 +10637,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "username",
-        "password"
-      ],
+      "required": ["username", "password"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11628,13 +10662,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "clientId",
-        "clientSecret",
-        "tokenUrl",
-        "audience",
-        "scope"
-      ],
+      "required": ["clientId", "clientSecret", "tokenUrl", "audience", "scope"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11677,12 +10705,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "host",
-        "port",
-        "username",
-        "password"
-      ],
+      "required": ["host", "port", "username", "password"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11719,10 +10742,7 @@ _None_
           "$ref": "#/definitions/Azure"
         }
       },
-      "required": [
-        "accountName",
-        "tenant"
-      ],
+      "required": ["accountName", "tenant"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11738,10 +10758,7 @@ _None_
       "properties": {
         "connectionType": {
           "type": "string",
-          "enum": [
-            "fields",
-            "url"
-          ]
+          "enum": ["fields", "url"]
         },
         "connectionUrl": {
           "type": "string"
@@ -11756,9 +10773,7 @@ _None_
           "$ref": "#/definitions/DynamicWorkflowConfiguration"
         }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
     },
     "Plugin_OracleDbConnection": {
       "type": "object",
@@ -11788,16 +10803,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "hostUrl",
-        "port",
-        "user",
-        "password",
-        "databaseService",
-        "useTcps",
-        "connectionType",
-        "connectionUrl"
-      ],
+      "required": ["hostUrl", "port", "user", "password", "databaseService", "useTcps", "connectionType", "connectionUrl"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11816,9 +10822,7 @@ _None_
           "$ref": "#/definitions/DynamicWorkflowConfiguration"
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11857,11 +10861,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "hostUrl",
-        "path",
-        "port"
-      ],
+      "required": ["hostUrl", "path", "port"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11869,11 +10869,7 @@ _None_
     },
     "Plugin_ConnectionType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "CouchbaseDatasourceConfiguration": {
       "type": "object",
@@ -11891,9 +10887,7 @@ _None_
           "$ref": "#/definitions/DynamicWorkflowConfiguration"
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11912,11 +10906,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "user",
-        "password",
-        "url"
-      ],
+      "required": ["user", "password", "url"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11971,9 +10961,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "configurationId"
-      ],
+      "required": ["configurationId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -11995,10 +10983,7 @@ _None_
                   "const": "mock"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12015,10 +11000,7 @@ _None_
                   "const": "akeylessSecretsManager"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12035,10 +11017,7 @@ _None_
                   "const": "awsSecretsManager"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12055,10 +11034,7 @@ _None_
                   "const": "gcpSecretManager"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12075,10 +11051,7 @@ _None_
                   "const": "hashicorpVault"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12102,9 +11075,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12120,9 +11091,7 @@ _None_
           }
         }
       },
-      "required": [
-        "data"
-      ],
+      "required": ["data"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12162,10 +11131,7 @@ _None_
                   "const": "apiKey"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12182,10 +11148,7 @@ _None_
                   "const": "email"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12209,9 +11172,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12227,10 +11188,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "accessId",
-        "accessKey"
-      ],
+      "required": ["accessId", "accessKey"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12246,10 +11204,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "email",
-        "password"
-      ],
+      "required": ["email", "password"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12286,10 +11241,7 @@ _None_
                   "const": "static"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12306,10 +11258,7 @@ _None_
                   "const": "assumeRole"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12336,10 +11285,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "config",
-        "region"
-      ],
+      "required": ["config", "region"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12355,10 +11301,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "accessKeyId",
-        "secretAccessKey"
-      ],
+      "required": ["accessKeyId", "secretAccessKey"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12371,9 +11314,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "roleArn"
-      ],
+      "required": ["roleArn"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12389,9 +11330,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "projectId"
-      ],
+      "required": ["projectId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12418,9 +11357,7 @@ _None_
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "byteLength"
-                      ],
+                      "required": ["byteLength"],
                       "additionalProperties": {
                         "not": true,
                         "errorMessage": "extra property is ${0#}"
@@ -12436,13 +11373,7 @@ _None_
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "BYTES_PER_ELEMENT",
-                    "buffer",
-                    "byteLength",
-                    "byteOffset",
-                    "length"
-                  ],
+                  "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
                   "additionalProperties": {
                     "type": "number"
                   }
@@ -12452,10 +11383,7 @@ _None_
                   "const": "serviceAccount"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12479,9 +11407,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12514,10 +11440,7 @@ _None_
           "description": "the path to the secrets"
         }
       },
-      "required": [
-        "address",
-        "version"
-      ],
+      "required": ["address", "version"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12539,10 +11462,7 @@ _None_
                   "const": "token"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12559,10 +11479,7 @@ _None_
                   "const": "appRole"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12586,9 +11503,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "config"
-      ],
+      "required": ["config"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12604,10 +11519,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "roleId",
-        "secretId"
-      ],
+      "required": ["roleId", "secretId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12615,11 +11527,7 @@ _None_
     },
     "HashicorpVault_Version": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     }
   }
 }
@@ -12664,16 +11572,10 @@ _None_
               "type": "string"
             },
             "applicationId": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "pageId": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "organizationId": {
               "type": "string"
@@ -12705,10 +11607,7 @@ _None_
               "$ref": "#/definitions/ScheduleConfig"
             },
             "folderId": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "isDeployed": {
               "type": "boolean"
@@ -12735,10 +11634,7 @@ _None_
                   "type": "string"
                 }
               },
-              "required": [
-                "id",
-                "name"
-              ],
+              "required": ["id", "name"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -12757,9 +11653,7 @@ _None_
                       "format": "date-time"
                     }
                   },
-                  "required": [
-                    "created"
-                  ],
+                  "required": ["created"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -12774,19 +11668,10 @@ _None_
               "type": "boolean"
             }
           },
-          "required": [
-            "apiPb",
-            "id",
-            "name",
-            "organizationId",
-            "triggerType",
-            "updated"
-          ]
+          "required": ["apiPb", "id", "name", "organizationId", "triggerType", "updated"]
         }
       },
-      "required": [
-        "api"
-      ],
+      "required": ["api"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12842,10 +11727,7 @@ _None_
         },
         "supportedMethod": {
           "type": "string",
-          "enum": [
-            "GET",
-            "POST"
-          ]
+          "enum": ["GET", "POST"]
         },
         "workflowParams": {
           "type": "array",
@@ -12863,11 +11745,7 @@ _None_
           "$ref": "#/definitions/ApiTriggerType"
         }
       },
-      "required": [
-        "name",
-        "triggerActionId",
-        "actions"
-      ],
+      "required": ["name", "triggerActionId", "actions"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12902,14 +11780,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "frequency",
-        "interval",
-        "time",
-        "dayOfMonth",
-        "daysOfWeek",
-        "timezoneLocale"
-      ],
+      "required": ["frequency", "interval", "time", "dayOfMonth", "daysOfWeek", "timezoneLocale"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12917,13 +11788,7 @@ _None_
     },
     "Interval": {
       "type": "string",
-      "enum": [
-        "minute",
-        "hour",
-        "day",
-        "week",
-        "month"
-      ]
+      "enum": ["minute", "hour", "day", "week", "month"]
     },
     "Action": {
       "type": "object",
@@ -12959,14 +11824,7 @@ _None_
           }
         }
       },
-      "required": [
-        "id",
-        "name",
-        "type",
-        "configuration",
-        "pluginId",
-        "datasourceId"
-      ],
+      "required": ["id", "name", "type", "configuration", "pluginId", "datasourceId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -12974,12 +11832,7 @@ _None_
     },
     "ActionType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ]
+      "enum": [0, 1, 2, 3]
     },
     "ActionConfiguration": {
       "anyOf": [
@@ -13028,10 +11881,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -13046,10 +11896,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -13063,10 +11910,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -13108,10 +11952,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -13126,10 +11967,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -13143,10 +11981,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -13190,10 +12025,7 @@ _None_
                       "const": "sql"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -13211,10 +12043,7 @@ _None_
                       "const": "pointOperation"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -13273,10 +12102,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -13291,10 +12117,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -13308,10 +12131,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -13356,10 +12176,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -13374,10 +12191,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -13391,10 +12205,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -13615,10 +12426,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -13633,10 +12441,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -13650,10 +12455,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -13764,10 +12566,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -13782,10 +12581,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -13799,10 +12595,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -13973,10 +12766,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -13991,10 +12781,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -14008,10 +12795,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -14082,10 +12866,7 @@ _None_
                       "const": "raw"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -14102,10 +12883,7 @@ _None_
                       "const": "structured"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -14166,10 +12944,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -14184,10 +12959,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -14201,10 +12973,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -14487,10 +13256,7 @@ _None_
             },
             "useAdvancedMatching": {
               "type": "string",
-              "enum": [
-                "auto",
-                "advanced"
-              ]
+              "enum": ["auto", "advanced"]
             },
             "schema": {
               "type": "string"
@@ -14505,10 +13271,7 @@ _None_
             "filterBy": {},
             "mappingMode": {
               "type": "string",
-              "enum": [
-                "auto",
-                "manual"
-              ]
+              "enum": ["auto", "manual"]
             },
             "mappedColumns": {
               "type": "array",
@@ -14522,10 +13285,7 @@ _None_
                     "type": "string"
                   }
                 },
-                "required": [
-                  "json",
-                  "sql"
-                ],
+                "required": ["json", "sql"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -14600,10 +13360,7 @@ _None_
                       "const": "soql"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -14620,10 +13377,7 @@ _None_
                       "const": "crud"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -14640,10 +13394,7 @@ _None_
                       "const": "bulk"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -14709,9 +13460,7 @@ _None_
                 "properties": {
                   "value": {}
                 },
-                "required": [
-                  "value"
-                ],
+                "required": ["value"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -14801,9 +13550,7 @@ _None_
                   "type": "string"
                 }
               },
-              "required": [
-                "sheetTitle"
-              ],
+              "required": ["sheetTitle"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -14970,10 +13717,7 @@ _None_
                       "const": "createContainer"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -14990,10 +13734,7 @@ _None_
                       "const": "createDirectory"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15010,10 +13751,7 @@ _None_
                       "const": "renameDirectory"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15030,10 +13768,7 @@ _None_
                       "const": "deleteDirectory"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15050,10 +13785,7 @@ _None_
                       "const": "listDirectoryContents"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15070,10 +13802,7 @@ _None_
                       "const": "uploadFile"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15090,10 +13819,7 @@ _None_
                       "const": "downloadFile"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15110,10 +13836,7 @@ _None_
                       "const": "deleteFile"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15252,10 +13975,7 @@ _None_
                       "const": "runSql"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15272,10 +13992,7 @@ _None_
                       "const": "insert"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15292,10 +14009,7 @@ _None_
                       "const": "get"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15312,10 +14026,7 @@ _None_
                       "const": "remove"
                     }
                   },
-                  "required": [
-                    "value",
-                    "case"
-                  ],
+                  "required": ["value", "case"],
                   "additionalProperties": {
                     "not": true,
                     "errorMessage": "extra property is ${0#}"
@@ -15367,10 +14078,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "sqlBody",
-        "useParameterized"
-      ],
+      "required": ["sqlBody", "useParameterized"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15395,10 +14103,7 @@ _None_
                   "const": "singleton"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15422,9 +14127,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "action"
-      ],
+      "required": ["action"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15447,11 +14150,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "containerId",
-        "query",
-        "crossPartition"
-      ],
+      "required": ["containerId", "query", "crossPartition"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15477,10 +14176,7 @@ _None_
                   "const": "read"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15497,10 +14193,7 @@ _None_
                   "const": "replace"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15517,10 +14210,7 @@ _None_
                   "const": "upsert"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15537,10 +14227,7 @@ _None_
                   "const": "delete"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15557,10 +14244,7 @@ _None_
                   "const": "create"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15584,10 +14268,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "containerId",
-        "action"
-      ],
+      "required": ["containerId", "action"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15603,9 +14284,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15622,9 +14301,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "body"
-      ],
+      "required": ["body"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15641,9 +14318,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "body"
-      ],
+      "required": ["body"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15660,9 +14335,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15679,9 +14352,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "body"
-      ],
+      "required": ["body"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15704,9 +14375,7 @@ _None_
               "type": "number"
             }
           },
-          "required": [
-            "byteLength"
-          ],
+          "required": ["byteLength"],
           "additionalProperties": {
             "not": true,
             "errorMessage": "extra property is ${0#}"
@@ -15722,13 +14391,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "BYTES_PER_ELEMENT",
-        "buffer",
-        "byteLength",
-        "byteOffset",
-        "length"
-      ]
+      "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"]
     },
     "Property": {
       "type": "object",
@@ -15780,13 +14443,7 @@ _None_
     },
     "ActionResponseType": {
       "type": "string",
-      "enum": [
-        "auto",
-        "json",
-        "text",
-        "binary",
-        "raw"
-      ]
+      "enum": ["auto", "json", "text", "binary", "raw"]
     },
     "Plugin_Raw": {
       "type": "object",
@@ -15804,10 +14461,7 @@ _None_
                   "const": "singleton"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15831,9 +14485,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "action"
-      ],
+      "required": ["action"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15846,9 +14498,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "query"
-      ],
+      "required": ["query"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -15870,10 +14520,7 @@ _None_
                   "const": "get"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15890,10 +14537,7 @@ _None_
                   "const": "set"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15910,10 +14554,7 @@ _None_
                   "const": "del"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15930,10 +14571,7 @@ _None_
                   "const": "keys"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15950,10 +14588,7 @@ _None_
                   "const": "mget"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15970,10 +14605,7 @@ _None_
                   "const": "hget"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -15990,10 +14622,7 @@ _None_
                   "const": "hmget"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16010,10 +14639,7 @@ _None_
                   "const": "hgetall"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16030,10 +14656,7 @@ _None_
                   "const": "hset"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16050,10 +14673,7 @@ _None_
                   "const": "hsetnx"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16070,10 +14690,7 @@ _None_
                   "const": "hlen"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16090,10 +14707,7 @@ _None_
                   "const": "hdel"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16110,10 +14724,7 @@ _None_
                   "const": "hkeys"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16130,10 +14741,7 @@ _None_
                   "const": "hvals"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16150,10 +14758,7 @@ _None_
                   "const": "lindex"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16170,10 +14775,7 @@ _None_
                   "const": "llen"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16190,10 +14792,7 @@ _None_
                   "const": "lpush"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16210,10 +14809,7 @@ _None_
                   "const": "lrem"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16230,10 +14826,7 @@ _None_
                   "const": "lrange"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16250,10 +14843,7 @@ _None_
                   "const": "sadd"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16270,10 +14860,7 @@ _None_
                   "const": "scard"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16290,10 +14877,7 @@ _None_
                   "const": "smembers"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16310,10 +14894,7 @@ _None_
                   "const": "sismember"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16330,10 +14911,7 @@ _None_
                   "const": "srandmember"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16350,10 +14928,7 @@ _None_
                   "const": "srem"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16370,10 +14945,7 @@ _None_
                   "const": "zadd"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16390,10 +14962,7 @@ _None_
                   "const": "zcard"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16410,10 +14979,7 @@ _None_
                   "const": "zcount"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16430,10 +14996,7 @@ _None_
                   "const": "zrange"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16450,10 +15013,7 @@ _None_
                   "const": "zrank"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16470,10 +15030,7 @@ _None_
                   "const": "zrem"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16490,10 +15047,7 @@ _None_
                   "const": "zscore"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16510,10 +15064,7 @@ _None_
                   "const": "expire"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16530,10 +15081,7 @@ _None_
                   "const": "ttl"
                 }
               },
-              "required": [
-                "value",
-                "case"
-              ],
+              "required": ["value", "case"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -16557,9 +15105,7 @@ _None_
           ]
         }
       },
-      "required": [
-        "action"
-      ],
+      "required": ["action"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16572,9 +15118,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16593,10 +15137,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "key",
-        "value"
-      ],
+      "required": ["key", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16609,9 +15150,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16624,9 +15163,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "pattern"
-      ],
+      "required": ["pattern"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16640,9 +15177,7 @@ _None_
           "description": "comma-separated list"
         }
       },
-      "required": [
-        "keys"
-      ],
+      "required": ["keys"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16658,10 +15193,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "field"
-      ],
+      "required": ["key", "field"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16678,10 +15210,7 @@ _None_
           "description": "comma-separated list"
         }
       },
-      "required": [
-        "key",
-        "fields"
-      ],
+      "required": ["key", "fields"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16694,9 +15223,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16715,11 +15242,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "field",
-        "value"
-      ],
+      "required": ["key", "field", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16738,11 +15261,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "field",
-        "value"
-      ],
+      "required": ["key", "field", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16755,9 +15274,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16773,10 +15290,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "field"
-      ],
+      "required": ["key", "field"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16789,9 +15303,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16804,9 +15316,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16822,10 +15332,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "key",
-        "index"
-      ],
+      "required": ["key", "index"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16838,9 +15345,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16856,10 +15361,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "value"
-      ],
+      "required": ["key", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16878,11 +15380,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "count",
-        "value"
-      ],
+      "required": ["key", "count", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16901,11 +15399,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "key",
-        "start",
-        "stop"
-      ],
+      "required": ["key", "start", "stop"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16921,10 +15415,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "member"
-      ],
+      "required": ["key", "member"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16937,9 +15428,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16952,9 +15441,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16970,10 +15457,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "member"
-      ],
+      "required": ["key", "member"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -16989,9 +15473,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17007,10 +15489,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "member"
-      ],
+      "required": ["key", "member"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17029,11 +15508,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "score",
-        "member"
-      ],
+      "required": ["key", "score", "member"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17047,9 +15522,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17068,11 +15541,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "key",
-        "min",
-        "max"
-      ],
+      "required": ["key", "min", "max"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17091,11 +15560,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "key",
-        "start",
-        "stop"
-      ],
+      "required": ["key", "start", "stop"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17111,10 +15576,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "member"
-      ],
+      "required": ["key", "member"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17131,10 +15593,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "member"
-      ],
+      "required": ["key", "member"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17150,10 +15609,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "member"
-      ],
+      "required": ["key", "member"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17172,10 +15628,7 @@ _None_
           "$ref": "#/definitions/Plugin_Expire_Option"
         }
       },
-      "required": [
-        "key",
-        "seconds"
-      ],
+      "required": ["key", "seconds"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17183,13 +15636,7 @@ _None_
     },
     "Plugin_Expire_Option": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "Plugin_Ttl": {
       "type": "object",
@@ -17198,9 +15645,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17223,25 +15668,11 @@ _None_
     },
     "HttpMethod": {
       "type": "string",
-      "enum": [
-        "GET",
-        "HEAD",
-        "POST",
-        "PUT",
-        "PATCH",
-        "DELETE",
-        "OPTIONS",
-        "TRACE"
-      ]
+      "enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE"]
     },
     "RestApiBodyDataType": {
       "type": "string",
-      "enum": [
-        "jsonBody",
-        "rawBody",
-        "formData",
-        "fileForm"
-      ]
+      "enum": ["jsonBody", "rawBody", "formData", "fileForm"]
     },
     "IntegrationAuthType": {
       "type": "string",
@@ -17269,10 +15700,7 @@ _None_
           "$ref": "#/definitions/Plugin_Soql_SoqlAction"
         }
       },
-      "required": [
-        "sqlBody",
-        "action"
-      ],
+      "required": ["sqlBody", "action"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17281,10 +15709,7 @@ _None_
     },
     "Plugin_Soql_SoqlAction": {
       "type": "number",
-      "enum": [
-        0,
-        1
-      ],
+      "enum": [0, 1],
       "description": "Specified for singleton types."
     },
     "Plugin_Crud": {
@@ -17305,12 +15730,7 @@ _None_
           "description": "delete requires resource_id, other actions don't"
         }
       },
-      "required": [
-        "resourceType",
-        "action",
-        "resourceBody",
-        "resourceId"
-      ],
+      "required": ["resourceType", "action", "resourceBody", "resourceId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17318,13 +15738,7 @@ _None_
     },
     "Plugin_Crud_CrudAction": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "Plugin_Bulk": {
       "type": "object",
@@ -17344,12 +15758,7 @@ _None_
           "description": "only used for upsert https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/walkthrough_upsert.htm"
         }
       },
-      "required": [
-        "resourceType",
-        "action",
-        "resourceBody",
-        "externalId"
-      ],
+      "required": ["resourceType", "action", "resourceBody", "externalId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17357,13 +15766,7 @@ _None_
     },
     "Plugin_Bulk_BulkAction": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "GoogleSheetsActionType": {
       "type": "string",
@@ -17378,26 +15781,15 @@ _None_
     },
     "GoogleSheetsFormatType": {
       "type": "string",
-      "enum": [
-        "EFFECTIVE_VALUE",
-        "USER_ENTERED_VALUE",
-        "FORMATTED_VALUE"
-      ]
+      "enum": ["EFFECTIVE_VALUE", "USER_ENTERED_VALUE", "FORMATTED_VALUE"]
     },
     "GoogleSheetsDestinationType": {
       "type": "string",
-      "enum": [
-        "ROW_NUMBER",
-        "APPEND"
-      ]
+      "enum": ["ROW_NUMBER", "APPEND"]
     },
     "Operation": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "Plugin_Produce": {
       "type": "object",
@@ -17430,13 +15822,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "acks",
-        "autoCreateTopic",
-        "idempotent",
-        "transaction",
-        "messages"
-      ],
+      "required": ["acks", "autoCreateTopic", "idempotent", "transaction", "messages"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17444,22 +15830,11 @@ _None_
     },
     "Acks": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ]
+      "enum": [0, 1, 2, 3]
     },
     "Compression": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "enum": [0, 1, 2, 3, 4]
     },
     "Plugin_Consume": {
       "type": "object",
@@ -17485,11 +15860,7 @@ _None_
           "type": "boolean"
         }
       },
-      "required": [
-        "from",
-        "topic",
-        "readUncommitted"
-      ],
+      "required": ["from", "topic", "readUncommitted"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17497,12 +15868,7 @@ _None_
     },
     "Plugin_Consume_From": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ]
+      "enum": [0, 1, 2, 3]
     },
     "Plugin_Consume_Seek": {
       "type": "object",
@@ -17517,11 +15883,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "topic",
-        "offset",
-        "partition"
-      ],
+      "required": ["topic", "offset", "partition"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17529,11 +15891,7 @@ _None_
     },
     "Plugin_OperationType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "Plugin_KinesisPut": {
       "type": "object",
@@ -17554,11 +15912,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "data",
-        "partitionKey",
-        "streamIdentifierType"
-      ],
+      "required": ["data", "partitionKey", "streamIdentifierType"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17567,11 +15921,7 @@ _None_
     },
     "Plugin_StreamIdentifier": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "Plugin_KinesisGet": {
       "type": "object",
@@ -17606,13 +15956,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "shardId",
-        "shardIteratorType",
-        "limit",
-        "pollingCooldownMs",
-        "streamIdentifierType"
-      ],
+      "required": ["shardId", "shardIteratorType", "limit", "pollingCooldownMs", "streamIdentifierType"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17621,14 +15965,7 @@ _None_
     },
     "Plugin_ShardIteratorType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5
-      ],
+      "enum": [0, 1, 2, 3, 4, 5],
       "description": "https://docs.aws.amazon.com/kinesis/latest/APIReference/API_GetShardIterator.html#API_GetShardIterator_RequestSyntax"
     },
     "Plugin_CreateContainer": {
@@ -17638,9 +15975,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "fileSystem"
-      ],
+      "required": ["fileSystem"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17657,10 +15992,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "fileSystem",
-        "path"
-      ],
+      "required": ["fileSystem", "path"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17679,11 +16011,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "fileSystem",
-        "path",
-        "newPath"
-      ],
+      "required": ["fileSystem", "path", "newPath"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17699,10 +16027,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "fileSystem",
-        "path"
-      ],
+      "required": ["fileSystem", "path"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17718,10 +16043,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "fileSystem",
-        "path"
-      ],
+      "required": ["fileSystem", "path"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17740,11 +16062,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "fileSystem",
-        "path",
-        "content"
-      ],
+      "required": ["fileSystem", "path", "content"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17760,10 +16078,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "fileSystem",
-        "path"
-      ],
+      "required": ["fileSystem", "path"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17779,10 +16094,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "fileSystem",
-        "path"
-      ],
+      "required": ["fileSystem", "path"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17828,10 +16140,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "filterBy",
-        "mappedColumns"
-      ],
+      "required": ["filterBy", "mappedColumns"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17839,19 +16148,11 @@ _None_
     },
     "SQLMatchingMode": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "SQLMappingMode": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "SQLMappedColumns": {
       "type": "object",
@@ -17863,10 +16164,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "json",
-        "sql"
-      ],
+      "required": ["json", "sql"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17874,11 +16172,7 @@ _None_
     },
     "SQLOperation": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "Plugin_CouchbaseInsert": {
       "type": "object",
@@ -17893,10 +16187,7 @@ _None_
           "$ref": "#/definitions/Plugin_CouchbaseIdentifier"
         }
       },
-      "required": [
-        "key",
-        "value"
-      ],
+      "required": ["key", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17912,10 +16203,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "scope",
-        "collection"
-      ],
+      "required": ["scope", "collection"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17931,9 +16219,7 @@ _None_
           "$ref": "#/definitions/Plugin_CouchbaseIdentifier"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17949,9 +16235,7 @@ _None_
           "$ref": "#/definitions/Plugin_CouchbaseIdentifier"
         }
       },
-      "required": [
-        "key"
-      ],
+      "required": ["key"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17986,10 +16270,7 @@ _None_
         },
         "value": {}
       },
-      "required": [
-        "key",
-        "value"
-      ],
+      "required": ["key", "value"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -17997,18 +16278,11 @@ _None_
     },
     "ApiTriggerType": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2
-      ]
+      "enum": [0, 1, 2]
     },
     "ScheduleState": {
       "type": "number",
-      "enum": [
-        0,
-        1
-      ]
+      "enum": [0, 1]
     },
     "IntegrationDto": {
       "type": "object",
@@ -18055,17 +16329,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "configurations",
-        "created",
-        "id",
-        "isUserConfigured",
-        "kind",
-        "name",
-        "organizationId",
-        "pluginId",
-        "updated"
-      ],
+      "required": ["configurations", "created", "id", "isUserConfigured", "kind", "name", "organizationId", "pluginId", "updated"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18073,10 +16337,7 @@ _None_
     },
     "IntegrationKind": {
       "type": "string",
-      "enum": [
-        "SECRET",
-        "PLUGIN"
-      ]
+      "enum": ["SECRET", "PLUGIN"]
     },
     "IntegrationConfigurationDto": {
       "type": "object",
@@ -18110,13 +16371,7 @@ _None_
           }
         }
       },
-      "required": [
-        "id",
-        "created",
-        "integrationId",
-        "configuration",
-        "isDefault"
-      ],
+      "required": ["id", "created", "integrationId", "configuration", "isDefault"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18141,19 +16396,14 @@ _None_
               "$ref": "#/definitions/EntityModeProfileSettings"
             }
           },
-          "required": [
-            "editor",
-            "deployed"
-          ],
+          "required": ["editor", "deployed"],
           "additionalProperties": {
             "not": true,
             "errorMessage": "extra property is ${0#}"
           }
         }
       },
-      "required": [
-        "profiles"
-      ],
+      "required": ["profiles"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18172,10 +16422,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "availableProfileIds",
-        "defaultProfileId"
-      ],
+      "required": ["availableProfileIds", "defaultProfileId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18207,9 +16454,7 @@ _None_
           }
         }
       },
-      "required": [
-        "updates"
-      ],
+      "required": ["updates"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18238,9 +16483,7 @@ _None_
           "format": "date-time"
         }
       },
-      "required": [
-        "apiId"
-      ],
+      "required": ["apiId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18253,9 +16496,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "commitId"
-      ],
+      "required": ["commitId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18268,9 +16509,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "branchName"
-      ],
+      "required": ["branchName"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18296,10 +16535,7 @@ _None_
           "description": "The algorithm used to sign the data."
         }
       },
-      "required": [
-        "keyId",
-        "data"
-      ],
+      "required": ["keyId", "data"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18331,9 +16567,7 @@ _None_
                   "type": "number"
                 }
               },
-              "required": [
-                "byteLength"
-              ],
+              "required": ["byteLength"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -18349,13 +16583,7 @@ _None_
               "type": "number"
             }
           },
-          "required": [
-            "BYTES_PER_ELEMENT",
-            "buffer",
-            "byteLength",
-            "byteOffset",
-            "length"
-          ],
+          "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
           "additionalProperties": {
             "type": "number"
           }
@@ -18364,12 +16592,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "errors",
-        "keyId",
-        "publicKey",
-        "algorithm"
-      ],
+      "required": ["errors", "keyId", "publicKey", "algorithm"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18382,9 +16605,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "message"
-      ],
+      "required": ["message"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18414,9 +16635,7 @@ _None_
           }
         }
       },
-      "required": [
-        "statuses"
-      ],
+      "required": ["statuses"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18444,12 +16663,7 @@ _None_
           "$ref": "#/definitions/V1Error"
         }
       },
-      "required": [
-        "apiId",
-        "code",
-        "message",
-        "error"
-      ],
+      "required": ["apiId", "code", "message", "error"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18462,9 +16676,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "commitId"
-      ],
+      "required": ["commitId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18477,9 +16689,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "branchName"
-      ],
+      "required": ["branchName"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18507,14 +16717,7 @@ _None_
           "$ref": "#/definitions/Code"
         }
       },
-      "required": [
-        "name",
-        "message",
-        "handled",
-        "blockPath",
-        "formPath",
-        "code"
-      ],
+      "required": ["name", "message", "handled", "blockPath", "formPath", "code"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18522,18 +16725,7 @@ _None_
     },
     "Code": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9
-      ]
+      "enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     }
   }
 }
@@ -18561,9 +16753,7 @@ _None_
           }
         }
       },
-      "required": [
-        "updates"
-      ],
+      "required": ["updates"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18595,9 +16785,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "applicationId"
-      ],
+      "required": ["applicationId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18610,9 +16798,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "commitId"
-      ],
+      "required": ["commitId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18625,9 +16811,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "branchName"
-      ],
+      "required": ["branchName"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18653,10 +16837,7 @@ _None_
           "description": "The algorithm used to sign the data."
         }
       },
-      "required": [
-        "keyId",
-        "data"
-      ],
+      "required": ["keyId", "data"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18688,9 +16869,7 @@ _None_
                   "type": "number"
                 }
               },
-              "required": [
-                "byteLength"
-              ],
+              "required": ["byteLength"],
               "additionalProperties": {
                 "not": true,
                 "errorMessage": "extra property is ${0#}"
@@ -18706,13 +16885,7 @@ _None_
               "type": "number"
             }
           },
-          "required": [
-            "BYTES_PER_ELEMENT",
-            "buffer",
-            "byteLength",
-            "byteOffset",
-            "length"
-          ],
+          "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
           "additionalProperties": {
             "type": "number"
           }
@@ -18721,12 +16894,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "errors",
-        "keyId",
-        "publicKey",
-        "algorithm"
-      ],
+      "required": ["errors", "keyId", "publicKey", "algorithm"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18739,9 +16907,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "message"
-      ],
+      "required": ["message"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18771,9 +16937,7 @@ _None_
           }
         }
       },
-      "required": [
-        "statuses"
-      ],
+      "required": ["statuses"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18801,12 +16965,7 @@ _None_
           "$ref": "#/definitions/V1Error"
         }
       },
-      "required": [
-        "applicationId",
-        "code",
-        "message",
-        "error"
-      ],
+      "required": ["applicationId", "code", "message", "error"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18819,9 +16978,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "commitId"
-      ],
+      "required": ["commitId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18834,9 +16991,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "branchName"
-      ],
+      "required": ["branchName"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18864,14 +17019,7 @@ _None_
           "$ref": "#/definitions/Code"
         }
       },
-      "required": [
-        "name",
-        "message",
-        "handled",
-        "blockPath",
-        "formPath",
-        "code"
-      ],
+      "required": ["name", "message", "handled", "blockPath", "formPath", "code"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18879,18 +17027,7 @@ _None_
     },
     "Code": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9
-      ]
+      "enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     }
   }
 }
@@ -18918,10 +17055,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "claimedBy",
-        "limit"
-      ],
+      "required": ["claimedBy", "limit"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18951,9 +17085,7 @@ _None_
           }
         }
       },
-      "required": [
-        "resources"
-      ],
+      "required": ["resources"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18982,9 +17114,7 @@ _None_
           "format": "date-time"
         }
       },
-      "required": [
-        "lastUpdated"
-      ],
+      "required": ["lastUpdated"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -18997,9 +17127,7 @@ _None_
           "type": "object"
         }
       },
-      "required": [
-        "data"
-      ],
+      "required": ["data"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19031,14 +17159,7 @@ _None_
           "type": "number"
         }
       },
-      "required": [
-        "data",
-        "signature",
-        "resourceId",
-        "organizationId",
-        "type",
-        "pageVersion"
-      ],
+      "required": ["data", "signature", "resourceId", "organizationId", "type", "pageVersion"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19064,10 +17185,7 @@ _None_
           "description": "The algorithm used to sign the data."
         }
       },
-      "required": [
-        "keyId",
-        "data"
-      ],
+      "required": ["keyId", "data"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19081,9 +17199,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "commitId"
-      ],
+      "required": ["commitId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19096,9 +17212,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "branchName"
-      ],
+      "required": ["branchName"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19111,14 +17225,14 @@ _None_
 </details>
 
 ### Optional Requests
+
 The following table lists the optional outgoing calls from the agent to Superblocks Cloud, that are used primarily for observability. The Superblocks Cloud host is specific to each call, and all of these calls are authenticated with the organization-specific agent key, which is loaded into the agent as the `SUPERBLOCKS_AGENT_KEY` environment variable.
 
-| Host                                                                            | Type     | Source | Target            | Description                                                                                 | Authentication                        |
-| ------------------------------------------------------------------------------- | -------- | ------ | ----------------- | ------------------------------------------------------------------------------------------- |-------------------------------------- |
-| [`events.intake.superblocks.com`](#eventsintakesuperblockscom)                             | `POST`   | Agent  | Superblocks Cloud | Route called to upload execution analytics events.                                          | Superblocks Agent Key      |
-| [`metadata.intake.superblocks.com`](#metadataintakesuperblockscom)                             | `POST`   | Agent  | Superblocks Cloud | Route called to upload integration configuration metadata to the Superblocks Cloud.                                          | Superblocks Agent Key      |
-| [`logs.intake.superblocks.com`](#logsintakesuperblockscom)                             | `POST`   | Agent  | Superblocks Cloud | Route called to upload batched agent platform logs for the Observability feature.                                          | Superblocks Agent Key      |
-
+| Host                                                               | Type   | Source | Target            | Description                                                                         | Authentication        |
+| ------------------------------------------------------------------ | ------ | ------ | ----------------- | ----------------------------------------------------------------------------------- | --------------------- |
+| [`events.intake.superblocks.com`](#eventsintakesuperblockscom)     | `POST` | Agent  | Superblocks Cloud | Route called to upload execution analytics events.                                  | Superblocks Agent Key |
+| [`metadata.intake.superblocks.com`](#metadataintakesuperblockscom) | `POST` | Agent  | Superblocks Cloud | Route called to upload integration configuration metadata to the Superblocks Cloud. | Superblocks Agent Key |
+| [`logs.intake.superblocks.com`](#logsintakesuperblockscom)         | `POST` | Agent  | Superblocks Cloud | Route called to upload batched agent platform logs for the Observability feature.   | Superblocks Agent Key |
 
 #### `events.intake.superblocks.com`
 
@@ -19148,9 +17262,7 @@ The following table lists the optional outgoing calls from the agent to Superblo
                     "type": "number"
                   }
                 },
-                "required": [
-                  "byteLength"
-                ],
+                "required": ["byteLength"],
                 "additionalProperties": {
                   "not": true,
                   "errorMessage": "extra property is ${0#}"
@@ -19166,22 +17278,14 @@ The following table lists the optional outgoing calls from the agent to Superblo
                 "type": "number"
               }
             },
-            "required": [
-              "BYTES_PER_ELEMENT",
-              "buffer",
-              "byteLength",
-              "byteOffset",
-              "length"
-            ],
+            "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
             "additionalProperties": {
               "type": "number"
             }
           }
         }
       },
-      "required": [
-        "events"
-      ],
+      "required": ["events"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19220,9 +17324,7 @@ _None_
           }
         }
       },
-      "required": [
-        "metadata"
-      ],
+      "required": ["metadata"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19251,14 +17353,7 @@ _None_
           "type": "string"
         }
       },
-      "required": [
-        "configurationId",
-        "integrationId",
-        "rawMetadata",
-        "updatedDatetimeUtc",
-        "integrationType",
-        "organizationId"
-      ],
+      "required": ["configurationId", "integrationId", "rawMetadata", "updatedDatetimeUtc", "integrationType", "organizationId"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19288,9 +17383,7 @@ _None_
           }
         }
       },
-      "required": [
-        "errors"
-      ],
+      "required": ["errors"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19318,14 +17411,7 @@ _None_
           "$ref": "#/definitions/Code"
         }
       },
-      "required": [
-        "name",
-        "message",
-        "handled",
-        "blockPath",
-        "formPath",
-        "code"
-      ],
+      "required": ["name", "message", "handled", "blockPath", "formPath", "code"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"
@@ -19333,18 +17419,7 @@ _None_
     },
     "Code": {
       "type": "number",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9
-      ]
+      "enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     }
   }
 }
@@ -19372,9 +17447,7 @@ _None_
           }
         }
       },
-      "required": [
-        "logs"
-      ],
+      "required": ["logs"],
       "additionalProperties": {
         "not": true,
         "errorMessage": "extra property is ${0#}"

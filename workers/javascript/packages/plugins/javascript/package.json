@@ -8,9 +8,6 @@
     ".": "./dist/src/index.js",
     "./bootstrap": "./src/bootstrap.js"
   },
-  "engines": {
-    "node": "20.19.5"
-  },
   "scripts": {
     "start": "chokidar '**/*.ts' '../../shared-backend/**/*' -c 'pnpm run build'",
     "build": "swc src -d dist",
@@ -33,8 +30,8 @@
     "bcrypt": "5.1.1",
     "date-fns": "3.6.0",
     "deasync": "0.1.30",
-    "esprima": "4.0.1",
     "dotenv": "catalog:",
+    "esprima": "4.0.1",
     "jmespath": "0.16.0",
     "jsonwebtoken": "9.0.2",
     "lodash": "4.17.23",
@@ -63,12 +60,13 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "rimraf": "catalog:",
     "ts-jest": "catalog:",
     "ts-node": "catalog:",
     "typescript": "catalog:"
+  },
+  "engines": {
+    "node": "20.19.5"
   }
 }

@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext, ExecutionOutput, IntegrationError, WorkerPool } from '@superblocks/shared';
 
+jest.mock('./env', () => ({
+  SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST: ['CUSTOM_A', 'CUSTOM_B']
+}));
+
 import JavascriptSdkApiPlugin from './index';
 
 describe('JavascriptSdkApiPlugin', () => {
@@ -13,9 +17,7 @@ describe('JavascriptSdkApiPlugin', () => {
     const output = new ExecutionOutput();
     output.output = { ok: true };
 
-    const executeSpy = jest
-      .spyOn(WorkerPool, 'ExecuteInWorkerPool')
-      .mockResolvedValue(output);
+    const executeSpy = jest.spyOn(WorkerPool, 'ExecuteInWorkerPool').mockResolvedValue(output);
 
     const context = new ExecutionContext();
     context.globals = {
@@ -61,15 +63,14 @@ describe('JavascriptSdkApiPlugin', () => {
     ]);
     expect(call.poolName).toBe('JavaScript SDK API');
     expect(call.input.code).toBe('return true;');
+    expect(call.input.inheritedEnv).toEqual(['CUSTOM_A', 'CUSTOM_B']);
   });
 
   it('passes integrationExecutor and includeDiagnostics', async () => {
     const output = new ExecutionOutput();
     output.output = {};
 
-    const executeSpy = jest
-      .spyOn(WorkerPool, 'ExecuteInWorkerPool')
-      .mockResolvedValue(output);
+    const executeSpy = jest.spyOn(WorkerPool, 'ExecuteInWorkerPool').mockResolvedValue(output);
 
     const mockExecutor = {
       executeIntegration: jest.fn()
@@ -129,9 +130,9 @@ describe('JavascriptSdkApiPlugin', () => {
     context.kvStore = { read: async () => ({ data: [] }), write: async () => undefined, writeMany: async () => undefined } as never;
 
     const plugin = new JavascriptSdkApiPlugin();
-    await expect(
-      plugin.execute({ actionConfiguration: { body: 'return 1;' } as never, context: context as never } as never)
-    ).rejects.toBe(integrationErr);
+    await expect(plugin.execute({ actionConfiguration: { body: 'return 1;' } as never, context: context as never } as never)).rejects.toBe(
+      integrationErr
+    );
   });
 
   it('wraps non-IntegrationError from WorkerPool', async () => {

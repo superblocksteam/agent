@@ -7,6 +7,7 @@ import {
   RelayDelegate
 } from '@superblocks/shared';
 import { cloneDeep } from 'lodash';
+
 import EmailPlugin from '.';
 
 // THESE TESTS SHOULD ONLY EVER BE RUN LOCALLY, NOT IN CI

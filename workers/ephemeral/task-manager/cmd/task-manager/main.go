@@ -74,7 +74,7 @@ func init() {
 	pflag.Duration("transport.redis.block.duration", 5*time.Second, "The maximum duration to block for a message.")
 	pflag.Int("transport.redis.max.messages", 10, "The maximum number of messages to process at once.")
 	pflag.Duration("transport.redis.degraded.mode.backoff", 1*time.Second, "The backoff duration between failed plugin availability checks.")
-	pflag.Duration("transport.redis.degraded.mode.max.time", 10*time.Minute, "The maximum time the service will stay in degraded mode before shutting down.")
+	pflag.Duration("transport.redis.degraded.mode.max.time", 10*time.Minute, "The maximum time the service will stay in degraded mode before shutting down. Also used for replacing a TRANSIENT-unhealthy sandbox in the pool after this duration (dynamic sandbox pool). Zero disables timed sandbox replacement.")
 
 	// Store Redis settings (uses same Redis as transport by default)
 	pflag.String("store.redis.host", "", "The store redis host (defaults to transport.redis.host).")
@@ -103,8 +103,7 @@ func init() {
 	pflag.Duration("worker.shutdown.max.jitter", 0, "Maximum jitter added to the shutdown delay.")
 
 	// Sandbox settings
-	// Static mode: connect to existing sandbox at this address (Docker Compose)
-	pflag.String("sandbox.address", "", "Address of existing sandbox gRPC server. If set, skips Kubernetes Job creation.")
+	pflag.StringSlice("sandbox.address", []string{}, "Static sandbox gRPC address(es) (host:port). Repeat the flag and/or use comma-separated values per entry. Pool size in static mode is the resulting address count. When any address is set, Kubernetes sandbox Jobs are not created.")
 	// Dynamic mode: create Kubernetes Jobs (requires POD_IP, POD_NAMESPACE, sandbox.image)
 	pflag.Duration("sandbox.timeout", 0, "Timeout for ephemeral job execution. 0 means no timeout.")
 	pflag.String("sandbox.namespace", "", "Kubernetes namespace for sandbox Jobs (defaults to current namespace from POD_NAMESPACE env).")
@@ -116,6 +115,7 @@ func init() {
 	pflag.StringToString("sandbox.nodeSelector", map[string]string{}, "Node selector for sandbox pods (e.g., 'key=value,key2=value2').")
 	pflag.StringArray("sandbox.toleration", []string{}, "Toleration for sandbox pods (format: 'key=x,operator=y,value=z,effect=w'). Can be specified multiple times for multiple tolerations.")
 	pflag.String("sandbox.zone", "", "Availability zone for sandbox pods. Auto-discovered from node if NODE_NAME is set and this is empty.")
+	pflag.Int("sandbox.pool.size", 1, "Number of sandbox Jobs per worker in dynamic mode. Ignored when using static sandbox.address (pool size is the address count).")
 
 	// Sandbox resource requests/limits
 	pflag.String("sandbox.resources.requests.cpu", "", "CPU request for sandbox containers (e.g., '100m').")
@@ -393,13 +393,7 @@ func main() {
 		logger.Warn("IP filtering is disabled")
 	}
 
-	// Drain coordination: transport closes this when in-flight requests finish.
-	// SandboxPlugin.Close blocks until then before deleting the sandbox.
-	drainCompleteCh := make(chan struct{})
-
-	// Configure sandbox plugin options
 	sandboxOptions := []sandbox.Option{
-		sandbox.WithSandboxId(id),
 		sandbox.WithLogger(logger),
 		sandbox.WithKvStore(storeClient),
 		sandbox.WithVariableStoreAddress(variableStoreGrpcAddress),
@@ -408,17 +402,23 @@ func main() {
 		// Response hard cap is aligned with large object handling class so
 		// task-manager can receive full sandbox output and enforce quota at KV write.
 		sandbox.WithGrpcMaxResponseSize(viper.GetInt("filepicker.max.size")),
-		sandbox.WithDrainCompleteCh(drainCompleteCh),
 	}
 
-	// Determine sandbox mode: static address (existing sandbox process e.g. Docker Compose) or dynamic Jobs (Kubernetes)
-	if sandboxAddress := viper.GetString("sandbox.address"); sandboxAddress != "" {
-		sandboxOptions = append(
-			sandboxOptions,
+	var sandboxPoolSize int
+	staticAddrs := utils.GetStringSlice("sandbox.address")
+
+	if len(staticAddrs) > 0 {
+		sandboxPoolSize = len(staticAddrs)
+		sandboxOptions = append(sandboxOptions,
 			sandbox.WithConnectionMode(sandbox.SandboxConnectionModeStatic),
-			sandbox.WithSandboxAddress(sandboxAddress),
 		)
 	} else {
+		sandboxPoolSize = viper.GetInt("sandbox.pool.size")
+		if sandboxPoolSize < 1 {
+			logger.Error("sandbox.pool.size must be at least 1")
+			os.Exit(1)
+		}
+
 		// Create sandbox manager for dynamically creating sandbox (on-demand)
 		podIP := os.Getenv("POD_IP")
 		if podIP == "" {
@@ -563,22 +563,39 @@ func main() {
 		)
 	}
 
-	sandboxPlugin, err := sandbox.NewSandboxPlugin(sandboxOptions...)
+	// Drain coordination: transport closes this when in-flight requests finish.
+	// SandboxPlugin.Close blocks until then before deleting the sandbox.
+	drainCompleteCh := make(chan struct{})
+
+	sandboxRunnable, err := sandbox.NewSandboxPool(
+		sandbox.WithWorkerId(id),
+		sandbox.WithSandboxOptions(sandboxOptions...),
+		sandbox.WithSandboxPoolSize(sandboxPoolSize),
+		sandbox.WithSandboxAddresses(staticAddrs),
+		sandbox.WithPoolLogger(logger),
+		sandbox.WithDrainCompleteCh(drainCompleteCh),
+		sandbox.WithSandboxRecoveryTimeout(viper.GetDuration("transport.redis.degraded.mode.max.time")),
+		sandbox.WithEphemeralExecution(viper.GetBool("worker.ephemeral")),
+	)
 	if err != nil {
-		logger.Error("failed to create sandbox plugin", zap.Error(err))
+		logger.Error("failed to create sandbox pool", zap.Error(err))
 		os.Exit(1)
 	}
 
-	for _, plugin := range plugins.ToSlice() {
-		pluginExec.RegisterPlugin(plugin, sandboxPlugin)
+	for _, pluginName := range plugins.ToSlice() {
+		pluginExec.RegisterPlugin(pluginName, sandboxRunnable)
 	}
 
-	logger.Info(
-		"sandbox configured",
-		zap.String("sandbox_id", id),
+	logFields := []zap.Field{
+		zap.String("worker_id", id),
+		zap.Int("sandbox.pool.size", sandboxPoolSize),
 		zap.Strings("plugins", pluginExec.ListPlugins()),
 		zap.Strings("events", events.ToSlice()),
-	)
+	}
+	if len(staticAddrs) > 0 {
+		logFields = append(logFields, zap.Strings("static_sandbox_addresses", staticAddrs))
+	}
+	logger.Info("sandbox configured", logFields...)
 
 	// Generate stream keys
 	streamKeys := utils.GetStringSlice("worker.stream.keys")
@@ -748,7 +765,6 @@ func main() {
 	// Sandbox health check reports NOT READY while sandbox is being created
 	healthChecker := health.NewChecker(&health.Options{
 		Redis:          redisClient,
-		Sandbox:        sandboxPlugin, // Reports Connecting while sandbox is being created
 		Logger:         logger,
 		PingTimeout:    viper.GetDuration("health.ping.timeout"),
 		HealthFilePath: viper.GetString("health.file"),
@@ -756,31 +772,39 @@ func main() {
 	})
 
 	// Create Redis transport
-	transportRunnable := redis.NewRedisTransport(redis.NewOptions(
-		redis.WithLogger(logger),
-		redis.WithRedisClient(redisClient),
-		redis.WithExecutionPool(viper.GetInt64("transport.redis.execution.pool")),
-		redis.WithConsumerGroup(viper.GetString("worker.consumer.group")),
-		redis.WithBlockDuration(viper.GetDuration("transport.redis.block.duration")),
-		redis.WithMessageCount(viper.GetInt64("transport.redis.max.messages")),
-		redis.WithPluginExecutor(pluginExec),
-		redis.WithStreamKeys(streamKeys),
-		redis.WithWorkerId(id),
-		redis.WithFileContextProvider(variableStoreGrpcRunnable),
-		redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
-		redis.WithAgentKey(viper.GetString("superblocks.key")),
-		redis.WithDrainCompleteCh(drainCompleteCh),
-		redis.WithDegradedModeBackoff(viper.GetDuration("transport.redis.degraded.mode.backoff")),
-		redis.WithMaxDegradedTime(viper.GetDuration("transport.redis.degraded.mode.max.time")),
-	))
+	var transportRunnable run.Runnable
+	{
+		executionPoolSize := viper.GetInt64("transport.redis.execution.pool")
+		if viper.GetBool("worker.ephemeral") {
+			executionPoolSize = min(executionPoolSize, int64(sandboxPoolSize))
+		}
 
-	logger.Info("redis transport configured",
-		zap.String("host", viper.GetString("transport.redis.host")),
-		zap.Int("port", viper.GetInt("transport.redis.port")),
-		zap.String("group", viper.GetString("worker.consumer.group")),
-		zap.Bool("worker_ephemeral", viper.GetBool("worker.ephemeral")),
-		zap.Duration("sandbox_timeout", viper.GetDuration("sandbox.timeout")),
-	)
+		transportRunnable = redis.NewRedisTransport(redis.NewOptions(
+			redis.WithLogger(logger),
+			redis.WithRedisClient(redisClient),
+			redis.WithExecutionPool(executionPoolSize),
+			redis.WithConsumerGroup(viper.GetString("worker.consumer.group")),
+			redis.WithBlockDuration(viper.GetDuration("transport.redis.block.duration")),
+			redis.WithMessageCount(viper.GetInt64("transport.redis.max.messages")),
+			redis.WithPluginExecutor(pluginExec),
+			redis.WithStreamKeys(streamKeys),
+			redis.WithWorkerId(id),
+			redis.WithFileContextProvider(variableStoreGrpcRunnable),
+			redis.WithEphemeral(viper.GetBool("worker.ephemeral")),
+			redis.WithAgentKey(viper.GetString("superblocks.key")),
+			redis.WithDrainCompleteCh(drainCompleteCh),
+			redis.WithDegradedModeBackoff(viper.GetDuration("transport.redis.degraded.mode.backoff")),
+			redis.WithMaxDegradedTime(viper.GetDuration("transport.redis.degraded.mode.max.time")),
+		))
+
+		logger.Info("redis transport configured",
+			zap.String("host", viper.GetString("transport.redis.host")),
+			zap.Int("port", viper.GetInt("transport.redis.port")),
+			zap.String("group", viper.GetString("worker.consumer.group")),
+			zap.Bool("worker_ephemeral", viper.GetBool("worker.ephemeral")),
+			zap.Duration("sandbox_timeout", viper.GetDuration("sandbox.timeout")),
+		)
+	}
 
 	g := run.New(
 		run.WithSyncShutdown(),
@@ -792,7 +816,7 @@ func main() {
 	))
 	g.Add(viper.GetBool("health.enabled"), healthChecker)
 	g.Always(transportRunnable)
-	g.Always(sandboxPlugin)
+	g.Always(sandboxRunnable)
 	g.Always(variableStoreGrpcRunnable)
 	g.Always(variableStoreHttpRunnable)
 	g.Always(streamingProxyService)

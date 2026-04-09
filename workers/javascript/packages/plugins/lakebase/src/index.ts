@@ -22,6 +22,7 @@ import {
 import { LakebasePluginV1 } from '@superblocksteam/types';
 import { isEmpty } from 'lodash';
 import { Client, Notification } from 'pg';
+
 import { KEYS_QUERY, TABLE_QUERY } from './queries';
 
 const TEST_CONNECTION_TIMEOUT = 5000;

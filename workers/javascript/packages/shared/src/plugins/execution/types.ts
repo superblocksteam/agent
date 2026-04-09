@@ -1,8 +1,9 @@
+import type { MessagePort } from 'worker_threads';
+
 import { RelayDelegate } from '../../relay';
 import { ExecutionContext, ExecutionParam } from '../../types/api';
 import { AgentCredentials } from '../auth';
 import { RequestFile, RequestFiles } from '../files';
-import type { MessagePort } from 'worker_threads';
 
 export type ProcessInput = {
   context: ExecutionContext;

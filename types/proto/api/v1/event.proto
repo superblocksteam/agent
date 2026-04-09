@@ -135,6 +135,22 @@ message Performance {
   int64 execution = 4;
   int64 overhead = 5;
   map<string, int64> custom = 6;
+
+  // Sub-phase breakdown of plugin_execution for SDK API (code-mode)
+  // executions. Populated when the worker reports bootstrap timing.
+  // All values are in milliseconds.
+  BootstrapTiming bootstrap_timing = 7;
+
+  message BootstrapTiming {
+    // Time to import the SDK API module.
+    int64 sdk_import_ms = 1;
+    // Time to set up the integration bridge.
+    int64 bridge_setup_ms = 2;
+    // Time to resolve the require root.
+    int64 require_root_ms = 3;
+    // Time to execute the user's code.
+    int64 code_execution_ms = 4;
+  }
 }
 
 message Output {

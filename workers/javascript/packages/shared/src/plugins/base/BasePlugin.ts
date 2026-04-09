@@ -1,6 +1,7 @@
 import { context, SpanKind, SpanStatusCode, trace, Tracer } from '@opentelemetry/api';
 import _, { isEmpty } from 'lodash';
 import P from 'pino';
+
 import { ErrorCode, ForbiddenError, IntegrationError, UnauthorizedError } from '../../errors';
 import { RelayDelegate } from '../../relay';
 import {
@@ -285,6 +286,12 @@ export abstract class BasePlugin {
         mutableOutput.structuredLog = mutableOutput.structuredLog.concat(innerOutput.structuredLog);
         mutableOutput.output = innerOutput.output;
         mutableOutput.diagnostics = innerOutput.diagnostics;
+        // Propagate bootstrap timing from the Piscina worker result so
+        // the shim can write it into the Performance proto.
+        const bt = (innerOutput as unknown as Record<string, unknown>)._bootstrapTiming;
+        if (bt !== undefined) {
+          (mutableOutput as unknown as Record<string, unknown>)._bootstrapTiming = bt;
+        }
       }
     } catch (e) {
       mutableOutput.executionTime = Date.now() - startTime.getTime();

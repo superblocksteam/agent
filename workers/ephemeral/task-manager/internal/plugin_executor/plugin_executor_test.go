@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -332,6 +333,29 @@ func TestPluginsReady_SamePluginRegisteredTwice_DeduplicatedByInstance(t *testin
 	}
 }
 
+func TestArePluginsAvailable_SamePluginRegisteredTwice_DeduplicatedByInstance(t *testing.T) {
+	t.Parallel()
+
+	var isAvailableCalls atomic.Int32
+	executor := newTestExecutor()
+	mock := &mockPlugin{
+		name: "shared",
+		isAvailableFunc: func(ctx context.Context) plugin.PluginStatus {
+			isAvailableCalls.Add(1)
+			return plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE}
+		},
+	}
+	executor.RegisterPlugin("python", mock)
+	executor.RegisterPlugin("javascript", mock)
+
+	ctx := context.Background()
+	executor.ArePluginsAvailable(ctx)
+
+	if isAvailableCalls.Load() != 1 {
+		t.Errorf("IsAvailable() call count = %d, want 1", isAvailableCalls.Load())
+	}
+}
+
 func TestArePluginsAvailable_NoPlugins_ReturnsAvailable(t *testing.T) {
 	t.Parallel()
 
@@ -625,6 +649,74 @@ func TestExecuteWithPerformance(t *testing.T) {
 	// Performance should be populated
 	if perf.PluginExecution == nil {
 		t.Error("Performance.PluginExecution should be set")
+	}
+}
+
+func TestExecuteBootstrapTimingPropagatedFromSandboxResponse(t *testing.T) {
+	executor := newTestExecutor()
+
+	mock := &mockPlugin{
+		name: "python",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{
+				Performance: &transportv1.Performance{
+					BootstrapSdkImport:     &transportv1.Performance_Observable{Value: 12_000},
+					BootstrapBridgeSetup:   &transportv1.Performance_Observable{Value: 8_000},
+					BootstrapRequireRoot:   &transportv1.Performance_Observable{Value: 3_000},
+					BootstrapCodeExecution: &transportv1.Performance_Observable{Value: 25_000},
+				},
+			}, nil
+		},
+	}
+
+	executor.RegisterPlugin("python", mock)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{}
+	parentPerf := &transportv1.Performance{}
+
+	_, err := executor.Execute(ctx, "python", reqData, nil, parentPerf)
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	if parentPerf.BootstrapSdkImport == nil || parentPerf.BootstrapSdkImport.Value != 12_000 {
+		t.Errorf("expected BootstrapSdkImport=12000, got %v", parentPerf.BootstrapSdkImport)
+	}
+	if parentPerf.BootstrapBridgeSetup == nil || parentPerf.BootstrapBridgeSetup.Value != 8_000 {
+		t.Errorf("expected BootstrapBridgeSetup=8000, got %v", parentPerf.BootstrapBridgeSetup)
+	}
+	if parentPerf.BootstrapRequireRoot == nil || parentPerf.BootstrapRequireRoot.Value != 3_000 {
+		t.Errorf("expected BootstrapRequireRoot=3000, got %v", parentPerf.BootstrapRequireRoot)
+	}
+	if parentPerf.BootstrapCodeExecution == nil || parentPerf.BootstrapCodeExecution.Value != 25_000 {
+		t.Errorf("expected BootstrapCodeExecution=25000, got %v", parentPerf.BootstrapCodeExecution)
+	}
+}
+
+func TestExecuteBootstrapTimingNilWhenSandboxOmitsPerformance(t *testing.T) {
+	executor := newTestExecutor()
+
+	mock := &mockPlugin{
+		name: "python",
+		executeFunc: func(ctx context.Context, requestMeta *workerv1.RequestMetadata, props *transportv1.Request_Data_Data_Props, quotas *transportv1.Request_Data_Data_Quota, pinned *transportv1.Request_Data_Pinned) (*workerv1.ExecuteResponse, error) {
+			return &workerv1.ExecuteResponse{}, nil
+		},
+	}
+
+	executor.RegisterPlugin("python", mock)
+
+	ctx := context.Background()
+	reqData := &transportv1.Request_Data_Data{}
+	parentPerf := &transportv1.Performance{}
+
+	_, err := executor.Execute(ctx, "python", reqData, nil, parentPerf)
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	if parentPerf.BootstrapSdkImport != nil {
+		t.Error("BootstrapSdkImport should be nil when sandbox doesn't report it")
 	}
 }
 

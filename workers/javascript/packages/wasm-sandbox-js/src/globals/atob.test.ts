@@ -1,4 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
+
 import { createSandbox } from '../sandbox';
 
 describe('globals/atob', () => {

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+
 import {
   ActionConfiguration,
   DUMMY_EXECUTION_CONTEXT,
@@ -16,6 +17,7 @@ import {
 } from '@superblocks/shared';
 import { cloneDeep } from 'lodash';
 import { Connection, createConnection } from 'mariadb';
+
 import MariaDBPlugin from '.';
 
 const MARIADB_HOST = '127.0.0.1';

@@ -3,34 +3,34 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  bin = "./worker_go --log.level=debug --emitter.remote.enabled=false --store.redis.password=koala --transport.redis.password=koala"
-  cmd = "make build-go GO_BINARY_NAME=worker_go"
-  delay = 1000
-  exclude_dir = ["assets", "configs", "deploy", "scripts"]
-  exclude_file = []
-  exclude_regex = ["_test.go"]
-  exclude_unchanged = false
-  follow_symlink = false
-  full_bin = ""
-  include_dir = []
-  include_ext = ["go", "tpl", "tmpl", "json", "mod", "sum", "toml"]
-  kill_delay = 2000
-  log = "build-errors.log"
-  send_interrupt = true
-  stop_on_error = true
+bin = "./worker_go --log.level=debug --emitter.remote.enabled=false --store.redis.password=koala --transport.redis.password=koala"
+cmd = "make build-go GO_BINARY_NAME=worker_go"
+delay = 1000
+exclude_dir = ["assets", "configs", "deploy", "scripts"]
+exclude_file = []
+exclude_regex = ["_test.go"]
+exclude_unchanged = false
+follow_symlink = false
+full_bin = ""
+include_dir = []
+include_ext = ["go", "tpl", "tmpl", "json", "mod", "sum", "toml"]
+kill_delay = 2000
+log = "build-errors.log"
+send_interrupt = true
+stop_on_error = true
 
 [color]
-  app = ""
-  build = "yellow"
-  main = "magenta"
-  runner = "green"
-  watcher = "cyan"
+app = ""
+build = "yellow"
+main = "magenta"
+runner = "green"
+watcher = "cyan"
 
 [log]
-  time = false
+time = false
 
 [misc]
-  clean_on_exit = false
+clean_on_exit = false
 
 [screen]
-  clear_on_rebuild = false
+clear_on_rebuild = false

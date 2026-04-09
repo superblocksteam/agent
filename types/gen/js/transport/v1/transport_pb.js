@@ -487,7 +487,11 @@ proto.transport.v1.Performance.toObject = function(includeInstance, msg) {
     queueResponse: (f = msg.getQueueResponse()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f),
     kvStoreFetch: (f = msg.getKvStoreFetch()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f),
     kvStorePush: (f = msg.getKvStorePush()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f),
-    total: (f = msg.getTotal()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f)
+    total: (f = msg.getTotal()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f),
+    bootstrapSdkImport: (f = msg.getBootstrapSdkImport()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f),
+    bootstrapBridgeSetup: (f = msg.getBootstrapBridgeSetup()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f),
+    bootstrapRequireRoot: (f = msg.getBootstrapRequireRoot()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f),
+    bootstrapCodeExecution: (f = msg.getBootstrapCodeExecution()) && proto.transport.v1.Performance.Observable.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -557,6 +561,26 @@ proto.transport.v1.Performance.deserializeBinaryFromReader = function(msg, reade
       var value = new proto.transport.v1.Performance.Observable;
       reader.readMessage(value,proto.transport.v1.Performance.Observable.deserializeBinaryFromReader);
       msg.setTotal(value);
+      break;
+    case 8:
+      var value = new proto.transport.v1.Performance.Observable;
+      reader.readMessage(value,proto.transport.v1.Performance.Observable.deserializeBinaryFromReader);
+      msg.setBootstrapSdkImport(value);
+      break;
+    case 9:
+      var value = new proto.transport.v1.Performance.Observable;
+      reader.readMessage(value,proto.transport.v1.Performance.Observable.deserializeBinaryFromReader);
+      msg.setBootstrapBridgeSetup(value);
+      break;
+    case 10:
+      var value = new proto.transport.v1.Performance.Observable;
+      reader.readMessage(value,proto.transport.v1.Performance.Observable.deserializeBinaryFromReader);
+      msg.setBootstrapRequireRoot(value);
+      break;
+    case 11:
+      var value = new proto.transport.v1.Performance.Observable;
+      reader.readMessage(value,proto.transport.v1.Performance.Observable.deserializeBinaryFromReader);
+      msg.setBootstrapCodeExecution(value);
       break;
     default:
       reader.skipField();
@@ -638,6 +662,38 @@ proto.transport.v1.Performance.serializeBinaryToWriter = function(message, write
   if (f != null) {
     writer.writeMessage(
       7,
+      f,
+      proto.transport.v1.Performance.Observable.serializeBinaryToWriter
+    );
+  }
+  f = message.getBootstrapSdkImport();
+  if (f != null) {
+    writer.writeMessage(
+      8,
+      f,
+      proto.transport.v1.Performance.Observable.serializeBinaryToWriter
+    );
+  }
+  f = message.getBootstrapBridgeSetup();
+  if (f != null) {
+    writer.writeMessage(
+      9,
+      f,
+      proto.transport.v1.Performance.Observable.serializeBinaryToWriter
+    );
+  }
+  f = message.getBootstrapRequireRoot();
+  if (f != null) {
+    writer.writeMessage(
+      10,
+      f,
+      proto.transport.v1.Performance.Observable.serializeBinaryToWriter
+    );
+  }
+  f = message.getBootstrapCodeExecution();
+  if (f != null) {
+    writer.writeMessage(
+      11,
       f,
       proto.transport.v1.Performance.Observable.serializeBinaryToWriter
     );
@@ -1132,6 +1188,154 @@ proto.transport.v1.Performance.prototype.clearTotal = function() {
  */
 proto.transport.v1.Performance.prototype.hasTotal = function() {
   return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * optional Observable bootstrap_sdk_import = 8;
+ * @return {?proto.transport.v1.Performance.Observable}
+ */
+proto.transport.v1.Performance.prototype.getBootstrapSdkImport = function() {
+  return /** @type{?proto.transport.v1.Performance.Observable} */ (
+    jspb.Message.getWrapperField(this, proto.transport.v1.Performance.Observable, 8));
+};
+
+
+/**
+ * @param {?proto.transport.v1.Performance.Observable|undefined} value
+ * @return {!proto.transport.v1.Performance} returns this
+*/
+proto.transport.v1.Performance.prototype.setBootstrapSdkImport = function(value) {
+  return jspb.Message.setWrapperField(this, 8, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Performance} returns this
+ */
+proto.transport.v1.Performance.prototype.clearBootstrapSdkImport = function() {
+  return this.setBootstrapSdkImport(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Performance.prototype.hasBootstrapSdkImport = function() {
+  return jspb.Message.getField(this, 8) != null;
+};
+
+
+/**
+ * optional Observable bootstrap_bridge_setup = 9;
+ * @return {?proto.transport.v1.Performance.Observable}
+ */
+proto.transport.v1.Performance.prototype.getBootstrapBridgeSetup = function() {
+  return /** @type{?proto.transport.v1.Performance.Observable} */ (
+    jspb.Message.getWrapperField(this, proto.transport.v1.Performance.Observable, 9));
+};
+
+
+/**
+ * @param {?proto.transport.v1.Performance.Observable|undefined} value
+ * @return {!proto.transport.v1.Performance} returns this
+*/
+proto.transport.v1.Performance.prototype.setBootstrapBridgeSetup = function(value) {
+  return jspb.Message.setWrapperField(this, 9, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Performance} returns this
+ */
+proto.transport.v1.Performance.prototype.clearBootstrapBridgeSetup = function() {
+  return this.setBootstrapBridgeSetup(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Performance.prototype.hasBootstrapBridgeSetup = function() {
+  return jspb.Message.getField(this, 9) != null;
+};
+
+
+/**
+ * optional Observable bootstrap_require_root = 10;
+ * @return {?proto.transport.v1.Performance.Observable}
+ */
+proto.transport.v1.Performance.prototype.getBootstrapRequireRoot = function() {
+  return /** @type{?proto.transport.v1.Performance.Observable} */ (
+    jspb.Message.getWrapperField(this, proto.transport.v1.Performance.Observable, 10));
+};
+
+
+/**
+ * @param {?proto.transport.v1.Performance.Observable|undefined} value
+ * @return {!proto.transport.v1.Performance} returns this
+*/
+proto.transport.v1.Performance.prototype.setBootstrapRequireRoot = function(value) {
+  return jspb.Message.setWrapperField(this, 10, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Performance} returns this
+ */
+proto.transport.v1.Performance.prototype.clearBootstrapRequireRoot = function() {
+  return this.setBootstrapRequireRoot(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Performance.prototype.hasBootstrapRequireRoot = function() {
+  return jspb.Message.getField(this, 10) != null;
+};
+
+
+/**
+ * optional Observable bootstrap_code_execution = 11;
+ * @return {?proto.transport.v1.Performance.Observable}
+ */
+proto.transport.v1.Performance.prototype.getBootstrapCodeExecution = function() {
+  return /** @type{?proto.transport.v1.Performance.Observable} */ (
+    jspb.Message.getWrapperField(this, proto.transport.v1.Performance.Observable, 11));
+};
+
+
+/**
+ * @param {?proto.transport.v1.Performance.Observable|undefined} value
+ * @return {!proto.transport.v1.Performance} returns this
+*/
+proto.transport.v1.Performance.prototype.setBootstrapCodeExecution = function(value) {
+  return jspb.Message.setWrapperField(this, 11, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.transport.v1.Performance} returns this
+ */
+proto.transport.v1.Performance.prototype.clearBootstrapCodeExecution = function() {
+  return this.setBootstrapCodeExecution(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.transport.v1.Performance.prototype.hasBootstrapCodeExecution = function() {
+  return jspb.Message.getField(this, 11) != null;
 };
 
 

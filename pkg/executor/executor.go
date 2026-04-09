@@ -444,6 +444,16 @@ func (e *execution) Run(ctx context.Context) {
 			zap.String("status", status.String()),
 			zap.Int64("end", time.Now().UnixMilli()),
 		}...)
+		isIntegrationQuery := false
+		for _, f := range auditFields {
+			if f.Key == "type" && f.String == agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY.String() {
+				isIntegrationQuery = true
+				break
+			}
+		}
+		if isIntegrationQuery {
+			auditFields = append(auditFields, zap.Int64("integrationQueryEnd", time.Now().UnixMilli()))
+		}
 
 		e.Logger.Info("audit log: api execute end", auditFields...)
 

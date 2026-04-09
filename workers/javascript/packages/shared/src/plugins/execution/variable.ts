@@ -1,4 +1,5 @@
 import { toVmValue, hostFunction, hostGetter } from '@superblocks/wasm-sandbox-js';
+
 import { decodeBytestrings } from '../../utils';
 import { VariableClient } from './types';
 

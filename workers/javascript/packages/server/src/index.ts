@@ -1,6 +1,7 @@
 import { RedisClientType } from '@redis/client';
 import { HttpServer, MaybeError, shutdownHandlers } from '@superblocks/shared';
 import express, { NextFunction, Request, Response } from 'express';
+
 import {
   SUPERBLOCKS_AGENT_PROCESS_ASYNC,
   SUPERBLOCKS_AGENT_REDIS_POOL_FAST_MAX,

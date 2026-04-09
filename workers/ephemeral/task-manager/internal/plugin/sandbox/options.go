@@ -25,8 +25,6 @@ type Options struct {
 	KvStore                    store.Store
 	IpFilterSetter             IpFilterSetter // Optional - set allowed IP on variable store (only used in dynamic mode)
 
-	DrainCompleteCh <-chan struct{}
-
 	// Max gRPC message sizes for sandbox transport calls.
 	GrpcMaxRequestSize  int
 	GrpcMaxResponseSize int
@@ -85,12 +83,6 @@ func WithKvStore(kvStore store.Store) Option {
 func WithIpFilterSetter(ipFilterSetter IpFilterSetter) Option {
 	return func(o *Options) {
 		o.IpFilterSetter = ipFilterSetter
-	}
-}
-
-func WithDrainCompleteCh(ch <-chan struct{}) Option {
-	return func(o *Options) {
-		o.DrainCompleteCh = ch
 	}
 }
 

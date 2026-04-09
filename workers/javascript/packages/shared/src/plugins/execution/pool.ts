@@ -1,11 +1,13 @@
+import type { MessagePort } from 'worker_threads';
+
 import { omit } from 'lodash';
 import Piscina from 'piscina';
+
 import { ErrorCode, IntegrationError } from '../../errors';
 import { ExecutionOutput, IntegrationExecutor } from '../../types';
 import { PoolIntegrationExecutorServer } from './pool-integration-executor-server';
 import { PoolVariableServer } from './pool-variable-server';
 import type { WorkerInput, WorkerTaskInput } from './types';
-import type { MessagePort } from 'worker_threads';
 
 /**
  * Buffer time (ms) added to the hard timeout (worker termination) beyond the soft timeout.

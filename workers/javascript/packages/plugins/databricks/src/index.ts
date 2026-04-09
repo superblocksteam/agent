@@ -22,9 +22,9 @@ import {
   Table,
   TableType
 } from '@superblocks/shared';
-
 import { DatabricksPluginV1 } from '@superblocksteam/types';
 import { chunk, isEmpty, merge } from 'lodash';
+
 import { KEYS_QUERY, SQL_SINGLE_TABLE_METADATA } from './queries';
 import { getConnectionOptionsFromDatasourceConfiguration } from './utils';
 

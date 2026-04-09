@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { NodeVM } from 'vm2';
+
 import { ExecutionContext } from '../../types';
 import { nodeVMWithContext } from './vm';
 

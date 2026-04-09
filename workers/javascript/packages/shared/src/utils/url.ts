@@ -1,4 +1,5 @@
 import { isEmpty } from 'lodash';
+
 import { Property } from '..';
 import { RestApiBodyDataType } from '../types';
 import { MASKED_SECRET } from './configuration';

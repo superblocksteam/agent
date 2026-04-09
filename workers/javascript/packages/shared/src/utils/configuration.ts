@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import { FieldListFormItem, FormComponentType, FormItem, InputFormItem, Plugin, Property, getRowItemsFromSectionItem } from '../types';
 
+import { FieldListFormItem, FormComponentType, FormItem, InputFormItem, Plugin, Property, getRowItemsFromSectionItem } from '../types';
 import { DatasourceConfiguration, InputDataType } from '../types';
 
 export const MASKED_SECRET = '<redacted>';

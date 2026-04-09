@@ -16,6 +16,7 @@ import {
   normalizeTableColumnNames
 } from '@superblocks/shared';
 import { isEmpty } from 'lodash';
+
 import { Snowflake } from './Snowflake';
 import { connectionOptionsFromDatasourceConfiguration, getMetadataQuery } from './util';
 

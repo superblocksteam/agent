@@ -1,4 +1,5 @@
 import { MessagePort } from 'worker_threads';
+
 import { VariableClient } from './types';
 
 interface VariableMessage {

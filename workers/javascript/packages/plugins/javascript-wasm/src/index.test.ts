@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
 import { ExecutionContext, WorkerPool } from '@superblocks/shared';
+
 import JavascriptWasmPlugin from './index';
 
 class MockKVStore {

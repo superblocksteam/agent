@@ -1,4 +1,5 @@
 import path from 'path';
+
 import {
   AdlsActionConfiguration,
   AdlsDatasourceConfiguration,
@@ -10,6 +11,7 @@ import {
 } from '@superblocks/shared';
 import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
+
 import AdlsPlugin from '.';
 
 // RUN: `npm run env:secrets:fetch:plugins` to fetch the latest plugin credentials

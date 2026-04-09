@@ -1,4 +1,5 @@
 import { Histogram } from 'prom-client';
+
 import { observe } from './metrics';
 
 describe('observe', () => {

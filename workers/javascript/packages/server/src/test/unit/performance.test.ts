@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { default as pino } from 'pino';
+
 import { StepPerformanceImpl } from '../../performance/step';
 import { StepPerformance } from '../../performance/types';
 import { micros, observe } from '../../performance/utils';

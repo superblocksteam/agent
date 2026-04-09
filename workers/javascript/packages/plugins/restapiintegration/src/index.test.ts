@@ -12,6 +12,7 @@ import {
   SUPERBLOCKS_OPENAPI_TENANT_KEYWORD
 } from '@superblocks/shared';
 import { AxiosRequestConfig } from 'axios';
+
 import RestApiIntegrationPlugin from '.';
 
 const plugin = new RestApiIntegrationPlugin();
@@ -47,11 +48,41 @@ describe('RestApiIntegrationPlugin', () => {
 
   describe('execute removes empty params', () => {
     it.each([
-      {name: 'verboseHTTP: true, doNotFailOnError: true', verboseOutput: true, doNotFailOnError: true, expectedOutput: true, expectedFailOnError: false },
-      {name: 'verboseHTTP: false, doNotFailOnError: false', verboseOutput: false, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
-      {name: 'verboseHTTP: undefined, doNotFailOnError: true', verboseOutput: undefined, doNotFailOnError: true, expectedOutput: false, expectedFailOnError: false },
-      {name: 'verboseHTTP: undefined, doNotFailOnError: false', verboseOutput: undefined, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
-      {name: 'verboseHTTP: undefined, doNotFailOnError: undefined', verboseOutput: undefined, doNotFailOnError: undefined, expectedOutput: false, expectedFailOnError: true }
+      {
+        name: 'verboseHTTP: true, doNotFailOnError: true',
+        verboseOutput: true,
+        doNotFailOnError: true,
+        expectedOutput: true,
+        expectedFailOnError: false
+      },
+      {
+        name: 'verboseHTTP: false, doNotFailOnError: false',
+        verboseOutput: false,
+        doNotFailOnError: false,
+        expectedOutput: false,
+        expectedFailOnError: true
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: true',
+        verboseOutput: undefined,
+        doNotFailOnError: true,
+        expectedOutput: false,
+        expectedFailOnError: false
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: false',
+        verboseOutput: undefined,
+        doNotFailOnError: false,
+        expectedOutput: false,
+        expectedFailOnError: true
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: undefined',
+        verboseOutput: undefined,
+        doNotFailOnError: undefined,
+        expectedOutput: false,
+        expectedFailOnError: true
+      }
     ])('called with $name', async ({ verboseOutput, doNotFailOnError, expectedOutput, expectedFailOnError }) => {
       const spy = jest.spyOn(plugin, 'executeRequest').mockImplementation(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises
@@ -96,11 +127,41 @@ describe('RestApiIntegrationPlugin', () => {
 
   describe('execute injects placeholder URL with tenant subdomain', () => {
     it.each([
-      { name: 'verboseHTTP: true, doNotFailOnError: true', verboseOutput: true, doNotFailOnError: true, expectedOutput: true, expectedFailOnError: false },
-      { name: 'verboseHTTP: false, doNotFailOnError: false', verboseOutput: false, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
-      { name: 'verboseHTTP: undefined, doNotFailOnError: true', verboseOutput: undefined, doNotFailOnError: true, expectedOutput: false, expectedFailOnError: false },
-      { name: 'verboseHTTP: undefined, doNotFailOnError: false', verboseOutput: undefined, doNotFailOnError: false, expectedOutput: false, expectedFailOnError: true },
-      { name: 'verboseHTTP: undefined, doNotFailOnError: undefined', verboseOutput: undefined, doNotFailOnError: undefined, expectedOutput: false, expectedFailOnError: true }
+      {
+        name: 'verboseHTTP: true, doNotFailOnError: true',
+        verboseOutput: true,
+        doNotFailOnError: true,
+        expectedOutput: true,
+        expectedFailOnError: false
+      },
+      {
+        name: 'verboseHTTP: false, doNotFailOnError: false',
+        verboseOutput: false,
+        doNotFailOnError: false,
+        expectedOutput: false,
+        expectedFailOnError: true
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: true',
+        verboseOutput: undefined,
+        doNotFailOnError: true,
+        expectedOutput: false,
+        expectedFailOnError: false
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: false',
+        verboseOutput: undefined,
+        doNotFailOnError: false,
+        expectedOutput: false,
+        expectedFailOnError: true
+      },
+      {
+        name: 'verboseHTTP: undefined, doNotFailOnError: undefined',
+        verboseOutput: undefined,
+        doNotFailOnError: undefined,
+        expectedOutput: false,
+        expectedFailOnError: true
+      }
     ])('called with $name', async ({ verboseOutput, doNotFailOnError, expectedOutput, expectedFailOnError }) => {
       const spy = jest.spyOn(plugin, 'executeRequest').mockImplementation(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises
@@ -177,10 +238,14 @@ describe('RestApiIntegrationPlugin', () => {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         .mockImplementation((requestConfig: AxiosRequestConfig<unknown>, responseType?: unknown): Promise<ExecutionOutput> => {
           return Promise.resolve(new ExecutionOutput());
-        }
-      );
+        });
 
-      await plugin.test(datasourceConfiguration, { httpMethod: HttpMethod.GET, urlPath: 'test', verboseHttpOutput: verboseOutput, doNotFailOnRequestError: doNotFailOnError });
+      await plugin.test(datasourceConfiguration, {
+        httpMethod: HttpMethod.GET,
+        urlPath: 'test',
+        verboseHttpOutput: verboseOutput,
+        doNotFailOnRequestError: doNotFailOnError
+      });
 
       expect(spy).toHaveBeenCalledWith(
         {

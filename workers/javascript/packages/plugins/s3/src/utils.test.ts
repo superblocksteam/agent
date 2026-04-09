@@ -1,4 +1,5 @@
 import { AWSAuthType, S3ActionType } from '@superblocks/shared';
+
 import { buildListObjectsV2Command, getS3ClientConfig, validateS3Action } from './utils';
 
 describe('getS3ClientConfig', () => {

@@ -38,15 +38,15 @@ For each environment, create the following secrets in AWS Secrets Manager. Follo
 
 The values to populate come from 1Password:
 
-| 1Password item | AWS Secrets Manager key | Secret value key |
-|---|---|---|
-| `op://Staging/agent_key/password` | `staging/superblocks/orchestrator_superblocks_key` | plain string |
-| `op://Staging/staging_redis_execution/password` | `staging/superblocks/orchestrator_redis_transport_token` | plain string |
-| `op://Staging/staging_redis_kvstore/password` | `staging/superblocks/orchestrator_redis_store_token` | plain string |
-| `op://Staging/launchdarkly_apikey/credential` | `staging/superblocks/orchestrator_launchdarkly_apikey` | plain string |
-| `op://Staging/orchestrator_secrets_encryption_key/password` | `staging/superblocks/orchestrator_secrets_encryption_key` | plain string |
-| `op://Staging/worker_rsa_private_key/notesPlain` | `staging/superblocks/worker_tunnel_private_key_rsa` | plain string |
-| `op://Staging/worker_ed25519_private_key/notesPlain` | `staging/superblocks/worker_tunnel_private_key_ed25519` | plain string |
+| 1Password item                                              | AWS Secrets Manager key                                   | Secret value key |
+| ----------------------------------------------------------- | --------------------------------------------------------- | ---------------- |
+| `op://Staging/agent_key/password`                           | `staging/superblocks/orchestrator_superblocks_key`        | plain string     |
+| `op://Staging/staging_redis_execution/password`             | `staging/superblocks/orchestrator_redis_transport_token`  | plain string     |
+| `op://Staging/staging_redis_kvstore/password`               | `staging/superblocks/orchestrator_redis_store_token`      | plain string     |
+| `op://Staging/launchdarkly_apikey/credential`               | `staging/superblocks/orchestrator_launchdarkly_apikey`    | plain string     |
+| `op://Staging/orchestrator_secrets_encryption_key/password` | `staging/superblocks/orchestrator_secrets_encryption_key` | plain string     |
+| `op://Staging/worker_rsa_private_key/notesPlain`            | `staging/superblocks/worker_tunnel_private_key_rsa`       | plain string     |
+| `op://Staging/worker_ed25519_private_key/notesPlain`        | `staging/superblocks/worker_tunnel_private_key_ed25519`   | plain string     |
 
 Repeat for prod-us (`prod-us/superblocks/...`) and prod-eu (`prod-eu/superblocks/...`) using the corresponding `op://Prod/...` values.
 
@@ -57,6 +57,7 @@ Ideally these are created via Terraform in `dedicated-deployment/aws-infra/tfroo
 Update each environment values file to set the `remoteRef.key` paths.
 
 **`helm/orchestrator/staging.yaml`:**
+
 ```yaml
 externalSecrets:
   superblocksKey:
@@ -87,6 +88,7 @@ externalSecrets:
 Same shape for `production.yaml` (prefix: `prod-us/superblocks/`) and `prod-eu.yaml` (prefix: `prod-eu/superblocks/`).
 
 The JS worker chart also needs remote refs for the tunnel keys:
+
 ```yaml
 externalSecrets:
   tunnelPrivateKeyRSA:
@@ -167,19 +169,19 @@ Installing only the ESO CRDs is not sufficient — CRDs teach Kubernetes the sch
        fake:
          data:
            - key: ci/superblocks/orchestrator_superblocks_key
-             value: "koala"
+             value: 'koala'
            - key: ci/superblocks/orchestrator_redis_store_token
-             value: "koala"
+             value: 'koala'
            - key: ci/superblocks/orchestrator_redis_transport_token
-             value: "koala"
+             value: 'koala'
            - key: ci/superblocks/orchestrator_launchdarkly_apikey
-             value: "koala"
+             value: 'koala'
            - key: ci/superblocks/orchestrator_secrets_encryption_key
-             value: "koala"
+             value: 'koala'
            - key: ci/superblocks/worker_tunnel_private_key_rsa
-             value: "dev-rsa-key"
+             value: 'dev-rsa-key'
            - key: ci/superblocks/worker_tunnel_private_key_ed25519
-             value: "dev-ed-key"
+             value: 'dev-ed-key'
    ```
 3. Update CI values files to remove `externalSecrets.enabled: false` and set the fake remote ref paths
 

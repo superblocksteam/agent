@@ -1,6 +1,5 @@
 import { PutRecordsRequestEntry, KinesisClientConfig, GetShardIteratorCommandInput, ShardIteratorType } from '@aws-sdk/client-kinesis';
 import { KinesisActionConfiguration, KinesisDatasourceConfiguration, IntegrationError } from '@superblocks/shared';
-
 import { KinesisPluginV1 as Plugin } from '@superblocksteam/types';
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/kinesis/command/PutRecordsCommand/

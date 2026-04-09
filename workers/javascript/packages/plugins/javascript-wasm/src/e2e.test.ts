@@ -1,5 +1,6 @@
 import { describe, it, beforeAll, afterAll, expect, jest, afterEach } from '@jest/globals';
 import { ExecutionContext, VariableMode, VariableType, WorkerPool } from '@superblocks/shared';
+
 import JavascriptWasmPlugin from './index';
 import { executeWithWorkerInput } from './test-utils';
 
@@ -168,9 +169,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
         datasourceConfiguration: {}
       } as unknown as Parameters<typeof plugin.execute>[0]);
 
-      expect(executeSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 1234 }) })
-      );
+      expect(executeSpy).toHaveBeenCalledWith(expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 1234 }) }));
     });
 
     it('should fall back to default timeout when config is invalid', async () => {
@@ -189,9 +188,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
         datasourceConfiguration: {}
       } as unknown as Parameters<typeof plugin.execute>[0]);
 
-      expect(executeSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 1_200_000 }) })
-      );
+      expect(executeSpy).toHaveBeenCalledWith(expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 1_200_000 }) }));
     });
 
     it('should prefer quotas.duration over configured timeout', async () => {
@@ -211,9 +208,7 @@ describe('JavaScript WASM Plugin E2E Tests', () => {
         quotas: { duration: 3210 }
       } as unknown as Parameters<typeof plugin.execute>[0]);
 
-      expect(executeSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 3210 }) })
-      );
+      expect(executeSpy).toHaveBeenCalledWith(expect.objectContaining({ input: expect.objectContaining({ executionTimeout: 3210 }) }));
     });
 
     it('should convert AbortError from worker execution into timeout IntegrationError', async () => {

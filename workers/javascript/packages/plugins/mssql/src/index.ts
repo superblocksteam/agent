@@ -27,6 +27,7 @@ import {
 } from '@superblocks/shared';
 import { groupBy, isEmpty } from 'lodash';
 import mssql, { ConnectionPool } from 'mssql';
+
 import { DEFAULT_SCHEMA_QUERY, KEYS_QUERY, PRIMARY_KEY_QUERY, SQL_SINGLE_TABLE_METADATA, TABLE_QUERY } from './queries';
 
 export default class MicrosoftSQLPlugin extends DatabasePluginPooled<ConnectionPool, MsSqlDatasourceConfiguration> {

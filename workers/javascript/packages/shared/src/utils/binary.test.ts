@@ -1,5 +1,5 @@
-import { extractResponseData, decodeResponseText } from './binary';
 import { ActionResponseType } from '../types';
+import { extractResponseData, decodeResponseText } from './binary';
 
 describe('extractResponseData', () => {
   const textBuffer = Buffer.from('Hello, world!');

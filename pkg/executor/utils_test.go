@@ -609,6 +609,114 @@ func TestGenerateAuditLog(t *testing.T) {
 				zap.String("entityType", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_APPLICATION.String()),
 			},
 		},
+		{
+			name: "integration query audit tags route to integration event fields",
+			ctx:  context.WithValue(context.Background(), constants.ContextKeyApiStartTime, int64(123456)),
+			options: Options{
+				IsDeployed: false,
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:           "sdk-query-int-1",
+						Organization: "org_id",
+						Tags: map[string]string{
+							"audit.event_type":     "integration_query",
+							"audit.integration_id": "int-1",
+							"audit.plugin_type":    "postgres",
+						},
+					},
+				},
+			},
+			auditLogId: "log_id_1",
+			expectedLogs: []zap.Field{
+				zap.Bool("isDeployed", false),
+				zap.String("target", "sdk-query-int-1"),
+				zap.String("organizationId", "org_id"),
+				zap.Int64("start", int64(123456)),
+				zap.String("type", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY.String()),
+				zap.String("entityId", "int-1"),
+				zap.String("entityType", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_STEP.String()),
+				zap.String("integrationId", "int-1"),
+				zap.String("pluginType", "postgres"),
+				zap.Int64("integrationQueryStart", int64(123456)),
+				zap.String("source", "SDK API"),
+			},
+		},
+		{
+			name: "integration query sdk target routes without metadata tags",
+			ctx:  context.WithValue(context.Background(), constants.ContextKeyApiStartTime, int64(123456)),
+			options: Options{
+				IsDeployed: false,
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:           "sdk-query-int-2",
+						Organization: "org_id",
+					},
+					Blocks: []*apiv1.Block{
+						{
+							Name: "query",
+							Config: &apiv1.Block_Step{
+								Step: &apiv1.Step{
+									Integration: "int-2",
+									Config:      &apiv1.Step_Postgres{},
+								},
+							},
+						},
+					},
+				},
+			},
+			auditLogId: "log_id_1",
+			expectedLogs: []zap.Field{
+				zap.Bool("isDeployed", false),
+				zap.String("target", "sdk-query-int-2"),
+				zap.String("organizationId", "org_id"),
+				zap.Int64("start", int64(123456)),
+				zap.String("type", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY.String()),
+				zap.String("entityId", "int-2"),
+				zap.String("entityType", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_STEP.String()),
+				zap.String("integrationId", "int-2"),
+				zap.String("pluginType", "postgres"),
+				zap.Int64("integrationQueryStart", int64(123456)),
+				zap.String("source", "SDK API"),
+			},
+		},
+		{
+			name: "integration query sdk target infers canonical oneof plugin name",
+			ctx:  context.WithValue(context.Background(), constants.ContextKeyApiStartTime, int64(123456)),
+			options: Options{
+				IsDeployed: false,
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:           "sdk-query-int-3",
+						Organization: "org_id",
+					},
+					Blocks: []*apiv1.Block{
+						{
+							Name: "query",
+							Config: &apiv1.Block_Step{
+								Step: &apiv1.Step{
+									Integration: "int-3",
+									Config:      &apiv1.Step_OpenaiV2{},
+								},
+							},
+						},
+					},
+				},
+			},
+			auditLogId: "log_id_1",
+			expectedLogs: []zap.Field{
+				zap.Bool("isDeployed", false),
+				zap.String("target", "sdk-query-int-3"),
+				zap.String("organizationId", "org_id"),
+				zap.Int64("start", int64(123456)),
+				zap.String("type", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY.String()),
+				zap.String("entityId", "int-3"),
+				zap.String("entityType", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_STEP.String()),
+				zap.String("integrationId", "int-3"),
+				zap.String("pluginType", "openai_v2"),
+				zap.Int64("integrationQueryStart", int64(123456)),
+				zap.String("source", "SDK API"),
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -624,8 +732,6 @@ func TestGenerateAuditLog(t *testing.T) {
 					filteredActualLogs = append(filteredActualLogs, log)
 				}
 			}
-
-			fmt.Println("filtered = ", actualLogs)
 
 			// Check if the actualAuditLogId is a valid UUID (simple regex pattern for UUID)
 			uuidPattern := regexp.MustCompile(`^[a-fA-F0-9-]{36}$`)

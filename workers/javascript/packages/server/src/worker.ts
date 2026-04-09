@@ -2,6 +2,7 @@ import { context as ctx, propagation, ROOT_CONTEXT, SpanKind } from '@openteleme
 import { commandOptions } from '@redis/client';
 import { Closer, MaybeError } from '@superblocks/shared';
 import { Logger } from 'pino';
+
 import { ExecutionPoolImpl } from './language-step-executor/executionPool';
 import { JsLanguageStepExecutor } from './language-step-executor/jsLanguageStepExecutor';
 import logger from './logger';

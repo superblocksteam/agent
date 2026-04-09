@@ -1,5 +1,6 @@
 import { describe, expect, it, test } from '@jest/globals';
 import { ExecutionContext, KVStore } from '@superblocks/shared';
+
 import { MockKVStore } from '../../store/mock';
 import { executeCode } from './bootstrap';
 import { ExecutionOutput } from './executionOutput';
@@ -267,7 +268,7 @@ describe('bootstrap', () => {
       const filePaths: Record<string, string> = {};
       const inheritedEnv: Array<string> = [];
 
-      const expectedErr = `Error on line 61:
+      const expectedErr = `Error on line 31:
 Error: variables not defined`;
 
       const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
@@ -318,6 +319,31 @@ SyntaxError: Unexpected token ';'`;
       expect(result.log.length).toEqual(0);
       expect(result.output).toEqual({});
       expect(result.error).toEqual(expectedErr);
+    });
+
+    it('should extract message from thrown plain object instead of [object Object]', async () => {
+      const mockStore = new MockKVStore();
+      await mockStore.write('name', 'TestFunc');
+      const context: ExecutionContext = new ExecutionContext();
+      context.variables = {
+        name: {
+          key: 'name',
+          type: VariableType.Native,
+          mode: 'read'
+        }
+      };
+      context.kvStore = mockStore as unknown as KVStore;
+
+      const code = `throw { message: "bad thing" };`;
+      const filePaths: Record<string, string> = {};
+      const inheritedEnv: Array<string> = [];
+
+      const result: ExecutionOutput = await executeCode({ context, code, filePaths, inheritedEnv });
+
+      expect(result).toBeDefined();
+      expect(result.output).toEqual({});
+      expect(result.error).toContain('bad thing');
+      expect(result.error).not.toContain('[object Object]');
     });
 
     it('should throw runtime error', async () => {
@@ -443,74 +469,66 @@ VMError: Cannot find module 'node:child_process'`;
   });
 
   describe('indirect imports should throw errors', () => {
-    const moduleName = "child_process";
+    const moduleName = 'child_process';
 
     const testCases: Array<[string, string, RegExp]> = [
-      [
-        'require through module',
-        `module.require('${moduleName}')`,
-        /^Error on line -?\d+:\s+VMError: Cannot find module '\w+'$/,
-      ],
+      ['require through module', `module.require('${moduleName}')`, /^Error on line -?\d+:\s+VMError: Cannot find module '\w+'$/],
       [
         'require through module.parent',
         `module.parent.require('${moduleName}')`,
-        /^Error on line -?\d+:\s+TypeError: Cannot read properties of undefined \(reading 'require'\)$/,
+        /^Error on line -?\d+:\s+TypeError: Cannot read properties of undefined \(reading 'require'\)$/
       ],
-      [
-        'dynamic import',
-        `await import('${moduleName}')`,
-        /^Error on line -?\d+:\s+VMError: Dynamic Import not supported$/,
-      ],
+      ['dynamic import', `await import('${moduleName}')`, /^Error on line -?\d+:\s+VMError: Dynamic Import not supported$/],
       [
         'dynamic import through eval',
         `await eval("(async () => { return await import('${moduleName}') })()")`,
-        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/
       ],
       [
         'dynamic import through indirect eval',
         `await ('', eval)("(async () => { return await import('${moduleName}') })()")`,
-        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/
       ],
       [
         'require through Function.constructor',
         `Function.constructor("return require('${moduleName}')")()`,
-        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/
       ],
       [
         'dynamic import through Function.constructor',
         `await Function.constructor("return import('${moduleName}')")()`,
-        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/
       ],
       [
         'require through anonymous function constructor',
         `(() => {}).constructor("return require('${moduleName}')")()`,
-        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/
       ],
       [
         'dynamic import through anonymous function constructor',
         `await (() => {}).constructor("return import('${moduleName}')")()`,
-        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/
       ],
       [
         'require through AsyncFunction.constructor',
         `await AsyncFunction.constructor("return require('${moduleName}')")()`,
-        /^Error on line -?\d+:\s+ReferenceError: AsyncFunction is not defined$/,
+        /^Error on line -?\d+:\s+ReferenceError: AsyncFunction is not defined$/
       ],
       [
         'dynamic import through AsyncFunction.constructor',
         `await AsyncFunction.constructor("return import('${moduleName}')")()`,
-        /^Error on line -?\d+:\s+ReferenceError: AsyncFunction is not defined$/,
+        /^Error on line -?\d+:\s+ReferenceError: AsyncFunction is not defined$/
       ],
       [
         'require through anonymous async function constructor',
         `await (async () => {}).constructor("return require('${moduleName}')")()`,
-        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/
       ],
       [
         'dynamic import through anonymous async function constructor',
         `await (async () => {}).constructor("return import('${moduleName}')")()`,
-        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/,
-      ],
+        /^Error on line \d+:\s+EvalError: Code generation from strings disallowed for this context$/
+      ]
     ];
     for (const [name, importExpr, expectedErr] of testCases) {
       it(`should throw error when importing ${name}`, async () => {

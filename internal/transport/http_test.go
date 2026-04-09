@@ -524,7 +524,7 @@ func TestInjectViewModeIntoBody(t *testing.T) {
 			name:         "view_mode with empty body",
 			url:          "/v2/execute?view_mode=1",
 			body:         "",
-			expectedBody: map[string]interface{}{},
+			expectedBody: nil, // empty body is left untouched
 		},
 		{
 			name:          "invalid view_mode value",
@@ -533,10 +533,10 @@ func TestInjectViewModeIntoBody(t *testing.T) {
 			expectedError: "invalid view_mode value",
 		},
 		{
-			name:          "invalid JSON body",
-			url:           "/v2/execute?view_mode=1",
-			body:          `{invalid json}`,
-			expectedError: "failed to parse request body as JSON",
+			name:         "invalid JSON body",
+			url:          "/v2/execute?view_mode=1",
+			body:         `{invalid json}`,
+			expectedBody: nil, // invalid JSON is left untouched so downstream returns a proper error
 		},
 	}
 
@@ -565,6 +565,120 @@ func TestInjectViewModeIntoBody(t *testing.T) {
 
 				assert.Equal(t, tt.expectedBody, actualBody)
 			}
+		})
+	}
+}
+
+func TestInjectViewModeIntoBody_NormalizesStringViewMode(t *testing.T) {
+	tests := []struct {
+		name         string
+		body         string
+		expectedBody map[string]interface{}
+	}{
+		{
+			name:         "string 'deployed' is converted to numeric 3",
+			body:         `{"applicationId":"app-1","viewMode":"deployed","entryPoint":"server/apis/test.ts"}`,
+			expectedBody: map[string]interface{}{"applicationId": "app-1", "viewMode": float64(3), "entryPoint": "server/apis/test.ts"},
+		},
+		{
+			name:         "string 'editor' is converted to numeric 1",
+			body:         `{"applicationId":"app-1","viewMode":"editor"}`,
+			expectedBody: map[string]interface{}{"applicationId": "app-1", "viewMode": float64(1)},
+		},
+		{
+			name:         "string 'preview' is converted to numeric 2",
+			body:         `{"applicationId":"app-1","viewMode":"preview"}`,
+			expectedBody: map[string]interface{}{"applicationId": "app-1", "viewMode": float64(2)},
+		},
+		{
+			name:         "numeric viewMode is left unchanged",
+			body:         `{"applicationId":"app-1","viewMode":3}`,
+			expectedBody: map[string]interface{}{"applicationId": "app-1", "viewMode": float64(3)},
+		},
+		{
+			name:         "missing viewMode is left unchanged",
+			body:         `{"applicationId":"app-1"}`,
+			expectedBody: map[string]interface{}{"applicationId": "app-1"},
+		},
+		{
+			name:         "empty body is left unchanged",
+			body:         "",
+			expectedBody: nil,
+		},
+		{
+			name:         "unknown string viewMode is left as-is",
+			body:         `{"applicationId":"app-1","viewMode":"unknown"}`,
+			expectedBody: map[string]interface{}{"applicationId": "app-1", "viewMode": "unknown"},
+		},
+		{
+			name:         "invalid JSON body is left untouched",
+			body:         `{not valid json}`,
+			expectedBody: nil, // can't parse, so just check no error
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest(http.MethodPost, "/v3/execute", strings.NewReader(tt.body))
+			require.NoError(t, err)
+
+			err = injectViewModeIntoBody(req)
+			require.NoError(t, err)
+
+			bodyBytes, err := io.ReadAll(req.Body)
+			require.NoError(t, err)
+
+			if tt.expectedBody != nil {
+				var actualBody map[string]interface{}
+				err = json.Unmarshal(bodyBytes, &actualBody)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedBody, actualBody)
+			}
+		})
+	}
+}
+
+func TestHackUntilWeHaveGoKit_V3NormalizesStringViewMode(t *testing.T) {
+	for _, tc := range []struct {
+		name             string
+		body             string
+		expectedViewMode float64
+	}{
+		{
+			name:             "string 'deployed' normalized to 3",
+			body:             `{"applicationId":"app-1","viewMode":"deployed","entryPoint":"server/apis/test.ts"}`,
+			expectedViewMode: 3,
+		},
+		{
+			name:             "string 'editor' normalized to 1",
+			body:             `{"applicationId":"app-1","viewMode":"editor","entryPoint":"server/apis/test.ts"}`,
+			expectedViewMode: 1,
+		},
+		{
+			name:             "string 'preview' normalized to 2",
+			body:             `{"applicationId":"app-1","viewMode":"preview","entryPoint":"server/apis/test.ts"}`,
+			expectedViewMode: 2,
+		},
+		{
+			name:             "numeric 3 left unchanged",
+			body:             `{"applicationId":"app-1","viewMode":3,"entryPoint":"server/apis/test.ts"}`,
+			expectedViewMode: 3,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			request, err := http.NewRequest(http.MethodPost, "https://api.superblocks.com/v3/execute", strings.NewReader(tc.body))
+			require.NoError(t, err)
+			request.Header.Set("Content-Type", "application/json")
+
+			responseRecorder := httptest.NewRecorder()
+
+			HackUntilWeHaveGoKit(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				body, _ := io.ReadAll(r.Body)
+				var bodyMap map[string]interface{}
+				err := json.Unmarshal(body, &bodyMap)
+				require.NoError(t, err)
+				assert.Equal(t, tc.expectedViewMode, bodyMap["viewMode"])
+			})).ServeHTTP(responseRecorder, request)
 		})
 	}
 }

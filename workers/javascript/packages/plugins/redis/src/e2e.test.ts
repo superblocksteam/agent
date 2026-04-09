@@ -1,3 +1,6 @@
+import { promises as fs } from 'fs';
+import path from 'path';
+
 import {
   DUMMY_EXECUTION_CONTEXT,
   ErrorCode,
@@ -8,10 +11,9 @@ import {
   RelayDelegate
 } from '@superblocks/shared';
 import { RedisPluginV1 as RedisTypes } from '@superblocksteam/types';
-import { promises as fs } from 'fs';
 import { Redis } from 'ioredis';
 import { cloneDeep } from 'lodash';
-import path from 'path';
+
 import RedisPlugin from '.';
 
 // all connection info

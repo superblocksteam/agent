@@ -57,8 +57,8 @@ jest.mock('@superblocks/shared', () => {
 import { Client } from 'pg';
 jest.mock('pg');
 
-import { KeysQuery, TableQuery } from './queries';
 import CockroachDBPlugin from '.';
+import { KeysQuery, TableQuery } from './queries';
 
 const plugin: CockroachDBPlugin = new CockroachDBPlugin();
 

@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+
 import { AUTH_TYPE_OAUTH_TOKEN_EXCHANGE, SnowflakeDatasourceConfiguration, ErrorCode, IntegrationError } from '@superblocks/shared';
 import { ConnectionOptions } from 'snowflake-sdk';
 

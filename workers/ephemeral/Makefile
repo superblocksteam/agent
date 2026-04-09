@@ -13,6 +13,7 @@ K8S_NAMESPACE = superblocks
 K8S_CONTEXT = kind-superblocks
 HELM_TIMEOUT = 5m
 HELM_EXTRA_ARGS =
+TUNNEL_KEY_RSA_FILE =
 ENVIRONMENT = ci
 
 # Default target
@@ -104,6 +105,7 @@ deploy-helm:
 		--set taskManager.image.tag="$(IMAGE_TAG)" \
 		--set sandbox.python.image.tag="$(IMAGE_TAG)" \
 		--set sandbox.javascript.image.tag="$(IMAGE_TAG)" \
+		$(if $(TUNNEL_KEY_RSA_FILE),--set-file superblocks.tunnelPrivateKeyRSA=$(TUNNEL_KEY_RSA_FILE)) \
 		$(HELM_EXTRA_ARGS)
 
 load-images:
@@ -161,6 +163,11 @@ deploy-orchestrator:
 		--worker.ephemeral.plugins.enabled=python,javascript,javascriptwasm
 	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) expose pod orchestrator --port=8080 --target-port=8080 --name=orchestrator || true
 	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) wait --for=condition=ready pod/orchestrator --timeout=120s
+
+# Deploy SSH tunnel test infrastructure (sshd + Postgres + key pair)
+deploy-ssh-tunnel-test:
+	@echo "==> Deploying SSH tunnel test infrastructure..."
+	K8S_CONTEXT=$(K8S_CONTEXT) K8S_NAMESPACE=$(K8S_NAMESPACE) ./test-infra/deploy-ssh-tunnel-test.sh
 
 # Port forward orchestrator for local testing
 port-forward-orchestrator:

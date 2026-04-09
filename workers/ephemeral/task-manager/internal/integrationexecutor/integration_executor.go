@@ -422,6 +422,11 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 						Id:           fmt.Sprintf("sdk-query-%s", req.GetIntegrationId()),
 						Name:         "SDK Integration Query",
 						Organization: orgID,
+						Tags: map[string]string{
+							"audit.event_type":     "integration_query",
+							"audit.integration_id": req.GetIntegrationId(),
+							"audit.plugin_type":    req.GetPluginId(),
+						},
 					},
 					Blocks: []*apiv1.Block{{
 						Name:   "query",

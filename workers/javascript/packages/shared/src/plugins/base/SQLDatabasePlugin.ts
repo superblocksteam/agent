@@ -1,7 +1,9 @@
 import { AddressInfo, Server } from 'net';
+
 import { SpanKind, SpanStatusCode, Tracer } from '@opentelemetry/api';
 import { isEmpty } from 'lodash';
 import { Client } from 'ssh2';
+
 import { ErrorCode, IntegrationError } from '../../errors';
 import {
   PlaceholdersInfo,

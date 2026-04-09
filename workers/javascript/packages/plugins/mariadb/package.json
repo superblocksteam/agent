@@ -4,9 +4,6 @@
   "description": "Superblocks MariaDB Plugin",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "engines": {
-    "node": "20.19.5"
-  },
   "scripts": {
     "start": "chokidar '**/*.ts' '../../shared-backend/**/*' -c 'pnpm run build'",
     "build": "swc src -d dist",
@@ -21,7 +18,7 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-        "lodash": "^4.17.23",
+    "lodash": "^4.17.23",
     "mariadb": "2.5.6",
     "minimist": "1.2.6"
   },
@@ -39,9 +36,7 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:"
   },
@@ -49,5 +44,8 @@
     "*.{ts,js}": [
       "pnpm lint:precommit"
     ]
+  },
+  "engines": {
+    "node": "20.19.5"
   }
 }

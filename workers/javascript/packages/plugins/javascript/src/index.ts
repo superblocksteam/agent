@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+
 import {
   EvaluationPair,
   ExecutionOutput,
@@ -10,6 +11,7 @@ import {
   WorkerPool
 } from '@superblocks/shared';
 import { tokenize } from 'esprima';
+
 import { SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST } from './env';
 // Worker file: .ts when running from source, .js when built
 const bootstrapExt = __filename.endsWith('.ts') ? '.ts' : '.js';

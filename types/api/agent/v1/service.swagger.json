@@ -131,9 +131,34 @@
       "type": "string",
       "enum": [
         "AUDIT_LOG_EVENT_TYPE_UNSPECIFIED",
-        "AUDIT_LOG_EVENT_TYPE_API_RUN"
+        "AUDIT_LOG_EVENT_TYPE_API_RUN",
+        "AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY"
       ],
       "default": "AUDIT_LOG_EVENT_TYPE_UNSPECIFIED"
+    },
+    "AuditLogIntegrationQueryContext": {
+      "type": "object",
+      "properties": {
+        "integrationId": {
+          "type": "string"
+        },
+        "pluginType": {
+          "type": "string"
+        }
+      }
+    },
+    "AuditLogIntegrationQueryTiming": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "int64"
+        },
+        "end": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
     },
     "AuditLogRequestAuditLog": {
       "type": "object",
@@ -182,6 +207,12 @@
         },
         "targetName": {
           "type": "string"
+        },
+        "integrationQueryContext": {
+          "$ref": "#/definitions/AuditLogIntegrationQueryContext"
+        },
+        "integrationQueryTiming": {
+          "$ref": "#/definitions/AuditLogIntegrationQueryTiming"
         }
       }
     },

@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { getQuickJS } from './quickjs';
 import type { QuickJSWASMModule } from 'quickjs-emscripten-core';
+
 import { createEventLoop } from './event-loop';
+import { getQuickJS } from './quickjs';
 
 describe('createEventLoop', () => {
   let QuickJS: QuickJSWASMModule;

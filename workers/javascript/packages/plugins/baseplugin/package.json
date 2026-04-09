@@ -4,9 +4,6 @@
   "description": "Base Plugin",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "engines": {
-    "node": "20.19.5"
-  },
   "scripts": {
     "build": "swc src -d dist",
     "clean": "rimraf ./dist *tsbuildinfo",
@@ -38,10 +35,11 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:"
+  },
+  "engines": {
+    "node": "20.19.5"
   }
 }

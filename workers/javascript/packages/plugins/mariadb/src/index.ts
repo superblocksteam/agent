@@ -21,6 +21,7 @@ import {
 } from '@superblocks/shared';
 import { groupBy, isEmpty } from 'lodash';
 import { Connection, createConnection } from 'mariadb';
+
 import { DEFAULT_SCHEMA_QUERY, KEYS_QUERY, PRIMARY_KEY_QUERY, SQL_SINGLE_TABLE_METADATA, TABLE_QUERY } from './queries';
 
 const TEST_CONNECTION_TIMEOUT = 5000;

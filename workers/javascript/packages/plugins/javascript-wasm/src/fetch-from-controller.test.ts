@@ -1,6 +1,8 @@
 import * as http from 'node:http';
+
 import { describe, it, beforeAll, afterAll, beforeEach, expect } from '@jest/globals';
 import { ExecutionContext } from '@superblocks/shared';
+
 import JavascriptWasmPlugin from './index';
 import { executeWithWorkerInput } from './test-utils';
 

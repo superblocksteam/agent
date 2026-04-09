@@ -542,6 +542,11 @@ export class Auth extends jspb.Message {
     getOauthTokenExchange(): Auth.Nothing | undefined;
     setOauthTokenExchange(value?: Auth.Nothing): Auth;
 
+    hasOauthIdpTokenPassthrough(): boolean;
+    clearOauthIdpTokenPassthrough(): void;
+    getOauthIdpTokenPassthrough(): Auth.Nothing | undefined;
+    setOauthIdpTokenPassthrough(value?: Auth.Nothing): Auth;
+
     getMethodCase(): Auth.MethodCase;
 
     serializeBinary(): Uint8Array;
@@ -562,6 +567,7 @@ export namespace Auth {
         clientCredentialsFlow?: OAuth.ClientCredentialsFlow.AsObject,
         key?: Azure.Key.AsObject,
         oauthTokenExchange?: Auth.Nothing.AsObject,
+        oauthIdpTokenPassthrough?: Auth.Nothing.AsObject,
     }
 
 
@@ -591,6 +597,7 @@ export namespace Auth {
         CLIENT_CREDENTIALS_FLOW = 4,
         KEY = 5,
         OAUTH_TOKEN_EXCHANGE = 6,
+        OAUTH_IDP_TOKEN_PASSTHROUGH = 7,
     }
 
 }

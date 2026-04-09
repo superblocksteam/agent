@@ -4,6 +4,7 @@
 
 import { trace } from '@opentelemetry/api';
 import { Gauge } from 'prom-client';
+
 import { ConnectionPool, ConnectionPoolCoordinator, ConnectionPoolCoordinatorOptions, ConnectionPoolOptions } from '.';
 
 const DEFAULT_TTL_MS = 60_000;

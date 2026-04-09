@@ -1,5 +1,6 @@
 import { IntegrationError } from '@superblocks/shared';
 import { Logger } from 'pino';
+
 import { Observable } from './types';
 
 export async function observe<T>(logger: Logger, obs: Observable, fn: () => Promise<T>): Promise<T> {

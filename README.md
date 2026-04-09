@@ -5,7 +5,7 @@
 
 <img src="https://superblocks.s3.us-west-2.amazonaws.com/logo.png" width="100">
 
-----
+---
 
 The Superblocks [On-Premise Agent](https://www.superblocks.com/on-prem-agent) is a stateless service that securely connects the Superblocks platform to your data without leaving your network. It is the execution engine that powers Superblocks Application APIs, Workflows, and Scheduled Jobs. Here's how it works.
 

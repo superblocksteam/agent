@@ -1,5 +1,6 @@
 import { context } from '@opentelemetry/api';
 import { default as pino } from 'pino';
+
 import { SUPERBLOCKS_WORKER_ID as id, SUPERBLOCKS_WORKER_LOG_LEVEL as level } from './env';
 import { otelSpanContextToDataDog } from './otel';
 

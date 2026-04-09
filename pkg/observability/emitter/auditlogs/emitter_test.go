@@ -169,6 +169,46 @@ func TestAuditLogFlush(t *testing.T) {
 			},
 			expectedCall: 1,
 		},
+		{
+			name: "Test integration query audit log",
+			zapFields: []zap.Field{
+				zap.Bool("audit", true),
+				zap.String("auditLogId", "integration-log-id"),
+				zap.String("entityId", "00000000-0000-0000-0000-000000000123"),
+				zap.String("entityType", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_STEP.String()),
+				zap.String("organizationId", "test-org-id"),
+				zap.Bool("isDeployed", false),
+				zap.String("source", "SDK API"),
+				zap.String("target", "00000000-0000-0000-0000-000000000123"),
+				zap.String("status", agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_SUCCESS.String()),
+				zap.String("type", agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY.String()),
+				zap.String("integrationId", "00000000-0000-0000-0000-000000000123"),
+				zap.String("pluginType", "postgres"),
+				zap.Int64("integrationQueryStart", int64(100)),
+				zap.Int64("integrationQueryEnd", int64(150)),
+			},
+			expectedLog: &agentv1.AuditLogRequest_AuditLog{
+				Id:             "integration-log-id",
+				EntityId:       "00000000-0000-0000-0000-000000000123",
+				EntityType:     agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_ENTITY_TYPE_STEP,
+				OrganizationId: "test-org-id",
+				IsDeployed:     false,
+				Source:         "SDK API",
+				Target:         "00000000-0000-0000-0000-000000000123",
+				AgentId:        proto.String("test-agent-id"),
+				Type:           agentv1.AuditLogRequest_AuditLog_AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY,
+				Status:         agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_SUCCESS.Enum(),
+				IntegrationQueryContext: &agentv1.AuditLogRequest_AuditLog_IntegrationQueryContext{
+					IntegrationId: "00000000-0000-0000-0000-000000000123",
+					PluginType:    proto.String("postgres"),
+				},
+				IntegrationQueryTiming: &agentv1.AuditLogRequest_AuditLog_IntegrationQueryTiming{
+					Start: int64(100),
+					End:   proto.Int64(int64(150)),
+				},
+			},
+			expectedCall: 1,
+		},
 		// Add more test cases if needed
 	}
 

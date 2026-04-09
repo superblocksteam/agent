@@ -4,9 +4,6 @@
   "description": "Superblocks Couchbase Plugin",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "engines": {
-    "node": "20.19.5"
-  },
   "scripts": {
     "start": "chokidar '**/*.ts' '../../shared-backend/**/*' -c 'pnpm run build'",
     "build": "swc src -d dist",
@@ -28,6 +25,7 @@
     "ssh2": "1.15.0"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "@swc/cli": "catalog:",
     "@swc/core": "catalog:",
     "@swc/jest": "catalog:",
@@ -42,11 +40,11 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
-    "eslint-plugin-prettier": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "rimraf": "catalog:",
-    "typescript": "catalog:",
-    "@jest/globals": "^29.7.0"
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "node": "20.19.5"
   }
 }

@@ -1,4 +1,5 @@
 import { MessageChannel, MessagePort } from 'worker_threads';
+
 import { KVStore } from '../../types';
 
 interface VariableMessage {

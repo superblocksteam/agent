@@ -66,7 +66,8 @@ type redisTransport struct {
 	context context.Context
 	cancel  context.CancelFunc
 
-	// Ephemeral mode: process only one message and exit
+	// Ephemeral mode: read at most one Redis stream message per XReadGroup (messageCount forced to 1 in init).
+	// Single-use sandboxes are handled by the sandbox pool; the transport does not shut down after execute.
 	ephemeral bool
 
 	// drainCompleteCh is closed after in-flight requests finish.
@@ -144,9 +145,7 @@ func (rt *redisTransport) init() error {
 	}
 
 	if rt.ephemeral {
-		rt.executionPool.Store(1)
-		rt.executionPoolSize = 1
-
+		rt.messageCount = 1
 		rt.logger = rt.logger.With(zap.Bool("ephemeral", true))
 	}
 
@@ -291,12 +290,9 @@ func (rt *redisTransport) poll() error {
 	}
 
 	for rt.context.Err() == nil {
-		handled, err := rt.pollOnce()
+		_, err := rt.pollOnce()
 		if err != nil {
 			rt.logger.Error("error while polling messages", zap.Error(err))
-			if rt.ephemeral {
-				return err
-			}
 		}
 
 		// If the execution pool is exhausted, wait for worker completion signals.
@@ -307,11 +303,6 @@ func (rt *redisTransport) poll() error {
 				return rt.context.Err()
 			case <-rt.workerReturned:
 			}
-		}
-
-		// In ephemeral mode, return once the execution is complete
-		if rt.ephemeral && handled {
-			return nil
 		}
 	}
 

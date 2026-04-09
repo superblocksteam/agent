@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+
 import {
   ActionConfiguration,
   ClientWrapper,
@@ -17,6 +18,7 @@ import * as dotenv from 'dotenv';
 import { cloneDeep } from 'lodash';
 import { Client } from 'pg';
 import { Client as ssh2Client } from 'ssh2';
+
 import PostgresPlugin from '.';
 
 jest.setTimeout(20000);

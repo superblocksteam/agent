@@ -150,9 +150,8 @@ type SandboxPlugin struct {
 	// Tracks the number of executions to determine warm vs cold start.
 	executionCount atomic.Int64
 
-	// drainCompleteCh allows dependent services to sequence their shutdown with the sandbox plugin.
-	// Close blocks until this is closed before tearing down (deleting sandbox).
-	drainCompleteCh <-chan struct{}
+	// Protects activeRequests; written by Execute/Stream, read by Close
+	activeRequestsWg sync.WaitGroup
 
 	run.ForwardCompatibility
 }
@@ -182,7 +181,6 @@ func NewSandboxPlugin(options ...Option) (*SandboxPlugin, error) {
 		ipFilterSetter:             opts.IpFilterSetter,
 		internalCtx:                ctx,
 		internalCancel:             cancel,
-		drainCompleteCh:            opts.DrainCompleteCh,
 		grpcMaxRequestSize:         opts.GrpcMaxRequestSize,
 		grpcMaxResponseSize:        opts.GrpcMaxResponseSize,
 	}
@@ -241,7 +239,6 @@ func (p *SandboxPlugin) Run(ctx context.Context) error {
 			return fmt.Errorf("sandbox manager is required in dynamic mode")
 		}
 
-		// Dynamic mode: create a new sandbox on-demand
 		sandboxInfo, err := p.sandboxManager.CreateSandbox(ctx, p.sandboxId)
 		if err != nil {
 			return fmt.Errorf("failed to create sandbox: %w", err)
@@ -411,13 +408,9 @@ func (p *SandboxPlugin) connectToSandbox(ctx context.Context, address string) (*
 func (p *SandboxPlugin) Close(ctx context.Context) error {
 	p.internalCancel()
 
-	if p.drainCompleteCh != nil {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-p.drainCompleteCh:
-			// Drain complete, proceed with teardown
-		}
+	// Wait for all active requests to finish
+	if err := utils.WaitWithContext(ctx, &p.activeRequestsWg); err != nil {
+		p.logger.Warn("active requests did not finish before shutdown", zap.Error(err))
 	}
 
 	p.mu.Lock()
@@ -463,17 +456,6 @@ func (p *SandboxPlugin) Close(ctx context.Context) error {
 	return nil
 }
 
-// ConnectionState returns the underlying gRPC connection state for health checking
-// This method should be deprecated once we remove the health checker
-func (p *SandboxPlugin) ConnectionState() connectivity.State {
-	p.connMu.RLock()
-	defer p.connMu.RUnlock()
-	if p.conn == nil {
-		return connectivity.TransientFailure
-	}
-	return p.conn.GetState()
-}
-
 func (p *SandboxPlugin) NotifyWhenReady(notifyCh chan<- bool) {
 	p.mu.Lock()
 	p.sandboxReadyNotifyCh = append(p.sandboxReadyNotifyCh, notifyCh)
@@ -505,6 +487,14 @@ func (p *SandboxPlugin) notifyReadyChannels() {
 func (p *SandboxPlugin) IsAvailable(ctx context.Context) plugin.PluginStatus {
 	// Check if the sandbox is alive
 	if p.sandboxDead.Load() {
+		if p.connectionMode == SandboxConnectionModeStatic {
+			// Static mode cannot recreate sandboxes; the external supervisor is expected to restart them.
+			return plugin.PluginStatus{
+				Available:        false,
+				DegradationState: plugin.DegradationState_TRANSIENT,
+				Error:            fmt.Errorf("sandbox is dead (static mode); waiting for external restart"),
+			}
+		}
 		return plugin.PluginStatus{
 			Available:        false,
 			DegradationState: plugin.DegradationState_FATAL,
@@ -569,6 +559,9 @@ func (p *SandboxPlugin) Execute(
 	quotas *transportv1.Request_Data_Data_Quota,
 	pinned *transportv1.Request_Data_Pinned,
 ) (*workerv1.ExecuteResponse, error) {
+
+	p.activeRequestsWg.Add(1)
+	defer p.activeRequestsWg.Done()
 
 	pluginAttr := sandboxmetrics.AttrPlugin.String(requestMeta.GetPluginName())
 	req := &workerv1.ExecuteRequest{
@@ -640,6 +633,9 @@ func (p *SandboxPlugin) Stream(
 	pinned *transportv1.Request_Data_Pinned,
 ) error {
 
+	p.activeRequestsWg.Add(1)
+	defer p.activeRequestsWg.Done()
+
 	_, err := tracer.Observe(
 		ctx,
 		fmt.Sprintf("sandbox.%s.stream", requestMeta.GetPluginName()),
@@ -668,6 +664,9 @@ func (p *SandboxPlugin) Metadata(
 	datasourceConfig *structpb.Struct,
 	actionConfig *structpb.Struct,
 ) (*transportv1.Response_Data_Data, error) {
+
+	p.activeRequestsWg.Add(1)
+	defer p.activeRequestsWg.Done()
 
 	resp, err := tracer.Observe(
 		ctx,
@@ -704,6 +703,9 @@ func (p *SandboxPlugin) Metadata(
 }
 
 func (p *SandboxPlugin) Test(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig, actionConfig *structpb.Struct) error {
+	p.activeRequestsWg.Add(1)
+	defer p.activeRequestsWg.Done()
+
 	_, err := tracer.Observe(
 		ctx,
 		fmt.Sprintf("sandbox.%s.test", requestMeta.GetPluginName()),
@@ -725,6 +727,9 @@ func (p *SandboxPlugin) Test(ctx context.Context, requestMeta *workerv1.RequestM
 }
 
 func (p *SandboxPlugin) PreDelete(ctx context.Context, requestMeta *workerv1.RequestMetadata, datasourceConfig *structpb.Struct) error {
+	p.activeRequestsWg.Add(1)
+	defer p.activeRequestsWg.Done()
+
 	_, err := tracer.Observe(
 		ctx,
 		fmt.Sprintf("sandbox.%s.pre_delete", requestMeta.GetPluginName()),

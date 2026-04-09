@@ -1,5 +1,6 @@
 import { AssumeRoleCommand, STSClient, STSClientConfig } from '@aws-sdk/client-sts';
 import { fromInstanceMetadata, fromTokenFile } from '@aws-sdk/credential-providers';
+
 import { ErrorCode, IntegrationError } from '../../errors';
 import { AWSAuthType, AWSDatasourceConfiguration } from '../../types';
 

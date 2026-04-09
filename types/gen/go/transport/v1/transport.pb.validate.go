@@ -237,6 +237,122 @@ func (m *Performance) validate(all bool) error {
 		}
 	}
 
+	if all {
+		switch v := interface{}(m.GetBootstrapSdkImport()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapSdkImport",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapSdkImport",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBootstrapSdkImport()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PerformanceValidationError{
+				field:  "BootstrapSdkImport",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetBootstrapBridgeSetup()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapBridgeSetup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapBridgeSetup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBootstrapBridgeSetup()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PerformanceValidationError{
+				field:  "BootstrapBridgeSetup",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetBootstrapRequireRoot()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapRequireRoot",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapRequireRoot",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBootstrapRequireRoot()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PerformanceValidationError{
+				field:  "BootstrapRequireRoot",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetBootstrapCodeExecution()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapCodeExecution",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, PerformanceValidationError{
+					field:  "BootstrapCodeExecution",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBootstrapCodeExecution()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PerformanceValidationError{
+				field:  "BootstrapCodeExecution",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return PerformanceMultiError(errors)
 	}

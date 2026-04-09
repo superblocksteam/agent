@@ -1691,6 +1691,31 @@
       },
       "title": "You can specify multiple values for a single query parameter in a URL"
     },
+    "PerformanceBootstrapTiming": {
+      "type": "object",
+      "properties": {
+        "sdkImportMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Time to import the SDK API module."
+        },
+        "bridgeSetupMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Time to set up the integration bridge."
+        },
+        "requireRootMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Time to resolve the require root."
+        },
+        "codeExecutionMs": {
+          "type": "string",
+          "format": "int64",
+          "description": "Time to execute the user's code."
+        }
+      }
+    },
     "PluginAddSheet": {
       "type": "object",
       "properties": {
@@ -3209,6 +3234,10 @@
             "type": "string",
             "format": "int64"
           }
+        },
+        "bootstrapTiming": {
+          "$ref": "#/definitions/PerformanceBootstrapTiming",
+          "description": "Sub-phase breakdown of plugin_execution for SDK API (code-mode)\nexecutions. Populated when the worker reports bootstrap timing.\nAll values are in milliseconds."
         }
       }
     },

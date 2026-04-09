@@ -1,8 +1,10 @@
 import * as crypto from 'crypto';
 // the following import is needed for jest (https://github.com/facebook/jest/issues/11629)
 import { performance } from 'perf_hooks';
+
 import { context as otelContext, SpanStatusCode, Tracer } from '@opentelemetry/api';
 import { Gauge } from 'prom-client';
+
 import { getTagsFromContext } from '../../utils/tracing';
 import { MultiMap } from './MultiMap';
 
