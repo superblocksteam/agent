@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Upgrade Go toolchain pins from 1.25.5 to 1.26.1 and update Docker Go builders to use the published 1.26.1 trixie image
 - Add support for inheriting environment variables in the Apps 3.0 API execution environment (via the `SB_EXECUTION_ENV_INCLUSION_LIST`/`SUPERBLOCKS_EXECUTION_ENV_INCLUSION_LIST` environment variable)
 - Fix JavaScript worker error messages being truncated to just `Error on line N:` with an empty body when the error stack contains only frame lines (no message prefix)
 
@@ -19,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inject oauth token into `Authorization` header (if not present) when rendering datasource configs using oauth-code auth type
 - Fix parsing of CORS headers, when set via `SUPERBLOCKS_ORCHESTRATOR_CORS_HEADERS` env var, and provided as comma separated list
 - Re-expose `crypto` as a global so JavaScript code can use APIs like `crypto.randomUUID()` without explicitly requiring the module
-- Upgrade Go toolchain pins from 1.25.5 to 1.26.1 and update Docker Go builders to use the published 1.26.1 trixie image
 - Expose batch processor settings (`SUPERBLOCKS_TELEMETRY_MAX_QUEUE_SIZE`, `SUPERBLOCKS_TELEMETRY_MAX_EXPORT_BATCH_SIZE`, `SUPERBLOCKS_TELEMETRY_BATCH_TIMEOUT`, `SUPERBLOCKS_TELEMETRY_EXPORT_TIMEOUT`) as operator-tunable env vars
 
 ## v1.36.1
