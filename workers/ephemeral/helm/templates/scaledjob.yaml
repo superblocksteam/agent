@@ -207,7 +207,7 @@ spec:
           {{- end }}
           - "--transport.redis.block.duration={{ $.Values.queue.blockDuration }}"
           - "--transport.redis.max.messages={{ $.Values.queue.batchSize }}"
-          - "--transport.redis.execution.pool={{ $.Values.queue.executionPool }}"
+          - "--transport.redis.execution.pool={{ (($v.queue).executionPool) | default $.Values.queue.executionPool }}"
           - "--transport.redis.pool.max={{ $.Values.queue.pool.max }}"
           - "--transport.redis.pool.min={{ $.Values.queue.pool.min }}"
           {{- if $.Values.queue.timeout.dial }}

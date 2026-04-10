@@ -193,7 +193,7 @@ spec:
           {{- end }}
           - "--transport.redis.block.duration={{ $.Values.sandbox_workers.queue.blockDuration }}"
           - "--transport.redis.max.messages={{ $.Values.sandbox_workers.queue.batchSize }}"
-          - "--transport.redis.execution.pool={{ $.Values.sandbox_workers.queue.executionPool }}"
+          - "--transport.redis.execution.pool={{ (($v.queue).executionPool) | default $.Values.sandbox_workers.queue.executionPool }}"
           - "--transport.redis.pool.max={{ $.Values.sandbox_workers.queue.pool.max }}"
           - "--transport.redis.pool.min={{ $.Values.sandbox_workers.queue.pool.min }}"
           {{- if $.Values.sandbox_workers.queue.timeout.dial }}

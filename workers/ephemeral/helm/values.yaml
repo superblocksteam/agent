@@ -56,6 +56,9 @@
 #     # Optional: override chart-wide sandbox.poolSize for this fleet only
 #     sandbox:
 #       poolSize: 3
+#     # Optional: override chart-wide queue.executionPool for this fleet only
+#     queue:
+#       executionPool: 2
 fleets: {}
 # Task Manager configuration
 taskManager:

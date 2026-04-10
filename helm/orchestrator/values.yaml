@@ -383,7 +383,7 @@ sandbox_workers:
     timeout:
       dial: 20s
     batchSize: 2
-    executionPool: 10
+    executionPool: 50
   kvstore:
     host: '<override>'
     password: '<override>'
@@ -400,4 +400,6 @@ sandbox_workers:
       terminationGracePeriodSeconds: 600 # 10 minutes
       delay: 1m
       maxJitter: 5m
+  sandbox:
+    poolSize: 5
   fleets: {}
