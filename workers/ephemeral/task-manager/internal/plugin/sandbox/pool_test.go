@@ -9,9 +9,15 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	"workers/ephemeral/task-manager/internal/plugin"
 )
@@ -34,6 +40,293 @@ func mustTestSandboxPlugin(t *testing.T, sandboxID string) *SandboxPlugin {
 	)
 	require.NoError(t, err)
 	return p
+}
+
+// connectSandboxPluginClient wires a SandboxPlugin to a gRPC server address (for tests).
+func connectSandboxPluginClient(t *testing.T, p *SandboxPlugin, addr string) {
+	t.Helper()
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	p.conn = conn
+	p.client = workerv1.NewSandboxTransportServiceClient(conn)
+}
+
+func TestSandboxPool_Execute_InitialAcquireFails_NoReadySandbox(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
+
+	pool := &SandboxPool{
+		rr:          &atomic.Uint32{},
+		plugins:     map[string]*poolEntry{},
+		pluginOrder: []string{},
+		logger:      zap.NewNop(),
+		tracer:      otel.Tracer("test"),
+	}
+	attachSandboxPoolRunCtx(ctx, pool)
+
+	_, err := pool.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no ready sandbox")
+}
+
+func TestSandboxPool_Execute_TransientRetriesThenSucceeds_SingleSandbox(t *testing.T) {
+	t.Parallel()
+
+	attempts := 0
+	server := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			attempts++
+			if attempts < 3 {
+				return nil, status.Error(codes.ResourceExhausted, "transient resource pressure")
+			}
+			return &workerv1.ExecuteResponse{}, nil
+		},
+	}
+
+	addr, cleanup := startSandboxGrpcServerWithServer(t, server)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	connectSandboxPluginClient(t, p, addr)
+
+	entry := &poolEntry{plug: p}
+	entry.status.Store(uint32(poolEntryReady))
+
+	pool := &SandboxPool{
+		plugins:     map[string]*poolEntry{"a": entry},
+		pluginOrder: []string{"a"},
+		rr:          &atomic.Uint32{},
+		logger:      zap.NewNop(),
+		tracer:      otel.Tracer("test"),
+	}
+	attachSandboxPoolRunCtx(context.Background(), pool)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	t.Cleanup(cancel)
+
+	resp, err := pool.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, 3, attempts)
+}
+
+func TestSandboxPool_Execute_ExhaustsRetriesOnPersistentTransient(t *testing.T) {
+	t.Parallel()
+
+	attempts := 0
+	server := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			attempts++
+			return nil, status.Error(codes.ResourceExhausted, "transient resource pressure")
+		},
+	}
+
+	addr, cleanup := startSandboxGrpcServerWithServer(t, server)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	connectSandboxPluginClient(t, p, addr)
+
+	entry := &poolEntry{plug: p}
+	entry.status.Store(uint32(poolEntryReady))
+
+	pool := &SandboxPool{
+		plugins:     map[string]*poolEntry{"a": entry},
+		pluginOrder: []string{"a"},
+		rr:          &atomic.Uint32{},
+		logger:      zap.NewNop(),
+		tracer:      otel.Tracer("test"),
+	}
+	attachSandboxPoolRunCtx(context.Background(), pool)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	t.Cleanup(cancel)
+
+	resp, err := pool.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Equal(t, sandboxExecuteMaxAttempts, attempts)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Equal(t, codes.ResourceExhausted, st.Code())
+	require.Equal(t, "transient resource pressure", st.Message())
+}
+
+func TestSandboxPool_Execute_ReusesSandboxWhenSecondAcquireFails_EphemeralSingleSlot(t *testing.T) {
+	t.Parallel()
+
+	execCalls := 0
+	server := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			execCalls++
+			if execCalls == 1 {
+				return nil, status.Error(codes.Unavailable, "try another")
+			}
+			return &workerv1.ExecuteResponse{}, nil
+		},
+	}
+
+	addr, cleanup := startSandboxGrpcServerWithServer(t, server)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	connectSandboxPluginClient(t, p, addr)
+
+	entry := &poolEntry{plug: p}
+	entry.status.Store(uint32(poolEntryReady))
+
+	pool := &SandboxPool{
+		ephemeralExecution:        true,
+		plugins:                   map[string]*poolEntry{"only": entry},
+		pluginOrder:               []string{"only"},
+		rr:                        &atomic.Uint32{},
+		logger:                    zap.NewNop(),
+		tracer:                    otel.Tracer("test"),
+		failedSandboxReplacements: make(chan struct{}, 1),
+	}
+	attachSandboxPoolRunCtx(context.Background(), pool)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	t.Cleanup(cancel)
+
+	resp, err := pool.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, 2, execCalls, "second attempt should re-execute on the same sandbox after acquire finds no other ready slot")
+}
+
+func TestSandboxPool_Execute_SwitchesToSecondSandboxWhenAvailable(t *testing.T) {
+	t.Parallel()
+
+	callsA := 0
+	callsB := 0
+	serverA := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			callsA++
+			return nil, status.Error(codes.Unavailable, "sandbox a unhealthy")
+		},
+	}
+	serverB := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			callsB++
+			return &workerv1.ExecuteResponse{}, nil
+		},
+	}
+
+	addrA, cleanupA := startSandboxGrpcServerWithServer(t, serverA)
+	t.Cleanup(cleanupA)
+	addrB, cleanupB := startSandboxGrpcServerWithServer(t, serverB)
+	t.Cleanup(cleanupB)
+
+	pa, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addrA),
+		WithSandboxId("sandbox-a"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	connectSandboxPluginClient(t, pa, addrA)
+
+	pb, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addrB),
+		WithSandboxId("sandbox-b"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	connectSandboxPluginClient(t, pb, addrB)
+
+	ea := &poolEntry{plug: pa}
+	ea.status.Store(uint32(poolEntryReady))
+	eb := &poolEntry{plug: pb}
+	eb.status.Store(uint32(poolEntryReady))
+
+	pool := &SandboxPool{
+		plugins:     map[string]*poolEntry{"id-a": ea, "id-b": eb},
+		pluginOrder: []string{"id-a", "id-b"},
+		rr:          &atomic.Uint32{},
+		logger:      zap.NewNop(),
+		tracer:      otel.Tracer("test"),
+	}
+	attachSandboxPoolRunCtx(context.Background(), pool)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	t.Cleanup(cancel)
+
+	resp, err := pool.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, 1, callsA, "first round-robin pick should execute on sandbox A")
+	require.Equal(t, 1, callsB, "retry should acquire sandbox B and succeed there")
+}
+
+func TestSandboxPool_Execute_NonRetryableErrorReturnsImmediately(t *testing.T) {
+	t.Parallel()
+
+	attempts := 0
+	server := &executeFuncServer{
+		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
+			attempts++
+			return nil, status.Error(codes.InvalidArgument, "bad input")
+		},
+	}
+
+	addr, cleanup := startSandboxGrpcServerWithServer(t, server)
+	t.Cleanup(cleanup)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	connectSandboxPluginClient(t, p, addr)
+
+	entry := &poolEntry{plug: p}
+	entry.status.Store(uint32(poolEntryReady))
+
+	pool := &SandboxPool{
+		plugins:     map[string]*poolEntry{"a": entry},
+		pluginOrder: []string{"a"},
+		rr:          &atomic.Uint32{},
+		logger:      zap.NewNop(),
+		tracer:      otel.Tracer("test"),
+	}
+	attachSandboxPoolRunCtx(context.Background(), pool)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	t.Cleanup(cancel)
+
+	_, err = pool.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.Error(t, err)
+	require.Equal(t, 1, attempts)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Equal(t, codes.InvalidArgument, st.Code())
 }
 
 func TestSandboxPool_pickWithId_roundRobin(t *testing.T) {

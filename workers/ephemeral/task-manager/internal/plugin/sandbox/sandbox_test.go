@@ -925,47 +925,7 @@ func TestSandboxPlugin_Execute_DoesNotRetryTransportMaxSizeResourceExhausted(t *
 	require.Equal(t, "QuotaError: value size (600000000) exceeds max size (524288000)", quotaErr.Error())
 }
 
-func TestSandboxPlugin_Execute_RetriesGenericResourceExhausted(t *testing.T) {
-	t.Parallel()
-
-	attempts := 0
-	server := &executeFuncServer{
-		executeFunc: func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error) {
-			attempts++
-			if attempts < 3 {
-				return nil, status.Error(codes.ResourceExhausted, "transient resource pressure")
-			}
-			return &workerv1.ExecuteResponse{}, nil
-		},
-	}
-
-	addr, cleanup := startSandboxGrpcServerWithServer(t, server)
-	t.Cleanup(cleanup)
-
-	p, err := NewSandboxPlugin(
-		WithConnectionMode(SandboxConnectionModeStatic),
-		WithSandboxAddress(addr),
-		WithSandboxId("test-sandbox"),
-		WithLogger(zap.NewNop()),
-	)
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	t.Cleanup(cancel)
-
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = conn.Close() })
-	p.conn = conn
-	p.client = workerv1.NewSandboxTransportServiceClient(conn)
-
-	resp, err := p.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	require.Equal(t, 3, attempts)
-}
-
-func TestSandboxPlugin_Execute_RetriesGenericResourceExhaustedReturnsErrorAfterMaxAttempts(t *testing.T) {
+func TestSandboxPlugin_Execute_ReturnsErrorOnTransientResourceExhausted(t *testing.T) {
 	t.Parallel()
 
 	attempts := 0
@@ -999,13 +959,13 @@ func TestSandboxPlugin_Execute_RetriesGenericResourceExhaustedReturnsErrorAfterM
 	resp, err := p.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
 	require.Error(t, err)
 	require.Nil(t, resp)
-	require.Equal(t, sandboxExecuteMaxAttempts, attempts)
+	require.Equal(t, 1, attempts)
 
 	_, isQuotaErr := commonErr.IsQuotaError(err)
 	require.False(t, isQuotaErr, "generic ResourceExhausted should not be remapped to QuotaError")
 
 	st, ok := status.FromError(err)
-	require.True(t, ok, "expected gRPC status error after retry exhaustion")
+	require.True(t, ok, "expected gRPC status error")
 	require.Equal(t, codes.ResourceExhausted, st.Code())
 	require.Equal(t, "transient resource pressure", st.Message())
 }

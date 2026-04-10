@@ -45,19 +45,9 @@ const (
 	sandboxGrpcMsgMaxSize = 500 * 1024 * 1024
 	// Default request/send cap stays small; response/recv cap can be large.
 	sandboxGrpcRequestMaxSize = 30 * 1024 * 1024
-
-	// Execute RPC retry: attempts and backoff for transient gRPC failures.
-	sandboxExecuteMaxAttempts = 3
-	sandboxExecuteBackoff     = 100 * time.Millisecond
 )
 
-// Transient gRPC codes that may succeed on retry (connection blips, resource exhaustion).
 var (
-	transientExecuteCodeSet = utils.NewSet[codes.Code](
-		codes.Unavailable,
-		codes.ResourceExhausted,
-	)
-
 	infraErrorGrpcCodes = utils.NewSet[codes.Code](
 		codes.Aborted,
 		codes.Internal,
@@ -558,6 +548,28 @@ func (p *SandboxPlugin) connectionState() string {
 	}
 	return p.conn.GetState().String()
 }
+func (p *SandboxPlugin) recordExecuteAttemptMetrics(
+	ctx context.Context,
+	requestMeta *workerv1.RequestMetadata,
+	codeExecDuration time.Duration,
+	err error,
+) {
+	pluginAttr := sandboxmetrics.AttrPlugin.String(requestMeta.GetPluginName())
+	sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCodeExecutionAttemptDuration, codeExecDuration.Seconds(), pluginAttr)
+
+	result := "succeeded"
+	if err != nil {
+		result = "failed"
+	}
+	resultAttr := sandboxmetrics.AttrResult.String(result)
+
+	warmStart := p.executionCount.Add(1) > 1
+	sandboxmetrics.AddCounter(ctx, sandboxmetrics.SandboxCodeExecutionAttemptsTotal,
+		pluginAttr,
+		resultAttr,
+		sandboxmetrics.AttrWarmStart.Bool(warmStart),
+	)
+}
 
 // Execute runs code in the sandbox
 func (p *SandboxPlugin) Execute(
@@ -571,7 +583,6 @@ func (p *SandboxPlugin) Execute(
 	p.activeRequestsWg.Add(1)
 	defer p.activeRequestsWg.Done()
 
-	pluginAttr := sandboxmetrics.AttrPlugin.String(requestMeta.GetPluginName())
 	req := &workerv1.ExecuteRequest{
 		Metadata:                   requestMeta,
 		Props:                      props,
@@ -587,36 +598,11 @@ func (p *SandboxPlugin) Execute(
 		fmt.Sprintf("sandbox.%s.execute", requestMeta.GetPluginName()),
 		nil,
 		func(ctx context.Context, span trace.Span) (*workerv1.ExecuteResponse, error) {
-			return DoWithRetry(ctx, p.logger, sandboxExecuteMaxAttempts, sandboxExecuteBackoff, func() (*workerv1.ExecuteResponse, error) {
-				return p.client.Execute(ctx, req)
-			}, func(err error) bool {
-				if _, _, ok := grpcTransportSizeExceeded(err); ok {
-					return false
-				}
-				st, ok := status.FromError(err)
-				if !ok {
-					return false
-				}
-				return transientExecuteCodeSet.Contains(st.Code())
-			})
+			return p.client.Execute(ctx, req)
 		},
 		nil,
 	)
-	codeExecDuration := time.Since(codeExecStart).Seconds()
-	sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCodeExecutionDuration, codeExecDuration, pluginAttr)
-
-	result := "succeeded"
-	if err != nil {
-		result = "failed"
-	}
-	resultAttr := sandboxmetrics.AttrResult.String(result)
-
-	warmStart := p.executionCount.Add(1) > 1
-	sandboxmetrics.AddCounter(ctx, sandboxmetrics.SandboxExecutionsTotal,
-		pluginAttr,
-		resultAttr,
-		sandboxmetrics.AttrWarmStart.Bool(warmStart),
-	)
+	p.recordExecuteAttemptMetrics(ctx, requestMeta, time.Since(codeExecStart), err)
 
 	if err != nil {
 		if attemptedSize, maxSize, ok := grpcTransportSizeExceeded(err); ok {

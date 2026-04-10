@@ -39,9 +39,13 @@ var (
 	// (from receiving the request to returning the response, including all overhead).
 	SandboxExecutionDuration metric.Float64Histogram
 
-	// SandboxCodeExecutionDuration measures only the gRPC call to the sandbox
-	// (the actual code execution time, excluding overhead).
+	// SandboxCodeExecutionDuration measures the time for the logical execution (after pool-level retries).
+	// Labels include ephemeral, execute_attempts (0 implies pool never acquired a sandbox), etc.
 	SandboxCodeExecutionDuration metric.Float64Histogram
+
+	// SandboxCodeExecutionAttemptDuration measures only the gRPC call to the sandbox
+	// (the actual code execution time, excluding overhead).
+	SandboxCodeExecutionAttemptDuration metric.Float64Histogram
 
 	// SandboxLifecycleDuration measures task-manager lifecycle operations that are
 	// not part of plugin request handling (e.g., sandbox connect and teardown).
@@ -49,8 +53,11 @@ var (
 
 	// Counters
 
-	// SandboxExecutionsTotal counts total sandbox executions with warm/cold start labels.
+	// SandboxExecutionsTotal counts total sandbox executions (warm/cold, ephemeral, execute_attempts, …).
 	SandboxExecutionsTotal metric.Int64Counter
+
+	// SandboxCodeExecutionAttemptsTotal counts each gRPC Execute call (including pool retries).
+	SandboxCodeExecutionAttemptsTotal metric.Int64Counter
 
 	// SandboxConnectionStateTransitions counts gRPC connection state changes to sandbox
 	SandboxConnectionStateTransitions metric.Int64Counter
@@ -211,6 +218,15 @@ func registerWithMeter(meter metric.Meter) error {
 		return err
 	}
 
+	SandboxCodeExecutionAttemptDuration, err = meter.Float64Histogram(
+		"sandbox_code_execution_attempt_duration_seconds",
+		metric.WithDescription("Duration of a single gRPC Execute attempt to the sandbox"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return err
+	}
+
 	SandboxLifecycleDuration, err = meter.Float64Histogram(
 		"sandbox_lifecycle_duration_seconds",
 		metric.WithDescription("Time for sandbox lifecycle operations handled by task-manager"),
@@ -226,6 +242,15 @@ func registerWithMeter(meter metric.Meter) error {
 		"sandbox_executions_total",
 		metric.WithDescription("Total sandbox executions"),
 		metric.WithUnit("{execution}"),
+	)
+	if err != nil {
+		return err
+	}
+
+	SandboxCodeExecutionAttemptsTotal, err = meter.Int64Counter(
+		"sandbox_code_execution_attempts_total",
+		metric.WithDescription("Total gRPC Execute attempts to the sandbox (one per try, including retries)"),
+		metric.WithUnit("{attempt}"),
 	)
 	if err != nil {
 		return err
@@ -310,6 +335,7 @@ func histogramViews() []sdkmetric.Option {
 	durationHistograms := []string{
 		"sandbox_execution_duration_seconds",
 		"sandbox_code_execution_duration_seconds",
+		"sandbox_code_execution_attempt_duration_seconds",
 		"sandbox_lifecycle_duration_seconds",
 		"sandbox_pool_sandbox_ready_duration_seconds",
 	}
@@ -436,6 +462,7 @@ var (
 	AttrConnectionStateTo      = attribute.Key("to_state")
 	AttrDegradedModeTransition = attribute.Key("transition") // enter | recover
 	AttrEphemeral              = attribute.Key("ephemeral")
+	AttrExecuteAttempts        = attribute.Key("execute_attempts")
 	AttrLanguage               = attribute.Key("language")
 	AttrPlugin                 = attribute.Key("plugin_name")
 	AttrOperation              = attribute.Key("operation")

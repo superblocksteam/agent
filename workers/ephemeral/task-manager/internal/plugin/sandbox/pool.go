@@ -14,6 +14,7 @@ import (
 	sandboxmetrics "workers/ephemeral/task-manager/internal/metrics"
 	"workers/ephemeral/task-manager/internal/plugin"
 
+	"github.com/superblocksteam/agent/pkg/utils"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"github.com/superblocksteam/run"
@@ -22,6 +23,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	grpcodes "google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -48,6 +51,16 @@ type poolEntry struct {
 const (
 	defaultFailedSandboxRetryBackoff = 100 * time.Millisecond
 	maxFailedSandboxRetryBackoff     = 30 * time.Second
+
+	// Pool-level Execute/Stream retry: attempts and backoff for transient gRPC failures
+	sandboxExecuteMaxAttempts = 3
+	sandboxExecuteBackoff     = 100 * time.Millisecond
+)
+
+// Transient gRPC codes that may succeed on retry (connection blips, resource exhaustion)
+var transientExecuteCodeSet = utils.NewSet[grpcodes.Code](
+	grpcodes.Unavailable,
+	grpcodes.ResourceExhausted,
 )
 
 // SandboxPool runs SandboxPlugin instances (one Kubernetes Job per plugin in dynamic mode)
@@ -824,6 +837,47 @@ func (p *SandboxPool) acquireSandbox(ctx context.Context, span trace.Span) (*poo
 	return entry, cleanupFn, nil
 }
 
+// executeTransientRetryable reports whether err may succeed on retry (another sandbox or the same one).
+func executeTransientRetryable(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if st, ok := status.FromError(err); ok {
+		return transientExecuteCodeSet.Contains(st.Code())
+	}
+
+	return false
+}
+
+// recordExecuteMetrics records sandbox_executions_total, sandbox_code_execution_duration_seconds,
+// and execute_attempts for one logical pool execution (after pool-level retries).
+func (p *SandboxPool) recordExecuteMetrics(
+	ctx context.Context,
+	requestMeta *workerv1.RequestMetadata,
+	codeExecDuration time.Duration,
+	executeAttempts int,
+	err error,
+) {
+	pluginAttr := sandboxmetrics.AttrPlugin.String(requestMeta.GetPluginName())
+	ephemeralAttr := sandboxmetrics.AttrEphemeral.Bool(p.ephemeralExecution)
+	attemptAttr := sandboxmetrics.AttrExecuteAttempts.Int64(int64(executeAttempts))
+	sandboxmetrics.RecordHistogram(ctx, sandboxmetrics.SandboxCodeExecutionDuration, codeExecDuration.Seconds(), ephemeralAttr, pluginAttr, attemptAttr)
+
+	result := "succeeded"
+	if err != nil {
+		result = "failed"
+	}
+	resultAttr := sandboxmetrics.AttrResult.String(result)
+
+	sandboxmetrics.AddCounter(ctx, sandboxmetrics.SandboxExecutionsTotal,
+		ephemeralAttr,
+		pluginAttr,
+		resultAttr,
+		attemptAttr,
+	)
+}
+
 func (p *SandboxPool) Execute(
 	ctx context.Context,
 	requestMeta *workerv1.RequestMetadata,
@@ -834,13 +888,40 @@ func (p *SandboxPool) Execute(
 	ctx, span := p.tracerForPool().Start(ctx, "sandbox.pool.execute")
 	defer span.End()
 
-	entry, cleanup, err := p.acquireSandbox(ctx, span)
-	if err != nil {
-		return nil, err
-	}
-	defer cleanup()
+	var entry *poolEntry
+	var cleanup func()
+	defer func() {
+		if cleanup != nil {
+			cleanup()
+		}
+	}()
 
-	resp, err := entry.plug.Execute(ctx, requestMeta, props, quotas, pinned)
+	var attempts int
+	execStart := time.Now()
+	resp, err := DoWithRetry(ctx, p.logger, sandboxExecuteMaxAttempts, sandboxExecuteBackoff, func() (*workerv1.ExecuteResponse, error) {
+		if entry == nil {
+			var err error
+			entry, cleanup, err = p.acquireSandbox(ctx, span)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			nextEntry, nextCleanup, err := p.acquireSandbox(ctx, span)
+			if err == nil {
+				// We've found a new sandbox, clean up the old one.
+				cleanup()
+
+				entry = nextEntry
+				cleanup = nextCleanup
+			}
+		}
+
+		attempts++
+		return entry.plug.Execute(ctx, requestMeta, props, quotas, pinned)
+	}, executeTransientRetryable)
+
+	p.recordExecuteMetrics(ctx, requestMeta, time.Since(execStart), attempts, err)
+
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "execute failed")
