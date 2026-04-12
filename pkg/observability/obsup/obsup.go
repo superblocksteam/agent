@@ -145,7 +145,10 @@ func Setup(logger *zap.Logger, opts Options) (Result, func(context.Context) erro
 	otel.SetTracerProvider(result.TracerProvider)
 	onShutdown = append(onShutdown, result.TracerProvider.Shutdown)
 
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 
 	// Set up OTLP log exporter (only if URL is configured)
 	if opts.OtlpUrl != "" {

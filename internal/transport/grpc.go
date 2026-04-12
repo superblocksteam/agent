@@ -275,6 +275,29 @@ func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 		awaitTags["execute.path"] = "sdk_api"
 	}
 
+	// Enrich the span with identity and request attributes so traces can be
+	// queried by org, app, user, or request-id without drilling into child spans.
+	if orgID := constants.OrganizationID(ctx); orgID != "" {
+		awaitTags[observability.OBS_TAG_ORG_ID] = orgID
+	}
+	if orgTier, ok := jwt_validator.GetOrganizationType(ctx); ok && orgTier != "" {
+		awaitTags[observability.OBS_TAG_ORG_TIER] = orgTier
+	}
+	if fetchCode := req.GetFetchCode(); fetchCode != nil {
+		if id := fetchCode.GetId(); id != "" {
+			awaitTags[observability.OBS_TAG_APPLICATION_ID] = id
+		}
+	} else if fetchByPath := req.GetFetchByPath(); fetchByPath != nil {
+		if id := fetchByPath.GetApplicationId(); id != "" {
+			awaitTags[observability.OBS_TAG_APPLICATION_ID] = id
+		}
+	}
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get("x-superblocks-request-id"); len(vals) > 0 && vals[0] != "" {
+			awaitTags["superblocks.request-id"] = vals[0]
+		}
+	}
+
 	if output, err = tracer.Observe(ctx, "execute.api.await", awaitTags, func(spanCtx context.Context, span trace.Span) (*apiv1.Output, error) {
 		done, err := s.stream(spanCtx, req, func(resp *apiv1.StreamResponse) error {
 			execution = resp.Execution

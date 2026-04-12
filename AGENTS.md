@@ -91,6 +91,15 @@ Table-driven tests with `testify/assert`. Generate mocks: `//go:generate mockery
 
 The [`CHANGELOG.md`](CHANGELOG.md) documents customer-facing changes for the On-Premise Agent (OPA). When a PR changes behavior that ships in the OPA image (bug fixes, new features, configuration changes, dependency upgrades), add a line under `## vNext` describing the change at a high level. Skip the changelog for CI-only, test-only, or internal tooling changes that do not affect the OPA.
 
+### Release bump skill (files to update)
+
+Use this checklist based on merged PR patterns:
+
+- **Feature/bugfix PRs that ship in OPA**: update `CHANGELOG.md` under `## vNext` only.
+- **OPA release prep PRs** (e.g. "update helm chart and changelog for OPA vX.Y.Z"): update:
+  1. `CHANGELOG.md` (cut a new version section from `vNext`)
+  2. `helm/agent/Chart.yaml` (`appVersion` for OPA image version and `version` for chart version)
+
 ---
 
 ## Pre-commit Hooks

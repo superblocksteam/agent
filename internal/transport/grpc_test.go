@@ -40,6 +40,10 @@ import (
 	gsheets "github.com/superblocksteam/agent/types/gen/go/plugins/gsheets/v1"
 	kinesis "github.com/superblocksteam/agent/types/gen/go/plugins/kinesis/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -3807,6 +3811,158 @@ func TestAwaitCodeModeErrorsPromotedToAwaitResponse(t *testing.T) {
 
 	mockWorker.AssertExpectations(t)
 	fetcher.AssertExpectations(t)
+}
+
+// TestAwaitSpanAttributes verifies that the execute.api.await span includes
+// organization-id and application-id. These attributes are required for
+// querying orchestrator traces by organization or application in Datadog/Tempo.
+// Subtests run sequentially because they swap the global OTel TracerProvider.
+func TestAwaitSpanAttributes(t *testing.T) {
+	// findAwaitSpan returns the execute.api.await span whose attributes
+	// contain the given organization-id value, to avoid cross-pollution
+	// from spans created by unrelated tests.
+	findAwaitSpan := func(t *testing.T, spans tracetest.SpanStubs, orgID string) *tracetest.SpanStub {
+		t.Helper()
+		for i := range spans {
+			if spans[i].Name != "execute.api.await" {
+				continue
+			}
+			for _, attr := range spans[i].Attributes {
+				if string(attr.Key) == "organization-id" && attr.Value.AsString() == orgID {
+					return &spans[i]
+				}
+			}
+		}
+		return nil
+	}
+
+	t.Run("code_mode", func(t *testing.T) {
+		defer metrics.SetupForTesting()()
+
+		exporter := tracetest.NewInMemoryExporter()
+		tp := sdktrace.NewTracerProvider(
+			sdktrace.WithSyncer(exporter),
+			sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		)
+		prev := otel.GetTracerProvider()
+		otel.SetTracerProvider(tp)
+		defer otel.SetTracerProvider(prev)
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		outputJSON := `{"output":{},"log":[]}`
+		outputKey := "output-key-span-attrs"
+		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
+
+		fetcher.On("FetchApiCode", mock.Anything, "app-span-test", "", "", "", "", true).
+			Return(&fetch.ApiCodeBundle{Bundle: "export default function() { return 1; }"}, nil)
+
+		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, outputKey, nil)
+
+		srv := NewServer(&Config{
+			Logger:        zap.NewNop(),
+			Store:         memStore,
+			Worker:        mockWorker,
+			Fetcher:       fetcher,
+			SecretManager: secrets.NewSecretManager(),
+		})
+
+		ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+		ctx = jwt_validator.WithUserEmail(ctx, "test@example.com") // required by JWT auth path
+		ctx = jwt_validator.WithOrganizationID(ctx, "org-12345")
+		ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+		ctx = constants.WithExecutionID(ctx, "exec-span-attrs")
+		// Simulate x-superblocks-request-id arriving via gRPC metadata.
+		md := metadata.Pairs("x-superblocks-request-id", "req-abc123")
+		ctx = metadata.NewIncomingContext(ctx, md)
+
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchCode_{
+				FetchCode: &apiv1.ExecuteRequest_FetchCode{Id: "app-span-test"},
+			},
+		}
+
+		_, err := srv.Await(ctx, req)
+		require.NoError(t, err)
+
+		awaitSpan := findAwaitSpan(t, exporter.GetSpans(), "org-12345")
+		require.NotNil(t, awaitSpan, "expected an execute.api.await span with organization-id=org-12345")
+
+		attrMap := make(map[string]string)
+		for _, attr := range awaitSpan.Attributes {
+			if attr.Value.Type() == attribute.STRING {
+				attrMap[string(attr.Key)] = attr.Value.AsString()
+			}
+		}
+
+		assert.Equal(t, "sdk_api", attrMap["execute.path"])
+		assert.Equal(t, "org-12345", attrMap["organization-id"])
+		assert.Equal(t, "ENTERPRISE", attrMap["organization-tier"])
+		assert.Equal(t, "app-span-test", attrMap["application-id"])
+		assert.Equal(t, "req-abc123", attrMap["superblocks.request-id"])
+	})
+
+	t.Run("fetch_by_path", func(t *testing.T) {
+		defer metrics.SetupForTesting()()
+
+		exporter := tracetest.NewInMemoryExporter()
+		tp := sdktrace.NewTracerProvider(
+			sdktrace.WithSyncer(exporter),
+			sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		)
+		prev := otel.GetTracerProvider()
+		otel.SetTracerProvider(tp)
+		defer otel.SetTracerProvider(prev)
+
+		mockWorker := &worker.MockClient{}
+		fetcher := &fetchmocks.Fetcher{}
+		memStore := store.Memory()
+
+		ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+		ctx = jwt_validator.WithUserEmail(ctx, "test@example.com") // required by JWT auth path
+		ctx = jwt_validator.WithOrganizationID(ctx, "org-67890")
+		ctx = constants.WithExecutionID(ctx, "exec-fetch-by-path")
+
+		appID := "app-bypath-id"
+		req := &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_FetchByPath_{
+				FetchByPath: &apiv1.ExecuteRequest_FetchByPath{
+					Path:          "server/apis/GetUsers",
+					ApplicationId: &appID,
+				},
+			},
+		}
+
+		fetcher.On("FetchApiByPath", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, nil, errors.New("not found"))
+
+		srv := NewServer(&Config{
+			Logger:        zap.NewNop(),
+			Store:         memStore,
+			Worker:        mockWorker,
+			Fetcher:       fetcher,
+			SecretManager: secrets.NewSecretManager(),
+		})
+
+		_, _ = srv.Await(ctx, req)
+
+		awaitSpan := findAwaitSpan(t, exporter.GetSpans(), "org-67890")
+		require.NotNil(t, awaitSpan, "expected an execute.api.await span with organization-id=org-67890")
+
+		attrMap := make(map[string]string)
+		for _, attr := range awaitSpan.Attributes {
+			if attr.Value.Type() == attribute.STRING {
+				attrMap[string(attr.Key)] = attr.Value.AsString()
+			}
+		}
+
+		assert.Equal(t, "legacy", attrMap["execute.path"])
+		assert.Equal(t, "org-67890", attrMap["organization-id"])
+		assert.Equal(t, "app-bypath-id", attrMap["application-id"])
+	})
 }
 
 func strPtr(s string) *string { return &s }

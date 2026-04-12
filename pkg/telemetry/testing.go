@@ -174,7 +174,10 @@ func InitTestTelemetry(ctx context.Context, cfg Config, policy TelemetryPolicy, 
 	otel.SetTracerProvider(traceProvider)
 	otel.SetMeterProvider(meterProvider)
 	otellogglobal.SetLoggerProvider(logProvider)
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 
 	logger.Debug("initialized test telemetry")
 

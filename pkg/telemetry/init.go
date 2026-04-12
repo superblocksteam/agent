@@ -74,7 +74,10 @@ func Init(ctx context.Context, cfg Config, policy TelemetryPolicy, logger *zap.L
 		return nil, err
 	}
 	otel.SetTracerProvider(traceProvider)
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 
 	meterProvider, err := newMeterProvider(ctx, cfg, res, policyEvaluator)
 	if err != nil {
