@@ -46,10 +46,7 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 		log.Warn("check-auth could not resolve auth type")
 	}
 
-	authTokenScope := ""
-	if integration.Fields["authConfig"].GetStructValue() != nil {
-		authTokenScope = integration.Fields["authConfig"].GetStructValue().Fields["tokenScope"].GetStringValue()
-	}
+	authTokenScope := getTokenScopeFromStruct(integration.Fields["authConfig"].GetStructValue())
 
 	authId, authIdFallback := GetAuthId(authType, authConfig, integrationId)
 
@@ -137,7 +134,7 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 	case AuthTypeOauthCode:
 		if cookieValue == "" {
 			authConfigProto := &v1.OAuth_AuthorizationCodeFlow{}
-			err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto)
+			err := jsonutils.MapToProto(NormalizeTokenScope(authConfig.AsMap()), authConfigProto)
 			if err != nil {
 				log.Error("jsonutils.MapToProto error", zap.Error(err))
 				return nil, err
@@ -162,7 +159,7 @@ func (t *tokenManager) CheckAuth(ctx context.Context, integration *structpb.Stru
 		}
 	case authTypeOauthTokenExchange:
 		authConfigProto := &v1.OAuth_AuthorizationCodeFlow{}
-		if err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto); err != nil {
+		if err := jsonutils.MapToProto(NormalizeTokenScope(authConfig.AsMap()), authConfigProto); err != nil {
 			log.Error("error converting auth config to proto", zap.Error(err))
 			return nil, &sberrors.InternalError{Err: err}
 		}

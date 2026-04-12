@@ -123,6 +123,40 @@ func TestCheckAuth(t *testing.T) {
 			},
 		},
 		{
+			name:     "oauth code with boolean false tokenScope should behave as per-user",
+			authType: "oauth-code",
+			authConfig: map[string]interface{}{
+				"clientId":               "clientId",
+				"clientSecret":           "clientSecret",
+				"tokenScope":             false, // boolean false = "user" (per-user)
+				"refreshTokenFromServer": false,
+			},
+			userToken: true,
+			expected: &types.CheckAuthResponse{
+				Authenticated: true,
+				Cookies:       []*http.Cookie{},
+			},
+		},
+		{
+			name:     "oauth code with boolean true tokenScope should behave as datasource",
+			authType: "oauth-code",
+			authConfig: map[string]interface{}{
+				"clientId":               "clientId",
+				"clientSecret":           "clientSecret",
+				"tokenScope":             true, // boolean true = "datasource" (shared)
+				"refreshTokenFromServer": false,
+			},
+			expected: &types.CheckAuthResponse{
+				Authenticated: true,
+				Cookies: []*http.Cookie{
+					{
+						Name:  "oauth-code.clientId-id-token",
+						Value: "id-token",
+					},
+				},
+			},
+		},
+		{
 			name:     "oauth code without cookie and with server cache",
 			authType: "oauth-code",
 			authConfig: map[string]interface{}{

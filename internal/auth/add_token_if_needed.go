@@ -65,6 +65,57 @@ var (
 	}
 )
 
+// NormalizeTokenScope coerces a boolean tokenScope value in an authConfig map
+// to the corresponding string enum. The UI checkbox uses mapBooleansTo to convert
+// true→"datasource" and false→"user", but this mapping only fires on change events.
+// If the DB already contains a boolean (e.g. from a non-UI save path), it persists
+// unchanged and causes protojson.Unmarshal to reject it when mapping to the proto
+// string field token_scope. This function normalizes the map in-place before proto
+// conversion.
+func NormalizeTokenScope(m map[string]interface{}) map[string]interface{} {
+	if ts, ok := m["tokenScope"]; ok {
+		switch v := ts.(type) {
+		case bool:
+			if v {
+				m["tokenScope"] = "datasource"
+			} else {
+				m["tokenScope"] = "user"
+			}
+		case float64:
+			// JSON numbers: treat 0 as false→"user", non-zero as true→"datasource"
+			if v == 0 {
+				m["tokenScope"] = "user"
+			} else {
+				m["tokenScope"] = "datasource"
+			}
+		}
+	}
+	return m
+}
+
+// getTokenScopeFromStruct extracts tokenScope from a structpb.Struct, handling
+// both string and boolean values. Returns the string value or empty string.
+func getTokenScopeFromStruct(authConfig *structpb.Struct) string {
+	if authConfig == nil {
+		return ""
+	}
+	field := authConfig.Fields["tokenScope"]
+	if field == nil {
+		return ""
+	}
+	if s := field.GetStringValue(); s != "" {
+		return s
+	}
+	// Handle boolean value (legacy: false → "user", true → "datasource")
+	if _, ok := field.Kind.(*structpb.Value_BoolValue); ok {
+		if field.GetBoolValue() {
+			return "datasource"
+		}
+		return "user"
+	}
+	return ""
+}
+
 func normalizeAuthType(s string) string {
 	switch s {
 	case "oauthTokenExchange":
@@ -486,7 +537,7 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 
 	log.Info("exchangeOauthTokenForToken")
 	authConfigProto := &pluginscommon.OAuth_AuthorizationCodeFlow{}
-	err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto)
+	err := jsonutils.MapToProto(NormalizeTokenScope(authConfig.AsMap()), authConfigProto)
 	if err != nil {
 		log.Error("error converting auth config to proto", zap.Error(err))
 		return "", &sberrors.InternalError{Err: err}
@@ -548,7 +599,7 @@ func (t *tokenManager) getOauthCodeToken(ctx context.Context, authType string, a
 
 	log.Info("getOauthCodeToken", zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId))
 	authConfigProto := &pluginscommon.OAuth_AuthorizationCodeFlow{}
-	if err := jsonutils.MapToProto(authConfig.AsMap(), authConfigProto); err != nil {
+	if err := jsonutils.MapToProto(NormalizeTokenScope(authConfig.AsMap()), authConfigProto); err != nil {
 		log.Error("error converting auth config to proto", zap.Error(err))
 		return "", "", err
 	}

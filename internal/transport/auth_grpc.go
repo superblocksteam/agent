@@ -231,7 +231,7 @@ func (s *server) ExchangeOauthCodeForToken(ctx context.Context, req *apiv1.Excha
 	}
 
 	if authConfigField, ok := integrationPb.GetFields()["authConfig"]; ok {
-		err = jsonutils.MapToProto(authConfigField.GetStructValue().AsMap(), authConfig)
+		err = jsonutils.MapToProto(auth.NormalizeTokenScope(authConfigField.GetStructValue().AsMap()), authConfig)
 		if err != nil {
 			return nil, err
 		}

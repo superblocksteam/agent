@@ -2042,6 +2042,111 @@ func TestAddTokenIfNeeded_Firebase(t *testing.T) {
 	assert.Equal(t, "123", tokenPayload.UserId)
 }
 
+func TestNormalizeTokenScope(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]interface{}
+		expected map[string]interface{}
+	}{
+		{
+			name:     "boolean false becomes user",
+			input:    map[string]interface{}{"tokenScope": false, "clientId": "id"},
+			expected: map[string]interface{}{"tokenScope": "user", "clientId": "id"},
+		},
+		{
+			name:     "boolean true becomes datasource",
+			input:    map[string]interface{}{"tokenScope": true, "clientId": "id"},
+			expected: map[string]interface{}{"tokenScope": "datasource", "clientId": "id"},
+		},
+		{
+			name:     "string user stays user",
+			input:    map[string]interface{}{"tokenScope": "user", "clientId": "id"},
+			expected: map[string]interface{}{"tokenScope": "user", "clientId": "id"},
+		},
+		{
+			name:     "string datasource stays datasource",
+			input:    map[string]interface{}{"tokenScope": "datasource", "clientId": "id"},
+			expected: map[string]interface{}{"tokenScope": "datasource", "clientId": "id"},
+		},
+		{
+			name:     "no tokenScope key is unchanged",
+			input:    map[string]interface{}{"clientId": "id"},
+			expected: map[string]interface{}{"clientId": "id"},
+		},
+		{
+			name:     "float64 zero becomes user",
+			input:    map[string]interface{}{"tokenScope": float64(0)},
+			expected: map[string]interface{}{"tokenScope": "user"},
+		},
+		{
+			name:     "float64 nonzero becomes datasource",
+			input:    map[string]interface{}{"tokenScope": float64(1)},
+			expected: map[string]interface{}{"tokenScope": "datasource"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NormalizeTokenScope(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestGetTokenScopeFromStruct(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *structpb.Struct
+		expected string
+	}{
+		{
+			name:     "nil struct returns empty",
+			input:    nil,
+			expected: "",
+		},
+		{
+			name: "string user returns user",
+			input: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"tokenScope": structpb.NewStringValue("user"),
+			}},
+			expected: "user",
+		},
+		{
+			name: "string datasource returns datasource",
+			input: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"tokenScope": structpb.NewStringValue("datasource"),
+			}},
+			expected: "datasource",
+		},
+		{
+			name: "boolean false returns user",
+			input: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"tokenScope": structpb.NewBoolValue(false),
+			}},
+			expected: "user",
+		},
+		{
+			name: "boolean true returns datasource",
+			input: &structpb.Struct{Fields: map[string]*structpb.Value{
+				"tokenScope": structpb.NewBoolValue(true),
+			}},
+			expected: "datasource",
+		},
+		{
+			name:     "no tokenScope field returns empty",
+			input:    &structpb.Struct{Fields: map[string]*structpb.Value{}},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getTokenScopeFromStruct(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestCanBeNil(t *testing.T) {
 	var tm *tokenManager
 	_, err := tm.AddTokenIfNeeded(context.Background(), nil, nil, nil, "", "", "")
