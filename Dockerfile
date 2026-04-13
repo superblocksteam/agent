@@ -110,10 +110,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -f /etc/apt/sources.list.d/nodesource.list                                                                                    && \
     rm -rf /var/lib/apt/lists/*
 
-COPY pnpm-workspace.yaml package.json .npmrc pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
-# NPM_TOKEN is used by .npmrc for GitHub Packages auth (interpolated by pnpm)
-ARG NPM_TOKEN
 # node-gyp must be available globally before pnpm fetch, because approved
 # native packages (lz4, cpu-features, node-expat) call node-gyp during fetch
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \

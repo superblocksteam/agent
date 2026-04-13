@@ -39,10 +39,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm add -g node-gyp
 
 # Copy lockfile + root config for pnpm fetch cache layer
-COPY pnpm-workspace.yaml package.json .npmrc pnpm-lock.yaml ./
-
-# NPM_TOKEN is used by .npmrc for GitHub Packages auth (interpolated by pnpm)
-ARG NPM_TOKEN
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
 # Fetch all dependencies into the pnpm store (cached on lockfile change)
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
