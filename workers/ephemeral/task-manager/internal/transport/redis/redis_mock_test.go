@@ -341,64 +341,73 @@ func TestClosingProperlyDrainsRequests(t *testing.T) {
 
 func TestStreamKeysGeneration(t *testing.T) {
 	testCases := []struct {
-		name      string
-		plugins   []string
-		group     string
-		buckets   []string
-		events    []string
-		ephemeral bool
-		expected  []string
+		name                   string
+		plugins                []string
+		group                  string
+		buckets                []string
+		variants               []string
+		events                 []string
+		includeStandardStreams bool
+		expected               []string
 	}{
 		{
-			name:    "single plugin single event",
-			plugins: []string{"python"},
-			group:   "main",
-			buckets: []string{"BA"},
-			events:  []string{"execute"},
+			name:                   "single plugin single event",
+			plugins:                []string{"python"},
+			group:                  "main",
+			buckets:                []string{"BA"},
+			variants:               nil,
+			events:                 []string{"execute"},
+			includeStandardStreams: true,
 			expected: []string{
 				"agent.main.bucket.BA.plugin.python.event.execute",
 			},
 		},
 		{
-			name:      "single bucket single plugin single event ephemeral",
-			plugins:   []string{"python"},
-			group:     "main",
-			buckets:   []string{"BA"},
-			events:    []string{"execute"},
-			ephemeral: true,
+			name:                   "single bucket single plugin single event ephemeral variant only",
+			plugins:                []string{"python"},
+			group:                  "main",
+			buckets:                []string{"BA"},
+			variants:               []string{"ephemeral"},
+			events:                 []string{"execute"},
+			includeStandardStreams: false,
 			expected: []string{
 				"agent.main.bucket.BA.ephemeral.plugin.python.event.execute",
 			},
 		},
 		{
-			name:    "single bucket single plugin multiple events",
-			plugins: []string{"python"},
-			group:   "main",
-			buckets: []string{"BA"},
-			events:  []string{"execute", "metadata"},
+			name:                   "single bucket single plugin multiple events",
+			plugins:                []string{"python"},
+			group:                  "main",
+			buckets:                []string{"BA"},
+			variants:               nil,
+			events:                 []string{"execute", "metadata"},
+			includeStandardStreams: true,
 			expected: []string{
 				"agent.main.bucket.BA.plugin.python.event.execute",
 				"agent.main.bucket.BA.plugin.python.event.metadata",
 			},
 		},
 		{
-			name:    "single bucket multiple plugins single event",
-			plugins: []string{"python", "javascript"},
-			group:   "main",
-			buckets: []string{"BA"},
-			events:  []string{"execute"},
+			name:                   "single bucket multiple plugins single event",
+			plugins:                []string{"python", "javascript"},
+			group:                  "main",
+			buckets:                []string{"BA"},
+			variants:               nil,
+			events:                 []string{"execute"},
+			includeStandardStreams: true,
 			expected: []string{
 				"agent.main.bucket.BA.plugin.python.event.execute",
 				"agent.main.bucket.BA.plugin.javascript.event.execute",
 			},
 		},
 		{
-			name:      "multiple buckets multiple plugins and events ephemeral",
-			plugins:   []string{"python", "javascript"},
-			group:     "main",
-			buckets:   []string{"BA", "BE"},
-			events:    []string{"execute", "metadata", "test"},
-			ephemeral: true,
+			name:                   "multiple buckets multiple plugins and events ephemeral variant only",
+			plugins:                []string{"python", "javascript"},
+			group:                  "main",
+			buckets:                []string{"BA", "BE"},
+			variants:               []string{"ephemeral"},
+			events:                 []string{"execute", "metadata", "test"},
+			includeStandardStreams: false,
 			expected: []string{
 				"agent.main.bucket.BA.ephemeral.plugin.python.event.execute",
 				"agent.main.bucket.BE.ephemeral.plugin.python.event.execute",
@@ -411,27 +420,56 @@ func TestStreamKeysGeneration(t *testing.T) {
 			},
 		},
 		{
-			name:     "empty plugins",
-			plugins:  []string{},
-			group:    "main",
-			buckets:  []string{"BA"},
-			events:   []string{"execute"},
-			expected: []string{},
+			name:                   "standard and ephemeral variant",
+			plugins:                []string{"python"},
+			group:                  "main",
+			buckets:                []string{"BA"},
+			variants:               []string{"ephemeral"},
+			events:                 []string{"execute"},
+			includeStandardStreams: true,
+			expected: []string{
+				"agent.main.bucket.BA.ephemeral.plugin.python.event.execute",
+				"agent.main.bucket.BA.plugin.python.event.execute",
+			},
 		},
 		{
-			name:      "empty plugins ephemeral",
-			plugins:   []string{},
-			group:     "main",
-			buckets:   []string{"BA"},
-			events:    []string{"execute"},
-			ephemeral: true,
-			expected:  []string{},
+			name:                   "multiple variants without standard",
+			plugins:                []string{"python"},
+			group:                  "main",
+			buckets:                []string{"BA"},
+			variants:               []string{"ephemeral", "canary"},
+			events:                 []string{"execute"},
+			includeStandardStreams: false,
+			expected: []string{
+				"agent.main.bucket.BA.ephemeral.plugin.python.event.execute",
+				"agent.main.bucket.BA.canary.plugin.python.event.execute",
+			},
+		},
+		{
+			name:                   "empty plugins",
+			plugins:                []string{},
+			group:                  "main",
+			buckets:                []string{"BA"},
+			variants:               nil,
+			events:                 []string{"execute"},
+			includeStandardStreams: true,
+			expected:               []string{},
+		},
+		{
+			name:                   "empty plugins ephemeral variant only",
+			plugins:                []string{},
+			group:                  "main",
+			buckets:                []string{"BA"},
+			variants:               []string{"ephemeral"},
+			events:                 []string{"execute"},
+			includeStandardStreams: false,
+			expected:               []string{},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := StreamKeys(tc.plugins, tc.group, tc.buckets, tc.events, tc.ephemeral)
+			result := StreamKeys(tc.plugins, tc.group, tc.buckets, tc.variants, tc.events, tc.includeStandardStreams)
 			assert.ElementsMatch(t, tc.expected, result)
 		})
 	}

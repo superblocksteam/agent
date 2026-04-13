@@ -22,6 +22,13 @@
 {{- $sandboxConfig := index $.Values.sandbox $language }}
 {{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
 {{- $tmShutdown := merge (index $v "shutdown" | default dict) (index $.Values.taskManager "shutdown" | default dict) }}
+{{- /* Sprig `default` treats false as empty; use hasKey so includeStandardStreams: false is honored */}}
+{{- $includeStandardStreams := true }}
+{{- if hasKey $v "includeStandardStreams" }}
+{{- $includeStandardStreams = $v.includeStandardStreams }}
+{{- else if and $.Values.worker (hasKey $.Values.worker "includeStandardStreams") }}
+{{- $includeStandardStreams = $.Values.worker.includeStandardStreams }}
+{{- end }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
@@ -116,14 +123,6 @@ spec:
           {{- else }}
           - "--worker.ephemeral=false"
           {{- end }}
-          # Whether to use separate transport streams for sandboxed executions
-          {{- if $v.useSeparateSandboxStreams }}
-          - "--worker.sandbox.streams.separate=true"
-          {{- else if $.Values.worker.useSeparateSandboxStreams }}
-          - "--worker.sandbox.streams.separate=true"
-          {{- else }}
-          - "--worker.sandbox.streams.separate=false"
-          {{- end }}
           # Health check configuration
           - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.taskManager.healthFilePath }}"
           # Logging
@@ -197,6 +196,13 @@ spec:
           {{- else if $.Values.worker.buckets }}
           - "--worker.buckets={{ join "," $.Values.worker.buckets }}"
           {{- end }}
+          {{- if $v.streamVariants }}
+          - "--worker.stream.variants={{ join "," $v.streamVariants }}"
+          {{- else if $.Values.worker.streamVariants }}
+          - "--worker.stream.variants={{ join "," $.Values.worker.streamVariants }}"
+          {{- end }}
+          # Whether to include standard streams in the stream keys
+          - "--worker.stream.include.standard.keys={{ $includeStandardStreams }}"
           {{- end }}
           # Redis transport
           - "--transport.redis.host={{ $.Values.queue.host }}"

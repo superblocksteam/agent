@@ -19,6 +19,13 @@
 {{- $sandboxConfig := index $.Values.sandbox_workers.sandbox $language }}
 {{- $podAnnotations := merge (deepCopy ($v.podAnnotations | default $.Values.podAnnotations | default dict)) (dict "karpenter.sh/do-not-disrupt" "true") }}
 {{- $tmShutdown := merge (index $v "shutdown" | default dict) (index $.Values.sandbox_workers.taskManager "shutdown" | default dict) }}
+{{- /* Sprig `default` treats false as empty; use hasKey so includeStandardStreams: false is honored */}}
+{{- $includeStandardStreams := true }}
+{{- if hasKey $v "includeStandardStreams" }}
+{{- $includeStandardStreams = $v.includeStandardStreams }}
+{{- else if and $.Values.sandbox_workers.worker (hasKey $.Values.sandbox_workers.worker "includeStandardStreams") }}
+{{- $includeStandardStreams = $.Values.sandbox_workers.worker.includeStandardStreams }}
+{{- end }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
@@ -123,14 +130,6 @@ spec:
           {{- else }}
           - "--worker.ephemeral=false"
           {{- end }}
-          # Whether to use separate transport streams for sandboxed executions
-          {{- if $v.useSeparateSandboxStreams }}
-          - "--worker.sandbox.streams.separate=true"
-          {{- else if $.Values.sandbox_workers.worker.useSeparateSandboxStreams }}
-          - "--worker.sandbox.streams.separate=true"
-          {{- else }}
-          - "--worker.sandbox.streams.separate=false"
-          {{- end }}
           # Health check configuration
           - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.sandbox_workers.taskManager.healthFilePath }}"
           # Logging
@@ -183,6 +182,13 @@ spec:
           {{- else if $.Values.sandbox_workers.worker.buckets }}
           - "--worker.buckets={{ join "," $.Values.sandbox_workers.worker.buckets }}"
           {{- end }}
+          {{- if $v.streamVariants }}
+          - "--worker.stream.variants={{ join "," $v.streamVariants }}"
+          {{- else if $.Values.sandbox_workers.worker.streamVariants }}
+          - "--worker.stream.variants={{ join "," $.Values.sandbox_workers.worker.streamVariants }}"
+          {{- end }}
+          # Whether to include standard streams in the stream keys
+          - "--worker.stream.include.standard.keys={{ $includeStandardStreams }}"
           {{- end }}
           # Redis transport
           - "--transport.redis.host={{ $.Values.sandbox_workers.queue.host }}"

@@ -403,4 +403,6 @@ sandbox_workers:
       maxJitter: 5m
   sandbox:
     poolSize: 5
+  worker:
+    includeStandardStreams: true
   fleets: {}

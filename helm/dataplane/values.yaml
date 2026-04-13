@@ -353,6 +353,12 @@ sandbox_workers:
     group: main
     events:
       - execute
+    # When generating stream keys (no worker.stream.keys override), include standard
+    # keys (agent.<group>.bucket.<bucket>.plugin.<plugin>.event.<event>).
+    includeStandardStreams: true
+    # Optional: non-empty stream variants (e.g. ephemeral) — combined with standard keys when includeStandardStreams is true.
+    # streamVariants:
+    #   - ephemeral
   # Observability
   observability:
     logging:

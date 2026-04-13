@@ -5,7 +5,7 @@ x-environment: &environment
   SUPERBLOCKS_AGENT_KEY: dev-agent-key
   SUPERBLOCKS_AGENT_REDIS_TOKEN: koala
   SUPERBLOCKS_AGENT_REDIS_KVSTORE_TOKEN: koala
-  SUPERBLOCKS_AGENT_TLS_INSECURE: 'true'
+  SUPERBLOCKS_AGENT_TLS_INSECURE: "true"
   SUPERBLOCKS_AGENT_REDIS_HOST: redis
   SUPERBLOCKS_AGENT_REDIS_KVSTORE_HOST: redis
 x-task-manager-environment: &task-manager-environment
@@ -23,8 +23,6 @@ x-task-manager-environment: &task-manager-environment
   SUPERBLOCKS_WORKER_SANDBOX_WORKER_EPHEMERAL: "false"
   # Disable IP filtering in compose (static sandbox mode) since sandbox IPs are not dynamically configured
   SUPERBLOCKS_WORKER_SANDBOX_IP_FILTER_DISABLED: "true"
-  # Use ephemeral.plugin stream names so orchestrator (with worker.ephemeral.plugins.enabled) routes here
-  SUPERBLOCKS_WORKER_SANDBOX_WORKER_SANDBOX_STREAMS_SEPARATE: "true"
 x-task-manager-base: &task-manager-base
   image: ghcr.io/superblocksteam/task-manager:${EPHEMERAL_IMAGE_TAG:-latest}
   build:

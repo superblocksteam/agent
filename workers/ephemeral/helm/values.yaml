@@ -30,6 +30,10 @@
 #       - BA
 #     consumerGroup: ephemeral-javascript
 #     ephemeral: true
+#     includeStandardStreams: true
+#     streamVariants:
+#       - ephemeral
+#       - canary
 #     plugins:
 #       - '*'
 #       - '-javascript'
@@ -246,6 +250,7 @@ worker:
   group: main
   events:
     - execute
+  includeStandardStreams: true
 # Observability
 observability:
   logging:
