@@ -80,7 +80,7 @@ spec:
         - "--emitter.remote.intake={{ .Values.observability.logs.intake.url }}"
         - "--intake.metadata.url={{ .Values.observability.metadata.intake.url }}"
         - "--intake.event.url={{ .Values.observability.event.intake.url }}"
-        - "--launchdarkly.local=false"
+        - "--launchdarkly.local={{ .Values.launchdarkly.local }}"
         - "--quotas.enabled=true"
         - "--registration.enabled=false"
         - "--signature.verification.enabled=false"

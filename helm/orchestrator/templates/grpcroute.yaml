@@ -1,6 +1,6 @@
 {{- if .Values.server.deploy }}
 {{ $hosts := mustAppend ( .Values.ingress.additionalUrls | default (list) ) .Values.externalUrl }}
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
   name: {{ include "orchestrator.fullname" $ }}

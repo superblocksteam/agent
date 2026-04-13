@@ -4,7 +4,7 @@ apiVersion: configuration.konghq.com/v1
 kind: KongPlugin
 metadata:
   name: {{ include "orchestrator.fullname" . }}-cors
-  label:
+  labels:
     global: "false"
 plugin: cors
 config:
@@ -30,7 +30,7 @@ apiVersion: configuration.konghq.com/v1
 kind: KongPlugin
 metadata:
   name: {{ include "orchestrator.fullname" . }}-request-size
-  label:
+  labels:
     global: "false"
 plugin: request-size-limiting
 config:
@@ -42,7 +42,7 @@ apiVersion: configuration.konghq.com/v1
 kind: KongPlugin
 metadata:
   name: {{ include "orchestrator.fullname" . }}-404
-  label:
+  labels:
     global: "false"
 plugin: request-termination
 config:
