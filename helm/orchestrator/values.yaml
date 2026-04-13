@@ -139,7 +139,6 @@ image:
     password: '<override>'
 launchdarkly:
   apikey: '<override>'
-  local: false
 secrets:
   encryptionKey: '<override>'
 externalSecrets:

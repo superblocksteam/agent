@@ -53,7 +53,7 @@
             if builtins.hasAttr goAttr pkgs then
               pkgs.${goAttr}
             else
-              builtins.trace "warning: unsupported Go version in .go-version: ${goVersion}; defaulting to pkgs.go" pkgs.go;
+              builtins.trace "warning: unsupported Go version in .go-version: ${goVersion}; defaulting to go_1_26" pkgs.go_1_26;
 
           pythonVersion = readVersionOrFallback {
             path = ./workers/python/.python-version;
