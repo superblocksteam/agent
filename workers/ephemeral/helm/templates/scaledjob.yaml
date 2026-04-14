@@ -29,6 +29,8 @@
 {{- else if and $.Values.worker (hasKey $.Values.worker "includeStandardStreams") }}
 {{- $includeStandardStreams = $.Values.worker.includeStandardStreams }}
 {{- end }}
+{{- /* Sprig `default` treats 0 as empty; use hasKey so minReplicaCount/maxReplicaCount: 0 are honored */}}
+{{- $fleetKeda := $v.keda | default dict }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
@@ -40,8 +42,8 @@ spec:
   pollingInterval: {{ $v.keda.pollingInterval | default $.Values.keda.pollingInterval }}
   successfulJobsHistoryLimit: {{ $v.keda.successfulJobsHistoryLimit | default $.Values.keda.successfulJobsHistoryLimit }}
   failedJobsHistoryLimit: {{ $v.keda.failedJobsHistoryLimit | default $.Values.keda.failedJobsHistoryLimit }}
-  maxReplicaCount: {{ $v.keda.maxReplicaCount | default $.Values.keda.maxReplicaCount }}
-  minReplicaCount: {{ $v.keda.minReplicaCount | default $.Values.keda.minReplicaCount }}
+  maxReplicaCount: {{ if hasKey $fleetKeda "maxReplicaCount" }}{{ index $fleetKeda "maxReplicaCount" }}{{ else }}{{ $.Values.keda.maxReplicaCount }}{{ end }}
+  minReplicaCount: {{ if hasKey $fleetKeda "minReplicaCount" }}{{ index $fleetKeda "minReplicaCount" }}{{ else }}{{ $.Values.keda.minReplicaCount }}{{ end }}
   {{- if or $v.keda.triggers $.Values.keda.triggers }}
   triggers:
     {{- toYaml ($v.keda.triggers | default $.Values.keda.triggers) | nindent 4 }}
@@ -141,11 +143,19 @@ spec:
           {{- if $.Values.image.credentials }}
           - "--sandbox.imagePullSecrets={{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}"
           {{- end }}
-          {{- if or $.Values.nodeSelector $.Values.sandbox.nodeSelector }}
+          {{- if and $v.sandbox $v.sandbox.nodeSelector }}
+          - "--sandbox.nodeSelector={{ include "mapToStringFlag" $v.sandbox.nodeSelector }}"
+          {{- else if or $.Values.nodeSelector $.Values.sandbox.nodeSelector }}
           - "--sandbox.nodeSelector={{ include "mapToStringFlag" ($.Values.sandbox.nodeSelector | default $.Values.nodeSelector) }}"
           {{- end }}
+          {{- if and $v.sandbox $v.sandbox.tolerations }}
+          {{- range $v.sandbox.tolerations }}
+          - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
+          {{- end }}
+          {{- else }}
           {{- range ($.Values.sandbox.tolerations | default $.Values.tolerations) }}
           - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
+          {{- end }}
           {{- end }}
           {{- with (($v.sandbox).resources) | default $sandboxConfig.resources }}
           {{- with .requests }}

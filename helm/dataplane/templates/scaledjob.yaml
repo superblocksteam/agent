@@ -26,6 +26,8 @@
 {{- else if and $.Values.sandbox_workers.worker (hasKey $.Values.sandbox_workers.worker "includeStandardStreams") }}
 {{- $includeStandardStreams = $.Values.sandbox_workers.worker.includeStandardStreams }}
 {{- end }}
+{{- /* Sprig `default` treats 0 as empty; use hasKey so minReplicaCount/maxReplicaCount: 0 are honored */}}
+{{- $fleetKeda := $v.keda | default dict }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
@@ -37,8 +39,8 @@ spec:
   pollingInterval: {{ $v.keda.pollingInterval | default $.Values.sandbox_workers.keda.pollingInterval }}
   successfulJobsHistoryLimit: {{ $v.keda.successfulJobsHistoryLimit | default $.Values.sandbox_workers.keda.successfulJobsHistoryLimit }}
   failedJobsHistoryLimit: {{ $v.keda.failedJobsHistoryLimit | default $.Values.sandbox_workers.keda.failedJobsHistoryLimit }}
-  maxReplicaCount: {{ $v.keda.maxReplicaCount | default $.Values.sandbox_workers.keda.maxReplicaCount }}
-  minReplicaCount: {{ $v.keda.minReplicaCount | default $.Values.sandbox_workers.keda.minReplicaCount }}
+  maxReplicaCount: {{ if hasKey $fleetKeda "maxReplicaCount" }}{{ index $fleetKeda "maxReplicaCount" }}{{ else }}{{ $.Values.sandbox_workers.keda.maxReplicaCount }}{{ end }}
+  minReplicaCount: {{ if hasKey $fleetKeda "minReplicaCount" }}{{ index $fleetKeda "minReplicaCount" }}{{ else }}{{ $.Values.sandbox_workers.keda.minReplicaCount }}{{ end }}
   {{- if $.Release.IsInstall }}
   # On first install the Redis streams don't exist yet — the task-manager
   # pods create them. Use a cron trigger to bootstrap minReplicaCount pods
@@ -49,7 +51,7 @@ spec:
         timezone: UTC
         start: "0 0 * * *"
         end: "59 23 * * *"
-        desiredReplicas: {{ $v.keda.minReplicaCount | default $.Values.sandbox_workers.keda.minReplicaCount | quote }}
+        desiredReplicas: {{ if hasKey $fleetKeda "minReplicaCount" }}{{ index $fleetKeda "minReplicaCount" | quote }}{{ else }}{{ $.Values.sandbox_workers.keda.minReplicaCount | quote }}{{ end }}
   {{- else if or $v.keda.triggers $.Values.sandbox_workers.keda.triggers }}
   triggers:
     {{- toYaml ($v.keda.triggers | default $.Values.sandbox_workers.keda.triggers) | nindent 4 }}
@@ -145,11 +147,19 @@ spec:
           {{- if $.Values.sandbox_workers.image.credentials }}
           - "--sandbox.imagePullSecrets=ephemeral-worker-docker"
           {{- end }}
-          {{- if or $.Values.nodeSelector $.Values.sandbox_workers.sandbox.nodeSelector }}
+          {{- if and $v.sandbox $v.sandbox.nodeSelector }}
+          - "--sandbox.nodeSelector={{ include "mapToStringFlag" $v.sandbox.nodeSelector }}"
+          {{- else if or $.Values.sandbox_workers.nodeSelector $.Values.sandbox_workers.sandbox.nodeSelector }}
           - "--sandbox.nodeSelector={{ include "mapToStringFlag" ($.Values.sandbox_workers.sandbox.nodeSelector | default $.Values.sandbox_workers.nodeSelector) }}"
           {{- end }}
+          {{- if and $v.sandbox $v.sandbox.tolerations }}
+          {{- range $v.sandbox.tolerations }}
+          - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
+          {{- end }}
+          {{- else }}
           {{- range ($.Values.sandbox_workers.sandbox.tolerations | default $.Values.sandbox_workers.tolerations) }}
           - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
+          {{- end }}
           {{- end }}
           # Shutdown configuration
           - "--worker.shutdown.delay={{ index $tmShutdown "delay" | default 0 }}"
