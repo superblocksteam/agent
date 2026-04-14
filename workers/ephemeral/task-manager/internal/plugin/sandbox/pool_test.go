@@ -69,7 +69,37 @@ func TestSandboxPool_Execute_InitialAcquireFails_NoReadySandbox(t *testing.T) {
 
 	_, err := pool.Execute(ctx, &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "no ready sandbox")
+
+	st, ok := status.FromError(err)
+	require.True(t, ok, "Execute error should be a gRPC status")
+	require.Equal(t, codes.Internal, st.Code())
+	require.Contains(t, st.Message(), "failed to acquire sandbox")
+	require.Contains(t, st.Message(), "no ready sandbox")
+}
+
+func TestSandboxPool_Stream_InitialAcquireFails_NoReadySandbox(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
+
+	pool := &SandboxPool{
+		rr:          &atomic.Uint32{},
+		plugins:     map[string]*poolEntry{},
+		pluginOrder: []string{},
+		logger:      zap.NewNop(),
+		tracer:      otel.Tracer("test"),
+	}
+	attachSandboxPoolRunCtx(ctx, pool)
+
+	err := pool.Stream(ctx, "topic", &workerv1.RequestMetadata{PluginName: "javascript"}, &transportv1.Request_Data_Data_Props{}, nil, nil)
+	require.Error(t, err)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok, "Stream error should be a gRPC status")
+	require.Equal(t, codes.Internal, st.Code())
+	require.Contains(t, st.Message(), "failed to acquire sandbox")
+	require.Contains(t, st.Message(), "no ready sandbox")
 }
 
 func TestSandboxPool_Execute_TransientRetriesThenSucceeds_SingleSandbox(t *testing.T) {

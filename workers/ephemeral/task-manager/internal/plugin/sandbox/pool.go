@@ -903,7 +903,7 @@ func (p *SandboxPool) Execute(
 			var err error
 			entry, cleanup, err = p.acquireSandbox(ctx, span)
 			if err != nil {
-				return nil, err
+				return nil, status.Errorf(grpcodes.Internal, "failed to acquire sandbox: %v", err)
 			}
 		} else {
 			nextEntry, nextCleanup, err := p.acquireSandbox(ctx, span)
@@ -944,7 +944,7 @@ func (p *SandboxPool) Stream(
 
 	entry, cleanup, err := p.acquireSandbox(ctx, span)
 	if err != nil {
-		return err
+		return status.Errorf(grpcodes.Internal, "failed to acquire sandbox: %v", err)
 	}
 	defer cleanup()
 
