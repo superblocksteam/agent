@@ -28,12 +28,11 @@ func TestRemote(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name            string
-		testCtx         context.Context
-		plugin          string
-		supportedEvents []string
-		enabledPlugins  []string
-		expectedStream  string
+		name           string
+		testCtx        context.Context
+		plugin         string
+		streamVariant  string
+		expectedStream string
 	}{
 		{
 			name:           "happy path - empty context",
@@ -54,36 +53,25 @@ func TestRemote(t *testing.T) {
 			expectedStream: "agent.main.bucket.ba.plugin.javascript.event.execute",
 		},
 		{
-			name:            "happy path ephemeral - empty context",
-			testCtx:         context.Background(),
-			plugin:          "javascript",
-			supportedEvents: []string{"execute", "metadata"},
-			enabledPlugins:  []string{"javascript", "python"},
-			expectedStream:  "agent.main.bucket.ba.ephemeral.plugin.javascript.event.execute",
+			name:           "variant set - inserts segment after bucket",
+			testCtx:        context.Background(),
+			plugin:         "javascript",
+			streamVariant:  "ephemeral",
+			expectedStream: "agent.main.bucket.ba.ephemeral.plugin.javascript.event.execute",
 		},
 		{
-			name:            "happy path ephemeral - context with event",
-			testCtx:         worker.WithEvent(context.Background(), worker.Event("test")),
-			plugin:          "python",
-			supportedEvents: []string{"metadata", "test"},
-			enabledPlugins:  []string{"javascript", "python"},
-			expectedStream:  "agent.main.bucket.ba.ephemeral.plugin.python.event.test",
+			name:           "variant set - respects context event and plugin",
+			testCtx:        worker.WithEvent(context.Background(), worker.Event("test")),
+			plugin:         "python",
+			streamVariant:  "ephemeral",
+			expectedStream: "agent.main.bucket.ba.ephemeral.plugin.python.event.test",
 		},
 		{
-			name:            "ephemeral unsupported event - returns non-ephemeral stream",
-			testCtx:         worker.WithEvent(context.Background(), worker.Event("execute")),
-			plugin:          "python",
-			supportedEvents: []string{"metadata", "test"},
-			enabledPlugins:  []string{"javascript", "python"},
-			expectedStream:  "agent.main.bucket.ba.plugin.python.event.execute",
-		},
-		{
-			name:            "ephemeral unsupported plugin - returns non-ephemeral stream",
-			testCtx:         worker.WithEvent(context.Background(), worker.Event("execute")),
-			plugin:          "python",
-			supportedEvents: []string{"execute", "metadata", "test"},
-			enabledPlugins:  []string{"javascript"},
-			expectedStream:  "agent.main.bucket.ba.plugin.python.event.execute",
+			name:           "variant arbitrary string - not limited to ephemeral",
+			testCtx:        context.Background(),
+			plugin:         "javascript",
+			streamVariant:  "canary",
+			expectedStream: "agent.main.bucket.ba.canary.plugin.javascript.event.execute",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -97,8 +85,7 @@ func TestRemote(t *testing.T) {
 			anyOrgId := "anyOrgId"
 
 			mockFlags := mocks.NewFlags(t)
-			mockFlags.On("GetEphemeralEnabledPlugins", anyOrgPlan, anyOrgId).Return(tc.enabledPlugins).Once()
-			mockFlags.On("GetEphemeralSupportedEvents", anyOrgPlan, anyOrgId).Return(tc.supportedEvents).Once()
+			mockFlags.On("GetStreamVariant", anyOrgPlan, anyOrgId).Return(tc.streamVariant).Once()
 
 			tnspt := &transport{
 				flags: mockFlags,
@@ -149,8 +136,7 @@ func TestExecute(t *testing.T) {
 		client, clientMock := redismock.NewClientMock()
 
 		mockFlags := &mocks.Flags{}
-		mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-		mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+		mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 		tnspt := &transport{
 			flags: mockFlags,
@@ -207,8 +193,7 @@ func TestAckTimeoutReturnsWorkerUnavailableError(t *testing.T) {
 	client, clientMock := redismock.NewClientMock()
 
 	mockFlags := &mocks.Flags{}
-	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 	ctx := context.Background()
 	carrier := tracer.Propagate(ctx)
@@ -273,8 +258,7 @@ func TestExecuteSendFailureReturnsInternalErrorAndRecordsInfrastructureMetric(t 
 	client, clientMock := redismock.NewClientMock()
 
 	mockFlags := &mocks.Flags{}
-	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 	ctx := context.Background()
 	reqData := &transportv1.Request_Data_Data{}
@@ -332,8 +316,7 @@ func TestExecuteSendRedisNilFailureReturnsInternalErrorAndRecordsInfrastructureM
 	client, clientMock := redismock.NewClientMock()
 
 	mockFlags := &mocks.Flags{}
-	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 	ctx := context.Background()
 	reqData := &transportv1.Request_Data_Data{}
@@ -391,8 +374,7 @@ func TestExecuteReadResponseFailureReturnsInternalErrorAndRecordsInfrastructureM
 	client, clientMock := redismock.NewClientMock()
 
 	mockFlags := &mocks.Flags{}
-	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 	ctx := context.Background()
 	reqData := &transportv1.Request_Data_Data{}
@@ -469,8 +451,7 @@ func TestExecuteReadResponseTimeoutReturnsIntegrationTimeoutAndNoInfrastructureM
 	client, clientMock := redismock.NewClientMock()
 
 	mockFlags := &mocks.Flags{}
-	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 	ctx := context.Background()
 	reqData := &transportv1.Request_Data_Data{}
@@ -550,8 +531,7 @@ func TestExecuteProcessInternalErrorRecordsInfrastructureMetric(t *testing.T) {
 	client, clientMock := redismock.NewClientMock()
 
 	mockFlags := &mocks.Flags{}
-	mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-	mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+	mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 	ctx := context.Background()
 	reqData := &transportv1.Request_Data_Data{}
@@ -938,8 +918,7 @@ func TestProcess(t *testing.T) {
 		},
 	} {
 		mockFlags := &mocks.Flags{}
-		mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-		mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+		mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 		tnspt := &transport{
 			flags: mockFlags,
@@ -996,8 +975,7 @@ func TestExecuteComputesQueueRequestTimingFromEnqueueAndDequeue(t *testing.T) {
 		clientMock.MatchExpectationsInOrder(false)
 
 		mockFlags := &mocks.Flags{}
-		mockFlags.On("GetEphemeralEnabledPlugins", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
-		mockFlags.On("GetEphemeralSupportedEvents", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
+		mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
 
 		tnspt := &transport{
 			flags: mockFlags,

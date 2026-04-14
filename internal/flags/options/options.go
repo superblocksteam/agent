@@ -19,8 +19,7 @@ type Options struct {
 	DefaultMaxComputeMinutesPerWeek                 float64
 	DefaultApiTimeout                               float64
 	DefaultGoWorkerEnabled                          bool
-	DefaultEphemeralEnabledPlugins                  []string
-	DefaultEphemeralSupportedEvents                 []string
+	DefaultStreamVariant                            string
 	DefaultWorkflowPluginInheritanceEnabled         bool
 	DefaultValidateSubjectTokenDuringOboFlowEnabled bool
 	BindingsWasmSandboxEnabled                      bool
@@ -104,15 +103,9 @@ func WithDefaultGoWorkerEnabled(goWorkerEnabled bool) Option {
 	}
 }
 
-func WithDefaultEphemeralEnabledPlugins(ephemeralEnabledPlugins ...string) Option {
+func WithDefaultStreamVariant(streamVariant string) Option {
 	return func(d *Options) {
-		d.DefaultEphemeralEnabledPlugins = ephemeralEnabledPlugins
-	}
-}
-
-func WithDefaultEphemeralSupportedEvents(ephemeralSupportedEvents ...string) Option {
-	return func(d *Options) {
-		d.DefaultEphemeralSupportedEvents = ephemeralSupportedEvents
+		d.DefaultStreamVariant = streamVariant
 	}
 }
 
@@ -165,8 +158,7 @@ func Apply(opts ...Option) Options {
 		DefaultMaxComputeMinutesPerWeek:         float64(math.MaxInt32),
 		DefaultApiTimeout:                       float64(time.Duration(1 * time.Hour).Milliseconds()), // NOTE(frank): This is arbitrary.
 		DefaultGoWorkerEnabled:                  false,
-		DefaultEphemeralEnabledPlugins:          []string{},
-		DefaultEphemeralSupportedEvents:         []string{},
+		DefaultStreamVariant:                    "",
 		DefaultWorkflowPluginInheritanceEnabled: false,
 		Logger:                                  zap.NewNop(),
 		Config:                                  nil,

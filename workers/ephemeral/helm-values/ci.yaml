@@ -11,14 +11,11 @@ fleets:
     ephemeral: false
     plugins:
       - postgres
+    buckets:
+      - BA
+      - BE
     events:
       - execute
-      - metadata
-      - test
-      - pre_delete
-    streams:
-      - agent.main.bucket.BA.plugin.postgres.event.execute
-      - agent.main.bucket.BE.plugin.postgres.event.execute
     taskManager:
       extraEnv:
         - name: SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA
@@ -49,13 +46,13 @@ fleets:
     consumerGroup: ephemeral-python
     plugins:
       - python
+    buckets:
+      - BA
+      - BE
+      - B1
+      - B2
     events:
       - execute
-    streams:
-      - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
-      - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
-      - agent.main.bucket.B1.ephemeral.plugin.python.event.execute
-      - agent.main.bucket.B2.ephemeral.plugin.python.event.execute
     keda:
       pollingInterval: 1
       minReplicaCount: 1
@@ -64,7 +61,7 @@ fleets:
         - type: redis-streams
           metadata:
             address: redis-master.superblocks.svc.cluster.local:6379
-            stream: agent.main.bucket.BA.ephemeral.plugin.python.event.execute
+            stream: agent.main.bucket.BA.plugin.python.event.execute
             consumerGroup: ephemeral-python
             lagCount: "1"
           authenticationRef:
@@ -77,17 +74,13 @@ fleets:
     plugins:
       - javascript
       - javascriptwasm
+    buckets:
+      - BA
+      - BE
+      - B1
+      - B2
     events:
       - execute
-    streams:
-      - agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute
-      - agent.main.bucket.BE.ephemeral.plugin.javascript.event.execute
-      - agent.main.bucket.B1.ephemeral.plugin.javascript.event.execute
-      - agent.main.bucket.B2.ephemeral.plugin.javascript.event.execute
-      - agent.main.bucket.BA.ephemeral.plugin.javascriptwasm.event.execute
-      - agent.main.bucket.BE.ephemeral.plugin.javascriptwasm.event.execute
-      - agent.main.bucket.B1.ephemeral.plugin.javascriptwasm.event.execute
-      - agent.main.bucket.B2.ephemeral.plugin.javascriptwasm.event.execute
     keda:
       pollingInterval: 1
       minReplicaCount: 1
@@ -96,7 +89,7 @@ fleets:
         - type: redis-streams
           metadata:
             address: redis-master.superblocks.svc.cluster.local:6379
-            stream: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute
+            stream: agent.main.bucket.BA.plugin.javascript.event.execute
             consumerGroup: ephemeral-javascript
             lagCount: "1"
           authenticationRef:
@@ -104,7 +97,7 @@ fleets:
         - type: redis-streams
           metadata:
             address: redis-master.superblocks.svc.cluster.local:6379
-            stream: agent.main.bucket.BA.ephemeral.plugin.javascriptwasm.event.execute
+            stream: agent.main.bucket.BA.plugin.javascriptwasm.event.execute
             consumerGroup: ephemeral-javascript
             lagCount: "1"
           authenticationRef:

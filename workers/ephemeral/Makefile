@@ -160,8 +160,7 @@ deploy-orchestrator:
 		--env="SUPERBLOCKS_ORCHESTRATOR_EVENTS_CLOUD_ENABLED=false" \
 		--env="SUPERBLOCKS_ORCHESTRATOR_TRANSPORT_REDIS_ACK_TIMEOUT=30s" \
 		-- \
-		--http.bind=0.0.0.0 \
-		--worker.ephemeral.plugins.enabled=python,javascript,javascriptwasm
+		--http.bind=0.0.0.0
 	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) expose pod orchestrator --port=8080 --target-port=8080 --name=orchestrator || true
 	kubectl --context $(K8S_CONTEXT) -n $(K8S_NAMESPACE) wait --for=condition=ready pod/orchestrator --timeout=120s
 

@@ -198,16 +198,16 @@
       "variations": [30000, 300000, 3000],
       "deleted": false
     },
-    "agent.worker.ephemeral.plugins.enabled": {
-      "key": "agent.worker.ephemeral.plugins.enabled",
+    "agent.worker.stream.variant": {
+      "key": "agent.worker.stream.variant",
       "on": true,
       "targets": [],
       "rules": [],
       "fallthrough": {
-        "variation": 1
+        "variation": 0
       },
       "offVariation": 0,
-      "variations": [[], ["javascriptsdkapi"]],
+      "variations": [""],
       "deleted": false
     },
     "agent.quota.api.parallel.pool.size.max": {

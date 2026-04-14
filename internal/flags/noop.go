@@ -93,12 +93,8 @@ func (flags *noopFlags) GetSdkApiUseWasmWorkerEnabled(string, string) bool {
 	return flags.options.SdkApiWasmWorkerEnabled
 }
 
-func (flags *noopFlags) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
-	return flags.options.DefaultEphemeralEnabledPlugins
-}
-
-func (flags *noopFlags) GetEphemeralSupportedEvents(tier string, orgId string) []string {
-	return flags.options.DefaultEphemeralSupportedEvents
+func (flags *noopFlags) GetStreamVariant(tier string, orgId string) string {
+	return flags.options.DefaultStreamVariant
 }
 
 func (flags *noopFlags) GetWorkflowPluginInheritanceEnabled(string) bool {

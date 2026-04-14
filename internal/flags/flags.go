@@ -39,8 +39,7 @@ type Flags interface {
 	GetPureJsUseWasmSandboxEnabled(tier string, orgId string) bool
 	GetSdkApiUseWasmWorkerEnabled(tier string, orgId string) bool
 
-	GetEphemeralEnabledPlugins(tier string, orgId string) []string
-	GetEphemeralSupportedEvents(tier string, orgId string) []string
+	GetStreamVariant(tier string, orgId string) string
 
 	GetWorkflowPluginInheritanceEnabled(orgId string) bool
 	GetValidateSubjectTokenDuringOboFlowEnabled(orgId string) bool

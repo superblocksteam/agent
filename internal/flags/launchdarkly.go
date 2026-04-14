@@ -113,12 +113,8 @@ func (flags *launchdarkly) GetSdkApiUseWasmWorkerEnabled(tier string, orgId stri
 	return flags.GetBoolVariation("sdk-api.wasm_worker.enabled", tier, orgId, flags.options.SdkApiWasmWorkerEnabled)
 }
 
-func (flags *launchdarkly) GetEphemeralEnabledPlugins(tier string, orgId string) []string {
-	return flags.GetStringSliceVariation("agent.worker.ephemeral.plugins.enabled", tier, orgId, flags.options.DefaultEphemeralEnabledPlugins)
-}
-
-func (flags *launchdarkly) GetEphemeralSupportedEvents(tier string, orgId string) []string {
-	return flags.GetStringSliceVariation("agent.worker.ephemeral.supported.events", tier, orgId, flags.options.DefaultEphemeralSupportedEvents)
+func (flags *launchdarkly) GetStreamVariant(tier string, orgId string) string {
+	return flags.GetStringVariation("agent.worker.stream.variant", tier, orgId, flags.options.DefaultStreamVariant)
 }
 
 func (flags *launchdarkly) GetWorkflowPluginInheritanceEnabled(orgId string) bool {

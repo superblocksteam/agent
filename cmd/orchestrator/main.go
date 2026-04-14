@@ -213,8 +213,7 @@ func init() {
 	pflag.Bool("signature.reconciler.enabled", true, "enable the agent signature reconciler")
 	pflag.Int("signature.batch.size", 200, "number of resources to fetch per signature reconcile loop")
 	pflag.Bool("worker.go.enabled", false, "Whether or not to enable routing requests to the Go worker in the OPA.")
-	pflag.StringSlice("worker.ephemeral.plugins.enabled", []string{}, "A list of plugins that are enabled for ephemeral execution.")
-	pflag.StringSlice("worker.ephemeral.supported.events", []string{"execute"}, "A list of events that are supported for ephemeral execution.")
+	pflag.String("worker.stream.variant", "", "The variant of the stream to use for the worker.")
 	pflag.Bool("agent.plugins.workflow.inherit_parameters.enabled", false, "Whether or not to use the API's mode and branch for workflow plugin step execution.")
 	pflag.Bool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled", true, "Whether or not to validate subject tokens during OBO flow.")
 	pflag.Bool("bindings.wasm_sandbox.enabled", false, "Enable WASM sandbox for bindings evaluation. LaunchDarkly takes priority if configured.")
@@ -536,8 +535,7 @@ func main() {
 			flagoptions.WithLogger(logger),
 			flagoptions.WithDefaultApiTimeout(viper.GetFloat64("quotas.default.api_timeout")),
 			flagoptions.WithDefaultGoWorkerEnabled(viper.GetBool("worker.go.enabled")),
-			flagoptions.WithDefaultEphemeralEnabledPlugins(utils.GetStringSlice("worker.ephemeral.plugins.enabled")...),
-			flagoptions.WithDefaultEphemeralSupportedEvents(utils.GetStringSlice("worker.ephemeral.supported.events")...),
+			flagoptions.WithDefaultStreamVariant(viper.GetString("worker.stream.variant")),
 			flagoptions.WithDefaultWorkflowPluginInheritanceEnabled(viper.GetBool("agent.plugins.workflow.inherit_parameters.enabled")),
 			flagoptions.WithDefaultValidateSubjectTokenDuringOboFlowEnabled(viper.GetBool("agent.plugins.auth.validate_subject_token_during_obo_flow.enabled")),
 		}
@@ -566,11 +564,7 @@ func main() {
 			flagsClient = flags.NoopFlags(options...)
 		}
 
-		logger.Info(
-			"Initialized flags client with default values",
-			zap.Strings("ephemeral_enabled_plugins", utils.GetStringSlice("worker.ephemeral.plugins.enabled")),
-			zap.Strings("ephemeral_supported_events", utils.GetStringSlice("worker.ephemeral.supported.events")),
-		)
+		logger.Info("Initialized flags client with default values", zap.String("worker.stream.variant", viper.GetString("worker.stream.variant")))
 	}
 
 	var transportRedisClient *redis.Client

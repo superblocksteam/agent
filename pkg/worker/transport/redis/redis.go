@@ -20,7 +20,6 @@ import (
 	metricsPkg "github.com/superblocksteam/agent/pkg/metrics"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
-	"github.com/superblocksteam/agent/pkg/pluginparser"
 	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	"github.com/superblocksteam/agent/pkg/worker/options"
@@ -113,16 +112,16 @@ func (t *transport) Remote(ctx context.Context, pluginName string, organizationP
 	}
 
 	bucket := t.options.buckets.Assign(pluginName, estimate)
+	variant := t.flags.GetStreamVariant(organizationPlan, orgId)
 
-	enabledPlugins := pluginparser.ParsePlugins(t.flags.GetEphemeralEnabledPlugins(organizationPlan, orgId))
-	supportedEvents := utils.NewSet(t.flags.GetEphemeralSupportedEvents(organizationPlan, orgId)...)
-
-	streamFmtStr := "agent.main.bucket.%s.plugin.%s.event.%s"
-	if enabledPlugins.Contains(pluginName) && supportedEvents.Contains(string(event)) {
-		streamFmtStr = "agent.main.bucket.%s.ephemeral.plugin.%s.event.%s"
+	var stream string
+	if variant != "" {
+		stream = fmt.Sprintf("agent.main.bucket.%s.%s.plugin.%s.event.%s", bucket, variant, pluginName, event)
+	} else {
+		stream = fmt.Sprintf("agent.main.bucket.%s.plugin.%s.event.%s", bucket, pluginName, event)
 	}
 
-	return bucket, fmt.Sprintf(streamFmtStr, bucket, pluginName, event)
+	return bucket, stream
 }
 
 func (t *transport) Execute(ctx context.Context, plugin string, data *transportv1.Request_Data_Data, opts ...options.Option) (*transportv1.Performance, string, error) {
