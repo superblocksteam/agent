@@ -93,6 +93,10 @@ func (flags *noopFlags) GetSdkApiUseWasmWorkerEnabled(string, string) bool {
 	return flags.options.SdkApiWasmWorkerEnabled
 }
 
+func (flags *noopFlags) GetCodeModeRatePerApiV2(string, string) map[string]any {
+	return flags.options.DefaultCodeModeRatePerApi
+}
+
 func (flags *noopFlags) GetStreamVariant(tier string, orgId string) string {
 	return flags.options.DefaultStreamVariant
 }

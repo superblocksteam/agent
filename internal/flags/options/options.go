@@ -16,6 +16,7 @@ type Options struct {
 	DefaultStepDurationByOrg                        int
 	DefaultMaxParallelPoolSizeByAPI                 int
 	DefaultMaxStreamSendSizeByOrg                   int
+	DefaultCodeModeRatePerApi                       map[string]any
 	DefaultMaxComputeMinutesPerWeek                 float64
 	DefaultApiTimeout                               float64
 	DefaultGoWorkerEnabled                          bool
@@ -82,6 +83,12 @@ func WithDefaultMaxParallelPoolSizeByAPI(maxParallelPoolSizeByAPI int) Option {
 func WithDefaultMaxStreamSendSizeByOrg(maxStreamSendSizeByOrg int) Option {
 	return func(d *Options) {
 		d.DefaultMaxStreamSendSizeByOrg = maxStreamSendSizeByOrg
+	}
+}
+
+func WithDefaultCodeModeRatePerApi(rate map[string]any) Option {
+	return func(d *Options) {
+		d.DefaultCodeModeRatePerApi = rate
 	}
 }
 
@@ -155,6 +162,7 @@ func Apply(opts ...Option) Options {
 		DefaultStepDurationByOrg:                math.MaxInt32,
 		DefaultMaxParallelPoolSizeByAPI:         math.MaxInt32,
 		DefaultMaxStreamSendSizeByOrg:           math.MaxInt32,
+		DefaultCodeModeRatePerApi:               map[string]any{"value": 5, "units": "seconds"},
 		DefaultMaxComputeMinutesPerWeek:         float64(math.MaxInt32),
 		DefaultApiTimeout:                       float64(time.Duration(1 * time.Hour).Milliseconds()), // NOTE(frank): This is arbitrary.
 		DefaultGoWorkerEnabled:                  false,

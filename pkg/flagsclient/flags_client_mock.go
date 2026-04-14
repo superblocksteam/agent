@@ -233,6 +233,66 @@ func (_m *MockFlagsClient) GetIntVariationCustomDims(flag string, orgId string, 
 	return r0
 }
 
+// GetMapVariation provides a mock function with given fields: flag, tier, orgId, fallback
+func (_m *MockFlagsClient) GetMapVariation(flag string, tier string, orgId string, fallback map[string]interface{}) map[string]interface{} {
+	ret := _m.Called(flag, tier, orgId, fallback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMapVariation")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(string, string, string, map[string]interface{}) map[string]interface{}); ok {
+		r0 = rf(flag, tier, orgId, fallback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// GetMapVariationByOrg provides a mock function with given fields: flag, orgId, fallback
+func (_m *MockFlagsClient) GetMapVariationByOrg(flag string, orgId string, fallback map[string]interface{}) map[string]interface{} {
+	ret := _m.Called(flag, orgId, fallback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMapVariationByOrg")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(string, string, map[string]interface{}) map[string]interface{}); ok {
+		r0 = rf(flag, orgId, fallback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// GetMapVariationCustomDims provides a mock function with given fields: flag, orgId, dims, fallback
+func (_m *MockFlagsClient) GetMapVariationCustomDims(flag string, orgId string, dims map[string]string, fallback map[string]interface{}) map[string]interface{} {
+	ret := _m.Called(flag, orgId, dims, fallback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMapVariationCustomDims")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(string, string, map[string]string, map[string]interface{}) map[string]interface{}); ok {
+		r0 = rf(flag, orgId, dims, fallback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
 // GetStringSliceVariation provides a mock function with given fields: flag, tier, orgId, fallback
 func (_m *MockFlagsClient) GetStringSliceVariation(flag string, tier string, orgId string, fallback []string) []string {
 	ret := _m.Called(flag, tier, orgId, fallback)

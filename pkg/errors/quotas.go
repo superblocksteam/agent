@@ -69,3 +69,19 @@ func PluginStepRateQuotaError(pluginName string, stepRate int) *QuotaError {
 func UserStepRateQuotaError(user string, stepRate int) *QuotaError {
 	return TerminalQuotaError(fmt.Sprintf("User %s has exceeded their block rate limit of %v per second. Contact support to increase this quota.", user, stepRate), "user_step_rate_exceeded")
 }
+
+func ApiCodeModeRateQuotaError(rate int, units string) *QuotaError {
+	singularUnits := map[string]string{
+		"seconds": "second",
+		"minutes": "minute",
+		"hours":   "hour",
+	}
+	if singular, ok := singularUnits[units]; ok {
+		units = singular
+	}
+	return TerminalQuotaError(fmt.Sprintf("This API has exceeded its code-mode execution rate limit of %v per %s. Contact support to increase this quota.", rate, units), "api_codemode_rate_exceeded")
+}
+
+func ApiCodeModeDisabledQuotaError() *QuotaError {
+	return TerminalQuotaError("Code-mode executions are not available on your current plan. Contact support to upgrade.", "api_codemode_disabled")
+}

@@ -104,8 +104,9 @@ var (
 	ComputeUnitsPerWeekMillisTotal   metric.Int64Gauge
 
 	// SDK API (code-mode) metrics
-	SdkApiExecutionDuration metric.Float64Histogram
-	SdkApiExecutionsTotal   metric.Int64Counter
+	CodeModeQuotaRejectionsTotal metric.Int64Counter
+	SdkApiExecutionDuration      metric.Float64Histogram
+	SdkApiExecutionsTotal        metric.Int64Counter
 
 	// Histograms
 	StepEstimateErrorPercentage metric.Float64Histogram
@@ -349,6 +350,14 @@ func RegisterMetrics(meter metric.Meter) error {
 		return err
 	}
 
+	CodeModeQuotaRejectionsTotal, err = meter.Int64Counter(
+		"code_mode_quota_rejections_total",
+		metric.WithDescription("Total code-mode executions rejected by rate or plan quota."),
+	)
+	if err != nil {
+		return err
+	}
+
 	// Histograms
 	StepEstimateErrorPercentage, err = meter.Float64Histogram(
 		"superblocks_step_estimate_error_percentage",
@@ -499,6 +508,15 @@ func AddApiExecutionEvent(ctx context.Context, eventType, apiType string, extraA
 func AddExecuteInfrastructureError(ctx context.Context, extraAttrs ...attribute.KeyValue) {
 	AddCounter(ctx, ExecuteInfrastructureErrorsTotal, extraAttrs...)
 	executeInfrastructureErrorsTotal.Add(1)
+}
+
+// RecordCodeModeQuotaRejection records a code-mode execution rejected by
+// rate-window or plan quota enforcement.
+func RecordCodeModeQuotaRejection(ctx context.Context, quotaKind string, orgId string) {
+	AddCounter(ctx, CodeModeQuotaRejectionsTotal,
+		attribute.String("quota_kind", quotaKind),
+		attribute.String("organization_id", orgId),
+	)
 }
 
 // RecordSdkApiExecution records both the duration histogram and counter for

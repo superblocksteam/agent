@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Add code-mode API rate limiting with tier-based defaults configurable via LaunchDarkly. Exceeding the rate returns a 429 with a user-facing message including the limit and window duration.
 - Remove GitHub Packages authentication requirement from OPA Docker build, allowing customers to build the OPA image without an `NPM_TOKEN`
 
 ## v1.38.0

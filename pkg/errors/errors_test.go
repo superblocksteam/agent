@@ -202,6 +202,26 @@ func TestWorkerUnavailableError(t *testing.T) {
 	}
 }
 
+func TestApiCodeModeRateQuotaError_UsesSingularUnits(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name     string
+		units    string
+		expected string
+	}{
+		{name: "seconds", units: "seconds", expected: "second"},
+		{name: "minutes", units: "minutes", expected: "minute"},
+		{name: "hours", units: "hours", expected: "hour"},
+		{name: "unknown", units: "fortnights", expected: "fortnights"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			err := ApiCodeModeRateQuotaError(30, test.units)
+			assert.Contains(t, err.Error(), fmt.Sprintf("30 per %s", test.expected))
+		})
+	}
+}
+
 func TestIsWorkerUnavailableError(t *testing.T) {
 	t.Parallel()
 

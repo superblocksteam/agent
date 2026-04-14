@@ -128,3 +128,35 @@ func TestGetSdkApiUseWasmWorkerEnabled(t *testing.T) {
 		})
 	}
 }
+
+func TestGetCodeModeRatePerApiV2(t *testing.T) {
+	t.Parallel()
+
+	defaultFallback := map[string]any{"value": 5, "units": "seconds"}
+
+	t.Run("returns map from LaunchDarkly", func(t *testing.T) {
+		t.Parallel()
+
+		mockFlagsClient := flagsclient.NewMockFlagsClient(t)
+		mockFlagsClient.On("GetMapVariation", "agent.quota.api.codemode.rate", "ENTERPRISE", "org-1", defaultFallback).
+			Return(map[string]any{"value": float64(30), "units": "minutes"}).
+			Once()
+
+		client := LaunchDarkly(mockFlagsClient)
+		actual := client.GetCodeModeRatePerApiV2("ENTERPRISE", "org-1")
+		assert.Equal(t, map[string]any{"value": float64(30), "units": "minutes"}, actual)
+	})
+
+	t.Run("returns fallback when LaunchDarkly returns default", func(t *testing.T) {
+		t.Parallel()
+
+		mockFlagsClient := flagsclient.NewMockFlagsClient(t)
+		mockFlagsClient.On("GetMapVariation", "agent.quota.api.codemode.rate", "FREE", "org-2", defaultFallback).
+			Return(defaultFallback).
+			Once()
+
+		client := LaunchDarkly(mockFlagsClient)
+		actual := client.GetCodeModeRatePerApiV2("FREE", "org-2")
+		assert.Equal(t, defaultFallback, actual)
+	})
+}

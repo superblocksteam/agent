@@ -30,6 +30,7 @@ import (
 	workerengine "github.com/superblocksteam/agent/pkg/engine/worker"
 	sberror "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/executor"
+	"github.com/superblocksteam/agent/pkg/executor/middleware/ratelimit"
 	"github.com/superblocksteam/agent/pkg/executor/options"
 	"github.com/superblocksteam/agent/pkg/functions"
 	"github.com/superblocksteam/agent/pkg/mocker"
@@ -810,6 +811,25 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	// Code-mode direct execution: bypass the block executor entirely.
 	// Bundle was fetched in Fetch(); generate wrapper script and dispatch to JS worker.
 	if fetchCode := req.GetFetchCode(); fetchCode != nil {
+		orgPlan, orgID := getOrganizationPlanAndIdFromContext(ctx)
+		if err := ratelimit.CheckCodeModeRateLimit(
+			ctx,
+			s.Logger,
+			s.Store,
+			s.Flags,
+			&ratelimit.CodeModeQuotaParams{
+				OrgID:   orgID,
+				OrgTier: orgPlan,
+				ApiID:   result.GetApi().GetMetadata().GetId(),
+			},
+		); err != nil {
+			var quotaErr *sberror.QuotaError
+			if errors.As(err, &quotaErr) {
+				metrics.RecordCodeModeQuotaRejection(ctx, quotaErr.Kind, orgID)
+			}
+			return nil, err
+		}
+
 		return s.executeCodeMode(ctx, fetchCode, result, rawResult, req, useAgentKey, send, constants.IncludeDiagnostics(ctx))
 	}
 

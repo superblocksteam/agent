@@ -2,6 +2,7 @@ package flagsclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -191,6 +192,18 @@ func (ldc *launchdarklyClient) GetStringSliceVariationCustomDims(flag string, or
 	return getVariationCustomDims(ldc.client, flag, orgId, dims, fallback, ldc.logger)
 }
 
+func (ldc *launchdarklyClient) GetMapVariation(flag, tier string, orgId string, fallback map[string]any) map[string]any {
+	return getVariationCustomDims(ldc.client, flag, orgId, map[string]string{"tier": tier}, fallback, ldc.logger)
+}
+
+func (ldc *launchdarklyClient) GetMapVariationByOrg(flag, orgId string, fallback map[string]any) map[string]any {
+	return getVariationCustomDims(ldc.client, flag, orgId, nil, fallback, ldc.logger)
+}
+
+func (ldc *launchdarklyClient) GetMapVariationCustomDims(flag string, orgId string, dims map[string]string, fallback map[string]any) map[string]any {
+	return getVariationCustomDims(ldc.client, flag, orgId, dims, fallback, ldc.logger)
+}
+
 func getVariationCustomDims[T any](client ldClient, flag string, orgId string, dims map[string]string, fallback T, logger *zap.Logger) T {
 	ctxBldr := &ldcontext.Builder{}
 	if orgId != "" {
@@ -253,6 +266,22 @@ func getVariation[T any](client ldClient, key string, context ldcontext.Context,
 		for _, v := range value.AsValueArray().AsSlice() {
 			result = append(result, v.StringValue())
 		}
+		return any(result).(T)
+	case map[string]any:
+		defaultValAsValue := ldvalue.CopyArbitraryValue(defaultVal)
+
+		value, err := client.JSONVariation(key, context, defaultValAsValue)
+		if err != nil {
+			logger.Warn("could not retrieve flag value; returning default value", zap.String("flag", key), zap.Error(err))
+			return any(defaultVal).(T)
+		}
+
+		var result map[string]any
+		if err := json.Unmarshal([]byte(value.JSONString()), &result); err != nil {
+			logger.Warn("could not parse JSON flag value; returning default value", zap.String("flag", key), zap.Error(err))
+			return any(defaultVal).(T)
+		}
+
 		return any(result).(T)
 	}
 

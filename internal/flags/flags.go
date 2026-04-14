@@ -38,6 +38,7 @@ type Flags interface {
 	GetJsBindingsUseWasmBindingsSandboxEnabled(tier string, orgId string) bool
 	GetPureJsUseWasmSandboxEnabled(tier string, orgId string) bool
 	GetSdkApiUseWasmWorkerEnabled(tier string, orgId string) bool
+	GetCodeModeRatePerApiV2(tier string, orgId string) map[string]any
 
 	GetStreamVariant(tier string, orgId string) string
 

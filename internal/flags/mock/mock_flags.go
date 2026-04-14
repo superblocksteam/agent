@@ -30,6 +30,26 @@ func (_m *Flags) GetApiTimeoutV2(api *v1.Api, tier string) float64 {
 	return r0
 }
 
+// GetCodeModeRatePerApiV2 provides a mock function with given fields: tier, orgId
+func (_m *Flags) GetCodeModeRatePerApiV2(tier string, orgId string) map[string]interface{} {
+	ret := _m.Called(tier, orgId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCodeModeRatePerApiV2")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(string, string) map[string]interface{}); ok {
+		r0 = rf(tier, orgId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
 // GetComputeMinutesPerWeekV2 provides a mock function with given fields: tier, orgId
 func (_m *Flags) GetComputeMinutesPerWeekV2(tier string, orgId string) float64 {
 	ret := _m.Called(tier, orgId)

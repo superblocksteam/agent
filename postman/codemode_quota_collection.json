@@ -1,0 +1,169 @@
+{
+  "info": {
+    "_postman_id": "codemode-quota-e2e",
+    "name": "Code-Mode Quota E2E",
+    "description": "E2E tests for code-mode (API 2.0) rate limits via ExecuteV3. Sends real v3/execute requests that breach per-user and per-org rate limits through request volume. Requires QUOTAS_ENABLED=true, ephemeral javascriptsdkapi workers, and flags.json targeting the test JWT's org with low limits (org=2/min, user=1/min).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "code-mode quota",
+      "item": [
+        {
+          "name": "first request succeeds within rate budget",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('assert status', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('execution produced output', () => {",
+                  "    pm.expect(response.output).to.not.be.undefined;",
+                  "    pm.expect(response.output.result).to.not.be.undefined;",
+                  "    pm.expect(response.output.result.sdkapi).to.eql('ok');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Superblocks-Authorization",
+                "value": "Bearer {{superblocks_jwt}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"applicationId\": \"00000000-0000-0000-0000-000000000001\",\n    \"commitId\": \"test-commit-for-fetchcode\",\n    \"inputs\": {}\n}"
+            },
+            "url": {
+              "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+              "protocol": "{{orchestrator_scheme}}",
+              "host": ["{{orchestrator_host}}"],
+              "port": "{{orchestrator_port}}",
+              "path": ["v3", "execute"]
+            }
+          }
+        },
+        {
+          "name": "user rate limit breached on second request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('assert response body', () => {",
+                  "    pm.expect(response.message).to.eql('QuotaError: You have exceeded your code-mode execution rate limit of 1 per minute. Contact support to increase this quota.');",
+                  "});",
+                  "",
+                  "pm.test('assert status', () => {",
+                  "    pm.response.to.have.status(429);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Superblocks-Authorization",
+                "value": "Bearer {{superblocks_jwt}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"applicationId\": \"00000000-0000-0000-0000-000000000001\",\n    \"commitId\": \"test-commit-for-fetchcode\",\n    \"inputs\": {}\n}"
+            },
+            "url": {
+              "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+              "protocol": "{{orchestrator_scheme}}",
+              "host": ["{{orchestrator_host}}"],
+              "port": "{{orchestrator_port}}",
+              "path": ["v3", "execute"]
+            }
+          }
+        },
+        {
+          "name": "org rate limit breached on third request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('assert response body', () => {",
+                  "    pm.expect(response.message).to.eql('QuotaError: Your organization has exceeded its code-mode execution rate limit of 2 per minute. Contact support to increase this quota.');",
+                  "});",
+                  "",
+                  "pm.test('assert status', () => {",
+                  "    pm.response.to.have.status(429);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Superblocks-Authorization",
+                "value": "Bearer {{superblocks_jwt}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"applicationId\": \"00000000-0000-0000-0000-000000000001\",\n    \"commitId\": \"test-commit-for-fetchcode\",\n    \"inputs\": {}\n}"
+            },
+            "url": {
+              "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v3/execute",
+              "protocol": "{{orchestrator_scheme}}",
+              "host": ["{{orchestrator_host}}"],
+              "port": "{{orchestrator_port}}",
+              "path": ["v3", "execute"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "orchestrator_scheme",
+      "value": "http"
+    },
+    {
+      "key": "orchestrator_host",
+      "value": "localhost"
+    },
+    {
+      "key": "orchestrator_port",
+      "value": "8080"
+    }
+  ]
+}

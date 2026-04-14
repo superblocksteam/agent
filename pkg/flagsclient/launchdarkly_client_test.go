@@ -149,6 +149,20 @@ func TestGetVariation(t *testing.T) {
 			expected:     []string{"default", "value"},
 		},
 		{
+			name:         "map variation success",
+			variation:    "map",
+			defaultVal:   map[string]any{"value": float64(10), "units": "seconds"},
+			variationErr: nil,
+			expected:     map[string]any{"value": float64(30), "units": "minutes"},
+		},
+		{
+			name:         "map variation error logs and returns default",
+			variation:    "map",
+			defaultVal:   map[string]any{"value": float64(10), "units": "seconds"},
+			variationErr: errors.New("key does not exist"),
+			expected:     map[string]any{"value": float64(10), "units": "seconds"},
+		},
+		{
 			name:         "unsupported variation type returns default",
 			variation:    "unsupported",
 			defaultVal:   complex(3.0, 1.0),
@@ -184,6 +198,11 @@ func TestGetVariation(t *testing.T) {
 
 				defaultValAsValue := toLdValue(test.defaultVal.([]string))
 				expectedAsValue := toLdValue(test.expected.([]string))
+
+				mockLdClient.On("JSONVariation", anyKey, mock.Anything, defaultValAsValue).Return(expectedAsValue, test.variationErr)
+			case "map":
+				defaultValAsValue := ldvalue.CopyArbitraryValue(test.defaultVal)
+				expectedAsValue := ldvalue.CopyArbitraryValue(test.expected)
 
 				mockLdClient.On("JSONVariation", anyKey, mock.Anything, defaultValAsValue).Return(expectedAsValue, test.variationErr)
 			}

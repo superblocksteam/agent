@@ -113,6 +113,10 @@ func (flags *launchdarkly) GetSdkApiUseWasmWorkerEnabled(tier string, orgId stri
 	return flags.GetBoolVariation("sdk-api.wasm_worker.enabled", tier, orgId, flags.options.SdkApiWasmWorkerEnabled)
 }
 
+func (flags *launchdarkly) GetCodeModeRatePerApiV2(tier string, orgId string) map[string]any {
+	return flags.GetMapVariation("agent.quota.api.codemode.rate", tier, orgId, flags.options.DefaultCodeModeRatePerApi)
+}
+
 func (flags *launchdarkly) GetStreamVariant(tier string, orgId string) string {
 	return flags.GetStringVariation("agent.worker.stream.variant", tier, orgId, flags.options.DefaultStreamVariant)
 }

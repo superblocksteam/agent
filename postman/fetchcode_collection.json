@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "fetchcode-e2e",
     "name": "FetchCode - Ephemeral Worker E2E",
-    "description": "E2E tests for FetchCode (API 2.0 code delivery) path using ExecuteV3. Validates that the orchestrator fetches the definition, fetches the code bundle from the server, and executes via javascriptsdkapi ephemeral workers. Run with POSTMAN_ENV=ci-ephemeral.",
+    "description": "E2E tests for FetchCode (code-mode) path using ExecuteV3. Validates that the orchestrator fetches the definition, fetches the code bundle from the server, and executes via javascriptsdkapi ephemeral workers. Includes response time guards (10s threshold). Run with POSTMAN_ENV=ci-ephemeral.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -36,6 +36,10 @@
               "    if (Object.prototype.hasOwnProperty.call(user, 'name')) {",
               "        pm.expect(user.name).to.be.a('string');",
               "    }",
+              "});",
+              "",
+              "pm.test('response time is acceptable', () => {",
+              "    pm.expect(pm.response.responseTime).to.be.below(10000);",
               "});"
             ],
             "type": "text/javascript"
@@ -84,6 +88,10 @@
               "    pm.expect(response.output.result).to.not.be.undefined;",
               "    pm.expect(response.output.result.sdkapi).to.eql('ok');",
               "    pm.expect(response.output.result.from).to.eql('fetchcode');",
+              "});",
+              "",
+              "pm.test('response time is acceptable', () => {",
+              "    pm.expect(pm.response.responseTime).to.be.below(10000);",
               "});"
             ],
             "type": "text/javascript"
@@ -132,6 +140,10 @@
               "    pm.expect(response.output.result).to.not.be.undefined;",
               "    pm.expect(response.output.result.sdkapi).to.eql('ok');",
               "    pm.expect(response.output.result.from).to.eql('fetchcode');",
+              "});",
+              "",
+              "pm.test('response time is acceptable', () => {",
+              "    pm.expect(pm.response.responseTime).to.be.below(10000);",
               "});"
             ],
             "type": "text/javascript"
@@ -181,6 +193,10 @@
               "    pm.expect(response.output.result.sdkapi).to.eql('ok');",
               "    pm.expect(response.output.result.from).to.eql('fetchcode-file-upload');",
               "    pm.expect(response.output.result.contents).to.eql('hello from v3 file upload');",
+              "});",
+              "",
+              "pm.test('response time is acceptable', () => {",
+              "    pm.expect(pm.response.responseTime).to.be.below(10000);",
               "});"
             ],
             "type": "text/javascript"
