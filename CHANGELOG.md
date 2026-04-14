@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Remove GitHub Packages authentication requirement from OPA Docker build, allowing customers to build the OPA image without an `NPM_TOKEN`
+
+## v1.38.0
 - Upgrade Go toolchain pins from 1.25.5 to 1.26.1 and update Docker Go builders to use the published 1.26.1 trixie image
 - Add support for inheriting environment variables in the Apps 3.0 API execution environment (via the `SB_EXECUTION_ENV_INCLUSION_LIST`/`SUPERBLOCKS_EXECUTION_ENV_INCLUSION_LIST` environment variable)
 - Fix JavaScript worker error messages being truncated to just `Error on line N:` with an empty body when the error stack contains only frame lines (no message prefix)
