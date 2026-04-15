@@ -93,7 +93,17 @@ spec:
         - name: SUPERBLOCKS_ORCHESTRATOR_AGENT_TAGS
           value: {{ default "profile:*" .Values.superblocks.agentTags }}
         - name: SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL
-          value: https://traces.intake.superblocks.com:443/v1/traces
+          value: {{ if .Values.superblocks.telemetry.remoteEnabled }}{{ .Values.superblocks.telemetry.otelCollectorUrl | quote }}{{ else }}""{{ end }}
+        - name: SUPERBLOCKS_WORKER_GO_OTEL_COLLECTOR_HTTP_URL
+          value: {{ if .Values.superblocks.telemetry.remoteEnabled }}{{ .Values.superblocks.telemetry.otelCollectorUrl | quote }}{{ else }}""{{ end }}
+        - name: SUPERBLOCKS_WORKER_SANDBOX_OTEL_COLLECTOR_HTTP_URL
+          value: {{ if .Values.superblocks.telemetry.remoteEnabled }}{{ .Values.superblocks.telemetry.otelCollectorUrl | quote }}{{ else }}""{{ end }}
+        - name: __SUPERBLOCKS_AGENT_INTAKE_TRACES_ENABLE
+          value: {{ .Values.superblocks.telemetry.remoteEnabled | quote }}
+        {{- if not .Values.superblocks.telemetry.remoteEnabled }}
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: ""
+        {{- end }}
         - name: SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE
           value: https://logs.intake.superblocks.com
         - name: SUPERBLOCKS_ORCHESTRATOR_INTAKE_METADATA_URL

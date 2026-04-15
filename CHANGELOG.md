@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 - Add code-mode API rate limiting with tier-based defaults configurable via LaunchDarkly. Exceeding the rate returns a 429 with a user-facing message including the limit and window duration.
 - Remove GitHub Packages authentication requirement from OPA Docker build, allowing customers to build the OPA image without an `NPM_TOKEN`
+- Fix OTLP export errors when remote telemetry is disabled: worker processes (Go worker, task-manager) no longer default to `http://127.0.0.1:4318` and the task-manager s6 script now honors an explicitly empty collector URL
 
 ## v1.38.0
 - Upgrade Go toolchain pins from 1.25.5 to 1.26.1 and update Docker Go builders to use the published 1.26.1 trixie image

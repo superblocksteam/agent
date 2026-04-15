@@ -157,7 +157,7 @@ func init() {
 
 	// OpenTelemetry settings
 	pflag.String("agent.environment", "*", "Environment to register the agent under.")
-	pflag.String("otel.collector.http.url", "http://127.0.0.1:4318", "The OTLP HTTP collector URL for traces.")
+	pflag.String("otel.collector.http.url", "", "The OTLP HTTP collector URL for traces. Empty disables OTLP export.")
 	pflag.String("telemetry.deployment.type", "on-prem", "Telemetry deployment type. Valid values: cloud, cloud-prem, on-prem.")
 	pflag.Int("telemetry.batch.max.queue.size", 0, "Max spans queued for export (0 = library default 2048).")
 	pflag.Int("telemetry.batch.max.export.batch.size", 0, "Max spans per export batch (0 = SDK default 512).")

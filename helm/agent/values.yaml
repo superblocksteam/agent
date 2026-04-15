@@ -46,6 +46,10 @@ superblocks:
   telemetry:
     deploymentType: "on-prem"
     remoteEnabled: true
+    # OTLP collector URL for traces, metrics, and logs.
+    # Defaults to Superblocks intake. Override to send telemetry to your own collector (e.g., Alloy, Grafana Agent).
+    # Set to "" to disable OTLP push entirely (metrics are still available via Prometheus scrape on the metrics port).
+    otelCollectorUrl: "https://traces.intake.superblocks.com:443/v1/traces"
   workers:
     python:
       execution:
