@@ -61,7 +61,6 @@ import (
 	grpc_correlation "github.com/superblocksteam/agent/pkg/middleware/correlation"
 	grpc_errors "github.com/superblocksteam/agent/pkg/middleware/errors"
 	grpc_jwt "github.com/superblocksteam/agent/pkg/middleware/jwt"
-	grpc_trace "github.com/superblocksteam/agent/pkg/middleware/trace"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/emitter"
 	"github.com/superblocksteam/agent/pkg/observability/emitter/auditlogs"
@@ -88,6 +87,7 @@ import (
 	"github.com/superblocksteam/run/contrib/waitgroup"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -452,6 +452,11 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	// Set the global MeterProvider AFTER telemetry.Init(), which unconditionally
+	// calls otel.SetMeterProvider() with a bare provider (MetricsEnabled: false).
+	// Our provider has Prometheus + OTLP readers and must be the final global.
+	otel.SetMeterProvider(metricsProvider.SDKProvider())
 
 	var logger *zap.Logger
 	{
@@ -854,7 +859,6 @@ func main() {
 
 		streamInterceptors := []grpc.StreamServerInterceptor{
 			grpc_correlation.StreamServerInterceptor(),
-			grpc_trace.StreamServerInterceptor(),
 			grpc_cancellation.StreamServerInterceptor(logger),
 			grpc_selector.StreamServerInterceptor(
 				grpc_logging.StreamServerInterceptor(log.InterceptorLogger(logger), logOptions...),
@@ -871,7 +875,6 @@ func main() {
 
 		unaryInterceptors := []grpc.UnaryServerInterceptor{
 			grpc_correlation.UnaryServerInterceptor(),
-			grpc_trace.UnaryServerInterceptor(),
 			grpc_cancellation.UnaryServerInterceptor(logger),
 			grpc_selector.UnaryServerInterceptor(
 				grpc_logging.UnaryServerInterceptor(log.InterceptorLogger(logger), logOptions...),

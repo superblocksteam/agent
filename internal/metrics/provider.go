@@ -178,6 +178,11 @@ func (p *Provider) Meter() metric.Meter {
 	return p.meter
 }
 
+// SDKProvider returns the underlying SDK MeterProvider for registering as the global provider.
+func (p *Provider) SDKProvider() *sdkmetric.MeterProvider {
+	return p.provider
+}
+
 // Shutdown gracefully shuts down the metrics provider.
 func (p *Provider) Shutdown(ctx context.Context) error {
 	return p.provider.Shutdown(ctx)
