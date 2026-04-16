@@ -34,8 +34,9 @@ spec:
       {{- end }}
       containers:
       - name: orchestrator
-        image: "{{ .Values.image.repository | default "ghcr.io/superblocksteam/orchestrator" }}:{{ .Values.image.tag | default "latest" }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+        {{- $orchImg := index .Values.image "orchestrator" | default dict }}
+        image: "{{ $orchImg.repository | default "ghcr.io/superblocksteam/orchestrator" }}:{{ $orchImg.tag | default "latest" }}"
+        imagePullPolicy: {{ $orchImg.pullPolicy | default "IfNotPresent" }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         # TODO(frank): Turn the secure flags into env vars with viper.

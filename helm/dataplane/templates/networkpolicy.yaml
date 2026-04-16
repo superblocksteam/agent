@@ -52,7 +52,7 @@ spec:
       destination:
         selector: role == 'sandbox'
         ports:
-          - {{ .Values.sandbox.port }}
+          - {{ .Values.sandbox_workers.sandbox.port }}
 
     # Allow RFC-1918 private ranges (internal VPC)
     # Task-manager needs: Redis, K8s API, OTEL collector
@@ -62,6 +62,14 @@ spec:
           - 10.0.0.0/8
           - 172.16.0.0/12
           - 192.168.0.0/16
+
+    # Allow OTLP egress to observability namespace
+    - action: Allow
+      protocol: TCP
+      destination:
+        namespaceSelector: kubernetes.io/metadata.name == 'observability'
+        ports:
+        - 4318 # HTTP OTLP
 
     # Allow HTTPS egress (trace export, JWKS for integration executor auth)
     - action: Allow
@@ -106,14 +114,16 @@ spec:
       destination:
         selector: role == 'task-manager'
         ports:
-          - {{ .Values.grpc.port }}
+          - {{ .Values.sandbox_workers.variableStore.grpc.port }}
+          - {{ .Values.sandbox_workers.variableStore.http.port }}
+          - {{ .Values.sandbox_workers.streamingProxy.grpc.port }}
           {{- if .Values.sandbox_workers.integrationExecutor.enabled }}
           - {{ .Values.sandbox_workers.integrationExecutor.grpc.port }}
           {{- end }}
 
-    {{- if .Values.network.additionalAllowedCIDRs }}
+    {{- if .Values.sandbox_workers.network.additionalAllowedCIDRs }}
     # Customer-specified allowed CIDRs (internal APIs, etc.)
-    {{- range .Values.network.additionalAllowedCIDRs }}
+    {{- range .Values.sandbox_workers.network.additionalAllowedCIDRs }}
     - action: Allow
       destination:
         nets:
@@ -155,7 +165,7 @@ spec:
         selector: role == 'task-manager'
       destination:
         ports:
-          - {{ .Values.sandbox.port }}
+          - {{ .Values.sandbox_workers.sandbox.port }}
     # Deny all other ingress
     - action: Deny
 
@@ -180,7 +190,9 @@ spec:
         selector: role == 'sandbox'
       destination:
         ports:
-          - {{ .Values.grpc.port }}
+          - {{ .Values.sandbox_workers.variableStore.grpc.port }}
+          - {{ .Values.sandbox_workers.variableStore.http.port }}
+          - {{ .Values.sandbox_workers.streamingProxy.grpc.port }}
           {{- if .Values.sandbox_workers.integrationExecutor.enabled }}
           - {{ .Values.sandbox_workers.integrationExecutor.grpc.port }}
           {{- end }}
@@ -349,28 +361,15 @@ spec:
       ports:
       - 6379
 
-# Begin Ephemeral Worker Network Policies
+# Begin Sandbox Worker Network Policies
 ---
 apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
-  name: worker-ephemeral-egress-allow-all
-spec:
-  order: 200
-  selector: component == 'worker.ephemeral'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: worker-ephemeral-egress-deny-cluster
+  name: sandbox-worker-egress-deny-cluster
 spec:
   order: 190
-  selector: component == 'worker.ephemeral'
+  selector: component == 'worker.sandbox'
   types:
   - Egress
   egress:
@@ -388,216 +387,15 @@ spec:
 apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
-  name: worker-ephemeral-egress-allow-orchestrator
+  name: sandbox-worker-egress-allow-orchestrator
 spec:
   order: 182
-  selector: component == 'worker.ephemeral'
+  selector: component == 'worker.sandbox'
   types:
   - Egress
   egress:
   - action: Allow
     destination:
       selector: component == 'orchestrator'
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: worker-ephemeral-egress-allow-dns
-spec:
-  order: 180
-  selector: component == 'worker.ephemeral'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-    protocol: UDP
-    destination:
-      services:
-        name: kube-dns
-        namespace: kube-system
-      ports:
-      - 53
-  - action: Allow
-    protocol: TCP
-    destination:
-      services:
-        name: kube-dns
-        namespace: kube-system
-      ports:
-      - 53
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: worker-ephemeral-egress-allow-otlp
-spec:
-  order: 170
-  selector: component == 'worker.ephemeral'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-    protocol: TCP
-    destination:
-      namespaceSelector: kubernetes.io/metadata.name == 'observability'
-      ports:
-      - 4318 # HTTP OTLP
-# End Ephemeral Worker Network Policies
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-egress-deny-aws-instance-metadata
-spec:
-  order: 91
-  selector: component == 'worker.js'
-  types:
-  - Egress
-  egress:
-  - action: Deny
-    destination:
-      nets:
-      # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
-      - 169.254.169.254/32
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-egress-deny-rfc1918
-spec:
-  order: 90
-  selector: component == 'worker.js'
-  types:
-  - Egress
-  egress:
-  - action: Deny
-    destination:
-      nets:
-      - 10.0.0.0/8
-      - 172.16.0.0/12
-      - 192.168.0.0/16
-
-{{- range $name, $rule := .Values.networkpolicy.egress }}
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-{{ $name }}
-spec:
-  order: {{ $rule.priority }}
-  selector: component == 'worker.js'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-    protocol: TCP
-    destination:
-      nets:
-      {{- range $rule.cidrs }}
-      - {{ . }}
-      {{- end }}
-      ports:
-      {{- range $rule.ports }}
-      - {{ . }}
-      {{- end }}
-{{- end }}
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-controller-egress-allow
-spec:
-  order: 88
-  selector: component == 'worker.js'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-    destination:
-      namespaceSelector: 'agent-namespace == "true"'
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-egress-allow-dns-tcp
-spec:
-  order: 81
-  selector: component == 'worker.js'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-    protocol: TCP
-    destination:
-      services:
-        name: kube-dns
-        namespace: kube-system
-      ports:
-      - 53
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-egress-allow-dns-udp
-spec:
-  order: 80
-  selector: component == 'worker.js'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-    protocol: UDP
-    destination:
-      services:
-        name: kube-dns
-        namespace: kube-system
-      ports:
-      - 53
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-allow-otlp-tcp-port
-spec:
-  order: 70
-  selector: component == 'worker.js'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-    protocol: TCP
-    destination:
-      nets:
-      - 10.0.0.0/8
-      ports:
-      - 4318 # HTTP OTLP
-      - 4317 # GRPC OTLP
-
----
-apiVersion: crd.projectcalico.org/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-allow-redis-tcp-port
-spec:
-  order: 60
-  selector: component == 'worker.js'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-    protocol: TCP
-    destination:
-      nets:
-      - 10.0.0.0/8
-      ports:
-      - 6379
-
+# End Sandbox Worker Network Policies
 {{- end }}

@@ -5,19 +5,21 @@
 # 1. Pull work from Redis queue
 # 2. Dynamically create sandbox Jobs for execution
 # 3. Communicate with sandbox via gRPC
-# 4. Delete sandbox Jobs after execution
-# 5. Self-terminate (ephemeral mode)
+# 4. (if ephemeral is true) Delete sandbox Jobs after execution
+# 5. Manage sandbox lifecycle (create new sandboxes when necessary)
 #
 # Network isolation is enforced via Kubernetes NetworkPolicy on sandbox Jobs.
 # Task-manager has full internal network access; sandbox Jobs are restricted.
 #
 # Task-manager container resources: chart defaults are deep-copied, then
 # mergeOverwrite applies per-fleet ($v.taskManager).resources (fleet wins).
+# (Sprig merge also gives precedence to the right-hand map in `a | merge b`;
+# swapping operands inverts precedence—do not "fix" without re-checking output.)
 # =============================================================================
 {{- range $k, $v := .Values.sandbox_workers.fleets }}
 {{- $language := $v.language | required "language is required (python or javascript)" }}
 {{- $sandboxConfig := index $.Values.sandbox_workers.sandbox $language }}
-{{- $podAnnotations := merge (deepCopy ($v.podAnnotations | default $.Values.podAnnotations | default dict)) (dict "karpenter.sh/do-not-disrupt" "true") }}
+{{- $podAnnotations := merge (deepCopy ($v.podAnnotations | default $.Values.sandbox_workers.podAnnotations | default dict)) (dict "karpenter.sh/do-not-disrupt" "true") }}
 {{- $tmShutdown := merge (index $v "shutdown" | default dict) (index $.Values.sandbox_workers.taskManager "shutdown" | default dict) }}
 {{- /* Sprig `default` treats false as empty; use hasKey so includeStandardStreams: false is honored */}}
 {{- $includeStandardStreams := true }}
@@ -74,7 +76,7 @@ spec:
     {{- end }}
   {{- end }}
   scalingStrategy:
-    {{- toYaml ($v.keda.scalingStrategy | default $.Values.sandbox_workers.keda.scalingStrategy | default (dict "strategy" "accurate")) | nindent 4 }}
+    {{- toYaml ($v.keda.scalingStrategy | default $.Values.sandbox_workers.keda.scalingStrategy) | nindent 4 }}
   jobTargetRef:
     parallelism: 1
     completions: 1
@@ -136,11 +138,14 @@ spec:
           - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.sandbox_workers.taskManager.healthFilePath }}"
           # Logging
           - "--log.level={{ $.Values.sandbox_workers.observability.logging.level }}"
+          # Sandbox language
+          - "--sandbox.language={{ $language }}"
           # Sandbox mode - create separate sandbox Jobs
           - "--sandbox.namespace={{ $.Release.Namespace }}"
           - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
           - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox_workers.sandbox.port }}"
-          - "--sandbox.ttl={{ $.Values.sandbox_workers.sandboxJob.ttlSecondsAfterFinished | default 60 }}"
+          - "--sandbox.pool.size={{ (($v.sandbox).poolSize) | default $.Values.sandbox_workers.sandbox.poolSize | default 1 }}"
+          - "--sandbox.ttl={{ $.Values.sandbox_workers.sandboxJob.ttlSecondsAfterFinished }}"
           {{- if or $.Values.sandbox_workers.sandbox.runtimeClassName $.Values.sandbox_workers.runtimeClassName }}
           - "--sandbox.runtimeClass={{ $.Values.sandbox_workers.sandbox.runtimeClassName | default $.Values.sandbox_workers.runtimeClassName }}"
           {{- end }}
@@ -159,6 +164,24 @@ spec:
           {{- else }}
           {{- range ($.Values.sandbox_workers.sandbox.tolerations | default $.Values.sandbox_workers.tolerations) }}
           - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
+          {{- end }}
+          {{- end }}
+          {{- with (($v.sandbox).resources) | default $sandboxConfig.resources }}
+          {{- with .requests }}
+          {{- with .cpu }}
+          - "--sandbox.resources.requests.cpu={{ . }}"
+          {{- end }}
+          {{- with .memory }}
+          - "--sandbox.resources.requests.memory={{ . }}"
+          {{- end }}
+          {{- end }}
+          {{- with .limits }}
+          {{- with .cpu }}
+          - "--sandbox.resources.limits.cpu={{ . }}"
+          {{- end }}
+          {{- with .memory }}
+          - "--sandbox.resources.limits.memory={{ . }}"
+          {{- end }}
           {{- end }}
           {{- end }}
           # Shutdown configuration
@@ -258,18 +281,7 @@ spec:
           {{- if $.Values.sandbox_workers.observability.tracing.url }}
           - "--otel.collector.http.url={{ $.Values.sandbox_workers.observability.tracing.url }}"
           {{- end }}
-          {{- if $.Values.sandbox_workers.observability.tracing.batchTimeout }}
-          - "--otel.batcher.batch.timeout={{ $.Values.sandbox_workers.observability.tracing.batchTimeout }}"
-          {{- end }}
-          {{- if $.Values.sandbox_workers.observability.tracing.exportTimeout }}
-          - "--otel.batcher.export.timeout={{ $.Values.sandbox_workers.observability.tracing.exportTimeout }}"
-          {{- end }}
-          {{- if $.Values.sandbox_workers.observability.tracing.maxExportBatchSize }}
-          - "--otel.batcher.export.batch.max={{ $.Values.sandbox_workers.observability.tracing.maxExportBatchSize }}"
-          {{- end }}
-          {{- if $.Values.sandbox_workers.observability.tracing.maxQueueSize }}
-          - "--otel.batcher.export.queue.max={{ $.Values.sandbox_workers.observability.tracing.maxQueueSize }}"
-          {{- end }}
+          - "--telemetry.deployment.type={{ $.Values.sandbox_workers.telemetry.deploymentType }}"
           # Integration executor - allows sandbox to execute integrations via orchestrator
           {{- $ieEnabled := $.Values.sandbox_workers.integrationExecutor.enabled }}
           {{- with ($v.integrationExecutor) }}
@@ -280,7 +292,7 @@ spec:
           {{- if $ieEnabled }}
           - "--integration.executor.enabled=true"
           - "--integration.executor.grpc.port={{ (($v.integrationExecutor).grpc).port | default $.Values.sandbox_workers.integrationExecutor.grpc.port }}"
-          - "--orchestrator.grpc.address={{ include "orchestrator.fullname" $ }}-grpc:{{ $.Values.service.ports.grpc }}"
+          - "--orchestrator.grpc.address={{ $.Values.sandbox_workers.integrationExecutor.orchestratorGrpcAddress | default (printf "%s-grpc:%v" (include "orchestrator.fullname" $) $.Values.service.ports.grpc) }}"
           {{- end }}
           # Extra args from values
           {{- with $.Values.sandbox_workers.taskManager.extraArgs }}
@@ -316,21 +328,27 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          {{- if $.Values.sandbox_workers.queue.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: queue-redis-token
                 key: token
+          {{- end }}
+          {{- if $.Values.sandbox_workers.kvstore.password }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: kvstore-redis-token
                 key: token
+          {{- end }}
+          {{- if $.Values.sandbox_workers.superblocks.key }}
           - name: SUPERBLOCKS_WORKER_SANDBOX_SUPERBLOCKS_KEY
             valueFrom:
               secretKeyRef:
                 name: dataplane-superblocks-key
                 key: key
+          {{- end }}
           {{- with ($v.taskManager).extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -355,6 +373,10 @@ spec:
         {{- end }}
         {{- with $v.affinity | default $.Values.sandbox_workers.affinity }}
         affinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with $v.topologySpreadConstraints | default $.Values.sandbox_workers.topologySpreadConstraints }}
+        topologySpreadConstraints:
           {{- toYaml . | nindent 10 }}
         {{- end }}
         {{- with $v.tolerations | default $.Values.sandbox_workers.tolerations }}

@@ -1,5 +1,5 @@
 # =============================================================================
-# Calico Network Policies for Ephemeral Workers
+# Calico Network Policies for Sandbox Workers
 #
 # Uses Calico NetworkPolicy CRD with explicit order to take precedence over
 # the allow-all GlobalNetworkPolicy (which has no order).

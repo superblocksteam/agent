@@ -5,8 +5,8 @@
 # 1. Pull work from Redis queue
 # 2. Dynamically create sandbox Jobs for execution
 # 3. Communicate with sandbox via gRPC
-# 4. Delete sandbox Jobs after execution
-# 5. Self-terminate (ephemeral mode)
+# 4. (if ephemeral is true) Delete sandbox Jobs after execution
+# 5. Manage sandbox lifecycle (create new sandboxes when necessary)
 #
 # Network isolation is enforced via Kubernetes NetworkPolicy on sandbox Jobs.
 # Task-manager has full internal network access; sandbox Jobs are restricted.

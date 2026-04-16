@@ -1,13 +1,4 @@
 ---
-x-tolerations: &tolerations
-  tolerations:
-    - effect: NoSchedule
-      key: dedicated
-      value: lang-exec-worker
-      operator: Equal
-x-selector: &selector
-  nodeSelector:
-    superblocks.com/node-type: lang-exec-worker
 superblocks:
   url: 'https://api.superblocks.com'
 autoscaling:
@@ -114,24 +105,16 @@ image:
     repository: ghcr.io/superblocksteam/orchestrator
     tag: latest
     pullPolicy: IfNotPresent
-  javascript:
-    repository: ghcr.io/superblocksteam/worker.js
-    tag: latest
-    pullPolicy: IfNotPresent
-  ephemeral:
-    repository: ghcr.io/superblocksteam/ephemeral-worker
-    tag: latest
-    pullPolicy: IfNotPresent
 bindings:
   # Enable WASM sandbox for bindings evaluation.
   # LaunchDarkly takes priority when configured; this is used as fallback.
-  wasmSandboxEnabled: false
+  wasmSandboxEnabled: true
 pureJs:
   # Enable WASM sandbox for pure JS step execution.
   # LaunchDarkly takes priority when configured; this is used as fallback.
-  wasmSandboxEnabled: false
+  wasmSandboxEnabled: true
 networkpolicy:
-  disable: true
+  disable: false
 events:
   cloud:
     enabled: false
@@ -144,38 +127,189 @@ gateway:
   timeouts:
     request: 10m
     backendRequest: 10m
-worker_js:
-  deploy: false
-  !!merge <<: *tolerations
-  !!merge <<: *selector
-  fleets:
-    main.ba.javascript.shared.auxillary:
-      bucket: BA
-      async: true
-      events: '!execute'
-      group: one
-      package: all
-      resources:
-        requests:
-          memory: 400Mi
-      autoscaling:
-        min: 1
-    main.ba.javascript.shared.execute:
-      bucket: BA
-      async: true
-      group: two
-      package: non-lang
-      events: execute
-    main.be.javascript.shared.execute:
-      bucket: BE
-      async: true
-      group: three
-      package: non-lang
-      events: execute
-      autoscaling:
-        min: 1
+# Sandbox workers (KEDA ScaledJobs): Redis streams → task-manager → pool of sandboxes.
 sandbox_workers:
-  fleets: {}
+  fleets:
+    main.sandbox.javascript.auxillary:
+      language: javascript
+      consumerGroup: main-sandbox
+      ephemeral: false
+      triggerStreams:
+        - agent.main.bucket.BA.plugin.mssql.event.execute
+        - agent.main.bucket.BE.plugin.mssql.event.execute
+        - agent.main.bucket.BA.plugin.mssql.event.metadata
+        - agent.main.bucket.BA.plugin.mssql.event.test
+        - agent.main.bucket.BA.plugin.mssql.event.pre_delete
+        - agent.main.bucket.BA.plugin.postgres.event.execute
+        - agent.main.bucket.BE.plugin.postgres.event.execute
+        - agent.main.bucket.BA.plugin.postgres.event.metadata
+        - agent.main.bucket.BA.plugin.postgres.event.test
+        - agent.main.bucket.BA.plugin.postgres.event.pre_delete
+        - agent.main.bucket.BA.plugin.restapi.event.execute
+        - agent.main.bucket.BE.plugin.restapi.event.execute
+        - agent.main.bucket.BA.plugin.restapi.event.metadata
+        - agent.main.bucket.BA.plugin.restapi.event.test
+        - agent.main.bucket.BA.plugin.restapi.event.pre_delete
+        - agent.main.bucket.BA.plugin.restapiintegration.event.execute
+        - agent.main.bucket.BE.plugin.restapiintegration.event.execute
+        - agent.main.bucket.BA.plugin.restapiintegration.event.metadata
+        - agent.main.bucket.BA.plugin.restapiintegration.event.test
+        - agent.main.bucket.BA.plugin.restapiintegration.event.pre_delete
+        - agent.main.bucket.BA.plugin.s3.event.execute
+        - agent.main.bucket.BE.plugin.s3.event.execute
+        - agent.main.bucket.BA.plugin.s3.event.metadata
+        - agent.main.bucket.BA.plugin.s3.event.test
+        - agent.main.bucket.BA.plugin.s3.event.pre_delete
+      buckets:
+        - BA
+        - BE
+      plugins:
+        - "*"
+        - "-javascript"
+        - "-javascriptwasm"
+        - "-javascriptsdkapi"
+        - "-python"
+      events:
+        - execute
+        - metadata
+        - test
+        - pre_delete
+      taskManager:
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 400m
+            memory: 128Mi
+      sandbox:
+        resources:
+          limits:
+            memory: 4Gi
+          requests:
+            cpu: 600m
+            memory: 700Mi
+      keda:
+        pollingInterval: 1
+        minReplicaCount: 5
+        maxReplicaCount: 20
+      shutdown:
+        terminationGracePeriodSeconds: 600
+        delay: 4m
+        maxJitter: 2m
+    main.sandbox.javascriptwasm.execute:
+      language: javascript
+      consumerGroup: main-sandbox
+      ephemeral: false
+      triggerStreams:
+        - agent.main.bucket.BA.plugin.javascriptwasm.event.execute
+        - agent.main.bucket.BE.plugin.javascriptwasm.event.execute
+      plugins:
+        - javascriptwasm
+      events:
+        - execute
+        - metadata
+        - test
+        - pre_delete
+      buckets:
+        - BA
+        - BE
+      taskManager:
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 400m
+            memory: 128Mi
+      sandbox:
+        resources:
+          limits:
+            memory: 4Gi
+          requests:
+            cpu: 600m
+            memory: 700Mi
+      keda:
+        pollingInterval: 1
+        minReplicaCount: 10
+        maxReplicaCount: 20
+      shutdown:
+        terminationGracePeriodSeconds: 600
+        delay: 4m
+        maxJitter: 2m
+    main.ephemeral.javascript.execute:
+      language: javascript
+      consumerGroup: main-sandbox-ephemeral
+      ephemeral: true
+      queue:
+        executionPool: 2
+      triggerStreams:
+        - agent.main.bucket.BA.plugin.javascript.event.execute
+        - agent.main.bucket.BE.plugin.javascript.event.execute
+      buckets:
+        - BA
+        - BE
+      plugins:
+        - javascript
+      events:
+        - execute
+        - metadata
+        - test
+        - pre_delete
+      sandbox:
+        poolSize: 3
+      keda:
+        pollingInterval: 1
+        minReplicaCount: 75
+        maxReplicaCount: 150
+    main.ephemeral.javascriptsdkapi.execute:
+      language: javascript
+      consumerGroup: main-sandbox-ephemeral
+      ephemeral: true
+      queue:
+        executionPool: 2
+      triggerStreams:
+        - agent.main.bucket.BA.plugin.javascriptsdkapi.event.execute
+        - agent.main.bucket.BE.plugin.javascriptsdkapi.event.execute
+      plugins:
+        - javascriptsdkapi
+      events:
+        - execute
+        - metadata
+        - test
+        - pre_delete
+      buckets:
+        - BA
+        - BE
+      sandbox:
+        poolSize: 3
+      keda:
+        pollingInterval: 1
+        minReplicaCount: 100
+        maxReplicaCount: 200
+    main.ephemeral.python.execute:
+      language: python
+      consumerGroup: main-sandbox-ephemeral
+      ephemeral: true
+      queue:
+        executionPool: 2
+      triggerStreams:
+        - agent.main.bucket.BA.plugin.python.event.execute
+        - agent.main.bucket.BE.plugin.python.event.execute
+      buckets:
+        - BA
+        - BE
+      plugins:
+        - python
+      events:
+        - execute
+        - metadata
+        - test
+        - pre_delete
+      sandbox:
+        poolSize: 3
+      keda:
+        pollingInterval: 1
+        minReplicaCount: 150
+        maxReplicaCount: 300
   # Task Manager configuration
   taskManager:
     image:
@@ -191,30 +325,29 @@ sandbox_workers:
     # Additional args to pass to the task-manager
     extraArgs: []
     # Health file path for file-based probes
-    healthFilePath: /tmp/worker_healthy
+    healthFilePath: "/tmp/worker_healthy"
     # Set to false to disable all probes (startup, readiness, liveness)
-    probesEnabled: true
-    # Startup probe - checks if health file exists (created when Redis and sandbox are ready)
+    probesEnabled: false
+    # Startup probe — health file exists once Redis and sandbox are ready
     startupProbe:
       exec:
         command:
           - cat
-          - /tmp/worker_healthy
-      failureThreshold: 30 # Allow up to 60 seconds for startup (30 * 2s)
+          - "/tmp/worker_healthy"
+      failureThreshold: 30 # Allow up to ~60s startup (30 * 2s period)
       periodSeconds: 2
-    # Readiness probe - checks if Redis and sandbox are reachable
+    # Readiness probe — Redis and sandbox reachable
     readinessProbe:
       exec:
         command:
           - cat
-          - /tmp/worker_healthy
-    # Liveness probe - checks if task-manager and sandbox are alive
+          - "/tmp/worker_healthy"
+    # Liveness probe — task-manager and sandbox still healthy
     livenessProbe:
       exec:
         command:
           - cat
-          - /tmp/worker_healthy
-    # Shutdown configuration - termination grace period and delay before draining the worker
+          - "/tmp/worker_healthy"
     shutdown:
       terminationGracePeriodSeconds: 600 # 10 minutes
       # Base delay before, after receiving a termination signal, before draining the worker.
@@ -225,9 +358,11 @@ sandbox_workers:
   sandbox:
     # Default gRPC port for sandbox pods (used in NetworkPolicy)
     port: 50051
+    # Number of sandbox Jobs per task-manager pod (override per fleet with fleets.<name>.sandbox.poolSize)
+    poolSize: 5
     # Runtime class for sandbox pods (e.g., gvisor for secure isolation)
     # Falls back to global runtimeClassName if not set
-    runtimeClassName: ""
+    runtimeClassName: gvisor
     python:
       image:
         repository: ghcr.io/superblocksteam/python-sandbox
@@ -257,31 +392,28 @@ sandbox_workers:
       # Additional args/env for the javascript sandbox
       extraEnv: []
   # Sandbox Job configuration
-  # Task-manager creates sandbox Jobs dynamically for each execution
+  # Task-manager creates and manages the lifecycle of sandboxes
+  # In ephemeral mode, the task-manager will dynamically create a new sandbox Job for each execution
   sandboxJob:
-    # Auto-delete job 60s after completion (success or failure)
-    ttlSecondsAfterFinished: 60
+    # Auto-delete Job after completion (success or failure)
+    ttlSecondsAfterFinished: 0
     # No restart attempts on failure
     backoffLimit: 0
-  # KEDA ScaledJob configuration
+  # KEDA ScaledJob defaults (fleets may override via fleets.<name>.keda)
   keda:
     pollingInterval: 5
     successfulJobsHistoryLimit: 3
     failedJobsHistoryLimit: 3
-    ttlSecondsAfterFinished: 30 # Auto-cleanup completed pods after 30 seconds
+    ttlSecondsAfterFinished: 0 # Auto-cleanup completed task-manager pods after completion
     maxReplicaCount: 100
     minReplicaCount: 0
-    # lagCount: Target lag per pod for scaling (optional, omitted if not set)
-    # When set, KEDA scales to (lag / lagCount) pods
-    # Example: lag=10, lagCount=5 -> 2 pods
-    # lagCount: "1"
-    # activationLagCount: Minimum lag before scaling starts (default: "1")
-    activationLagCount: "1"
+    # Dataplane chart: scale as soon as there is backlog per trigger
+    lagCount: '1'
     # Scaling strategy: "default", "custom", or "accurate"
-    # "accurate" provides more precise scaling based on pending jobs
+    # "sum" matches multi-trigger aggregation when used
     scalingStrategy:
-      strategy: accurate
-    # Scaling triggers - typically Redis stream length
+      strategy: default
+      multipleScalersCalculation: "sum"
     triggers: []
     # Example:
     # triggers:
@@ -294,20 +426,19 @@ sandbox_workers:
     #       activationLagCount: "1"
   # Redis transport configuration
   queue:
-    deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)
-    tls: false
-    host: redis
+    tls: true
+    host: "<override>"
     servername: ""
     port: 6379
-    password: ""
+    password: "<override>"
     blockDuration: 5s
-    batchSize: 10
-    executionPool: 100
+    batchSize: 2
+    executionPool: 50
     pool:
-      min: 5
-      max: 10
+      min: 10
+      max: 50
     timeout:
-      dial: 5s
+      dial: 20s
       read: 5m
       write: 10s
       pool: 5m
@@ -316,27 +447,26 @@ sandbox_workers:
       maxTime: 10m
   # Redis kvstore configuration
   kvstore:
-    deploy: false # Set to true to deploy Redis as a subchart (for local/CI testing)
-    tls: false
-    host: redis
+    tls: true
+    host: "<override>"
     servername: ""
     port: 6379
-    password: ""
+    password: "<override>"
     pool:
-      min: 5
-      max: 10
+      min: 10
+      max: 50
     timeout:
-      dial: 5s
+      dial: 20s
       read: 5m
       write: 10s
       pool: 5m
-  # Variable Store gRPC service configuration
+  # Variable Store gRPC/HTTP service configuration
   variableStore:
     grpc:
       port: 50050
     http:
       port: 8080
-  # Streaming Proxy gRPC service configuration
+  # Streaming proxy gRPC service configuration
   streamingProxy:
     grpc:
       port: 50052
@@ -345,9 +475,12 @@ sandbox_workers:
   # to execute integrations by proxying requests to the orchestrator.
   # Requires orchestrator gRPC service to be accessible from task-manager pods.
   integrationExecutor:
-    enabled: false
+    enabled: true
     grpc:
       port: 50053
+    # Internal gRPC address of the orchestrator (e.g., "orchestrator-grpc:8081").
+    # When empty, defaults to <orchestrator.fullname>-grpc:<service.ports.grpc>.
+    orchestratorGrpcAddress: ""
   # Worker configuration
   worker:
     group: main
@@ -356,28 +489,51 @@ sandbox_workers:
     # When generating stream keys (no worker.stream.keys override), include standard
     # keys (agent.<group>.bucket.<bucket>.plugin.<plugin>.event.<event>).
     includeStandardStreams: true
-    # Optional: non-empty stream variants (e.g. ephemeral) — combined with standard keys when includeStandardStreams is true.
+    # Optional stream variants combined with standard keys when includeStandardStreams is true
     # streamVariants:
     #   - ephemeral
   # Observability
   observability:
     logging:
       level: info
+      url: https://logs.intake.superblocks.com
+      enabled: true
     metrics:
-      url: ""
+      url: http://otelcol-collector.observability.svc.cluster.local:4318
     tracing:
-      url: ""
-      batchTimeout: 1s
-      exportTimeout: 15s
-      maxExportBatchSize: 1000
-      maxQueueSize: 5000
-  # Pod configuration
-  nodeSelector: {}
-  tolerations: []
+      url: http://otelcol-collector.observability.svc.cluster.local:4318
+  # Passed to task-manager as --telemetry.deployment.type
+  telemetry:
+    deploymentType: "cloud-prem"
+  # Pod scheduling for task-manager pods (ScaledJob template)
+  nodeSelector:
+    superblocks.com/node-type: gvisor
+  tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      value: gvisor
+      operator: Equal
   affinity: {}
+  # Spread task-manager pods across zones / nodes when supported by the cluster
+  topologySpreadConstraints:
+    - maxSkew: 5
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          role: task-manager
+    - maxSkew: 5
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          role: task-manager
   podAnnotations: {}
+  # Superblocks agent key (when set, mounts SUPERBLOCKS_WORKER_SANDBOX_SUPERBLOCKS_KEY from dataplane-superblocks-key)
+  superblocks:
+    key: "<override>"
   # Network isolation configuration
-  # Blocks sandbox from accessing internal infrastructure via iptables
+  # Blocks sandbox from accessing internal infrastructure via iptables / policy helpers in templates
   network:
     # VPC CIDR to block - set this to your cloud VPC range
     # Leave empty to block ALL RFC 1918 private ranges (10.x, 172.16.x, 192.168.x)
@@ -389,15 +545,14 @@ sandbox_workers:
     # Additional CIDRs to allow (list) - for customer internal APIs that should be accessible
     # These CIDRs will be explicitly allowed even if they fall within blocked ranges
     additionalAllowedCIDRs: []
-  # gVisor runtime class name (if using gVisor for sandbox isolation)
-  # Set this to your gVisor RuntimeClass name (e.g., "gvisor", "runsc")
-  runtimeClassName: ""
-  # Image pull secrets
+  # Default RuntimeClass for sandbox workers (e.g. gvisor / runsc)
+  runtimeClassName: gvisor
+  # Image pull secrets for task-manager / sandbox images (registry in credentials)
   image:
     credentials:
       registry: ghcr.io
-      username: '<override>'
-      password: '<override>'
+      username: "<override>"
+      password: "<override>"
 externalSecrets:
   enabled: false
   refreshInterval: 1h
