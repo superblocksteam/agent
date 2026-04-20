@@ -75,11 +75,11 @@
           default = pkgs.mkShell {
             packages = [
               pkgs.buf
-              pkgs.corepack_20
+              pkgs.corepack_22
               goPackage
               pkgs.go-mockery
               pkgs.gotestsum
-              pkgs.nodejs_20
+              pkgs.nodejs_22
               pkgs.pprof
               pythonPackage
             ];

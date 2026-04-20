@@ -9,7 +9,7 @@
     "./bootstrap": "./src/bootstrap.js"
   },
   "engines": {
-    "node": "20.19.5"
+    "node": ">= 22"
   },
   "scripts": {
     "start": "chokidar '**/*.ts' '../../shared-backend/**/*' -c 'npm run build'",

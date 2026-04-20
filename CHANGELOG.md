@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
--
+- Upgrade JavaScript worker Node.js runtime from 20.19.5 to 22.22.2 (LTS). All customer-facing dependencies remain at their current versions.
 
 ## v1.39.0
 - Fix OTLP export errors when remote telemetry is disabled: worker processes (Go worker, task-manager) no longer default to `http://127.0.0.1:4318` and the task-manager s6 script now honors an explicitly empty collector URL

@@ -2,8 +2,9 @@
 # JavaScript plugins sandbox for ephemeral worker
 # Executes JavaScript plugin steps in a sandboxed gRPC server
 
-ARG NODE_VERSION=20.19.5
+ARG NODE_VERSION=22.22.2
 ARG TRANSPORT_GRPC_PORT=50051
+ARG LZ4_VERSION=0.6.5
 ARG EMSDK_VERSION=3.1.65
 
 
@@ -11,6 +12,7 @@ ARG EMSDK_VERSION=3.1.65
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION} AS builder
 
 ARG EMSDK_VERSION
+ARG LZ4_VERSION
 
 WORKDIR /app
 
@@ -74,6 +76,15 @@ RUN . $HOME/.bashrc && pnpm --filter javascript-plugins-sandbox deploy --prod /d
       cp /app/workers/javascript/packages/plugins/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js \
         /deploy/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js; \
     fi
+
+# Rebuild lz4 native addon (xxhash.node) for the current Node ABI.
+# The pnpm store cache may contain stale binaries compiled for a different
+# Node major version. clean-modules strips binding.gyp from deploy, so we
+# rebuild from the workspace source and copy the resulting .node files.
+RUN . $HOME/.bashrc && \
+    cd /app/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4 && \
+    node-gyp rebuild && \
+    cp -r build /deploy/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4/
 
 # Copy generated protobuf types to the deployed dist
 RUN cp -r /app/workers/ephemeral/javascript-plugins-sandbox/src/types /deploy/dist/

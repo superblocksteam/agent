@@ -6,10 +6,11 @@
 ARG DEBIAN_TRIXIE_VERSION=20250811
 ARG GO_VERSION=1.26.1
 ARG PYTHON_VERSION=3.10.18
-ARG NODE_VERSION_MAJOR=20
-ARG NODE_VERSION=20.19.5
+ARG NODE_VERSION_MAJOR=22
+ARG NODE_VERSION=22.22.2
 ARG S6_OVERLAY_VERSION=3.2.1.0
 ARG DEASYNC_VERSION=0.1.29
+ARG LZ4_VERSION=0.6.5
 ARG EMSDK_VERSION=3.1.65
 ARG LIBEXPAT_VERSION=2.6.3
 ARG REQUIREMENTS_FILE=requirements-slim.txt
@@ -80,6 +81,7 @@ ARG NODE_VERSION_MAJOR
 ARG GO_VERSION
 ARG S6_OVERLAY_VERSION
 ARG DEASYNC_VERSION
+ARG LZ4_VERSION
 ARG EMSDK_VERSION
 ARG WORKER_JS_PREPARE_FS_ARGS
 ARG FLEET_PACKAGE
@@ -163,7 +165,9 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     cp -r workers/ephemeral/javascript-plugins-sandbox/src/types /deploy-sandbox-js/dist/ && \
     npx clean-modules --directory /deploy-sandbox-js/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/'
 
-# Install build the deasync binding for this architecture
+# Rebuild native addons in the deployed node_modules for the current Node ABI.
+# pnpm deploy copies binaries from the store cache, which may contain stale
+# artifacts compiled for a different Node major version.
 RUN --mount=type=cache,target=/root/.npm \
     npm install -g node-gyp                                                                                                                   && \
     git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblocksteam/deasync.git                                           && \
@@ -174,7 +178,11 @@ RUN --mount=type=cache,target=/root/.npm \
     mkdir -p /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build                                                 && \
     cp build/Release/deasync.node /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node               && \
     mkdir -p /deploy-sandbox-js/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build                                    && \
-    cp build/Release/deasync.node /deploy-sandbox-js/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node
+    cp build/Release/deasync.node /deploy-sandbox-js/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node   && \
+    cd /app/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4                                                                                && \
+    node-gyp rebuild                                                                                                                       && \
+    cp -r build /deploy/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4/                                                                   && \
+    cp -r build /deploy-sandbox-js/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4/
 
 ############
 ## PARENT ##

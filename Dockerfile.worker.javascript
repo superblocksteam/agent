@@ -1,10 +1,11 @@
 # syntax=docker/dockerfile:1.9.0
 
-ARG NODE_VERSION=20.19.5
+ARG NODE_VERSION=22.22.2
 ARG EMSDK_VERSION=3.1.65
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION} AS builder
 
 ARG DEASYNC_VERSION=0.1.29
+ARG LZ4_VERSION=0.6.5
 ARG EMSDK_VERSION
 
 WORKDIR /app
@@ -66,7 +67,10 @@ RUN mkdir -p /deploy/fleets/all /deploy/fleets/javascript /deploy/fleets/javascr
   cp -r /app/workers/javascript/packages/fleets/javascriptsdkapi/dist /deploy/fleets/javascriptsdkapi/dist && \
   cp -r /app/workers/javascript/packages/fleets/non-lang/dist /deploy/fleets/non-lang/dist
 
-# Build the deasync binding for this architecture (node-gyp installed globally above)
+# Rebuild native addons in the deployed node_modules for the current Node ABI.
+# pnpm deploy copies binaries from the store cache, which may contain stale
+# artifacts compiled for a different Node major version. clean-modules strips
+# binding.gyp from deploy, so we build from source and copy the .node files.
 RUN --mount=type=cache,target=/root/.npm \
     git clone --depth 1 --branch v${DEASYNC_VERSION} https://github.com/superblocksteam/deasync.git                      && \
   cd deasync                                                                                                             && \
@@ -74,7 +78,10 @@ RUN --mount=type=cache,target=/root/.npm \
   node-gyp configure                                                                                                     && \
   node-gyp build                                                                                                         && \
   mkdir -p /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build                              && \
-  cp build/Release/deasync.node /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node
+  cp build/Release/deasync.node /deploy/node_modules/.pnpm/deasync@${DEASYNC_VERSION}/node_modules/deasync/build/deasync.node && \
+  cd /app/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4                                                               && \
+  node-gyp rebuild                                                                                                      && \
+  cp -r build /deploy/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4/
 
 FROM ghcr.io/superblocksteam/node:${NODE_VERSION}-bookworm-slim
 
