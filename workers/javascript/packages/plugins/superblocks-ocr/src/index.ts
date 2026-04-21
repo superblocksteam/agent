@@ -109,7 +109,7 @@ export default class SuperblocksOcrPlugin extends ApiPlugin {
     }
 
     // get apim-request-id from upload
-    const requestId = uploadResponse.headers['apim-request-id'];
+    const requestId = String(uploadResponse.headers['apim-request-id'] ?? '');
     // get results
     const resultHeaders = this.getResultRequestHeaders(datasourceConfiguration);
     const resultAxiosConfig: AxiosRequestConfig = {

@@ -287,7 +287,7 @@ export abstract class ApiPlugin extends BasePlugin {
     if (!Buffer.isBuffer(dataRaw)) {
       responseData = dataRaw;
     } else {
-      const mimeTypeString = response.headers['content-type'] ?? 'text/plain';
+      const mimeTypeString = String(response.headers['content-type'] ?? 'text/plain');
       // rely on the toJSON method of Buffer in node.js
       responseData = extractResponseData(dataRaw, mimeTypeString, responseType);
     }

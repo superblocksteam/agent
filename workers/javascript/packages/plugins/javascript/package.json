@@ -25,7 +25,7 @@
     "@paralleldrive/cuid2": "2.2.2",
     "@superblocks/shared": "workspace:*",
     "aws-sdk": "2.1664.0",
-    "axios": "1.13.5",
+    "axios": "1.15.1",
     "base64url": "3.0.1",
     "bcrypt": "5.1.1",
     "date-fns": "3.6.0",
