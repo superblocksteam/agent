@@ -8,7 +8,7 @@
 # the allow-all GlobalNetworkPolicy (which has no order).
 #
 # Four policies:
-# 1. Task Manager Egress: RFC-1918 only (Redis, K8s API, sandbox pods - all internal)
+# 1. Task Manager Egress: internal ranges only (Redis, K8s API, sandbox pods - all internal)
 # 2. Task Manager Ingress: Only sandbox pods on gRPC port (deny all other ingress)
 # 3. Sandbox Egress: Restricted (only task-manager pods for gRPC, internet excluding private ranges)
 # 4. Sandbox Ingress: Only task-manager pods on sandbox gRPC port (deny all other ingress)
@@ -17,6 +17,7 @@
 # separate pods with separate NetworkPolicies.
 # =============================================================================
 {{- if not .Values.networkpolicy.disable }}
+{{- $internalCIDRs := .Values.sandbox_workers.network.internalCIDRs | default (list "10.0.0.0/8" "100.64.0.0/10") }}
 ---
 # Task Manager Network Policy - Internal VPC only
 # Task manager needs access to Redis, K8s API, sandbox pods, OTEL collector
@@ -54,12 +55,14 @@ spec:
         ports:
           - {{ .Values.sandbox_workers.sandbox.port }}
 
-    # Allow RFC-1918 private ranges (internal VPC)
+    # Allow internal ranges (internal VPC)
     # Task-manager needs: Redis, K8s API, OTEL collector
     - action: Allow
       destination:
         nets:
-          - 10.0.0.0/8
+          {{- range $internalCIDRs }}
+          - {{ . }}
+          {{- end }}
           - 172.16.0.0/12
           - 192.168.0.0/16
 
@@ -135,11 +138,12 @@ spec:
     - action: Deny
       destination:
         nets:
-          - 10.0.0.0/8
+          {{- range $internalCIDRs }}
+          - {{ . }}
+          {{- end }}
           - 172.16.0.0/12
           - 192.168.0.0/16
           - 169.254.0.0/16
-          - 100.64.0.0/10
 
     # Allow everything else (internet)
     - action: Allow
@@ -243,7 +247,9 @@ spec:
   - action: Deny
     destination:
       nets:
-      - 10.0.0.0/8
+      {{- range $internalCIDRs }}
+      - {{ . }}
+      {{- end }}
       - 172.16.0.0/12
       - 192.168.0.0/16
 
@@ -317,7 +323,9 @@ spec:
     protocol: UDP
     destination:
       nets:
-      - 10.0.0.0/8
+      {{- range $internalCIDRs }}
+      - {{ . }}
+      {{- end }}
       ports:
       - 8125
 
@@ -336,7 +344,9 @@ spec:
     protocol: TCP
     destination:
       nets:
-      - 10.0.0.0/8
+      {{- range $internalCIDRs }}
+      - {{ . }}
+      {{- end }}
       ports:
       - 8126
       - 4318 # HTTP OTLP
@@ -357,7 +367,9 @@ spec:
     protocol: TCP
     destination:
       nets:
-      - 10.0.0.0/8
+      {{- range $internalCIDRs }}
+      - {{ . }}
+      {{- end }}
       ports:
       - 6379
 

@@ -535,6 +535,10 @@ sandbox_workers:
   # Network isolation configuration
   # Blocks sandbox from accessing internal infrastructure via iptables / policy helpers in templates
   network:
+    # CIDRs treated as internal by network policy rules that target VPC-local services.
+    internalCIDRs:
+      - 10.0.0.0/8
+      - 100.64.0.0/10
     # VPC CIDR to block - set this to your cloud VPC range
     # Leave empty to block ALL RFC 1918 private ranges (10.x, 172.16.x, 192.168.x)
     vpcCIDR: ""
