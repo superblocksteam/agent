@@ -4,10 +4,11 @@
   "version": "0.31.0",
   "scripts": {
     "build": "pnpm run build:tsc && echo built $npm_package_json && ls -l",
-    "build:tsc": "npx tsc --project tsconfig.tsup.json",
+    "build:tsc": "tsc --project tsconfig.tsup.json",
     "clean": "git clean -fx ."
   },
   "devDependencies": {
+    "typescript": "catalog:",
     "vite-tsconfig-paths": "^6.0.3"
   }
 }

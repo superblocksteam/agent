@@ -39,7 +39,7 @@
     }
   },
   "scripts": {
-    "tsc": "npx tsc -p . --noEmit",
+    "tsc": "tsc -p . --noEmit",
     "test": "npx vitest run",
     "build": "npx tsup"
   },
@@ -47,6 +47,7 @@
     "@jitl/quickjs-ffi-types": "workspace:*"
   },
   "devDependencies": {
-    "@jitl/tsconfig": "workspace:*"
+    "@jitl/tsconfig": "workspace:*",
+    "typescript": "catalog:"
   }
 }

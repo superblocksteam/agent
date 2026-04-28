@@ -8,7 +8,7 @@
     "build": "swc src -d dist",
     "test": "jest --coverage --detectOpenHandles",
     "lint": "eslint . --ext ts --max-warnings 0",
-    "typecheck": "npx tsc"
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
@@ -22,6 +22,6 @@
     "@types/jest": "29.5.12",
     "@types/node": "20.14.8",
     "jest": "29.7.0",
-    "typescript": "^5.5.4"
+    "typescript": "catalog:"
   }
 }

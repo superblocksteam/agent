@@ -10,7 +10,7 @@
     "build": "swc ./src --out-dir ./dist --config-file .swcrc",
     "lint": "eslint . --ext ts",
     "lint:fix": "eslint . --ext ts --fix",
-    "typecheck": "npx tsc"
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@superblocks/worker.js": "workspace:*",

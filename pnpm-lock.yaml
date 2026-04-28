@@ -1893,7 +1893,7 @@ importers:
         specifier: 29.7.0
         version: 29.7.0(@types/node@20.14.8)
       typescript:
-        specifier: ^5.5.4
+        specifier: 'catalog:'
         version: 5.5.4
 
   workers/javascript/packages/plugins/javascript-sdk-api-wasm:
@@ -3549,7 +3549,7 @@ importers:
         specifier: ^4.6.2
         version: 4.21.0
       typescript:
-        specifier: ^5.3.3
+        specifier: 'catalog:'
         version: 5.5.4
       vitest:
         specifier: 2.0.5
@@ -3557,6 +3557,9 @@ importers:
 
   workers/javascript/packages/quickjs-emscripten/packages/internal-tsconfig:
     devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.5.4
       vite-tsconfig-paths:
         specifier: ^6.0.3
         version: 6.0.3(typescript@5.5.4)(vite@5.4.21(@types/node@22.15.3)(terser@5.46.0))
@@ -3570,24 +3573,38 @@ importers:
       '@jitl/tsconfig':
         specifier: workspace:*
         version: link:../internal-tsconfig
+      typescript:
+        specifier: 'catalog:'
+        version: 5.5.4
 
   workers/javascript/packages/quickjs-emscripten/packages/quickjs-ffi-types:
     devDependencies:
       '@jitl/tsconfig':
         specifier: workspace:*
         version: link:../internal-tsconfig
+      typescript:
+        specifier: 'catalog:'
+        version: 5.5.4
 
   workers/javascript/packages/quickjs-emscripten/packages/variant-quickjs-wasmfile-debug-sync:
     dependencies:
       '@jitl/quickjs-ffi-types':
         specifier: workspace:*
         version: link:../quickjs-ffi-types
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.5.4
 
   workers/javascript/packages/quickjs-emscripten/packages/variant-quickjs-wasmfile-release-sync:
     dependencies:
       '@jitl/quickjs-ffi-types':
         specifier: workspace:*
         version: link:../quickjs-ffi-types
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.5.4
 
   workers/javascript/packages/server:
     dependencies:
@@ -6161,141 +6178,141 @@ packages:
 
   '@superblocks/shared@file:workers/javascript/packages/shared':
     resolution: {directory: workers/javascript/packages/shared, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocks/wasm-sandbox-js@file:workers/javascript/packages/wasm-sandbox-js':
     resolution: {directory: workers/javascript/packages/wasm-sandbox-js, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocks/worker.js@file:workers/javascript/packages/server':
     resolution: {directory: workers/javascript/packages/server, type: directory}
 
   '@superblocksteam/adls@file:workers/javascript/packages/plugins/adls':
     resolution: {directory: workers/javascript/packages/plugins/adls, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/athena@file:workers/javascript/packages/plugins/athena':
     resolution: {directory: workers/javascript/packages/plugins/athena, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/bigquery@file:workers/javascript/packages/plugins/bigquery':
     resolution: {directory: workers/javascript/packages/plugins/bigquery, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/cockroachdb@file:workers/javascript/packages/plugins/cockroachdb':
     resolution: {directory: workers/javascript/packages/plugins/cockroachdb, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/cosmosdb@file:workers/javascript/packages/plugins/cosmosdb':
     resolution: {directory: workers/javascript/packages/plugins/cosmosdb, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/couchbase@file:workers/javascript/packages/plugins/couchbase':
     resolution: {directory: workers/javascript/packages/plugins/couchbase, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/databricks@file:workers/javascript/packages/plugins/databricks':
     resolution: {directory: workers/javascript/packages/plugins/databricks, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/dynamodb@file:workers/javascript/packages/plugins/dynamodb':
     resolution: {directory: workers/javascript/packages/plugins/dynamodb, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/email@file:workers/javascript/packages/plugins/email':
     resolution: {directory: workers/javascript/packages/plugins/email, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/gcs@file:workers/javascript/packages/plugins/gcs':
     resolution: {directory: workers/javascript/packages/plugins/gcs, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/graphql@file:workers/javascript/packages/plugins/graphql':
     resolution: {directory: workers/javascript/packages/plugins/graphql, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/gsheets@file:workers/javascript/packages/plugins/gsheets':
     resolution: {directory: workers/javascript/packages/plugins/gsheets, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/javascript-sdk-api@file:workers/javascript/packages/plugins/javascript-sdk-api':
     resolution: {directory: workers/javascript/packages/plugins/javascript-sdk-api, type: directory}
 
   '@superblocksteam/javascript-wasm@file:workers/javascript/packages/plugins/javascript-wasm':
     resolution: {directory: workers/javascript/packages/plugins/javascript-wasm, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/javascript@file:workers/javascript/packages/plugins/javascript':
     resolution: {directory: workers/javascript/packages/plugins/javascript, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/kafka@file:workers/javascript/packages/plugins/kafka':
     resolution: {directory: workers/javascript/packages/plugins/kafka, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/kinesis@file:workers/javascript/packages/plugins/kinesis':
     resolution: {directory: workers/javascript/packages/plugins/kinesis, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/lakebase@file:workers/javascript/packages/plugins/lakebase':
     resolution: {directory: workers/javascript/packages/plugins/lakebase, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/mariadb@file:workers/javascript/packages/plugins/mariadb':
     resolution: {directory: workers/javascript/packages/plugins/mariadb, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/mongodb@file:workers/javascript/packages/plugins/mongodb':
     resolution: {directory: workers/javascript/packages/plugins/mongodb, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/mssql@file:workers/javascript/packages/plugins/mssql':
     resolution: {directory: workers/javascript/packages/plugins/mssql, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/mysql@file:workers/javascript/packages/plugins/mysql':
     resolution: {directory: workers/javascript/packages/plugins/mysql, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/openai@file:workers/javascript/packages/plugins/openai':
     resolution: {directory: workers/javascript/packages/plugins/openai, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/oracledb@file:workers/javascript/packages/plugins/oracledb':
     resolution: {directory: workers/javascript/packages/plugins/oracledb, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/postgres@file:workers/javascript/packages/plugins/postgres':
     resolution: {directory: workers/javascript/packages/plugins/postgres, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/redis@file:workers/javascript/packages/plugins/redis':
     resolution: {directory: workers/javascript/packages/plugins/redis, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/redshift@file:workers/javascript/packages/plugins/redshift':
     resolution: {directory: workers/javascript/packages/plugins/redshift, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/restapi@file:workers/javascript/packages/plugins/restapi':
     resolution: {directory: workers/javascript/packages/plugins/restapi, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/restapiintegration@file:workers/javascript/packages/plugins/restapiintegration':
     resolution: {directory: workers/javascript/packages/plugins/restapiintegration, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/rockset@file:workers/javascript/packages/plugins/rockset':
     resolution: {directory: workers/javascript/packages/plugins/rockset, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/s3@file:workers/javascript/packages/plugins/s3':
     resolution: {directory: workers/javascript/packages/plugins/s3, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/salesforce@file:workers/javascript/packages/plugins/salesforce':
     resolution: {directory: workers/javascript/packages/plugins/salesforce, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/sdk-api@0.0.6':
     resolution: {integrity: sha512-wImai+SqgJHnPeqT4sEE0EcQ4PT01ekoPLxUupr5fW9yjtZrUVGDHIGJ1kgtmZT/qbL84KNWS8KliDUTpjjNCA==}
@@ -6303,19 +6320,19 @@ packages:
 
   '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp':
     resolution: {directory: workers/javascript/packages/plugins/smtp, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/snowflake@file:workers/javascript/packages/plugins/snowflake':
     resolution: {directory: workers/javascript/packages/plugins/snowflake, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/snowflakepostgres@file:workers/javascript/packages/plugins/snowflakepostgres':
     resolution: {directory: workers/javascript/packages/plugins/snowflakepostgres, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/superblocks-ocr@file:workers/javascript/packages/plugins/superblocks-ocr':
     resolution: {directory: workers/javascript/packages/plugins/superblocks-ocr, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@superblocksteam/types@1.196.0':
     resolution: {integrity: sha512-EpYK9lCfy0NBnKIdK0lB/SXLX/oztAcG5+Xi+YLYeePP89P6lyUIWbMI6WfzHyYAM4+6c7tKiL+Of1ZtC6HgMA==}
@@ -6325,7 +6342,7 @@ packages:
 
   '@superblocksteam/workflow@file:workers/javascript/packages/plugins/workflow':
     resolution: {directory: workers/javascript/packages/plugins/workflow, type: directory}
-    engines: {node: ">= 22"}
+    engines: {node: '>= 22'}
 
   '@swc-node/core@1.14.1':
     resolution: {integrity: sha512-jrt5GUaZUU6cmMS+WTJEvGvaB6j1YNKPHPzC2PUi2BjaFbtxURHj6641Az6xN7b665hNniAIdvjxWcRml5yCnw==}
@@ -10043,6 +10060,7 @@ packages:
 
   proxy-from-env@2.1.0:
     resolution: {integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==}
+    engines: {node: '>=10'}
 
   pseudomap@1.0.2:
     resolution: {integrity: sha512-b/YwNhb8lk1Zz2+bXXpS/LK9OisiZZ1SNsSLxN1x2OXVEhW2Ckr/7mWE5vrC1ZTiJlD9g19jWszTmJsB+oEpFQ==}

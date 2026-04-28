@@ -16,8 +16,11 @@
     "build": "pnpm build:c && pnpm build:ts",
     "build:c": "make",
     "build:ts": "npx tsup",
-    "check:types": "npx tsc --project . --noEmit",
+    "check:types": "tsc --project . --noEmit",
     "clean": "make clean"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
   },
   "files": [
     "LICENSE",

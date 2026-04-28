@@ -29,7 +29,7 @@
     "prettier": "^3.2.0",
     "tsup": "^8.0.1",
     "tsx": "^4.6.2",
-    "typescript": "^5.3.3",
+    "typescript": "catalog:",
     "vitest": "2.0.5"
   }
 }
