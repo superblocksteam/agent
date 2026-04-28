@@ -1,12 +1,14 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs-go.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs-python310.url = "github:nixos/nixpkgs/nixos-24.11";
   };
 
   outputs =
     {
       nixpkgs,
+      nixpkgs-go,
       nixpkgs-python310,
       ...
     }:
@@ -18,6 +20,7 @@
           system:
           function {
             pkgs = import nixpkgs { inherit system; };
+            pkgsGo = import nixpkgs-go { inherit system; };
             pkgsPython310 = import nixpkgs-python310 { inherit system; };
           }
         );
@@ -25,7 +28,7 @@
     {
       formatter = forAllSystems ({ pkgs, ... }: pkgs.nixfmt);
       devShells = forAllSystems (
-        { pkgs, pkgsPython310 }:
+        { pkgs, pkgsGo, pkgsPython310 }:
         let
           readVersionOrFallback =
             {
@@ -50,8 +53,8 @@
           };
           goAttr = "go_" + builtins.replaceStrings [ "." ] [ "_" ] (lib.versions.majorMinor goVersion);
           goPackage =
-            if builtins.hasAttr goAttr pkgs then
-              pkgs.${goAttr}
+            if builtins.hasAttr goAttr pkgsGo then
+              pkgsGo.${goAttr}
             else
               builtins.trace "warning: unsupported Go version in .go-version: ${goVersion}; defaulting to pkgs.go" pkgs.go;
 
