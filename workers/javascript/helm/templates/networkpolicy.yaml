@@ -21,6 +21,22 @@ spec:
       - 169.254.169.254/32
 
 ---
+# Allow external egress (internet) - catch-all for traffic not matching other rules
+# This is necessary because the GlobalNetworkPolicy 'allow-all' may not be parsed
+# correctly by Felix (error: "could not parse policy allow-all"), causing default-deny
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: workers-egress-allow-external
+spec:
+  order: 92
+  selector: component == 'worker.js' || component == 'worker.py' || component == 'worker.go'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+
+---
 apiVersion: crd.projectcalico.org/v1
 kind: NetworkPolicy
 metadata:
