@@ -16,6 +16,8 @@ spec:
     - {{ . }}
     {{- end }}
   rules:
+    # Do not add api.v1.InternalExecutorService here. It is reserved for
+    # task-manager -> orchestrator callbacks and must not be publicly routed.
     - matches:
         - method:
             service: api.v1.ExecutorService

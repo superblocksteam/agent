@@ -851,3 +851,95 @@ var ExecutorService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "api/v1/service.proto",
 }
+
+const (
+	InternalExecutorService_ExecuteSdkIntegration_FullMethodName = "/api.v1.InternalExecutorService/ExecuteSdkIntegration"
+)
+
+// InternalExecutorServiceClient is the client API for InternalExecutorService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type InternalExecutorServiceClient interface {
+	// ExecuteSdkIntegration runs the synthetic one-step definition generated for
+	// Apps 3.0 SDK integration calls (ctx.integrations.*).
+	ExecuteSdkIntegration(ctx context.Context, in *ExecuteRequest, opts ...grpc.CallOption) (*AwaitResponse, error)
+}
+
+type internalExecutorServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewInternalExecutorServiceClient(cc grpc.ClientConnInterface) InternalExecutorServiceClient {
+	return &internalExecutorServiceClient{cc}
+}
+
+func (c *internalExecutorServiceClient) ExecuteSdkIntegration(ctx context.Context, in *ExecuteRequest, opts ...grpc.CallOption) (*AwaitResponse, error) {
+	out := new(AwaitResponse)
+	err := c.cc.Invoke(ctx, InternalExecutorService_ExecuteSdkIntegration_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// InternalExecutorServiceServer is the server API for InternalExecutorService service.
+// All implementations should embed UnimplementedInternalExecutorServiceServer
+// for forward compatibility
+type InternalExecutorServiceServer interface {
+	// ExecuteSdkIntegration runs the synthetic one-step definition generated for
+	// Apps 3.0 SDK integration calls (ctx.integrations.*).
+	ExecuteSdkIntegration(context.Context, *ExecuteRequest) (*AwaitResponse, error)
+}
+
+// UnimplementedInternalExecutorServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedInternalExecutorServiceServer struct {
+}
+
+func (UnimplementedInternalExecutorServiceServer) ExecuteSdkIntegration(context.Context, *ExecuteRequest) (*AwaitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteSdkIntegration not implemented")
+}
+
+// UnsafeInternalExecutorServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to InternalExecutorServiceServer will
+// result in compilation errors.
+type UnsafeInternalExecutorServiceServer interface {
+	mustEmbedUnimplementedInternalExecutorServiceServer()
+}
+
+func RegisterInternalExecutorServiceServer(s grpc.ServiceRegistrar, srv InternalExecutorServiceServer) {
+	s.RegisterService(&InternalExecutorService_ServiceDesc, srv)
+}
+
+func _InternalExecutorService_ExecuteSdkIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExecuteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InternalExecutorServiceServer).ExecuteSdkIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InternalExecutorService_ExecuteSdkIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InternalExecutorServiceServer).ExecuteSdkIntegration(ctx, req.(*ExecuteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// InternalExecutorService_ServiceDesc is the grpc.ServiceDesc for InternalExecutorService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var InternalExecutorService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.v1.InternalExecutorService",
+	HandlerType: (*InternalExecutorServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ExecuteSdkIntegration",
+			Handler:    _InternalExecutorService_ExecuteSdkIntegration_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/v1/service.proto",
+}

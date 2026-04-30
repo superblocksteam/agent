@@ -62,6 +62,7 @@ spec:
     {{- end }}
 ---
 {{- $grpcPort := .Values.service.ports.grpc -}}
+{{- /* Do not include api.v1.InternalExecutorService here. It is reserved for task-manager -> orchestrator callbacks and must not be publicly routed. */ -}}
 {{- $services := .Values.ingress.grpcServices | default (list "/grpc.reflection.v1.ServerReflection" "/grpc.reflection.v1alpha.ServerReflection" "/api.v1.ExecutorService") }}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
 apiVersion: networking.k8s.io/v1

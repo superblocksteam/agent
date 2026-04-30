@@ -422,42 +422,76 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 
 	// Fetch missing integration configurations
 	if len(integrationsToFetch) > 0 {
-		resp, err := fetcher.FetchIntegrations(ctx, &integrationv1.GetIntegrationsRequest{
-			Ids:     integrationsToFetch,
-			Profile: request.GetProfile(),
-		}, useAgentKey)
-		if err != nil {
-			logger.Warn("integration fetch failed for inline definition", zap.Error(err))
-			return nil, nil, err
-		}
-
 		if def.Integrations == nil {
 			def.Integrations = map[string]*structpb.Struct{}
 		}
 
-		fetchedConfigs := make(map[string]bool, len(resp.Data))
-		for _, integration := range resp.Data {
-			if integration == nil {
-				continue
-			}
-			if len(integration.Configurations) == 0 || integration.Configurations[0] == nil || integration.Configurations[0].GetConfiguration() == nil {
-				return nil, nil, fmt.Errorf("integration %q has no accessible configurations", integration.GetId())
-			}
-			cfg := integration.Configurations[0]
-			inner := cfg.GetConfiguration()
-			if cfg.GetId() != "" {
-				if inner.Fields == nil {
-					inner.Fields = map[string]*structpb.Value{}
+		if constants.IsSDKIntegrationExecution(ctx) {
+			// SDK integration callbacks use the agent datasource endpoint, which
+			// returns one integration at a time. Keep this path narrow to preserve
+			// the internal execution trust boundary; consider adding a batch agent
+			// endpoint if SDK APIs commonly fan out across many integrations.
+			for _, integrationID := range integrationsToFetch {
+				integration, err := fetcher.FetchIntegration(ctx, integrationID, request.GetProfile())
+				if err != nil {
+					logger.Warn("SDK integration fetch failed for inline definition", zap.String("integration_id", integrationID), zap.Error(err))
+					return nil, nil, err
 				}
-				inner.Fields["id"] = structpb.NewStringValue(cfg.GetId())
+				if integration == nil || integration.Configuration == nil {
+					return nil, nil, fmt.Errorf("integration %q configuration not found or inaccessible", integrationID)
+				}
+				config, err := structpb.NewStruct(integration.Configuration)
+				if err != nil {
+					return nil, nil, fmt.Errorf("integration %q configuration is invalid: %w", integrationID, err)
+				}
+				if config.GetFields()["id"].GetStringValue() == "" {
+					return nil, nil, fmt.Errorf("integration %q configuration id not found or inaccessible", integrationID)
+				}
+				if integration.PluginId != "" {
+					// Agent datasource responses carry pluginId at the datasource
+					// level; copy it into the config struct so plugin metrics match
+					// the legacy FetchIntegrations path.
+					if config.Fields == nil {
+						config.Fields = map[string]*structpb.Value{}
+					}
+					config.Fields["pluginId"] = structpb.NewStringValue(integration.PluginId)
+				}
+				def.Integrations[integrationID] = config
 			}
-			def.Integrations[integration.Id] = inner
-			fetchedConfigs[integration.GetId()] = true
-		}
+		} else {
+			resp, err := fetcher.FetchIntegrations(ctx, &integrationv1.GetIntegrationsRequest{
+				Ids:     integrationsToFetch,
+				Profile: request.GetProfile(),
+			}, useAgentKey)
+			if err != nil {
+				logger.Warn("integration fetch failed for inline definition", zap.Error(err))
+				return nil, nil, err
+			}
 
-		for _, integrationID := range integrationsToFetch {
-			if !fetchedConfigs[integrationID] {
-				return nil, nil, fmt.Errorf("integration %q configuration not found or inaccessible", integrationID)
+			fetchedConfigs := make(map[string]bool, len(resp.Data))
+			for _, integration := range resp.Data {
+				if integration == nil {
+					continue
+				}
+				if len(integration.Configurations) == 0 || integration.Configurations[0] == nil || integration.Configurations[0].GetConfiguration() == nil {
+					return nil, nil, fmt.Errorf("integration %q has no accessible configurations", integration.GetId())
+				}
+				cfg := integration.Configurations[0]
+				inner := cfg.GetConfiguration()
+				if cfg.GetId() != "" {
+					if inner.Fields == nil {
+						inner.Fields = map[string]*structpb.Value{}
+					}
+					inner.Fields["id"] = structpb.NewStringValue(cfg.GetId())
+				}
+				def.Integrations[integration.Id] = inner
+				fetchedConfigs[integration.GetId()] = true
+			}
+
+			for _, integrationID := range integrationsToFetch {
+				if !fetchedConfigs[integrationID] {
+					return nil, nil, fmt.Errorf("integration %q configuration not found or inaccessible", integrationID)
+				}
 			}
 		}
 	}

@@ -78,12 +78,14 @@ const (
 type server struct {
 	*Config
 	apiv1.UnimplementedExecutorServiceServer
+	apiv1.UnimplementedInternalExecutorServiceServer
 	secretsv1.UnimplementedStoreServiceServer
 	securityv1.UnimplementedSignatureServiceServer
 }
 
 type Services interface {
 	apiv1.ExecutorServiceServer
+	apiv1.InternalExecutorServiceServer
 	apiv1.MetadataServiceServer
 	apiv1.DeprecatedServiceServer
 	apiv1.IntegrationAuthServiceServer
@@ -254,6 +256,10 @@ func (s *server) Await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 	}, nil
 }
 
+func (s *server) ExecuteSdkIntegration(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.AwaitResponse, error) {
+	return s.Await(constants.WithSDKIntegrationExecution(ctx), req)
+}
+
 func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *apiv1.AwaitResponse, err error) {
 	var events []*apiv1.Event
 	var output *apiv1.Output
@@ -274,6 +280,8 @@ func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 	awaitTags := map[string]any{"execute.path": "legacy"}
 	if req.GetFetchCode() != nil {
 		awaitTags["execute.path"] = "sdk_api"
+	} else if constants.IsSDKIntegrationExecution(ctx) {
+		awaitTags["execute.path"] = "sdk_integration"
 	}
 
 	// Enrich the span with identity and request attributes so traces can be
@@ -789,10 +797,11 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 
 	useAgentKey := s.getUseAgentKeyForHydration(ctx)
 
-	// Code-mode fetches (FetchCode) always use the agent key so that
-	// ephemeral/PR environments work even when the LaunchDarkly flag
-	// client falls back to defaults.
-	if req.GetFetchCode() != nil {
+	// Code-mode fetches (FetchCode) and internal SDK integration executions
+	// use agent-key hydration. For SDK integration executions, the direct
+	// datasource fetch already uses the agent endpoint, while this flag also
+	// preserves downstream secret-store hydration parity with legacy execution.
+	if req.GetFetchCode() != nil || constants.IsSDKIntegrationExecution(ctx) {
 		useAgentKey = true
 	}
 

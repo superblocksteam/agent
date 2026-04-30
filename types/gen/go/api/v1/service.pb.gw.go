@@ -703,6 +703,32 @@ func local_request_ExecutorService_Validate_0(ctx context.Context, marshaler run
 
 }
 
+func request_InternalExecutorService_ExecuteSdkIntegration_0(ctx context.Context, marshaler runtime.Marshaler, client InternalExecutorServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ExecuteRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ExecuteSdkIntegration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_InternalExecutorService_ExecuteSdkIntegration_0(ctx context.Context, marshaler runtime.Marshaler, server InternalExecutorServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ExecuteRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ExecuteSdkIntegration(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterMetadataServiceHandlerServer registers the http handlers for service MetadataService to "mux".
 // UnaryRPC     :call MetadataServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -1127,6 +1153,40 @@ func RegisterExecutorServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 		}
 
 		forward_ExecutorService_Validate_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+// RegisterInternalExecutorServiceHandlerServer registers the http handlers for service InternalExecutorService to "mux".
+// UnaryRPC     :call InternalExecutorServiceServer directly.
+// StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterInternalExecutorServiceHandlerFromEndpoint instead.
+func RegisterInternalExecutorServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server InternalExecutorServiceServer) error {
+
+	mux.Handle("POST", pattern_InternalExecutorService_ExecuteSdkIntegration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.InternalExecutorService/ExecuteSdkIntegration", runtime.WithHTTPPathPattern("/api.v1.InternalExecutorService/ExecuteSdkIntegration"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_InternalExecutorService_ExecuteSdkIntegration_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_InternalExecutorService_ExecuteSdkIntegration_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1760,4 +1820,75 @@ var (
 	forward_ExecutorService_Cancel_0 = runtime.ForwardResponseMessage
 
 	forward_ExecutorService_Validate_0 = runtime.ForwardResponseMessage
+)
+
+// RegisterInternalExecutorServiceHandlerFromEndpoint is same as RegisterInternalExecutorServiceHandler but
+// automatically dials to "endpoint" and closes the connection when "ctx" gets done.
+func RegisterInternalExecutorServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+			return
+		}
+		go func() {
+			<-ctx.Done()
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+		}()
+	}()
+
+	return RegisterInternalExecutorServiceHandler(ctx, mux, conn)
+}
+
+// RegisterInternalExecutorServiceHandler registers the http handlers for service InternalExecutorService to "mux".
+// The handlers forward requests to the grpc endpoint over "conn".
+func RegisterInternalExecutorServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterInternalExecutorServiceHandlerClient(ctx, mux, NewInternalExecutorServiceClient(conn))
+}
+
+// RegisterInternalExecutorServiceHandlerClient registers the http handlers for service InternalExecutorService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "InternalExecutorServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "InternalExecutorServiceClient"
+// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
+// "InternalExecutorServiceClient" to call the correct interceptors.
+func RegisterInternalExecutorServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client InternalExecutorServiceClient) error {
+
+	mux.Handle("POST", pattern_InternalExecutorService_ExecuteSdkIntegration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.v1.InternalExecutorService/ExecuteSdkIntegration", runtime.WithHTTPPathPattern("/api.v1.InternalExecutorService/ExecuteSdkIntegration"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_InternalExecutorService_ExecuteSdkIntegration_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_InternalExecutorService_ExecuteSdkIntegration_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+var (
+	pattern_InternalExecutorService_ExecuteSdkIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"api.v1.InternalExecutorService", "ExecuteSdkIntegration"}, ""))
+)
+
+var (
+	forward_InternalExecutorService_ExecuteSdkIntegration_0 = runtime.ForwardResponseMessage
 )

@@ -25,6 +25,7 @@ const (
 	ContextKeyEventType
 	ContextKeyRequestUsesJwtAuth
 	ContextKeyIncludeDiagnostics
+	ContextKeySDKIntegrationExecution
 	// TODO(frank): Add other context keys here.
 
 	HeaderAgentKey       = "x-superblocks-agent-key"
@@ -99,6 +100,17 @@ func WithIncludeDiagnostics(ctx context.Context, include bool) context.Context {
 
 func IncludeDiagnostics(ctx context.Context) bool {
 	if v, ok := ctx.Value(ContextKeyIncludeDiagnostics).(bool); ok {
+		return v
+	}
+	return false
+}
+
+func WithSDKIntegrationExecution(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ContextKeySDKIntegrationExecution, true)
+}
+
+func IsSDKIntegrationExecution(ctx context.Context) bool {
+	if v, ok := ctx.Value(ContextKeySDKIntegrationExecution).(bool); ok {
 		return v
 	}
 	return false
