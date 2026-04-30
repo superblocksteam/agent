@@ -75,7 +75,7 @@
                       "const response = pm.response.json();",
                       "",
                       "pm.test(\"assert response body\", () => {",
-                      "    pm.expect(response.message).to.eql(\"QuotaError: The duration of block BLOCK_STEP_WELCOME has exceeded its limit of 5 seconds. Contact support to increase this quota.\")",
+                      "    pm.expect(response.message).to.eql(\"QuotaError: The duration of block BLOCK_STEP_WELCOME has exceeded its limit of 120 seconds. Contact support to increase this quota.\")",
                       "});",
                       "",
                       "pm.test(\"assert status\", () => {",
@@ -101,7 +101,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return await new Promise(resolve => setTimeout(resolve, 25000));\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
+                  "raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"javascript\": {\n                            \"body\": \"return await new Promise(resolve => setTimeout(resolve, 125000));\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -292,7 +292,7 @@
                       "const response = pm.response.json();",
                       "",
                       "pm.test(\"assert response body\", () => {",
-                      "    pm.expect(response.message).to.eql(\"QuotaError: The duration of block BLOCK_STEP_WELCOME has exceeded its limit of 5 seconds. Contact support to increase this quota.\")",
+                      "    pm.expect(response.message).to.eql(\"QuotaError: The duration of block BLOCK_STEP_WELCOME has exceeded its limit of 120 seconds. Contact support to increase this quota.\")",
                       "});",
                       "",
                       "pm.test(\"assert status\", () => {",
@@ -318,7 +318,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"python\": {\n                            \"body\": \"import time\\ntime.sleep(25)\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
+                  "raw": "{\n    \"options\": {\n        \"includeEvents\": true\n    },\n    \"definition\": {\n        \"api\": {\n            \"metadata\": {\n                \"id\": \"00000000-0000-0000-0000-000000000005\",\n                \"organization\": \"00000000-0000-0000-0000-000000000001\",\n                \"name\": \"MyTestApi\"\n            },\n            \"blocks\": [\n                {\n                    \"name\": \"BLOCK_STEP_WELCOME\",\n                    \"step\": {\n                        \"python\": {\n                            \"body\": \"import time\\ntime.sleep(125)\"\n                        }\n                    }\n                }\n            ]\n        },\n        \"metadata\": {\n            \"profile\": \"production\"\n        },\n        \"integrations\": {}\n    }\n}",
                   "options": {
                     "raw": {
                       "language": "json"

@@ -139,6 +139,16 @@ image:
     password: '<override>'
 launchdarkly:
   apikey: '<override>'
+  # Enable local file-based flags instead of connecting to LaunchDarkly.
+  # When true, requires featureFlags.configMapName to be set.
+  local: false
+# Feature flags ConfigMap - when set with launchdarkly.local=true, mounts an external
+# flags file instead of connecting to LaunchDarkly. Useful for local development.
+# The ConfigMap should contain a flagValues format compatible with LaunchDarkly file data source.
+# Example: featureFlags:
+#            configMapName: feature-flags
+#            fileName: feature-flags.json
+featureFlags: {}
 secrets:
   encryptionKey: '<override>'
 externalSecrets:

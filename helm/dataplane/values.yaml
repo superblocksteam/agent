@@ -119,6 +119,12 @@ events:
   cloud:
     enabled: false
 extraEnv: {}
+# Feature flags ConfigMap - when set, mounts an external flags file instead of using the baked-in flags.json.
+# The ConfigMap should contain a flagValues key-value format compatible with LaunchDarkly file data source.
+# Example: featureFlags:
+#            configMapName: feature-flags
+#            fileName: feature-flags.json
+featureFlags: {}
 gateway:
   gatewayRefs:
     - name: internal-gateway

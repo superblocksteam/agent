@@ -80,7 +80,10 @@ spec:
         - "--emitter.remote.intake={{ .Values.observability.logs.intake.url }}"
         - "--intake.metadata.url={{ .Values.observability.metadata.intake.url }}"
         - "--intake.event.url={{ .Values.observability.event.intake.url }}"
-        - "--launchdarkly.local=false"
+        - "--launchdarkly.local={{ .Values.launchdarkly.local | default false }}"
+        {{- if and .Values.launchdarkly.local .Values.featureFlags.configMapName }}
+        - "--launchdarkly.config=/etc/feature-flags/{{ .Values.featureFlags.fileName | default "feature-flags.json" }}"
+        {{- end }}
         - "--quotas.enabled=true"
         - "--registration.enabled=false"
         - "--signature.verification.enabled=false"
@@ -150,6 +153,11 @@ spec:
         volumeMounts:
         - name: buckets
           mountPath: /etc/orchestrator
+        {{- if and .Values.launchdarkly.local .Values.featureFlags.configMapName }}
+        - name: feature-flags
+          mountPath: /etc/feature-flags
+          readOnly: true
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -166,4 +174,9 @@ spec:
       - name: buckets
         configMap:
           name: orchestrator-buckets-config
+      {{- if and .Values.launchdarkly.local .Values.featureFlags.configMapName }}
+      - name: feature-flags
+        configMap:
+          name: {{ .Values.featureFlags.configMapName }}
+      {{- end }}
 {{- end }}

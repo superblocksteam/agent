@@ -97,7 +97,7 @@
         "variation": 0
       },
       "offVariation": 0,
-      "variations": [5000, 500],
+      "variations": [120000, 500],
       "deleted": false
     },
     "agent.quota.org.stream.send.size.max": {
