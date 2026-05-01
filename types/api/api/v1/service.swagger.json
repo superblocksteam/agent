@@ -17,9 +17,6 @@
     },
     {
       "name": "ExecutorService"
-    },
-    {
-      "name": "InternalExecutorService"
     }
   ],
   "host": "agent.superblocks.com",

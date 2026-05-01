@@ -57,7 +57,7 @@ func (d orchestratorDialTarget) cacheKey() string {
 
 // IntegrationExecutorService implements the SandboxIntegrationExecutorService
 // gRPC service. It proxies integration execution requests from the sandbox to
-// the orchestrator's internal SDK integration endpoint using an inline Definition.
+// the orchestrator's Await endpoint using an inline Definition.
 type IntegrationExecutorService struct {
 	workerv1.UnimplementedSandboxIntegrationExecutorServiceServer
 
@@ -68,7 +68,7 @@ type IntegrationExecutorService struct {
 	fileContextProvider FileContextProvider
 
 	orchestratorClientLock sync.Mutex
-	orchestratorClients    map[string]apiv1.InternalExecutorServiceClient
+	orchestratorClients    map[string]apiv1.ExecutorServiceClient
 	orchestratorConns      map[string]*grpc.ClientConn
 	orchestratorClientKeys []string
 	newOrchestratorConn    func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error)
@@ -92,7 +92,7 @@ func New(opts ...Option) *IntegrationExecutorService {
 		logger:                 o.logger,
 		orchestratorAddress:    o.orchestratorAddress,
 		fileContextProvider:    o.fileContextProvider,
-		orchestratorClients:    map[string]apiv1.InternalExecutorServiceClient{},
+		orchestratorClients:    map[string]apiv1.ExecutorServiceClient{},
 		orchestratorConns:      map[string]*grpc.ClientConn{},
 		orchestratorClientKeys: []string{},
 		newOrchestratorConn:    grpc.NewClient,
@@ -171,7 +171,7 @@ func (s *IntegrationExecutorService) Close(ctx context.Context) error {
 			}
 		}
 		s.orchestratorConns = map[string]*grpc.ClientConn{}
-		s.orchestratorClients = map[string]apiv1.InternalExecutorServiceClient{}
+		s.orchestratorClients = map[string]apiv1.ExecutorServiceClient{}
 		s.orchestratorClientKeys = []string{}
 	}
 
@@ -185,14 +185,13 @@ func (s *IntegrationExecutorService) Alive() bool {
 	return s.server != nil
 }
 
-// getOrCreateOrchestratorClient lazily creates and caches an internal gRPC client by dial target.
-// Eviction is FIFO by insertion order; this only bounds callback-target churn, so we do not maintain LRU state.
-func (s *IntegrationExecutorService) getOrCreateOrchestratorClient(target orchestratorDialTarget) (apiv1.InternalExecutorServiceClient, error) {
+// getOrCreateOrchestratorClient lazily creates and caches a gRPC client by dial target.
+func (s *IntegrationExecutorService) getOrCreateOrchestratorClient(target orchestratorDialTarget) (apiv1.ExecutorServiceClient, error) {
 	s.orchestratorClientLock.Lock()
 	defer s.orchestratorClientLock.Unlock()
 
 	if s.orchestratorClients == nil {
-		s.orchestratorClients = map[string]apiv1.InternalExecutorServiceClient{}
+		s.orchestratorClients = map[string]apiv1.ExecutorServiceClient{}
 	}
 	if s.orchestratorConns == nil {
 		s.orchestratorConns = map[string]*grpc.ClientConn{}
@@ -232,7 +231,7 @@ func (s *IntegrationExecutorService) getOrCreateOrchestratorClient(target orches
 	}
 
 	s.orchestratorConns[cacheKey] = conn
-	s.orchestratorClients[cacheKey] = apiv1.NewInternalExecutorServiceClient(conn)
+	s.orchestratorClients[cacheKey] = apiv1.NewExecutorServiceClient(conn)
 	s.orchestratorClientKeys = append(s.orchestratorClientKeys, cacheKey)
 
 	return s.orchestratorClients[cacheKey], nil
@@ -307,7 +306,7 @@ func buildStep(integrationID, pluginID string, actionConfig *structpb.Struct) (*
 // ExecuteIntegration handles integration execution requests from the sandbox.
 // It looks up the stored JWT for the execution, builds an inline Definition
 // with the plugin-typed Step config, and proxies the request to the
-// orchestrator's internal SDK integration endpoint.
+// orchestrator's Await endpoint.
 func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req *workerv1.ExecuteIntegrationRequest) (*workerv1.ExecuteIntegrationResponse, error) {
 	if req.GetExecutionId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "execution_id is required")
@@ -384,12 +383,8 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 	// Cookies carry per-user auth tokens (basic, oauth-implicit, firebase)
 	// that the orchestrator's GetCookies(ctx) reads during integration
 	// resolution.
-	authorizationHeaderToken := authorizationToken
-	if authorizationHeaderToken == "" {
-		authorizationHeaderToken = superblocksToken
-	}
 	md := metadata.Pairs(
-		"authorization", "Bearer "+authorizationHeaderToken,
+		"authorization", "Bearer "+authorizationToken,
 		constants.HeaderSuperblocksJwt, "Bearer "+superblocksToken,
 	)
 	if origin != "" {
@@ -419,7 +414,7 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		}
 	}
 
-	resp, err := client.ExecuteSdkIntegration(outCtx, &apiv1.ExecuteRequest{
+	resp, err := client.Await(outCtx, &apiv1.ExecuteRequest{
 		Request: &apiv1.ExecuteRequest_Definition{
 			Definition: &apiv1.Definition{
 				Api: &apiv1.Api{

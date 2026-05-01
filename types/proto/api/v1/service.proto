@@ -171,14 +171,6 @@ service ExecutorService {
   }
 }
 
-// InternalExecutorService is for orchestrator-to-task-manager callbacks and is
-// intentionally not exposed through the public HTTP gateway or GRPCRoute.
-service InternalExecutorService {
-  // ExecuteSdkIntegration runs the synthetic one-step definition generated for
-  // Apps 3.0 SDK integration calls (ctx.integrations.*).
-  rpc ExecuteSdkIntegration(ExecuteRequest) returns (AwaitResponse);
-}
-
 message HealthRequest {
   bool detailed = 1;
 }

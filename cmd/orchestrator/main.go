@@ -820,9 +820,6 @@ func main() {
 			// Unconditionally require JWT for certain request types, regardless of
 			// feature flags or context values. These checks must come before anything
 			// that could early-return false.
-			if callMeta.Service == "api.v1.InternalExecutorService" && callMeta.Method == "ExecuteSdkIntegration" {
-				return true
-			}
 			switch callMeta.ReqOrNil.(type) {
 			case *apiv1.ExecuteV3Request:
 				return true
@@ -900,7 +897,6 @@ func main() {
 			grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		)
 		apiv1.RegisterExecutorServiceServer(s, grpcServer)
-		apiv1.RegisterInternalExecutorServiceServer(s, grpcServer)
 		apiv1.RegisterMetadataServiceServer(s, grpcServer)
 		apiv1.RegisterDeprecatedServiceServer(s, grpcServer)
 		apiv1.RegisterIntegrationAuthServiceServer(s, grpcServer)

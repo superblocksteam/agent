@@ -61,7 +61,7 @@ func (m *mockFileContextProvider) GetFileContext(executionID string) *redisstore
 
 // fakeOrchestratorServer implements the Await RPC for testing.
 type fakeOrchestratorServer struct {
-	apiv1.UnimplementedInternalExecutorServiceServer
+	apiv1.UnimplementedExecutorServiceServer
 
 	lastAuthorization string
 	lastOrigin        string
@@ -72,7 +72,7 @@ type fakeOrchestratorServer struct {
 	err               error
 }
 
-func (f *fakeOrchestratorServer) ExecuteSdkIntegration(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.AwaitResponse, error) {
+func (f *fakeOrchestratorServer) Await(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.AwaitResponse, error) {
 	f.lastRequest = req
 
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
@@ -106,7 +106,7 @@ func startFakeOrchestrator(t *testing.T, fake *fakeOrchestratorServer) string {
 	require.NoError(t, err)
 
 	server := grpc.NewServer()
-	apiv1.RegisterInternalExecutorServiceServer(server, fake)
+	apiv1.RegisterExecutorServiceServer(server, fake)
 
 	go func() {
 		_ = server.Serve(lis)
@@ -214,7 +214,6 @@ func TestExecuteIntegration(t *testing.T) {
 		wantJwt            string
 		wantOrigin         string
 		wantCookie         string
-		wantAuthorization  string
 		wantOrg            string
 		wantProfile        *commonv1.Profile
 		wantFiles          []*apiv1.ExecuteRequest_File
@@ -232,30 +231,10 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT), Profile: profileFallback},
 			},
-			wantJwt:           "Bearer " + validJWT,
-			wantAuthorization: "Bearer " + validJWT,
-			wantOrg:           testOrgID,
-			wantProfile:       profileTest,
-			wantOutput:        outputValue,
-		},
-		{
-			name: "falls back to Superblocks JWT for Authorization when external embed auth has no separate Authorization token",
-			request: &workerv1.ExecuteIntegrationRequest{
-				ExecutionId:         "exec-1",
-				IntegrationId:       "int-1",
-				PluginId:            "postgres",
-				ActionConfiguration: actionConfig,
-				ViewMode:            apiv1.ViewMode_VIEW_MODE_DEPLOYED,
-				Profile:             profileTest,
-			},
-			contexts: map[string]*redisstore.ExecutionFileContext{
-				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, ""), Profile: profileFallback},
-			},
-			wantJwt:           "Bearer " + validJWT,
-			wantAuthorization: "Bearer " + validJWT,
-			wantOrg:           testOrgID,
-			wantProfile:       profileTest,
-			wantOutput:        outputValue,
+			wantJwt:     "Bearer " + validJWT,
+			wantOrg:     testOrgID,
+			wantProfile: profileTest,
+			wantOutput:  outputValue,
 		},
 		{
 			name: "files lazily fetched from file server and forwarded to Await",
@@ -267,9 +246,8 @@ func TestExecuteIntegration(t *testing.T) {
 				ViewMode:            apiv1.ViewMode_VIEW_MODE_EDIT,
 			},
 			// contexts is set dynamically below (needs file server URL)
-			wantJwt:           "Bearer " + validJWT,
-			wantAuthorization: "Bearer " + validJWT,
-			wantOrg:           testOrgID,
+			wantJwt: "Bearer " + validJWT,
+			wantOrg: testOrgID,
 			wantFiles: []*apiv1.ExecuteRequest_File{
 				{
 					OriginalName: "activate.sh-375-1772482012190",
@@ -292,11 +270,10 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT, "https://app.superblocks.com")},
 			},
-			wantJwt:           "Bearer " + validJWT,
-			wantAuthorization: "Bearer " + validJWT,
-			wantOrigin:        "https://app.superblocks.com",
-			wantOrg:           testOrgID,
-			wantOutput:        outputValue,
+			wantJwt:    "Bearer " + validJWT,
+			wantOrigin: "https://app.superblocks.com",
+			wantOrg:    testOrgID,
+			wantOutput: outputValue,
 		},
 		{
 			name: "forwards cookie metadata when present",
@@ -309,11 +286,10 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: workerJWTContextSuperblocksPrefix + validJWT + "\n" + workerJWTContextAuthorizationPrefix + validJWT + "\n" + workerJWTContextCookiePrefix + "basic.ds123-token=abc123"},
 			},
-			wantJwt:           "Bearer " + validJWT,
-			wantAuthorization: "Bearer " + validJWT,
-			wantCookie:        "basic.ds123-token=abc123",
-			wantOrg:           testOrgID,
-			wantOutput:        outputValue,
+			wantJwt:    "Bearer " + validJWT,
+			wantCookie: "basic.ds123-token=abc123",
+			wantOrg:    testOrgID,
+			wantOutput: outputValue,
 		},
 		{
 			name: "drops invalid origin metadata when present",
@@ -326,11 +302,10 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT, "https://app.superblocks.com/oauth/callback")},
 			},
-			wantJwt:           "Bearer " + validJWT,
-			wantAuthorization: "Bearer " + validJWT,
-			wantOrigin:        "",
-			wantOrg:           testOrgID,
-			wantOutput:        outputValue,
+			wantJwt:    "Bearer " + validJWT,
+			wantOrigin: "",
+			wantOrg:    testOrgID,
+			wantOutput: outputValue,
 		},
 		{
 			name: "profile falls back to parent execution",
@@ -343,11 +318,10 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT), Profile: profileFallback},
 			},
-			wantJwt:           "Bearer " + validJWT,
-			wantAuthorization: "Bearer " + validJWT,
-			wantOrg:           testOrgID,
-			wantProfile:       profileFallback,
-			wantOutput:        outputValue,
+			wantJwt:     "Bearer " + validJWT,
+			wantOrg:     testOrgID,
+			wantProfile: profileFallback,
+			wantOutput:  outputValue,
 		},
 		{
 			name: "missing execution_id",
@@ -435,10 +409,9 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT)},
 			},
-			wantJwt:           "Bearer " + validJWT,
-			wantAuthorization: "Bearer " + validJWT,
-			wantOrg:           testOrgID,
-			wantOutput:        outputValue,
+			wantJwt:    "Bearer " + validJWT,
+			wantOrg:    testOrgID,
+			wantOutput: outputValue,
 		},
 		{
 			name: "orchestrator returns block-level errors (e.g. bad SQL query)",
@@ -584,8 +557,8 @@ func TestExecuteIntegration(t *testing.T) {
 			assert.Equal(t, "result-exec-id", resp.GetExecutionId())
 			assert.Equal(t, test.wantOutput.GetStructValue().AsMap(), resp.GetOutput().GetStructValue().AsMap())
 
-			// Verify both authorization and x-superblocks-authorization carry a usable JWT.
-			assert.Equal(t, test.wantAuthorization, fake.lastAuthorization)
+			// Verify both authorization and x-superblocks-authorization carry the JWT.
+			assert.Equal(t, test.wantJwt, fake.lastAuthorization)
 			assert.Equal(t, test.wantJwt, fake.lastJwtToken)
 			assert.Equal(t, test.wantOrigin, fake.lastOrigin)
 			assert.Equal(t, test.wantCookie, fake.lastCookie)
@@ -933,8 +906,8 @@ func TestCloseWithActiveOrchestratorConnection(t *testing.T) {
 		orchestratorConns: map[string]*grpc.ClientConn{
 			orchestratorDialTarget{Address: orchestratorAddr, UseTLS: false}.cacheKey(): conn,
 		},
-		orchestratorClients: map[string]apiv1.InternalExecutorServiceClient{
-			orchestratorDialTarget{Address: orchestratorAddr, UseTLS: false}.cacheKey(): apiv1.NewInternalExecutorServiceClient(conn),
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
+			orchestratorDialTarget{Address: orchestratorAddr, UseTLS: false}.cacheKey(): apiv1.NewExecutorServiceClient(conn),
 		},
 	}
 
@@ -1266,8 +1239,8 @@ func TestEvictOldestOrchestratorClientLockedClosesConnection(t *testing.T) {
 
 	svc := &IntegrationExecutorService{
 		logger: zap.NewNop(),
-		orchestratorClients: map[string]apiv1.InternalExecutorServiceClient{
-			oldestKey: apiv1.NewInternalExecutorServiceClient(conn),
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
+			oldestKey: apiv1.NewExecutorServiceClient(conn),
 		},
 		orchestratorConns: map[string]*grpc.ClientConn{
 			oldestKey: conn,
@@ -1285,7 +1258,7 @@ func TestEvictOldestOrchestratorClientLockedClosesConnection(t *testing.T) {
 func TestEvictOldestOrchestratorClientLockedNoopWhenEmpty(t *testing.T) {
 	svc := &IntegrationExecutorService{
 		logger:                 zap.NewNop(),
-		orchestratorClients:    map[string]apiv1.InternalExecutorServiceClient{},
+		orchestratorClients:    map[string]apiv1.ExecutorServiceClient{},
 		orchestratorConns:      map[string]*grpc.ClientConn{},
 		orchestratorClientKeys: []string{},
 	}
@@ -1302,7 +1275,7 @@ func TestCloseSkipsNilCachedConnection(t *testing.T) {
 	svc := &IntegrationExecutorService{
 		logger: zap.NewNop(),
 		server: grpc.NewServer(),
-		orchestratorClients: map[string]apiv1.InternalExecutorServiceClient{
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
 			cacheKey: nil,
 		},
 		orchestratorConns: map[string]*grpc.ClientConn{
@@ -1325,7 +1298,7 @@ func TestCloseContinuesWhenCachedConnectionCloseFails(t *testing.T) {
 	svc := &IntegrationExecutorService{
 		logger: zap.NewNop(),
 		server: grpc.NewServer(),
-		orchestratorClients: map[string]apiv1.InternalExecutorServiceClient{
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
 			cacheKey: nil,
 		},
 		orchestratorConns: map[string]*grpc.ClientConn{
@@ -1354,7 +1327,7 @@ func TestOrchestratorClientCacheEvictsOldestWhenFull(t *testing.T) {
 
 	svc := &IntegrationExecutorService{
 		logger:                 zap.NewNop(),
-		orchestratorClients:    map[string]apiv1.InternalExecutorServiceClient{},
+		orchestratorClients:    map[string]apiv1.ExecutorServiceClient{},
 		orchestratorConns:      map[string]*grpc.ClientConn{},
 		orchestratorClientKeys: []string{},
 	}
@@ -1387,7 +1360,7 @@ func TestEvictOldestOrchestratorClientLockedContinuesWhenCloseFails(t *testing.T
 
 	svc := &IntegrationExecutorService{
 		logger: zap.NewNop(),
-		orchestratorClients: map[string]apiv1.InternalExecutorServiceClient{
+		orchestratorClients: map[string]apiv1.ExecutorServiceClient{
 			oldestKey: nil,
 		},
 		orchestratorConns: map[string]*grpc.ClientConn{

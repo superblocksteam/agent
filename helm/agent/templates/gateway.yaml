@@ -71,7 +71,6 @@ spec:
     {{- end }}
 ---
 {{- $grpcPort := .Values.service.ports.grpc -}}
-{{- /* Do not include api.v1.InternalExecutorService here. It is reserved for task-manager -> orchestrator callbacks and must not be publicly routed. */ -}}
 {{- $services := .Values.gateway.grpcServices | default (list "/grpc.reflection.v1.ServerReflection" "/grpc.reflection.v1alpha.ServerReflection" "/api.v1.ExecutorService") }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
