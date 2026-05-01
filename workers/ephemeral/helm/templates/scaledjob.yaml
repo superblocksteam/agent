@@ -18,6 +18,7 @@
 # =============================================================================
 {{- $fullname := include "sandbox_workers.fullname" . }}
 {{- range $k, $v := .Values.fleets }}
+{{- if ne ($v.mode | default "job") "deployment" }}
 {{- $language := $v.language | required "language is required (python or javascript)" }}
 {{- $sandboxConfig := index $.Values.sandbox $language }}
 {{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
@@ -273,6 +274,18 @@ spec:
           - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"
           {{- end }}
           - "--telemetry.deployment.type={{ $.Values.telemetry.deploymentType }}"
+          {{- if $.Values.observability.tracing.batchTimeout }}
+          - "--telemetry.batch.timeout={{ $.Values.observability.tracing.batchTimeout }}"
+          {{- end }}
+          {{- if $.Values.observability.tracing.exportTimeout }}
+          - "--telemetry.batch.export.timeout={{ $.Values.observability.tracing.exportTimeout }}"
+          {{- end }}
+          {{- if $.Values.observability.tracing.maxExportBatchSize }}
+          - "--telemetry.batch.max.export.batch.size={{ $.Values.observability.tracing.maxExportBatchSize }}"
+          {{- end }}
+          {{- if $.Values.observability.tracing.maxQueueSize }}
+          - "--telemetry.batch.max.queue.size={{ $.Values.observability.tracing.maxQueueSize }}"
+          {{- end }}
           # Integration executor - allows sandbox to execute integrations via orchestrator
           {{- $ieEnabled := $.Values.integrationExecutor.enabled }}
           {{- with ($v.integrationExecutor) }}
@@ -374,4 +387,5 @@ spec:
         tolerations:
           {{- toYaml . | nindent 10 }}
         {{- end }}
+{{- end }}
 {{- end }}

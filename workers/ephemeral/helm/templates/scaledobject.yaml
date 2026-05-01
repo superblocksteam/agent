@@ -1,0 +1,41 @@
+{{- $fullname := include "sandbox_workers.fullname" . }}
+{{- range $k, $v := .Values.fleets }}
+{{- if eq ($v.mode | default "job") "deployment" }}
+{{- $fleetKeda := $v.keda | default dict }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ printf "%s-%s" $fullname $k | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "sandbox.worker.labels" $v | nindent 4 }}
+spec:
+  scaleTargetRef:
+    name: {{ printf "%s-%s" $fullname $k | trunc 63 | trimSuffix "-" }}
+  pollingInterval: {{ $v.keda.pollingInterval | default $.Values.keda.pollingInterval }}
+  cooldownPeriod: {{ $v.keda.cooldownPeriod | default $.Values.keda.cooldownPeriod | default 30 }}
+  minReplicaCount: {{ if hasKey $fleetKeda "minReplicaCount" }}{{ index $fleetKeda "minReplicaCount" }}{{ else }}{{ $.Values.keda.minReplicaCount }}{{ end }}
+  maxReplicaCount: {{ if hasKey $fleetKeda "maxReplicaCount" }}{{ index $fleetKeda "maxReplicaCount" }}{{ else }}{{ $.Values.keda.maxReplicaCount }}{{ end }}
+  {{- if or $v.keda.triggers $.Values.keda.triggers }}
+  triggers:
+    {{- toYaml ($v.keda.triggers | default $.Values.keda.triggers) | nindent 4 }}
+  {{- else }}
+  triggers:
+    {{- range $v.triggerStreams }}
+    - type: redis-streams
+      metadata:
+        host: {{ $.Values.queue.host }}
+        port: {{ $.Values.queue.port | quote }}
+        enableTLS: {{ $.Values.queue.tls | quote }}
+        stream: {{ . }}
+        consumerGroup: {{ $v.consumerGroup }}
+        {{- with $v.keda.lagCount | default $.Values.keda.lagCount }}
+        lagCount: {{ . | quote }}
+        {{- end }}
+        activationLagCount: {{ $v.keda.activationLagCount | default $.Values.keda.activationLagCount | default "1" | quote }}
+      authenticationRef:
+        name: {{ printf "%s-redis-trigger-auth" $fullname | trunc 63 | trimSuffix "-" }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

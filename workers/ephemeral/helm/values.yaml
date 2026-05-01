@@ -164,9 +164,10 @@ sandboxJob:
   ttlSecondsAfterFinished: 0
   # No restart attempts on failure
   backoffLimit: 0
-# KEDA ScaledJob configuration
+# KEDA configuration
 keda:
   pollingInterval: 5
+  cooldownPeriod: 300
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   ttlSecondsAfterFinished: 0 # Auto-cleanup completed pods immediately

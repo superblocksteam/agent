@@ -102,6 +102,36 @@ fleets:
             lagCount: "1"
           authenticationRef:
             name: sandbox-workers-redis-trigger-auth
+  # Deployment-mode stub: validates Deployment + ScaledObject templates install
+  # alongside ScaledJobs without disrupting existing CI test traffic.
+  # minReplicaCount=0 so the Deployment starts with no pods.
+  # maxReplicaCount=1 (KEDA requires >= 1); the isolated consumer group ensures
+  # no real traffic triggers scale-up, so zero pods run in practice.
+  javascript-ba-deploy:
+    mode: deployment
+    language: javascript
+    bucket: BA
+    consumerGroup: ephemeral-javascript-deploy
+    plugins:
+      - javascript
+    buckets:
+      - BA
+      - BE
+    events:
+      - execute
+    keda:
+      pollingInterval: 1
+      minReplicaCount: 0
+      maxReplicaCount: 1
+      triggers:
+        - type: redis-streams
+          metadata:
+            address: redis-master.superblocks.svc.cluster.local:6379
+            stream: agent.main.bucket.BA.plugin.javascript.event.execute
+            consumerGroup: ephemeral-javascript-deploy
+            lagCount: "1"
+          authenticationRef:
+            name: sandbox-workers-redis-trigger-auth
 # Task Manager image (built in CI)
 taskManager:
   # Expose a stable Service so e2e tests can reach the HTTP gateway via DNS
