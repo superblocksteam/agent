@@ -263,6 +263,9 @@ func main() {
 	metricsCtx := context.Background()
 	metricsProvider, err := metrics.NewProvider(metricsCtx, metrics.ProviderOptions{
 		OTELCollectorURL: viper.GetString("otel.collector.http.url"),
+		Headers: map[string]string{
+			"x-superblocks-agent-key": viper.GetString("superblocks.key"),
+		},
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "could not create metrics provider: %s", err)
@@ -439,7 +442,7 @@ func main() {
 				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
 			},
 			MetricsEnabled: false, // internal/metrics handles Prometheus + OTLP metrics
-			LogsEnabled:    true,
+			LogsEnabled:    false, // rely on legacy remoteEmitter for log shipping
 			Batch: telemetry.BatchConfig{
 				MaxQueueSize:       viper.GetInt("telemetry.batch.max.queue.size"),
 				MaxExportBatchSize: viper.GetInt("telemetry.batch.max.export.batch.size"),

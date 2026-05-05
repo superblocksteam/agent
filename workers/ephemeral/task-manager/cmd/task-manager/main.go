@@ -263,7 +263,7 @@ func main() {
 				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
 			},
 			MetricsEnabled: false,
-			LogsEnabled:    true,
+			LogsEnabled:    false, // rely on legacy log pipeline instead of OTLP log export
 			Batch: telemetry.BatchConfig{
 				MaxQueueSize:       viper.GetInt("telemetry.batch.max.queue.size"),
 				MaxExportBatchSize: viper.GetInt("telemetry.batch.max.export.batch.size"),
@@ -290,6 +290,9 @@ func main() {
 			version,
 			os.Getenv("POD_NAME"),
 			os.Getenv("FLEET_NAME"),
+			map[string]string{
+				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
+			},
 		)
 		if err != nil {
 			intakeLogger.Error("could not create meter provider", zap.Error(err))

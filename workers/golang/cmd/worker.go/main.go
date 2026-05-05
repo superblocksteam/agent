@@ -162,7 +162,7 @@ func main() {
 				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
 			},
 			MetricsEnabled: false,
-			LogsEnabled:    true,
+			LogsEnabled:    false, // rely on legacy remoteEmitter log pipeline
 			Batch: telemetry.BatchConfig{
 				MaxQueueSize:       viper.GetInt("telemetry.batch.max.queue.size"),
 				MaxExportBatchSize: viper.GetInt("telemetry.batch.max.export.batch.size"),

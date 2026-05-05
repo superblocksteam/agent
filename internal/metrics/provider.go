@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/superblocksteam/agent/pkg/telemetry"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
@@ -49,6 +50,9 @@ type ProviderOptions struct {
 	// OTELCollectorURL is the URL of the OTEL collector for push-based metrics.
 	// If empty, only Prometheus pull-based metrics will be enabled.
 	OTELCollectorURL string
+
+	// Headers are OTLP HTTP headers sent with push-based metrics requests.
+	Headers map[string]string
 
 	// PrometheusRegistry is the Prometheus registry to use.
 	// If nil, the default registry will be used.
@@ -90,9 +94,11 @@ func NewProvider(ctx context.Context, opts ProviderOptions) (*Provider, error) {
 			return nil, fmt.Errorf("failed to build metrics URL: %w", err)
 		}
 
-		otlpExporter, err := otlpmetrichttp.New(ctx,
-			otlpmetrichttp.WithEndpointURL(metricsURL),
+		metricOpts := append(
+			[]otlpmetrichttp.Option{otlpmetrichttp.WithEndpointURL(metricsURL)},
+			telemetry.OTLPMetricHeaderOptions(metricsURL, opts.Headers)...,
 		)
+		otlpExporter, err := otlpmetrichttp.New(ctx, metricOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OTLP exporter: %w", err)
 		}

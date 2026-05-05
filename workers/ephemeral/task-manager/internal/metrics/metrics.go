@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/superblocksteam/agent/pkg/telemetry"
 	"github.com/superblocksteam/run"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -103,12 +104,13 @@ var (
 
 // SetupMeterProvider creates and registers an OTLP-based meter provider for
 // pushing sandbox metrics to the configured collector.
-func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersion, podName, fleetName string) (*sdkmetric.MeterProvider, error) {
+func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersion, podName, fleetName string, headers map[string]string) (*sdkmetric.MeterProvider, error) {
 	metricsURL := buildMetricsURL(otlpURL)
 
 	opts := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithEndpointURL(metricsURL),
 	}
+	opts = append(opts, telemetry.OTLPMetricHeaderOptions(metricsURL, headers)...)
 
 	if strings.HasPrefix(otlpURL, "http://") {
 		opts = append(opts, otlpmetrichttp.WithInsecure())
