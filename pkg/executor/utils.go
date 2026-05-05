@@ -341,6 +341,13 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 				"bundle": structpb.NewStringValue(bundle.Bundle),
 			},
 		}
+		if len(bundle.IntegrationIds) > 0 {
+			values := make([]*structpb.Value, 0, len(bundle.IntegrationIds))
+			for _, id := range bundle.IntegrationIds {
+				values = append(values, structpb.NewStringValue(id))
+			}
+			rawDef.Fields["integrationIds"] = structpb.NewListValue(&structpb.ListValue{Values: values})
+		}
 		return def, rawDef, nil
 	} else if f := request.GetFetchByPath(); f != nil {
 		if def, rawDef, err = fetcher.FetchApiByPath(ctx, f, useAgentKey); err != nil {
@@ -405,6 +412,25 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 		}
 	})
 
+	if constants.IsSDKIntegrationExecution(ctx) {
+		integrationsToFetch = integrationsToFetch[:0]
+		seenIntegrationIds := make(map[string]struct{}, len(allIntegrationIds))
+		for _, integrationID := range allIntegrationIds {
+			if !constants.IsSDKIntegrationAllowed(ctx, integrationID) {
+				return nil, nil, fmt.Errorf("integration %q is not declared by the SDK API source", integrationID)
+			}
+			if _, seen := seenIntegrationIds[integrationID]; seen {
+				continue
+			}
+			seenIntegrationIds[integrationID] = struct{}{}
+			integrationsToFetch = append(integrationsToFetch, integrationID)
+		}
+		// Never trust caller-supplied integration configs on signed SDK callbacks;
+		// hydrate all referenced integrations from the server-authoritative agent
+		// datasource endpoint below.
+		def.Integrations = map[string]*structpb.Struct{}
+	}
+
 	// Validate profile restrictions if viewMode is explicitly provided
 	if len(allIntegrationIds) > 0 && request.GetProfile() != nil && request.ViewMode != apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
 		viewModeStr := viewModeEnumToString(request.ViewMode)
@@ -422,42 +448,71 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 
 	// Fetch missing integration configurations
 	if len(integrationsToFetch) > 0 {
-		resp, err := fetcher.FetchIntegrations(ctx, &integrationv1.GetIntegrationsRequest{
-			Ids:     integrationsToFetch,
-			Profile: request.GetProfile(),
-		}, useAgentKey)
-		if err != nil {
-			logger.Warn("integration fetch failed for inline definition", zap.Error(err))
-			return nil, nil, err
-		}
-
 		if def.Integrations == nil {
 			def.Integrations = map[string]*structpb.Struct{}
 		}
 
-		fetchedConfigs := make(map[string]bool, len(resp.Data))
-		for _, integration := range resp.Data {
-			if integration == nil {
-				continue
-			}
-			if len(integration.Configurations) == 0 || integration.Configurations[0] == nil || integration.Configurations[0].GetConfiguration() == nil {
-				return nil, nil, fmt.Errorf("integration %q has no accessible configurations", integration.GetId())
-			}
-			cfg := integration.Configurations[0]
-			inner := cfg.GetConfiguration()
-			if cfg.GetId() != "" {
-				if inner.Fields == nil {
-					inner.Fields = map[string]*structpb.Value{}
+		if constants.IsSDKIntegrationExecution(ctx) {
+			for _, integrationID := range integrationsToFetch {
+				// FetchIntegration uses the agent datasource endpoint, which always
+				// sends the agent key; it does not need the useAgentKey flag.
+				integration, err := fetcher.FetchIntegration(ctx, integrationID, request.GetProfile())
+				if err != nil {
+					logger.Warn("SDK integration fetch failed for inline definition", zap.String("integration_id", integrationID), zap.Error(err))
+					return nil, nil, err
 				}
-				inner.Fields["id"] = structpb.NewStringValue(cfg.GetId())
+				if integration == nil || integration.Configuration == nil {
+					return nil, nil, fmt.Errorf("integration %q configuration not found or inaccessible", integrationID)
+				}
+				config, err := structpb.NewStruct(integration.Configuration)
+				if err != nil {
+					return nil, nil, fmt.Errorf("integration %q configuration is invalid: %w", integrationID, err)
+				}
+				if config.GetFields()["id"].GetStringValue() == "" {
+					return nil, nil, fmt.Errorf("integration %q configuration id not found or inaccessible", integrationID)
+				}
+				if integration.PluginId != "" {
+					if config.Fields == nil {
+						config.Fields = map[string]*structpb.Value{}
+					}
+					config.Fields["pluginId"] = structpb.NewStringValue(integration.PluginId)
+				}
+				def.Integrations[integrationID] = config
 			}
-			def.Integrations[integration.Id] = inner
-			fetchedConfigs[integration.GetId()] = true
-		}
+		} else {
+			resp, err := fetcher.FetchIntegrations(ctx, &integrationv1.GetIntegrationsRequest{
+				Ids:     integrationsToFetch,
+				Profile: request.GetProfile(),
+			}, useAgentKey)
+			if err != nil {
+				logger.Warn("integration fetch failed for inline definition", zap.Error(err))
+				return nil, nil, err
+			}
 
-		for _, integrationID := range integrationsToFetch {
-			if !fetchedConfigs[integrationID] {
-				return nil, nil, fmt.Errorf("integration %q configuration not found or inaccessible", integrationID)
+			fetchedConfigs := make(map[string]bool, len(resp.Data))
+			for _, integration := range resp.Data {
+				if integration == nil {
+					continue
+				}
+				if len(integration.Configurations) == 0 || integration.Configurations[0] == nil || integration.Configurations[0].GetConfiguration() == nil {
+					return nil, nil, fmt.Errorf("integration %q has no accessible configurations", integration.GetId())
+				}
+				cfg := integration.Configurations[0]
+				inner := cfg.GetConfiguration()
+				if cfg.GetId() != "" {
+					if inner.Fields == nil {
+						inner.Fields = map[string]*structpb.Value{}
+					}
+					inner.Fields["id"] = structpb.NewStringValue(cfg.GetId())
+				}
+				def.Integrations[integration.Id] = inner
+				fetchedConfigs[integration.GetId()] = true
+			}
+
+			for _, integrationID := range integrationsToFetch {
+				if !fetchedConfigs[integrationID] {
+					return nil, nil, fmt.Errorf("integration %q configuration not found or inaccessible", integrationID)
+				}
 			}
 		}
 	}

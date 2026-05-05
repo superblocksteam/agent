@@ -78,7 +78,8 @@ type FetchIntegrationResponse struct {
 
 // ApiCodeBundle is the response from GET /api/v3/applications/{id}/code (API 2.0 esbuild bundle).
 type ApiCodeBundle struct {
-	Bundle string
+	Bundle         string
+	IntegrationIds []string
 }
 
 type Integration struct {
@@ -195,14 +196,15 @@ func (f *fetcher) FetchApiCode(ctx context.Context, applicationId string, entryP
 		span.SetAttributes(attribute.Int("response_bytes", len(respData)))
 
 		var result struct {
-			Bundle string `json:"bundle"`
+			Bundle         string   `json:"bundle"`
+			IntegrationIds []string `json:"integrationIds"`
 		}
 		if jsonErr := json.Unmarshal(respData, &result); jsonErr != nil {
 			logger.Error("could not unmarshal api code response", zap.Error(jsonErr))
 			return nil, sberrors.ErrInternal
 		}
 
-		return &ApiCodeBundle{Bundle: result.Bundle}, nil
+		return &ApiCodeBundle{Bundle: result.Bundle, IntegrationIds: result.IntegrationIds}, nil
 	}, nil)
 
 	return bundle, err

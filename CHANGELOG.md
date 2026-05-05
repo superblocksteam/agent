@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Fix Apps 3.0 SDK integration callbacks for embedded external users using short-lived orchestrator-signed capabilities.
 - Include `x-superblocks-agent-key` in OTLP metrics upload headers for orchestrator and task-manager exporters
 - Disable OTLP log exporting to the collector and rely on the legacy remote logging pipeline instead
 - Upgrade axios from 1.13.5 to 1.15.1 across all JavaScript worker packages, addressing CVE-2026-40175 (critical prototype-pollution RCE gadget) and CVE-2025-62718 (SSRF via hostname bypass)

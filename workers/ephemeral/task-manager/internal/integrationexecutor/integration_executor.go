@@ -39,6 +39,7 @@ const (
 	workerJWTContextAuthorizationPrefix = "authjwt="
 	workerJWTContextOriginPrefix        = "origin="
 	workerJWTContextCookiePrefix        = "cookie="
+	workerJWTContextSDKCallbackPrefix   = "sdkcap="
 	maxOrchestratorClientCacheSize      = 128
 )
 
@@ -330,7 +331,7 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
 	}
 
-	superblocksToken, authorizationToken, origin, cookie := parseWorkerJWTContext(fileCtx.JwtToken)
+	superblocksToken, authorizationToken, origin, cookie, sdkCallbackToken := parseWorkerJWTContext(fileCtx.JwtToken)
 	if superblocksToken == "" && authorizationToken == "" {
 		return nil, status.Error(codes.PermissionDenied, "no JWT token available for this execution")
 	}
@@ -383,10 +384,20 @@ func (s *IntegrationExecutorService) ExecuteIntegration(ctx context.Context, req
 	// Cookies carry per-user auth tokens (basic, oauth-implicit, firebase)
 	// that the orchestrator's GetCookies(ctx) reads during integration
 	// resolution.
+	authorizationHeaderToken := authorizationToken
+	if authorizationHeaderToken == "" && sdkCallbackToken != "" {
+		// Embedded external users may only have a Superblocks JWT. For signed
+		// SDK callbacks, reuse it as Authorization so inline-definition auth passes.
+		authorizationHeaderToken = superblocksToken
+	}
 	md := metadata.Pairs(
-		"authorization", "Bearer "+authorizationToken,
+		"authorization", "Bearer "+authorizationHeaderToken,
 		constants.HeaderSuperblocksJwt, "Bearer "+superblocksToken,
 	)
+	if sdkCallbackToken != "" {
+		md.Set(constants.HeaderSDKCallbackToken, "Bearer "+sdkCallbackToken)
+		md.Set(constants.HeaderSDKCallbackExecutionID, req.GetExecutionId())
+	}
 	if origin != "" {
 		md.Set("origin", origin)
 	}
@@ -624,10 +635,10 @@ func extractOrgIDFromJWT(jwtToken string) (string, error) {
 	return claims.OrgID, nil
 }
 
-func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken, origin, cookie string) {
+func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken, origin, cookie, sdkCallbackToken string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return "", "", "", ""
+		return "", "", "", "", ""
 	}
 
 	lines := strings.Split(raw, "\n")
@@ -649,9 +660,13 @@ func parseWorkerJWTContext(raw string) (superblocksToken, authorizationToken, or
 			cookie = strings.TrimPrefix(line, workerJWTContextCookiePrefix)
 			continue
 		}
+		if strings.HasPrefix(line, workerJWTContextSDKCallbackPrefix) {
+			sdkCallbackToken = strings.TrimSpace(strings.TrimPrefix(line, workerJWTContextSDKCallbackPrefix))
+			continue
+		}
 	}
 
-	return superblocksToken, authorizationToken, origin, cookie
+	return superblocksToken, authorizationToken, origin, cookie, sdkCallbackToken
 }
 
 func normalizeWorkerOrigin(raw string) (string, error) {

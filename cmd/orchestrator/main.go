@@ -93,6 +93,7 @@ import (
 	"golang.org/x/text/language"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	grpcmetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -759,6 +760,7 @@ func main() {
 			TokenManager:            auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms"), flagsClient),
 			AgentId:                 id,
 			AgentVersion:            version,
+			AgentKey:                viper.GetString("superblocks.key"),
 			IntegrationsCallbackUrl: viper.GetString("integrations.callback.url"),
 			SecretManager:           secretManager,
 			Secrets:                 manager,
@@ -823,6 +825,9 @@ func main() {
 			// Unconditionally require JWT for certain request types, regardless of
 			// feature flags or context values. These checks must come before anything
 			// that could early-return false.
+			if md, ok := grpcmetadata.FromIncomingContext(ctx); ok && len(md.Get(constants.HeaderSDKCallbackToken)) > 0 {
+				return true
+			}
 			switch callMeta.ReqOrNil.(type) {
 			case *apiv1.ExecuteV3Request:
 				return true

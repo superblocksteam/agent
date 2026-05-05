@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
 	flagsmocks "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/internal/metrics"
 
@@ -1855,7 +1857,7 @@ func TestExecuteV3PacksOriginIntoWorkerJWTContext(t *testing.T) {
 
 	_, err := s.ExecuteV3(ctx, req)
 	require.NoError(t, err)
-	assert.Equal(t, encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, ""), capturedJwtToken)
+	assert.Equal(t, encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, "", ""), capturedJwtToken)
 
 	fetcher.AssertExpectations(t)
 	mockWorker.AssertExpectations(t)
@@ -1919,8 +1921,89 @@ func TestExecuteV3PacksCookieIntoWorkerJWTContext(t *testing.T) {
 
 	_, err := s.ExecuteV3(ctx, req)
 	require.NoError(t, err)
-	assert.Equal(t, encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, cookieHeader), capturedJwtToken)
+	assert.Equal(t, encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, cookieHeader, ""), capturedJwtToken)
 	assert.Contains(t, capturedJwtToken, "cookie="+cookieHeader)
+
+	fetcher.AssertExpectations(t)
+	mockWorker.AssertExpectations(t)
+}
+
+func TestExecuteV3PacksSDKCallbackTokenForDeclaredIntegrations(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	const agentKey = "agent-key"
+	const superblocksJWT = "superblocks-jwt"
+
+	mockWorker := &worker.MockClient{}
+	fetcher := &fetchmocks.Fetcher{}
+	memStore := store.Memory()
+
+	outputKey := "output-key-v3-sdk-callback-context"
+	require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: `{"output":{"ok":true}}`}))
+
+	var capturedJwtToken string
+	mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.MatchedBy(func(data *transportv1.Request_Data_Data) bool {
+		capturedJwtToken = data.GetProps().GetJwtToken()
+		return true
+	}), mock.Anything, mock.Anything).Return(nil, outputKey, nil)
+
+	fetcher.On(
+		"FetchApiCode",
+		mock.Anything,
+		"app-with-integrations",
+		"server/apis/get-orders.ts",
+		"",
+		"commit-1",
+		"",
+		mock.Anything,
+	).Return(&fetch.ApiCodeBundle{
+		Bundle:         `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
+		IntegrationIds: []string{"integration-1"},
+	}, nil)
+
+	s := NewServer(&Config{
+		Logger:        zap.NewNop(),
+		Store:         memStore,
+		Worker:        mockWorker,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		AgentKey:      agentKey,
+	})
+
+	req := &apiv1.ExecuteV3Request{
+		ApplicationId: "app-with-integrations",
+		CommitId:      strPtr("commit-1"),
+		EntryPoint:    strPtr("server/apis/get-orders.ts"),
+	}
+
+	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
+	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
+	ctx = jwt_validator.WithOrganizationID(ctx, "org-1")
+	ctx = constants.WithExecutionID(ctx, "exec-with-integrations")
+	ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(constants.HeaderSuperblocksJwt, "Bearer "+superblocksJWT))
+
+	_, err := s.ExecuteV3(ctx, req)
+	require.NoError(t, err)
+
+	parts := strings.Split(capturedJwtToken, "\n")
+	require.NotEmpty(t, parts)
+	var sdkToken string
+	for _, part := range parts {
+		if strings.HasPrefix(part, "sdkcap=") {
+			sdkToken = strings.TrimPrefix(part, "sdkcap=")
+		}
+	}
+	require.NotEmpty(t, sdkToken)
+
+	claims, err := verifySDKCallbackToken(agentKey, sdkToken)
+	require.NoError(t, err)
+	assert.Equal(t, "exec-with-integrations", claims.ExecutionID)
+	assert.Equal(t, "org-1", claims.OrganizationID)
+	assert.Equal(t, "app-with-integrations", claims.ApplicationID)
+	assert.Equal(t, "commit-1", claims.CommitID)
+	assert.Equal(t, "server/apis/get-orders.ts", claims.EntryPoint)
+	assert.Equal(t, []string{"integration-1"}, claims.AllowedIntegrationIDs)
 
 	fetcher.AssertExpectations(t)
 	mockWorker.AssertExpectations(t)
@@ -1935,6 +2018,7 @@ func TestEncodeWorkerJWTContext(t *testing.T) {
 		authjwt    string
 		origin     string
 		cookie     string
+		sdk        string
 		wantEmpty  bool
 		wantResult string
 	}{
@@ -2013,6 +2097,12 @@ func TestEncodeWorkerJWTContext(t *testing.T) {
 			wantResult: "sbjwt=sb-token\nauthjwt=auth-token",
 		},
 		{
+			name:       "SDK callback token appended",
+			sbjwt:      "sb-token",
+			sdk:        "cap-token",
+			wantResult: "sbjwt=sb-token\nsdkcap=cap-token",
+		},
+		{
 			name:       "whitespace-only cookie not appended",
 			sbjwt:      "sb-token",
 			authjwt:    "auth-token",
@@ -2021,7 +2111,7 @@ func TestEncodeWorkerJWTContext(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			result := encodeWorkerJWTContext(test.sbjwt, test.authjwt, test.origin, test.cookie)
+			result := encodeWorkerJWTContext(test.sbjwt, test.authjwt, test.origin, test.cookie, test.sdk)
 			if test.wantEmpty {
 				assert.Empty(t, result)
 			} else {
@@ -2064,6 +2154,99 @@ func TestNormalizeWorkerOrigin(t *testing.T) {
 			assert.Equal(t, test.want, got)
 		})
 	}
+}
+
+func TestWithSDKCallbackContext(t *testing.T) {
+	agentKey := "agent-key"
+	executionID := "exec-sdk"
+	orgID := "org-sdk"
+
+	makeSDKReq := func() *apiv1.ExecuteRequest {
+		return &apiv1.ExecuteRequest{
+			Request: &apiv1.ExecuteRequest_Definition{
+				Definition: &apiv1.Definition{
+					Api: &apiv1.Api{
+						Metadata: &v1.Metadata{
+							Id: "sdk-query-integration-1",
+						},
+					},
+				},
+			},
+		}
+	}
+
+	token, err := signSDKCallbackToken(agentKey, sdkCallbackClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    sdkCallbackIssuer,
+			Audience:  jwt.ClaimStrings{sdkCallbackAudience},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+		},
+		ExecutionID:           executionID,
+		OrganizationID:        orgID,
+		AllowedIntegrationIDs: []string{"integration-1"},
+	})
+	require.NoError(t, err)
+	expiredToken, err := signSDKCallbackToken(agentKey, sdkCallbackClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    sdkCallbackIssuer,
+			Audience:  jwt.ClaimStrings{sdkCallbackAudience},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-time.Minute)),
+		},
+		ExecutionID:           executionID,
+		OrganizationID:        orgID,
+		AllowedIntegrationIDs: []string{"integration-1"},
+	})
+	require.NoError(t, err)
+
+	baseCtx := jwt_validator.WithOrganizationID(context.Background(), orgID)
+	baseCtx = metadata.NewIncomingContext(baseCtx, metadata.Pairs(
+		constants.HeaderSDKCallbackToken, "Bearer "+token,
+		constants.HeaderSDKCallbackExecutionID, executionID,
+	))
+	srv := &server{Config: &Config{AgentKey: agentKey}}
+
+	ctx, err := srv.withSDKCallbackContext(baseCtx, makeSDKReq())
+	require.NoError(t, err)
+	assert.True(t, constants.IsSDKIntegrationExecution(ctx))
+	assert.True(t, constants.IsSDKIntegrationAllowed(ctx, "integration-1"))
+	assert.False(t, constants.IsSDKIntegrationAllowed(ctx, "integration-2"))
+
+	_, err = srv.withSDKCallbackContext(context.Background(), makeSDKReq())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "SDK integration callback token required")
+
+	legacyCtx, err := srv.withSDKCallbackContext(context.Background(), &apiv1.ExecuteRequest{
+		Request: &apiv1.ExecuteRequest_Definition{Definition: &apiv1.Definition{Api: &apiv1.Api{Metadata: &v1.Metadata{Id: "regular-inline"}}}},
+	})
+	require.NoError(t, err)
+	assert.False(t, constants.IsSDKIntegrationExecution(legacyCtx))
+
+	mismatchedExecCtx := jwt_validator.WithOrganizationID(context.Background(), orgID)
+	mismatchedExecCtx = metadata.NewIncomingContext(mismatchedExecCtx, metadata.Pairs(
+		constants.HeaderSDKCallbackToken, "Bearer "+token,
+		constants.HeaderSDKCallbackExecutionID, "other-exec",
+	))
+	_, err = srv.withSDKCallbackContext(mismatchedExecCtx, makeSDKReq())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "execution mismatch")
+
+	mismatchedOrgCtx := jwt_validator.WithOrganizationID(context.Background(), "other-org")
+	mismatchedOrgCtx = metadata.NewIncomingContext(mismatchedOrgCtx, metadata.Pairs(
+		constants.HeaderSDKCallbackToken, "Bearer "+token,
+		constants.HeaderSDKCallbackExecutionID, executionID,
+	))
+	_, err = srv.withSDKCallbackContext(mismatchedOrgCtx, makeSDKReq())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "organization mismatch")
+
+	expiredCtx := jwt_validator.WithOrganizationID(context.Background(), orgID)
+	expiredCtx = metadata.NewIncomingContext(expiredCtx, metadata.Pairs(
+		constants.HeaderSDKCallbackToken, "Bearer "+expiredToken,
+		constants.HeaderSDKCallbackExecutionID, executionID,
+	))
+	_, err = srv.withSDKCallbackContext(expiredCtx, makeSDKReq())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid SDK integration callback token")
 }
 
 func TestExecuteV3RejectsMissingReferencedFilePayload(t *testing.T) {

@@ -68,6 +68,8 @@ type fakeOrchestratorServer struct {
 	lastCookie        string
 	lastRequest       *apiv1.ExecuteRequest
 	lastJwtToken      string
+	lastSDKToken      string
+	lastSDKExecID     string
 	response          *apiv1.AwaitResponse
 	err               error
 }
@@ -84,6 +86,12 @@ func (f *fakeOrchestratorServer) Await(ctx context.Context, req *apiv1.ExecuteRe
 		}
 		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
 			f.lastJwtToken = vals[0]
+		}
+		if vals := md.Get(constants.HeaderSDKCallbackToken); len(vals) > 0 {
+			f.lastSDKToken = vals[0]
+		}
+		if vals := md.Get(constants.HeaderSDKCallbackExecutionID); len(vals) > 0 {
+			f.lastSDKExecID = vals[0]
 		}
 		if vals := md.Get("cookie"); len(vals) > 0 {
 			f.lastCookie = vals[0]
@@ -212,8 +220,10 @@ func TestExecuteIntegration(t *testing.T) {
 		wantOutput         *structpb.Value
 		wantError          string
 		wantJwt            string
+		wantAuthorization  string
 		wantOrigin         string
 		wantCookie         string
+		wantSDK            string
 		wantOrg            string
 		wantProfile        *commonv1.Profile
 		wantFiles          []*apiv1.ExecuteRequest_File
@@ -231,10 +241,70 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT), Profile: profileFallback},
 			},
-			wantJwt:     "Bearer " + validJWT,
-			wantOrg:     testOrgID,
-			wantProfile: profileTest,
-			wantOutput:  outputValue,
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantOrg:           testOrgID,
+			wantProfile:       profileTest,
+			wantOutput:        outputValue,
+		},
+		{
+			name: "forwards SDK callback token metadata when present",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+				ViewMode:            apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+				Profile:             profileTest,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: workerJWTContextSuperblocksPrefix + validJWT + "\n" + workerJWTContextAuthorizationPrefix + validJWT + "\n" + workerJWTContextSDKCallbackPrefix + "cap-token"},
+			},
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantOrg:           testOrgID,
+			wantProfile:       profileTest,
+			wantOutput:        outputValue,
+			wantSDK:           "Bearer cap-token",
+		},
+		{
+			name: "falls back to Superblocks JWT for Authorization only when SDK callback token is present",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+				ViewMode:            apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+				Profile:             profileTest,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: workerJWTContextSuperblocksPrefix + validJWT + "\n" + workerJWTContextSDKCallbackPrefix + "cap-token"},
+			},
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantOrg:           testOrgID,
+			wantProfile:       profileTest,
+			wantOutput:        outputValue,
+			wantSDK:           "Bearer cap-token",
+		},
+		{
+			name: "does not fall back to Superblocks JWT for non-SDK callbacks",
+			request: &workerv1.ExecuteIntegrationRequest{
+				ExecutionId:         "exec-1",
+				IntegrationId:       "int-1",
+				PluginId:            "postgres",
+				ActionConfiguration: actionConfig,
+				ViewMode:            apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+				Profile:             profileTest,
+			},
+			contexts: map[string]*redisstore.ExecutionFileContext{
+				"exec-1": {JwtToken: workerJWTContextSuperblocksPrefix + validJWT},
+			},
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer ",
+			wantOrg:           testOrgID,
+			wantProfile:       profileTest,
+			wantOutput:        outputValue,
 		},
 		{
 			name: "files lazily fetched from file server and forwarded to Await",
@@ -246,8 +316,9 @@ func TestExecuteIntegration(t *testing.T) {
 				ViewMode:            apiv1.ViewMode_VIEW_MODE_EDIT,
 			},
 			// contexts is set dynamically below (needs file server URL)
-			wantJwt: "Bearer " + validJWT,
-			wantOrg: testOrgID,
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantOrg:           testOrgID,
 			wantFiles: []*apiv1.ExecuteRequest_File{
 				{
 					OriginalName: "activate.sh-375-1772482012190",
@@ -270,10 +341,11 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT, "https://app.superblocks.com")},
 			},
-			wantJwt:    "Bearer " + validJWT,
-			wantOrigin: "https://app.superblocks.com",
-			wantOrg:    testOrgID,
-			wantOutput: outputValue,
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantOrigin:        "https://app.superblocks.com",
+			wantOrg:           testOrgID,
+			wantOutput:        outputValue,
 		},
 		{
 			name: "forwards cookie metadata when present",
@@ -286,10 +358,11 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: workerJWTContextSuperblocksPrefix + validJWT + "\n" + workerJWTContextAuthorizationPrefix + validJWT + "\n" + workerJWTContextCookiePrefix + "basic.ds123-token=abc123"},
 			},
-			wantJwt:    "Bearer " + validJWT,
-			wantCookie: "basic.ds123-token=abc123",
-			wantOrg:    testOrgID,
-			wantOutput: outputValue,
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantCookie:        "basic.ds123-token=abc123",
+			wantOrg:           testOrgID,
+			wantOutput:        outputValue,
 		},
 		{
 			name: "drops invalid origin metadata when present",
@@ -302,10 +375,11 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT, "https://app.superblocks.com/oauth/callback")},
 			},
-			wantJwt:    "Bearer " + validJWT,
-			wantOrigin: "",
-			wantOrg:    testOrgID,
-			wantOutput: outputValue,
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantOrigin:        "",
+			wantOrg:           testOrgID,
+			wantOutput:        outputValue,
 		},
 		{
 			name: "profile falls back to parent execution",
@@ -318,10 +392,11 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT), Profile: profileFallback},
 			},
-			wantJwt:     "Bearer " + validJWT,
-			wantOrg:     testOrgID,
-			wantProfile: profileFallback,
-			wantOutput:  outputValue,
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantOrg:           testOrgID,
+			wantProfile:       profileFallback,
+			wantOutput:        outputValue,
 		},
 		{
 			name: "missing execution_id",
@@ -409,9 +484,10 @@ func TestExecuteIntegration(t *testing.T) {
 			contexts: map[string]*redisstore.ExecutionFileContext{
 				"exec-1": {JwtToken: makeWorkerJWTContext(validJWT, validJWT)},
 			},
-			wantJwt:    "Bearer " + validJWT,
-			wantOrg:    testOrgID,
-			wantOutput: outputValue,
+			wantJwt:           "Bearer " + validJWT,
+			wantAuthorization: "Bearer " + validJWT,
+			wantOrg:           testOrgID,
+			wantOutput:        outputValue,
 		},
 		{
 			name: "orchestrator returns block-level errors (e.g. bad SQL query)",
@@ -558,8 +634,12 @@ func TestExecuteIntegration(t *testing.T) {
 			assert.Equal(t, test.wantOutput.GetStructValue().AsMap(), resp.GetOutput().GetStructValue().AsMap())
 
 			// Verify both authorization and x-superblocks-authorization carry the JWT.
-			assert.Equal(t, test.wantJwt, fake.lastAuthorization)
+			assert.Equal(t, test.wantAuthorization, fake.lastAuthorization)
 			assert.Equal(t, test.wantJwt, fake.lastJwtToken)
+			assert.Equal(t, test.wantSDK, fake.lastSDKToken)
+			if test.wantSDK != "" {
+				assert.Equal(t, test.request.GetExecutionId(), fake.lastSDKExecID)
+			}
 			assert.Equal(t, test.wantOrigin, fake.lastOrigin)
 			assert.Equal(t, test.wantCookie, fake.lastCookie)
 
@@ -671,6 +751,7 @@ func TestParseWorkerJWTContext(t *testing.T) {
 		wantAuth   string
 		wantOrigin string
 		wantCookie string
+		wantSDK    string
 	}{
 		{
 			name:       "empty input",
@@ -728,13 +809,20 @@ func TestParseWorkerJWTContext(t *testing.T) {
 			wantOrigin: "https://app.superblocks.com",
 			wantCookie: "basic.ds123-token=abc123; firebase.proj1-token=xyz",
 		},
+		{
+			name:      "extracts SDK callback token",
+			input:     workerJWTContextSuperblocksPrefix + "sb-token\n" + workerJWTContextSDKCallbackPrefix + "cap-token",
+			wantSuper: "sb-token",
+			wantSDK:   "cap-token",
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			gotSuper, gotAuth, gotOrigin, gotCookie := parseWorkerJWTContext(test.input)
+			gotSuper, gotAuth, gotOrigin, gotCookie, gotSDK := parseWorkerJWTContext(test.input)
 			assert.Equal(t, test.wantSuper, gotSuper)
 			assert.Equal(t, test.wantAuth, gotAuth)
 			assert.Equal(t, test.wantOrigin, gotOrigin)
 			assert.Equal(t, test.wantCookie, gotCookie)
+			assert.Equal(t, test.wantSDK, gotSDK)
 		})
 	}
 }
@@ -751,6 +839,7 @@ func TestParseWorkerJWTContextRoundTrip(t *testing.T) {
 		authjwt string
 		origin  string
 		cookie  string
+		sdk     string
 	}{
 		{
 			name:    "tokens only",
@@ -776,6 +865,11 @@ func TestParseWorkerJWTContextRoundTrip(t *testing.T) {
 			origin:  "https://app.superblocks.com",
 			cookie:  "basic.ds123-token=dXNlcjpwYXNz; firebase.proj1-token=eyJhbGciOiJSUzI1NiJ9; firebase.proj1-userId=uid123",
 		},
+		{
+			name:  "SDK callback token",
+			sbjwt: "sb-token",
+			sdk:   "cap-token",
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			encoded := workerJWTContextSuperblocksPrefix + test.sbjwt + "\n" + workerJWTContextAuthorizationPrefix + test.authjwt
@@ -785,12 +879,16 @@ func TestParseWorkerJWTContextRoundTrip(t *testing.T) {
 			if test.cookie != "" {
 				encoded += "\n" + workerJWTContextCookiePrefix + test.cookie
 			}
+			if test.sdk != "" {
+				encoded += "\n" + workerJWTContextSDKCallbackPrefix + test.sdk
+			}
 
-			gotSbjwt, gotAuthjwt, gotOrigin, gotCookie := parseWorkerJWTContext(encoded)
+			gotSbjwt, gotAuthjwt, gotOrigin, gotCookie, gotSDK := parseWorkerJWTContext(encoded)
 			assert.Equal(t, test.sbjwt, gotSbjwt)
 			assert.Equal(t, test.authjwt, gotAuthjwt)
 			assert.Equal(t, test.origin, gotOrigin)
 			assert.Equal(t, test.cookie, gotCookie)
+			assert.Equal(t, test.sdk, gotSDK)
 		})
 	}
 }

@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -1681,6 +1682,207 @@ func TestFetchDefinitionFromRequestInjectsConfigurationId(t *testing.T) {
 	assert.Equal(t, configurationId, idField.GetStringValue())
 
 	assert.Equal(t, "oauth2-code", integrationStruct.GetFields()["authType"].GetStringValue())
+}
+
+func TestFetchDefinitionFromRequestUsesAgentDatasourceEndpointForSDKIntegrationExecution(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+
+	makeReq := func(integrationID string, prepopulateIntegration bool) *apiv1.ExecuteRequest {
+		integrations := map[string]*structpb.Struct{}
+		if prepopulateIntegration {
+			integrations[integrationID] = &structpb.Struct{Fields: map[string]*structpb.Value{
+				"id":       structpb.NewStringValue("caller-supplied-config"),
+				"pluginId": structpb.NewStringValue("postgres"),
+			}}
+		}
+		return &apiv1.ExecuteRequest{
+			ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED,
+			Profile: &commonv1.Profile{
+				Name: &profileName,
+			},
+			Request: &apiv1.ExecuteRequest_Definition{
+				Definition: &apiv1.Definition{
+					Api: &apiv1.Api{
+						Metadata: &commonv1.Metadata{
+							Id:   "sdk-query-" + integrationID,
+							Name: "SDK Integration Query",
+						},
+						Blocks: []*apiv1.Block{
+							{
+								Name: "query",
+								Config: &apiv1.Block_Step{
+									Step: &apiv1.Step{
+										Integration: integrationID,
+									},
+								},
+							},
+						},
+					},
+					Integrations: integrations,
+				},
+			},
+		}
+	}
+
+	for _, test := range []struct {
+		name                   string
+		requestIntegrationID   string
+		allowedIntegrationIDs  []string
+		integration            *fetch.Integration
+		fetchErr               error
+		expectFetch            bool
+		expectValidateProfile  bool
+		prepopulateIntegration bool
+		assertResult           func(t *testing.T, def *apiv1.Definition)
+		errorContains          string
+	}{
+		{
+			name:                  "hydrates config from agent datasource endpoint",
+			requestIntegrationID:  "integration-1",
+			allowedIntegrationIDs: []string{"integration-1"},
+			expectFetch:           true,
+			expectValidateProfile: true,
+			integration: &fetch.Integration{
+				PluginId: "postgres",
+				Configuration: map[string]interface{}{
+					"id":       "config-from-agent-endpoint",
+					"authType": "oauth2-code",
+				},
+			},
+			assertResult: func(t *testing.T, def *apiv1.Definition) {
+				t.Helper()
+
+				integrationStruct := def.Integrations["integration-1"]
+				require.NotNil(t, integrationStruct)
+				assert.Equal(t, "config-from-agent-endpoint", integrationStruct.GetFields()["id"].GetStringValue())
+				assert.Equal(t, "oauth2-code", integrationStruct.GetFields()["authType"].GetStringValue())
+				assert.Equal(t, "postgres", integrationStruct.GetFields()["pluginId"].GetStringValue())
+			},
+		},
+		{
+			name:                   "re-fetches and overwrites pre-populated integration config",
+			requestIntegrationID:   "integration-1",
+			allowedIntegrationIDs:  []string{"integration-1"},
+			expectFetch:            true,
+			expectValidateProfile:  true,
+			prepopulateIntegration: true,
+			integration: &fetch.Integration{
+				PluginId: "postgres",
+				Configuration: map[string]interface{}{
+					"id":       "server-authoritative-config",
+					"authType": "oauth2-code",
+				},
+			},
+			assertResult: func(t *testing.T, def *apiv1.Definition) {
+				t.Helper()
+
+				integrationStruct := def.Integrations["integration-1"]
+				require.NotNil(t, integrationStruct)
+				assert.Equal(t, "server-authoritative-config", integrationStruct.GetFields()["id"].GetStringValue())
+			},
+		},
+		{
+			name:                  "rejects integration not in signed allowlist",
+			requestIntegrationID:  "integration-2",
+			allowedIntegrationIDs: []string{"integration-1"},
+			errorContains:         "not declared by the SDK API source",
+		},
+		{
+			name:                   "rejects pre-populated integration not in signed allowlist",
+			requestIntegrationID:   "integration-2",
+			allowedIntegrationIDs:  []string{"integration-1"},
+			prepopulateIntegration: true,
+			errorContains:          "not declared by the SDK API source",
+		},
+		{
+			name:                  "returns fetch error",
+			requestIntegrationID:  "integration-1",
+			allowedIntegrationIDs: []string{"integration-1"},
+			expectFetch:           true,
+			expectValidateProfile: true,
+			fetchErr:              errors.New("datasource fetch failed"),
+			errorContains:         "datasource fetch failed",
+		},
+		{
+			name:                  "returns error for nil integration",
+			requestIntegrationID:  "integration-1",
+			allowedIntegrationIDs: []string{"integration-1"},
+			expectFetch:           true,
+			expectValidateProfile: true,
+			integration:           nil,
+			errorContains:         "configuration not found or inaccessible",
+		},
+		{
+			name:                  "returns error for nil configuration",
+			requestIntegrationID:  "integration-1",
+			allowedIntegrationIDs: []string{"integration-1"},
+			expectFetch:           true,
+			expectValidateProfile: true,
+			integration: &fetch.Integration{
+				PluginId:      "postgres",
+				Configuration: nil,
+			},
+			errorContains: "configuration not found or inaccessible",
+		},
+		{
+			name:                  "returns error for invalid configuration",
+			requestIntegrationID:  "integration-1",
+			allowedIntegrationIDs: []string{"integration-1"},
+			expectFetch:           true,
+			expectValidateProfile: true,
+			integration: &fetch.Integration{
+				PluginId: "postgres",
+				Configuration: map[string]interface{}{
+					"bad": func() {},
+				},
+			},
+			errorContains: "configuration is invalid",
+		},
+		{
+			name:                  "returns error for missing configuration id",
+			requestIntegrationID:  "integration-1",
+			allowedIntegrationIDs: []string{"integration-1"},
+			expectFetch:           true,
+			expectValidateProfile: true,
+			integration: &fetch.Integration{
+				PluginId: "postgres",
+				Configuration: map[string]interface{}{
+					"authType": "oauth2-code",
+				},
+			},
+			errorContains: "configuration id not found or inaccessible",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			req := makeReq(test.requestIntegrationID, test.prepopulateIntegration)
+			mockFetcher := fetchmocks.NewFetcher(t)
+			if test.expectValidateProfile {
+				mockFetcher.On("ValidateProfile", mock.Anything, mock.Anything).Return(nil)
+			}
+			if test.expectFetch {
+				mockFetcher.On(
+					"FetchIntegration",
+					mock.Anything,
+					test.requestIntegrationID,
+					req.GetProfile(),
+				).Return(test.integration, test.fetchErr)
+			}
+
+			ctx := constants.WithSDKIntegrationExecution(context.Background(), test.allowedIntegrationIDs)
+			def, _, err := fetchDefinitionFromRequest(ctx, req, mockFetcher, false, zap.NewNop())
+			if test.errorContains != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.errorContains)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, def)
+			test.assertResult(t, def)
+		})
+	}
 }
 
 func TestFetchDefinitionFromRequestPreservesExistingConfigurationId(t *testing.T) {

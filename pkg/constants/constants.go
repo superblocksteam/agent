@@ -25,12 +25,16 @@ const (
 	ContextKeyEventType
 	ContextKeyRequestUsesJwtAuth
 	ContextKeyIncludeDiagnostics
+	ContextKeySDKIntegrationExecution
+	ContextKeySDKIntegrationAllowedIntegrationIDs
 	// TODO(frank): Add other context keys here.
 
-	HeaderAgentKey       = "x-superblocks-agent-key"
-	HeaderCorrelationId  = "x-superblocks-correlation-id"
-	HeaderOrganizationId = "x-superblocks-organization-id"
-	HeaderSuperblocksJwt = "x-superblocks-authorization"
+	HeaderAgentKey               = "x-superblocks-agent-key"
+	HeaderCorrelationId          = "x-superblocks-correlation-id"
+	HeaderOrganizationId         = "x-superblocks-organization-id"
+	HeaderSuperblocksJwt         = "x-superblocks-authorization"
+	HeaderSDKCallbackToken       = "x-superblocks-sdk-callback-token"
+	HeaderSDKCallbackExecutionID = "x-superblocks-sdk-callback-execution-id"
 
 	ApiTypeUnknown      = "unknown"
 	ApiTypeApi          = "api"
@@ -102,6 +106,33 @@ func IncludeDiagnostics(ctx context.Context) bool {
 		return v
 	}
 	return false
+}
+
+func WithSDKIntegrationExecution(ctx context.Context, allowedIntegrationIDs []string) context.Context {
+	allowed := make(map[string]struct{}, len(allowedIntegrationIDs))
+	for _, id := range allowedIntegrationIDs {
+		if id != "" {
+			allowed[id] = struct{}{}
+		}
+	}
+	ctx = context.WithValue(ctx, ContextKeySDKIntegrationExecution, true)
+	return context.WithValue(ctx, ContextKeySDKIntegrationAllowedIntegrationIDs, allowed)
+}
+
+func IsSDKIntegrationExecution(ctx context.Context) bool {
+	if v, ok := ctx.Value(ContextKeySDKIntegrationExecution).(bool); ok {
+		return v
+	}
+	return false
+}
+
+func IsSDKIntegrationAllowed(ctx context.Context, integrationID string) bool {
+	allowed, ok := ctx.Value(ContextKeySDKIntegrationAllowedIntegrationIDs).(map[string]struct{})
+	if !ok {
+		return false
+	}
+	_, ok = allowed[integrationID]
+	return ok
 }
 
 // NOTE(frank): This was added because we record a metric in the individual implementations

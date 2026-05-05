@@ -2,6 +2,8 @@ package transport
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/superblocksteam/agent/internal/auth"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
 	"github.com/superblocksteam/agent/internal/fetch"
@@ -73,7 +76,25 @@ const VisitorOrganizationID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 const (
 	sdkApiPluginName     = "javascriptsdkapi"
 	sdkApiWasmPluginName = "javascriptsdkapiwasm"
+
+	sdkCallbackSigningLabel = "sdk-callback-signing-v1"
+	sdkCallbackIssuer       = "orchestrator"
+	sdkCallbackAudience     = "sdk-integration-callback"
+	// Match the code-mode execution timeout so callbacks remain valid for the
+	// entire worker execution while still expiring promptly after completion.
+	sdkCallbackTTL = 20 * time.Minute
+	sdkQueryPrefix = "sdk-query-"
 )
+
+type sdkCallbackClaims struct {
+	jwt.RegisteredClaims
+	ExecutionID           string   `json:"exec_id"`
+	OrganizationID        string   `json:"org_id"`
+	ApplicationID         string   `json:"application_id,omitempty"`
+	CommitID              string   `json:"commit_id,omitempty"`
+	EntryPoint            string   `json:"entry_point,omitempty"`
+	AllowedIntegrationIDs []string `json:"allowed_integration_ids"`
+}
 
 type server struct {
 	*Config
@@ -108,6 +129,7 @@ type Config struct {
 	Secrets               secrets.Secrets
 	Signature             signature.Registry
 	WaitGroup             *sync.WaitGroup
+	AgentKey              string
 	// IntegrationsCallbackUrl is the gRPC address that workers should use
 	// to call back to this orchestrator for proxied integration execution.
 	// When non-empty, it is set on every code-mode worker request so that
@@ -142,6 +164,104 @@ func (s *server) getUseAgentKeyForHydration(ctx context.Context) bool {
 	}
 
 	return s.Flags.GetUseAgentKeyForHydration(orgId)
+}
+
+func sdkCallbackSigningKey(agentKey string) ([]byte, error) {
+	if strings.TrimSpace(agentKey) == "" {
+		return nil, errors.New("agent key is required for SDK callback capability signing")
+	}
+	// The signing key is derived from the process' configured agent key. Runtime
+	// agent-key rotation is not supported; short token TTL bounds in-flight impact.
+	mac := hmac.New(sha256.New, []byte(agentKey))
+	_, _ = mac.Write([]byte(sdkCallbackSigningLabel))
+	return mac.Sum(nil), nil
+}
+
+func signSDKCallbackToken(agentKey string, claims sdkCallbackClaims) (string, error) {
+	key, err := sdkCallbackSigningKey(agentKey)
+	if err != nil {
+		return "", err
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(key)
+}
+
+func verifySDKCallbackToken(agentKey, raw string) (*sdkCallbackClaims, error) {
+	key, err := sdkCallbackSigningKey(agentKey)
+	if err != nil {
+		return nil, err
+	}
+	claims := &sdkCallbackClaims{}
+	token, err := jwt.ParseWithClaims(raw, claims, func(token *jwt.Token) (any, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected SDK callback token signing method %s", token.Method.Alg())
+		}
+		return key, nil
+	}, jwt.WithIssuer(sdkCallbackIssuer), jwt.WithAudience(sdkCallbackAudience))
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, errors.New("SDK callback token is invalid")
+	}
+	return claims, nil
+}
+
+func sdkCallbackTokenFromMetadata(ctx context.Context) string {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get(constants.HeaderSDKCallbackToken); len(vals) > 0 {
+			return strings.TrimSpace(strings.TrimPrefix(vals[0], "Bearer "))
+		}
+	}
+	return ""
+}
+
+func sdkCallbackExecutionIDFromMetadata(ctx context.Context) string {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get(constants.HeaderSDKCallbackExecutionID); len(vals) > 0 {
+			return vals[0]
+		}
+	}
+	return ""
+}
+
+func isSDKIntegrationDefinition(req *apiv1.ExecuteRequest) bool {
+	def := req.GetDefinition()
+	if def == nil || def.GetApi() == nil || def.GetApi().GetMetadata() == nil {
+		return false
+	}
+	// This is only a shape heuristic used to fail SDK-looking callbacks that are
+	// missing a capability token. Authorization comes from token verification.
+	apiMeta := def.GetApi().GetMetadata()
+	if strings.HasPrefix(apiMeta.GetId(), sdkQueryPrefix) {
+		return true
+	}
+	return apiMeta.GetTags()["audit.event_type"] == "integration_query"
+}
+
+func (s *server) withSDKCallbackContext(ctx context.Context, req *apiv1.ExecuteRequest) (context.Context, error) {
+	rawToken := sdkCallbackTokenFromMetadata(ctx)
+	if rawToken == "" {
+		if isSDKIntegrationDefinition(req) {
+			return nil, sberror.AuthorizationError(errors.New("SDK integration callback token required"))
+		}
+		return ctx, nil
+	}
+
+	claims, err := verifySDKCallbackToken(s.AgentKey, rawToken)
+	if err != nil {
+		return nil, sberror.AuthorizationError(fmt.Errorf("invalid SDK integration callback token: %w", err))
+	}
+
+	if claims.ExecutionID == "" || claims.ExecutionID != sdkCallbackExecutionIDFromMetadata(ctx) {
+		return nil, sberror.AuthorizationError(errors.New("SDK integration callback execution mismatch"))
+	}
+
+	orgID, ok := jwt_validator.GetOrganizationID(ctx)
+	if !ok || orgID == "" || claims.OrganizationID != orgID {
+		return nil, sberror.AuthorizationError(errors.New("SDK integration callback organization mismatch"))
+	}
+
+	return constants.WithSDKIntegrationExecution(ctx, claims.AllowedIntegrationIDs), nil
 }
 
 func (s *server) Workflow(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.WorkflowResponse, error) {
@@ -223,6 +343,10 @@ func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*a
 }
 
 func (s *server) Await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *apiv1.AwaitResponse, err error) {
+	ctx, err = s.withSDKCallbackContext(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	// Require authorization for inline definitions to prevent anonymous code execution
 	if err := requireAuthForInlineDefinition(ctx, req); err != nil {
 		return nil, err
@@ -274,6 +398,8 @@ func (s *server) await(ctx context.Context, req *apiv1.ExecuteRequest) (resp *ap
 	awaitTags := map[string]any{"execute.path": "legacy"}
 	if req.GetFetchCode() != nil {
 		awaitTags["execute.path"] = "sdk_api"
+	} else if constants.IsSDKIntegrationExecution(ctx) {
+		awaitTags["execute.path"] = "sdk_integration"
 	}
 
 	// Enrich the span with identity and request attributes so traces can be
@@ -376,8 +502,13 @@ func (s *server) TwoWayStream(stream apiv1.ExecutorService_TwoWayStreamServer) (
 		}
 	}
 
+	ctx, err := s.withSDKCallbackContext(stream.Context(), req)
+	if err != nil {
+		return err
+	}
+
 	// Require authorization for inline definitions to prevent anonymous code execution
-	if err := requireAuthForInlineDefinition(stream.Context(), req); err != nil {
+	if err := requireAuthForInlineDefinition(ctx, req); err != nil {
 		return err
 	}
 
@@ -427,7 +558,7 @@ func (s *server) TwoWayStream(stream apiv1.ExecutorService_TwoWayStreamServer) (
 		})
 	})
 
-	if _, err := tracer.Observe(stream.Context(), "execute.api.stream", nil, func(ctx context.Context, span trace.Span) (any, error) {
+	if _, err := tracer.Observe(ctx, "execute.api.stream", nil, func(ctx context.Context, span trace.Span) (any, error) {
 		return s.stream(ctx, req, func(resp *apiv1.StreamResponse) error {
 			if err := forEach(resp); err != nil && first == nil {
 				// NOTE(frank): Do not return this error.
@@ -448,8 +579,13 @@ func (s *server) TwoWayStream(stream apiv1.ExecutorService_TwoWayStreamServer) (
 }
 
 func (s *server) Stream(req *apiv1.ExecuteRequest, stream apiv1.ExecutorService_StreamServer) (first error) {
+	ctx, err := s.withSDKCallbackContext(stream.Context(), req)
+	if err != nil {
+		return err
+	}
+
 	// Require authorization for inline definitions to prevent anonymous code execution
-	if err := requireAuthForInlineDefinition(stream.Context(), req); err != nil {
+	if err := requireAuthForInlineDefinition(ctx, req); err != nil {
 		return err
 	}
 
@@ -462,7 +598,7 @@ func (s *server) Stream(req *apiv1.ExecuteRequest, stream apiv1.ExecutorService_
 		return stream.Send(resp)
 	})
 
-	if _, err := tracer.Observe(stream.Context(), "execute.api.stream", nil, func(ctx context.Context, span trace.Span) (any, error) {
+	if _, err := tracer.Observe(ctx, "execute.api.stream", nil, func(ctx context.Context, span trace.Span) (any, error) {
 		return s.stream(ctx, req, func(resp *apiv1.StreamResponse) error {
 			if err := forEach(resp); err != nil && first == nil {
 				// NOTE(frank): Do not return this error.
@@ -789,10 +925,14 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 
 	useAgentKey := s.getUseAgentKeyForHydration(ctx)
 
-	// Code-mode fetches (FetchCode) always use the agent key so that
-	// ephemeral/PR environments work even when the LaunchDarkly flag
-	// client falls back to defaults.
+	// Code-mode fetches (FetchCode) and verified SDK integration callbacks use
+	// agent-key hydration. For SDK integration callbacks, this preserves
+	// datasource and secret-store hydration parity with legacy execution without
+	// relying on a spoofable caller-provided marker.
 	if req.GetFetchCode() != nil {
+		useAgentKey = true
+	}
+	if constants.IsSDKIntegrationExecution(ctx) {
 		useAgentKey = true
 	}
 
@@ -1135,17 +1275,14 @@ func (s *server) executeCodeMode(
 	// For code-mode executions we pass all of these through the existing
 	// JwtToken field using a compact, backward-compatible encoding understood
 	// by the ephemeral task-manager integration executor.
-	var jwtToken string
+	var jwtToken, superblocksJwt, authorizationJwt, origin, cookie string
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		var superblocksJwt string
 		if vals := md.Get(constants.HeaderSuperblocksJwt); len(vals) > 0 {
 			superblocksJwt = strings.TrimPrefix(vals[0], "Bearer ")
 		}
-		var authorizationJwt string
 		if vals := md.Get("authorization"); len(vals) > 0 {
 			authorizationJwt = strings.TrimPrefix(vals[0], "Bearer ")
 		}
-		var origin string
 		if vals := md.Get("origin"); len(vals) > 0 {
 			normalizedOrigin, originErr := normalizeWorkerOrigin(vals[0])
 			if originErr != nil {
@@ -1154,11 +1291,35 @@ func (s *server) executeCodeMode(
 				origin = normalizedOrigin
 			}
 		}
-		var cookie string
 		if vals := md.Get("cookie"); len(vals) > 0 {
 			cookie = vals[0]
 		}
-		jwtToken = encodeWorkerJWTContext(superblocksJwt, authorizationJwt, origin, cookie)
+		jwtToken = encodeWorkerJWTContext(superblocksJwt, authorizationJwt, origin, cookie, "")
+	}
+	allowedIntegrationIDs := integrationIDsFromRawResult(rawResult)
+	var sdkCallbackToken string
+	if len(allowedIntegrationIDs) > 0 {
+		sdkCallbackToken, err = signSDKCallbackToken(s.AgentKey, sdkCallbackClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    sdkCallbackIssuer,
+				Audience:  jwt.ClaimStrings{sdkCallbackAudience},
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(sdkCallbackTTL)),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+			},
+			ExecutionID:           executionID,
+			OrganizationID:        orgIdFromContext,
+			ApplicationID:         fetchCode.GetId(),
+			CommitID:              fetchCode.GetCommitId(),
+			EntryPoint:            fetchCode.GetEntryPoint(),
+			AllowedIntegrationIDs: allowedIntegrationIDs,
+		})
+		if err != nil {
+			reqPrepSpan.SetAttributes(attribute.String("error", err.Error()))
+			reqPrepSpan.End()
+			logger.Error("could not sign SDK integration callback token", zap.Error(err))
+			return sendError(err)
+		}
+		jwtToken = encodeWorkerJWTContext(superblocksJwt, authorizationJwt, origin, cookie, sdkCallbackToken)
 	}
 
 	if err := validateExecuteFileBindings(req.GetInputs(), req.GetFiles()); err != nil {
@@ -1575,7 +1736,7 @@ func classifySdkApiError(err error) string {
 	return "internal"
 }
 
-func encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, cookie string) string {
+func encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, cookie, sdkCallbackToken string) string {
 	superblocksJWT = strings.TrimSpace(strings.TrimPrefix(superblocksJWT, "Bearer "))
 	authorizationJWT = strings.TrimSpace(strings.TrimPrefix(authorizationJWT, "Bearer "))
 	origin = strings.TrimSpace(origin)
@@ -1596,8 +1757,29 @@ func encodeWorkerJWTContext(superblocksJWT, authorizationJWT, origin, cookie str
 	if cookie != "" {
 		parts = append(parts, "cookie="+cookie)
 	}
+	sdkCallbackToken = strings.TrimSpace(strings.TrimPrefix(sdkCallbackToken, "Bearer "))
+	if sdkCallbackToken != "" {
+		parts = append(parts, "sdkcap="+sdkCallbackToken)
+	}
 
 	return strings.Join(parts, "\n")
+}
+
+func integrationIDsFromRawResult(rawResult *structpb.Struct) []string {
+	if rawResult == nil {
+		return nil
+	}
+	field := rawResult.GetFields()["integrationIds"]
+	if field == nil || field.GetListValue() == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(field.GetListValue().GetValues()))
+	for _, value := range field.GetListValue().GetValues() {
+		if id := value.GetStringValue(); id != "" {
+			ids = append(ids, id)
+		}
+	}
+	return ids
 }
 
 func normalizeWorkerOrigin(raw string) (string, error) {
