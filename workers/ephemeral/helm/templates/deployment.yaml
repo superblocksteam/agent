@@ -27,6 +27,11 @@ spec:
     matchLabels:
       fleet: {{ $k }}
       role: task-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 25%
   template:
     metadata:
       labels:
