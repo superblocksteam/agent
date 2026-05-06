@@ -1,0 +1,157 @@
+{{- if eq ($.Values.keda.prometheusServerAddress | default "") "auto" }}
+{{- $collectorName := include "sandbox_workers.metricsCollectorK8sName" . }}
+{{- $promName := include "sandbox_workers.kedaPrometheusK8sName" . }}
+{{- $metricsFanout := coalesce $.Values.observability.metrics.url $.Values.observability.metrics.forwardUrl }}
+---
+# OTel Collector: receives OTLP metrics from task-managers.
+# Exports to: in-chart Prometheus (for KEDA) and, if observability.metrics.url or .forwardUrl
+# is set, forwards a copy to that OTLP endpoint (url wins if both are set; see values.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $collectorName }}-config
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+    processors:
+      batch:
+        timeout: 5s
+    exporters:
+      prometheusremotewrite:
+        endpoint: {{ include "sandbox_workers.autoPromQueryUrl" . }}/api/v1/write
+        resource_to_telemetry_conversion:
+          enabled: true
+      {{- if $metricsFanout }}
+      otlphttp:
+        endpoint: {{ $metricsFanout }}
+      {{- end }}
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters:
+            - prometheusremotewrite
+            {{- if $metricsFanout }}
+            - otlphttp
+            {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $collectorName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $collectorName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $collectorName }}
+        # Calico isolates OTLP when prometheusServerAddress is auto (see networkpolicy.yaml).
+        kedaMetrics: collector
+    spec:
+      containers:
+        - name: collector
+          image: {{ $.Values.keda.collector.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0" }}
+          args: ["--config=/etc/otel/config.yaml"]
+          ports:
+            - containerPort: 4317
+            - containerPort: 4318
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $collectorName }}-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $collectorName }}
+spec:
+  selector:
+    app: {{ $collectorName }}
+  ports:
+    - port: 4317
+      name: otlp-grpc
+    - port: 4318
+      name: otlp-http
+---
+# Prometheus: receives remote-write from OTel Collector,
+# serves PromQL queries for KEDA's prometheus trigger.
+# Lightweight: 1h retention, 256MB storage cap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $promName }}-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $promName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $promName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $promName }}
+        kedaMetrics: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: {{ $.Values.keda.prometheus.image | default "ghcr.io/superblocksteam/prom/prometheus:v3.4.0" }}
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--web.enable-remote-write-receiver"
+            - "--storage.tsdb.retention.time=1h"
+            - "--storage.tsdb.retention.size=256MB"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $promName }}-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $promName }}
+spec:
+  selector:
+    app: {{ $promName }}
+  ports:
+    - port: 9090
+      name: http
+{{- end }}
+

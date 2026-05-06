@@ -266,9 +266,14 @@ spec:
           {{- if $.Values.kvstore.timeout.pool }}
           - "--store.redis.timeout.pool={{ $.Values.kvstore.timeout.pool }}"
           {{- end }}
-          # Observability
-          {{- if $.Values.observability.metrics.url }}
-          - "--otel.metrics.collector.http.url={{ $.Values.observability.metrics.url }}"
+          # Observability — prometheusServerAddress "auto" → OTLP to in-chart collector; fan-out uses metrics.url / forwardUrl (values.yaml)
+          {{- $tmMetricsURL := $.Values.observability.metrics.url }}
+          {{- $autoCollector := include "sandbox_workers.autoOtelMetricsCollectorHttpUrl" $ | trim }}
+          {{- if $autoCollector }}
+          {{- $tmMetricsURL = $autoCollector }}
+          {{- end }}
+          {{- if $tmMetricsURL }}
+          - "--otel.metrics.collector.http.url={{ $tmMetricsURL }}"
           {{- end }}
           {{- if $.Values.observability.tracing.url }}
           - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"

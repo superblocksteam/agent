@@ -2,6 +2,10 @@
 {{- range $k, $v := .Values.fleets }}
 {{- if eq ($v.mode | default "deployment") "deployment" }}
 {{- $fleetKeda := $v.keda | default dict }}
+{{- $minReplicas := $.Values.keda.minReplicaCount }}
+{{- if hasKey $fleetKeda "minReplicaCount" }}
+{{- $minReplicas = index $fleetKeda "minReplicaCount" }}
+{{- end }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
@@ -14,8 +18,13 @@ spec:
     name: {{ printf "%s-%s" $fullname $k | trunc 63 | trimSuffix "-" }}
   pollingInterval: {{ $v.keda.pollingInterval | default $.Values.keda.pollingInterval }}
   cooldownPeriod: {{ $v.keda.cooldownPeriod | default $.Values.keda.cooldownPeriod | default 30 }}
-  minReplicaCount: {{ if hasKey $fleetKeda "minReplicaCount" }}{{ index $fleetKeda "minReplicaCount" }}{{ else }}{{ $.Values.keda.minReplicaCount }}{{ end }}
+  minReplicaCount: {{ $minReplicas }}
   maxReplicaCount: {{ if hasKey $fleetKeda "maxReplicaCount" }}{{ index $fleetKeda "maxReplicaCount" }}{{ else }}{{ $.Values.keda.maxReplicaCount }}{{ end }}
+  {{- if $.Values.keda.prometheusServerAddress }}
+  fallback:
+    failureThreshold: {{ $.Values.keda.fallbackFailureThreshold | default 3 }}
+    replicas: {{ max 1 ($minReplicas | int) }}
+  {{- end }}
   {{- if or $v.keda.triggers $.Values.keda.triggers }}
   triggers:
     {{- toYaml ($v.keda.triggers | default $.Values.keda.triggers) | nindent 4 }}
@@ -35,6 +44,22 @@ spec:
         activationLagCount: {{ $v.keda.activationLagCount | default $.Values.keda.activationLagCount | default "1" | quote }}
       authenticationRef:
         name: {{ printf "%s-redis-trigger-auth" $fullname | trunc 63 | trimSuffix "-" }}
+    {{- end }}
+    {{- if $.Values.keda.prometheusServerAddress }}
+    {{- $promAddr := $.Values.keda.prometheusServerAddress }}
+    {{- if eq $promAddr "auto" }}
+    {{- $promAddr = include "sandbox_workers.autoPromQueryUrl" $ | trim }}
+    {{- end }}
+    {{- $execPoolSize := (($v.queue).executionPool) | default $.Values.queue.executionPool | default 1 }}
+    # Metrics-based trigger: desired replicas = ceil(in_use / executionPool) + minReplicas.
+    # Each replica serves executionPool concurrent events (requests), so dividing gives the
+    # number of fully-occupied workers (task-managers); adding minReplicas maintains the warm buffer.
+    - type: prometheus
+      metadata:
+        serverAddress: {{ $promAddr }}
+        query: ceil((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) / {{ $execPoolSize }}) + {{ $minReplicas }}
+        threshold: "1"
+        activationThreshold: "0"
     {{- end }}
   {{- end }}
 {{- end }}

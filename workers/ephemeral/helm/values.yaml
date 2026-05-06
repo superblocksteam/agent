@@ -168,6 +168,25 @@ sandboxJob:
 keda:
   pollingInterval: 5
   cooldownPeriod: 300
+  # Prometheus HTTP API base URL for KEDA's prometheus scaler (PromQL).
+  # - "auto": deploy in-chart OTel Collector + Prometheus. Task-managers send OTLP to that
+  #   collector (not to observability.metrics.url). Optional fan-out from the collector uses
+  #   observability.metrics.url first, then observability.metrics.forwardUrl if url is empty
+  #   (see observability.metrics).
+  # - Any other non-empty URL: KEDA queries that Prometheus (or compatible) instance; task-managers
+  #   send OTLP to observability.metrics.url only.
+  prometheusServerAddress: ""
+  # When prometheusServerAddress is "auto", Calico policies restrict who can reach the in-chart
+  # OTel collector (OTLP) and Prometheus (:9090 remote-write + PromQL). Must list every
+  # namespace that runs KEDA components that query Prometheus (often "keda"; some installs use
+  # "keda-system").
+  prometheusQueryClientNamespaces:
+    - keda
+  # Container images for in-chart components (override for ECR mirroring).
+  collector:
+    image: "" # default: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0
+  prometheus:
+    image: "" # default: ghcr.io/superblocksteam/prom/prometheus:v3.4.0
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   ttlSecondsAfterFinished: 0 # Auto-cleanup completed pods immediately
@@ -257,7 +276,15 @@ observability:
   logging:
     level: info
   metrics:
+    # OTLP HTTP base for task-manager metrics.
+    # When keda.prometheusServerAddress is "auto": task-managers do not use this for export;
+    # they send to the in-chart collector instead. In that mode, url (if non-empty) is the
+    # collector's optional OTLP fan-out target, and takes precedence over forwardUrl when both
+    # are set. When prometheusServerAddress is not "auto", task-managers send OTLP here only.
     url: ""
+    # When keda.prometheusServerAddress is "auto": optional second fan-out target. Used only if
+    # url is empty. Ignored when not "auto" (task-managers use url only).
+    forwardUrl: ""
   tracing:
     url: ""
 telemetry:
