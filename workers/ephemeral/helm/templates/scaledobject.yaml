@@ -1,6 +1,6 @@
 {{- $fullname := include "sandbox_workers.fullname" . }}
 {{- range $k, $v := .Values.fleets }}
-{{- if eq ($v.mode | default "job") "deployment" }}
+{{- if eq ($v.mode | default "deployment") "deployment" }}
 {{- $fleetKeda := $v.keda | default dict }}
 ---
 apiVersion: keda.sh/v1alpha1

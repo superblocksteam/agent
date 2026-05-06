@@ -1,5 +1,5 @@
 ---
-# Fleets configuration - each fleet is a ScaledJob
+# Fleets configuration - each fleet is a Deployment + KEDA ScaledObject
 # Example:
 # fleets:
 #   python-ba:

@@ -1,6 +1,6 @@
 ---
-# Local testing configuration - uses host.docker.internal for Redis
-# No password auth for Docker Redis
+# Local testing configuration: Redis at host.docker.internal (no password).
+# Task managers run as Deployments with KEDA ScaledObject autoscaling.
 fleets:
   # Python ephemeral worker fleet
   python-ba:

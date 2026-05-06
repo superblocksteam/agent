@@ -1,7 +1,7 @@
 ---
 apiVersion: v2
 name: sandbox_workers
-description: A Helm chart for sandboxed workers using KEDA ScaledJob with Python/JavaScript sandboxes.
+description: A Helm chart for sandboxed workers using Deployments + KEDA ScaledObject autoscaling with Python/JavaScript sandboxes.
 type: application
 version: 0.0.1
 appVersion: "latest"

@@ -93,7 +93,7 @@ deploy-kind:
 		--timeout 2m
 
 deploy-helm:
-	@echo "==> Deploying ephemeral workers to Kind..."
+	@echo "==> Deploying sandbox workers to Kind..."
 	helm dependency build ./helm
 	helm upgrade --install $(SERVICE_NAME) ./helm \
 		--namespace $(K8S_NAMESPACE) \
