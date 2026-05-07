@@ -1,4 +1,5 @@
 {{- if eq ($.Values.keda.prometheusServerAddress | default "") "auto" }}
+{{- $fullname := include "sandbox_workers.fullname" . }}
 {{- $collectorName := include "sandbox_workers.metricsCollectorK8sName" . }}
 {{- $promName := include "sandbox_workers.kedaPrometheusK8sName" . }}
 {{- $metricsFanout := coalesce $.Values.observability.metrics.url $.Values.observability.metrics.forwardUrl }}
@@ -58,9 +59,14 @@ spec:
         # Calico isolates OTLP when prometheusServerAddress is auto (see networkpolicy.yaml).
         kedaMetrics: collector
     spec:
+      {{- if $.Values.image.credentials }}
+      imagePullSecrets:
+        - name: {{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}
+      {{- end }}
       containers:
         - name: collector
-          image: {{ $.Values.keda.collector.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.146.0" }}
+          image: "{{ $.Values.keda.collector.image.repository | default "ghcr.io/superblocksteam/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}:{{ $.Values.keda.collector.image.tag | default "0.146.0" }}"
+          imagePullPolicy: {{ ((.Values.keda.collector.image | default dict).pullPolicy | default "IfNotPresent") }}
           args: ["--config=/etc/otel/config.yaml"]
           ports:
             - containerPort: 4317
@@ -119,9 +125,14 @@ spec:
         app: {{ $promName }}
         kedaMetrics: prometheus
     spec:
+      {{- if $.Values.image.credentials }}
+      imagePullSecrets:
+        - name: {{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}
+      {{- end }}
       containers:
         - name: prometheus
-          image: {{ $.Values.keda.prometheus.image | default "prom/prometheus:v3.4.0" }}
+          image: "{{ $.Values.keda.prometheus.image.repository | default "ghcr.io/superblocksteam/prom/prometheus" }}:{{ $.Values.keda.prometheus.image.tag | default "v3.4.0" }}"
+          imagePullPolicy: {{ ((.Values.keda.prometheus.image | default dict).pullPolicy | default "IfNotPresent") }}
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--web.enable-remote-write-receiver"
