@@ -1,6 +1,5 @@
 {{- $fullname := include "sandbox_workers.fullname" . }}
 {{- range $k, $v := .Values.fleets }}
-{{- if eq ($v.mode | default "deployment") "deployment" }}
 {{- $language := $v.language | required "language is required (python or javascript)" }}
 {{- $sandboxConfig := index $.Values.sandbox $language }}
 {{- $podAnnotations := $v.podAnnotations | default $.Values.podAnnotations }}
@@ -353,5 +352,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-{{- end }}
 {{- end }}

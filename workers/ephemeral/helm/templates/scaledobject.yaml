@@ -1,6 +1,5 @@
 {{- $fullname := include "sandbox_workers.fullname" . }}
 {{- range $k, $v := .Values.fleets }}
-{{- if eq ($v.mode | default "deployment") "deployment" }}
 {{- $fleetKeda := $v.keda | default dict }}
 {{- $minReplicas := $.Values.keda.minReplicaCount }}
 {{- if hasKey $fleetKeda "minReplicaCount" }}
@@ -15,9 +14,11 @@ metadata:
     {{- include "sandbox.worker.labels" $v | nindent 4 }}
 spec:
   scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
     name: {{ printf "%s-%s" $fullname $k | trunc 63 | trimSuffix "-" }}
-  pollingInterval: {{ $v.keda.pollingInterval | default $.Values.keda.pollingInterval }}
-  cooldownPeriod: {{ $v.keda.cooldownPeriod | default $.Values.keda.cooldownPeriod | default 30 }}
+  pollingInterval: {{ ($v.keda | default dict).pollingInterval | default $.Values.keda.pollingInterval }}
+  cooldownPeriod: {{ ($v.keda | default dict).cooldownPeriod | default $.Values.keda.cooldownPeriod | default 30 }}
   minReplicaCount: {{ $minReplicas }}
   maxReplicaCount: {{ if hasKey $fleetKeda "maxReplicaCount" }}{{ index $fleetKeda "maxReplicaCount" }}{{ else }}{{ $.Values.keda.maxReplicaCount }}{{ end }}
   {{- if $.Values.keda.prometheusServerAddress }}
@@ -25,9 +26,9 @@ spec:
     failureThreshold: {{ $.Values.keda.fallbackFailureThreshold | default 3 }}
     replicas: {{ max 1 ($minReplicas | int) }}
   {{- end }}
-  {{- if or $v.keda.triggers $.Values.keda.triggers }}
+  {{- if or (index $fleetKeda "triggers") $.Values.keda.triggers }}
   triggers:
-    {{- toYaml ($v.keda.triggers | default $.Values.keda.triggers) | nindent 4 }}
+    {{- toYaml (index $fleetKeda "triggers" | default $.Values.keda.triggers) | nindent 4 }}
   {{- else }}
   triggers:
     {{- range $v.triggerStreams }}
@@ -38,10 +39,10 @@ spec:
         enableTLS: {{ $.Values.queue.tls | quote }}
         stream: {{ . }}
         consumerGroup: {{ $v.consumerGroup }}
-        {{- with $v.keda.lagCount | default $.Values.keda.lagCount }}
+        {{- with index $fleetKeda "lagCount" | default $.Values.keda.lagCount }}
         lagCount: {{ . | quote }}
         {{- end }}
-        activationLagCount: {{ $v.keda.activationLagCount | default $.Values.keda.activationLagCount | default "1" | quote }}
+        activationLagCount: {{ index $fleetKeda "activationLagCount" | default $.Values.keda.activationLagCount | default "1" | quote }}
       authenticationRef:
         name: {{ printf "%s-redis-trigger-auth" $fullname | trunc 63 | trimSuffix "-" }}
     {{- end }}
@@ -62,5 +63,4 @@ spec:
         activationThreshold: "0"
     {{- end }}
   {{- end }}
-{{- end }}
 {{- end }}

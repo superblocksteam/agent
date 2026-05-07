@@ -472,7 +472,7 @@ func main() {
 		}
 
 		// Build owner pod labels for pod affinity matching.
-		// These must match the labels on the task-manager pod template in the ScaledJob.
+		// These must match the labels on the task-manager pod template in the Deployment.
 		ownerPodLabels := map[string]string{
 			"role": "task-manager",
 		}
