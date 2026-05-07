@@ -21,7 +21,7 @@ data:
             endpoint: 0.0.0.0:4317
     processors:
       batch:
-        timeout: 5s
+        timeout: {{ $.Values.keda.collector.batchTimeout | default "5s" | quote }}
     exporters:
       prometheusremotewrite:
         endpoint: {{ include "sandbox_workers.autoPromQueryUrl" . }}/api/v1/write
@@ -60,7 +60,7 @@ spec:
     spec:
       containers:
         - name: collector
-          image: {{ $.Values.keda.collector.image | default "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0" }}
+          image: {{ $.Values.keda.collector.image | default "ghcr.io/superblocksteam/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.146.0" }}
           args: ["--config=/etc/otel/config.yaml"]
           ports:
             - containerPort: 4317

@@ -164,6 +164,7 @@ func init() {
 	pflag.Duration("telemetry.batch.timeout", 0, "Flush partial batch after this duration (0 = SDK default 5s).")
 	pflag.Duration("telemetry.batch.export.timeout", 0, "Per-export-call timeout (0 = library default 30s).")
 	pflag.String("otel.metrics.collector.http.url", "", "The OTLP HTTP collector URL for metrics. Falls back to otel.collector.http.url if empty.")
+	pflag.Duration("otel.metrics.export.interval", 10*time.Second, "How often to export OTLP metrics.")
 
 	// Superblocks settings
 	pflag.String("superblocks.key", "dev-agent-key", "The superblocks agent key.")
@@ -192,6 +193,7 @@ func init() {
 	_ = viper.BindEnv("telemetry.batch.max.export.batch.size", "SUPERBLOCKS_TELEMETRY_MAX_EXPORT_BATCH_SIZE")
 	_ = viper.BindEnv("telemetry.batch.timeout", "SUPERBLOCKS_TELEMETRY_BATCH_TIMEOUT")
 	_ = viper.BindEnv("telemetry.batch.export.timeout", "SUPERBLOCKS_TELEMETRY_EXPORT_TIMEOUT")
+	_ = viper.BindEnv("otel.metrics.export.interval", "SUPERBLOCKS_OTEL_METRICS_EXPORT_INTERVAL")
 
 	if path := viper.GetString("config.path"); path != "" {
 		viper.SetConfigFile(path)
@@ -293,6 +295,7 @@ func main() {
 			map[string]string{
 				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
 			},
+			viper.GetDuration("otel.metrics.export.interval"),
 		)
 		if err != nil {
 			intakeLogger.Error("could not create meter provider", zap.Error(err))
@@ -800,6 +803,7 @@ func main() {
 			redis.WithDrainCompleteCh(drainCompleteCh),
 			redis.WithDegradedModeBackoff(viper.GetDuration("transport.redis.degraded.mode.backoff")),
 			redis.WithMaxDegradedTime(viper.GetDuration("transport.redis.degraded.mode.max.time")),
+			redis.WithFleetName(os.Getenv("FLEET_NAME")),
 		))
 
 		logger.Info("redis transport configured",

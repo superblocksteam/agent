@@ -233,6 +233,9 @@ spec:
         {{- if $tmMetricsURL }}
         - "--otel.metrics.collector.http.url={{ $tmMetricsURL }}"
         {{- end }}
+        {{- if $.Values.observability.metrics.exportInterval }}
+        - "--otel.metrics.export.interval={{ $.Values.observability.metrics.exportInterval }}"
+        {{- end }}
         {{- if $.Values.observability.tracing.url }}
         - "--otel.collector.http.url={{ $.Values.observability.tracing.url }}"
         {{- end }}

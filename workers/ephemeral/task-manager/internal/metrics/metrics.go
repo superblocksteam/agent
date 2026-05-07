@@ -104,7 +104,7 @@ var (
 
 // SetupMeterProvider creates and registers an OTLP-based meter provider for
 // pushing sandbox metrics to the configured collector.
-func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersion, podName, fleetName string, headers map[string]string) (*sdkmetric.MeterProvider, error) {
+func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersion, podName, fleetName string, headers map[string]string, exportInterval time.Duration) (*sdkmetric.MeterProvider, error) {
 	metricsURL := buildMetricsURL(otlpURL)
 
 	opts := []otlpmetrichttp.Option{
@@ -140,11 +140,15 @@ func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersio
 		return nil, err
 	}
 
+	if exportInterval <= 0 {
+		exportInterval = 10 * time.Second
+	}
+
 	views := histogramViews()
 
 	providerOpts := []sdkmetric.Option{
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter,
-			sdkmetric.WithInterval(10*time.Second),
+			sdkmetric.WithInterval(exportInterval),
 		)),
 		sdkmetric.WithResource(res),
 	}
@@ -465,6 +469,7 @@ var (
 	AttrDegradedModeTransition = attribute.Key("transition") // enter | recover
 	AttrEphemeral              = attribute.Key("ephemeral")
 	AttrExecuteAttempts        = attribute.Key("execute_attempts")
+	AttrFleet                  = attribute.Key("fleet")
 	AttrLanguage               = attribute.Key("language")
 	AttrPlugin                 = attribute.Key("plugin_name")
 	AttrOperation              = attribute.Key("operation")

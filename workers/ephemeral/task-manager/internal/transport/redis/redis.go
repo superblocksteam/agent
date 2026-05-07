@@ -22,6 +22,7 @@ import (
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"github.com/superblocksteam/run"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -42,6 +43,7 @@ type redisTransport struct {
 	xReadArgs      []string
 	workerId       string
 	consumerGroup  string
+	fleetName      string
 	logger         *zap.Logger
 	pluginExecutor plugin_executor.PluginExecutor
 
@@ -98,6 +100,13 @@ func generateXReadArgs(streamKeys []string) []string {
 	return xReadArgs
 }
 
+func (rt *redisTransport) executionPoolMetricAttrs() []attribute.KeyValue {
+	if rt.fleetName == "" {
+		return nil
+	}
+	return []attribute.KeyValue{sandboxmetrics.AttrFleet.String(rt.fleetName)}
+}
+
 // NewRedisTransport creates a new Redis transport
 func NewRedisTransport(options *Options) *redisTransport {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -115,6 +124,7 @@ func NewRedisTransport(options *Options) *redisTransport {
 		xReadArgs:            generateXReadArgs(options.StreamKeys),
 		workerId:             options.WorkerId,
 		consumerGroup:        options.ConsumerGroup,
+		fleetName:            options.FleetName,
 		logger:               options.Logger,
 		pluginExecutor:       options.PluginExecutor,
 		fileContextProvider:  options.FileContextProvider,
@@ -154,7 +164,7 @@ func (rt *redisTransport) init() error {
 	}
 
 	// Report configured execution pool size
-	sandboxmetrics.RecordGauge(context.Background(), sandboxmetrics.SandboxExecutionPoolSize, rt.executionPoolSize)
+	sandboxmetrics.RecordGauge(context.Background(), sandboxmetrics.SandboxExecutionPoolSize, rt.executionPoolSize, rt.executionPoolMetricAttrs()...)
 
 	// Wait for plugin executor to be ready
 	readyCh := rt.pluginExecutor.PluginsReady(rt.context)
@@ -364,7 +374,7 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 			// handle messages concurrently with execution pool management
 			rt.logger.Debug("message received", zap.String("stream", stream.Stream), zap.String("id", mesg.ID))
 			rt.executionPool.Add(-1)
-			sandboxmetrics.AddUpDownCounter(context.Background(), sandboxmetrics.SandboxExecutionPoolInUse, 1)
+			sandboxmetrics.AddUpDownCounter(context.Background(), sandboxmetrics.SandboxExecutionPoolInUse, 1, rt.executionPoolMetricAttrs()...)
 
 			go func(streamKey string) {
 				rt.handleMessage(&m, streamKey)
@@ -372,7 +382,7 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 				rt.mutex.Lock()
 				defer rt.mutex.Unlock()
 
-				sandboxmetrics.AddUpDownCounter(context.Background(), sandboxmetrics.SandboxExecutionPoolInUse, -1)
+				sandboxmetrics.AddUpDownCounter(context.Background(), sandboxmetrics.SandboxExecutionPoolInUse, -1, rt.executionPoolMetricAttrs()...)
 				pool := rt.executionPool.Add(1)
 				rt.notifyWorkerReturned(rt.executionPoolSize - pool)
 			}(stream.Stream)

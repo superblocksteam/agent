@@ -184,7 +184,10 @@ keda:
     - keda
   # Container images for in-chart components (override for ECR mirroring).
   collector:
-    image: "" # default: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0
+    image: "" # default: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.146.0
+    # Batch flush interval before forwarding OTLP metrics to Prometheus remote-write.
+    # Lower = fresher sandbox_execution_pool_in_use for KEDA (more frequent writes).
+    batchTimeout: 5s
   prometheus:
     image: "" # default: ghcr.io/superblocksteam/prom/prometheus:v3.4.0
   successfulJobsHistoryLimit: 3
@@ -282,6 +285,10 @@ observability:
     # collector's optional OTLP fan-out target, and takes precedence over forwardUrl when both
     # are set. When prometheusServerAddress is not "auto", task-managers send OTLP here only.
     url: ""
+    # How often task-manager exports OTLP metrics (Kubernetes duration, e.g. 2s, 5s).
+    # Lower reduces staleness for KEDA Prometheus queries at the cost of higher OTLP volume.
+    # Omit (empty) to use task-manager default (10s).
+    exportInterval: ""
     # When keda.prometheusServerAddress is "auto": optional second fan-out target. Used only if
     # url is empty. Ignored when not "auto" (task-managers use url only).
     forwardUrl: ""

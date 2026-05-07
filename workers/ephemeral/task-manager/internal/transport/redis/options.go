@@ -13,13 +13,15 @@ import (
 
 // Options for creating a RedisTransport
 type Options struct {
-	RedisClient         *r.Client
-	StreamKeys          []string
-	Logger              *zap.Logger
-	BlockDuration       time.Duration
-	MessageCount        int64
-	WorkerId            string
-	ConsumerGroup       string
+	RedisClient   *r.Client
+	StreamKeys    []string
+	Logger        *zap.Logger
+	BlockDuration time.Duration
+	MessageCount  int64
+	WorkerId      string
+	ConsumerGroup string
+	// FleetName is the Helm fleet key (same as env FLEET_NAME); attached to execution-pool metrics for backends that do not map OTEL resource attrs to tags (e.g. Datadog).
+	FleetName           string
 	PluginExecutor      plugin_executor.PluginExecutor
 	ExecutionPool       int64
 	FileContextProvider redisstore.FileContextProvider
@@ -86,6 +88,13 @@ func WithWorkerId(value string) Option {
 func WithConsumerGroup(value string) Option {
 	return func(o *Options) {
 		o.ConsumerGroup = value
+	}
+}
+
+// WithFleetName sets the fleet identifier for metric dimensions (e.g. main.ephemeral.javascriptsdkapi.execute).
+func WithFleetName(value string) Option {
+	return func(o *Options) {
+		o.FleetName = value
 	}
 }
 
