@@ -256,29 +256,10 @@ deploy-helm:
 		--debug \
 		--create-namespace \
 		--values helm/orchestrator/overrides/$(ENVIRONMENT).yaml \
+		--set worker_go.deploy=false \
+		--set worker_py.deploy=false \
+		--set worker_js.deploy=false \
 		--set sandbox_workers.deploy=false \
-		--set worker_go.image.tag=$(IMAGE_TAG) \
-		--set worker_go.queue.host=$(HELM_QUEUE_HOST) \
-		--set worker_go.queue.servername=$(HELM_QUEUE_HOST) \
-		--set worker_go.kvstore.host=$(HELM_KVSTORE_HOST) \
-		--set worker_go.kvstore.servername=$(HELM_KVSTORE_HOST) \
-		--set worker_go.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
-		--set worker_py.image.tag=$(IMAGE_TAG) \
-		--set worker_py.queue.host=$(HELM_QUEUE_HOST) \
-		--set worker_py.queue.token="${HELM_QUEUE_TOKEN}" \
-		--set worker_py.kvstore.host=$(HELM_KVSTORE_HOST) \
-		--set worker_py.kvstore.token="${HELM_KVSTORE_TOKEN}" \
-		--set worker_py.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
-		--set worker_js.queue.host="${HELM_QUEUE_HOST}" \
-		--set worker_js.queue.token="${HELM_QUEUE_TOKEN}" \
-		--set worker_js.kvstore.host="${HELM_KVSTORE_HOST}" \
-		--set worker_js.kvstore.token="${HELM_KVSTORE_TOKEN}" \
-		--set worker_js.image.credentials.username="${HELM_IMAGE_CREDENTIALS_USERNAME}" \
-		--set worker_js.image.credentials.password="${HELM_IMAGE_CREDENTIALS_PASSWORD}" \
-		--set worker_js.image.tag="$(IMAGE_TAG)" \
-		--set worker_js.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
-		--set worker_js.superblocks.privateKeyRSA="$(HELM_WORKER_KEY_RSA)" \
-		--set worker_js.superblocks.privateKeyEd25519="$(HELM_WORKER_KEY_ED25519)" \
 		--set queue.host="${HELM_QUEUE_HOST}" \
 		--set queue.token="${HELM_QUEUE_TOKEN}" \
 		--set kvstore.host="${HELM_KVSTORE_HOST}" \
