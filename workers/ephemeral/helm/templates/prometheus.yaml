@@ -75,11 +75,7 @@ spec:
             - name: config
               mountPath: /etc/otel
           resources:
-            requests:
-              cpu: 25m
-              memory: 64Mi
-            limits:
-              memory: 128Mi
+            {{- toYaml $.Values.keda.collector.resources | nindent 12 }}
       volumes:
         - name: config
           configMap:
@@ -144,11 +140,7 @@ spec:
             - name: config
               mountPath: /etc/prometheus
           resources:
-            requests:
-              cpu: 25m
-              memory: 64Mi
-            limits:
-              memory: 256Mi
+            {{- toYaml $.Values.keda.prometheus.resources | nindent 12 }}
       volumes:
         - name: config
           configMap:

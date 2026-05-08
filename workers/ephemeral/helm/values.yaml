@@ -188,6 +188,12 @@ keda:
       repository: ghcr.io/superblocksteam/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
       tag: 0.146.0
       pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
     # Batch flush interval before forwarding OTLP metrics to Prometheus remote-write.
     # Lower = fresher sandbox_execution_pool_in_use for KEDA (more frequent writes).
     batchTimeout: 5s
@@ -196,6 +202,12 @@ keda:
       repository: ghcr.io/superblocksteam/prom/prometheus
       tag: v3.4.0
       pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
   maxReplicaCount: 100
   minReplicaCount: 0
   # Scaling triggers - typically Redis stream length
