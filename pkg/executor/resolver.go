@@ -1348,7 +1348,7 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 		v, err := ResolveTemplate[int32](ctx, sandbox, r.logger, step.Range, false, engine.WithResolved("range"))
 		if err != nil {
 			ctx.AppendFormPath("range")
-			return "", sberrors.BindingError(errors.New("loop range must evalute to a number"))
+			return "", sberrors.BindingError(errors.New("loop range must evaluate to a number"))
 		}
 
 		for i := 0; i < int(*v); i++ {
@@ -1360,7 +1360,7 @@ func (r *resolver) Loop(ctx *apictx.Context, step *apiv1.Block_Loop, ops ...opti
 		vals, err := ResolveTemplate[[]string](ctx, sandbox, r.logger, step.Range, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("range"))
 		if err != nil {
 			ctx.AppendFormPath("range")
-			return "", sberrors.BindingError(errors.New("loop range must evalute to an array"))
+			return "", sberrors.BindingError(errors.New("loop range must evaluate to an array"))
 		}
 
 		items = *vals
@@ -1516,7 +1516,7 @@ func (r *resolver) Parallel(ctx *apictx.Context, step *apiv1.Block_Parallel, ops
 			loopable, err := ResolveTemplate[any](ctx, sandbox, r.logger, step.GetDynamic().Paths, false, engine.WithJSONEncodeArrayItems(), engine.WithResolved("dynamic.paths"))
 			if err != nil {
 				ctx.AppendFormPath("dynamic", "paths")
-				return "", sberrors.BindingError(errors.New("parallel paths must evalute to a number or an array"))
+				return "", sberrors.BindingError(errors.New("parallel paths must evaluate to a number or an array"))
 			}
 
 			var times int
