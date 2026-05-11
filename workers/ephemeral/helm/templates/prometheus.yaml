@@ -3,6 +3,9 @@
 {{- $collectorName := include "sandbox_workers.metricsCollectorK8sName" . }}
 {{- $promName := include "sandbox_workers.kedaPrometheusK8sName" . }}
 {{- $metricsFanout := coalesce $.Values.observability.metrics.url $.Values.observability.metrics.forwardUrl }}
+{{- $batchCfg := $.Values.keda.collector.batch | default dict }}
+{{- $prw := $.Values.keda.collector.prometheusRemoteWrite | default dict }}
+{{- $rwq := $prw.remoteWriteQueue | default dict }}
 ---
 # OTel Collector: receives OTLP metrics from task-managers.
 # Exports to: in-chart Prometheus (for KEDA) and, if observability.metrics.url or .forwardUrl
@@ -23,14 +26,26 @@ data:
     processors:
       batch:
         timeout: {{ $.Values.keda.collector.batchTimeout | default "5s" | quote }}
+        send_batch_size: {{ $batchCfg.sendBatchSize | default 512 }}
+        send_batch_max_size: {{ $batchCfg.sendBatchMaxSize | default 2048 }}
     exporters:
       prometheusremotewrite:
         endpoint: {{ include "sandbox_workers.autoPromQueryUrl" . }}/api/v1/write
+        timeout: {{ $prw.timeout | default "30s" | quote }}
+        tls:
+          insecure: {{ if hasKey $prw "tlsInsecure" }}{{ $prw.tlsInsecure }}{{ else }}true{{ end }}
         resource_to_telemetry_conversion:
           enabled: true
+        remote_write_queue:
+          enabled: {{ if hasKey $rwq "enabled" }}{{ $rwq.enabled }}{{ else }}true{{ end }}
+          queue_size: {{ $rwq.queueSize | default 4096 }}
+          num_consumers: {{ $rwq.numConsumers | default 5 }}
       {{- if $metricsFanout }}
       otlphttp:
         endpoint: {{ $metricsFanout }}
+        timeout: {{ $prw.timeout | default "30s" | quote }}
+        tls:
+          insecure: {{ if hasKey $prw "tlsInsecure" }}{{ $prw.tlsInsecure }}{{ else }}true{{ end }}
       {{- end }}
     service:
       pipelines:

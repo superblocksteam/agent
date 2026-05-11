@@ -194,6 +194,16 @@ keda:
         memory: 64Mi
       limits:
         memory: 128Mi
+    batch:
+      sendBatchSize: 512
+      sendBatchMaxSize: 2048
+    prometheusRemoteWrite:
+      timeout: 30s
+      tlsInsecure: true
+      remoteWriteQueue:
+        enabled: true
+        queueSize: 4096
+        numConsumers: 5
     # Batch flush interval before forwarding OTLP metrics to Prometheus remote-write.
     # Lower = fresher sandbox_execution_pool_in_use for KEDA (more frequent writes).
     batchTimeout: 5s
