@@ -2,17 +2,8 @@ dependencies:
 - name: valkey
   repository: oci://registry-1.docker.io/bitnamicharts
   version: 5.1.4
-- name: worker_go
-  repository: file://../../workers/golang/helm
-  version: 0.0.1
-- name: worker_py
-  repository: file://../../workers/python/helm
-  version: 0.0.1
-- name: worker_js
-  repository: file://../../workers/javascript/helm
-  version: 0.0.1
 - name: sandbox_workers
   repository: file://../../workers/ephemeral/helm
   version: 0.0.1
-digest: sha256:f1b0792b3a55f0d44aa446285ca5e3aefb13f93358d0040ed2b32ffc4b6028bf
-generated: "2026-02-10T11:31:14.431906-05:00"
+digest: sha256:a04fdc989606225cf5908a1830283580d8e5f7ec698b10fa0d26668fb994e728
+generated: "2026-05-08T14:41:52.506756-04:00"

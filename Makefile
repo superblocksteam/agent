@@ -256,9 +256,6 @@ deploy-helm:
 		--debug \
 		--create-namespace \
 		--values helm/orchestrator/overrides/$(ENVIRONMENT).yaml \
-		--set worker_go.deploy=false \
-		--set worker_py.deploy=false \
-		--set worker_js.deploy=false \
 		--set sandbox_workers.deploy=false \
 		--set queue.host="${HELM_QUEUE_HOST}" \
 		--set queue.token="${HELM_QUEUE_TOKEN}" \
@@ -278,9 +275,6 @@ deploy-helm:
 		--values helm/orchestrator/overrides/$(ENVIRONMENT).yaml \
 		--set server.deploy=false \
 		--set queue.deploy=false \
-		--set worker_go.deploy=false \
-		--set worker_py.deploy=false \
-		--set worker_js.deploy=false \
 		--set sandbox_workers.fullnameOverride=orchestrator-workers \
 		--set sandbox_workers.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \
 		--set sandbox_workers.queue.host="$(HELM_QUEUE_HOST)" \

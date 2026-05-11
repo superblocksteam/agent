@@ -10,18 +10,6 @@ dependencies:
     version: 5.1.4
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: queue.deploy
-  - name: worker_go
-    version: 0.0.1
-    repository: "file://../../workers/golang/helm"
-    condition: worker_go.deploy
-  - name: worker_py
-    version: 0.0.1
-    repository: "file://../../workers/python/helm"
-    condition: worker_py.deploy
-  - name: worker_js
-    version: 0.0.1
-    repository: "file://../../workers/javascript/helm"
-    condition: worker_js.deploy
   - name: sandbox_workers
     version: 0.0.1
     repository: "file://../../workers/ephemeral/helm"
