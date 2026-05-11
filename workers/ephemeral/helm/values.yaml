@@ -218,6 +218,11 @@ keda:
         memory: 64Mi
       limits:
         memory: 256Mi
+  # When prometheusServerAddress is "auto": optional node placement for the in-chart OTel
+  # collector and Prometheus Deployments.
+  metricsInfra:
+    nodeSelector: {}
+    tolerations: []
   maxReplicaCount: 100
   minReplicaCount: 0
   # Scaling triggers - typically Redis stream length

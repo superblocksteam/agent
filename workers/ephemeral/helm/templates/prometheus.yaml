@@ -6,6 +6,7 @@
 {{- $batchCfg := $.Values.keda.collector.batch | default dict }}
 {{- $prw := $.Values.keda.collector.prometheusRemoteWrite | default dict }}
 {{- $rwq := $prw.remoteWriteQueue | default dict }}
+{{- $metricsInfra := $.Values.keda.metricsInfra | default dict }}
 ---
 # OTel Collector: receives OTLP metrics from task-managers.
 # Exports to: in-chart Prometheus (for KEDA) and, if observability.metrics.url or .forwardUrl
@@ -41,7 +42,7 @@ data:
           queue_size: {{ $rwq.queueSize | default 4096 }}
           num_consumers: {{ $rwq.numConsumers | default 5 }}
       {{- if $metricsFanout }}
-      otlphttp:
+      otlp_http:
         endpoint: {{ $metricsFanout }}
         timeout: {{ $prw.timeout | default "30s" | quote }}
         tls:
@@ -55,7 +56,7 @@ data:
           exporters:
             - prometheusremotewrite
             {{- if $metricsFanout }}
-            - otlphttp
+            - otlp_http
             {{- end }}
 ---
 apiVersion: apps/v1
@@ -77,6 +78,14 @@ spec:
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
         - name: {{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}
+      {{- end }}
+      {{- with $metricsInfra.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $metricsInfra.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: collector
@@ -139,6 +148,14 @@ spec:
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
         - name: {{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}
+      {{- end }}
+      {{- with $metricsInfra.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $metricsInfra.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: prometheus
