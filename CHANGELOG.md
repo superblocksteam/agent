@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Upgrade Go toolchain from 1.26.1 to 1.26.3 and update Docker Go builder images to use the published 1.26.3 trixie image
 - Fix Apps 3.0 SDK integration callbacks for embedded external users using short-lived orchestrator-signed capabilities.
 - Include `x-superblocks-agent-key` in OTLP metrics upload headers for orchestrator and task-manager exporters
 - Disable OTLP log exporting to the collector and rely on the legacy remote logging pipeline instead

@@ -47,7 +47,7 @@
 
           goVersion = readVersionOrFallback {
             path = ./.go-version;
-            fallback = "1.26.1";
+            fallback = "1.26.3";
             label = ".go-version";
             pattern = "[0-9]+\\.[0-9]+\\.[0-9]+";
           };
