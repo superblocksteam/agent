@@ -3,7 +3,7 @@
 # Python sandbox for ephemeral worker
 # Executes Python scripts in a sandboxed gRPC server
 
-FROM python:3.10-slim
+FROM ghcr.io/superblocksteam/python:3.10.20-slim-trixie
 
 WORKDIR /app
 
