@@ -1,0 +1,373 @@
+# =============================================================================
+# Task Manager Deployment
+#
+# KEDA manages a pool of task-manager pods that:
+# 1. Pull work from Redis queue
+# 2. Dynamically create sandbox Jobs for execution
+# 3. Communicate with sandbox via gRPC
+# 4. (if ephemeral is true) Delete sandbox Jobs after execution
+# 5. Manage sandbox lifecycle (create new sandboxes when necessary)
+#
+# Network isolation is enforced via Kubernetes NetworkPolicy on sandbox Jobs.
+# Task-manager has full internal network access; sandbox Jobs are restricted.
+#
+# Task-manager container resources: chart defaults are deep-copied, then
+# mergeOverwrite applies per-fleet ($v.taskManager).resources (fleet wins).
+# (Sprig merge also gives precedence to the right-hand map in `a | merge b`;
+# swapping operands inverts precedence—do not "fix" without re-checking output.)
+# =============================================================================
+{{- range $k, $v := .Values.sandbox_workers.fleets }}
+{{- $language := $v.language | required "language is required (python or javascript)" }}
+{{- $sandboxConfig := index $.Values.sandbox_workers.sandbox $language }}
+{{- $podAnnotations := merge (deepCopy ($v.podAnnotations | default $.Values.sandbox_workers.podAnnotations | default dict)) (dict "karpenter.sh/do-not-disrupt" "true") }}
+{{- $tmShutdown := merge (index $v "shutdown" | default dict) (index $.Values.sandbox_workers.taskManager "shutdown" | default dict) }}
+{{- /* Sprig `default` treats false as empty; use hasKey so includeStandardStreams: false is honored */}}
+{{- $includeStandardStreams := true }}
+{{- if hasKey $v "includeStandardStreams" }}
+{{- $includeStandardStreams = $v.includeStandardStreams }}
+{{- else if and $.Values.sandbox_workers.worker (hasKey $.Values.sandbox_workers.worker "includeStandardStreams") }}
+{{- $includeStandardStreams = $.Values.sandbox_workers.worker.includeStandardStreams }}
+{{- end }}
+{{- /* Sprig `default` treats 0 as empty; use hasKey so minReplicaCount/maxReplicaCount: 0 are honored */}}
+{{- $fleetKeda := $v.keda | default dict }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $k }}
+  labels:
+    {{- include "sandbox.worker.labels" $v | nindent 4 }}
+spec:
+  replicas: {{ if hasKey $fleetKeda "minReplicaCount" }}{{ index $fleetKeda "minReplicaCount" }}{{ else }}{{ $.Values.sandbox_workers.keda.minReplicaCount }}{{ end }}
+  selector:
+    matchLabels:
+      fleet: {{ $k }}
+      role: task-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "sandbox.worker.labels" $v | nindent 8 }}
+        ephemeral: {{ ($v.ephemeral | default $.Values.sandbox_workers.worker.ephemeral | default false) | quote }}
+        fleet: {{ $k }}
+        language: {{ $language }}
+        role: task-manager
+      {{- with $podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: {{ index $tmShutdown "terminationGracePeriodSeconds" | default 60 }}
+      serviceAccountName: task-manager
+      {{- if $.Values.sandbox_workers.image.credentials }}
+      imagePullSecrets:
+      - name: ephemeral-worker-docker
+      {{- end }}
+
+      containers:
+      - name: task-manager
+        image: "{{ (($v.taskManager).image).repository | default $.Values.sandbox_workers.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.sandbox_workers.taskManager.image.tag }}"
+        imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.sandbox_workers.taskManager.image.pullPolicy }}
+        resources:
+          {{- $taskManagerResources := deepCopy ($.Values.sandbox_workers.taskManager.resources | default dict) }}
+          {{- $_ := mergeOverwrite $taskManagerResources (($v.taskManager).resources | default dict) }}
+          {{- toYaml $taskManagerResources | nindent 10 }}
+        {{- if $.Values.sandbox_workers.taskManager.probesEnabled }}
+        {{- with (($v.taskManager).startupProbe) | default $.Values.sandbox_workers.taskManager.startupProbe }}
+        startupProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with (($v.taskManager).readinessProbe) | default $.Values.sandbox_workers.taskManager.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with (($v.taskManager).livenessProbe) | default $.Values.sandbox_workers.taskManager.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
+        command: ["./task-manager"]
+        args:
+        # Ephemeral mode - process one job and exit
+        {{- if $v.ephemeral }}
+        - "--worker.ephemeral=true"
+        {{- else if $.Values.sandbox_workers.worker.ephemeral }}
+        - "--worker.ephemeral=true"
+        {{- else }}
+        - "--worker.ephemeral=false"
+        {{- end }}
+        # Health check configuration
+        - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.sandbox_workers.taskManager.healthFilePath }}"
+        # Logging
+        - "--log.level={{ $.Values.sandbox_workers.observability.logging.level }}"
+        # Sandbox language
+        - "--sandbox.language={{ $language }}"
+        # Sandbox mode - create separate sandbox Jobs
+        - "--sandbox.namespace={{ $.Release.Namespace }}"
+        - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
+        - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox_workers.sandbox.port }}"
+        - "--sandbox.pool.size={{ (($v.sandbox).poolSize) | default $.Values.sandbox_workers.sandbox.poolSize | default 1 }}"
+        - "--sandbox.ttl={{ $.Values.sandbox_workers.sandboxJob.ttlSecondsAfterFinished }}"
+        {{- if or $.Values.sandbox_workers.sandbox.runtimeClassName $.Values.sandbox_workers.runtimeClassName }}
+        - "--sandbox.runtimeClass={{ $.Values.sandbox_workers.sandbox.runtimeClassName | default $.Values.sandbox_workers.runtimeClassName }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.image.credentials }}
+        - "--sandbox.imagePullSecrets=ephemeral-worker-docker"
+        {{- end }}
+        {{- if and $v.sandbox $v.sandbox.nodeSelector }}
+        - "--sandbox.nodeSelector={{ include "mapToStringFlag" $v.sandbox.nodeSelector }}"
+        {{- else if or $.Values.sandbox_workers.nodeSelector $.Values.sandbox_workers.sandbox.nodeSelector }}
+        - "--sandbox.nodeSelector={{ include "mapToStringFlag" ($.Values.sandbox_workers.sandbox.nodeSelector | default $.Values.sandbox_workers.nodeSelector) }}"
+        {{- end }}
+        {{- if and $v.sandbox $v.sandbox.tolerations }}
+        {{- range $v.sandbox.tolerations }}
+        - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
+        {{- end }}
+        {{- else }}
+        {{- range ($.Values.sandbox_workers.sandbox.tolerations | default $.Values.sandbox_workers.tolerations) }}
+        - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
+        {{- end }}
+        {{- end }}
+        {{- with (($v.sandbox).resources) | default $sandboxConfig.resources }}
+        {{- with .requests }}
+        {{- with .cpu }}
+        - "--sandbox.resources.requests.cpu={{ . }}"
+        {{- end }}
+        {{- with .memory }}
+        - "--sandbox.resources.requests.memory={{ . }}"
+        {{- end }}
+        {{- end }}
+        {{- with .limits }}
+        {{- with .cpu }}
+        - "--sandbox.resources.limits.cpu={{ . }}"
+        {{- end }}
+        {{- with .memory }}
+        - "--sandbox.resources.limits.memory={{ . }}"
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        # Shutdown configuration
+        - "--worker.shutdown.delay={{ index $tmShutdown "delay" | default 0 }}"
+        - "--worker.shutdown.max.jitter={{ index $tmShutdown "maxJitter" | default 0 }}"
+        # gRPC configuration (variable store for sandbox)
+        - "--variable.store.grpc.port={{ $.Values.sandbox_workers.variableStore.grpc.port }}"
+        - "--variable.store.http.port={{ $.Values.sandbox_workers.variableStore.http.port }}"
+        # gRPC configuration (streaming proxy for sandbox)
+        - "--streaming.proxy.grpc.port={{ $.Values.sandbox_workers.streamingProxy.grpc.port }}"
+        # Worker configuration
+        - "--worker.consumer.group={{ $v.consumerGroup }}"
+        {{- if $v.plugins }}
+        - "--worker.plugins={{ join "," $v.plugins }}"
+        {{- else if $.Values.sandbox_workers.worker.plugins }}
+        - "--worker.plugins={{ join "," $.Values.sandbox_workers.worker.plugins }}"
+        {{- end }}
+        {{- if $v.events }}
+        - "--worker.events={{ join "," $v.events }}"
+        {{- else if $.Values.sandbox_workers.worker.events }}
+        - "--worker.events={{ join "," $.Values.sandbox_workers.worker.events }}"
+        {{- end }}
+        {{- if $v.streams }}
+        - "--worker.stream.keys={{ join "," $v.streams }}"
+        {{- else if $.Values.sandbox_workers.worker.streams }}
+        - "--worker.stream.keys={{ join "," $.Values.sandbox_workers.worker.streams }}"
+        {{- else }}
+        - "--worker.group={{ $.Values.sandbox_workers.worker.group }}"
+        {{- if $v.buckets }}
+        - "--worker.buckets={{ join "," $v.buckets }}"
+        {{- else if $.Values.sandbox_workers.worker.buckets }}
+        - "--worker.buckets={{ join "," $.Values.sandbox_workers.worker.buckets }}"
+        {{- end }}
+        {{- if $v.streamVariants }}
+        - "--worker.stream.variants={{ join "," $v.streamVariants }}"
+        {{- else if $.Values.sandbox_workers.worker.streamVariants }}
+        - "--worker.stream.variants={{ join "," $.Values.sandbox_workers.worker.streamVariants }}"
+        {{- end }}
+        # Whether to include standard streams in the stream keys
+        - "--worker.stream.include.standard.keys={{ $includeStandardStreams }}"
+        {{- end }}
+        # Redis transport
+        - "--transport.redis.host={{ $.Values.sandbox_workers.queue.host }}"
+        - "--transport.redis.port={{ $.Values.sandbox_workers.queue.port }}"
+        - "--transport.redis.tls={{ $.Values.sandbox_workers.queue.tls }}"
+        {{- if $.Values.sandbox_workers.queue.servername }}
+        - "--transport.redis.servername={{ $.Values.sandbox_workers.queue.servername }}"
+        {{- end }}
+        - "--transport.redis.block.duration={{ $.Values.sandbox_workers.queue.blockDuration }}"
+        - "--transport.redis.max.messages={{ $.Values.sandbox_workers.queue.batchSize }}"
+        - "--transport.redis.execution.pool={{ (($v.queue).executionPool) | default $.Values.sandbox_workers.queue.executionPool }}"
+        - "--transport.redis.pool.max={{ $.Values.sandbox_workers.queue.pool.max }}"
+        - "--transport.redis.pool.min={{ $.Values.sandbox_workers.queue.pool.min }}"
+        {{- if $.Values.sandbox_workers.queue.timeout.dial }}
+        - "--transport.redis.timeout.dial={{ $.Values.sandbox_workers.queue.timeout.dial }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.queue.timeout.read }}
+        - "--transport.redis.timeout.read={{ $.Values.sandbox_workers.queue.timeout.read }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.queue.timeout.write }}
+        - "--transport.redis.timeout.write={{ $.Values.sandbox_workers.queue.timeout.write }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.queue.timeout.pool }}
+        - "--transport.redis.timeout.pool={{ $.Values.sandbox_workers.queue.timeout.pool }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.queue.degradedMode.backoff }}
+        - "--transport.redis.degraded.mode.backoff={{ $.Values.sandbox_workers.queue.degradedMode.backoff }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.queue.degradedMode.maxTime }}
+        - "--transport.redis.degraded.mode.max.time={{ $.Values.sandbox_workers.queue.degradedMode.maxTime }}"
+        {{- end }}
+        # Redis store
+        - "--store.redis.host={{ $.Values.sandbox_workers.kvstore.host }}"
+        - "--store.redis.port={{ $.Values.sandbox_workers.kvstore.port }}"
+        - "--store.redis.tls={{ $.Values.sandbox_workers.kvstore.tls }}"
+        {{- if $.Values.sandbox_workers.kvstore.servername }}
+        - "--store.redis.servername={{ $.Values.sandbox_workers.kvstore.servername }}"
+        {{- end }}
+        - "--store.redis.pool.max={{ $.Values.sandbox_workers.kvstore.pool.max }}"
+        - "--store.redis.pool.min={{ $.Values.sandbox_workers.kvstore.pool.min }}"
+        {{- if $.Values.sandbox_workers.kvstore.timeout.dial }}
+        - "--store.redis.timeout.dial={{ $.Values.sandbox_workers.kvstore.timeout.dial }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.kvstore.timeout.read }}
+        - "--store.redis.timeout.read={{ $.Values.sandbox_workers.kvstore.timeout.read }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.kvstore.timeout.write }}
+        - "--store.redis.timeout.write={{ $.Values.sandbox_workers.kvstore.timeout.write }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.kvstore.timeout.pool }}
+        - "--store.redis.timeout.pool={{ $.Values.sandbox_workers.kvstore.timeout.pool }}"
+        {{- end }}
+        # Observability — prometheusServerAddress "auto" → OTLP to in-chart collector; fan-out uses metrics.url / forwardUrl (values.yaml)
+        {{- $tmMetricsURL := $.Values.sandbox_workers.observability.metrics.url }}
+        {{- $autoCollector := include "sandbox_workers.autoOtelMetricsCollectorHttpUrl" $ | trim }}
+        {{- if $autoCollector }}
+        {{- $tmMetricsURL = $autoCollector }}
+        {{- end }}
+        {{- if $tmMetricsURL }}
+        - "--otel.metrics.collector.http.url={{ $tmMetricsURL }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.observability.metrics.exportInterval }}
+        - "--otel.metrics.export.interval={{ $.Values.sandbox_workers.observability.metrics.exportInterval }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.observability.tracing.url }}
+        - "--otel.collector.http.url={{ $.Values.sandbox_workers.observability.tracing.url }}"
+        {{- end }}
+        - "--telemetry.deployment.type={{ $.Values.sandbox_workers.telemetry.deploymentType }}"
+        {{- if $.Values.sandbox_workers.observability.tracing.batchTimeout }}
+        - "--telemetry.batch.timeout={{ $.Values.sandbox_workers.observability.tracing.batchTimeout }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.observability.tracing.exportTimeout }}
+        - "--telemetry.batch.export.timeout={{ $.Values.sandbox_workers.observability.tracing.exportTimeout }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.observability.tracing.maxExportBatchSize }}
+        - "--telemetry.batch.max.export.batch.size={{ $.Values.sandbox_workers.observability.tracing.maxExportBatchSize }}"
+        {{- end }}
+        {{- if $.Values.sandbox_workers.observability.tracing.maxQueueSize }}
+        - "--telemetry.batch.max.queue.size={{ $.Values.sandbox_workers.observability.tracing.maxQueueSize }}"
+        {{- end }}
+        # Integration executor - allows sandbox to execute integrations via orchestrator
+        {{- $ieEnabled := $.Values.sandbox_workers.integrationExecutor.enabled }}
+        {{- with ($v.integrationExecutor) }}
+        {{-   if hasKey . "enabled" }}
+        {{-     $ieEnabled = .enabled }}
+        {{-   end }}
+        {{- end }}
+        {{- if $ieEnabled }}
+        - "--integration.executor.enabled=true"
+        - "--integration.executor.grpc.port={{ (($v.integrationExecutor).grpc).port | default $.Values.sandbox_workers.integrationExecutor.grpc.port }}"
+        - "--orchestrator.grpc.address={{ $.Values.sandbox_workers.integrationExecutor.orchestratorGrpcAddress | default (printf "%s-grpc:%v" (include "orchestrator.fullname" $) $.Values.service.ports.grpc) }}"
+        {{- end }}
+        # Extra args from values
+        {{- with $.Values.sandbox_workers.taskManager.extraArgs }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with ($v.taskManager).extraArgs }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        env:
+        # Fleet identity
+        - name: FLEET_NAME
+          value: {{ $k }}
+        # Pod info via Downward API
+        # Required to properly set owner reference for sandbox cleanup
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        # Node name for zone discovery (sandbox pod co-location)
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        {{- if $.Values.sandbox_workers.queue.password }}
+        - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: queue-redis-token
+              key: token
+        {{- end }}
+        {{- if $.Values.sandbox_workers.kvstore.password }}
+        - name: SUPERBLOCKS_WORKER_SANDBOX_STORE_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kvstore-redis-token
+              key: token
+        {{- end }}
+        {{- if $.Values.sandbox_workers.superblocks.key }}
+        - name: SUPERBLOCKS_WORKER_SANDBOX_SUPERBLOCKS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: dataplane-superblocks-key
+              key: key
+        {{- end }}
+        {{- with ($v.taskManager).extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        ports:
+        - name: var-store-grpc
+          containerPort: {{ $.Values.sandbox_workers.variableStore.grpc.port }}
+          protocol: TCP
+        - name: var-store-http
+          containerPort: {{ $.Values.sandbox_workers.variableStore.http.port }}
+        - name: stream-grpc
+          containerPort: {{ $.Values.sandbox_workers.streamingProxy.grpc.port }}
+          protocol: TCP
+        {{- if $ieEnabled }}
+        - name: integ-exec-grpc
+          containerPort: {{ (($v.integrationExecutor).grpc).port | default $.Values.sandbox_workers.integrationExecutor.grpc.port }}
+          protocol: TCP
+        {{- end }}
+
+      {{- with $v.nodeSelector | default $.Values.sandbox_workers.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.affinity | default $.Values.sandbox_workers.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.topologySpreadConstraints | default $.Values.sandbox_workers.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.tolerations | default $.Values.sandbox_workers.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

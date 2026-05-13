@@ -1,0 +1,66 @@
+{{- range $k, $v := .Values.sandbox_workers.fleets }}
+{{- $fleetKeda := $v.keda | default dict }}
+{{- $minReplicas := $.Values.sandbox_workers.keda.minReplicaCount }}
+{{- if hasKey $fleetKeda "minReplicaCount" }}
+{{- $minReplicas = index $fleetKeda "minReplicaCount" }}
+{{- end }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ $k }}
+  labels:
+    {{- include "sandbox.worker.labels" $v | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $k }}
+  pollingInterval: {{ ($v.keda | default dict).pollingInterval | default $.Values.sandbox_workers.keda.pollingInterval }}
+  cooldownPeriod: {{ ($v.keda | default dict).cooldownPeriod | default $.Values.sandbox_workers.keda.cooldownPeriod | default 30 }}
+  minReplicaCount: {{ $minReplicas }}
+  maxReplicaCount: {{ if hasKey $fleetKeda "maxReplicaCount" }}{{ index $fleetKeda "maxReplicaCount" }}{{ else }}{{ $.Values.sandbox_workers.keda.maxReplicaCount }}{{ end }}
+  {{- if $.Values.sandbox_workers.keda.prometheusServerAddress }}
+  fallback:
+    failureThreshold: {{ $.Values.sandbox_workers.keda.fallbackFailureThreshold | default 3 }}
+    replicas: {{ max 1 ($minReplicas | int) }}
+  {{- end }}
+  {{- if or (index $fleetKeda "triggers") $.Values.sandbox_workers.keda.triggers }}
+  triggers:
+    {{- toYaml (index $fleetKeda "triggers" | default $.Values.sandbox_workers.keda.triggers) | nindent 4 }}
+  {{- else }}
+  triggers:
+    {{- range $v.triggerStreams }}
+    - type: redis-streams
+      metadata:
+        host: {{ $.Values.sandbox_workers.queue.host }}
+        port: {{ $.Values.sandbox_workers.queue.port | quote }}
+        enableTLS: {{ $.Values.sandbox_workers.queue.tls | quote }}
+        stream: {{ . }}
+        consumerGroup: {{ $v.consumerGroup }}
+        {{- with index $fleetKeda "lagCount" | default $.Values.sandbox_workers.keda.lagCount }}
+        lagCount: {{ . | quote }}
+        {{- end }}
+        activationLagCount: {{ index $fleetKeda "activationLagCount" | default $.Values.sandbox_workers.keda.activationLagCount | default "1" | quote }}
+      authenticationRef:
+        name: redis-trigger-auth
+    {{- end }}
+    {{- if $.Values.sandbox_workers.keda.prometheusServerAddress }}
+    {{- $promAddr := $.Values.sandbox_workers.keda.prometheusServerAddress }}
+    {{- if eq $promAddr "auto" }}
+    {{- $promAddr = include "sandbox_workers.autoPromQueryUrl" $ | trim }}
+    {{- end }}
+    {{- $execPoolSize := (($v.queue).executionPool) | default $.Values.sandbox_workers.queue.executionPool | default 1 }}
+    # Metrics-based trigger: desired replicas = ceil(in_use / executionPool) + minReplicas.
+    # Each replica serves executionPool concurrent events (requests), so dividing gives the
+    # number of fully-occupied workers (task-managers); adding minReplicas maintains the warm buffer.
+    - type: prometheus
+      metricType: AverageValue
+      metadata:
+        serverAddress: {{ $promAddr }}
+        query: ceil((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) / {{ $execPoolSize }}) + {{ $minReplicas }}
+        threshold: "1"
+        activationThreshold: "0"
+    {{- end }}
+  {{- end }}
+{{- end }}

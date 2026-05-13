@@ -1,0 +1,191 @@
+{{- if eq ($.Values.sandbox_workers.keda.prometheusServerAddress | default "") "auto" }}
+{{- $collectorName := "sandbox-workers-metrics-collector" }}
+{{- $promName := "sandbox-workers-prometheus" }}
+{{- $metricsFanout := coalesce $.Values.sandbox_workers.observability.metrics.url $.Values.sandbox_workers.observability.metrics.forwardUrl }}
+{{- $batchCfg := $.Values.sandbox_workers.keda.collector.batch | default dict }}
+{{- $prw := $.Values.sandbox_workers.keda.collector.prometheusRemoteWrite | default dict }}
+{{- $rwq := $prw.remoteWriteQueue | default dict }}
+{{- $metricsInfra := $.Values.sandbox_workers.keda.metricsInfra | default dict }}
+---
+# OTel Collector: receives OTLP metrics from task-managers.
+# Exports to: in-chart Prometheus (for KEDA) and, if observability.metrics.url or .forwardUrl
+# is set, forwards a copy to that OTLP endpoint (url wins if both are set; see values.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $collectorName }}-config
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+    processors:
+      batch:
+        timeout: {{ $.Values.sandbox_workers.keda.collector.batchTimeout | default "5s" | quote }}
+        send_batch_size: {{ $batchCfg.sendBatchSize | default 512 }}
+        send_batch_max_size: {{ $batchCfg.sendBatchMaxSize | default 2048 }}
+    exporters:
+      prometheusremotewrite:
+        endpoint: {{ include "sandbox_workers.autoPromQueryUrl" . }}/api/v1/write
+        timeout: {{ $prw.timeout | default "30s" | quote }}
+        tls:
+          insecure: {{ if hasKey $prw "tlsInsecure" }}{{ $prw.tlsInsecure }}{{ else }}true{{ end }}
+        resource_to_telemetry_conversion:
+          enabled: true
+        remote_write_queue:
+          enabled: {{ if hasKey $rwq "enabled" }}{{ $rwq.enabled }}{{ else }}true{{ end }}
+          queue_size: {{ $rwq.queueSize | default 4096 }}
+          num_consumers: {{ $rwq.numConsumers | default 5 }}
+      {{- if $metricsFanout }}
+      otlp_http:
+        endpoint: {{ $metricsFanout }}
+        timeout: {{ $prw.timeout | default "30s" | quote }}
+        tls:
+          insecure: {{ if hasKey $prw "tlsInsecure" }}{{ $prw.tlsInsecure }}{{ else }}true{{ end }}
+      {{- end }}
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters:
+            - prometheusremotewrite
+            {{- if $metricsFanout }}
+            - otlp_http
+            {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $collectorName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $collectorName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $collectorName }}
+        # Calico isolates OTLP when prometheusServerAddress is auto (see networkpolicy.yaml).
+        kedaMetrics: collector
+    spec:
+      {{- if $.Values.sandbox_workers.image.credentials }}
+      imagePullSecrets:
+        - name: ephemeral-worker-docker
+      {{- end }}
+      {{- with $metricsInfra.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $metricsInfra.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: collector
+          image: "{{ $.Values.sandbox_workers.keda.collector.image.repository | default "ghcr.io/superblocksteam/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}:{{ $.Values.sandbox_workers.keda.collector.image.tag | default "0.146.0" }}"
+          imagePullPolicy: {{ ((.Values.sandbox_workers.keda.collector.image | default dict).pullPolicy | default "IfNotPresent") }}
+          args: ["--config=/etc/otel/config.yaml"]
+          ports:
+            - containerPort: 4317
+            - containerPort: 4318
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+          resources:
+            {{- toYaml $.Values.sandbox_workers.keda.collector.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $collectorName }}-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $collectorName }}
+spec:
+  selector:
+    app: {{ $collectorName }}
+  ports:
+    - port: 4317
+      name: otlp-grpc
+    - port: 4318
+      name: otlp-http
+---
+# Prometheus: receives remote-write from OTel Collector,
+# serves PromQL queries for KEDA's prometheus trigger.
+# Lightweight: 1h retention, 256MB storage cap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $promName }}-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $promName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $promName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $promName }}
+        kedaMetrics: prometheus
+    spec:
+      {{- if $.Values.sandbox_workers.image.credentials }}
+      imagePullSecrets:
+        - name: ephemeral-worker-docker
+      {{- end }}
+      {{- with $metricsInfra.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $metricsInfra.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: prometheus
+          image: "{{ $.Values.sandbox_workers.keda.prometheus.image.repository | default "ghcr.io/superblocksteam/prom/prometheus" }}:{{ $.Values.sandbox_workers.keda.prometheus.image.tag | default "v3.4.0" }}"
+          imagePullPolicy: {{ ((.Values.sandbox_workers.keda.prometheus.image | default dict).pullPolicy | default "IfNotPresent") }}
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--web.enable-remote-write-receiver"
+            - "--storage.tsdb.retention.time=1h"
+            - "--storage.tsdb.retention.size=256MB"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+          resources:
+            {{- toYaml $.Values.sandbox_workers.keda.prometheus.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $promName }}-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $promName }}
+spec:
+  selector:
+    app: {{ $promName }}
+  ports:
+    - port: 9090
+      name: http
+{{- end }}
+

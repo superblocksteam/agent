@@ -162,8 +162,6 @@ sandbox:
 sandboxJob:
   # Auto-delete job immediately after completion (success or failure)
   ttlSecondsAfterFinished: 0
-  # No restart attempts on failure
-  backoffLimit: 0
 # KEDA ScaledObject configuration
 keda:
   pollingInterval: 5

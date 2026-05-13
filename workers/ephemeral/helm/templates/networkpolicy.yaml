@@ -259,6 +259,7 @@ spec:
           {{- end }}
           - 172.16.0.0/12
           - 192.168.0.0/16
+    {{- if .Values.network.taskManagerAllowedExternalPorts }}
     - action: Allow
       protocol: TCP
       destination:
@@ -266,6 +267,7 @@ spec:
           {{- range .Values.network.taskManagerAllowedExternalPorts }}
           - {{ . }}
           {{- end }}
+    {{- end }}
     {{- if .Values.network.additionalAllowedCIDRs }}
     {{- range .Values.network.additionalAllowedCIDRs }}
     - action: Allow

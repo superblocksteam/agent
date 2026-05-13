@@ -140,32 +140,6 @@ sandbox_workers:
       language: javascript
       consumerGroup: main-sandbox
       ephemeral: false
-      triggerStreams:
-        - agent.main.bucket.BA.plugin.mssql.event.execute
-        - agent.main.bucket.BE.plugin.mssql.event.execute
-        - agent.main.bucket.BA.plugin.mssql.event.metadata
-        - agent.main.bucket.BA.plugin.mssql.event.test
-        - agent.main.bucket.BA.plugin.mssql.event.pre_delete
-        - agent.main.bucket.BA.plugin.postgres.event.execute
-        - agent.main.bucket.BE.plugin.postgres.event.execute
-        - agent.main.bucket.BA.plugin.postgres.event.metadata
-        - agent.main.bucket.BA.plugin.postgres.event.test
-        - agent.main.bucket.BA.plugin.postgres.event.pre_delete
-        - agent.main.bucket.BA.plugin.restapi.event.execute
-        - agent.main.bucket.BE.plugin.restapi.event.execute
-        - agent.main.bucket.BA.plugin.restapi.event.metadata
-        - agent.main.bucket.BA.plugin.restapi.event.test
-        - agent.main.bucket.BA.plugin.restapi.event.pre_delete
-        - agent.main.bucket.BA.plugin.restapiintegration.event.execute
-        - agent.main.bucket.BE.plugin.restapiintegration.event.execute
-        - agent.main.bucket.BA.plugin.restapiintegration.event.metadata
-        - agent.main.bucket.BA.plugin.restapiintegration.event.test
-        - agent.main.bucket.BA.plugin.restapiintegration.event.pre_delete
-        - agent.main.bucket.BA.plugin.s3.event.execute
-        - agent.main.bucket.BE.plugin.s3.event.execute
-        - agent.main.bucket.BA.plugin.s3.event.metadata
-        - agent.main.bucket.BA.plugin.s3.event.test
-        - agent.main.bucket.BA.plugin.s3.event.pre_delete
       buckets:
         - BA
         - BE
@@ -183,10 +157,10 @@ sandbox_workers:
       taskManager:
         resources:
           limits:
-            memory: 512Mi
+            memory: 1Gi
           requests:
             cpu: 400m
-            memory: 128Mi
+            memory: 256Mi
       sandbox:
         resources:
           limits:
@@ -196,7 +170,7 @@ sandbox_workers:
             memory: 700Mi
       keda:
         pollingInterval: 1
-        minReplicaCount: 5
+        minReplicaCount: 2
         maxReplicaCount: 20
       shutdown:
         terminationGracePeriodSeconds: 600
@@ -206,9 +180,6 @@ sandbox_workers:
       language: javascript
       consumerGroup: main-sandbox
       ephemeral: false
-      triggerStreams:
-        - agent.main.bucket.BA.plugin.javascriptwasm.event.execute
-        - agent.main.bucket.BE.plugin.javascriptwasm.event.execute
       plugins:
         - javascriptwasm
       events:
@@ -235,7 +206,7 @@ sandbox_workers:
             memory: 700Mi
       keda:
         pollingInterval: 1
-        minReplicaCount: 10
+        minReplicaCount: 2
         maxReplicaCount: 20
       shutdown:
         terminationGracePeriodSeconds: 600
@@ -247,9 +218,6 @@ sandbox_workers:
       ephemeral: true
       queue:
         executionPool: 2
-      triggerStreams:
-        - agent.main.bucket.BA.plugin.javascript.event.execute
-        - agent.main.bucket.BE.plugin.javascript.event.execute
       buckets:
         - BA
         - BE
@@ -264,17 +232,14 @@ sandbox_workers:
         poolSize: 3
       keda:
         pollingInterval: 1
-        minReplicaCount: 75
-        maxReplicaCount: 150
+        minReplicaCount: 2
+        maxReplicaCount: 50
     main.ephemeral.javascriptsdkapi.execute:
       language: javascript
       consumerGroup: main-sandbox-ephemeral
       ephemeral: true
       queue:
         executionPool: 2
-      triggerStreams:
-        - agent.main.bucket.BA.plugin.javascriptsdkapi.event.execute
-        - agent.main.bucket.BE.plugin.javascriptsdkapi.event.execute
       plugins:
         - javascriptsdkapi
       events:
@@ -289,7 +254,7 @@ sandbox_workers:
         poolSize: 3
       keda:
         pollingInterval: 1
-        minReplicaCount: 100
+        minReplicaCount: 15
         maxReplicaCount: 200
     main.ephemeral.python.execute:
       language: python
@@ -297,9 +262,6 @@ sandbox_workers:
       ephemeral: true
       queue:
         executionPool: 2
-      triggerStreams:
-        - agent.main.bucket.BA.plugin.python.event.execute
-        - agent.main.bucket.BE.plugin.python.event.execute
       buckets:
         - BA
         - BE
@@ -314,8 +276,8 @@ sandbox_workers:
         poolSize: 3
       keda:
         pollingInterval: 1
-        minReplicaCount: 150
-        maxReplicaCount: 300
+        minReplicaCount: 2
+        maxReplicaCount: 50
   # Task Manager configuration
   taskManager:
     image:
@@ -326,7 +288,7 @@ sandbox_workers:
       limits:
         memory: 512Mi
       requests:
-        cpu: 100m
+        cpu: 200m
         memory: 128Mi
     # Additional args to pass to the task-manager
     extraArgs: []
@@ -390,10 +352,10 @@ sandbox_workers:
         pullPolicy: IfNotPresent
       resources:
         limits:
-          memory: 2Gi
+          memory: 4Gi
         requests:
-          cpu: 100m
-          memory: 256Mi
+          cpu: 300m
+          memory: 700Mi
       port: 50051
       # Additional args/env for the javascript sandbox
       extraEnv: []
@@ -403,23 +365,72 @@ sandbox_workers:
   sandboxJob:
     # Auto-delete Job after completion (success or failure)
     ttlSecondsAfterFinished: 0
-    # No restart attempts on failure
-    backoffLimit: 0
   # KEDA ScaledJob defaults (fleets may override via fleets.<name>.keda)
   keda:
     pollingInterval: 5
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    ttlSecondsAfterFinished: 0 # Auto-cleanup completed task-manager pods after completion
+    cooldownPeriod: 300
+    # Prometheus HTTP API base URL for KEDA's prometheus scaler (PromQL).
+    # - "auto": deploy in-chart OTel Collector + Prometheus. Task-managers send OTLP to that
+    #   collector (not to observability.metrics.url). Optional fan-out from the collector uses
+    #   observability.metrics.url first, then observability.metrics.forwardUrl if url is empty
+    #   (see observability.metrics).
+    # - Any other non-empty URL: KEDA queries that Prometheus (or compatible) instance; task-managers
+    #   send OTLP to observability.metrics.url only.
+    prometheusServerAddress: auto
+    # When prometheusServerAddress is "auto", Calico policies restrict who can reach the in-chart
+    # OTel collector (OTLP) and Prometheus (:9090 remote-write + PromQL). Must list every
+    # namespace that runs KEDA components that query Prometheus (often "keda"; some installs use
+    # "keda-system").
+    prometheusQueryClientNamespaces:
+      - keda
+    # Container images for in-chart components (override for mirroring or air-gapped registries).
+    collector:
+      image:
+        repository: ghcr.io/superblocksteam/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+        tag: 0.146.0
+        pullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+      batch:
+        sendBatchSize: 512
+        sendBatchMaxSize: 2048
+      prometheusRemoteWrite:
+        timeout: 30s
+        tlsInsecure: true
+        remoteWriteQueue:
+          enabled: true
+          queueSize: 4096
+          numConsumers: 5
+      # Batch flush interval before forwarding OTLP metrics to Prometheus remote-write.
+      # Lower = fresher sandbox_execution_pool_in_use for KEDA (more frequent writes).
+      batchTimeout: 5s
+    prometheus:
+      image:
+        repository: ghcr.io/superblocksteam/prom/prometheus
+        tag: v3.4.0
+        pullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          cpu: 250m
+          memory: 1Gi
+    # When prometheusServerAddress is "auto": optional node placement for the in-chart OTel
+    # collector and Prometheus Deployments.
+    metricsInfra:
+      nodeSelector: {}
+      tolerations: []
     maxReplicaCount: 100
     minReplicaCount: 0
     # Dataplane chart: scale as soon as there is backlog per trigger
     lagCount: '1'
-    # Scaling strategy: "default", "custom", or "accurate"
-    # "sum" matches multi-trigger aggregation when used
-    scalingStrategy:
-      strategy: default
-      multipleScalersCalculation: "sum"
+    # Scaling triggers - typically Redis stream length
     triggers: []
     # Example:
     # triggers:
@@ -506,6 +517,7 @@ sandbox_workers:
       enabled: true
     metrics:
       url: http://otelcol-collector.observability.svc.cluster.local:4318
+      exportInterval: 5s
     tracing:
       url: http://otelcol-collector.observability.svc.cluster.local:4318
   # Passed to task-manager as --telemetry.deployment.type
@@ -548,6 +560,9 @@ sandbox_workers:
     # VPC CIDR to block - set this to your cloud VPC range
     # Leave empty to block ALL RFC 1918 private ranges (10.x, 172.16.x, 192.168.x)
     vpcCIDR: ""
+    # External HTTPS/gRPC callback ports that task-manager can egress to.
+    # Keep this list minimal; override per environment when needed.
+    taskManagerAllowedExternalPorts: []
     # Kubernetes service CIDR (blocks access to k8s services)
     serviceCIDR: ""
     # Additional CIDRs to block (list)

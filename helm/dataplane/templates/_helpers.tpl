@@ -39,6 +39,38 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Cluster-local DNS + HTTP base (internal). Use autoOtelMetricsCollectorHttpUrl / autoPromQueryUrl for auto mode.
+Pass dict keys: svc, namespace, port.
+*/}}
+{{- define "sandbox_workers.clusterLocalFQDN" -}}
+{{- printf "%s.%s.svc.cluster.local" .svc .namespace }}
+{{- end }}
+
+{{- define "sandbox_workers.clusterLocalHTTPBaseURL" -}}
+{{- printf "http://%s:%s" (include "sandbox_workers.clusterLocalFQDN" (dict "svc" .svc "namespace" .namespace)) .port }}
+{{- end }}
+
+{{/*
+Public: full OTLP HTTP URL for task-managers when keda.prometheusServerAddress is "auto" (:4318).
+Empty when not "auto".
+*/}}
+{{- define "sandbox_workers.autoOtelMetricsCollectorHttpUrl" -}}
+{{- if eq (.Values.sandbox_workers.keda.prometheusServerAddress | default "") "auto" }}
+{{- include "sandbox_workers.clusterLocalHTTPBaseURL" (dict "svc" "sandbox-workers-metrics-collector" "namespace" .Release.Namespace "port" "4318") }}
+{{- end }}
+{{- end }}
+
+{{/*
+Public: Prometheus HTTP API base (scheme + host + port) for in-chart KEDA/Prom when prometheusServerAddress is "auto" (:9090).
+Empty when not "auto". Append /api/v1/write for remote-write, use as KEDA serverAddress as-is.
+*/}}
+{{- define "sandbox_workers.autoPromQueryUrl" -}}
+{{- if eq (.Values.sandbox_workers.keda.prometheusServerAddress | default "") "auto" }}
+{{- include "sandbox_workers.clusterLocalHTTPBaseURL" (dict "svc" "sandbox-workers-prometheus" "namespace" .Release.Namespace "port" "9090") }}
+{{- end }}
+{{- end }}
+
+{{/*
 Common labels for all ephemeral worker resources
 */}}
 {{- define "sandbox_workers.labels" -}}

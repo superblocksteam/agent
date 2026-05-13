@@ -426,4 +426,120 @@ spec:
     destination:
       selector: component == 'orchestrator'
 # End Sandbox Worker Network Policies
+
+# Begin Local OTEL Collector + Prometheus Network Policies
+{{- if eq ($.Values.sandbox_workers.keda.prometheusServerAddress | default "") "auto" }}
+---
+# In-chart KEDA metrics (OTLP collector + Prometheus): deny unauthenticated remote-write / PromQL
+# from arbitrary pods. Without this, any workload could push fake sandbox_execution_pool_in_use
+# samples and manipulate KEDA replica counts.
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-workers-metrics-collector-ingress
+  labels:
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
+spec:
+  order: 10
+  selector: kedaMetrics == 'collector'
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: role == 'task-manager'
+      destination:
+        ports:
+          - 4317
+          - 4318
+    - action: Deny
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-workers-metrics-collector-egress
+  labels:
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
+spec:
+  order: 10
+  selector: kedaMetrics == 'collector'
+  types:
+    - Egress
+  egress:
+    - action: Allow
+      protocol: UDP
+      destination:
+        ports:
+          - 53
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 53
+    - action: Allow
+      protocol: TCP
+      destination:
+        selector: kedaMetrics == 'prometheus'
+        ports:
+          - 9090
+    - action: Allow
+      destination:
+        nets:
+          {{- range $internalCIDRs }}
+          - {{ . }}
+          {{- end }}
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+    {{- if $.Values.sandbox_workers.network.taskManagerAllowedExternalPorts }}
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          {{- range $.Values.sandbox_workers.network.taskManagerAllowedExternalPorts }}
+          - {{ . }}
+          {{- end }}
+    {{- end }}
+    {{- if $.Values.sandbox_workers.network.additionalAllowedCIDRs }}
+    {{- range $.Values.sandbox_workers.network.additionalAllowedCIDRs }}
+    - action: Allow
+      destination:
+        nets:
+          - {{ . }}
+    {{- end }}
+    {{- end }}
+    - action: Deny
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-workers-prometheus-ingress
+  labels:
+    {{- include "sandbox_workers.labels" . | nindent 4 }}
+spec:
+  order: 10
+  selector: kedaMetrics == 'prometheus'
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      protocol: TCP
+      source:
+        selector: kedaMetrics == 'collector'
+      destination:
+        ports:
+          - 9090
+    {{- range $.Values.sandbox_workers.keda.prometheusQueryClientNamespaces }}
+    - action: Allow
+      protocol: TCP
+      source:
+        namespaceSelector: kubernetes.io/metadata.name == '{{ . }}'
+      destination:
+        ports:
+          - 9090
+    {{- end }}
+    - action: Deny
+{{- end }}
+# End Local OTEL Collector + Prometheus Network Policies
+
 {{- end }}
