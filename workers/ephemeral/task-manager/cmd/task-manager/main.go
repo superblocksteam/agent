@@ -117,6 +117,7 @@ func init() {
 	pflag.StringArray("sandbox.toleration", []string{}, "Toleration for sandbox pods (format: 'key=x,operator=y,value=z,effect=w'). Can be specified multiple times for multiple tolerations.")
 	pflag.String("sandbox.zone", "", "Availability zone for sandbox pods. Auto-discovered from node if NODE_NAME is set and this is empty.")
 	pflag.Int("sandbox.pool.size", 1, "Number of sandbox Jobs per worker in dynamic mode. Ignored when using static sandbox.address (pool size is the address count).")
+	pflag.Duration("sandbox.graceful.shutdown.timeout", 10*time.Minute, "Max time allowed for the sandboxes to drain in-flight requests after receiving a SIGTERM/SIGINT.")
 
 	// Sandbox resource requests/limits
 	pflag.String("sandbox.resources.requests.cpu", "", "CPU request for sandbox containers (e.g., '100m').")
@@ -546,6 +547,7 @@ func main() {
 			k8sjobmanager.WithExecutionEnvInclusionList(executionEnvInclusionList.ToSlice()),
 			k8sjobmanager.WithGrpcMaxRequestSize(viper.GetInt("grpc.msg.req.max")),
 			k8sjobmanager.WithGrpcMaxResponseSize(viper.GetInt("filepicker.max.size")),
+			k8sjobmanager.WithGracefulShutdownTimeout(viper.GetDuration("sandbox.graceful.shutdown.timeout")),
 		}
 
 		if viper.GetBool("integration.executor.enabled") {

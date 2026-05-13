@@ -323,6 +323,16 @@ export namespace AuditLogRequest {
         getTargetname(): string | undefined;
         setTargetname(value: string): AuditLog;
 
+        hasIntegrationQueryContext(): boolean;
+        clearIntegrationQueryContext(): void;
+        getIntegrationQueryContext(): AuditLogRequest.AuditLog.IntegrationQueryContext | undefined;
+        setIntegrationQueryContext(value?: AuditLogRequest.AuditLog.IntegrationQueryContext): AuditLog;
+
+        hasIntegrationQueryTiming(): boolean;
+        clearIntegrationQueryTiming(): void;
+        getIntegrationQueryTiming(): AuditLogRequest.AuditLog.IntegrationQueryTiming | undefined;
+        setIntegrationQueryTiming(value?: AuditLogRequest.AuditLog.IntegrationQueryTiming): AuditLog;
+
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): AuditLog.AsObject;
         static toObject(includeInstance: boolean, msg: AuditLog): AuditLog.AsObject;
@@ -350,6 +360,8 @@ export namespace AuditLogRequest {
             apiTiming?: AuditLogRequest.AuditLog.ApiTiming.AsObject,
             userType?: common_v1_common_pb.UserType,
             targetname?: string,
+            integrationQueryContext?: AuditLogRequest.AuditLog.IntegrationQueryContext.AsObject,
+            integrationQueryTiming?: AuditLogRequest.AuditLog.IntegrationQueryTiming.AsObject,
         }
 
 
@@ -399,6 +411,58 @@ export namespace AuditLogRequest {
             }
         }
 
+        export class IntegrationQueryContext extends jspb.Message { 
+            getIntegrationId(): string;
+            setIntegrationId(value: string): IntegrationQueryContext;
+
+            hasPluginType(): boolean;
+            clearPluginType(): void;
+            getPluginType(): string | undefined;
+            setPluginType(value: string): IntegrationQueryContext;
+
+            serializeBinary(): Uint8Array;
+            toObject(includeInstance?: boolean): IntegrationQueryContext.AsObject;
+            static toObject(includeInstance: boolean, msg: IntegrationQueryContext): IntegrationQueryContext.AsObject;
+            static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+            static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+            static serializeBinaryToWriter(message: IntegrationQueryContext, writer: jspb.BinaryWriter): void;
+            static deserializeBinary(bytes: Uint8Array): IntegrationQueryContext;
+            static deserializeBinaryFromReader(message: IntegrationQueryContext, reader: jspb.BinaryReader): IntegrationQueryContext;
+        }
+
+        export namespace IntegrationQueryContext {
+            export type AsObject = {
+                integrationId: string,
+                pluginType?: string,
+            }
+        }
+
+        export class IntegrationQueryTiming extends jspb.Message { 
+            getStart(): number;
+            setStart(value: number): IntegrationQueryTiming;
+
+            hasEnd(): boolean;
+            clearEnd(): void;
+            getEnd(): number | undefined;
+            setEnd(value: number): IntegrationQueryTiming;
+
+            serializeBinary(): Uint8Array;
+            toObject(includeInstance?: boolean): IntegrationQueryTiming.AsObject;
+            static toObject(includeInstance: boolean, msg: IntegrationQueryTiming): IntegrationQueryTiming.AsObject;
+            static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+            static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+            static serializeBinaryToWriter(message: IntegrationQueryTiming, writer: jspb.BinaryWriter): void;
+            static deserializeBinary(bytes: Uint8Array): IntegrationQueryTiming;
+            static deserializeBinaryFromReader(message: IntegrationQueryTiming, reader: jspb.BinaryReader): IntegrationQueryTiming;
+        }
+
+        export namespace IntegrationQueryTiming {
+            export type AsObject = {
+                start: number,
+                end?: number,
+            }
+        }
+
 
         export enum ApiRunStatus {
     API_RUN_STATUS_UNSPECIFIED = 0,
@@ -417,6 +481,7 @@ export namespace AuditLogRequest {
         export enum AuditLogEventType {
     AUDIT_LOG_EVENT_TYPE_UNSPECIFIED = 0,
     AUDIT_LOG_EVENT_TYPE_API_RUN = 1,
+    AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY = 2,
         }
 
     }

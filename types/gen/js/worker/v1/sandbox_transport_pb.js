@@ -2525,7 +2525,8 @@ proto.worker.v1.HealthResponse.serializeBinaryToWriter = function(message, write
  */
 proto.worker.v1.HealthResponse.Status = {
   STATUS_UNSPECIFIED: 0,
-  STATUS_READY: 1
+  STATUS_READY: 1,
+  STATUS_DRAINING: 2
 };
 
 /**

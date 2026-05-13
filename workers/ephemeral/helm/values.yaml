@@ -57,9 +57,10 @@
 #       terminationGracePeriodSeconds: 600
 #       delay: 1m
 #       maxJitter: 5m
-#     # Optional: override chart-wide sandbox.poolSize for this fleet only
+#     # Optional: override chart-wide sandbox settings for this fleet only
 #     sandbox:
 #       poolSize: 3
+#       gracefulShutdownTimeout: 90s
 #     # Optional: override chart-wide queue.executionPool for this fleet only
 #     queue:
 #       executionPool: 2
@@ -126,6 +127,8 @@ sandbox:
   port: 50051
   # Number of sandbox Jobs per task-manager pod (dynamic mode only; use 1 for static sandbox.address)
   poolSize: 1
+  # Maximum time sandbox pods may drain in-flight requests after receiving a SIGTERM/SIGINT.
+  gracefulShutdownTimeout: 10m
   # Runtime class for sandbox pods (e.g., gvisor for secure isolation)
   # Falls back to global runtimeClassName if not set
   runtimeClassName: ""

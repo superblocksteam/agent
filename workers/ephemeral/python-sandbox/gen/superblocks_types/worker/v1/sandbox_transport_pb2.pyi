@@ -37,7 +37,7 @@ class ExecuteRequest(_message.Message):
     def __init__(self, metadata: _Optional[_Union[RequestMetadata, _Mapping]] = ..., props: _Optional[_Union[_transport_pb2.Request.Data.Data.Props, _Mapping]] = ..., quotas: _Optional[_Union[_transport_pb2.Request.Data.Data.Quota, _Mapping]] = ..., pinned: _Optional[_Union[_transport_pb2.Request.Data.Pinned, _Mapping]] = ..., variable_store_address: _Optional[str] = ..., integration_executor_address: _Optional[str] = ...) -> None: ...
 
 class ExecuteResponse(_message.Message):
-    __slots__ = ("output", "error", "authError", "children", "startTime", "executionTime", "structuredLog", "diagnostics")
+    __slots__ = ("output", "error", "authError", "children", "startTime", "executionTime", "structuredLog", "diagnostics", "performance")
     OUTPUT_FIELD_NUMBER: _ClassVar[int]
     ERROR_FIELD_NUMBER: _ClassVar[int]
     AUTHERROR_FIELD_NUMBER: _ClassVar[int]
@@ -46,6 +46,7 @@ class ExecuteResponse(_message.Message):
     EXECUTIONTIME_FIELD_NUMBER: _ClassVar[int]
     STRUCTUREDLOG_FIELD_NUMBER: _ClassVar[int]
     DIAGNOSTICS_FIELD_NUMBER: _ClassVar[int]
+    PERFORMANCE_FIELD_NUMBER: _ClassVar[int]
     output: _event_pb2.OutputOld
     error: _errors_pb2.Error
     authError: bool
@@ -54,7 +55,8 @@ class ExecuteResponse(_message.Message):
     executionTime: _duration_pb2.Duration
     structuredLog: _containers.RepeatedCompositeFieldContainer[StructuredLog]
     diagnostics: _containers.RepeatedCompositeFieldContainer[_event_pb2.IntegrationDiagnostic]
-    def __init__(self, output: _Optional[_Union[_event_pb2.OutputOld, _Mapping]] = ..., error: _Optional[_Union[_errors_pb2.Error, _Mapping]] = ..., authError: bool = ..., children: _Optional[_Iterable[str]] = ..., startTime: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., executionTime: _Optional[_Union[_duration_pb2.Duration, _Mapping]] = ..., structuredLog: _Optional[_Iterable[_Union[StructuredLog, _Mapping]]] = ..., diagnostics: _Optional[_Iterable[_Union[_event_pb2.IntegrationDiagnostic, _Mapping]]] = ...) -> None: ...
+    performance: _transport_pb2.Performance
+    def __init__(self, output: _Optional[_Union[_event_pb2.OutputOld, _Mapping]] = ..., error: _Optional[_Union[_errors_pb2.Error, _Mapping]] = ..., authError: bool = ..., children: _Optional[_Iterable[str]] = ..., startTime: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., executionTime: _Optional[_Union[_duration_pb2.Duration, _Mapping]] = ..., structuredLog: _Optional[_Iterable[_Union[StructuredLog, _Mapping]]] = ..., diagnostics: _Optional[_Iterable[_Union[_event_pb2.IntegrationDiagnostic, _Mapping]]] = ..., performance: _Optional[_Union[_transport_pb2.Performance, _Mapping]] = ...) -> None: ...
 
 class StreamRequest(_message.Message):
     __slots__ = ("request", "topic")
@@ -110,8 +112,10 @@ class HealthResponse(_message.Message):
         __slots__ = ()
         STATUS_UNSPECIFIED: _ClassVar[HealthResponse.Status]
         STATUS_READY: _ClassVar[HealthResponse.Status]
+        STATUS_DRAINING: _ClassVar[HealthResponse.Status]
     STATUS_UNSPECIFIED: HealthResponse.Status
     STATUS_READY: HealthResponse.Status
+    STATUS_DRAINING: HealthResponse.Status
     STATUS_FIELD_NUMBER: _ClassVar[int]
     status: HealthResponse.Status
     def __init__(self, status: _Optional[_Union[HealthResponse.Status, str]] = ...) -> None: ...

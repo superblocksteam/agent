@@ -126,7 +126,7 @@ class TagList(_message.Message):
 class AuditLogRequest(_message.Message):
     __slots__ = ("audit_logs",)
     class AuditLog(_message.Message):
-        __slots__ = ("id", "entity_id", "entity_type", "organization_id", "is_deployed", "source", "target", "type", "agent_id", "status", "error", "api_location_context", "api_timing", "user_type", "targetName")
+        __slots__ = ("id", "entity_id", "entity_type", "organization_id", "is_deployed", "source", "target", "type", "agent_id", "status", "error", "api_location_context", "api_timing", "user_type", "targetName", "integration_query_context", "integration_query_timing")
         class ApiRunStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
             __slots__ = ()
             API_RUN_STATUS_UNSPECIFIED: _ClassVar[AuditLogRequest.AuditLog.ApiRunStatus]
@@ -151,14 +151,30 @@ class AuditLogRequest(_message.Message):
             __slots__ = ()
             AUDIT_LOG_EVENT_TYPE_UNSPECIFIED: _ClassVar[AuditLogRequest.AuditLog.AuditLogEventType]
             AUDIT_LOG_EVENT_TYPE_API_RUN: _ClassVar[AuditLogRequest.AuditLog.AuditLogEventType]
+            AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY: _ClassVar[AuditLogRequest.AuditLog.AuditLogEventType]
         AUDIT_LOG_EVENT_TYPE_UNSPECIFIED: AuditLogRequest.AuditLog.AuditLogEventType
         AUDIT_LOG_EVENT_TYPE_API_RUN: AuditLogRequest.AuditLog.AuditLogEventType
+        AUDIT_LOG_EVENT_TYPE_INTEGRATION_QUERY: AuditLogRequest.AuditLog.AuditLogEventType
         class ApiLocationContext(_message.Message):
             __slots__ = ("application_id",)
             APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
             application_id: str
             def __init__(self, application_id: _Optional[str] = ...) -> None: ...
         class ApiTiming(_message.Message):
+            __slots__ = ("start", "end")
+            START_FIELD_NUMBER: _ClassVar[int]
+            END_FIELD_NUMBER: _ClassVar[int]
+            start: int
+            end: int
+            def __init__(self, start: _Optional[int] = ..., end: _Optional[int] = ...) -> None: ...
+        class IntegrationQueryContext(_message.Message):
+            __slots__ = ("integration_id", "plugin_type")
+            INTEGRATION_ID_FIELD_NUMBER: _ClassVar[int]
+            PLUGIN_TYPE_FIELD_NUMBER: _ClassVar[int]
+            integration_id: str
+            plugin_type: str
+            def __init__(self, integration_id: _Optional[str] = ..., plugin_type: _Optional[str] = ...) -> None: ...
+        class IntegrationQueryTiming(_message.Message):
             __slots__ = ("start", "end")
             START_FIELD_NUMBER: _ClassVar[int]
             END_FIELD_NUMBER: _ClassVar[int]
@@ -180,6 +196,8 @@ class AuditLogRequest(_message.Message):
         API_TIMING_FIELD_NUMBER: _ClassVar[int]
         USER_TYPE_FIELD_NUMBER: _ClassVar[int]
         TARGETNAME_FIELD_NUMBER: _ClassVar[int]
+        INTEGRATION_QUERY_CONTEXT_FIELD_NUMBER: _ClassVar[int]
+        INTEGRATION_QUERY_TIMING_FIELD_NUMBER: _ClassVar[int]
         id: str
         entity_id: str
         entity_type: AuditLogRequest.AuditLog.AuditLogEntityType
@@ -195,7 +213,9 @@ class AuditLogRequest(_message.Message):
         api_timing: AuditLogRequest.AuditLog.ApiTiming
         user_type: _common_pb2.UserType
         targetName: str
-        def __init__(self, id: _Optional[str] = ..., entity_id: _Optional[str] = ..., entity_type: _Optional[_Union[AuditLogRequest.AuditLog.AuditLogEntityType, str]] = ..., organization_id: _Optional[str] = ..., is_deployed: bool = ..., source: _Optional[str] = ..., target: _Optional[str] = ..., type: _Optional[_Union[AuditLogRequest.AuditLog.AuditLogEventType, str]] = ..., agent_id: _Optional[str] = ..., status: _Optional[_Union[AuditLogRequest.AuditLog.ApiRunStatus, str]] = ..., error: _Optional[str] = ..., api_location_context: _Optional[_Union[AuditLogRequest.AuditLog.ApiLocationContext, _Mapping]] = ..., api_timing: _Optional[_Union[AuditLogRequest.AuditLog.ApiTiming, _Mapping]] = ..., user_type: _Optional[_Union[_common_pb2.UserType, str]] = ..., targetName: _Optional[str] = ...) -> None: ...
+        integration_query_context: AuditLogRequest.AuditLog.IntegrationQueryContext
+        integration_query_timing: AuditLogRequest.AuditLog.IntegrationQueryTiming
+        def __init__(self, id: _Optional[str] = ..., entity_id: _Optional[str] = ..., entity_type: _Optional[_Union[AuditLogRequest.AuditLog.AuditLogEntityType, str]] = ..., organization_id: _Optional[str] = ..., is_deployed: bool = ..., source: _Optional[str] = ..., target: _Optional[str] = ..., type: _Optional[_Union[AuditLogRequest.AuditLog.AuditLogEventType, str]] = ..., agent_id: _Optional[str] = ..., status: _Optional[_Union[AuditLogRequest.AuditLog.ApiRunStatus, str]] = ..., error: _Optional[str] = ..., api_location_context: _Optional[_Union[AuditLogRequest.AuditLog.ApiLocationContext, _Mapping]] = ..., api_timing: _Optional[_Union[AuditLogRequest.AuditLog.ApiTiming, _Mapping]] = ..., user_type: _Optional[_Union[_common_pb2.UserType, str]] = ..., targetName: _Optional[str] = ..., integration_query_context: _Optional[_Union[AuditLogRequest.AuditLog.IntegrationQueryContext, _Mapping]] = ..., integration_query_timing: _Optional[_Union[AuditLogRequest.AuditLog.IntegrationQueryTiming, _Mapping]] = ...) -> None: ...
     AUDIT_LOGS_FIELD_NUMBER: _ClassVar[int]
     audit_logs: _containers.RepeatedCompositeFieldContainer[AuditLogRequest.AuditLog]
     def __init__(self, audit_logs: _Optional[_Iterable[_Union[AuditLogRequest.AuditLog, _Mapping]]] = ...) -> None: ...

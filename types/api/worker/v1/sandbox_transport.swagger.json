@@ -679,9 +679,11 @@
       "type": "string",
       "enum": [
         "STATUS_UNSPECIFIED",
-        "STATUS_READY"
+        "STATUS_READY",
+        "STATUS_DRAINING"
       ],
-      "default": "STATUS_UNSPECIFIED"
+      "default": "STATUS_UNSPECIFIED",
+      "title": "- STATUS_DRAINING: Sandbox is draining in-flight work and not accepting new requests"
     },
     "v1IntegrationDiagnostic": {
       "type": "object",

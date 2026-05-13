@@ -503,11 +503,19 @@ export enum HealthResponse_Status {
    * @generated from enum value: STATUS_READY = 1;
    */
   READY = 1,
+
+  /**
+   * Sandbox is draining in-flight work and not accepting new Execute/Stream/Metadata/Test/PreDelete RPCs.
+   *
+   * @generated from enum value: STATUS_DRAINING = 2;
+   */
+  DRAINING = 2,
 }
 // Retrieve enum metadata with: proto3.getEnumType(HealthResponse_Status)
 proto3.util.setEnumType(HealthResponse_Status, "worker.v1.HealthResponse.Status", [
   { no: 0, name: "STATUS_UNSPECIFIED" },
   { no: 1, name: "STATUS_READY" },
+  { no: 2, name: "STATUS_DRAINING" },
 ]);
 
 /**

@@ -328,6 +328,8 @@ sandbox_workers:
     port: 50051
     # Number of sandbox Jobs per task-manager pod (override per fleet with fleets.<name>.sandbox.poolSize)
     poolSize: 5
+    # Maximum time sandbox pods may drain in-flight requests after receiving a SIGTERM/SIGINT.
+    gracefulShutdownTimeout: 10m
     # Runtime class for sandbox pods (e.g., gvisor for secure isolation)
     # Falls back to global runtimeClassName if not set
     runtimeClassName: gvisor

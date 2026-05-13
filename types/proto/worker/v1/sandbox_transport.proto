@@ -93,6 +93,8 @@ message HealthResponse {
   enum Status {
     STATUS_UNSPECIFIED = 0;
     STATUS_READY = 1;
+    // Sandbox is draining in-flight work and not accepting new requests
+    STATUS_DRAINING = 2;
   }
 
   Status status = 1;

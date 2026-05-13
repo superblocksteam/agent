@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,6 +70,8 @@ type K8sJobManager struct {
 	// gRPC transport hard caps passed to sandbox pods.
 	grpcMaxRequestSize  int
 	grpcMaxResponseSize int
+
+	gracefulShutdownTimeout time.Duration
 }
 
 // NewSandboxJobManager creates a new SandboxJobManager
@@ -101,7 +104,15 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		executionEnvInclusionList:   opts.ExecutionEnvInclusionList,
 		grpcMaxRequestSize:          opts.GrpcMaxRequestSize,
 		grpcMaxResponseSize:         opts.GrpcMaxResponseSize,
+		gracefulShutdownTimeout:     opts.GracefulShutdownTimeout,
 	}
+}
+
+func (m *K8sJobManager) gracefulShutdownTimeoutForSandbox() time.Duration {
+	if m.gracefulShutdownTimeout < 0 {
+		return 0
+	}
+	return m.gracefulShutdownTimeout
 }
 
 // CreateSandbox creates a new sandbox Job and waits for the Pod to be ready.
@@ -388,6 +399,10 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 			Name:  "SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE",
 			Value: fmt.Sprintf("%d", m.grpcMaxResponseSize),
 		},
+		{
+			Name:  "SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS",
+			Value: strconv.FormatInt(m.gracefulShutdownTimeoutForSandbox().Milliseconds(), 10),
+		},
 	}
 
 	containerName := fmt.Sprintf("%s-sandbox", language)
@@ -409,8 +424,9 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		"sandbox-id":   sandboxId,
 	}
 
-	podAnnotations := map[string]string{
-		"karpenter.sh/do-not-disrupt": "true",
+	var terminationGracePeriodSeconds *int64
+	if timeout := int64(m.gracefulShutdownTimeoutForSandbox().Seconds()); timeout > 0 {
+		terminationGracePeriodSeconds = ptr.To(timeout)
 	}
 
 	job := &batchv1.Job{
@@ -427,13 +443,13 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 			Completions:             &completions,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      specLabels,
-					Annotations: podAnnotations,
+					Labels: specLabels,
 				},
 				Spec: corev1.PodSpec{
-					RestartPolicy:                corev1.RestartPolicyNever,
-					AutomountServiceAccountToken: ptr.To(false),
-					ImagePullSecrets:             m.buildImagePullSecrets(),
+					RestartPolicy:                 corev1.RestartPolicyNever,
+					TerminationGracePeriodSeconds: terminationGracePeriodSeconds,
+					AutomountServiceAccountToken:  ptr.To(false),
+					ImagePullSecrets:              m.buildImagePullSecrets(),
 					Containers: []corev1.Container{
 						{
 							Name:            containerName,

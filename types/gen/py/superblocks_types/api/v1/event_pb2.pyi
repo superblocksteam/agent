@@ -123,7 +123,7 @@ class Event(_message.Message):
     def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[BlockType, str]] = ..., timestamp: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., start: _Optional[_Union[Event.Start, _Mapping]] = ..., end: _Optional[_Union[Event.End, _Mapping]] = ..., data: _Optional[_Union[Event.Data, _Mapping]] = ..., request: _Optional[_Union[Event.Request, _Mapping]] = ..., response: _Optional[_Union[Event.Response, _Mapping]] = ..., parent: _Optional[str] = ..., execution_index: _Optional[str] = ...) -> None: ...
 
 class Performance(_message.Message):
-    __slots__ = ("start", "finish", "total", "execution", "overhead", "custom")
+    __slots__ = ("start", "finish", "total", "execution", "overhead", "custom", "bootstrap_timing")
     class CustomEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -131,19 +131,32 @@ class Performance(_message.Message):
         key: str
         value: int
         def __init__(self, key: _Optional[str] = ..., value: _Optional[int] = ...) -> None: ...
+    class BootstrapTiming(_message.Message):
+        __slots__ = ("sdk_import_ms", "bridge_setup_ms", "require_root_ms", "code_execution_ms")
+        SDK_IMPORT_MS_FIELD_NUMBER: _ClassVar[int]
+        BRIDGE_SETUP_MS_FIELD_NUMBER: _ClassVar[int]
+        REQUIRE_ROOT_MS_FIELD_NUMBER: _ClassVar[int]
+        CODE_EXECUTION_MS_FIELD_NUMBER: _ClassVar[int]
+        sdk_import_ms: int
+        bridge_setup_ms: int
+        require_root_ms: int
+        code_execution_ms: int
+        def __init__(self, sdk_import_ms: _Optional[int] = ..., bridge_setup_ms: _Optional[int] = ..., require_root_ms: _Optional[int] = ..., code_execution_ms: _Optional[int] = ...) -> None: ...
     START_FIELD_NUMBER: _ClassVar[int]
     FINISH_FIELD_NUMBER: _ClassVar[int]
     TOTAL_FIELD_NUMBER: _ClassVar[int]
     EXECUTION_FIELD_NUMBER: _ClassVar[int]
     OVERHEAD_FIELD_NUMBER: _ClassVar[int]
     CUSTOM_FIELD_NUMBER: _ClassVar[int]
+    BOOTSTRAP_TIMING_FIELD_NUMBER: _ClassVar[int]
     start: int
     finish: int
     total: int
     execution: int
     overhead: int
     custom: _containers.ScalarMap[str, int]
-    def __init__(self, start: _Optional[int] = ..., finish: _Optional[int] = ..., total: _Optional[int] = ..., execution: _Optional[int] = ..., overhead: _Optional[int] = ..., custom: _Optional[_Mapping[str, int]] = ...) -> None: ...
+    bootstrap_timing: Performance.BootstrapTiming
+    def __init__(self, start: _Optional[int] = ..., finish: _Optional[int] = ..., total: _Optional[int] = ..., execution: _Optional[int] = ..., overhead: _Optional[int] = ..., custom: _Optional[_Mapping[str, int]] = ..., bootstrap_timing: _Optional[_Union[Performance.BootstrapTiming, _Mapping]] = ...) -> None: ...
 
 class Output(_message.Message):
     __slots__ = ("result", "request", "stdout", "stderr", "request_v2")
@@ -179,7 +192,7 @@ class OutputOld(_message.Message):
     def __init__(self, output: _Optional[_Union[_struct_pb2.Value, _Mapping]] = ..., log: _Optional[_Iterable[str]] = ..., request: _Optional[str] = ..., place_holders_info: _Optional[_Union[_struct_pb2.Value, _Mapping]] = ...) -> None: ...
 
 class IntegrationDiagnostic(_message.Message):
-    __slots__ = ("integration_id", "plugin_id", "input_truncated", "output_truncated", "start_ms", "end_ms", "duration_ms", "error", "sequence", "metadata")
+    __slots__ = ("integration_id", "plugin_id", "input_truncated", "output_truncated", "start_ms", "end_ms", "duration_ms", "error", "sequence", "metadata", "input_was_truncated", "output_was_truncated", "error_code")
     INTEGRATION_ID_FIELD_NUMBER: _ClassVar[int]
     PLUGIN_ID_FIELD_NUMBER: _ClassVar[int]
     INPUT_TRUNCATED_FIELD_NUMBER: _ClassVar[int]
@@ -190,6 +203,9 @@ class IntegrationDiagnostic(_message.Message):
     ERROR_FIELD_NUMBER: _ClassVar[int]
     SEQUENCE_FIELD_NUMBER: _ClassVar[int]
     METADATA_FIELD_NUMBER: _ClassVar[int]
+    INPUT_WAS_TRUNCATED_FIELD_NUMBER: _ClassVar[int]
+    OUTPUT_WAS_TRUNCATED_FIELD_NUMBER: _ClassVar[int]
+    ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     integration_id: str
     plugin_id: str
     input_truncated: str
@@ -200,7 +216,10 @@ class IntegrationDiagnostic(_message.Message):
     error: str
     sequence: int
     metadata: TraceMetadata
-    def __init__(self, integration_id: _Optional[str] = ..., plugin_id: _Optional[str] = ..., input_truncated: _Optional[str] = ..., output_truncated: _Optional[str] = ..., start_ms: _Optional[int] = ..., end_ms: _Optional[int] = ..., duration_ms: _Optional[int] = ..., error: _Optional[str] = ..., sequence: _Optional[int] = ..., metadata: _Optional[_Union[TraceMetadata, _Mapping]] = ...) -> None: ...
+    input_was_truncated: bool
+    output_was_truncated: bool
+    error_code: str
+    def __init__(self, integration_id: _Optional[str] = ..., plugin_id: _Optional[str] = ..., input_truncated: _Optional[str] = ..., output_truncated: _Optional[str] = ..., start_ms: _Optional[int] = ..., end_ms: _Optional[int] = ..., duration_ms: _Optional[int] = ..., error: _Optional[str] = ..., sequence: _Optional[int] = ..., metadata: _Optional[_Union[TraceMetadata, _Mapping]] = ..., input_was_truncated: bool = ..., output_was_truncated: bool = ..., error_code: _Optional[str] = ...) -> None: ...
 
 class TraceMetadata(_message.Message):
     __slots__ = ("label", "description")

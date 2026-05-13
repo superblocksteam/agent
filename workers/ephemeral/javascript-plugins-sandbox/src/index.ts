@@ -4,6 +4,7 @@ import { ExecuteRequest, KVStore, MetadataRequest, PreDeleteRequest, StreamReque
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 
 import {
+  SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT,
@@ -36,12 +37,28 @@ import {
 } from './types/worker/v1/sandbox_transport_pb';
 import { SandboxVariableStoreServiceClient } from './types/worker/v1/sandbox_variable_store_grpc_pb';
 
+const sandboxShuttingDownMessage = 'sandbox is shutting down';
+
 function createSandboxTransportService(
   pluginsRouter: PluginsRouter,
   messageTransformer: MessageTransformer,
   variableStoreClient: SandboxVariableStoreServiceClient,
-  variableStoreHttpAddress: string
+  variableStoreHttpAddress: string,
+  isDraining: () => boolean
 ): ISandboxTransportServiceServer {
+  function rejectIfDraining<Res>(callback: grpc.sendUnaryData<Res>): boolean {
+    if (!isDraining()) {
+      return false;
+    }
+
+    callback({
+      code: grpc.status.UNAVAILABLE,
+      message: sandboxShuttingDownMessage
+    });
+
+    return true;
+  }
+
   function handleEvent(
     func: (
       pluginName: string,
@@ -96,6 +113,10 @@ function createSandboxTransportService(
 
   return {
     execute(call: grpc.ServerUnaryCall<ProtoExecuteRequest, ProtoExecuteResponse>, callback: grpc.sendUnaryData<ProtoExecuteResponse>) {
+      if (rejectIfDraining(callback)) {
+        return;
+      }
+
       const pluginName = call.request.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: ExecuteRequest = messageTransformer.protoRequestToNative(call.request) as ExecuteRequest;
       const executionId = nativeRequest.props?.executionId ?? '';
@@ -108,6 +129,10 @@ function createSandboxTransportService(
       call: grpc.ServerWritableStream<ProtoStreamRequest, google_protobuf_empty_pb.Empty>,
       callback: grpc.sendUnaryData<google_protobuf_empty_pb.Empty>
     ) {
+      if (rejectIfDraining(callback)) {
+        return;
+      }
+
       const pluginName = call.request.getRequest()?.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: StreamRequest = messageTransformer.protoRequestToNative(call.request) as StreamRequest;
       const executionId = nativeRequest.props?.executionId ?? '';
@@ -120,6 +145,10 @@ function createSandboxTransportService(
       call: grpc.ServerUnaryCall<ProtoMetadataRequest, ProtoTransportResponse.Data.Data>,
       callback: grpc.sendUnaryData<ProtoTransportResponse.Data.Data>
     ) {
+      if (rejectIfDraining(callback)) {
+        return;
+      }
+
       const pluginName = call.request.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: MetadataRequest = messageTransformer.protoRequestToNative(call.request) as MetadataRequest;
       void handleEvent(pluginsRouter.handleMetadataEvent.bind(pluginsRouter), pluginName, nativeRequest, callback, undefined);
@@ -129,6 +158,10 @@ function createSandboxTransportService(
       call: grpc.ServerUnaryCall<ProtoTestRequest, google_protobuf_empty_pb.Empty>,
       callback: grpc.sendUnaryData<google_protobuf_empty_pb.Empty>
     ) {
+      if (rejectIfDraining(callback)) {
+        return;
+      }
+
       const pluginName = call.request.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: TestRequest = messageTransformer.protoRequestToNative(call.request) as TestRequest;
       void handleEvent(pluginsRouter.handleTestEvent.bind(pluginsRouter), pluginName, nativeRequest, callback, undefined);
@@ -138,6 +171,10 @@ function createSandboxTransportService(
       call: grpc.ServerUnaryCall<ProtoPreDeleteRequest, google_protobuf_empty_pb.Empty>,
       callback: grpc.sendUnaryData<google_protobuf_empty_pb.Empty>
     ) {
+      if (rejectIfDraining(callback)) {
+        return;
+      }
+
       const pluginName = call.request.getMetadata()?.getPluginname() ?? '';
       const nativeRequest: PreDeleteRequest = messageTransformer.protoRequestToNative(call.request) as PreDeleteRequest;
       void handleEvent(pluginsRouter.handlePreDeleteEvent.bind(pluginsRouter), pluginName, nativeRequest, callback, undefined);
@@ -145,7 +182,9 @@ function createSandboxTransportService(
 
     health(call: grpc.ServerUnaryCall<ProtoHealthRequest, ProtoHealthResponse>, callback: grpc.sendUnaryData<ProtoHealthResponse>) {
       const response = new ProtoHealthResponse();
-      response.setStatus(ProtoHealthResponse.Status.STATUS_READY);
+      response.setStatus(
+        isDraining() ? ProtoHealthResponse.Status.STATUS_DRAINING : ProtoHealthResponse.Status.STATUS_READY
+      );
       callback(null, response);
     }
   };
@@ -200,13 +239,18 @@ async function main() {
     'grpc.max_receive_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
     'grpc.max_send_message_length': SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE
   });
+
+  let draining = false;
+  const isDraining = (): boolean => draining;
+
   server.addService(
     SandboxTransportServiceService,
     createSandboxTransportService(
       pluginsRouter,
       messageTransformer,
       variableStoreClient,
-      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS
+      SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS,
+      isDraining
     )
   );
 
@@ -217,6 +261,54 @@ async function main() {
     }
 
     console.log(`gRPC server running on ${addr}`);
+
+    const beginGracefulShutdown = (): void => {
+      if (draining) {
+        return;
+      }
+
+      draining = true;
+      logger.info(
+        { drainTimeoutMs: SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS },
+        'sandbox received shutdown signal; draining in-flight requests'
+      );
+
+      let forceShutdownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+      if (SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS > 0) {
+        forceShutdownTimer = setTimeout(() => {
+          logger.warn(
+            { drainTimeoutMs: SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS },
+            'sandbox graceful shutdown timed out; forcing shutdown'
+          );
+
+          try {
+            server.forceShutdown();
+          } catch {
+            // ignore any errors from forceShutdown
+          }
+
+          process.exit(1);
+        }, SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS);
+
+        forceShutdownTimer.unref();
+      }
+
+      server.tryShutdown((shutdownErr?: Error | null) => {
+        if (forceShutdownTimer !== undefined) {
+          clearTimeout(forceShutdownTimer);
+          forceShutdownTimer = undefined;
+        }
+
+        if (shutdownErr) {
+          logger.error({ err: shutdownErr }, 'sandbox gRPC tryShutdown completed with error');
+        }
+
+        process.exit(shutdownErr ? 1 : 0);
+      });
+    };
+
+    process.once('SIGTERM', beginGracefulShutdown);
+    process.once('SIGINT', beginGracefulShutdown);
   });
 }
 

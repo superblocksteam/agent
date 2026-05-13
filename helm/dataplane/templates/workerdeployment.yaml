@@ -112,6 +112,11 @@ spec:
         - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
         - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox_workers.sandbox.port }}"
         - "--sandbox.pool.size={{ (($v.sandbox).poolSize) | default $.Values.sandbox_workers.sandbox.poolSize | default 1 }}"
+        {{- if and $v.sandbox (hasKey $v.sandbox "gracefulShutdownTimeout") }}
+        - "--sandbox.graceful.shutdown.timeout={{ $v.sandbox.gracefulShutdownTimeout }}"
+        {{- else if and $.Values.sandbox_workers.sandbox (hasKey $.Values.sandbox_workers.sandbox "gracefulShutdownTimeout") }}
+        - "--sandbox.graceful.shutdown.timeout={{ $.Values.sandbox_workers.sandbox.gracefulShutdownTimeout }}"
+        {{- end }}
         - "--sandbox.ttl={{ $.Values.sandbox_workers.sandboxJob.ttlSecondsAfterFinished }}"
         {{- if or $.Values.sandbox_workers.sandbox.runtimeClassName $.Values.sandbox_workers.runtimeClassName }}
         - "--sandbox.runtimeClass={{ $.Values.sandbox_workers.sandbox.runtimeClassName | default $.Values.sandbox_workers.runtimeClassName }}"

@@ -100,6 +100,9 @@ type Options struct {
 	// Sandbox transport gRPC max message sizes (bytes).
 	GrpcMaxRequestSize  int
 	GrpcMaxResponseSize int
+
+	// Max time for the sandboxes to drain in-flight requests after receiving a SIGTERM/SIGINT.
+	GracefulShutdownTimeout time.Duration
 }
 
 // Option is a functional option for Options
@@ -312,6 +315,13 @@ func WithGrpcMaxRequestSize(size int) Option {
 func WithGrpcMaxResponseSize(size int) Option {
 	return func(o *Options) {
 		o.GrpcMaxResponseSize = size
+	}
+}
+
+// WithGracefulShutdownTimeout sets the sandboxes graceful shutdown timeout period.
+func WithGracefulShutdownTimeout(d time.Duration) Option {
+	return func(o *Options) {
+		o.GracefulShutdownTimeout = d
 	}
 }
 

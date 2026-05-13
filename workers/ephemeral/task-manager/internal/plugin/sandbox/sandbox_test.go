@@ -674,6 +674,37 @@ func TestSandboxPlugin_IsAvailable_HealthFails_ReturnsTransient(t *testing.T) {
 	require.Contains(t, status.Error.Error(), "health check failed")
 }
 
+func TestSandboxPlugin_IsAvailable_HealthDraining_ReturnsFatal(t *testing.T) {
+	t.Parallel()
+
+	addr, cleanup := startSandboxGrpcServerWithHealthStatus(t, workerv1.HealthResponse_STATUS_DRAINING)
+	t.Cleanup(cleanup)
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+
+	client := workerv1.NewSandboxTransportServiceClient(conn)
+
+	p, err := NewSandboxPlugin(
+		WithConnectionMode(SandboxConnectionModeStatic),
+		WithSandboxAddress(addr),
+		WithSandboxId("test-sandbox"),
+		WithLogger(zap.NewNop()),
+	)
+	require.NoError(t, err)
+	p.conn = conn
+	p.client = client
+	p.sandboxReady.Store(true)
+
+	status := p.IsAvailable(context.Background())
+
+	require.False(t, status.Available)
+	require.Equal(t, plugin.DegradationState_FATAL, status.DegradationState)
+	require.Error(t, status.Error)
+	require.Contains(t, status.Error.Error(), "draining")
+}
+
 func TestConnectToSandbox_HealthSucceeds_ReturnsConnAndClient(t *testing.T) {
 	t.Parallel()
 
@@ -1194,6 +1225,16 @@ func (healthOKServer) Health(context.Context, *workerv1.HealthRequest) (*workerv
 	return &workerv1.HealthResponse{Status: workerv1.HealthResponse_STATUS_READY}, nil
 }
 
+// healthStatusServer returns a fixed Health status (for tests).
+type healthStatusServer struct {
+	workerv1.UnimplementedSandboxTransportServiceServer
+	status workerv1.HealthResponse_Status
+}
+
+func (s *healthStatusServer) Health(context.Context, *workerv1.HealthRequest) (*workerv1.HealthResponse, error) {
+	return &workerv1.HealthResponse{Status: s.status}, nil
+}
+
 type executeFuncServer struct {
 	healthOKServer
 	executeFunc func(context.Context, *workerv1.ExecuteRequest) (*workerv1.ExecuteResponse, error)
@@ -1264,6 +1305,26 @@ func startSandboxGrpcServerWithHealth(t *testing.T) (addr string, cleanup func()
 
 	grpcServer := grpc.NewServer()
 	workerv1.RegisterSandboxTransportServiceServer(grpcServer, &healthOKServer{})
+
+	go func() {
+		_ = grpcServer.Serve(lis)
+	}()
+
+	return lis.Addr().String(), func() {
+		grpcServer.GracefulStop()
+		_ = lis.Close()
+	}
+}
+
+// startSandboxGrpcServerWithHealthStatus starts a gRPC server that implements Health with the given status.
+func startSandboxGrpcServerWithHealthStatus(t *testing.T, st workerv1.HealthResponse_Status) (addr string, cleanup func()) {
+	t.Helper()
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	grpcServer := grpc.NewServer()
+	workerv1.RegisterSandboxTransportServiceServer(grpcServer, &healthStatusServer{status: st})
 
 	go func() {
 		_ = grpcServer.Serve(lis)

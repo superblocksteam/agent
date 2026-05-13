@@ -23,7 +23,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Performance(_message.Message):
-    __slots__ = ("error", "plugin_execution", "queue_request", "queue_response", "kv_store_fetch", "kv_store_push", "total")
+    __slots__ = ("error", "plugin_execution", "queue_request", "queue_response", "kv_store_fetch", "kv_store_push", "total", "bootstrap_sdk_import", "bootstrap_bridge_setup", "bootstrap_require_root", "bootstrap_code_execution")
     class Observable(_message.Message):
         __slots__ = ("start", "end", "value", "bytes", "estimate")
         START_FIELD_NUMBER: _ClassVar[int]
@@ -44,6 +44,10 @@ class Performance(_message.Message):
     KV_STORE_FETCH_FIELD_NUMBER: _ClassVar[int]
     KV_STORE_PUSH_FIELD_NUMBER: _ClassVar[int]
     TOTAL_FIELD_NUMBER: _ClassVar[int]
+    BOOTSTRAP_SDK_IMPORT_FIELD_NUMBER: _ClassVar[int]
+    BOOTSTRAP_BRIDGE_SETUP_FIELD_NUMBER: _ClassVar[int]
+    BOOTSTRAP_REQUIRE_ROOT_FIELD_NUMBER: _ClassVar[int]
+    BOOTSTRAP_CODE_EXECUTION_FIELD_NUMBER: _ClassVar[int]
     error: bool
     plugin_execution: Performance.Observable
     queue_request: Performance.Observable
@@ -51,7 +55,11 @@ class Performance(_message.Message):
     kv_store_fetch: Performance.Observable
     kv_store_push: Performance.Observable
     total: Performance.Observable
-    def __init__(self, error: bool = ..., plugin_execution: _Optional[_Union[Performance.Observable, _Mapping]] = ..., queue_request: _Optional[_Union[Performance.Observable, _Mapping]] = ..., queue_response: _Optional[_Union[Performance.Observable, _Mapping]] = ..., kv_store_fetch: _Optional[_Union[Performance.Observable, _Mapping]] = ..., kv_store_push: _Optional[_Union[Performance.Observable, _Mapping]] = ..., total: _Optional[_Union[Performance.Observable, _Mapping]] = ...) -> None: ...
+    bootstrap_sdk_import: Performance.Observable
+    bootstrap_bridge_setup: Performance.Observable
+    bootstrap_require_root: Performance.Observable
+    bootstrap_code_execution: Performance.Observable
+    def __init__(self, error: bool = ..., plugin_execution: _Optional[_Union[Performance.Observable, _Mapping]] = ..., queue_request: _Optional[_Union[Performance.Observable, _Mapping]] = ..., queue_response: _Optional[_Union[Performance.Observable, _Mapping]] = ..., kv_store_fetch: _Optional[_Union[Performance.Observable, _Mapping]] = ..., kv_store_push: _Optional[_Union[Performance.Observable, _Mapping]] = ..., total: _Optional[_Union[Performance.Observable, _Mapping]] = ..., bootstrap_sdk_import: _Optional[_Union[Performance.Observable, _Mapping]] = ..., bootstrap_bridge_setup: _Optional[_Union[Performance.Observable, _Mapping]] = ..., bootstrap_require_root: _Optional[_Union[Performance.Observable, _Mapping]] = ..., bootstrap_code_execution: _Optional[_Union[Performance.Observable, _Mapping]] = ...) -> None: ...
 
 class Variable(_message.Message):
     __slots__ = ("key", "type", "mode")

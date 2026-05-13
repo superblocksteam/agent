@@ -127,14 +127,9 @@ func TestBuildJobSpec(t *testing.T) {
 			expectIntegrationExecutor:   false,
 		},
 		{
-			name:      "ephemeral adds do-not-disrupt annotation",
+			name:      "ephemeral workload sets ephemeral labels",
 			language:  "javascript",
 			ephemeral: true,
-		},
-		{
-			name:      "non-ephemeral includes do-not-disrupt annotation",
-			language:  "javascript",
-			ephemeral: false,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -160,7 +155,7 @@ func TestBuildJobSpec(t *testing.T) {
 			assert.Equal(t, "sandbox-test-123", job.Name)
 			assert.Equal(t, "test-ns", job.Namespace)
 
-			assert.Equal(t, "true", job.Spec.Template.ObjectMeta.Annotations["karpenter.sh/do-not-disrupt"], "do-not-disrupt is always set on sandbox pods")
+			assert.Empty(t, job.Spec.Template.ObjectMeta.Annotations)
 
 			container := job.Spec.Template.Spec.Containers[0]
 			readinessProbe := container.ReadinessProbe
@@ -207,8 +202,117 @@ func TestBuildJobSpec(t *testing.T) {
 			}
 			assert.Equal(t, "30000000", requestCap)
 			assert.Equal(t, "524288000", responseCap)
+
+			var gracefulShutdownMs string
+			for _, env := range container.Env {
+				if env.Name == "SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS" {
+					gracefulShutdownMs = env.Value
+					break
+				}
+			}
+			assert.Equal(t, "0", gracefulShutdownMs,
+				"zero graceful shutdown: no in-sandbox timeout (sandbox applies its own fallback), env passes 0 ms")
+
+			assert.Nil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds,
+				"zero graceful shutdown: omit termination grace so Kubernetes uses its default (~30s)")
 		})
 	}
+}
+
+func TestBuildJobSpec_GracefulShutdownExplicitTimeout(t *testing.T) {
+	m := &K8sJobManager{
+		namespace:               "test-ns",
+		image:                   "sandbox:latest",
+		port:                    50051,
+		podIP:                   "10.0.0.1",
+		variableStoreGrpcPort:   50050,
+		variableStoreHttpPort:   8080,
+		streamingProxyGrpcPort:  50053,
+		ttlSecondsAfterFinished: 0,
+		language:                "javascript",
+		ephemeral:               false,
+		grpcMaxRequestSize:      30_000_000,
+		grpcMaxResponseSize:     500 * 1024 * 1024,
+		logger:                  zap.NewNop(),
+		gracefulShutdownTimeout: 10 * time.Minute,
+	}
+	job := m.buildJobSpec("sandbox-test-123", "test-123", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	var gracefulShutdownMs string
+	for _, env := range container.Env {
+		if env.Name == "SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS" {
+			gracefulShutdownMs = env.Value
+			break
+		}
+	}
+	assert.Equal(t, "600000", gracefulShutdownMs)
+
+	require.NotNil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, int64(600), *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
+
+func TestBuildJobSpec_GracefulShutdownNegativeTimeout(t *testing.T) {
+	m := &K8sJobManager{
+		namespace:               "test-ns",
+		image:                   "sandbox:latest",
+		port:                    50051,
+		podIP:                   "10.0.0.1",
+		variableStoreGrpcPort:   50050,
+		variableStoreHttpPort:   8080,
+		streamingProxyGrpcPort:  50053,
+		ttlSecondsAfterFinished: 0,
+		language:                "javascript",
+		ephemeral:               false,
+		grpcMaxRequestSize:      30_000_000,
+		grpcMaxResponseSize:     500 * 1024 * 1024,
+		logger:                  zap.NewNop(),
+		gracefulShutdownTimeout: -1 * time.Second,
+	}
+	job := m.buildJobSpec("sandbox-test-123", "test-123", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	var gracefulShutdownMs string
+	for _, env := range container.Env {
+		if env.Name == "SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS" {
+			gracefulShutdownMs = env.Value
+			break
+		}
+	}
+	assert.Equal(t, "0", gracefulShutdownMs)
+	assert.Nil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
+
+func TestBuildJobSpec_CustomGracefulShutdownTimeout(t *testing.T) {
+	m := &K8sJobManager{
+		namespace:               "test-ns",
+		image:                   "sandbox:latest",
+		port:                    50051,
+		podIP:                   "10.0.0.1",
+		variableStoreGrpcPort:   50050,
+		variableStoreHttpPort:   8080,
+		streamingProxyGrpcPort:  50053,
+		ttlSecondsAfterFinished: 0,
+		language:                "javascript",
+		ephemeral:               false,
+		grpcMaxRequestSize:      30_000_000,
+		grpcMaxResponseSize:     500 * 1024 * 1024,
+		logger:                  zap.NewNop(),
+		gracefulShutdownTimeout: 90 * time.Second,
+	}
+	job := m.buildJobSpec("sandbox-test-123", "test-123", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+	var gracefulShutdownMs string
+	for _, env := range container.Env {
+		if env.Name == "SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS" {
+			gracefulShutdownMs = env.Value
+			break
+		}
+	}
+	assert.Equal(t, "90000", gracefulShutdownMs)
+
+	require.NotNil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, int64(90), *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }
 
 func TestBuildJobSpecExecutionEnvInclusionList(t *testing.T) {

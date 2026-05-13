@@ -104,20 +104,22 @@ class ExecuteRequest(_message.Message):
         branch_name: str
         def __init__(self, profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., test: bool = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., path: _Optional[str] = ..., application_id: _Optional[str] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ...) -> None: ...
     class FetchCode(_message.Message):
-        __slots__ = ("id", "profile", "view_mode", "commit_id", "branch_name", "entry_point")
+        __slots__ = ("id", "profile", "view_mode", "commit_id", "branch_name", "entry_point", "export_name")
         ID_FIELD_NUMBER: _ClassVar[int]
         PROFILE_FIELD_NUMBER: _ClassVar[int]
         VIEW_MODE_FIELD_NUMBER: _ClassVar[int]
         COMMIT_ID_FIELD_NUMBER: _ClassVar[int]
         BRANCH_NAME_FIELD_NUMBER: _ClassVar[int]
         ENTRY_POINT_FIELD_NUMBER: _ClassVar[int]
+        EXPORT_NAME_FIELD_NUMBER: _ClassVar[int]
         id: str
         profile: _common_pb2.Profile
         view_mode: ViewMode
         commit_id: str
         branch_name: str
         entry_point: str
-        def __init__(self, id: _Optional[str] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ..., entry_point: _Optional[str] = ...) -> None: ...
+        export_name: str
+        def __init__(self, id: _Optional[str] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ..., entry_point: _Optional[str] = ..., export_name: _Optional[str] = ...) -> None: ...
     class InputsEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -161,7 +163,7 @@ class ExecuteRequest(_message.Message):
     def __init__(self, options: _Optional[_Union[ExecuteRequest.Options, _Mapping]] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., definition: _Optional[_Union[Definition, _Mapping]] = ..., fetch: _Optional[_Union[ExecuteRequest.Fetch, _Mapping]] = ..., fetch_by_path: _Optional[_Union[ExecuteRequest.FetchByPath, _Mapping]] = ..., fetch_code: _Optional[_Union[ExecuteRequest.FetchCode, _Mapping]] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., mocks: _Optional[_Iterable[_Union[Mock, _Mapping]]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ...) -> None: ...
 
 class ExecuteV3Request(_message.Message):
-    __slots__ = ("application_id", "inputs", "view_mode", "profile", "commit_id", "branch_name", "entry_point", "files", "include_diagnostics")
+    __slots__ = ("application_id", "inputs", "view_mode", "profile", "commit_id", "branch_name", "entry_point", "files", "include_diagnostics", "export_name")
     class InputsEntry(_message.Message):
         __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -178,6 +180,7 @@ class ExecuteV3Request(_message.Message):
     ENTRY_POINT_FIELD_NUMBER: _ClassVar[int]
     FILES_FIELD_NUMBER: _ClassVar[int]
     INCLUDE_DIAGNOSTICS_FIELD_NUMBER: _ClassVar[int]
+    EXPORT_NAME_FIELD_NUMBER: _ClassVar[int]
     application_id: str
     inputs: _containers.MessageMap[str, _struct_pb2.Value]
     view_mode: ViewMode
@@ -187,7 +190,8 @@ class ExecuteV3Request(_message.Message):
     entry_point: str
     files: _containers.RepeatedCompositeFieldContainer[ExecuteRequest.File]
     include_diagnostics: bool
-    def __init__(self, application_id: _Optional[str] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ..., entry_point: _Optional[str] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ..., include_diagnostics: bool = ...) -> None: ...
+    export_name: str
+    def __init__(self, application_id: _Optional[str] = ..., inputs: _Optional[_Mapping[str, _struct_pb2.Value]] = ..., view_mode: _Optional[_Union[ViewMode, str]] = ..., profile: _Optional[_Union[_common_pb2.Profile, _Mapping]] = ..., commit_id: _Optional[str] = ..., branch_name: _Optional[str] = ..., entry_point: _Optional[str] = ..., files: _Optional[_Iterable[_Union[ExecuteRequest.File, _Mapping]]] = ..., include_diagnostics: bool = ..., export_name: _Optional[str] = ...) -> None: ...
 
 class Definition(_message.Message):
     __slots__ = ("api", "integrations", "metadata", "stores")

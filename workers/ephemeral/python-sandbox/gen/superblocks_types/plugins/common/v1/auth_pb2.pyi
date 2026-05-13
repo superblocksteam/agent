@@ -176,7 +176,7 @@ class AkeylessAuth(_message.Message):
     def __init__(self, api_key: _Optional[_Union[AkeylessAuth.ApiKey, _Mapping]] = ..., email: _Optional[_Union[AkeylessAuth.Email, _Mapping]] = ...) -> None: ...
 
 class Auth(_message.Message):
-    __slots__ = ("password_grant_flow", "authorization_code_flow", "basic", "client_credentials_flow", "key", "oauth_token_exchange")
+    __slots__ = ("password_grant_flow", "authorization_code_flow", "basic", "client_credentials_flow", "key", "oauth_token_exchange", "oauth_idp_token_passthrough")
     class Nothing(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
@@ -186,10 +186,12 @@ class Auth(_message.Message):
     CLIENT_CREDENTIALS_FLOW_FIELD_NUMBER: _ClassVar[int]
     KEY_FIELD_NUMBER: _ClassVar[int]
     OAUTH_TOKEN_EXCHANGE_FIELD_NUMBER: _ClassVar[int]
+    OAUTH_IDP_TOKEN_PASSTHROUGH_FIELD_NUMBER: _ClassVar[int]
     password_grant_flow: OAuth.PasswordGrantFlow
     authorization_code_flow: OAuth.AuthorizationCodeFlow
     basic: Basic
     client_credentials_flow: OAuth.ClientCredentialsFlow
     key: Azure.Key
     oauth_token_exchange: Auth.Nothing
-    def __init__(self, password_grant_flow: _Optional[_Union[OAuth.PasswordGrantFlow, _Mapping]] = ..., authorization_code_flow: _Optional[_Union[OAuth.AuthorizationCodeFlow, _Mapping]] = ..., basic: _Optional[_Union[Basic, _Mapping]] = ..., client_credentials_flow: _Optional[_Union[OAuth.ClientCredentialsFlow, _Mapping]] = ..., key: _Optional[_Union[Azure.Key, _Mapping]] = ..., oauth_token_exchange: _Optional[_Union[Auth.Nothing, _Mapping]] = ...) -> None: ...
+    oauth_idp_token_passthrough: Auth.Nothing
+    def __init__(self, password_grant_flow: _Optional[_Union[OAuth.PasswordGrantFlow, _Mapping]] = ..., authorization_code_flow: _Optional[_Union[OAuth.AuthorizationCodeFlow, _Mapping]] = ..., basic: _Optional[_Union[Basic, _Mapping]] = ..., client_credentials_flow: _Optional[_Union[OAuth.ClientCredentialsFlow, _Mapping]] = ..., key: _Optional[_Union[Azure.Key, _Mapping]] = ..., oauth_token_exchange: _Optional[_Union[Auth.Nothing, _Mapping]] = ..., oauth_idp_token_passthrough: _Optional[_Union[Auth.Nothing, _Mapping]] = ...) -> None: ...

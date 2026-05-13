@@ -321,6 +321,7 @@ export namespace HealthResponse {
     export enum Status {
     STATUS_UNSPECIFIED = 0,
     STATUS_READY = 1,
+    STATUS_DRAINING = 2,
     }
 
 }

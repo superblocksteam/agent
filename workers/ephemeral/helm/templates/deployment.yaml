@@ -94,6 +94,11 @@ spec:
         - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
         - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox.port }}"
         - "--sandbox.pool.size={{ (($v.sandbox).poolSize) | default $.Values.sandbox.poolSize | default 1 }}"
+        {{- if and $v.sandbox (hasKey $v.sandbox "gracefulShutdownTimeout") }}
+        - "--sandbox.graceful.shutdown.timeout={{ $v.sandbox.gracefulShutdownTimeout }}"
+        {{- else if and $.Values.sandbox (hasKey $.Values.sandbox "gracefulShutdownTimeout") }}
+        - "--sandbox.graceful.shutdown.timeout={{ $.Values.sandbox.gracefulShutdownTimeout }}"
+        {{- end }}
         - "--sandbox.ttl={{ $.Values.sandboxJob.ttlSecondsAfterFinished }}"
         {{- if or $.Values.sandbox.runtimeClassName $.Values.runtimeClassName }}
         - "--sandbox.runtimeClass={{ $.Values.sandbox.runtimeClassName | default $.Values.runtimeClassName }}"

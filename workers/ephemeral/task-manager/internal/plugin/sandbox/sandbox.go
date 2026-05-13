@@ -375,9 +375,13 @@ func (p *SandboxPlugin) connectToSandbox(ctx context.Context, address string) (*
 	defer cancel()
 
 	for healthCtx.Err() == nil {
-		_, err := client.Health(healthCtx, &workerv1.HealthRequest{})
-		if err == nil {
+		resp, err := client.Health(healthCtx, &workerv1.HealthRequest{})
+		if err == nil && sandboxHealthStatusConnectReady(resp.GetStatus()) {
 			return conn, client, nil
+		}
+		if err == nil && resp.GetStatus() == workerv1.HealthResponse_STATUS_DRAINING {
+			p.logger.Debug("sandbox is not healthy (draining), returning immediately")
+			return nil, nil, fmt.Errorf("sandbox did not become ready within %s: sandbox is draining and shutting down", sandboxHealthTimeout)
 		}
 
 		p.logger.Debug("sandbox health check failed, retrying after backoff", zap.Error(err), zap.Duration("backoff", sandboxHealthBackoff))
@@ -391,6 +395,15 @@ func (p *SandboxPlugin) connectToSandbox(ctx context.Context, address string) (*
 
 	_ = conn.Close()
 	return nil, nil, fmt.Errorf("sandbox did not become ready within %s: %w", sandboxHealthTimeout, healthCtx.Err())
+}
+
+func sandboxHealthStatusConnectReady(s workerv1.HealthResponse_Status) bool {
+	switch s {
+	case workerv1.HealthResponse_STATUS_READY, workerv1.HealthResponse_STATUS_UNSPECIFIED:
+		return true
+	default:
+		return false
+	}
 }
 
 // Close cleans up any resources - closes connection and deletes sandbox Job.
@@ -516,11 +529,20 @@ func (p *SandboxPlugin) IsAvailable(ctx context.Context) plugin.PluginStatus {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	if _, err := p.client.Health(timeoutCtx, &workerv1.HealthRequest{}); err != nil {
+	resp, err := p.client.Health(timeoutCtx, &workerv1.HealthRequest{})
+	if err != nil {
 		return plugin.PluginStatus{
 			Available:        false,
 			DegradationState: plugin.DegradationState_TRANSIENT,
 			Error:            fmt.Errorf("sandbox health check failed: %w", err),
+		}
+	}
+
+	if resp.GetStatus() == workerv1.HealthResponse_STATUS_DRAINING {
+		return plugin.PluginStatus{
+			Available:        false,
+			DegradationState: plugin.DegradationState_FATAL,
+			Error:            fmt.Errorf("sandbox is draining and shutting down"),
 		}
 	}
 
