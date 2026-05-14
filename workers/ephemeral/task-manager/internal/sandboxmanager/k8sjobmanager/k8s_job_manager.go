@@ -70,6 +70,8 @@ type K8sJobManager struct {
 	// gRPC transport hard caps passed to sandbox pods.
 	grpcMaxRequestSize  int
 	grpcMaxResponseSize int
+	// Annotations to set on sandbox pod templates.
+	sandboxPodAnnotations map[string]string
 
 	gracefulShutdownTimeout time.Duration
 }
@@ -104,6 +106,7 @@ func NewSandboxJobManager(opts *Options) *K8sJobManager {
 		executionEnvInclusionList:   opts.ExecutionEnvInclusionList,
 		grpcMaxRequestSize:          opts.GrpcMaxRequestSize,
 		grpcMaxResponseSize:         opts.GrpcMaxResponseSize,
+		sandboxPodAnnotations:       opts.SandboxPodAnnotations,
 		gracefulShutdownTimeout:     opts.GracefulShutdownTimeout,
 	}
 }
@@ -424,6 +427,11 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		"sandbox-id":   sandboxId,
 	}
 
+	podAnnotations := make(map[string]string, len(m.sandboxPodAnnotations))
+	for k, v := range m.sandboxPodAnnotations {
+		podAnnotations[k] = v
+	}
+
 	var terminationGracePeriodSeconds *int64
 	if timeout := int64(m.gracefulShutdownTimeoutForSandbox().Seconds()); timeout > 0 {
 		terminationGracePeriodSeconds = ptr.To(timeout)
@@ -443,7 +451,8 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 			Completions:             &completions,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: specLabels,
+					Labels:      specLabels,
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					RestartPolicy:                 corev1.RestartPolicyNever,

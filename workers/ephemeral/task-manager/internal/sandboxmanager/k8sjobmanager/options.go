@@ -101,6 +101,9 @@ type Options struct {
 	GrpcMaxRequestSize  int
 	GrpcMaxResponseSize int
 
+	// Annotations to set on sandbox pod templates.
+	SandboxPodAnnotations map[string]string
+
 	// Max time for the sandboxes to drain in-flight requests after receiving a SIGTERM/SIGINT.
 	GracefulShutdownTimeout time.Duration
 }
@@ -315,6 +318,13 @@ func WithGrpcMaxRequestSize(size int) Option {
 func WithGrpcMaxResponseSize(size int) Option {
 	return func(o *Options) {
 		o.GrpcMaxResponseSize = size
+	}
+}
+
+// WithSandboxPodAnnotations sets annotations on sandbox pod templates.
+func WithSandboxPodAnnotations(annotations map[string]string) Option {
+	return func(o *Options) {
+		o.SandboxPodAnnotations = annotations
 	}
 }
 

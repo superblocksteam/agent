@@ -124,6 +124,10 @@ spec:
         {{- if $.Values.sandbox_workers.image.credentials }}
         - "--sandbox.imagePullSecrets=ephemeral-worker-docker"
         {{- end }}
+        {{- $sandboxPodAnnotations := merge (deepCopy ((($v.sandbox).podAnnotations) | default dict)) ($sandboxConfig.podAnnotations | default dict) ($.Values.sandbox_workers.sandbox.podAnnotations | default dict) }}
+        {{- range $key, $value := $sandboxPodAnnotations }}
+        - "--sandbox.pod.annotations={{ $key }}={{ $value }}"
+        {{- end }}
         {{- if and $v.sandbox $v.sandbox.nodeSelector }}
         - "--sandbox.nodeSelector={{ include "mapToStringFlag" $v.sandbox.nodeSelector }}"
         {{- else if or $.Values.sandbox_workers.nodeSelector $.Values.sandbox_workers.sandbox.nodeSelector }}

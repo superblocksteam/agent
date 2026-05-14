@@ -333,6 +333,10 @@ sandbox_workers:
     # Runtime class for sandbox pods (e.g., gvisor for secure isolation)
     # Falls back to global runtimeClassName if not set
     runtimeClassName: gvisor
+    # Annotations to add to sandbox pod templates.
+    # Can be overridden per-language (sandbox.python.podAnnotations) or per-fleet (fleets.<name>.sandbox.podAnnotations).
+    # Merging order (later takes precedence): global sandbox.podAnnotations < language < fleet.
+    podAnnotations: {}
     python:
       image:
         repository: ghcr.io/superblocksteam/python-sandbox
@@ -347,6 +351,10 @@ sandbox_workers:
       port: 50051
       # Additional args/env for the python sandbox
       extraEnv: []
+      # Python sandboxes don't gracefully handle SIGTERM yet, so prevent Karpenter disruption.
+      # This can be removed once graceful shutdown is implemented for Python sandboxes.
+      podAnnotations:
+        karpenter.sh/do-not-disrupt: "true"
     javascript:
       image:
         repository: ghcr.io/superblocksteam/javascript-sandbox

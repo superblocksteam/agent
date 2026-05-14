@@ -118,6 +118,7 @@ func init() {
 	pflag.String("sandbox.zone", "", "Availability zone for sandbox pods. Auto-discovered from node if NODE_NAME is set and this is empty.")
 	pflag.Int("sandbox.pool.size", 1, "Number of sandbox Jobs per worker in dynamic mode. Ignored when using static sandbox.address (pool size is the address count).")
 	pflag.Duration("sandbox.graceful.shutdown.timeout", 10*time.Minute, "Max time allowed for the sandboxes to drain in-flight requests after receiving a SIGTERM/SIGINT.")
+	pflag.StringArray("sandbox.pod.annotations", []string{}, "Annotation for sandbox pods (format: 'key=value'). Can be specified multiple times for multiple annotations.")
 
 	// Sandbox resource requests/limits
 	pflag.String("sandbox.resources.requests.cpu", "", "CPU request for sandbox containers (e.g., '100m').")
@@ -519,6 +520,15 @@ func main() {
 			}
 		}
 
+		// Parse sandbox pod annotations from string array (format: "key=value")
+		sandboxPodAnnotations := make(map[string]string)
+		for _, a := range utils.GetStringSlice("sandbox.pod.annotations") {
+			kv := strings.SplitN(a, "=", 2)
+			if len(kv) == 2 {
+				sandboxPodAnnotations[kv[0]] = kv[1]
+			}
+		}
+
 		jobManagerOptions := []k8sjobmanager.Option{
 			k8sjobmanager.WithClientset(k8sClient),
 			k8sjobmanager.WithNamespace(namespace),
@@ -548,6 +558,7 @@ func main() {
 			k8sjobmanager.WithGrpcMaxRequestSize(viper.GetInt("grpc.msg.req.max")),
 			k8sjobmanager.WithGrpcMaxResponseSize(viper.GetInt("filepicker.max.size")),
 			k8sjobmanager.WithGracefulShutdownTimeout(viper.GetDuration("sandbox.graceful.shutdown.timeout")),
+			k8sjobmanager.WithSandboxPodAnnotations(sandboxPodAnnotations),
 		}
 
 		if viper.GetBool("integration.executor.enabled") {

@@ -100,6 +100,10 @@ spec:
         - "--sandbox.graceful.shutdown.timeout={{ $.Values.sandbox.gracefulShutdownTimeout }}"
         {{- end }}
         - "--sandbox.ttl={{ $.Values.sandboxJob.ttlSecondsAfterFinished }}"
+        {{- $sandboxPodAnnotations := merge (deepCopy ((($v.sandbox).podAnnotations) | default dict)) ($sandboxConfig.podAnnotations | default dict) ($.Values.sandbox.podAnnotations | default dict) }}
+        {{- range $key, $value := $sandboxPodAnnotations }}
+        - "--sandbox.pod.annotations={{ $key }}={{ $value }}"
+        {{- end }}
         {{- if or $.Values.sandbox.runtimeClassName $.Values.runtimeClassName }}
         - "--sandbox.runtimeClass={{ $.Values.sandbox.runtimeClassName | default $.Values.runtimeClassName }}"
         {{- end }}

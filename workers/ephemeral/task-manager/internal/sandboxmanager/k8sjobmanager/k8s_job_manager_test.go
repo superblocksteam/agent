@@ -24,6 +24,7 @@ func TestNewSandboxJobManager(t *testing.T) {
 		nodeSelector := map[string]string{"node-type": "sandbox"}
 		imagePullSecrets := []string{"registry-creds"}
 		ownerPodLabels := map[string]string{"role": "task-manager", "fleet": "python-ba"}
+		sandboxPodAnnotations := map[string]string{"karpenter.sh/do-not-disrupt": "true"}
 
 		opts := NewOptions(
 			WithNamespace("sandbox-ns"),
@@ -49,6 +50,7 @@ func TestNewSandboxJobManager(t *testing.T) {
 			WithOwnerPodLabels(ownerPodLabels),
 			WithGrpcMaxRequestSize(123456789),
 			WithGrpcMaxResponseSize(987654321),
+			WithSandboxPodAnnotations(sandboxPodAnnotations),
 		)
 
 		m := NewSandboxJobManager(opts)
@@ -76,6 +78,7 @@ func TestNewSandboxJobManager(t *testing.T) {
 		assert.Equal(t, ownerPodLabels, m.ownerPodLabels)
 		assert.Equal(t, 123456789, m.grpcMaxRequestSize)
 		assert.Equal(t, 987654321, m.grpcMaxResponseSize)
+		assert.Equal(t, sandboxPodAnnotations, m.sandboxPodAnnotations)
 	})
 
 	t.Run("uses default option values", func(t *testing.T) {
@@ -313,6 +316,67 @@ func TestBuildJobSpec_CustomGracefulShutdownTimeout(t *testing.T) {
 
 	require.NotNil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds)
 	assert.Equal(t, int64(90), *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
+
+func TestBuildJobSpecSandboxPodAnnotations(t *testing.T) {
+	for _, test := range []struct {
+		name                string
+		annotations         map[string]string
+		expectedAnnotations map[string]string
+	}{
+		{
+			name:                "nil annotations results in empty map",
+			annotations:         nil,
+			expectedAnnotations: map[string]string{},
+		},
+		{
+			name:                "empty annotations results in empty map",
+			annotations:         map[string]string{},
+			expectedAnnotations: map[string]string{},
+		},
+		{
+			name: "single annotation is applied",
+			annotations: map[string]string{
+				"karpenter.sh/do-not-disrupt": "true",
+			},
+			expectedAnnotations: map[string]string{
+				"karpenter.sh/do-not-disrupt": "true",
+			},
+		},
+		{
+			name: "multiple annotations are applied",
+			annotations: map[string]string{
+				"karpenter.sh/do-not-disrupt": "true",
+				"prometheus.io/scrape":        "true",
+				"prometheus.io/port":          "9090",
+			},
+			expectedAnnotations: map[string]string{
+				"karpenter.sh/do-not-disrupt": "true",
+				"prometheus.io/scrape":        "true",
+				"prometheus.io/port":          "9090",
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			m := &K8sJobManager{
+				namespace:               "test-ns",
+				image:                   "sandbox:latest",
+				port:                    50051,
+				podIP:                   "10.0.0.1",
+				variableStoreGrpcPort:   50050,
+				variableStoreHttpPort:   8080,
+				streamingProxyGrpcPort:  50053,
+				ttlSecondsAfterFinished: 0,
+				language:                "javascript",
+				logger:                  zap.NewNop(),
+				sandboxPodAnnotations:   test.annotations,
+			}
+
+			job := m.buildJobSpec("sandbox-test-annotations", "test-annotations", "javascript")
+
+			assert.Equal(t, test.expectedAnnotations, job.Spec.Template.ObjectMeta.Annotations)
+		})
+	}
 }
 
 func TestBuildJobSpecExecutionEnvInclusionList(t *testing.T) {
