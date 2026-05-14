@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix Apps 3.0 SDK integration callbacks for embedded external users using short-lived orchestrator-signed capabilities.
 - Include `x-superblocks-agent-key` in OTLP metrics upload headers for orchestrator and task-manager exporters
 - Disable OTLP log exporting to the collector and rely on the legacy remote logging pipeline instead
-- Upgrade axios from 1.13.5 to 1.15.1 across all JavaScript worker packages, addressing CVE-2026-40175 (critical prototype-pollution RCE gadget) and CVE-2025-62718 (SSRF via hostname bypass)
+- Upgrade axios from 1.13.5 to 1.16.0 across all JavaScript worker packages, addressing CVE-2026-40175, CVE-2025-62718, and 10 additional axios CVEs (SSRF, prototype pollution, DoS)
+- Upgrade protobufjs to 7.5.8, node-forge to 1.4.0, and fast-xml-parser to 4.5.6 via pnpm overrides, resolving CVE-2026-41242 (critical protobufjs RCE), CVE-2026-25896 (critical fast-xml-parser XSS), and 11 additional high/medium CVEs
 - Upgrade JavaScript worker Node.js runtime from 20.19.5 to 22.22.2 (LTS). All customer-facing dependencies remain at their current versions.
 
 ## v1.39.0

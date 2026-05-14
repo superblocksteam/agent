@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@superblocks/shared": "workspace:*",
-    "axios": "1.15.1",
+    "axios": "1.16.0",
     "lodash": "^4.17.23",
     "minimist": "1.2.6"
   },

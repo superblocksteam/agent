@@ -34,7 +34,7 @@
     "ajv": "8.18.0",
     "ajv-errors": "3.0.0",
     "ajv-formats": "2.1.1",
-    "axios": "1.15.1",
+    "axios": "1.16.0",
     "base64url": "3.0.1",
     "bson": "4.6.5",
     "date-fns": "3.3.1",
