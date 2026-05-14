@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade axios from 1.13.5 to 1.16.0 across all JavaScript worker packages, addressing CVE-2026-40175, CVE-2025-62718, and 10 additional axios CVEs (SSRF, prototype pollution, DoS)
 - Upgrade protobufjs to 7.5.8, node-forge to 1.4.0, and fast-xml-parser to 4.5.6 via pnpm overrides, resolving CVE-2026-41242 (critical protobufjs RCE), CVE-2026-25896 (critical fast-xml-parser XSS), and 11 additional high/medium CVEs
 - Upgrade JavaScript worker Node.js runtime from 20.19.5 to 22.22.2 (LTS). All customer-facing dependencies remain at their current versions.
+- Upgrade Python worker dependencies: Authlib 1.3.2 to 1.6.12 (CVE-2026-27962 JWT forgery), gevent 21.12.0 to 24.11.1 (CVE-2023-41419), geventhttpclient 2.0.12 to 2.3.9, greenlet 1.1.3 to 3.1.1
 
 ## v1.39.0
 - Fix OTLP export errors when remote telemetry is disabled: worker processes (Go worker, task-manager) no longer default to `http://127.0.0.1:4318` and the task-manager s6 script now honors an explicitly empty collector URL
