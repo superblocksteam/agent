@@ -285,8 +285,8 @@ importers:
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/salesforce
       '@superblocksteam/sdk-api':
-        specifier: 0.0.6
-        version: 0.0.6
+        specifier: 0.0.7
+        version: 0.0.7
       '@superblocksteam/smtp':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/smtp
@@ -1871,8 +1871,8 @@ importers:
         specifier: workspace:*
         version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
       '@superblocksteam/sdk-api':
-        specifier: 0.0.6
-        version: 0.0.6
+        specifier: 0.0.7
+        version: 0.0.7
       dotenv:
         specifier: 'catalog:'
         version: 16.4.5
@@ -1906,8 +1906,8 @@ importers:
         version: link:../../wasm-sandbox-js
     devDependencies:
       '@superblocksteam/sdk-api':
-        specifier: 0.0.6
-        version: 0.0.6
+        specifier: 0.0.7
+        version: 0.0.7
       '@swc/cli':
         specifier: 'catalog:'
         version: 0.6.0(@swc/core@1.7.26)(chokidar@4.0.3)
@@ -6314,8 +6314,8 @@ packages:
     resolution: {directory: workers/javascript/packages/plugins/salesforce, type: directory}
     engines: {node: '>= 22'}
 
-  '@superblocksteam/sdk-api@0.0.6':
-    resolution: {integrity: sha512-wImai+SqgJHnPeqT4sEE0EcQ4PT01ekoPLxUupr5fW9yjtZrUVGDHIGJ1kgtmZT/qbL84KNWS8KliDUTpjjNCA==}
+  '@superblocksteam/sdk-api@0.0.7':
+    resolution: {integrity: sha512-XLRNvSBpxqMcrZQxcWouHISaH4czqtVY28Q3VNSq7qi8pWm6dQhz+MHakhrFm0phNpCUqxnuLL2f5GCiqZdt3w==}
     engines: {node: '>=20', npm: '>=10.x'}
 
   '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp':
@@ -6334,8 +6334,8 @@ packages:
     resolution: {directory: workers/javascript/packages/plugins/superblocks-ocr, type: directory}
     engines: {node: '>= 22'}
 
-  '@superblocksteam/types@1.196.0':
-    resolution: {integrity: sha512-EpYK9lCfy0NBnKIdK0lB/SXLX/oztAcG5+Xi+YLYeePP89P6lyUIWbMI6WfzHyYAM4+6c7tKiL+Of1ZtC6HgMA==}
+  '@superblocksteam/types@1.351.0':
+    resolution: {integrity: sha512-6/7Om7BTw/JhvLxzv36Grny+Tv4+g8CsOpS1rIKfpMbbrklv2FPmjxIc0r7gJeHZa/GBI6T8CRJgugUL1n9N6g==}
 
   '@superblocksteam/types@file:workers/javascript/packages/types':
     resolution: {directory: workers/javascript/packages/types, type: directory}
@@ -14620,7 +14620,7 @@ snapshots:
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
-      '@superblocksteam/sdk-api': 0.0.6
+      '@superblocksteam/sdk-api': 0.0.7
       dotenv: 16.4.5
     transitivePeerDependencies:
       - aws-crt
@@ -14637,7 +14637,7 @@ snapshots:
     dependencies:
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
-      '@superblocksteam/sdk-api': 0.0.6
+      '@superblocksteam/sdk-api': 0.0.7
       dotenv: 16.4.5
     transitivePeerDependencies:
       - aws-crt
@@ -14971,9 +14971,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/sdk-api@0.0.6':
+  '@superblocksteam/sdk-api@0.0.7':
     dependencies:
-      '@superblocksteam/types': 1.196.0
+      '@superblocksteam/types': 1.351.0
       zod: 3.23.8
 
   '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp(ws@8.18.0)':
@@ -15033,7 +15033,7 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/types@1.196.0':
+  '@superblocksteam/types@1.351.0':
     dependencies:
       '@bufbuild/protobuf': 1.3.0
 

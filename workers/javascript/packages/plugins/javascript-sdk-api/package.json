@@ -1,6 +1,6 @@
 {
   "name": "@superblocksteam/javascript-sdk-api",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Superblocks SDK API Plugin",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -13,7 +13,7 @@
   "dependencies": {
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/javascript": "workspace:*",
-    "@superblocksteam/sdk-api": "0.0.6",
+    "@superblocksteam/sdk-api": "0.0.7",
     "dotenv": "catalog:"
   },
   "devDependencies": {
