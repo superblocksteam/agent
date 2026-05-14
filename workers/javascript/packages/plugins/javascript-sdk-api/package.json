@@ -1,6 +1,6 @@
 {
   "name": "@superblocksteam/javascript-sdk-api",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "Superblocks SDK API Plugin",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
