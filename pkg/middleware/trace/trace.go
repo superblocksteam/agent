@@ -7,17 +7,21 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
+// RPCServiceKey was removed from semconv in v1.40.0.
+var rpcServiceKey = attribute.Key("rpc.service")
+
 func attributes(ctx context.Context, meta interceptors.CallMeta) map[string]any {
 	attributes := map[string]any{
-		string(semconv.RPCSystemKey):  semconv.RPCSystemGRPC,
-		string(semconv.RPCMethodKey):  meta.Method,
-		string(semconv.RPCServiceKey): meta.Service,
+		string(semconv.RPCSystemNameKey): semconv.RPCSystemNameGRPC.Value.AsString(),
+		string(semconv.RPCMethodKey):     meta.Method,
+		string(rpcServiceKey):            meta.Service,
 	}
 
 	md, ok := metadata.FromIncomingContext(ctx)
