@@ -73,7 +73,8 @@ module.exports = [
               return res.sendStatus(401);
             }
 
-            const bundle = `module.exports={default:{name:"fetchcode-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){return {sdkapi:"ok",from:"fetchcode",branch:${JSON.stringify(req.params.branchName)},user:ctx.user};}}};`;
+            const branch = JSON.stringify(req.params.branchName); // lgtm[js/bad-code-sanitization]
+            const bundle = `module.exports={default:{name:"fetchcode-test",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(ctx,input){return {sdkapi:"ok",from:"fetchcode",branch:${branch},user:ctx.user};}}};`;
 
             return res.status(200).json({ bundle });
           },

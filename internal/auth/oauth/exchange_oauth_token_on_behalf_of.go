@@ -48,8 +48,8 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 		zap.String("clientId", authConfig.ClientId),
 		zap.String("audience", authConfig.Audience),
 		zap.String("scope", authConfig.Scope),
-		zap.String("MD5(clientSecret)", utils.Md5(authConfig.ClientSecret)),
-		zap.String("MD5(subjectToken)", utils.Md5(subjectToken)),
+		zap.String("sha256(clientSecret)", utils.Sha256Short(authConfig.ClientSecret)),
+		zap.String("sha256(subjectToken)", utils.Sha256Short(subjectToken)),
 	)
 
 	data := url.Values{}

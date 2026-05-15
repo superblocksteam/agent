@@ -15,7 +15,7 @@ function evaluateWrapper(wrapperScript: string, globals: Record<string, unknown>
 
   const wrappedCode = `(async function(${globalNames.join(',')}) {\n${wrapperScript}\n})`;
   // eslint-disable-next-line no-new-func
-  const fn = new Function(`return ${wrappedCode}`);
+  const fn = new Function(`return ${wrappedCode}`); // lgtm[js/bad-code-sanitization]
   return fn()(...globalValues);
 }
 

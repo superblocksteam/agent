@@ -10,7 +10,7 @@ export const merge = (target: PlainObject, source?: PlainObject): PlainObject =>
   }
 
   for (const key in source) {
-    if (source.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(source, key) && key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
       const sourceValue = source[key];
       const targetValue = target[key];
 

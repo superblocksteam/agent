@@ -49,6 +49,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// mustJSONString returns s as a JSON-encoded string literal (double-quoted, with
+// special characters escaped). Produces a value that is safe to embed in JS expressions.
+func mustJSONString(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
+}
+
 func ResolveTemplate[T any](ctx *apictx.Context, sandbox engine.Sandbox, logger *zap.Logger, template string, json bool, options ...engine.ResultOption) (*T, error) {
 	e, err := sandbox.Engine(ctx.Context)
 	if err != nil {
@@ -920,15 +927,15 @@ func EvaluateDatasource(
 	newVarsRedacted := []*apiv1.Variables_Config{}
 
 	if authToken != "" && bindingName != "" {
-		objPairs := []string{fmt.Sprintf("token: '%s'", authToken)}
-		redactedObjPairs := []string{fmt.Sprintf("token: '%s'", auth.RedactedSecret)}
+		objPairs := []string{fmt.Sprintf("token: %s", mustJSONString(authToken))}
+		redactedObjPairs := []string{fmt.Sprintf("token: %s", mustJSONString(auth.RedactedSecret))}
 		if authUserId != "" {
-			objPairs = append(objPairs, fmt.Sprintf("userId: '%s'", authUserId))
-			redactedObjPairs = append(redactedObjPairs, fmt.Sprintf("userId: '%s'", authUserId))
+			objPairs = append(objPairs, fmt.Sprintf("userId: %s", mustJSONString(authUserId)))
+			redactedObjPairs = append(redactedObjPairs, fmt.Sprintf("userId: %s", mustJSONString(authUserId)))
 		}
 		if authIdToken != "" {
-			objPairs = append(objPairs, fmt.Sprintf("idToken: '%s'", authIdToken))
-			redactedObjPairs = append(redactedObjPairs, fmt.Sprintf("idToken: '%s'", auth.RedactedSecret))
+			objPairs = append(objPairs, fmt.Sprintf("idToken: %s", mustJSONString(authIdToken)))
+			redactedObjPairs = append(redactedObjPairs, fmt.Sprintf("idToken: %s", mustJSONString(auth.RedactedSecret)))
 		}
 		if tokenDecoded != nil {
 			tokenDecodedJson, err := protojson.Marshal(tokenDecoded)

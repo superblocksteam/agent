@@ -55,9 +55,9 @@ func (c *OAuthClient) ExchangeOauthCodeForToken(
 		zap.String("oauth-request-type", "oauth-code"),
 		zap.String("origin", origin),
 		zap.String("tokenUrl", authConfig.TokenUrl),
-		zap.String("MD5(accessCode)", utils.Md5(accessCode)),
+		zap.String("sha256(accessCode)", utils.Sha256Short(accessCode)),
 		zap.String("clientId", authConfig.ClientId),
-		zap.String("MD5(clientSecret)", utils.Md5(authConfig.ClientSecret)),
+		zap.String("sha256(clientSecret)", utils.Sha256Short(authConfig.ClientSecret)),
 	)
 	res, err := c.exchangeCode(authConfig, accessCode, origin)
 	if err != nil {

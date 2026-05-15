@@ -2,7 +2,7 @@ package utils
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -142,15 +142,9 @@ func ObjectKeys[T any](x map[string]T) []string {
 	return result
 }
 
-func Md5(input string) string {
-	hasher := md5.New()
-	_, err := hasher.Write([]byte(input))
-	if err != nil {
-		return "<failed to calculate MD5>"
-	}
-	md5Sum := hasher.Sum(nil)
-	md5Hex := hex.EncodeToString(md5Sum)
-	return md5Hex
+func Sha256Short(input string) string {
+	sum := sha256.Sum256([]byte(input))
+	return hex.EncodeToString(sum[:])[:16]
 }
 
 func IntegrationsToSecretStores(in []*integrationv1.Integration) (out []*secretsv1.Store, _ error) {

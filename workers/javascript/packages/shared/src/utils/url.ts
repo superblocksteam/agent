@@ -126,27 +126,24 @@ export const paramHasKeyValue = (param: Property | undefined): param is Property
 
 //match url pattern
 export const isApplicationUrl = (url: string): boolean => {
-  const re = /\/applications\/.*?$/;
-  return re.test(url);
+  return url.includes('/applications/');
 };
 
 export const isApplicationEditUrl = (url: string): boolean => {
-  const re = /\/applications\/.*\/edit.*?$/;
+  const re = /\/applications\/[^?#]+\/edit/;
   return re.test(url);
 };
 
 export const isWorkflowUrl = (url: string): boolean => {
-  const re = /\/workflows\/.*?$/;
-  return re.test(url);
+  return url.includes('/workflows/');
 };
 
 export const isScheduledJobUrl = (url: string): boolean => {
-  const re = /\/scheduled_jobs\/.*?$/;
-  return re.test(url);
+  return url.includes('/scheduled_jobs/');
 };
 
 export const getApplicationIdFromUrl = (url: string): string | undefined => {
-  const re = /\/applications\/(.*?)\//;
+  const re = /\/applications\/([^/]+)\//;
   const matched = url.match(re);
   if (matched) {
     return matched[1];
@@ -154,7 +151,7 @@ export const getApplicationIdFromUrl = (url: string): string | undefined => {
 };
 
 export const getWorkflowIdFromUrl = (url: string): string | undefined => {
-  const re = /\/workflows\/(.*?)\//;
+  const re = /\/workflows\/([^/]+)\//;
   const matched = url.match(re);
   if (matched) {
     return matched[1];
@@ -162,7 +159,7 @@ export const getWorkflowIdFromUrl = (url: string): string | undefined => {
 };
 
 export const getScheduledJobIdFromUrl = (url: string): string | undefined => {
-  const re = /\/scheduled_jobs\/(.*?)\//;
+  const re = /\/scheduled_jobs\/([^/]+)\//;
   const matched = url.match(re);
   if (matched) {
     return matched[1];

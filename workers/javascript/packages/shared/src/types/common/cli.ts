@@ -5,5 +5,5 @@ export function slugifyName(originalName: string): string {
   return slugify(originalName, {
     replacement: '_',
     lower: true
-  }).replace("'", "\\'");
+  }).replaceAll("'", "\\'");
 }

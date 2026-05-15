@@ -2,10 +2,10 @@ import { isString } from 'lodash';
 
 import { PositionedSegment, StringSegment } from './types';
 
-const DATA_BIND_REGEX = /{{([\s\S]*?)}}/;
-
-// referencing DATA_BIND_REGEX fails for the value "{{Table1.tableData[Table1.selectedRowIndex]}}" if you run it multiple times and don't recreate
-export const containsBindingsAnywhere = (value: string): boolean => DATA_BIND_REGEX.test(value);
+export const containsBindingsAnywhere = (value: string): boolean => {
+  const start = value.indexOf('{{');
+  return start !== -1 && value.indexOf('}}', start + 2) !== -1;
+};
 
 /**
  * used to filter the output of `getDynamicStringSegments` for further processing, not a validator
