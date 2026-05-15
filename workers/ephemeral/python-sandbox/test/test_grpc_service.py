@@ -732,3 +732,60 @@ class TestSystemErrorClassification:
                     await servicer.Execute(request, mock_context)
 
         mock_context.set_code.assert_called_once_with(grpc.StatusCode.INTERNAL)
+
+
+class TestShutdownBehavior:
+    """Tests for graceful shutdown signal handling."""
+
+    @pytest.fixture
+    def servicer(self):
+        return SandboxTransportServicer()
+
+    def test_health_returns_ready_before_shutdown(self, servicer):
+        mock_context = MagicMock()
+        response = servicer.Health(MagicMock(), mock_context)
+        assert response.status == transport_pb2.HealthResponse.STATUS_READY
+
+    def test_health_returns_draining_after_mark_shutting_down(self, servicer):
+        servicer.mark_shutting_down()
+
+        mock_context = MagicMock()
+        response = servicer.Health(MagicMock(), mock_context)
+
+        assert response.status == transport_pb2.HealthResponse.STATUS_DRAINING
+
+    def test_mark_shutting_down_is_idempotent(self, servicer):
+        servicer.mark_shutting_down()
+        servicer.mark_shutting_down()
+
+        mock_context = MagicMock()
+        response = servicer.Health(MagicMock(), mock_context)
+
+        assert response.status == transport_pb2.HealthResponse.STATUS_DRAINING
+
+    @pytest.mark.asyncio
+    async def test_execute_still_works_after_mark_shutting_down(self, servicer):
+        """In-flight Execute calls complete normally; only Health rejects new work."""
+        servicer.mark_shutting_down()
+
+        request = MagicMock()
+        request.metadata.pluginName = "python"
+        request.props.execution_id = ""
+        request.variable_store_address = ""
+
+        with patch("src.service.json_format.MessageToDict") as mock_dict:
+            mock_dict.return_value = {
+                "actionConfiguration": {"body": "return 1 + 1"},
+                "executionId": "",
+                "bindingKeys": [],
+                "variables": {},
+                "$fileServerUrl": "",
+                "$flagWorker": "",
+                "files": [],
+            }
+            response = await servicer.Execute(request, MagicMock())
+
+        import json as _json
+        from google.protobuf import json_format as pbjson
+        result = _json.loads(pbjson.MessageToJson(response.output.output)) if response.output.output.ListFields() else None
+        assert result == 2

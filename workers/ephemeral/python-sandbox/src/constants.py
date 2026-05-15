@@ -132,6 +132,14 @@ SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_DEFAULT_TIMEOUT_MS = get_env_var(
     "SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_DEFAULT_TIMEOUT_MS", default=120_000, as_type=int
 )
 
+# Graceful shutdown: max time (milliseconds) to wait for in-flight gRPC calls to finish
+# after SIGTERM before the server force-closes. Task-manager sets the corresponding
+# terminationGracePeriodSeconds on the pod to the same value.
+# Default 600000ms (10 minutes) matches the JavaScript sandbox.
+SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS = get_env_var(
+    "SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS", default=600_000, as_type=int
+)
+
 # When True, each execution is isolated in a forked child process.
 # Required when the sandbox process is long-lived and handles multiple concurrent
 # executions (e.g. OPA/non-ephemeral mode). In ephemeral K8s Job mode each pod

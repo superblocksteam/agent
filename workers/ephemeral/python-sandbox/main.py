@@ -3,6 +3,7 @@
 
 import asyncio
 import multiprocessing
+import signal
 
 import grpc
 
@@ -11,30 +12,40 @@ from src.constants import (
     SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
     SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
     SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT,
+    SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS,
 )
 from src.service import SandboxTransportServicer
 
 
 async def serve():
     """Start the gRPC server."""
+    servicer = SandboxTransportServicer()
     server = grpc.aio.server(
         options=[
             ("grpc.max_receive_message_length", SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE),
             ("grpc.max_send_message_length", SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE),
         ],
     )
-    transport_pb2_grpc.add_SandboxTransportServiceServicer_to_server(
-        SandboxTransportServicer(), server
-    )
+    transport_pb2_grpc.add_SandboxTransportServiceServicer_to_server(servicer, server)
 
     server.add_insecure_port(f"[::]:{SUPERBLOCKS_WORKER_SANDBOX_EXECUTOR_TRANSPORT_GRPC_PORT}")
     await server.start()
 
-    try:
-        await server.wait_for_termination()
-    except KeyboardInterrupt:
-        print("\nShutting down server...")
-        await server.stop(grace=5)
+    loop = asyncio.get_event_loop()
+
+    def _on_signal(sig: signal.Signals) -> None:
+        grace_seconds = SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS / 1000
+        print(f"received {sig.name}, starting graceful shutdown ({grace_seconds}s grace)", flush=True)
+        # Mark draining immediately so the task-manager stops routing new work
+        # before the gRPC server stops accepting new RPCs.
+        servicer.mark_shutting_down()
+        # stop(grace=N): reject new RPCs immediately, allow in-flight up to N seconds.
+        loop.create_task(server.stop(grace=grace_seconds))
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, _on_signal, sig)
+
+    await server.wait_for_termination()
 
 
 if __name__ == "__main__":

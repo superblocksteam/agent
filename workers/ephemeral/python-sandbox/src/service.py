@@ -20,6 +20,11 @@ class SandboxTransportServicer(transport_pb2_grpc.SandboxTransportServiceService
 
     def __init__(self):
         self.plugin = PythonPlugin()
+        self._shutting_down: bool = False
+
+    def mark_shutting_down(self) -> None:
+        """Signal that the server is shutting down. Health() will return STATUS_DRAINING."""
+        self._shutting_down = True
 
     async def Execute(self, request: transport_pb2.ExecuteRequest, context) -> transport_pb2.ExecuteResponse:
         """Execute a Python script and return stdout, stderr, and exit code."""
@@ -83,7 +88,12 @@ class SandboxTransportServicer(transport_pb2_grpc.SandboxTransportServiceService
         pass
 
     def Health(self, request, context) -> transport_pb2.HealthResponse:
-        return transport_pb2.HealthResponse(status=transport_pb2.HealthResponse.STATUS_READY)
+        status = (
+            transport_pb2.HealthResponse.STATUS_DRAINING
+            if self._shutting_down
+            else transport_pb2.HealthResponse.STATUS_READY
+        )
+        return transport_pb2.HealthResponse(status=status)
 
     def _execution_output_to_proto(self, output: dict) -> transport_pb2.ExecuteResponse:
         """Convert an ExecutionOutput-like dict to ExecuteResponse proto."""
