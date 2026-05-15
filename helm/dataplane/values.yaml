@@ -351,10 +351,6 @@ sandbox_workers:
       port: 50051
       # Additional args/env for the python sandbox
       extraEnv: []
-      # Python sandboxes don't gracefully handle SIGTERM yet, so prevent Karpenter disruption.
-      # This can be removed once graceful shutdown is implemented for Python sandboxes.
-      podAnnotations:
-        karpenter.sh/do-not-disrupt: "true"
     javascript:
       image:
         repository: ghcr.io/superblocksteam/javascript-sandbox

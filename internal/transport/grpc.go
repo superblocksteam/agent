@@ -84,6 +84,10 @@ const (
 	// entire worker execution while still expiring promptly after completion.
 	sdkCallbackTTL = 20 * time.Minute
 	sdkQueryPrefix = "sdk-query-"
+
+	sdkCallbackTokenRequiredError = "SDK integration callback token required. The server did not provide an SDK integration callback token for this API. " +
+		"This usually means no integration IDs were detected in api({ integrations }). Declare integrations directly with helpers like postgres(INTEGRATION_ID), " +
+		"where INTEGRATION_ID may be an imported string constant. Imported wrapper or factory functions such as ordersDb() => postgres(ID) are not supported."
 )
 
 type sdkCallbackClaims struct {
@@ -242,7 +246,7 @@ func (s *server) withSDKCallbackContext(ctx context.Context, req *apiv1.ExecuteR
 	rawToken := sdkCallbackTokenFromMetadata(ctx)
 	if rawToken == "" {
 		if isSDKIntegrationDefinition(req) {
-			return nil, sberror.AuthorizationError(errors.New("SDK integration callback token required"))
+			return nil, sberror.AuthorizationError(errors.New(sdkCallbackTokenRequiredError))
 		}
 		return ctx, nil
 	}

@@ -2214,6 +2214,8 @@ func TestWithSDKCallbackContext(t *testing.T) {
 	_, err = srv.withSDKCallbackContext(context.Background(), makeSDKReq())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "SDK integration callback token required")
+	assert.Contains(t, err.Error(), "no integration IDs were detected in api({ integrations })")
+	assert.Contains(t, err.Error(), "Imported wrapper or factory functions")
 
 	legacyCtx, err := srv.withSDKCallbackContext(context.Background(), &apiv1.ExecuteRequest{
 		Request: &apiv1.ExecuteRequest_Definition{Definition: &apiv1.Definition{Api: &apiv1.Api{Metadata: &v1.Metadata{Id: "regular-inline"}}}},
