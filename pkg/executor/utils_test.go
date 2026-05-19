@@ -2254,3 +2254,103 @@ func TestPrimaryPluginFromIntegrations(t *testing.T) {
 		})
 	}
 }
+
+func TestMustJSONString(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "normal JWT",
+			input:    "eyJhbGciOiJSUzI1NiJ9.abc123",
+			expected: `"eyJhbGciOiJSUzI1NiJ9.abc123"`,
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: `""`,
+		},
+		{
+			name:     "single quote",
+			input:    "it's-a-token",
+			expected: `"it's-a-token"`,
+		},
+		{
+			name:     "double quote",
+			input:    `token"with"quotes`,
+			expected: `"token\"with\"quotes"`,
+		},
+		{
+			name:     "backslash",
+			input:    `token\path`,
+			expected: `"token\\path"`,
+		},
+		{
+			name:     "newline",
+			input:    "token\ninjection",
+			expected: `"token\ninjection"`,
+		},
+		{
+			name:     "tab",
+			input:    "token\there",
+			expected: `"token\there"`,
+		},
+		{
+			name:     "unicode",
+			input:    "token-with-émojis-🔑",
+			expected: `"token-with-émojis-🔑"`,
+		},
+		{
+			name:     "angle brackets escaped for XSS safety",
+			input:    "abc</script><script>alert(1)</script>",
+			expected: "\"abc\\u003c/script\\u003e\\u003cscript\\u003ealert(1)\\u003c/script\\u003e\"",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, mustJSONString(test.input))
+		})
+	}
+}
+
+func TestMustJSONString_ProducesValidJSExpression(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{
+		Logger: zap.NewNop(),
+	})
+	defer sandbox.Close()
+
+	for _, test := range []struct {
+		name  string
+		token string
+	}{
+		{name: "normal JWT", token: "eyJhbGciOiJSUzI1NiJ9.abc123"},
+		{name: "single quote", token: "it's-a-token"},
+		{name: "double quote", token: `token"with"quotes`},
+		{name: "backslash", token: `token\path`},
+		{name: "unicode", token: "token-with-émojis-🔑"},
+		{name: "newline", token: "token\ninjection"},
+		{name: "carriage return", token: "token\rinjection"},
+		// Without proper escaping this payload would break out of the string
+		// literal and execute arbitrary JS (e.g. require('child_process').execSync(...)).
+		{name: "double-quote breakout attempt", token: `" + (1+1) + "`},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			expr := fmt.Sprintf("{{ { token: %s } }}", mustJSONString(test.token))
+			template := fmt.Sprintf("{{ %s.token }}", utils.IdempotentUnwrap(expr))
+
+			ctx := apictx.New(&apictx.Context{Context: context.Background()})
+			e, err := sandbox.Engine(ctx.Context)
+			require.NoError(t, err)
+			defer e.Close()
+
+			result, err := e.Resolve(ctx.Context, template, nil).Result()
+			require.NoError(t, err)
+			assert.Equal(t, test.token, result)
+		})
+	}
+}

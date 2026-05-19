@@ -285,6 +285,9 @@ module.exports = [
             if (tokenType === 'id-token') {
               return res.status(200).json({ data: 'some-id-token-that-should-be-a-jwt' });
             }
+            if (a.includes('oauth') && req.body.authConfig?.clientId === 'clientid-special-chars') {
+              return res.status(200).json({ data: "token'with\"special-chars" });
+            }
             if (a.includes('oauth')) {
               return res.status(200).json({ data: 'asdf' });
             }
