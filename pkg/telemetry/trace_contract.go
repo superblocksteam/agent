@@ -82,6 +82,10 @@ var cloudPremTraceContract = traceContract{
 
 		// Scheduled jobs
 		{prefix: "schedule.", wildcard: true},
+
+		// SABS app-builder (exact root span + step spans)
+		{prefix: "sabs.build", wildcard: false},
+		{prefix: "sabs.build.", wildcard: true},
 	},
 }
 
