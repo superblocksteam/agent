@@ -4,6 +4,22 @@
 {{- if hasKey $fleetKeda "minReplicaCount" }}
 {{- $minReplicas = index $fleetKeda "minReplicaCount" }}
 {{- end }}
+{{- $hasTriggers := or (index $fleetKeda "triggers") $.Values.sandbox_workers.keda.triggers }}
+{{- $mergeFlag := $.Values.sandbox_workers.keda.triggersMerge | default false }}
+{{- if hasKey $fleetKeda "triggersMerge" }}
+{{- $mergeFlag = index $fleetKeda "triggersMerge" }}
+{{- end }}
+{{- $triggersMerge := and $hasTriggers $mergeFlag }}
+{{- /* Prometheus warm buffer: minReplicaCount on ScaledObject is the off-hours floor; cron desiredReplicas is the business-hours buffer size. */}}
+{{- $promBuffer := $minReplicas }}
+{{- range index $fleetKeda "triggers" | default list }}
+{{- if eq (index . "type") "cron" }}
+{{- with index .metadata "desiredReplicas" }}
+{{- $promBuffer = . | int }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $extraWarm := sub ($promBuffer | int) ($minReplicas | int) }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
@@ -23,13 +39,13 @@ spec:
   {{- if $.Values.sandbox_workers.keda.prometheusServerAddress }}
   fallback:
     failureThreshold: {{ $.Values.sandbox_workers.keda.fallbackFailureThreshold | default 3 }}
-    replicas: {{ max 1 ($minReplicas | int) }}
+    replicas: {{ max 1 (max ($minReplicas | int) ($promBuffer | int)) }}
   {{- end }}
-  {{- if or (index $fleetKeda "triggers") $.Values.sandbox_workers.keda.triggers }}
   triggers:
+  {{- if $hasTriggers }}
     {{- toYaml (index $fleetKeda "triggers" | default $.Values.sandbox_workers.keda.triggers) | nindent 4 }}
-  {{- else }}
-  triggers:
+  {{- end }}
+  {{- if or (not $hasTriggers) $triggersMerge }}
     {{- range $v.triggerStreams }}
     - type: redis-streams
       metadata:
@@ -51,14 +67,19 @@ spec:
     {{- $promAddr = include "sandbox_workers.autoPromQueryUrl" $ | trim }}
     {{- end }}
     {{- $execPoolSize := (($v.queue).executionPool) | default $.Values.sandbox_workers.queue.executionPool | default 1 }}
-    # Metrics-based trigger: desired replicas = ceil(in_use / executionPool) + minReplicas.
+    # Metrics-based trigger: desired replicas = ceil(in_use / executionPool) + minReplicaCount + extraWarm when load is high.
     # Each replica serves executionPool concurrent events (requests), so dividing gives the
-    # number of fully-occupied workers (task-managers); adding minReplicas maintains the warm buffer.
+    # number of fully-occupied workers (task-managers); adding minReplicaCount maintains the warm buffer.
+    #
+    # promBuffer is minReplicaCount unless a cron trigger sets desiredReplicas (e.g. business-hours warm capacity).
+    # extraWarm (= promBuffer - minReplicaCount) applies only when in_use exceeds the cron warm-pool capacity (extraWarm * executionPool).
+    #
+    # With no cron (extraWarm=0), this reduces to ceil(in_use / executionPool) + minReplicas.
     - type: prometheus
       metricType: AverageValue
       metadata:
         serverAddress: {{ $promAddr }}
-        query: ceil((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) / {{ $execPoolSize }}) + {{ $minReplicas }}
+        query: ceil((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) / {{ $execPoolSize }}) + {{ $minReplicas }} + ((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) >bool {{ mul $extraWarm $execPoolSize }}) * {{ $extraWarm }}
         threshold: "1"
         activationThreshold: "0"
     {{- end }}

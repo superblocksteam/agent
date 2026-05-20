@@ -230,7 +230,7 @@ keda:
     tolerations: []
   maxReplicaCount: 100
   minReplicaCount: 0
-  # Scaling triggers - typically Redis stream length
+  # Scaling triggers
   triggers: []
   # Example:
   # triggers:

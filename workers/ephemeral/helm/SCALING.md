@@ -28,22 +28,41 @@ Each execution consumes one task-manager pod + one sandbox pod (2 pods, 2 IPs).
 
 Source: `helm/orchestrator/overrides/{staging,production,prod-eu}.yaml`
 
-| Environment | Fleet            | `minReplicaCount` | `maxReplicaCount` | CPU ceiling\* |
-| ----------- | ---------------- | ----------------: | ----------------: | ------------: |
-| **Staging** | javascript       |               100 |               250 |          3350 |
-| **Staging** | javascriptsdkapi |               200 |               400 |          3500 |
-| **Staging** | python           |               100 |               250 |          3350 |
-| **Prod**    | javascript       |               150 |               300 |          3300 |
-| **Prod**    | javascriptsdkapi |               200 |               400 |          3400 |
-| **Prod**    | python           |               150 |               300 |          3300 |
-| **Prod-EU** | javascript       |                35 |                70 |          3480 |
-| **Prod-EU** | javascriptsdkapi |               200 |               400 |          3810 |
-| **Prod-EU** | python           |                60 |               120 |          3530 |
+All sandbox worker fleets in these overrides use **scheduled scale-down** (see below).
+`minReplicaCount` is the off-hours floor; **business-hours floor** is the cron trigger
+`desiredReplicas` (the fleet’s former constant `minReplicaCount`). Ephemeral execute fleets
+(javascript, javascriptsdkapi, python) and non-ephemeral fleets (auxiliary, wasm) share the
+same cron + `triggersMerge` pattern.
 
-\*CPU ceiling = max replicas for this fleet before hitting the 2000 vCPU nodepool
-limit, assuming other ephemeral fleets stay at their current `maxReplicaCount`.
-Calculated as (4000 total executions) − (sum of other fleets' max). Non-ephemeral
-sandbox fleets (auxiliary, wasm) also share the nodepool and reduce this ceiling.
+| Environment | Fleet            | Off-hours min | Business-hours floor | `maxReplicaCount` |
+| ----------- | ---------------- | ------------: | -------------------: | ----------------: |
+| **Staging** | javascript       |             1 |                    5 |               125 |
+| **Staging** | javascriptsdkapi |             1 |                    5 |               200 |
+| **Staging** | python           |             1 |                   10 |               125 |
+| **Staging** | auxiliary        |             1 |                    1 |                10 |
+| **Staging** | wasm             |             1 |                    1 |                10 |
+| **Prod**    | javascript       |             1 |                   10 |               150 |
+| **Prod**    | javascriptsdkapi |             1 |                   15 |               200 |
+| **Prod**    | python           |             1 |                   15 |               300 |
+| **Prod**    | auxiliary        |             1 |                    2 |                20 |
+| **Prod**    | wasm             |             1 |                    2 |                20 |
+| **Prod-EU** | javascript       |             1 |                    5 |                35 |
+| **Prod-EU** | javascriptsdkapi |             1 |                    5 |               200 |
+| **Prod-EU** | python           |             1 |                    5 |                60 |
+| **Prod-EU** | auxiliary        |             1 |                    2 |                20 |
+| **Prod-EU** | wasm             |             1 |                    2 |                14 |
+
+Business-hours windows (KEDA cron, Mon–Fri):
+
+| Environment | Timezone           | Schedule (local)   |
+| ----------- | ------------------ | ------------------ |
+| Staging, Prod | `America/New_York` | 08:00–20:00      |
+| Prod-EU     | `Europe/London`    | 08:00–20:00        |
+
+CPU ceiling calculations in older runbooks assumed constant `minReplicaCount`; at max load,
+use **business-hours floor** + spike headroom against `maxReplicaCount` and the 2000 vCPU
+nodepool limit. All fleets share the gVisor nodepool; auxiliary and wasm reduce headroom for
+ephemeral scale-up.
 
 ## Infrastructure Limits
 
@@ -105,10 +124,102 @@ Prod-EU:
 Non-ephemeral sandbox fleets (auxiliary, javascriptwasm) also consume from the
 same nodepool and subnets. Factor those in when approaching limits.
 
+## KEDA scaling (`templates/scaledobject.yaml`)
+
+Each fleet gets a KEDA `ScaledObject` with up to three trigger types:
+
+| Trigger | Source | Role |
+| ------- | ------ | ---- |
+| **cron** | Fleet `keda.triggers` (optional) | Business-hours replica floor via `desiredReplicas` |
+| **redis-streams** | Generated from `triggerStreams` | Scale on stream backlog |
+| **prometheus** | Generated when `keda.prometheusServerAddress` is set | Scale on `sandbox_execution_pool_in_use` |
+
+KEDA sets replica count to the **maximum** across all active triggers.
+
+### Trigger modes
+
+| Configuration | Behavior |
+| ------------- | -------- |
+| No fleet `keda.triggers` | Redis + Prometheus only (default) |
+| `keda.triggers` set, `triggersMerge: false` (default) | Custom triggers **replace** redis/prometheus (local dev / CI) |
+| `keda.triggers` + `triggersMerge: true` | Custom triggers **plus** generated redis/prometheus (production schedules) |
+
+`triggersMerge` can be set per fleet (`fleet.keda.triggersMerge`) or globally
+(`keda.triggersMerge`); fleet wins when `hasKey` is set (explicit `false` is respected).
+
+### Off-hours scale-down (cron)
+
+Configured per fleet in `helm/orchestrator/overrides/*.yaml`:
+
+| Field | Meaning |
+| ----- | ------- |
+| `keda.minReplicaCount: 1` | Off-hours / weekend floor on the `ScaledObject` |
+| `keda.triggers` (cron) | `desiredReplicas` = former business-hours `minReplicaCount` |
+| `keda.triggersMerge: true` | Keep redis-streams and prometheus triggers |
+
+Outside the cron window (nights, weekends), only `minReplicaCount` (typically **1**) applies
+unless load or backlog pushes higher.
+
+```yaml
+# Shared schedule anchor (staging / prod)
+x-worker-cron-metadata: &worker_cron_metadata
+  timezone: America/New_York
+  start: "0 8 * * 1-5"
+  end: "0 20 * * 1-5"
+
+main.ephemeral.javascript.execute:
+  keda:
+    minReplicaCount: 1
+    triggersMerge: true
+    triggers:
+      - type: cron
+        metadata:
+          <<: *worker_cron_metadata
+          desiredReplicas: "10"
+```
+
+Prod-EU uses `timezone: Europe/London` with the same local hours (08:00–20:00 Mon–Fri).
+
+### Prometheus warm buffer (`extraWarm`)
+
+Load-based desired replicas (Prometheus trigger; idle floors from cron + `minReplicaCount`):
+
+```text
+ceil(sum(in_use) / executionPool) + minReplicaCount
+  + (in_use > extraWarm * executionPool) * extraWarm
+```
+
+Where `extraWarm = promBuffer - minReplicaCount` and `promBuffer` is cron `desiredReplicas` when
+configured, else `minReplicaCount`. With **no cron**, `extraWarm = 0` and the query is the legacy
+`ceil(in_use / executionPool) + minReplicas`.
+
+The extra warm pool (`extraWarm`) applies only when load exceeds what the cron floor already
+covers (`extraWarm * executionPool` concurrent executions). That avoids scaling to 10+ replicas on
+a single off-hours request while preserving full warm capacity under sustained load.
+
+| `promBuffer` source | When |
+| ------------------- | ---- |
+| `minReplicaCount` | No cron trigger on the fleet |
+| Cron `desiredReplicas` | Fleet has a cron trigger with `desiredReplicas` set |
+
+Example with cron `desiredReplicas: "10"`, `minReplicaCount: 1`, `executionPool: 2`
+(`extraWarm=9`, threshold `in_use > 18`):
+
+| State | Prometheus | Cron (active) | Result |
+| ----- | ---------- | ------------- | ------ |
+| Idle, business hours | 1 | 10 | 10 |
+| Idle, off-hours | 1 | inactive | 1 |
+| Off-hours, `in_use=1` | `ceil(1)+1=2` | inactive | **2** |
+| `in_use=20` | `ceil(10)+1+9=20` | 10 | 20 |
+
+Prometheus scaler fallback uses `max(minReplicaCount, promBuffer)` so metrics outages retain the
+former business-hours floor when cron is configured.
+
 ## Scaling Recommendations
 
-1. **Increase `minReplicaCount`** -- most direct lever. Each +100 adds ~25
-   RPS capacity (based on staging observations).
+1. **Increase business-hours capacity** -- raise cron `desiredReplicas` (and keep
+   `minReplicaCount: 1` for off-hours). Each +100 in the former min adds ~25 sustained RPS
+   (staging observations). Prometheus `promBuffer` follows `desiredReplicas` automatically.
 2. **Increase `maxReplicaCount`** -- raises the ceiling for traffic spikes.
 3. **Verify Karpenter nodepool limits** -- ensure the gVisor nodepool can
    provision enough total CPU/memory for the desired pod count.
@@ -132,14 +243,21 @@ The gVisor nodepool has 2000 vCPU. Other fleets at their current max
 consume 400 vCPU (javascript 150 + python 150 + auxiliary 50 + wasm 50),
 leaving **1600 vCPU** for javascriptsdkapi = **3,200 max replicas**.
 
-To raise sustained RPS, increase `minReplicaCount`:
+To raise sustained RPS for javascriptsdkapi, increase cron `desiredReplicas` (business-hours
+floor) and `maxReplicaCount`:
 
 ```yaml
-# helm/orchestrator/overrides/production.yaml
+# helm/orchestrator/overrides/production.yaml — main.ephemeral.javascriptsdkapi.execute
 keda:
-  minReplicaCount: 400  # up from 200; ~50 vCPU baseline, ~100 sustained RPS
-  maxReplicaCount: 800  # raise ceiling proportionally
+  minReplicaCount: 1
+  maxReplicaCount: 800
+  triggersMerge: true
+  triggers:
+    - type: cron
+      metadata:
+        <<: *worker_cron_metadata
+        desiredReplicas: "400"  # up from 15; ~100 sustained RPS at prior staging ratios
 ```
 
-Each +100 min adds ~50 vCPU of baseline cost and ~25 sustained RPS.
+Each +100 on the business-hours floor adds ~50 vCPU during that window and ~25 sustained RPS.
 No infrastructure changes required -- the nodepool already supports it.
