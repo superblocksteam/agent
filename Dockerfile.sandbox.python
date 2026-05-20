@@ -3,11 +3,11 @@
 # Python sandbox for ephemeral worker
 # Executes Python scripts in a sandboxed gRPC server
 
-FROM ghcr.io/superblocksteam/python:3.10.20-slim-trixie
+FROM ghcr.io/superblocksteam/python:3.10.20-slim-trixie AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-# Install system dependencies (gcc, python-dev, linux-headers for psutil, cmake for cvxpy/qdldl)
+# Install build tools needed to compile C extensions (psutil, cvxpy, numpy, etc.)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
@@ -18,9 +18,26 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     linux-libc-dev \
     python3-dev
 
-# Copy and install Python dependencies
+# Install Python dependencies (C extensions compiled here)
 COPY workers/ephemeral/python-sandbox/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+
+# Runtime stage — clean base without build tools
+FROM ghcr.io/superblocksteam/python:3.10.20-slim-trixie
+
+# Install only the runtime libraries that compiled extensions link against
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    libopenblas0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy pre-built Python packages from the builder
+ARG PYTHON_MINOR=3.10
+COPY --from=builder /usr/local/lib/python${PYTHON_MINOR}/site-packages /usr/local/lib/python${PYTHON_MINOR}/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy sandbox-specific source files
 COPY workers/ephemeral/python-sandbox/main.py ./

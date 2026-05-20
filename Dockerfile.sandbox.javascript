@@ -94,8 +94,8 @@ RUN cp -r /app/workers/ephemeral/javascript-plugins-sandbox/src/types /deploy/di
 RUN test -f /deploy/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js \
     || (echo "ERROR: sdk-api.iife.js bundle missing from javascript-sdk-api-wasm dist" && exit 1)
 
-# Production stage
-FROM ghcr.io/superblocksteam/node:${NODE_VERSION}-bookworm-slim
+# Production stage (distroless — no shell, no package manager)
+FROM ghcr.io/superblocksteam/gcr.io/distroless/nodejs22-debian13:nonroot@sha256:844b775ede9efe67b4a22cadb5f0afbcb6114bd30d09611f282bb0494adb8956
 
 ARG TRANSPORT_GRPC_PORT
 
@@ -117,4 +117,4 @@ COPY --from=builder /deploy /app
 
 EXPOSE ${TRANSPORT_GRPC_PORT}
 
-CMD ["node", "dist/index.js"]
+CMD ["dist/index.js"]

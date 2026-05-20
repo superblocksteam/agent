@@ -5,7 +5,7 @@
 # They need to be redefined in each stage to be used in that stage
 ARG DEBIAN_TRIXIE_VERSION=20250811
 ARG GO_VERSION=1.26.3
-ARG PYTHON_VERSION=3.10.18
+ARG PYTHON_VERSION=3.10.20
 ARG NODE_VERSION_MAJOR=22
 ARG NODE_VERSION=22.22.2
 ARG S6_OVERLAY_VERSION=3.2.1.0
@@ -17,6 +17,7 @@ ARG REQUIREMENTS_FILE=requirements-slim.txt
 ARG SLIM_IMAGE=true
 ARG WORKER_JS_PREPARE_FS_ARGS=--slim
 ARG FLEET_PACKAGE=@superblocks/fleet.all
+ARG UV_VERSION=0.11.15
 ARG PNPM_VERSION=10.29.2
 ARG SB_GIT_COMMIT_SHA=unset
 ARG SERVICE_VERSION
@@ -24,6 +25,8 @@ ARG EXTRA_GO_OPTIONS
 ARG INTERNAL_TAG
 ARG VERSION
 ARG EXTERNAL_TAG
+
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
 
 ##################
 ## ORCHESTRATOR ##
@@ -184,6 +187,35 @@ RUN --mount=type=cache,target=/root/.npm \
     cp -r build /deploy/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4/                                                                   && \
     cp -r build /deploy-sandbox-js/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4/
 
+#################
+## PYTHON DEPS ##
+#################
+
+FROM ghcr.io/superblocksteam/python:${PYTHON_VERSION}-slim-trixie AS python_deps
+
+ARG REQUIREMENTS_FILE
+
+WORKDIR /build
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    gcc \
+    libblas-dev \
+    libc6-dev \
+    liblapack-dev \
+    libpq-dev
+
+COPY --from=uv /uv /uvx /bin/
+
+COPY workers/python/requirements.txt workers/python/requirements-slim.txt ./
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system --upgrade pip "setuptools>=65,<82" && \
+    uv pip install --system -r ${REQUIREMENTS_FILE}
+
 ############
 ## PARENT ##
 ############
@@ -234,12 +266,12 @@ RUN src="/app/worker.py/${REQUIREMENTS_FILE}" && \
 #              isn't looking in the dist folder of the types. I think this is because we don't
 #              bubble up index.ts files.
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+ARG PYTHON_MINOR=3.10
+COPY --from=python_deps /usr/local/lib/python${PYTHON_MINOR}/site-packages /usr/local/lib/python${PYTHON_MINOR}/site-packages
+COPY --from=python_deps /usr/local/bin /usr/local/bin
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    --mount=type=cache,target=/root/.cache/uv \
-    cd /app/worker.py                                                                                                                            && \
-    uv pip install --system --upgrade pip "setuptools>=65,<82"                                                                                    && \
     apt-get update                                                                                                                               && \
     apt-get install -yqq --no-install-recommends lsb-release curl gpg                                                                            && \
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION_MAJOR}.x | bash -                                                                 && \
@@ -248,8 +280,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     tee /etc/apt/sources.list.d/redis.list                                                                                                       && \
     apt-get update                                                                                                                               && \
     # Installing redis also creates a user and group called redis with id 101 and an user called redis with id 100
-    apt-get install -yqq --no-install-recommends gcc gnupg libc6-dev libpq-dev dnsutils iputils-ping nodejs=${NODE_VERSION}-1nodesource1            \
-    ca-certificates curl build-essential cmake redis libblas-dev liblapack-dev gettext-base                                                      && \
+    apt-get install -yqq --no-install-recommends gnupg dnsutils iputils-ping nodejs=${NODE_VERSION}-1nodesource1                                    \
+    ca-certificates curl redis libblas3 liblapack3 libpq5 gettext-base                                                                          && \
     mkdir -p /app/redis                                                                                                                          && \
     chown -R redis:redis /app/redis                                                                                                              && \
     curl https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/trusted.gpg.d/microsoft.asc                                            && \
@@ -257,7 +289,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     echo "deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list && \
     apt-get update                                                                                                                               && \
     ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18                                                                         && \
-    uv pip install --system -r ${REQUIREMENTS_FILE}                                                                                              && \
     find /app/orchestrator/bin /app/task-manager/bin /etc/s6-overlay/s6-rc.d -type d -exec chmod 755 {} \;                                   && \
     find /app/orchestrator/buckets.json /app/orchestrator/flags.json /etc/s6-overlay/s6-rc.d -type f -exec chmod g=u,o=u {} \;                   && \
     groupadd --gid 1000 superblocks                                                                                                              && \

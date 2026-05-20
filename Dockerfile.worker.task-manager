@@ -32,17 +32,16 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=1 GOOS=linux go build -o task-manager ./cmd/task-manager
 
-# Runtime stage (using Debian trixie-slim to match builder glibc version)
-FROM debian:trixie-slim
+# Runtime stage (distroless includes glibc + ca-certificates, no shell/package manager)
+FROM ghcr.io/superblocksteam/gcr.io/distroless/cc-debian13:nonroot@sha256:e1fd250ce83d94603e9887ec991156a6c26905a6b0001039b7a43699018c0733
 
 WORKDIR /app
 
-# Install ca-certificates for HTTPS
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy the binary
 COPY --from=builder /app/workers/ephemeral/task-manager/task-manager .
+
+# Kubernetes probes use `cat /tmp/worker_healthy`; distroless has no coreutils
+COPY --from=builder /bin/cat /bin/cat
 
 # Default environment variables for Task Manager
 # Note: sandbox.address is NOT set - defaults to job mode (dynamic Kubernetes Jobs)
