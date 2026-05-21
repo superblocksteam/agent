@@ -118,12 +118,3 @@ Convert a map to key=value,key2=value2 format for StringToString flags
 {{- end -}}
 {{- join "," $pairs -}}
 {{- end -}}
-
-{{/*
-Worker labels
-*/}}
-{{- define "worker.labels" -}}
-component: worker.js
-plugins: {{ .package }}
-events: {{ .events | replace "!" "not." | replace "," "_" }}
-{{- end -}}

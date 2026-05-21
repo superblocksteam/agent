@@ -135,149 +135,32 @@ gateway:
     backendRequest: 10m
 # Sandbox workers (KEDA ScaledJobs): Redis streams → task-manager → pool of sandboxes.
 sandbox_workers:
-  fleets:
-    main.sandbox.javascript.auxillary:
-      language: javascript
-      consumerGroup: main-sandbox
-      ephemeral: false
-      buckets:
-        - BA
-        - BE
-      plugins:
-        - "*"
-        - "-javascript"
-        - "-javascriptwasm"
-        - "-javascriptsdkapi"
-        - "-python"
-      events:
-        - execute
-        - metadata
-        - test
-        - pre_delete
-      taskManager:
-        resources:
-          limits:
-            memory: 1Gi
-          requests:
-            cpu: 400m
-            memory: 256Mi
-      sandbox:
-        resources:
-          limits:
-            memory: 4Gi
-          requests:
-            cpu: 600m
-            memory: 700Mi
-      keda:
-        pollingInterval: 1
-        minReplicaCount: 2
-        maxReplicaCount: 20
-      shutdown:
-        terminationGracePeriodSeconds: 600
-        delay: 4m
-        maxJitter: 2m
-    main.sandbox.javascriptwasm.execute:
-      language: javascript
-      consumerGroup: main-sandbox
-      ephemeral: false
-      plugins:
-        - javascriptwasm
-      events:
-        - execute
-        - metadata
-        - test
-        - pre_delete
-      buckets:
-        - BA
-        - BE
-      taskManager:
-        resources:
-          limits:
-            memory: 512Mi
-          requests:
-            cpu: 400m
-            memory: 128Mi
-      sandbox:
-        resources:
-          limits:
-            memory: 4Gi
-          requests:
-            cpu: 600m
-            memory: 700Mi
-      keda:
-        pollingInterval: 1
-        minReplicaCount: 2
-        maxReplicaCount: 20
-      shutdown:
-        terminationGracePeriodSeconds: 600
-        delay: 4m
-        maxJitter: 2m
-    main.ephemeral.javascript.execute:
-      language: javascript
-      consumerGroup: main-sandbox-ephemeral
-      ephemeral: true
-      queue:
-        executionPool: 2
-      buckets:
-        - BA
-        - BE
-      plugins:
-        - javascript
-      events:
-        - execute
-        - metadata
-        - test
-        - pre_delete
-      sandbox:
-        poolSize: 3
-      keda:
-        pollingInterval: 1
-        minReplicaCount: 2
-        maxReplicaCount: 50
-    main.ephemeral.javascriptsdkapi.execute:
-      language: javascript
-      consumerGroup: main-sandbox-ephemeral
-      ephemeral: true
-      queue:
-        executionPool: 2
-      plugins:
-        - javascriptsdkapi
-      events:
-        - execute
-        - metadata
-        - test
-        - pre_delete
-      buckets:
-        - BA
-        - BE
-      sandbox:
-        poolSize: 3
-      keda:
-        pollingInterval: 1
-        minReplicaCount: 15
-        maxReplicaCount: 200
-    main.ephemeral.python.execute:
-      language: python
-      consumerGroup: main-sandbox-ephemeral
-      ephemeral: true
-      queue:
-        executionPool: 2
-      buckets:
-        - BA
-        - BE
-      plugins:
-        - python
-      events:
-        - execute
-        - metadata
-        - test
-        - pre_delete
-      sandbox:
-        poolSize: 3
-      keda:
-        pollingInterval: 1
-        minReplicaCount: 2
-        maxReplicaCount: 50
+  # Fleets configuration - each fleet is a Deployment + KEDA ScaledObject
+  # Example:
+  # fleets:
+  #   main.ephemeral.javascriptsdkapi.execute:
+  #     language: javascript
+  #     consumerGroup: main-sandbox-ephemeral
+  #     ephemeral: true
+  #     queue:
+  #       executionPool: 2
+  #     plugins:
+  #       - javascriptsdkapi
+  #     events:
+  #       - execute
+  #       - metadata
+  #       - test
+  #       - pre_delete
+  #     buckets:
+  #       - BA
+  #       - BE
+  #     sandbox:
+  #       poolSize: 3
+  #     keda:
+  #       pollingInterval: 1
+  #       minReplicaCount: 15
+  #       maxReplicaCount: 200
+  fleets: {}
   # Task Manager configuration
   taskManager:
     image:

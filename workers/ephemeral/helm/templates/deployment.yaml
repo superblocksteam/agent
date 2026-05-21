@@ -37,7 +37,6 @@ spec:
         {{- include "sandbox.worker.labels" $v | nindent 8 }}
         ephemeral: {{ ($v.ephemeral | default $.Values.worker.ephemeral | default false) | quote }}
         fleet: {{ $k }}
-        language: {{ $language }}
         role: task-manager
       {{- with $podAnnotations }}
       annotations:

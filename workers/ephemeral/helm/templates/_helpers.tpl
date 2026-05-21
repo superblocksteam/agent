@@ -87,7 +87,6 @@ Worker labels for fleet-specific resources
 {{- define "sandbox.worker.labels" -}}
 component: worker.sandbox
 language: {{ .language }}
-bucket: {{ .bucket }}
 {{- end -}}
 
 {{/*
