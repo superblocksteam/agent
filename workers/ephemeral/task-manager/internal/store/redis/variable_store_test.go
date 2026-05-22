@@ -2,17 +2,21 @@ package redis
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/pkg/store"
 	mockstore "github.com/superblocksteam/agent/pkg/store/mock"
 	workerv1 "github.com/superblocksteam/agent/types/gen/go/worker/v1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func TestNewVariableStoreGRPC(t *testing.T) {
@@ -865,4 +869,74 @@ func TestSecurityViolationHandler_NotSetDoesNotPanic(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 	assert.Contains(t, err.Error(), "key not allowed")
+}
+
+func getFreePort(t *testing.T) int {
+	t.Helper()
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	port := lis.Addr().(*net.TCPAddr).Port
+	require.NoError(t, lis.Close())
+	return port
+}
+
+func assertVariableStoreReachable(t *testing.T, port int) {
+	t.Helper()
+
+	conn, err := grpc.NewClient(
+		fmt.Sprintf("127.0.0.1:%d", port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	client := workerv1.NewSandboxVariableStoreServiceClient(conn)
+	_, err = client.GetVariable(context.Background(), &workerv1.GetVariableRequest{
+		ExecutionId: "exec-shutdown-test",
+		Key:         "exec-shutdown-test.context.probe",
+	})
+	require.NoError(t, err)
+}
+
+func TestVariableStoreGRPC_RunCancelKeepsServerAlive(t *testing.T) {
+	port := getFreePort(t)
+	mockStore := mockstore.NewStore(t)
+	mockStore.On("Read", mock.Anything, mock.Anything).Return([]any{"value"}, nil).Maybe()
+
+	svc := NewVariableStoreGRPC(
+		WithKvStore(mockStore),
+		WithServer(grpc.NewServer()),
+		WithLogger(zap.NewNop()),
+		WithPort(port),
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- svc.Run(ctx) }()
+
+	require.Eventually(t, func() bool {
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", port), 100*time.Millisecond)
+		if err != nil {
+			return false
+		}
+		_ = conn.Close()
+		return true
+	}, 5*time.Second, 50*time.Millisecond)
+
+	cancel()
+
+	select {
+	case err := <-errCh:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run did not exit after context cancellation")
+	}
+
+	assert.True(t, svc.Alive())
+	assertVariableStoreReachable(t, port)
+
+	require.NoError(t, svc.Close(context.Background()))
+	assert.False(t, svc.Alive())
 }

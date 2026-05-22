@@ -110,7 +110,6 @@ type VariableStoreGRPC struct {
 	securityHandlerLock sync.RWMutex
 
 	shutdownLock sync.RWMutex
-	done         chan error
 
 	run.ForwardCompatibility
 }
@@ -136,25 +135,25 @@ func (s *VariableStoreGRPC) Name() string {
 }
 
 func (s *VariableStoreGRPC) Run(ctx context.Context) error {
-	s.done = make(chan error)
+	done := make(chan error, 1)
 
 	go func() {
-		if err := s.Start(); err != nil {
+		err := s.Start()
+		if err != nil {
 			s.logger.Error("VariableStoreGRPC server returned with error", zap.Error(err))
-			s.done <- err
 		}
+		done <- err
 	}()
-	defer s.Stop()
 
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
-	case err := <-s.done:
+		return nil
+	case err := <-done:
 		return err
 	}
 }
 
-func (s *VariableStoreGRPC) Close(ctx context.Context) error {
+func (s *VariableStoreGRPC) Close(_ context.Context) error {
 	s.Stop()
 	return nil
 }
@@ -195,10 +194,6 @@ func (s *VariableStoreGRPC) Stop() {
 	if s.server != nil {
 		s.server.GracefulStop()
 		s.server = nil
-		if s.done != nil {
-			close(s.done)
-			s.done = nil
-		}
 	}
 }
 

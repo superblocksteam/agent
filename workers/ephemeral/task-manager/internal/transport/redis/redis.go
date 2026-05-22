@@ -316,13 +316,13 @@ func (rt *redisTransport) poll() error {
 		for rt.executionPool.Load() <= 0 {
 			select {
 			case <-rt.context.Done():
-				return rt.context.Err()
+				return nil
 			case <-rt.workerReturned:
 			}
 		}
 	}
 
-	return rt.context.Err()
+	return nil
 }
 
 // pollOnce reads messages from Redis and dispatches them for handling.
@@ -582,7 +582,7 @@ func (rt *redisTransport) sendResult(result *transportv1.Response, stream string
 }
 
 // Run implements run.Runnable
-func (rt *redisTransport) Run(ctx context.Context) error {
+func (rt *redisTransport) Run(_ context.Context) error {
 	if err := rt.init(); err != nil {
 		return err
 	}

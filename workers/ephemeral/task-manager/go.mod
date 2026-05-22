@@ -3,6 +3,7 @@ module workers/ephemeral/task-manager
 go 1.26.3
 
 require (
+	github.com/alicebob/miniredis/v2 v2.37.0
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0
 	github.com/redis/go-redis/v9 v9.14.0
@@ -94,6 +95,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/bridges/otelzap v0.15.0 // indirect

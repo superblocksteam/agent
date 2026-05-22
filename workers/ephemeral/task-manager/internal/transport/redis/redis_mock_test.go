@@ -918,8 +918,8 @@ func TestTransportShutsDownWhenPluginsReturnFatal(t *testing.T) {
 
 	select {
 	case err := <-runDone:
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, context.Canceled)
+		require.NoError(t, err)
+		assert.ErrorIs(t, transport.context.Err(), context.Canceled)
 	case <-time.After(500 * time.Millisecond):
 		t.Fatal("Run did not return within timeout after FATAL degradation")
 	}
@@ -964,8 +964,8 @@ func TestTransportShutsDownAfterMaxDegradedTime(t *testing.T) {
 
 	select {
 	case err := <-runDone:
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, context.Canceled)
+		require.NoError(t, err)
+		assert.ErrorIs(t, transport.context.Err(), context.Canceled)
 	case <-time.After(500 * time.Millisecond):
 		t.Fatal("Run did not return within timeout after max degraded time")
 	}

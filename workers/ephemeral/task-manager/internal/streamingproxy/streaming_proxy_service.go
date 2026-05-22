@@ -25,7 +25,6 @@ type StreamingProxyService struct {
 
 	logger       *zap.Logger
 	shutdownLock sync.RWMutex
-	done         chan error
 
 	run.ForwardCompatibility
 }
@@ -40,7 +39,6 @@ func NewStreamingProxyService(options ...Option) *StreamingProxyService {
 		redisClient: opts.redisClient,
 		port:        opts.port,
 		logger:      opts.logger,
-		done:        make(chan error),
 	}
 }
 
@@ -71,14 +69,15 @@ func (s *StreamingProxyService) Start() error {
 }
 
 func (s *StreamingProxyService) Run(ctx context.Context) error {
+	done := make(chan error, 1)
 	go func() {
-		s.done <- s.Start()
+		done <- s.Start()
 	}()
 
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
-	case err := <-s.done:
+		return nil
+	case err := <-done:
 		return err
 	}
 }
@@ -90,10 +89,6 @@ func (s *StreamingProxyService) Close(ctx context.Context) error {
 	if s.server != nil {
 		s.server.GracefulStop()
 		s.server = nil
-		if s.done != nil {
-			close(s.done)
-			s.done = nil
-		}
 	}
 
 	return nil

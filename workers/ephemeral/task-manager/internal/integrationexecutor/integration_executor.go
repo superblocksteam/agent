@@ -76,7 +76,6 @@ type IntegrationExecutorService struct {
 	closeOrchestratorConn  func(conn *grpc.ClientConn) error
 
 	shutdownLock sync.RWMutex
-	done         chan error
 
 	run.ForwardCompatibility
 }
@@ -100,7 +99,6 @@ func New(opts ...Option) *IntegrationExecutorService {
 		closeOrchestratorConn: func(conn *grpc.ClientConn) error {
 			return conn.Close()
 		},
-		done: make(chan error, 1),
 	}
 }
 
@@ -133,15 +131,14 @@ func (s *IntegrationExecutorService) Start() error {
 // Run implements run.Runnable. It starts the gRPC server and blocks until
 // the context is cancelled or an error occurs.
 func (s *IntegrationExecutorService) Run(ctx context.Context) error {
-	// Capture locally to avoid a race with Close() setting s.done = nil.
-	done := s.done
+	done := make(chan error, 1)
 	go func() {
 		done <- s.Start()
 	}()
 
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return nil
 	case err := <-done:
 		return err
 	}

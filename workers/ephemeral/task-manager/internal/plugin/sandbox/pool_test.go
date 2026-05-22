@@ -889,6 +889,63 @@ func TestSandboxPool_Close_waitsUntilAllPluginsRemoved(t *testing.T) {
 	require.Zero(t, n, "Close should wait for all closePlugin calls to remove entries")
 }
 
+func TestSandboxPool_CloseWaitsForDrainCompleteCh(t *testing.T) {
+	t.Parallel()
+
+	drainCompleteCh := make(chan struct{})
+
+	pool, err := NewSandboxPool(
+		WithWorkerId("drain-test"),
+		WithSandboxPoolSize(2),
+		WithSandboxAddresses([]string{"127.0.0.1:5011", "127.0.0.1:5012"}),
+		WithDrainCompleteCh(drainCompleteCh),
+		WithSandboxOptions(
+			WithConnectionMode(SandboxConnectionModeStatic),
+			WithSandboxAddress("127.0.0.1:5011"),
+			WithLogger(zap.NewNop()),
+		),
+	)
+	require.NoError(t, err)
+
+	runDone := make(chan error, 1)
+	go func() {
+		groupCtx, groupCancel := context.WithCancel(context.Background())
+		groupCancel()
+		runDone <- pool.Run(groupCtx)
+	}()
+
+	closeStarted := make(chan struct{})
+	closeDone := make(chan error, 1)
+	go func() {
+		close(closeStarted)
+		closeDone <- pool.Close(context.Background())
+	}()
+
+	<-closeStarted
+
+	select {
+	case err := <-runDone:
+		t.Fatalf("Run returned before drain completed: %v", err)
+	case <-time.After(200 * time.Millisecond):
+	}
+
+	close(drainCompleteCh)
+
+	select {
+	case err := <-closeDone:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close did not complete after drain signal")
+	}
+
+	select {
+	case err := <-runDone:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run did not return after Close")
+	}
+}
+
 func TestSandboxPool_acquireSandbox_errWhenNoReadySandbox(t *testing.T) {
 	t.Parallel()
 

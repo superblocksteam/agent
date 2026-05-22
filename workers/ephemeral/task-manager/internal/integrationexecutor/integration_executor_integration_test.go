@@ -232,7 +232,7 @@ func TestIntegrationExecutorEndToEnd(t *testing.T) {
 	cancel()
 	select {
 	case err := <-errCh:
-		assert.ErrorIs(t, err, context.Canceled)
+		require.NoError(t, err)
 	case <-time.After(5 * time.Second):
 		t.Fatal("service did not shut down in time")
 	}
@@ -344,7 +344,7 @@ func TestIntegrationExecutorEndToEndPerExecutionAddressRouting(t *testing.T) {
 	cancel()
 	select {
 	case err := <-errCh:
-		assert.ErrorIs(t, err, context.Canceled)
+		require.NoError(t, err)
 	case <-time.After(5 * time.Second):
 		t.Fatal("service did not shut down in time")
 	}

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	redisstore "workers/ephemeral/task-manager/internal/store/redis"
 
@@ -905,7 +906,6 @@ func TestStartNilServer(t *testing.T) {
 		logger: zap.NewNop(),
 		// server intentionally nil
 		port: port,
-		done: make(chan error, 1),
 	}
 
 	err := svc.Start()
@@ -1624,4 +1624,69 @@ func TestGetOrCreateOrchestratorClientReuseKeyedByAddress(t *testing.T) {
 	assert.NotSame(t, connA, connB, "different addresses should use different connections")
 	assert.Len(t, svc.orchestratorConns, 2)
 	assert.Len(t, svc.orchestratorClients, 2)
+}
+
+func assertIntegrationExecutorReachable(t *testing.T, port int) {
+	t.Helper()
+
+	conn, err := grpc.NewClient(
+		fmt.Sprintf("127.0.0.1:%d", port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	client := workerv1.NewSandboxIntegrationExecutorServiceClient(conn)
+	_, err = client.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{})
+	st, ok := status.FromError(err)
+	require.True(t, ok, "expected gRPC status error, got %v", err)
+	assert.NotEqual(t, codes.Unavailable, st.Code())
+}
+
+func TestIntegrationExecutorService_RunCancelKeepsServerAlive(t *testing.T) {
+	port := getFreePort(t)
+
+	svc := New(
+		WithServer(grpc.NewServer()),
+		WithPort(port),
+		WithLogger(zap.NewNop()),
+		WithOrchestratorAddress("127.0.0.1:9999"),
+		WithFileContextProvider(&mockFileContextProvider{contexts: map[string]*redisstore.ExecutionFileContext{}}),
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- svc.Run(ctx) }()
+
+	require.Eventually(t, func() bool {
+		conn, err := grpc.NewClient(
+			fmt.Sprintf("127.0.0.1:%d", port),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		if err != nil {
+			return false
+		}
+		defer conn.Close()
+
+		client := workerv1.NewSandboxIntegrationExecutorServiceClient(conn)
+		_, err = client.ExecuteIntegration(context.Background(), &workerv1.ExecuteIntegrationRequest{})
+		st, ok := status.FromError(err)
+		return ok && st.Code() != codes.Unavailable
+	}, 5*time.Second, 50*time.Millisecond)
+
+	cancel()
+
+	select {
+	case err := <-errCh:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run did not exit after context cancellation")
+	}
+
+	assert.True(t, svc.Alive())
+	assertIntegrationExecutorReachable(t, port)
+
+	require.NoError(t, svc.Close(context.Background()))
+	assert.False(t, svc.Alive())
 }

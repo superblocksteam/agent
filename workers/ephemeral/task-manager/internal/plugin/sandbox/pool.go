@@ -82,8 +82,9 @@ type SandboxPool struct {
 	staticMode             bool
 	ephemeralExecution     bool
 
-	runMu  sync.RWMutex
-	runCtx context.Context
+	runMu     sync.RWMutex
+	runCtx    context.Context
+	runCancel context.CancelFunc
 
 	// drainCompleteCh is closed after in-flight requests finish.
 	drainCompleteCh           <-chan struct{}
@@ -106,8 +107,11 @@ var _ run.Runnable = (*SandboxPool)(nil)
 
 // NewSandboxPool returns a Runnable + Plugin over sandbox plugins keyed by sandbox id.
 func NewSandboxPool(options ...PoolOption) (*SandboxPool, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	poolOpts := ApplyPoolOptions(options...)
 	if err := validatePoolOptions(poolOpts); err != nil {
+		cancel()
 		return nil, err
 	}
 
@@ -122,6 +126,8 @@ func NewSandboxPool(options ...PoolOption) (*SandboxPool, error) {
 		plugins:                   make(map[string]*poolEntry),
 		recoveryTimers:            make(map[string]*time.Timer),
 		sandboxRecoveryTimeout:    poolOpts.SandboxRecoveryTimeout,
+		runCtx:                    ctx,
+		runCancel:                 cancel,
 		logger:                    poolOpts.Logger,
 		staticMode:                len(poolOpts.SandboxAddresses) > 0,
 	}
@@ -142,6 +148,7 @@ func NewSandboxPool(options ...PoolOption) (*SandboxPool, error) {
 	)
 
 	if err := sandboxPool.bootstrapPlugins(); err != nil {
+		cancel()
 		return nil, fmt.Errorf("failed to create sandbox plugins: %w", err)
 	}
 
@@ -535,11 +542,7 @@ func (p *SandboxPool) Name() string {
 	return "sandboxPool"
 }
 
-func (p *SandboxPool) Run(ctx context.Context) error {
-	p.runMu.Lock()
-	p.runCtx = ctx
-	p.runMu.Unlock()
-
+func (p *SandboxPool) Run(_ context.Context) error {
 	p.mu.RLock()
 	ids := append([]string(nil), p.pluginOrder...)
 	p.mu.RUnlock()
@@ -550,12 +553,12 @@ func (p *SandboxPool) Run(ctx context.Context) error {
 	// Start all plugins
 	for _, id := range ids {
 		id := id
-		go p.runPlugin(ctx, id)
+		go p.runPlugin(p.runCtx, id)
 	}
 
 	// Block until run context is done
-	<-ctx.Done()
-	return ctx.Err()
+	<-p.runCtx.Done()
+	return nil
 }
 
 func (p *SandboxPool) Close(ctx context.Context) error {
@@ -564,11 +567,16 @@ func (p *SandboxPool) Close(ctx context.Context) error {
 	if p.drainCompleteCh != nil {
 		select {
 		case <-ctx.Done():
+			// Cancel the run context before exiting early
+			p.runCancel()
 			return ctx.Err()
 		case <-p.drainCompleteCh:
 			// Drain complete, proceed with teardown
 		}
 	}
+
+	// Cancel the run context now that draining is complete
+	p.runCancel()
 
 	p.mu.Lock()
 	for id := range p.recoveryTimers {
