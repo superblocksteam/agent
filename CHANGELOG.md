@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Fix a case where payload size truncation rendered Clark api traces as "empty object"
 - Update `@superblocksteam/sdk-api` version (to `v0.0.7`) to add support for `javascriptsdkapi` plugins to call GraphQL integrations with dynamic headers
 - Drain Apps 3.0 API requests when the agent receives a SIGTERM/SIGINT (rather than existing behavior of immediately stopping execution of in-flight requests)
 - Improve the error message for Apps 3.0 SDK integration callbacks that are missing orchestrator-signed capability tokens

@@ -12,7 +12,12 @@ export function truncateJson(value: unknown, maxBytes: number): { json: string; 
     if (originalBytes <= maxBytes) return { json, truncated: false, originalBytes };
     const { jsonString } = truncateJsonLib(json, maxBytes);
     const resultBytes = Buffer.byteLength(jsonString, 'utf8');
-    if (resultBytes <= maxBytes) {
+    // The library can drop every property/element when even one entry exceeds
+    // the limit (e.g. `{ body: <very long string> }` becomes `{}`). That renders
+    // as "Empty object." in the trace, hiding the integration's actual payload,
+    // so fall through to the sentinel which preserves the original size.
+    const collapsedToEmpty = jsonString === '{}' || jsonString === '[]';
+    if (resultBytes <= maxBytes && !collapsedToEmpty) {
       return { json: jsonString, truncated: true, originalBytes };
     }
     const fallback = JSON.stringify({ $truncated: true, $originalBytes: originalBytes });

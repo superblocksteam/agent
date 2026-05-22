@@ -132,6 +132,31 @@ describe('truncateJson', () => {
     expect(isSentinel || isTruncatedString).toBe(true);
     if (isSentinel) expect(parsed.$originalBytes).toBe(originalBytes);
   });
+
+  it('falls back to sentinel when library collapses object to "{}"', () => {
+    // A single property with a value larger than the limit causes
+    // @mmkal/truncate-json to drop the only key, leaving "{}". This used to
+    // surface in the trace as "Empty object." for parallel Snowflake queries
+    // whose interpolated SQL exceeded the diagnostic byte cap (APPS-2105).
+    const obj = { body: 'SELECT ' + 'x'.repeat(15_000) };
+    const { json, truncated, originalBytes } = truncateJson(obj, 10_240);
+    expect(truncated).toBe(true);
+    expect(json).not.toBe('{}');
+    const parsed = JSON.parse(json);
+    expect(parsed.$truncated).toBe(true);
+    expect(parsed.$originalBytes).toBe(originalBytes);
+    expect(originalBytes).toBeGreaterThan(10_240);
+  });
+
+  it('falls back to sentinel when library collapses array to "[]"', () => {
+    const arr = ['x'.repeat(15_000)];
+    const { json, truncated, originalBytes } = truncateJson(arr, 1_024);
+    expect(truncated).toBe(true);
+    expect(json).not.toBe('[]');
+    const parsed = JSON.parse(json);
+    expect(parsed.$truncated).toBe(true);
+    expect(parsed.$originalBytes).toBe(originalBytes);
+  });
 });
 
 describe('diagnostics JSON serialization contract', () => {
