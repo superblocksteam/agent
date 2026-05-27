@@ -260,14 +260,23 @@ async function main() {
   collectDefaultMetrics({ register: registry });
 
   const metricsServer = SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT > 0
-    ? http.createServer(async (req, res) => {
-        if (req.method === 'GET' && req.url === '/metrics') {
-          res.writeHead(200, { 'Content-Type': registry.contentType });
-          res.end(await registry.metrics());
-        } else {
+    ? http.createServer((req, res) => {
+        if (req.method !== 'GET' || req.url !== '/metrics') {
           res.writeHead(404);
           res.end();
+          return;
         }
+        registry.metrics().then(
+          (body) => {
+            res.writeHead(200, { 'Content-Type': registry.contentType });
+            res.end(body);
+          },
+          (err: unknown) => {
+            logger.error({ err }, 'failed to collect metrics');
+            res.writeHead(500);
+            res.end();
+          }
+        );
       })
     : null;
 
