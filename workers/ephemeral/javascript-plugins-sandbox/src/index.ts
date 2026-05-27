@@ -1,10 +1,13 @@
+import * as http from 'node:http';
 import * as grpc from '@grpc/grpc-js';
 import { IntegrationError } from '@superblocks/shared';
+import { collectDefaultMetrics } from 'prom-client';
 import { ExecuteRequest, KVStore, MetadataRequest, PreDeleteRequest, StreamRequest, TestRequest } from '@superblocks/worker.js';
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 
 import {
   SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS,
+  SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_REQUEST_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_MAX_RESPONSE_SIZE,
   SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT,
@@ -18,7 +21,7 @@ import { GrpcKvStore } from './grpcKvStore';
 import logger from './logger';
 import { MessageTransformer, MessageTransformerImpl, NativeRequest, NativeResponse, ProtoResponse } from './messageTransformer';
 import { parsePluginSelection } from './pluginSelection';
-import { ALL_PLUGIN_IDS, loadPlugins } from './pluginsLoader';
+import { ALL_PLUGIN_IDS, loadPlugins, registry } from './pluginsLoader';
 import { PluginsRouter } from './pluginsRouter';
 import { isGrpcPermissionDenied, isGrpcServiceError, TaskManagerClientError } from './taskManagerClientError';
 import { Response as ProtoTransportResponse } from './types/transport/v1/transport_pb';
@@ -254,6 +257,29 @@ async function main() {
     )
   );
 
+  collectDefaultMetrics({ register: registry });
+
+  const metricsServer = SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT > 0
+    ? http.createServer(async (req, res) => {
+        if (req.method === 'GET' && req.url === '/metrics') {
+          res.writeHead(200, { 'Content-Type': registry.contentType });
+          res.end(await registry.metrics());
+        } else {
+          res.writeHead(404);
+          res.end();
+        }
+      })
+    : null;
+
+  if (metricsServer) {
+    metricsServer.on('error', (err: NodeJS.ErrnoException) => {
+      logger.error({ err, port: SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT }, 'metrics server error');
+    });
+    metricsServer.listen(SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT, '0.0.0.0', () => {
+      logger.info({ port: SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT }, 'metrics server listening');
+    });
+  }
+
   const addr = `0.0.0.0:${SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT}`;
   server.bindAsync(addr, grpc.ServerCredentials.createInsecure(), (err) => {
     if (err) {
@@ -292,6 +318,8 @@ async function main() {
 
         forceShutdownTimer.unref();
       }
+
+      metricsServer?.close();
 
       server.tryShutdown((shutdownErr?: Error | null) => {
         if (forceShutdownTimer !== undefined) {

@@ -221,7 +221,7 @@ export const ALL_PLUGIN_IDS: string[] = Object.keys(PLUGIN_FACTORIES);
 const tracer = trace.getTracer('sandbox-javascript', '0.0.1');
 
 const prefix = 'sandbox_javascript_';
-const registry = new Registry();
+export const registry = new Registry();
 registry.setDefaultLabels({ component: 'sandbox-javascript' });
 const poolConnectionsTotalGauge = new Gauge({
   name: `${prefix}pool_connections_total`,

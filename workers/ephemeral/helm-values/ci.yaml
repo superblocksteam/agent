@@ -24,8 +24,10 @@ fleets:
               name: sandbox-workers-tunnel-private-key-rsa
               key: key
               optional: true
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=512"
         - name: SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST
-          value: "SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA"
+          value: "SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA,NODE_OPTIONS"
     keda:
       pollingInterval: 1
       minReplicaCount: 1
@@ -81,6 +83,12 @@ fleets:
       - B2
     events:
       - execute
+    taskManager:
+      extraEnv:
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=512"
+        - name: SUPERBLOCKS_WORKER_EXECUTION_ENV_INCLUSION_LIST
+          value: "NODE_OPTIONS"
     keda:
       pollingInterval: 1
       minReplicaCount: 1

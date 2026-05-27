@@ -45,6 +45,10 @@ envs.addAll([
   {
     name: 'SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS',
     defaultValue: ''
+  },
+  {
+    name: 'SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT',
+    defaultValue: '0'
   }
 ]);
 
@@ -81,5 +85,7 @@ export const SUPERBLOCKS_WORKER_SANDBOX_GRACEFUL_SHUTDOWN_TIMEOUT_MS = Number(
 );
 
 export const SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS: string = envs.get('SUPERBLOCKS_WORKER_SANDBOX_WORKER_PLUGINS');
+
+export const SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT = Number(envs.get('SUPERBLOCKS_WORKER_SANDBOX_METRICS_PORT'));
 
 export default envs;
