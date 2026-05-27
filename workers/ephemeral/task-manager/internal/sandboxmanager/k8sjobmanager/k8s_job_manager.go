@@ -426,6 +426,10 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		"role":         "sandbox",
 		"sandbox-id":   sandboxId,
 	}
+	if fleet, ok := m.ownerPodLabels["fleet"]; ok && fleet != "" {
+		labels["fleet"] = fleet
+		specLabels["fleet"] = fleet
+	}
 
 	podAnnotations := make(map[string]string, len(m.sandboxPodAnnotations))
 	for k, v := range m.sandboxPodAnnotations {

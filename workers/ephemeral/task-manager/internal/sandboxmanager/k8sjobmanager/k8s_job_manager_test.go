@@ -318,6 +318,65 @@ func TestBuildJobSpec_CustomGracefulShutdownTimeout(t *testing.T) {
 	assert.Equal(t, int64(90), *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }
 
+func TestBuildJobSpecInheritsFleetLabelFromOwner(t *testing.T) {
+	for _, test := range []struct {
+		name           string
+		ownerPodLabels map[string]string
+		expectFleet    string
+	}{
+		{
+			name:           "fleet label is inherited when present on parent",
+			ownerPodLabels: map[string]string{"role": "task-manager", "fleet": "javascript-ba"},
+			expectFleet:    "javascript-ba",
+		},
+		{
+			name:           "no fleet label inherited when missing on parent",
+			ownerPodLabels: map[string]string{"role": "task-manager"},
+			expectFleet:    "",
+		},
+		{
+			name:           "empty fleet label is not propagated",
+			ownerPodLabels: map[string]string{"role": "task-manager", "fleet": ""},
+			expectFleet:    "",
+		},
+		{
+			name:           "nil owner labels does not propagate fleet",
+			ownerPodLabels: nil,
+			expectFleet:    "",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			m := &K8sJobManager{
+				namespace:              "test-ns",
+				image:                  "sandbox:latest",
+				port:                   50051,
+				podIP:                  "10.0.0.1",
+				variableStoreGrpcPort:  50050,
+				variableStoreHttpPort:  8080,
+				streamingProxyGrpcPort: 50053,
+				language:               "javascript",
+				logger:                 zap.NewNop(),
+				ownerPodLabels:         test.ownerPodLabels,
+			}
+
+			job := m.buildJobSpec("sandbox-fleet-test", "fleet-test", "javascript")
+
+			if test.expectFleet == "" {
+				_, jobHasFleet := job.Labels["fleet"]
+				_, podHasFleet := job.Spec.Template.Labels["fleet"]
+				assert.False(t, jobHasFleet, "expected Job to not carry a fleet label")
+				assert.False(t, podHasFleet, "expected sandbox pod template to not carry a fleet label")
+				return
+			}
+
+			assert.Equal(t, test.expectFleet, job.Labels["fleet"],
+				"Job should inherit fleet label from parent task-manager (used by Datadog podLabelsAsTags)")
+			assert.Equal(t, test.expectFleet, job.Spec.Template.Labels["fleet"],
+				"Sandbox pod template should inherit fleet label from parent task-manager")
+		})
+	}
+}
+
 func TestBuildJobSpecSandboxPodAnnotations(t *testing.T) {
 	for _, test := range []struct {
 		name                string
