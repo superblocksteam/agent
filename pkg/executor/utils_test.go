@@ -23,6 +23,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
+	"github.com/superblocksteam/agent/pkg/secrets/refresolver"
 	"github.com/superblocksteam/agent/pkg/testutils"
 	"github.com/superblocksteam/agent/pkg/utils"
 	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
@@ -1937,6 +1938,234 @@ func TestFetchDefinitionFromRequestPreservesExistingConfigurationId(t *testing.T
 
 	idField := integrationStruct.GetFields()["id"]
 	assert.Equal(t, existingConfigId, idField.GetStringValue())
+}
+
+func TestFetchDefinitionFromRequest_RefsRequireAllowlist(t *testing.T) {
+	// Request contains an integration config with an embedded
+	// {resolver, ref, field} map. With the refresolver allowlist
+	// env var unset, fetchDefinitionFromRequest must reject the
+	// request rather than dereferencing the ARN under the
+	// orchestrator's IAM identity.
+	//
+	// t.Setenv unsets the variable for this test (passing "" matches
+	// "unset" semantically because refresolver's CSV split treats
+	// empty strings as nil) and restores the prior value on cleanup.
+	// Implicitly prevents t.Parallel(), which is what we want here.
+	t.Setenv(refresolver.AllowedRefPrefixesEnvVar, "")
+
+	cfg, err := structpb.NewStruct(map[string]interface{}{
+		"id":   "integration-1",
+		"host": "db.example.com",
+		"password": map[string]interface{}{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:111:secret:caller-supplied/x",
+			"field":    "password",
+		},
+	})
+	require.NoError(t, err)
+
+	req := &apiv1.ExecuteRequest{
+		Request: &apiv1.ExecuteRequest_Definition{
+			Definition: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{Id: "api-id", Name: "Test API"},
+					Blocks: []*apiv1.Block{
+						{
+							Name: "Step1",
+							Config: &apiv1.Block_Step{
+								Step: &apiv1.Step{Integration: "integration-1"},
+							},
+						},
+					},
+				},
+				Integrations: map[string]*structpb.Struct{
+					"integration-1": cfg,
+				},
+			},
+		},
+	}
+
+	mockFetcher := fetchmocks.NewFetcher(t)
+	_, _, err = fetchDefinitionFromRequest(context.Background(), req, mockFetcher, false, zap.NewNop())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES")
+}
+
+func TestFetch_ResolvesCredentialRefsForFetchedDefinition(t *testing.T) {
+	const arn = "arn:aws:secretsmanager:us-east-1:1:secret:rds!binding-abc"
+	t.Setenv(refresolver.AllowedRefPrefixesEnvVar, "arn:aws:secretsmanager:us-east-1:1:secret:rds!")
+	withFakeCredRefDispatcher(t, &fakeRefResolver{docs: map[string]map[string]string{
+		arn: {"password": "hunter2"},
+	}}, nil)
+
+	cfg, err := structpb.NewStruct(map[string]interface{}{
+		"id":   "integration-1",
+		"host": "db.example.com",
+		"password": map[string]interface{}{
+			"resolver": "aws_secrets_manager",
+			"ref":      arn,
+			"field":    "password",
+		},
+	})
+	require.NoError(t, err)
+
+	def := &apiv1.Definition{
+		Api: &apiv1.Api{
+			Metadata: &commonv1.Metadata{
+				Id:           "00000000-0000-0000-0000-000000000001",
+				Organization: "00000000-0000-0000-0000-000000000002",
+				Name:         "Test API",
+			},
+		},
+		Integrations: map[string]*structpb.Struct{"integration-1": cfg},
+	}
+
+	fetchOptions := &apiv1.ExecuteRequest_Fetch{Id: "api-id"}
+	req := &apiv1.ExecuteRequest{
+		Request: &apiv1.ExecuteRequest_Fetch_{Fetch: fetchOptions},
+	}
+	mockFetcher := fetchmocks.NewFetcher(t)
+	mockFetcher.On("FetchApi", mock.Anything, fetchOptions, false).Return(def, &structpb.Struct{}, nil)
+
+	got, _, err := Fetch(context.Background(), req, mockFetcher, false, zap.NewNop())
+	require.NoError(t, err)
+	assert.Equal(t, "hunter2", got.Integrations["integration-1"].Fields["password"].GetStringValue())
+}
+
+// fakeRefResolver is an in-memory refresolver.Resolver used by the
+// resolveIntegrationCredentialRefs tests. Avoids dragging the full AWS
+// SDK surface into executor tests.
+type fakeRefResolver struct {
+	docs map[string]map[string]string
+	err  error
+}
+
+func (f *fakeRefResolver) Resolve(_ context.Context, ref, field string) (string, error) {
+	if f.err != nil {
+		return "", f.err
+	}
+	if doc, ok := f.docs[ref]; ok {
+		return doc[field], nil
+	}
+	return "", fmt.Errorf("fake: secret %q not found", ref)
+}
+
+// withFakeCredRefDispatcher swaps the package-level dispatcher factory
+// for one backed by an in-memory fake. Mirrors the dsn.go test seam
+// pattern. Tests using this MUST NOT call t.Parallel().
+func withFakeCredRefDispatcher(t *testing.T, fake *fakeRefResolver, factoryErr error) {
+	t.Helper()
+	prev := newCredRefDispatcher
+	newCredRefDispatcher = func(_ context.Context, allowedPrefixes []string) (*refresolver.Dispatcher, error) {
+		if factoryErr != nil {
+			return nil, factoryErr
+		}
+		return refresolver.NewDispatcher(map[refresolver.ResolverType]refresolver.Resolver{
+			refresolver.ResolverAWSSecretsManager: fake,
+		}, allowedPrefixes), nil
+	}
+	t.Cleanup(func() { newCredRefDispatcher = prev })
+}
+
+func TestResolveIntegrationCredentialRefs_NoRefsIsNoOp(t *testing.T) {
+	// HasRefs returns false → short-circuit before constructing a
+	// dispatcher. The expensive AWS SDK init must not run for the
+	// common case (integration carries literal scalar credentials).
+	withFakeCredRefDispatcher(t, &fakeRefResolver{}, errors.New("must not be called"))
+	cfg, err := structpb.NewStruct(map[string]interface{}{
+		"id":       "integration-1",
+		"host":     "db.example.com",
+		"username": "alice",
+		"password": "literal",
+	})
+	require.NoError(t, err)
+	integrations := map[string]*structpb.Struct{"integration-1": cfg}
+
+	require.NoError(t, resolveIntegrationCredentialRefs(context.Background(), integrations, zap.NewNop()))
+}
+
+func TestResolveIntegrationCredentialRefs_DispatcherInitFailureBubblesUp(t *testing.T) {
+	// AWS SDK config-chain init failure (missing IAM role, malformed
+	// credentials) must surface verbatim so the operator sees the
+	// underlying SDK error, not a generic "resolve failed".
+	t.Setenv(refresolver.AllowedRefPrefixesEnvVar, "arn:aws:secretsmanager:us-east-1:1:secret:rds!")
+	withFakeCredRefDispatcher(t, nil, errors.New("ec2 metadata unreachable"))
+
+	cfg, err := structpb.NewStruct(map[string]interface{}{
+		"id": "integration-1",
+		"password": map[string]interface{}{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:1:secret:rds!x",
+			"field":    "password",
+		},
+	})
+	require.NoError(t, err)
+
+	err = resolveIntegrationCredentialRefs(context.Background(),
+		map[string]*structpb.Struct{"integration-1": cfg}, zap.NewNop())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "init credential resolver")
+	assert.Contains(t, err.Error(), "ec2 metadata unreachable")
+}
+
+func TestResolveIntegrationCredentialRefs_HappyPathInPlaceRewrite(t *testing.T) {
+	// Refs present + allowlist set + dispatcher init succeeds +
+	// individual resolves succeed → integration config is rewritten in
+	// place with the literal credential values (the structpb Map
+	// value's previously-ref-shaped entry is replaced by the resolved
+	// string).
+	const arn = "arn:aws:secretsmanager:us-east-1:1:secret:rds!binding-abc"
+	t.Setenv(refresolver.AllowedRefPrefixesEnvVar, "arn:aws:secretsmanager:us-east-1:1:secret:rds!")
+	withFakeCredRefDispatcher(t, &fakeRefResolver{docs: map[string]map[string]string{
+		arn: {"password": "hunter2"},
+	}}, nil)
+
+	cfg, err := structpb.NewStruct(map[string]interface{}{
+		"id":   "integration-1",
+		"host": "db.example.com",
+		"password": map[string]interface{}{
+			"resolver": "aws_secrets_manager",
+			"ref":      arn,
+			"field":    "password",
+		},
+	})
+	require.NoError(t, err)
+	integrations := map[string]*structpb.Struct{"integration-1": cfg}
+
+	require.NoError(t, resolveIntegrationCredentialRefs(context.Background(), integrations, zap.NewNop()))
+	// The ref-map at integrations["integration-1"].password is replaced
+	// in place with the resolved literal string.
+	pwdField := integrations["integration-1"].Fields["password"]
+	require.NotNil(t, pwdField)
+	assert.Equal(t, "hunter2", pwdField.GetStringValue())
+}
+
+func TestResolveIntegrationCredentialRefs_PerIntegrationFailureLabelsId(t *testing.T) {
+	// When ResolveInConfig fails for one specific integration, the
+	// error must include the integration id so the operator can find
+	// the broken config. Other integrations in the same call are
+	// skipped (resolve order is map-iteration order, so we only assert
+	// that the id of whichever-failed lands in the message).
+	t.Setenv(refresolver.AllowedRefPrefixesEnvVar, "arn:aws:secretsmanager:us-east-1:1:secret:rds!")
+	withFakeCredRefDispatcher(t, &fakeRefResolver{docs: map[string]map[string]string{}}, nil)
+	// Fake returns "not found" for every ref → every integration's
+	// resolve fails → the iteration aborts on the first failure.
+
+	cfg, err := structpb.NewStruct(map[string]interface{}{
+		"id": "integration-bad",
+		"password": map[string]interface{}{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:1:secret:rds!gone",
+			"field":    "password",
+		},
+	})
+	require.NoError(t, err)
+
+	err = resolveIntegrationCredentialRefs(context.Background(),
+		map[string]*structpb.Struct{"integration-bad": cfg}, zap.NewNop())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "resolve credential refs for integration")
+	assert.Contains(t, err.Error(), "integration-bad")
 }
 
 func TestFindParametersExpression(t *testing.T) {

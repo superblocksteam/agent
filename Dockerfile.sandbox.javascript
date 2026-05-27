@@ -70,7 +70,6 @@ RUN . $HOME/.bashrc && \
 
 # Deploy javascript-plugins-sandbox with all its dependencies to a self-contained directory
 RUN . $HOME/.bashrc && pnpm --filter javascript-plugins-sandbox deploy --prod /deploy && \
-    npx clean-modules --directory /deploy/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/' && \
     mkdir -p /deploy/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles && \
     if [ ! -f /deploy/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js ]; then \
       cp /app/workers/javascript/packages/plugins/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js \
@@ -79,8 +78,8 @@ RUN . $HOME/.bashrc && pnpm --filter javascript-plugins-sandbox deploy --prod /d
 
 # Rebuild lz4 native addon (xxhash.node) for the current Node ABI.
 # The pnpm store cache may contain stale binaries compiled for a different
-# Node major version. clean-modules strips binding.gyp from deploy, so we
-# rebuild from the workspace source and copy the resulting .node files.
+# Node major version, so rebuild from the workspace source and copy the
+# resulting .node files.
 RUN . $HOME/.bashrc && \
     cd /app/node_modules/.pnpm/lz4@${LZ4_VERSION}/node_modules/lz4 && \
     node-gyp rebuild && \

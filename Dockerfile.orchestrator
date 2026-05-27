@@ -4,6 +4,71 @@
 ARG GO_VERSION
 ARG SB_GIT_COMMIT_SHA
 
+# OpenTofu binary — invoked by the database-lifecycle worker (started with
+# --database.lifecycle.worker.enabled=true) to apply native-DB Terraform
+# modules. Helm wires SUPERBLOCKS_DATABASE_LIFECYCLE_TERRAFORM_BIN=tofu
+# (helm/orchestrator/values.yaml `terraformBin`), so this binary must be
+# on PATH in the runtime image. Version pinned to match the workspace nix
+# devshell used by `just up local-orch` (workspace flake.nix → opentofu).
+#
+# Installed from OpenTofu's official packagecloud apt repository, using
+# `apt-get install tofu=${TOFU_VERSION}` for version pinning. Both signing
+# keys are verified against fingerprints pinned inline before they are
+# trusted by apt; bumping the keys requires a deliberate Dockerfile edit.
+# (The upstream ghcr.io/opentofu/opentofu image is unusable as a multi-stage
+# source as of OpenTofu 1.10 — opentofu/opentofu#1931.)
+FROM debian:bookworm-slim AS opentofu
+ARG TOFU_VERSION=1.11.6
+# Primary fingerprints for the two keys apt will trust via `signed-by`:
+#   - TOFU_RELEASE_KEY_FPR: OpenTofu's release-signing key
+#     (https://get.opentofu.org/opentofu.gpg)
+#   - TOFU_REPO_KEY_FPR:    packagecloud's repository-metadata signing key
+#     (https://packages.opentofu.org/opentofu/tofu/gpgkey)
+# Both are checked at install time; mismatches fail the build.
+ARG TOFU_RELEASE_KEY_FPR=E3E6E43D84CB852EADB0051D0C0AF313E5FD9F80
+ARG TOFU_REPO_KEY_FPR=F4AF70F66EAC4337EEECC97407D3DFCD4C61499F
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates curl gnupg \
+    && rm -rf /var/lib/apt/lists/*
+RUN set -eu; \
+    install -m 0755 -d /etc/apt/keyrings; \
+    tmpd=$(mktemp -d); chmod 700 "${tmpd}"; \
+    # Fetch, verify the pinned fingerprint, and install a keyring file.
+    # cursor r3277733904: previously `gpg --dearmor`d the WHOLE key file
+    # after only checking that the expected fingerprint was *present* —
+    # so a tampered response carrying expected + attacker keys would
+    # land both in apt's keyring. Now we import into a scratch homedir,
+    # verify the expected fingerprint is present, then export ONLY that
+    # fingerprint to the output keyring. apt's signed-by then trusts
+    # exactly the one key, not every key the server returned.
+    install_key() { \
+        _url="$1"; _expect="$2"; _out="$3"; \
+        _gnupghome="${tmpd}/gpg.$$"; \
+        install -m 0700 -d "${_gnupghome}"; \
+        curl -fsSL --proto '=https' --tlsv1.2 "${_url}" -o "${tmpd}/k.asc"; \
+        gpg --no-default-keyring --homedir "${_gnupghome}" --no-tty --batch \
+            --import "${tmpd}/k.asc" 2>/dev/null; \
+        gpg --no-default-keyring --homedir "${_gnupghome}" --list-keys --with-colons \
+            | awk -F: '/^fpr:/{print $10}' | grep -qx "${_expect}" \
+            || { echo "fingerprint ${_expect} not present in ${_url}" >&2; exit 1; }; \
+        gpg --no-default-keyring --homedir "${_gnupghome}" --no-tty --batch \
+            --export "${_expect}" > "${_out}"; \
+        rm -rf "${_gnupghome}"; \
+    }; \
+    install_key https://get.opentofu.org/opentofu.gpg \
+        "${TOFU_RELEASE_KEY_FPR}" /etc/apt/keyrings/opentofu.gpg; \
+    install_key https://packages.opentofu.org/opentofu/tofu/gpgkey \
+        "${TOFU_REPO_KEY_FPR}" /etc/apt/keyrings/opentofu-repo.gpg; \
+    chmod a+r /etc/apt/keyrings/opentofu.gpg /etc/apt/keyrings/opentofu-repo.gpg; \
+    rm -rf "${tmpd}"; \
+    echo "deb [signed-by=/etc/apt/keyrings/opentofu.gpg,/etc/apt/keyrings/opentofu-repo.gpg] https://packages.opentofu.org/opentofu/tofu/any/ any main" \
+        > /etc/apt/sources.list.d/opentofu.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends "tofu=${TOFU_VERSION}"; \
+    rm -rf /var/lib/apt/lists/*; \
+    tofu version
+
 # Builder base image
 FROM ghcr.io/superblocksteam/golang:${GO_VERSION}-trixie AS builder
 
@@ -59,6 +124,10 @@ COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/buckets.json
 COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/buckets.minimal.json /buckets.minimal.json
 COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/buckets.minimal.json /buckets.minimal.json
 COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/flags.json           /flags.json
+
+# OpenTofu — required by the database-lifecycle worker. Inert for other
+# orchestrator roles. See top of file for context.
+COPY --from=opentofu /usr/bin/tofu /usr/local/bin/tofu
 
 ENV SB_GIT_REPOSITORY_URL "https://github.com/superblocksteam/orchestrator"
 ENV SB_GIT_COMMIT_SHA     ${SB_GIT_COMMIT_SHA}

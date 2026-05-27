@@ -1,0 +1,302 @@
+package databaselifecycle
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestWorkerPollOnceClaimsAndProcessesDispatches(t *testing.T) {
+	var claimedAgentID string
+	var materialized []string
+	var processed []string
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			claimedAgentID = agentID
+			return []DispatchPayload{
+				{BindingKey: "app:prod:orders", RequestID: "request-1", ResourceKey: "resource-1"},
+				{BindingKey: "app:prod:billing", RequestID: "request-2", ResourceKey: "resource-2"},
+			}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey, WorkingDir: "/tmp/" + dispatch.RequestID}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			materialized = append(materialized, dispatch.RequestID+":"+job.WorkingDir)
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			processed = append(processed, job.BindingKey+":"+job.WorkingDir)
+			return TerminalCallbackResult{RequestID: dispatch.RequestID, RequestState: "ready"}, nil
+		}),
+	)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, "agent-1", claimedAgentID)
+	require.Equal(t, []string{
+		"app:prod:orders:/tmp/request-1",
+		"app:prod:billing:/tmp/request-2",
+	}, processed)
+	require.Equal(t, []string{"request-1:/tmp/request-1", "request-2:/tmp/request-2"}, materialized)
+	require.Equal(t, PollResult{Claimed: 2, Processed: 2}, result)
+}
+
+func TestWorkerPollOnceMigrateSchemaSkipsTerraformJobSetup(t *testing.T) {
+	var processed []string
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", Operation: "migrate_schema", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			t.Fatal("migrate_schema must not build a Terraform job")
+			return Job{}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			t.Fatal("migrate_schema must not materialize Terraform files")
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			processed = append(processed, job.BindingKey+":"+job.WorkingDir)
+			return TerminalCallbackResult{RequestID: dispatch.RequestID, RequestState: "ready"}, nil
+		}),
+	)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"app:prod:orders:"}, processed)
+	require.Equal(t, PollResult{Claimed: 1, Processed: 1}, result)
+}
+
+func TestWorkerPollOnceContinuesAfterDispatchErrors(t *testing.T) {
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{
+				{BindingKey: "app:prod:orders", RequestID: "request-1", ResourceKey: "resource-1"},
+				{BindingKey: "app:prod:billing", RequestID: "request-2", ResourceKey: "resource-2"},
+			}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			if dispatch.RequestID == "request-1" {
+				return Job{}, errors.New("missing workspace")
+			}
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{RequestID: dispatch.RequestID, RequestState: "ready"}, nil
+		}),
+	)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 2, result.Claimed)
+	require.Equal(t, 1, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.Equal(t, "request-1", result.Errors[0].RequestID)
+	require.False(t, result.Errors[0].Retryable)
+	require.ErrorContains(t, result.Errors[0].Err, "missing workspace")
+}
+
+func TestWorkerPollOnceReturnsClaimErrors(t *testing.T) {
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return nil, errors.New("claim unavailable")
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{}, nil
+		}),
+	)
+
+	_, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.ErrorContains(t, err, "claim unavailable")
+}
+
+func TestWorkerPollOnceDoesNotProcessMaterializationErrors(t *testing.T) {
+	processed := false
+	var reported []TerminalCallback
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			return errors.New("write backend")
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			processed = true
+			return TerminalCallbackResult{}, nil
+		}),
+	)
+	worker.ReportFailuresWith(CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
+		reported = append(reported, callback)
+		return TerminalCallbackResult{RequestID: callback.RequestID, RequestState: "failed"}, nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.False(t, processed)
+	// cursor r3283851696: reporting the failure to the server is a side
+	// effect; the worker-side accounting must still record the dispatch
+	// as a poll error, not as Processed. Operators looking at
+	// "processed=1, errors=0" would otherwise miss broken dispatches
+	// entirely and the loop logger would never surface the failure.
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.ErrorContains(t, result.Errors[0].Err, "write backend")
+	require.Len(t, reported, 1)
+	require.Equal(t, "request-1", reported[0].RequestID)
+	require.Equal(t, "failed", reported[0].LifecycleState)
+	require.Equal(t, "terraform_failed", reported[0].Error.Code)
+	require.Contains(t, reported[0].Error.Message, "write backend")
+}
+
+func TestWorkerPollOncePreservesOriginalFailureWhenReportingFails(t *testing.T) {
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{}, errors.New("missing workspace")
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{}, nil
+		}),
+	)
+	worker.ReportFailuresWith(CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
+		return TerminalCallbackResult{}, errors.New("callback failed")
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Len(t, result.Errors, 1)
+	require.ErrorContains(t, result.Errors[0].Err, "missing workspace")
+	require.ErrorContains(t, result.Errors[0].Err, "callback failed")
+}
+
+func TestWorkerPollOnceReportsNonRetryableLockFailures(t *testing.T) {
+	var built bool
+	var reported []TerminalCallback
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", RequestID: "request-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			built = true
+			return Job{}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{}, nil
+		}),
+	)
+	worker.ReportFailuresWith(CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
+		reported = append(reported, callback)
+		return TerminalCallbackResult{RequestID: callback.RequestID, RequestState: "failed"}, nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.False(t, built)
+	// cursor r3283851696: the reported-but-failed dispatch still belongs
+	// in result.Errors (so operators and the loop logger see it) — the
+	// terminal callback to the server is the side effect of recording the
+	// failure, not a signal that the dispatch processed cleanly.
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.ErrorContains(t, result.Errors[0].Err, "database lifecycle resource key is required")
+	require.Len(t, reported, 1)
+	require.Equal(t, "request-1", reported[0].RequestID)
+	require.Equal(t, "failed", reported[0].LifecycleState)
+	require.Equal(t, "terraform_failed", reported[0].Error.Code)
+	require.Contains(t, reported[0].Error.Message, "database lifecycle resource key is required")
+}
+
+func TestWorkerPollOnceSkipsLockedResources(t *testing.T) {
+	locker := NewMemoryLocker()
+	release, err := locker.Lock(context.Background(), "resource-1")
+	require.NoError(t, err)
+	defer release()
+	processed := false
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		locker,
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			processed = true
+			return TerminalCallbackResult{}, nil
+		}),
+	)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.False(t, processed)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.True(t, result.Errors[0].Retryable)
+	require.ErrorIs(t, result.Errors[0].Err, ErrResourceLocked)
+}
+
+func TestWorkerPollOnceMarksRetryableLifecycleErrors(t *testing.T) {
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{}, &LifecycleError{Code: ErrorCodeBackendLocked, Retryable: true, Err: errors.New("state lock")}
+		}),
+	)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.True(t, result.Errors[0].Retryable)
+}

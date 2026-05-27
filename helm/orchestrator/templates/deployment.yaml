@@ -113,6 +113,10 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
+        {{- if .Values.databaseLifecycle.allowedRefPrefixes }}
+        - name: SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES
+          value: {{ join "," .Values.databaseLifecycle.allowedRefPrefixes | quote }}
+        {{- end }}
         - name: SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_KEY
           valueFrom:
             secretKeyRef:

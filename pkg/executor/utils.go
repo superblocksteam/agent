@@ -22,6 +22,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/executor/options"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	"github.com/superblocksteam/agent/pkg/secrets/refresolver"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/gc"
 	"github.com/superblocksteam/agent/pkg/template"
@@ -385,6 +386,14 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 		return nil, nil, errors.Join(errs...)
 	}
 
+	// Resolve refs after all definition-loading paths have produced a
+	// Definition. Inline requests also resolve before rawDef generation below,
+	// but fetched API/FetchByPath definitions only pass through this common
+	// Fetch path.
+	if err := resolveIntegrationCredentialRefs(ctx, def.GetIntegrations(), logger); err != nil {
+		return nil, nil, err
+	}
+
 	return def, rawDef, nil
 }
 
@@ -522,6 +531,24 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 				}
 			}
 		}
+	}
+
+	// Resolve any {resolver, ref, field} credential refs embedded in
+	// fetched (or inline) integration configurations before handing them
+	// to the plugin sandbox. database_lifecycle-managed integrations
+	// store credentials as typed refs so the orchestrator holds no secret
+	// material at rest; regular integrations have literal scalar creds
+	// and are walked but not modified.
+	//
+	// The Dispatcher is constructed with an operator-controlled prefix
+	// allowlist (SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES,
+	// comma-separated). Refs outside the allowlist are rejected, so a
+	// caller-supplied integration config can't trick the orchestrator
+	// into dereferencing arbitrary AWS Secrets Manager ARNs under its
+	// IAM identity. Empty allowlist + refs present → request fails
+	// explicitly rather than silently no-op'ing.
+	if err := resolveIntegrationCredentialRefs(ctx, def.Integrations, logger); err != nil {
+		return nil, nil, err
 	}
 
 	contains, err := utils.ContainsSuperblocksSecrets(def.GetApi(), def.GetIntegrations())
@@ -1513,4 +1540,57 @@ func enrich(v *structpb.Value, files []*transportv1.Request_Data_Data_Props_File
 	}
 
 	return v, true
+}
+
+// newCredRefDispatcher is the seam tests use to inject a fake resolver
+// without needing real AWS config. Production constructs the AWS Secrets
+// Manager resolver from the default credential chain and wraps it in a
+// Dispatcher with the operator-configured prefix allowlist.
+//
+// Mutability contract: tests overriding this var MUST NOT call
+// t.Parallel(). The save/restore pattern is unsynchronized; mirrors the
+// `newRefDispatcher` seam in pkg/databaselifecycle/dsn.go.
+var newCredRefDispatcher = func(ctx context.Context, allowedPrefixes []string) (*refresolver.Dispatcher, error) {
+	awsResolver, err := refresolver.NewAWSSecretsManagerResolverFromDefaultConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return refresolver.NewDispatcher(map[refresolver.ResolverType]refresolver.Resolver{
+		refresolver.ResolverAWSSecretsManager: awsResolver,
+	}, allowedPrefixes), nil
+}
+
+// resolveIntegrationCredentialRefs walks each integration's
+// configuration and dereferences any embedded {resolver, ref, field}
+// maps in-place. Returns nil (no-op) when no integration carries refs;
+// returns a labeled error when refs are present but the operator hasn't
+// set the prefix allowlist, when AWS config-chain initialization fails,
+// or when a specific integration's resolve fails (label includes the
+// integration id so operators can pinpoint the broken config).
+//
+// Extracted into a helper so the AWS SDK construction is reachable via
+// the `newCredRefDispatcher` test seam without dragging the full
+// fetchDefinitionFromRequest signature into the test setup.
+func resolveIntegrationCredentialRefs(ctx context.Context, integrations map[string]*structpb.Struct, logger *zap.Logger) error {
+	if !refresolver.HasRefs(integrations) {
+		return nil
+	}
+	allowedPrefixes := refresolver.AllowedRefPrefixesFromEnv()
+	if len(allowedPrefixes) == 0 {
+		logger.Error("credential refs present but no allowlist configured",
+			zap.String("env_var", refresolver.AllowedRefPrefixesEnvVar))
+		return fmt.Errorf("credential refs present in integration config but %s is empty", refresolver.AllowedRefPrefixesEnvVar)
+	}
+	dispatcher, err := newCredRefDispatcher(ctx, allowedPrefixes)
+	if err != nil {
+		logger.Error("init credential resolver failed", zap.Error(err))
+		return fmt.Errorf("init credential resolver: %w", err)
+	}
+	for id, cfg := range integrations {
+		if err := refresolver.ResolveInConfig(ctx, dispatcher, cfg); err != nil {
+			logger.Error("resolve credential refs failed", zap.String("integration_id", id), zap.Error(err))
+			return fmt.Errorf("resolve credential refs for integration %q: %w", id, err)
+		}
+	}
+	return nil
 }

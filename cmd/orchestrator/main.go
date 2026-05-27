@@ -220,6 +220,7 @@ func init() {
 	pflag.Bool("bindings.wasm_sandbox.enabled", false, "Enable WASM sandbox for bindings evaluation. LaunchDarkly takes priority if configured.")
 	pflag.Bool("purejs.wasm_sandbox.enabled", false, "Enable WASM sandbox for pure JS step execution. LaunchDarkly takes priority if configured.")
 	pflag.Bool("sdkapi.wasm_worker.enabled", false, "Enable WASM worker routing for SDK API code-mode execution. LaunchDarkly takes priority if configured.")
+	pflag.Bool("database.lifecycle.worker.enabled", false, "Run the database lifecycle Terraform worker instead of the orchestrator servers.")
 
 	// This pflag setup allows the stdlib flag package to be used with viper.
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -319,6 +320,16 @@ func main() {
 		}
 
 		serverHttpClient = clients.NewServerClient(&serverHttpClientOptions)
+	}
+
+	if viper.GetBool("database.lifecycle.worker.enabled") {
+		workerCtx, stop := databaseLifecycleWorkerContext(ctx)
+		defer stop()
+		if err := runDatabaseLifecycleWorker(workerCtx, serverHttpClient); err != nil {
+			fmt.Fprintf(os.Stderr, "database lifecycle worker failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	var auditEmitter emitter.Emitter

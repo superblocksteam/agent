@@ -43,3 +43,33 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+Default suffixed name for any database-lifecycle resource (Deployment +
+ServiceAccount). Truncates the chart fullname BEFORE appending the suffix
+so the resulting name reliably ends in `-database-lifecycle`, even when
+`orchestrator.fullname` is already close to the 63-char limit.
+*/}}
+{{- define "orchestrator.databaseLifecycle.name" -}}
+{{- $suffix := "-database-lifecycle" -}}
+{{- $maxFullname := sub 63 (len $suffix) -}}
+{{- $fullname := include "orchestrator.fullname" . | trunc (int $maxFullname) | trimSuffix "-" -}}
+{{- printf "%s%s" $fullname $suffix -}}
+{{- end }}
+
+{{/*
+ServiceAccount name for the database-lifecycle worker. Honors
+`databaseLifecycle.serviceAccount.name` when set; otherwise derives from the
+chart's fullname so the SA the helm chart creates and the SA the Deployment
+references can never drift apart.
+*/}}
+{{- define "orchestrator.databaseLifecycle.serviceAccountName" -}}
+{{- $sa := .Values.databaseLifecycle.serviceAccount | default dict }}
+{{- if $sa.name }}
+{{- $sa.name }}
+{{- else if and (hasKey $sa "create") (eq $sa.create false) }}
+{{- fail "databaseLifecycle.serviceAccount.name is required when databaseLifecycle.serviceAccount.create=false" }}
+{{- else }}
+{{- include "orchestrator.databaseLifecycle.name" . }}
+{{- end }}
+{{- end }}

@@ -200,6 +200,49 @@ events:
   cloud:
     enabled: false
 extraEnv: {}
+# Native-database lifecycle worker. Off by default. When enabled the chart
+# renders an additional Deployment + ServiceAccount under
+# `<release>-orchestrator-database-lifecycle` that polls the Superblocks
+# server for dispatches and runs Terraform against a configured backend.
+# IRSA wiring (state bucket access, RDS provisioning, Secrets Manager
+# reads, etc.) is provisioned out-of-band; `serviceAccount.irsaRoleArn`
+# must point at the role that trust policy allows this pod to assume.
+databaseLifecycle:
+  enabled: false
+  replicas: 1
+  agentId: ""
+  # Default rootDir is written via the dedicated `database-lifecycle-work`
+  # emptyDir volume mount in the deployment template, so the non-root
+  # orchestrator user (UID 1001) can write there without the image needing
+  # a world-writable /var/lib path. Override if you supply your own volume.
+  rootDir: /var/lib/superblocks/database-lifecycle
+  terraformBin: tofu
+  pollInterval: 30s
+  allowedResourceTypes: []
+  allowedModuleSources: []
+  # TLS posture for the migration runner's DSN AND the shared-mode
+  # `provider "postgresql"` block. The worker has no implicit default —
+  # operators must opt in. Production answer is verify-full (full cert +
+  # hostname validation) paired with sslRootCert. `require` encrypts but
+  # does not validate cert identity (MITM-vulnerable) and is intended
+  # only for intra-VPC sandbox connections. See pkg/databaselifecycle/dsn.go
+  # validateSSLOptions for the full state machine.
+  sslMode: ""
+  sslRootCert: ""
+  # Allowlist of credential-ref prefixes the worker is permitted to
+  # dereference (e.g. "arn:aws:secretsmanager:us-east-1:<account>:secret:rds!db-"
+  # to restrict the worker to a single AWS account's RDS-managed secrets).
+  # Empty list denies all refs — the worker still starts, but every
+  # dispatch carrying credential_refs will fail until an operator
+  # populates this. Mirrors SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES
+  # in pkg/secrets/refresolver/refresolver.go.
+  allowedRefPrefixes: []
+  resources: {}
+  serviceAccount:
+    create: true
+    name: ""
+    irsaRoleArn: ""
+    annotations: {}
 gateway:
   gatewayRefs:
     - name: internal-gateway

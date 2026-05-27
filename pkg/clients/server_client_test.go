@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -90,6 +91,84 @@ func TestGetApplicationCode(t *testing.T) {
 			resp.Body.Close()
 		})
 	}
+}
+
+func TestPostClaimDatabaseLifecycleDispatches(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/v1/database-lifecycle/dispatches/claim", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "agent-key", r.Header.Get("x-superblocks-agent-key"))
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+		var body map[string]string
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "agent-1", body["agentId"])
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"data":[]}`))
+	}))
+	defer server.Close()
+
+	client := NewServerClient(&ServerClientOptions{
+		URL:                 server.URL,
+		SuperblocksAgentKey: "agent-key",
+	})
+
+	resp, err := client.PostClaimDatabaseLifecycleDispatches(
+		context.Background(),
+		nil,
+		http.Header{},
+		DatabaseLifecycleDispatchClaimRequest{AgentID: "agent-1"},
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestPostDatabaseLifecycleTerminalCallback(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/v1/database-lifecycle/callbacks/terminal", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "agent-key", r.Header.Get("x-superblocks-agent-key"))
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "request-1", body["requestId"])
+		assert.Equal(t, "app:prod:orders", body["bindingKey"])
+		assert.Equal(t, "ready", body["lifecycleState"])
+		assert.Equal(t, "migrated", body["migrationState"])
+		assert.Equal(t, "orders.internal", body["connectionMetadata"].(map[string]any)["host"])
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"data":{"requestId":"request-1","requestState":"ready"}}`))
+	}))
+	defer server.Close()
+
+	client := NewServerClient(&ServerClientOptions{
+		URL:                 server.URL,
+		SuperblocksAgentKey: "agent-key",
+	})
+
+	resp, err := client.PostDatabaseLifecycleTerminalCallback(
+		context.Background(),
+		nil,
+		http.Header{},
+		DatabaseLifecycleTerminalCallbackRequest{
+			BindingKey:     "app:prod:orders",
+			LifecycleState: "ready",
+			MigrationState: "migrated",
+			RequestID:      "request-1",
+			ConnectionMetadata: map[string]any{
+				"host": "orders.internal",
+			},
+		},
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestValidateProfile(t *testing.T) {

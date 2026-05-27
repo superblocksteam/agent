@@ -60,6 +60,24 @@ type RegisterAgentBody struct {
 	VerificationKeys   map[string]VerificationKey `json:"verificationKeys"`
 }
 
+type DatabaseLifecycleDispatchClaimRequest struct {
+	AgentID string `json:"agentId"`
+}
+
+type DatabaseLifecycleTerminalCallbackRequest struct {
+	BindingKey              string         `json:"bindingKey"`
+	ConnectionMetadata      map[string]any `json:"connectionMetadata,omitempty"`
+	RuntimeCredentialRefs   map[string]any `json:"runtimeCredentialRefs,omitempty"`
+	MigrationCredentialRefs map[string]any `json:"migrationCredentialRefs,omitempty"`
+	Error                   *struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	} `json:"error,omitempty"`
+	LifecycleState string `json:"lifecycleState"`
+	MigrationState string `json:"migrationState,omitempty"`
+	RequestID      string `json:"requestId"`
+}
+
 //go:generate mockery --name=ServerClient --output ./mocks --structname ServerClient
 type ServerClient interface {
 	PostRegister(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                  // Registers an agent
@@ -86,6 +104,8 @@ type ServerClient interface {
 	PutApiSignatures(context.Context, *time.Duration, http.Header, url.Values, *apiv1.UpdateApiSignaturesRequest) (*http.Response, error)                 // Put API Signatures
 	PutApplicationSignatures(context.Context, *time.Duration, http.Header, url.Values, *apiv1.UpdateApplicationSignaturesRequest) (*http.Response, error) // Put Application Signatures
 	PostClaimKeyRotationResourcesForSigningV2(context.Context, *time.Duration, http.Header, *securityv1.ResourcesToResignRequest) (*http.Response, error) // Claim key rotation resources for signing
+	PostClaimDatabaseLifecycleDispatches(context.Context, *time.Duration, http.Header, DatabaseLifecycleDispatchClaimRequest) (*http.Response, error)     // Claim database lifecycle dispatches
+	PostDatabaseLifecycleTerminalCallback(context.Context, *time.Duration, http.Header, DatabaseLifecycleTerminalCallbackRequest) (*http.Response, error) // Post database lifecycle terminal callback
 
 	// UNUSED by orchestrator. But used by other clients
 	PostClaimKeyRotationResourcesForSigning(context.Context, *time.Duration, http.Header, *securityv1.ResourcesToResignRequest) (*http.Response, error) // Claim key rotation resources for signing
@@ -248,6 +268,20 @@ func (s *serverClient) PostClaimKeyRotationResourcesForSigning(ctx context.Conte
 
 func (s *serverClient) PostClaimKeyRotationResourcesForSigningV2(ctx context.Context, timeout *time.Duration, headers http.Header, body *securityv1.ResourcesToResignRequest) (*http.Response, error) {
 	return s.sendRequest(ctx, timeout, http.MethodPost, "api/v2/keyrotations/claim-resources", headers, nil, body, true)
+}
+
+func (s *serverClient) PostClaimDatabaseLifecycleDispatches(ctx context.Context, timeout *time.Duration, headers http.Header, body DatabaseLifecycleDispatchClaimRequest) (*http.Response, error) {
+	headers = combineHeaders(map[string]string{
+		"Content-Type": "application/json",
+	}, headers)
+	return s.sendRequest(ctx, timeout, http.MethodPost, "api/v1/database-lifecycle/dispatches/claim", headers, nil, body, true)
+}
+
+func (s *serverClient) PostDatabaseLifecycleTerminalCallback(ctx context.Context, timeout *time.Duration, headers http.Header, body DatabaseLifecycleTerminalCallbackRequest) (*http.Response, error) {
+	headers = combineHeaders(map[string]string{
+		"Content-Type": "application/json",
+	}, headers)
+	return s.sendRequest(ctx, timeout, http.MethodPost, "api/v1/database-lifecycle/callbacks/terminal", headers, nil, body, true)
 }
 
 func (s *serverClient) sendRequest(ctx context.Context, timeout *time.Duration, method string, path string, headers http.Header, query url.Values, body any, useAgentKey bool) (*http.Response, error) {
