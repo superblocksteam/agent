@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	systemruntime "runtime"
 	"strings"
@@ -26,8 +27,11 @@ import (
 	r "github.com/redis/go-redis/v9"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/superblocksteam/agent/pkg/clients"
 	httpserver "github.com/superblocksteam/agent/pkg/http"
 	"github.com/superblocksteam/agent/pkg/observability"
+	"github.com/superblocksteam/agent/pkg/observability/emitter"
+	"github.com/superblocksteam/agent/pkg/observability/emitter/remote"
 	"github.com/superblocksteam/agent/pkg/observability/log"
 	"github.com/superblocksteam/agent/pkg/pluginparser"
 	pkgrun "github.com/superblocksteam/agent/pkg/run"
@@ -168,6 +172,13 @@ func init() {
 	pflag.String("otel.metrics.collector.http.url", "", "The OTLP HTTP collector URL for metrics. Falls back to otel.collector.http.url if empty.")
 	pflag.Duration("otel.metrics.export.interval", 10*time.Second, "How often to export OTLP metrics.")
 
+	// Remote log emitter settings
+	pflag.Bool("emitter.remote.enabled", true, "Whether the remote log emitter is enabled.")
+	pflag.String("emitter.remote.intake", "", "The remote log intake URL.")
+	pflag.Int("emitter.remote.flush.max.items", 5, "The maximum number of items per remote log flush.")
+	pflag.Duration("emitter.remote.flush.max.duration", 30*time.Second, "The maximum duration between remote log flushes.")
+	pflag.Duration("superblocks.timeout", 10*time.Second, "The timeout to use for Superblocks HTTP requests.")
+
 	// Superblocks settings
 	pflag.String("superblocks.key", "dev-agent-key", "The superblocks agent key.")
 
@@ -225,6 +236,52 @@ func main() {
 		serviceLabel = fmt.Sprintf("%s.ephemeral", serviceLabel)
 	}
 
+	var intakeHttpClient clients.IntakeClient
+	{
+		duration := viper.GetDuration("superblocks.timeout")
+		intakeHttpClient = clients.NewIntakeClient(&clients.IntakeClientOptions{
+			Logger: zap.NewNop(),
+			LogUrl: viper.GetString("emitter.remote.intake"),
+			Headers: map[string]string{
+				"x-superblocks-agent-id":  id,
+				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
+			},
+			Timeout: &duration,
+		})
+	}
+
+	var remoteEmitter emitter.Emitter
+	{
+		headers := http.Header{}
+		remoteEmitter = remote.Emitter(
+			intakeHttpClient,
+			remote.Enabled(viper.GetBool("emitter.remote.enabled")),
+			remote.FlushMaxItems(viper.GetInt("emitter.remote.flush.max.items")),
+			remote.FlushMaxDuration(viper.GetDuration("emitter.remote.flush.max.duration")),
+			remote.Whitelist(
+				observability.OBS_TAG_AGENT_ID,
+				observability.OBS_TAG_AGENT_VERSION,
+				observability.OBS_TAG_APPLICATION_ID,
+				observability.OBS_TAG_COMPONENT,
+				observability.OBS_TAG_CORRELATION_ID,
+				observability.OBS_TAG_ORG_ID,
+				observability.OBS_TAG_PAGE_ID,
+				observability.OBS_TAG_PARENT_ID,
+				observability.OBS_TAG_PARENT_NAME,
+				observability.OBS_TAG_PARENT_TYPE,
+				observability.OBS_TAG_PROFILE,
+				observability.OBS_TAG_RESOURCE_ACTION,
+				observability.OBS_TAG_RESOURCE_ID,
+				observability.OBS_TAG_RESOURCE_NAME,
+				observability.OBS_TAG_RESOURCE_TYPE,
+				observability.OBS_TAG_USER_EMAIL,
+				observability.OBS_TAG_USER_TYPE,
+				observability.OBS_TAG_VIEW_MODE,
+			),
+			remote.Headers(headers),
+		)
+	}
+
 	var intakeLogger *zap.Logger
 	{
 		l, err := log.Logger(&log.Options{
@@ -232,6 +289,7 @@ func main() {
 			InitialFields: map[string]any{
 				observability.OBS_TAG_WORKER_ID: id,
 			},
+			Emitters: []emitter.Emitter{remoteEmitter},
 		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not create logger: %s", err)
@@ -319,6 +377,7 @@ func main() {
 				observability.OBS_TAG_WORKER_ID: id,
 				observability.OBS_TAG_COMPONENT: serviceLabel,
 			},
+			Emitters:       []emitter.Emitter{remoteEmitter},
 			LoggerProvider: telInstance.LoggerProvider,
 			ServiceName:    serviceLabel,
 		})
@@ -836,6 +895,7 @@ func main() {
 		signaldelay.WithBaseDelay(viper.GetDuration("worker.shutdown.delay")),
 		signaldelay.WithMaxJitter(viper.GetDuration("worker.shutdown.max.jitter")),
 	))
+	g.Add(viper.GetBool("emitter.remote.enabled"), remoteEmitter)
 	g.Add(viper.GetBool("health.enabled"), healthChecker)
 	g.Always(transportRunnable)
 	g.Always(sandboxRunnable)

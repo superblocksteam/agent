@@ -105,7 +105,15 @@ spec:
           value: ""
         {{- end }}
         - name: SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE
-          value: https://logs.intake.superblocks.com
+          value: {{ .Values.superblocks.telemetry.logIntakeUrl | quote }}
+        - name: SUPERBLOCKS_WORKER_GO_EMITTER_REMOTE_ENABLED
+          value: {{ .Values.superblocks.telemetry.remoteEnabled | quote }}
+        - name: SUPERBLOCKS_WORKER_GO_EMITTER_REMOTE_INTAKE
+          value: {{ if .Values.superblocks.telemetry.remoteEnabled }}{{ .Values.superblocks.telemetry.logIntakeUrl | quote }}{{ else }}""{{ end }}
+        - name: SUPERBLOCKS_WORKER_SANDBOX_EMITTER_REMOTE_ENABLED
+          value: {{ .Values.superblocks.telemetry.remoteEnabled | quote }}
+        - name: SUPERBLOCKS_WORKER_SANDBOX_EMITTER_REMOTE_INTAKE
+          value: {{ if .Values.superblocks.telemetry.remoteEnabled }}{{ .Values.superblocks.telemetry.logIntakeUrl | quote }}{{ else }}""{{ end }}
         - name: SUPERBLOCKS_ORCHESTRATOR_INTAKE_METADATA_URL
           value: https://metadata.intake.superblocks.com
         - name: SUPERBLOCKS_ORCHESTRATOR_FILE_SERVER_URL

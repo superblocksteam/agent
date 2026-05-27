@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	systemruntime "runtime"
 	"strings"
@@ -18,9 +19,11 @@ import (
 	r "github.com/redis/go-redis/v9"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/emitter"
+	"github.com/superblocksteam/agent/pkg/observability/emitter/remote"
 	"github.com/superblocksteam/agent/pkg/observability/log"
 	pkgrun "github.com/superblocksteam/agent/pkg/run"
 	"github.com/superblocksteam/agent/pkg/store"
@@ -59,6 +62,10 @@ func init() {
 	pflag.Int("telemetry.batch.max.export.batch.size", 0, "Max spans per export batch (0 = SDK default 512).")
 	pflag.Duration("telemetry.batch.timeout", 0, "Flush partial batch after this duration (0 = SDK default 5s).")
 	pflag.Duration("telemetry.batch.export.timeout", 0, "Per-export-call timeout (0 = library default 30s).")
+	pflag.Bool("emitter.remote.enabled", true, "Whether the remote log emitter is enabled.")
+	pflag.String("emitter.remote.intake", "", "The remote log intake URL.")
+	pflag.Int("emitter.remote.flush.max.items", 5, "The maximum number of items per remote log flush.")
+	pflag.Duration("emitter.remote.flush.max.duration", 30*time.Second, "The maximum duration between remote log flushes.")
 	pflag.String("superblocks.key", "dev-agent-key", "The superblocks agent key.")
 	pflag.Duration("superblocks.timeout", 10*time.Second, "The timeout to use for Superblocks HTTP requests.")
 	pflag.Duration("transport.redis.timeout.dial", 5*time.Second, "The maximum duration for dialing a redis connection.")
@@ -119,6 +126,52 @@ func init() {
 func main() {
 	pflag.Parse()
 
+	var intakeHttpClient clients.IntakeClient
+	{
+		duration := viper.GetDuration("superblocks.timeout")
+		intakeHttpClient = clients.NewIntakeClient(&clients.IntakeClientOptions{
+			Logger: zap.NewNop(),
+			LogUrl: viper.GetString("emitter.remote.intake"),
+			Headers: map[string]string{
+				"x-superblocks-agent-id":  id,
+				"x-superblocks-agent-key": viper.GetString("superblocks.key"),
+			},
+			Timeout: &duration,
+		})
+	}
+
+	var remoteEmitter emitter.Emitter
+	{
+		headers := http.Header{}
+		remoteEmitter = remote.Emitter(
+			intakeHttpClient,
+			remote.Enabled(viper.GetBool("emitter.remote.enabled")),
+			remote.FlushMaxItems(viper.GetInt("emitter.remote.flush.max.items")),
+			remote.FlushMaxDuration(viper.GetDuration("emitter.remote.flush.max.duration")),
+			remote.Whitelist(
+				observability.OBS_TAG_AGENT_ID,
+				observability.OBS_TAG_AGENT_VERSION,
+				observability.OBS_TAG_APPLICATION_ID,
+				observability.OBS_TAG_COMPONENT,
+				observability.OBS_TAG_CORRELATION_ID,
+				observability.OBS_TAG_ORG_ID,
+				observability.OBS_TAG_PAGE_ID,
+				observability.OBS_TAG_PARENT_ID,
+				observability.OBS_TAG_PARENT_NAME,
+				observability.OBS_TAG_PARENT_TYPE,
+				observability.OBS_TAG_PROFILE,
+				observability.OBS_TAG_RESOURCE_ACTION,
+				observability.OBS_TAG_RESOURCE_ID,
+				observability.OBS_TAG_RESOURCE_NAME,
+				observability.OBS_TAG_RESOURCE_TYPE,
+				observability.OBS_TAG_USER_EMAIL,
+				observability.OBS_TAG_USER_TYPE,
+				observability.OBS_TAG_VIEW_MODE,
+			),
+			remote.Headers(headers),
+		)
+	}
+
 	var intakeLogger *zap.Logger
 	{
 		l, err := log.Logger(&log.Options{
@@ -126,7 +179,7 @@ func main() {
 			InitialFields: map[string]any{
 				observability.OBS_TAG_WORKER_ID: id,
 			},
-			Emitters: []emitter.Emitter{},
+			Emitters: []emitter.Emitter{remoteEmitter},
 		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not create logger: %s", err)
@@ -186,7 +239,7 @@ func main() {
 				observability.OBS_TAG_WORKER_ID: id,
 				observability.OBS_TAG_COMPONENT: "worker.go",
 			},
-			Emitters:       []emitter.Emitter{},
+			Emitters:       []emitter.Emitter{remoteEmitter},
 			LoggerProvider: telInstance.LoggerProvider,
 			ServiceName:    "worker.go",
 		})
@@ -294,6 +347,7 @@ func main() {
 	var g run.Group
 
 	g.Always(process.New())
+	g.Add(viper.GetBool("emitter.remote.enabled"), remoteEmitter)
 	g.Always(transportRunnable)
 	g.Always(tracerRunnable)
 

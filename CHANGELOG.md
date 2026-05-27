@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Restore `console.log` observability for JavaScript steps: re-enable the legacy remote log emitter in the Go worker and task-manager so that `console.log`/`console.warn`/`console.error` output appears in the Observability logs UI. This restores pre-v1.37 behavior for on-premise (OPA) deployments.
 - Only load the `javascriptsdkapi` plugin (instead of all plugins) in the JavaScript SDK sandbox. Loading all plugins increased OPA memory usage by ~1GiB and caused some OPAs to OOM (the JavaScript SDK sandbox only executes `javascriptsdkapi` plugins).
 - Fix a case where payload size truncation rendered Clark api traces as "empty object"
 - Update `@superblocksteam/sdk-api` version (to `v0.0.7`) to add support for `javascriptsdkapi` plugins to call GraphQL integrations with dynamic headers
