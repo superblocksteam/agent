@@ -86,6 +86,11 @@
               pkgs.pprof
               pythonPackage
             ];
+            # buildInputs (not `packages`) so the apple-sdk hook sets the
+            # host-platform SDKROOT/DEVELOPER_DIR that cgo reads; via
+            # `packages` it only sets *_FOR_BUILD and cgo keeps using the
+            # nixpkgs-default host SDK.
+            buildInputs = lib.optional pkgs.stdenv.isDarwin pkgs.apple-sdk_26;
           };
         }
       );

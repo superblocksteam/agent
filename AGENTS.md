@@ -140,41 +140,10 @@ Run `make ephemeral-status` to check process state and `make ephemeral-down` to 
 
 `Makefile.ephemeral` resolves the right Node automatically (`NODE_BIN` from `~/.nvm` / `~/.fnm` matching `.nvmrc`); `make ephemeral-check-node` runs the resolution and warns on mismatch. Other Makefiles (top-level `Makefile`, `workers/javascript/Makefile`) use whatever `node` is on `PATH` — `nvm use` (or `fnm use`) before running JS-related targets.
 
-### macOS + Nix devshell C toolchain
-
-The workspace Nix devshell ships a `clang-wrapper` and Apple SDK from the Nix store. When that SDK predates macOS 12, Go's `crypto/x509/internal/macos` package fails to link because it references `_SecTrustCopyCertificateChain` (added in macOS 12):
-
-```text
-Undefined symbols for architecture arm64:
-  "_SecTrustCopyCertificateChain", referenced from:
-      _crypto/x509/internal/macos.x509_SecTrustCopyCertificateChain_trampoline.abi0
-```
-
-`Makefile.ephemeral` works around this by detecting whether **any** of `cc`, `SDKROOT`, or `DEVELOPER_DIR` resolves into `/nix/store/...` and overriding all four to the system toolchain: `CC=/usr/bin/clang`, `CXX=/usr/bin/clang++`, `SDKROOT=$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcrun --show-sdk-path)`, `DEVELOPER_DIR=$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcode-select -p)`. Run `make ephemeral-check-toolchain` to confirm.
-
-Two non-obvious traps make checking just `cc` (or using plain `xcrun`) wrong:
-
-- **`direnv use flake` leaves `cc` at `/usr/bin/cc`** while still exporting Nix `SDKROOT` and `DEVELOPER_DIR`. Detection on `cc` alone misses this — cgo still picks up the Nix Security.framework via `DEVELOPER_DIR`.
-- **`xcrun` honors `$DEVELOPER_DIR` and `$SDKROOT`** even with `-sdk macosx`, so calling `xcrun --show-sdk-path` from inside the devshell echoes back the Nix SDK and any "override" computed from it is a no-op. Always invoke `xcrun` and `xcode-select` with `env -u DEVELOPER_DIR -u SDKROOT` to get the real system paths.
-
-`IN_NIX_SHELL` is only set by the legacy `nix-shell` command, not by `nix develop` or `direnv use flake`, so it is not a reliable detection signal on its own.
-
-Other Make targets in this repo (top-level `Makefile`, `make/Makefile.golang`) do not have this override yet, so `make build-go` directly inside the devshell hits the same error — either run those targets outside the devshell, or invoke them with the same env-var prefix:
-
-```bash
-CC=/usr/bin/clang CXX=/usr/bin/clang++ \
-  SDKROOT=$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcrun --show-sdk-path) \
-  DEVELOPER_DIR=$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcode-select -p) \
-  make build-go
-```
-
-The longer-term fix is to bump `pkgs.apple-sdk_*` in the workspace `flake.nix` `devShells.default.packages` for `aarch64-darwin` to a version that exports the newer Security.framework symbols natively, removing the need for the override.
-
 ## Gotchas
 
 - **JS sandbox env var is `SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT`** (default 50051), declared in `workers/ephemeral/javascript-plugins-sandbox/src/env.ts`. There is no `EXECUTOR_TRANSPORT_GRPC_PORT` variant; that name is silently ignored and the sandbox falls back to its default.
 - **Native modules in the JS workspace require Node 22**; see Local Development above.
-- **Nix devshell on macOS shadows the system Apple SDK**; cgo link fails with `Undefined symbols ... _SecTrustCopyCertificateChain`. See "macOS + Nix devshell C toolchain" above.
 
 ## Evolving This File
 

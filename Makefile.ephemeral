@@ -30,13 +30,6 @@
 #   Server:     SUPERBLOCKS_AGENT_SERVER_URL must be reachable (orchestrator
 #               exits on /api/v1/agents/register failure). For local server,
 #               run `pnpm dev` in repos/superblocks first.
-#   macOS Nix:  inside the workspace Nix devshell, this Makefile overrides
-#               CC/CXX/SDKROOT to the system clang because the Nix
-#               clang-wrapper bundles an older Apple SDK that's missing
-#               `_SecTrustCopyCertificateChain` (added in macOS 12). Without
-#               the override, `go build` fails with "Undefined symbols for
-#               architecture arm64". Run `make ephemeral-check-toolchain` to
-#               see the resolved toolchain.
 #
 # OPA-equivalent env vars (same as public Docker Compose agent steps):
 #   SUPERBLOCKS_AGENT_SERVER_URL or __SUPERBLOCKS_AGENT_SERVER_URL  -> --superblocks.url (e.g. https://staging.superblocks.com, https://pr-1234.superblocks.dev)
@@ -116,42 +109,6 @@ endif
 ORCH_GRPC_PORT    ?= 8081
 ORCH_METRICS_PORT ?= 9091
 ORCH_PPROF_PORT   ?= 7777
-
-# macOS + Nix devshell: the Nix `clang-wrapper` injects an older Apple SDK
-# (frequently apple-sdk_11) whose Security.framework is missing symbols that
-# Go's `crypto/x509/internal/macos` package needs (`_SecTrustCopyCertificateChain`,
-# added in macOS 12). The cgo link step then fails with "Undefined symbols for
-# architecture arm64". When any of `cc`, `SDKROOT`, or `DEVELOPER_DIR` come
-# from the Nix store, override the toolchain back to the system clang + SDK
-# so the system Security.framework is on the linker search path.
-#
-# Detection: any of `cc`, `SDKROOT`, or `DEVELOPER_DIR` resolving into
-# `/nix/store/...`. Nix flakes (`use flake`) and `nix develop` export
-# `DEVELOPER_DIR` and `SDKROOT` even when `cc` stays at /usr/bin/cc, so
-# checking `cc` alone misses direnv-driven setups.
-#
-# Resolution: `xcrun` honors `$DEVELOPER_DIR` and `$SDKROOT`, so calling it
-# inside the Nix devshell (even with `-sdk macosx`) echoes back the Nix SDK
-# and the "override" becomes a no-op. Invoke `xcrun` with both variables
-# unset (`env -u`) so it falls back to the active system developer dir
-# (Xcode.app or /Library/Developer/CommandLineTools).
-ifeq ($(shell uname -s),Darwin)
-CC_PATH := $(shell command -v cc 2>/dev/null)
-NIX_CC_DETECTED := $(filter /nix/store/%,$(CC_PATH))
-NIX_SDKROOT_DETECTED := $(filter /nix/store/%,$(SDKROOT))
-NIX_DEVELOPER_DIR_DETECTED := $(filter /nix/store/%,$(DEVELOPER_DIR))
-ifneq ($(NIX_CC_DETECTED)$(NIX_SDKROOT_DETECTED)$(NIX_DEVELOPER_DIR_DETECTED),)
-SYSTEM_SDKROOT := $(shell env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcrun --show-sdk-path 2>/dev/null)
-SYSTEM_DEVELOPER_DIR := $(shell env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcode-select -p 2>/dev/null)
-ifneq ($(SYSTEM_SDKROOT),)
-export CC            := /usr/bin/clang
-export CXX           := /usr/bin/clang++
-export SDKROOT       := $(SYSTEM_SDKROOT)
-export DEVELOPER_DIR := $(SYSTEM_DEVELOPER_DIR)
-NIX_TOOLCHAIN_DETECTED := 1
-endif
-endif
-endif
 
 # Node.js binary used for the JS sandboxes. The repo pins a specific version
 # in .nvmrc; deasync@0.1.29 only ships prebuilt darwin-arm64 bindings up to
@@ -251,52 +208,6 @@ ephemeral-check-node:
 		echo "    Install: nvm install $(NVMRC_VERSION) && nvm use $(NVMRC_VERSION)"; \
 		echo "    Or set NODE_BIN=/abs/path/to/node-$(NVMRC_MAJOR) when invoking make."; \
 		exit 1; \
-	fi
-
-# Reports the C toolchain the cgo link step will use. On Darwin, when `cc`,
-# `SDKROOT`, or `DEVELOPER_DIR` come from the Nix devshell, `Makefile.ephemeral`
-# overrides them to the system toolchain so the cgo link step can resolve
-# symbols like `_SecTrustCopyCertificateChain` from the current macOS
-# Security.framework.
-.PHONY: ephemeral-check-toolchain
-ephemeral-check-toolchain:
-	@if [ "$$(uname -s)" = "Darwin" ]; then \
-		if [ -n "$(NIX_TOOLCHAIN_DETECTED)" ]; then \
-			if [ -n "$(NIX_CC_DETECTED)" ]; then \
-				echo "==> Detected Nix toolchain at $(CC_PATH); overriding to system clang"; \
-			elif [ -n "$(NIX_DEVELOPER_DIR_DETECTED)" ]; then \
-				echo "==> Detected Nix DEVELOPER_DIR ($(NIX_DEVELOPER_DIR_DETECTED)); overriding to system SDK"; \
-			else \
-				echo "==> Detected Nix SDKROOT ($(NIX_SDKROOT_DETECTED)); overriding to system SDK"; \
-			fi; \
-		fi; \
-		echo "==> Using CC=$${CC:-cc} CXX=$${CXX:-c++} SDKROOT=$${SDKROOT:-<unset>} DEVELOPER_DIR=$${DEVELOPER_DIR:-<unset>}"; \
-		actual_cc=$$(command -v $${CC:-cc} 2>/dev/null || echo "<not found>"); \
-		echo "    cc resolves to: $$actual_cc"; \
-		case "$$actual_cc" in \
-			/nix/store/*) \
-				echo "==> ERROR: cc still resolves into /nix/store. cgo link will fail with"; \
-				echo "    'Undefined symbols ... _SecTrustCopyCertificateChain'."; \
-				echo "    Workaround: CC=/usr/bin/clang CXX=/usr/bin/clang++ \\"; \
-				echo "                SDKROOT=\$$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcrun --show-sdk-path) \\"; \
-				echo "                DEVELOPER_DIR=\$$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcode-select -p) make ..."; \
-				exit 1;; \
-		esac; \
-		case "$${SDKROOT:-}" in \
-			/nix/store/*) \
-				echo "==> ERROR: SDKROOT still points at /nix/store. cgo link will fail with"; \
-				echo "    'Undefined symbols ... _SecTrustCopyCertificateChain'."; \
-				echo "    Workaround: SDKROOT=\$$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcrun --show-sdk-path) \\"; \
-				echo "                DEVELOPER_DIR=\$$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcode-select -p) make ..."; \
-				exit 1;; \
-		esac; \
-		case "$${DEVELOPER_DIR:-}" in \
-			/nix/store/*) \
-				echo "==> ERROR: DEVELOPER_DIR still points at /nix/store. cgo link will fail with"; \
-				echo "    'Undefined symbols ... _SecTrustCopyCertificateChain'."; \
-				echo "    Workaround: DEVELOPER_DIR=\$$(env -u DEVELOPER_DIR -u SDKROOT /usr/bin/xcode-select -p) make ..."; \
-				exit 1;; \
-		esac; \
 	fi
 
 # ============================================================================
@@ -618,7 +529,7 @@ EPHEMERAL_SERVICES = orchestrator \
                      go-worker
 
 .PHONY: ephemeral-up
-ephemeral-up: ephemeral-check-node ephemeral-check-toolchain ephemeral-kill-all ephemeral-deps ephemeral-build-go
+ephemeral-up: ephemeral-check-node ephemeral-kill-all ephemeral-deps ephemeral-build-go
 	@echo ""
 	@echo "==> Starting all services in background..."
 	$(call bg_start,orchestrator,cd $(ORCH_SRC) && SUPERBLOCKS_AGENT_APP_ENV_TEST=ok \
