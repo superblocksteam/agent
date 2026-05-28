@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/types && cp -R src/types/. dist/types/",
     "clean": "rimraf ./dist ./coverage *tsbuildinfo",
     "lint": "eslint . --ext ts --max-warnings 0 --cache --cache-strategy content --cache-location ~/.cache/eslint/",
     "lint:fix": "eslint . --ext ts --fix --cache --cache-strategy content --cache-location ~/.cache/eslint/",

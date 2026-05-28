@@ -67,6 +67,7 @@ TM_DIR          = $(ORCH_SRC)/workers/ephemeral/task-manager
 TM_BINARY       = $(TM_DIR)/task-manager
 JS_WORKSPACE    = $(ORCH_SRC)/workers/javascript
 JS_SANDBOX_DIR  = $(ORCH_SRC)/workers/ephemeral/javascript-plugins-sandbox
+JS_SANDBOX_DEPLOY_DIR = $(JS_SANDBOX_DIR)/.deploy
 GO_WORKER_DIR   = $(ORCH_SRC)/workers/golang
 GO_WORKER_BIN   = $(GO_WORKER_DIR)/worker-go
 ORCH_BINARY     = $(ORCH_SRC)/orchestrator
@@ -237,36 +238,83 @@ ephemeral-build-js-sandbox: ephemeral-check-node
 		echo "==> Rebuilding native module: $$pkg"; \
 		find node_modules/.pnpm -path "*/$${pkg}@*/node_modules/$${pkg}" -type d 2>/dev/null | xargs -I{} sh -c 'cd "{}" && npm rebuild' || true; \
 	done && \
-	echo "==> Building transitive dependencies..." && \
-	pnpm --filter "@superblocks/worker.js^..." --filter "@superblocksteam/javascript-sdk-api^..." build && \
+	echo "==> Building transitive dependencies of javascript-plugins-sandbox (plugins, worker.js, etc.)..." && \
+	pnpm --filter 'javascript-plugins-sandbox^...' run build && \
+	echo "==> Re-linking workspace packages after plugin builds (Dockerfile.sandbox.javascript phase 1)..." && \
+	pnpm install && \
 	echo "==> Generating type declarations for sandbox dependencies..." && \
 	pnpm --filter @superblocks/worker.js typecheck && \
 	pnpm --filter @superblocksteam/javascript-sdk-api typecheck && \
-	pnpm --filter javascript-plugins-sandbox... build
+	echo "==> Building javascript-plugins-sandbox..." && \
+	pnpm --filter javascript-plugins-sandbox run clean && \
+	pnpm --filter javascript-plugins-sandbox build && \
+	echo "==> Re-linking workspace packages after sandbox build (Dockerfile.sandbox.javascript phase 2)..." && \
+	pnpm install && \
+	echo "==> Deploying javascript-plugins-sandbox for local runtime..." && \
+	rm -rf $(JS_SANDBOX_DEPLOY_DIR) && \
+	pnpm --filter javascript-plugins-sandbox deploy --prod $(JS_SANDBOX_DEPLOY_DIR)
+	@mkdir -p $(JS_SANDBOX_DEPLOY_DIR)/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles
+	@if [ ! -f $(JS_SANDBOX_DEPLOY_DIR)/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js ]; then \
+		cp $(JS_WORKSPACE)/packages/plugins/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js \
+		   $(JS_SANDBOX_DEPLOY_DIR)/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js; \
+	fi
+	@test -f $(JS_SANDBOX_DEPLOY_DIR)/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js \
+	  || (echo "ERROR: sdk-api.iife.js missing from deploy" && exit 1)
 	@if [ -d $(JS_SANDBOX_DIR)/src/types ]; then \
-		echo "==> Copying protobuf types to JS sandbox dist..."; \
-		mkdir -p $(JS_SANDBOX_DIR)/dist/types && \
-		cp -R $(JS_SANDBOX_DIR)/src/types/. $(JS_SANDBOX_DIR)/dist/types/; \
+		echo "==> Copying protobuf types to JS sandbox deploy dist..."; \
+		mkdir -p $(JS_SANDBOX_DEPLOY_DIR)/dist/types && \
+		cp -R $(JS_SANDBOX_DIR)/src/types/. $(JS_SANDBOX_DEPLOY_DIR)/dist/types/; \
 	fi
 
-JS_LOCKFILE = $(JS_WORKSPACE)/pnpm-lock.yaml
+JS_LOCKFILE              = $(ORCH_SRC)/pnpm-lock.yaml
+JS_WORKSPACE_CONFIG      = $(ORCH_SRC)/pnpm-workspace.yaml
+JS_SANDBOX_DEPLOY_INDEX  = $(JS_SANDBOX_DEPLOY_DIR)/dist/index.js
 
-.PHONY: ephemeral-build-go
-ephemeral-build-go: ephemeral-build-orchestrator ephemeral-build-task-manager ephemeral-build-go-worker
-	@if [ ! -f $(JS_SANDBOX_DIR)/dist/index.js ]; then \
-		echo "==> JS sandbox dist missing, building..."; \
-		$(MAKE) ephemeral-build-js-sandbox; \
-	elif [ -f $(JS_LOCKFILE) ] && [ "$(JS_LOCKFILE)" -nt "$(JS_SANDBOX_DIR)/dist/index.js" ]; then \
-		echo "==> pnpm-lock.yaml newer than dist, rebuilding JS sandbox..."; \
+# Rebuild .deploy when sandbox sources, plugin workspace sources, lockfiles, or this
+# Makefile change. A lockfile-only check misses code edits; scanning source trees
+# avoids serving stale deploy output after `make ephemeral-up`.
+.PHONY: ephemeral-build-js-sandbox-if-needed
+ephemeral-build-js-sandbox-if-needed:
+	@deploy='$(JS_SANDBOX_DEPLOY_INDEX)'; \
+	reason=''; \
+	if [ ! -f "$$deploy" ]; then \
+		reason='deploy dist missing'; \
+	elif [ -f '$(JS_LOCKFILE)' ] && [ '$(JS_LOCKFILE)' -nt "$$deploy" ]; then \
+		reason='pnpm-lock.yaml changed'; \
+	elif [ -f '$(JS_WORKSPACE_CONFIG)' ] && [ '$(JS_WORKSPACE_CONFIG)' -nt "$$deploy" ]; then \
+		reason='pnpm-workspace.yaml changed'; \
+	elif [ '$(CURDIR)/Makefile.ephemeral' -nt "$$deploy" ]; then \
+		reason='Makefile.ephemeral changed'; \
+	elif [ '$(JS_SANDBOX_DIR)/package.json' -nt "$$deploy" ]; then \
+		reason='javascript-plugins-sandbox/package.json changed'; \
+	elif find \
+		'$(JS_SANDBOX_DIR)/src' \
+		'$(JS_WORKSPACE)/packages' \
+		'$(ORCH_SRC)/types/gen/js' \
+		-type f \
+		! -path '*/node_modules/*' \
+		! -path '*/dist/*' \
+		! -path '*/.deploy/*' \
+		! -path '*/coverage/*' \
+		! -name '*.tsbuildinfo' \
+		-newer "$$deploy" \
+		-print -quit 2>/dev/null | grep -q .; then \
+		reason='sandbox or plugin sources changed'; \
+	fi; \
+	if [ -n "$$reason" ]; then \
+		echo "==> JS sandbox deploy stale ($$reason), rebuilding..."; \
 		$(MAKE) ephemeral-build-js-sandbox; \
 	else \
-		echo "==> JS sandbox dist exists, skipping (use 'make ephemeral-build-js-sandbox' to force)"; \
+		echo "==> JS sandbox deploy dist up to date, skipping (make ephemeral-build-js-sandbox to force)"; \
 	fi
-	@if [ -d $(JS_SANDBOX_DIR)/src/types ] && [ ! -d $(JS_SANDBOX_DIR)/dist/types ]; then \
-		echo "==> Copying protobuf types to JS sandbox dist..."; \
-		mkdir -p $(JS_SANDBOX_DIR)/dist/types && \
-		cp -R $(JS_SANDBOX_DIR)/src/types/. $(JS_SANDBOX_DIR)/dist/types/; \
+	@if [ -d $(JS_SANDBOX_DIR)/src/types ] && [ ! -d $(JS_SANDBOX_DEPLOY_DIR)/dist/types ]; then \
+		echo "==> Copying protobuf types to JS sandbox deploy dist..."; \
+		mkdir -p $(JS_SANDBOX_DEPLOY_DIR)/dist/types && \
+		cp -R $(JS_SANDBOX_DIR)/src/types/. $(JS_SANDBOX_DEPLOY_DIR)/dist/types/; \
 	fi
+
+.PHONY: ephemeral-build-go
+ephemeral-build-go: ephemeral-build-orchestrator ephemeral-build-task-manager ephemeral-build-go-worker ephemeral-build-js-sandbox-if-needed
 	@echo ""
 	@echo "==> Build complete"
 
@@ -374,7 +422,7 @@ ephemeral-task-manager-py: ephemeral-build-task-manager
 .PHONY: ephemeral-js-sandbox
 ephemeral-js-sandbox: ephemeral-build-js-sandbox
 	@echo "==> Starting JavaScript sandbox (gRPC=:$(JS_SANDBOX_PORT))..."
-	@env -u ELECTRON_RUN_AS_NODE \
+	@cd $(JS_SANDBOX_DEPLOY_DIR) && env -u ELECTRON_RUN_AS_NODE \
 	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT=$(JS_SANDBOX_PORT) \
 	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_GRPC_PORT) \
 	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_HTTP_PORT) \
@@ -383,14 +431,14 @@ ephemeral-js-sandbox: ephemeral-build-js-sandbox
 	SUPERBLOCKS_AGENT_KEY="" \
 	SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA="" \
 	SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519="" \
-	$(NODE_BIN) $(JS_SANDBOX_DIR)/dist/index.js
+	$(NODE_BIN) dist/index.js
 
 # Dedicated JS sandbox for the SDK API task-manager. Same binary, different
 # ports so the two sandbox processes are isolated (matches staging).
 .PHONY: ephemeral-js-sandbox-sdkapi
 ephemeral-js-sandbox-sdkapi: ephemeral-build-js-sandbox
 	@echo "==> Starting SDK API JavaScript sandbox (gRPC=:$(SDKAPI_SANDBOX_PORT))..."
-	@env -u ELECTRON_RUN_AS_NODE \
+	@cd $(JS_SANDBOX_DEPLOY_DIR) && env -u ELECTRON_RUN_AS_NODE \
 	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT=$(SDKAPI_SANDBOX_PORT) \
 	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS=127.0.0.1:$(SDKAPI_TM_VAR_STORE_GRPC_PORT) \
 	SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS=127.0.0.1:$(SDKAPI_TM_VAR_STORE_HTTP_PORT) \
@@ -399,7 +447,7 @@ ephemeral-js-sandbox-sdkapi: ephemeral-build-js-sandbox
 	SUPERBLOCKS_AGENT_KEY="" \
 	SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA="" \
 	SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519="" \
-	$(NODE_BIN) $(JS_SANDBOX_DIR)/dist/index.js
+	$(NODE_BIN) dist/index.js
 
 # Go worker — handles the v8 JavaScript path for bucket BA. Reads work from the
 # same Redis stream as the task-managers; orchestrator routes by bucket.
@@ -559,7 +607,7 @@ ephemeral-up: ephemeral-check-node ephemeral-kill-all ephemeral-deps ephemeral-b
 		--worker.go.enabled=$${SUPERBLOCKS_ORCHESTRATOR_WORKER_GO_ENABLED-true} \
 		--worker.stream.variant=$${SUPERBLOCKS_WORKER_STREAM_VARIANT-} \
 		--otel.collector.http.url=http://127.0.0.1:4318)
-	$(call bg_start,js-sandbox,env -u ELECTRON_RUN_AS_NODE \
+	$(call bg_start,js-sandbox,cd $(JS_SANDBOX_DEPLOY_DIR) && env -u ELECTRON_RUN_AS_NODE \
 		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT=$(JS_SANDBOX_PORT) \
 		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_GRPC_PORT) \
 		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS=127.0.0.1:$(JS_TM_VAR_STORE_HTTP_PORT) \
@@ -568,8 +616,8 @@ ephemeral-up: ephemeral-check-node ephemeral-kill-all ephemeral-deps ephemeral-b
 		SUPERBLOCKS_AGENT_KEY="" \
 		SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA="" \
 		SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519="" \
-		$(NODE_BIN) $(JS_SANDBOX_DIR)/dist/index.js)
-	$(call bg_start,js-sandbox-sdkapi,env -u ELECTRON_RUN_AS_NODE \
+		$(NODE_BIN) dist/index.js)
+	$(call bg_start,js-sandbox-sdkapi,cd $(JS_SANDBOX_DEPLOY_DIR) && env -u ELECTRON_RUN_AS_NODE \
 		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_GRPC_PORT=$(SDKAPI_SANDBOX_PORT) \
 		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_ADDRESS=127.0.0.1:$(SDKAPI_TM_VAR_STORE_GRPC_PORT) \
 		SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_VARIABLE_STORE_HTTP_ADDRESS=127.0.0.1:$(SDKAPI_TM_VAR_STORE_HTTP_PORT) \
@@ -578,7 +626,7 @@ ephemeral-up: ephemeral-check-node ephemeral-kill-all ephemeral-deps ephemeral-b
 		SUPERBLOCKS_AGENT_KEY="" \
 		SUPERBLOCKS_TUNNEL_PRIVATE_KEY_RSA="" \
 		SUPERBLOCKS_TUNNEL_PRIVATE_KEY_ED25519="" \
-		$(NODE_BIN) $(JS_SANDBOX_DIR)/dist/index.js)
+		$(NODE_BIN) dist/index.js)
 	@echo "==> Waiting for sandboxes to bind (3s)..."
 	@sleep 3
 	$(call bg_start,task-manager-js,\
@@ -702,6 +750,7 @@ ephemeral-help:
 	@echo "  make ephemeral-logs                   Tail all logs"
 	@echo "  make ephemeral-build                  Build all binaries (orch, task-manager, go-worker, js-sandbox)"
 	@echo "  make ephemeral-build-js-sandbox       Force rebuild JS sandbox (after merge/pnpm install)"
+	@echo "  make ephemeral-build-js-sandbox-if-needed  Rebuild JS sandbox only when .deploy, lockfile, or sources require it"
 	@echo "  make ephemeral-bench-sandbox-startup  Benchmark sandbox startup latency"
 	@echo ""
 	@echo "Per-service targets (run in a dedicated terminal):"

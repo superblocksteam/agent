@@ -1134,6 +1134,9 @@ importers:
       '@azure/cosmos':
         specifier: 4.0.0
         version: 4.0.0
+      '@azure/logger':
+        specifier: 1.1.4
+        version: 1.1.4
       '@bufbuild/protobuf':
         specifier: 1.3.0
         version: 1.3.0
@@ -14503,6 +14506,7 @@ snapshots:
       '@aws-sdk/client-athena': 3.758.0
       '@aws-sdk/client-glue': 3.758.0
       '@azure/cosmos': 4.0.0
+      '@azure/logger': 1.1.4
       '@bufbuild/protobuf': 1.3.0
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
