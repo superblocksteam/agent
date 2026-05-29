@@ -230,6 +230,11 @@ ephemeral-build-go-worker:
 	@echo "==> Building go-worker..."
 	@cd $(GO_WORKER_DIR) && CGO_ENABLED=1 go build -ldflags="-s -w" -o worker-go ./cmd/worker.go/...
 
+# The final `pnpm deploy` uses `--legacy` because pnpm v10's default injected
+# deploy refuses with ERR_PNPM_DEPLOY_NONINJECTED_WORKSPACE in CI (the
+# injectWorkspacePackages setting from pnpm-workspace.yaml is not honored by the
+# deploy guard there). Legacy deploy still produces a self-contained prod tree
+# that resolves plugin deps (e.g. cosmosdb's @azure/logger) and the WASM bundle.
 .PHONY: ephemeral-build-js-sandbox
 ephemeral-build-js-sandbox: ephemeral-check-node
 	@echo "==> Building JavaScript sandbox (this may take a while on first run)..."
@@ -252,7 +257,7 @@ ephemeral-build-js-sandbox: ephemeral-check-node
 	pnpm install && \
 	echo "==> Deploying javascript-plugins-sandbox for local runtime..." && \
 	rm -rf $(JS_SANDBOX_DEPLOY_DIR) && \
-	pnpm --filter javascript-plugins-sandbox deploy --prod $(JS_SANDBOX_DEPLOY_DIR)
+	pnpm --filter javascript-plugins-sandbox deploy --prod --legacy $(JS_SANDBOX_DEPLOY_DIR)
 	@mkdir -p $(JS_SANDBOX_DEPLOY_DIR)/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles
 	@if [ ! -f $(JS_SANDBOX_DEPLOY_DIR)/node_modules/@superblocksteam/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js ]; then \
 		cp $(JS_WORKSPACE)/packages/plugins/javascript-sdk-api-wasm/dist/src/bundles/sdk-api.iife.js \
