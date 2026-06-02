@@ -79,10 +79,28 @@ catalogs:
 
 overrides:
   '@smithy/config-resolver': ^4.4.0
-  qs: ^6.14.2
+  qs: '>=6.15.2 <7'
   protobufjs: ^7.5.8
   node-forge: ^1.4.0
   fast-xml-parser: ^4.5.6
+  axios: '>=1.16.0 <2'
+  basic-ftp: '>=5.3.1 <6'
+  fast-uri: '>=3.1.2 <4'
+  path-to-regexp: '>=0.1.13 <0.2'
+  form-data@<3: '>=2.5.4 <3'
+  js-yaml@<4: '>=3.14.2 <4'
+  glob@>=10 <11: '>=10.5.0 <11'
+  ws@>=8 <9: '>=8.20.1 <9'
+  minimatch@>=3 <4: '>=3.1.4 <4'
+  minimatch@>=5 <6: '>=5.1.8 <6'
+  minimatch@>=9 <10: '>=9.0.7 <10'
+  minimatch@>=10 <11: '>=10.2.3 <11'
+  jws@<4: '>=3.2.3 <4'
+  jws@>=4 <5: '>=4.0.1 <5'
+  brace-expansion@<2: '>=1.1.13 <2'
+  brace-expansion@>=2 <3: '>=2.0.3 <3'
+  bn.js@>=4 <5: '>=4.12.3 <5'
+  bn.js@>=5 <6: '>=5.2.3 <6'
 
 importers:
 
@@ -187,7 +205,7 @@ importers:
         version: link:../../javascript/packages/shared
       '@superblocks/worker.js':
         specifier: workspace:*
-        version: file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
+        version: file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)
       '@superblocksteam/adls':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/adls
@@ -229,7 +247,7 @@ importers:
         version: link:../../javascript/packages/plugins/javascript
       '@superblocksteam/javascript-sdk-api':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/javascript-sdk-api(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
+        version: file:workers/javascript/packages/plugins/javascript-sdk-api(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)
       '@superblocksteam/javascript-sdk-api-wasm':
         specifier: workspace:*
         version: link:../../javascript/packages/plugins/javascript-sdk-api-wasm
@@ -371,115 +389,115 @@ importers:
     dependencies:
       '@superblocks/worker.js':
         specifier: workspace:*
-        version: file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
+        version: file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)
       '@superblocksteam/adls':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/adls(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/adls(ws@8.21.0)
       '@superblocksteam/athena':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/athena(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/athena(ws@8.21.0)
       '@superblocksteam/bigquery':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/bigquery(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/bigquery(ws@8.21.0)
       '@superblocksteam/cockroachdb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/cockroachdb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/cockroachdb(ws@8.21.0)
       '@superblocksteam/cosmosdb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/cosmosdb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/cosmosdb(ws@8.21.0)
       '@superblocksteam/couchbase':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/couchbase(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/couchbase(ws@8.21.0)
       '@superblocksteam/databricks':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/databricks(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/databricks(ws@8.21.0)
       '@superblocksteam/dynamodb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/dynamodb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/dynamodb(ws@8.21.0)
       '@superblocksteam/email':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/email(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/email(ws@8.21.0)
       '@superblocksteam/gcs':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/gcs(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/gcs(ws@8.21.0)
       '@superblocksteam/graphql':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/graphql(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/graphql(ws@8.21.0)
       '@superblocksteam/gsheets':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/gsheets(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/gsheets(ws@8.21.0)
       '@superblocksteam/javascript':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
+        version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)
       '@superblocksteam/javascript-wasm':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/javascript-wasm(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/javascript-wasm(ws@8.21.0)
       '@superblocksteam/kafka':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/kafka(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/kafka(ws@8.21.0)
       '@superblocksteam/kinesis':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/kinesis(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/kinesis(ws@8.21.0)
       '@superblocksteam/lakebase':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/lakebase(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/lakebase(ws@8.21.0)
       '@superblocksteam/mariadb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/mariadb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/mariadb(ws@8.21.0)
       '@superblocksteam/mongodb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/mongodb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/mongodb(ws@8.21.0)
       '@superblocksteam/mssql':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/mssql(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/mssql(ws@8.21.0)
       '@superblocksteam/mysql':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/mysql(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/mysql(ws@8.21.0)
       '@superblocksteam/openai':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/openai(ws@8.18.0)(zod@3.23.8)
+        version: file:workers/javascript/packages/plugins/openai(ws@8.21.0)(zod@3.23.8)
       '@superblocksteam/oracledb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/oracledb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/oracledb(ws@8.21.0)
       '@superblocksteam/postgres':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/postgres(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/postgres(ws@8.21.0)
       '@superblocksteam/redis':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/redis(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/redis(ws@8.21.0)
       '@superblocksteam/redshift':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/redshift(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/redshift(ws@8.21.0)
       '@superblocksteam/restapi':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/restapi(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/restapi(ws@8.21.0)
       '@superblocksteam/restapiintegration':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/restapiintegration(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/restapiintegration(ws@8.21.0)
       '@superblocksteam/rockset':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/rockset(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/rockset(ws@8.21.0)
       '@superblocksteam/s3':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/s3(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/s3(ws@8.21.0)
       '@superblocksteam/salesforce':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/salesforce(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/salesforce(ws@8.21.0)
       '@superblocksteam/smtp':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/smtp(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/smtp(ws@8.21.0)
       '@superblocksteam/snowflake':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/snowflake(asn1.js@5.4.1)(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/snowflake(asn1.js@5.4.1)(ws@8.21.0)
       '@superblocksteam/snowflakepostgres':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.21.0)
       '@superblocksteam/superblocks-ocr':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/superblocks-ocr(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/superblocks-ocr(ws@8.21.0)
       '@superblocksteam/workflow':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/workflow(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/workflow(ws@8.21.0)
       ion-js:
         specifier: 5.2.1
         version: 5.2.1
@@ -531,7 +549,7 @@ importers:
         version: file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)
       '@superblocksteam/javascript':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)
       ion-js:
         specifier: 5.2.1
         version: 5.2.1
@@ -632,112 +650,112 @@ importers:
     dependencies:
       '@superblocks/worker.js':
         specifier: workspace:*
-        version: file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
+        version: file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)
       '@superblocksteam/adls':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/adls(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/adls(ws@8.21.0)
       '@superblocksteam/athena':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/athena(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/athena(ws@8.21.0)
       '@superblocksteam/bigquery':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/bigquery(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/bigquery(ws@8.21.0)
       '@superblocksteam/cockroachdb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/cockroachdb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/cockroachdb(ws@8.21.0)
       '@superblocksteam/cosmosdb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/cosmosdb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/cosmosdb(ws@8.21.0)
       '@superblocksteam/couchbase':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/couchbase(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/couchbase(ws@8.21.0)
       '@superblocksteam/databricks':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/databricks(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/databricks(ws@8.21.0)
       '@superblocksteam/dynamodb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/dynamodb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/dynamodb(ws@8.21.0)
       '@superblocksteam/email':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/email(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/email(ws@8.21.0)
       '@superblocksteam/gcs':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/gcs(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/gcs(ws@8.21.0)
       '@superblocksteam/graphql':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/graphql(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/graphql(ws@8.21.0)
       '@superblocksteam/gsheets':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/gsheets(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/gsheets(ws@8.21.0)
       '@superblocksteam/javascript-wasm':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/javascript-wasm(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/javascript-wasm(ws@8.21.0)
       '@superblocksteam/kafka':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/kafka(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/kafka(ws@8.21.0)
       '@superblocksteam/kinesis':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/kinesis(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/kinesis(ws@8.21.0)
       '@superblocksteam/lakebase':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/lakebase(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/lakebase(ws@8.21.0)
       '@superblocksteam/mariadb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/mariadb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/mariadb(ws@8.21.0)
       '@superblocksteam/mongodb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/mongodb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/mongodb(ws@8.21.0)
       '@superblocksteam/mssql':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/mssql(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/mssql(ws@8.21.0)
       '@superblocksteam/mysql':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/mysql(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/mysql(ws@8.21.0)
       '@superblocksteam/openai':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/openai(ws@8.18.0)(zod@3.23.8)
+        version: file:workers/javascript/packages/plugins/openai(ws@8.21.0)(zod@3.23.8)
       '@superblocksteam/oracledb':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/oracledb(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/oracledb(ws@8.21.0)
       '@superblocksteam/postgres':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/postgres(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/postgres(ws@8.21.0)
       '@superblocksteam/redis':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/redis(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/redis(ws@8.21.0)
       '@superblocksteam/redshift':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/redshift(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/redshift(ws@8.21.0)
       '@superblocksteam/restapi':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/restapi(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/restapi(ws@8.21.0)
       '@superblocksteam/restapiintegration':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/restapiintegration(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/restapiintegration(ws@8.21.0)
       '@superblocksteam/rockset':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/rockset(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/rockset(ws@8.21.0)
       '@superblocksteam/s3':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/s3(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/s3(ws@8.21.0)
       '@superblocksteam/salesforce':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/salesforce(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/salesforce(ws@8.21.0)
       '@superblocksteam/smtp':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/smtp(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/smtp(ws@8.21.0)
       '@superblocksteam/snowflake':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/snowflake(asn1.js@5.4.1)(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/snowflake(asn1.js@5.4.1)(ws@8.21.0)
       '@superblocksteam/snowflakepostgres':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.21.0)
       '@superblocksteam/superblocks-ocr':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/superblocks-ocr(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/superblocks-ocr(ws@8.21.0)
       '@superblocksteam/workflow':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/workflow(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/workflow(ws@8.21.0)
       ion-js:
         specifier: 5.2.1
         version: 5.2.1
@@ -1750,7 +1768,7 @@ importers:
         specifier: 2.1664.0
         version: 2.1664.0
       axios:
-        specifier: 1.16.0
+        specifier: '>=1.16.0 <2'
         version: 1.16.0(debug@4.4.3)
       base64url:
         specifier: 3.0.1
@@ -1872,7 +1890,7 @@ importers:
         version: link:../../shared
       '@superblocksteam/javascript':
         specifier: workspace:*
-        version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
+        version: file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)
       '@superblocksteam/sdk-api':
         specifier: 0.0.7
         version: 0.0.7
@@ -2505,7 +2523,7 @@ importers:
         specifier: workspace:*
         version: link:../../shared
       axios:
-        specifier: 1.16.0
+        specifier: '>=1.16.0 <2'
         version: 1.16.0(debug@4.4.3)
       form-data:
         specifier: ^4.0.4
@@ -2858,7 +2876,7 @@ importers:
         specifier: workspace:*
         version: link:../../shared
       axios:
-        specifier: 1.16.0
+        specifier: '>=1.16.0 <2'
         version: 1.16.0(debug@4.4.3)
       lodash:
         specifier: ^4.17.23
@@ -2925,7 +2943,7 @@ importers:
         specifier: workspace:*
         version: link:../../shared
       axios:
-        specifier: 1.16.0
+        specifier: '>=1.16.0 <2'
         version: 1.16.0(debug@4.4.3)
       lodash:
         specifier: ^4.17.23
@@ -3135,7 +3153,7 @@ importers:
         specifier: workspace:*
         version: link:../../types
       axios:
-        specifier: 1.16.0
+        specifier: '>=1.16.0 <2'
         version: 1.16.0(debug@4.4.3)
       lodash:
         specifier: 4.17.23
@@ -3403,7 +3421,7 @@ importers:
         specifier: workspace:*
         version: link:../../shared
       axios:
-        specifier: 1.16.0
+        specifier: '>=1.16.0 <2'
         version: 1.16.0(debug@4.4.3)
       form-data:
         specifier: ^4.0.4
@@ -3660,7 +3678,7 @@ importers:
         specifier: 2.1664.0
         version: 2.1664.0
       axios:
-        specifier: 1.16.0
+        specifier: '>=1.16.0 <2'
         version: 1.16.0(debug@4.4.3)
       base64url:
         specifier: 3.0.1
@@ -3841,7 +3859,7 @@ importers:
         specifier: 2.1.1
         version: 2.1.1(ajv@8.18.0)
       axios:
-        specifier: 1.16.0
+        specifier: '>=1.16.0 <2'
         version: 1.16.0(debug@4.4.3)
       base64url:
         specifier: 3.0.1
@@ -3869,7 +3887,7 @@ importers:
         version: 0.6.3
       isomorphic-ws:
         specifier: ^5.0.0
-        version: 5.0.0(ws@8.18.0)
+        version: 5.0.0(ws@8.21.0)
       js-base64:
         specifier: ^3.7.5
         version: 3.7.7
@@ -5191,14 +5209,6 @@ packages:
 
   '@ioredis/commands@1.2.0':
     resolution: {integrity: sha512-Sx1pU8EM64o2BrqNpEO1CNLtKQwyhuXuqyfH7oGKCk+1a33d2r5saW8zNwm3j6BTExtjrv2BxTgzzkMwts6vGg==}
-
-  '@isaacs/balanced-match@4.0.1':
-    resolution: {integrity: sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ==}
-    engines: {node: 20 || >=22}
-
-  '@isaacs/brace-expansion@5.0.1':
-    resolution: {integrity: sha512-WMz71T1JS624nWj2n2fnYAuPovhv7EUhk69R6i9dsVyzxt5eM3bjwvgk9L+APE1TRscGysAVMANkB0jh0LQZrQ==}
-    engines: {node: 20 || >=22}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -7017,8 +7027,8 @@ packages:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
 
-  ansi-regex@6.0.1:
-    resolution: {integrity: sha512-n5M855fKb2SsfMIiFFoVrABHJC8QtHwVx+mHWP3QcEqBHYienj5dHSgjbxtC0WEZXYt4wcD6zrQElDPhFuZgfA==}
+  ansi-regex@6.2.2:
+    resolution: {integrity: sha512-Bq3SmSpyFHaWjPk8If9yc6svM8c56dB5BAtW4Qbw5jHTwwXXcTLoRMkpDJp6VL0XzlWaCHTXrkFURMYmD0sLqg==}
     engines: {node: '>=12'}
 
   ansi-styles@3.2.1:
@@ -7033,8 +7043,8 @@ packages:
     resolution: {integrity: sha512-Cxwpt2SfTzTtXcfOlzGEee8O+c+MmUgGrNiBcXnuWxuFJHe6a5Hz7qwhwe5OgaSYI0IJvkLqWX1ASG+cJOkEiA==}
     engines: {node: '>=10'}
 
-  ansi-styles@6.2.1:
-    resolution: {integrity: sha512-bN798gFfQX+viw3R7yrGWRqnrN2oRkEkUjjl4JNn4E8GxxbjtG3FbrEIIY3l8/hrwUwIeCZvi4QuOTP4MErVug==}
+  ansi-styles@6.2.3:
+    resolution: {integrity: sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg==}
     engines: {node: '>=12'}
 
   any-promise@1.3.0:
@@ -7208,6 +7218,10 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
+  balanced-match@4.0.4:
+    resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
+    engines: {node: 18 || 20 || >=22}
+
   bare-events@2.8.2:
     resolution: {integrity: sha512-riJjyv1/mHLIPX4RwiK+oW9/4c3TEUeORHKefKAKnZ5kyslbN+HXowtbaVEqt4IMUB7OXlfixcs6gsFeo/jhiQ==}
     peerDependencies:
@@ -7227,8 +7241,8 @@ packages:
     resolution: {integrity: sha512-ipDqC8FrAl/76p2SSWKSI+H9tFwm7vYqXQrItCuiVPt26Km0jS+NzSsBWAaBusvSbQcfJG+JitdMm+wZAgTYqg==}
     hasBin: true
 
-  basic-ftp@5.0.5:
-    resolution: {integrity: sha512-4Bcg1P8xhUuqcii/S0Z9wiHIrQVPMermM1any+MX5GeGD7faD3/msQUDGLol9wOcz4/jbg/WJnGqoJF6LiBdtg==}
+  basic-ftp@5.3.1:
+    resolution: {integrity: sha512-bopVNp6ugyA150DDuZfPFdt1KZ5a94ZDiwX4hMgZDzF+GttD80lEy8kj98kbyhLXnPvhtIo93mdnLIjpCAeeOw==}
     engines: {node: '>=10.0.0'}
 
   bcrypt-pbkdf@1.0.2:
@@ -7276,11 +7290,11 @@ packages:
   bl@6.0.14:
     resolution: {integrity: sha512-TJfbvGdL7KFGxTsEbsED7avqpFdY56q9IW0/aiytyheJzxST/+Io6cx/4Qx0K2/u0BPRDs65mjaQzYvMZeNocQ==}
 
-  bn.js@4.12.0:
-    resolution: {integrity: sha512-c98Bf3tPniI+scsdk237ku1Dc3ujXQTSgyiPUDEOe7tRkhrqridvh8klBv0HCEso1OLOYcHuCv/cS6DNxKH+ZA==}
+  bn.js@4.12.3:
+    resolution: {integrity: sha512-fGTi3gxV/23FTYdAoUtLYp6qySe2KE3teyZitipKNRuVYcBkoP/bB3guXN/XVKUe9mxCHXnc9C4ocyz8OmgN0g==}
 
-  bn.js@5.2.1:
-    resolution: {integrity: sha512-eXRvHzWyYPBuB4NBy0cmYQjGitUrtqwbvlzP3G6VFnNRbsZQIxQ10PbKKHt8gZ/HW/D/747aDl+QkDqg3KQLMQ==}
+  bn.js@5.2.3:
+    resolution: {integrity: sha512-EAcmnPkxpntVL+DS7bO1zhcZNvCkxqtkd0ZY53h06GNQ3DEkkGZ/gKgmDv6DdZQGj9BgfSPKtJJ7Dp1GPP8f7w==}
 
   body-parser@1.20.3:
     resolution: {integrity: sha512-7rAxByjUMqQ3/bHJy7D6OGXvx/MMc4IqBn/X0fcM1QUcAItpZrBEYhWGem+tzXH90c+G01ypMcYJBO9Y30203g==}
@@ -7289,11 +7303,15 @@ packages:
   bowser@2.11.0:
     resolution: {integrity: sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==}
 
-  brace-expansion@1.1.11:
-    resolution: {integrity: sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==}
+  brace-expansion@1.1.14:
+    resolution: {integrity: sha512-MWPGfDxnyzKU7rNOW9SP/c50vi3xrmrua/+6hfPbCS2ABNWfx24vPidzvC7krjU/RTo235sV776ymlsMtGKj8g==}
 
-  brace-expansion@2.0.1:
-    resolution: {integrity: sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==}
+  brace-expansion@2.1.0:
+    resolution: {integrity: sha512-TN1kCZAgdgweJhWWpgKYrQaMNHcDULHkWwQIspdtjV4Y5aurRdZpjAqn6yX3FPqTA9ngHCc4hJxMAMgGfve85w==}
+
+  brace-expansion@5.0.6:
+    resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
+    engines: {node: 18 || 20 || >=22}
 
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
@@ -8137,8 +8155,8 @@ packages:
   fast-text-encoding@1.0.6:
     resolution: {integrity: sha512-VhXlQgj9ioXCqGstD37E/HBeqEGV/qOD/kmbVG8h5xKBYvM1L3lR1Zn4555cQ8GkYbJa8aJSipLPndE1k6zK2w==}
 
-  fast-uri@3.1.0:
-    resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
+  fast-uri@3.1.2:
+    resolution: {integrity: sha512-rVjf7ArG3LTk+FS6Yw81V1DLuZl1bRbNrev6Tmd/9RaroeeRRJhAt7jg/6YFxbvAQXUCavSoZhPPj6oOx+5KjQ==}
 
   fast-xml-parser@4.5.6:
     resolution: {integrity: sha512-Yd4vkROfJf8AuJrDIVMVmYfULKmIJszVsMv7Vo71aocsKgFxpdlpSHXSaInvyYfgw2PRuObQSW2GFpVMUjxu9A==}
@@ -8272,8 +8290,8 @@ packages:
     resolution: {integrity: sha512-yDYSgNMraqvnxiEXO4hi88+YZxaHC6QKzb5N84iRCTDeRO7ZALpir/lVmf/uXUhnwUr2O4HU8s/n6x+yNjQkHw==}
     engines: {node: '>= 14.17'}
 
-  form-data@2.5.1:
-    resolution: {integrity: sha512-m21N3WOmEEURgk6B9GLOE4RuWOFf28Lhh9qGYeNlGq4VDXUlJy2th2slBNU8Gp8EzloYZOibZJ7t5ecIrFSjVA==}
+  form-data@2.5.5:
+    resolution: {integrity: sha512-jqdObeR2rxZZbPSGL+3VckHMYtu+f9//KXBsVny6JSX/pa38Fy+bGjuG8eW/H6USNQWhLi8Num++cU2yOCNz4A==}
     engines: {node: '>= 0.12'}
 
   form-data@4.0.5:
@@ -8418,8 +8436,8 @@ packages:
   glob-to-regexp@0.4.1:
     resolution: {integrity: sha512-lkX1HJXwyMcprw/5YUZc2s7DrpAiHB21/V+E1rHUrVNokkvB6bqMzT0VfV6/86ZNabt1k14YOIaT7nDvOX3Iiw==}
 
-  glob@10.4.5:
-    resolution: {integrity: sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==}
+  glob@10.5.0:
+    resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
     deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
@@ -8873,12 +8891,12 @@ packages:
   isomorphic-ws@4.0.1:
     resolution: {integrity: sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==}
     peerDependencies:
-      ws: '*'
+      ws: '>=8.20.1 <9'
 
   isomorphic-ws@5.0.0:
     resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
     peerDependencies:
-      ws: '*'
+      ws: '>=8.20.1 <9'
 
   istanbul-lib-coverage@3.2.2:
     resolution: {integrity: sha512-O8dpsF+r0WV/8MNRKfnmrtCWhuKjxrq2w+jpzBL5UZKTi2LeVWnWOmWRxFlesJONmc+wLAGvKQZEOanko0LFTg==}
@@ -9074,12 +9092,8 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
-  js-yaml@3.14.0:
-    resolution: {integrity: sha512-/4IbIeHcD9VMHFqDR/gQ7EdZdLimOvW2DdcxFjdyyZ9NsbS+ccrXqVWDtab/lRl5AlUqmpBx8EhPaWR+OtY17A==}
-    hasBin: true
-
-  js-yaml@3.14.1:
-    resolution: {integrity: sha512-okMH7OXXJ7YrN9Ok3/SXrnu4iX9yOk+25nqX4imS2npuvTYDmo/QEZoqwZkYaIDk3jVvBOTOIEgEhaLOynBS9g==}
+  js-yaml@3.14.2:
+    resolution: {integrity: sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==}
     hasBin: true
 
   js-yaml@4.1.1:
@@ -9141,17 +9155,17 @@ packages:
     resolution: {integrity: sha512-PRp66vJ865SSqOlgqS8hujT5U4AOgMfhrwYIuIhfKaoSCZcirrmASQr8CX7cUg+RMih+hgznrjp99o+W4pJLHQ==}
     engines: {node: '>=12', npm: '>=6'}
 
-  jwa@1.4.1:
-    resolution: {integrity: sha512-qiLX/xhEEFKUAJ6FiBMbes3w9ATzyk5W7Hvzpa/SLYdxNtng+gcurvrI7TbACjIXlsJyr05/S1oUhZrc63evQA==}
+  jwa@1.4.2:
+    resolution: {integrity: sha512-eeH5JO+21J78qMvTIDdBXidBd6nG2kZjg5Ohz/1fpa28Z4CcsWUzJ1ZZyFq/3z3N17aZy+ZuBoHljASbL1WfOw==}
 
-  jwa@2.0.0:
-    resolution: {integrity: sha512-jrZ2Qx916EA+fq9cEAeCROWPTfCwi1IVHqT2tapuqLEVVDKFDENFw1oL+MwrTvH6msKxsd1YTDVw6uKEcsrLEA==}
+  jwa@2.0.1:
+    resolution: {integrity: sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg==}
 
-  jws@3.2.2:
-    resolution: {integrity: sha512-YHlZCB6lMTllWDtSPHz/ZXTsi8S00usEV6v1tjq8tOUZzw7DpSDWVXjXDre6ed1w/pd495ODpHZYSdkRTsa0HA==}
+  jws@3.2.3:
+    resolution: {integrity: sha512-byiJ0FLRdLdSVSReO/U4E7RoEyOCKnEnEPMjq3HxWtvzLsV08/i5RQKsFVNkCldrCaPr2vDNAOMsfs8T/Hze7g==}
 
-  jws@4.0.0:
-    resolution: {integrity: sha512-KDncfTmOZoOMTFG4mBlG0qUIOlc03fmzH+ru6RgYVZhPkyiy/92Owlt/8UEN+a4TXR1FQetfIpJE8ApdvdVxTg==}
+  jws@4.0.1:
+    resolution: {integrity: sha512-EKI/M/yqPncGUUh44xz0PxSidXFr/+r0pA70+gIYhjv+et7yxM+s29Y+VGDkovRofQem0fs7Uvf4+YmAdyRduA==}
 
   kafkajs@2.2.4:
     resolution: {integrity: sha512-j/YeapB1vfPT2iOIUn/vxdyKEuhuY2PxMBvf5JWux6iSaukAccrMtXEY/Lb7OvavDhOWME589bpLrEdnVHjfjA==}
@@ -9398,19 +9412,19 @@ packages:
   minimalistic-assert@1.0.1:
     resolution: {integrity: sha512-UtJcAD4yEaGtjPezWuO9wC4nwUnVH/8/Im3yEHQP4b67cXlD/Qr9hdITCU1xDbSEXg2XKNaP8jsReV7vQd00/A==}
 
-  minimatch@10.1.2:
-    resolution: {integrity: sha512-fu656aJ0n2kcXwsnwnv9g24tkU5uSmOlTjd6WyyaKm2Z+h1qmY6bAjrcaIxF/BslFqbZ8UBtbJi7KgQOZD2PTw==}
-    engines: {node: 20 || >=22}
+  minimatch@10.2.5:
+    resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
+    engines: {node: 18 || 20 || >=22}
 
-  minimatch@3.1.2:
-    resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
+  minimatch@3.1.5:
+    resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
 
-  minimatch@5.1.6:
-    resolution: {integrity: sha512-lKwV/1brpG6mBUFHtb7NUmtABCb2WZZmm2wNiOA5hAb8VdCS4B3dtMWyvcoViccwAW/COERjXLt0zP1zXUN26g==}
+  minimatch@5.1.9:
+    resolution: {integrity: sha512-7o1wEA2RyMP7Iu7GNba9vc0RWWGACJOCZBJX2GJWip0ikV+wcOsgVuY9uE8CPiyQhkGFSlhuSkZPavN7u1c2Fw==}
     engines: {node: '>=10'}
 
-  minimatch@9.0.5:
-    resolution: {integrity: sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==}
+  minimatch@9.0.9:
+    resolution: {integrity: sha512-OBwBN9AL4dqmETlpS2zasx+vTeWclWzkblfZk7KTA5j3jeOONz/tRCnZomUyvNg83wL5Zv9Ss6HMJXAgL8R2Yg==}
     engines: {node: '>=16 || 14 >=14.17'}
 
   minimist@1.2.6:
@@ -9845,8 +9859,8 @@ packages:
     resolution: {integrity: sha512-oWyT4gICAu+kaA7QWk/jvCHWarMKNs6pXOGWKDTr7cw4IGcUbW+PeTfbaQiLGheFRpjo6O9J0PmyMfQPjH71oA==}
     engines: {node: 20 || >=22}
 
-  path-to-regexp@0.1.12:
-    resolution: {integrity: sha512-RA1GjUVMnvYFxuqovrEqZoxxW5NUZqbwKtYz/Tt7nXerk0LbLblQmrsgdeOxV5SFHf0UDggjS/bSeOZwt1pmEQ==}
+  path-to-regexp@0.1.13:
+    resolution: {integrity: sha512-A/AGNMFN3c8bOlvV9RreMdrv7jsmF9XIfDeCd87+I8RNg6s78BhJxMu69NEMHBSJFxKidViTEdruRwEk/WIKqA==}
 
   path-type@4.0.0:
     resolution: {integrity: sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==}
@@ -10094,8 +10108,8 @@ packages:
 
       (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
 
-  qs@6.15.0:
-    resolution: {integrity: sha512-mAZTtNCeetKMH+pSjrb76NAM8V9a05I9aBZOHztWy/UqcJdQYNsf59vrRKWnojAT9Y+GbIvoTBC++CPHqpDBhQ==}
+  qs@6.15.2:
+    resolution: {integrity: sha512-Rzq0KEyX/w/tEybncDgdkZrJgVUsUMk3xjh3t5bv3S1HTAtg+uOYt72+ZfwiQwKdysThkTBdL/rTi6HDmX9Ddw==}
     engines: {node: '>=0.6'}
 
   querystring@0.2.0:
@@ -10577,8 +10591,8 @@ packages:
     resolution: {integrity: sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==}
     engines: {node: '>=8'}
 
-  strip-ansi@7.1.0:
-    resolution: {integrity: sha512-iq6eVVI64nQQTRYq2KtEg2d2uU7LElhTJwsH4YzIHZshxlgZms/wIc4VoDQTlG/IvVIrBKG06CrZnp0qv7hkcQ==}
+  strip-ansi@7.2.0:
+    resolution: {integrity: sha512-yDPMNjp4WyfYBkHnjIRLfca1i6KMyGCtsVgoKe/z1+6vukgaENdgGBZt+ZmKPc4gavvEZ5OgHfHdrazhgNyG7w==}
     engines: {node: '>=12'}
 
   strip-bom@3.0.0:
@@ -11382,8 +11396,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.18.0:
-    resolution: {integrity: sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==}
+  ws@8.21.0:
+    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -12391,7 +12405,7 @@ snapshots:
       '@azure/msal-browser': 3.21.0
       '@azure/msal-node': 2.13.0
       events: 3.3.0
-      jws: 4.0.0
+      jws: 4.0.1
       open: 8.4.2
       stoppable: 1.1.0
       tslib: 2.8.1
@@ -13044,7 +13058,7 @@ snapshots:
       ignore: 5.3.2
       import-fresh: 3.3.0
       js-yaml: 4.1.1
-      minimatch: 3.1.2
+      minimatch: 3.1.5
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
       - supports-color
@@ -13173,7 +13187,7 @@ snapshots:
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
       debug: 4.4.3(supports-color@5.5.0)
-      minimatch: 3.1.2
+      minimatch: 3.1.5
     transitivePeerDependencies:
       - supports-color
 
@@ -13183,17 +13197,11 @@ snapshots:
 
   '@ioredis/commands@1.2.0': {}
 
-  '@isaacs/balanced-match@4.0.1': {}
-
-  '@isaacs/brace-expansion@5.0.1':
-    dependencies:
-      '@isaacs/balanced-match': 4.0.1
-
   '@isaacs/cliui@8.0.2':
     dependencies:
       string-width: 5.1.2
       string-width-cjs: string-width@4.2.3
-      strip-ansi: 7.1.0
+      strip-ansi: 7.2.0
       strip-ansi-cjs: strip-ansi@6.0.1
       wrap-ansi: 8.1.0
       wrap-ansi-cjs: wrap-ansi@7.0.0
@@ -13205,7 +13213,7 @@ snapshots:
       camelcase: 5.3.1
       find-up: 4.1.0
       get-package-type: 0.1.0
-      js-yaml: 3.14.1
+      js-yaml: 3.14.2
       resolve-from: 5.0.0
 
   '@istanbuljs/schema@0.1.3': {}
@@ -14272,7 +14280,7 @@ snapshots:
 
   '@streamparser/json@0.0.20': {}
 
-  '@superblocks/shared@file:workers/javascript/packages/shared(ws@8.18.0)':
+  '@superblocks/shared@file:workers/javascript/packages/shared(ws@8.21.0)':
     dependencies:
       '@aws-sdk/client-sts': 3.758.0
       '@aws-sdk/credential-providers': 3.758.0
@@ -14300,7 +14308,7 @@ snapshots:
       form-data: 4.0.5
       google-protobuf: 3.21.4
       iconv-lite: 0.6.3
-      isomorphic-ws: 5.0.0(ws@8.18.0)
+      isomorphic-ws: 5.0.0(ws@8.21.0)
       js-base64: 3.7.7
       json5: 2.2.3
       lodash: 4.17.23
@@ -14345,8 +14353,8 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.25.1
       '@paralleldrive/cuid2': 2.2.2
       '@redis/client': 1.5.17
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
-      '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
+      '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)
       acorn: 8.12.1
       amazon-qldb-driver-nodejs: 2.2.0(aws-sdk@2.1664.0)(ion-js@5.2.1)(jsbi@4.3.0)
       aws-sdk: 2.1664.0
@@ -14388,7 +14396,7 @@ snapshots:
       - ws
       - zod
 
-  '@superblocks/worker.js@file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)':
+  '@superblocks/worker.js@file:workers/javascript/packages/server(ion-js@5.2.1)(jsbi@4.3.0)(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)':
     dependencies:
       '@bufbuild/protobuf': 1.10.0
       '@notionhq/client': 2.2.15
@@ -14401,8 +14409,8 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.25.1
       '@paralleldrive/cuid2': 2.2.2
       '@redis/client': 1.5.17
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
-      '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
+      '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)
       acorn: 8.12.1
       amazon-qldb-driver-nodejs: 2.2.0(aws-sdk@2.1664.0)(ion-js@5.2.1)(jsbi@4.3.0)
       aws-sdk: 2.1664.0
@@ -14444,12 +14452,12 @@ snapshots:
       - ws
       - zod
 
-  '@superblocksteam/adls@file:workers/javascript/packages/plugins/adls(ws@8.18.0)':
+  '@superblocksteam/adls@file:workers/javascript/packages/plugins/adls(ws@8.21.0)':
     dependencies:
       '@azure/identity': 3.4.2
       '@azure/storage-file-datalake': 12.23.0
       '@bufbuild/protobuf': 1.3.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
     transitivePeerDependencies:
       - aws-crt
@@ -14458,12 +14466,12 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/athena@file:workers/javascript/packages/plugins/athena(ws@8.18.0)':
+  '@superblocksteam/athena@file:workers/javascript/packages/plugins/athena(ws@8.21.0)':
     dependencies:
       '@aws-sdk/client-athena': 3.758.0
       '@aws-sdk/client-glue': 3.758.0
       '@bufbuild/protobuf': 1.2.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       lodash: 4.17.23
     transitivePeerDependencies:
@@ -14473,10 +14481,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/bigquery@file:workers/javascript/packages/plugins/bigquery(ws@8.18.0)':
+  '@superblocksteam/bigquery@file:workers/javascript/packages/plugins/bigquery(ws@8.21.0)':
     dependencies:
       '@google-cloud/bigquery': 5.12.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       google-auth-library: 9.15.1
       lodash: 4.17.23
       minimist: 1.2.6
@@ -14487,9 +14495,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/cockroachdb@file:workers/javascript/packages/plugins/cockroachdb(ws@8.18.0)':
+  '@superblocksteam/cockroachdb@file:workers/javascript/packages/plugins/cockroachdb(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       minimist: 1.2.6
       pg: 8.11.5
@@ -14501,14 +14509,14 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/cosmosdb@file:workers/javascript/packages/plugins/cosmosdb(ws@8.18.0)':
+  '@superblocksteam/cosmosdb@file:workers/javascript/packages/plugins/cosmosdb(ws@8.21.0)':
     dependencies:
       '@aws-sdk/client-athena': 3.758.0
       '@aws-sdk/client-glue': 3.758.0
       '@azure/cosmos': 4.0.0
       '@azure/logger': 1.1.4
       '@bufbuild/protobuf': 1.3.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
     transitivePeerDependencies:
       - aws-crt
@@ -14517,9 +14525,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/couchbase@file:workers/javascript/packages/plugins/couchbase(ws@8.18.0)':
+  '@superblocksteam/couchbase@file:workers/javascript/packages/plugins/couchbase(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       couchbase: 4.2.9
       lodash: 4.17.23
@@ -14532,10 +14540,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/databricks@file:workers/javascript/packages/plugins/databricks(ws@8.18.0)':
+  '@superblocksteam/databricks@file:workers/javascript/packages/plugins/databricks(ws@8.21.0)':
     dependencies:
       '@databricks/sql': 1.10.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       lodash: 4.17.23
       minimist: 1.2.6
@@ -14548,10 +14556,10 @@ snapshots:
       - utf-8-validate
       - ws
 
-  '@superblocksteam/dynamodb@file:workers/javascript/packages/plugins/dynamodb(ws@8.18.0)':
+  '@superblocksteam/dynamodb@file:workers/javascript/packages/plugins/dynamodb(ws@8.21.0)':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.758.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       minimist: 1.2.6
     transitivePeerDependencies:
@@ -14561,11 +14569,11 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/email@file:workers/javascript/packages/plugins/email(ws@8.18.0)':
+  '@superblocksteam/email@file:workers/javascript/packages/plugins/email(ws@8.21.0)':
     dependencies:
       '@sendgrid/helpers': 8.0.0
       '@sendgrid/mail': 8.1.4
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       minimist: 1.2.6
     transitivePeerDependencies:
@@ -14575,10 +14583,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/gcs@file:workers/javascript/packages/plugins/gcs(ws@8.18.0)':
+  '@superblocksteam/gcs@file:workers/javascript/packages/plugins/gcs(ws@8.21.0)':
     dependencies:
       '@google-cloud/storage': 6.12.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
     transitivePeerDependencies:
       - aws-crt
@@ -14587,9 +14595,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/graphql@file:workers/javascript/packages/plugins/graphql(ws@8.18.0)':
+  '@superblocksteam/graphql@file:workers/javascript/packages/plugins/graphql(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       minimist: 1.2.6
     transitivePeerDependencies:
@@ -14599,10 +14607,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/gsheets@file:workers/javascript/packages/plugins/gsheets(ws@8.18.0)':
+  '@superblocksteam/gsheets@file:workers/javascript/packages/plugins/gsheets(ws@8.21.0)':
     dependencies:
       '@flighter/a1-notation': 2.1.3
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       ajv: 8.18.0
       ajv-errors: 3.0.0(ajv@8.18.0)
       ajv-formats: 2.1.1(ajv@8.18.0)
@@ -14617,8 +14625,8 @@ snapshots:
 
   '@superblocksteam/javascript-sdk-api@file:workers/javascript/packages/plugins/javascript-sdk-api(typescript@5.5.4)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
-      '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
+      '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)
       '@superblocksteam/sdk-api': 0.0.7
       dotenv: 16.4.5
     transitivePeerDependencies:
@@ -14632,10 +14640,10 @@ snapshots:
       - ws
       - zod
 
-  '@superblocksteam/javascript-sdk-api@file:workers/javascript/packages/plugins/javascript-sdk-api(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)':
+  '@superblocksteam/javascript-sdk-api@file:workers/javascript/packages/plugins/javascript-sdk-api(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
-      '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
+      '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)
       '@superblocksteam/sdk-api': 0.0.7
       dotenv: 16.4.5
     transitivePeerDependencies:
@@ -14649,9 +14657,9 @@ snapshots:
       - ws
       - zod
 
-  '@superblocksteam/javascript-wasm@file:workers/javascript/packages/plugins/javascript-wasm(ws@8.18.0)':
+  '@superblocksteam/javascript-wasm@file:workers/javascript/packages/plugins/javascript-wasm(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocks/wasm-sandbox-js': file:workers/javascript/packages/wasm-sandbox-js
       deasync: 0.1.29
       esprima: 4.0.1
@@ -14663,11 +14671,11 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/javascript@file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)':
+  '@superblocksteam/javascript@file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)':
     dependencies:
       '@notionhq/client': 2.2.15
       '@paralleldrive/cuid2': 2.2.2
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       aws-sdk: 2.1664.0
       axios: 1.16.0(debug@4.4.3)
       base64url: 3.0.1
@@ -14698,11 +14706,11 @@ snapshots:
       - ws
       - zod
 
-  '@superblocksteam/javascript@file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.18.0)(zod@3.23.8)':
+  '@superblocksteam/javascript@file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)':
     dependencies:
       '@notionhq/client': 2.2.15
       '@paralleldrive/cuid2': 2.2.2
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       aws-sdk: 2.1664.0
       axios: 1.16.0(debug@4.4.3)
       base64url: 3.0.1
@@ -14733,10 +14741,10 @@ snapshots:
       - ws
       - zod
 
-  '@superblocksteam/kafka@file:workers/javascript/packages/plugins/kafka(ws@8.18.0)':
+  '@superblocksteam/kafka@file:workers/javascript/packages/plugins/kafka(ws@8.21.0)':
     dependencies:
       '@bufbuild/protobuf': 1.2.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       kafkajs: 2.2.4
     transitivePeerDependencies:
@@ -14746,10 +14754,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/kinesis@file:workers/javascript/packages/plugins/kinesis(ws@8.18.0)':
+  '@superblocksteam/kinesis@file:workers/javascript/packages/plugins/kinesis(ws@8.21.0)':
     dependencies:
       '@aws-sdk/client-kinesis': 3.758.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
     transitivePeerDependencies:
       - aws-crt
@@ -14758,9 +14766,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/lakebase@file:workers/javascript/packages/plugins/lakebase(ws@8.18.0)':
+  '@superblocksteam/lakebase@file:workers/javascript/packages/plugins/lakebase(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       lodash: 4.17.23
       minimist: 1.2.6
@@ -14773,9 +14781,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/mariadb@file:workers/javascript/packages/plugins/mariadb(ws@8.18.0)':
+  '@superblocksteam/mariadb@file:workers/javascript/packages/plugins/mariadb(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       mariadb: 2.5.6
       minimist: 1.2.6
@@ -14786,9 +14794,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/mongodb@file:workers/javascript/packages/plugins/mongodb(ws@8.18.0)':
+  '@superblocksteam/mongodb@file:workers/javascript/packages/plugins/mongodb(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       lodash: 4.17.23
       minimist: 1.2.6
@@ -14801,9 +14809,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/mssql@file:workers/javascript/packages/plugins/mssql(ws@8.18.0)':
+  '@superblocksteam/mssql@file:workers/javascript/packages/plugins/mssql(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       mssql: 10.0.2
     transitivePeerDependencies:
@@ -14813,9 +14821,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/mysql@file:workers/javascript/packages/plugins/mysql(ws@8.18.0)':
+  '@superblocksteam/mysql@file:workers/javascript/packages/plugins/mysql(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       mariadb: 2.5.6
       minimist: 1.2.6
@@ -14827,9 +14835,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/openai@file:workers/javascript/packages/plugins/openai(ws@8.18.0)(zod@3.23.8)':
+  '@superblocksteam/openai@file:workers/javascript/packages/plugins/openai(ws@8.21.0)(zod@3.23.8)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       axios: 1.16.0(debug@4.4.3)
       form-data: 4.0.5
       lodash: 4.17.23
@@ -14843,9 +14851,9 @@ snapshots:
       - ws
       - zod
 
-  '@superblocksteam/oracledb@file:workers/javascript/packages/plugins/oracledb(ws@8.18.0)':
+  '@superblocksteam/oracledb@file:workers/javascript/packages/plugins/oracledb(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       lodash: 4.17.23
       minimist: 1.2.6
@@ -14857,9 +14865,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/postgres@file:workers/javascript/packages/plugins/postgres(ws@8.18.0)':
+  '@superblocksteam/postgres@file:workers/javascript/packages/plugins/postgres(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       minimist: 1.2.6
       pg: 8.11.5
@@ -14872,10 +14880,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/redis@file:workers/javascript/packages/plugins/redis(ws@8.18.0)':
+  '@superblocksteam/redis@file:workers/javascript/packages/plugins/redis(ws@8.21.0)':
     dependencies:
       '@bufbuild/protobuf': 1.2.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       '@types/ioredis': 5.0.0
       ioredis: 5.3.2
@@ -14886,9 +14894,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/redshift@file:workers/javascript/packages/plugins/redshift(ws@8.18.0)':
+  '@superblocksteam/redshift@file:workers/javascript/packages/plugins/redshift(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       minimist: 1.2.6
       pg: 8.11.5
@@ -14900,9 +14908,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/restapi@file:workers/javascript/packages/plugins/restapi(ws@8.18.0)':
+  '@superblocksteam/restapi@file:workers/javascript/packages/plugins/restapi(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       axios: 1.16.0(debug@4.4.3)
       lodash: 4.17.23
       minimist: 1.2.6
@@ -14913,9 +14921,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/restapiintegration@file:workers/javascript/packages/plugins/restapiintegration(ws@8.18.0)':
+  '@superblocksteam/restapiintegration@file:workers/javascript/packages/plugins/restapiintegration(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       axios: 1.16.0(debug@4.4.3)
       lodash: 4.17.23
       minimist: 1.2.6
@@ -14926,10 +14934,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/rockset@file:workers/javascript/packages/plugins/rockset(ws@8.18.0)':
+  '@superblocksteam/rockset@file:workers/javascript/packages/plugins/rockset(ws@8.21.0)':
     dependencies:
       '@rockset/client': 0.8.32
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       minimist: 1.2.6
       node-fetch: 2.6.12
     transitivePeerDependencies:
@@ -14939,13 +14947,13 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/s3@file:workers/javascript/packages/plugins/s3(ws@8.18.0)':
+  '@superblocksteam/s3@file:workers/javascript/packages/plugins/s3(ws@8.21.0)':
     dependencies:
       '@aws-sdk/client-s3': 3.758.0
       '@aws-sdk/client-sts': 3.758.0
       '@aws-sdk/lib-storage': 3.758.0(@aws-sdk/client-s3@3.758.0)
       '@aws-sdk/s3-request-presigner': 3.758.0
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       minimist: 1.2.6
     transitivePeerDependencies:
@@ -14955,11 +14963,11 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/salesforce@file:workers/javascript/packages/plugins/salesforce(ws@8.18.0)':
+  '@superblocksteam/salesforce@file:workers/javascript/packages/plugins/salesforce(ws@8.21.0)':
     dependencies:
       '@bufbuild/protobuf': 1.2.0
       '@json2csv/node': 7.0.6
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       axios: 1.16.0(debug@4.4.3)
       lodash: 4.17.23
@@ -14975,9 +14983,9 @@ snapshots:
       '@superblocksteam/types': 1.351.0
       zod: 3.23.8
 
-  '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp(ws@8.18.0)':
+  '@superblocksteam/smtp@file:workers/javascript/packages/plugins/smtp(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       lodash: 4.17.23
       minimist: 1.2.6
@@ -14989,9 +14997,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/snowflake@file:workers/javascript/packages/plugins/snowflake(asn1.js@5.4.1)(ws@8.18.0)':
+  '@superblocksteam/snowflake@file:workers/javascript/packages/plugins/snowflake(asn1.js@5.4.1)(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       minimist: 1.2.6
       snowflake-sdk: 2.0.4(asn1.js@5.4.1)
@@ -15003,9 +15011,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/snowflakepostgres@file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.18.0)':
+  '@superblocksteam/snowflakepostgres@file:workers/javascript/packages/plugins/snowflakepostgres(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/types': file:workers/javascript/packages/types
       lodash: 4.17.23
       minimist: 1.2.6
@@ -15018,9 +15026,9 @@ snapshots:
       - supports-color
       - ws
 
-  '@superblocksteam/superblocks-ocr@file:workers/javascript/packages/plugins/superblocks-ocr(ws@8.18.0)':
+  '@superblocksteam/superblocks-ocr@file:workers/javascript/packages/plugins/superblocks-ocr(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       axios: 1.16.0(debug@4.4.3)
       form-data: 4.0.5
       lodash: 4.17.23
@@ -15040,9 +15048,9 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.3.0
 
-  '@superblocksteam/workflow@file:workers/javascript/packages/plugins/workflow(ws@8.18.0)':
+  '@superblocksteam/workflow@file:workers/javascript/packages/plugins/workflow(ws@8.21.0)':
     dependencies:
-      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.18.0)
+      '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.17.23
       minimist: 1.2.6
     transitivePeerDependencies:
@@ -15084,7 +15092,7 @@ snapshots:
       '@swc/counter': 0.1.3
       commander: 8.3.0
       fast-glob: 3.3.2
-      minimatch: 9.0.5
+      minimatch: 9.0.9
       piscina: 4.6.1
       semver: 7.7.3
       slash: 3.0.0
@@ -15099,7 +15107,7 @@ snapshots:
       '@xhmikosr/bin-wrapper': 13.2.0
       commander: 8.3.0
       fast-glob: 3.3.2
-      minimatch: 9.0.5
+      minimatch: 9.0.9
       piscina: 4.6.1
       semver: 7.7.3
       slash: 3.0.0
@@ -15379,7 +15387,7 @@ snapshots:
       '@types/caseless': 0.12.5
       '@types/node': 20.14.8
       '@types/tough-cookie': 4.0.5
-      form-data: 2.5.1
+      form-data: 2.5.5
 
   '@types/responselike@1.0.3':
     dependencies:
@@ -15527,7 +15535,7 @@ snapshots:
       debug: 4.4.3(supports-color@5.5.0)
       globby: 11.1.0
       is-glob: 4.0.3
-      minimatch: 9.0.5
+      minimatch: 9.0.9
       semver: 7.7.3
       ts-api-utils: 1.3.0(typescript@5.5.4)
     optionalDependencies:
@@ -15542,7 +15550,7 @@ snapshots:
       debug: 4.4.3(supports-color@5.5.0)
       globby: 11.1.0
       is-glob: 4.0.3
-      minimatch: 9.0.5
+      minimatch: 9.0.9
       semver: 7.7.3
       ts-api-utils: 1.3.0(typescript@5.5.4)
     optionalDependencies:
@@ -15871,7 +15879,7 @@ snapshots:
   ajv@8.18.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.0
+      fast-uri: 3.1.2
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -15892,7 +15900,7 @@ snapshots:
 
   ansi-regex@5.0.1: {}
 
-  ansi-regex@6.0.1: {}
+  ansi-regex@6.2.2: {}
 
   ansi-styles@3.2.1:
     dependencies:
@@ -15904,7 +15912,7 @@ snapshots:
 
   ansi-styles@5.2.0: {}
 
-  ansi-styles@6.2.1: {}
+  ansi-styles@6.2.3: {}
 
   any-promise@1.3.0: {}
 
@@ -16019,7 +16027,7 @@ snapshots:
 
   asn1.js@5.4.1:
     dependencies:
-      bn.js: 4.12.0
+      bn.js: 4.12.3
       inherits: 2.0.4
       minimalistic-assert: 1.0.1
       safer-buffer: 2.1.2
@@ -16132,6 +16140,8 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
+  balanced-match@4.0.4: {}
+
   bare-events@2.8.2: {}
 
   base64-js@1.5.1: {}
@@ -16140,7 +16150,7 @@ snapshots:
 
   baseline-browser-mapping@2.9.19: {}
 
-  basic-ftp@5.0.5: {}
+  basic-ftp@5.3.1: {}
 
   bcrypt-pbkdf@1.0.2:
     dependencies:
@@ -16193,9 +16203,9 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 4.7.0
 
-  bn.js@4.12.0: {}
+  bn.js@4.12.3: {}
 
-  bn.js@5.2.1: {}
+  bn.js@5.2.3: {}
 
   body-parser@1.20.3:
     dependencies:
@@ -16207,7 +16217,7 @@ snapshots:
       http-errors: 2.0.0
       iconv-lite: 0.4.24
       on-finished: 2.4.1
-      qs: 6.15.0
+      qs: 6.15.2
       raw-body: 2.5.2
       type-is: 1.6.18
       unpipe: 1.0.0
@@ -16216,14 +16226,18 @@ snapshots:
 
   bowser@2.11.0: {}
 
-  brace-expansion@1.1.11:
+  brace-expansion@1.1.14:
     dependencies:
       balanced-match: 1.0.2
       concat-map: 0.0.1
 
-  brace-expansion@2.0.1:
+  brace-expansion@2.1.0:
     dependencies:
       balanced-match: 1.0.2
+
+  brace-expansion@5.0.6:
+    dependencies:
+      balanced-match: 4.0.4
 
   braces@3.0.3:
     dependencies:
@@ -17042,7 +17056,7 @@ snapshots:
       hasown: 2.0.2
       is-core-module: 2.15.0
       is-glob: 4.0.3
-      minimatch: 3.1.2
+      minimatch: 3.1.5
       object.fromentries: 2.0.8
       object.groupby: 1.0.3
       object.values: 1.2.0
@@ -17102,7 +17116,7 @@ snapshots:
       json-stable-stringify-without-jsonify: 1.0.1
       levn: 0.4.1
       lodash.merge: 4.6.2
-      minimatch: 3.1.2
+      minimatch: 3.1.5
       natural-compare: 1.4.0
       optionator: 0.9.4
       strip-ansi: 6.0.1
@@ -17240,9 +17254,9 @@ snapshots:
       methods: 1.1.2
       on-finished: 2.4.1
       parseurl: 1.3.3
-      path-to-regexp: 0.1.12
+      path-to-regexp: 0.1.13
       proxy-addr: 2.0.7
-      qs: 6.15.0
+      qs: 6.15.2
       range-parser: 1.2.1
       safe-buffer: 5.2.1
       send: 0.19.0
@@ -17288,7 +17302,7 @@ snapshots:
 
   fast-text-encoding@1.0.6: {}
 
-  fast-uri@3.1.0: {}
+  fast-uri@3.1.2: {}
 
   fast-xml-parser@4.5.6:
     dependencies:
@@ -17341,7 +17355,7 @@ snapshots:
 
   filelist@1.0.4:
     dependencies:
-      minimatch: 5.1.6
+      minimatch: 5.1.9
 
   filename-reserved-regex@3.0.0: {}
 
@@ -17430,11 +17444,14 @@ snapshots:
 
   form-data-encoder@2.1.4: {}
 
-  form-data@2.5.1:
+  form-data@2.5.5:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
+      es-set-tostringtag: 2.1.0
+      hasown: 2.0.2
       mime-types: 2.1.35
+      safe-buffer: 5.2.1
 
   form-data@4.0.5:
     dependencies:
@@ -17608,7 +17625,7 @@ snapshots:
 
   get-uri@6.0.3:
     dependencies:
-      basic-ftp: 5.0.5
+      basic-ftp: 5.3.1
       data-uri-to-buffer: 6.0.2
       debug: 4.4.3(supports-color@5.5.0)
       fs-extra: 11.2.0
@@ -17625,11 +17642,11 @@ snapshots:
 
   glob-to-regexp@0.4.1: {}
 
-  glob@10.4.5:
+  glob@10.5.0:
     dependencies:
       foreground-child: 3.3.1
       jackspeak: 3.4.3
-      minimatch: 9.0.5
+      minimatch: 9.0.9
       minipass: 7.1.2
       package-json-from-dist: 1.0.0
       path-scurry: 1.11.1
@@ -17638,7 +17655,7 @@ snapshots:
     dependencies:
       foreground-child: 3.3.1
       jackspeak: 4.2.3
-      minimatch: 10.1.2
+      minimatch: 10.2.5
       minipass: 7.1.2
       package-json-from-dist: 1.0.0
       path-scurry: 2.0.1
@@ -17648,7 +17665,7 @@ snapshots:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.1.2
+      minimatch: 3.1.5
       once: 1.4.0
       path-is-absolute: 1.0.1
 
@@ -17683,7 +17700,7 @@ snapshots:
       gaxios: 4.3.3
       gcp-metadata: 4.3.1
       gtoken: 5.3.2
-      jws: 4.0.0
+      jws: 4.0.1
       lru-cache: 6.0.0
     transitivePeerDependencies:
       - encoding
@@ -17698,7 +17715,7 @@ snapshots:
       gaxios: 5.1.3
       gcp-metadata: 5.3.0
       gtoken: 6.1.2
-      jws: 4.0.0
+      jws: 4.0.1
       lru-cache: 6.0.0
     transitivePeerDependencies:
       - encoding
@@ -17711,7 +17728,7 @@ snapshots:
       gaxios: 6.7.1
       gcp-metadata: 6.1.0
       gtoken: 7.1.0
-      jws: 4.0.0
+      jws: 4.0.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -17733,7 +17750,7 @@ snapshots:
       extend: 3.0.2
       gaxios: 4.3.3
       google-auth-library: 7.14.1
-      qs: 6.15.0
+      qs: 6.15.2
       url-template: 2.0.8
       uuid: 8.3.2
     transitivePeerDependencies:
@@ -17798,7 +17815,7 @@ snapshots:
     dependencies:
       gaxios: 4.3.3
       google-p12-pem: 3.1.4
-      jws: 4.0.0
+      jws: 4.0.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -17807,7 +17824,7 @@ snapshots:
     dependencies:
       gaxios: 5.1.3
       google-p12-pem: 4.0.1
-      jws: 4.0.0
+      jws: 4.0.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -17815,7 +17832,7 @@ snapshots:
   gtoken@7.1.0:
     dependencies:
       gaxios: 6.7.1
-      jws: 4.0.0
+      jws: 4.0.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -18154,9 +18171,9 @@ snapshots:
     dependencies:
       ws: 5.2.4
 
-  isomorphic-ws@5.0.0(ws@8.18.0):
+  isomorphic-ws@5.0.0(ws@8.21.0):
     dependencies:
-      ws: 8.18.0
+      ws: 8.21.0
 
   istanbul-lib-coverage@3.2.2: {}
 
@@ -18610,12 +18627,7 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  js-yaml@3.14.0:
-    dependencies:
-      argparse: 1.0.10
-      esprima: 4.0.1
-
-  js-yaml@3.14.1:
+  js-yaml@3.14.2:
     dependencies:
       argparse: 1.0.10
       esprima: 4.0.1
@@ -18664,7 +18676,7 @@ snapshots:
 
   jsonwebtoken@9.0.2:
     dependencies:
-      jws: 3.2.2
+      jws: 3.2.3
       lodash.includes: 4.3.0
       lodash.isboolean: 3.0.3
       lodash.isinteger: 4.0.4
@@ -18675,26 +18687,26 @@ snapshots:
       ms: 2.1.3
       semver: 7.7.3
 
-  jwa@1.4.1:
+  jwa@1.4.2:
     dependencies:
       buffer-equal-constant-time: 1.0.1
       ecdsa-sig-formatter: 1.0.11
       safe-buffer: 5.2.1
 
-  jwa@2.0.0:
+  jwa@2.0.1:
     dependencies:
       buffer-equal-constant-time: 1.0.1
       ecdsa-sig-formatter: 1.0.11
       safe-buffer: 5.2.1
 
-  jws@3.2.2:
+  jws@3.2.3:
     dependencies:
-      jwa: 1.4.1
+      jwa: 1.4.2
       safe-buffer: 5.2.1
 
-  jws@4.0.0:
+  jws@4.0.1:
     dependencies:
-      jwa: 2.0.0
+      jwa: 2.0.1
       safe-buffer: 5.2.1
 
   kafkajs@2.2.4: {}
@@ -18893,21 +18905,21 @@ snapshots:
 
   minimalistic-assert@1.0.1: {}
 
-  minimatch@10.1.2:
+  minimatch@10.2.5:
     dependencies:
-      '@isaacs/brace-expansion': 5.0.1
+      brace-expansion: 5.0.6
 
-  minimatch@3.1.2:
+  minimatch@3.1.5:
     dependencies:
-      brace-expansion: 1.1.11
+      brace-expansion: 1.1.14
 
-  minimatch@5.1.6:
+  minimatch@5.1.9:
     dependencies:
-      brace-expansion: 2.0.1
+      brace-expansion: 2.1.0
 
-  minimatch@9.0.5:
+  minimatch@9.0.9:
     dependencies:
-      brace-expansion: 2.0.1
+      brace-expansion: 2.1.0
 
   minimist@1.2.6: {}
 
@@ -19055,7 +19067,7 @@ snapshots:
       chokidar: 3.6.0
       debug: 4.4.3(supports-color@5.5.0)
       ignore-by-default: 1.0.1
-      minimatch: 3.1.2
+      minimatch: 3.1.5
       pstree.remy: 1.1.8
       semver: 7.7.3
       simple-update-notifier: 2.0.0
@@ -19372,7 +19384,7 @@ snapshots:
       lru-cache: 11.2.5
       minipass: 7.1.2
 
-  path-to-regexp@0.1.12: {}
+  path-to-regexp@0.1.13: {}
 
   path-type@4.0.0: {}
 
@@ -19622,7 +19634,7 @@ snapshots:
 
   q@1.5.1: {}
 
-  qs@6.15.0:
+  qs@6.15.2:
     dependencies:
       side-channel: 1.1.0
 
@@ -19770,7 +19782,7 @@ snapshots:
 
   rimraf@5.0.10:
     dependencies:
-      glob: 10.4.5
+      glob: 10.5.0
 
   rimraf@6.0.1:
     dependencies:
@@ -19997,13 +20009,13 @@ snapshots:
       big-integer: 1.6.52
       bignumber.js: 9.1.2
       binascii: 0.0.2
-      bn.js: 5.2.1
+      bn.js: 5.2.3
       browser-request: 0.3.3
       expand-tilde: 2.0.2
       fast-xml-parser: 4.5.6
       fastest-levenshtein: 1.0.16
       generic-pool: 3.9.0
-      glob: 10.4.5
+      glob: 10.5.0
       https-proxy-agent: 7.0.5
       jsonwebtoken: 9.0.2
       mime-types: 2.1.35
@@ -20162,7 +20174,7 @@ snapshots:
     dependencies:
       eastasianwidth: 0.2.0
       emoji-regex: 9.2.2
-      strip-ansi: 7.1.0
+      strip-ansi: 7.2.0
 
   string.prototype.trim@1.2.9:
     dependencies:
@@ -20195,9 +20207,9 @@ snapshots:
     dependencies:
       ansi-regex: 5.0.1
 
-  strip-ansi@7.1.0:
+  strip-ansi@7.2.0:
     dependencies:
-      ansi-regex: 6.0.1
+      ansi-regex: 6.2.2
 
   strip-bom@3.0.0: {}
 
@@ -20364,7 +20376,7 @@ snapshots:
     dependencies:
       '@istanbuljs/schema': 0.1.3
       glob: 7.2.3
-      minimatch: 3.1.2
+      minimatch: 3.1.5
 
   text-decoder@1.2.3:
     dependencies:
@@ -20735,7 +20747,7 @@ snapshots:
   url@0.11.4:
     dependencies:
       punycode: 1.4.1
-      qs: 6.15.0
+      qs: 6.15.2
 
   util-deprecate@1.0.2: {}
 
@@ -21013,11 +21025,11 @@ snapshots:
   web3-providers-ws@4.0.8:
     dependencies:
       '@types/ws': 8.5.3
-      isomorphic-ws: 5.0.0(ws@8.18.0)
+      isomorphic-ws: 5.0.0(ws@8.21.0)
       web3-errors: 1.3.1
       web3-types: 1.10.0
       web3-utils: 4.3.3
-      ws: 8.18.0
+      ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -21222,9 +21234,9 @@ snapshots:
 
   wrap-ansi@8.1.0:
     dependencies:
-      ansi-styles: 6.2.1
+      ansi-styles: 6.2.3
       string-width: 5.1.2
-      strip-ansi: 7.1.0
+      strip-ansi: 7.2.0
 
   wrappy@1.0.2: {}
 
@@ -21237,7 +21249,7 @@ snapshots:
     dependencies:
       async-limiter: 1.0.1
 
-  ws@8.18.0: {}
+  ws@8.21.0: {}
 
   xml2js@0.6.2:
     dependencies:
@@ -21256,14 +21268,14 @@ snapshots:
       '@oozcitak/infra': 1.0.8
       '@oozcitak/util': 8.3.8
       '@types/node': 20.14.8
-      js-yaml: 3.14.0
+      js-yaml: 3.14.2
 
   xmlbuilder2@3.1.1:
     dependencies:
       '@oozcitak/dom': 1.15.10
       '@oozcitak/infra': 1.0.8
       '@oozcitak/util': 8.3.8
-      js-yaml: 3.14.1
+      js-yaml: 3.14.2
 
   xmlbuilder@11.0.1: {}
 

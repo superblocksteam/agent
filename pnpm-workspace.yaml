@@ -9,10 +9,28 @@ packages:
   - 'types/gen/js'
 overrides:
   "@smithy/config-resolver": "^4.4.0"
-  qs: "^6.14.2"
+  qs: ">=6.15.2 <7"
   protobufjs: "^7.5.8"
   node-forge: "^1.4.0"
   fast-xml-parser: "^4.5.6"
+  axios: ">=1.16.0 <2"
+  basic-ftp: ">=5.3.1 <6"
+  fast-uri: ">=3.1.2 <4"
+  path-to-regexp: ">=0.1.13 <0.2"
+  "form-data@<3": ">=2.5.4 <3"
+  "js-yaml@<4": ">=3.14.2 <4"
+  "glob@>=10 <11": ">=10.5.0 <11"
+  "ws@>=8 <9": ">=8.20.1 <9"
+  "minimatch@>=3 <4": ">=3.1.4 <4"
+  "minimatch@>=5 <6": ">=5.1.8 <6"
+  "minimatch@>=9 <10": ">=9.0.7 <10"
+  "minimatch@>=10 <11": ">=10.2.3 <11"
+  "jws@<4": ">=3.2.3 <4"
+  "jws@>=4 <5": ">=4.0.1 <5"
+  "brace-expansion@<2": ">=1.1.13 <2"
+  "brace-expansion@>=2 <3": ">=2.0.3 <3"
+  "bn.js@>=4 <5": ">=4.12.3 <5"
+  "bn.js@>=5 <6": ">=5.2.3 <6"
 catalog:
   '@jest/globals': '29.7.0'
   '@swc/cli': '0.6.0'
