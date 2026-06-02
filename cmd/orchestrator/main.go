@@ -88,6 +88,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.uber.org/zap"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -221,6 +222,7 @@ func init() {
 	pflag.Bool("purejs.wasm_sandbox.enabled", false, "Enable WASM sandbox for pure JS step execution. LaunchDarkly takes priority if configured.")
 	pflag.Bool("sdkapi.wasm_worker.enabled", false, "Enable WASM worker routing for SDK API code-mode execution. LaunchDarkly takes priority if configured.")
 	pflag.Bool("database.lifecycle.worker.enabled", false, "Run the database lifecycle Terraform worker instead of the orchestrator servers.")
+	pflag.Bool("grpc.otel.metrics.enabled", false, "Enable otelgrpc metrics. Disabled by default to reduce Datadog custom metrics cost.")
 
 	// This pflag setup allows the stdlib flag package to be used with viper.
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -908,12 +910,18 @@ func main() {
 			),
 		}
 
+		var otelgrpcServerOpts []otelgrpc.Option
+		if !viper.GetBool("grpc.otel.metrics.enabled") {
+			logger.Info("otelgrpc metrics disabled (set SUPERBLOCKS_ORCHESTRATOR_GRPC_OTEL_METRICS_ENABLED=true to enable)")
+			otelgrpcServerOpts = append(otelgrpcServerOpts, otelgrpc.WithMeterProvider(noop.NewMeterProvider()))
+		}
+
 		s := grpc.NewServer(
 			grpc.ChainUnaryInterceptor(unaryInterceptors...),
 			grpc.ChainStreamInterceptor(streamInterceptors...),
 			grpc.MaxRecvMsgSize(viper.GetInt("grpc.msg.req.max")),
 			grpc.MaxSendMsgSize(viper.GetInt("grpc.msg.res.max")),
-			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+			grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpcServerOpts...)),
 		)
 		apiv1.RegisterExecutorServiceServer(s, grpcServer)
 		apiv1.RegisterMetadataServiceServer(s, grpcServer)
@@ -968,9 +976,14 @@ func main() {
 			}),
 		)
 
+		var otelgrpcClientOpts []otelgrpc.Option
+		if !viper.GetBool("grpc.otel.metrics.enabled") {
+			otelgrpcClientOpts = append(otelgrpcClientOpts, otelgrpc.WithMeterProvider(noop.NewMeterProvider()))
+		}
+
 		opts := []grpc.DialOption{
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelgrpcClientOpts...)),
 			grpc.WithDefaultCallOptions(
 				// note that gateway uses the opposite of grpc direction.
 				// grpc send max (response) is gateway receive max
