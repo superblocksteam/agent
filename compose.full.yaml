@@ -96,12 +96,21 @@ services:
       - ./scripts/plugins/integration/kinesis/init-kinesis.sh:/etc/localstack/init/ready.d/init-kinesis.sh
       - ./scripts/plugins/integration/s3/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0.23
     ports:
       - "27017:27017"
+    # E2E data is disposable; keep Mongo data off runner disk so Docker disk pressure
+    # cannot make the service disappear mid-run.
+    tmpfs:
+      - /data/db
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=example
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--username", "root", "--password", "example", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
   intake:
     image: ghcr.io/superblocksteam/intake:v0.88.0
     ports:
