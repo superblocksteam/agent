@@ -1,0 +1,88 @@
+---
+vulnerabilities:
+  # vm2 3.10.5 — sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred
+  # pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed.
+  - id: CVE-2026-24118
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-24781
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-26332
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-43997
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-43998
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-43999
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44000
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44001
+    statement: "vm2 DoS / process-crash via Promise constructor unhandled rejection (not a sandbox escape); patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44002
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44003
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44004
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44005
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44006
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44007
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44008
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-44009
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: CVE-2026-45411
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  - id: GHSA-2cm2-m3w5-gp2f
+    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
+    expired_at: "2026-09-01T00:00:00Z"
+  # form-data 2.5.1 — inert artifact pulled in only via the types-only chain
+  # snowflake-sdk > @google-cloud/storage > retry-request > @types/request (types-only) > form-data@2.5.1.
+  # Runtime importers resolve patched form-data@4.0.5; path-scoped to the inert 2.5.1 copy.
+  - id: CVE-2025-7783
+    paths:
+      - "**/node_modules/.pnpm/form-data@2.5.1/node_modules/form-data/**"
+    statement: "inert form-data@2.5.1 via snowflake-sdk > @google-cloud/storage > retry-request > @types/request (types-only); runtime importers resolve patched form-data@4.0.5"
+misconfigurations:
+  # Vendored CI Dockerfiles in node_modules (cpu-features, lz4) — not shipped.
+  # Path-scoped to avoid suppressing findings on first-party Dockerfiles.
+  - id: DS-0001
+    paths:
+      - "**/node_modules/**"
+    statement: "third-party CI Dockerfile in node_modules, not shipped"
+  - id: DS-0002
+    paths:
+      - "**/node_modules/**"
+    statement: "third-party CI Dockerfile in node_modules, not shipped"
+  - id: DS-0010
+    paths:
+      - "**/node_modules/**"
+    statement: "third-party CI Dockerfile in node_modules, not shipped"
+  - id: DS-0017
+    paths:
+      - "**/node_modules/**"
+    statement: "third-party CI Dockerfile in node_modules, not shipped"
+  - id: DS-0029
+    paths:
+      - "**/node_modules/**"
+    statement: "third-party CI Dockerfile in node_modules, not shipped"
