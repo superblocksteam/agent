@@ -3,8 +3,9 @@ package databaselifecycle
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type Poller interface {
@@ -17,30 +18,29 @@ func (f PollOnceFunc) PollOnce(ctx context.Context, agentID string) (PollResult,
 	return f(ctx, agentID)
 }
 
-func RunPollLoop(ctx context.Context, poller Poller, agentID string, interval time.Duration) error {
-	return RunPollLoopWithLogger(ctx, poller, agentID, interval, slog.Default())
-}
-
-func RunPollLoopWithLogger(ctx context.Context, poller Poller, agentID string, interval time.Duration, logger *slog.Logger) error {
+func RunPollLoop(ctx context.Context, poller Poller, agentID string, interval time.Duration, logger *zap.Logger) error {
 	if interval <= 0 {
 		return errors.New("database lifecycle poll interval must be positive")
 	}
 	if logger == nil {
-		logger = slog.Default()
+		logger = zap.NewNop()
 	}
 
+	// On cancellation the loop returns ctx.Err(): run-group adapters
+	// (runfx.AdaptRunCtxAsRunnable) treat context errors as a graceful stop
+	// and a nil return as a contract violation.
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return ctx.Err()
 		default:
 		}
 		result, err := poller.PollOnce(ctx, agentID)
 		if err != nil {
 			if ctx.Err() != nil {
-				return nil
+				return ctx.Err()
 			}
-			logger.Warn("database lifecycle poll failed", "agent_id", agentID, "error", err)
+			logger.Warn("database lifecycle poll failed", zap.String("agent_id", agentID), zap.Error(err))
 		} else {
 			logPollResult(logger, agentID, result)
 		}
@@ -51,21 +51,21 @@ func RunPollLoopWithLogger(ctx context.Context, poller Poller, agentID string, i
 			if !timer.Stop() {
 				<-timer.C
 			}
-			return nil
+			return ctx.Err()
 		case <-timer.C:
 		}
 	}
 }
 
-func logPollResult(logger *slog.Logger, agentID string, result PollResult) {
+func logPollResult(logger *zap.Logger, agentID string, result PollResult) {
 	for _, pollErr := range result.Errors {
 		logger.Warn(
 			"database lifecycle dispatch failed",
-			"agent_id", agentID,
-			"binding_key", pollErr.BindingKey,
-			"request_id", pollErr.RequestID,
-			"retryable", pollErr.Retryable,
-			"error", pollErr.Err,
+			zap.String("agent_id", agentID),
+			zap.String("binding_key", pollErr.BindingKey),
+			zap.String("request_id", pollErr.RequestID),
+			zap.Bool("retryable", pollErr.Retryable),
+			zap.Error(pollErr.Err),
 		)
 	}
 }

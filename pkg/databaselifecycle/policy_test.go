@@ -37,6 +37,19 @@ func TestResourceTypePolicyRejectsUnsupportedPlanResourceTypes(t *testing.T) {
 	require.ErrorContains(t, lifecycleErr, "unsupported Terraform resource type aws_iam_role")
 }
 
+func TestResourceTypePolicyIgnoresTerraformDataSources(t *testing.T) {
+	policy := NewResourceTypePolicy([]string{"aws_db_instance"})
+
+	err := policy.Check(context.Background(), `{
+		"resource_changes": [
+			{"mode": "managed", "type": "aws_db_instance"},
+			{"mode": "data", "type": "aws_secretsmanager_secret_version"}
+		]
+	}`)
+
+	require.NoError(t, err)
+}
+
 func TestResourceTypePolicyRejectsInvalidPlanJSON(t *testing.T) {
 	policy := NewResourceTypePolicy([]string{"aws_db_instance"})
 

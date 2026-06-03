@@ -173,6 +173,42 @@ func TestWorkerPollOnceDoesNotProcessMaterializationErrors(t *testing.T) {
 	require.Contains(t, reported[0].Error.Message, "write backend")
 }
 
+func TestWorkerPollOnceUsesBindingKeyWhenResourceKeyIsMissing(t *testing.T) {
+	var lockRelease ReleaseFunc
+	var materialized []DispatchPayload
+	locker := NewMemoryLocker()
+	release, err := locker.Lock(context.Background(), "app:prod:orders")
+	require.NoError(t, err)
+	lockRelease = release
+	lockRelease()
+
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", RequestID: "request-1"}}, nil
+		}),
+		locker,
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+			materialized = append(materialized, dispatch)
+			return nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			lockRelease, err = locker.Lock(ctx, "app:prod:orders")
+			require.ErrorIs(t, err, ErrResourceLocked)
+			return TerminalCallbackResult{RequestID: dispatch.RequestID, RequestState: "ready"}, nil
+		}),
+	)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, PollResult{Claimed: 1, Processed: 1}, result)
+	require.Len(t, materialized, 1)
+	require.Equal(t, "app:prod:orders", materialized[0].ResourceKey)
+}
+
 func TestWorkerPollOncePreservesOriginalFailureWhenReportingFails(t *testing.T) {
 	worker := NewWorker(
 		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
@@ -206,7 +242,7 @@ func TestWorkerPollOnceReportsNonRetryableLockFailures(t *testing.T) {
 	var reported []TerminalCallback
 	worker := NewWorker(
 		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
-			return []DispatchPayload{{BindingKey: "app:prod:orders", RequestID: "request-1"}}, nil
+			return []DispatchPayload{{RequestID: "request-1"}}, nil
 		}),
 		NewMemoryLocker(),
 		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {

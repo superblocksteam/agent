@@ -9,7 +9,6 @@ import (
 
 func TestConfigFromEnvReadsLifecycleWorkerSettings(t *testing.T) {
 	env := map[string]string{
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_AGENT_ID":               "agent-1",
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_ROOT_DIR":               "/var/lib/superblocks/database-lifecycle",
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_TERRAFORM_BIN":          "/usr/local/bin/tofu",
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_POLL_INTERVAL":          "5s",
@@ -23,7 +22,9 @@ func TestConfigFromEnvReadsLifecycleWorkerSettings(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, Config{
-		AgentID:      "agent-1",
+		// AgentID is supplied by the orchestrator process, not the
+		// environment (see Config.AgentID).
+		AgentID:      "",
 		RootDir:      "/var/lib/superblocks/database-lifecycle",
 		TerraformBin: "/usr/local/bin/tofu",
 		PollInterval: 5 * time.Second,
@@ -41,11 +42,7 @@ func TestConfigFromEnvReadsLifecycleWorkerSettings(t *testing.T) {
 }
 
 func TestConfigFromEnvHasNoImplicitSSLMode(t *testing.T) {
-	env := map[string]string{
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_AGENT_ID": "agent-1",
-	}
-
-	config, err := ConfigFromEnv(func(key string) string { return env[key] })
+	config, err := ConfigFromEnv(func(string) string { return "" })
 
 	require.NoError(t, err)
 	// SSLMode has NO implicit default (cursor HIGH 2026-05-20). Shipping
@@ -59,11 +56,7 @@ func TestConfigFromEnvHasNoImplicitSSLMode(t *testing.T) {
 }
 
 func TestConfigFromEnvDefaultsOptionalSettings(t *testing.T) {
-	env := map[string]string{
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_AGENT_ID": "agent-1",
-	}
-
-	config, err := ConfigFromEnv(func(key string) string { return env[key] })
+	config, err := ConfigFromEnv(func(string) string { return "" })
 
 	require.NoError(t, err)
 	require.Equal(t, "/var/lib/superblocks/database-lifecycle", config.RootDir)
@@ -71,15 +64,8 @@ func TestConfigFromEnvDefaultsOptionalSettings(t *testing.T) {
 	require.Equal(t, 30*time.Second, config.PollInterval)
 }
 
-func TestConfigFromEnvRequiresAgentID(t *testing.T) {
-	_, err := ConfigFromEnv(func(key string) string { return "" })
-
-	require.ErrorContains(t, err, "agent id is required")
-}
-
 func TestConfigFromEnvRejectsInvalidPollInterval(t *testing.T) {
 	env := map[string]string{
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_AGENT_ID":      "agent-1",
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_POLL_INTERVAL": "nope",
 	}
 

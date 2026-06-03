@@ -3,40 +3,25 @@ package main
 import (
 	"context"
 	"os"
-	"os/signal"
-	"path/filepath"
-	"syscall"
 
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/databaselifecycle"
+	runfx "github.com/superblocksteam/agent/pkg/run/fx"
+	"github.com/superblocksteam/run"
+	"go.uber.org/zap"
 )
 
-type databaseLifecycleRuntime struct {
-	config   databaselifecycle.Config
-	executor databaselifecycle.CommandExecutor
-	locker   databaselifecycle.ResourceLocker
-}
-
-func newDatabaseLifecycleRuntime(getenv func(string) string) (*databaseLifecycleRuntime, error) {
-	config, err := databaselifecycle.ConfigFromEnv(getenv)
-	if err != nil {
-		return nil, err
-	}
-	return &databaseLifecycleRuntime{
-		config:   config,
-		executor: databaselifecycle.NewBinaryCommandExecutor(config.TerraformBin),
-		locker:   databaselifecycle.NewFileLocker(filepath.Join(config.RootDir, "locks")),
-	}, nil
-}
-
-func runDatabaseLifecycleWorker(ctx context.Context, client clients.ServerClient) error {
-	runtime, err := newDatabaseLifecycleRuntime(os.Getenv)
-	if err != nil {
-		return err
-	}
-	return databaselifecycle.RunFromConfig(ctx, runtime.config, client, runtime.executor, runtime.locker, nil)
-}
-
-func databaseLifecycleWorkerContext(parent context.Context) (context.Context, context.CancelFunc) {
-	return signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
+// databaseLifecycleWorkerRunnable runs the database lifecycle worker as a
+// goroutine in the same process as the API servers (added to main()'s
+// run.Group, so it shares the process's signal-driven shutdown). agentID is
+// the orchestrator's own per-boot agent id: the registrar publishes this
+// process's environment profiles under that id, so the worker claims
+// dispatches as the same identity — no separate agent id configuration.
+// logger is the process logger so worker logs flow through the orchestrator's
+// zap pipeline (including remote emitters) rather than a process-global
+// default.
+func databaseLifecycleWorkerRunnable(serverClientOptions clients.ServerClientOptions, agentID string, logger *zap.Logger) run.Runnable {
+	return runfx.AdaptRunCtxAsRunnable(func(ctx context.Context) error {
+		return databaselifecycle.RunOrchestratorWorker(ctx, os.Getenv, serverClientOptions, agentID, logger)
+	})
 }

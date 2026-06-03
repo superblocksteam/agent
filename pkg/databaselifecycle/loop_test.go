@@ -1,15 +1,14 @@
 package databaselifecycle
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"log/slog"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestRunPollLoopPollsUntilContextCancellation(t *testing.T) {
@@ -24,9 +23,9 @@ func TestRunPollLoopPollsUntilContextCancellation(t *testing.T) {
 		return PollResult{}, nil
 	})
 
-	err := RunPollLoop(ctx, worker, "agent-1", time.Millisecond)
+	err := RunPollLoop(ctx, worker, "agent-1", time.Millisecond, nil)
 
-	require.NoError(t, err)
+	require.ErrorIs(t, err, context.Canceled)
 	require.Equal(t, "agent-1", <-polls)
 	require.Equal(t, "agent-1", <-polls)
 }
@@ -34,7 +33,7 @@ func TestRunPollLoopPollsUntilContextCancellation(t *testing.T) {
 func TestRunPollLoopRejectsInvalidIntervals(t *testing.T) {
 	err := RunPollLoop(context.Background(), PollOnceFunc(func(ctx context.Context, agentID string) (PollResult, error) {
 		return PollResult{}, nil
-	}), "agent-1", 0)
+	}), "agent-1", 0, nil)
 
 	require.ErrorContains(t, err, "poll interval must be positive")
 }
@@ -52,15 +51,14 @@ func TestRunPollLoopContinuesAfterTransientPollError(t *testing.T) {
 		return PollResult{}, nil
 	})
 
-	err := RunPollLoop(ctx, worker, "agent-1", time.Millisecond)
+	err := RunPollLoop(ctx, worker, "agent-1", time.Millisecond, nil)
 
-	require.NoError(t, err)
+	require.ErrorIs(t, err, context.Canceled)
 	require.Equal(t, 2, polls)
 }
 
 func TestRunPollLoopLogsTransientPollError(t *testing.T) {
-	var logs bytes.Buffer
-	logger := slog.New(slog.NewTextHandler(&logs, nil))
+	core, logs := observer.New(zap.WarnLevel)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	polls := 0
@@ -73,17 +71,19 @@ func TestRunPollLoopLogsTransientPollError(t *testing.T) {
 		return PollResult{}, nil
 	})
 
-	err := RunPollLoopWithLogger(ctx, worker, "agent-1", time.Millisecond, logger)
+	err := RunPollLoop(ctx, worker, "agent-1", time.Millisecond, zap.New(core))
 
-	require.NoError(t, err)
+	require.ErrorIs(t, err, context.Canceled)
 	require.Equal(t, 2, polls)
-	require.Contains(t, logs.String(), "database lifecycle poll failed")
-	require.Contains(t, logs.String(), "temporary control-plane failure")
+	entries := logs.FilterMessage("database lifecycle poll failed").All()
+	require.Len(t, entries, 1)
+	fields := entries[0].ContextMap()
+	require.Equal(t, "agent-1", fields["agent_id"])
+	require.Equal(t, "temporary control-plane failure", fields["error"])
 }
 
 func TestRunPollLoopLogsDispatchErrors(t *testing.T) {
-	var logs bytes.Buffer
-	logger := slog.New(slog.NewTextHandler(&logs, nil))
+	core, logs := observer.New(zap.WarnLevel)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	worker := PollOnceFunc(func(ctx context.Context, agentID string) (PollResult, error) {
@@ -102,19 +102,17 @@ func TestRunPollLoopLogsDispatchErrors(t *testing.T) {
 		}, nil
 	})
 
-	err := RunPollLoopWithLogger(ctx, worker, "agent-1", time.Millisecond, logger)
+	err := RunPollLoop(ctx, worker, "agent-1", time.Millisecond, zap.New(core))
 
-	require.NoError(t, err)
-	logOutput := logs.String()
-	for _, expected := range []string{
-		"database lifecycle dispatch failed",
-		"agent-1",
-		"profile:postgres",
-		"req-1",
-		"terraform apply failed",
-	} {
-		require.True(t, strings.Contains(logOutput, expected), "expected log output to contain %q: %s", expected, logOutput)
-	}
+	require.ErrorIs(t, err, context.Canceled)
+	entries := logs.FilterMessage("database lifecycle dispatch failed").All()
+	require.Len(t, entries, 1)
+	fields := entries[0].ContextMap()
+	require.Equal(t, "agent-1", fields["agent_id"])
+	require.Equal(t, "profile:postgres", fields["binding_key"])
+	require.Equal(t, "req-1", fields["request_id"])
+	require.Equal(t, true, fields["retryable"])
+	require.Equal(t, "terraform apply failed", fields["error"])
 }
 
 func TestRunPollLoopReturnsContextCancellationBeforeFirstPoll(t *testing.T) {
@@ -124,7 +122,7 @@ func TestRunPollLoopReturnsContextCancellationBeforeFirstPoll(t *testing.T) {
 	err := RunPollLoop(ctx, PollOnceFunc(func(ctx context.Context, agentID string) (PollResult, error) {
 		t.Fatal("unexpected poll")
 		return PollResult{}, nil
-	}), "agent-1", time.Millisecond)
+	}), "agent-1", time.Millisecond, nil)
 
-	require.NoError(t, err)
+	require.ErrorIs(t, err, context.Canceled)
 }

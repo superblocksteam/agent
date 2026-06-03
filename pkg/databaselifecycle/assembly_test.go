@@ -30,6 +30,9 @@ func TestNewWorkerFromDependenciesThreadsPlanPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/api/v1/database-lifecycle/dispatches/claim":
+			var body map[string]string
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			require.Equal(t, "agent-1", body["agentId"])
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"data":[{"agentId":"agent-1","bindingKey":"app:prod:orders","desiredSpecHash":"hash-1","operation":"ensure_prod_database","profileId":"profile-1","requestId":"request-1","resourceKey":"resource-1","terraformBackend":{"stateBackend":"s3","bucket":"state"},"terraformModule":{"source":"app.terraform.io/superblocks/rds-postgres/aws","version":"1.2.3","inputs":{}}}]}`))
 		case "/api/v1/database-lifecycle/callbacks/terminal":

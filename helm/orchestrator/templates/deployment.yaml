@@ -1,3 +1,24 @@
+{{- if .Values.databaseLifecycle.enabled }}
+{{- if not .Values.server.deploy }}
+{{- fail "server.deploy=true is required when databaseLifecycle.enabled=true; the lifecycle worker runs in the orchestrator Deployment" }}
+{{- end }}
+{{- $serviceAccount := .Values.serviceAccount | default dict }}
+{{- if not .Values.databaseLifecycle.sslMode }}
+{{- fail "databaseLifecycle.sslMode is required when databaseLifecycle.enabled=true (set to \"verify-full\" with databaseLifecycle.sslRootCert pointing at a CA bundle for production, or \"require\" for intra-VPC sandboxes)" }}
+{{- end }}
+{{- if and (or (eq .Values.databaseLifecycle.sslMode "verify-ca") (eq .Values.databaseLifecycle.sslMode "verify-full")) (not .Values.databaseLifecycle.sslRootCert) }}
+{{- fail "databaseLifecycle.sslRootCert is required when sslMode is verify-ca or verify-full" }}
+{{- end }}
+{{- if and (not $serviceAccount.create) (not $serviceAccount.name) }}
+{{- fail "serviceAccount.create=true or serviceAccount.name is required when databaseLifecycle.enabled=true; the lifecycle worker requires an IRSA-capable ServiceAccount" }}
+{{- end }}
+{{- if not .Values.databaseLifecycle.allowedResourceTypes }}
+{{- fail "databaseLifecycle.allowedResourceTypes is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- if not .Values.databaseLifecycle.allowedModuleSources }}
+{{- fail "databaseLifecycle.allowedModuleSources is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- end }}
 {{- if .Values.server.deploy }}
 ---
 apiVersion: apps/v1
@@ -39,8 +60,17 @@ spec:
         tags.datadoghq.com/service: orchestrator
         tags.datadoghq.com/version: {{ .Values.image.tag | quote }}
     spec:
-      serviceAccountName: default
+      serviceAccountName: {{ include "orchestrator.serviceAccountName" . }}
       terminationGracePeriodSeconds: {{ .Values.service.terminationGracePeriodSeconds }}
+      {{- if .Values.databaseLifecycle.enabled }}
+      {{- /* The database lifecycle worker writes per-dispatch tofu
+             workspaces under databaseLifecycle.rootDir as the non-root
+             orchestrator user (UID 1001). Without `fsGroup: 1001` the
+             emptyDir's mount-point is root-owned and the worker fails
+             to mkdir its first dispatch directory. */}}
+      securityContext:
+        fsGroup: 1001
+      {{- end }}
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
       - name: orchestrator-docker
@@ -101,6 +131,14 @@ spec:
         {{- if (.Values.superblocks).dataDomain }}
         - "--data.domain={{ .Values.superblocks.dataDomain }}"
         {{- end }}
+        {{- if .Values.databaseLifecycle.enabled }}
+        {{- /* Run the database lifecycle worker as a goroutine in the same
+               process as the API servers (see cmd/orchestrator/main.go). The
+               worker claims dispatches as this process's own agent id — the
+               identity the registrar publishes environment profiles under —
+               so no separate Deployment or agent id configuration exists. */}}
+        - "--database.lifecycle.worker.enabled=true"
+        {{- end }}
         env:
         - name: DD_ENV
           value: {{ .Values.environment }}
@@ -144,6 +182,28 @@ spec:
               key: store
         - name: SUPERBLOCKS_AGENT_APP_ENV_TEST
           value: {{.Values.agentAppEnvTestValue}}
+        {{- if .Values.databaseLifecycle.enabled }}
+        {{- /* Database lifecycle worker config. These env vars feed
+               databaselifecycle.ConfigFromEnv. The worker's agent id is NOT
+               configured here — it is the orchestrator's own per-boot agent
+               id, passed in-process (see cmd/orchestrator/main.go). */}}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_ROOT_DIR
+          value: {{ .Values.databaseLifecycle.rootDir | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_TERRAFORM_BIN
+          value: {{ .Values.databaseLifecycle.terraformBin | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_POLL_INTERVAL
+          value: {{ .Values.databaseLifecycle.pollInterval | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_RESOURCE_TYPES
+          value: {{ join "," .Values.databaseLifecycle.allowedResourceTypes | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_MODULE_SOURCES
+          value: {{ join "," .Values.databaseLifecycle.allowedModuleSources | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE
+          value: {{ .Values.databaseLifecycle.sslMode | quote }}
+        {{- if .Values.databaseLifecycle.sslRootCert }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT
+          value: {{ .Values.databaseLifecycle.sslRootCert | quote }}
+        {{- end }}
+        {{- end }}
         ports:
         - name: http
           containerPort: {{ .Values.service.ports.http }}
@@ -161,6 +221,16 @@ spec:
         - name: feature-flags
           mountPath: /etc/feature-flags
           readOnly: true
+        {{- end }}
+        {{- if .Values.databaseLifecycle.enabled }}
+        {{- /* Per-dispatch tofu workspace lives under an emptyDir at the
+               worker's rootDir. The orchestrator user (UID 1001) can't
+               mkdir under /var/lib without this mount; the rootDir is
+               intentionally not persistent — every dispatch re-materializes
+               its terraform tree from the module source allowlist, and
+               ledger state lives in the customer DB, not on disk. */}}
+        - name: database-lifecycle-work
+          mountPath: {{ .Values.databaseLifecycle.rootDir | quote }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -182,5 +252,9 @@ spec:
       - name: feature-flags
         configMap:
           name: {{ .Values.featureFlags.configMapName }}
+      {{- end }}
+      {{- if .Values.databaseLifecycle.enabled }}
+      - name: database-lifecycle-work
+        emptyDir: {}
       {{- end }}
 {{- end }}

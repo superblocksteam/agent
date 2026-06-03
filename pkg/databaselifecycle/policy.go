@@ -27,6 +27,7 @@ func (p *ResourceTypePolicy) Check(ctx context.Context, planJSON string) error {
 
 	var plan struct {
 		ResourceChanges []struct {
+			Mode string `json:"mode"`
 			Type string `json:"type"`
 		} `json:"resource_changes"`
 	}
@@ -35,6 +36,16 @@ func (p *ResourceTypePolicy) Check(ctx context.Context, planJSON string) error {
 	}
 
 	for _, change := range plan.ResourceChanges {
+		// Data sources are intentionally exempt from the resource-type
+		// allowlist: they are read-only, so the blast radius the allowlist
+		// constrains (creating/mutating cloud resources) does not apply.
+		// The trust boundary for what a module may read is the module-source
+		// allowlist plus the worker's IAM (IRSA) scoping. Note that data
+		// source reads can still land in Terraform state, so state storage
+		// must be treated as sensitive regardless of this policy.
+		if change.Mode == "data" {
+			continue
+		}
 		if change.Type == "" {
 			continue
 		}

@@ -1,14 +1,12 @@
 package databaselifecycle
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
 
 const (
-	envAgentID      = "SUPERBLOCKS_DATABASE_LIFECYCLE_AGENT_ID"
 	envRootDir      = "SUPERBLOCKS_DATABASE_LIFECYCLE_ROOT_DIR"
 	envTerraformBin = "SUPERBLOCKS_DATABASE_LIFECYCLE_TERRAFORM_BIN"
 	envPollInterval = "SUPERBLOCKS_DATABASE_LIFECYCLE_POLL_INTERVAL"
@@ -19,6 +17,10 @@ const (
 )
 
 type Config struct {
+	// AgentID is the orchestrator's own agent id, supplied by the caller
+	// (the worker runs in-process and claims dispatches as the agent that
+	// registered this process's environment profiles). It is intentionally
+	// not read from the environment.
 	AgentID              string
 	RootDir              string
 	TerraformBin         string
@@ -38,7 +40,6 @@ type Config struct {
 
 func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	config := Config{
-		AgentID:      getenv(envAgentID),
 		RootDir:      valueOrDefault(getenv(envRootDir), "/var/lib/superblocks/database-lifecycle"),
 		TerraformBin: valueOrDefault(getenv(envTerraformBin), "tofu"),
 		PollInterval: 30 * time.Second,
@@ -47,9 +48,6 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	config.AllowedModuleSources = splitCSV(getenv(envAllowedMods))
 	config.SSLMode = getenv(envSSLMode)
 	config.SSLRootCert = getenv(envSSLRootCert)
-	if config.AgentID == "" {
-		return Config{}, errors.New("database lifecycle agent id is required")
-	}
 	if rawInterval := getenv(envPollInterval); rawInterval != "" {
 		interval, err := time.ParseDuration(rawInterval)
 		if err != nil {

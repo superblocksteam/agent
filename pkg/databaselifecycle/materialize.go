@@ -63,7 +63,7 @@ func MaterializeJob(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOption
 	// stripped backend args as HCL. We strip the dispatch-level meta keys
 	// (`stateBackend` drives the HCL declaration; `locking`/`remoteState`
 	// are caller-side hints not understood by the s3 backend).
-	if err := writeStringFile(job.BackendFile, backendConfigHCL(backendArgsForFile(dispatch.TerraformBackend))); err != nil {
+	if err := writeStringFile(job.BackendFile, backendConfigHCL(backendArgsForFile(dispatch.TerraformBackend, dispatch))); err != nil {
 		return err
 	}
 	vars := map[string]any{
@@ -374,7 +374,7 @@ func hclValue(value any) string {
 // backend arguments. `stateBackend` is consumed by `backendBlockFromBackend`
 // to emit the HCL declaration; `locking` and `remoteState` are caller-side
 // hints (e.g. for the server's UI) that backends don't recognize.
-func backendArgsForFile(backend map[string]any) map[string]any {
+func backendArgsForFile(backend map[string]any, dispatch DispatchPayload) map[string]any {
 	if backend == nil {
 		return nil
 	}
@@ -384,9 +384,26 @@ func backendArgsForFile(backend map[string]any) map[string]any {
 		case "stateBackend", "locking", "remoteState":
 			continue
 		}
+		if key == "key" {
+			if raw, ok := value.(string); ok {
+				value = expandBackendKey(raw, dispatch)
+			}
+		}
 		out[key] = value
 	}
 	return out
+}
+
+func expandBackendKey(value string, dispatch DispatchPayload) string {
+	resourceKey := dispatch.ResourceKey
+	if resourceKey == "" {
+		resourceKey = dispatch.BindingKey
+	}
+	return strings.NewReplacer(
+		"{{resource_key}}", safeBindingPathSegment(resourceKey),
+		"{{binding_key}}", safeBindingPathSegment(dispatch.BindingKey),
+		"{{profile_id}}", safeBindingPathSegment(dispatch.ProfileID),
+	).Replace(value)
 }
 
 func validateTerraformBackend(backend map[string]any) error {

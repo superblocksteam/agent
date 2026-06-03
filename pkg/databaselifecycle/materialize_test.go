@@ -43,7 +43,8 @@ func TestMaterializeJobWritesBackendAndVarsFiles(t *testing.T) {
 		Operation:        "ensure_prod_database",
 		ProfileID:        "profile-1",
 		RequestID:        "request-1",
-		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "orders.tfstate", "region": "us-west-2"},
+		ResourceKey:      "database/orders",
+		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "profiles/{{profile_id}}/{{resource_key}}.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
 			Source:  "app.terraform.io/superblocks/rds-postgres/aws",
 			Version: "1.2.3",
@@ -102,7 +103,7 @@ func TestMaterializeJobWritesBackendAndVarsFiles(t *testing.T) {
 	// `tofu init -backend-config=<file>` parses HCL key=value pairs,
 	// not JSON. `type` is stripped — it's consumed by the HCL backend
 	// declaration, not a valid s3-backend argument.
-	require.Equal(t, "bucket = \"state-bucket\"\nkey = \"orders.tfstate\"\nregion = \"us-west-2\"\n", string(backend))
+	require.Equal(t, "bucket = \"state-bucket\"\nkey = \"profiles/profile-1-50135a426adc/database-orders-13abfc789342.tfstate\"\nregion = \"us-west-2\"\n", string(backend))
 
 	var vars map[string]any
 	require.NoError(t, readJSONFile(job.VarsFile, &vars))
@@ -886,6 +887,20 @@ func TestBackendBlockFromBackend(t *testing.T) {
 	require.Equal(t, "", backendBlockFromBackend(map[string]any{"bucket": "x"})) // missing "stateBackend"
 	require.Equal(t, "terraform {\n  backend \"s3\" {}\n}\n\n",
 		backendBlockFromBackend(map[string]any{"stateBackend": "s3", "bucket": "x"}))
+}
+
+func TestExpandBackendKeyFallsBackToBindingKeyWhenResourceKeyIsEmpty(t *testing.T) {
+	withResourceKey := expandBackendKey("state/{{resource_key}}.tfstate", DispatchPayload{
+		ResourceKey: "resource-1",
+		BindingKey:  "binding-1",
+	})
+	withoutResourceKey := expandBackendKey("state/{{resource_key}}.tfstate", DispatchPayload{
+		BindingKey: "binding-1",
+	})
+
+	require.Equal(t, "state/"+safeBindingPathSegment("resource-1")+".tfstate", withResourceKey)
+	require.Equal(t, "state/"+safeBindingPathSegment("binding-1")+".tfstate", withoutResourceKey)
+	require.NotEqual(t, withResourceKey, withoutResourceKey)
 }
 
 func TestValidateTerraformBackend(t *testing.T) {

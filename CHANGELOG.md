@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drain Apps 3.0 API requests when the agent receives a SIGTERM/SIGINT (rather than existing behavior of immediately stopping execution of in-flight requests)
 - Improve the error message for Apps 3.0 SDK integration callbacks that are missing orchestrator-signed capability tokens
 - Upgrade Go toolchain from 1.26.1 to 1.26.3 and update Docker Go builder images to use the published 1.26.3 trixie image
-- Add Native Database lifecycle worker support for Terraform-backed database provisioning, including operator-configurable module source allowlisting.
+- Add Native Database lifecycle worker support for Terraform-backed database provisioning: runs in-process alongside the orchestrator servers (off by default), claims dispatches as the agent's own id, with operator-configurable resource-type and module-source allowlisting and optional IRSA via a chart-managed ServiceAccount.
+- Allow Terraform `data` sources (e.g. AWS Secrets Manager lookups) for shared PostgreSQL database modules in the lifecycle worker's plan policy.
 - Fix Apps 3.0 SDK integration callbacks for embedded external users using short-lived orchestrator-signed capabilities.
 - Include `x-superblocks-agent-key` in OTLP metrics upload headers for orchestrator and task-manager exporters
 - Disable OTLP log exporting to the collector and rely on the legacy remote logging pipeline instead

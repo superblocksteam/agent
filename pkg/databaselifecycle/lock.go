@@ -50,6 +50,12 @@ func (l *MemoryLocker) Lock(ctx context.Context, resourceKey string) (ReleaseFun
 	}, nil
 }
 
+// FileLocker serializes Terraform runs within a single pod only. Cross-pod
+// protection is the server-side dispatch claim CAS, the active-request
+// uniqueness constraint, and Terraform S3 state locking.
+// TODO(ENG-3517): decide whether an explicit distributed lock is needed so
+// horizontally-scaled orchestrators can never run Terraform for the same
+// binding in parallel.
 type FileLocker struct {
 	dir string
 }

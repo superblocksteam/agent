@@ -221,8 +221,8 @@ func init() {
 	pflag.Bool("bindings.wasm_sandbox.enabled", false, "Enable WASM sandbox for bindings evaluation. LaunchDarkly takes priority if configured.")
 	pflag.Bool("purejs.wasm_sandbox.enabled", false, "Enable WASM sandbox for pure JS step execution. LaunchDarkly takes priority if configured.")
 	pflag.Bool("sdkapi.wasm_worker.enabled", false, "Enable WASM worker routing for SDK API code-mode execution. LaunchDarkly takes priority if configured.")
-	pflag.Bool("database.lifecycle.worker.enabled", false, "Run the database lifecycle Terraform worker instead of the orchestrator servers.")
 	pflag.Bool("grpc.otel.metrics.enabled", false, "Enable otelgrpc metrics. Disabled by default to reduce Datadog custom metrics cost.")
+	pflag.Bool("database.lifecycle.worker.enabled", false, "Run the database lifecycle Terraform worker as a goroutine alongside the orchestrator servers. The worker claims dispatches as this agent's own id (the same identity the registrar publishes environment profiles under).")
 
 	// This pflag setup allows the stdlib flag package to be used with viper.
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
@@ -322,16 +322,6 @@ func main() {
 		}
 
 		serverHttpClient = clients.NewServerClient(&serverHttpClientOptions)
-	}
-
-	if viper.GetBool("database.lifecycle.worker.enabled") {
-		workerCtx, stop := databaseLifecycleWorkerContext(ctx)
-		defer stop()
-		if err := runDatabaseLifecycleWorker(workerCtx, serverHttpClient); err != nil {
-			fmt.Fprintf(os.Stderr, "database lifecycle worker failed: %v\n", err)
-			os.Exit(1)
-		}
-		return
 	}
 
 	var auditEmitter emitter.Emitter
@@ -1142,6 +1132,19 @@ func main() {
 	g.Add(viper.GetBool("registration.enabled"), registrator)
 	g.Add(viper.GetBool("registration.enabled"), metricsExporter)
 	g.Add(viper.GetBool("emitter.remote.enabled"), remoteEmitter)
+
+	// Database lifecycle worker runs in-process alongside the API servers and
+	// claims dispatches as this process's own agent id — the same identity the
+	// registrar publishes the environment profiles under, so routing stays
+	// self-consistent across restarts without a separately configured agent id.
+	// Claim races between replicas resolve at the lifecycle_request row via the
+	// server's UPDATE … WHERE state='pending' claim.
+	if viper.GetBool("database.lifecycle.worker.enabled") && !viper.GetBool("registration.enabled") {
+		logger.Warn("database lifecycle worker is enabled but agent registration is disabled; " +
+			"dispatch claims resolve through environment profiles published at registration, " +
+			"so the worker will poll but never claim any work")
+	}
+	g.Add(viper.GetBool("database.lifecycle.worker.enabled"), databaseLifecycleWorkerRunnable(serverHttpClientOptions, id, logger.Named("database-lifecycle-worker")))
 
 	g.Always(metricsRunnable)
 	g.Always(pkgrun.Telemetry(telInstance))

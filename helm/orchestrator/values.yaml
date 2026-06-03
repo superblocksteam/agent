@@ -200,17 +200,27 @@ events:
   cloud:
     enabled: false
 extraEnv: {}
-# Native-database lifecycle worker. Off by default. When enabled the chart
-# renders an additional Deployment + ServiceAccount under
-# `<release>-orchestrator-database-lifecycle` that polls the Superblocks
-# server for dispatches and runs Terraform against a configured backend.
-# IRSA wiring (state bucket access, RDS provisioning, Secrets Manager
-# reads, etc.) is provisioned out-of-band; `serviceAccount.irsaRoleArn`
-# must point at the role that trust policy allows this pod to assume.
+# ServiceAccount for the main orchestrator Deployment. Defaults to the
+# namespace `default` SA because most environments don't need pod-level AWS
+# identity. Set `name` with `create=false` to use an externally managed SA, or
+# set `create=true` to let this chart create one. Required when the in-process
+# database lifecycle worker is enabled (Terraform state bucket access, RDS
+# provisioning, Secrets Manager reads). IRSA wiring (`irsaRoleArn`) is
+# provisioned out-of-band; the role's trust policy must allow
+# `system:serviceaccount:<namespace>:<saName>` to assume.
+# TODO(ENG-3518): `irsaRoleArn` is AWS-specific; fold it into the generic
+# `annotations` map or a cloud-scoped key.
+serviceAccount:
+  create: false
+  name: ""
+  irsaRoleArn: ""
+  annotations: {}
+# Native-database lifecycle worker. Off by default. When enabled, the main
+# orchestrator process runs the worker as a goroutine alongside the API
+# servers; it claims dispatches as the orchestrator's own agent id, so there
+# is no separate Deployment, ServiceAccount, or agent id to configure.
 databaseLifecycle:
   enabled: false
-  replicas: 1
-  agentId: ""
   # Default rootDir is written via the dedicated `database-lifecycle-work`
   # emptyDir volume mount in the deployment template, so the non-root
   # orchestrator user (UID 1001) can write there without the image needing
@@ -237,12 +247,6 @@ databaseLifecycle:
   # populates this. Mirrors SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES
   # in pkg/secrets/refresolver/refresolver.go.
   allowedRefPrefixes: []
-  resources: {}
-  serviceAccount:
-    create: true
-    name: ""
-    irsaRoleArn: ""
-    annotations: {}
 gateway:
   gatewayRefs:
     - name: internal-gateway

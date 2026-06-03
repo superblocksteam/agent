@@ -274,6 +274,7 @@ deploy-helm:
 		--create-namespace \
 		--values helm/orchestrator/overrides/$(ENVIRONMENT).yaml \
 		--set server.deploy=false \
+		--set databaseLifecycle.enabled=false \
 		--set queue.deploy=false \
 		--set sandbox_workers.fullnameOverride=orchestrator-workers \
 		--set sandbox_workers.superblocks.key="$(HELM_SUPERBLOCKS_KEY)" \

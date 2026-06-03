@@ -100,6 +100,7 @@ func (w *Worker) PollOnce(ctx context.Context, agentID string) (PollResult, erro
 }
 
 func (w *Worker) pollDispatch(ctx context.Context, dispatch DispatchPayload) error {
+	dispatch = normalizeDispatchLockKey(dispatch)
 	release, err := w.locker.Lock(ctx, dispatch.ResourceKey)
 	if err != nil {
 		if errors.Is(err, ErrResourceLocked) {
@@ -110,6 +111,13 @@ func (w *Worker) pollDispatch(ctx context.Context, dispatch DispatchPayload) err
 	defer release()
 
 	return w.processLockedDispatch(ctx, dispatch)
+}
+
+func normalizeDispatchLockKey(dispatch DispatchPayload) DispatchPayload {
+	if dispatch.ResourceKey == "" {
+		dispatch.ResourceKey = dispatch.BindingKey
+	}
+	return dispatch
 }
 
 func (w *Worker) processLockedDispatch(ctx context.Context, dispatch DispatchPayload) error {

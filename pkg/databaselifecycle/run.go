@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/superblocksteam/agent/pkg/clients"
+	"go.uber.org/zap"
 )
 
 type PollLoop interface {
@@ -17,6 +18,14 @@ func (f PollLoopFunc) Run(ctx context.Context, poller Poller, agentID string, in
 	return f(ctx, poller, agentID, interval)
 }
 
+// NewPollLoop binds RunPollLoop to the given logger so loop output flows
+// through the caller's logging pipeline. A nil logger discards loop logs.
+func NewPollLoop(logger *zap.Logger) PollLoop {
+	return PollLoopFunc(func(ctx context.Context, poller Poller, agentID string, interval time.Duration) error {
+		return RunPollLoop(ctx, poller, agentID, interval, logger)
+	})
+}
+
 func RunFromConfig(
 	ctx context.Context,
 	config Config,
@@ -26,7 +35,7 @@ func RunFromConfig(
 	loop PollLoop,
 ) error {
 	if loop == nil {
-		loop = PollLoopFunc(RunPollLoop)
+		loop = NewPollLoop(nil)
 	}
 	worker, interval, err := BootstrapWorker(config, client, executor, locker)
 	if err != nil {

@@ -93,10 +93,8 @@ func NewRunnerWithPolicy(executor CommandExecutor, policy PlanPolicy) *Runner {
 
 func (r *Runner) Run(ctx context.Context, job Job) (Result, error) {
 	var logs []string
-	// cursor r3237338511: skip `tofu show -json tfplan` when no policy is
-	// configured. The step only feeds `r.policy.Check`; running it
-	// unconditionally costs a tofu invocation per dispatch on every
-	// deployment that hasn't opted into plan-policy enforcement.
+	// `show` is skipped unless a plan policy is configured because its only
+	// consumer is policy.Check.
 	commands := []Command{
 		{Name: "init", Args: []string{"-input=false", "-backend-config=" + job.BackendFile}, Dir: job.WorkingDir},
 		{Name: "plan", Args: []string{"-input=false", "-out=tfplan", "-var-file=" + job.VarsFile}, Dir: job.WorkingDir},
