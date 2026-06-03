@@ -350,7 +350,6 @@ func main() {
 			metricsURL,
 			serviceLabel,
 			version,
-			os.Getenv("POD_NAME"),
 			os.Getenv("FLEET_NAME"),
 			map[string]string{
 				"x-superblocks-agent-key": viper.GetString("superblocks.key"),

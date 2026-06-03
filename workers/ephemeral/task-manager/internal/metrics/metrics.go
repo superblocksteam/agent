@@ -104,7 +104,7 @@ var (
 
 // SetupMeterProvider creates and registers an OTLP-based meter provider for
 // pushing sandbox metrics to the configured collector.
-func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersion, podName, fleetName string, headers map[string]string, exportInterval time.Duration) (*sdkmetric.MeterProvider, error) {
+func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersion, fleetName string, headers map[string]string, exportInterval time.Duration) (*sdkmetric.MeterProvider, error) {
 	metricsURL := buildMetricsURL(otlpURL)
 
 	opts := []otlpmetrichttp.Option{
@@ -124,9 +124,6 @@ func SetupMeterProvider(ctx context.Context, otlpURL, serviceName, serviceVersio
 	attrs := []attribute.KeyValue{
 		semconv.ServiceNameKey.String(serviceName),
 		semconv.ServiceVersionKey.String(serviceVersion),
-	}
-	if podName != "" {
-		attrs = append(attrs, semconv.K8SPodNameKey.String(podName))
 	}
 	if fleetName != "" {
 		attrs = append(attrs, attribute.String("fleet", fleetName))
