@@ -1,61 +1,151 @@
 ---
 vulnerabilities:
-  # vm2 3.10.5 — sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred
-  # pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed.
+  # vm2 sandbox-escape findings — risk accepted on compensating controls (NOT vm2's own
+  # sandboxing): each user JS step/API runs in its own ephemeral, single-use pod that is
+  # terminated immediately after one execution, under gVisor, network-isolated with no
+  # access to the internal network. (Cloud Prem deploys the vm2 execute paths
+  # main.ephemeral.javascript.execute / .javascriptsdkapi.execute with ephemeral: true;
+  # only the non-vm2 WASM/QuickJS paths run pooled.)
+  # A fix (vm2 3.11.5) is available and rolling out in the next release via orchestrator
+  # PR #2675, so these are time-boxed (expired_at) to that rollout — extend if the customer
+  # has not upgraded by then. vm2 itself stays (coexists with the WASM/QuickJS sandbox); a
+  # future vm2 CVE should reuse this rationale only after confirming the same controls apply
+  # to that vulnerability class — it is not auto-accepted.
   - id: CVE-2026-24118
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-24781
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-26332
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-43997
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-43998
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-43999
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44000
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44001
-    statement: "vm2 DoS / process-crash via Promise constructor unhandled rejection (not a sandbox escape); patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 DoS / process-crash via Promise constructor unhandled rejection (not a sandbox escape); blast radius limited to the current execution — the ephemeral, single-use pod is terminated after one execution, so a crash fails only that one user request and cannot cascade to other users or persistent infrastructure. Fix (vm2 3.11.5) rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44002
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44003
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44004
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44005
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44006
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44007
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44008
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-44009
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: CVE-2026-45411
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47131
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47135
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47137
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47139
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47140
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47141
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47208
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47209
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
+  - id: CVE-2026-47210
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   - id: GHSA-2cm2-m3w5-gp2f
-    statement: "vm2 sandbox-escape CVEs; patch exists (vm2 3.11.3) but upgrade deferred pending WASM sandbox migration (AGENT-2575); risk accepted, time-boxed"
-    expired_at: "2026-09-01T00:00:00Z"
+    paths:
+      - "**/node_modules/vm2/**"
+    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
+    expired_at: "2026-06-12T00:00:00Z"
   # form-data 2.5.1 — inert artifact pulled in only via the types-only chain
   # snowflake-sdk > @google-cloud/storage > retry-request > @types/request (types-only) > form-data@2.5.1.
   # Runtime importers resolve patched form-data@4.0.5; path-scoped to the inert 2.5.1 copy.
