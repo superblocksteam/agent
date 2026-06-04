@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -463,6 +464,15 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 					TerminationGracePeriodSeconds: terminationGracePeriodSeconds,
 					AutomountServiceAccountToken:  ptr.To(false),
 					ImagePullSecrets:              m.buildImagePullSecrets(),
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsNonRoot:   ptr.To(true),
+						SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+					},
+					Volumes: []corev1.Volume{
+						{Name: "tmp", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: ptr.To(resource.MustParse("256Mi")),
+						}}},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:            containerName,
@@ -477,6 +487,15 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 								},
 							},
 							Resources: m.resources,
+							SecurityContext: &corev1.SecurityContext{
+								AllowPrivilegeEscalation: ptr.To(false),
+								Privileged:               ptr.To(false),
+								Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+								ReadOnlyRootFilesystem:   ptr.To(true),
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{Name: "tmp", MountPath: "/tmp"},
+							},
 							// Readiness probe: only mark Ready when gRPC server is listening.
 							// Prevents task-manager from connecting before sandbox has bound to port 50051.
 							// With lazy plugin imports, JS-API sandbox starts in ~730ms and JS sandbox

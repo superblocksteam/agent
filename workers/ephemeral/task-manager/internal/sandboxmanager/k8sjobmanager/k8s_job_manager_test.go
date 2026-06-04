@@ -222,6 +222,58 @@ func TestBuildJobSpec(t *testing.T) {
 	}
 }
 
+func TestBuildJobSpec_SecurityContext(t *testing.T) {
+	t.Parallel()
+	m := &K8sJobManager{
+		namespace:              "test-ns",
+		image:                  "sandbox:latest",
+		port:                   50051,
+		podIP:                  "10.0.0.1",
+		variableStoreGrpcPort:  50050,
+		variableStoreHttpPort:  8080,
+		streamingProxyGrpcPort: 50053,
+		language:               "javascript",
+		grpcMaxRequestSize:     30_000_000,
+		grpcMaxResponseSize:    500 * 1024 * 1024,
+		logger:                 zap.NewNop(),
+	}
+
+	job := m.buildJobSpec("sandbox-test-123", "test-123", "javascript")
+	podSpec := job.Spec.Template.Spec
+
+	// Pod-level security context
+	require.NotNil(t, podSpec.SecurityContext, "pod security context must be set")
+	require.NotNil(t, podSpec.SecurityContext.RunAsNonRoot)
+	assert.True(t, *podSpec.SecurityContext.RunAsNonRoot)
+	require.NotNil(t, podSpec.SecurityContext.SeccompProfile)
+	assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, podSpec.SecurityContext.SeccompProfile.Type)
+
+	// /tmp emptyDir volume with size limit to cap ephemeral storage use
+	require.Len(t, podSpec.Volumes, 1)
+	assert.Equal(t, "tmp", podSpec.Volumes[0].Name)
+	require.NotNil(t, podSpec.Volumes[0].EmptyDir)
+	require.NotNil(t, podSpec.Volumes[0].EmptyDir.SizeLimit)
+	assert.Equal(t, "256Mi", podSpec.Volumes[0].EmptyDir.SizeLimit.String())
+
+	// Container-level security context
+	require.Len(t, podSpec.Containers, 1)
+	sc := podSpec.Containers[0].SecurityContext
+	require.NotNil(t, sc, "container security context must be set")
+	require.NotNil(t, sc.AllowPrivilegeEscalation)
+	assert.False(t, *sc.AllowPrivilegeEscalation)
+	require.NotNil(t, sc.Privileged)
+	assert.False(t, *sc.Privileged)
+	require.NotNil(t, sc.ReadOnlyRootFilesystem)
+	assert.True(t, *sc.ReadOnlyRootFilesystem)
+	require.NotNil(t, sc.Capabilities)
+	assert.Equal(t, []corev1.Capability{"ALL"}, sc.Capabilities.Drop)
+
+	// /tmp volume mount on container
+	require.Len(t, podSpec.Containers[0].VolumeMounts, 1)
+	assert.Equal(t, "tmp", podSpec.Containers[0].VolumeMounts[0].Name)
+	assert.Equal(t, "/tmp", podSpec.Containers[0].VolumeMounts[0].MountPath)
+}
+
 func TestBuildJobSpec_GracefulShutdownExplicitTimeout(t *testing.T) {
 	m := &K8sJobManager{
 		namespace:               "test-ns",
