@@ -3,6 +3,7 @@ package databaselifecycle
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/databaselifecycle/migrations"
@@ -18,6 +19,7 @@ type WorkerDependencies struct {
 	RootDir              string
 	AllowedModuleSources []string
 	DSNOptions           DSNOptions
+	LifecycleConfig      LifecycleConfig
 }
 
 func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
@@ -38,11 +40,28 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 	reporter := CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
 		return ReportTerminalCallback(ctx, deps.Client, callback)
 	})
+	// SSL options forwarded into the materializer so the shared-mode
+	// `provider "postgresql"` block uses the same posture (sslmode +
+	// optional sslrootcert) as DSNOptions, keeping the terraform apply
+	// and the subsequent migration run on the same root CA pinning.
+	// cursor r3284281726.
+	sslOpts := ProviderSSLOptions{
+		Mode:               deps.DSNOptions.SSLMode,
+		RootCert:           deps.DSNOptions.SSLRootCert,
+		AllowedRefPrefixes: deps.DSNOptions.AllowedRefPrefixes,
+	}
 	materializer := JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
-		if err := ValidateTerraformModuleSource(dispatch.TerraformModule, deps.AllowedModuleSources); err != nil {
+		if len(deps.LifecycleConfig.Entries) == 0 {
+			return errors.New("database lifecycle local config is required")
+		}
+		resolved, err := deps.LifecycleConfig.Resolve(dispatch.Environment, dispatch.Profile, dispatch.Operation, dispatch.Engine)
+		if err != nil {
 			return err
 		}
-		return MaterializeJob(job, dispatch)
+		if err := ValidateTerraformModuleSource(resolved.Module, deps.AllowedModuleSources); err != nil {
+			return fmt.Errorf("config entry %s/%s: %w", dispatch.Environment, dispatch.Profile, err)
+		}
+		return MaterializeResolvedJob(job, dispatch, resolved, sslOpts)
 	})
 	dsnBuilder := NewDSNBuilder(deps.DSNOptions)
 	worker := NewWorker(

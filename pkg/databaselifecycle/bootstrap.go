@@ -30,6 +30,7 @@ func BootstrapWorker(config Config, client clients.ServerClient, executor Comman
 		Policy:               policy,
 		RootDir:              config.RootDir,
 		AllowedModuleSources: config.AllowedModuleSources,
+		LifecycleConfig:      config.LifecycleConfig,
 		DSNOptions:           dsnOptionsFromConfig(config),
 	})
 	if err != nil {

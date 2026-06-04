@@ -17,8 +17,11 @@ type DispatchPayload struct {
 	RuntimeCredentialRefs   map[string]any         `json:"runtimeCredentialRefs,omitempty"`
 	MigrationCredentialRefs map[string]any         `json:"migrationCredentialRefs,omitempty"`
 	DesiredSpecHash         string                 `json:"desiredSpecHash"`
+	Engine                  string                 `json:"engine,omitempty"`
+	Environment             string                 `json:"environment,omitempty"`
 	Migrations              []migrations.Migration `json:"migrations,omitempty"`
 	Operation               string                 `json:"operation"`
+	Profile                 string                 `json:"profile,omitempty"`
 	ProfileID               string                 `json:"profileId"`
 	RequestID               string                 `json:"requestId"`
 	ResourceKey             string                 `json:"resourceKey"`

@@ -47,16 +47,10 @@ func (f *fakeHandler) CloseOne() {
 
 func (f *fakeHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	t := f.t
-	tlogf := func(format string, args ...any) {
-		t.Logf("handler: "+format, args...)
-	}
 
 	require.Equal(t, f.proto, req.Proto, "wrong http protocol for test")
 
-	tlogf("request received\nheaders=%v", req.Header)
-
 	if req.Header.Get("authorization") != "Bearer "+authorizationToken {
-		tlogf("status=unauthorized")
 		resp.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -75,14 +69,12 @@ func (f *fakeHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("cache-control", "no-cache")
 	resp.Header().Set("connection", "keep-alive")
 
-	tlogf("status=ok")
 	resp.WriteHeader(http.StatusOK)
 
 	buf := marshalEvent(f.initial)
 	_, err := w.Write(buf)
 	require.NoError(t, err)
 	w.Flush()
-	tlogf("wrote event\n`%s`\n", string(buf))
 
 	for {
 		select {
@@ -95,16 +87,13 @@ func (f *fakeHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			_, err := w.Write(buf)
 			require.NoError(t, err)
 			w.Flush()
-			tlogf("wrote bytes\n`%s`\n", string(buf))
 		case <-f.closeOne:
-			tlogf("closing")
 			return
 		case event := <-f.events:
 			buf := marshalEvent(event)
 			_, err := w.Write(buf)
 			require.NoError(t, err)
 			w.Flush()
-			tlogf("wrote event\n`%s`\n", string(buf))
 		}
 	}
 }

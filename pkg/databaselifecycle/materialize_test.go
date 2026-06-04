@@ -9,6 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// testSSLOpts is the SSL posture passed by tests that don't care about
+// it — matches the pre-fix hardcoded behavior of sslmode=require, so
+// non-SSL-focused tests keep the same generated HCL. SSL-specific
+// behavior is exercised by TestMaterializeJobEmitsConfiguredSSLModeForSharedModeModule.
+var testSSLOpts = ProviderSSLOptions{Mode: "require"}
+var testSharedModeSSLOpts = ProviderSSLOptions{
+	Mode:               "require",
+	AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!"},
+}
+
 func tempRoot(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
@@ -43,7 +53,7 @@ func TestMaterializeJobWritesBackendAndVarsFiles(t *testing.T) {
 				"storage_gb":     float64(20),
 			},
 		},
-	})
+	}, testSSLOpts)
 
 	require.NoError(t, err)
 	mainFile, err := os.ReadFile(job.MainFile)
@@ -54,9 +64,11 @@ func TestMaterializeJobWritesBackendAndVarsFiles(t *testing.T) {
 	require.Contains(t, string(mainFile), `terraform {
   backend "s3" {}
 }`)
-	require.NotContains(t, string(mainFile), `provider "aws"`)
-	require.NotContains(t, string(mainFile), `data "aws_secretsmanager_secret_version"`)
-	require.NotContains(t, string(mainFile), `provider "postgresql"`)
+	// S3 backend implies AWS; root must configure the provider so tofu can
+	// authenticate. Region flows through from the dispatch's backend config.
+	require.Contains(t, string(mainFile), `provider "aws" {
+  region = "us-west-2"
+}`)
 	require.Contains(t, string(mainFile), `variable "engine_version" {
   type = any
 }`)
@@ -104,6 +116,93 @@ func TestMaterializeJobWritesBackendAndVarsFiles(t *testing.T) {
 	require.Equal(t, float64(20), vars["storage_gb"])
 }
 
+func TestMaterializeJobUsesResolvedLifecycleConfig(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:prod:orders",
+		WorkingDir:  filepath.Join(root, "app-prod-orders"),
+		MainFile:    filepath.Join(root, "app-prod-orders", "main.tf"),
+		BackendFile: filepath.Join(root, "app-prod-orders", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-prod-orders", "terraform.tfvars.json"),
+	}
+	resolved := ResolvedLifecycleConfig{
+		Module: TerraformModule{
+			Source:  "app.terraform.io/superblocks/postgres-managed-database/aws",
+			Version: "1.2.3",
+			Inputs: map[string]any{
+				"storage_gb": float64(20),
+			},
+		},
+		Backend: map[string]any{
+			"stateBackend": "s3",
+			"bucket":       "state-bucket",
+			"key":          "profiles/{{profile_id}}/{{resource_key}}.tfstate",
+			"region":       "us-west-2",
+		},
+		CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
+	}
+
+	err := MaterializeResolvedJob(job, DispatchPayload{
+		BindingKey:      "app:prod:orders",
+		DesiredSpecHash: "hash-1",
+		Operation:       "ensure_database",
+		ProfileID:       "profile-1",
+		RequestID:       "request-1",
+		ResourceKey:     "database/orders",
+	}, resolved, testSSLOpts)
+
+	require.NoError(t, err)
+	mainFile, err := os.ReadFile(job.MainFile)
+	require.NoError(t, err)
+	require.Contains(t, string(mainFile), `module "database" {
+  source  = "app.terraform.io/superblocks/postgres-managed-database/aws"
+  version = "1.2.3"`)
+
+	var vars map[string]any
+	require.NoError(t, readJSONFile(job.VarsFile, &vars))
+	require.Equal(t, "ensure_database", vars["operation"])
+	require.Equal(t, float64(20), vars["storage_gb"])
+	require.Equal(t, map[string]any{"runtime": "aws_secrets_manager"}, vars["credential_resolver"])
+}
+
+func TestMaterializeResolvedJobRejectsCredentialResolverInputConflict(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:prod:orders",
+		WorkingDir:  filepath.Join(root, "app-prod-orders"),
+		MainFile:    filepath.Join(root, "app-prod-orders", "main.tf"),
+		BackendFile: filepath.Join(root, "app-prod-orders", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-prod-orders", "terraform.tfvars.json"),
+	}
+	resolved := ResolvedLifecycleConfig{
+		Module: TerraformModule{
+			Source:  "app.terraform.io/superblocks/postgres-managed-database/aws",
+			Version: "1.2.3",
+			Inputs: map[string]any{
+				"credential_resolver": "override",
+			},
+		},
+		Backend: map[string]any{
+			"stateBackend": "s3",
+			"bucket":       "state-bucket",
+			"key":          "profiles/{{profile_id}}/{{resource_key}}.tfstate",
+			"region":       "us-west-2",
+		},
+		CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
+	}
+
+	err := MaterializeResolvedJob(job, DispatchPayload{
+		BindingKey:      "app:prod:orders",
+		DesiredSpecHash: "hash-1",
+		Operation:       "ensure_database",
+		ProfileID:       "profile-1",
+		RequestID:       "request-1",
+		ResourceKey:     "database/orders",
+	}, resolved, testSSLOpts)
+
+	require.ErrorContains(t, err, `input "credential_resolver" conflicts with local lifecycle credential resolver`)
+}
+
 func TestMaterializeJobOmitsProviderBlockForNonCloudBackends(t *testing.T) {
 	root := tempRoot(t)
 	job := Job{
@@ -121,7 +220,7 @@ func TestMaterializeJobOmitsProviderBlockForNonCloudBackends(t *testing.T) {
 			Source:  "app.terraform.io/superblocks/rds-postgres/aws",
 			Version: "1.2.3",
 		},
-	})
+	}, testSSLOpts)
 
 	require.NoError(t, err)
 	mainFile, err := os.ReadFile(job.MainFile)
@@ -149,7 +248,7 @@ func TestMaterializeJobRejectsModuleInputsThatOverwriteSystemVariables(t *testin
 				"request_id": "override",
 			},
 		},
-	})
+	}, testSSLOpts)
 
 	require.ErrorContains(t, err, `input "request_id" conflicts with a system tracking variable`)
 }
@@ -174,7 +273,7 @@ func TestMaterializeJobRejectsReservedTerraformModuleInputNames(t *testing.T) {
 				"source": "override",
 			},
 		},
-	})
+	}, testSSLOpts)
 
 	require.ErrorContains(t, err, `input "source" conflicts with a Terraform module meta-argument`)
 	require.NoFileExists(t, job.MainFile)
@@ -209,7 +308,7 @@ func TestMaterializeJobRejectsInvalidTerraformInputIdentifiers(t *testing.T) {
 				"engine_version\ninjected = true": "16.3",
 			},
 		},
-	})
+	}, testSSLOpts)
 
 	require.ErrorContains(t, err, `is not a valid Terraform identifier`)
 }
@@ -231,7 +330,7 @@ func TestMaterializeJobRejectsMissingTerraformBackendStateBackend(t *testing.T) 
 			Source:  "app.terraform.io/superblocks/rds-postgres/aws",
 			Version: "1.2.3",
 		},
-	})
+	}, testSSLOpts)
 
 	require.ErrorContains(t, err, "terraformBackend.stateBackend is required")
 	require.NoFileExists(t, job.MainFile)
@@ -254,7 +353,7 @@ func TestMaterializeJobRejectsUnknownTerraformBackendStateBackend(t *testing.T) 
 			Source:  "app.terraform.io/superblocks/rds-postgres/aws",
 			Version: "1.2.3",
 		},
-	})
+	}, testSSLOpts)
 
 	require.ErrorContains(t, err, `terraformBackend.stateBackend "consul" is not supported`)
 	require.NoFileExists(t, job.MainFile)
@@ -332,20 +431,20 @@ func TestMaterializeJobRejectsMissingPaths(t *testing.T) {
 	// producing a half-materialized workspace.
 	root := tempRoot(t)
 	t.Run("missing WorkingDir", func(t *testing.T) {
-		err := MaterializeJob(Job{}, DispatchPayload{BindingKey: "app:prod:orders"})
+		err := MaterializeJob(Job{}, DispatchPayload{BindingKey: "app:prod:orders"}, testSSLOpts)
 		require.ErrorContains(t, err, "working directory is required")
 	})
 	t.Run("missing MainFile", func(t *testing.T) {
 		err := MaterializeJob(Job{
 			WorkingDir: filepath.Join(root, "x"),
-		}, DispatchPayload{BindingKey: "app:prod:orders"})
+		}, DispatchPayload{BindingKey: "app:prod:orders"}, testSSLOpts)
 		require.ErrorContains(t, err, "main file is required")
 	})
 	t.Run("missing BackendFile", func(t *testing.T) {
 		err := MaterializeJob(Job{
 			WorkingDir: filepath.Join(root, "x"),
 			MainFile:   filepath.Join(root, "x", "main.tf"),
-		}, DispatchPayload{BindingKey: "app:prod:orders"})
+		}, DispatchPayload{BindingKey: "app:prod:orders"}, testSSLOpts)
 		require.ErrorContains(t, err, "backend file is required")
 	})
 	t.Run("missing VarsFile", func(t *testing.T) {
@@ -353,7 +452,7 @@ func TestMaterializeJobRejectsMissingPaths(t *testing.T) {
 			WorkingDir:  filepath.Join(root, "x"),
 			MainFile:    filepath.Join(root, "x", "main.tf"),
 			BackendFile: filepath.Join(root, "x", "backend.tfbackend"),
-		}, DispatchPayload{BindingKey: "app:prod:orders"})
+		}, DispatchPayload{BindingKey: "app:prod:orders"}, testSSLOpts)
 		require.ErrorContains(t, err, "vars file is required")
 	})
 }
@@ -373,7 +472,7 @@ func TestMaterializeJobRejectsMissingTerraformModuleSource(t *testing.T) {
 		TerraformModule: TerraformModule{
 			Version: "1.2.3",
 		},
-	})
+	}, testSSLOpts)
 
 	require.ErrorContains(t, err, "Terraform module source is required")
 }
@@ -393,7 +492,7 @@ func TestMaterializeJobRejectsMissingTerraformModuleVersion(t *testing.T) {
 		TerraformModule: TerraformModule{
 			Source: "app.terraform.io/superblocks/rds-postgres/aws",
 		},
-	})
+	}, testSSLOpts)
 
 	require.ErrorContains(t, err, "Terraform module version is required")
 }
@@ -420,7 +519,7 @@ func TestMaterializeJobTreatsVCSShorthandSourcesAsNonRegistryModules(t *testing.
 					Source:  source,
 					Version: "1.2.3",
 				},
-			})
+			}, testSSLOpts)
 
 			require.NoError(t, err)
 			mainFile, err := os.ReadFile(job.MainFile)
@@ -447,12 +546,104 @@ func TestMaterializeJobDoesNotRequireVersionForVCSShorthandSources(t *testing.T)
 		TerraformModule: TerraformModule{
 			Source: "github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
 		},
-	})
+	}, testSSLOpts)
 
 	require.NoError(t, err)
 }
 
-func TestMaterializeJobTreatsSharedModeModuleAsOpaqueOpenTofuModule(t *testing.T) {
+func TestMaterializeJobRejectsUnallowlistedSharedModeRuntimeCredentialRef(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:dev:devdb",
+		WorkingDir:  filepath.Join(root, "app-dev-devdb"),
+		MainFile:    filepath.Join(root, "app-dev-devdb", "main.tf"),
+		BackendFile: filepath.Join(root, "app-dev-devdb", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-dev-devdb", "terraform.tfvars.json"),
+	}
+
+	err := MaterializeJob(job, DispatchPayload{
+		BindingKey:       "app:dev:devdb",
+		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
+		TerraformModule: TerraformModule{
+			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Inputs: map[string]any{
+				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
+				"runtime_credential_ref": map[string]any{
+					"resolver": "aws_secrets_manager",
+					"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:other/pool-master",
+				},
+			},
+		},
+	}, testSharedModeSSLOpts)
+
+	require.ErrorContains(t, err, "runtime_credential_ref.ref is not in allowed prefixes")
+	require.NoFileExists(t, job.MainFile)
+}
+
+func TestMaterializeJobRejectsInvalidSharedModeSSLOptions(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:dev:devdb",
+		WorkingDir:  filepath.Join(root, "app-dev-devdb"),
+		MainFile:    filepath.Join(root, "app-dev-devdb", "main.tf"),
+		BackendFile: filepath.Join(root, "app-dev-devdb", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-dev-devdb", "terraform.tfvars.json"),
+	}
+
+	err := MaterializeJob(job, DispatchPayload{
+		BindingKey:       "app:dev:devdb",
+		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
+		TerraformModule: TerraformModule{
+			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Inputs: map[string]any{
+				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
+				"runtime_credential_ref": map[string]any{
+					"resolver": "aws_secrets_manager",
+					"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e",
+				},
+			},
+		},
+	}, ProviderSSLOptions{
+		AllowedRefPrefixes: testSharedModeSSLOpts.AllowedRefPrefixes,
+	})
+
+	require.ErrorContains(t, err, "must be set explicitly")
+	require.NoFileExists(t, job.MainFile)
+}
+
+func TestMaterializeJobRejectsNonARNSharedModeRuntimeCredentialRef(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:dev:devdb",
+		WorkingDir:  filepath.Join(root, "app-dev-devdb"),
+		MainFile:    filepath.Join(root, "app-dev-devdb", "main.tf"),
+		BackendFile: filepath.Join(root, "app-dev-devdb", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-dev-devdb", "terraform.tfvars.json"),
+	}
+
+	err := MaterializeJob(job, DispatchPayload{
+		BindingKey:       "app:dev:devdb",
+		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
+		TerraformModule: TerraformModule{
+			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Inputs: map[string]any{
+				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
+				"runtime_credential_ref": map[string]any{
+					"resolver": "aws_secrets_manager",
+					"ref":      "superblocks/native-db/pool-master",
+				},
+			},
+		},
+	}, ProviderSSLOptions{
+		Mode:               "require",
+		AllowedRefPrefixes: []string{"superblocks/native-db/"},
+	})
+
+	require.ErrorContains(t, err, "runtime_credential_ref.ref must be an AWS Secrets Manager ARN")
+	require.NoFileExists(t, job.MainFile)
+}
+
+func TestMaterializeJobEmitsPostgresProviderForSharedModeModule(t *testing.T) {
 	root := tempRoot(t)
 	job := Job{
 		BindingKey:  "app:dev:devdb",
@@ -472,54 +663,67 @@ func TestMaterializeJobTreatsSharedModeModuleAsOpaqueOpenTofuModule(t *testing.T
 		TerraformModule: TerraformModule{
 			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
 			Inputs: map[string]any{
-				"database_name":       "db_abc",
 				"host":                "pool-rds.example.us-east-1.rds.amazonaws.com",
-				"migration_role_name": "migr_abc",
+				"database_name":       "db_abc",
 				"runtime_role_name":   "db_abc",
+				"migration_role_name": "migr_abc",
 				"runtime_credential_ref": map[string]any{
-					"resolver": "gcp_secret_manager",
-					"ref":      "projects/customer-prod/secrets/db_abc_runtime",
+					"resolver": "aws_secrets_manager",
+					"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
 				},
 				"migration_credential_ref": map[string]any{
-					"resolver": "gcp_secret_manager",
-					"ref":      "projects/customer-prod/secrets/db_abc_migration",
+					"resolver": "aws_secrets_manager",
+					"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
 				},
 			},
 		},
-	})
+	}, testSharedModeSSLOpts)
 
 	require.NoError(t, err)
 	mainFile, err := os.ReadFile(job.MainFile)
 	require.NoError(t, err)
 	main := string(mainFile)
 
-	require.NotContains(t, main, `required_providers`)
-	require.NotContains(t, main, `provider "aws"`)
-	require.NotContains(t, main, `data "aws_secretsmanager_secret_version"`)
-	require.NotContains(t, main, `provider "postgresql"`)
-	require.NotContains(t, main, `sslmode`)
-	require.NotContains(t, main, `sslrootcert`)
-	require.Contains(t, main, `variable "runtime_credential_ref" {
-  type = any
+	require.Contains(t, main, `terraform {
+  required_providers {
+    postgresql = {
+      source  = "cyrilgdn/postgresql"
+      version = "~> 1.26.0"
+    }
+  }
 }`)
-	require.Contains(t, main, `module "database" {
-  source  = "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch"
-  binding_key = var.binding_key
-  database_name = var.database_name
-  desired_spec_hash = var.desired_spec_hash
-  host = var.host
-  migration_credential_ref = var.migration_credential_ref
-  migration_role_name = var.migration_role_name
-  operation = var.operation
-  profile_id = var.profile_id
-  request_id = var.request_id
-  runtime_credential_ref = var.runtime_credential_ref
-  runtime_role_name = var.runtime_role_name
-}
-`)
+	require.Contains(t, main, `locals {
+  __pool_master_secret_arn    = var.runtime_credential_ref.ref
+  __pool_master_secret_region = split(":", local.__pool_master_secret_arn)[3]
+}`)
+	require.Contains(t, main, `provider "aws" {
+  alias  = "pool_secrets"
+  region = local.__pool_master_secret_region
+}`)
+	require.Contains(t, main, `data "aws_secretsmanager_secret_version" "pool_master" {
+  provider  = aws.pool_secrets
+  secret_id = local.__pool_master_secret_arn
+}`)
+	require.Contains(t, main, `provider "postgresql" {
+  host      = var.host
+  port      = 5432
+  username  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["username"]
+  password  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["password"]
+  sslmode   = "require"
+  superuser = false
+}`)
+	require.Contains(t, main, `provider "aws" {
+  region = "us-west-2"
+}`)
 }
 
-func TestMaterializeJobPassesThroughArbitraryCredentialRefs(t *testing.T) {
+func TestMaterializeJobEmitsConfiguredSSLModeForSharedModeModule(t *testing.T) {
+	// Regression: cursor r3284281726. The shared-mode `provider "postgresql"`
+	// block previously hardcoded `sslmode = "require"`, contradicting
+	// validateSSLOptions (which rejects "require" as an implicit default and
+	// pushes operators toward verify-full + a root CA bundle). The materializer
+	// now threads ProviderSSLOptions through so terraform-apply and the
+	// migration runner share the same TLS posture.
 	root := tempRoot(t)
 	job := Job{
 		BindingKey:  "app:dev:devdb",
@@ -528,37 +732,73 @@ func TestMaterializeJobPassesThroughArbitraryCredentialRefs(t *testing.T) {
 		BackendFile: filepath.Join(root, "app-dev-devdb", "backend.tfbackend"),
 		VarsFile:    filepath.Join(root, "app-dev-devdb", "terraform.tfvars.json"),
 	}
-
-	// The materializer no longer validates credential refs (resolver type,
-	// AWS ARN shape, or allowed prefixes); those checks moved to DSN
-	// construction at migration time. Here we prove the materializer forwards
-	// an arbitrary, non-AWS credential ref into the vars file verbatim so
-	// modules own resolution and validation.
-	runtimeRef := map[string]any{
-		"resolver":   "azure_key_vault",
-		"ref":        "https://customer-vault.vault.azure.net/secrets/db-runtime",
-		"customAttr": "opaque-value",
-	}
-	err := MaterializeJob(job, DispatchPayload{
+	dispatch := DispatchPayload{
 		BindingKey:       "app:dev:devdb",
 		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
 			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
 			Inputs: map[string]any{
-				"host":                   "pool-rds.example.us-east-1.rds.amazonaws.com",
-				"runtime_credential_ref": runtimeRef,
+				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
+				"runtime_credential_ref": map[string]any{
+					"resolver": "aws_secrets_manager",
+					"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e",
+				},
 			},
 		},
-	})
+	}
 
+	require.NoError(t, MaterializeJob(job, dispatch, ProviderSSLOptions{
+		Mode:               "verify-full",
+		RootCert:           "/etc/rds/global-bundle.pem",
+		AllowedRefPrefixes: testSharedModeSSLOpts.AllowedRefPrefixes,
+	}))
+	mainFile, err := os.ReadFile(job.MainFile)
 	require.NoError(t, err)
-	require.FileExists(t, job.VarsFile)
+	main := string(mainFile)
 
-	varsRaw, err := os.ReadFile(job.VarsFile)
+	// verify-full mode + sslrootcert path both threaded through; HCL is
+	// formatted with %q so the path is quoted (rules out unquoted-path
+	// regressions if an operator supplied a path containing whitespace).
+	require.Contains(t, main, `  sslmode   = "verify-full"`)
+	require.Contains(t, main, `  sslrootcert = "/etc/rds/global-bundle.pem"`)
+	// require posture must NOT leak in via a stale hardcoded literal.
+	require.NotContains(t, main, `  sslmode   = "require"`)
+}
+
+func TestMaterializeJobOmitsSSLRootCertWhenUnset(t *testing.T) {
+	// `require` does not need a root cert, and the cyrilgdn/postgresql
+	// provider treats `sslrootcert = ""` as an attempt to load an empty
+	// path (errors at provider init). The materializer must skip the
+	// argument entirely when SSLRootCert is empty.
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:dev:devdb",
+		WorkingDir:  filepath.Join(root, "app-dev-devdb"),
+		MainFile:    filepath.Join(root, "app-dev-devdb", "main.tf"),
+		BackendFile: filepath.Join(root, "app-dev-devdb", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-dev-devdb", "terraform.tfvars.json"),
+	}
+	dispatch := DispatchPayload{
+		BindingKey:       "app:dev:devdb",
+		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
+		TerraformModule: TerraformModule{
+			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Inputs: map[string]any{
+				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
+				"runtime_credential_ref": map[string]any{
+					"resolver": "aws_secrets_manager",
+					"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e",
+				},
+			},
+		},
+	}
+
+	require.NoError(t, MaterializeJob(job, dispatch, testSharedModeSSLOpts))
+	mainFile, err := os.ReadFile(job.MainFile)
 	require.NoError(t, err)
-	var vars map[string]any
-	require.NoError(t, json.Unmarshal(varsRaw, &vars))
-	require.Equal(t, runtimeRef, vars["runtime_credential_ref"])
+	main := string(mainFile)
+	require.Contains(t, main, `  sslmode   = "require"`)
+	require.NotContains(t, main, `sslrootcert`)
 }
 
 func TestMaterializeJobRejectsSymlinkedGeneratedFiles(t *testing.T) {
@@ -581,7 +821,7 @@ func TestMaterializeJobRejectsSymlinkedGeneratedFiles(t *testing.T) {
 		TerraformModule: TerraformModule{
 			Source: "github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
 		},
-	})
+	}, testSSLOpts)
 
 	require.ErrorContains(t, err, "refuses to write through symlink")
 	raw, err := os.ReadFile(outside)
