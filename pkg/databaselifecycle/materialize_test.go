@@ -261,15 +261,80 @@ func TestMaterializeJobRejectsUnknownTerraformBackendStateBackend(t *testing.T) 
 
 	err := MaterializeJob(job, DispatchPayload{
 		BindingKey:       "app:prod:orders",
-		TerraformBackend: map[string]any{"stateBackend": "gcs", "bucket": "state-bucket", "prefix": "orders"},
+		TerraformBackend: map[string]any{"stateBackend": "consul", "address": "127.0.0.1:8500", "path": "orders"},
 		TerraformModule: TerraformModule{
 			Source:  "app.terraform.io/superblocks/rds-postgres/aws",
 			Version: "1.2.3",
 		},
 	}, testSSLOpts)
 
-	require.ErrorContains(t, err, `terraformBackend.stateBackend "gcs" is not supported`)
+	require.ErrorContains(t, err, `terraformBackend.stateBackend "consul" is not supported`)
 	require.NoFileExists(t, job.MainFile)
+}
+
+func TestMaterializeJobAcceptsGCSAndAzureRMTerraformBackends(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		backend     map[string]any
+		wantBackend string
+		wantConfig  string
+	}{
+		{
+			name: "gcs",
+			backend: map[string]any{
+				"bucket":       "state-bucket",
+				"prefix":       "orders",
+				"stateBackend": "gcs",
+			},
+			wantBackend: `terraform {
+  backend "gcs" {}
+}`,
+			wantConfig: "bucket = \"state-bucket\"\nprefix = \"orders\"\n",
+		},
+		{
+			name: "azurerm",
+			backend: map[string]any{
+				"container_name":       "tfstate",
+				"key":                  "orders.tfstate",
+				"resource_group_name":  "rg-superblocks",
+				"stateBackend":         "azurerm",
+				"storage_account_name": "sbstorage",
+			},
+			wantBackend: `terraform {
+  backend "azurerm" {}
+}`,
+			wantConfig: "container_name = \"tfstate\"\nkey = \"orders.tfstate\"\nresource_group_name = \"rg-superblocks\"\nstorage_account_name = \"sbstorage\"\n",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := tempRoot(t)
+			job := Job{
+				BindingKey:  "app:prod:orders",
+				WorkingDir:  filepath.Join(root, "app-prod-orders"),
+				MainFile:    filepath.Join(root, "app-prod-orders", "main.tf"),
+				BackendFile: filepath.Join(root, "app-prod-orders", "backend.tfbackend"),
+				VarsFile:    filepath.Join(root, "app-prod-orders", "terraform.tfvars.json"),
+			}
+
+			err := MaterializeJob(job, DispatchPayload{
+				BindingKey:       "app:prod:orders",
+				TerraformBackend: tc.backend,
+				TerraformModule: TerraformModule{
+					Source:  "app.terraform.io/superblocks/rds-postgres/aws",
+					Version: "1.2.3",
+				},
+			}, testSSLOpts)
+
+			require.NoError(t, err)
+			mainFile, err := os.ReadFile(job.MainFile)
+			require.NoError(t, err)
+			require.Contains(t, string(mainFile), tc.wantBackend)
+
+			backendFile, err := os.ReadFile(job.BackendFile)
+			require.NoError(t, err)
+			require.Equal(t, tc.wantConfig, string(backendFile))
+		})
+	}
 }
 
 func TestMaterializeJobRejectsMissingPaths(t *testing.T) {
@@ -907,7 +972,9 @@ func TestValidateTerraformBackend(t *testing.T) {
 	require.ErrorContains(t, validateTerraformBackend(nil), "terraformBackend.stateBackend is required")
 	require.ErrorContains(t, validateTerraformBackend(map[string]any{}), "terraformBackend.stateBackend is required")
 	require.ErrorContains(t, validateTerraformBackend(map[string]any{"bucket": "x"}), "terraformBackend.stateBackend is required")
-	require.ErrorContains(t, validateTerraformBackend(map[string]any{"stateBackend": "gcs"}), `terraformBackend.stateBackend "gcs" is not supported`)
+	require.ErrorContains(t, validateTerraformBackend(map[string]any{"stateBackend": "consul"}), `terraformBackend.stateBackend "consul" is not supported`)
+	require.NoError(t, validateTerraformBackend(map[string]any{"stateBackend": "azurerm"}))
+	require.NoError(t, validateTerraformBackend(map[string]any{"stateBackend": "gcs"}))
 	require.NoError(t, validateTerraformBackend(map[string]any{"stateBackend": "local"}))
 	require.NoError(t, validateTerraformBackend(map[string]any{"stateBackend": "s3"}))
 }

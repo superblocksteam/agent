@@ -412,7 +412,7 @@ func validateTerraformBackend(backend map[string]any) error {
 		return errors.New("database lifecycle terraformBackend.stateBackend is required")
 	}
 	switch backendType {
-	case "local", "s3":
+	case "azurerm", "gcs", "local", "s3":
 		return nil
 	default:
 		return fmt.Errorf("database lifecycle terraformBackend.stateBackend %q is not supported", backendType)
