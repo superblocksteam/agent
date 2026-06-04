@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade Go toolchain from 1.26.1 to 1.26.3 and update Docker Go builder images to use the published 1.26.3 trixie image
 - Add Native Database lifecycle worker support for Terraform-backed database provisioning: runs in-process alongside the orchestrator servers (off by default), claims dispatches as the agent's own id, with operator-configurable resource-type and module-source allowlisting and optional IRSA via a chart-managed ServiceAccount.
 - Allow Terraform `data` sources (e.g. AWS Secrets Manager lookups) for shared PostgreSQL database modules in the lifecycle worker's plan policy.
+- Make the Native Database lifecycle materializer cloud-agnostic: the generated root module is now a thin wrapper (backend, typed variables, `module "database"`, outputs) and no longer emits worker-side `provider "aws"`, AWS Secrets Manager data sources, `provider "postgresql"`, or shared-mode `required_providers`. Provider configuration, secret reads, and cloud-specific input validation now belong to the selected Terraform module. Credential-ref allowlist and SSL posture remain enforced at migration time during DSN construction.
 - Fix Apps 3.0 SDK integration callbacks for embedded external users using short-lived orchestrator-signed capabilities.
 - Include `x-superblocks-agent-key` in OTLP metrics upload headers for orchestrator and task-manager exporters
 - Disable OTLP log exporting to the collector and rely on the legacy remote logging pipeline instead

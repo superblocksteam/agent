@@ -10,26 +10,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/superblocksteam/agent/pkg/secrets/refresolver"
 	"golang.org/x/sys/unix"
 )
 
-// ProviderSSLOptions configures the TLS posture of the shared-mode
-// `provider "postgresql"` block emitted by rootModuleHCL. The values
-// match DSNOptions.SSLMode / DSNOptions.SSLRootCert that the migration
-// runner uses, so both code paths (terraform-apply and migration-run)
-// connect to the pool master with the same posture and the same root
-// CA pinning. Mode is required; an empty Mode is a misconfiguration
-// (the helm template hard-fails when the operator did not pick one).
-// RootCert is required only for verify-ca / verify-full, mirroring
-// validateSSLOptions in dsn.go.
-type ProviderSSLOptions struct {
-	Mode               string
-	RootCert           string
-	AllowedRefPrefixes []string
-}
-
-func MaterializeJob(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOptions) error {
+func MaterializeJob(job Job, dispatch DispatchPayload) error {
 	if job.WorkingDir == "" {
 		return errors.New("database lifecycle working directory is required")
 	}
@@ -85,15 +69,7 @@ func MaterializeJob(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOption
 		}
 		vars[key] = value
 	}
-	if isSharedModeModule(dispatch.TerraformModule, vars) {
-		if err := validateSSLOptions(DSNOptions{SSLMode: sslOpts.Mode, SSLRootCert: sslOpts.RootCert}); err != nil {
-			return err
-		}
-		if err := validateSharedModeRuntimeCredentialRef(vars["runtime_credential_ref"], sslOpts.AllowedRefPrefixes); err != nil {
-			return err
-		}
-	}
-	if err := writeStringFile(job.MainFile, rootModuleHCL(dispatch.TerraformModule, dispatch.TerraformBackend, vars, sslOpts)); err != nil {
+	if err := writeStringFile(job.MainFile, rootModuleHCL(dispatch.TerraformModule, dispatch.TerraformBackend, vars)); err != nil {
 		return err
 	}
 	return writeJSONFile(job.VarsFile, vars)
@@ -152,77 +128,12 @@ func isVCSShorthandModuleSource(source string) bool {
 
 var scpStyleGitModuleSourcePattern = regexp.MustCompile(`^[^/@\s]+@[^:\s]+:.+`)
 
-func isSharedModeModule(module TerraformModule, vars map[string]any) bool {
-	_, hasHost := vars["host"]
-	_, hasRuntimeCredRef := vars["runtime_credential_ref"]
-	return strings.Contains(module.Source, "postgres-managed-database") && hasHost && hasRuntimeCredRef
-}
-
-func validateSharedModeRuntimeCredentialRef(value any, allowedPrefixes []string) error {
-	refMap, ok := value.(map[string]any)
-	if !ok {
-		return unsupportedSharedModeRuntimeCredentialRef("runtime_credential_ref must be a typed credential ref")
-	}
-	ref, ok := refresolver.RefFromMap(refMap)
-	if !ok {
-		return unsupportedSharedModeRuntimeCredentialRef("runtime_credential_ref must be a typed credential ref")
-	}
-	if ref.Resolver != refresolver.ResolverAWSSecretsManager {
-		return unsupportedSharedModeRuntimeCredentialRef(fmt.Sprintf("runtime_credential_ref resolver %q is not supported", ref.Resolver))
-	}
-	if !isAWSSecretsManagerARN(ref.Ref) {
-		return unsupportedSharedModeRuntimeCredentialRef("runtime_credential_ref.ref must be an AWS Secrets Manager ARN")
-	}
-	if !refAllowedByPrefix(ref.Ref, allowedPrefixes) {
-		return unsupportedSharedModeRuntimeCredentialRef(fmt.Sprintf("runtime_credential_ref.ref is not in allowed prefixes configured by %s", refresolver.AllowedRefPrefixesEnvVar))
-	}
-	return nil
-}
-
-func unsupportedSharedModeRuntimeCredentialRef(message string) error {
-	return &LifecycleError{
-		Code:      ErrorCodeUnsupportedShape,
-		Retryable: false,
-		Err:       errors.New(message),
-	}
-}
-
-func refAllowedByPrefix(ref string, allowedPrefixes []string) bool {
-	for _, prefix := range allowedPrefixes {
-		if prefix != "" && strings.HasPrefix(ref, prefix) {
-			return true
-		}
-	}
-	return false
-}
-
-func isAWSSecretsManagerARN(ref string) bool {
-	parts := strings.SplitN(ref, ":", 6)
-	return len(parts) == 6 &&
-		parts[0] == "arn" &&
-		parts[1] != "" &&
-		parts[2] == "secretsmanager" &&
-		parts[3] != "" &&
-		parts[4] != "" &&
-		strings.HasPrefix(parts[5], "secret:")
-}
-
-func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[string]any, sslOpts ProviderSSLOptions) string {
+func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[string]any) string {
 	keys := make([]string, 0, len(vars))
 	for key := range vars {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-
-	// Shared-mode = postgres-managed-database module + host/runtime_credential_ref
-	// in dispatch inputs. The module needs a configured `postgresql` provider at
-	// root (the module itself declares only required_providers), and the master
-	// credential is referenced by AWS Secrets Manager ARN — so the root must
-	// also include a `data "aws_secretsmanager_secret_version"` block reading
-	// it. Region for that secret comes from the ARN itself (split by ':') so
-	// the orchestrator stays region-agnostic and doesn't need to align with
-	// the state-backend region.
-	sharedMode := isSharedModeModule(module, vars)
 
 	var builder strings.Builder
 	// Declare the backend in HCL. `-backend-config=<file>` only supplies
@@ -233,65 +144,9 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 	if backendHCL := backendBlockFromBackend(backend); backendHCL != "" {
 		builder.WriteString(backendHCL)
 	}
-	// Root-level required_providers MUST include every provider the root
-	// directly references (alias blocks, data sources, provider blocks).
-	// Without this, `tofu init` skips installing cyrilgdn/postgresql and
-	// `tofu plan` fails with "Required provider not declared".
-	if sharedMode {
-		builder.WriteString("terraform {\n")
-		builder.WriteString("  required_providers {\n")
-		builder.WriteString("    postgresql = {\n")
-		builder.WriteString("      source  = \"cyrilgdn/postgresql\"\n")
-		builder.WriteString("      version = \"~> 1.26.0\"\n")
-		builder.WriteString("    }\n")
-		builder.WriteString("  }\n")
-		builder.WriteString("}\n\n")
-	}
 	for _, key := range keys {
 		builder.WriteString(fmt.Sprintf("variable %q {\n", key))
 		builder.WriteString("  type = any\n")
-		builder.WriteString("}\n\n")
-	}
-	// Cloud providers required by the module need explicit root-level
-	// configuration; the module itself only declares the version constraint.
-	// Derive the minimal config from the backend so the dispatch payload
-	// remains the single source of truth for where state + resources live.
-	if providerHCL := providerBlocksFromBackend(backend); providerHCL != "" {
-		builder.WriteString(providerHCL)
-	}
-	if sharedMode {
-		// Read pool master credentials from AWS Secrets Manager and configure
-		// the `postgresql` provider with them. The secret ARN embeds its region
-		// in the fourth colon-delimited segment, so the secret can live in a
-		// different region from the state backend.
-		builder.WriteString("locals {\n")
-		builder.WriteString("  __pool_master_secret_arn    = var.runtime_credential_ref.ref\n")
-		builder.WriteString("  __pool_master_secret_region = split(\":\", local.__pool_master_secret_arn)[3]\n")
-		builder.WriteString("}\n\n")
-		builder.WriteString("provider \"aws\" {\n")
-		builder.WriteString("  alias  = \"pool_secrets\"\n")
-		builder.WriteString("  region = local.__pool_master_secret_region\n")
-		builder.WriteString("}\n\n")
-		builder.WriteString("data \"aws_secretsmanager_secret_version\" \"pool_master\" {\n")
-		builder.WriteString("  provider  = aws.pool_secrets\n")
-		builder.WriteString("  secret_id = local.__pool_master_secret_arn\n")
-		builder.WriteString("}\n\n")
-		// SSL posture is threaded from operator config (DSNOptions /
-		// SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE) so the terraform
-		// apply and the subsequent migration run both connect to the
-		// pool master with the same posture and the same root CA
-		// pinning — operators can pick `verify-full` once and have it
-		// apply across both code paths. cursor r3284281726.
-		builder.WriteString("provider \"postgresql\" {\n")
-		builder.WriteString("  host      = var.host\n")
-		builder.WriteString("  port      = 5432\n")
-		builder.WriteString("  username  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)[\"username\"]\n")
-		builder.WriteString("  password  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)[\"password\"]\n")
-		builder.WriteString(fmt.Sprintf("  sslmode   = %q\n", sslOpts.Mode))
-		if sslOpts.RootCert != "" {
-			builder.WriteString(fmt.Sprintf("  sslrootcert = %q\n", sslOpts.RootCert))
-		}
-		builder.WriteString("  superuser = false\n")
 		builder.WriteString("}\n\n")
 	}
 	builder.WriteString("module \"database\" {\n")
@@ -434,28 +289,6 @@ func backendBlockFromBackend(backend map[string]any) string {
 		return ""
 	}
 	return fmt.Sprintf("terraform {\n  backend %q {}\n}\n\n", backendType)
-}
-
-// providerBlocksFromBackend emits root-level `provider "..." {}` blocks for
-// the cloud(s) implied by the dispatch's terraform backend. Today we only
-// derive AWS from an S3 backend; extend here for GCS/Azure/etc. as new
-// backends ship. Returns an empty string if no provider config is needed
-// (e.g. local backends or providers that auto-configure from env).
-func providerBlocksFromBackend(backend map[string]any) string {
-	if backend == nil {
-		return ""
-	}
-	backendType, _ := backend["stateBackend"].(string)
-	var builder strings.Builder
-	if backendType == "s3" {
-		region, _ := backend["region"].(string)
-		builder.WriteString("provider \"aws\" {\n")
-		if region != "" {
-			builder.WriteString(fmt.Sprintf("  region = %q\n", region))
-		}
-		builder.WriteString("}\n\n")
-	}
-	return builder.String()
 }
 
 func ValidateTerraformModuleSource(module TerraformModule, allowedSources []string) error {

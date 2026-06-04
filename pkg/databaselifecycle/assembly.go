@@ -38,21 +38,11 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 	reporter := CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
 		return ReportTerminalCallback(ctx, deps.Client, callback)
 	})
-	// SSL options forwarded into the materializer so the shared-mode
-	// `provider "postgresql"` block uses the same posture (sslmode +
-	// optional sslrootcert) as DSNOptions, keeping the terraform apply
-	// and the subsequent migration run on the same root CA pinning.
-	// cursor r3284281726.
-	sslOpts := ProviderSSLOptions{
-		Mode:               deps.DSNOptions.SSLMode,
-		RootCert:           deps.DSNOptions.SSLRootCert,
-		AllowedRefPrefixes: deps.DSNOptions.AllowedRefPrefixes,
-	}
 	materializer := JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
 		if err := ValidateTerraformModuleSource(dispatch.TerraformModule, deps.AllowedModuleSources); err != nil {
 			return err
 		}
-		return MaterializeJob(job, dispatch, sslOpts)
+		return MaterializeJob(job, dispatch)
 	})
 	dsnBuilder := NewDSNBuilder(deps.DSNOptions)
 	worker := NewWorker(
