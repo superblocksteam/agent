@@ -217,6 +217,20 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system -r ${REQUIREMENTS_FILE}
 
 ############
+## TOFU   ##
+############
+
+# OpenTofu for the database-lifecycle worker when orchestrator runs with
+# --database.lifecycle.worker.enabled=true inside the OPA (agent) image.
+# Installed from OpenTofu's official packagecloud apt repository through the
+# shared installer, with version and trusted signing key fingerprints pinned.
+FROM ghcr.io/superblocksteam/debian:trixie-${DEBIAN_TRIXIE_VERSION}-slim AS opentofu
+
+ARG TOFU_VERSION=1.11.6
+COPY --chmod=755 scripts/install-opentofu.sh /tmp/install-opentofu.sh
+RUN /tmp/install-opentofu.sh
+
+############
 ## PARENT ##
 ############
 
@@ -248,6 +262,7 @@ LABEL io.snyk.containers.image.dockerfile="/Dockerfile"
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/orchestrator                              /app/orchestrator/bin
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/buckets.minimal.json                     /app/orchestrator/buckets.json
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/flags.json                               /app/orchestrator/flags.json
+COPY              --from=opentofu                     /usr/bin/tofu                                                                     /usr/local/bin/tofu
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/workers/golang/worker.go                 /app/worker.go/bin
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/workers/ephemeral/task-manager/task-manager /app/task-manager/bin
 COPY              --from=workers                        /deploy                                                                           /app/worker.js
