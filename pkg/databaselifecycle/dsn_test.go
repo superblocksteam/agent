@@ -32,20 +32,16 @@ type refresolverNotFoundErr struct{ ref, field string }
 
 func (e *refresolverNotFoundErr) Error() string { return "secret not found: " + e.ref + "/" + e.field }
 
-// withFakeResolver swaps the package-level dispatcher factory so the
-// rest of the test runs against an in-memory secrets backend. Restores
-// on cleanup.
-func withFakeResolver(t *testing.T, docs map[string]map[string]string) *fakeAWSResolver {
-	t.Helper()
+func fakeResolverFactory(docs map[string]map[string]string) (CredentialResolverFactory, *fakeAWSResolver) {
 	fake := &fakeAWSResolver{docs: docs}
-	prev := newRefDispatcher
-	newRefDispatcher = func(_ context.Context, allowedPrefixes []string) (*refresolver.Dispatcher, error) {
-		return refresolver.NewDispatcher(map[refresolver.ResolverType]refresolver.Resolver{
-			refresolver.ResolverAWSSecretsManager: fake,
-		}, allowedPrefixes), nil
-	}
-	t.Cleanup(func() { newRefDispatcher = prev })
-	return fake
+	return func(context.Context) (refresolver.Resolver, error) {
+		return fake, nil
+	}, fake
+}
+
+func dsnOptionsWithFakeResolver(docs map[string]map[string]string) (DSNOptions, *fakeAWSResolver) {
+	factory, fake := fakeResolverFactory(docs)
+	return DSNOptions{ResolverFactory: factory}, fake
 }
 
 func sampleCallback(secretARN string) TerminalCallback {
@@ -74,14 +70,13 @@ func TestNewDSNBuilder_ExplicitRequireMode(t *testing.T) {
 	// SSLMode has no implicit default — operators choose. "require"
 	// is the explicit opt-in for intra-VPC sandbox deployments.
 	const arn = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/binding-1"
-	withFakeResolver(t, map[string]map[string]string{
+	opts, _ := dsnOptionsWithFakeResolver(map[string]map[string]string{
 		arn: {"username": "alice", "password": "p@ss"},
 	})
 
-	build := NewDSNBuilder(DSNOptions{
-		SSLMode:            sslModeRequire,
-		AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"},
-	})
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}
+	build := NewDSNBuilder(opts)
 
 	dsn, err := build(context.Background(), sampleCallback(arn))
 	require.NoError(t, err)
@@ -110,15 +105,14 @@ func TestNewDSNBuilder_EmptySSLModeIsExplicitFail(t *testing.T) {
 
 func TestNewDSNBuilder_VerifyFullEmitsSslrootcert(t *testing.T) {
 	const arn = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/binding-2"
-	withFakeResolver(t, map[string]map[string]string{
+	opts, _ := dsnOptionsWithFakeResolver(map[string]map[string]string{
 		arn: {"username": "alice", "password": "p"},
 	})
 
-	build := NewDSNBuilder(DSNOptions{
-		SSLMode:            "verify-full",
-		SSLRootCert:        "/etc/rds/global-bundle.pem",
-		AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"},
-	})
+	opts.SSLMode = "verify-full"
+	opts.SSLRootCert = "/etc/rds/global-bundle.pem"
+	opts.AllowedRefPrefixes = []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}
+	build := NewDSNBuilder(opts)
 
 	dsn, err := build(context.Background(), sampleCallback(arn))
 	require.NoError(t, err)
@@ -160,13 +154,14 @@ func TestNewDSNBuilder_EmptyAllowlistRejectsRefs(t *testing.T) {
 	// The migration runner must default-deny: a worker booted without
 	// SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES set
 	// will reject any incoming dispatch that carries runtime_credential_refs.
-	fake := withFakeResolver(t, map[string]map[string]string{
+	opts, fake := dsnOptionsWithFakeResolver(map[string]map[string]string{
 		"arn:aws:secretsmanager:us-east-1:111:secret:foo/x": {"username": "alice", "password": "p"},
 	})
 
 	// SSLMode set so the test exercises the allowlist gate, not the
 	// (separate) SSLMode-required check.
-	build := NewDSNBuilder(DSNOptions{SSLMode: sslModeRequire})
+	opts.SSLMode = sslModeRequire
+	build := NewDSNBuilder(opts)
 
 	_, err := build(context.Background(), sampleCallback("arn:aws:secretsmanager:us-east-1:111:secret:foo/x"))
 	require.Error(t, err)
@@ -181,15 +176,14 @@ func TestNewDSNBuilder_AllowlistEnforcedOutsidePrefix(t *testing.T) {
 	// the resolver type is otherwise wired up.
 	const sandboxARN = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/binding-A"
 	const foreignARN = "arn:aws:secretsmanager:us-east-1:111:secret:not-managed/x"
-	fake := withFakeResolver(t, map[string]map[string]string{
+	opts, fake := dsnOptionsWithFakeResolver(map[string]map[string]string{
 		sandboxARN: {"username": "alice", "password": "p"},
 		foreignARN: {"username": "evil", "password": "evil"},
 	})
 
-	build := NewDSNBuilder(DSNOptions{
-		SSLMode:            sslModeRequire,
-		AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"},
-	})
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}
+	build := NewDSNBuilder(opts)
 
 	_, err := build(context.Background(), sampleCallback(foreignARN))
 	require.Error(t, err)
@@ -201,8 +195,10 @@ func TestNewDSNBuilder_AllowlistEnforcedOutsidePrefix(t *testing.T) {
 }
 
 func TestNewDSNBuilder_RejectsMissingConnectionMetadata(t *testing.T) {
-	withFakeResolver(t, nil)
-	build := NewDSNBuilder(DSNOptions{SSLMode: sslModeRequire, AllowedRefPrefixes: []string{"any"}})
+	opts, _ := dsnOptionsWithFakeResolver(nil)
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"any"}
+	build := NewDSNBuilder(opts)
 
 	_, err := build(context.Background(), TerminalCallback{})
 	require.Error(t, err)
@@ -210,8 +206,10 @@ func TestNewDSNBuilder_RejectsMissingConnectionMetadata(t *testing.T) {
 }
 
 func TestNewDSNBuilder_RejectsMissingMetadataFields(t *testing.T) {
-	withFakeResolver(t, nil)
-	build := NewDSNBuilder(DSNOptions{SSLMode: sslModeRequire, AllowedRefPrefixes: []string{"any"}})
+	opts, _ := dsnOptionsWithFakeResolver(nil)
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"any"}
+	build := NewDSNBuilder(opts)
 
 	t.Run("missing host", func(t *testing.T) {
 		cb := TerminalCallback{ConnectionMetadata: map[string]any{"port": 5432, "database": "app"}}
@@ -234,8 +232,10 @@ func TestNewDSNBuilder_RejectsMissingMetadataFields(t *testing.T) {
 }
 
 func TestNewDSNBuilder_RejectsMissingRuntimeCredentialRefs(t *testing.T) {
-	withFakeResolver(t, nil)
-	build := NewDSNBuilder(DSNOptions{SSLMode: sslModeRequire, AllowedRefPrefixes: []string{"any"}})
+	opts, _ := dsnOptionsWithFakeResolver(nil)
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"any"}
+	build := NewDSNBuilder(opts)
 
 	baseMeta := map[string]any{"host": "db", "port": 5432, "database": "app"}
 
@@ -302,13 +302,14 @@ func TestNewDSNBuilder_RefDispatcherInitFailureBubblesUp(t *testing.T) {
 	// builder must surface that error to the caller verbatim so
 	// operators see the underlying SDK failure rather than a generic
 	// "resolve failed" message.
-	prev := newRefDispatcher
-	newRefDispatcher = func(_ context.Context, _ []string) (*refresolver.Dispatcher, error) {
-		return nil, errors.New("load aws config: ec2 metadata unreachable")
-	}
-	t.Cleanup(func() { newRefDispatcher = prev })
+	build := NewDSNBuilder(DSNOptions{
+		SSLMode:            sslModeRequire,
+		AllowedRefPrefixes: []string{"any"},
+		ResolverFactory: func(context.Context) (refresolver.Resolver, error) {
+			return nil, errors.New("load aws config: ec2 metadata unreachable")
+		},
+	})
 
-	build := NewDSNBuilder(DSNOptions{SSLMode: sslModeRequire, AllowedRefPrefixes: []string{"any"}})
 	cb := TerminalCallback{
 		ConnectionMetadata: map[string]any{"host": "db", "port": 5432, "database": "app"},
 		RuntimeCredentialRefs: map[string]any{
@@ -329,16 +330,15 @@ func TestNewDSNBuilder_PasswordResolveFailureSurfacesField(t *testing.T) {
 	// its notFoundErr from the dispatch.
 	const userARN = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/user"
 	const passARN = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/unknown"
-	withFakeResolver(t, map[string]map[string]string{
+	opts, _ := dsnOptionsWithFakeResolver(map[string]map[string]string{
 		userARN: {"username": "alice"},
 		// passARN intentionally absent so Resolve returns the
 		// "secret not found" error path.
 	})
 
-	build := NewDSNBuilder(DSNOptions{
-		SSLMode:            sslModeRequire,
-		AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"},
-	})
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}
+	build := NewDSNBuilder(opts)
 	cb := TerminalCallback{
 		ConnectionMetadata: map[string]any{"host": "db", "port": 5432, "database": "app"},
 		RuntimeCredentialRefs: map[string]any{
@@ -359,7 +359,7 @@ func TestNewDSNBuilder_DefaultsCredentialFieldNames(t *testing.T) {
 	// explicit Field values, the builder substitutes the RDS-managed-
 	// password JSON key names. Validates the tolerant default path.
 	const arn = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/binding-defaults"
-	withFakeResolver(t, map[string]map[string]string{
+	opts, _ := dsnOptionsWithFakeResolver(map[string]map[string]string{
 		arn: {"username": "alice", "password": "p@ss"},
 	})
 
@@ -370,10 +370,9 @@ func TestNewDSNBuilder_DefaultsCredentialFieldNames(t *testing.T) {
 			"password": map[string]any{"resolver": "aws_secrets_manager", "ref": arn},
 		},
 	}
-	build := NewDSNBuilder(DSNOptions{
-		SSLMode:            sslModeRequire,
-		AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"},
-	})
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}
+	build := NewDSNBuilder(opts)
 	dsn, err := build(context.Background(), cb)
 	require.NoError(t, err)
 	u, perr := url.Parse(dsn)
@@ -385,17 +384,16 @@ func TestNewDSNBuilder_DefaultsCredentialFieldNames(t *testing.T) {
 
 func TestNewDSNBuilder_EmptyMigrationCredentialRefsFallsBackToRuntimeRefs(t *testing.T) {
 	const arn = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/runtime-fallback"
-	withFakeResolver(t, map[string]map[string]string{
+	opts, _ := dsnOptionsWithFakeResolver(map[string]map[string]string{
 		arn: {"username": "runtime_user", "password": "runtime_pass"},
 	})
 
 	cb := sampleCallback(arn)
 	cb.MigrationCredentialRefs = map[string]any{}
 
-	build := NewDSNBuilder(DSNOptions{
-		SSLMode:            sslModeRequire,
-		AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"},
-	})
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}
+	build := NewDSNBuilder(opts)
 	dsn, err := build(context.Background(), cb)
 	require.NoError(t, err)
 	u, perr := url.Parse(dsn)
@@ -411,11 +409,13 @@ func TestNewDSNBuilder_PortNumericConversions(t *testing.T) {
 	// hand int/int64. asFloat must handle all three. The DSN builder
 	// formats the port as an integer regardless.
 	const arn = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/port-cov"
-	withFakeResolver(t, map[string]map[string]string{
+	opts, _ := dsnOptionsWithFakeResolver(map[string]map[string]string{
 		arn: {"username": "u", "password": "p"},
 	})
 	allowed := []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}
-	build := NewDSNBuilder(DSNOptions{SSLMode: sslModeRequire, AllowedRefPrefixes: allowed})
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = allowed
+	build := NewDSNBuilder(opts)
 
 	for name, port := range map[string]any{"float64": float64(5433), "int": int(5434), "int64": int64(5435)} {
 		t.Run(name, func(t *testing.T) {
@@ -450,12 +450,11 @@ func TestNewDSNBuilder_PropagatesResolverBackendError(t *testing.T) {
 	const arn = "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/missing"
 	// fakeAWSResolver returns refresolverNotFoundErr for any (ref, field)
 	// not in its docs map, so an empty docs map exercises both branches.
-	withFakeResolver(t, map[string]map[string]string{})
+	opts, _ := dsnOptionsWithFakeResolver(map[string]map[string]string{})
 
-	build := NewDSNBuilder(DSNOptions{
-		SSLMode:            sslModeRequire,
-		AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"},
-	})
+	opts.SSLMode = sslModeRequire
+	opts.AllowedRefPrefixes = []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}
+	build := NewDSNBuilder(opts)
 
 	cb := TerminalCallback{
 		ConnectionMetadata: map[string]any{"host": "db", "port": 5432, "database": "app"},
@@ -467,4 +466,17 @@ func TestNewDSNBuilder_PropagatesResolverBackendError(t *testing.T) {
 	_, err := build(context.Background(), cb)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "resolve username")
+}
+
+func TestNewDSNBuilder_NilResolverFactoryFailsOnlyWhenRefsNeedResolution(t *testing.T) {
+	build := NewDSNBuilder(DSNOptions{SSLMode: sslModeRequire, AllowedRefPrefixes: []string{"any"}})
+
+	_, err := build(context.Background(), TerminalCallback{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "connection_metadata missing")
+	assert.NotContains(t, err.Error(), "ResolverFactory")
+
+	_, err = build(context.Background(), sampleCallback("any-arn"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "ResolverFactory")
 }

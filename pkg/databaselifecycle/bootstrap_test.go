@@ -29,6 +29,20 @@ func TestBootstrapWorkerBuildsWorkerFromConfig(t *testing.T) {
 	require.Equal(t, 5*time.Second, interval)
 }
 
+func TestDSNOptionsFromConfigWiresCredentialResolver(t *testing.T) {
+	t.Setenv("SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES", "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/")
+
+	opts := dsnOptionsFromConfig(Config{
+		SSLMode:     "verify-full",
+		SSLRootCert: "/etc/rds/global-bundle.pem",
+	})
+
+	require.Equal(t, "verify-full", opts.SSLMode)
+	require.Equal(t, "/etc/rds/global-bundle.pem", opts.SSLRootCert)
+	require.Equal(t, []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}, opts.AllowedRefPrefixes)
+	require.NotNil(t, opts.ResolverFactory)
+}
+
 func TestBootstrapWorkerRejectsMissingConfig(t *testing.T) {
 	_, _, err := BootstrapWorker(Config{}, nil, nil, nil)
 

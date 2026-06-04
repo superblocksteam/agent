@@ -22,10 +22,13 @@ import (
 // matches an operator-controlled prefix. Empty allowlist → deny all;
 // any dispatch with runtime or migration credential refs will fail loudly, which is the
 // intended behavior for misconfigured deployments.
+type CredentialResolverFactory func(ctx context.Context) (refresolver.Resolver, error)
+
 type DSNOptions struct {
 	SSLMode            string
 	SSLRootCert        string
 	AllowedRefPrefixes []string
+	ResolverFactory    CredentialResolverFactory
 }
 
 const (
@@ -126,7 +129,7 @@ func buildDSNFromCallback(ctx context.Context, callback TerminalCallback, opts D
 		passRef.Field = "password"
 	}
 
-	dispatcher, err := newRefDispatcher(ctx, opts.AllowedRefPrefixes)
+	dispatcher, err := newRefDispatcher(ctx, opts)
 	if err != nil {
 		return "", err
 	}
@@ -155,25 +158,20 @@ func buildDSNFromCallback(ctx context.Context, callback TerminalCallback, opts D
 	return u.String(), nil
 }
 
-// newRefDispatcher is the seam tests use to substitute a fake resolver
-// without touching AWS. Production constructs the AWS Secrets Manager
-// resolver from the default credential chain; tests override the
-// closure to return a Dispatcher backed by an in-memory map.
-//
-// Mutability contract: tests in this package MUST NOT call t.Parallel().
-// The override pattern (`prev := newRefDispatcher; newRefDispatcher =
-// ...; t.Cleanup(restore)`) is unsynchronized — running parallel tests
-// would race on this var and the race detector would flag it. Keep
-// dsn_test.go serial; constructor injection on DSNOptions would be the
-// alternative if parallel coverage becomes valuable.
-var newRefDispatcher = func(ctx context.Context, allowedPrefixes []string) (*refresolver.Dispatcher, error) {
-	awsResolver, err := refresolver.NewAWSSecretsManagerResolverFromDefaultConfig(ctx)
+func newRefDispatcher(ctx context.Context, opts DSNOptions) (*refresolver.Dispatcher, error) {
+	if opts.ResolverFactory == nil {
+		return nil, errors.New("databaselifecycle: DSNOptions.ResolverFactory is required to resolve credential refs")
+	}
+	awsResolver, err := opts.ResolverFactory(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("init aws resolver: %w", err)
+		return nil, fmt.Errorf("init credential resolver: %w", err)
+	}
+	if awsResolver == nil {
+		return nil, errors.New("databaselifecycle: DSNOptions.ResolverFactory returned nil resolver")
 	}
 	return refresolver.NewDispatcher(map[refresolver.ResolverType]refresolver.Resolver{
 		refresolver.ResolverAWSSecretsManager: awsResolver,
-	}, allowedPrefixes), nil
+	}, opts.AllowedRefPrefixes), nil
 }
 
 func validateSSLOptions(opts DSNOptions) error {

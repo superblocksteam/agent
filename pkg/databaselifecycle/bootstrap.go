@@ -1,6 +1,7 @@
 package databaselifecycle
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -29,17 +30,24 @@ func BootstrapWorker(config Config, client clients.ServerClient, executor Comman
 		Policy:               policy,
 		RootDir:              config.RootDir,
 		AllowedModuleSources: config.AllowedModuleSources,
-		DSNOptions: DSNOptions{
-			SSLMode:     config.SSLMode,
-			SSLRootCert: config.SSLRootCert,
-			// Allowlist comes from the shared, cross-mode env var so the
-			// worker and API server share one source of truth for which
-			// secret-ARN prefixes the orchestrator may dereference.
-			AllowedRefPrefixes: refresolver.AllowedRefPrefixesFromEnv(),
-		},
+		DSNOptions:           dsnOptionsFromConfig(config),
 	})
 	if err != nil {
 		return nil, 0, err
 	}
 	return worker, config.PollInterval, nil
+}
+
+func dsnOptionsFromConfig(config Config) DSNOptions {
+	return DSNOptions{
+		SSLMode:     config.SSLMode,
+		SSLRootCert: config.SSLRootCert,
+		ResolverFactory: func(ctx context.Context) (refresolver.Resolver, error) {
+			return refresolver.NewAWSSecretsManagerResolverFromDefaultConfig(ctx)
+		},
+		// Allowlist comes from the shared, cross-mode env var so the
+		// worker and API server share one source of truth for which
+		// secret-ARN prefixes the orchestrator may dereference.
+		AllowedRefPrefixes: refresolver.AllowedRefPrefixesFromEnv(),
+	}
 }
