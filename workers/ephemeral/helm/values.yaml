@@ -143,10 +143,10 @@ sandbox:
       pullPolicy: IfNotPresent
     resources:
       limits:
-        memory: 4Gi
+        memory: 1Gi
       requests:
         cpu: 300m
-        memory: 700Mi
+        memory: 350Mi
     port: 50051
     # Additional args/env for the python sandbox
     extraEnv: []
