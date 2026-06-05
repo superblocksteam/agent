@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -50,7 +51,7 @@ type LifecycleConfig struct {
 
 type LifecycleConfigEntry struct {
 	Environment        string                                `json:"environment"`
-	Profile            string                                `json:"profile"`
+	Profiles           []string                              `json:"profiles"`
 	Engines            []string                              `json:"engines"`
 	Backend            map[string]any                        `json:"backend"`
 	CredentialResolver map[string]any                        `json:"credentialResolver"`
@@ -65,7 +66,7 @@ type ResolvedLifecycleConfig struct {
 
 func (config LifecycleConfig) Resolve(environment string, profile string, operation string, engine string) (ResolvedLifecycleConfig, error) {
 	for _, entry := range config.Entries {
-		if entry.Environment != environment || entry.Profile != profile {
+		if entry.Environment != environment || !entry.SupportsProfile(profile) {
 			continue
 		}
 		if !containsString(entry.Engines, engine) {
@@ -128,11 +129,16 @@ func parseLifecycleConfig(raw string) (LifecycleConfig, error) {
 		if err := validateLifecycleConfigEntry(index, entry); err != nil {
 			return LifecycleConfig{}, err
 		}
-		key := entry.Environment + "\x00" + entry.Profile
-		if _, exists := seenEntries[key]; exists {
-			return LifecycleConfig{}, fmt.Errorf("database lifecycle config entries[%d] duplicates environment %q profile %q", index, entry.Environment, entry.Profile)
+		for _, profile := range entry.Profiles {
+			key := entry.Environment + "\x00" + profile
+			if _, exists := seenEntries[key]; exists {
+				return LifecycleConfig{}, fmt.Errorf("database lifecycle config entries[%d] duplicates environment %q profile %q", index, entry.Environment, profile)
+			}
+			seenEntries[key] = struct{}{}
 		}
-		seenEntries[key] = struct{}{}
+	}
+	if err := validateLifecycleConfigCoverage(config); err != nil {
+		return LifecycleConfig{}, err
 	}
 	return config, nil
 }
@@ -142,8 +148,13 @@ func validateLifecycleConfigEntry(index int, entry LifecycleConfigEntry) error {
 	if !isSupportedEnvironment(entry.Environment) {
 		return fmt.Errorf("%s.environment must be one of edit, preview, deployed", prefix)
 	}
-	if entry.Profile == "" {
-		return fmt.Errorf("%s.profile is required", prefix)
+	if len(entry.Profiles) == 0 {
+		return fmt.Errorf("%s.profiles is required", prefix)
+	}
+	for profileIndex, profile := range entry.Profiles {
+		if profile == "" {
+			return fmt.Errorf("%s.profiles[%d] is required", prefix, profileIndex)
+		}
 	}
 	if len(entry.Engines) == 0 {
 		return fmt.Errorf("%s.engines is required", prefix)
@@ -177,8 +188,42 @@ func validateLifecycleConfigEntry(index int, entry LifecycleConfigEntry) error {
 				return fmt.Errorf("%s.moduleSelectors.%s.%s.source is required", prefix, operation, engine)
 			}
 		}
+		for _, engine := range entry.Engines {
+			if _, ok := byEngine[engine]; !ok {
+				return fmt.Errorf("%s.moduleSelectors.%s.%s is required for declared engine", prefix, operation, engine)
+			}
+		}
 	}
 	return nil
+}
+
+func validateLifecycleConfigCoverage(config LifecycleConfig) error {
+	engines := make([]string, 0, len(config.Entries))
+	operations := make([]string, 0, len(config.Entries))
+
+	for _, entry := range config.Entries {
+		engines = append(engines, entry.Engines...)
+		operations = append(operations, moduleSelectorOperations(entry.ModuleSelectors)...)
+	}
+
+	allOperations := sortedUniqueStrings(operations)
+	allEngines := sortedUniqueStrings(engines)
+	for index, entry := range config.Entries {
+		entryOperations := sortedUniqueStrings(moduleSelectorOperations(entry.ModuleSelectors))
+		if !slices.Equal(entryOperations, allOperations) {
+			return fmt.Errorf("database lifecycle config entries[%d].moduleSelectors operations must match configured operations %s", index, formatStringList(allOperations))
+		}
+		entryEngines := sortedUniqueStrings(entry.Engines)
+		if !slices.Equal(entryEngines, allEngines) {
+			return fmt.Errorf("database lifecycle config entries[%d].engines must match configured engines %s", index, formatStringList(allEngines))
+		}
+	}
+
+	return nil
+}
+
+func (entry LifecycleConfigEntry) SupportsProfile(profile string) bool {
+	return containsString(entry.Profiles, profile) || containsString(entry.Profiles, "*")
 }
 
 func isSupportedEnvironment(environment string) bool {
@@ -221,13 +266,30 @@ func containsString(values []string, target string) bool {
 	return false
 }
 
+func sortedUniqueStrings(values []string) []string {
+	unique := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		unique = append(unique, value)
+	}
+	sort.Strings(unique)
+	return unique
+}
+
 func formatConfiguredEntries(entries []LifecycleConfigEntry) string {
 	if len(entries) == 0 {
 		return "<none>"
 	}
 	formatted := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		formatted = append(formatted, fmt.Sprintf("%s/%s engines=%s operations=%s", entry.Environment, entry.Profile, formatStringList(entry.Engines), formatStringList(moduleSelectorOperations(entry.ModuleSelectors))))
+		formatted = append(formatted, fmt.Sprintf("%s profiles=%s engines=%s operations=%s", entry.Environment, formatStringList(entry.Profiles), formatStringList(entry.Engines), formatStringList(moduleSelectorOperations(entry.ModuleSelectors))))
 	}
 	sort.Strings(formatted)
 	return strings.Join(formatted, "; ")

@@ -32,7 +32,6 @@ import (
 	"github.com/superblocksteam/agent/internal/flags"
 	flagoptions "github.com/superblocksteam/agent/internal/flags/options"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
-	"github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/internal/registration"
 	"github.com/superblocksteam/agent/internal/schedule"
@@ -729,11 +728,23 @@ func main() {
 				Key:       publicKey.EncodedValue,
 			}
 		}
+		registrationTags, err := databaseLifecycleRegistrationTags(
+			viper.GetString("agent.tags"),
+			viper.GetBool("database.lifecycle.worker.enabled"),
+			os.Getenv,
+		)
+		if err != nil {
+			logDatabaseLifecycleRegistrationTagError(logger, os.Getenv, err)
+			os.Exit(1)
+		}
+		if viper.GetBool("database.lifecycle.worker.enabled") {
+			logDatabaseLifecycleRegistrationTags(logger, registrationTags)
+		}
 
 		registrator = registration.New(&registration.Options{
 			Logger:               logger,
 			ServerClient:         serverHttpClient,
-			Tags:                 metadata.GetTagsMap(viper.GetString("agent.tags")),
+			Tags:                 registrationTags,
 			AgentVersion:         viper.GetString("agent.version"),
 			AgentVersionExternal: viper.GetString("agent.version.external"),
 			AgentUrl:             viper.GetString("agent.host.url"),

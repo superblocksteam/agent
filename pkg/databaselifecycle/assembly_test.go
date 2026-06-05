@@ -64,7 +64,7 @@ func TestNewWorkerFromDependenciesThreadsPlanPolicy(t *testing.T) {
 		LifecycleConfig: LifecycleConfig{
 			Entries: []LifecycleConfigEntry{{
 				Environment: "deployed",
-				Profile:     "production",
+				Profiles:    []string{"production"},
 				Engines:     []string{"postgres"},
 				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"},
 				ModuleSelectors: map[string]map[string]TerraformModule{
@@ -126,7 +126,7 @@ func TestNewWorkerFromDependenciesResolvesModuleFromLocalLifecycleConfig(t *test
 		LifecycleConfig: LifecycleConfig{
 			Entries: []LifecycleConfigEntry{{
 				Environment: "deployed",
-				Profile:     "production",
+				Profiles:    []string{"production"},
 				Engines:     []string{"postgres"},
 				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "resource-1.tfstate", "region": "us-west-2"},
 				ModuleSelectors: map[string]map[string]TerraformModule{
@@ -183,7 +183,7 @@ func TestNewWorkerFromDependenciesReportsConfigEntryForUnallowedModuleSource(t *
 		LifecycleConfig: LifecycleConfig{
 			Entries: []LifecycleConfigEntry{{
 				Environment: "deployed",
-				Profile:     "production",
+				Profiles:    []string{"production"},
 				Engines:     []string{"postgres"},
 				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"},
 				ModuleSelectors: map[string]map[string]TerraformModule{

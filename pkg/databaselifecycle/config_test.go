@@ -80,7 +80,7 @@ func TestConfigFromEnvParsesLifecycleConfigAndResolvesPlatformEntry(t *testing.T
 		  "entries": [
 		    {
 		      "environment": "deployed",
-		      "profile": "production",
+		      "profiles": ["production", "staging"],
 		      "engines": ["postgres"],
 		      "backend": {"stateBackend": "s3", "bucket": "state-bucket", "key": "profiles/{{profile_id}}/{{resource_key}}.tfstate", "region": "us-west-2"},
 		      "credentialResolver": {"runtime": "aws_secrets_manager"},
@@ -117,6 +117,10 @@ func TestConfigFromEnvParsesLifecycleConfigAndResolvesPlatformEntry(t *testing.T
 		"region":       "us-west-2",
 	}, resolved.Backend)
 	require.Equal(t, map[string]any{"runtime": "aws_secrets_manager"}, resolved.CredentialResolver)
+
+	staging, err := config.LifecycleConfig.Resolve("deployed", "staging", "ensure_database", "postgres")
+	require.NoError(t, err)
+	require.Equal(t, resolved, staging)
 }
 
 func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
@@ -131,9 +135,14 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			wantError: "entries[0].environment must be one of edit, preview, deployed",
 		},
 		{
+			name:      "missing profiles",
+			config:    lifecycleConfigWithEntry(`"profiles": []`),
+			wantError: "entries[0].profiles is required",
+		},
+		{
 			name:      "empty profile",
-			config:    lifecycleConfigWithEntry(`"profile": ""`),
-			wantError: "entries[0].profile is required",
+			config:    lifecycleConfigWithEntry(`"profiles": [""]`),
+			wantError: "entries[0].profiles[0] is required",
 		},
 		{
 			name:      "empty engine",
@@ -176,12 +185,90 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			wantError: "entries[0].moduleSelectors.ensure_database.postgres.source is required",
 		},
 		{
-			name: "duplicate environment and profile",
+			name:      "operation missing declared engine module",
+			config:    lifecycleConfigWithEntry(`"engines": ["postgres", "mysql"], "moduleSelectors": {"ensure_database": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}}`),
+			wantError: "entries[0].moduleSelectors.ensure_database.mysql is required for declared engine",
+		},
+		{
+			name: "entry missing globally advertised operation",
 			config: `{
 			  "entries": [
 			    {
 			      "environment": "deployed",
-			      "profile": "production",
+			      "profiles": ["production"],
+			      "engines": ["postgres"],
+			      "backend": {"stateBackend": "s3"},
+			      "credentialResolver": {"runtime": "aws_secrets_manager"},
+			      "moduleSelectors": {
+			        "ensure_database": {
+			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			        }
+			      }
+			    },
+			    {
+			      "environment": "edit",
+			      "profiles": ["production"],
+			      "engines": ["postgres"],
+			      "backend": {"stateBackend": "s3"},
+			      "credentialResolver": {"runtime": "aws_secrets_manager"},
+			      "moduleSelectors": {
+			        "ensure_database": {
+			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			        },
+			        "migrate_schema": {
+			          "postgres": {"source": "app.terraform.io/superblocks/postgres-migration-runner/native"}
+			        }
+			      }
+			    }
+			  ]
+			}`,
+			wantError: "entries[0].moduleSelectors operations must match configured operations [ensure_database, migrate_schema]",
+		},
+		{
+			name: "entry missing globally advertised engine",
+			config: `{
+			  "entries": [
+			    {
+			      "environment": "deployed",
+			      "profiles": ["production"],
+			      "engines": ["postgres"],
+			      "backend": {"stateBackend": "s3"},
+			      "credentialResolver": {"runtime": "aws_secrets_manager"},
+			      "moduleSelectors": {
+			        "ensure_database": {
+			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			        }
+			      }
+			    },
+			    {
+			      "environment": "edit",
+			      "profiles": ["production"],
+			      "engines": ["mysql", "postgres"],
+			      "backend": {"stateBackend": "s3"},
+			      "credentialResolver": {"runtime": "aws_secrets_manager"},
+			      "moduleSelectors": {
+			        "ensure_database": {
+			          "mysql": {"source": "app.terraform.io/superblocks/mysql-managed-database/aws"},
+			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			        }
+			      }
+			    }
+			  ]
+			}`,
+			wantError: "entries[0].engines must match configured engines [mysql, postgres]",
+		},
+		{
+			name:      "duplicate environment and profile within profiles array",
+			config:    lifecycleConfigWithEntry(`"profiles": ["production", "production"]`),
+			wantError: `duplicates environment "deployed" profile "production"`,
+		},
+		{
+			name: "duplicate environment and profile across entries",
+			config: `{
+			  "entries": [
+			    {
+			      "environment": "deployed",
+			      "profiles": ["production"],
 			      "engines": ["postgres"],
 			      "backend": {"stateBackend": "s3"},
 			      "credentialResolver": {"runtime": "aws_secrets_manager"},
@@ -193,7 +280,7 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			    },
 			    {
 			      "environment": "deployed",
-			      "profile": "production",
+			      "profiles": ["production"],
 			      "engines": ["postgres"],
 			      "backend": {"stateBackend": "s3"},
 			      "credentialResolver": {"runtime": "aws_secrets_manager"},
@@ -226,7 +313,7 @@ func TestLifecycleConfigResolveIncludesRequestContextAndAvailableEntries(t *test
 		  "entries": [
 		    {
 		      "environment": "deployed",
-		      "profile": "production",
+		      "profiles": ["production"],
 		      "engines": ["postgres"],
 		      "backend": {"stateBackend": "s3"},
 		      "credentialResolver": {"runtime": "aws_secrets_manager"},
@@ -245,17 +332,49 @@ func TestLifecycleConfigResolveIncludesRequestContextAndAvailableEntries(t *test
 	_, err = config.LifecycleConfig.Resolve("preview", "sandbox", "drop_database", "mysql")
 
 	require.ErrorContains(t, err, `environment "preview" profile "sandbox" operation "drop_database" engine "mysql"`)
-	require.ErrorContains(t, err, `configured entries: deployed/production engines=[postgres] operations=[ensure_database]`)
+	require.ErrorContains(t, err, `configured entries: deployed profiles=[production] engines=[postgres] operations=[ensure_database]`)
 }
 
 func TestLifecycleConfigResolveReportsSupportedModuleEngines(t *testing.T) {
+	config := LifecycleConfig{
+		Entries: []LifecycleConfigEntry{{
+			Environment: "deployed",
+			Profiles:    []string{"production"},
+			Engines:     []string{"mysql", "postgres"},
+			ModuleSelectors: map[string]map[string]TerraformModule{
+				"ensure_database": {
+					"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws"},
+				},
+			},
+		}},
+	}
+
+	_, err := config.Resolve("deployed", "production", "ensure_database", "mysql")
+
+	require.ErrorContains(t, err, `operation "ensure_database" does not support environment "deployed" profile "production" operation "ensure_database" engine "mysql"`)
+	require.ErrorContains(t, err, "supported engines: [postgres]")
+}
+
+func TestConfigFromEnvAllowsNonRectangularEnvironmentProfileCoverage(t *testing.T) {
 	env := map[string]string{
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": `{
 		  "entries": [
 		    {
 		      "environment": "deployed",
-		      "profile": "production",
-		      "engines": ["mysql", "postgres"],
+		      "profiles": ["production"],
+		      "engines": ["postgres"],
+		      "backend": {"stateBackend": "s3"},
+		      "credentialResolver": {"runtime": "aws_secrets_manager"},
+		      "moduleSelectors": {
+		        "ensure_database": {
+		          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+		        }
+		      }
+		    },
+		    {
+		      "environment": "edit",
+		      "profiles": ["staging-us", "staging-eu"],
+		      "engines": ["postgres"],
 		      "backend": {"stateBackend": "s3"},
 		      "credentialResolver": {"runtime": "aws_secrets_manager"},
 		      "moduleSelectors": {
@@ -267,13 +386,35 @@ func TestLifecycleConfigResolveReportsSupportedModuleEngines(t *testing.T) {
 		  ]
 		}`,
 	}
+
 	config, err := ConfigFromEnv(func(key string) string { return env[key] })
 	require.NoError(t, err)
 
-	_, err = config.LifecycleConfig.Resolve("deployed", "production", "ensure_database", "mysql")
+	_, err = config.LifecycleConfig.Resolve("edit", "production", "ensure_database", "postgres")
+	require.ErrorContains(t, err, `environment "edit" profile "production" operation "ensure_database" engine "postgres"`)
+}
 
-	require.ErrorContains(t, err, `operation "ensure_database" does not support environment "deployed" profile "production" operation "ensure_database" engine "mysql"`)
-	require.ErrorContains(t, err, "supported engines: [postgres]")
+func TestLifecycleConfigResolveSupportsExplicitWildcardProfile(t *testing.T) {
+	config := LifecycleConfig{
+		Entries: []LifecycleConfigEntry{{
+			Environment: "edit",
+			Profiles:    []string{"*"},
+			Engines:     []string{"postgres"},
+			Backend:     map[string]any{"stateBackend": "s3"},
+			CredentialResolver: map[string]any{
+				"runtime": "aws_secrets_manager",
+			},
+			ModuleSelectors: map[string]map[string]TerraformModule{
+				"ensure_database": {
+					"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws"},
+				},
+			},
+		}},
+	}
+
+	_, err := config.Resolve("edit", "staging-us", "ensure_database", "postgres")
+
+	require.NoError(t, err)
 }
 
 func lifecycleConfigWithEntry(replacement string) string {
@@ -281,7 +422,7 @@ func lifecycleConfigWithEntry(replacement string) string {
 	  "entries": [
 	    {
 	      "environment": "deployed",
-	      "profile": "production",
+	      "profiles": ["production"],
 	      "engines": ["postgres"],
 	      "backend": {"stateBackend": "s3"},
 	      "credentialResolver": {"runtime": "aws_secrets_manager"},
@@ -301,7 +442,7 @@ func lifecycleConfigWithEmptyCredentialResolver() string {
 	  "entries": [
 	    {
 	      "environment": "deployed",
-	      "profile": "production",
+	      "profiles": ["production"],
 	      "engines": ["postgres"],
 	      "backend": {"stateBackend": "s3"},
 	      "credentialResolver": {},
@@ -320,7 +461,7 @@ func lifecycleConfigWithEmptyBackend() string {
 	  "entries": [
 	    {
 	      "environment": "deployed",
-	      "profile": "production",
+	      "profiles": ["production"],
 	      "engines": ["postgres"],
 	      "backend": {},
 	      "credentialResolver": {"runtime": "aws_secrets_manager"},
@@ -339,7 +480,7 @@ func lifecycleConfigWithEmptyModuleSelectors() string {
 	  "entries": [
 	    {
 	      "environment": "deployed",
-	      "profile": "production",
+	      "profiles": ["production"],
 	      "engines": ["postgres"],
 	      "backend": {"stateBackend": "s3"},
 	      "credentialResolver": {"runtime": "aws_secrets_manager"},
@@ -354,7 +495,7 @@ func lifecycleConfigWithModuleSelectors(moduleSelectors string) string {
 	  "entries": [
 	    {
 	      "environment": "deployed",
-	      "profile": "production",
+	      "profiles": ["production"],
 	      "engines": ["postgres"],
 	      "backend": {"stateBackend": "s3"},
 	      "credentialResolver": {"runtime": "aws_secrets_manager"},

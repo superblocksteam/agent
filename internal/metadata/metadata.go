@@ -10,12 +10,12 @@ func GetTagsMap(tagsString string) map[string][]string {
 	tagsMap := make(map[string][]string)
 	kvPairs := strings.Split(tagsString, ",")
 	for _, tag := range kvPairs {
-		parts := strings.Split(tag, ":")
-		if len(parts) != 2 {
+		separatorIndex := strings.LastIndex(tag, ":")
+		if separatorIndex == -1 {
 			continue
 		}
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
+		key := strings.TrimSpace(tag[:separatorIndex])
+		value := strings.TrimSpace(tag[separatorIndex+1:])
 		if key == "" || value == "" {
 			continue
 		}

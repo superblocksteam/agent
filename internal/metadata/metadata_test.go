@@ -35,6 +35,13 @@ func TestGetTagsMap(t *testing.T) {
 				"key2": {"value2"},
 			},
 		},
+		{
+			tagsString: "databaseLifecycle:environments:deployed,profile:production",
+			expected: map[string][]string{
+				"databaseLifecycle:environments": {"deployed"},
+				"profile":                        {"production"},
+			},
+		},
 	}
 
 	for _, test := range tests {
