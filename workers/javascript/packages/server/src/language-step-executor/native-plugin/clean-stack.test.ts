@@ -59,6 +59,48 @@ describe('cleanStack', () => {
     expect(cleanStack('', lineOffset)).toBeUndefined();
   });
 
+  describe('vm2 3.11 stack shapes', () => {
+    it('extracts the line number from a sandbox frame when the message line has no number (VMError)', () => {
+      const stack = ["VMError: Cannot find module 'process'", '    at user-code:4:23'].join('\n');
+      const result = cleanStack(stack, lineOffset);
+      expect(result).toBe("Error on line 1:\nVMError: Cannot find module 'process'");
+    });
+
+    it('prefers a sandbox frame over later absolute-path frames for line extraction', () => {
+      const stack = [
+        'ReferenceError: x is not defined',
+        '    at user-code:5:1',
+        '    at VM2 Wrapper.apply (/host/vm2/lib/bridge.js:1664:11)',
+      ].join('\n');
+      const result = cleanStack(stack, lineOffset);
+      expect(result).toBe('Error on line 2:\nReferenceError: x is not defined');
+    });
+
+    it('does not filter a message line that merely looks like a location header', () => {
+      const stack = ['timeout:30', '    at user-code:6:1'].join('\n');
+      const result = cleanStack(stack, lineOffset);
+      expect(result).toBe('Error on line 27:\ntimeout:30');
+    });
+
+    it('filters the bare location header from SyntaxError stacks with plain VM filenames', () => {
+      const stack = [
+        'user-code:7',
+        '      console.log("Starting script...";',
+        '                                      ^',
+        "SyntaxError: Unexpected token ';'",
+      ].join('\n');
+      const result = cleanStack(stack, lineOffset);
+      expect(result).toBe(
+        [
+          'Error on line 4:',
+          '      console.log("Starting script...";',
+          '                                      ^',
+          "SyntaxError: Unexpected token ';'",
+        ].join('\n')
+      );
+    });
+  });
+
   describe('with source maps', () => {
     it('uses source-mapped line and path from .ts frame', () => {
       const stack = [

@@ -8,6 +8,7 @@ packages:
   - 'mocks'
   - 'types/gen/js'
 overrides:
+  vm2: ">=3.11.5 <4"
   "@smithy/config-resolver": "^4.4.0"
   qs: ">=6.15.2 <7"
   protobufjs: "^7.5.8"

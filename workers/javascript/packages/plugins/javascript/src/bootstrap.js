@@ -194,7 +194,10 @@ function prepareSourceMapLookup(codeToExecute) {
   const lookup = buildSourceMapLookup(sourceMapJson, bundleStartLine);
   if (!lookup) return null;
 
-  return { lookup, bundleStartLine, virtualFilename: path.join(__dirname, CODE_MODE_VM_FILENAME) };
+  // Plain (non-absolute) filename: vm2 3.11+ redacts file/line info for frames whose
+  // filename looks like a host path (absolute, node:, internal/), so the VM filename
+  // must not contain path separators for user line numbers to survive.
+  return { lookup, bundleStartLine, virtualFilename: CODE_MODE_VM_FILENAME };
 }
 
 function serialize(buffer, mode) {
@@ -267,6 +270,21 @@ const sharedCode = `
     };
   }(console));
   console = $augmentedConsole;
+  // vm2 3.11+ sanitizes the default stack formatter (frames render as "at CallSite {}"),
+  // which breaks the host-side "Error on line N" extraction in clean-stack.js. Reinstall
+  // V8-style formatting for sandbox frames; host frames (getFileName() redacted to null
+  // by vm2) are dropped entirely.
+  Error.prepareStackTrace = function (err, frames) {
+    let out = (err.name || 'Error') + (err.message ? ': ' + err.message : '');
+    for (const frame of frames) {
+      const file = frame.getFileName();
+      if (!file) continue;
+      const fn = frame.getFunctionName();
+      const loc = file + ':' + frame.getLineNumber() + ':' + frame.getColumnNumber();
+      out += '\\n    at ' + (fn ? fn + ' (' + loc + ')' : loc);
+    }
+    return out;
+  };
 `;
 
 module.exports.executeCode = async (workerData) => {
@@ -312,15 +330,28 @@ module.exports.executeCode = async (workerData) => {
     // Create vm2 sandbox for user script execution
     const requireOpts = {
       builtin: ['*', '-child_process', '-process'],
-      external: true
+      external: true,
+      // customResolver: vm2 resolves external modules relative to the script filename.
+      // The plain 'user-code' filename (required under vm2 3.11+, which redacts stack
+      // frames whose filename is an absolute path) gives vm2 no usable resolution base,
+      // so fall back to resolving from this bootstrap's directory — the same base the
+      // old absolute filename provided.
+      resolve: (moduleName) => {
+        try {
+          return require.resolve(moduleName, { paths: [__dirname] });
+        } catch {
+          return undefined;
+        }
+      }
     };
     if (requireRoot && requireRoot.length > 0) {
       requireOpts.root = requireRoot;
-      // customResolver: when VM2 cannot find a module via normal lookup (e.g. pnpm's
-      // .pnpm layout), try resolving from requireRoot so @superblocksteam/sdk-api works.
+      // when VM2 cannot find a module via normal lookup (e.g. pnpm's .pnpm layout),
+      // try resolving from requireRoot (so @superblocksteam/sdk-api works), then from
+      // this bootstrap's directory (the pre-vm2-3.11 resolution base).
       requireOpts.resolve = (moduleName, dirname) => {
         try {
-          return require.resolve(moduleName, { paths: requireRoot });
+          return require.resolve(moduleName, { paths: [...requireRoot, __dirname] });
         } catch {
           return undefined;
         }
@@ -351,10 +382,11 @@ module.exports = async function() {
   ${code}
 }()`;
 
-    const codeModeFilename = path.join(__dirname, CODE_MODE_VM_FILENAME);
     sourceMapCtx = prepareSourceMapLookup(codeToExecute);
     hasSourceMap = !!sourceMapCtx;
-    const vmFilename = hasSourceMap ? codeModeFilename : __dirname;
+    // Plain (non-absolute) filenames: vm2 3.11+ classifies absolute paths as host
+    // frames and redacts their file/line info, which would break error line mapping.
+    const vmFilename = hasSourceMap ? CODE_MODE_VM_FILENAME : 'user-code';
 
     ret.output = await vm.run(codeToExecute, { filename: vmFilename });
     eventEmitter.removeAllListeners();

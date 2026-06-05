@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Upgrade `vm2` from 3.10.5 to 3.11.5 in the JavaScript workers, resolving the known sandbox-escape CVEs (CVE-2026-24118, CVE-2026-24781, CVE-2026-26332, CVE-2026-43997 through CVE-2026-44009, CVE-2026-45411, CVE-2026-47131, CVE-2026-47137, CVE-2026-47140, CVE-2026-47208, CVE-2026-47210; all patched by 3.11.0–3.11.4 per GHSA), and enforce the version floor via a pnpm workspace override
+- Upgrade Python worker dependencies to resolve Trivy CVE alerts: `h11` 0.14.0 → 0.16.0 with `httpcore` 1.0.5 → 1.0.9 (CVE-2025-43859) and `nltk` 3.8.1 → 3.9.4 (CVE-2025-14009). **Action required for Python steps using nltk tokenizers:** nltk 3.9 replaced the `punkt` tokenizer data package with `punkt_tab` — steps using `word_tokenize`/`sent_tokenize` must call `nltk.download('punkt_tab')` instead of `nltk.download('punkt')`, otherwise they will raise `LookupError: Resource punkt_tab not found` at runtime
+- JavaScript step error messages: with the vm2 upgrade, the `Error on line N` number for blocked-module errors (e.g. `require('child_process')`) now points at the user's actual `require` call instead of an internal offset, and `err.stack` observed inside a step no longer includes sandbox-internal frames. Step execution behavior is unchanged
 - Ship OpenTofu in the OPA (agent) image so lifecycle worker mode can run outside the standalone orchestrator image.
 - Add Native Database lifecycle worker support for local `(environment, profile)` configuration resolution using the platform `edit`/`preview`/`deployed` taxonomy.
 - Publish Native Database lifecycle capability tags from local lifecycle config during orchestrator registration.

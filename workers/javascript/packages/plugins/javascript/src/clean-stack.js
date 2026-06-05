@@ -1,4 +1,14 @@
 const extractPathRegex = /\s+at.*[(\s](.*)\)?/;
+// V8 SyntaxError stacks start with a "<filename>:<line>" location header. With vm2 3.11+
+// the VM filename is a plain name (no leading "/"), so the startsWith('/') filter below
+// no longer catches it — match the exact filenames passed to vm.run (kept in sync with
+// the bootstraps) so user error messages that happen to look like "word:123" survive.
+const locationHeaderRegex = /^(?:user-code|code-mode-bundle):\d+(?::\d+)?$/;
+// Sandbox frames carry the VM filename, which is a plain name without path separators
+// (e.g. "user-code", "code-mode-bundle"). vm2 3.11+ host errors (VMError etc.) put vm2's
+// own internal frames first, so prefer a sandbox frame for line extraction before
+// falling back to the first frame.
+const sandboxFrameRegex = /\s+at\s+(?:.*\()?([^\s/():]+):(\d+):\d+\)?/;
 
 /**
  * Cleans a V8 error stack trace for display to users.
@@ -38,6 +48,16 @@ function cleanStack(stack, lineOffset, sourceMapApplied) {
 
   let errorLineNumber = parseInt(errorLines[0].split(':').pop() ?? '');
 
+  if (isNaN(errorLineNumber)) {
+    for (const line of errorLines) {
+      const sandboxMatch = line.match(sandboxFrameRegex);
+      if (sandboxMatch) {
+        errorLineNumber = parseInt(sandboxMatch[2], 10);
+        break;
+      }
+    }
+  }
+
   const errorStack = errorLines
     .filter((line) => {
       const pathMatches = line.match(extractPathRegex);
@@ -45,7 +65,7 @@ function cleanStack(stack, lineOffset, sourceMapApplied) {
         const lineSplit = line.split(':');
         errorLineNumber = parseInt(lineSplit[lineSplit.length - 2]);
       }
-      return !pathMatches && !line.startsWith('/');
+      return !pathMatches && !line.startsWith('/') && !locationHeaderRegex.test(line);
     })
     .filter((line) => line.trim() !== '')
     .join('\n');
@@ -61,7 +81,7 @@ function filterFrames(stack) {
     .split('\n')
     .filter((line) => {
       const pathMatches = line.match(extractPathRegex);
-      return !pathMatches && !line.startsWith('/');
+      return !pathMatches && !line.startsWith('/') && !locationHeaderRegex.test(line);
     })
     .filter((line) => line.trim() !== '')
     .join('\n');

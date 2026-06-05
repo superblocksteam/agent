@@ -401,7 +401,9 @@ ReferenceError: userName is not defined`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: Array<string> = [];
 
-      const expectedErr = `Error on line 35:
+      // vm2 3.11+: the sandbox frame (require call site in user code) drives the line
+      // number; previously a vm2-internal host frame produced a bogus offset (35).
+      const expectedErr = `Error on line 1:
 VMError: Cannot find module 'process'`;
 
       let code = `var nodeProcess = require('process');
@@ -413,7 +415,7 @@ VMError: Cannot find module 'process'`;
       expect(result.output).toEqual({});
       expect(result.error).toEqual(expectedErr);
 
-      const expectedErrNode = `Error on line 5:
+      const expectedErrNode = `Error on line 1:
 VMError: Cannot find module 'node:process'`;
 
       code = `console.log('hello'); var nodeProcess = require('node:process');
@@ -442,7 +444,9 @@ VMError: Cannot find module 'node:process'`;
       const filePaths: Record<string, string> = {};
       const inheritedEnv: Array<string> = [];
 
-      const expectedErr = `Error on line 35:
+      // vm2 3.11+: the sandbox frame (require call site in user code) drives the line
+      // number; previously a vm2-internal host frame produced a bogus offset (35).
+      const expectedErr = `Error on line 1:
 VMError: Cannot find module 'child_process'`;
 
       let code = `var childProc = require('child_process');
@@ -454,7 +458,7 @@ VMError: Cannot find module 'child_process'`;
       expect(result.output).toEqual({});
       expect(result.error).toEqual(expectedErr);
 
-      const expectedErrNode = `Error on line 5:
+      const expectedErrNode = `Error on line 1:
 VMError: Cannot find module 'node:child_process'`;
 
       code = `var childProc = require('node:child_process');

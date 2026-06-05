@@ -78,6 +78,7 @@ catalogs:
       version: 5.5.4
 
 overrides:
+  vm2: '>=3.11.5 <4'
   '@smithy/config-resolver': ^4.4.0
   qs: '>=6.15.2 <7'
   protobufjs: ^7.5.8
@@ -1807,8 +1808,8 @@ importers:
         specifier: 3.1.1
         version: 3.1.1
       vm2:
-        specifier: ^3.10.5
-        version: 3.10.5
+        specifier: '>=3.11.5 <4'
+        version: 3.11.5
       web3:
         specifier: 4.11.1
         version: 4.11.1(typescript@5.5.4)(zod@3.23.8)
@@ -3738,8 +3739,8 @@ importers:
         specifier: 15.1.3
         version: 15.1.3
       vm2:
-        specifier: ^3.10.5
-        version: 3.10.5
+        specifier: '>=3.11.5 <4'
+        version: 3.11.5
       web3:
         specifier: 4.11.1
         version: 4.11.1(typescript@5.5.4)(zod@3.23.8)
@@ -3931,8 +3932,8 @@ importers:
         specifier: 8.3.2
         version: 8.3.2
       vm2:
-        specifier: 3.10.5
-        version: 3.10.5
+        specifier: '>=3.11.5 <4'
+        version: 3.11.5
       whatwg-mimetype:
         specifier: ^3.0.0
         version: 3.0.0
@@ -11190,8 +11191,8 @@ packages:
       jsdom:
         optional: true
 
-  vm2@3.10.5:
-    resolution: {integrity: sha512-3P/2QDccVFBcujfCOeP8vVNuGfuBJHEuvGR8eMmI10p/iwLL2UwF5PDaNaoOS2pRGQEDmJRyeEcc8kmm2Z59RA==}
+  vm2@3.11.5:
+    resolution: {integrity: sha512-RSrkBiwrj6FRU+QdqNs6KG0XdlvJCjpQ4GXiqmMbrhmwfu5k/XIMpAer0L8f6iuf0uJ3a4T1xJN126Q8yf0VIA==}
     engines: {node: '>=6.0'}
     hasBin: true
 
@@ -14323,7 +14324,7 @@ snapshots:
       ssh2: 1.15.0
       tunnel-ssh: 5.1.1
       uuid: 8.3.2
-      vm2: 3.10.5
+      vm2: 3.11.5
       whatwg-mimetype: 3.0.0
       xmlbuilder2: 3.0.2
     transitivePeerDependencies:
@@ -14378,7 +14379,7 @@ snapshots:
       notion-to-md: 3.1.1
       pino: 8.21.0
       prom-client: 15.1.3
-      vm2: 3.10.5
+      vm2: 3.11.5
       web3: 4.11.1(typescript@5.5.4)(zod@3.23.8)
       webflow-api: 1.3.1
       xml2json: 0.12.0
@@ -14434,7 +14435,7 @@ snapshots:
       notion-to-md: 3.1.1
       pino: 8.21.0
       prom-client: 15.1.3
-      vm2: 3.10.5
+      vm2: 3.11.5
       web3: 4.11.1(typescript@5.5.4)(zod@3.23.8)
       webflow-api: 1.3.1
       xml2json: 0.12.0
@@ -14690,7 +14691,7 @@ snapshots:
       moment: 2.30.1
       moment-timezone: 0.5.46
       notion-to-md: 3.1.1
-      vm2: 3.10.5
+      vm2: 3.11.5
       web3: 4.11.1(typescript@5.5.4)(zod@3.23.8)
       webflow-api: 1.3.1
       xml2json: 0.12.0
@@ -14725,7 +14726,7 @@ snapshots:
       moment: 2.30.1
       moment-timezone: 0.5.46
       notion-to-md: 3.1.1
-      vm2: 3.10.5
+      vm2: 3.11.5
       web3: 4.11.1(typescript@5.5.4)(zod@3.23.8)
       webflow-api: 1.3.1
       xml2json: 0.12.0
@@ -20860,7 +20861,7 @@ snapshots:
       - supports-color
       - terser
 
-  vm2@3.10.5:
+  vm2@3.11.5:
     dependencies:
       acorn: 8.15.0
       acorn-walk: 8.3.4
