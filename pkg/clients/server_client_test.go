@@ -171,6 +171,77 @@ func TestPostDatabaseLifecycleTerminalCallback(t *testing.T) {
 	resp.Body.Close()
 }
 
+func TestDatabaseLifecyclePhysicalDatabaseInstanceClientMethods(t *testing.T) {
+	var seen []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.Method+" "+r.URL.RequestURI())
+		assert.Equal(t, "agent-key", r.Header.Get("x-superblocks-agent-key"))
+		switch r.Method + " " + r.URL.Path {
+		case "GET /api/v1/database-lifecycle/physical-database-instances":
+			assert.Equal(t, "deployed", r.URL.Query().Get("environment"))
+			assert.Equal(t, "postgres", r.URL.Query().Get("engine"))
+			assert.Equal(t, "us-east-1", r.URL.Query().Get("region"))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":[{"id":"instance-1","region":"us-east-1","capacityUsed":1,"capacityMax":4}]}`))
+		case "POST /api/v1/database-lifecycle/physical-database-instances/instance-1/reserve":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"id":"instance-1"}}`))
+		case "POST /api/v1/database-lifecycle/physical-database-instances/instance-1/release":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"id":"instance-1"}}`))
+		case "POST /api/v1/database-lifecycle/physical-database-instances":
+			var body map[string]any
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			assert.Equal(t, "us-east-1", body["region"])
+			assert.Equal(t, "deployed", body["environment"])
+			assert.Equal(t, "postgres", body["engine"])
+			assert.Equal(t, "rds.internal:5432", body["endpoint"])
+			assert.EqualValues(t, 25, body["capacityMax"])
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"id":"instance-2"}}`))
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	client := NewServerClient(&ServerClientOptions{
+		URL:                 server.URL,
+		SuperblocksAgentKey: "agent-key",
+	})
+
+	resp, err := client.GetDatabaseLifecyclePhysicalDatabaseInstances(context.Background(), nil, http.Header{}, DatabaseLifecyclePhysicalDatabaseInstanceListRequest{
+		Environment: "deployed",
+		Engine:      "postgres",
+		Region:      "us-east-1",
+	})
+	require.NoError(t, err)
+	resp.Body.Close()
+	resp, err = client.PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(context.Background(), nil, http.Header{}, "instance-1")
+	require.NoError(t, err)
+	resp.Body.Close()
+	resp, err = client.PostDatabaseLifecyclePhysicalDatabaseInstanceRelease(context.Background(), nil, http.Header{}, "instance-1")
+	require.NoError(t, err)
+	resp.Body.Close()
+	resp, err = client.PostDatabaseLifecyclePhysicalDatabaseInstance(context.Background(), nil, http.Header{}, DatabaseLifecyclePhysicalDatabaseInstance{
+		Region:              "us-east-1",
+		Environment:         "deployed",
+		Engine:              "postgres",
+		Endpoint:            "rds.internal:5432",
+		MasterCredentialRef: map[string]any{"resolver": "aws_secrets_manager", "ref": "physical/master", "field": "password"},
+		CapacityMax:         25,
+	})
+	require.NoError(t, err)
+	resp.Body.Close()
+
+	require.Equal(t, []string{
+		"GET /api/v1/database-lifecycle/physical-database-instances?engine=postgres&environment=deployed&region=us-east-1",
+		"POST /api/v1/database-lifecycle/physical-database-instances/instance-1/reserve",
+		"POST /api/v1/database-lifecycle/physical-database-instances/instance-1/release",
+		"POST /api/v1/database-lifecycle/physical-database-instances",
+	}, seen)
+}
+
 func TestValidateProfile(t *testing.T) {
 	tests := []struct {
 		name               string

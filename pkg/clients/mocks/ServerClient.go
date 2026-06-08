@@ -200,6 +200,36 @@ func (_m *ServerClient) GetApplicationCode(_a0 context.Context, _a1 *time.Durati
 	return r0, r1
 }
 
+// GetDatabaseLifecyclePhysicalDatabaseInstances provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *ServerClient) GetDatabaseLifecyclePhysicalDatabaseInstances(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 clients.DatabaseLifecyclePhysicalDatabaseInstanceListRequest) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDatabaseLifecyclePhysicalDatabaseInstances")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecyclePhysicalDatabaseInstanceListRequest) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecyclePhysicalDatabaseInstanceListRequest) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecyclePhysicalDatabaseInstanceListRequest) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetIntegrationConfiguration provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
 func (_m *ServerClient) GetIntegrationConfiguration(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values, _a4 string) (*http.Response, error) {
 	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)
@@ -462,6 +492,96 @@ func (_m *ServerClient) PostClaimKeyRotationResourcesForSigningV2(_a0 context.Co
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, *securityv1.ResourcesToResignRequest) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostDatabaseLifecyclePhysicalDatabaseInstance provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *ServerClient) PostDatabaseLifecyclePhysicalDatabaseInstance(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 clients.DatabaseLifecyclePhysicalDatabaseInstance) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostDatabaseLifecyclePhysicalDatabaseInstance")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecyclePhysicalDatabaseInstance) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecyclePhysicalDatabaseInstance) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecyclePhysicalDatabaseInstance) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostDatabaseLifecyclePhysicalDatabaseInstanceRelease provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *ServerClient) PostDatabaseLifecyclePhysicalDatabaseInstanceRelease(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 string) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostDatabaseLifecyclePhysicalDatabaseInstanceRelease")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, string) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, string) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, string) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PostDatabaseLifecyclePhysicalDatabaseInstanceReserve provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *ServerClient) PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 string) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostDatabaseLifecyclePhysicalDatabaseInstanceReserve")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, string) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, string) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, string) error); ok {
 		r1 = rf(_a0, _a1, _a2, _a3)
 	} else {
 		r1 = ret.Error(1)

@@ -78,6 +78,26 @@ type DatabaseLifecycleTerminalCallbackRequest struct {
 	RequestID      string `json:"requestId"`
 }
 
+type DatabaseLifecyclePhysicalDatabaseInstanceListRequest struct {
+	Environment string
+	Engine      string
+	Region      string
+}
+
+type DatabaseLifecyclePhysicalDatabaseInstance struct {
+	ID                  string         `json:"id,omitempty"`
+	OrganizationID      string         `json:"organizationId,omitempty"`
+	Region              string         `json:"region"`
+	Environment         string         `json:"environment"`
+	Engine              string         `json:"engine"`
+	Endpoint            string         `json:"endpoint"`
+	MasterCredentialRef map[string]any `json:"masterCredentialRef"`
+	CapacityMax         int            `json:"capacityMax"`
+	CapacityUsed        int            `json:"capacityUsed,omitempty"`
+	Status              string         `json:"status,omitempty"`
+	SecurityClass       string         `json:"securityClass,omitempty"`
+}
+
 //go:generate mockery --name=ServerClient --output ./mocks --structname ServerClient
 type ServerClient interface {
 	PostRegister(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                  // Registers an agent
@@ -95,17 +115,21 @@ type ServerClient interface {
 	DeleteOrgUserToken(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                 // Delete org specific auth token
 	GetOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                               // Get org specific auth token
 	// TODO:(bruce) This endpoint has been deleted in the server so we need to look into this, this actually looks like a dead code path, but I do see 404s in server logs on this endpoint
-	GetIntegrationConfiguration(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                                 // Get integration configuration
-	PostPendingJobs(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                                // Post pending jobs
-	PostAuditLogs(context.Context, *time.Duration, http.Header, url.Values, *agentv1.AuditLogRequest) (*http.Response, error)                             // Post audit logs
-	PostGSheetsTokenRefresh(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                        // Post GSheets token refresh
-	GetIntegrations(context.Context, *time.Duration, http.Header, url.Values, bool) (*http.Response, error)                                               // Get configurations
-	PatchApis(context.Context, *time.Duration, http.Header, url.Values, *apiv1.PatchApisRequest) (*http.Response, error)                                  // Patch APIs
-	PutApiSignatures(context.Context, *time.Duration, http.Header, url.Values, *apiv1.UpdateApiSignaturesRequest) (*http.Response, error)                 // Put API Signatures
-	PutApplicationSignatures(context.Context, *time.Duration, http.Header, url.Values, *apiv1.UpdateApplicationSignaturesRequest) (*http.Response, error) // Put Application Signatures
-	PostClaimKeyRotationResourcesForSigningV2(context.Context, *time.Duration, http.Header, *securityv1.ResourcesToResignRequest) (*http.Response, error) // Claim key rotation resources for signing
-	PostClaimDatabaseLifecycleDispatches(context.Context, *time.Duration, http.Header, DatabaseLifecycleDispatchClaimRequest) (*http.Response, error)     // Claim database lifecycle dispatches
-	PostDatabaseLifecycleTerminalCallback(context.Context, *time.Duration, http.Header, DatabaseLifecycleTerminalCallbackRequest) (*http.Response, error) // Post database lifecycle terminal callback
+	GetIntegrationConfiguration(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                                                     // Get integration configuration
+	PostPendingJobs(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                                                    // Post pending jobs
+	PostAuditLogs(context.Context, *time.Duration, http.Header, url.Values, *agentv1.AuditLogRequest) (*http.Response, error)                                                 // Post audit logs
+	PostGSheetsTokenRefresh(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                                                            // Post GSheets token refresh
+	GetIntegrations(context.Context, *time.Duration, http.Header, url.Values, bool) (*http.Response, error)                                                                   // Get configurations
+	PatchApis(context.Context, *time.Duration, http.Header, url.Values, *apiv1.PatchApisRequest) (*http.Response, error)                                                      // Patch APIs
+	PutApiSignatures(context.Context, *time.Duration, http.Header, url.Values, *apiv1.UpdateApiSignaturesRequest) (*http.Response, error)                                     // Put API Signatures
+	PutApplicationSignatures(context.Context, *time.Duration, http.Header, url.Values, *apiv1.UpdateApplicationSignaturesRequest) (*http.Response, error)                     // Put Application Signatures
+	PostClaimKeyRotationResourcesForSigningV2(context.Context, *time.Duration, http.Header, *securityv1.ResourcesToResignRequest) (*http.Response, error)                     // Claim key rotation resources for signing
+	PostClaimDatabaseLifecycleDispatches(context.Context, *time.Duration, http.Header, DatabaseLifecycleDispatchClaimRequest) (*http.Response, error)                         // Claim database lifecycle dispatches
+	PostDatabaseLifecycleTerminalCallback(context.Context, *time.Duration, http.Header, DatabaseLifecycleTerminalCallbackRequest) (*http.Response, error)                     // Post database lifecycle terminal callback
+	GetDatabaseLifecyclePhysicalDatabaseInstances(context.Context, *time.Duration, http.Header, DatabaseLifecyclePhysicalDatabaseInstanceListRequest) (*http.Response, error) // List database lifecycle physical database instances
+	PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(context.Context, *time.Duration, http.Header, string) (*http.Response, error)                                        // Reserve database lifecycle physical database instance capacity
+	PostDatabaseLifecyclePhysicalDatabaseInstanceRelease(context.Context, *time.Duration, http.Header, string) (*http.Response, error)                                        // Release database lifecycle physical database instance capacity
+	PostDatabaseLifecyclePhysicalDatabaseInstance(context.Context, *time.Duration, http.Header, DatabaseLifecyclePhysicalDatabaseInstance) (*http.Response, error)            // Register database lifecycle physical database instance
 
 	// UNUSED by orchestrator. But used by other clients
 	PostClaimKeyRotationResourcesForSigning(context.Context, *time.Duration, http.Header, *securityv1.ResourcesToResignRequest) (*http.Response, error) // Claim key rotation resources for signing
@@ -282,6 +306,39 @@ func (s *serverClient) PostDatabaseLifecycleTerminalCallback(ctx context.Context
 		"Content-Type": "application/json",
 	}, headers)
 	return s.sendRequest(ctx, timeout, http.MethodPost, "api/v1/database-lifecycle/callbacks/terminal", headers, nil, body, true)
+}
+
+func (s *serverClient) GetDatabaseLifecyclePhysicalDatabaseInstances(ctx context.Context, timeout *time.Duration, headers http.Header, request DatabaseLifecyclePhysicalDatabaseInstanceListRequest) (*http.Response, error) {
+	query := url.Values{}
+	query.Set("environment", request.Environment)
+	query.Set("engine", request.Engine)
+	if request.Region != "" {
+		query.Set("region", request.Region)
+	}
+	return s.sendRequest(ctx, timeout, http.MethodGet, "api/v1/database-lifecycle/physical-database-instances", headers, query, nil, true)
+}
+
+func (s *serverClient) PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(ctx context.Context, timeout *time.Duration, headers http.Header, instanceID string) (*http.Response, error) {
+	headers = combineHeaders(map[string]string{
+		"Content-Type": "application/json",
+	}, headers)
+	path := fmt.Sprintf("api/v1/database-lifecycle/physical-database-instances/%s/reserve", url.PathEscape(instanceID))
+	return s.sendRequest(ctx, timeout, http.MethodPost, path, headers, nil, nil, true)
+}
+
+func (s *serverClient) PostDatabaseLifecyclePhysicalDatabaseInstanceRelease(ctx context.Context, timeout *time.Duration, headers http.Header, instanceID string) (*http.Response, error) {
+	headers = combineHeaders(map[string]string{
+		"Content-Type": "application/json",
+	}, headers)
+	path := fmt.Sprintf("api/v1/database-lifecycle/physical-database-instances/%s/release", url.PathEscape(instanceID))
+	return s.sendRequest(ctx, timeout, http.MethodPost, path, headers, nil, nil, true)
+}
+
+func (s *serverClient) PostDatabaseLifecyclePhysicalDatabaseInstance(ctx context.Context, timeout *time.Duration, headers http.Header, body DatabaseLifecyclePhysicalDatabaseInstance) (*http.Response, error) {
+	headers = combineHeaders(map[string]string{
+		"Content-Type": "application/json",
+	}, headers)
+	return s.sendRequest(ctx, timeout, http.MethodPost, "api/v1/database-lifecycle/physical-database-instances", headers, nil, body, true)
 }
 
 func (s *serverClient) sendRequest(ctx context.Context, timeout *time.Duration, method string, path string, headers http.Header, query url.Values, body any, useAgentKey bool) (*http.Response, error) {
