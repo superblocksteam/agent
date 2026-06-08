@@ -40,11 +40,12 @@ func TestMaterializeJobWritesBackendAndVarsFiles(t *testing.T) {
 	err := MaterializeJob(job, DispatchPayload{
 		BindingKey:       "app:prod:orders",
 		DesiredSpecHash:  "hash-1",
-		Operation:        "ensure_prod_database",
-		ProfileID:        "profile-1",
+		Environment:      "deployed",
+		Operation:        "ensure_database",
+		Profile:          "production",
 		RequestID:        "request-1",
 		ResourceKey:      "database/orders",
-		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "profiles/{{profile_id}}/{{resource_key}}.tfstate", "region": "us-west-2"},
+		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
 			Source:  "app.terraform.io/superblocks/rds-postgres/aws",
 			Version: "1.2.3",
@@ -81,12 +82,17 @@ func TestMaterializeJobWritesBackendAndVarsFiles(t *testing.T) {
   binding_key = var.binding_key
   desired_spec_hash = var.desired_spec_hash
   engine_version = var.engine_version
+  environment_class = var.environment_class
+  environment_name = var.environment_name
   operation = var.operation
   profile_id = var.profile_id
   request_id = var.request_id
+  resource_key = var.resource_key
   storage_gb = var.storage_gb
 }
 `)
+	require.NotContains(t, string(mainFile), `  environment = var.environment`)
+	require.NotContains(t, string(mainFile), `  profile = var.profile`)
 	// Root-level outputs that re-export the module's connection_metadata and
 	// runtime_credential_refs. Without these, `tofu output -json` returns {} and
 	// the binding's connection info stays empty after a successful apply.
@@ -103,15 +109,18 @@ func TestMaterializeJobWritesBackendAndVarsFiles(t *testing.T) {
 	// `tofu init -backend-config=<file>` parses HCL key=value pairs,
 	// not JSON. `type` is stripped — it's consumed by the HCL backend
 	// declaration, not a valid s3-backend argument.
-	require.Equal(t, "bucket = \"state-bucket\"\nkey = \"profiles/profile-1-50135a426adc/database-orders-13abfc789342.tfstate\"\nregion = \"us-west-2\"\n", string(backend))
+	require.Equal(t, "bucket = \"state-bucket\"\nkey = \"deployed/production/database-orders-13abfc789342.tfstate\"\nregion = \"us-west-2\"\n", string(backend))
 
 	var vars map[string]any
 	require.NoError(t, readJSONFile(job.VarsFile, &vars))
 	require.Equal(t, "app:prod:orders", vars["binding_key"])
 	require.Equal(t, "hash-1", vars["desired_spec_hash"])
-	require.Equal(t, "ensure_prod_database", vars["operation"])
-	require.Equal(t, "profile-1", vars["profile_id"])
+	require.Equal(t, "prod", vars["environment_class"])
+	require.Equal(t, "production", vars["environment_name"])
+	require.Equal(t, "ensure_database", vars["operation"])
+	require.Nil(t, vars["profile_id"])
 	require.Equal(t, "request-1", vars["request_id"])
+	require.Equal(t, "database/orders", vars["resource_key"])
 	require.Equal(t, "16.3", vars["engine_version"])
 	require.Equal(t, float64(20), vars["storage_gb"])
 }
@@ -136,7 +145,7 @@ func TestMaterializeJobUsesResolvedLifecycleConfig(t *testing.T) {
 		Backend: map[string]any{
 			"stateBackend": "s3",
 			"bucket":       "state-bucket",
-			"key":          "profiles/{{profile_id}}/{{resource_key}}.tfstate",
+			"key":          "{{environment}}/{{profile}}/{{resource_key}}.tfstate",
 			"region":       "us-west-2",
 		},
 		CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
@@ -145,8 +154,9 @@ func TestMaterializeJobUsesResolvedLifecycleConfig(t *testing.T) {
 	err := MaterializeResolvedJob(job, DispatchPayload{
 		BindingKey:      "app:prod:orders",
 		DesiredSpecHash: "hash-1",
+		Environment:     "deployed",
 		Operation:       "ensure_database",
-		ProfileID:       "profile-1",
+		Profile:         "production",
 		RequestID:       "request-1",
 		ResourceKey:     "database/orders",
 	}, resolved, testSSLOpts)
@@ -160,9 +170,17 @@ func TestMaterializeJobUsesResolvedLifecycleConfig(t *testing.T) {
 
 	var vars map[string]any
 	require.NoError(t, readJSONFile(job.VarsFile, &vars))
+	require.Equal(t, "prod", vars["environment_class"])
+	require.Equal(t, "production", vars["environment_name"])
 	require.Equal(t, "ensure_database", vars["operation"])
+	require.Nil(t, vars["profile_id"])
+	require.Equal(t, "database/orders", vars["resource_key"])
 	require.Equal(t, float64(20), vars["storage_gb"])
 	require.Equal(t, map[string]any{"runtime": "aws_secrets_manager"}, vars["credential_resolver"])
+
+	backend, err := os.ReadFile(job.BackendFile)
+	require.NoError(t, err)
+	require.Equal(t, "bucket = \"state-bucket\"\nkey = \"deployed/production/database-orders-13abfc789342.tfstate\"\nregion = \"us-west-2\"\n", string(backend))
 }
 
 func TestMaterializeResolvedJobRejectsCredentialResolverInputConflict(t *testing.T) {
@@ -185,7 +203,7 @@ func TestMaterializeResolvedJobRejectsCredentialResolverInputConflict(t *testing
 		Backend: map[string]any{
 			"stateBackend": "s3",
 			"bucket":       "state-bucket",
-			"key":          "profiles/{{profile_id}}/{{resource_key}}.tfstate",
+			"key":          "{{environment}}/{{profile}}/{{resource_key}}.tfstate",
 			"region":       "us-west-2",
 		},
 		CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
@@ -194,8 +212,9 @@ func TestMaterializeResolvedJobRejectsCredentialResolverInputConflict(t *testing
 	err := MaterializeResolvedJob(job, DispatchPayload{
 		BindingKey:      "app:prod:orders",
 		DesiredSpecHash: "hash-1",
+		Environment:     "deployed",
 		Operation:       "ensure_database",
-		ProfileID:       "profile-1",
+		Profile:         "production",
 		RequestID:       "request-1",
 		ResourceKey:     "database/orders",
 	}, resolved, testSSLOpts)
@@ -656,8 +675,9 @@ func TestMaterializeJobEmitsPostgresProviderForSharedModeModule(t *testing.T) {
 	err := MaterializeJob(job, DispatchPayload{
 		BindingKey:       "app:dev:devdb",
 		DesiredSpecHash:  "hash-1",
-		Operation:        "ensure_dev_database",
-		ProfileID:        "profile-1",
+		Environment:      "edit",
+		Operation:        "ensure_database",
+		Profile:          "development",
 		RequestID:        "request-1",
 		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{

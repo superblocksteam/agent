@@ -82,7 +82,7 @@ func TestConfigFromEnvParsesLifecycleConfigAndResolvesPlatformEntry(t *testing.T
 		      "environment": "deployed",
 		      "profiles": ["production", "staging"],
 		      "engines": ["postgres"],
-		      "backend": {"stateBackend": "s3", "bucket": "state-bucket", "key": "profiles/{{profile_id}}/{{resource_key}}.tfstate", "region": "us-west-2"},
+		      "backend": {"stateBackend": "s3", "bucket": "state-bucket", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"},
 		      "credentialResolver": {"runtime": "aws_secrets_manager"},
 		      "moduleSelectors": {
 		        "ensure_database": {
@@ -113,7 +113,7 @@ func TestConfigFromEnvParsesLifecycleConfigAndResolvesPlatformEntry(t *testing.T
 	require.Equal(t, map[string]any{
 		"stateBackend": "s3",
 		"bucket":       "state-bucket",
-		"key":          "profiles/{{profile_id}}/{{resource_key}}.tfstate",
+		"key":          "{{environment}}/{{profile}}/{{resource_key}}.tfstate",
 		"region":       "us-west-2",
 	}, resolved.Backend)
 	require.Equal(t, map[string]any{"runtime": "aws_secrets_manager"}, resolved.CredentialResolver)

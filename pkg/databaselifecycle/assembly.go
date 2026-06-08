@@ -52,7 +52,10 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 	}
 	materializer := JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
 		if len(deps.LifecycleConfig.Entries) == 0 {
-			return errors.New("database lifecycle local config is required")
+			return &LifecycleError{
+				Code: ErrorCodeUnsupportedShape,
+				Err:  errors.New("database lifecycle local config is required: set SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG with at least one entry"),
+			}
 		}
 		resolved, err := deps.LifecycleConfig.Resolve(dispatch.Environment, dispatch.Profile, dispatch.Operation, dispatch.Engine)
 		if err != nil {

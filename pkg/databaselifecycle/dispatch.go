@@ -11,22 +11,23 @@ import (
 )
 
 type DispatchPayload struct {
-	AgentID                 string                 `json:"agentId"`
+	AgentID                 string                 `json:"-"`
 	BindingKey              string                 `json:"bindingKey"`
 	ConnectionMetadata      map[string]any         `json:"connectionMetadata,omitempty"`
 	RuntimeCredentialRefs   map[string]any         `json:"runtimeCredentialRefs,omitempty"`
 	MigrationCredentialRefs map[string]any         `json:"migrationCredentialRefs,omitempty"`
+	DesiredSpec             map[string]any         `json:"desiredSpec,omitempty"`
 	DesiredSpecHash         string                 `json:"desiredSpecHash"`
 	Engine                  string                 `json:"engine,omitempty"`
 	Environment             string                 `json:"environment,omitempty"`
 	Migrations              []migrations.Migration `json:"migrations,omitempty"`
 	Operation               string                 `json:"operation"`
 	Profile                 string                 `json:"profile,omitempty"`
-	ProfileID               string                 `json:"profileId"`
+	ProfileID               string                 `json:"-"`
 	RequestID               string                 `json:"requestId"`
 	ResourceKey             string                 `json:"resourceKey"`
-	TerraformBackend        map[string]any         `json:"terraformBackend"`
-	TerraformModule         TerraformModule        `json:"terraformModule"`
+	TerraformBackend        map[string]any         `json:"-"`
+	TerraformModule         TerraformModule        `json:"-"`
 }
 
 type TerraformModule struct {

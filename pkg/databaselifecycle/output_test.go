@@ -12,7 +12,7 @@ func TestReadyCallbackFromTerraformOutputUsesOnlyConnectionMetadataAndRuntimeCre
 	callback, err := ReadyCallbackFromTerraformOutput(
 		DispatchPayload{
 			BindingKey: "app:prod:orders",
-			Operation:  "ensure_prod_database",
+			Operation:  "ensure_database",
 			RequestID:  "request-1",
 		},
 		Result{
@@ -58,7 +58,7 @@ func TestReadyCallbackFromTerraformOutputCanParseSecretLikeUnusedOutputs(t *test
 	callback, err := ReadyCallbackFromTerraformOutput(
 		DispatchPayload{
 			BindingKey: "app:prod:orders",
-			Operation:  "ensure_prod_database",
+			Operation:  "ensure_database",
 			RequestID:  "request-1",
 		},
 		Result{

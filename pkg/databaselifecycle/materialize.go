@@ -91,13 +91,7 @@ func MaterializeJob(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOption
 	if err := writeStringFile(job.BackendFile, backendConfigHCL(backendArgsForFile(dispatch.TerraformBackend, dispatch))); err != nil {
 		return err
 	}
-	vars := map[string]any{
-		"binding_key":       dispatch.BindingKey,
-		"desired_spec_hash": dispatch.DesiredSpecHash,
-		"operation":         dispatch.Operation,
-		"profile_id":        dispatch.ProfileID,
-		"request_id":        dispatch.RequestID,
-	}
+	vars := terraformTrackingVars(dispatch)
 	for key, value := range dispatch.TerraformModule.Inputs {
 		if !terraformIdentifierPattern.MatchString(key) {
 			return fmt.Errorf("database lifecycle Terraform module input %q is not a valid Terraform identifier", key)
@@ -125,6 +119,40 @@ func MaterializeJob(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOption
 }
 
 var terraformIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+func terraformTrackingVars(dispatch DispatchPayload) map[string]any {
+	profileID := any(nil)
+	if dispatch.ProfileID != "" {
+		profileID = dispatch.ProfileID
+	}
+	resourceKey := dispatch.ResourceKey
+	if resourceKey == "" {
+		resourceKey = dispatch.BindingKey
+	}
+	return map[string]any{
+		"binding_key":       dispatch.BindingKey,
+		"desired_spec_hash": dispatch.DesiredSpecHash,
+		"environment_class": legacyTerraformEnvironmentClass(dispatch.Environment),
+		"environment_name":  dispatch.Profile,
+		"operation":         dispatch.Operation,
+		"profile_id":        profileID,
+		"request_id":        dispatch.RequestID,
+		"resource_key":      resourceKey,
+	}
+}
+
+func legacyTerraformEnvironmentClass(environment string) string {
+	switch environment {
+	case "edit":
+		return "dev"
+	case "preview":
+		return "staging"
+	case "deployed":
+		return "prod"
+	default:
+		return environment
+	}
+}
 
 var terraformModuleMetaArguments = map[string]struct{}{
 	"count":      {},
@@ -427,8 +455,18 @@ func expandBackendKey(value string, dispatch DispatchPayload) string {
 	return strings.NewReplacer(
 		"{{resource_key}}", safeBindingPathSegment(resourceKey),
 		"{{binding_key}}", safeBindingPathSegment(dispatch.BindingKey),
-		"{{profile_id}}", safeBindingPathSegment(dispatch.ProfileID),
+		"{{environment}}", safeBackendPathSegment(dispatch.Environment),
+		"{{profile}}", safeBackendPathSegment(dispatch.Profile),
 	).Replace(value)
+}
+
+func safeBackendPathSegment(value string) string {
+	sanitized := unsafePathSegmentPattern.ReplaceAllString(value, "-")
+	sanitized = strings.Trim(sanitized, "-")
+	if strings.Trim(sanitized, "._-") == "" {
+		return "unknown"
+	}
+	return sanitized
 }
 
 func validateTerraformBackend(backend map[string]any) error {

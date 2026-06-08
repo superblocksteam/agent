@@ -12,9 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publish Native Database lifecycle capability tags from local lifecycle config during orchestrator registration.
 - Add Native Database lifecycle worker support for local `(environment, profile)` configuration resolution using the platform `edit`/`preview`/`deployed` taxonomy.
 - Make the Native Database lifecycle materializer cloud-agnostic: the generated root module is now a thin wrapper (backend, typed variables, `module "database"`, outputs) and no longer emits worker-side `provider "aws"`, AWS Secrets Manager data sources, `provider "postgresql"`, or shared-mode `required_providers`. Provider configuration, secret reads, and cloud-specific input validation now belong to the selected Terraform module. Credential-ref allowlist and SSL posture remain enforced at migration time during DSN construction.
-
-## v1.40.0
-- Ship OpenTofu in the OPA (agent) image so lifecycle worker mode can run outside the standalone orchestrator image.
+- Slim the Native Database lifecycle dispatch payload and collapse ensure operations to `ensure_database`.
+- Keep generated Native Database Terraform module calls compatible with existing lifecycle modules while the worker dispatch payload uses the new `(environment, profile)` taxonomy.
 - Tighten `qs` override and add pnpm security overrides for 12 transitive Node.js dependencies (basic-ftp, fast-uri, path-to-regexp, form-data, js-yaml, glob, ws, minimatch, jws, brace-expansion, bn.js, axios floor guard) to resolve Trivy CVE alerts
 - Disable otelgrpc metrics by default. The `rpc_*` metrics (e.g. `rpc_server_call_duration_seconds`, `rpc_client_response_size_bytes`) added significant cardinality overhead from histogram buckets and endpoint labels. Set `SUPERBLOCKS_ORCHESTRATOR_GRPC_OTEL_METRICS_ENABLED=true` to re-enable if needed for debugging.
 - Restore `console.log` observability for JavaScript steps: re-enable the legacy remote log emitter in the Go worker and task-manager so that `console.log`/`console.warn`/`console.error` output appears in the Observability logs UI. This restores pre-v1.37 behavior for on-premise (OPA) deployments.
@@ -33,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade protobufjs to 7.5.8, node-forge to 1.4.0, and fast-xml-parser to 4.5.6 via pnpm overrides, resolving CVE-2026-41242 (critical protobufjs RCE), CVE-2026-25896 (critical fast-xml-parser XSS), and 11 additional high/medium CVEs
 - Upgrade JavaScript worker Node.js runtime from 20.19.5 to 22.22.2 (LTS). All customer-facing dependencies remain at their current versions.
 - Upgrade Python worker dependencies: Authlib 1.3.2 to 1.6.12 (CVE-2026-27962 JWT forgery), gevent 21.12.0 to 24.11.1 (CVE-2023-41419), geventhttpclient 2.0.12 to 2.3.9, greenlet 1.1.3 to 3.1.1
+
+## v1.40.0
+- Ship OpenTofu in the OPA (agent) image so lifecycle worker mode can run outside the standalone orchestrator image.
 
 ## v1.39.0
 - Fix OTLP export errors when remote telemetry is disabled: worker processes (Go worker, task-manager) no longer default to `http://127.0.0.1:4318` and the task-manager s6 script now honors an explicitly empty collector URL

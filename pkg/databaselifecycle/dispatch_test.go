@@ -21,7 +21,7 @@ func TestClaimDispatchesDecodesControlPlanePayloads(t *testing.T) {
 		require.Equal(t, "agent-1", body["agentId"])
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"data":[{"agentId":"agent-1","bindingKey":"app:prod:orders","desiredSpecHash":"hash-1","operation":"ensure_prod_database","profileId":"profile-1","requestId":"request-1","terraformBackend":{"stateBackend":"s3","remoteState":true,"locking":true}}]}`))
+		w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpec":{"databaseName":"orders"},"desiredSpecHash":"hash-1","engine":"postgres","environment":"deployed","operation":"ensure_database","profile":"production","requestId":"request-1","resourceKey":"resource-1"}]}`))
 	}))
 	defer server.Close()
 
@@ -32,19 +32,44 @@ func TestClaimDispatchesDecodesControlPlanePayloads(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []DispatchPayload{
 		{
-			AgentID:         "agent-1",
-			BindingKey:      "app:prod:orders",
-			DesiredSpecHash: "hash-1",
-			Operation:       "ensure_prod_database",
-			ProfileID:       "profile-1",
-			RequestID:       "request-1",
-			TerraformBackend: map[string]any{
-				"stateBackend": "s3",
-				"remoteState":  true,
-				"locking":      true,
+			BindingKey: "app:prod:orders",
+			DesiredSpec: map[string]any{
+				"databaseName": "orders",
 			},
+			DesiredSpecHash: "hash-1",
+			Engine:          "postgres",
+			Environment:     "deployed",
+			Operation:       "ensure_database",
+			Profile:         "production",
+			RequestID:       "request-1",
+			ResourceKey:     "resource-1",
 		},
 	}, dispatches)
+}
+
+func TestDispatchPayloadOmitsWorkerResolvedFieldsFromWire(t *testing.T) {
+	encoded, err := json.Marshal(DispatchPayload{
+		BindingKey:      "app:prod:orders",
+		DesiredSpecHash: "hash-1",
+		Engine:          "postgres",
+		Environment:     "deployed",
+		Operation:       "ensure_database",
+		Profile:         "production",
+		RequestID:       "request-1",
+		ResourceKey:     "resource-1",
+	})
+
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"bindingKey": "app:prod:orders",
+		"desiredSpecHash": "hash-1",
+		"engine": "postgres",
+		"environment": "deployed",
+		"operation": "ensure_database",
+		"profile": "production",
+		"requestId": "request-1",
+		"resourceKey": "resource-1"
+	}`, string(encoded))
 }
 
 func TestClaimDispatchesReturnsControlPlaneErrors(t *testing.T) {

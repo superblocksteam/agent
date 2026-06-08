@@ -70,7 +70,7 @@ func TestProcessDispatchReportsReadyCallbackAfterRunnerSuccess(t *testing.T) {
 		}),
 		DispatchPayload{
 			BindingKey: "app:prod:orders",
-			Operation:  "ensure_prod_database",
+			Operation:  "ensure_database",
 			RequestID:  "request-1",
 		},
 		Job{BindingKey: "app:prod:orders"},
@@ -185,7 +185,7 @@ func TestProcessDispatchFailsMigrationWhenDSNBuilderFails(t *testing.T) {
 		}),
 		DispatchPayload{
 			BindingKey: "app:prod:orders",
-			Operation:  "ensure_prod_database",
+			Operation:  "ensure_database",
 			RequestID:  "request-1",
 			Migrations: []migrations.Migration{{Version: "0001", Filename: "0001_init.sql", SQL: "CREATE TABLE t();"}},
 		},
@@ -228,8 +228,8 @@ func TestProcessDispatchSkipsMigrationsWhenNilField(t *testing.T) {
 func TestProcessDispatchKeepsPendingForEmptyMigrationsSlice(t *testing.T) {
 	// MigrationState is the contract of "did we actually apply SQL". An
 	// empty (but non-nil) Migrations slice means the dispatcher arrived
-	// without any work for us — typical of provisioning operations
-	// (ensure_dev_database / ensure_prod_database) where the server
+	// without any work for us — typical of an ensure_database dispatch
+	// where the server
 	// pre-loaded migrations but found none in the working state. The
 	// worker must NOT lie about migrating here; MigrationState stays at
 	// the default "pending" so a subsequent migrate_schema dispatch is
@@ -249,7 +249,7 @@ func TestProcessDispatchKeepsPendingForEmptyMigrationsSlice(t *testing.T) {
 		}),
 		DispatchPayload{
 			BindingKey: "app:prod:orders",
-			Operation:  "ensure_prod_database",
+			Operation:  "ensure_database",
 			RequestID:  "request-1",
 			Migrations: []migrations.Migration{},
 		},
@@ -439,7 +439,7 @@ func TestProcessDispatchAppliesAttachedMigrationsAndMarksMigrated(t *testing.T) 
 		}),
 		DispatchPayload{
 			BindingKey: "app:prod:orders",
-			Operation:  "ensure_prod_database",
+			Operation:  "ensure_database",
 			RequestID:  "request-1",
 			Migrations: attached,
 		},
@@ -472,7 +472,7 @@ func TestProcessDispatchFailsMigrationWhenRunnerErrors(t *testing.T) {
 		}),
 		DispatchPayload{
 			BindingKey: "app:prod:orders",
-			Operation:  "ensure_prod_database",
+			Operation:  "ensure_database",
 			RequestID:  "request-1",
 			Migrations: []migrations.Migration{{Version: "0001", Filename: "broken.sql", SQL: "WIBBLE"}},
 		},
