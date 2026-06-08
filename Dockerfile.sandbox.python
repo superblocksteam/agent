@@ -48,7 +48,12 @@ COPY workers/ephemeral/python-sandbox/gen ./gen
 
 RUN groupadd -r -g 1000 sandbox && useradd -r -u 1000 -g sandbox sandbox \
     && chown -R sandbox:sandbox /app
-USER sandbox
+# Must be numeric: the ephemeral sandbox pod runs with RunAsNonRoot=true and no
+# explicit runAsUser, so the kubelet validates the image's USER against root. A
+# non-numeric name (e.g. "sandbox") cannot be resolved to a UID by the kubelet,
+# which then refuses to start the container with CreateContainerConfigError. The
+# numeric form (uid:gid created above) lets the kubelet verify it is non-root.
+USER 1000:1000
 
 ENV PYTHONPATH=/app/gen:/app
 ENV PYTHONDONTWRITEBYTECODE=1
