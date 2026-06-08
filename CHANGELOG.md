@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Slim the Native Database lifecycle dispatch payload and collapse ensure operations to `ensure_database`.
 - Keep generated Native Database Terraform module calls compatible with existing lifecycle modules while the worker dispatch payload uses the new `(environment, profile)` taxonomy.
 - Add Native Database lifecycle worker-side pool client endpoints and allocation coordinator for existing-or-new shared pools.
+- Fail fast with structured Native Database lifecycle unsupported-shape errors and add module-shape drift validation.
 - Tighten `qs` override and add pnpm security overrides for 12 transitive Node.js dependencies (basic-ftp, fast-uri, path-to-regexp, form-data, js-yaml, glob, ws, minimatch, jws, brace-expansion, bn.js, axios floor guard) to resolve Trivy CVE alerts
 - Disable otelgrpc metrics by default. The `rpc_*` metrics (e.g. `rpc_server_call_duration_seconds`, `rpc_client_response_size_bytes`) added significant cardinality overhead from histogram buckets and endpoint labels. Set `SUPERBLOCKS_ORCHESTRATOR_GRPC_OTEL_METRICS_ENABLED=true` to re-enable if needed for debugging.
 - Restore `console.log` observability for JavaScript steps: re-enable the legacy remote log emitter in the Go worker and task-manager so that `console.log`/`console.warn`/`console.error` output appears in the Observability logs UI. This restores pre-v1.37 behavior for on-premise (OPA) deployments.

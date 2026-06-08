@@ -29,6 +29,30 @@ func TestBootstrapWorkerBuildsWorkerFromConfig(t *testing.T) {
 	require.Equal(t, 5*time.Second, interval)
 }
 
+func TestBootstrapWorkerRejectsLifecycleConfigWithInvalidModuleShape(t *testing.T) {
+	_, _, err := BootstrapWorker(
+		Config{
+			AgentID:              "agent-1",
+			RootDir:              t.TempDir(),
+			TerraformBin:         "tofu",
+			PollInterval:         5 * time.Second,
+			AllowedResourceTypes: []string{"aws_db_instance"},
+			AllowedModuleSources: []string{"app.terraform.io/superblocks/rds-postgres/aws"},
+			LifecycleConfig:      testLifecycleConfig("app.terraform.io/superblocks/rds-postgres/aws"),
+			ModuleShapes: map[string]TerraformModuleShape{
+				"app.terraform.io/superblocks/rds-postgres/aws": {
+					Variables: []string{"binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id"},
+				},
+			},
+		},
+		clients.NewServerClient(&clients.ServerClientOptions{URL: "http://127.0.0.1"}),
+		CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) { return CommandResult{}, nil }),
+		NewMemoryLocker(),
+	)
+
+	require.ErrorContains(t, err, `does not declare system variable "resource_key"`)
+}
+
 func TestDSNOptionsFromConfigWiresCredentialResolver(t *testing.T) {
 	t.Setenv("SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES", "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/")
 
@@ -66,4 +90,21 @@ func TestBootstrapWorkerRejectsMissingPolicyAllowlists(t *testing.T) {
 	configWithResourceTypes.AllowedResourceTypes = []string{"aws_db_instance"}
 	_, _, err = BootstrapWorker(configWithResourceTypes, client, executor, NewMemoryLocker())
 	require.ErrorContains(t, err, "allowed module sources are required")
+}
+
+func testLifecycleConfig(moduleSource string) LifecycleConfig {
+	return LifecycleConfig{
+		Entries: []LifecycleConfigEntry{{
+			Environment: "deployed",
+			Profiles:    []string{"production"},
+			Engines:     []string{"postgres"},
+			Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"},
+			ModuleSelectors: map[string]map[string]TerraformModule{
+				"ensure_database": {
+					"postgres": {Source: moduleSource},
+				},
+			},
+			CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
+		}},
+	}
 }

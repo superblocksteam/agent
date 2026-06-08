@@ -19,6 +19,7 @@ const (
 	envSSLMode      = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"
 	envSSLRootCert  = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"
 	envConfig       = "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG"
+	envModuleShapes = "SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES"
 )
 
 type Config struct {
@@ -43,6 +44,7 @@ type Config struct {
 	SSLRootCert string
 
 	LifecycleConfig LifecycleConfig
+	ModuleShapes    map[string]TerraformModuleShape
 }
 
 type LifecycleConfig struct {
@@ -105,6 +107,13 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 			return Config{}, err
 		}
 		config.LifecycleConfig = lifecycleConfig
+		if rawShapes := getenv(envModuleShapes); rawShapes != "" {
+			moduleShapes, err := parseModuleShapes(rawShapes)
+			if err != nil {
+				return Config{}, err
+			}
+			config.ModuleShapes = moduleShapes
+		}
 	}
 	if rawInterval := getenv(envPollInterval); rawInterval != "" {
 		interval, err := time.ParseDuration(rawInterval)
@@ -114,6 +123,25 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		config.PollInterval = interval
 	}
 	return config, nil
+}
+
+func parseModuleShapes(raw string) (map[string]TerraformModuleShape, error) {
+	var shapes map[string]TerraformModuleShape
+	if err := json.Unmarshal([]byte(raw), &shapes); err != nil {
+		return nil, fmt.Errorf("database lifecycle module shapes: %w", err)
+	}
+	if len(shapes) == 0 {
+		return nil, errors.New("database lifecycle module shapes are required")
+	}
+	for source, shape := range shapes {
+		if source == "" {
+			return nil, errors.New("database lifecycle module shape source is required")
+		}
+		if len(shape.Variables) == 0 {
+			return nil, fmt.Errorf("database lifecycle module shape %q variables are required", source)
+		}
+	}
+	return shapes, nil
 }
 
 func parseLifecycleConfig(raw string) (LifecycleConfig, error) {

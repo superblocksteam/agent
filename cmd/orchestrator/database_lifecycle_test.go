@@ -49,9 +49,7 @@ func TestDatabaseLifecycleWorkerRunnableStopsCleanlyOnContextCancellation(t *tes
 }
 
 func TestDatabaseLifecycleRegistrationTagsMergeLifecycleCapabilities(t *testing.T) {
-	getenv := func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
-			return `{
+	getenv := databaseLifecycleRegistrationTestGetenv(`{
 				"entries": [
 					{
 						"environment": "deployed",
@@ -66,10 +64,7 @@ func TestDatabaseLifecycleRegistrationTagsMergeLifecycleCapabilities(t *testing.
 						}
 					}
 				]
-			}`
-		}
-		return ""
-	}
+			}`)
 
 	tags, err := databaseLifecycleRegistrationTags("profile:staging,profile:production,region:us-east-1", true, getenv)
 
@@ -84,9 +79,7 @@ func TestDatabaseLifecycleRegistrationTagsMergeLifecycleCapabilities(t *testing.
 }
 
 func TestDatabaseLifecycleRegistrationTagsRejectsLifecycleEnvironmentProfileNotCoveredByProfileTag(t *testing.T) {
-	getenv := func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
-			return `{
+	getenv := databaseLifecycleRegistrationTestGetenv(`{
 				"entries": [
 					{
 						"environment": "deployed",
@@ -101,10 +94,7 @@ func TestDatabaseLifecycleRegistrationTagsRejectsLifecycleEnvironmentProfileNotC
 						}
 					}
 				]
-			}`
-		}
-		return ""
-	}
+			}`)
 
 	_, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
 
@@ -112,9 +102,7 @@ func TestDatabaseLifecycleRegistrationTagsRejectsLifecycleEnvironmentProfileNotC
 }
 
 func TestDatabaseLifecycleRegistrationTagsAllowsProfileTagSuperset(t *testing.T) {
-	getenv := func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
-			return `{
+	getenv := databaseLifecycleRegistrationTestGetenv(`{
 				"entries": [
 					{
 						"environment": "deployed",
@@ -129,10 +117,7 @@ func TestDatabaseLifecycleRegistrationTagsAllowsProfileTagSuperset(t *testing.T)
 						}
 					}
 				]
-			}`
-		}
-		return ""
-	}
+			}`)
 
 	tags, err := databaseLifecycleRegistrationTags("profile:production,profile:staging", true, getenv)
 
@@ -142,9 +127,7 @@ func TestDatabaseLifecycleRegistrationTagsAllowsProfileTagSuperset(t *testing.T)
 }
 
 func TestDatabaseLifecycleRegistrationTagsAllowsWildcardProfileCoverage(t *testing.T) {
-	getenv := func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
-			return `{
+	getenv := databaseLifecycleRegistrationTestGetenv(`{
 				"entries": [
 					{
 						"environment": "deployed",
@@ -159,10 +142,7 @@ func TestDatabaseLifecycleRegistrationTagsAllowsWildcardProfileCoverage(t *testi
 						}
 					}
 				]
-			}`
-		}
-		return ""
-	}
+			}`)
 
 	tags, err := databaseLifecycleRegistrationTags("profile:*", true, getenv)
 
@@ -172,9 +152,7 @@ func TestDatabaseLifecycleRegistrationTagsAllowsWildcardProfileCoverage(t *testi
 }
 
 func TestDatabaseLifecycleRegistrationTagsAllowsWildcardLifecycleProfileWhenProfileTagIsWildcard(t *testing.T) {
-	getenv := func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
-			return `{
+	getenv := databaseLifecycleRegistrationTestGetenv(`{
 				"entries": [
 					{
 						"environment": "edit",
@@ -189,10 +167,7 @@ func TestDatabaseLifecycleRegistrationTagsAllowsWildcardLifecycleProfileWhenProf
 						}
 					}
 				]
-			}`
-		}
-		return ""
-	}
+			}`)
 
 	tags, err := databaseLifecycleRegistrationTags("profile:*", true, getenv)
 
@@ -201,9 +176,7 @@ func TestDatabaseLifecycleRegistrationTagsAllowsWildcardLifecycleProfileWhenProf
 }
 
 func TestDatabaseLifecycleRegistrationTagsRejectsWildcardLifecycleProfileWithoutWildcardProfileTag(t *testing.T) {
-	getenv := func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
-			return `{
+	getenv := databaseLifecycleRegistrationTestGetenv(`{
 				"entries": [
 					{
 						"environment": "edit",
@@ -218,10 +191,7 @@ func TestDatabaseLifecycleRegistrationTagsRejectsWildcardLifecycleProfileWithout
 						}
 					}
 				]
-			}`
-		}
-		return ""
-	}
+			}`)
 
 	_, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
 
@@ -229,9 +199,7 @@ func TestDatabaseLifecycleRegistrationTagsRejectsWildcardLifecycleProfileWithout
 }
 
 func TestDatabaseLifecycleRegistrationTagsSupportsNonRectangularEnvironmentProfiles(t *testing.T) {
-	getenv := func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
-			return `{
+	getenv := databaseLifecycleRegistrationTestGetenv(`{
 				"entries": [
 					{
 						"environment": "edit",
@@ -258,10 +226,7 @@ func TestDatabaseLifecycleRegistrationTagsSupportsNonRectangularEnvironmentProfi
 						}
 					}
 				]
-			}`
-		}
-		return ""
-	}
+			}`)
 
 	tags, err := databaseLifecycleRegistrationTags("profile:staging-us,profile:staging-eu,profile:production", true, getenv)
 
@@ -302,6 +267,87 @@ func TestDatabaseLifecycleRegistrationTagsInvalidConfigReturnsError(t *testing.T
 	_, err := databaseLifecycleRegistrationTags("profile:staging", true, getenv)
 
 	require.ErrorContains(t, err, "database lifecycle config")
+}
+
+func TestDatabaseLifecycleRegistrationTagsRejectsMissingModuleShapes(t *testing.T) {
+	getenv := func(key string) string {
+		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
+			return `{
+				"entries": [
+					{
+						"environment": "deployed",
+						"profiles": ["production"],
+						"engines": ["postgres"],
+						"backend": {"bucket": "native-db"},
+						"credentialResolver": {"type": "aws"},
+						"moduleSelectors": {
+							"ensure_database": {
+								"postgres": {"source": "registry.example.com/postgres"}
+							}
+						}
+					}
+				]
+			}`
+		}
+		return ""
+	}
+
+	_, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
+
+	require.ErrorContains(t, err, "database lifecycle module shapes are required")
+}
+
+func TestDatabaseLifecycleRegistrationTagsRejectsInvalidModuleShape(t *testing.T) {
+	getenv := func(key string) string {
+		switch key {
+		case "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":
+			return `{
+				"entries": [
+					{
+						"environment": "deployed",
+						"profiles": ["production"],
+						"engines": ["postgres"],
+						"backend": {"bucket": "native-db"},
+						"credentialResolver": {"type": "aws"},
+						"moduleSelectors": {
+							"ensure_database": {
+								"postgres": {"source": "registry.example.com/postgres"}
+							}
+						}
+					}
+				]
+			}`
+		case "SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES":
+			return `{
+				"registry.example.com/postgres": {
+					"variables": ["binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key"]
+				}
+			}`
+		default:
+			return ""
+		}
+	}
+
+	_, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
+
+	require.ErrorContains(t, err, `does not declare system variable "credential_resolver"`)
+}
+
+func databaseLifecycleRegistrationTestGetenv(config string) func(string) string {
+	return func(key string) string {
+		switch key {
+		case "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":
+			return config
+		case "SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES":
+			return `{
+				"registry.example.com/postgres": {
+					"variables": ["binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key", "credential_resolver"]
+				}
+			}`
+		default:
+			return ""
+		}
+	}
 }
 
 func TestLogDatabaseLifecycleRegistrationTagsIncludesMergedTagSummary(t *testing.T) {

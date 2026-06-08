@@ -244,6 +244,61 @@ func TestNewWorkerFromDependenciesReportsConfigEntryForUnallowedModuleSource(t *
 	require.Contains(t, callbackBody["error"].(map[string]any)["message"], "unsupported Terraform module source app.terraform.io/superblocks/postgres-managed-database/aws")
 }
 
+func TestNewWorkerFromDependenciesReportsUnsupportedShapeWhenLocalConfigCannotMaterialize(t *testing.T) {
+	var callbackBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v1/database-lifecycle/dispatches/claim":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpecHash":"hash-1","environment":"deployed","profile":"production","engine":"mysql","operation":"ensure_database","requestId":"request-1","resourceKey":"resource-1"}]}`))
+		case "/api/v1/database-lifecycle/callbacks/terminal":
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"failed","migrationState":"pending","requestId":"request-1","requestState":"failed"}}`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	worker, err := NewWorkerFromDependencies(WorkerDependencies{
+		AgentID: "agent-1",
+		Client:  clients.NewServerClient(&clients.ServerClientOptions{URL: server.URL, SuperblocksAgentKey: "agent-key"}),
+		Executor: CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) {
+			t.Fatal("unmaterializable dispatch must fail before Terraform commands")
+			return CommandResult{}, nil
+		}),
+		Locker:  NewMemoryLocker(),
+		RootDir: tempRoot(t),
+		AllowedModuleSources: []string{
+			"app.terraform.io/superblocks/postgres-managed-database/aws",
+		},
+		LifecycleConfig: LifecycleConfig{
+			Entries: []LifecycleConfigEntry{{
+				Environment: "deployed",
+				Profiles:    []string{"production"},
+				Engines:     []string{"postgres"},
+				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"},
+				ModuleSelectors: map[string]map[string]TerraformModule{
+					"ensure_database": {
+						"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws", Version: "1.2.3"},
+					},
+				},
+				CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
+			}},
+		},
+	})
+	require.NoError(t, err)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.Equal(t, "unsupported_provider_capability", callbackBody["error"].(map[string]any)["code"])
+	require.Contains(t, callbackBody["error"].(map[string]any)["message"], `operation "ensure_database" engine "mysql"; supported engines: [postgres]`)
+}
+
 func TestNewWorkerFromDependenciesRejectsMissingDependencies(t *testing.T) {
 	valid := WorkerDependencies{
 		AgentID:  "agent-1",

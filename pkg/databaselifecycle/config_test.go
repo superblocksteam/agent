@@ -123,6 +123,79 @@ func TestConfigFromEnvParsesLifecycleConfigAndResolvesPlatformEntry(t *testing.T
 	require.Equal(t, resolved, staging)
 }
 
+func TestConfigFromEnvParsesModuleShapes(t *testing.T) {
+	env := map[string]string{
+		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": minimalLifecycleConfig(),
+		"SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES": `{
+		  "app.terraform.io/superblocks/postgres-managed-database/aws": {
+		    "variables": ["binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key", "credential_resolver", "storage_gb"]
+		  }
+		}`,
+	}
+
+	config, err := ConfigFromEnv(func(key string) string { return env[key] })
+
+	require.NoError(t, err)
+	require.Equal(t, map[string]TerraformModuleShape{
+		"app.terraform.io/superblocks/postgres-managed-database/aws": {
+			Variables: []string{"binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key", "credential_resolver", "storage_gb"},
+		},
+	}, config.ModuleShapes)
+}
+
+func TestConfigFromEnvIgnoresModuleShapesWithoutLifecycleConfig(t *testing.T) {
+	env := map[string]string{
+		"SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES": `{invalid json`,
+	}
+
+	config, err := ConfigFromEnv(func(key string) string { return env[key] })
+
+	require.NoError(t, err)
+	require.Nil(t, config.ModuleShapes)
+}
+
+func TestConfigFromEnvRejectsInvalidModuleShapes(t *testing.T) {
+	tests := []struct {
+		name      string
+		shapes    string
+		wantError string
+	}{
+		{
+			name:      "invalid json",
+			shapes:    `{invalid json`,
+			wantError: "database lifecycle module shapes",
+		},
+		{
+			name:      "empty map",
+			shapes:    `{}`,
+			wantError: "database lifecycle module shapes are required",
+		},
+		{
+			name:      "empty source",
+			shapes:    `{"": {"variables": ["binding_key"]}}`,
+			wantError: "database lifecycle module shape source is required",
+		},
+		{
+			name:      "empty variables",
+			shapes:    `{"app.terraform.io/superblocks/postgres-managed-database/aws": {"variables": []}}`,
+			wantError: `database lifecycle module shape "app.terraform.io/superblocks/postgres-managed-database/aws" variables are required`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			env := map[string]string{
+				"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":        minimalLifecycleConfig(),
+				"SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES": test.shapes,
+			}
+
+			_, err := ConfigFromEnv(func(key string) string { return env[key] })
+
+			require.ErrorContains(t, err, test.wantError)
+		})
+	}
+}
+
 func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -415,6 +488,25 @@ func TestLifecycleConfigResolveSupportsExplicitWildcardProfile(t *testing.T) {
 	_, err := config.Resolve("edit", "staging-us", "ensure_database", "postgres")
 
 	require.NoError(t, err)
+}
+
+func minimalLifecycleConfig() string {
+	return `{
+	  "entries": [
+	    {
+	      "environment": "deployed",
+	      "profiles": ["production"],
+	      "engines": ["postgres"],
+	      "backend": {"stateBackend": "s3"},
+	      "credentialResolver": {"runtime": "aws_secrets_manager"},
+	      "moduleSelectors": {
+	        "ensure_database": {
+	          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+	        }
+	      }
+	    }
+	  ]
+	}`
 }
 
 func lifecycleConfigWithEntry(replacement string) string {

@@ -52,17 +52,14 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 	}
 	materializer := JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
 		if len(deps.LifecycleConfig.Entries) == 0 {
-			return &LifecycleError{
-				Code: ErrorCodeUnsupportedShape,
-				Err:  errors.New("database lifecycle local config is required: set SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG with at least one entry"),
-			}
+			return unsupportedShapeError(errors.New("database lifecycle local config is required: set SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG with at least one entry"))
 		}
 		resolved, err := deps.LifecycleConfig.Resolve(dispatch.Environment, dispatch.Profile, dispatch.Operation, dispatch.Engine)
 		if err != nil {
-			return err
+			return unsupportedShapeError(err)
 		}
 		if err := ValidateTerraformModuleSource(resolved.Module, deps.AllowedModuleSources); err != nil {
-			return fmt.Errorf("config entry %s/%s: %w", dispatch.Environment, dispatch.Profile, err)
+			return unsupportedShapeError(fmt.Errorf("config entry %s/%s: %w", dispatch.Environment, dispatch.Profile, err))
 		}
 		return MaterializeResolvedJob(job, dispatch, resolved, sslOpts)
 	})
@@ -80,4 +77,8 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 	)
 	worker.ReportFailuresWith(reporter)
 	return worker, nil
+}
+
+func unsupportedShapeError(err error) error {
+	return &LifecycleError{Code: ErrorCodeUnsupportedShape, Retryable: false, Err: err}
 }
