@@ -26,7 +26,7 @@ import { DatabricksPluginV1 } from '@superblocksteam/types';
 import { chunk, isEmpty, merge } from 'lodash';
 
 import { KEYS_QUERY, SQL_SINGLE_TABLE_METADATA } from './queries';
-import { getConnectionOptionsFromDatasourceConfiguration } from './utils';
+import { DATABRICKS_SOCKET_TIMEOUT_MS, getConnectionOptionsFromDatasourceConfiguration } from './utils';
 
 const TEST_CONNECTION_TIMEOUT_MS = 5000;
 
@@ -606,6 +606,38 @@ export default class DatabricksPlugin extends DatabasePluginPooled<DBSQLClient, 
     }
 
     const message = `${initialMessage}: ${error.message}`;
+
+    // APPS-4459: query-time auth failures from @databricks/sql@1.10.0 throw a THTTPException (a
+    // subclass of Thrift's TApplicationException, name === 'THTTPException') carrying a numeric
+    // statusCode. Gate on BOTH the error type AND a numeric 401/403 so the classification is
+    // correct-by-construction (symmetric with the TApplicationException timeout gate below) and a
+    // stray error that merely carries a numeric statusCode can't be promoted to an auth error. We
+    // only accept a numeric statusCode (no string parse: parseInt('401 ...') would return 401).
+    const statusCode = (error as unknown as { statusCode?: unknown }).statusCode;
+    if (error.name === 'THTTPException' && (statusCode === 401 || statusCode === 403)) {
+      this.logger.warn(
+        `[Databricks] auth failure: HTTP ${statusCode} from @databricks/sql -- classifying as INTEGRATION_AUTHORIZATION (cached OAuth/OBO token may be expired)`
+      );
+      return new IntegrationError(
+        `Authorization failed (HTTP ${statusCode}): the Databricks credentials were rejected -- re-check the connection's credentials (reconnect the OAuth token, or verify the personal access token) and confirm the warehouse is running.`,
+        ErrorCode.INTEGRATION_AUTHORIZATION,
+        { pluginName: this.pluginName }
+      );
+    }
+
+    // APPS-4459: a socket timeout (set in utils.ts) is converted by @databricks/sql@1.10.0 into a
+    // TApplicationException whose message is exactly 'Request timed out' (see
+    // dist/connection/connections/ThriftHttpConnection.js). Match that precise shape -- gated on the
+    // error type, exact case -- so we don't swallow unrelated errors that merely contain the word
+    // "timeout" (e.g. a HiveDriverError carrying "Retry timeout exceeded", or a server-side
+    // OperationStateError). If upgrading @databricks/sql, re-verify this exact string in the new dist.
+    if (error.name === 'TApplicationException' && error.message === 'Request timed out') {
+      this.logger.warn(
+        `[Databricks] socket timed out (~${DATABRICKS_SOCKET_TIMEOUT_MS}ms round-trip bound) -- classifying as INTEGRATION_QUERY_TIMEOUT`
+      );
+      return new IntegrationError(message, ErrorCode.INTEGRATION_QUERY_TIMEOUT, { pluginName: this.pluginName });
+    }
+
     const errorNameMap: Record<string, ErrorCode> = {
       'Authentication Error': ErrorCode.INTEGRATION_AUTHORIZATION,
       'Parameter Error': ErrorCode.INTEGRATION_SYNTAX,

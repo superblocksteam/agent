@@ -1,25 +1,45 @@
 import { DatabricksDatasourceConfiguration, ErrorCode, IntegrationError } from '@superblocks/shared';
 import { DatabricksPluginV1 } from '@superblocksteam/types';
 
-import { getConnectionOptionsFromDatasourceConfiguration } from './utils';
+import { DATABRICKS_SOCKET_TIMEOUT_MS, getConnectionOptionsFromDatasourceConfiguration, resolveDatabricksSocketTimeoutMs } from './utils';
 describe('getConnectionOptionsFromDatasourceConfiguration', () => {
   it.each([
     {
       description: 'no connection type',
       datasourceConfiguration: { connection: { port: 1234, hostUrl: 'hostUrl', path: 'path', token: 'token' } },
-      expectedConnectionOptions: { host: 'hostUrl', path: 'path', port: 1234, token: 'token', userAgentEntry: 'Superblocks' }
+      expectedConnectionOptions: {
+        host: 'hostUrl',
+        path: 'path',
+        port: 1234,
+        token: 'token',
+        socketTimeout: DATABRICKS_SOCKET_TIMEOUT_MS,
+        userAgentEntry: 'Superblocks'
+      }
     },
     {
       description: 'port not given',
       datasourceConfiguration: { connection: { hostUrl: 'hostUrl', path: 'path', token: 'token' } },
-      expectedConnectionOptions: { host: 'hostUrl', path: 'path', token: 'token', userAgentEntry: 'Superblocks' }
+      expectedConnectionOptions: {
+        host: 'hostUrl',
+        path: 'path',
+        token: 'token',
+        socketTimeout: DATABRICKS_SOCKET_TIMEOUT_MS,
+        userAgentEntry: 'Superblocks'
+      }
     },
     {
       description: 'connection type PAT',
       datasourceConfiguration: {
         connection: { connectionType: 'CONNECTION_TYPE_PAT', port: 1234, hostUrl: 'hostUrl', path: 'path', token: 'token' }
       },
-      expectedConnectionOptions: { host: 'hostUrl', path: 'path', port: 1234, token: 'token', userAgentEntry: 'Superblocks' }
+      expectedConnectionOptions: {
+        host: 'hostUrl',
+        path: 'path',
+        port: 1234,
+        token: 'token',
+        socketTimeout: DATABRICKS_SOCKET_TIMEOUT_MS,
+        userAgentEntry: 'Superblocks'
+      }
     },
     {
       description: 'connection type M2M',
@@ -40,6 +60,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         port: 1234,
         oauthClientId: 'oauthClientId',
         oauthClientSecret: 'oauthClientSecret',
+        socketTimeout: DATABRICKS_SOCKET_TIMEOUT_MS,
         userAgentEntry: 'Superblocks'
       }
     },
@@ -61,6 +82,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         path: '/sql/1.0/warehouses/abc123',
         port: 443,
         token: 'oauth-exchanged-token-abc123',
+        socketTimeout: DATABRICKS_SOCKET_TIMEOUT_MS,
         userAgentEntry: 'Superblocks'
       }
     },
@@ -78,6 +100,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         host: 'hostUrl',
         path: 'path',
         token: 'pat-token',
+        socketTimeout: DATABRICKS_SOCKET_TIMEOUT_MS,
         userAgentEntry: 'Superblocks'
       }
     },
@@ -98,6 +121,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         path: 'path',
         oauthClientId: 'm2m-client-id',
         oauthClientSecret: 'm2m-client-secret',
+        socketTimeout: DATABRICKS_SOCKET_TIMEOUT_MS,
         userAgentEntry: 'Superblocks'
       }
     },
@@ -117,6 +141,7 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
         host: 'hostUrl',
         path: 'path',
         token: 'exchanged-token',
+        socketTimeout: DATABRICKS_SOCKET_TIMEOUT_MS,
         userAgentEntry: 'Superblocks'
       }
     }
@@ -125,6 +150,70 @@ describe('getConnectionOptionsFromDatasourceConfiguration', () => {
       datasourceConfiguration as DatabricksDatasourceConfiguration
     );
     expect(actualConnectionOptions).toEqual(expectedConnectionOptions);
+  });
+
+  // APPS-4459: every connection path must set socketTimeout so @databricks/sql does not fall back
+  // to its 15-minute default (which leaves a stalled socket hanging the worker for 600s+).
+  describe('socketTimeout (APPS-4459)', () => {
+    it('uses a conservative round-trip bound, not the 15-minute library default', () => {
+      // The library default is 15 * 60 * 1000. Ours must be much smaller so a single
+      // stalled HTTP round-trip aborts quickly instead of hanging the worker.
+      expect(DATABRICKS_SOCKET_TIMEOUT_MS).toBe(120 * 1000);
+      expect(DATABRICKS_SOCKET_TIMEOUT_MS).toBeLessThan(15 * 60 * 1000);
+    });
+
+    it.each([
+      { raw: undefined, expected: 120 * 1000, why: 'no override -> default' },
+      { raw: '', expected: 120 * 1000, why: 'empty -> default' },
+      { raw: '60000', expected: 60000, why: 'plain integer' },
+      { raw: '300000', expected: 300000, why: 'larger-but-valid (5m, below the 15m library default)' },
+      { raw: '3e5', expected: 300_000, why: 'scientific notation parses as intended (3e5=300000, not 3)' },
+      { raw: 'abc', expected: 120 * 1000, why: 'junk -> default' },
+      { raw: '12.5', expected: 120 * 1000, why: 'non-integer -> default' },
+      { raw: '-5', expected: 120 * 1000, why: 'non-positive -> default' },
+      { raw: '0', expected: 120 * 1000, why: 'zero -> default' },
+      { raw: String(15 * 60 * 1000), expected: 120 * 1000, why: 'at the library default -> rejected (re-introduces the hang)' },
+      { raw: '1800000', expected: 120 * 1000, why: 'above the library default -> rejected' }
+    ])('resolveDatabricksSocketTimeoutMs: $why', ({ raw, expected }) => {
+      expect(resolveDatabricksSocketTimeoutMs(raw)).toBe(expected);
+    });
+
+    it.each([
+      {
+        description: 'PAT',
+        connection: {
+          connectionType: DatabricksPluginV1.Plugin_ConnectionType.PAT,
+          hostUrl: 'hostUrl',
+          path: 'path',
+          token: 'pat-token'
+        }
+      },
+      {
+        description: 'M2M (OBO/OAuth)',
+        connection: {
+          connectionType: DatabricksPluginV1.Plugin_ConnectionType.M2M,
+          hostUrl: 'hostUrl',
+          path: 'path',
+          oauthClientId: 'id',
+          oauthClientSecret: 'secret'
+        }
+      },
+      {
+        description: 'OAUTH_EXCHANGE',
+        connection: { connectionType: DatabricksPluginV1.Plugin_ConnectionType.OAUTH_EXCHANGE, hostUrl: 'hostUrl', path: 'path' },
+        authConfig: { authToken: 'tok' }
+      },
+      {
+        description: 'default (no connection type)',
+        connection: { hostUrl: 'hostUrl', path: 'path', token: 'token' }
+      }
+    ])('sets socketTimeout for $description', ({ connection, authConfig }) => {
+      const options = getConnectionOptionsFromDatasourceConfiguration({
+        connection,
+        authConfig
+      } as DatabricksDatasourceConfiguration);
+      expect(options.socketTimeout).toBe(DATABRICKS_SOCKET_TIMEOUT_MS);
+    });
   });
 
   // Test error cases

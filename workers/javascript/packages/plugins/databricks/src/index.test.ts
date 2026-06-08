@@ -1,5 +1,5 @@
 import { DBSQLClient } from '@databricks/sql';
-import { DatabricksDatasourceConfiguration } from '@superblocks/shared';
+import { DatabricksDatasourceConfiguration, ErrorCode, IntegrationError } from '@superblocks/shared';
 import { DatabricksPluginV1 } from '@superblocksteam/types';
 
 import DatabricksPlugin from './index';
@@ -1039,6 +1039,95 @@ describe('DatabricksPlugin', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(plugin.logger.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  // APPS-4459: query-time auth failures throw a THTTPException (subclass of Thrift
+  // TApplicationException) carrying a numeric statusCode -- never error.name === 'Authentication
+  // Error'. The legacy name-keyed map missed these and defaulted to UNSPECIFIED. Socket stalls
+  // (FIX #4) surface as a "Request timed out" TApplicationException and must classify as a
+  // timeout, not UNSPECIFIED.
+  describe('_handleError classification (APPS-4459)', () => {
+    const handle = (err: unknown): IntegrationError => (plugin as any)._handleError(err, 'SQL query failed');
+
+    // Mirrors @databricks/sql ThriftHttpConnection's THTTPException shape.
+    const makeThriftHttpException = (statusCode: number): Error => {
+      const e = new Error(`Received a response with a bad HTTP status code: ${statusCode}`);
+      e.name = 'THTTPException';
+      (e as any).statusCode = statusCode;
+      return e;
+    };
+
+    it('maps a THTTPException with statusCode 403 to INTEGRATION_AUTHORIZATION', () => {
+      const result = handle(makeThriftHttpException(403));
+      expect(result).toBeInstanceOf(IntegrationError);
+      expect(result.code).toBe(ErrorCode.INTEGRATION_AUTHORIZATION);
+      expect(result.message).toContain('403');
+    });
+
+    it('maps a THTTPException with statusCode 401 to INTEGRATION_AUTHORIZATION', () => {
+      const result = handle(makeThriftHttpException(401));
+      expect(result.code).toBe(ErrorCode.INTEGRATION_AUTHORIZATION);
+      expect(result.message).toContain('401');
+    });
+
+    it('classifies a socket-timeout-shaped error as a query timeout', () => {
+      // node-fetch request-timeout -> Thrift TApplicationException(PROTOCOL_ERROR, 'Request timed out')
+      const e = new Error('Request timed out');
+      e.name = 'TApplicationException';
+      expect(handle(e).code).toBe(ErrorCode.INTEGRATION_QUERY_TIMEOUT);
+    });
+
+    // The timeout branch is gated on the exact TApplicationException 'Request timed out' shape so it
+    // does NOT swallow unrelated errors that merely contain the word "timeout".
+    it('does not misclassify a Hive Driver retry-exhaustion error (contains "timeout") as a query timeout', () => {
+      const e = new Error('Hive driver: 503 when connecting to resource. Retry timeout exceeded.');
+      e.name = 'Hive Driver Error';
+      // Falls through the timeout gate to the legacy name map -> NETWORK, not QUERY_TIMEOUT.
+      expect(handle(e).code).toBe(ErrorCode.INTEGRATION_NETWORK);
+    });
+
+    it('does not misclassify a generic error whose message contains "timeout" as a query timeout', () => {
+      const e = new Error('query failed: connection timeout to external source');
+      e.name = 'SomethingElse';
+      expect(handle(e).code).toBe(ErrorCode.UNSPECIFIED);
+    });
+
+    it('still maps a legacy "Authentication Error" name to INTEGRATION_AUTHORIZATION', () => {
+      const e = new Error('bad creds');
+      e.name = 'Authentication Error';
+      expect(handle(e).code).toBe(ErrorCode.INTEGRATION_AUTHORIZATION);
+    });
+
+    it('falls back to UNSPECIFIED for an unclassifiable error', () => {
+      const e = new Error('totally unexpected');
+      e.name = 'SomethingElse';
+      expect(handle(e).code).toBe(ErrorCode.UNSPECIFIED);
+    });
+
+    it('classifies a non-auth THTTPException (500) as UNSPECIFIED (not an auth error)', () => {
+      // 'THTTPException' isn't in errorNameMap, so a non-401/403 status falls through to the
+      // UNSPECIFIED default rather than being misclassified as an auth failure.
+      const result = handle(makeThriftHttpException(500));
+      expect(result.code).toBe(ErrorCode.UNSPECIFIED);
+    });
+
+    it('does not treat a string statusCode "401" as INTEGRATION_AUTHORIZATION', () => {
+      // The guard requires a numeric statusCode; a string must not trigger the auth path
+      // (parseInt-style coercion is deliberately avoided).
+      const e = new Error('bad status');
+      e.name = 'THTTPException';
+      (e as unknown as { statusCode: unknown }).statusCode = '401';
+      expect(handle(e).code).toBe(ErrorCode.UNSPECIFIED);
+    });
+
+    it('does not treat a numeric 401 from a non-THTTPException error as INTEGRATION_AUTHORIZATION', () => {
+      // The auth gate also requires error.name === 'THTTPException', so a stray error that merely
+      // carries a numeric statusCode is not promoted to an auth failure.
+      const e = new Error('not a thrift exception');
+      e.name = 'SomeOtherError';
+      (e as unknown as { statusCode: number }).statusCode = 401;
+      expect(handle(e).code).toBe(ErrorCode.UNSPECIFIED);
     });
   });
 });
