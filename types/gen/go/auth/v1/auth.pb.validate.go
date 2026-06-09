@@ -104,6 +104,8 @@ func (m *Claims) validate(all bool) error {
 
 	// no validation rules for UserName
 
+	// no validation rules for AppEngineVersion
+
 	if m.Metadata != nil {
 
 		if all {

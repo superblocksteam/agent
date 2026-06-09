@@ -19,6 +19,7 @@ const (
 type claims struct {
 	jwt.RegisteredClaims
 	authv1.Claims
+	ApplicationID string `json:"app_id"`
 }
 
 func NewClaims() jwt.Claims {
@@ -64,6 +65,12 @@ func Validate(ctx context.Context, parsed *jwt.Token, jwtClaims jwt.Claims) (con
 
 	userDisplayName := c.UserName
 	ctx = context.WithValue(ctx, ContextKeyUserDisplayName, userDisplayName)
+
+	appEngineVersion := c.AppEngineVersion
+	ctx = WithAppEngineVersion(ctx, appEngineVersion)
+
+	applicationID := c.ApplicationID
+	ctx = WithApplicationID(ctx, applicationID)
 
 	rbacRole := c.RbacRole
 	ctx = context.WithValue(ctx, ContextKeyRbacRole, rbacRole)

@@ -159,7 +159,7 @@ func (s *server) resolveBindings(
 		if strings.HasPrefix(*field, "{{") && strings.HasSuffix(*field, "}}") {
 			// avoid using unnecessary resources by creating sbctx every time
 			if sbctx == nil || sandbox == nil || garbage == nil {
-				sbctx, sandbox, garbage, err = s.getSbctx(ctx, s.Store, "", map[string]*structpb.Struct{})
+				sbctx, sandbox, garbage, _, err = s.getSbctx(ctx, s.Store, "", map[string]*structpb.Struct{}, false, true)
 				if sandbox != nil {
 					defer sandbox.Close()
 				}

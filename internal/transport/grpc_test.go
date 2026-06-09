@@ -557,13 +557,15 @@ func TestGetSbctx_UsesWorkerSandboxWhenWorkerAvailable(t *testing.T) {
 		Secrets:       nil,
 	}).(*server)
 
-	sbctx, sandbox, garbage, err := srv.getSbctx(
+	sbctx, sandbox, garbage, _, err := srv.getSbctx(
 		ctx,
 		memStore,
 		"production",
 		map[string]*structpb.Struct{
 			"anonymous": {},
 		},
+		false,
+		true,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, sbctx)
@@ -622,13 +624,15 @@ func TestGetSbctx_UsesServerStoreForWorkerSandboxVariableInitialization(t *testi
 		Secrets:       nil,
 	}).(*server)
 
-	sbctx, sandbox, garbage, err := srv.getSbctx(
+	sbctx, sandbox, garbage, _, err := srv.getSbctx(
 		ctx,
 		requestStore,
 		"production",
 		map[string]*structpb.Struct{
 			"anonymous": {},
 		},
+		false,
+		true,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, sbctx)
@@ -662,13 +666,15 @@ func TestGetSbctx_FallsBackToJavascriptSandboxWhenWorkerUnavailable(t *testing.T
 		Secrets:       nil,
 	}).(*server)
 
-	sbctx, sandbox, garbage, err := srv.getSbctx(
+	sbctx, sandbox, garbage, _, err := srv.getSbctx(
 		ctx,
 		memStore,
 		"production",
 		map[string]*structpb.Struct{
 			"anonymous": {},
 		},
+		false,
+		true,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, sbctx)
@@ -1469,6 +1475,396 @@ func TestMetadata(t *testing.T) {
 	}
 }
 
+func TestMetadataUsesAgentKeyForSecretStoreHydrationForScopedAppEngineVersion(t *testing.T) {
+	profileName := "test-profile"
+	integrationId := "test-integration-id"
+	pluginId := "kinesis"
+	orgId := "org-metadata"
+
+	ctx := jwt_validator.WithOrganizationID(context.Background(), orgId)
+	ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+	ctx = jwt_validator.WithAppEngineVersion(ctx, "2.0")
+
+	tm := &mocks.TokenManager{}
+	tm.On("AddTokenIfNeeded", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(types.TokenPayload{}, nil)
+
+	mockFlags := flagsmock.NewFlags(t)
+	mockFlags.On("GetUseAgentKeyForHydration", orgId).Return(false).Once()
+	mockFlags.On("GetPureJsUseWasmSandboxEnabled", "ENTERPRISE", orgId).Return(false).Once()
+
+	mockWorker := &worker.MockClient{}
+	mockWorker.On("Metadata", mock.Anything, pluginId, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		&transportv1.Response{Data: &transportv1.Response_Data{Data: &transportv1.Response_Data_Data{Kinesis: &kinesis.Metadata{Streams: []string{"stream"}}}}},
+		nil,
+	)
+
+	fetcher := fetchmocks.NewFetcher(t)
+	fetcher.On("FetchIntegration", mock.Anything, integrationId, mock.Anything).Return(&fetch.Integration{
+		PluginId:      pluginId,
+		Configuration: map[string]interface{}{},
+	}, nil).Once()
+	fetcher.On(
+		"FetchIntegrations",
+		mock.Anything,
+		mock.MatchedBy(func(req *integrationv1.GetIntegrationsRequest) bool {
+			return req.GetKind() == integrationv1.Kind_KIND_SECRET && req.GetProfile().GetName() == profileName
+		}),
+		true,
+	).Return(new(integrationv1.GetIntegrationsResponse), nil).Once()
+
+	defer metrics.SetupForTesting()()
+	services := NewServer(&Config{
+		TokenManager:  tm,
+		Logger:        zap.NewNop(),
+		Store:         store.Memory(),
+		Worker:        mockWorker,
+		Flags:         mockFlags,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+	})
+
+	resp, err := services.Metadata(ctx, &apiv1.MetadataRequest{
+		Integration:       integrationId,
+		Profile:           &v1.Profile{Name: &profileName},
+		StepConfiguration: &structpb.Struct{Fields: map[string]*structpb.Value{}},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, &apiv1.MetadataResponse_Kinesis{Kinesis: &kinesis.Metadata{Streams: []string{"stream"}}}, resp.Metadata)
+
+	mockWorker.AssertExpectations(t)
+}
+
+func TestMetadataUsesAgentKeyForSecretStoreHydrationForVerifiedJwtRequest(t *testing.T) {
+	profileName := "test-profile"
+	integrationId := "test-integration-id"
+	pluginId := "kinesis"
+	orgId := "org-metadata"
+
+	ctx := constants.WithRequestUsesJwtAuth(context.Background(), true)
+	ctx = jwt_validator.WithOrganizationID(ctx, orgId)
+	ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+	ctx = jwt_validator.WithApplicationID(ctx, "app-id")
+
+	tm := &mocks.TokenManager{}
+	tm.On("AddTokenIfNeeded", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(types.TokenPayload{}, nil)
+
+	mockFlags := flagsmock.NewFlags(t)
+	mockFlags.On("GetUseAgentKeyForHydration", orgId).Return(false).Once()
+	mockFlags.On("GetPureJsUseWasmSandboxEnabled", "ENTERPRISE", orgId).Return(false).Once()
+
+	mockWorker := &worker.MockClient{}
+	mockWorker.On("Metadata", mock.Anything, pluginId, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		&transportv1.Response{Data: &transportv1.Response_Data{Data: &transportv1.Response_Data_Data{Kinesis: &kinesis.Metadata{Streams: []string{"stream"}}}}},
+		nil,
+	)
+
+	fetcher := fetchmocks.NewFetcher(t)
+	fetcher.On("FetchIntegration", mock.Anything, integrationId, mock.Anything).Return(&fetch.Integration{
+		PluginId:      pluginId,
+		Configuration: map[string]interface{}{},
+	}, nil).Once()
+	fetcher.On(
+		"FetchIntegrations",
+		mock.Anything,
+		mock.MatchedBy(func(req *integrationv1.GetIntegrationsRequest) bool {
+			return req.GetKind() == integrationv1.Kind_KIND_SECRET && req.GetProfile().GetName() == profileName
+		}),
+		true,
+	).Return(new(integrationv1.GetIntegrationsResponse), nil).Once()
+
+	defer metrics.SetupForTesting()()
+	services := NewServer(&Config{
+		TokenManager:  tm,
+		Logger:        zap.NewNop(),
+		Store:         store.Memory(),
+		Worker:        mockWorker,
+		Flags:         mockFlags,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+	})
+
+	resp, err := services.Metadata(ctx, &apiv1.MetadataRequest{
+		Integration:       integrationId,
+		Profile:           &v1.Profile{Name: &profileName},
+		StepConfiguration: &structpb.Struct{Fields: map[string]*structpb.Value{}},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, &apiv1.MetadataResponse_Kinesis{Kinesis: &kinesis.Metadata{Streams: []string{"stream"}}}, resp.Metadata)
+
+	mockWorker.AssertExpectations(t)
+}
+
+func TestMetadataRendersDatasourceSecretsForVerifiedJwtRequest(t *testing.T) {
+	profileName := "staging"
+	integrationId := "test-integration-id"
+	pluginId := "restapi"
+	orgId := "org-metadata"
+
+	ctx := constants.WithRequestUsesJwtAuth(context.Background(), true)
+	ctx = jwt_validator.WithOrganizationID(ctx, orgId)
+	ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+	ctx = jwt_validator.WithApplicationID(ctx, "app-id")
+
+	tm := &mocks.TokenManager{}
+	tm.On("AddTokenIfNeeded", mock.Anything, mock.Anything, mock.Anything, mock.Anything, integrationId, "datasource-config-id", pluginId).Return(types.TokenPayload{}, nil)
+
+	mockFlags := flagsmock.NewFlags(t)
+	mockFlags.On("GetUseAgentKeyForHydration", orgId).Return(false).Once()
+	mockFlags.On("GetPureJsUseWasmSandboxEnabled", "ENTERPRISE", orgId).Return(false).Once()
+
+	mockWorker := &worker.MockClient{}
+	mockWorker.On(
+		"Metadata",
+		mock.Anything,
+		pluginId,
+		mock.MatchedBy(func(config *structpb.Struct) bool {
+			headers := config.GetFields()["headers"].GetListValue().GetValues()
+			if len(headers) != 1 {
+				return false
+			}
+			return headers[0].GetStructValue().GetFields()["value"].GetStringValue() == "this is a secret"
+		}),
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+	).Return(&transportv1.Response{Data: &transportv1.Response_Data{Data: &transportv1.Response_Data_Data{}}}, nil)
+
+	datasourceConfig, err := structpb.NewStruct(map[string]any{
+		"id": "datasource-config-id",
+		"headers": []any{
+			map[string]any{
+				"key":   "x-secret",
+				"value": "{{sb_secrets.mock_store.shhh}}",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	mockStoreConfig, err := structpb.NewStruct(map[string]any{
+		"provider": map[string]any{
+			"mock": map[string]any{
+				"data": map[string]any{
+					"shhh": "this is a secret",
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	fetcher := fetchmocks.NewFetcher(t)
+	fetcher.On("FetchIntegration", mock.Anything, integrationId, mock.Anything).Return(&fetch.Integration{
+		PluginId:      pluginId,
+		Configuration: datasourceConfig.AsMap(),
+	}, nil).Once()
+	fetcher.On(
+		"FetchIntegrations",
+		mock.Anything,
+		mock.MatchedBy(func(req *integrationv1.GetIntegrationsRequest) bool {
+			return req.GetKind() == integrationv1.Kind_KIND_SECRET && req.GetProfile().GetName() == profileName
+		}),
+		true,
+	).Return(&integrationv1.GetIntegrationsResponse{
+		Data: []*integrationv1.Integration{
+			{
+				Name:           "Mock Secrets Manager",
+				OrganizationId: orgId,
+				Slug:           "mock_store",
+				Configurations: []*integrationv1.Configuration{
+					{
+						Id:            "mock-store-config-id",
+						Configuration: mockStoreConfig,
+					},
+				},
+			},
+		},
+	}, nil).Once()
+
+	defer metrics.SetupForTesting()()
+	services := NewServer(&Config{
+		TokenManager:  tm,
+		Logger:        zap.NewNop(),
+		Store:         store.Memory(),
+		Worker:        mockWorker,
+		Flags:         mockFlags,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		Secrets:       secrets.Manager(),
+	})
+
+	_, err = services.Metadata(ctx, &apiv1.MetadataRequest{
+		Integration:       integrationId,
+		Profile:           &v1.Profile{Name: &profileName},
+		StepConfiguration: &structpb.Struct{Fields: map[string]*structpb.Value{}},
+	})
+
+	require.NoError(t, err)
+	mockWorker.AssertExpectations(t)
+}
+
+func TestTestDoesNotRenderDatasourceSecretsForVerifiedJwtRequest(t *testing.T) {
+	profileName := "staging"
+	integrationId := "datasource-config-id"
+	pluginId := "restapi"
+	orgId := "org-test"
+
+	ctx := constants.WithRequestUsesJwtAuth(context.Background(), true)
+	ctx = jwt_validator.WithOrganizationID(ctx, orgId)
+	ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+	ctx = jwt_validator.WithApplicationID(ctx, "app-id")
+
+	tm := &mocks.TokenManager{}
+	tm.On("AddTokenIfNeeded", mock.Anything, mock.Anything, mock.Anything, mock.Anything, integrationId, "datasource-config-id", pluginId).Return(types.TokenPayload{}, nil)
+
+	mockFlags := flagsmock.NewFlags(t)
+	mockFlags.On("GetUseAgentKeyForHydration", orgId).Return(false).Once()
+	mockFlags.On("GetPureJsUseWasmSandboxEnabled", "ENTERPRISE", orgId).Return(false).Once()
+
+	mockWorker := &worker.MockClient{}
+
+	datasourceConfig, err := structpb.NewStruct(map[string]any{
+		"id": "datasource-config-id",
+		"headers": []any{
+			map[string]any{
+				"key":   "x-secret",
+				"value": "{{sb_secrets.mock_store.shhh}}",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	fetcher := fetchmocks.NewFetcher(t)
+	fetcher.On("FetchIntegrationMetadata", mock.Anything, integrationId).Return(&integrationv1.GetIntegrationResponse{}, errors.New("not found")).Once()
+
+	defer metrics.SetupForTesting()()
+	services := NewServer(&Config{
+		TokenManager:  tm,
+		Logger:        zap.NewNop(),
+		Store:         store.Memory(),
+		Worker:        mockWorker,
+		Flags:         mockFlags,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		Secrets:       secrets.Manager(),
+	})
+
+	_, err = services.Test(ctx, &apiv1.TestRequest{
+		DatasourceConfig: datasourceConfig,
+		IntegrationType:  pluginId,
+		Profile:          &v1.Profile{Name: &profileName},
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "sb_secrets")
+	mockWorker.AssertNotCalled(t, "TestConnection", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	fetcher.AssertNotCalled(t, "FetchIntegrations", mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestTestRendersDatasourceSecretsForLegacyJwtRequest(t *testing.T) {
+	profileName := "staging"
+	integrationId := "datasource-config-id"
+	pluginId := "restapi"
+	orgId := "org-test"
+
+	ctx := constants.WithRequestUsesJwtAuth(context.Background(), true)
+	ctx = jwt_validator.WithOrganizationID(ctx, orgId)
+	ctx = jwt_validator.WithOrganizationType(ctx, "ENTERPRISE")
+
+	tm := &mocks.TokenManager{}
+	tm.On("AddTokenIfNeeded", mock.Anything, mock.Anything, mock.Anything, mock.Anything, integrationId, "datasource-config-id", pluginId).Return(types.TokenPayload{}, nil)
+
+	mockFlags := flagsmock.NewFlags(t)
+	mockFlags.On("GetUseAgentKeyForHydration", orgId).Return(false).Once()
+	mockFlags.On("GetPureJsUseWasmSandboxEnabled", "ENTERPRISE", orgId).Return(false).Once()
+
+	mockWorker := &worker.MockClient{}
+	mockWorker.On(
+		"TestConnection",
+		mock.Anything,
+		pluginId,
+		mock.MatchedBy(func(config *structpb.Struct) bool {
+			headers := config.GetFields()["headers"].GetListValue().GetValues()
+			if len(headers) != 1 {
+				return false
+			}
+			return headers[0].GetStructValue().GetFields()["value"].GetStringValue() == "this is a secret"
+		}),
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+	).Return(&transportv1.Response{}, nil)
+
+	datasourceConfig, err := structpb.NewStruct(map[string]any{
+		"id": "datasource-config-id",
+		"headers": []any{
+			map[string]any{
+				"key":   "x-secret",
+				"value": "{{sb_secrets.mock_store.shhh}}",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	mockStoreConfig, err := structpb.NewStruct(map[string]any{
+		"provider": map[string]any{
+			"mock": map[string]any{
+				"data": map[string]any{
+					"shhh": "this is a secret",
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	fetcher := fetchmocks.NewFetcher(t)
+	fetcher.On("FetchIntegrationMetadata", mock.Anything, integrationId).Return(&integrationv1.GetIntegrationResponse{}, errors.New("not found")).Once()
+	fetcher.On(
+		"FetchIntegrations",
+		mock.Anything,
+		mock.MatchedBy(func(req *integrationv1.GetIntegrationsRequest) bool {
+			return req.GetKind() == integrationv1.Kind_KIND_SECRET && req.GetProfile().GetName() == profileName
+		}),
+		false,
+	).Return(&integrationv1.GetIntegrationsResponse{
+		Data: []*integrationv1.Integration{
+			{
+				Name:           "Mock Secrets Manager",
+				OrganizationId: orgId,
+				Slug:           "mock_store",
+				Configurations: []*integrationv1.Configuration{
+					{
+						Id:            "mock-store-config-id",
+						Configuration: mockStoreConfig,
+					},
+				},
+			},
+		},
+	}, nil).Once()
+
+	defer metrics.SetupForTesting()()
+	services := NewServer(&Config{
+		TokenManager:  tm,
+		Logger:        zap.NewNop(),
+		Store:         store.Memory(),
+		Worker:        mockWorker,
+		Flags:         mockFlags,
+		Fetcher:       fetcher,
+		SecretManager: secrets.NewSecretManager(),
+		Secrets:       secrets.Manager(),
+	})
+
+	resp, err := services.Test(ctx, &apiv1.TestRequest{
+		DatasourceConfig: datasourceConfig,
+		IntegrationType:  pluginId,
+		Profile:          &v1.Profile{Name: &profileName},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, &apiv1.TestResponse{}, resp)
+	mockWorker.AssertExpectations(t)
+}
+
 // TestExecuteV3ConvertsToFetchCodeRequest verifies that ExecuteV3 correctly
 // converts an ExecuteV3Request into an internal ExecuteRequest with FetchCode,
 // passing applicationId through to FetchApiCode. Fetch() calls FetchApiCode
@@ -1557,6 +1953,82 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 
 			require.Error(t, err)
 			fetcher.AssertExpectations(t)
+		})
+	}
+}
+
+func TestGetUseAgentKeyForExecuteRequest(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name                      string
+		ctx                       context.Context
+		req                       *apiv1.ExecuteRequest
+		expectServerFetch         bool
+		expectDefinitionHydration bool
+	}{
+		{
+			name: "plain fetch without flag uses neither agent-key path",
+			ctx:  context.Background(),
+			req: &apiv1.ExecuteRequest{
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{Id: "api-id"},
+				},
+			},
+		},
+		{
+			name: "code-mode fetch forces both agent-key paths",
+			ctx:  context.Background(),
+			req: &apiv1.ExecuteRequest{
+				Request: &apiv1.ExecuteRequest_FetchCode_{
+					FetchCode: &apiv1.ExecuteRequest_FetchCode{Id: "app-id"},
+				},
+			},
+			expectServerFetch:         true,
+			expectDefinitionHydration: true,
+		},
+		{
+			name: "SDK integration execution forces both agent-key paths",
+			ctx:  constants.WithSDKIntegrationExecution(context.Background(), nil),
+			req: &apiv1.ExecuteRequest{
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{Id: "api-id"},
+				},
+			},
+			expectServerFetch:         true,
+			expectDefinitionHydration: true,
+		},
+		{
+			name: "org-scoped JWT fetch does not use agent-key paths",
+			ctx:  jwt_validator.WithOrganizationID(constants.WithRequestUsesJwtAuth(context.Background(), true), "org-id"),
+			req: &apiv1.ExecuteRequest{
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{Id: "api-id"},
+				},
+			},
+		},
+		{
+			name: "app-scoped JWT fetch uses agent key only for definition hydration",
+			ctx: jwt_validator.WithApplicationID(
+				jwt_validator.WithOrganizationID(constants.WithRequestUsesJwtAuth(context.Background(), true), "org-id"),
+				"app-id",
+			),
+			req: &apiv1.ExecuteRequest{
+				Request: &apiv1.ExecuteRequest_Fetch_{
+					Fetch: &apiv1.ExecuteRequest_Fetch{Id: "api-id"},
+				},
+			},
+			expectDefinitionHydration: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := &server{Config: &Config{}}
+			serverFetch, definitionHydration := server.getUseAgentKeyForExecuteRequest(test.ctx, test.req)
+
+			assert.Equal(t, test.expectServerFetch, serverFetch)
+			assert.Equal(t, test.expectDefinitionHydration, definitionHydration)
 		})
 	}
 }

@@ -384,6 +384,56 @@ module.exports = [
       },
     ],
   },
+  {
+    id: 'fetch-agent-secret-stores',
+    url: '/api/v1/agents/secret-stores',
+    method: 'GET',
+    variants: [
+      {
+        id: 'default',
+        type: 'middleware',
+        options: {
+          middleware: (req, res) => {
+            if (!validateAgentKey(req)) {
+              return res.sendStatus(401);
+            }
+
+            const profile = req.query.profile || 'default';
+            let ids;
+            if (req.query.slug) {
+              ids = [req.query.slug];
+            } else if (Array.isArray(req.query.id)) {
+              ids = req.query.id;
+            } else {
+              ids = [req.query.id];
+            }
+            const data = [];
+            const pool = integrations.SECRET;
+
+            if (ids.filter((x) => x).length === 0) {
+              Object.entries(pool).forEach(([k, v]) => {
+                if (profile in v) {
+                  data.push({
+                    id: k, slug: k, organizationId: '00000000-0000-0000-0000-000000000001', configurations: [{ id: v[profile].configuration_id, configuration: v[profile] }],
+                  });
+                }
+              });
+
+              return res.status(200).json({ data });
+            }
+
+            const missingId = ids.find((id) => !(id in pool) || !(profile in pool[id]));
+            if (missingId) {
+              return res.sendStatus(404);
+            }
+            ids.forEach((id) => data.push({ id, slug: id, configurations: [{ configuration: pool[id][profile] }] }));
+
+            return res.status(200).json({ data });
+          },
+        },
+      },
+    ],
+  },
   // Application code routes (fetch-application-code, fetch-application-code-by-branch)
   // are defined in mocks/routes/application-code.js to avoid duplicate route IDs.
   {

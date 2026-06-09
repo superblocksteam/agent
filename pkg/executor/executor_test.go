@@ -9,21 +9,128 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/thejerf/abtime"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/superblocksteam/agent/internal/flags"
+	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"github.com/superblocksteam/agent/pkg/constants"
 	apictx "github.com/superblocksteam/agent/pkg/context"
+	"github.com/superblocksteam/agent/pkg/crypto/signature"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	secretspkg "github.com/superblocksteam/agent/pkg/secrets"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/utils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
+	javascriptv1 "github.com/superblocksteam/agent/types/gen/go/plugins/javascript/v1"
+	secretsv1 "github.com/superblocksteam/agent/types/gen/go/secrets/v1"
+	storev1 "github.com/superblocksteam/agent/types/gen/go/store/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"google.golang.org/protobuf/proto"
 )
+
+func TestNewSkipsBlanketSecretInjectionForSignedScopedExecutions(t *testing.T) {
+	t.Parallel()
+
+	makeOptions := func(t *testing.T) *Options {
+		t.Helper()
+
+		registry, err := signature.Manager(false, nil, "", signature.NewResourceSerializer())
+		require.NoError(t, err)
+
+		return &Options{
+			Api: &apiv1.Api{
+				Metadata: &commonv1.Metadata{
+					Id:           "api-id",
+					Organization: "org-id",
+				},
+				Blocks: []*apiv1.Block{
+					{
+						Name: "Step1",
+						Config: &apiv1.Block_Step{
+							Step: &apiv1.Step{
+								Config: &apiv1.Step_Javascript{
+									Javascript: &javascriptv1.Plugin{
+										Body: "return sb_secrets;",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			DefinitionMetadata: &apiv1.Definition_Metadata{},
+			Flags:              flags.NoopFlags(),
+			Inputs:             map[string]*structpb.Value{},
+			Logger:             zap.NewNop(),
+			Secrets:            secretspkg.Manager(),
+			Signature:          registry,
+			Store:              store.Memory(),
+			Stores: &storev1.Stores{
+				Secrets: []*secretsv1.Store{
+					{
+						Metadata: &commonv1.Metadata{
+							Name: "mock_store",
+						},
+						Provider: &secretsv1.Provider{
+							Config: &secretsv1.Provider_Mock{
+								Mock: &secretsv1.MockStore{
+									Data: map[string]string{
+										"shhh": "this is a secret",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	for _, test := range []struct {
+		name             string
+		appEngineVersion string
+		sdkIntegration   bool
+		expectInjected   bool
+	}{
+		{
+			name:             "legacy signed execution keeps blanket injection",
+			appEngineVersion: "1.0",
+			expectInjected:   true,
+		},
+		{
+			name:             "scoped signed execution skips blanket injection",
+			appEngineVersion: "2.0",
+			expectInjected:   false,
+		},
+		{
+			name:             "sdk integration callback skips blanket injection",
+			appEngineVersion: "2.0",
+			sdkIntegration:   true,
+			expectInjected:   false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := jwt_validator.WithAppEngineVersion(context.Background(), test.appEngineVersion)
+			if test.sdkIntegration {
+				ctx = constants.WithSDKIntegrationExecution(ctx, []string{"integration-id"})
+			}
+			options := makeOptions(t)
+
+			_, err := New(ctx, options)
+			require.NoError(t, err)
+
+			_, injected := options.Inputs["sb_secrets"]
+			assert.Equal(t, test.expectInjected, injected)
+		})
+	}
+}
 
 func TestFinish(t *testing.T) {
 	t.Parallel()

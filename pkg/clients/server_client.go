@@ -271,7 +271,20 @@ func (s *serverClient) PostGSheetsTokenRefresh(ctx context.Context, timeout *tim
 }
 
 func (s *serverClient) GetIntegrations(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, useAgentKey bool) (*http.Response, error) {
+	if useAgentKey && isSecretStoreFetch(query) {
+		resp, err := s.sendRequest(ctx, timeout, http.MethodGet, "api/v1/agents/secret-stores", headers, query, nil, useAgentKey)
+		if err == nil && resp != nil && resp.StatusCode == http.StatusNotFound {
+			resp.Body.Close()
+			return s.sendRequest(ctx, timeout, http.MethodGet, "api/v1/integrations", headers, query, nil, useAgentKey)
+		}
+		return resp, err
+	}
 	return s.sendRequest(ctx, timeout, http.MethodGet, "api/v1/integrations", headers, query, nil, useAgentKey)
+}
+
+func isSecretStoreFetch(query url.Values) bool {
+	kinds := query["kind"]
+	return len(kinds) == 1 && kinds[0] == "SECRET"
 }
 
 func (s *serverClient) PatchApis(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, body *apiv1.PatchApisRequest) (*http.Response, error) {

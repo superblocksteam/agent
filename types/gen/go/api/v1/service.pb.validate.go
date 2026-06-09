@@ -4803,6 +4803,8 @@ func (m *ExecuteRequest_Options) validate(all bool) error {
 
 	// no validation rules for IncludeApiEvents
 
+	// no validation rules for IsAiTriggered
+
 	if len(errors) > 0 {
 		return ExecuteRequest_OptionsMultiError(errors)
 	}

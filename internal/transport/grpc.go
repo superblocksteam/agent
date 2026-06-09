@@ -58,6 +58,7 @@ import (
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
 	secretsv1 "github.com/superblocksteam/agent/types/gen/go/secrets/v1"
 	securityv1 "github.com/superblocksteam/agent/types/gen/go/security/v1"
+	storev1 "github.com/superblocksteam/agent/types/gen/go/store/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	utilsv1 "github.com/superblocksteam/agent/types/gen/go/utils/v1"
 	"go.opentelemetry.io/otel/attribute"
@@ -161,6 +162,11 @@ func (s *server) getUseAgentKeyForHydration(ctx context.Context) bool {
 
 	orgId := constants.OrganizationID(ctx)
 	if orgId == "" {
+		if jwtOrgId, ok := jwt_validator.GetOrganizationID(ctx); ok {
+			orgId = jwtOrgId
+		}
+	}
+	if orgId == "" {
 		requestUsesJwtAuth, err := constants.GetRequestUsesJwtAuth(ctx)
 		if err == nil && !requestUsesJwtAuth {
 			orgId = VisitorOrganizationID
@@ -168,6 +174,14 @@ func (s *server) getUseAgentKeyForHydration(ctx context.Context) bool {
 	}
 
 	return s.Flags.GetUseAgentKeyForHydration(orgId)
+}
+
+func (s *server) getUseAgentKeyForDatasourceHydration(ctx context.Context) bool {
+	if s.getUseAgentKeyForHydration(ctx) {
+		return true
+	}
+
+	return executor.IsVerifiedJwtRequestWithoutLegacyAppEngineVersion(ctx)
 }
 
 func sdkCallbackSigningKey(agentKey string) ([]byte, error) {
@@ -909,6 +923,26 @@ func getViewMode(req *apiv1.ExecuteRequest) apiv1.ViewMode {
 	return req.GetViewMode()
 }
 
+func (s *server) getUseAgentKeyForExecuteRequest(ctx context.Context, req *apiv1.ExecuteRequest) (bool, bool) {
+	useAgentKeyForServerFetch := s.getUseAgentKeyForHydration(ctx)
+	useAgentKeyForDefinitionHydration := s.getUseAgentKeyForDatasourceHydration(ctx)
+
+	// Code-mode fetches (FetchCode) and verified SDK integration callbacks use
+	// agent-key hydration. For SDK integration callbacks, this preserves
+	// datasource and secret-store hydration parity with legacy execution without
+	// relying on a spoofable caller-provided marker.
+	if req.GetFetchCode() != nil {
+		useAgentKeyForServerFetch = true
+		useAgentKeyForDefinitionHydration = true
+	}
+	if constants.IsSDKIntegrationExecution(ctx) {
+		useAgentKeyForServerFetch = true
+		useAgentKeyForDefinitionHydration = true
+	}
+
+	return useAgentKeyForServerFetch, useAgentKeyForDefinitionHydration
+}
+
 func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send func(*apiv1.StreamResponse) error, bus functions.Bus) (done *executor.Done, err error) {
 	ctx = constants.WithAgentId(
 		constants.WithAgentVersion(
@@ -917,6 +951,9 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		),
 		s.AgentId,
 	)
+	if _, ok := req.GetRequest().(*apiv1.ExecuteRequest_Definition); ok && req.GetOptions().GetIsAiTriggered() {
+		ctx = constants.WithAITriggeredExecution(ctx)
+	}
 
 	var disableSignatureVerification bool
 	{
@@ -927,24 +964,20 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		}
 	}
 
-	useAgentKey := s.getUseAgentKeyForHydration(ctx)
-
-	// Code-mode fetches (FetchCode) and verified SDK integration callbacks use
-	// agent-key hydration. For SDK integration callbacks, this preserves
-	// datasource and secret-store hydration parity with legacy execution without
-	// relying on a spoofable caller-provided marker.
-	if req.GetFetchCode() != nil {
-		useAgentKey = true
-	}
-	if constants.IsSDKIntegrationExecution(ctx) {
-		useAgentKey = true
-	}
+	useAgentKeyForServerFetch, useAgentKeyForDefinitionHydration := s.getUseAgentKeyForExecuteRequest(ctx, req)
 
 	var result *apiv1.Definition
 	var rawResult *structpb.Struct
 	var rawApiValue *structpb.Value
 	{
-		result, rawResult, err = executor.Fetch(ctx, req, s.Fetcher, useAgentKey, s.Logger)
+		result, rawResult, err = executor.Fetch(
+			ctx,
+			req,
+			s.Fetcher,
+			useAgentKeyForServerFetch,
+			useAgentKeyForDefinitionHydration,
+			s.Logger,
+		)
 		rawApiValue, _ = utils.GetStructField(rawResult, "api")
 	}
 
@@ -974,7 +1007,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 			return nil, err
 		}
 
-		return s.executeCodeMode(ctx, fetchCode, result, rawResult, req, useAgentKey, send, constants.IncludeDiagnostics(ctx))
+		return s.executeCodeMode(ctx, fetchCode, result, rawResult, req, useAgentKeyForDefinitionHydration, send, constants.IncludeDiagnostics(ctx))
 	}
 
 	viewMode := getViewMode(req)
@@ -1100,7 +1133,8 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 		RootStartTime:                time.Now(),
 		SecretManager:                s.SecretManager,
 		GarbageCollect:               true,
-		UseAgentKey:                  useAgentKey,
+		UseAgentKey:                  useAgentKeyForDefinitionHydration,
+		UseAgentKeyForServerFetch:    useAgentKeyForServerFetch,
 		Stores:                       result.GetStores(),
 		Secrets:                      s.Secrets,
 		Signature:                    s.Signature,
@@ -1857,7 +1891,7 @@ func (s *server) Validate(_ context.Context, req *apiv1.ValidateRequest) (_ *emp
 		e.Issues = append(e.Issues, failures)
 	}
 
-	if e.Issues == nil || len(e.Issues) == 0 {
+	if len(e.Issues) == 0 {
 		return new(emptypb.Empty), nil
 	}
 
@@ -1893,7 +1927,8 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 		}
 	}
 
-	renderedIntegrationConfig, err := s.evaluateDatasource(ctx, configuration.GetStructValue(), req.Integration, "", integration.PluginId, profile)
+	useAgentKey := s.getUseAgentKeyForDatasourceHydration(ctx)
+	renderedIntegrationConfig, err := s.evaluateDatasource(ctx, configuration.GetStructValue(), req.Integration, "", integration.PluginId, profile, useAgentKey, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1981,8 +2016,8 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 func (s *server) MetadataDeprecated(ctx context.Context, req *apiv1.MetadataRequestDeprecated) (*apiv1.MetadataResponse, error) {
 	var err error
 	var fetchRes *apiv1.Definition
+	useAgentKey := s.getUseAgentKeyForHydration(ctx)
 	{
-		useAgentKey := s.getUseAgentKeyForHydration(ctx)
 		fetchRes, _, err = s.Fetcher.FetchApi(ctx, &apiv1.ExecuteRequest_Fetch{
 			Id:      req.ApiId,
 			Profile: req.Profile,
@@ -2046,7 +2081,7 @@ func (s *server) MetadataDeprecated(ctx context.Context, req *apiv1.MetadataRequ
 		}
 	}
 
-	renderedIntegrationConfig, err := s.evaluateDatasource(ctx, integration, req.Integration, "", pluginName, profile)
+	renderedIntegrationConfig, err := s.evaluateDatasource(ctx, integration, req.Integration, "", pluginName, profile, s.getUseAgentKeyForDatasourceHydration(ctx), true)
 	if err != nil {
 		return nil, err
 	}
@@ -2147,7 +2182,9 @@ func (s *server) Test(ctx context.Context, req *apiv1.TestRequest) (*apiv1.TestR
 	}
 
 	ctx = constants.WithEventType(ctx, constants.EventTypeTest)
-	renderedIntegrationConfig, err := s.evaluateDatasource(ctx, req.GetDatasourceConfig(), integration, req.ConfigurationId, plugin, profile)
+	useAgentKey := s.getUseAgentKeyForDatasourceHydration(ctx)
+	allowDatasourceSecrets := !executor.IsVerifiedJwtRequestWithoutLegacyAppEngineVersion(ctx)
+	renderedIntegrationConfig, err := s.evaluateDatasource(ctx, req.GetDatasourceConfig(), integration, req.ConfigurationId, plugin, profile, useAgentKey, allowDatasourceSecrets)
 	if err != nil {
 		return nil, err
 	}
@@ -2354,7 +2391,7 @@ func (s *server) shouldUseWorkerSandboxForDatasourceBindings(ctx context.Context
 }
 
 // client must call sandbox.Close() and garbage.Run
-func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfileName string, integrationConfigs map[string]*structpb.Struct) (*apictx.Context, engine.Sandbox, gc.GC, error) {
+func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfileName string, integrationConfigs map[string]*structpb.Struct, useAgentKey bool, allowDatasourceSecrets bool) (*apictx.Context, engine.Sandbox, gc.GC, []*secretsv1.Store, error) {
 	useWorkerSandbox := s.shouldUseWorkerSandboxForDatasourceBindings(ctx)
 	// Keep the store used by the engine explicit so GC and variable initialization
 	// always operate on the same backing store.
@@ -2390,6 +2427,7 @@ func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfil
 		})
 	}
 
+	var stores []*secretsv1.Store
 	var inputs map[string]*structpb.Value
 	{
 		inputs = map[string]*structpb.Value{}
@@ -2400,24 +2438,29 @@ func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfil
 		}
 		inputs["Env"] = structpb.NewStructValue(&structpb.Struct{Fields: agentAppVarMap})
 
-		stores, err := executor.FetchSecretStores(ctx, s.Fetcher, integrationProfileName, false, s.Logger)
-		if err != nil {
-			s.Logger.Error("failed to fetch secret stores", zap.Error(err))
-			return nil, nil, nil, err
-		}
+		if allowDatasourceSecrets {
+			var err error
+			stores, err = executor.FetchSecretStores(ctx, s.Fetcher, integrationProfileName, useAgentKey, s.Logger)
+			if err != nil {
+				s.Logger.Error("failed to fetch secret stores", zap.Error(err))
+				return nil, nil, nil, nil, err
+			}
 
-		if _, err := tracer.Observe[any](ctx, "fetch.secrets", nil, func(ctx context.Context, _ trace.Span) (any, error) {
-			return nil, secrets.RetrieveAndUnmarshalIfNeeded(
-				ctx,
-				s.Secrets,
-				stores,
-				nil,
-				integrationConfigs,
-				inputs,
-			)
-		}, nil); err != nil {
-			s.Logger.Error("failed to retrieve secrets", zap.Error(err))
-			return nil, nil, nil, err
+			if !executor.ShouldSkipDefinitionSecretInjection(ctx) {
+				if _, err := tracer.Observe[any](ctx, "fetch.secrets", nil, func(ctx context.Context, _ trace.Span) (any, error) {
+					return nil, secrets.RetrieveAndUnmarshalIfNeeded(
+						ctx,
+						s.Secrets,
+						stores,
+						nil,
+						integrationConfigs,
+						inputs,
+					)
+				}, nil); err != nil {
+					s.Logger.Error("failed to retrieve secrets", zap.Error(err))
+					return nil, nil, nil, nil, err
+				}
+			}
 		}
 	}
 
@@ -2431,7 +2474,7 @@ func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfil
 		variables, err := executor.ExtractVariablesFromInputs(inputs, nil)
 		if err != nil {
 			s.Logger.Error("could not transform secrets into variables", zap.Error(err))
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 
 		sbctxWithVariables, err := executor.Variables(sbctx, &apiv1.Variables{
@@ -2439,18 +2482,20 @@ func (s *server) getSbctx(ctx context.Context, st store.Store, integrationProfil
 		}, sandbox, s.Logger, garbage, engineStore)
 		if err != nil {
 			s.Logger.Error("could not initialize variables", zap.Error(err))
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 
 		sbctx = sbctxWithVariables
 	}
-	return sbctx, sandbox, garbage, nil
+	return sbctx, sandbox, garbage, stores, nil
 }
 
 func (s *server) evaluateDatasource(
 	ctx context.Context,
 	unrenderedIntegrationConfig *structpb.Struct,
 	integrationId, integrationConfigurationId, pluginName, profileName string,
+	useAgentKey bool,
+	allowDatasourceSecrets bool,
 ) (*structpb.Struct, error) {
 	unrenderedRedactedIntegrationConfig, err := structpb.NewValue(unrenderedIntegrationConfig.AsMap())
 	if err != nil {
@@ -2458,9 +2503,9 @@ func (s *server) evaluateDatasource(
 	}
 
 	memory := store.Memory()
-	sbctx, sandbox, garbage, err := s.getSbctx(ctx, memory, profileName, map[string]*structpb.Struct{
+	sbctx, sandbox, garbage, stores, err := s.getSbctx(ctx, memory, profileName, map[string]*structpb.Struct{
 		"anonymous": unrenderedIntegrationConfig,
-	})
+	}, useAgentKey, allowDatasourceSecrets)
 	if sandbox != nil {
 		defer sandbox.Close()
 	}
@@ -2486,16 +2531,18 @@ func (s *server) evaluateDatasource(
 		pluginName,
 		garbage,
 		&executor.Options{
-			Worker:        s.Worker,
-			Flags:         s.Flags,
-			Logger:        s.Logger,
-			Store:         s.Store,
-			TokenManager:  s.TokenManager,
-			Fetcher:       s.Fetcher,
-			SecretManager: s.SecretManager,
-			Secrets:       s.Secrets,
-			FileServerUrl: s.FileServerUrl,
-			RootStartTime: time.Now(),
+			Worker:                           s.Worker,
+			Flags:                            s.Flags,
+			Logger:                           s.Logger,
+			Store:                            s.Store,
+			TokenManager:                     s.TokenManager,
+			Fetcher:                          s.Fetcher,
+			SecretManager:                    s.SecretManager,
+			Secrets:                          s.Secrets,
+			Stores:                           &storev1.Stores{Secrets: stores},
+			DisableDatasourceSecretRendering: !allowDatasourceSecrets,
+			FileServerUrl:                    s.FileServerUrl,
+			RootStartTime:                    time.Now(),
 			DefinitionMetadata: &apiv1.Definition_Metadata{
 				Profile: profileName,
 			},

@@ -27,6 +27,7 @@ const (
 	ContextKeyIncludeDiagnostics
 	ContextKeySDKIntegrationExecution
 	ContextKeySDKIntegrationAllowedIntegrationIDs
+	ContextKeyAITriggeredExecution
 	// TODO(frank): Add other context keys here.
 
 	HeaderAgentKey               = "x-superblocks-agent-key"
@@ -133,6 +134,17 @@ func IsSDKIntegrationAllowed(ctx context.Context, integrationID string) bool {
 	}
 	_, ok = allowed[integrationID]
 	return ok
+}
+
+func WithAITriggeredExecution(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ContextKeyAITriggeredExecution, true)
+}
+
+func IsAITriggeredExecution(ctx context.Context) bool {
+	if v, ok := ctx.Value(ContextKeyAITriggeredExecution).(bool); ok {
+		return v
+	}
+	return false
 }
 
 // NOTE(frank): This was added because we record a metric in the individual implementations

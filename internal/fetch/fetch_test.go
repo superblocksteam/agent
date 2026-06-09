@@ -327,6 +327,7 @@ func TestFetchIntegrations(t *testing.T) {
 	for _, test := range []struct {
 		name        string
 		request     *integrationv1.GetIntegrationsRequest
+		useAgentKey bool
 		expectedURL string
 		response    *http.Response
 		err         error
@@ -344,6 +345,20 @@ func TestFetchIntegrations(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			expectedURL: "https://api.superblocks.com/api/v1/integrations?kind=SECRET&profile=default&slug=slug",
+		},
+		{
+			name: "agent-key secret stores use agent endpoint",
+			request: &integrationv1.GetIntegrationsRequest{
+				Kind: &kindSecret,
+				Profile: &commonv1.Profile{
+					Name: proto.String("default"),
+				},
+			},
+			useAgentKey: true,
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+			},
+			expectedURL: "https://api.superblocks.com/api/v1/agents/secret-stores?kind=SECRET&profile=default",
 		},
 		{
 			name: "timed out, nil response",
@@ -374,7 +389,7 @@ func TestFetchIntegrations(t *testing.T) {
 				}),
 			}).(*fetcher)
 
-			_, err := fetcher.FetchIntegrations(context.Background(), test.request, false)
+			_, err := fetcher.FetchIntegrations(context.Background(), test.request, test.useAgentKey)
 
 			if test.err != nil {
 				assert.Error(t, err, test.name)

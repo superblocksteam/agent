@@ -86,44 +86,46 @@ type execution struct {
 }
 
 type Options struct {
-	Logger                       *zap.Logger
-	Store                        store.Store
-	Flags                        flags.Flags
-	Worker                       worker.Client
-	Key                          utils.Map[string]
-	Options                      *apiv1.ExecuteRequest_Options
-	OrgPlan                      string
-	Files                        []*apiv1.ExecuteRequest_File
-	FileServerUrl                string
-	JwtToken                     string
-	Profile                      *commonv1.Profile
-	Inputs                       map[string]*structpb.Value
-	Fetcher                      fetch.Fetcher
-	FetchToken                   string
-	TokenManager                 auth.TokenManager
-	Integrations                 map[string]*structpb.Struct
-	Api                          *apiv1.Api
-	RawApi                       *structpb.Value
-	Renderer                     template.RenderFunc
-	TemplatePlugin               func(*plugins.Input) plugins.Plugin
-	LegacyTemplatePlugin         func(*plugins.Input) plugins.Plugin
-	LegacyTemplateResolver       func(context.Context, *utils.TokenJoiner, string) engine.Value
-	LegacyTemplateTokenJoiner    *utils.TokenJoiner
-	RootStartTime                time.Time
-	Timeout                      time.Duration
-	Requester                    string
-	DefinitionMetadata           *apiv1.Definition_Metadata
-	IsDeployed                   bool
-	GarbageCollect               bool
-	SecretManager                secrets.SecretManager // NOTE(frank): We shouldn't pass this around, Rather, we put it in the inputs.
-	DefaultResolveOptions        []options.Option
-	UseAgentKey                  bool
-	Stores                       *storev1.Stores
-	Secrets                      secrets.Secrets
-	Signature                    signature.Registry
-	DisableSignatureVerification bool
-	BranchName                   string
-	Mocker                       mocker.Mocker
+	Logger                           *zap.Logger
+	Store                            store.Store
+	Flags                            flags.Flags
+	Worker                           worker.Client
+	Key                              utils.Map[string]
+	Options                          *apiv1.ExecuteRequest_Options
+	OrgPlan                          string
+	Files                            []*apiv1.ExecuteRequest_File
+	FileServerUrl                    string
+	JwtToken                         string
+	Profile                          *commonv1.Profile
+	Inputs                           map[string]*structpb.Value
+	Fetcher                          fetch.Fetcher
+	FetchToken                       string
+	TokenManager                     auth.TokenManager
+	Integrations                     map[string]*structpb.Struct
+	Api                              *apiv1.Api
+	RawApi                           *structpb.Value
+	Renderer                         template.RenderFunc
+	TemplatePlugin                   func(*plugins.Input) plugins.Plugin
+	LegacyTemplatePlugin             func(*plugins.Input) plugins.Plugin
+	LegacyTemplateResolver           func(context.Context, *utils.TokenJoiner, string) engine.Value
+	LegacyTemplateTokenJoiner        *utils.TokenJoiner
+	RootStartTime                    time.Time
+	Timeout                          time.Duration
+	Requester                        string
+	DefinitionMetadata               *apiv1.Definition_Metadata
+	IsDeployed                       bool
+	GarbageCollect                   bool
+	SecretManager                    secrets.SecretManager // NOTE(frank): We shouldn't pass this around, Rather, we put it in the inputs.
+	DefaultResolveOptions            []options.Option
+	UseAgentKey                      bool
+	UseAgentKeyForServerFetch        bool
+	DisableDatasourceSecretRendering bool
+	Stores                           *storev1.Stores
+	Secrets                          secrets.Secrets
+	Signature                        signature.Registry
+	DisableSignatureVerification     bool
+	BranchName                       string
+	Mocker                           mocker.Mocker
 }
 
 func New(ctx context.Context, options *Options) (Executor, error) {
@@ -262,18 +264,20 @@ func New(ctx context.Context, options *Options) (Executor, error) {
 	// NOTE(frank): I don't think I hate that this is here. I haven't given it that much though either.
 	trace.SpanFromContext(ctx).SetAttributes(ex.resolver.attributes...)
 
-	if _, err := tracer.Observe(ctx, "fetch.secrets", nil, func(ctx context.Context, _ trace.Span) (any, error) {
-		return nil, secrets.RetrieveAndUnmarshalIfNeeded(
-			constants.WithOrganizationID(ctx, orgId),
-			options.Secrets,
-			options.Stores.GetSecrets(),
-			ex.Api,
-			options.Integrations,
-			options.Inputs,
-		)
-	}, nil); err != nil {
-		options.Logger.Error("failed to retrieve secrets", zap.Error(err))
-		return nil, err
+	if !constants.IsSDKIntegrationExecution(ctx) && !shouldSkipDefinitionSecretInjection(ctx) {
+		if _, err := tracer.Observe(ctx, "fetch.secrets", nil, func(ctx context.Context, _ trace.Span) (any, error) {
+			return nil, secrets.RetrieveAndUnmarshalIfNeeded(
+				constants.WithOrganizationID(ctx, orgId),
+				options.Secrets,
+				options.Stores.GetSecrets(),
+				ex.Api,
+				options.Integrations,
+				options.Inputs,
+			)
+		}, nil); err != nil {
+			options.Logger.Error("failed to retrieve secrets", zap.Error(err))
+			return nil, err
+		}
 	}
 
 	return ex, nil

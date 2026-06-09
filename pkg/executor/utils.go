@@ -22,6 +22,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/executor/options"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
+	secretspkg "github.com/superblocksteam/agent/pkg/secrets"
 	"github.com/superblocksteam/agent/pkg/secrets/refresolver"
 	"github.com/superblocksteam/agent/pkg/store"
 	"github.com/superblocksteam/agent/pkg/store/gc"
@@ -298,17 +299,24 @@ func Execute(ctx context.Context, options *Options, send func(*apiv1.StreamRespo
 	}
 }
 
-func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fetcher, useAgentKey bool, logger *zap.Logger) (*apiv1.Definition, *structpb.Struct, error) {
+func Fetch(
+	ctx context.Context,
+	request *apiv1.ExecuteRequest,
+	fetcher fetch.Fetcher,
+	useAgentKeyForServerFetch bool,
+	useAgentKeyForDefinitionHydration bool,
+	logger *zap.Logger,
+) (*apiv1.Definition, *structpb.Struct, error) {
 	var def *apiv1.Definition
 	var rawDef *structpb.Struct
 	var err error
 
 	if request.GetDefinition() != nil {
-		if def, rawDef, err = fetchDefinitionFromRequest(ctx, request, fetcher, useAgentKey, logger); err != nil {
+		if def, rawDef, err = fetchDefinitionFromRequest(ctx, request, fetcher, useAgentKeyForDefinitionHydration, logger); err != nil {
 			return nil, nil, err
 		}
 	} else if f := request.GetFetch(); f != nil {
-		if def, rawDef, err = fetcher.FetchApi(ctx, f, useAgentKey); err != nil {
+		if def, rawDef, err = fetcher.FetchApi(ctx, f, useAgentKeyForServerFetch); err != nil {
 			metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))
 			return nil, nil, err
 		}
@@ -321,7 +329,7 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 		if fc.GetId() == "" {
 			return nil, nil, fmt.Errorf("missing applicationId in FetchCode request")
 		}
-		bundle, err := fetcher.FetchApiCode(ctx, fc.GetId(), fc.GetEntryPoint(), fc.GetExportName(), fc.GetCommitId(), fc.GetBranchName(), useAgentKey)
+		bundle, err := fetcher.FetchApiCode(ctx, fc.GetId(), fc.GetEntryPoint(), fc.GetExportName(), fc.GetCommitId(), fc.GetBranchName(), useAgentKeyForServerFetch)
 		if err != nil {
 			metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))
 			return nil, nil, err
@@ -358,7 +366,7 @@ func Fetch(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fet
 		}
 		return def, rawDef, nil
 	} else if f := request.GetFetchByPath(); f != nil {
-		if def, rawDef, err = fetcher.FetchApiByPath(ctx, f, useAgentKey); err != nil {
+		if def, rawDef, err = fetcher.FetchApiByPath(ctx, f, useAgentKeyForServerFetch); err != nil {
 			metrics.AddCounter(ctx, metrics.ApiFetchRequestsTotal, attribute.String("result", "failed"))
 			return nil, nil, err
 		}
@@ -410,7 +418,7 @@ func viewModeEnumToString(vm apiv1.ViewMode) string {
 	}
 }
 
-func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fetcher, useAgentKey bool, logger *zap.Logger) (*apiv1.Definition, *structpb.Struct, error) {
+func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteRequest, fetcher fetch.Fetcher, useAgentKeyForDefinitionHydration bool, logger *zap.Logger) (*apiv1.Definition, *structpb.Struct, error) {
 	def := request.GetDefinition()
 
 	// Security: For inline definitions, validate profile restrictions before execution
@@ -429,21 +437,27 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 	})
 
 	if constants.IsSDKIntegrationExecution(ctx) {
-		integrationsToFetch = integrationsToFetch[:0]
-		seenIntegrationIds := make(map[string]struct{}, len(allIntegrationIds))
 		for _, integrationID := range allIntegrationIds {
 			if !constants.IsSDKIntegrationAllowed(ctx, integrationID) {
 				return nil, nil, fmt.Errorf("integration %q is not declared by the SDK API source", integrationID)
 			}
-			if _, seen := seenIntegrationIds[integrationID]; seen {
-				continue
-			}
-			seenIntegrationIds[integrationID] = struct{}{}
-			integrationsToFetch = append(integrationsToFetch, integrationID)
 		}
 		// Never trust caller-supplied integration configs on signed SDK callbacks;
 		// hydrate all referenced integrations from the server-authoritative agent
 		// datasource endpoint below.
+		integrationsToFetch = dedupeIntegrationIds(allIntegrationIds)
+		def.Integrations = map[string]*structpb.Struct{}
+	} else if shouldSkipDefinitionSecretInjection(ctx) {
+		// Any inline execution that is authorized to render datasource secrets
+		// (scoped app engine versions and app-scoped Superblocks JWT requests
+		// without a legacy claim) can reach datasource secret rendering. A
+		// caller could embed a {{sb_secrets...}} binding in a hand-crafted inline
+		// integration config to exfiltrate the org's secret store into an
+		// attacker-controlled datasource. Discard caller-supplied configs and
+		// refetch referenced integrations from the server-authoritative endpoint.
+		// This must stay in lockstep with shouldRenderDatasourceSecrets so a
+		// trusted renderer never evaluates caller-supplied integration configs.
+		integrationsToFetch = dedupeIntegrationIds(allIntegrationIds)
 		def.Integrations = map[string]*structpb.Struct{}
 	}
 
@@ -499,7 +513,7 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 			resp, err := fetcher.FetchIntegrations(ctx, &integrationv1.GetIntegrationsRequest{
 				Ids:     integrationsToFetch,
 				Profile: request.GetProfile(),
-			}, useAgentKey)
+			}, useAgentKeyForDefinitionHydration)
 			if err != nil {
 				logger.Warn("integration fetch failed for inline definition", zap.Error(err))
 				return nil, nil, err
@@ -556,8 +570,8 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 		contains = true // We're opting for a potentially slower execution than a failed one.
 	}
 
-	if contains && def.GetStores() == nil {
-		stores, err := FetchSecretStores(ctx, fetcher, request.GetProfile().GetName(), useAgentKey, logger)
+	if contains && def.GetStores() == nil && shouldFetchDefinitionSecretStores(ctx, def) {
+		stores, err := FetchSecretStores(ctx, fetcher, request.GetProfile().GetName(), useAgentKeyForDefinitionHydration, logger)
 		if err != nil {
 			logger.Error("failed to fetch secret stores", zap.Error(err))
 			return nil, nil, err
@@ -593,6 +607,19 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 	rawDef.Fields["api"] = apiValue
 
 	return def, rawDef, nil
+}
+
+func dedupeIntegrationIds(integrationIds []string) []string {
+	deduped := make([]string, 0, len(integrationIds))
+	seenIntegrationIds := make(map[string]struct{}, len(integrationIds))
+	for _, integrationID := range integrationIds {
+		if _, seen := seenIntegrationIds[integrationID]; seen {
+			continue
+		}
+		seenIntegrationIds[integrationID] = struct{}{}
+		deduped = append(deduped, integrationID)
+	}
+	return deduped
 }
 
 func FetchSecretStores(ctx context.Context, fetcher fetch.Fetcher, profile string, useAgentKey bool, logger *zap.Logger) ([]*secretsv1.Store, error) {
@@ -671,6 +698,7 @@ func HandleWorkflow(
 		ctx.Context,
 		request,
 		executeOpts.Fetcher,
+		executeOpts.UseAgentKeyForServerFetch,
 		executeOpts.UseAgentKey,
 		executeOpts.Logger,
 	)
@@ -740,34 +768,35 @@ func HandleWorkflow(
 	rawApiValue, _ := utils.GetStructField(rawDef, "api")
 
 	done, err, userError := Execute(context.WithValue(ctx.Context, constants.ContextKeyApiStartTime, time.Now().UnixMilli()), &Options{
-		Logger:                executeOpts.Logger,
-		Store:                 executeOpts.Store,
-		Key:                   refs,
-		Worker:                executeOpts.Worker,
-		Fetcher:               executeOpts.Fetcher,
-		Api:                   def.Api,
-		RawApi:                rawApiValue,
-		Integrations:          def.Integrations,
-		FileServerUrl:         executeOpts.FileServerUrl,
-		JwtToken:              executeOpts.JwtToken,
-		Profile:               executeOpts.Profile,
-		TokenManager:          executeOpts.TokenManager,
-		IsDeployed:            true,
-		Flags:                 executeOpts.Flags,
-		Requester:             requester,
-		Options:               request.Options,
-		Inputs:                inputs,
-		DefaultResolveOptions: options,
-		DefinitionMetadata:    executeOpts.DefinitionMetadata,
-		SecretManager:         executeOpts.SecretManager,
-		FetchToken:            executeOpts.FetchToken,
-		RootStartTime:         executeOpts.RootStartTime,
-		Timeout:               executeOpts.Timeout,
-		GarbageCollect:        false,                   // VERY important - do not garbage collect the workflow output, need to handle it manually before it gets deleted by the GC
-		UseAgentKey:           executeOpts.UseAgentKey, // This is to inform the resolve whether it's correct to pass the agent key. The agent key should only be used if it's a nested workflow from a scheduled job
-		Secrets:               executeOpts.Secrets,
-		Stores:                def.Stores,
-		Signature:             executeOpts.Signature,
+		Logger:                    executeOpts.Logger,
+		Store:                     executeOpts.Store,
+		Key:                       refs,
+		Worker:                    executeOpts.Worker,
+		Fetcher:                   executeOpts.Fetcher,
+		Api:                       def.Api,
+		RawApi:                    rawApiValue,
+		Integrations:              def.Integrations,
+		FileServerUrl:             executeOpts.FileServerUrl,
+		JwtToken:                  executeOpts.JwtToken,
+		Profile:                   executeOpts.Profile,
+		TokenManager:              executeOpts.TokenManager,
+		IsDeployed:                true,
+		Flags:                     executeOpts.Flags,
+		Requester:                 requester,
+		Options:                   request.Options,
+		Inputs:                    inputs,
+		DefaultResolveOptions:     options,
+		DefinitionMetadata:        executeOpts.DefinitionMetadata,
+		SecretManager:             executeOpts.SecretManager,
+		FetchToken:                executeOpts.FetchToken,
+		RootStartTime:             executeOpts.RootStartTime,
+		Timeout:                   executeOpts.Timeout,
+		GarbageCollect:            false,                   // VERY important - do not garbage collect the workflow output, need to handle it manually before it gets deleted by the GC
+		UseAgentKey:               executeOpts.UseAgentKey, // This is to inform the resolve whether it's correct to pass the agent key. The agent key should only be used if it's a nested workflow from a scheduled job
+		UseAgentKeyForServerFetch: executeOpts.UseAgentKeyForServerFetch,
+		Secrets:                   executeOpts.Secrets,
+		Stores:                    def.Stores,
+		Signature:                 executeOpts.Signature,
 	}, nil)
 	if err != nil {
 		return "", "", nil, err
@@ -998,6 +1027,19 @@ func EvaluateDatasource(
 		return nil, nil, err
 	}
 
+	newCtx, newCtxRedacted, err = withDatasourceSecrets(
+		newCtx,
+		newCtxRedacted,
+		cloned,
+		sandbox,
+		garbage,
+		executeOpts,
+		options...,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// TODO: can we figure out how to render proto value without variables? That way we don't need to write to the store with Variables()
 	datasourceConfig, err := renderDatasourceConfig(newCtx, cloned, sandbox, executeOpts.Logger)
 	if err != nil {
@@ -1010,6 +1052,147 @@ func EvaluateDatasource(
 	}
 
 	return datasourceConfig, redactedDatasourceConfig, nil
+}
+
+func shouldFetchDefinitionSecretStores(ctx context.Context, def *apiv1.Definition) bool {
+	if constants.IsSDKIntegrationExecution(ctx) {
+		return true
+	}
+
+	if shouldSkipDefinitionSecretInjection(ctx) {
+		// Trusted datasource-secret renderers (scoped executions and verified
+		// app-scoped Superblocks JWT requests without a legacy claim) confine secrets to
+		// datasource rendering. By this point caller-supplied inline integration
+		// configs have been wiped and refetched from the server (see
+		// fetchDefinitionFromRequest), so this check sees only
+		// server-authoritative datasource configs. Keep this predicate aligned
+		// with the wipe branch in fetchDefinitionFromRequest so a caller can
+		// never trigger a store fetch via a smuggled inline sb_secrets binding.
+		contains, err := utils.ContainsSuperblocksSecrets(nil, def.GetIntegrations())
+		if err != nil {
+			return true
+		}
+		return contains
+	}
+
+	// Legacy and missing app engine versions (non-JWT or unverified callers)
+	// retain full inline secret injection, so secret stores are fetched whenever
+	// the definition references sb_secrets (gated by the caller-side contains
+	// check).
+	return true
+}
+
+func withDatasourceSecrets(
+	ctx *apictx.Context,
+	redactedCtx *apictx.Context,
+	datasource *structpb.Value,
+	sandbox engine.Sandbox,
+	garbage gc.GC,
+	executeOpts *Options,
+	options ...options.Option,
+) (*apictx.Context, *apictx.Context, error) {
+	if executeOpts.DisableDatasourceSecretRendering {
+		return ctx, redactedCtx, nil
+	}
+
+	if !shouldRenderDatasourceSecrets(ctx.Context) {
+		return ctx, redactedCtx, nil
+	}
+
+	datasourceStruct := datasource.GetStructValue()
+	if datasourceStruct == nil {
+		return ctx, redactedCtx, nil
+	}
+	if executeOpts.Stores == nil || len(executeOpts.Stores.GetSecrets()) == 0 {
+		return ctx, redactedCtx, nil
+	}
+
+	// SDK integration callbacks and Clark's direct integration test path use
+	// inline definitions, but their datasource config is fetched from the server.
+	// Keep sb_secrets scoped to datasource rendering so caller-supplied action
+	// config still cannot reference it.
+	secretInputs := map[string]*structpb.Value{}
+	secretCtx := ctx.Context
+	if executeOpts.Api != nil && executeOpts.Api.GetMetadata().GetOrganization() != "" {
+		organizationId := executeOpts.Api.GetMetadata().GetOrganization()
+		secretCtx = constants.WithOrganizationID(secretCtx, organizationId)
+	}
+
+	if err := secretspkg.RetrieveAndUnmarshalIfNeeded(
+		secretCtx,
+		executeOpts.Secrets,
+		executeOpts.Stores.GetSecrets(),
+		nil,
+		map[string]*structpb.Struct{"datasource": datasourceStruct},
+		secretInputs,
+	); err != nil {
+		return nil, nil, err
+	}
+
+	if len(secretInputs) == 0 {
+		return ctx, redactedCtx, nil
+	}
+
+	secretVars, err := ExtractVariablesFromInputs(secretInputs, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	redactedSecretInputs := map[string]*structpb.Value{}
+	for key, value := range secretInputs {
+		redactedSecretInputs[key] = redactSecretValue(value)
+	}
+
+	redactedSecretVars, err := ExtractVariablesFromInputs(redactedSecretInputs, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ctx, err = Variables(ctx, &apiv1.Variables{Items: secretVars}, sandbox, executeOpts.Logger, garbage, executeOpts.Store, options...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	redactedCtx, err = Variables(redactedCtx, &apiv1.Variables{Items: redactedSecretVars}, sandbox, executeOpts.Logger, garbage, executeOpts.Store, options...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return ctx, redactedCtx, nil
+}
+
+func shouldRenderDatasourceSecrets(ctx context.Context) bool {
+	// Datasource secret rendering is authorized by a verified SDK integration
+	// callback or a signed app-scoped Superblocks JWT request. It must not depend on the
+	// spoofable is_ai_triggered request flag, which a caller controls.
+	return constants.IsSDKIntegrationExecution(ctx) || IsVerifiedJwtRequestWithoutLegacyAppEngineVersion(ctx)
+}
+
+func redactSecretValue(value *structpb.Value) *structpb.Value {
+	if value == nil {
+		return nil
+	}
+
+	switch kind := value.GetKind().(type) {
+	case *structpb.Value_StructValue:
+		fields := map[string]*structpb.Value{}
+		for key, value := range kind.StructValue.GetFields() {
+			fields[key] = redactSecretValue(value)
+		}
+
+		return structpb.NewStructValue(&structpb.Struct{Fields: fields})
+	case *structpb.Value_ListValue:
+		values := []*structpb.Value{}
+		for _, value := range kind.ListValue.GetValues() {
+			values = append(values, redactSecretValue(value))
+		}
+
+		return structpb.NewListValue(&structpb.ListValue{Values: values})
+	case *structpb.Value_StringValue:
+		return structpb.NewStringValue(auth.RedactedSecret)
+	default:
+		return proto.Clone(value).(*structpb.Value)
+	}
 }
 
 func renderDatasourceConfig(ctx *apictx.Context, datasource *structpb.Value, sandbox engine.Sandbox, logger *zap.Logger) (*structpb.Value, error) {

@@ -6375,6 +6375,10 @@
         "includeApiEvents": {
           "type": "boolean",
           "description": "If true, the begin and complete events will be sent. This flag is need to retain backwards compatibility."
+        },
+        "isAiTriggered": {
+          "type": "boolean",
+          "description": "If true, this execution was triggered by the AI assistant."
         }
       }
     },

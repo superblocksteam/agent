@@ -16,6 +16,7 @@ message Claims {
   string user_id = 7;
   string user_name = 8; // user display name
   optional google.protobuf.Struct metadata = 9;
+  string app_engine_version = 10;
 
   message RbacGroupObject {
     string id = 1;

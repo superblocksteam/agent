@@ -227,6 +227,11 @@ message ExecuteRequest {
      * If true, the begin and complete events will be sent. This flag is need to retain backwards compatibility.
      */
     bool include_api_events = 8;
+
+    /*
+     * If true, this execution was triggered by the AI assistant.
+     */
+    bool is_ai_triggered = 9;
   }
 
   message Fetch {

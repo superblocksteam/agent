@@ -171,6 +171,81 @@ func TestPostDatabaseLifecycleTerminalCallback(t *testing.T) {
 	resp.Body.Close()
 }
 
+func TestGetIntegrationsSecretStoresUsesAgentEndpointWithFallback(t *testing.T) {
+	for _, test := range []struct {
+		name          string
+		query         url.Values
+		useAgentKey   bool
+		firstStatus   int
+		expectedPaths []string
+	}{
+		{
+			name:          "agent key secret stores use agent endpoint",
+			query:         url.Values{"kind": []string{"SECRET"}, "profile": []string{"production"}},
+			useAgentKey:   true,
+			firstStatus:   http.StatusOK,
+			expectedPaths: []string{"/api/v1/agents/secret-stores"},
+		},
+		{
+			name:          "agent key secret stores fall back for older servers",
+			query:         url.Values{"kind": []string{"SECRET"}, "profile": []string{"production"}},
+			useAgentKey:   true,
+			firstStatus:   http.StatusNotFound,
+			expectedPaths: []string{"/api/v1/agents/secret-stores", "/api/v1/integrations"},
+		},
+		{
+			name:          "non secret integrations use integration endpoint",
+			query:         url.Values{"kind": []string{"PLUGIN"}, "profile": []string{"production"}},
+			useAgentKey:   true,
+			firstStatus:   http.StatusOK,
+			expectedPaths: []string{"/api/v1/integrations"},
+		},
+		{
+			name:          "user secret stores use integration endpoint",
+			query:         url.Values{"kind": []string{"SECRET"}, "profile": []string{"production"}},
+			useAgentKey:   false,
+			firstStatus:   http.StatusOK,
+			expectedPaths: []string{"/api/v1/integrations"},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			requestCount := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				require.Less(t, requestCount, len(test.expectedPaths))
+				assert.Equal(t, test.expectedPaths[requestCount], r.URL.Path)
+				assert.Equal(t, http.MethodGet, r.Method)
+				for k, v := range test.query {
+					assert.Equal(t, v, r.URL.Query()[k], "query param %s", k)
+				}
+
+				requestCount++
+				if requestCount == 1 && test.firstStatus == http.StatusNotFound {
+					w.WriteHeader(http.StatusNotFound)
+					w.Write([]byte(`{"error":"not found"}`))
+					return
+				}
+
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"data":[]}`))
+			}))
+			defer server.Close()
+
+			client := NewServerClient(&ServerClientOptions{
+				URL:                 server.URL,
+				SuperblocksAgentKey: "agent-key",
+			})
+
+			resp, err := client.GetIntegrations(context.Background(), nil, http.Header{}, test.query, test.useAgentKey)
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, len(test.expectedPaths), requestCount)
+			resp.Body.Close()
+		})
+	}
+}
+
 func TestDatabaseLifecyclePhysicalDatabaseInstanceClientMethods(t *testing.T) {
 	var seen []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

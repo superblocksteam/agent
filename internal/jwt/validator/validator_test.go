@@ -24,6 +24,8 @@ type results struct {
 	rbacRole         string
 	rbacGroupObjects []*authv1.Claims_RbacGroupObject
 	metadata         *structpb.Struct
+	appEngineVersion string
+	applicationID    string
 }
 
 func TestValidate(t *testing.T) {
@@ -40,6 +42,7 @@ func TestValidate(t *testing.T) {
 			name:        "valid parsed jwt and claims",
 			parsedToken: &jwt.Token{Valid: true},
 			parsedClaims: &claims{
+				ApplicationID: "app-123",
 				Claims: authv1.Claims{
 					OrgId:     "12345",
 					OrgType:   "free",
@@ -57,7 +60,8 @@ func TestValidate(t *testing.T) {
 							Name: "user",
 						},
 					},
-					UserType: "awesome",
+					UserType:         "awesome",
+					AppEngineVersion: "2.0",
 				},
 			},
 			expected: results{
@@ -78,6 +82,8 @@ func TestValidate(t *testing.T) {
 						Name: "user",
 					},
 				},
+				appEngineVersion: "2.0",
+				applicationID:    "app-123",
 			},
 		},
 		{
@@ -232,6 +238,12 @@ func testEquals(t *testing.T, ctx context.Context, expected results) {
 	actualMetadata, ok := GetMetadata(ctx)
 	assert.True(t, ok, "could not get metadata")
 
+	appEngineVersion, ok := GetAppEngineVersion(ctx)
+	assert.True(t, ok, "could not get appEngineVersion")
+
+	applicationID, ok := GetApplicationID(ctx)
+	assert.True(t, ok, "could not get applicationID")
+
 	// since metadata is proto, we just assert that separately
 	// first, check that metadata matches
 	testutils.ProtoEquals(t, expected.metadata, actualMetadata)
@@ -247,6 +259,8 @@ func testEquals(t *testing.T, ctx context.Context, expected results) {
 		userName:         userName,
 		rbacRole:         rbacRole,
 		rbacGroupObjects: rbacGroupObjects,
+		appEngineVersion: appEngineVersion,
+		applicationID:    applicationID,
 	}
 	assert.Equal(t, expected, actual)
 }

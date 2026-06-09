@@ -13,6 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/superblocksteam/agent/internal/auth"
+	authmocks "github.com/superblocksteam/agent/internal/auth/mocks"
+	authtypes "github.com/superblocksteam/agent/internal/auth/types"
 	"github.com/superblocksteam/agent/internal/fetch"
 	fetchmocks "github.com/superblocksteam/agent/internal/fetch/mocks"
 	mocks "github.com/superblocksteam/agent/internal/flags/mock"
@@ -23,7 +26,11 @@ import (
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/engine/javascript"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
+	secretspkg "github.com/superblocksteam/agent/pkg/secrets"
 	"github.com/superblocksteam/agent/pkg/secrets/refresolver"
+	"github.com/superblocksteam/agent/pkg/store"
+	"github.com/superblocksteam/agent/pkg/store/gc"
+	"github.com/superblocksteam/agent/pkg/template/plugins/mustache"
 	"github.com/superblocksteam/agent/pkg/testutils"
 	"github.com/superblocksteam/agent/pkg/utils"
 	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
@@ -31,8 +38,12 @@ import (
 	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	integrationv1 "github.com/superblocksteam/agent/types/gen/go/integration/v1"
 	pluginscommon "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
+	javascriptv1 "github.com/superblocksteam/agent/types/gen/go/plugins/javascript/v1"
+	postgresv1 "github.com/superblocksteam/agent/types/gen/go/plugins/postgresql/v1"
+	workflowv1pkg "github.com/superblocksteam/agent/types/gen/go/plugins/workflow/v1"
 	v2 "github.com/superblocksteam/agent/types/gen/go/plugins/workflow/v2"
 	secretsv1 "github.com/superblocksteam/agent/types/gen/go/secrets/v1"
+	storev1 "github.com/superblocksteam/agent/types/gen/go/store/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -107,6 +118,42 @@ func TestResolve(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, test.resolved, ctx.GetResolved())
 			}
+		})
+	}
+}
+
+func TestShouldSkipDefinitionSecretInjection(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name             string
+		appEngineVersion string
+		expected         bool
+	}{
+		{
+			name:     "no app engine version",
+			expected: false,
+		},
+		{
+			name:             "legacy app engine version",
+			appEngineVersion: legacyAppEngineVersion,
+			expected:         false,
+		},
+		{
+			name:             "non legacy app engine version",
+			appEngineVersion: "2.0",
+			expected:         true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.Background()
+			if test.appEngineVersion != "" {
+				ctx = jwt_validator.WithAppEngineVersion(ctx, test.appEngineVersion)
+			}
+
+			assert.Equal(t, test.expected, shouldSkipDefinitionSecretInjection(ctx))
 		})
 	}
 }
@@ -437,6 +484,54 @@ func TestConstructHandleWorkflowFetchRequest(t *testing.T) {
 	}
 }
 
+func TestHandleWorkflowUsesSeparateServerFetchAgentKeyFlag(t *testing.T) {
+	t.Parallel()
+
+	fetchErr := errors.New("stop after fetch")
+	fetcher := fetchmocks.NewFetcher(t)
+	fetcher.On(
+		"FetchApi",
+		mock.Anything,
+		mock.MatchedBy(func(req *apiv1.ExecuteRequest_Fetch) bool {
+			return req.GetId() == "workflow-id"
+		}),
+		false,
+	).Return((*apiv1.Definition)(nil), (*structpb.Struct)(nil), fetchErr).Once()
+
+	flags := mocks.NewFlags(t)
+	flags.On("GetWorkflowPluginInheritanceEnabled", "org-id").Return(false).Once()
+
+	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{Logger: zap.NewNop()})
+	defer sandbox.Close()
+
+	_, _, _, err := HandleWorkflow(
+		apictx.New(&apictx.Context{Context: context.Background()}),
+		sandbox,
+		&workflowv1pkg.Plugin{Workflow: "workflow-id"},
+		func(def *apiv1.Definition) string {
+			return def.GetApi().GetMetadata().GetName()
+		},
+		mustache.Instance,
+		true,
+		&Options{
+			Api: &apiv1.Api{
+				Metadata: &commonv1.Metadata{
+					Organization: "org-id",
+				},
+			},
+			DefinitionMetadata: &apiv1.Definition_Metadata{
+				Profile: "production",
+			},
+			Fetcher:                   fetcher,
+			Flags:                     flags,
+			Logger:                    zap.NewNop(),
+			UseAgentKey:               true,
+			UseAgentKeyForServerFetch: false,
+		},
+	)
+	require.ErrorIs(t, err, fetchErr)
+}
+
 func TestFetchSecretStores(t *testing.T) {
 	cfg, err := structpb.NewStruct(map[string]interface{}{
 		"provider": map[string]interface{}{
@@ -510,6 +605,428 @@ func TestFetchSecretStores(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFetchDefinitionFromRequestSkipsSecretStoresForNonLegacyAppEngine(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+	makeRequest := func() *apiv1.ExecuteRequest {
+		return &apiv1.ExecuteRequest{
+			Profile: &commonv1.Profile{
+				Name: &profileName,
+			},
+			Request: &apiv1.ExecuteRequest_Definition{
+				Definition: &apiv1.Definition{
+					Api: &apiv1.Api{
+						Metadata: &commonv1.Metadata{
+							Id:   "api-id",
+							Name: "Test API",
+						},
+						Blocks: []*apiv1.Block{
+							{
+								Name: "Step1",
+								Config: &apiv1.Block_Step{
+									Step: &apiv1.Step{
+										Config: &apiv1.Step_Javascript{
+											Javascript: &javascriptv1.Plugin{
+												Body: "return sb_secrets;",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Integrations: map[string]*structpb.Struct{},
+				},
+			},
+		}
+	}
+
+	for _, test := range []struct {
+		name             string
+		appEngineVersion string
+		integrations     map[string]*structpb.Struct
+		sdkIntegration   bool
+		verifiedJwt      bool
+		appScopedJwt     bool
+		expectStores     bool
+	}{
+		{
+			name:         "missing app engine version preserves legacy secret stores",
+			expectStores: true,
+		},
+		{
+			name:             "legacy app engine version preserves secret stores",
+			appEngineVersion: "1.0",
+			expectStores:     true,
+		},
+		{
+			name:             "scoped app engine version skips secret stores",
+			appEngineVersion: "2.0",
+		},
+		{
+			name:             "signed SDK integration execution with scoped app engine version fetches secret stores",
+			appEngineVersion: "2.0",
+			sdkIntegration:   true,
+			expectStores:     true,
+		},
+		{
+			name:             "unknown app engine version skips secret stores",
+			appEngineVersion: "3.0",
+		},
+		{
+			// Caller-supplied inline integration configs are wiped before the
+			// secret-store decision on scoped executions, so a smuggled
+			// {{sb_secrets...}} datasource binding cannot trigger a store fetch.
+			name:             "scoped execution ignores caller inline secret integration",
+			appEngineVersion: "2.0",
+			integrations: map[string]*structpb.Struct{
+				"integration-id": {
+					Fields: map[string]*structpb.Value{
+						"headers": structpb.NewListValue(&structpb.ListValue{
+							Values: []*structpb.Value{
+								structpb.NewStructValue(&structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"key":   structpb.NewStringValue("x-secret"),
+										"value": structpb.NewStringValue("{{sb_secrets.mock_store.shhh}}"),
+									},
+								}),
+							},
+						}),
+					},
+				},
+			},
+			expectStores: false,
+		},
+		{
+			// Org-only JWTs are not tied to a specific application, so they keep
+			// legacy inline secret-store behavior and caller-supplied integration
+			// configs are not wiped.
+			name:        "org-scoped jwt without app engine version preserves legacy secret stores",
+			verifiedJwt: true,
+			integrations: map[string]*structpb.Struct{
+				"integration-id": {
+					Fields: map[string]*structpb.Value{
+						"headers": structpb.NewListValue(&structpb.ListValue{
+							Values: []*structpb.Value{
+								structpb.NewStructValue(&structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"key":   structpb.NewStringValue("x-secret"),
+										"value": structpb.NewStringValue("{{sb_secrets.mock_store.shhh}}"),
+									},
+								}),
+							},
+						}),
+					},
+				},
+			},
+			expectStores: true,
+		},
+		{
+			// An app-scoped JWT without an app engine version claim is a trusted
+			// datasource-secret renderer (see shouldRenderDatasourceSecrets), so
+			// caller-supplied inline integration configs are wiped just like
+			// scoped executions. A smuggled {{sb_secrets...}} datasource binding
+			// must not be able to trigger a secret-store fetch.
+			name:         "app-scoped jwt without app engine version ignores caller inline secret integration",
+			verifiedJwt:  true,
+			appScopedJwt: true,
+			integrations: map[string]*structpb.Struct{
+				"integration-id": {
+					Fields: map[string]*structpb.Value{
+						"headers": structpb.NewListValue(&structpb.ListValue{
+							Values: []*structpb.Value{
+								structpb.NewStructValue(&structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"key":   structpb.NewStringValue("x-secret"),
+										"value": structpb.NewStringValue("{{sb_secrets.mock_store.shhh}}"),
+									},
+								}),
+							},
+						}),
+					},
+				},
+			},
+			expectStores: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
+			if test.appEngineVersion != "" {
+				ctx = jwt_validator.WithAppEngineVersion(ctx, test.appEngineVersion)
+			}
+			if test.sdkIntegration {
+				ctx = constants.WithSDKIntegrationExecution(ctx, nil)
+			}
+			if test.verifiedJwt {
+				ctx = constants.WithRequestUsesJwtAuth(ctx, true)
+				ctx = jwt_validator.WithOrganizationID(ctx, "org-id")
+			}
+			if test.appScopedJwt {
+				ctx = jwt_validator.WithApplicationID(ctx, "app-id")
+			}
+
+			fetcher := fetchmocks.NewFetcher(t)
+			if test.expectStores {
+				fetcher.On(
+					"FetchIntegrations",
+					mock.Anything,
+					mock.MatchedBy(func(req *integrationv1.GetIntegrationsRequest) bool {
+						return req.GetProfile().GetName() == profileName && req.GetKind() == integrationv1.Kind_KIND_SECRET
+					}),
+					false,
+				).Return(&integrationv1.GetIntegrationsResponse{
+					Data: []*integrationv1.Integration{},
+				}, nil)
+			}
+
+			request := makeRequest()
+			if test.integrations != nil {
+				request.GetDefinition().Integrations = test.integrations
+			}
+
+			def, _, err := fetchDefinitionFromRequest(ctx, request, fetcher, false, zap.NewNop())
+			require.NoError(t, err)
+
+			if test.expectStores {
+				require.NotNil(t, def.GetStores())
+				assert.NotNil(t, def.GetStores().GetSecrets())
+			} else {
+				assert.Nil(t, def.GetStores())
+			}
+		})
+	}
+}
+
+func TestFetchDefinitionFromRequestWipesCallerInlineIntegrationsForScopedExecution(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+	makeRequest := func() *apiv1.ExecuteRequest {
+		return &apiv1.ExecuteRequest{
+			Profile: &commonv1.Profile{
+				Name: &profileName,
+			},
+			Options: &apiv1.ExecuteRequest_Options{
+				IsAiTriggered: true,
+			},
+			Request: &apiv1.ExecuteRequest_Definition{
+				Definition: &apiv1.Definition{
+					Api: &apiv1.Api{
+						Metadata: &commonv1.Metadata{
+							Id:   "api-id",
+							Name: "Test API",
+						},
+						Blocks: []*apiv1.Block{
+							{
+								Name: "Step1",
+								Config: &apiv1.Block_Step{
+									Step: &apiv1.Step{
+										Config: &apiv1.Step_Javascript{
+											Javascript: &javascriptv1.Plugin{
+												Body: "return 1;",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Integrations: map[string]*structpb.Struct{
+						"attacker-integration": {
+							Fields: map[string]*structpb.Value{
+								"headers": structpb.NewListValue(&structpb.ListValue{
+									Values: []*structpb.Value{
+										structpb.NewStructValue(&structpb.Struct{
+											Fields: map[string]*structpb.Value{
+												"key":   structpb.NewStringValue("x-exfil"),
+												"value": structpb.NewStringValue("{{sb_secrets.mock_store.shhh}}"),
+											},
+										}),
+									},
+								}),
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	ctx := constants.WithAITriggeredExecution(
+		jwt_validator.WithAppEngineVersion(context.Background(), "2.0"),
+	)
+
+	fetcher := fetchmocks.NewFetcher(t)
+	fetcher.On(
+		"FetchIntegrations",
+		mock.Anything,
+		mock.MatchedBy(func(req *integrationv1.GetIntegrationsRequest) bool {
+			return req.GetKind() == integrationv1.Kind_KIND_SECRET
+		}),
+		false,
+	).Return(&integrationv1.GetIntegrationsResponse{
+		Data: []*integrationv1.Integration{},
+	}, nil).Maybe()
+
+	def, _, err := fetchDefinitionFromRequest(ctx, makeRequest(), fetcher, false, zap.NewNop())
+	require.NoError(t, err)
+
+	assert.NotContains(t, def.GetIntegrations(), "attacker-integration")
+
+	contains, err := utils.ContainsSuperblocksSecrets(def.GetApi(), def.GetIntegrations())
+	require.NoError(t, err)
+	assert.False(t, contains)
+}
+
+func TestFetchDefinitionFromRequestWipesCallerInlineIntegrationsForAppScopedJwtWithoutAppEngineVersion(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+	makeRequest := func() *apiv1.ExecuteRequest {
+		return &apiv1.ExecuteRequest{
+			Profile: &commonv1.Profile{
+				Name: &profileName,
+			},
+			Request: &apiv1.ExecuteRequest_Definition{
+				Definition: &apiv1.Definition{
+					Api: &apiv1.Api{
+						Metadata: &commonv1.Metadata{
+							Id:   "api-id",
+							Name: "Test API",
+						},
+						Blocks: []*apiv1.Block{
+							{
+								Name: "Step1",
+								Config: &apiv1.Block_Step{
+									Step: &apiv1.Step{
+										Config: &apiv1.Step_Javascript{
+											Javascript: &javascriptv1.Plugin{
+												Body: "return 1;",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Integrations: map[string]*structpb.Struct{
+						"attacker-integration": {
+							Fields: map[string]*structpb.Value{
+								"headers": structpb.NewListValue(&structpb.ListValue{
+									Values: []*structpb.Value{
+										structpb.NewStructValue(&structpb.Struct{
+											Fields: map[string]*structpb.Value{
+												"key":   structpb.NewStringValue("x-exfil"),
+												"value": structpb.NewStringValue("{{sb_secrets.mock_store.shhh}}"),
+											},
+										}),
+									},
+								}),
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	// An app-scoped Superblocks JWT request with no app_engine_version claim is
+	// authorized to render datasource secrets, so it must receive the same
+	// inline-integration wiping as a scoped execution. Otherwise a hand-crafted
+	// inline integration carrying a {{sb_secrets...}} binding would survive into
+	// datasource evaluation and exfiltrate the org secret store.
+	ctx := jwt_validator.WithApplicationID(
+		jwt_validator.WithOrganizationID(
+			constants.WithRequestUsesJwtAuth(context.Background(), true),
+			"org-id",
+		),
+		"app-id",
+	)
+
+	fetcher := fetchmocks.NewFetcher(t)
+	fetcher.On(
+		"FetchIntegrations",
+		mock.Anything,
+		mock.MatchedBy(func(req *integrationv1.GetIntegrationsRequest) bool {
+			return req.GetKind() == integrationv1.Kind_KIND_SECRET
+		}),
+		false,
+	).Return(&integrationv1.GetIntegrationsResponse{
+		Data: []*integrationv1.Integration{},
+	}, nil).Maybe()
+
+	def, _, err := fetchDefinitionFromRequest(ctx, makeRequest(), fetcher, false, zap.NewNop())
+	require.NoError(t, err)
+
+	assert.NotContains(t, def.GetIntegrations(), "attacker-integration")
+
+	contains, err := utils.ContainsSuperblocksSecrets(def.GetApi(), def.GetIntegrations())
+	require.NoError(t, err)
+	assert.False(t, contains)
+}
+
+func TestFetchDefinitionFromRequestPreservesCallerInlineIntegrationsForOrgJwtWithoutAppEngineVersion(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+	makeRequest := func() *apiv1.ExecuteRequest {
+		return &apiv1.ExecuteRequest{
+			Profile: &commonv1.Profile{
+				Name: &profileName,
+			},
+			Request: &apiv1.ExecuteRequest_Definition{
+				Definition: &apiv1.Definition{
+					Api: &apiv1.Api{
+						Metadata: &commonv1.Metadata{
+							Id:   "api-id",
+							Name: "Test API",
+						},
+						Blocks: []*apiv1.Block{
+							{
+								Name: "Step1",
+								Config: &apiv1.Block_Step{
+									Step: &apiv1.Step{
+										Integration: "postgres",
+										Config: &apiv1.Step_Postgres{
+											Postgres: &postgresv1.Plugin{
+												Body: "SELECT 1;",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Integrations: map[string]*structpb.Struct{
+						"postgres": {
+							Fields: map[string]*structpb.Value{
+								"id": structpb.NewStringValue("postgres-config"),
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	// Org-only JWTs without app_engine_version are used by existing E2E and
+	// legacy inline execute paths. They are not authorized datasource-secret
+	// renderers, so caller-supplied inline integration configs remain in place
+	// and should not be refetched from the server.
+	ctx := jwt_validator.WithOrganizationID(
+		constants.WithRequestUsesJwtAuth(context.Background(), true),
+		"org-id",
+	)
+
+	fetcher := fetchmocks.NewFetcher(t)
+
+	def, _, err := fetchDefinitionFromRequest(ctx, makeRequest(), fetcher, false, zap.NewNop())
+	require.NoError(t, err)
+
+	assert.Contains(t, def.GetIntegrations(), "postgres")
 }
 
 func TestGenerateAuditLog(t *testing.T) {
@@ -798,7 +1315,7 @@ func TestSingleStepRunApiDefinitionParsing(t *testing.T) {
 				Name:        &profileName,
 				Environment: nil,
 			},
-		}, &fetchmocks.Fetcher{}, false, logger)
+		}, &fetchmocks.Fetcher{}, false, false, logger)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "profile1", def.GetMetadata().GetProfile())
@@ -813,6 +1330,31 @@ func TestSingleStepRunApiDefinitionParsing(t *testing.T) {
 	})
 }
 
+func TestFetchUsesSeparateAgentKeyForServerAndDefinitionHydration(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	fetchOptions := &apiv1.ExecuteRequest_Fetch{Id: "api-id"}
+	req := &apiv1.ExecuteRequest{
+		Request: &apiv1.ExecuteRequest_Fetch_{Fetch: fetchOptions},
+	}
+	def := &apiv1.Definition{
+		Api: &apiv1.Api{
+			Metadata: &commonv1.Metadata{
+				Id:           "00000000-0000-0000-0000-000000000001",
+				Organization: "00000000-0000-0000-0000-000000000002",
+				Name:         "Test API",
+			},
+		},
+	}
+
+	mockFetcher := fetchmocks.NewFetcher(t)
+	mockFetcher.On("FetchApi", mock.Anything, fetchOptions, false).Return(def, &structpb.Struct{}, nil)
+
+	_, _, err := Fetch(context.Background(), req, mockFetcher, false, true, zap.NewNop())
+	require.NoError(t, err)
+}
+
 func TestFetch_FetchCodePath(t *testing.T) {
 	t.Parallel()
 	defer metrics.SetupForTesting()()
@@ -823,7 +1365,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		req := &apiv1.ExecuteRequest{
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
-		_, _, err := Fetch(context.Background(), req, &fetchmocks.Fetcher{}, false, zap.NewNop())
+		_, _, err := Fetch(context.Background(), req, &fetchmocks.Fetcher{}, false, false, zap.NewNop())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "applicationId")
 	})
@@ -839,7 +1381,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		fetchErr := fmt.Errorf("server error")
 		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "abc", "", false).
 			Return(nil, fetchErr)
-		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		_, _, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.Error(t, err)
 		assert.ErrorIs(t, err, fetchErr)
 		fetcher.AssertExpectations(t)
@@ -854,7 +1396,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		fetcher := &fetchmocks.Fetcher{}
 		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
 			Return(&fetch.ApiCodeBundle{Bundle: ""}, nil)
-		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		_, _, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "empty bundle")
 		fetcher.AssertExpectations(t)
@@ -869,7 +1411,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		fetcher := &fetchmocks.Fetcher{}
 		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
 			Return(&fetch.ApiCodeBundle{Bundle: "const x = 1;"}, nil)
-		def, rawDef, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		def, rawDef, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.NoError(t, err)
 		assert.Equal(t, "code-mode", def.GetApi().GetMetadata().GetName())
 		assert.Equal(t, "app-1", def.GetApi().GetTrigger().GetApplication().GetId())
@@ -889,7 +1431,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		fetcher := &fetchmocks.Fetcher{}
 		fetcher.On("FetchApiCode", mock.Anything, "app-2", "", "", "commit-123", "main", false).
 			Return(&fetch.ApiCodeBundle{Bundle: "code"}, nil)
-		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		_, _, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.NoError(t, err)
 		fetcher.AssertExpectations(t)
 	})
@@ -903,7 +1445,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		fetcher := &fetchmocks.Fetcher{}
 		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
 			Return(nil, nil)
-		_, _, err := Fetch(context.Background(), req, fetcher, false, zap.NewNop())
+		_, _, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "empty bundle")
 		fetcher.AssertExpectations(t)
@@ -1193,6 +1735,255 @@ func TestRenderDatasourceConfig_EdgeCases(t *testing.T) {
 			assert.Equal(t, tt.datasource, result)
 		})
 	}
+}
+
+func TestEvaluateDatasourceAllowsSDKIntegrationDatasourceSecrets(t *testing.T) {
+	t.Parallel()
+	defer metrics.SetupForTesting()()
+
+	memoryStore := store.Memory()
+	sandbox := javascript.Sandbox(context.Background(), &javascript.Options{
+		Logger: zap.NewNop(),
+		Store:  memoryStore,
+	})
+	defer sandbox.Close()
+
+	makeDatasource := func(t *testing.T) *structpb.Value {
+		t.Helper()
+
+		datasource, err := structpb.NewValue(map[string]any{
+			"id": "configuration-id",
+			"headers": []any{
+				map[string]any{
+					"key":   "x-secret",
+					"value": "{{sb_secrets.mock_store.shhh}}",
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		return datasource
+	}
+
+	makeOptions := func(t *testing.T) *Options {
+		t.Helper()
+
+		tokenManager := authmocks.NewTokenManager(t)
+		tokenManager.On(
+			"AddTokenIfNeeded",
+			mock.Anything,
+			mock.Anything,
+			mock.Anything,
+			mock.Anything,
+			"integration-id",
+			"configuration-id",
+			"restapi",
+		).Return(authtypes.TokenPayload{}, nil)
+
+		return &Options{
+			Api: &apiv1.Api{
+				Metadata: &commonv1.Metadata{
+					Organization: "org-id",
+				},
+			},
+			Logger:       zap.NewNop(),
+			Secrets:      secretspkg.Manager(),
+			Store:        memoryStore,
+			TokenManager: tokenManager,
+			Stores: &storev1.Stores{
+				Secrets: []*secretsv1.Store{
+					{
+						Metadata: &commonv1.Metadata{
+							Name: "mock_store",
+						},
+						Provider: &secretsv1.Provider{
+							Config: &secretsv1.Provider_Mock{
+								Mock: &secretsv1.MockStore{
+									Data: map[string]string{
+										"shhh": "this is a secret",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("signed SDK integration callback renders datasource secrets", func(t *testing.T) {
+		ctx := apictx.New(&apictx.Context{
+			Context: constants.WithSDKIntegrationExecution(constants.WithOrganizationID(context.Background(), "org-id"), nil),
+		})
+		datasource := makeDatasource(t)
+
+		rendered, redacted, err := EvaluateDatasource(
+			ctx,
+			sandbox,
+			datasource,
+			proto.Clone(datasource).(*structpb.Value),
+			"integration-id",
+			"",
+			"restapi",
+			gc.New(&gc.Options{Store: memoryStore}),
+			makeOptions(t),
+		)
+		require.NoError(t, err)
+
+		header := rendered.GetStructValue().GetFields()["headers"].GetListValue().GetValues()[0].GetStructValue()
+		assert.Equal(t, "this is a secret", header.GetFields()["value"].GetStringValue())
+
+		redactedHeader := redacted.GetStructValue().GetFields()["headers"].GetListValue().GetValues()[0].GetStructValue()
+		assert.Equal(t, "<redacted>", redactedHeader.GetFields()["value"].GetStringValue())
+
+		_, ok := ctx.Variables.Get("sb_secrets")
+		assert.False(t, ok, "datasource secrets should not be added to the caller action context")
+	})
+
+	t.Run("scoped app engine version renders datasource secrets", func(t *testing.T) {
+		ctx := apictx.New(&apictx.Context{
+			Context: jwt_validator.WithAppEngineVersion(constants.WithOrganizationID(context.Background(), "org-id"), "2.0"),
+		})
+		datasource := makeDatasource(t)
+
+		rendered, redacted, err := EvaluateDatasource(
+			ctx,
+			sandbox,
+			datasource,
+			proto.Clone(datasource).(*structpb.Value),
+			"integration-id",
+			"",
+			"restapi",
+			gc.New(&gc.Options{Store: memoryStore}),
+			makeOptions(t),
+		)
+		require.NoError(t, err)
+
+		header := rendered.GetStructValue().GetFields()["headers"].GetListValue().GetValues()[0].GetStructValue()
+		assert.Equal(t, "this is a secret", header.GetFields()["value"].GetStringValue())
+
+		redactedHeader := redacted.GetStructValue().GetFields()["headers"].GetListValue().GetValues()[0].GetStructValue()
+		assert.Equal(t, "<redacted>", redactedHeader.GetFields()["value"].GetStringValue())
+
+		_, ok := ctx.Variables.Get("sb_secrets")
+		assert.False(t, ok, "datasource secrets should not be added to the caller action context")
+	})
+
+	t.Run("verified jwt without stores renders datasource without secret lookups", func(t *testing.T) {
+		ctx := apictx.New(&apictx.Context{
+			Context: constants.WithRequestUsesJwtAuth(constants.WithOrganizationID(context.Background(), "org-id"), true),
+		})
+		datasource, err := structpb.NewValue(map[string]any{
+			"id": "configuration-id",
+			"headers": []any{
+				map[string]any{
+					"key":   "x-plain",
+					"value": "plain",
+				},
+			},
+		})
+		require.NoError(t, err)
+		options := makeOptions(t)
+		options.Stores = nil
+
+		rendered, redacted, err := EvaluateDatasource(
+			ctx,
+			sandbox,
+			datasource,
+			proto.Clone(datasource).(*structpb.Value),
+			"integration-id",
+			"",
+			"restapi",
+			gc.New(&gc.Options{Store: memoryStore}),
+			options,
+		)
+		require.NoError(t, err)
+
+		header := rendered.GetStructValue().GetFields()["headers"].GetListValue().GetValues()[0].GetStructValue()
+		assert.Equal(t, "plain", header.GetFields()["value"].GetStringValue())
+
+		redactedHeader := redacted.GetStructValue().GetFields()["headers"].GetListValue().GetValues()[0].GetStructValue()
+		assert.Equal(t, "plain", redactedHeader.GetFields()["value"].GetStringValue())
+	})
+
+	t.Run("spoofable AI-triggered flag alone cannot render datasource secrets", func(t *testing.T) {
+		ctx := apictx.New(&apictx.Context{
+			Context: constants.WithAITriggeredExecution(constants.WithOrganizationID(context.Background(), "org-id")),
+		})
+		datasource := makeDatasource(t)
+
+		_, _, err := EvaluateDatasource(
+			ctx,
+			sandbox,
+			datasource,
+			proto.Clone(datasource).(*structpb.Value),
+			"integration-id",
+			"",
+			"restapi",
+			gc.New(&gc.Options{Store: memoryStore}),
+			makeOptions(t),
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "sb_secrets")
+	})
+}
+
+func TestWithDatasourceSecretsSkipsWhenNotApplicable(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name       string
+		ctx        context.Context
+		datasource *structpb.Value
+	}{
+		{
+			name:       "ordinary execution",
+			ctx:        context.Background(),
+			datasource: structpb.NewStructValue(&structpb.Struct{}),
+		},
+		{
+			name:       "sdk execution with non object datasource",
+			ctx:        constants.WithSDKIntegrationExecution(context.Background(), nil),
+			datasource: structpb.NewStringValue("not-an-object"),
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := apictx.New(&apictx.Context{Context: test.ctx})
+			redactedCtx := apictx.New(&apictx.Context{Context: test.ctx})
+
+			gotCtx, gotRedactedCtx, err := withDatasourceSecrets(ctx, redactedCtx, test.datasource, nil, nil, &Options{})
+			require.NoError(t, err)
+			assert.Same(t, ctx, gotCtx)
+			assert.Same(t, redactedCtx, gotRedactedCtx)
+		})
+	}
+}
+
+func TestRedactSecretValue(t *testing.T) {
+	t.Parallel()
+
+	assert.Nil(t, redactSecretValue(nil))
+
+	number := structpb.NewNumberValue(42)
+	assert.True(t, proto.Equal(number, redactSecretValue(number)))
+
+	secret := structpb.NewStructValue(&structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"nested": structpb.NewListValue(&structpb.ListValue{
+				Values: []*structpb.Value{
+					structpb.NewStringValue("secret"),
+					structpb.NewBoolValue(true),
+				},
+			}),
+		},
+	})
+
+	redacted := redactSecretValue(secret)
+	values := redacted.GetStructValue().GetFields()["nested"].GetListValue().GetValues()
+	assert.Equal(t, auth.RedactedSecret, values[0].GetStringValue())
+	assert.Equal(t, true, values[1].GetBoolValue())
 }
 
 func TestFilterParameters(t *testing.T) {
@@ -2027,7 +2818,7 @@ func TestFetch_ResolvesCredentialRefsForFetchedDefinition(t *testing.T) {
 	mockFetcher := fetchmocks.NewFetcher(t)
 	mockFetcher.On("FetchApi", mock.Anything, fetchOptions, false).Return(def, &structpb.Struct{}, nil)
 
-	got, _, err := Fetch(context.Background(), req, mockFetcher, false, zap.NewNop())
+	got, _, err := Fetch(context.Background(), req, mockFetcher, false, false, zap.NewNop())
 	require.NoError(t, err)
 	assert.Equal(t, "hunter2", got.Integrations["integration-1"].Fields["password"].GetStringValue())
 }

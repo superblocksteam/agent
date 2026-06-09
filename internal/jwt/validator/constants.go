@@ -23,6 +23,8 @@ const (
 	ContextKeyUserType
 	ContextKeyUserId
 	ContextKeyUserDisplayName
+	ContextKeyAppEngineVersion
+	ContextKeyApplicationID
 )
 
 type QuotaTier int32
@@ -85,6 +87,24 @@ func GetUserId(ctx context.Context) (string, bool) {
 
 func GetUserDisplayName(ctx context.Context) (string, bool) {
 	val, ok := ctx.Value(ContextKeyUserDisplayName).(string)
+	return val, ok
+}
+
+func WithAppEngineVersion(ctx context.Context, appEngineVersion string) context.Context {
+	return context.WithValue(ctx, ContextKeyAppEngineVersion, appEngineVersion)
+}
+
+func GetAppEngineVersion(ctx context.Context) (string, bool) {
+	val, ok := ctx.Value(ContextKeyAppEngineVersion).(string)
+	return val, ok
+}
+
+func WithApplicationID(ctx context.Context, applicationID string) context.Context {
+	return context.WithValue(ctx, ContextKeyApplicationID, applicationID)
+}
+
+func GetApplicationID(ctx context.Context) (string, bool) {
+	val, ok := ctx.Value(ContextKeyApplicationID).(string)
 	return val, ok
 }
 
