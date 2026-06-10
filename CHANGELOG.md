@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Restrict inline DSL `sb_secrets` bindings to legacy application tokens.
+
+## v1.41.0
 - Fail fast on stalled Databricks connections: set a 120s socket timeout on every Databricks connection path so an expired/revoked OAuth (on-behalf-of) token no longer leaves the worker hanging for the library's 15-minute default (which could pin workers and cascade into 503s). Overridable via the `SUPERBLOCKS_DATABRICKS_SOCKET_TIMEOUT_MS` env var. Databricks auth failures (HTTP 401/403) now surface as a clear "Authorization failed — reconnect the OAuth token" error instead of a generic timeout.
 - Fail fast with structured Native Database lifecycle unsupported-shape errors and add module-shape drift validation.
 - Add Native Database lifecycle worker-side pool client endpoints and allocation coordinator for existing-or-new shared pools.
