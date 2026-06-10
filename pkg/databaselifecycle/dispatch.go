@@ -15,10 +15,9 @@ type DispatchPayload struct {
 	BindingKey              string                 `json:"bindingKey"`
 	ConnectionMetadata      map[string]any         `json:"connectionMetadata,omitempty"`
 	RuntimeCredentialRefs   map[string]any         `json:"runtimeCredentialRefs,omitempty"`
-	MigrationCredentialRefs map[string]any         `json:"migrationCredentialRefs,omitempty"`
-	DesiredSpec             map[string]any         `json:"desiredSpec,omitempty"`
+	MigrationCredentialRefs map[string]any         `json:"-"`
+	DesiredSpec             DatabaseRequirement    `json:"desiredSpec"`
 	DesiredSpecHash         string                 `json:"desiredSpecHash"`
-	Engine                  string                 `json:"engine,omitempty"`
 	Environment             string                 `json:"environment,omitempty"`
 	Migrations              []migrations.Migration `json:"migrations,omitempty"`
 	Operation               string                 `json:"operation"`
@@ -28,6 +27,16 @@ type DispatchPayload struct {
 	ResourceKey             string                 `json:"resourceKey"`
 	TerraformBackend        map[string]any         `json:"-"`
 	TerraformModule         TerraformModule        `json:"-"`
+}
+
+type DatabaseRequirement struct {
+	LogicalName        string         `json:"logicalName"`
+	Engine             string         `json:"engine"`
+	Version            string         `json:"version,omitempty"`
+	Sizing             map[string]any `json:"sizing,omitempty"`
+	Extensions         []string       `json:"extensions,omitempty"`
+	ReplicaCount       *int           `json:"replicaCount,omitempty"`
+	MigrationDirectory string         `json:"migrationDirectory,omitempty"`
 }
 
 type TerraformModule struct {

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Align Native Database lifecycle dispatch decoding with the control-plane payload by reading database requirements from typed `desiredSpec` instead of duplicated top-level spec fields.
 - Restrict inline DSL `sb_secrets` bindings to legacy application tokens.
 
 ## v1.41.0

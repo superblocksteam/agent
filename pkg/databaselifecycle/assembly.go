@@ -54,7 +54,10 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 		if len(deps.LifecycleConfig.Entries) == 0 {
 			return unsupportedShapeError(errors.New("database lifecycle local config is required: set SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG with at least one entry"))
 		}
-		resolved, err := deps.LifecycleConfig.Resolve(dispatch.Environment, dispatch.Profile, dispatch.Operation, dispatch.Engine)
+		if dispatch.DesiredSpec.Engine == "" {
+			return unsupportedShapeError(errors.New("malformed database lifecycle dispatch: desiredSpec.engine is required"))
+		}
+		resolved, err := deps.LifecycleConfig.Resolve(dispatch.Environment, dispatch.Profile, dispatch.Operation, dispatch.DesiredSpec.Engine)
 		if err != nil {
 			return unsupportedShapeError(err)
 		}

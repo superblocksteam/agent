@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/pkg/clients"
 )
+
+func claimLifecycleDispatchResponse(engine string) string {
+	return fmt.Sprintf(`{"data":[{"bindingKey":"app:prod:orders","desiredSpec":{"logicalName":"Orders DB","engine":%q},"desiredSpecHash":"hash-1","environment":"deployed","profile":"production","operation":"ensure_database","requestId":"request-1","resourceKey":"resource-1"}]}`, engine)
+}
+
+func claimLifecycleDispatchResponseWithoutEngine() string {
+	return `{"data":[{"bindingKey":"app:prod:orders","desiredSpec":{"logicalName":"Orders DB"},"desiredSpecHash":"hash-1","environment":"deployed","profile":"production","operation":"ensure_database","requestId":"request-1","resourceKey":"resource-1"}]}`
+}
 
 func TestNewWorkerFromDependenciesAssemblesLifecycleWorker(t *testing.T) {
 	worker, err := NewWorkerFromDependencies(WorkerDependencies{
@@ -34,7 +43,7 @@ func TestNewWorkerFromDependenciesThreadsPlanPolicy(t *testing.T) {
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
 			require.Equal(t, "agent-1", body["agentId"])
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpecHash":"hash-1","environment":"deployed","profile":"production","engine":"postgres","operation":"ensure_database","requestId":"request-1","resourceKey":"resource-1"}]}`))
+			w.Write([]byte(claimLifecycleDispatchResponse("postgres")))
 		case "/api/v1/database-lifecycle/callbacks/terminal":
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
 			w.WriteHeader(http.StatusOK)
@@ -96,7 +105,7 @@ func TestNewWorkerFromDependenciesResolvesModuleFromLocalLifecycleConfig(t *test
 		switch r.URL.Path {
 		case "/api/v1/database-lifecycle/dispatches/claim":
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpecHash":"hash-1","environment":"deployed","profile":"production","engine":"postgres","operation":"ensure_database","requestId":"request-1","resourceKey":"resource-1"}]}`))
+			w.Write([]byte(claimLifecycleDispatchResponse("postgres")))
 		case "/api/v1/database-lifecycle/callbacks/terminal":
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
 			w.WriteHeader(http.StatusOK)
@@ -158,7 +167,7 @@ func TestNewWorkerFromDependenciesReportsMissingLocalLifecycleConfig(t *testing.
 		switch r.URL.Path {
 		case "/api/v1/database-lifecycle/dispatches/claim":
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpecHash":"hash-1","environment":"deployed","profile":"production","engine":"postgres","operation":"ensure_database","requestId":"request-1","resourceKey":"resource-1"}]}`))
+			w.Write([]byte(claimLifecycleDispatchResponse("postgres")))
 		case "/api/v1/database-lifecycle/callbacks/terminal":
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
 			w.WriteHeader(http.StatusOK)
@@ -196,7 +205,7 @@ func TestNewWorkerFromDependenciesReportsConfigEntryForUnallowedModuleSource(t *
 		switch r.URL.Path {
 		case "/api/v1/database-lifecycle/dispatches/claim":
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpecHash":"hash-1","environment":"deployed","profile":"production","engine":"postgres","operation":"ensure_database","requestId":"request-1","resourceKey":"resource-1"}]}`))
+			w.Write([]byte(claimLifecycleDispatchResponse("postgres")))
 		case "/api/v1/database-lifecycle/callbacks/terminal":
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
 			w.WriteHeader(http.StatusOK)
@@ -250,7 +259,7 @@ func TestNewWorkerFromDependenciesReportsUnsupportedShapeWhenLocalConfigCannotMa
 		switch r.URL.Path {
 		case "/api/v1/database-lifecycle/dispatches/claim":
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpecHash":"hash-1","environment":"deployed","profile":"production","engine":"mysql","operation":"ensure_database","requestId":"request-1","resourceKey":"resource-1"}]}`))
+			w.Write([]byte(claimLifecycleDispatchResponse("mysql")))
 		case "/api/v1/database-lifecycle/callbacks/terminal":
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
 			w.WriteHeader(http.StatusOK)
@@ -297,6 +306,58 @@ func TestNewWorkerFromDependenciesReportsUnsupportedShapeWhenLocalConfigCannotMa
 	require.Len(t, result.Errors, 1)
 	require.Equal(t, "unsupported_provider_capability", callbackBody["error"].(map[string]any)["code"])
 	require.Contains(t, callbackBody["error"].(map[string]any)["message"], `operation "ensure_database" engine "mysql"; supported engines: [postgres]`)
+}
+
+func TestNewWorkerFromDependenciesReportsMalformedDispatchWhenDesiredSpecEngineMissing(t *testing.T) {
+	var callbackBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v1/database-lifecycle/dispatches/claim":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(claimLifecycleDispatchResponseWithoutEngine()))
+		case "/api/v1/database-lifecycle/callbacks/terminal":
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"failed","migrationState":"pending","requestId":"request-1","requestState":"failed"}}`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	worker, err := NewWorkerFromDependencies(WorkerDependencies{
+		AgentID: "agent-1",
+		Client:  clients.NewServerClient(&clients.ServerClientOptions{URL: server.URL, SuperblocksAgentKey: "agent-key"}),
+		Executor: CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) {
+			t.Fatal("malformed dispatch must fail before Terraform commands")
+			return CommandResult{}, nil
+		}),
+		Locker:  NewMemoryLocker(),
+		RootDir: tempRoot(t),
+		LifecycleConfig: LifecycleConfig{
+			Entries: []LifecycleConfigEntry{{
+				Environment: "deployed",
+				Profiles:    []string{"production"},
+				Engines:     []string{"postgres"},
+				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"},
+				ModuleSelectors: map[string]map[string]TerraformModule{
+					"ensure_database": {
+						"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws", Version: "1.2.3"},
+					},
+				},
+				CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
+			}},
+		},
+	})
+	require.NoError(t, err)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.Equal(t, "unsupported_provider_capability", callbackBody["error"].(map[string]any)["code"])
+	require.Contains(t, callbackBody["error"].(map[string]any)["message"], "malformed database lifecycle dispatch: desiredSpec.engine is required")
 }
 
 func TestNewWorkerFromDependenciesRejectsMissingDependencies(t *testing.T) {
