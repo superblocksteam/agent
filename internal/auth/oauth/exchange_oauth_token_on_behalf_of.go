@@ -48,6 +48,7 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 		zap.String("clientId", authConfig.ClientId),
 		zap.String("audience", authConfig.Audience),
 		zap.String("scope", authConfig.Scope),
+		zap.String("tokenScope", authConfig.GetTokenScope()),
 		zap.String("sha256(clientSecret)", utils.Sha256Short(authConfig.ClientSecret)),
 		zap.String("sha256(subjectToken)", utils.Sha256Short(subjectToken)),
 	)
@@ -134,13 +135,22 @@ func (c *OAuthClient) ExchangeOAuthTokenOnBehalfOf(
 	if err != nil {
 		return "", err
 	}
-	if authConfig.Scope == "datasource" {
+	// Shared-vs-user caching is decided by tokenScope (the sharing mode), not Scope
+	// (the OAuth scope string sent to the token endpoint). The fetch and eviction
+	// paths key on tokenScope, so caching must agree or they look up the wrong key.
+	if authConfig.GetTokenScope() == "datasource" {
+		c.Logger.Debug("caching as shared token", zap.String("oauth-request-type", string(OauthTokenExchange)))
 		err = c.FetcherCacher.CacheSharedToken(string(OauthTokenExchange), authConfigStruct, TokenTypeAccess, accessToken, accessExpiresAt, integrationId, configurationId)
 	} else {
+		c.Logger.Debug("caching as user token", zap.String("oauth-request-type", string(OauthTokenExchange)))
 		err = c.FetcherCacher.CacheUserToken(ctx, string(OauthTokenExchange), authConfigStruct, TokenTypeAccess, accessToken, accessExpiresAt, integrationId, configurationId)
 	}
 	if err != nil {
-		c.Logger.Warn("error caching access token", zap.String("oauth-request-type", string(OauthTokenExchange)), zap.Error(err))
+		c.Logger.Warn("error caching access token",
+			zap.String("oauth-request-type", string(OauthTokenExchange)),
+			zap.String("tokenScope", authConfig.GetTokenScope()),
+			zap.Error(err),
+		)
 	}
 
 	return accessToken, nil

@@ -53,6 +53,23 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "user"}`,
 		},
 		{
+			name: "success, user token (tokenScope=user explicit)",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience:     "https://example.com/userinfo",
+				ClientId:     "client-id",
+				ClientSecret: "client-secret",
+				Scope:        "all-apis",
+				TokenScope:   "user",
+				TokenUrl:     "https://example.com/token",
+			},
+			accessToken:               "access-token",
+			accessExpiresAt:           clock.Now().Add(time.Hour).Unix(),
+			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
+			exchangeRequestStatusCode: http.StatusOK,
+			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "all-apis"}`,
+		},
+		{
 			name: "success, default subject token type used if none given",
 			authConfig: &v1.OAuth_AuthorizationCodeFlow{
 				Audience:     "https://example.com/userinfo",
@@ -86,7 +103,26 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "user"}`,
 		},
 		{
-			name: "success, shared token",
+			name: "success, shared token (tokenScope=datasource)",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience:     "https://example.com/userinfo",
+				ClientId:     "client-id",
+				ClientSecret: "client-secret",
+				Scope:        "all-apis",
+				TokenScope:   "datasource",
+				TokenUrl:     "https://example.com/token",
+			},
+			accessToken:               "access-token",
+			accessExpiresAt:           clock.Now().Add(time.Hour).Unix(),
+			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
+			exchangeRequestStatusCode: http.StatusOK,
+			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "organization"}`,
+		},
+		{
+			// Regression: sharing is decided by tokenScope, not the OAuth scope string.
+			// A scope that happens to equal "datasource" must still cache per-user.
+			name: "success, user token when OAuth scope string is 'datasource' but tokenScope is unset",
 			authConfig: &v1.OAuth_AuthorizationCodeFlow{
 				Audience:     "https://example.com/userinfo",
 				ClientId:     "client-id",
@@ -99,7 +135,25 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			origin:                    "origin",
 			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
 			exchangeRequestStatusCode: http.StatusOK,
-			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "organization"}`,
+			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "datasource"}`,
+		},
+		{
+			// Exchange succeeds but the auth config cannot be converted to a struct for
+			// caching (protojson rejects invalid UTF-8 in string fields). The error must
+			// be returned and no cache write attempted.
+			name: "error converting auth config to struct after successful exchange",
+			authConfig: &v1.OAuth_AuthorizationCodeFlow{
+				Audience:     "https://example.com/userinfo",
+				ClientId:     "client-id",
+				ClientSecret: "client-secret",
+				Scope:        "all-apis\xc3\x28",
+				TokenUrl:     "https://example.com/token",
+			},
+			origin:                    "origin",
+			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
+			exchangeRequestStatusCode: http.StatusOK,
+			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "all-apis"}`,
+			expectedErr:               "proto: field plugins.common.v1.OAuth.AuthorizationCodeFlow.scope contains invalid UTF-8",
 		},
 		{
 			name:        "no origin in context",
@@ -196,7 +250,8 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 				Audience:     "https://example.com/userinfo",
 				ClientId:     "client-id",
 				ClientSecret: "client-secret",
-				Scope:        "datasource",
+				Scope:        "all-apis",
+				TokenScope:   "datasource",
 				TokenUrl:     "https://example.com/token",
 			},
 			accessToken:               "access-token",
@@ -297,7 +352,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			)
 
 			if tc.accessToken != "" {
-				if tc.authConfig.Scope == "datasource" {
+				if tc.authConfig.GetTokenScope() == "datasource" {
 					fetcherCacher.On(
 						"CacheSharedToken",
 						string(OauthTokenExchange),
