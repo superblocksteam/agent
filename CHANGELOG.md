@@ -8,16 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## vNext
 - Restrict inline DSL `sb_secrets` bindings to legacy application tokens.
 - Fail fast on stalled Databricks connections: set a 120s socket timeout on every Databricks connection path so an expired/revoked OAuth (on-behalf-of) token no longer leaves the worker hanging for the library's 15-minute default (which could pin workers and cascade into 503s). Overridable via the `SUPERBLOCKS_DATABRICKS_SOCKET_TIMEOUT_MS` env var. Databricks auth failures (HTTP 401/403) now surface as a clear "Authorization failed — reconnect the OAuth token" error instead of a generic timeout.
+- Fail fast with structured Native Database lifecycle unsupported-shape errors and add module-shape drift validation.
+- Add Native Database lifecycle worker-side pool client endpoints and allocation coordinator for existing-or-new shared pools.
+- Slim the Native Database lifecycle dispatch payload and collapse ensure operations to `ensure_database`.
+- Keep generated Native Database Terraform module calls compatible with existing lifecycle modules while the worker dispatch payload uses the new `(environment, profile)` taxonomy.
 - Upgrade `vm2` from 3.10.5 to 3.11.5 in the JavaScript workers, resolving the known sandbox-escape CVEs (CVE-2026-24118, CVE-2026-24781, CVE-2026-26332, CVE-2026-43997 through CVE-2026-44009, CVE-2026-45411, CVE-2026-47131, CVE-2026-47137, CVE-2026-47140, CVE-2026-47208, CVE-2026-47210; all patched by 3.11.0–3.11.4 per GHSA), and enforce the version floor via a pnpm workspace override
 - Upgrade Python worker dependencies to resolve Trivy CVE alerts: `h11` 0.14.0 → 0.16.0 with `httpcore` 1.0.5 → 1.0.9 (CVE-2025-43859) and `nltk` 3.8.1 → 3.9.4 (CVE-2025-14009). **Action required for Python steps using nltk tokenizers:** nltk 3.9 replaced the `punkt` tokenizer data package with `punkt_tab` — steps using `word_tokenize`/`sent_tokenize` must call `nltk.download('punkt_tab')` instead of `nltk.download('punkt')`, otherwise they will raise `LookupError: Resource punkt_tab not found` at runtime
 - JavaScript step error messages: with the vm2 upgrade, the `Error on line N` number for blocked-module errors (e.g. `require('child_process')`) now points at the user's actual `require` call instead of an internal offset, and `err.stack` observed inside a step no longer includes sandbox-internal frames. Step execution behavior is unchanged
 - Publish Native Database lifecycle capability tags from local lifecycle config during orchestrator registration.
 - Add Native Database lifecycle worker support for local `(environment, profile)` configuration resolution using the platform `edit`/`preview`/`deployed` taxonomy.
 - Make the Native Database lifecycle materializer cloud-agnostic: the generated root module is now a thin wrapper (backend, typed variables, `module "database"`, outputs) and no longer emits worker-side `provider "aws"`, AWS Secrets Manager data sources, `provider "postgresql"`, or shared-mode `required_providers`. Provider configuration, secret reads, and cloud-specific input validation now belong to the selected Terraform module. Credential-ref allowlist and SSL posture remain enforced at migration time during DSN construction.
-- Slim the Native Database lifecycle dispatch payload and collapse ensure operations to `ensure_database`.
-- Keep generated Native Database Terraform module calls compatible with existing lifecycle modules while the worker dispatch payload uses the new `(environment, profile)` taxonomy.
-- Add Native Database lifecycle worker-side pool client endpoints and allocation coordinator for existing-or-new shared pools.
-- Fail fast with structured Native Database lifecycle unsupported-shape errors and add module-shape drift validation.
+
+## v1.40.0
+- Ship OpenTofu in the OPA (agent) image so lifecycle worker mode can run outside the standalone orchestrator image.
 - Tighten `qs` override and add pnpm security overrides for 12 transitive Node.js dependencies (basic-ftp, fast-uri, path-to-regexp, form-data, js-yaml, glob, ws, minimatch, jws, brace-expansion, bn.js, axios floor guard) to resolve Trivy CVE alerts
 - Disable otelgrpc metrics by default. The `rpc_*` metrics (e.g. `rpc_server_call_duration_seconds`, `rpc_client_response_size_bytes`) added significant cardinality overhead from histogram buckets and endpoint labels. Set `SUPERBLOCKS_ORCHESTRATOR_GRPC_OTEL_METRICS_ENABLED=true` to re-enable if needed for debugging.
 - Restore `console.log` observability for JavaScript steps: re-enable the legacy remote log emitter in the Go worker and task-manager so that `console.log`/`console.warn`/`console.error` output appears in the Observability logs UI. This restores pre-v1.37 behavior for on-premise (OPA) deployments.
@@ -36,9 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade protobufjs to 7.5.8, node-forge to 1.4.0, and fast-xml-parser to 4.5.6 via pnpm overrides, resolving CVE-2026-41242 (critical protobufjs RCE), CVE-2026-25896 (critical fast-xml-parser XSS), and 11 additional high/medium CVEs
 - Upgrade JavaScript worker Node.js runtime from 20.19.5 to 22.22.2 (LTS). All customer-facing dependencies remain at their current versions.
 - Upgrade Python worker dependencies: Authlib 1.3.2 to 1.6.12 (CVE-2026-27962 JWT forgery), gevent 21.12.0 to 24.11.1 (CVE-2023-41419), geventhttpclient 2.0.12 to 2.3.9, greenlet 1.1.3 to 3.1.1
-
-## v1.40.0
-- Ship OpenTofu in the OPA (agent) image so lifecycle worker mode can run outside the standalone orchestrator image.
 
 ## v1.39.0
 - Fix OTLP export errors when remote telemetry is disabled: worker processes (Go worker, task-manager) no longer default to `http://127.0.0.1:4318` and the task-manager s6 script now honors an explicitly empty collector URL
