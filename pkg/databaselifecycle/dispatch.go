@@ -15,7 +15,7 @@ type DispatchPayload struct {
 	BindingKey              string                 `json:"bindingKey"`
 	ConnectionMetadata      map[string]any         `json:"connectionMetadata,omitempty"`
 	RuntimeCredentialRefs   map[string]any         `json:"runtimeCredentialRefs,omitempty"`
-	MigrationCredentialRefs map[string]any         `json:"-"`
+	MigrationCredentialRefs map[string]any         `json:"migrationCredentialRefs,omitempty"`
 	DesiredSpec             DatabaseRequirement    `json:"desiredSpec"`
 	DesiredSpecHash         string                 `json:"desiredSpecHash"`
 	Environment             string                 `json:"environment,omitempty"`
@@ -27,6 +27,35 @@ type DispatchPayload struct {
 	ResourceKey             string                 `json:"resourceKey"`
 	TerraformBackend        map[string]any         `json:"-"`
 	TerraformModule         TerraformModule        `json:"-"`
+}
+
+func (payload DispatchPayload) MarshalJSON() ([]byte, error) {
+	type wirePayload struct {
+		BindingKey            string                 `json:"bindingKey"`
+		ConnectionMetadata    map[string]any         `json:"connectionMetadata,omitempty"`
+		RuntimeCredentialRefs map[string]any         `json:"runtimeCredentialRefs,omitempty"`
+		DesiredSpec           DatabaseRequirement    `json:"desiredSpec"`
+		DesiredSpecHash       string                 `json:"desiredSpecHash"`
+		Environment           string                 `json:"environment,omitempty"`
+		Migrations            []migrations.Migration `json:"migrations,omitempty"`
+		Operation             string                 `json:"operation"`
+		Profile               string                 `json:"profile,omitempty"`
+		RequestID             string                 `json:"requestId"`
+		ResourceKey           string                 `json:"resourceKey"`
+	}
+	return json.Marshal(wirePayload{
+		BindingKey:            payload.BindingKey,
+		ConnectionMetadata:    payload.ConnectionMetadata,
+		RuntimeCredentialRefs: payload.RuntimeCredentialRefs,
+		DesiredSpec:           payload.DesiredSpec,
+		DesiredSpecHash:       payload.DesiredSpecHash,
+		Environment:           payload.Environment,
+		Migrations:            payload.Migrations,
+		Operation:             payload.Operation,
+		Profile:               payload.Profile,
+		RequestID:             payload.RequestID,
+		ResourceKey:           payload.ResourceKey,
+	})
 }
 
 type DatabaseRequirement struct {

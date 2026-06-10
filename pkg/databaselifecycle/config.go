@@ -20,6 +20,8 @@ const (
 	envSSLRootCert  = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"
 	envConfig       = "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG"
 	envModuleShapes = "SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES"
+
+	operationMigrateSchema = "migrate_schema"
 )
 
 type Config struct {
@@ -52,12 +54,24 @@ type LifecycleConfig struct {
 }
 
 type LifecycleConfigEntry struct {
-	Environment        string                                `json:"environment"`
-	Profiles           []string                              `json:"profiles"`
-	Engines            []string                              `json:"engines"`
-	Backend            map[string]any                        `json:"backend"`
-	CredentialResolver map[string]any                        `json:"credentialResolver"`
-	ModuleSelectors    map[string]map[string]TerraformModule `json:"moduleSelectors"`
+	Environment              string                        `json:"environment"`
+	Profiles                 []string                      `json:"profiles"`
+	Engines                  []string                      `json:"engines"`
+	Operations               map[string]LifecycleOperation `json:"operations"`
+	LegacyBackend            map[string]any                `json:"backend,omitempty"`
+	LegacyCredentialResolver map[string]any                `json:"credentialResolver,omitempty"`
+	LegacyModuleSelectors    map[string]any                `json:"moduleSelectors,omitempty"`
+}
+
+type LifecycleOperation struct {
+	Backend   string                     `json:"backend"`
+	Terraform *TerraformOperationBackend `json:"terraform,omitempty"`
+}
+
+type TerraformOperationBackend struct {
+	Backend            map[string]any             `json:"backend"`
+	CredentialResolver map[string]any             `json:"credentialResolver"`
+	ModuleSelectors    map[string]TerraformModule `json:"moduleSelectors"`
 }
 
 type ResolvedLifecycleConfig struct {
@@ -74,9 +88,12 @@ func (config LifecycleConfig) Resolve(environment string, profile string, operat
 		if !containsString(entry.Engines, engine) {
 			return ResolvedLifecycleConfig{}, fmt.Errorf("database lifecycle config entry %s/%s does not support environment %q profile %q operation %q engine %q; supported engines: %s", environment, profile, environment, profile, operation, engine, formatStringList(entry.Engines))
 		}
-		byEngine, ok := entry.ModuleSelectors[operation]
-		if !ok {
-			return ResolvedLifecycleConfig{}, fmt.Errorf("database lifecycle config entry %s/%s does not support environment %q profile %q operation %q engine %q; supported operations: %s", environment, profile, environment, profile, operation, engine, formatStringList(moduleSelectorOperations(entry.ModuleSelectors)))
+		byEngine, backend, credentialResolver, err := entry.resolveTerraformOperation(operation)
+		if err != nil {
+			return ResolvedLifecycleConfig{}, fmt.Errorf("database lifecycle config entry %s/%s does not support environment %q profile %q operation %q engine %q; %w", environment, profile, environment, profile, operation, engine, err)
+		}
+		if byEngine == nil {
+			return ResolvedLifecycleConfig{}, fmt.Errorf("database lifecycle config entry %s/%s operation %q uses backend %q and does not resolve to Terraform", environment, profile, operation, entry.Operations[operation].Backend)
 		}
 		module, ok := byEngine[engine]
 		if !ok {
@@ -84,8 +101,8 @@ func (config LifecycleConfig) Resolve(environment string, profile string, operat
 		}
 		return ResolvedLifecycleConfig{
 			Module:             module,
-			Backend:            entry.Backend,
-			CredentialResolver: entry.CredentialResolver,
+			Backend:            backend,
+			CredentialResolver: credentialResolver,
 		}, nil
 	}
 	return ResolvedLifecycleConfig{}, fmt.Errorf("database lifecycle config has no entry for environment %q profile %q operation %q engine %q; configured entries: %s", environment, profile, operation, engine, formatConfiguredEntries(config.Entries))
@@ -192,34 +209,65 @@ func validateLifecycleConfigEntry(index int, entry LifecycleConfigEntry) error {
 			return fmt.Errorf("%s.engines[%d] is required", prefix, engineIndex)
 		}
 	}
-	if len(entry.Backend) == 0 {
-		return fmt.Errorf("%s.backend is required", prefix)
+	if len(entry.LegacyBackend) > 0 || len(entry.LegacyCredentialResolver) > 0 || len(entry.LegacyModuleSelectors) > 0 {
+		return fmt.Errorf("%s uses legacy entry-level backend/credentialResolver/moduleSelectors fields; migrate to entries[].operations.<operation>.backend = \"terraform\" with entries[].operations.<operation>.terraform.{backend,credentialResolver,moduleSelectors}", prefix)
 	}
-	if len(entry.CredentialResolver) == 0 {
-		return fmt.Errorf("%s.credentialResolver is required", prefix)
+	if len(entry.Operations) == 0 {
+		return fmt.Errorf("%s.operations is required", prefix)
 	}
-	if len(entry.ModuleSelectors) == 0 {
-		return fmt.Errorf("%s.moduleSelectors is required", prefix)
-	}
-	for operation, byEngine := range entry.ModuleSelectors {
+	return validateLifecycleOperations(prefix, entry)
+}
+
+func validateLifecycleOperations(prefix string, entry LifecycleConfigEntry) error {
+	for operation, config := range entry.Operations {
 		if operation == "" {
-			return fmt.Errorf("%s.moduleSelectors operation key is required", prefix)
+			return fmt.Errorf("%s.operations operation key is required", prefix)
 		}
-		if len(byEngine) == 0 {
-			return fmt.Errorf("%s.moduleSelectors.%s engines are required", prefix, operation)
+		switch config.Backend {
+		case "terraform":
+			if config.Terraform == nil {
+				return fmt.Errorf("%s.operations.%s.terraform is required", prefix, operation)
+			}
+			if len(config.Terraform.Backend) == 0 {
+				return fmt.Errorf("%s.operations.%s.terraform.backend is required", prefix, operation)
+			}
+			if len(config.Terraform.CredentialResolver) == 0 {
+				return fmt.Errorf("%s.operations.%s.terraform.credentialResolver is required", prefix, operation)
+			}
+			if err := validateTerraformModuleSelectorEngines(fmt.Sprintf("%s.operations.%s.terraform.moduleSelectors", prefix, operation), entry.Engines, config.Terraform.ModuleSelectors); err != nil {
+				return err
+			}
+		case "native_runner":
+			if operation != operationMigrateSchema {
+				return fmt.Errorf("%s.operations.%s.backend native_runner is only supported for %s", prefix, operation, operationMigrateSchema)
+			}
+			if config.Terraform != nil {
+				return fmt.Errorf("%s.operations.%s.terraform must be omitted for backend native_runner", prefix, operation)
+			}
+		case "":
+			return fmt.Errorf("%s.operations.%s.backend is required", prefix, operation)
+		default:
+			return fmt.Errorf("%s.operations.%s.backend must be one of native_runner, terraform", prefix, operation)
 		}
-		for engine, module := range byEngine {
-			if engine == "" {
-				return fmt.Errorf("%s.moduleSelectors.%s engine key is required", prefix, operation)
-			}
-			if module.Source == "" {
-				return fmt.Errorf("%s.moduleSelectors.%s.%s.source is required", prefix, operation, engine)
-			}
+	}
+	return nil
+}
+
+func validateTerraformModuleSelectorEngines(prefix string, engines []string, byEngine map[string]TerraformModule) error {
+	if len(byEngine) == 0 {
+		return fmt.Errorf("%s engines are required", prefix)
+	}
+	for engine, module := range byEngine {
+		if engine == "" {
+			return fmt.Errorf("%s engine key is required", prefix)
 		}
-		for _, engine := range entry.Engines {
-			if _, ok := byEngine[engine]; !ok {
-				return fmt.Errorf("%s.moduleSelectors.%s.%s is required for declared engine", prefix, operation, engine)
-			}
+		if module.Source == "" {
+			return fmt.Errorf("%s.%s.source is required", prefix, engine)
+		}
+	}
+	for _, engine := range engines {
+		if _, ok := byEngine[engine]; !ok {
+			return fmt.Errorf("%s.%s is required for declared engine", prefix, engine)
 		}
 	}
 	return nil
@@ -231,15 +279,15 @@ func validateLifecycleConfigCoverage(config LifecycleConfig) error {
 
 	for _, entry := range config.Entries {
 		engines = append(engines, entry.Engines...)
-		operations = append(operations, moduleSelectorOperations(entry.ModuleSelectors)...)
+		operations = append(operations, entry.operationNames()...)
 	}
 
 	allOperations := sortedUniqueStrings(operations)
 	allEngines := sortedUniqueStrings(engines)
 	for index, entry := range config.Entries {
-		entryOperations := sortedUniqueStrings(moduleSelectorOperations(entry.ModuleSelectors))
+		entryOperations := sortedUniqueStrings(entry.operationNames())
 		if !slices.Equal(entryOperations, allOperations) {
-			return fmt.Errorf("database lifecycle config entries[%d].moduleSelectors operations must match configured operations %s", index, formatStringList(allOperations))
+			return fmt.Errorf("database lifecycle config entries[%d].operations must match configured operations %s", index, formatStringList(allOperations))
 		}
 		entryEngines := sortedUniqueStrings(entry.Engines)
 		if !slices.Equal(entryEngines, allEngines) {
@@ -248,6 +296,48 @@ func validateLifecycleConfigCoverage(config LifecycleConfig) error {
 	}
 
 	return nil
+}
+
+func (entry LifecycleConfigEntry) operationNames() []string {
+	operations := make([]string, 0, len(entry.Operations))
+	for operation := range entry.Operations {
+		operations = append(operations, operation)
+	}
+	return operations
+}
+
+func (entry LifecycleConfigEntry) resolveTerraformOperation(operation string) (map[string]TerraformModule, map[string]any, map[string]any, error) {
+	config, ok := entry.Operations[operation]
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("supported operations: %s", formatStringList(entry.operationNames()))
+	}
+	if config.Backend != "terraform" {
+		return nil, nil, nil, nil
+	}
+	if config.Terraform == nil {
+		return nil, nil, nil, fmt.Errorf("operation %q has incomplete Terraform backend config", operation)
+	}
+
+	return map[string]TerraformModule(config.Terraform.ModuleSelectors), config.Terraform.Backend, config.Terraform.CredentialResolver, nil
+}
+
+func (config LifecycleConfig) UsesTerraformOperations() bool {
+	for _, entry := range config.Entries {
+		if len(entry.terraformOperations()) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (entry LifecycleConfigEntry) terraformOperations() map[string]map[string]TerraformModule {
+	operations := make(map[string]map[string]TerraformModule)
+	for operation, config := range entry.Operations {
+		if config.Backend == "terraform" && config.Terraform != nil {
+			operations[operation] = config.Terraform.ModuleSelectors
+		}
+	}
+	return operations
 }
 
 func (entry LifecycleConfigEntry) SupportsProfile(profile string) bool {
@@ -317,7 +407,7 @@ func formatConfiguredEntries(entries []LifecycleConfigEntry) string {
 	}
 	formatted := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		formatted = append(formatted, fmt.Sprintf("%s profiles=%s engines=%s operations=%s", entry.Environment, formatStringList(entry.Profiles), formatStringList(entry.Engines), formatStringList(moduleSelectorOperations(entry.ModuleSelectors))))
+		formatted = append(formatted, fmt.Sprintf("%s profiles=%s engines=%s operations=%s", entry.Environment, formatStringList(entry.Profiles), formatStringList(entry.Engines), formatStringList(entry.operationNames())))
 	}
 	sort.Strings(formatted)
 	return strings.Join(formatted, "; ")
@@ -330,14 +420,6 @@ func formatStringList(values []string) string {
 	sorted := append([]string(nil), values...)
 	sort.Strings(sorted)
 	return "[" + strings.Join(sorted, ", ") + "]"
-}
-
-func moduleSelectorOperations(selectors map[string]map[string]TerraformModule) []string {
-	operations := make([]string, 0, len(selectors))
-	for operation := range selectors {
-		operations = append(operations, operation)
-	}
-	return operations
 }
 
 func terraformModuleKeys(modules map[string]TerraformModule) []string {

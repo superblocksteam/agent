@@ -98,13 +98,11 @@ func testLifecycleConfig(moduleSource string) LifecycleConfig {
 			Environment: "deployed",
 			Profiles:    []string{"production"},
 			Engines:     []string{"postgres"},
-			Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"},
-			ModuleSelectors: map[string]map[string]TerraformModule{
-				"ensure_database": {
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": terraformOperation(map[string]TerraformModule{
 					"postgres": {Source: moduleSource},
-				},
+				}),
 			},
-			CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
 		}},
 	}
 }

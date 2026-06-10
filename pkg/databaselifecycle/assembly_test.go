@@ -75,13 +75,11 @@ func TestNewWorkerFromDependenciesThreadsPlanPolicy(t *testing.T) {
 				Environment: "deployed",
 				Profiles:    []string{"production"},
 				Engines:     []string{"postgres"},
-				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"},
-				ModuleSelectors: map[string]map[string]TerraformModule{
-					"ensure_database": {
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": terraformOperationWithBackend(map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"}, map[string]TerraformModule{
 						"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws", Version: "1.2.3"},
-					},
+					}),
 				},
-				CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
 			}},
 		},
 		Policy: PlanPolicyFunc(func(ctx context.Context, planJSON string) error {
@@ -137,13 +135,11 @@ func TestNewWorkerFromDependenciesResolvesModuleFromLocalLifecycleConfig(t *test
 				Environment: "deployed",
 				Profiles:    []string{"production"},
 				Engines:     []string{"postgres"},
-				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"},
-				ModuleSelectors: map[string]map[string]TerraformModule{
-					"ensure_database": {
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": terraformOperationWithBackend(map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"}, map[string]TerraformModule{
 						"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws", Version: "1.2.3"},
-					},
+					}),
 				},
-				CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
 			}},
 		},
 		Policy: PlanPolicyFunc(func(ctx context.Context, planJSON string) error {
@@ -232,13 +228,11 @@ func TestNewWorkerFromDependenciesReportsConfigEntryForUnallowedModuleSource(t *
 				Environment: "deployed",
 				Profiles:    []string{"production"},
 				Engines:     []string{"postgres"},
-				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"},
-				ModuleSelectors: map[string]map[string]TerraformModule{
-					"ensure_database": {
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": terraformOperationWithBackend(map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"}, map[string]TerraformModule{
 						"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws", Version: "1.2.3"},
-					},
+					}),
 				},
-				CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
 			}},
 		},
 	})
@@ -287,13 +281,11 @@ func TestNewWorkerFromDependenciesReportsUnsupportedShapeWhenLocalConfigCannotMa
 				Environment: "deployed",
 				Profiles:    []string{"production"},
 				Engines:     []string{"postgres"},
-				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"},
-				ModuleSelectors: map[string]map[string]TerraformModule{
-					"ensure_database": {
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": terraformOperationWithBackend(map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"}, map[string]TerraformModule{
 						"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws", Version: "1.2.3"},
-					},
+					}),
 				},
-				CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
 			}},
 		},
 	})
@@ -339,13 +331,11 @@ func TestNewWorkerFromDependenciesReportsMalformedDispatchWhenDesiredSpecEngineM
 				Environment: "deployed",
 				Profiles:    []string{"production"},
 				Engines:     []string{"postgres"},
-				Backend:     map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"},
-				ModuleSelectors: map[string]map[string]TerraformModule{
-					"ensure_database": {
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": terraformOperationWithBackend(map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate"}, map[string]TerraformModule{
 						"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws", Version: "1.2.3"},
-					},
+					}),
 				},
-				CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
 			}},
 		},
 	})

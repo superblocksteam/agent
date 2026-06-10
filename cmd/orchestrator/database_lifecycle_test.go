@@ -55,11 +55,16 @@ func TestDatabaseLifecycleRegistrationTagsMergeLifecycleCapabilities(t *testing.
 						"environment": "deployed",
 						"profiles": ["production", "staging"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -85,11 +90,16 @@ func TestDatabaseLifecycleRegistrationTagsRejectsLifecycleEnvironmentProfileNotC
 						"environment": "deployed",
 						"profiles": ["production", "staging"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -108,11 +118,16 @@ func TestDatabaseLifecycleRegistrationTagsAllowsProfileTagSuperset(t *testing.T)
 						"environment": "deployed",
 						"profiles": ["production"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -133,11 +148,16 @@ func TestDatabaseLifecycleRegistrationTagsAllowsWildcardProfileCoverage(t *testi
 						"environment": "deployed",
 						"profiles": ["production"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -158,11 +178,16 @@ func TestDatabaseLifecycleRegistrationTagsAllowsWildcardLifecycleProfileWhenProf
 						"environment": "edit",
 						"profiles": ["*"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -182,11 +207,16 @@ func TestDatabaseLifecycleRegistrationTagsRejectsWildcardLifecycleProfileWithout
 						"environment": "edit",
 						"profiles": ["*"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -205,11 +235,16 @@ func TestDatabaseLifecycleRegistrationTagsSupportsNonRectangularEnvironmentProfi
 						"environment": "edit",
 						"profiles": ["staging-us", "staging-eu"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					},
@@ -217,11 +252,16 @@ func TestDatabaseLifecycleRegistrationTagsSupportsNonRectangularEnvironmentProfi
 						"environment": "deployed",
 						"profiles": ["production"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -278,11 +318,16 @@ func TestDatabaseLifecycleRegistrationTagsRejectsMissingModuleShapes(t *testing.
 						"environment": "deployed",
 						"profiles": ["production"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -307,11 +352,16 @@ func TestDatabaseLifecycleRegistrationTagsRejectsInvalidModuleShape(t *testing.T
 						"environment": "deployed",
 						"profiles": ["production"],
 						"engines": ["postgres"],
-						"backend": {"bucket": "native-db"},
-						"credentialResolver": {"type": "aws"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"type": "aws"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}

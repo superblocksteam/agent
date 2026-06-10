@@ -100,7 +100,7 @@ func TestDispatchPayloadOmitsWorkerResolvedFieldsFromWire(t *testing.T) {
 	}
 }
 
-func TestClaimDispatchesDoesNotDecodeCallbackOnlyMigrationCredentialRefs(t *testing.T) {
+func TestClaimDispatchesDecodesMigrationCredentialRefs(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpec":{"logicalName":"Orders DB","engine":"postgres"},"desiredSpecHash":"hash-1","environment":"deployed","operation":"migrate_schema","profile":"production","requestId":"request-1","resourceKey":"resource-1","runtimeCredentialRefs":{"username":{"resolver":"aws_secrets_manager","ref":"database/orders","field":"username"}},"migrationCredentialRefs":{"username":{"resolver":"aws_secrets_manager","ref":"database/orders/migration","field":"username"}}}]}`))
@@ -120,7 +120,13 @@ func TestClaimDispatchesDoesNotDecodeCallbackOnlyMigrationCredentialRefs(t *test
 			"field":    "username",
 		},
 	}, dispatches[0].RuntimeCredentialRefs)
-	require.Nil(t, dispatches[0].MigrationCredentialRefs)
+	require.Equal(t, map[string]any{
+		"username": map[string]any{
+			"resolver": "aws_secrets_manager",
+			"ref":      "database/orders/migration",
+			"field":    "username",
+		},
+	}, dispatches[0].MigrationCredentialRefs)
 }
 
 func TestClaimDispatchesReturnsControlPlaneErrors(t *testing.T) {

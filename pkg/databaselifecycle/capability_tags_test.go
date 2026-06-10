@@ -13,25 +13,25 @@ func TestLifecycleConfigCapabilityTagsDeriveSortedUniqueTags(t *testing.T) {
 				Environment: "preview",
 				Profiles:    []string{"production", "qa"},
 				Engines:     []string{"postgres", "mysql"},
-				ModuleSelectors: map[string]map[string]TerraformModule{
-					"ensure_database": {
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": terraformOperation(map[string]TerraformModule{
 						"postgres": {Source: "registry.example.com/postgres"},
 						"mysql":    {Source: "registry.example.com/mysql"},
-					},
-					"promote_database": {
+					}),
+					"promote_database": terraformOperation(map[string]TerraformModule{
 						"postgres": {Source: "registry.example.com/postgres"},
 						"mysql":    {Source: "registry.example.com/mysql"},
-					},
+					}),
 				},
 			},
 			{
 				Environment: "edit",
 				Profiles:    []string{"staging"},
 				Engines:     []string{"postgres"},
-				ModuleSelectors: map[string]map[string]TerraformModule{
-					"ensure_database": {
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": terraformOperation(map[string]TerraformModule{
 						"postgres": {Source: "registry.example.com/postgres"},
-					},
+					}),
 				},
 			},
 		},
@@ -54,13 +54,18 @@ func TestCapabilityTagsFromEnvValidatesModuleShapes(t *testing.T) {
 						"environment": "deployed",
 						"profiles": ["production"],
 						"engines": ["postgres"],
-						"backend": {"stateBackend": "s3"},
-						"credentialResolver": {"runtime": "aws_secrets_manager"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {
-									"source": "registry.example.com/postgres",
-									"inputs": {"storage_gb": 20}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"runtime": "aws_secrets_manager"},
+									"moduleSelectors": {
+										"postgres": {
+											"source": "registry.example.com/postgres",
+											"inputs": {"storage_gb": 20}
+										}
+									}
 								}
 							}
 						}
@@ -86,6 +91,56 @@ func TestCapabilityTagsFromEnvValidatesModuleShapes(t *testing.T) {
 	}, tags)
 }
 
+func TestCapabilityTagsFromEnvPublishesNativeRunnerOperations(t *testing.T) {
+	tags, err := CapabilityTagsFromEnv(func(key string) string {
+		switch key {
+		case envConfig:
+			return `{
+				"entries": [
+					{
+						"environment": "deployed",
+						"profiles": ["production"],
+						"engines": ["postgres"],
+						"operations": {
+							"ensure_database": {
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"runtime": "aws_secrets_manager"},
+									"moduleSelectors": {
+										"postgres": {
+											"source": "registry.example.com/postgres",
+											"inputs": {"storage_gb": 20}
+										}
+									}
+								}
+							},
+							"migrate_schema": {
+								"backend": "native_runner"
+							}
+						}
+					}
+				]
+			}`
+		case envModuleShapes:
+			return `{
+				"registry.example.com/postgres": {
+					"variables": ["binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key", "credential_resolver", "storage_gb"]
+				}
+			}`
+		default:
+			return ""
+		}
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, map[string][]string{
+		"databaseLifecycle:operations":          {"ensure_database", "migrate_schema"},
+		"databaseLifecycle:engines":             {"postgres"},
+		"databaseLifecycle:environmentProfiles": {"deployed:production"},
+	}, tags)
+}
+
 func TestCapabilityTagsFromEnvRejectsMissingModuleShapes(t *testing.T) {
 	_, err := CapabilityTagsFromEnv(func(key string) string {
 		if key == envConfig {
@@ -95,11 +150,16 @@ func TestCapabilityTagsFromEnvRejectsMissingModuleShapes(t *testing.T) {
 						"environment": "deployed",
 						"profiles": ["production"],
 						"engines": ["postgres"],
-						"backend": {"stateBackend": "s3"},
-						"credentialResolver": {"runtime": "aws_secrets_manager"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"runtime": "aws_secrets_manager"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}
@@ -122,11 +182,16 @@ func TestCapabilityTagsFromEnvRejectsInvalidModuleShapes(t *testing.T) {
 						"environment": "deployed",
 						"profiles": ["production"],
 						"engines": ["postgres"],
-						"backend": {"stateBackend": "s3"},
-						"credentialResolver": {"runtime": "aws_secrets_manager"},
-						"moduleSelectors": {
+						"operations": {
 							"ensure_database": {
-								"postgres": {"source": "registry.example.com/postgres"}
+								"backend": "terraform",
+								"terraform": {
+									"backend": {"stateBackend": "s3"},
+									"credentialResolver": {"runtime": "aws_secrets_manager"},
+									"moduleSelectors": {
+										"postgres": {"source": "registry.example.com/postgres"}
+									}
+								}
 							}
 						}
 					}

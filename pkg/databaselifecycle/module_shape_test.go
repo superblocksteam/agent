@@ -12,15 +12,15 @@ func TestValidateLifecycleConfigModuleShapesRejectsUnknownModuleInput(t *testing
 			Environment: "deployed",
 			Profiles:    []string{"production"},
 			Engines:     []string{"postgres"},
-			ModuleSelectors: map[string]map[string]TerraformModule{
-				"ensure_database": {
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": terraformOperation(map[string]TerraformModule{
 					"postgres": {
 						Source: "registry.example.com/postgres",
 						Inputs: map[string]any{
 							"unexpected_input": "value",
 						},
 					},
-				},
+				}),
 			},
 		}},
 	}
@@ -37,19 +37,18 @@ func TestValidateLifecycleConfigModuleShapesRejectsUnknownModuleInput(t *testing
 func TestValidateLifecycleConfigModuleShapesAcceptsDeclaredInputs(t *testing.T) {
 	config := LifecycleConfig{
 		Entries: []LifecycleConfigEntry{{
-			Environment:        "deployed",
-			Profiles:           []string{"production"},
-			Engines:            []string{"postgres"},
-			CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
-			ModuleSelectors: map[string]map[string]TerraformModule{
-				"ensure_database": {
+			Environment: "deployed",
+			Profiles:    []string{"production"},
+			Engines:     []string{"postgres"},
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": terraformOperation(map[string]TerraformModule{
 					"postgres": {
 						Source: "registry.example.com/postgres",
 						Inputs: map[string]any{
 							"storage_gb": 20,
 						},
 					},
-				},
+				}),
 			},
 		}},
 	}
@@ -69,10 +68,10 @@ func TestValidateLifecycleConfigModuleShapesRejectsMissingModuleShape(t *testing
 			Environment: "deployed",
 			Profiles:    []string{"production"},
 			Engines:     []string{"postgres"},
-			ModuleSelectors: map[string]map[string]TerraformModule{
-				"ensure_database": {
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": terraformOperation(map[string]TerraformModule{
 					"postgres": {Source: "registry.example.com/postgres"},
-				},
+				}),
 			},
 		}},
 	}
@@ -88,10 +87,10 @@ func TestValidateLifecycleConfigModuleShapesRejectsMissingSystemVariable(t *test
 			Environment: "deployed",
 			Profiles:    []string{"production"},
 			Engines:     []string{"postgres"},
-			ModuleSelectors: map[string]map[string]TerraformModule{
-				"ensure_database": {
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": terraformOperation(map[string]TerraformModule{
 					"postgres": {Source: "registry.example.com/postgres"},
-				},
+				}),
 			},
 		}},
 	}
@@ -109,14 +108,13 @@ func TestValidateLifecycleConfigModuleShapesRejectsMissingSystemVariable(t *test
 func TestValidateLifecycleConfigModuleShapesRejectsMissingCredentialResolverVariable(t *testing.T) {
 	config := LifecycleConfig{
 		Entries: []LifecycleConfigEntry{{
-			Environment:        "deployed",
-			Profiles:           []string{"production"},
-			Engines:            []string{"postgres"},
-			CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
-			ModuleSelectors: map[string]map[string]TerraformModule{
-				"ensure_database": {
+			Environment: "deployed",
+			Profiles:    []string{"production"},
+			Engines:     []string{"postgres"},
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": terraformOperation(map[string]TerraformModule{
 					"postgres": {Source: "registry.example.com/postgres"},
-				},
+				}),
 			},
 		}},
 	}

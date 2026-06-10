@@ -82,14 +82,19 @@ func TestConfigFromEnvParsesLifecycleConfigAndResolvesPlatformEntry(t *testing.T
 		      "environment": "deployed",
 		      "profiles": ["production", "staging"],
 		      "engines": ["postgres"],
-		      "backend": {"stateBackend": "s3", "bucket": "state-bucket", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"},
-		      "credentialResolver": {"runtime": "aws_secrets_manager"},
-		      "moduleSelectors": {
+		      "operations": {
 		        "ensure_database": {
-		          "postgres": {
-		            "source": "app.terraform.io/superblocks/postgres-managed-database/aws",
-		            "version": "1.2.3",
-		            "inputs": {"storage_gb": 20}
+		          "backend": "terraform",
+		          "terraform": {
+		            "backend": {"stateBackend": "s3", "bucket": "state-bucket", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-west-2"},
+		            "credentialResolver": {"runtime": "aws_secrets_manager"},
+		            "moduleSelectors": {
+		              "postgres": {
+		                "source": "app.terraform.io/superblocks/postgres-managed-database/aws",
+		                "version": "1.2.3",
+		                "inputs": {"storage_gb": 20}
+		              }
+		            }
 		          }
 		        }
 		      }
@@ -121,6 +126,60 @@ func TestConfigFromEnvParsesLifecycleConfigAndResolvesPlatformEntry(t *testing.T
 	staging, err := config.LifecycleConfig.Resolve("deployed", "staging", "ensure_database", "postgres")
 	require.NoError(t, err)
 	require.Equal(t, resolved, staging)
+}
+
+func TestConfigFromEnvParsesOperationBackendsAndResolvesTerraformOperation(t *testing.T) {
+	env := map[string]string{
+		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": `{
+		  "entries": [
+		    {
+		      "environment": "deployed",
+		      "profiles": ["production"],
+		      "engines": ["postgres"],
+		      "operations": {
+		        "ensure_database": {
+		          "backend": "terraform",
+		          "terraform": {
+		            "backend": {"stateBackend": "s3", "bucket": "state-bucket"},
+		            "credentialResolver": {"runtime": "aws_secrets_manager"},
+		            "moduleSelectors": {
+		              "postgres": {
+		                "source": "app.terraform.io/superblocks/postgres-managed-database/aws",
+		                "version": "1.2.3",
+		                "inputs": {"storage_gb": 20}
+		              }
+		            }
+		          }
+		        },
+		        "migrate_schema": {
+		          "backend": "native_runner"
+		        }
+		      }
+		    }
+		  ]
+		}`,
+	}
+
+	config, err := ConfigFromEnv(func(key string) string { return env[key] })
+	require.NoError(t, err)
+
+	require.Equal(t, map[string][]string{
+		"databaseLifecycle:operations":          {"ensure_database", "migrate_schema"},
+		"databaseLifecycle:engines":             {"postgres"},
+		"databaseLifecycle:environmentProfiles": {"deployed:production"},
+	}, config.LifecycleConfig.CapabilityTags())
+
+	resolved, err := config.LifecycleConfig.Resolve("deployed", "production", "ensure_database", "postgres")
+	require.NoError(t, err)
+	require.Equal(t, TerraformModule{
+		Source:  "app.terraform.io/superblocks/postgres-managed-database/aws",
+		Version: "1.2.3",
+		Inputs: map[string]any{
+			"storage_gb": float64(20),
+		},
+	}, resolved.Module)
+	require.Equal(t, map[string]any{"stateBackend": "s3", "bucket": "state-bucket"}, resolved.Backend)
+	require.Equal(t, map[string]any{"runtime": "aws_secrets_manager"}, resolved.CredentialResolver)
 }
 
 func TestConfigFromEnvParsesModuleShapes(t *testing.T) {
@@ -203,6 +262,11 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 		wantError string
 	}{
 		{
+			name:      "legacy module selectors without operations",
+			config:    legacyLifecycleConfig(),
+			wantError: "uses legacy entry-level backend/credentialResolver/moduleSelectors fields",
+		},
+		{
 			name:      "unsupported environment",
 			config:    lifecycleConfigWithEntry(`"environment": "staging"`),
 			wantError: "entries[0].environment must be one of edit, preview, deployed",
@@ -223,44 +287,64 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			wantError: "entries[0].engines[0] is required",
 		},
 		{
-			name:      "empty credential resolver",
-			config:    lifecycleConfigWithEmptyCredentialResolver(),
-			wantError: "entries[0].credentialResolver is required",
-		},
-		{
-			name:      "missing module selectors",
-			config:    lifecycleConfigWithEmptyModuleSelectors(),
-			wantError: "entries[0].moduleSelectors is required",
-		},
-		{
-			name:      "missing backend",
-			config:    lifecycleConfigWithEmptyBackend(),
-			wantError: "entries[0].backend is required",
+			name:      "missing operations",
+			config:    lifecycleConfigWithoutOperations(),
+			wantError: "entries[0].operations is required",
 		},
 		{
 			name:      "empty operation key",
-			config:    lifecycleConfigWithModuleSelectors(`"": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}`),
-			wantError: "entries[0].moduleSelectors operation key is required",
+			config:    lifecycleConfigWithOperations(`"": {"backend": "native_runner"}`),
+			wantError: "entries[0].operations operation key is required",
 		},
 		{
-			name:      "empty operation engines",
-			config:    lifecycleConfigWithModuleSelectors(`"ensure_database": {}`),
-			wantError: "entries[0].moduleSelectors.ensure_database engines are required",
+			name:      "missing operation backend",
+			config:    lifecycleConfigWithOperations(`"ensure_database": {}`),
+			wantError: "entries[0].operations.ensure_database.backend is required",
+		},
+		{
+			name:      "unsupported operation backend",
+			config:    lifecycleConfigWithOperations(`"ensure_database": {"backend": "queue"}`),
+			wantError: "entries[0].operations.ensure_database.backend must be one of native_runner, terraform",
+		},
+		{
+			name:      "native runner backend for unsupported operation",
+			config:    lifecycleConfigWithOperations(`"ensure_database": {"backend": "native_runner"}`),
+			wantError: "entries[0].operations.ensure_database.backend native_runner is only supported for migrate_schema",
+		},
+		{
+			name:      "terraform operation missing terraform config",
+			config:    lifecycleConfigWithOperations(`"ensure_database": {"backend": "terraform"}`),
+			wantError: "entries[0].operations.ensure_database.terraform is required",
+		},
+		{
+			name:      "terraform operation missing backend",
+			config:    lifecycleConfigWithTerraformOperation(`"credentialResolver": {"runtime": "aws_secrets_manager"}, "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}`),
+			wantError: "entries[0].operations.ensure_database.terraform.backend is required",
+		},
+		{
+			name:      "terraform operation missing credential resolver",
+			config:    lifecycleConfigWithTerraformOperation(`"backend": {"stateBackend": "s3"}, "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}`),
+			wantError: "entries[0].operations.ensure_database.terraform.credentialResolver is required",
+		},
+		{
+			name:      "terraform operation missing module selectors",
+			config:    lifecycleConfigWithTerraformOperation(`"backend": {"stateBackend": "s3"}, "credentialResolver": {"runtime": "aws_secrets_manager"}, "moduleSelectors": {}`),
+			wantError: "entries[0].operations.ensure_database.terraform.moduleSelectors engines are required",
 		},
 		{
 			name:      "empty module engine key",
-			config:    lifecycleConfigWithModuleSelectors(`"ensure_database": {"": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}`),
-			wantError: "entries[0].moduleSelectors.ensure_database engine key is required",
+			config:    lifecycleConfigWithTerraformOperation(`"backend": {"stateBackend": "s3"}, "credentialResolver": {"runtime": "aws_secrets_manager"}, "moduleSelectors": {"": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}`),
+			wantError: "entries[0].operations.ensure_database.terraform.moduleSelectors engine key is required",
 		},
 		{
 			name:      "missing module source",
-			config:    lifecycleConfigWithModuleSelectors(`"ensure_database": {"postgres": {"version": "1.2.3"}}`),
-			wantError: "entries[0].moduleSelectors.ensure_database.postgres.source is required",
+			config:    lifecycleConfigWithTerraformOperation(`"backend": {"stateBackend": "s3"}, "credentialResolver": {"runtime": "aws_secrets_manager"}, "moduleSelectors": {"postgres": {"version": "1.2.3"}}`),
+			wantError: "entries[0].operations.ensure_database.terraform.moduleSelectors.postgres.source is required",
 		},
 		{
 			name:      "operation missing declared engine module",
-			config:    lifecycleConfigWithEntry(`"engines": ["postgres", "mysql"], "moduleSelectors": {"ensure_database": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}}`),
-			wantError: "entries[0].moduleSelectors.ensure_database.mysql is required for declared engine",
+			config:    lifecycleConfigWithEntry(`"engines": ["postgres", "mysql"]`),
+			wantError: "entries[0].operations.ensure_database.terraform.moduleSelectors.mysql is required for declared engine",
 		},
 		{
 			name: "entry missing globally advertised operation",
@@ -270,11 +354,14 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			      "environment": "deployed",
 			      "profiles": ["production"],
 			      "engines": ["postgres"],
-			      "backend": {"stateBackend": "s3"},
-			      "credentialResolver": {"runtime": "aws_secrets_manager"},
-			      "moduleSelectors": {
+			      "operations": {
 			        "ensure_database": {
-			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			          "backend": "terraform",
+			          "terraform": {
+			            "backend": {"stateBackend": "s3"},
+			            "credentialResolver": {"runtime": "aws_secrets_manager"},
+			            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+			          }
 			        }
 			      }
 			    },
@@ -282,20 +369,23 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			      "environment": "edit",
 			      "profiles": ["production"],
 			      "engines": ["postgres"],
-			      "backend": {"stateBackend": "s3"},
-			      "credentialResolver": {"runtime": "aws_secrets_manager"},
-			      "moduleSelectors": {
+			      "operations": {
 			        "ensure_database": {
-			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			          "backend": "terraform",
+			          "terraform": {
+			            "backend": {"stateBackend": "s3"},
+			            "credentialResolver": {"runtime": "aws_secrets_manager"},
+			            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+			          }
 			        },
 			        "migrate_schema": {
-			          "postgres": {"source": "app.terraform.io/superblocks/postgres-migration-runner/native"}
+			          "backend": "native_runner"
 			        }
 			      }
 			    }
 			  ]
 			}`,
-			wantError: "entries[0].moduleSelectors operations must match configured operations [ensure_database, migrate_schema]",
+			wantError: "entries[0].operations must match configured operations [ensure_database, migrate_schema]",
 		},
 		{
 			name: "entry missing globally advertised engine",
@@ -305,11 +395,14 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			      "environment": "deployed",
 			      "profiles": ["production"],
 			      "engines": ["postgres"],
-			      "backend": {"stateBackend": "s3"},
-			      "credentialResolver": {"runtime": "aws_secrets_manager"},
-			      "moduleSelectors": {
+			      "operations": {
 			        "ensure_database": {
-			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			          "backend": "terraform",
+			          "terraform": {
+			            "backend": {"stateBackend": "s3"},
+			            "credentialResolver": {"runtime": "aws_secrets_manager"},
+			            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+			          }
 			        }
 			      }
 			    },
@@ -317,12 +410,17 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			      "environment": "edit",
 			      "profiles": ["production"],
 			      "engines": ["mysql", "postgres"],
-			      "backend": {"stateBackend": "s3"},
-			      "credentialResolver": {"runtime": "aws_secrets_manager"},
-			      "moduleSelectors": {
+			      "operations": {
 			        "ensure_database": {
-			          "mysql": {"source": "app.terraform.io/superblocks/mysql-managed-database/aws"},
-			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			          "backend": "terraform",
+			          "terraform": {
+			            "backend": {"stateBackend": "s3"},
+			            "credentialResolver": {"runtime": "aws_secrets_manager"},
+			            "moduleSelectors": {
+			              "mysql": {"source": "app.terraform.io/superblocks/mysql-managed-database/aws"},
+			              "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+			            }
+			          }
 			        }
 			      }
 			    }
@@ -343,26 +441,32 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			      "environment": "deployed",
 			      "profiles": ["production"],
 			      "engines": ["postgres"],
-			      "backend": {"stateBackend": "s3"},
-			      "credentialResolver": {"runtime": "aws_secrets_manager"},
-			      "moduleSelectors": {
-			        "ensure_database": {
-			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
-			        }
-			      }
-			    },
+				      "operations": {
+				        "ensure_database": {
+				          "backend": "terraform",
+				          "terraform": {
+				            "backend": {"stateBackend": "s3"},
+				            "credentialResolver": {"runtime": "aws_secrets_manager"},
+				            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+				          }
+				        }
+				      }
+				    },
 			    {
 			      "environment": "deployed",
 			      "profiles": ["production"],
 			      "engines": ["postgres"],
-			      "backend": {"stateBackend": "s3"},
-			      "credentialResolver": {"runtime": "aws_secrets_manager"},
-			      "moduleSelectors": {
-			        "ensure_database": {
-			          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
-			        }
-			      }
-			    }
+				      "operations": {
+				        "ensure_database": {
+				          "backend": "terraform",
+				          "terraform": {
+				            "backend": {"stateBackend": "s3"},
+				            "credentialResolver": {"runtime": "aws_secrets_manager"},
+				            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+				          }
+				        }
+				      }
+				    }
 			  ]
 			}`,
 			wantError: `duplicates environment "deployed" profile "production"`,
@@ -382,22 +486,7 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 
 func TestLifecycleConfigResolveIncludesRequestContextAndAvailableEntries(t *testing.T) {
 	env := map[string]string{
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": `{
-		  "entries": [
-		    {
-		      "environment": "deployed",
-		      "profiles": ["production"],
-		      "engines": ["postgres"],
-		      "backend": {"stateBackend": "s3"},
-		      "credentialResolver": {"runtime": "aws_secrets_manager"},
-		      "moduleSelectors": {
-		        "ensure_database": {
-		          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
-		        }
-		      }
-		    }
-		  ]
-		}`,
+		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": minimalLifecycleConfig(),
 	}
 	config, err := ConfigFromEnv(func(key string) string { return env[key] })
 	require.NoError(t, err)
@@ -414,10 +503,10 @@ func TestLifecycleConfigResolveReportsSupportedModuleEngines(t *testing.T) {
 			Environment: "deployed",
 			Profiles:    []string{"production"},
 			Engines:     []string{"mysql", "postgres"},
-			ModuleSelectors: map[string]map[string]TerraformModule{
-				"ensure_database": {
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": terraformOperation(map[string]TerraformModule{
 					"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws"},
-				},
+				}),
 			},
 		}},
 	}
@@ -428,6 +517,25 @@ func TestLifecycleConfigResolveReportsSupportedModuleEngines(t *testing.T) {
 	require.ErrorContains(t, err, "supported engines: [postgres]")
 }
 
+func TestLifecycleConfigResolveRejectsMalformedTerraformOperation(t *testing.T) {
+	config := LifecycleConfig{
+		Entries: []LifecycleConfigEntry{{
+			Environment: "deployed",
+			Profiles:    []string{"production"},
+			Engines:     []string{"postgres"},
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": {
+					Backend: "terraform",
+				},
+			},
+		}},
+	}
+
+	_, err := config.Resolve("deployed", "production", "ensure_database", "postgres")
+
+	require.ErrorContains(t, err, `operation "ensure_database" has incomplete Terraform backend config`)
+}
+
 func TestConfigFromEnvAllowsNonRectangularEnvironmentProfileCoverage(t *testing.T) {
 	env := map[string]string{
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": `{
@@ -436,25 +544,21 @@ func TestConfigFromEnvAllowsNonRectangularEnvironmentProfileCoverage(t *testing.
 		      "environment": "deployed",
 		      "profiles": ["production"],
 		      "engines": ["postgres"],
-		      "backend": {"stateBackend": "s3"},
-		      "credentialResolver": {"runtime": "aws_secrets_manager"},
-		      "moduleSelectors": {
-		        "ensure_database": {
-		          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
-		        }
-		      }
+			      "operations": {
+			        "migrate_schema": {
+			          "backend": "native_runner"
+			        }
+			      }
 		    },
 		    {
 		      "environment": "edit",
 		      "profiles": ["staging-us", "staging-eu"],
 		      "engines": ["postgres"],
-		      "backend": {"stateBackend": "s3"},
-		      "credentialResolver": {"runtime": "aws_secrets_manager"},
-		      "moduleSelectors": {
-		        "ensure_database": {
-		          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
-		        }
-		      }
+			      "operations": {
+			        "migrate_schema": {
+			          "backend": "native_runner"
+			        }
+			      }
 		    }
 		  ]
 		}`,
@@ -463,8 +567,8 @@ func TestConfigFromEnvAllowsNonRectangularEnvironmentProfileCoverage(t *testing.
 	config, err := ConfigFromEnv(func(key string) string { return env[key] })
 	require.NoError(t, err)
 
-	_, err = config.LifecycleConfig.Resolve("edit", "production", "ensure_database", "postgres")
-	require.ErrorContains(t, err, `environment "edit" profile "production" operation "ensure_database" engine "postgres"`)
+	_, err = config.LifecycleConfig.Resolve("edit", "production", "migrate_schema", "postgres")
+	require.ErrorContains(t, err, `environment "edit" profile "production" operation "migrate_schema" engine "postgres"`)
 }
 
 func TestLifecycleConfigResolveSupportsExplicitWildcardProfile(t *testing.T) {
@@ -473,14 +577,10 @@ func TestLifecycleConfigResolveSupportsExplicitWildcardProfile(t *testing.T) {
 			Environment: "edit",
 			Profiles:    []string{"*"},
 			Engines:     []string{"postgres"},
-			Backend:     map[string]any{"stateBackend": "s3"},
-			CredentialResolver: map[string]any{
-				"runtime": "aws_secrets_manager",
-			},
-			ModuleSelectors: map[string]map[string]TerraformModule{
-				"ensure_database": {
+			Operations: map[string]LifecycleOperation{
+				"ensure_database": terraformOperation(map[string]TerraformModule{
 					"postgres": {Source: "app.terraform.io/superblocks/postgres-managed-database/aws"},
-				},
+				}),
 			},
 		}},
 	}
@@ -491,6 +591,30 @@ func TestLifecycleConfigResolveSupportsExplicitWildcardProfile(t *testing.T) {
 }
 
 func minimalLifecycleConfig() string {
+	return `{
+	  "entries": [
+	    {
+	      "environment": "deployed",
+	      "profiles": ["production"],
+	      "engines": ["postgres"],
+	      "operations": {
+	        "ensure_database": {
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {
+	              "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+	            }
+	          }
+	        }
+	      }
+	    }
+	  ]
+	}`
+}
+
+func legacyLifecycleConfig() string {
 	return `{
 	  "entries": [
 	    {
@@ -516,11 +640,16 @@ func lifecycleConfigWithEntry(replacement string) string {
 	      "environment": "deployed",
 	      "profiles": ["production"],
 	      "engines": ["postgres"],
-	      "backend": {"stateBackend": "s3"},
-	      "credentialResolver": {"runtime": "aws_secrets_manager"},
-	      "moduleSelectors": {
+	      "operations": {
 	        "ensure_database": {
-	          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {
+	              "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
+	            }
+	          }
 	        }
 	      },
 	      ` + replacement + `
@@ -529,70 +658,46 @@ func lifecycleConfigWithEntry(replacement string) string {
 	}`
 }
 
-func lifecycleConfigWithEmptyCredentialResolver() string {
+func lifecycleConfigWithoutOperations() string {
 	return `{
 	  "entries": [
 	    {
 	      "environment": "deployed",
 	      "profiles": ["production"],
-	      "engines": ["postgres"],
-	      "backend": {"stateBackend": "s3"},
-	      "credentialResolver": {},
-	      "moduleSelectors": {
-	        "ensure_database": {
-	          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
-	        }
-	      }
+	      "engines": ["postgres"]
 	    }
 	  ]
 	}`
 }
 
-func lifecycleConfigWithEmptyBackend() string {
+func lifecycleConfigWithOperations(operations string) string {
 	return `{
 	  "entries": [
 	    {
 	      "environment": "deployed",
 	      "profiles": ["production"],
 	      "engines": ["postgres"],
-	      "backend": {},
-	      "credentialResolver": {"runtime": "aws_secrets_manager"},
-	      "moduleSelectors": {
-	        "ensure_database": {
-	          "postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}
-	        }
-	      }
+	      "operations": {` + operations + `}
 	    }
 	  ]
 	}`
 }
 
-func lifecycleConfigWithEmptyModuleSelectors() string {
-	return `{
-	  "entries": [
-	    {
-	      "environment": "deployed",
-	      "profiles": ["production"],
-	      "engines": ["postgres"],
-	      "backend": {"stateBackend": "s3"},
-	      "credentialResolver": {"runtime": "aws_secrets_manager"},
-	      "moduleSelectors": {}
-	    }
-	  ]
-	}`
+func lifecycleConfigWithTerraformOperation(terraformConfig string) string {
+	return lifecycleConfigWithOperations(`"ensure_database": {"backend": "terraform", "terraform": {` + terraformConfig + `}}`)
 }
 
-func lifecycleConfigWithModuleSelectors(moduleSelectors string) string {
-	return `{
-	  "entries": [
-	    {
-	      "environment": "deployed",
-	      "profiles": ["production"],
-	      "engines": ["postgres"],
-	      "backend": {"stateBackend": "s3"},
-	      "credentialResolver": {"runtime": "aws_secrets_manager"},
-	      "moduleSelectors": {` + moduleSelectors + `}
-	    }
-	  ]
-	}`
+func terraformOperation(moduleSelectors map[string]TerraformModule) LifecycleOperation {
+	return terraformOperationWithBackend(map[string]any{"stateBackend": "s3"}, moduleSelectors)
+}
+
+func terraformOperationWithBackend(backend map[string]any, moduleSelectors map[string]TerraformModule) LifecycleOperation {
+	return LifecycleOperation{
+		Backend: "terraform",
+		Terraform: &TerraformOperationBackend{
+			Backend:            backend,
+			CredentialResolver: map[string]any{"runtime": "aws_secrets_manager"},
+			ModuleSelectors:    moduleSelectors,
+		},
+	}
 }

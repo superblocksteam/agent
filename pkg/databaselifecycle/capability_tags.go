@@ -26,7 +26,7 @@ func (config LifecycleConfig) CapabilityTags() map[string][]string {
 		for _, engine := range entry.Engines {
 			addCapabilityTag(values, capabilityTagEngines, engine)
 		}
-		for operation := range entry.ModuleSelectors {
+		for _, operation := range entry.operationNames() {
 			addCapabilityTag(values, capabilityTagOperations, operation)
 		}
 	}
@@ -49,16 +49,18 @@ func CapabilityTagsFromEnv(getenv func(string) string) (map[string][]string, err
 	if err != nil {
 		return nil, err
 	}
-	rawShapes := getenv(envModuleShapes)
-	if rawShapes == "" {
-		return nil, errors.New("database lifecycle module shapes are required")
-	}
-	shapes, err := parseModuleShapes(rawShapes)
-	if err != nil {
-		return nil, err
-	}
-	if err := ValidateLifecycleConfigModuleShapes(config, shapes); err != nil {
-		return nil, err
+	if config.UsesTerraformOperations() {
+		rawShapes := getenv(envModuleShapes)
+		if rawShapes == "" {
+			return nil, errors.New("database lifecycle module shapes are required")
+		}
+		shapes, err := parseModuleShapes(rawShapes)
+		if err != nil {
+			return nil, err
+		}
+		if err := ValidateLifecycleConfigModuleShapes(config, shapes); err != nil {
+			return nil, err
+		}
 	}
 	return config.CapabilityTags(), nil
 }

@@ -121,7 +121,7 @@ func normalizeDispatchLockKey(dispatch DispatchPayload) DispatchPayload {
 }
 
 func (w *Worker) processLockedDispatch(ctx context.Context, dispatch DispatchPayload) error {
-	if dispatch.Operation == "migrate_schema" {
+	if dispatch.Operation == operationMigrateSchema {
 		if _, err := w.processor.Process(ctx, dispatch, Job{BindingKey: dispatch.BindingKey}); err != nil {
 			return err
 		}

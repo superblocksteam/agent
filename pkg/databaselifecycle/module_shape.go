@@ -22,7 +22,7 @@ var systemTerraformVariables = []string{
 // ValidateLifecycleConfigModuleShapes verifies local lifecycle config only selects modules that declare every system variable and configured input.
 func ValidateLifecycleConfigModuleShapes(config LifecycleConfig, shapes map[string]TerraformModuleShape) error {
 	for _, entry := range config.Entries {
-		for operation, byEngine := range entry.ModuleSelectors {
+		for operation, byEngine := range entry.terraformOperations() {
 			for engine, module := range byEngine {
 				shape, ok := shapes[module.Source]
 				if !ok {
