@@ -3,6 +3,7 @@ package databaselifecycle
 import (
 	"context"
 	"errors"
+	"fmt"
 )
 
 type DispatchClaimer interface {
@@ -36,13 +37,23 @@ func (f DispatchProcessorFunc) Process(ctx context.Context, dispatch DispatchPay
 }
 
 type JobMaterializer interface {
-	Materialize(Job, DispatchPayload) error
+	Materialize(context.Context, Job, DispatchPayload) (DispatchPayload, error)
 }
 
-type JobMaterializerFunc func(Job, DispatchPayload) error
+type JobMaterializerFunc func(context.Context, Job, DispatchPayload) (DispatchPayload, error)
 
-func (f JobMaterializerFunc) Materialize(job Job, dispatch DispatchPayload) error {
-	return f(job, dispatch)
+func (f JobMaterializerFunc) Materialize(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+	return f(ctx, job, dispatch)
+}
+
+type PhysicalDatabaseInstanceReleaser interface {
+	ReleasePhysicalDatabaseInstance(context.Context, string) error
+}
+
+type PhysicalDatabaseInstanceReleaserFunc func(context.Context, string) error
+
+func (f PhysicalDatabaseInstanceReleaserFunc) ReleasePhysicalDatabaseInstance(ctx context.Context, instanceID string) error {
+	return f(ctx, instanceID)
 }
 
 type Worker struct {
@@ -52,6 +63,7 @@ type Worker struct {
 	materializer JobMaterializer
 	processor    DispatchProcessor
 	reporter     CallbackReporter
+	releaser     PhysicalDatabaseInstanceReleaser
 }
 
 type PollResult struct {
@@ -79,6 +91,10 @@ func NewWorker(claimer DispatchClaimer, locker ResourceLocker, builder JobBuilde
 
 func (w *Worker) ReportFailuresWith(reporter CallbackReporter) {
 	w.reporter = reporter
+}
+
+func (w *Worker) ReleaseReservedPhysicalDatabaseInstancesWith(releaser PhysicalDatabaseInstanceReleaser) {
+	w.releaser = releaser
 }
 
 func (w *Worker) PollOnce(ctx context.Context, agentID string) (PollResult, error) {
@@ -132,11 +148,49 @@ func (w *Worker) processLockedDispatch(ctx context.Context, dispatch DispatchPay
 	if err != nil {
 		return w.reportFailure(ctx, dispatch, err)
 	}
-	if err := w.materializer.Materialize(job, dispatch); err != nil {
+	dispatch, err = w.materializer.Materialize(ctx, job, dispatch)
+	if err != nil {
 		return w.reportFailure(ctx, dispatch, err)
 	}
-	if _, err := w.processor.Process(ctx, dispatch, job); err != nil {
+	result, err := w.processor.Process(ctx, dispatch, job)
+	if err != nil {
+		if dispatch.PhysicalDatabaseInstanceID != "" && shouldReleaseReservedPhysicalDatabaseInstanceAfterProcessorError(result, err) {
+			if releaseErr := w.releasePhysicalDatabaseInstance(ctx, dispatch.PhysicalDatabaseInstanceID); releaseErr != nil {
+				return errors.Join(err, releaseErr)
+			}
+		}
 		return err
+	}
+	if dispatch.PhysicalDatabaseInstanceID != "" && isTerminalFailedResult(result) {
+		return w.releasePhysicalDatabaseInstance(ctx, dispatch.PhysicalDatabaseInstanceID)
+	}
+	return nil
+}
+
+func isTerminalFailedResult(result TerminalCallbackResult) bool {
+	return result.LifecycleState == "failed" || result.RequestState == "failed"
+}
+
+func isTerminalReadyResult(result TerminalCallbackResult) bool {
+	return result.LifecycleState == "ready" || result.RequestState == "ready"
+}
+
+func shouldReleaseReservedPhysicalDatabaseInstanceAfterProcessorError(result TerminalCallbackResult, err error) bool {
+	if isTerminalFailedResult(result) {
+		return true
+	}
+	if isTerminalReadyResult(result) {
+		return false
+	}
+	return isRetryableLifecycleError(err)
+}
+
+func (w *Worker) releasePhysicalDatabaseInstance(ctx context.Context, instanceID string) error {
+	if w.releaser == nil {
+		return nil
+	}
+	if err := w.releaser.ReleasePhysicalDatabaseInstance(ctx, instanceID); err != nil {
+		return fmt.Errorf("release reserved physical database instance %s: %w", instanceID, err)
 	}
 	return nil
 }

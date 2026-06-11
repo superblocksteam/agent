@@ -3,9 +3,12 @@ package databaselifecycle
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/superblocksteam/agent/pkg/clients"
 )
 
 type recordingPhysicalDatabaseInstanceLifecycleClient struct {
@@ -348,4 +351,23 @@ func TestPhysicalDatabaseInstanceLifecycleReturnsProvisionerErrorWhenNewInstance
 
 func TestAllPhysicalDatabaseInstanceCapacityExhaustedReturnsFalseForEmptyInput(t *testing.T) {
 	require.False(t, allPhysicalDatabaseInstanceCapacityExhausted(nil))
+}
+
+func TestServerPhysicalDatabaseInstanceLifecycleClientMapsCapacityExhaustion(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/reserve", r.URL.Path)
+		require.Equal(t, "agent-key", r.Header.Get("x-superblocks-agent-key"))
+		w.WriteHeader(http.StatusConflict)
+		w.Write([]byte(`{"responseMeta":{"error":{"code":"physical_database_instance_capacity_exhausted","message":"physical database instance capacity exhausted"},"message":"physical database instance capacity exhausted"}}`))
+	}))
+	defer server.Close()
+
+	client := NewServerPhysicalDatabaseInstanceLifecycleClient(clients.NewServerClient(&clients.ServerClientOptions{
+		URL:                 server.URL,
+		SuperblocksAgentKey: "agent-key",
+	}))
+
+	err := client.ReservePhysicalDatabaseInstance(context.Background(), "11111111-1111-4111-8111-111111111111")
+
+	require.ErrorIs(t, err, ErrPhysicalDatabaseInstanceCapacityExhausted)
 }

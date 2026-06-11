@@ -18,15 +18,29 @@ func ReadyCallbackFromTerraformOutput(dispatch DispatchPayload, result Result) (
 		}
 	}
 
+	connectionMetadata := mapOutputValue(outputs, "connection_metadata")
+	if dispatch.PhysicalDatabaseInstanceID != "" {
+		connectionMetadata = copyConnectionMetadata(connectionMetadata)
+		connectionMetadata["physical_database_instance_ref"] = dispatch.PhysicalDatabaseInstanceID
+	}
+
 	return TerminalCallback{
 		BindingKey:              dispatch.BindingKey,
-		ConnectionMetadata:      mapOutputValue(outputs, "connection_metadata"),
+		ConnectionMetadata:      connectionMetadata,
 		RuntimeCredentialRefs:   mapOutputValue(outputs, "runtime_credential_refs"),
 		MigrationCredentialRefs: mapOutputValue(outputs, "migration_credential_refs"),
 		LifecycleState:          "ready",
 		MigrationState:          "pending",
 		RequestID:               dispatch.RequestID,
 	}, nil
+}
+
+func copyConnectionMetadata(metadata map[string]any) map[string]any {
+	copied := make(map[string]any, len(metadata)+1)
+	for key, value := range metadata {
+		copied[key] = value
+	}
+	return copied
 }
 
 func mapOutputValue(outputs map[string]terraformOutputValue, key string) map[string]any {

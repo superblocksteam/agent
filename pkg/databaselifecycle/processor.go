@@ -11,6 +11,10 @@ type LifecycleRunner interface {
 	Run(context.Context, Job) (Result, error)
 }
 
+type LifecycleDestroyer interface {
+	Destroy(context.Context, Job) (Result, error)
+}
+
 type RunnerFunc func(context.Context, Job) (Result, error)
 
 func (f RunnerFunc) Run(ctx context.Context, job Job) (Result, error) {
@@ -59,12 +63,12 @@ func ProcessDispatch(
 		if isRetryableLifecycleError(err) {
 			return TerminalCallbackResult{}, err
 		}
-		return reporter.Report(ctx, FailedCallbackFromErrorWithLogs(dispatch, err, result.Logs))
+		return reportTerminalCallback(ctx, reporter, FailedCallbackFromErrorWithLogs(dispatch, err, result.Logs))
 	}
 
 	callback, err := ReadyCallbackFromTerraformOutput(dispatch, result)
 	if err != nil {
-		return reporter.Report(ctx, FailedCallbackFromErrorWithLogs(dispatch, err, result.Logs))
+		return reportTerminalCallback(ctx, reporter, FailedCallbackFromErrorWithLogs(dispatch, err, result.Logs))
 	}
 
 	return applyMigrationsAndReport(ctx, migrationRunner, buildDSN, reporter, dispatch, callback)
@@ -84,21 +88,46 @@ func applyMigrationsAndReport(
 	// a successful no-op and must unblock the deploy gate.
 	if dispatch.Operation == "migrate_schema" && len(dispatch.Migrations) == 0 {
 		callback.MigrationState = "migrated"
-		return reporter.Report(ctx, callback)
+		return reportTerminalCallback(ctx, reporter, callback)
 	}
 	if migrationRunner != nil && len(dispatch.Migrations) > 0 {
 		dsn, dsnErr := buildDSN(ctx, callback)
 		if dsnErr != nil {
-			return reporter.Report(ctx, FailedCallbackFromError(dispatch,
+			return reportTerminalCallback(ctx, reporter, FailedCallbackFromError(dispatch,
 				&LifecycleError{Code: ErrorCodeMigrationFailed, Retryable: false, Err: dsnErr}))
 		}
 		if _, migErr := migrationRunner.Apply(ctx, dsn, dispatch.Migrations); migErr != nil {
-			return reporter.Report(ctx, FailedCallbackFromError(dispatch,
+			return reportTerminalCallback(ctx, reporter, FailedCallbackFromError(dispatch,
 				&LifecycleError{Code: ErrorCodeMigrationFailed, Retryable: false, Err: migErr}))
 		}
 		callback.MigrationState = "migrated"
 	}
-	return reporter.Report(ctx, callback)
+	return reportTerminalCallback(ctx, reporter, callback)
+}
+
+func reportTerminalCallback(ctx context.Context, reporter CallbackReporter, callback TerminalCallback) (TerminalCallbackResult, error) {
+	result, err := reporter.Report(ctx, callback)
+	if err != nil && result == (TerminalCallbackResult{}) {
+		result = resultFromTerminalCallback(callback)
+	}
+	return result, err
+}
+
+func resultFromTerminalCallback(callback TerminalCallback) TerminalCallbackResult {
+	return TerminalCallbackResult{
+		BindingKey:     callback.BindingKey,
+		LifecycleState: callback.LifecycleState,
+		MigrationState: callback.MigrationState,
+		RequestID:      callback.RequestID,
+		RequestState:   requestStateFromTerminalCallback(callback),
+	}
+}
+
+func requestStateFromTerminalCallback(callback TerminalCallback) string {
+	if callback.Error != nil || callback.LifecycleState == "failed" {
+		return "failed"
+	}
+	return callback.LifecycleState
 }
 
 func isRetryableLifecycleError(err error) bool {

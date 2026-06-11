@@ -136,6 +136,23 @@ func (r *Runner) Run(ctx context.Context, job Job) (Result, error) {
 	return Result{OutputJSON: output, Logs: logs}, nil
 }
 
+func (r *Runner) Destroy(ctx context.Context, job Job) (Result, error) {
+	commands := []Command{
+		{Name: "init", Args: []string{"-input=false", "-backend-config=" + job.BackendFile}, Dir: job.WorkingDir},
+		{Name: "destroy", Args: []string{"-input=false", "-auto-approve", "-var-file=" + job.VarsFile}, Dir: job.WorkingDir},
+	}
+
+	var logs []string
+	for _, command := range commands {
+		commandResult, err := r.executor.Run(ctx, command)
+		logs = appendRedacted(logs, commandResult.Stdout, commandResult.Stderr)
+		if err != nil {
+			return Result{Logs: logs}, classifyTerraformError(commandResult, err)
+		}
+	}
+	return Result{Logs: logs}, nil
+}
+
 func classifyTerraformError(result CommandResult, err error) error {
 	combined := strings.ToLower(result.Stdout + "\n" + result.Stderr + "\n" + err.Error())
 	switch {

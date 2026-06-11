@@ -24,9 +24,9 @@ func TestWorkerPollOnceClaimsAndProcessesDispatches(t *testing.T) {
 		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
 			return Job{BindingKey: dispatch.BindingKey, WorkingDir: "/tmp/" + dispatch.RequestID}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 			materialized = append(materialized, dispatch.RequestID+":"+job.WorkingDir)
-			return nil
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			processed = append(processed, job.BindingKey+":"+job.WorkingDir)
@@ -57,9 +57,9 @@ func TestWorkerPollOnceMigrateSchemaSkipsTerraformJobSetup(t *testing.T) {
 			t.Fatal("migrate_schema must not build a Terraform job")
 			return Job{}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 			t.Fatal("migrate_schema must not materialize Terraform files")
-			return nil
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			processed = append(processed, job.BindingKey+":"+job.WorkingDir)
@@ -89,8 +89,8 @@ func TestWorkerPollOnceContinuesAfterDispatchErrors(t *testing.T) {
 			}
 			return Job{BindingKey: dispatch.BindingKey}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
-			return nil
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			return TerminalCallbackResult{RequestID: dispatch.RequestID, RequestState: "ready"}, nil
@@ -117,8 +117,8 @@ func TestWorkerPollOnceReturnsClaimErrors(t *testing.T) {
 		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
 			return Job{}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
-			return nil
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			return TerminalCallbackResult{}, nil
@@ -141,8 +141,8 @@ func TestWorkerPollOnceDoesNotProcessMaterializationErrors(t *testing.T) {
 		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
 			return Job{BindingKey: dispatch.BindingKey}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
-			return errors.New("write backend")
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			return dispatch, errors.New("write backend")
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			processed = true
@@ -190,9 +190,9 @@ func TestWorkerPollOnceUsesBindingKeyWhenResourceKeyIsMissing(t *testing.T) {
 		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
 			return Job{BindingKey: dispatch.BindingKey}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 			materialized = append(materialized, dispatch)
-			return nil
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			lockRelease, err = locker.Lock(ctx, "app:prod:orders")
@@ -218,8 +218,8 @@ func TestWorkerPollOncePreservesOriginalFailureWhenReportingFails(t *testing.T) 
 		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
 			return Job{}, errors.New("missing workspace")
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
-			return nil
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			return TerminalCallbackResult{}, nil
@@ -249,8 +249,8 @@ func TestWorkerPollOnceReportsNonRetryableLockFailures(t *testing.T) {
 			built = true
 			return Job{}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
-			return nil
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			return TerminalCallbackResult{}, nil
@@ -293,8 +293,8 @@ func TestWorkerPollOnceSkipsLockedResources(t *testing.T) {
 		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
 			return Job{BindingKey: dispatch.BindingKey}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
-			return nil
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			processed = true
@@ -321,8 +321,8 @@ func TestWorkerPollOnceMarksRetryableLifecycleErrors(t *testing.T) {
 		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
 			return Job{BindingKey: dispatch.BindingKey}, nil
 		}),
-		JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
-			return nil
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
 			return TerminalCallbackResult{}, &LifecycleError{Code: ErrorCodeBackendLocked, Retryable: true, Err: errors.New("state lock")}
@@ -335,4 +335,135 @@ func TestWorkerPollOnceMarksRetryableLifecycleErrors(t *testing.T) {
 	require.Equal(t, 0, result.Processed)
 	require.Len(t, result.Errors, 1)
 	require.True(t, result.Errors[0].Retryable)
+}
+
+func TestWorkerPollOnceReleasesReservedPhysicalDatabaseInstanceAfterTerminalFailure(t *testing.T) {
+	var released []string
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", Operation: "ensure_database", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			return dispatch, nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			require.Equal(t, "11111111-1111-4111-8111-111111111111", dispatch.PhysicalDatabaseInstanceID)
+			return TerminalCallbackResult{LifecycleState: "failed", RequestID: dispatch.RequestID, RequestState: "failed"}, nil
+		}),
+	)
+	worker.ReleaseReservedPhysicalDatabaseInstancesWith(PhysicalDatabaseInstanceReleaserFunc(func(ctx context.Context, instanceID string) error {
+		released = append(released, instanceID)
+		return nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, PollResult{Claimed: 1, Processed: 1}, result)
+	require.Equal(t, []string{"11111111-1111-4111-8111-111111111111"}, released)
+}
+
+func TestWorkerPollOnceSurfacesReleaseErrorAfterTerminalFailure(t *testing.T) {
+	releaseErr := errors.New("release failed")
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", Operation: "ensure_database", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			return dispatch, nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{LifecycleState: "failed", RequestID: dispatch.RequestID, RequestState: "failed"}, nil
+		}),
+	)
+	worker.ReleaseReservedPhysicalDatabaseInstancesWith(PhysicalDatabaseInstanceReleaserFunc(func(ctx context.Context, instanceID string) error {
+		return releaseErr
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.ErrorIs(t, result.Errors[0].Err, releaseErr)
+	require.ErrorContains(t, result.Errors[0].Err, "release reserved physical database instance 11111111-1111-4111-8111-111111111111")
+	require.False(t, result.Errors[0].Retryable)
+}
+
+func TestWorkerPollOnceReleasesReservedPhysicalDatabaseInstanceAfterProcessorError(t *testing.T) {
+	var released []string
+	processorErr := &LifecycleError{Code: ErrorCodeBackendLocked, Retryable: true, Err: errors.New("state lock")}
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", Operation: "ensure_database", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			return dispatch, nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{}, processorErr
+		}),
+	)
+	worker.ReleaseReservedPhysicalDatabaseInstancesWith(PhysicalDatabaseInstanceReleaserFunc(func(ctx context.Context, instanceID string) error {
+		released = append(released, instanceID)
+		return nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.ErrorIs(t, result.Errors[0].Err, processorErr)
+	require.True(t, result.Errors[0].Retryable)
+	require.Equal(t, []string{"11111111-1111-4111-8111-111111111111"}, released)
+}
+
+func TestWorkerPollOnceKeepsReservedPhysicalDatabaseInstanceAfterReadyCallbackError(t *testing.T) {
+	var released []string
+	callbackErr := errors.New("callback failed")
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", Operation: "ensure_database", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			return dispatch, nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{LifecycleState: "ready", RequestID: dispatch.RequestID, RequestState: "ready"}, callbackErr
+		}),
+	)
+	worker.ReleaseReservedPhysicalDatabaseInstancesWith(PhysicalDatabaseInstanceReleaserFunc(func(ctx context.Context, instanceID string) error {
+		released = append(released, instanceID)
+		return nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.ErrorIs(t, result.Errors[0].Err, callbackErr)
+	require.False(t, result.Errors[0].Retryable)
+	require.Empty(t, released)
 }

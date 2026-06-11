@@ -50,21 +50,43 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 		RootCert:           deps.DSNOptions.SSLRootCert,
 		AllowedRefPrefixes: deps.DSNOptions.AllowedRefPrefixes,
 	}
-	materializer := JobMaterializerFunc(func(job Job, dispatch DispatchPayload) error {
+	physicalDatabaseInstanceClient := NewServerPhysicalDatabaseInstanceLifecycleClient(deps.Client)
+	physicalDatabaseInstanceProvisioner := newTerraformPhysicalDatabaseInstanceProvisioner(deps.LifecycleConfig, deps.AllowedModuleSources, deps.RootDir, runner, sslOpts)
+	physicalDatabaseInstanceLifecycle := NewPhysicalDatabaseInstanceLifecycle(physicalDatabaseInstanceClient, physicalDatabaseInstanceProvisioner)
+	materializer := JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 		if len(deps.LifecycleConfig.Entries) == 0 {
-			return unsupportedShapeError(errors.New("database lifecycle local config is required: set SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG with at least one entry"))
+			return dispatch, unsupportedShapeError(errors.New("database lifecycle local config is required: set SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG with at least one entry"))
 		}
 		if dispatch.DesiredSpec.Engine == "" {
-			return unsupportedShapeError(errors.New("malformed database lifecycle dispatch: desiredSpec.engine is required"))
+			return dispatch, unsupportedShapeError(errors.New("malformed database lifecycle dispatch: desiredSpec.engine is required"))
 		}
 		resolved, err := deps.LifecycleConfig.Resolve(dispatch.Environment, dispatch.Profile, dispatch.Operation, dispatch.DesiredSpec.Engine)
 		if err != nil {
-			return unsupportedShapeError(err)
+			return dispatch, unsupportedShapeError(err)
 		}
 		if err := ValidateTerraformModuleSource(resolved.Module, deps.AllowedModuleSources); err != nil {
-			return unsupportedShapeError(fmt.Errorf("config entry %s/%s: %w", dispatch.Environment, dispatch.Profile, err))
+			return dispatch, unsupportedShapeError(fmt.Errorf("config entry %s/%s: %w", dispatch.Environment, dispatch.Profile, err))
 		}
-		return MaterializeResolvedJob(job, dispatch, resolved, sslOpts)
+		if err := validateSharedPostgresEnsureCredentialSecretPrefix(dispatch, resolved); err != nil {
+			return dispatch, err
+		}
+		if shouldReservePhysicalDatabaseInstance(dispatch, resolved) {
+			instance, err := physicalDatabaseInstanceLifecycle.ReserveForEnsure(ctx, physicalDatabaseInstanceSelector(dispatch, resolved))
+			if err != nil {
+				return dispatch, err
+			}
+			dispatch.PhysicalDatabaseInstanceID = instance.ID
+			resolved = ResolveWithPhysicalDatabaseInstance(resolved, instance)
+		}
+		if err := MaterializeResolvedJob(job, dispatch, resolved, sslOpts); err != nil {
+			if dispatch.PhysicalDatabaseInstanceID != "" {
+				if releaseErr := releaseReservedPhysicalDatabaseInstance(ctx, physicalDatabaseInstanceClient, dispatch.PhysicalDatabaseInstanceID); releaseErr != nil {
+					return dispatch, errors.Join(err, releaseErr)
+				}
+			}
+			return dispatch, err
+		}
+		return dispatch, nil
 	})
 	dsnBuilder := NewDSNBuilder(deps.DSNOptions)
 	worker := NewWorker(
@@ -79,9 +101,64 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 		}),
 	)
 	worker.ReportFailuresWith(reporter)
+	worker.ReleaseReservedPhysicalDatabaseInstancesWith(physicalDatabaseInstanceClient)
 	return worker, nil
 }
 
 func unsupportedShapeError(err error) error {
 	return &LifecycleError{Code: ErrorCodeUnsupportedShape, Retryable: false, Err: err}
+}
+
+func shouldReservePhysicalDatabaseInstance(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) bool {
+	credentialSecretPrefix, hasCredentialSecretPrefix := resolved.Module.Inputs[credentialSecretPrefixInput].(string)
+	return dispatch.Operation == "ensure_database" &&
+		isPostgresManagedDatabaseSource(resolved.Module.Source) &&
+		hasCredentialSecretPrefix &&
+		credentialSecretPrefix != ""
+}
+
+func validateSharedPostgresEnsureCredentialSecretPrefix(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) error {
+	if dispatch.Operation != "ensure_database" || !isPostgresManagedDatabaseSource(resolved.Module.Source) {
+		return nil
+	}
+	if _, exists := resolved.Module.Inputs[credentialSecretPrefixInput]; !exists {
+		return nil
+	}
+	return validateSharedModeCredentialSecretPrefix(resolved.Module.Inputs)
+}
+
+func physicalDatabaseInstanceSelector(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) PhysicalDatabaseInstanceSelector {
+	return PhysicalDatabaseInstanceSelector{
+		Region:      stringBackendValue(resolved.Backend, "region"),
+		Environment: dispatch.Environment,
+		Profile:     dispatch.Profile,
+		Engine:      dispatch.DesiredSpec.Engine,
+	}
+}
+
+func stringBackendValue(backend map[string]any, key string) string {
+	value, _ := backend[key].(string)
+	return value
+}
+
+const physicalDatabaseInstanceReleaseAttempts = 3
+
+func releaseReservedPhysicalDatabaseInstance(ctx context.Context, releaser PhysicalDatabaseInstanceReleaser, instanceID string) error {
+	if releaser == nil || instanceID == "" {
+		return nil
+	}
+
+	var lastErr error
+	for attempt := 0; attempt < physicalDatabaseInstanceReleaseAttempts; attempt++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := releaser.ReleasePhysicalDatabaseInstance(ctx, instanceID); err != nil {
+			lastErr = err
+			continue
+		}
+		return nil
+	}
+
+	return fmt.Errorf("release reserved physical database instance %s: %w", instanceID, lastErr)
 }

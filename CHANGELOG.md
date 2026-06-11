@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## vNext
 - Fix OAuth token-exchange (on-behalf-of) caching to honor the connection's token scope setting: tokens for datasource-scoped connections are now cached under the shared key instead of always falling back to per-user caching, so cache reads and eviction find them.
+- Reserve registered physical database instance capacity from the control plane for shared Native Database `ensure_database` work, inject the reserved endpoint/admin credential into materialization, and release reserved capacity on failed lifecycle paths.
 - Align Native Database lifecycle dispatch decoding with the control-plane payload by reading database requirements from typed `desiredSpec` instead of duplicated top-level spec fields.
 - **Breaking:** Native Database lifecycle config no longer accepts legacy entry-level `backend`, `credentialResolver`, or `moduleSelectors` fields. Operators must migrate to the per-operation `entries[].operations.<operation>.backend = "terraform"` shape with `entries[].operations.<operation>.terraform.{backend,credentialResolver,moduleSelectors}`.
 - Restrict inline DSL `sb_secrets` bindings to legacy application tokens.

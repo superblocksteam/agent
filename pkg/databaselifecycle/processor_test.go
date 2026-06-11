@@ -96,6 +96,37 @@ func TestProcessDispatchReportsReadyCallbackAfterRunnerSuccess(t *testing.T) {
 	}, reported)
 }
 
+func TestProcessDispatchReturnsReadyResultWhenReadyCallbackReportFails(t *testing.T) {
+	reportErr := errors.New("callback failed")
+	result, err := ProcessDispatch(
+		context.Background(),
+		RunnerFunc(func(ctx context.Context, job Job) (Result, error) {
+			return Result{OutputJSON: `{"connection_metadata":{"value":{"host":"orders.internal"}},"runtime_credential_refs":{"value":{"password":{"resolver":"vault","ref":"database/orders","field":"password"}}}}`}, nil
+		}),
+		nil,
+		noDSN(t),
+		CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
+			require.Equal(t, "ready", callback.LifecycleState)
+			return TerminalCallbackResult{}, reportErr
+		}),
+		DispatchPayload{
+			BindingKey: "app:prod:orders",
+			Operation:  "ensure_database",
+			RequestID:  "request-1",
+		},
+		Job{BindingKey: "app:prod:orders"},
+	)
+
+	require.ErrorIs(t, err, reportErr)
+	require.Equal(t, TerminalCallbackResult{
+		BindingKey:     "app:prod:orders",
+		LifecycleState: "ready",
+		MigrationState: "pending",
+		RequestID:      "request-1",
+		RequestState:   "ready",
+	}, result)
+}
+
 func TestProcessDispatchReportsFailedCallbackForTerminalRunnerError(t *testing.T) {
 	var reported TerminalCallback
 	_, err := ProcessDispatch(

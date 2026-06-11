@@ -10,20 +10,22 @@ var ErrPhysicalDatabaseInstanceCapacityExhausted = errors.New("database lifecycl
 type PhysicalDatabaseInstanceSelector struct {
 	Region      string
 	Environment string
+	Profile     string
 	Engine      string
 }
 
 type PhysicalDatabaseInstance struct {
-	ID                  string
-	Region              string
-	Environment         string
-	Engine              string
-	Endpoint            string
-	MasterCredentialRef map[string]any
-	CapacityMax         int
-	CapacityUsed        int
-	Status              string
-	SecurityClass       string
+	ID                   string
+	Region               string
+	Environment          string
+	Engine               string
+	ProvisionResourceKey string
+	Endpoint             string
+	MasterCredentialRef  map[string]any
+	CapacityMax          int
+	CapacityUsed         int
+	Status               string
+	SecurityClass        string
 }
 
 type PhysicalDatabaseInstanceLifecycleClient interface {

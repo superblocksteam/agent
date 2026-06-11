@@ -72,6 +72,30 @@ func TestRunnerIncludesShowWhenPlanPolicyIsConfigured(t *testing.T) {
 	}, commands)
 }
 
+func TestRunnerDestroySequencesTerraformCommandsAndRedactsLogs(t *testing.T) {
+	var commands []Command
+	executor := CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) {
+		commands = append(commands, command)
+		return CommandResult{Stdout: "destroyed password=secret"}, nil
+	})
+
+	result, err := NewRunner(executor).Destroy(context.Background(), Job{
+		BindingKey:  "physical-database-instance",
+		WorkingDir:  "/tmp/physical",
+		BackendFile: "backend.tfbackend",
+		VarsFile:    "terraform.tfvars.json",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, []Command{
+		{Name: "init", Args: []string{"-input=false", "-backend-config=backend.tfbackend"}, Dir: "/tmp/physical"},
+		{Name: "destroy", Args: []string{"-input=false", "-auto-approve", "-var-file=terraform.tfvars.json"}, Dir: "/tmp/physical"},
+	}, commands)
+	for _, line := range result.Logs {
+		require.NotContains(t, line, "secret")
+	}
+}
+
 func TestRunnerClassifiesBackendLockContention(t *testing.T) {
 	executor := CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) {
 		return CommandResult{Stderr: "Error acquiring the state lock"}, errors.New("exit status 1")

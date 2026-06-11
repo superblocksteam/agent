@@ -25,7 +25,7 @@ func TestClaimDispatchesDecodesControlPlanePayloads(t *testing.T) {
 		require.Equal(t, "agent-1", body["agentId"])
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpec":{"logicalName":"Orders DB","engine":"postgres","version":"16.3","sizing":{"class":"small"},"extensions":["pgvector"],"replicaCount":1,"migrationDirectory":"db/migrations"},"desiredSpecHash":"hash-1","environment":"deployed","operation":"ensure_database","profile":"production","requestId":"request-1","resourceKey":"resource-1"}]}`))
+		w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","connectionMetadata":{"database":"orders","host":"orders.internal","port":5432},"runtimeCredentialRefs":{"username":{"ref":"database/orders/runtime","field":"username"},"password":{"ref":"database/orders/runtime","field":"password"}},"migrationCredentialRefs":{"username":{"ref":"database/orders/migration","field":"username"},"password":{"ref":"database/orders/migration","field":"password"}},"desiredSpec":{"logicalName":"Orders DB","engine":"postgres","version":"16.3","sizing":{"class":"small"},"extensions":["pgvector"],"replicaCount":1,"migrationDirectory":"db/migrations"},"desiredSpecHash":"hash-1","environment":"deployed","operation":"migrate_schema","profile":"production","requestId":"request-1","resourceKey":"resource-1"}]}`))
 	}))
 	defer server.Close()
 
@@ -37,6 +37,19 @@ func TestClaimDispatchesDecodesControlPlanePayloads(t *testing.T) {
 	require.Equal(t, []DispatchPayload{
 		{
 			BindingKey: "app:prod:orders",
+			ConnectionMetadata: map[string]any{
+				"database": "orders",
+				"host":     "orders.internal",
+				"port":     float64(5432),
+			},
+			RuntimeCredentialRefs: map[string]any{
+				"username": map[string]any{"ref": "database/orders/runtime", "field": "username"},
+				"password": map[string]any{"ref": "database/orders/runtime", "field": "password"},
+			},
+			MigrationCredentialRefs: map[string]any{
+				"username": map[string]any{"ref": "database/orders/migration", "field": "username"},
+				"password": map[string]any{"ref": "database/orders/migration", "field": "password"},
+			},
 			DesiredSpec: DatabaseRequirement{
 				LogicalName:        "Orders DB",
 				Engine:             "postgres",
@@ -48,7 +61,7 @@ func TestClaimDispatchesDecodesControlPlanePayloads(t *testing.T) {
 			},
 			DesiredSpecHash: "hash-1",
 			Environment:     "deployed",
-			Operation:       "ensure_database",
+			Operation:       "migrate_schema",
 			Profile:         "production",
 			RequestID:       "request-1",
 			ResourceKey:     "resource-1",

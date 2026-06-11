@@ -74,6 +74,30 @@ func TestReadyCallbackFromTerraformOutputCanParseSecretLikeUnusedOutputs(t *test
 	require.Nil(t, callback.RuntimeCredentialRefs)
 }
 
+func TestReadyCallbackFromTerraformOutputIncludesReservedPhysicalDatabaseInstanceRef(t *testing.T) {
+	callback, err := ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			BindingKey:                 "app:prod:orders",
+			Operation:                  "ensure_database",
+			PhysicalDatabaseInstanceID: "11111111-1111-4111-8111-111111111111",
+			RequestID:                  "request-1",
+		},
+		Result{
+			OutputJSON: `{
+				"connection_metadata":{"sensitive":false,"type":["object",{}],"value":{"database":"orders","host":"orders.internal","port":5432}}
+			}`,
+		},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, map[string]any{
+		"database":                       "orders",
+		"host":                           "orders.internal",
+		"physical_database_instance_ref": "11111111-1111-4111-8111-111111111111",
+		"port":                           float64(5432),
+	}, callback.ConnectionMetadata)
+}
+
 func TestReadyCallbackFromTerraformOutputDefaultsMigrationStateToPending(t *testing.T) {
 	// MigrationState defaults to "pending" out of ReadyCallbackFromTerraformOutput;
 	// the migration runner upgrades it to "migrated" inside ProcessDispatch

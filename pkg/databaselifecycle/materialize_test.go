@@ -222,6 +222,119 @@ func TestMaterializeResolvedJobRejectsCredentialResolverInputConflict(t *testing
 	require.ErrorContains(t, err, `input "credential_resolver" conflicts with local lifecycle credential resolver`)
 }
 
+func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsFromReservedInstance(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:dev:orders",
+		WorkingDir:  filepath.Join(root, "app-dev-orders"),
+		MainFile:    filepath.Join(root, "app-dev-orders", "main.tf"),
+		BackendFile: filepath.Join(root, "app-dev-orders", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-dev-orders", "terraform.tfvars.json"),
+	}
+	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+		Module: TerraformModule{
+			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Inputs: map[string]any{
+				"credential_secret_prefix": "superblocks/native-db/local",
+			},
+		},
+		Backend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
+	}, PhysicalDatabaseInstance{
+		Endpoint: "pool-rds.example.us-east-1.rds.amazonaws.com:6432",
+		MasterCredentialRef: map[string]any{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
+		},
+	})
+
+	err := MaterializeResolvedJob(job, DispatchPayload{
+		BindingKey:      "org:app:edit:dev~dev:orders~Orders%20DB:postgres",
+		DesiredSpec:     DatabaseRequirement{LogicalName: "Orders DB", Engine: "postgres"},
+		DesiredSpecHash: "hash-1",
+		Environment:     "edit",
+		Operation:       "ensure_database",
+		Profile:         "dev",
+		RequestID:       "request-1",
+		ResourceKey:     "org/app/orders~Orders%20DB:postgres/edit/dev~dev/default",
+	}, resolved, testSharedModeSSLOpts)
+
+	require.NoError(t, err)
+
+	var vars map[string]any
+	require.NoError(t, readJSONFile(job.VarsFile, &vars))
+	require.Equal(t, "orders_db", vars["logical_name"])
+	require.Regexp(t, `^sb_[a-f0-9]{16}$`, vars["database_name"])
+	require.Regexp(t, `^sb_[a-f0-9]{16}_run$`, vars["runtime_role_name"])
+	require.Regexp(t, `^sb_[a-f0-9]{16}_mig$`, vars["migration_role_name"])
+	require.Equal(t, "pool-rds.example.us-east-1.rds.amazonaws.com", vars["host"])
+	require.Equal(t, float64(6432), vars["port"])
+	require.Equal(t, map[string]any{
+		"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
+		"resolver": "aws_secrets_manager",
+	}, vars["postgres_admin_credential_ref"])
+
+	mainFile, err := os.ReadFile(job.MainFile)
+	require.NoError(t, err)
+	main := string(mainFile)
+	require.Contains(t, main, `__pool_master_secret_arn    = var.postgres_admin_credential_ref.ref`)
+	require.Contains(t, main, `resource "random_password" "runtime"`)
+	require.Contains(t, main, `resource "aws_secretsmanager_secret" "runtime"`)
+	require.Contains(t, main, `provider = aws.pool_secrets
+  name     = "${local.__credential_secret_prefix}/${var.database_name}/runtime"`)
+	require.Contains(t, main, `runtime_credential_ref = {
+    resolver = "aws_secrets_manager"
+    ref      = aws_secretsmanager_secret.runtime.arn
+    field    = "password"
+  }`)
+	require.Contains(t, main, `runtime_password_wo = random_password.runtime.result`)
+	require.Contains(t, main, `postgres_admin_username = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["username"]`)
+	require.Contains(t, main, `postgres_admin_password = sensitive(jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["password"])`)
+	require.Contains(t, main, `provider "postgresql" {
+  host      = var.host
+  port      = var.port`)
+	require.NotContains(t, main, `postgres_admin_credential_ref = var.postgres_admin_credential_ref`)
+	require.NotContains(t, main, `credential_secret_prefix = var.credential_secret_prefix`)
+}
+
+func TestMaterializeResolvedJobRejectsInvalidCredentialSecretPrefixBeforeSharedModeMaterialization(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:dev:orders",
+		WorkingDir:  filepath.Join(root, "app-dev-orders"),
+		MainFile:    filepath.Join(root, "app-dev-orders", "main.tf"),
+		BackendFile: filepath.Join(root, "app-dev-orders", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-dev-orders", "terraform.tfvars.json"),
+	}
+	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+		Module: TerraformModule{
+			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Inputs: map[string]any{
+				"credential_secret_prefix": "",
+			},
+		},
+		Backend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
+	}, PhysicalDatabaseInstance{
+		Endpoint: "pool-rds.example.us-east-1.rds.amazonaws.com:5432",
+		MasterCredentialRef: map[string]any{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
+		},
+	})
+
+	err := MaterializeResolvedJob(job, DispatchPayload{
+		BindingKey:      "app:dev:orders",
+		DesiredSpec:     DatabaseRequirement{LogicalName: "Orders DB", Engine: "postgres"},
+		DesiredSpecHash: "hash-1",
+		Environment:     "edit",
+		Operation:       "ensure_database",
+		Profile:         "dev",
+		RequestID:       "request-1",
+		ResourceKey:     "resource-1",
+	}, resolved, testSharedModeSSLOpts)
+
+	require.ErrorContains(t, err, `credential_secret_prefix must be a non-empty string`)
+}
+
 func TestMaterializeJobOmitsProviderBlockForNonCloudBackends(t *testing.T) {
 	root := tempRoot(t)
 	job := Job{
@@ -706,6 +819,9 @@ func TestMaterializeJobEmitsPostgresProviderForSharedModeModule(t *testing.T) {
 
 	require.Contains(t, main, `terraform {
   required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
     postgresql = {
       source  = "cyrilgdn/postgresql"
       version = "~> 1.26.0"
@@ -726,13 +842,55 @@ func TestMaterializeJobEmitsPostgresProviderForSharedModeModule(t *testing.T) {
 }`)
 	require.Contains(t, main, `provider "postgresql" {
   host      = var.host
-  port      = 5432
+  port      = var.port
   username  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["username"]
   password  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["password"]
   sslmode   = "require"
   superuser = false
 }`)
 	require.Contains(t, main, `provider "aws" {
+  region = "us-west-2"
+}`)
+}
+
+func TestMaterializeJobBindsGeneratedSharedModeSecretsToPoolSecretsProvider(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:dev:devdb",
+		WorkingDir:  filepath.Join(root, "app-dev-devdb"),
+		MainFile:    filepath.Join(root, "app-dev-devdb", "main.tf"),
+		BackendFile: filepath.Join(root, "app-dev-devdb", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-dev-devdb", "terraform.tfvars.json"),
+	}
+
+	err := MaterializeJob(job, DispatchPayload{
+		BindingKey:       "app:dev:devdb",
+		TerraformBackend: map[string]any{"stateBackend": "gcs", "bucket": "state-bucket", "prefix": "devdb"},
+		TerraformModule: TerraformModule{
+			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Inputs: map[string]any{
+				"credential_secret_prefix": "superblocks/native-db/local",
+				"host":                     "pool-rds.example.us-east-1.rds.amazonaws.com",
+				"postgres_admin_credential_ref": map[string]any{
+					"resolver": "aws_secrets_manager",
+					"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
+				},
+			},
+		},
+	}, testSharedModeSSLOpts)
+
+	require.NoError(t, err)
+	mainFile, err := os.ReadFile(job.MainFile)
+	require.NoError(t, err)
+	main := string(mainFile)
+	require.Contains(t, main, `aws = {
+      source = "hashicorp/aws"
+    }`)
+	require.Contains(t, main, `resource "aws_secretsmanager_secret" "runtime" {
+  provider = aws.pool_secrets`)
+	require.Contains(t, main, `resource "aws_secretsmanager_secret_version" "runtime" {
+  provider      = aws.pool_secrets`)
+	require.NotContains(t, main, `provider "aws" {
   region = "us-west-2"
 }`)
 }
