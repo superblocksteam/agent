@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/superblocksteam/agent/pkg/clients"
+	"github.com/superblocksteam/agent/pkg/constants"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
@@ -555,6 +556,10 @@ func (f *fetcher) ValidateProfile(ctx context.Context, req *integrationv1.Valida
 
 		for _, id := range req.IntegrationIds {
 			query.Add("integrationId", id)
+		}
+
+		if appID := constants.SDKCallbackApplicationID(ctx); appID != "" {
+			query.Set("appId", appID)
 		}
 	}
 

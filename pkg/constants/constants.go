@@ -7,6 +7,7 @@ import (
 	"time"
 
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
+	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -28,6 +29,8 @@ const (
 	ContextKeySDKIntegrationExecution
 	ContextKeySDKIntegrationAllowedIntegrationIDs
 	ContextKeyAITriggeredExecution
+	ContextKeySDKCallbackApplicationID
+	ContextKeySDKCallbackViewMode
 	// TODO(frank): Add other context keys here.
 
 	HeaderAgentKey               = "x-superblocks-agent-key"
@@ -236,4 +239,27 @@ func CallerIpAddress(ctx context.Context) string {
 		}
 	}
 	return ipAddress
+}
+
+func WithSDKCallbackApplicationID(ctx context.Context, applicationID string) context.Context {
+	return context.WithValue(ctx, ContextKeySDKCallbackApplicationID, applicationID)
+}
+
+func SDKCallbackApplicationID(ctx context.Context) string {
+	id, ok := ctx.Value(ContextKeySDKCallbackApplicationID).(string)
+	if !ok {
+		return ""
+	}
+	return id
+}
+
+func WithSDKCallbackViewMode(ctx context.Context, viewMode apiv1.ViewMode) context.Context {
+	return context.WithValue(ctx, ContextKeySDKCallbackViewMode, viewMode)
+}
+
+func SDKCallbackViewMode(ctx context.Context) apiv1.ViewMode {
+	if vm, ok := ctx.Value(ContextKeySDKCallbackViewMode).(apiv1.ViewMode); ok {
+		return vm
+	}
+	return apiv1.ViewMode_VIEW_MODE_UNSPECIFIED
 }

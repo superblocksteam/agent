@@ -32,6 +32,7 @@ import (
 	"github.com/superblocksteam/agent/internal/flags"
 	flagoptions "github.com/superblocksteam/agent/internal/flags/options"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
+	"github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/internal/registration"
 	"github.com/superblocksteam/agent/internal/schedule"
@@ -774,6 +775,8 @@ func main() {
 			TokenManager:            auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms"), flagsClient),
 			AgentId:                 id,
 			AgentVersion:            version,
+			AgentTags:               metadata.GetTagsSetMap(viper.GetString("agent.tags")),
+			AgentEnvironment:        viper.GetString("agent.environment"),
 			AgentKey:                viper.GetString("superblocks.key"),
 			IntegrationsCallbackUrl: viper.GetString("integrations.callback.url"),
 			SecretManager:           secretManager,

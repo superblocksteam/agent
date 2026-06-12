@@ -12,6 +12,7 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/internal/auth/mocks"
 	v1 "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap/zaptest"
@@ -31,6 +32,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 		expectedRequestedTokenType string
 		expectedOptions            string
 		expectedErr                string
+		expectedErrContains        string
 		exchangeRequestErr         error
 		exchangeRequestStatusCode  int
 		exchangeResponseBody       string
@@ -153,7 +155,7 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 			expectedSubjectTokenType:  "urn:ietf:params:oauth:token-type:access_token",
 			exchangeRequestStatusCode: http.StatusOK,
 			exchangeResponseBody:      `{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "scope": "all-apis"}`,
-			expectedErr:               "proto: field plugins.common.v1.OAuth.AuthorizationCodeFlow.scope contains invalid UTF-8",
+			expectedErrContains:       "field plugins.common.v1.OAuth.AuthorizationCodeFlow.scope contains invalid UTF-8",
 		},
 		{
 			name:        "no origin in context",
@@ -380,7 +382,10 @@ func TestExchangeOAuthTokenOnBehalfOf(t *testing.T) {
 
 			actualToken, actualErr := client.ExchangeOAuthTokenOnBehalfOf(ctx, tc.authConfig, anySubjectToken, anyIntegrationId, anyConfigurationId)
 
-			if tc.expectedErr != "" {
+			if tc.expectedErrContains != "" {
+				require.Error(t, actualErr)
+				assert.Contains(t, actualErr.Error(), tc.expectedErrContains)
+			} else if tc.expectedErr != "" {
 				assert.EqualError(t, actualErr, tc.expectedErr)
 			} else {
 				assert.NoError(t, actualErr)
