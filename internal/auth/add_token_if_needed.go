@@ -532,15 +532,17 @@ func (t *tokenManager) getCachedOauthToken(ctx context.Context, authType string,
 	return ""
 }
 
-func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType string, authConfig *structpb.Struct, datasourceId string, configurationId string, pluginId string) (string, error) {
-	log := observability.ZapLogger(ctx, t.logger).With(zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId))
-
-	log.Info("exchangeOauthTokenForToken")
+// normalizedOAuthConfigProto reconstructs the OAuth auth-config proto exactly as
+// the token fetch/cache path derives it from a datasource's raw authConfig: the
+// NormalizeTokenScope → MapToProto round-trip plus the workforce-identity
+// audience defaulting. The struct rendered from this proto is what the server
+// derives the cache key from, so eviction MUST use the identical derivation or
+// it silently targets a key the token does not live under. Any change to the
+// fetch/cache derivation must go through this function.
+func normalizedOAuthConfigProto(authConfig *structpb.Struct) (*pluginscommon.OAuth_AuthorizationCodeFlow, error) {
 	authConfigProto := &pluginscommon.OAuth_AuthorizationCodeFlow{}
-	err := jsonutils.MapToProto(NormalizeTokenScope(authConfig.AsMap()), authConfigProto)
-	if err != nil {
-		log.Error("error converting auth config to proto", zap.Error(err))
-		return "", &sberrors.InternalError{Err: err}
+	if err := jsonutils.MapToProto(NormalizeTokenScope(authConfig.AsMap()), authConfigProto); err != nil {
+		return nil, err
 	}
 
 	if authConfigProto.WorkforcePoolId != "" && authConfigProto.WorkforceProviderId != "" && authConfigProto.Audience == "" {
@@ -549,6 +551,175 @@ func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType 
 			authConfigProto.WorkforcePoolId,
 			authConfigProto.WorkforceProviderId,
 		)
+	}
+
+	return authConfigProto, nil
+}
+
+// EvictCachedTokenOnAuthError evicts the cached OAuth token for the given
+// datasource so the next execution re-exchanges. Only the OAuth flows that
+// exchange and cache a token (OBO token-exchange and authorization-code) have a
+// cache to evict; for every other auth type this is a no-op.
+//
+// Known limitation: eviction is not deduplicated across replicas. When a shared
+// token expires while N replicas are serving the same datasource, each replica
+// independently evicts (idempotent server-side delete) and re-exchanges on its
+// next request. This burst is bounded by replica count and matches the
+// pre-existing behavior when a cached token's TTL lapses, so we accept it
+// rather than coordinate via a distributed lock; revisit if exchange-endpoint
+// pressure from mass auth failures becomes visible in practice.
+func (t *tokenManager) EvictCachedTokenOnAuthError(
+	ctx context.Context,
+	datasourceConfig *structpb.Struct,
+	datasourceId string,
+	configurationId string,
+) error {
+	if t == nil {
+		return nil
+	}
+
+	if datasourceConfig == nil || datasourceConfig.Fields == nil {
+		return nil
+	}
+
+	log := observability.ZapLogger(ctx, t.logger).Named("EvictCachedTokenOnAuthError")
+
+	authType := getAuthTypeFromDatasourceConfiguration(log, datasourceConfig)
+	normalizedAuthType := normalizeAuthType(authType)
+
+	switch normalizedAuthType {
+	case authTypeOauthTokenExchange, AuthTypeOauthCode:
+		// these flows exchange + cache a token; fall through to eviction
+	default:
+		// nothing is cached for this auth type
+		return nil
+	}
+
+	// Defensive: a partially-initialized token manager (nil embedded OAuthClient
+	// or nil FetcherCacher) has no cache to evict from; skip rather than panic.
+	if t.OAuthClient == nil || t.FetcherCacher == nil {
+		log.Warn("fetcher cacher not initialized; skipping cached token eviction",
+			zap.String("authType", normalizedAuthType),
+			zap.String("datasourceId", datasourceId),
+		)
+		return nil
+	}
+
+	authConfig := datasourceConfig.Fields["authConfig"].GetStructValue()
+	if authConfig == nil {
+		return nil
+	}
+
+	// Reconstruct the cache key exactly as the fetch/cache path does: the proto
+	// derivation in normalizedOAuthConfigProto determines the auth id the server
+	// derives, so it must match.
+	authConfigProto, err := normalizedOAuthConfigProto(authConfig)
+	if err != nil {
+		log.Error("error converting auth config to proto for eviction", zap.Error(err))
+		return &sberrors.InternalError{Err: err}
+	}
+
+	authConfigStruct, err := jsonutils.ToStruct(authConfigProto)
+	if err != nil {
+		log.Error("error converting auth config proto to struct for eviction", zap.Error(err))
+		return &sberrors.InternalError{Err: err}
+	}
+
+	// Decide shared-vs-user from the NORMALIZED proto, not the raw struct: NormalizeTokenScope
+	// (applied above, and on the fetch/cache path) coerces bool and numeric tokenScope values to
+	// "datasource"/"user", whereas a raw-struct read would miss a numeric tokenScope and wrongly
+	// treat a datasource-scoped token as user-scoped -- skipping the shared eviction and leaving a
+	// stale token. Reading the normalized proto keeps this decision consistent with where the
+	// token was actually cached/fetched.
+	isShared := authConfigProto.GetTokenScope() == "datasource"
+
+	if !isShared {
+		if normalizedAuthType == authTypeOauthTokenExchange {
+			// User-scoped OBO tokens (oauth-token-exchange with Login Identity Provider, where
+			// tokenScope is absent or "user"): evict the specific user's cached token via the
+			// targeted per-user server endpoint added in the companion server PR. ctx carries
+			// the user's authorization header in gRPC metadata, which the server uses to
+			// identify exactly whose token to delete.
+			//
+			// Guard: if the authorization header is absent (background context, non-gRPC path),
+			// skip eviction rather than sending an unauthenticated DELETE that would return
+			// 401/403 and mask the original Databricks auth error.
+			md, hasMD := metadata.FromIncomingContext(ctx)
+			if !hasMD || len(md.Get("authorization")) == 0 {
+				log.Warn("skipping user-scoped eviction: no authorization header in context",
+					zap.String("authType", normalizedAuthType),
+					zap.String("datasourceId", datasourceId),
+				)
+				return nil
+			}
+
+			logFields := []zap.Field{
+				zap.String("authType", normalizedAuthType),
+				zap.String("datasourceId", datasourceId),
+				zap.String("configurationId", configurationId),
+			}
+			if userEmail, ok := jwtvalidator.GetUserEmail(ctx); ok && userEmail != "" {
+				logFields = append(logFields, zap.String("userEmail", userEmail))
+			}
+			log.Info("attempting to evict cached user-scoped oauth token after auth error", logFields...)
+
+			// Errors are returned for observability; the only caller (maybeEvictTokenOnAuthError)
+			// logs at Warn and does not surface eviction failures to the end user.
+			if evictErr := t.FetcherCacher.InvalidateUserToken(ctx, normalizedAuthType, authConfigStruct, oauth.TokenTypeAccess); evictErr != nil {
+				log.Warn("failed to evict cached user-scoped oauth token", append(logFields, zap.Error(evictErr))...)
+				return evictErr
+			}
+			log.Info("evicted cached user-scoped oauth token after auth error", logFields...)
+			return nil
+		}
+		// oauth-code user-scoped: the server holds the refresh token; targeted per-user
+		// eviction for that flow is a follow-up.
+		log.Info("skipping eviction for user-scoped oauth-code token (follow-up)",
+			zap.String("authType", normalizedAuthType),
+			zap.String("datasourceId", datasourceId),
+			zap.String("configurationId", configurationId),
+		)
+		return nil
+	}
+
+	log.Info("evicting cached shared oauth token after auth error",
+		zap.String("authType", normalizedAuthType),
+		zap.String("datasourceId", datasourceId),
+		zap.String("configurationId", configurationId),
+	)
+
+	// Always evict the access token. For the authorization-code flow there is
+	// also an id token cached under the same key.
+	tokenTypes := []string{oauth.TokenTypeAccess}
+	if normalizedAuthType == AuthTypeOauthCode {
+		tokenTypes = append(tokenTypes, oauth.TokenTypeId)
+	}
+
+	var errs []error
+	for _, tokenType := range tokenTypes {
+		if evictErr := t.FetcherCacher.InvalidateSharedToken(normalizedAuthType, authConfigStruct, tokenType, datasourceId, configurationId); evictErr != nil {
+			log.Warn("failed to evict cached shared oauth token",
+				zap.String("tokenType", tokenType),
+				zap.String("authType", normalizedAuthType),
+				zap.String("datasourceId", datasourceId),
+				zap.String("configurationId", configurationId),
+				zap.Error(evictErr),
+			)
+			errs = append(errs, evictErr)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+func (t *tokenManager) exchangeOauthTokenForToken(ctx context.Context, authType string, authConfig *structpb.Struct, datasourceId string, configurationId string, pluginId string) (string, error) {
+	log := observability.ZapLogger(ctx, t.logger).With(zap.String("datasourceId", datasourceId), zap.String("pluginId", pluginId))
+
+	log.Info("exchangeOauthTokenForToken")
+	authConfigProto, err := normalizedOAuthConfigProto(authConfig)
+	if err != nil {
+		log.Error("error converting auth config to proto", zap.Error(err))
+		return "", &sberrors.InternalError{Err: err}
 	}
 
 	log = log.With(zap.String("subjectTokenSource", authConfigProto.GetSubjectTokenSource().String()))

@@ -375,7 +375,13 @@ export class Shim<T extends BasePlugin> implements Plugin {
           err: executionOutput.error
             ? {
                 name: errorName,
-                message: executionOutput.error
+                message: executionOutput.error,
+                // Propagate the structured integration error code (e.g.
+                // CODE_INTEGRATION_AUTHORIZATION) so the orchestrator transport
+                // can populate Err.Code and react (e.g. evict cached tokens).
+                // Only set when present, mirroring worker.ts, so the field is
+                // omitted (not `code: undefined`) when there is no code.
+                ...(executionOutput.integrationErrorCode != null ? { code: executionOutput.integrationErrorCode } : {})
               }
             : undefined,
           key: outputStoreKey

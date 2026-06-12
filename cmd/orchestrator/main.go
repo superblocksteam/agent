@@ -197,6 +197,7 @@ func init() {
 	pflag.Bool("auth.jwt.enabled", true, "")
 	pflag.String("auth.jwt.jwks_url", "https://prod-cdn.superblocks.com/.well-known/jwks.json", "")
 	pflag.Int("auth.eager.refresh.threshold.ms", 300000, "The threshold in milliseconds before a token expires to refresh it.")
+	pflag.Int("auth.eviction.timeout.ms", 10000, "Timeout in milliseconds for best-effort cached-token eviction calls to the server after an integration auth failure.")
 	pflag.String("config.path", "", "Path to config file")
 	pflag.Bool("quotas.enabled", false, "Whether or not to fetch quotas from LaunchDarkly")
 	pflag.Float64("quotas.default.api_timeout", 600000, `Default value for "api timeout by org tier" quota. Defaults to 10m`)
@@ -772,7 +773,7 @@ func main() {
 			Flags:                   flagsClient,
 			DefaultResolveOptions:   defaultResolveOptions,
 			Fetcher:                 fetcher,
-			TokenManager:            auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms"), flagsClient),
+			TokenManager:            auth.NewTokenManager(serverHttpClient, clock, logger, viper.GetInt64("auth.eager.refresh.threshold.ms"), viper.GetInt64("auth.eviction.timeout.ms"), flagsClient),
 			AgentId:                 id,
 			AgentVersion:            version,
 			AgentTags:               metadata.GetTagsSetMap(viper.GetString("agent.tags")),
@@ -1069,6 +1070,7 @@ func main() {
 			SecretManager:           secretManager,
 			Secrets:                 manager,
 			EagerRefreshThresholdMs: viper.GetInt64("auth.eager.refresh.threshold.ms"),
+			EvictionTimeoutMs:       viper.GetInt64("auth.eviction.timeout.ms"),
 			Signature:               registry,
 		})
 	}

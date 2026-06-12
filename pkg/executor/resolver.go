@@ -905,9 +905,38 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 			attribute.String("plugin_name", p.Name()),
 			attribute.String("code", typedError.Code().String()),
 		)
+
+		r.maybeEvictTokenOnAuthError(ctx.Context, typedError.Code(), step.GetIntegration(), props.GetDatasourceConfiguration())
 	}
 
 	return perf, key, err
+}
+
+// maybeEvictTokenOnAuthError evicts the cached OAuth token for the executed
+// datasource when the integration rejected our auth (e.g. Databricks denied a
+// cached OBO token), so the NEXT execution re-exchanges. This is evict-only: we
+// do not retry in-request (dispatch is single-shot).
+func (r *resolver) maybeEvictTokenOnAuthError(ctx context.Context, code commonv1.Code, datasourceId string, datasourceConfig *structpb.Struct) {
+	if code != commonv1.Code_CODE_INTEGRATION_AUTHORIZATION || r.tokenManager == nil || datasourceConfig == nil {
+		return
+	}
+
+	configurationId := datasourceConfig.GetFields()["id"].GetStringValue()
+	// Wrapped in a span so the bounded (default 10s) synchronous eviction HTTP
+	// call is visible in the request trace rather than an unexplained gap.
+	if _, evictErr := tracer.Observe[any](ctx, "evict.oauth.token", map[string]any{
+		"integrationId":   datasourceId,
+		"configurationId": configurationId,
+	}, func(spanCtx context.Context, _ trace.Span) (any, error) {
+		return nil, r.tokenManager.EvictCachedTokenOnAuthError(spanCtx, datasourceConfig, datasourceId, configurationId)
+	}, nil); evictErr != nil {
+		r.logger.Warn("failed to evict cached token after auth error",
+			zap.String("orgId", r.orgId),
+			zap.String("integration", datasourceId),
+			zap.String("apiName", r.apiName),
+			zap.Error(evictErr),
+		)
+	}
 }
 
 func (r *resolver) getPluginNameForExecution(p plugin.Plugin, actionConfig *structpb.Struct) string {

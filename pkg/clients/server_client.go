@@ -109,10 +109,10 @@ type ServerClient interface {
 	PostDatasource(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                             // Fetches an integration
 	ValidateProfile(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                    // Validates profile restrictions
 	PostSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                         // Create user specific auth token
-	DeleteSpecificUserTokens(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                           // Delete user specific auth token
+	DeleteSpecificUserTokens(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                      // Delete user specific auth token
 	GetSpecificUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                          // Fetch user specific auth token
 	PostOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                              // Create org specific auth token
-	DeleteOrgUserToken(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)                                 // Delete org specific auth token
+	DeleteOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                            // Delete org specific auth token
 	GetOrgUserToken(context.Context, *time.Duration, http.Header, url.Values, any) (*http.Response, error)                               // Get org specific auth token
 	// TODO:(bruce) This endpoint has been deleted in the server so we need to look into this, this actually looks like a dead code path, but I do see 404s in server logs on this endpoint
 	GetIntegrationConfiguration(context.Context, *time.Duration, http.Header, url.Values, string) (*http.Response, error)                                                     // Get integration configuration
@@ -223,8 +223,13 @@ func (s *serverClient) GetSpecificUserToken(ctx context.Context, timeout *time.D
 	return s.sendRequest(ctx, timeout, http.MethodGet, "api/v1/agents/user/userToken", headers, query, body, true)
 }
 
-func (s *serverClient) DeleteSpecificUserTokens(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values) (*http.Response, error) {
-	return s.sendRequest(ctx, timeout, http.MethodDelete, "api/v1/agents/user/userToken", headers, query, nil, true)
+func (s *serverClient) DeleteSpecificUserTokens(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, body any) (*http.Response, error) {
+	if body != nil {
+		headers = combineHeaders(map[string]string{
+			"Content-Type": "application/json",
+		}, headers)
+	}
+	return s.sendRequest(ctx, timeout, http.MethodDelete, "api/v1/agents/user/userToken", headers, query, body, true)
 }
 
 func (s *serverClient) PostOrgUserToken(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, body any) (*http.Response, error) {
@@ -234,8 +239,13 @@ func (s *serverClient) PostOrgUserToken(ctx context.Context, timeout *time.Durat
 	return s.sendRequest(ctx, timeout, http.MethodPost, "api/v1/agents/userToken", headers, query, body, true)
 }
 
-func (s *serverClient) DeleteOrgUserToken(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values) (*http.Response, error) {
-	return s.sendRequest(ctx, timeout, http.MethodDelete, "api/v1/agents/userToken", headers, query, nil, true)
+func (s *serverClient) DeleteOrgUserToken(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, body any) (*http.Response, error) {
+	if body != nil {
+		headers = combineHeaders(map[string]string{
+			"Content-Type": "application/json",
+		}, headers)
+	}
+	return s.sendRequest(ctx, timeout, http.MethodDelete, "api/v1/agents/userToken", headers, query, body, true)
 }
 
 func (s *serverClient) GetOrgUserToken(ctx context.Context, timeout *time.Duration, headers http.Header, query url.Values, body any) (*http.Response, error) {

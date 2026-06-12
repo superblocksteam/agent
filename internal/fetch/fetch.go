@@ -706,7 +706,7 @@ func (f *fetcher) DeleteSpecificUserTokens(ctx context.Context) error {
 		headers["X-Superblocks-Authorization"] = metadata.Get("x-superblocks-authorization")
 	}
 
-	resp, err := f.serverClient.DeleteSpecificUserTokens(ctx, nil, headers, nil)
+	resp, err := f.serverClient.DeleteSpecificUserTokens(ctx, nil, headers, nil, nil)
 	if err != nil {
 		return err
 	}

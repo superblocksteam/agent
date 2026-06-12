@@ -246,6 +246,10 @@ export class ExecutionOutput {
     instance.request = obj.request;
     instance.startTimeUtc = obj.startTimeUtc;
     instance.diagnostics = obj.diagnostics;
+    // Preserve the structured integration error code and auth-error flag so the
+    // orchestrator can react to auth failures (e.g. evict stale cached tokens).
+    instance.integrationErrorCode = obj.integrationErrorCode;
+    instance.authError = obj.authError;
 
     // Preserve bootstrap timing injected by the javascriptsdkapi Piscina
     // worker so it can flow through to the Performance proto.

@@ -286,6 +286,11 @@ export abstract class BasePlugin {
         mutableOutput.structuredLog = mutableOutput.structuredLog.concat(innerOutput.structuredLog);
         mutableOutput.output = innerOutput.output;
         mutableOutput.diagnostics = innerOutput.diagnostics;
+        // APPS-4459: carry the structured error metadata too, so a plugin that surfaces an auth
+        // failure by RETURNING an output (rather than throwing) still propagates its code to the
+        // orchestrator (used to evict a stale cached token).
+        mutableOutput.integrationErrorCode = innerOutput.integrationErrorCode;
+        mutableOutput.authError = innerOutput.authError;
         // Propagate bootstrap timing from the Piscina worker result so
         // the shim can write it into the Performance proto.
         const bt = (innerOutput as unknown as Record<string, unknown>)._bootstrapTiming;
@@ -400,6 +405,10 @@ export abstract class BasePlugin {
       this.logger.info(`Executing API step ${this.name()} took ${outputWrapper.executionTime}ms`);
     } catch (err) {
       outputWrapper.logError(err.message, err instanceof ForbiddenError || err instanceof UnauthorizedError);
+      // Preserve the structured integration error code (e.g.
+      // CODE_INTEGRATION_AUTHORIZATION) so it survives the wire to the
+      // orchestrator, which uses it to evict stale cached auth tokens.
+      outputWrapper.integrationErrorCode = err?.code;
       this.logger.info(`Executing API step ${this.name()} failed with error: ${err.message}`);
     }
     return outputWrapper;

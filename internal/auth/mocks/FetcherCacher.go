@@ -107,6 +107,42 @@ func (_m *FetcherCacher) FetchUserToken(ctx context.Context, authType string, au
 	return r0, r1
 }
 
+// InvalidateSharedToken provides a mock function with given fields: authType, authConfig, tokenType, datasourceId, configurationId
+func (_m *FetcherCacher) InvalidateSharedToken(authType string, authConfig *structpb.Struct, tokenType string, datasourceId string, configurationId string) error {
+	ret := _m.Called(authType, authConfig, tokenType, datasourceId, configurationId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InvalidateSharedToken")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, *structpb.Struct, string, string, string) error); ok {
+		r0 = rf(authType, authConfig, tokenType, datasourceId, configurationId)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InvalidateUserToken provides a mock function with given fields: ctx, authType, authConfig, tokenType
+func (_m *FetcherCacher) InvalidateUserToken(ctx context.Context, authType string, authConfig *structpb.Struct, tokenType string) error {
+	ret := _m.Called(ctx, authType, authConfig, tokenType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InvalidateUserToken")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *structpb.Struct, string) error); ok {
+		r0 = rf(ctx, authType, authConfig, tokenType)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NewFetcherCacher creates a new instance of FetcherCacher. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewFetcherCacher(t interface {

@@ -140,4 +140,31 @@ describe('ExecutionOutput.fromJSONString', () => {
     const bt = (output as unknown as Record<string, unknown>)._bootstrapTiming;
     expect(bt).toBeUndefined();
   });
+
+  test('round-trips integrationErrorCode and authError', () => {
+    const source = new ExecutionOutput();
+    source.logError('Databricks rejected the token', true);
+    // 1 === Code.CODE_INTEGRATION_AUTHORIZATION
+    source.integrationErrorCode = 1;
+
+    const json = JSON.stringify(source);
+    const output = ExecutionOutput.fromJSONString(json);
+
+    expect(output.integrationErrorCode).toBe(1);
+    expect(output.authError).toBe(true);
+    expect(output.error).toBe('Databricks rejected the token');
+  });
+
+  test('omits integrationErrorCode and authError when not in JSON', () => {
+    const json = JSON.stringify({
+      output: { result: 'ok' },
+      log: [],
+      structuredLog: [],
+    });
+
+    const output = ExecutionOutput.fromJSONString(json);
+
+    expect(output.integrationErrorCode).toBeUndefined();
+    expect(output.authError).toBeUndefined();
+  });
 });

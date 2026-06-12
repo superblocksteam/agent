@@ -1,6 +1,8 @@
-import { ActionResponseType, DatasourceMetadataDto, ExecutionOutput } from '../../types';
+import { Code } from '@superblocksteam/types';
+import { IntegrationError } from '../../errors';
+import { ActionResponseType, DatasourceMetadataDto, ExecutionContext, ExecutionOutput } from '../../types';
 import { doesResponseImplementServerSideEvents, ApiPlugin } from './ApiPlugin';
-import { PluginExecutionProps } from './BasePlugin';
+import { PluginExecutionProps, PluginProps } from './BasePlugin';
 
 describe('doesResponseImplementServerSideEvents', () => {
   it.each([
@@ -127,5 +129,134 @@ describe('ApiPlugin.streamRequest', () => {
     } finally {
       global.fetch = originalFetch;
     }
+  });
+});
+
+describe('BasePlugin.setupAndExecute auth-code propagation', () => {
+  class ThrowingApiPlugin extends ApiPlugin {
+    pluginName = 'ThrowingPlugin';
+
+    constructor(private readonly toThrow: unknown) {
+      super();
+    }
+
+    dynamicProperties(): string[] {
+      return [];
+    }
+
+    getRequest(): undefined {
+      return undefined;
+    }
+
+    async execute(_props: PluginExecutionProps): Promise<ExecutionOutput> {
+      throw this.toThrow;
+    }
+
+    async metadata(_datasourceConfiguration: unknown): Promise<DatasourceMetadataDto> {
+      return {} as DatasourceMetadataDto;
+    }
+
+    async test(): Promise<void> {
+      // no-op
+    }
+  }
+
+  // A plugin that surfaces an auth failure by RETURNING an output (not throwing).
+  class ReturningApiPlugin extends ApiPlugin {
+    pluginName = 'ReturningPlugin';
+
+    dynamicProperties(): string[] {
+      return [];
+    }
+
+    getRequest(): undefined {
+      return undefined;
+    }
+
+    async execute(_props: PluginExecutionProps): Promise<ExecutionOutput> {
+      const out = new ExecutionOutput();
+      out.logError('Databricks denied the OBO token', true);
+      out.integrationErrorCode = Code.INTEGRATION_AUTHORIZATION;
+      return out;
+    }
+
+    async metadata(_datasourceConfiguration: unknown): Promise<DatasourceMetadataDto> {
+      return {} as DatasourceMetadataDto;
+    }
+
+    async test(): Promise<void> {
+      // no-op
+    }
+  }
+
+  // Minimal pino-like logger so setupAndExecute's logging does not throw.
+  const noopLogger = {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    trace: jest.fn(),
+    fatal: jest.fn(),
+    child: jest.fn(() => noopLogger)
+  };
+
+  function makeProps(): PluginProps {
+    return {
+      context: new ExecutionContext(),
+      redactedContext: new ExecutionContext(),
+      datasourceConfiguration: {},
+      redactedDatasourceConfiguration: {},
+      actionConfiguration: {},
+      files: undefined,
+      agentCredentials: {},
+      recursionContext: { executedWorkflowsPath: [], isEvaluatingDatasource: false },
+      relayDelegate: undefined
+    } as unknown as PluginProps;
+  }
+
+  it('captures the integration error code on the execute path', async () => {
+    const plugin = new ThrowingApiPlugin(
+      new IntegrationError('Databricks denied the OBO token', Code.INTEGRATION_AUTHORIZATION)
+    );
+    plugin.attachLogger(noopLogger as never);
+
+    const output = await plugin.setupAndExecute(makeProps());
+
+    expect(output.integrationErrorCode).toBe(Code.INTEGRATION_AUTHORIZATION);
+    expect(output.error).toBe('Databricks denied the OBO token');
+  });
+
+  it('survives the JSON round-trip used to ship the output to the orchestrator', async () => {
+    const plugin = new ThrowingApiPlugin(
+      new IntegrationError('Databricks denied the OBO token', Code.INTEGRATION_AUTHORIZATION)
+    );
+    plugin.attachLogger(noopLogger as never);
+
+    const output = await plugin.setupAndExecute(makeProps());
+    const roundTripped = ExecutionOutput.fromJSONString(JSON.stringify(output));
+
+    expect(roundTripped.integrationErrorCode).toBe(Code.INTEGRATION_AUTHORIZATION);
+  });
+
+  it('leaves integrationErrorCode undefined when the error has no code', async () => {
+    const plugin = new ThrowingApiPlugin(new Error('boom'));
+    plugin.attachLogger(noopLogger as never);
+
+    const output = await plugin.setupAndExecute(makeProps());
+
+    expect(output.integrationErrorCode).toBeUndefined();
+    expect(output.error).toBe('boom');
+  });
+
+  it('propagates the integration error code when the plugin RETURNS an output instead of throwing', async () => {
+    const plugin = new ReturningApiPlugin();
+    plugin.attachLogger(noopLogger as never);
+
+    const output = await plugin.setupAndExecute(makeProps());
+
+    // timedExecute merges a returned output into the wrapper; the code must survive that merge.
+    expect(output.integrationErrorCode).toBe(Code.INTEGRATION_AUTHORIZATION);
+    expect(output.authError).toBe(true);
+    expect(output.error).toBe('Databricks denied the OBO token');
   });
 });

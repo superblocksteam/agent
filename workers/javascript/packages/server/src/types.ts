@@ -1,5 +1,6 @@
 import { RedisClientType } from '@redis/client';
 import { ActionConfiguration, Closer, DatasourceConfiguration, DatasourceMetadataDto, ExecutionOutput } from '@superblocks/shared';
+import type { Code } from '@superblocksteam/types';
 import { Options as PoolOptions } from 'generic-pool';
 import { Logger } from 'pino';
 
@@ -287,6 +288,12 @@ export type Metadata = Selector & {
 export interface Error {
   name: string;
   message: string;
+  /**
+   * Structured integration error code (e.g. CODE_INTEGRATION_AUTHORIZATION).
+   * Maps to the transport `Err.Code` / `Pinned.Code` proto fields so the
+   * orchestrator can react to specific failures (e.g. evict cached auth tokens).
+   */
+  code?: Code;
 }
 
 export type Response = ExecuteResponse | TestResponse | MetadataResponse | PreDeleteResponse | StreamResponse;
@@ -298,6 +305,10 @@ export interface ExecuteResponse {
   /**
    * Since the actual execution output is stored in the
    * {@link KVStore}, we don't need to return it to the client.
+   *
+   * `err.code` carries the structured integration error code (e.g.
+   * CODE_INTEGRATION_AUTHORIZATION) so it survives to the orchestrator's
+   * transport `Err.Code` proto field.
    */
   err?: Error;
   /**

@@ -34,6 +34,7 @@
     "@redis/client": "1.5.17",
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/javascript": "workspace:*",
+    "@superblocksteam/types": "workspace:*",
     "acorn": "8.12.1",
     "amazon-qldb-driver-nodejs": "2.2.0",
     "aws-sdk": "2.1664.0",

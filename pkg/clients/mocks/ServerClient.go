@@ -50,9 +50,9 @@ func (_m *ServerClient) DeleteAgent(_a0 context.Context, _a1 *time.Duration, _a2
 	return r0, r1
 }
 
-// DeleteOrgUserToken provides a mock function with given fields: _a0, _a1, _a2, _a3
-func (_m *ServerClient) DeleteOrgUserToken(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values) (*http.Response, error) {
-	ret := _m.Called(_a0, _a1, _a2, _a3)
+// DeleteOrgUserToken provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
+func (_m *ServerClient) DeleteOrgUserToken(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values, _a4 interface{}) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteOrgUserToken")
@@ -60,19 +60,19 @@ func (_m *ServerClient) DeleteOrgUserToken(_a0 context.Context, _a1 *time.Durati
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)); ok {
-		return rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values, interface{}) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3, _a4)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values) *http.Response); ok {
-		r0 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values, interface{}) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3, _a4)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, url.Values) error); ok {
-		r1 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, url.Values, interface{}) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3, _a4)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -80,9 +80,9 @@ func (_m *ServerClient) DeleteOrgUserToken(_a0 context.Context, _a1 *time.Durati
 	return r0, r1
 }
 
-// DeleteSpecificUserTokens provides a mock function with given fields: _a0, _a1, _a2, _a3
-func (_m *ServerClient) DeleteSpecificUserTokens(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values) (*http.Response, error) {
-	ret := _m.Called(_a0, _a1, _a2, _a3)
+// DeleteSpecificUserTokens provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
+func (_m *ServerClient) DeleteSpecificUserTokens(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 url.Values, _a4 interface{}) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteSpecificUserTokens")
@@ -90,19 +90,19 @@ func (_m *ServerClient) DeleteSpecificUserTokens(_a0 context.Context, _a1 *time.
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values) (*http.Response, error)); ok {
-		return rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values, interface{}) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3, _a4)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values) *http.Response); ok {
-		r0 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, url.Values, interface{}) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3, _a4)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, url.Values) error); ok {
-		r1 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, url.Values, interface{}) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3, _a4)
 	} else {
 		r1 = ret.Error(1)
 	}

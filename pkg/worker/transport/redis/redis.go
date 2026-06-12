@@ -35,6 +35,18 @@ var (
 	prefixResponse  = "RESPONSE"
 )
 
+// reactableWorkerCodes is the opt-in allowlist of structured worker error codes
+// that the transport surfaces to the executor. The filtering lives here — not in
+// the executor — because this is the single choke point where worker errors
+// become IntegrationErrors: collapsing every other code to CODE_UNSPECIFIED
+// preserves the error code that pre-existing worker failures report upstream
+// (response bodies, metric labels, e2e assertions). A worker code that needs an
+// executor reaction (e.g. CODE_INTEGRATION_AUTHORIZATION → evict a stale cached
+// OBO token) must be added here.
+var reactableWorkerCodes = map[commonv1.Code]bool{
+	commonv1.Code_CODE_INTEGRATION_AUTHORIZATION: true,
+}
+
 type transport struct {
 	options *Options
 	flags   flags.Flags
@@ -546,7 +558,13 @@ func (t *transport) process(data []redis.XStream, inbox string, reqData *transpo
 	{
 		if msg.Pinned != nil {
 			msg.Pinned.Message = utils.Escape(msg.Pinned.Message)
-			err = errors.IntegrationError(msg.Pinned, msg.Pinned.Code)
+			// Pinned (thrown) worker errors honor the same allowlist as step errors;
+			// see reactableWorkerCodes.
+			code := commonv1.Code_CODE_UNSPECIFIED
+			if reactableWorkerCodes[msg.Pinned.GetCode()] {
+				code = msg.Pinned.GetCode()
+			}
+			err = errors.IntegrationError(msg.Pinned, code)
 		}
 
 		if msg.Data.Data == nil {
@@ -573,7 +591,13 @@ func (t *transport) process(data []redis.XStream, inbox string, reqData *transpo
 		case "InternalError":
 			err = &errors.InternalError{}
 		default:
-			err = errors.IntegrationError(e.New(msg.Data.Data.Err.Message), commonv1.Code_CODE_UNSPECIFIED)
+			// Surface the worker's structured error code only for codes the executor
+			// reacts to; see reactableWorkerCodes for the rationale and the list.
+			code := commonv1.Code_CODE_UNSPECIFIED
+			if reactableWorkerCodes[msg.Data.Data.Err.GetCode()] {
+				code = msg.Data.Data.Err.GetCode()
+			}
+			err = errors.IntegrationError(e.New(msg.Data.Data.Err.Message), code)
 		}
 	}
 

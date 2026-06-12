@@ -54,6 +54,7 @@ type Config struct {
 	DefaultResolveOptions   []options.Option
 	Secrets                 secrets.Secrets
 	EagerRefreshThresholdMs int64
+	EvictionTimeoutMs       int64
 	Signature               signature.Registry
 }
 
@@ -139,7 +140,7 @@ func (r *ScheduleJobRunner) executeScheduleJob(def *apiv1.Definition, rawDef *st
 			Inputs:                    inputs,
 			Fetcher:                   r.Fetcher,
 			Flags:                     r.Flags,
-			TokenManager:              auth.NewTokenManager(r.ServerClient, r.Clock, logger, r.EagerRefreshThresholdMs, r.Flags),
+			TokenManager:              auth.NewTokenManager(r.ServerClient, r.Clock, logger, r.EagerRefreshThresholdMs, r.EvictionTimeoutMs, r.Flags),
 			IsDeployed:                true,
 			Requester:                 "Schedule",
 			RootStartTime:             time.Now(),

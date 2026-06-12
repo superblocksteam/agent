@@ -15,9 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	authmocks "github.com/superblocksteam/agent/internal/auth/mocks"
+	authtypes "github.com/superblocksteam/agent/internal/auth/types"
 	mockflags "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/superblocksteam/agent/pkg/constants"
 	apictx "github.com/superblocksteam/agent/pkg/context"
@@ -32,6 +35,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/worker"
 	wops "github.com/superblocksteam/agent/pkg/worker/options"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
+	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
 	javascriptv1 "github.com/superblocksteam/agent/types/gen/go/plugins/javascript/v1"
 	s3v1 "github.com/superblocksteam/agent/types/gen/go/plugins/s3/v1"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
@@ -2190,6 +2194,99 @@ func TestQuota(t *testing.T) {
 			assert.Equal(t, test.useWasmBindingsSandbox, props.GetUseWasmBindingsSandbox())
 		})
 	}
+}
+
+func TestStepEvictsCachedTokenOnIntegrationAuthError(t *testing.T) {
+	defer metrics.SetupForTesting()()
+
+	// The worker rejects the step with an integration AUTHORIZATION error (e.g.
+	// Databricks denied a cached OBO token). Step must route that through
+	// maybeEvictTokenOnAuthError so the cached token is evicted with the
+	// datasource configuration that was sent to the worker.
+	integrationErr := sberrors.IntegrationError(errors.New("401 unauthorized"), commonv1.Code_CODE_INTEGRATION_AUTHORIZATION)
+
+	mockWorker := &worker.MockClient{}
+	mockWorker.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, "", integrationErr)
+
+	datasourceConfig, err := structpb.NewStruct(map[string]any{
+		"id":       "cfg-123",
+		"authType": "oauth-token-exchange",
+	})
+	require.NoError(t, err)
+
+	tokenManager := &authmocks.TokenManager{}
+	tokenManager.On("AddTokenIfNeeded", mock.Anything, mock.Anything, mock.Anything, mock.Anything, "ds-integration", "cfg-123", mock.Anything).Return(authtypes.TokenPayload{}, nil).Once()
+	tokenManager.On("EvictCachedTokenOnAuthError", mock.Anything, mock.MatchedBy(func(cfg *structpb.Struct) bool {
+		return cfg.GetFields()["id"].GetStringValue() == "cfg-123"
+	}), "ds-integration", "cfg-123").Return(nil).Once()
+
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
+
+	variables := store.Memory()
+	createSandboxFunc := func() engine.Sandbox {
+		return javascript.Sandbox(ctx, &javascript.Options{
+			Logger: zap.NewNop(),
+			Store:  variables,
+		})
+	}
+
+	flags := new(mockflags.Flags)
+	flags.On("GetStepDurationV2", mock.Anything, mock.Anything).Return(10000, nil)
+	flags.On("GetStepSizeV2", mock.Anything, mock.Anything).Return(10000, nil)
+	flags.On("GetGoWorkerEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+	flags.On("GetJsBindingsUseWasmBindingsSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+	flags.On("GetPureJsUseWasmSandboxEnabled", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false)
+
+	mocker := new(mocker.Mocker)
+	mocker.On("Handle", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, false, nil)
+
+	r := &resolver{
+		orgId:             "org-1",
+		apiName:           "my-api",
+		logger:            zap.NewNop(),
+		worker:            mockWorker,
+		flags:             flags,
+		key:               utils.NewMap[string](),
+		variables:         gc.New(&gc.Options{Store: store.Memory()}),
+		store:             variables,
+		execution:         "ABCD-1234",
+		rootStartTime:     time.Now(),
+		timeout:           time.Second * 10,
+		createSandboxFunc: createSandboxFunc,
+		tokenManager:      tokenManager,
+		integrations: map[string]*structpb.Struct{
+			"ds-integration": datasourceConfig,
+		},
+		manager: &manager{
+			mutex:   sync.RWMutex{},
+			exiters: map[string](chan *exit){},
+		},
+		templatePlugin: mustache.Instance,
+		Options: &Options{
+			Mocker:       mocker,
+			Logger:       zap.NewNop(),
+			TokenManager: tokenManager,
+		},
+	}
+
+	step := &apiv1.Step{
+		Integration: "ds-integration",
+		Config: &apiv1.Step_Javascript{
+			Javascript: &javascriptv1.Plugin{
+				Body: "return 1;",
+			},
+		},
+	}
+
+	_, _, stepErr := r.Step(apictx.New(&apictx.Context{
+		Execution: "ABCD-1234",
+		Name:      "STEP_ONE",
+		Context:   ctx,
+	}), step)
+
+	require.ErrorIs(t, stepErr, integrationErr)
+	tokenManager.AssertExpectations(t)
 }
 
 func TestStream(t *testing.T) {

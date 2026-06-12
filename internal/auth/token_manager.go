@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/jonboulle/clockwork"
 	"github.com/superblocksteam/agent/internal/auth/oauth"
@@ -61,6 +62,17 @@ type TokenManager interface {
 	FetchNewOauthPasswordToken(
 		authConfig *v1.OAuth_PasswordGrantFlow,
 	) (*types.Response, error)
+
+	// EvictCachedTokenOnAuthError evicts the cached OAuth token for the given
+	// datasource so the next execution re-exchanges. It is a no-op for auth
+	// types that do not exchange/cache a token (e.g. basic, bearer). The cache
+	// key is reconstructed from the same fields used to fetch/cache the token.
+	EvictCachedTokenOnAuthError(
+		ctx context.Context,
+		datasourceConfig *structpb.Struct,
+		datasourceId string,
+		configurationId string,
+	) error
 }
 
 type tokenManager struct {
@@ -76,9 +88,10 @@ func NewTokenManager(
 	clock clockwork.Clock,
 	logger *zap.Logger,
 	eagerRefreshThresholdMs int64,
+	evictionTimeoutMs int64,
 	flags flags.Flags,
 ) TokenManager {
-	fetcherCacher := oauth.NewApiFetcherCacher(serverClient, eagerRefreshThresholdMs)
+	fetcherCacher := oauth.NewApiFetcherCacher(serverClient, eagerRefreshThresholdMs, time.Duration(evictionTimeoutMs)*time.Millisecond, logger.Named("ApiFetcherCacher"))
 	oauthClient := oauth.NewOAuthClient(fetcherCacher, clock, logger)
 	oauthCodeTokenFetcher := oauth.NewOAuthCodeTokenFetcher(
 		oauthClient,

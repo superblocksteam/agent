@@ -64,6 +64,41 @@ func transform(value any) (int, error) {
 	}
 }
 
+// CacheTokenRequest is the body sent to the server to cache an exchanged token.
+type CacheTokenRequest struct {
+	AuthType        string                 `json:"authType"`
+	AuthConfig      map[string]interface{} `json:"authConfig"`
+	TokenType       string                 `json:"tokenType"`
+	TokenValue      string                 `json:"tokenValue"`
+	DatasourceId    string                 `json:"datasourceId,omitempty"`
+	ConfigurationId string                 `json:"configurationId,omitempty"`
+	ExpiresAt       string                 `json:"expiresAt,omitempty"`
+}
+
+// FetchTokenRequest is the body sent to the server to look up a cached token.
+type FetchTokenRequest struct {
+	AuthType                string                 `json:"authType"`
+	AuthConfig              map[string]interface{} `json:"authConfig"`
+	TokenType               string                 `json:"tokenType"`
+	EagerRefreshThresholdMs int64                  `json:"eagerRefreshThresholdMs"`
+	DatasourceId            string                 `json:"datasourceId,omitempty"`
+	ConfigurationId         string                 `json:"configurationId,omitempty"`
+}
+
+type FetchTokenResponse struct {
+	Data string `json:"data"`
+}
+
+// InvalidateTokenRequest is the body sent to the server to evict a cached
+// token. The server derives the auth id from these fields.
+type InvalidateTokenRequest struct {
+	AuthType        string                 `json:"authType"`
+	AuthConfig      map[string]interface{} `json:"authConfig"`
+	TokenType       string                 `json:"tokenType,omitempty"`
+	DatasourceId    string                 `json:"datasourceId,omitempty"`
+	ConfigurationId string                 `json:"configurationId,omitempty"`
+}
+
 type TokenPayload struct {
 	Token        string
 	IdToken      string

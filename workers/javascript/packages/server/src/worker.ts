@@ -259,7 +259,11 @@ export class Worker implements Closer {
       _logger.error({ err: err.message, type: err.name, stack: err.stack }, 'error executing request');
       result.pinned = {
         name: err.name,
-        message: err.message
+        message: err.message,
+        // Propagate the structured integration error code (e.g.
+        // CODE_INTEGRATION_AUTHORIZATION) onto the transport's Err.Code so the
+        // orchestrator can react (e.g. evict a stale cached auth token).
+        ...(err?.code != null ? { code: err.code } : {})
       };
     }
 

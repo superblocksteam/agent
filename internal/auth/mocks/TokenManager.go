@@ -77,6 +77,24 @@ func (_m *TokenManager) CheckAuth(ctx context.Context, integration *structpb.Str
 	return r0, r1
 }
 
+// EvictCachedTokenOnAuthError provides a mock function with given fields: ctx, datasourceConfig, datasourceId, configurationId
+func (_m *TokenManager) EvictCachedTokenOnAuthError(ctx context.Context, datasourceConfig *structpb.Struct, datasourceId string, configurationId string) error {
+	ret := _m.Called(ctx, datasourceConfig, datasourceId, configurationId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EvictCachedTokenOnAuthError")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *structpb.Struct, string, string) error); ok {
+		r0 = rf(ctx, datasourceConfig, datasourceId, configurationId)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ExchangeOauthCodeForToken provides a mock function with given fields: ctx, authType, authConfig, accessCode, integrationId, configurationId
 func (_m *TokenManager) ExchangeOauthCodeForToken(ctx context.Context, authType string, authConfig *v1.OAuth_AuthorizationCodeFlow, accessCode string, integrationId string, configurationId string) error {
 	ret := _m.Called(ctx, authType, authConfig, accessCode, integrationId, configurationId)

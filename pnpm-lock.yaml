@@ -3669,6 +3669,9 @@ importers:
       '@superblocksteam/javascript':
         specifier: workspace:*
         version: link:../plugins/javascript
+      '@superblocksteam/types':
+        specifier: workspace:*
+        version: link:../types
       acorn:
         specifier: 8.12.1
         version: 8.12.1
@@ -14356,6 +14359,7 @@ snapshots:
       '@redis/client': 1.5.17
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)
+      '@superblocksteam/types': file:workers/javascript/packages/types
       acorn: 8.12.1
       amazon-qldb-driver-nodejs: 2.2.0(aws-sdk@2.1664.0)(ion-js@5.2.1)(jsbi@4.3.0)
       aws-sdk: 2.1664.0
@@ -14412,6 +14416,7 @@ snapshots:
       '@redis/client': 1.5.17
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       '@superblocksteam/javascript': file:workers/javascript/packages/plugins/javascript(typescript@5.5.4)(ws@8.21.0)(zod@3.23.8)
+      '@superblocksteam/types': file:workers/javascript/packages/types
       acorn: 8.12.1
       amazon-qldb-driver-nodejs: 2.2.0(aws-sdk@2.1664.0)(ion-js@5.2.1)(jsbi@4.3.0)
       aws-sdk: 2.1664.0

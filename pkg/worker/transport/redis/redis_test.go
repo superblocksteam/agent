@@ -948,6 +948,119 @@ func TestProcess(t *testing.T) {
 	}
 }
 
+func TestProcessPropagatesIntegrationErrorCode(t *testing.T) {
+	for _, test := range []struct {
+		name         string
+		data         string
+		expectedCode commonv1.Code
+	}{
+		{
+			name:         "authorization code is propagated",
+			data:         `{"data": {"data": {"key": "key", "err": {"message": "Databricks denied OBO token", "code": 1}}}}`,
+			expectedCode: commonv1.Code_CODE_INTEGRATION_AUTHORIZATION,
+		},
+		{
+			name:         "missing code defaults to unspecified",
+			data:         `{"data": {"data": {"key": "key", "err": {"message": "boom"}}}}`,
+			expectedCode: commonv1.Code_CODE_UNSPECIFIED,
+		},
+		{
+			// Only the auth code is surfaced (it drives token eviction). Other worker codes are
+			// intentionally collapsed to UNSPECIFIED so this change doesn't alter the error code
+			// other failures report upstream. Here code 2 = CODE_INTEGRATION_NETWORK.
+			name:         "non-auth code is collapsed to unspecified",
+			data:         `{"data": {"data": {"key": "key", "err": {"message": "boom", "code": 2}}}}`,
+			expectedCode: commonv1.Code_CODE_UNSPECIFIED,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			mockFlags := &mocks.Flags{}
+			mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
+
+			tnspt := &transport{
+				flags: mockFlags,
+				options: &Options{
+					redis:  nil,
+					logger: zap.NewNop(),
+				},
+			}
+
+			data := []redis.XStream{
+				{
+					Stream: "inbox.1234",
+					Messages: []redis.XMessage{
+						{ID: "does_not_matter", Values: map[string]any{"data": test.data}},
+					},
+				},
+			}
+
+			_, _, _, err := tnspt.process(data, "inbox.1234", &transportv1.Request_Data_Data{})
+
+			require.Error(t, err)
+			typed, ok := errors.IsIntegrationError(err)
+			require.True(t, ok, "expected an integration error")
+			assert.Equal(t, test.expectedCode, typed.Code())
+		})
+	}
+}
+
+func TestProcessPinnedErrorCodeAllowlist(t *testing.T) {
+	// Pinned (thrown) worker errors must honor the same reactableWorkerCodes
+	// allowlist as step errors: now that worker.ts attaches `code` to pinned
+	// errors, a raw passthrough would let non-auth codes bypass the filter.
+	for _, test := range []struct {
+		name         string
+		data         string
+		expectedCode commonv1.Code
+	}{
+		{
+			name:         "pinned authorization code is propagated",
+			data:         `{"pinned": {"name": "IntegrationError", "message": "Databricks denied OBO token", "code": 1}, "data": {"data": {"key": "key"}}}`,
+			expectedCode: commonv1.Code_CODE_INTEGRATION_AUTHORIZATION,
+		},
+		{
+			name:         "pinned missing code defaults to unspecified",
+			data:         `{"pinned": {"name": "Error", "message": "boom"}, "data": {"data": {"key": "key"}}}`,
+			expectedCode: commonv1.Code_CODE_UNSPECIFIED,
+		},
+		{
+			// code 2 = CODE_INTEGRATION_NETWORK: not allowlisted, must collapse.
+			name:         "pinned non-auth code is collapsed to unspecified",
+			data:         `{"pinned": {"name": "Error", "message": "boom", "code": 2}, "data": {"data": {"key": "key"}}}`,
+			expectedCode: commonv1.Code_CODE_UNSPECIFIED,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			mockFlags := &mocks.Flags{}
+			mockFlags.On("GetStreamVariant", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("")
+
+			tnspt := &transport{
+				flags: mockFlags,
+				options: &Options{
+					redis:  nil,
+					logger: zap.NewNop(),
+				},
+			}
+
+			data := []redis.XStream{
+				{
+					Stream: "inbox.1234",
+					Messages: []redis.XMessage{
+						{ID: "does_not_matter", Values: map[string]any{"data": test.data}},
+					},
+				},
+			}
+
+			_, _, _, err := tnspt.process(data, "inbox.1234", &transportv1.Request_Data_Data{})
+
+			require.Error(t, err)
+			typed, ok := errors.IsIntegrationError(err)
+			require.True(t, ok, "expected an integration error")
+			assert.Equal(t, test.expectedCode, typed.Code())
+		})
+	}
+}
+
 func TestObserveInfrastructureError(t *testing.T) {
 	defer metrics.SetupForTesting()()
 

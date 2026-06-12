@@ -399,3 +399,74 @@ func TestValidateProfile(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteUserTokenMethods(t *testing.T) {
+	for _, test := range []struct {
+		name              string
+		call              string
+		body              any
+		expectedPath      string
+		expectContentType bool
+	}{
+		{
+			name:              "DeleteSpecificUserTokens with body sets content type",
+			call:              "specific",
+			body:              map[string]string{"authType": "oauth-token-exchange"},
+			expectedPath:      "/api/v1/agents/user/userToken",
+			expectContentType: true,
+		},
+		{
+			name:         "DeleteSpecificUserTokens without body has no content type",
+			call:         "specific",
+			expectedPath: "/api/v1/agents/user/userToken",
+		},
+		{
+			name:              "DeleteOrgUserToken with body sets content type",
+			call:              "org",
+			body:              map[string]string{"authType": "oauth-code"},
+			expectedPath:      "/api/v1/agents/userToken",
+			expectContentType: true,
+		},
+		{
+			name:         "DeleteOrgUserToken without body has no content type",
+			call:         "org",
+			expectedPath: "/api/v1/agents/userToken",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodDelete, r.Method)
+				assert.Equal(t, test.expectedPath, r.URL.Path)
+
+				if test.expectContentType {
+					assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+					var got map[string]string
+					require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+					assert.Equal(t, test.body, got)
+				} else {
+					assert.Empty(t, r.Header.Get("Content-Type"))
+				}
+
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{}`))
+			}))
+			defer server.Close()
+
+			client := NewServerClient(&ServerClientOptions{URL: server.URL})
+
+			var resp *http.Response
+			var err error
+			if test.call == "specific" {
+				resp, err = client.DeleteSpecificUserTokens(context.Background(), nil, http.Header{}, nil, test.body)
+			} else {
+				resp, err = client.DeleteOrgUserToken(context.Background(), nil, http.Header{}, nil, test.body)
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			resp.Body.Close()
+		})
+	}
+}

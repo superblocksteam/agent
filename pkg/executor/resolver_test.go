@@ -2,16 +2,22 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	authmocks "github.com/superblocksteam/agent/internal/auth/mocks"
 	mocks "github.com/superblocksteam/agent/internal/flags/mock"
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/plugin"
 	"github.com/superblocksteam/agent/pkg/template/plugins"
 	"github.com/superblocksteam/agent/pkg/utils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
+	commonv1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
+	"go.uber.org/zap"
+	googlestructpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestResolver_GetPluginNameForExecution(t *testing.T) {
@@ -251,6 +257,86 @@ func TestResolver_GetPluginNameForExecution(t *testing.T) {
 			retStream := r.getPluginNameForExecution(testCase.plugin, testCase.actionConfig)
 
 			assert.Equal(t, testCase.expected, retStream)
+		})
+	}
+}
+
+func TestMaybeEvictTokenOnAuthError(t *testing.T) {
+	dsConfig := func() *googlestructpb.Struct {
+		s, err := googlestructpb.NewStruct(map[string]any{
+			"id":       "cfg-123",
+			"authType": "oauth-token-exchange",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+
+	tests := []struct {
+		name             string
+		code             commonv1.Code
+		datasourceConfig *googlestructpb.Struct
+		nilTokenManager  bool
+		expectEvict      bool
+		evictErr         error
+	}{
+		{
+			name:             "auth error triggers eviction with the right key",
+			code:             commonv1.Code_CODE_INTEGRATION_AUTHORIZATION,
+			datasourceConfig: dsConfig(),
+			expectEvict:      true,
+		},
+		{
+			name:             "eviction failure is swallowed (best-effort)",
+			code:             commonv1.Code_CODE_INTEGRATION_AUTHORIZATION,
+			datasourceConfig: dsConfig(),
+			expectEvict:      true,
+			evictErr:         errors.New("server unavailable"),
+		},
+		{
+			name:             "non-auth error does not evict",
+			code:             commonv1.Code_CODE_INTEGRATION_QUERY_TIMEOUT,
+			datasourceConfig: dsConfig(),
+			expectEvict:      false,
+		},
+		{
+			name:             "nil datasource config does not evict",
+			code:             commonv1.Code_CODE_INTEGRATION_AUTHORIZATION,
+			datasourceConfig: nil,
+			expectEvict:      false,
+		},
+		{
+			name:             "nil token manager is a no-op",
+			code:             commonv1.Code_CODE_INTEGRATION_AUTHORIZATION,
+			datasourceConfig: dsConfig(),
+			nilTokenManager:  true,
+			expectEvict:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tokenManager := &authmocks.TokenManager{}
+			if tt.expectEvict {
+				tokenManager.On("EvictCachedTokenOnAuthError", mock.Anything, tt.datasourceConfig, "ds-integration", "cfg-123").Return(tt.evictErr).Once()
+			}
+
+			r := &resolver{
+				logger:  zap.NewNop(),
+				apiName: "my-api",
+			}
+			if !tt.nilTokenManager {
+				r.tokenManager = tokenManager
+			}
+
+			r.maybeEvictTokenOnAuthError(context.Background(), tt.code, "ds-integration", tt.datasourceConfig)
+
+			if tt.expectEvict {
+				tokenManager.AssertExpectations(t)
+			} else {
+				tokenManager.AssertNotCalled(t, "EvictCachedTokenOnAuthError")
+			}
 		})
 	}
 }

@@ -22,10 +22,13 @@ import (
 	jwtvalidator "github.com/superblocksteam/agent/internal/jwt/validator"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/constants"
+	sberrors "github.com/superblocksteam/agent/pkg/errors"
+	"github.com/superblocksteam/agent/pkg/jsonutils"
 	pluginscommon "github.com/superblocksteam/agent/types/gen/go/plugins/common/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -2153,9 +2156,354 @@ func TestCanBeNil(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestEvictCachedTokenOnAuthError(t *testing.T) {
+	tests := []struct {
+		name               string
+		ctx                context.Context // nil → context.Background()
+		datasourceConfig   *structpb.Struct
+		datasourceId       string
+		configurationId    string
+		expectShared       bool
+		expectedTokenTypes []string
+		expectUser         bool  // expect InvalidateUserToken to be called (user-scoped OBO)
+		userErr            error // error InvalidateUserToken should return; nil = success
+		expectNoInvalidate bool
+	}{
+		{
+			name: "obo shared evicts shared access token",
+			datasourceConfig: DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+				"clientId":   "clientId",
+				"tokenScope": "datasource",
+			}),
+			datasourceId:       "ds-1",
+			configurationId:    "cfg-1",
+			expectShared:       true,
+			expectedTokenTypes: []string{oauth.TokenTypeAccess},
+		},
+		{
+			// Numeric tokenScope is normalized (non-zero -> "datasource") on the fetch/cache path;
+			// eviction must agree and evict the SHARED token, not skip it as user-scoped.
+			name: "obo numeric tokenScope (datasource) evicts shared access token",
+			datasourceConfig: DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+				"clientId":   "clientId",
+				"tokenScope": float64(1),
+			}),
+			datasourceId:       "ds-1",
+			configurationId:    "cfg-1",
+			expectShared:       true,
+			expectedTokenTypes: []string{oauth.TokenTypeAccess},
+		},
+		{
+			name: "obo user-scoped (explicit tokenScope=user) evicts user token",
+			ctx:  ctxWithAuthHeader("Bearer user-token"),
+			datasourceConfig: DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+				"clientId":   "clientId",
+				"tokenScope": "user",
+			}),
+			datasourceId:    "ds-1",
+			configurationId: "cfg-1",
+			expectUser:      true,
+		},
+		{
+			// Real Databricks OBO connections via the UI set no tokenScope at all.
+			// GetTokenScope() returns "" which is not "datasource", so isShared=false.
+			// The user-scoped eviction path must fire for these connections.
+			name: "obo no tokenScope (real Databricks Login IDP connection) evicts user token",
+			ctx:  ctxWithAuthHeader("Bearer user-token"),
+			datasourceConfig: DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+				"clientId": "clientId",
+			}),
+			datasourceId:    "ds-1",
+			configurationId: "cfg-1",
+			expectUser:      true,
+		},
+		{
+			// Eviction is best-effort: the error is returned so callers can log/observe it,
+			// but the original auth failure is still the root cause. This test pins the
+			// propagation semantics so any future change to best-effort (return nil) is explicit.
+			name: "obo user-scoped eviction error is propagated",
+			ctx:  ctxWithAuthHeader("Bearer user-token"),
+			datasourceConfig: DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+				"clientId": "clientId",
+			}),
+			datasourceId:    "ds-1",
+			configurationId: "cfg-1",
+			expectUser:      true,
+			userErr:         fmt.Errorf("server unavailable"),
+		},
+		{
+			// The user email from the JWT context is appended to the eviction log fields;
+			// the eviction itself must behave identically to the no-email case.
+			name: "obo user-scoped with user email in context evicts user token",
+			ctx:  jwtvalidator.WithUserEmail(ctxWithAuthHeader("Bearer user-token"), "test-user@example.com"),
+			datasourceConfig: DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+				"clientId": "clientId",
+			}),
+			datasourceId:    "ds-1",
+			configurationId: "cfg-1",
+			expectUser:      true,
+		},
+		{
+			// No authorization header in context: guard must skip eviction rather than
+			// sending an unauthenticated DELETE that would mask the original 401.
+			name: "obo user-scoped skips eviction when no auth header in context",
+			datasourceConfig: DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+				"clientId": "clientId",
+			}),
+			datasourceId:       "ds-1",
+			configurationId:    "cfg-1",
+			expectNoInvalidate: true,
+		},
+		{
+			name: "salesforce obo (proto authType) normalizes and evicts",
+			datasourceConfig: DatasourceConfig("oauthTokenExchange", map[string]interface{}{
+				"clientId":   "clientId",
+				"tokenScope": "datasource",
+			}),
+			datasourceId:       "ds-1",
+			configurationId:    "cfg-1",
+			expectShared:       true,
+			expectedTokenTypes: []string{oauth.TokenTypeAccess},
+		},
+		{
+			name: "oauth-code user-scoped is skipped (follow-up)",
+			datasourceConfig: DatasourceConfig(AuthTypeOauthCode, map[string]interface{}{
+				"clientId": "clientId",
+			}),
+			datasourceId:       "ds-1",
+			configurationId:    "cfg-1",
+			expectNoInvalidate: true,
+		},
+		{
+			// Explicit tokenScope=user on oauth-code also skips (refresh-token semantics differ).
+			name: "oauth-code explicit tokenScope=user is skipped (follow-up)",
+			datasourceConfig: DatasourceConfig(AuthTypeOauthCode, map[string]interface{}{
+				"clientId":   "clientId",
+				"tokenScope": "user",
+			}),
+			datasourceId:       "ds-1",
+			configurationId:    "cfg-1",
+			expectNoInvalidate: true,
+		},
+		{
+			name: "oauth-code shared evicts access and id tokens",
+			datasourceConfig: DatasourceConfig(AuthTypeOauthCode, map[string]interface{}{
+				"clientId":   "clientId",
+				"tokenScope": "datasource",
+			}),
+			datasourceId:       "ds-1",
+			configurationId:    "cfg-1",
+			expectShared:       true,
+			expectedTokenTypes: []string{oauth.TokenTypeAccess, oauth.TokenTypeId},
+		},
+		{
+			name: "basic auth is a no-op",
+			datasourceConfig: DatasourceConfig(authTypeBasic, map[string]interface{}{
+				"username": "u",
+			}),
+			datasourceId:       "ds-1",
+			configurationId:    "cfg-1",
+			expectNoInvalidate: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fetcherCacher := &mocks.FetcherCacher{}
+
+			expectedAuthType := normalizeAuthType(tt.datasourceConfig.Fields["authType"].GetStringValue())
+
+			if tt.expectShared {
+				for _, tokenType := range tt.expectedTokenTypes {
+					fetcherCacher.On("InvalidateSharedToken", expectedAuthType, mock.AnythingOfType("*structpb.Struct"), tokenType, tt.datasourceId, tt.configurationId).Return(nil).Once()
+				}
+			}
+
+			if tt.expectUser {
+				fetcherCacher.On("InvalidateUserToken", mock.Anything, expectedAuthType, mock.AnythingOfType("*structpb.Struct"), oauth.TokenTypeAccess).Return(tt.userErr).Once()
+			}
+
+			tm := &tokenManager{
+				OAuthClient: &oauth.OAuthClient{
+					FetcherCacher: fetcherCacher,
+					Logger:        zap.NewNop(),
+				},
+				logger: zap.NewNop(),
+			}
+
+			ctx := tt.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			err := tm.EvictCachedTokenOnAuthError(ctx, tt.datasourceConfig, tt.datasourceId, tt.configurationId)
+			if tt.userErr != nil {
+				require.ErrorIs(t, err, tt.userErr)
+			} else {
+				require.NoError(t, err)
+			}
+
+			if tt.expectNoInvalidate {
+				fetcherCacher.AssertNotCalled(t, "InvalidateSharedToken")
+				fetcherCacher.AssertNotCalled(t, "InvalidateUserToken")
+			} else {
+				fetcherCacher.AssertExpectations(t)
+			}
+		})
+	}
+}
+
+func TestEvictCachedTokenOnAuthError_KeyDerivationMatchesCachePath(t *testing.T) {
+	// The struct eviction sends to the server must be byte-identical to the one
+	// the fetch/cache path sends, or the server derives a different auth id and
+	// eviction silently misses. Workforce identity federation is the adversarial
+	// case: the cache path defaults the audience from the pool/provider ids
+	// before converting to a struct.
+	authConfigMap := map[string]interface{}{
+		"clientId":            "clientId",
+		"tokenScope":          "datasource",
+		"workforcePoolId":     "pool-1",
+		"workforceProviderId": "provider-1",
+	}
+
+	// Replicate the fetch/cache path's derivation (exchangeOauthTokenForToken).
+	expectedProto := &pluginscommon.OAuth_AuthorizationCodeFlow{}
+	require.NoError(t, jsonutils.MapToProto(NormalizeTokenScope(map[string]interface{}{
+		"clientId":            "clientId",
+		"tokenScope":          "datasource",
+		"workforcePoolId":     "pool-1",
+		"workforceProviderId": "provider-1",
+	}), expectedProto))
+	expectedProto.Audience = "//iam.googleapis.com/locations/global/workforcePools/pool-1/providers/provider-1"
+	expectedStruct, err := jsonutils.ToStruct(expectedProto)
+	require.NoError(t, err)
+
+	fetcherCacher := &mocks.FetcherCacher{}
+	fetcherCacher.On("InvalidateSharedToken", authTypeOauthTokenExchange, mock.MatchedBy(func(s *structpb.Struct) bool {
+		return proto.Equal(s, expectedStruct)
+	}), oauth.TokenTypeAccess, "ds-1", "cfg-1").Return(nil).Once()
+
+	tm := &tokenManager{
+		OAuthClient: &oauth.OAuthClient{
+			FetcherCacher: fetcherCacher,
+			Logger:        zap.NewNop(),
+		},
+		logger: zap.NewNop(),
+	}
+
+	require.NoError(t, tm.EvictCachedTokenOnAuthError(context.Background(), DatasourceConfig(authTypeOauthTokenExchange, authConfigMap), "ds-1", "cfg-1"))
+	fetcherCacher.AssertExpectations(t)
+}
+
+func TestEvictCachedTokenOnAuthError_NoAuthConfigIsNoOp(t *testing.T) {
+	// An eviction-eligible auth type without an authConfig has no cache key to
+	// reconstruct, so eviction must be a silent no-op.
+	fetcherCacher := &mocks.FetcherCacher{}
+	tm := &tokenManager{
+		OAuthClient: &oauth.OAuthClient{
+			FetcherCacher: fetcherCacher,
+			Logger:        zap.NewNop(),
+		},
+		logger: zap.NewNop(),
+	}
+
+	datasourceConfig, err := structpb.NewStruct(map[string]interface{}{
+		"authType": authTypeOauthTokenExchange,
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, tm.EvictCachedTokenOnAuthError(context.Background(), datasourceConfig, "ds-1", "cfg-1"))
+	fetcherCacher.AssertNotCalled(t, "InvalidateSharedToken")
+	fetcherCacher.AssertNotCalled(t, "InvalidateUserToken")
+}
+
+func TestEvictCachedTokenOnAuthError_InvalidAuthConfigReturnsInternalError(t *testing.T) {
+	// An authConfig that cannot round-trip through the proto (numeric clientId)
+	// means the cache key cannot be reconstructed; surface an InternalError
+	// instead of evicting with a mismatched key.
+	fetcherCacher := &mocks.FetcherCacher{}
+	tm := &tokenManager{
+		OAuthClient: &oauth.OAuthClient{
+			FetcherCacher: fetcherCacher,
+			Logger:        zap.NewNop(),
+		},
+		logger: zap.NewNop(),
+	}
+
+	datasourceConfig := DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+		"clientId": float64(123),
+	})
+
+	err := tm.EvictCachedTokenOnAuthError(context.Background(), datasourceConfig, "ds-1", "cfg-1")
+	require.Error(t, err)
+	internalErr := &sberrors.InternalError{}
+	require.ErrorAs(t, err, &internalErr)
+	fetcherCacher.AssertNotCalled(t, "InvalidateSharedToken")
+	fetcherCacher.AssertNotCalled(t, "InvalidateUserToken")
+}
+
+func TestEvictCachedTokenOnAuthError_SharedEvictionErrorsAreJoined(t *testing.T) {
+	// oauth-code shared evicts both the access and id tokens. A failure on one
+	// token type must not stop eviction of the other, and all failures must be
+	// reported to the caller.
+	accessErr := errors.New("access eviction failed")
+	idErr := errors.New("id eviction failed")
+
+	fetcherCacher := &mocks.FetcherCacher{}
+	fetcherCacher.On("InvalidateSharedToken", AuthTypeOauthCode, mock.AnythingOfType("*structpb.Struct"), oauth.TokenTypeAccess, "ds-1", "cfg-1").Return(accessErr).Once()
+	fetcherCacher.On("InvalidateSharedToken", AuthTypeOauthCode, mock.AnythingOfType("*structpb.Struct"), oauth.TokenTypeId, "ds-1", "cfg-1").Return(idErr).Once()
+
+	tm := &tokenManager{
+		OAuthClient: &oauth.OAuthClient{
+			FetcherCacher: fetcherCacher,
+			Logger:        zap.NewNop(),
+		},
+		logger: zap.NewNop(),
+	}
+
+	datasourceConfig := DatasourceConfig(AuthTypeOauthCode, map[string]interface{}{
+		"clientId":   "clientId",
+		"tokenScope": "datasource",
+	})
+
+	err := tm.EvictCachedTokenOnAuthError(context.Background(), datasourceConfig, "ds-1", "cfg-1")
+	require.ErrorIs(t, err, accessErr)
+	require.ErrorIs(t, err, idErr)
+	fetcherCacher.AssertExpectations(t)
+}
+
+func TestEvictCachedTokenOnAuthError_NilSafe(t *testing.T) {
+	var tm *tokenManager
+	require.NoError(t, tm.EvictCachedTokenOnAuthError(context.Background(), nil, "", ""))
+
+	tm = &tokenManager{logger: zap.NewNop()}
+	require.NoError(t, tm.EvictCachedTokenOnAuthError(context.Background(), nil, "ds", "cfg"))
+
+	// An eviction-eligible config must not panic on a partially-initialized
+	// manager: nil embedded OAuthClient...
+	evictableConfig := DatasourceConfig(authTypeOauthTokenExchange, map[string]interface{}{
+		"clientId":   "clientId",
+		"tokenScope": "datasource",
+	})
+	tm = &tokenManager{logger: zap.NewNop()}
+	require.NoError(t, tm.EvictCachedTokenOnAuthError(context.Background(), evictableConfig, "ds", "cfg"))
+
+	// ...or a non-nil OAuthClient with a nil FetcherCacher.
+	tm = &tokenManager{
+		OAuthClient: &oauth.OAuthClient{Logger: zap.NewNop()},
+		logger:      zap.NewNop(),
+	}
+	require.NoError(t, tm.EvictCachedTokenOnAuthError(context.Background(), evictableConfig, "ds", "cfg"))
+}
+
 func ctxWithCookie(cookie string) context.Context {
 	return metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 		"Cookie": cookie,
+	}))
+}
+
+func ctxWithAuthHeader(token string) context.Context {
+	return metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
+		"authorization": token,
 	}))
 }
 

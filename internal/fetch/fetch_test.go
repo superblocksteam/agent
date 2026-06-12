@@ -1944,3 +1944,86 @@ func TestValidateProfile(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteSpecificUserTokens(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		md          metadata.MD
+		response    *http.Response
+		err         error
+		expectError bool
+	}{
+		{
+			name: "success forwards auth headers from context",
+			md: metadata.MD{
+				"authorization":               []string{"Bearer user-token"},
+				"x-superblocks-authorization": []string{"Bearer sb-token"},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("{}")),
+			},
+		},
+		{
+			name:        "transport error is returned",
+			err:         fmt.Errorf("connection refused"),
+			expectError: true,
+		},
+		{
+			name:        "nil response is an internal error",
+			expectError: true,
+		},
+		{
+			name: "non-2xx status is an error",
+			response: &http.Response{
+				StatusCode: http.StatusInternalServerError,
+				Body:       io.NopCloser(strings.NewReader("boom")),
+			},
+			expectError: true,
+		},
+		{
+			name: "non-2xx status with unreadable body is an error",
+			response: &http.Response{
+				StatusCode: http.StatusInternalServerError,
+				Body:       io.NopCloser(&errorReader{}),
+			},
+			expectError: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			mockServerClient := mocks.NewServerClient(t)
+			mockServerClient.On("DeleteSpecificUserTokens",
+				mock.Anything, // ctx
+				mock.Anything, // timeout
+				mock.Anything, // headers
+				mock.Anything, // query
+				mock.Anything, // body
+			).Return(test.response, test.err)
+
+			fetcher := &fetcher{
+				serverClient: mockServerClient,
+				logger:       zap.NewNop(),
+			}
+
+			ctx := context.Background()
+			if test.md != nil {
+				ctx = metadata.NewIncomingContext(ctx, test.md)
+			}
+
+			err := fetcher.DeleteSpecificUserTokens(ctx)
+
+			if test.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+
+				headers, ok := mockServerClient.Calls[0].Arguments.Get(2).(http.Header)
+				assert.True(t, ok)
+				assert.Equal(t, []string{"Bearer user-token"}, headers["Authorization"])
+				assert.Equal(t, []string{"Bearer sb-token"}, headers["X-Superblocks-Authorization"])
+			}
+
+			mockServerClient.AssertExpectations(t)
+		})
+	}
+}
