@@ -6,7 +6,9 @@
 
 set -e
 
-compose_yaml="https://raw.githubusercontent.com/superblocksteam/agent/main/compose.yaml"
+# Allow overriding the compose source; default to the public install origin
+# (served from the charts CDN) rather than the agent repo, which is private.
+compose_yaml="${SUPERBLOCKS_COMPOSE_URL:-https://charts.superblocks.com/install/compose.yaml}"
 env_file="/etc/superblocks.conf"
 log_file="/var/log/superblocks.log"
 
