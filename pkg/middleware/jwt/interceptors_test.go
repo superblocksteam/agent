@@ -161,6 +161,115 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+func TestValidate_WithValidMethodsRejectsEmptyHMACForgery(t *testing.T) {
+	t.Parallel()
+
+	private_rsa, _ := pair_rsa(t)
+	private_ecdsa, public_ecdsa := pair_ecdsa(t)
+	claimsFactory := func() jwt.Claims {
+		return &testClaims{}
+	}
+
+	validECDSAToken, err := jwt.NewWithClaims(jwt.SigningMethodES256, testClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+		},
+		UserEmail: "fbgrecojr@me.com",
+		OrgId:     "12345",
+	}).SignedString(private_ecdsa)
+	assert.NoError(t, err)
+
+	emptyHMACToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, testClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+		},
+		UserEmail: "attacker@example.com",
+		OrgId:     "attacker-org",
+	}).SignedString([]byte{})
+	assert.NoError(t, err)
+
+	validRSAToken, err := jwt.NewWithClaims(jwt.SigningMethodRS256, testClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+		},
+		UserEmail: "fbgrecojr@me.com",
+		OrgId:     "12345",
+	}).SignedString(private_rsa)
+	assert.NoError(t, err)
+
+	for _, test := range []struct {
+		name        string
+		token       string
+		options     *options
+		errContains string
+	}{
+		{
+			name:  "valid ecdsa token passes es256 allowlist",
+			token: validECDSAToken,
+			options: &options{
+				key:             "authorization",
+				ecdsaSigningKey: public_ecdsa,
+				claimsFactory:   claimsFactory,
+				validMethods:    []string{"ES256"},
+			},
+		},
+		{
+			name:  "empty-key hmac token fails es256 allowlist",
+			token: emptyHMACToken,
+			options: &options{
+				key:             "authorization",
+				ecdsaSigningKey: public_ecdsa,
+				claimsFactory:   claimsFactory,
+				validMethods:    []string{"ES256"},
+			},
+			errContains: "signing method HS256 is invalid",
+		},
+		{
+			name:  "empty-key hmac token fails when hmac key is unset",
+			token: emptyHMACToken,
+			options: &options{
+				key:             "authorization",
+				ecdsaSigningKey: public_ecdsa,
+				claimsFactory:   claimsFactory,
+			},
+			errContains: "hmac signing key not configured",
+		},
+		{
+			name:  "ecdsa token fails when ecdsa key is unset",
+			token: validECDSAToken,
+			options: &options{
+				key:           "authorization",
+				claimsFactory: claimsFactory,
+				validMethods:  []string{"ES256"},
+			},
+			errContains: "ecdsa signing key not configured",
+		},
+		{
+			name:  "rsa token fails when rsa key is unset",
+			token: validRSAToken,
+			options: &options{
+				key:           "authorization",
+				claimsFactory: claimsFactory,
+			},
+			errContains: "rsa signing key not configured",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+test.token))
+
+			_, err := validate(ctx, test.options)
+			if test.errContains == "" {
+				assert.NoError(t, err)
+				return
+			}
+
+			if assert.Error(t, err) {
+				assert.Contains(t, err.Error(), test.errContains)
+			}
+		})
+	}
+}
+
 func TestValidate_AdditionalValidators(t *testing.T) {
 	t.Parallel()
 

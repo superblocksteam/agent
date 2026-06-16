@@ -18,6 +18,7 @@ type options struct {
 	ecdsaSigningKey      *ecdsa.PublicKey
 	claimsFactory        ClaimsFactory
 	additionalValidators []JwtValidator
+	validMethods         []string
 }
 
 func newOptions(opts ...Option) *options {
@@ -78,5 +79,13 @@ func WithClaimsFactory(factory ClaimsFactory) Option {
 func WithAdditionalValidators(validators ...JwtValidator) Option {
 	return func(o *options) {
 		o.additionalValidators = validators
+	}
+}
+
+// WithValidMethods restricts JWT parsing to the provided signing algorithms.
+// Passing nil or an empty slice leaves method validation unrestricted.
+func WithValidMethods(methods []string) Option {
+	return func(o *options) {
+		o.validMethods = append([]string(nil), methods...)
 	}
 }

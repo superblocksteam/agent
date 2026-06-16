@@ -837,6 +837,7 @@ func main() {
 			grpc_jwt.WithSigningKeyECDSA(key),
 			grpc_jwt.WithClaimsFactory(jwt_validator.NewClaims),
 			grpc_jwt.WithAdditionalValidators(jwt_validator.Validate),
+			grpc_jwt.WithValidMethods([]string{"ES256"}),
 		}
 
 		jwtDecider := func(ctx context.Context, callMeta interceptors.CallMeta) bool {

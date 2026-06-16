@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -68,18 +69,32 @@ func validate(ctx context.Context, opts *options) (context.Context, error) {
 		token = parts[1]
 	}
 
+	parserOptions := make([]jwt.ParserOption, 0, 1)
+	if len(opts.validMethods) > 0 {
+		parserOptions = append(parserOptions, jwt.WithValidMethods(opts.validMethods))
+	}
+
 	parsed, err := jwt.ParseWithClaims(token, opts.claimsFactory(), func(token *jwt.Token) (any, error) {
 		switch token.Method.(type) {
 		case *jwt.SigningMethodHMAC:
+			if len(opts.hmacSigningKey) == 0 {
+				return nil, fmt.Errorf("hmac signing key not configured for %s", token.Method.Alg())
+			}
 			return opts.hmacSigningKey, nil
 		case *jwt.SigningMethodRSA:
+			if opts.rsaSigningKey == nil {
+				return nil, fmt.Errorf("rsa signing key not configured for %s", token.Method.Alg())
+			}
 			return opts.rsaSigningKey, nil
 		case *jwt.SigningMethodECDSA:
+			if opts.ecdsaSigningKey == nil {
+				return nil, fmt.Errorf("ecdsa signing key not configured for %s", token.Method.Alg())
+			}
 			return opts.ecdsaSigningKey, nil
 		default:
 			return nil, errors.New("unexpected signing method")
 		}
-	})
+	}, parserOptions...)
 
 	if err != nil {
 		return nil, err
