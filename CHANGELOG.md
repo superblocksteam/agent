@@ -6,7 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
-- Fix executor JWT validation to only accept Superblocks-issued ES256 tokens and fail closed when a signing key is not configured, preventing algorithm-confusion bypasses with empty HMAC keys.
 - Automatically evict a stale cached OAuth token when an integration rejects authentication (e.g. an expired Databricks on-behalf-of token), so the next execution re-exchanges a fresh token instead of repeatedly failing. Eviction is best-effort and applies to datasource-scoped (shared) OAuth token-exchange and authorization-code flows, and to user-scoped on-behalf-of (Login Identity Provider) flows; user-scoped authorization-code flows are not yet covered (follow-up planned). The eviction call timeout defaults to 10s and is configurable via `SUPERBLOCKS_ORCHESTRATOR_AUTH_EVICTION_TIMEOUT_MS`. **IMPORTANT:** a worker auth rejection now reports `CODE_INTEGRATION_AUTHORIZATION` on the `integration_errors_total` metric where it previously reported `CODE_UNSPECIFIED` (other worker error codes are unchanged) — dashboards or alert rules matching `code="CODE_UNSPECIFIED"` to detect auth failures will stop matching them after this deploy and must be updated to `code="CODE_INTEGRATION_AUTHORIZATION"`.
 - Reject Apps 3.0 (`FetchCode`) execution requests when the requested profile is not covered by this agent's `agent.tags` profile data tags (or legacy `agent.environment` fallback).
 - Fix OAuth token-exchange (on-behalf-of) caching to honor the connection's token scope setting: tokens for datasource-scoped connections are now cached under the shared key instead of always falling back to per-user caching, so cache reads and eviction find them.
@@ -14,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Align Native Database lifecycle dispatch decoding with the control-plane payload by reading database requirements from typed `desiredSpec` instead of duplicated top-level spec fields.
 - **Breaking:** Native Database lifecycle config no longer accepts legacy entry-level `backend`, `credentialResolver`, or `moduleSelectors` fields. Operators must migrate to the per-operation `entries[].operations.<operation>.backend = "terraform"` shape with `entries[].operations.<operation>.terraform.{backend,credentialResolver,moduleSelectors}`.
 - Restrict inline DSL `sb_secrets` bindings to legacy application tokens.
+
+## v1.41.1
+- Fix executor JWT validation to only accept Superblocks-issued ES256 tokens and fail closed when a signing key is not configured, preventing algorithm-confusion bypasses with empty HMAC keys.
 
 ## v1.41.0
 - Fail fast on stalled Databricks connections: set a 120s socket timeout on every Databricks connection path so an expired/revoked OAuth (on-behalf-of) token no longer leaves the worker hanging for the library's 15-minute default (which could pin workers and cascade into 503s). Overridable via the `SUPERBLOCKS_DATABRICKS_SOCKET_TIMEOUT_MS` env var. Databricks auth failures (HTTP 401/403) now surface as a clear "Authorization failed — reconnect the OAuth token" error instead of a generic timeout.
