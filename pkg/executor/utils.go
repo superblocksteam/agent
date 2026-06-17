@@ -461,19 +461,9 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 		def.Integrations = map[string]*structpb.Struct{}
 	}
 
-	// For SDK integration callbacks, fall back to the ViewMode embedded in the callback token.
-	viewMode := request.ViewMode
-	if viewMode == apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
-		viewMode = constants.SDKCallbackViewMode(ctx)
-	}
-	// Signed SDK callbacks should carry viewMode, but default to deployed when both the
-	// request and callback token omit it so profile validation cannot be skipped.
-	if viewMode == apiv1.ViewMode_VIEW_MODE_UNSPECIFIED && constants.IsSDKIntegrationExecution(ctx) {
-		viewMode = apiv1.ViewMode_VIEW_MODE_DEPLOYED
-	}
-
-	if len(allIntegrationIds) > 0 && request.GetProfile() != nil && viewMode != apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
-		viewModeStr := viewModeEnumToString(viewMode)
+	// Validate profile restrictions if viewMode is explicitly provided
+	if len(allIntegrationIds) > 0 && request.GetProfile() != nil && request.ViewMode != apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
+		viewModeStr := viewModeEnumToString(request.ViewMode)
 
 		err := fetcher.ValidateProfile(ctx, &integrationv1.ValidateProfileRequest{
 			Profile:        request.GetProfile(),

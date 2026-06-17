@@ -2677,50 +2677,6 @@ func TestFetchDefinitionFromRequestUsesAgentDatasourceEndpointForSDKIntegrationE
 	}
 }
 
-func TestFetchDefinitionFromRequestValidatesProfileForSDKCallbackWithoutViewMode(t *testing.T) {
-	t.Parallel()
-
-	profileName := "production"
-	req := &apiv1.ExecuteRequest{
-		Profile: &commonv1.Profile{Name: &profileName},
-		Request: &apiv1.ExecuteRequest_Definition{
-			Definition: &apiv1.Definition{
-				Api: &apiv1.Api{
-					Metadata: &commonv1.Metadata{
-						Id:   "sdk-query-integration-1",
-						Name: "SDK Integration Query",
-					},
-					Blocks: []*apiv1.Block{{
-						Name: "query",
-						Config: &apiv1.Block_Step{
-							Step: &apiv1.Step{Integration: "integration-1"},
-						},
-					}},
-				},
-			},
-		},
-	}
-
-	mockFetcher := &fetchmocks.Fetcher{}
-	mockFetcher.On("ValidateProfile", mock.Anything, mock.MatchedBy(func(req *integrationv1.ValidateProfileRequest) bool {
-		return req.ViewMode == "deployed" &&
-			req.Profile.GetName() == profileName &&
-			len(req.IntegrationIds) == 1 &&
-			req.IntegrationIds[0] == "integration-1"
-	})).Return(nil)
-	mockFetcher.On("FetchIntegration", mock.Anything, "integration-1", req.GetProfile()).Return(&fetch.Integration{
-		PluginId: "postgres",
-		Configuration: map[string]interface{}{
-			"id": "config-from-agent-endpoint",
-		},
-	}, nil)
-
-	ctx := constants.WithSDKIntegrationExecution(context.Background(), []string{"integration-1"})
-	_, _, err := fetchDefinitionFromRequest(ctx, req, mockFetcher, false, zap.NewNop())
-	require.NoError(t, err)
-	mockFetcher.AssertExpectations(t)
-}
-
 func TestFetchDefinitionFromRequestPreservesExistingConfigurationId(t *testing.T) {
 	t.Parallel()
 

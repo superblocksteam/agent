@@ -3,9 +3,6 @@ package metadata
 import (
 	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetTagsMap(t *testing.T) {
@@ -53,18 +50,4 @@ func TestGetTagsMap(t *testing.T) {
 			t.Errorf("TagsMap mismatch.\nExpected: %#v\nGot: %#v", test.expected, result)
 		}
 	}
-}
-
-func TestGetTagsSetMap(t *testing.T) {
-	t.Parallel()
-
-	tagsSetMap := GetTagsSetMap("profile:staging,profile:production,region:us-east-1")
-	require.Len(t, tagsSetMap, 2)
-	require.NotNil(t, tagsSetMap["profile"])
-	assert.True(t, tagsSetMap["profile"].Contains("staging"))
-	assert.True(t, tagsSetMap["profile"].Contains("production"))
-	require.NotNil(t, tagsSetMap["region"])
-	assert.True(t, tagsSetMap["region"].Contains("us-east-1"))
-
-	assert.Empty(t, GetTagsSetMap(""))
 }

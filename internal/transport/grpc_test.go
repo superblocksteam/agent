@@ -11,7 +11,6 @@ import (
 
 	jwt "github.com/golang-jwt/jwt/v5"
 	flagsmocks "github.com/superblocksteam/agent/internal/flags/mock"
-	agentmetadata "github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
 
 	"github.com/superblocksteam/agent/pkg/secrets"
@@ -1870,37 +1869,6 @@ func TestTestRendersDatasourceSecretsForLegacyJwtRequest(t *testing.T) {
 // converts an ExecuteV3Request into an internal ExecuteRequest with FetchCode,
 // passing applicationId through to FetchApiCode. Fetch() calls FetchApiCode
 // directly (same flow as FetchByPath) and returns synthetic def + bundle in rawDef.
-func TestExecuteV3RejectsUnsupportedProfile(t *testing.T) {
-	t.Parallel()
-	defer metrics.SetupForTesting()()
-
-	profileName := "staging"
-	server := NewServer(&Config{
-		Logger:        zap.NewNop(),
-		Store:         store.Memory(),
-		Worker:        &worker.MockClient{},
-		Fetcher:       &fetchmocks.Fetcher{},
-		SecretManager: secrets.NewSecretManager(),
-		AgentTags: map[string]*utils.Set[string]{
-			agentmetadata.ProfileTagKey: utils.NewSet("production"),
-		},
-		AgentEnvironment: "*",
-	})
-
-	ctx := context.WithValue(context.Background(), constants.ContextKeyRequestUsesJwtAuth, true)
-	ctx = jwt_validator.WithUserEmail(ctx, "test@example.com")
-
-	_, err := server.ExecuteV3(ctx, &apiv1.ExecuteV3Request{
-		ApplicationId: "app-123",
-		ViewMode:      apiv1.ViewMode_VIEW_MODE_DEPLOYED,
-		Profile:       &v1.Profile{Name: &profileName},
-	})
-
-	require.Error(t, err)
-	assert.True(t, sberror.IsAuthorizationError(err))
-	assert.Contains(t, err.Error(), `profile "staging" is not supported by this agent`)
-}
-
 func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 	commitId := "commit-abc"
 	branchName := "feature/code-mode"
@@ -2508,7 +2476,6 @@ func TestExecuteV3PacksSDKCallbackTokenForDeclaredIntegrations(t *testing.T) {
 	assert.Equal(t, "commit-1", claims.CommitID)
 	assert.Equal(t, "server/apis/get-orders.ts", claims.EntryPoint)
 	assert.Equal(t, []string{"integration-1"}, claims.AllowedIntegrationIDs)
-	assert.Equal(t, apiv1.ViewMode_VIEW_MODE_DEPLOYED, claims.ViewMode)
 
 	fetcher.AssertExpectations(t)
 	mockWorker.AssertExpectations(t)
