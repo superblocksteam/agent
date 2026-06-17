@@ -610,11 +610,13 @@ func TestFetchSecretStores(t *testing.T) {
 func TestFetchDefinitionFromRequestSkipsSecretStoresForNonLegacyAppEngine(t *testing.T) {
 	t.Parallel()
 
-	profileName := "production"
+	profileName := "Staging"
+	profileKey := "staging"
 	makeRequest := func() *apiv1.ExecuteRequest {
 		return &apiv1.ExecuteRequest{
 			Profile: &commonv1.Profile{
 				Name: &profileName,
+				Key:  &profileKey,
 			},
 			Request: &apiv1.ExecuteRequest_Definition{
 				Definition: &apiv1.Definition{
@@ -774,7 +776,7 @@ func TestFetchDefinitionFromRequestSkipsSecretStoresForNonLegacyAppEngine(t *tes
 					"FetchIntegrations",
 					mock.Anything,
 					mock.MatchedBy(func(req *integrationv1.GetIntegrationsRequest) bool {
-						return req.GetProfile().GetName() == profileName && req.GetKind() == integrationv1.Kind_KIND_SECRET
+						return req.GetProfile().GetName() == profileKey && req.GetKind() == integrationv1.Kind_KIND_SECRET
 					}),
 					false,
 				).Return(&integrationv1.GetIntegrationsResponse{
@@ -1301,7 +1303,8 @@ func TestSingleStepRunApiDefinitionParsing(t *testing.T) {
 		}
 		logger := zap.NewNop()
 
-		profileName := "profile1"
+		profileName := "Staging"
+		profileKey := "staging"
 
 		def, rawDef, err := Fetch(context.Background(), &apiv1.ExecuteRequest{
 			Options: nil,
@@ -1313,18 +1316,19 @@ func TestSingleStepRunApiDefinitionParsing(t *testing.T) {
 			Profile: &commonv1.Profile{
 				Id:          nil,
 				Name:        &profileName,
+				Key:         &profileKey,
 				Environment: nil,
 			},
 		}, &fetchmocks.Fetcher{}, false, false, logger)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "profile1", def.GetMetadata().GetProfile())
+		assert.Equal(t, "staging", def.GetMetadata().GetProfile())
 		assert.Equal(t, "free", def.GetMetadata().GetOrganizationPlan())
 		assert.Equal(t, "ClosedAI", def.GetMetadata().GetOrganizationName())
 
 		rawMetadata := rawDef.GetFields()["metadata"].GetStructValue()
 		assert.NotNil(t, rawMetadata)
-		assert.Equal(t, "profile1", rawMetadata.GetFields()["profile"].GetStringValue())
+		assert.Equal(t, "staging", rawMetadata.GetFields()["profile"].GetStringValue())
 		assert.Equal(t, "free", rawMetadata.GetFields()["organizationPlan"].GetStringValue())
 		assert.Equal(t, "ClosedAI", rawMetadata.GetFields()["organizationName"].GetStringValue())
 	})
@@ -2675,6 +2679,50 @@ func TestFetchDefinitionFromRequestUsesAgentDatasourceEndpointForSDKIntegrationE
 			test.assertResult(t, def)
 		})
 	}
+}
+
+func TestFetchDefinitionFromRequestValidatesProfileForSDKCallbackWithoutViewMode(t *testing.T) {
+	t.Parallel()
+
+	profileName := "production"
+	req := &apiv1.ExecuteRequest{
+		Profile: &commonv1.Profile{Name: &profileName},
+		Request: &apiv1.ExecuteRequest_Definition{
+			Definition: &apiv1.Definition{
+				Api: &apiv1.Api{
+					Metadata: &commonv1.Metadata{
+						Id:   "sdk-query-integration-1",
+						Name: "SDK Integration Query",
+					},
+					Blocks: []*apiv1.Block{{
+						Name: "query",
+						Config: &apiv1.Block_Step{
+							Step: &apiv1.Step{Integration: "integration-1"},
+						},
+					}},
+				},
+			},
+		},
+	}
+
+	mockFetcher := &fetchmocks.Fetcher{}
+	mockFetcher.On("ValidateProfile", mock.Anything, mock.MatchedBy(func(req *integrationv1.ValidateProfileRequest) bool {
+		return req.ViewMode == "deployed" &&
+			req.Profile.GetName() == profileName &&
+			len(req.IntegrationIds) == 1 &&
+			req.IntegrationIds[0] == "integration-1"
+	})).Return(nil)
+	mockFetcher.On("FetchIntegration", mock.Anything, "integration-1", req.GetProfile()).Return(&fetch.Integration{
+		PluginId: "postgres",
+		Configuration: map[string]interface{}{
+			"id": "config-from-agent-endpoint",
+		},
+	}, nil)
+
+	ctx := constants.WithSDKIntegrationExecution(context.Background(), []string{"integration-1"})
+	_, _, err := fetchDefinitionFromRequest(ctx, req, mockFetcher, false, zap.NewNop())
+	require.NoError(t, err)
+	mockFetcher.AssertExpectations(t)
 }
 
 func TestFetchDefinitionFromRequestPreservesExistingConfigurationId(t *testing.T) {

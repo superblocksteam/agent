@@ -83,6 +83,9 @@
         "environment": {
           "type": "string",
           "title": "DEPRECATED"
+        },
+        "key": {
+          "type": "string"
         }
       }
     },

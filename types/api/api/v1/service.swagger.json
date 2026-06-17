@@ -528,6 +528,12 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "profile.key",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -6850,6 +6856,9 @@
         "environment": {
           "type": "string",
           "title": "DEPRECATED"
+        },
+        "key": {
+          "type": "string"
         }
       }
     },

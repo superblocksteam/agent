@@ -91,10 +91,11 @@ func TestRequest(t *testing.T) {
 				Profile: &commonv1.Profile{
 					Id:          utils.Pointer("profile-id"),
 					Name:        utils.Pointer("profile-name"),
+					Key:         utils.Pointer("profile-key"),
 					Environment: utils.Pointer("environment-deprecated"),
 				},
 			},
-			expectedURL: "https://api.superblocks.com/api/v3/apis/00000000-0000-0000-0000-000000000001?environment=environment-deprecated&hydrate=true&profile=profile-name&profileId=profile-id&v2=true",
+			expectedURL: "https://api.superblocks.com/api/v3/apis/00000000-0000-0000-0000-000000000001?environment=environment-deprecated&hydrate=true&profile=profile-key&profileId=profile-id&v2=true",
 			expectedHeaders: http.Header{
 				"Authorization":               {"Bearer <token>"},
 				"X-Superblocks-Authorization": []string(nil),
@@ -359,6 +360,21 @@ func TestFetchIntegrations(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			expectedURL: "https://api.superblocks.com/api/v1/agents/secret-stores?kind=SECRET&profile=default",
+		},
+		{
+			name: "profile key is used when present",
+			request: &integrationv1.GetIntegrationsRequest{
+				Kind: &kindSecret,
+				Slug: proto.String("slug"),
+				Profile: &commonv1.Profile{
+					Name: proto.String("Production Display"),
+					Key:  proto.String("production"),
+				},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+			},
+			expectedURL: "https://api.superblocks.com/api/v1/integrations?kind=SECRET&profile=production&slug=slug",
 		},
 		{
 			name: "timed out, nil response",
@@ -1156,6 +1172,50 @@ func TestFetchIntegration(t *testing.T) {
 			expectedURL: "https://api.superblocks.com/api/v1/agents/datasource/integration-id?profile=default",
 		},
 		{
+			name:          "profile key is used when present",
+			integrationId: "integration-id",
+			profile: &commonv1.Profile{
+				Name: proto.String("Production Display"),
+				Key:  proto.String("production"),
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+					{
+						"data": {
+						  "datasource": {
+							"pluginId": "abc"
+						  }
+						}
+					  }
+					`)),
+			},
+			err:         nil,
+			expectedURL: "https://api.superblocks.com/api/v1/agents/datasource/integration-id?profile=production",
+		},
+		{
+			name:          "blank profile key falls back to name",
+			integrationId: "integration-id",
+			profile: &commonv1.Profile{
+				Name: proto.String("production"),
+				Key:  proto.String("   "),
+			},
+			response: &http.Response{
+				StatusCode: http.StatusOK,
+				Body: io.NopCloser(strings.NewReader(`
+					{
+						"data": {
+						  "datasource": {
+							"pluginId": "abc"
+						  }
+						}
+					  }
+					`)),
+			},
+			err:         nil,
+			expectedURL: "https://api.superblocks.com/api/v1/agents/datasource/integration-id?profile=production",
+		},
+		{
 			name:          "timed out, nil response",
 			integrationId: "integration-id",
 			profile: &commonv1.Profile{
@@ -1877,6 +1937,33 @@ func TestValidateProfile(t *testing.T) {
 			},
 		},
 		{
+			name: "successful validation uses profile key when present",
+			request: &integrationv1.ValidateProfileRequest{
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("Production Display"),
+					Key:  utils.Pointer("production"),
+					Id:   utils.Pointer("profile-id"),
+				},
+				ViewMode:       "editor",
+				IntegrationIds: []string{"integration-1"},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusNoContent,
+				Body:       io.NopCloser(strings.NewReader("")),
+			},
+			expectError: false,
+			expectedQuery: url.Values{
+				"profile":       []string{"production"},
+				"profileId":     []string{"profile-id"},
+				"viewMode":      []string{"editor"},
+				"integrationId": []string{"integration-1"},
+			},
+			expectedHeaders: map[string][]string{
+				"Authorization":               nil,
+				"X-Superblocks-Authorization": nil,
+			},
+		},
+		{
 			name: "validation failure - 403 forbidden",
 			request: &integrationv1.ValidateProfileRequest{
 				Profile: &commonv1.Profile{
@@ -1941,6 +2028,9 @@ func TestValidateProfile(t *testing.T) {
 
 			// Verify the mock was called
 			mockServerClient.AssertExpectations(t)
+			if test.expectedQuery != nil {
+				assert.Equal(t, test.expectedQuery, mockServerClient.Calls[0].Arguments.Get(3))
+			}
 		})
 	}
 }

@@ -40,6 +40,7 @@ message Profile {
    * DEPRECATED
    */
   optional string environment = 3;
+  optional string key = 4;
 }
 
 enum UserType {

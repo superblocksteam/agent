@@ -23,6 +23,7 @@ import (
 	"github.com/superblocksteam/agent/internal/fetch"
 	"github.com/superblocksteam/agent/internal/flags"
 	jwt_validator "github.com/superblocksteam/agent/internal/jwt/validator"
+	agentmetadata "github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
 	internalutils "github.com/superblocksteam/agent/internal/utils"
 	"github.com/superblocksteam/agent/pkg/constants"
@@ -93,12 +94,13 @@ const (
 
 type sdkCallbackClaims struct {
 	jwt.RegisteredClaims
-	ExecutionID           string   `json:"exec_id"`
-	OrganizationID        string   `json:"org_id"`
-	ApplicationID         string   `json:"application_id,omitempty"`
-	CommitID              string   `json:"commit_id,omitempty"`
-	EntryPoint            string   `json:"entry_point,omitempty"`
-	AllowedIntegrationIDs []string `json:"allowed_integration_ids"`
+	ExecutionID           string         `json:"exec_id"`
+	OrganizationID        string         `json:"org_id"`
+	ApplicationID         string         `json:"application_id,omitempty"`
+	CommitID              string         `json:"commit_id,omitempty"`
+	EntryPoint            string         `json:"entry_point,omitempty"`
+	AllowedIntegrationIDs []string       `json:"allowed_integration_ids"`
+	ViewMode              apiv1.ViewMode `json:"view_mode,omitempty"`
 }
 
 type server struct {
@@ -131,6 +133,8 @@ type Config struct {
 	SecretManager         secrets.SecretManager
 	AgentId               string
 	AgentVersion          string
+	AgentTags             map[string]*utils.Set[string]
+	AgentEnvironment      string
 	Secrets               secrets.Secrets
 	Signature             signature.Registry
 	WaitGroup             *sync.WaitGroup
@@ -144,6 +148,13 @@ type Config struct {
 }
 
 func NewServer(config *Config) Services {
+	if config.AgentEnvironment == "" {
+		config.AgentEnvironment = "*"
+	}
+	if config.AgentTags == nil {
+		config.AgentTags = map[string]*utils.Set[string]{}
+	}
+
 	return &server{
 		Config: config,
 	}
@@ -279,7 +290,14 @@ func (s *server) withSDKCallbackContext(ctx context.Context, req *apiv1.ExecuteR
 		return nil, sberror.AuthorizationError(errors.New("SDK integration callback organization mismatch"))
 	}
 
-	return constants.WithSDKIntegrationExecution(ctx, claims.AllowedIntegrationIDs), nil
+	ctx = constants.WithSDKIntegrationExecution(ctx, claims.AllowedIntegrationIDs)
+	if claims.ApplicationID != "" {
+		ctx = constants.WithSDKCallbackApplicationID(ctx, claims.ApplicationID)
+	}
+	if claims.ViewMode != apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
+		ctx = constants.WithSDKCallbackViewMode(ctx, claims.ViewMode)
+	}
+	return ctx, nil
 }
 
 func (s *server) Workflow(ctx context.Context, req *apiv1.ExecuteRequest) (*apiv1.WorkflowResponse, error) {
@@ -329,9 +347,14 @@ func requireAuthForInlineDefinition(ctx context.Context, req *apiv1.ExecuteReque
 // with FetchCode (API 2.0 code delivery) and delegates to the existing
 // await() pipeline. JWT is always required (enforced by the jwtDecider in main.go).
 func (s *server) ExecuteV3(ctx context.Context, req *apiv1.ExecuteV3Request) (*apiv1.AwaitResponse, error) {
+	viewMode := req.GetViewMode()
+	if viewMode == apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
+		viewMode = apiv1.ViewMode_VIEW_MODE_DEPLOYED
+	}
+
 	fetchCode := &apiv1.ExecuteRequest_FetchCode{
 		Id:         req.GetApplicationId(),
-		ViewMode:   req.GetViewMode(),
+		ViewMode:   viewMode,
 		Profile:    req.GetProfile(),
 		CommitId:   req.CommitId,
 		BranchName: req.BranchName,
@@ -923,6 +946,15 @@ func getViewMode(req *apiv1.ExecuteRequest) apiv1.ViewMode {
 	return req.GetViewMode()
 }
 
+func (s *server) validateAgentProfileForExecution(req *apiv1.ExecuteRequest) error {
+	fetchCode := req.GetFetchCode()
+	if fetchCode == nil {
+		return nil
+	}
+
+	return agentmetadata.ValidateExecutionProfile(s.AgentTags, s.AgentEnvironment, fetchCode.GetProfile())
+}
+
 func (s *server) getUseAgentKeyForExecuteRequest(ctx context.Context, req *apiv1.ExecuteRequest) (bool, bool) {
 	useAgentKeyForServerFetch := s.getUseAgentKeyForHydration(ctx)
 	useAgentKeyForDefinitionHydration := s.getUseAgentKeyForDatasourceHydration(ctx)
@@ -965,6 +997,10 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 	}
 
 	useAgentKeyForServerFetch, useAgentKeyForDefinitionHydration := s.getUseAgentKeyForExecuteRequest(ctx, req)
+
+	if err := s.validateAgentProfileForExecution(req); err != nil {
+		return nil, err
+	}
 
 	var result *apiv1.Definition
 	var rawResult *structpb.Struct
@@ -1350,6 +1386,7 @@ func (s *server) executeCodeMode(
 			CommitID:              fetchCode.GetCommitId(),
 			EntryPoint:            fetchCode.GetEntryPoint(),
 			AllowedIntegrationIDs: allowedIntegrationIDs,
+			ViewMode:              fetchCode.GetViewMode(),
 		})
 		if err != nil {
 			reqPrepSpan.SetAttributes(attribute.String("error", err.Error()))

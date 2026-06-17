@@ -436,6 +436,10 @@ func (m *Profile) validate(all bool) error {
 		// no validation rules for Environment
 	}
 
+	if m.Key != nil {
+		// no validation rules for Key
+	}
+
 	if len(errors) > 0 {
 		return ProfileMultiError(errors)
 	}

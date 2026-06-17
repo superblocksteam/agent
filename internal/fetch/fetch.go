@@ -11,7 +11,9 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
+	agentmetadata "github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/pkg/clients"
+	"github.com/superblocksteam/agent/pkg/constants"
 	sberrors "github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/tracer"
@@ -287,8 +289,8 @@ func (f *fetcher) FetchIntegration(ctx context.Context, integrationId string, pr
 
 	query := url.Values{}
 	if profile != nil {
-		if profile.Name != nil {
-			query.Set(QueryParamProfileName, *profile.Name)
+		if value := agentmetadata.ProfileKeyOrName(profile); value != "" {
+			query.Set(QueryParamProfileName, value)
 		}
 		if profile.Id != nil {
 			query.Set(QueryParamProfileID, *profile.Id)
@@ -427,8 +429,8 @@ func (f *fetcher) FetchIntegrations(ctx context.Context, req *integrationv1.GetI
 	query := map[string][]string{}
 	{
 		if req.Profile != nil {
-			if req.Profile.Name != nil {
-				query[QueryParamProfileName] = []string{*req.Profile.Name}
+			if value := agentmetadata.ProfileKeyOrName(req.Profile); value != "" {
+				query[QueryParamProfileName] = []string{value}
 			}
 
 			if req.Profile.Id != nil {
@@ -541,8 +543,8 @@ func (f *fetcher) ValidateProfile(ctx context.Context, req *integrationv1.Valida
 	query := url.Values{}
 	{
 		if req.Profile != nil {
-			if req.Profile.Name != nil {
-				query.Set(QueryParamProfileName, *req.Profile.Name)
+			if value := agentmetadata.ProfileKeyOrName(req.Profile); value != "" {
+				query.Set(QueryParamProfileName, value)
 			}
 			if req.Profile.Id != nil {
 				query.Set(QueryParamProfileID, *req.Profile.Id)
@@ -555,6 +557,10 @@ func (f *fetcher) ValidateProfile(ctx context.Context, req *integrationv1.Valida
 
 		for _, id := range req.IntegrationIds {
 			query.Add("integrationId", id)
+		}
+
+		if appID := constants.SDKCallbackApplicationID(ctx); appID != "" {
+			query.Set("appId", appID)
 		}
 	}
 
@@ -619,8 +625,8 @@ func (f *fetcher) sendFetchApiRequest(ctx context.Context, options *apiv1.Execut
 	query.Set("v2", "true")
 
 	if profile := options.Profile; profile != nil {
-		if profile.Name != nil {
-			query.Set(QueryParamProfileName, *profile.Name)
+		if value := agentmetadata.ProfileKeyOrName(profile); value != "" {
+			query.Set(QueryParamProfileName, value)
 		}
 		if profile.Environment != nil {
 			query.Set(QueryParamEnvironment, *profile.Environment)
@@ -664,8 +670,8 @@ func (f *fetcher) sendFetchApiByPathRequest(ctx context.Context, options *apiv1.
 	query.Set("hydrate", "true")
 
 	if profile := options.Profile; profile != nil {
-		if profile.Name != nil {
-			query.Set(QueryParamProfileName, profile.GetName())
+		if value := agentmetadata.ProfileKeyOrName(profile); value != "" {
+			query.Set(QueryParamProfileName, value)
 		}
 		if profile.Environment != nil {
 			query.Set(QueryParamEnvironment, profile.GetEnvironment())

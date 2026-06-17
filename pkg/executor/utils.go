@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/superblocksteam/agent/internal/auth"
 	"github.com/superblocksteam/agent/internal/fetch"
+	agentmetadata "github.com/superblocksteam/agent/internal/metadata"
 	"github.com/superblocksteam/agent/internal/metrics"
 	"github.com/superblocksteam/agent/pkg/constants"
 	apictx "github.com/superblocksteam/agent/pkg/context"
@@ -461,9 +462,19 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 		def.Integrations = map[string]*structpb.Struct{}
 	}
 
-	// Validate profile restrictions if viewMode is explicitly provided
-	if len(allIntegrationIds) > 0 && request.GetProfile() != nil && request.ViewMode != apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
-		viewModeStr := viewModeEnumToString(request.ViewMode)
+	// For SDK integration callbacks, fall back to the ViewMode embedded in the callback token.
+	viewMode := request.ViewMode
+	if viewMode == apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
+		viewMode = constants.SDKCallbackViewMode(ctx)
+	}
+	// Signed SDK callbacks should carry viewMode, but default to deployed when both the
+	// request and callback token omit it so profile validation cannot be skipped.
+	if viewMode == apiv1.ViewMode_VIEW_MODE_UNSPECIFIED && constants.IsSDKIntegrationExecution(ctx) {
+		viewMode = apiv1.ViewMode_VIEW_MODE_DEPLOYED
+	}
+
+	if len(allIntegrationIds) > 0 && request.GetProfile() != nil && viewMode != apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
+		viewModeStr := viewModeEnumToString(viewMode)
 
 		err := fetcher.ValidateProfile(ctx, &integrationv1.ValidateProfileRequest{
 			Profile:        request.GetProfile(),
@@ -571,7 +582,7 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 	}
 
 	if contains && def.GetStores() == nil && shouldFetchDefinitionSecretStores(ctx, def) {
-		stores, err := FetchSecretStores(ctx, fetcher, request.GetProfile().GetName(), useAgentKeyForDefinitionHydration, logger)
+		stores, err := FetchSecretStores(ctx, fetcher, agentmetadata.ProfileKeyOrName(request.GetProfile()), useAgentKeyForDefinitionHydration, logger)
 		if err != nil {
 			logger.Error("failed to fetch secret stores", zap.Error(err))
 			return nil, nil, err
@@ -582,7 +593,7 @@ func fetchDefinitionFromRequest(ctx context.Context, request *apiv1.ExecuteReque
 		}
 	}
 	def.Metadata = &apiv1.Definition_Metadata{
-		Profile:          request.GetProfile().GetName(),
+		Profile:          agentmetadata.ProfileKeyOrName(request.GetProfile()),
 		OrganizationPlan: request.GetDefinition().GetMetadata().GetOrganizationPlan(),
 		OrganizationName: request.GetDefinition().GetMetadata().GetOrganizationName(),
 	}
