@@ -2,6 +2,7 @@ package telemetry
 
 // Forbidden Tier 2 span attributes.
 // Source: https://github.com/superblocksteam/superblocks/blob/main/packages/telemetry/src/common/contracts/tier2-traces.ts
+// (canonical contract: superblocksteam/engineering -- projects/o11y-refactor/contracts/tier2-traces.v0.5.0.json)
 // Cloud-prem: full denylist applied at SDK level (defense in depth with Collector).
 // Cloud: TS applies no SDK-level filtering (Collector only). Go intentionally
 // diverges by stripping auth/secrets/AI content at SDK level via
@@ -12,6 +13,19 @@ package telemetry
 // export. Go services (orchestrator, workers) handle agent keys and LLM payloads
 // directly and may emit spans before reaching any Collector-level filtering, so
 // we enforce a minimal SDK-level denylist even in cloud mode as defense in depth.
+//
+// Tier 2 contract v0.5.0 (AGENT-3255): opaque product-resource identifiers
+// (application-id, api-id, integration-id, profile-id, resource-id, commit-id and
+// their _id variants) are intentionally absent from this denylist -- they are
+// random UUIDv4 handles for non-person resources and pass through. The contract's
+// hashed identifiers (enduser.id, session.id, user-id/user.id/user_id) are classified
+// "hashed", not forbidden; SDK-level HMAC hashing is not yet implemented in Go, so
+// they are neither stripped nor hashed here. In cloud-prem the OTel collector router
+// is the fail-safe (it deletes the full hashed set); in cloud mode the default config
+// applies only alwaysForbiddenAttributes (which also omits them), so cloud likewise
+// relies on the collector pipeline. Both modes therefore depend on collector-level
+// removal of these identifiers until the Go/collector HMAC processor lands. Resource NAMES
+// (api-name, resource-name), widget-type, and secrets stay forbidden below.
 var forbiddenTier2SpanAttributes = map[string]struct{}{
 	// AI/LLM content (Tier 1 only)
 	"llmobs.input":  {},
