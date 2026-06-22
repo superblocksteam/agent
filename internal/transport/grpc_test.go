@@ -3107,7 +3107,11 @@ func TestExecuteCodeMode(t *testing.T) {
 		endLogs := observedLogs.FilterMessage("audit log: api execute end").All()
 		require.Len(t, endLogs, 1)
 		endCtx := endLogs[0].ContextMap()
-		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_SUCCESS.String(), endCtx["status"])
+		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_SUCCESS.String(), endCtx["apiRunStatus"])
+		// "status" is reserved by Datadog as a log severity, so the run status
+		// must not be emitted under that key.
+		_, hasReservedStatus := endCtx["status"]
+		assert.False(t, hasReservedStatus)
 		_, hasEnd := endCtx["end"]
 		assert.True(t, hasEnd)
 
@@ -3150,7 +3154,11 @@ func TestExecuteCodeMode(t *testing.T) {
 		endLogs := observedLogs.FilterMessage("audit log: api execute end").All()
 		require.Len(t, endLogs, 1)
 		endCtx := endLogs[0].ContextMap()
-		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED.String(), endCtx["status"])
+		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED.String(), endCtx["apiRunStatus"])
+		// "status" is reserved by Datadog as a log severity, so the run status
+		// must not be emitted under that key.
+		_, hasReservedStatus := endCtx["status"]
+		assert.False(t, hasReservedStatus)
 		assert.Contains(t, endCtx["error"], "missing bundle")
 		_, hasEnd := endCtx["end"]
 		assert.True(t, hasEnd)
@@ -3209,7 +3217,11 @@ func TestExecuteCodeMode(t *testing.T) {
 		endLogs := observedLogs.FilterMessage("audit log: api execute end").All()
 		require.Len(t, endLogs, 1)
 		endCtx := endLogs[0].ContextMap()
-		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED.String(), endCtx["status"])
+		assert.Equal(t, agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED.String(), endCtx["apiRunStatus"])
+		// "status" is reserved by Datadog as a log severity, so the run status
+		// must not be emitted under that key.
+		_, hasReservedStatus := endCtx["status"]
+		assert.False(t, hasReservedStatus)
 		_, hasEnd := endCtx["end"]
 		assert.True(t, hasEnd)
 

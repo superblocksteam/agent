@@ -62,6 +62,14 @@ const (
 	OBS_TAG_COMPONENT              = "component"
 )
 
+// AUDIT_FIELD_API_RUN_STATUS is the audit-log field key that carries the API run
+// status. It is deliberately not "status": Datadog reserves "status" as the
+// log-severity attribute and remaps the value to a syslog severity, which
+// mislabeled these informational audit logs as "alert" (the enum value
+// "API_RUN_STATUS_*" starts with "a"). The audit-log emitter reads this exact
+// key, so all producers and the consumer must share this constant.
+const AUDIT_FIELD_API_RUN_STATUS = "apiRunStatus"
+
 func GetUserTypeStringFromPb(userType commonv1.UserType) string {
 	switch userType {
 	case commonv1.UserType_USER_TYPE_SUPERBLOCKS:

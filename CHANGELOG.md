@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Align Native Database lifecycle dispatch decoding with the control-plane payload by reading database requirements from typed `desiredSpec` instead of duplicated top-level spec fields.
 - **Breaking:** Native Database lifecycle config no longer accepts legacy entry-level `backend`, `credentialResolver`, or `moduleSelectors` fields. Operators must migrate to the per-operation `entries[].operations.<operation>.backend = "terraform"` shape with `entries[].operations.<operation>.terraform.{backend,credentialResolver,moduleSelectors}`.
 - Restrict inline DSL `sb_secrets` bindings to legacy application tokens.
+- **Breaking (log schema):** Emit the API run status on audit-end logs under the `apiRunStatus` field instead of `status`. The old field name collided with the reserved log-severity attribute and caused these informational audit logs to be labeled with an elevated severity. Datadog saved searches, dashboards, or monitors filtering on `@status:API_RUN_STATUS_*` must be updated to `@apiRunStatus:API_RUN_STATUS_*`.
 
 ## v1.41.1
 - Fix executor JWT validation to only accept Superblocks-issued ES256 tokens and fail closed when a signing key is not configured, preventing algorithm-confusion bypasses with empty HMAC keys.

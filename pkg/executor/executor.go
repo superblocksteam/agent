@@ -453,7 +453,7 @@ func (e *execution) Run(ctx context.Context) {
 		}
 
 		auditFields = append(auditFields, []zap.Field{
-			zap.String("status", status.String()),
+			zap.String(observability.AUDIT_FIELD_API_RUN_STATUS, status.String()),
 			zap.Int64("end", time.Now().UnixMilli()),
 		}...)
 		isIntegrationQuery := false

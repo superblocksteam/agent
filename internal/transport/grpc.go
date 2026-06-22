@@ -1770,7 +1770,7 @@ func buildCodeModeAuditEndFields(
 		status = agentv1.AuditLogRequest_AuditLog_API_RUN_STATUS_FAILED
 	}
 
-	endFields = append(endFields, zap.String("status", status.String()), zap.Int64("end", time.Now().UnixMilli()))
+	endFields = append(endFields, zap.String(observability.AUDIT_FIELD_API_RUN_STATUS, status.String()), zap.Int64("end", time.Now().UnixMilli()))
 	return endFields
 }
 

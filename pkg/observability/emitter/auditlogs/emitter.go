@@ -9,6 +9,7 @@ import (
 
 	"github.com/avast/retry-go"
 	"github.com/superblocksteam/agent/pkg/clients"
+	"github.com/superblocksteam/agent/pkg/observability"
 	"github.com/superblocksteam/agent/pkg/observability/emitter"
 	agentv1 "github.com/superblocksteam/agent/types/gen/go/agent/v1"
 	v1 "github.com/superblocksteam/agent/types/gen/go/common/v1"
@@ -269,7 +270,7 @@ func (l *audit) extractAuditLogFromFields(fields map[string]interface{}) (*agent
 		}
 	}
 
-	statusString, ok := fields["status"].(string)
+	statusString, ok := fields[observability.AUDIT_FIELD_API_RUN_STATUS].(string)
 
 	var status agentv1.AuditLogRequest_AuditLog_ApiRunStatus
 	if ok {
