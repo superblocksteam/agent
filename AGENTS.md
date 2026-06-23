@@ -89,7 +89,9 @@ Table-driven tests with `testify/assert`. Generate mocks: `//go:generate mockery
 
 ## Changelog
 
-The [`CHANGELOG.md`](CHANGELOG.md) documents customer-facing changes for the On-Premise Agent (OPA). When a PR changes behavior that ships in the OPA image (bug fixes, new features, configuration changes, dependency upgrades), add a line under `## vNext` describing the change at a high level. Skip the changelog for CI-only, test-only, or internal tooling changes that do not affect the OPA.
+The [`CHANGELOG.md`](CHANGELOG.md) documents customer-facing changes for the On-Premise Agent (OPA). When a PR changes behavior that ships in the OPA image (bug fixes, new features, configuration changes, dependency upgrades), add a simple, concise line at the top of the list under `## vNext` describing the change at a high level. Skip the changelog for CI-only, test-only, or internal tooling changes that do not affect the OPA.
+
+When resolving merge or rebase conflicts in `CHANGELOG.md` under `## vNext`, keep both entries and preserve order: your branch's pending entry stays at the top, with entries from `main` below it. Do not drop upstream entries, duplicate lines, or leave conflict markers.
 
 ### Release bump skill (files to update)
 
