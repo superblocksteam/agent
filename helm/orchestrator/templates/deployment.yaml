@@ -62,14 +62,9 @@ spec:
     spec:
       serviceAccountName: {{ include "orchestrator.serviceAccountName" . }}
       terminationGracePeriodSeconds: {{ .Values.service.terminationGracePeriodSeconds }}
-      {{- if .Values.databaseLifecycle.enabled }}
-      {{- /* The database lifecycle worker writes per-dispatch tofu
-             workspaces under databaseLifecycle.rootDir as the non-root
-             orchestrator user (UID 1001). Without `fsGroup: 1001` the
-             emptyDir's mount-point is root-owned and the worker fails
-             to mkdir its first dispatch directory. */}}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        fsGroup: 1001
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
@@ -79,6 +74,10 @@ spec:
       - name: orchestrator
         image: "{{ .Values.image.repository | default "ghcr.io/superblocksteam/orchestrator" }}:{{ .Values.image.tag | default "latest" }}"
         imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         # TODO(frank): Turn the secure flags into env vars with viper.
@@ -217,6 +216,9 @@ spec:
         volumeMounts:
         - name: buckets
           mountPath: /etc/orchestrator
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
         {{- if and .Values.launchdarkly.local .Values.featureFlags.configMapName }}
         - name: feature-flags
           mountPath: /etc/feature-flags
@@ -248,6 +250,10 @@ spec:
       - name: buckets
         configMap:
           name: orchestrator-buckets-config
+      - name: tmp
+        emptyDir:
+          # default is set to ~4x the maximum file upload size
+          sizeLimit: {{ .Values.tmpSizeLimit | default "2048Mi" }}
       {{- if and .Values.launchdarkly.local .Values.featureFlags.configMapName }}
       - name: feature-flags
         configMap:
