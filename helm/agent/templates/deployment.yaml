@@ -91,7 +91,7 @@ spec:
         - name: SUPERBLOCKS_ORCHESTRATOR_AGENT_HOST_URL
           value: {{ required "superblocks.agentHostUrl is required!" .Values.superblocks.agentHostUrl }}
         - name: SUPERBLOCKS_ORCHESTRATOR_AGENT_TAGS
-          value: {{ default "profile:*" .Values.superblocks.agentTags }}
+          value: {{ default "profile:*" .Values.superblocks.agentTags | quote }}
         - name: SUPERBLOCKS_ORCHESTRATOR_OTEL_COLLECTOR_HTTP_URL
           value: {{ if .Values.superblocks.telemetry.remoteEnabled }}{{ .Values.superblocks.telemetry.otelCollectorUrl | quote }}{{ else }}""{{ end }}
         - name: SUPERBLOCKS_WORKER_GO_OTEL_COLLECTOR_HTTP_URL

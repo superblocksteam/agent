@@ -1,6 +1,7 @@
 ---
 superblocks:
   url: 'https://api.superblocks.com'
+  agentTags: ''
 autoscaling:
   disable: false
   min: 5

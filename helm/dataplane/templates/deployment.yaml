@@ -93,6 +93,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: SUPERBLOCKS_ORCHESTRATOR_AGENT_TAGS
+          value: {{ default "profile:*" .Values.superblocks.agentTags | quote }}
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
         - name: SUPERBLOCKS_ORCHESTRATOR_SUPERBLOCKS_KEY
           valueFrom:
