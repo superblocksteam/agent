@@ -28,6 +28,10 @@ spec:
     spec:
       serviceAccountName: default
       terminationGracePeriodSeconds: {{ .Values.service.terminationGracePeriodSeconds }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
       - name: orchestrator-docker
@@ -37,6 +41,10 @@ spec:
         {{- $orchImg := index .Values.image "orchestrator" | default dict }}
         image: "{{ $orchImg.repository | default "ghcr.io/superblocksteam/orchestrator" }}:{{ $orchImg.tag | default "latest" }}"
         imagePullPolicy: {{ $orchImg.pullPolicy | default "IfNotPresent" }}
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         # TODO(frank): Turn the secure flags into env vars with viper.
@@ -129,6 +137,9 @@ spec:
         volumeMounts:
         - name: buckets
           mountPath: /etc/orchestrator
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
         {{- if .Values.featureFlags.configMapName }}
         - name: feature-flags
           mountPath: /etc/feature-flags
@@ -150,6 +161,10 @@ spec:
       - name: buckets
         configMap:
           name: orchestrator-buckets-config
+      - name: tmp
+        emptyDir:
+          # default is set to ~4x the maximum file upload size
+          sizeLimit: {{ .Values.tmpSizeLimit | default "2048Mi" }}
       {{- if .Values.featureFlags.configMapName }}
       - name: feature-flags
         configMap:

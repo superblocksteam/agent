@@ -78,6 +78,10 @@ spec:
       imagePullSecrets:
         - name: ephemeral-worker-docker
       {{- end }}
+      {{- with $.Values.sandbox_workers.keda.collector.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with $metricsInfra.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -90,6 +94,10 @@ spec:
         - name: collector
           image: "{{ $.Values.sandbox_workers.keda.collector.image.repository | default "ghcr.io/superblocksteam/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib" }}:{{ $.Values.sandbox_workers.keda.collector.image.tag | default "0.146.0" }}"
           imagePullPolicy: {{ ((.Values.sandbox_workers.keda.collector.image | default dict).pullPolicy | default "IfNotPresent") }}
+          {{- with $.Values.sandbox_workers.keda.collector.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           args: ["--config=/etc/otel/config.yaml"]
           ports:
             - containerPort: 4317
@@ -97,12 +105,18 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/otel
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
           resources:
             {{- toYaml $.Values.sandbox_workers.keda.collector.resources | nindent 12 }}
       volumes:
         - name: config
           configMap:
             name: {{ $collectorName }}-config
+        - name: tmp
+          emptyDir:
+            sizeLimit: {{ $.Values.sandbox_workers.keda.collector.tmpSizeLimit | default "64Mi" }}
 ---
 apiVersion: v1
 kind: Service
@@ -148,6 +162,10 @@ spec:
       imagePullSecrets:
         - name: ephemeral-worker-docker
       {{- end }}
+      {{- with $.Values.sandbox_workers.keda.prometheus.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with $metricsInfra.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -160,22 +178,32 @@ spec:
         - name: prometheus
           image: "{{ $.Values.sandbox_workers.keda.prometheus.image.repository | default "ghcr.io/superblocksteam/prom/prometheus" }}:{{ $.Values.sandbox_workers.keda.prometheus.image.tag | default "v3.4.0" }}"
           imagePullPolicy: {{ ((.Values.sandbox_workers.keda.prometheus.image | default dict).pullPolicy | default "IfNotPresent") }}
+          {{- with $.Values.sandbox_workers.keda.prometheus.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--web.enable-remote-write-receiver"
             - "--storage.tsdb.retention.time=1h"
             - "--storage.tsdb.retention.size=256MB"
+            - "--storage.tsdb.path=/prometheus"
           ports:
             - containerPort: 9090
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus
+            - name: tsdb
+              mountPath: /prometheus
           resources:
             {{- toYaml $.Values.sandbox_workers.keda.prometheus.resources | nindent 12 }}
       volumes:
         - name: config
           configMap:
             name: {{ $promName }}-config
+        - name: tsdb
+          emptyDir:
+            sizeLimit: {{ $.Values.sandbox_workers.keda.prometheus.tsdbSizeLimit | default "512Mi" }}
 ---
 apiVersion: v1
 kind: Service
