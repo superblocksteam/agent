@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Validate the requested profile against this agent's `agent.tags` data tags on all profile-bearing RPCs, not just Apps 3.0 `FetchCode` executions, so a data plane serves only the environments it is tagged for. No-op for unconstrained agents, so SaaS and single-agent deployments are unaffected.
 - Upgrade axios to 1.16.0 in the slim OPA JavaScript worker, matching the standard OPA variant.
 - **Breaking (log schema):** Emit the API run status on audit-end logs under the `apiRunStatus` field instead of `status`. The old field name collided with the reserved log-severity attribute and caused these informational audit logs to be labeled with an elevated severity. Datadog saved searches, dashboards, or monitors filtering on `@status:API_RUN_STATUS_*` must be updated to `@apiRunStatus:API_RUN_STATUS_*`.
 

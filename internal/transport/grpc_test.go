@@ -1936,7 +1936,7 @@ func TestExecuteV3AllowsProfileKeyAgainstKeyTag(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, server.validateAgentProfileForExecution(req))
+	assert.NoError(t, server.validateAgentProfileForExecution(context.Background(), req))
 }
 
 func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {

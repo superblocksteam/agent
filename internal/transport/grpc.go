@@ -946,13 +946,44 @@ func getViewMode(req *apiv1.ExecuteRequest) apiv1.ViewMode {
 	return req.GetViewMode()
 }
 
-func (s *server) validateAgentProfileForExecution(req *apiv1.ExecuteRequest) error {
-	fetchCode := req.GetFetchCode()
-	if fetchCode == nil {
-		return nil
+// validateAgentProfile rejects a request whose target profile is not covered by
+// this agent's data tags. No-op for an unconstrained agent (no profile tags and
+// agent.environment "*", the default), so SaaS/single-agent deployments are
+// unaffected. See ValidateExecutionProfile for the matching rules. A rejection
+// is logged and counted so oncall can tell a real denial from a misconfigured
+// agent silently dropping all traffic.
+func (s *server) validateAgentProfile(ctx context.Context, profile *commonv1.Profile) error {
+	err := agentmetadata.ValidateExecutionProfile(s.AgentTags, s.AgentEnvironment, profile)
+	if err != nil {
+		profileKey := agentmetadata.ProfileKeyOrName(profile)
+		s.Logger.Warn("agent profile validation rejected request",
+			zap.String("profile", profileKey),
+			zap.String("agent_environment", s.AgentEnvironment),
+		)
+		metrics.RecordAgentProfileRejection(ctx, profileKey)
 	}
+	return err
+}
 
-	return agentmetadata.ValidateExecutionProfile(s.AgentTags, s.AgentEnvironment, fetchCode.GetProfile())
+// executeRequestProfile returns the profile an execute request targets, read
+// from whichever fetch variant is set, else the top-level (inline-definition)
+// profile. A nil result means the request specifies no target environment, which
+// ValidateExecutionProfile treats as unconstrained (matching prior behavior).
+func executeRequestProfile(req *apiv1.ExecuteRequest) *commonv1.Profile {
+	if fetch := req.GetFetch(); fetch != nil {
+		return fetch.GetProfile()
+	}
+	if fetchByPath := req.GetFetchByPath(); fetchByPath != nil {
+		return fetchByPath.GetProfile()
+	}
+	if fetchCode := req.GetFetchCode(); fetchCode != nil {
+		return fetchCode.GetProfile()
+	}
+	return req.GetProfile()
+}
+
+func (s *server) validateAgentProfileForExecution(ctx context.Context, req *apiv1.ExecuteRequest) error {
+	return s.validateAgentProfile(ctx, executeRequestProfile(req))
 }
 
 func (s *server) getUseAgentKeyForExecuteRequest(ctx context.Context, req *apiv1.ExecuteRequest) (bool, bool) {
@@ -998,7 +1029,7 @@ func (s *server) stream(ctx context.Context, req *apiv1.ExecuteRequest, send fun
 
 	useAgentKeyForServerFetch, useAgentKeyForDefinitionHydration := s.getUseAgentKeyForExecuteRequest(ctx, req)
 
-	if err := s.validateAgentProfileForExecution(req); err != nil {
+	if err := s.validateAgentProfileForExecution(ctx, req); err != nil {
 		return nil, err
 	}
 
@@ -1936,6 +1967,10 @@ func (s *server) Validate(_ context.Context, req *apiv1.ValidateRequest) (_ *emp
 }
 
 func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*apiv1.MetadataResponse, error) {
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	span := trace.SpanFromContext(ctx)
 
 	span.SetAttributes(
@@ -2051,6 +2086,10 @@ func (s *server) Metadata(ctx context.Context, req *apiv1.MetadataRequest) (*api
 }
 
 func (s *server) MetadataDeprecated(ctx context.Context, req *apiv1.MetadataRequestDeprecated) (*apiv1.MetadataResponse, error) {
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	var err error
 	var fetchRes *apiv1.Definition
 	useAgentKey := s.getUseAgentKeyForHydration(ctx)
@@ -2179,6 +2218,10 @@ func (s *server) Test(ctx context.Context, req *apiv1.TestRequest) (*apiv1.TestR
 		return nil, sberror.AuthorizationError(errors.New("Authorization header required"))
 	}
 
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	var integration string
 	{
 		if req != nil && req.GetDatasourceConfig() != nil && req.GetDatasourceConfig().Fields != nil {
@@ -2235,6 +2278,10 @@ func (s *server) Test(ctx context.Context, req *apiv1.TestRequest) (*apiv1.TestR
 }
 
 func (s *server) Delete(ctx context.Context, req *apiv1.DeleteRequest) (*apiv1.DeleteResponse, error) {
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	// Skip the testing if the integration exist, and it's demo integration
 	integrationId := req.GetIntegration()
 	pluginName := strings.ToLower(req.GetPluginName())
@@ -2299,6 +2346,10 @@ func (s *server) Invalidate(ctx context.Context, req *secretsv1.InvalidateReques
 }
 
 func (s *server) ListSecrets(ctx context.Context, req *secretsv1.ListSecretsRequest) (*secretsv1.ListSecretsResponse, error) {
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	if err := utils.ProtoValidate(req); err != nil {
 		return nil, err
 	}

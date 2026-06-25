@@ -26,6 +26,10 @@ import (
 )
 
 func (s *server) CheckAuth(ctx context.Context, req *apiv1.CheckAuthRequest) (*apiv1.CheckAuthResponse, error) {
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	integration, err := s.Fetcher.FetchIntegration(ctx, req.IntegrationId, req.Profile)
 	if err != nil {
 		return nil, err
@@ -80,6 +84,10 @@ func (s *server) CheckAuth(ctx context.Context, req *apiv1.CheckAuthRequest) (*a
 }
 
 func (s *server) Login(ctx context.Context, req *apiv1.LoginRequest) (*apiv1.LoginResponse, error) {
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	integration, err := s.Fetcher.FetchIntegration(ctx, req.IntegrationId, req.Profile)
 	if err != nil {
 		return nil, err
@@ -190,6 +198,10 @@ func (s *server) resolveBindings(
 }
 
 func (s *server) ExchangeOauthCodeForToken(ctx context.Context, req *apiv1.ExchangeOauthCodeForTokenRequest) (*emptypb.Empty, error) {
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	var authType string
 	var authConfig *commonv1.OAuth_AuthorizationCodeFlow = &commonv1.OAuth_AuthorizationCodeFlow{}
 	// try to fetch the integration, it should work if it exists
@@ -257,6 +269,10 @@ func (s *server) ExchangeOauthCodeForToken(ctx context.Context, req *apiv1.Excha
 }
 
 func (s *server) RequestOauthPasswordToken(ctx context.Context, req *apiv1.RequestOauthPasswordTokenRequest) (*apiv1.RequestOauthPasswordTokenResponse, error) {
+	if err := s.validateAgentProfile(ctx, req.GetProfile()); err != nil {
+		return nil, err
+	}
+
 	integration, err := s.Fetcher.FetchIntegration(ctx, req.IntegrationId, req.Profile)
 	if err != nil {
 		return nil, err

@@ -108,6 +108,9 @@ var (
 	SdkApiExecutionDuration      metric.Float64Histogram
 	SdkApiExecutionsTotal        metric.Int64Counter
 
+	// Agent profile (data-tag) authorization metrics
+	AgentProfileRejectionsTotal metric.Int64Counter
+
 	// Histograms
 	StepEstimateErrorPercentage metric.Float64Histogram
 	StepOverhead                metric.Float64Histogram
@@ -358,6 +361,14 @@ func RegisterMetrics(meter metric.Meter) error {
 		return err
 	}
 
+	AgentProfileRejectionsTotal, err = meter.Int64Counter(
+		"agent_profile_rejections_total",
+		metric.WithDescription("Total requests rejected because the requested profile is not covered by the agent's data tags."),
+	)
+	if err != nil {
+		return err
+	}
+
 	// Histograms
 	StepEstimateErrorPercentage, err = meter.Float64Histogram(
 		"superblocks_step_estimate_error_percentage",
@@ -516,6 +527,15 @@ func RecordCodeModeQuotaRejection(ctx context.Context, quotaKind string, orgId s
 	AddCounter(ctx, CodeModeQuotaRejectionsTotal,
 		attribute.String("quota_kind", quotaKind),
 		attribute.String("organization_id", orgId),
+	)
+}
+
+// RecordAgentProfileRejection records a request rejected because the requested
+// profile is not covered by the agent's data tags. The profile key is bounded
+// per agent (its configured environments), keeping label cardinality low.
+func RecordAgentProfileRejection(ctx context.Context, profile string) {
+	AddCounter(ctx, AgentProfileRejectionsTotal,
+		attribute.String("profile", profile),
 	)
 }
 
