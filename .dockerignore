@@ -18,6 +18,8 @@ Dockerfile.worker.python
 ./workers/python/helm
 ./workers/python/integration_test
 ./workers/python/coverage.json
+./workers/python/slim.Dockerfile
+./workers/python/Dockerfile.freeze
 
 Dockerfile.worker.javascript
 ./workers/javascript/helm

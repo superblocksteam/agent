@@ -1,178 +1,235 @@
 ---
+# Trivy ignore file for the orchestrator — curated suppressions for crit/high findings.
+#
+# POLICY (do not strip — encodes why these are accepted, not just that they are):
+#   - Each entry suppresses a finding that is either (a) not reachable / inert in our
+#     deployment, (b) has no upstream fix, or (c) is a deferred bump tracked to a ticket.
+#   - `expired_at` marks time-boxed suppressions (a fix exists or is expected); entries
+#     WITHOUT it are permanent accepts (no upstream fix, e.g. Debian no-dsa OS packages).
+#   - OS/distro packages are scoped with `paths: []` (global by CVE id) or `purls:` —
+#     Trivy's `paths` matches image-root-relative FILE paths, which OS packages lack.
+#     Do NOT scope OS-package entries by image name; it silently matches nothing.
+#   - Compensating-control rationales (e.g. ephemeral gVisor sandbox pods) apply ONLY to
+#     the user-step execution paths, NOT to libraries linked into long-lived
+#     agent/orchestrator processes. State both surfaces honestly.
+#   - vm2-class sandbox-escape suppressions are NOT auto-accepted for future CVEs: a new
+#     vm2 CVE must be re-evaluated against the current compensating controls before reuse.
 vulnerabilities:
-  # vm2 sandbox-escape findings — risk accepted on compensating controls (NOT vm2's own
-  # sandboxing): each user JS step/API runs in its own ephemeral, single-use pod that is
-  # terminated immediately after one execution, under gVisor, network-isolated with no
-  # access to the internal network. (Cloud Prem deploys the vm2 execute paths
-  # main.ephemeral.javascript.execute / .javascriptsdkapi.execute with ephemeral: true;
-  # only the non-vm2 WASM/QuickJS paths run pooled.)
-  # A fix (vm2 3.11.5) is available and rolling out in the next release via orchestrator
-  # PR #2675, so these are time-boxed (expired_at) to that rollout — extend if the customer
-  # has not upgraded by then. vm2 itself stays (coexists with the WASM/QuickJS sandbox); a
-  # future vm2 CVE should reuse this rationale only after confirming the same controls apply
-  # to that vulnerability class — it is not auto-accepted.
-  - id: CVE-2026-24118
+  - id: CVE-2025-14874
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-24781
+      - '**/node_modules/.pnpm/nodemailer@6.9.9/node_modules/nodemailer/**'
+    statement: nodemailer DoS via crafted email address header; fix requires 7.0.11 (major version bump from 6.x); smtp plugin upgrade to nodemailer@9.0.1 in progress
+    expired_at: '2026-09-24T00:00:00Z'
+  - id: GHSA-p6gq-j5cr-w38f
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-26332
+      - '**/node_modules/.pnpm/nodemailer@6.9.9/node_modules/nodemailer/**'
+    statement: 'raw-option SSRF/file-read bypass is not reachable: smtp plugin never passes ''raw'' to sendMail and never sets disableFileAccess/disableUrlAccess on the transport; upgrading to 9.0.1 tracked alongside CVE-2025-14874'
+    expired_at: '2026-09-24T00:00:00Z'
+  - id: CVE-2026-41636
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-43997
+      - '**/node_modules/.pnpm/thrift@0.16.0/node_modules/thrift/**'
+    statement: thrift@0.16.0 skip() recursion DoS via Databricks plugin; fix in 0.23.0 requires pnpm override + Databricks integration retest (thrift ^0.16.0 semver-allows 0.23.0 but uuid v13 dep added)
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-43870
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-43998
+      - '**/node_modules/.pnpm/thrift@0.16.0/node_modules/thrift/**'
+    statement: thrift@0.16.0 path-traversal and HTTP request/response splitting; OSV last_affected=0.22.0 (fixed in 0.23.0); same pnpm override fix as CVE-2026-41636 pending Databricks integration retest
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2023-0286
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-43999
+      - '**/site-packages/cryptography-36.0.2.dist-info/**'
+    statement: cryptography 36->48 bump coupled with pyOpenSSL 22->24 (API-breaking pair); tracked in AGENT-2578. Suppressed pending coordinated upgrade.
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2023-50782
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44000
+      - '**/site-packages/cryptography-36.0.2.dist-info/**'
+    statement: cryptography 36->48 bump coupled with pyOpenSSL 22->24 (API-breaking pair); tracked in AGENT-2578. Suppressed pending coordinated upgrade.
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-26007
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44001
+      - '**/site-packages/cryptography-36.0.2.dist-info/**'
+    statement: cryptography 36->48 bump coupled with pyOpenSSL 22->24 (API-breaking pair); tracked in AGENT-2578. Suppressed pending coordinated upgrade.
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: GHSA-537c-gmf6-5ccf
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 DoS / process-crash via Promise constructor unhandled rejection (not a sandbox escape); blast radius limited to the current execution — the ephemeral, single-use pod is terminated after one execution, so a crash fails only that one user request and cannot cascade to other users or persistent infrastructure. Fix (vm2 3.11.5) rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44002
+      - '**/site-packages/cryptography-36.0.2.dist-info/**'
+    statement: cryptography 36->48 bump coupled with pyOpenSSL 22->24 (API-breaking pair); tracked in AGENT-2578. Suppressed pending coordinated upgrade.
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2025-65106
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44003
+      - '**/site-packages/langchain_core-*/**'
+    statement: 'langchain-core 0.1.52: fix requires 0.3.80+/1.0.7+ which mandates pydantic v2; conflicts with pinned pydantic==1.10.14; full langchain 0.1->1.x rewrite deferred in AGENT-2576'
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2025-68664
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44004
+      - '**/site-packages/langchain_core-*/**'
+    statement: 'langchain-core 0.1.52: fix requires 0.3.81+/1.2.5+ which mandates pydantic v2; conflicts with pinned pydantic==1.10.14; full langchain 0.1->1.x rewrite deferred in AGENT-2576'
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-34070
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44005
+      - '**/site-packages/langchain_core-*/**'
+    statement: 'langchain-core 0.1.52: fix requires 1.2.22+ which mandates pydantic v2; conflicts with pinned pydantic==1.10.14; full langchain 0.1->1.x rewrite deferred in AGENT-2576'
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-44843
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44006
+      - '**/site-packages/langchain_core-*/**'
+    statement: 'langchain-core 0.1.52: fix requires 0.3.85+/1.3.3+ which mandates pydantic v2; conflicts with pinned pydantic==1.10.14; full langchain 0.1->1.x rewrite deferred in AGENT-2576'
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2025-4565
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44007
+      - '**/site-packages/protobuf-3.20.3*/**'
+    statement: protobuf 3.20.3 in agent standard image cannot be upgraded without coordinated langchain (AGENT-2576) + grpcio upgrade; CVE is DoS via unbounded recursion in deserialization, mitigated by suppressing until AGENT-2576 is resolved
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-0994
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44008
+      - '**/site-packages/protobuf-4.25.8.dist-info/**'
+      - '**/site-packages/protobuf-3.20.3*/**'
+    statement: "protobuf 3.20.3 (agent standard) and 4.25.8 (agent-slim) DoS via recursion-depth bypass; both pinned by the old opentelemetry_proto/grpcio ecosystem (requires protobuf<4 / coordinated bump) — a 5.29.6 bump would break the freeze. Deferred; recursion DoS not reachable on trusted internal protos"
+    expired_at: '2026-09-24T00:00:00Z'
+  - id: CVE-2026-45134
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-44009
+      - '**/site-packages/langchain-*/**'
+    statement: "langchain hub.pull deserialization CVE fixed in 0.3.30 which requires the full 0.1→1.x rewrite (AGENT-2576, Won't do); Superblocks has no first-party call to hub.pull — only user code can trigger this path, which runs in ephemeral gVisor-sandboxed pods"
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: GHSA-f4xh-w4cj-qxq8
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-45411
+      - '**/site-packages/langsmith-0.1.95.dist-info/**'
+      - '**/site-packages/langsmith/**'
+    statement: "langsmith TracingMiddleware arbitrary file-read; fix requires langsmith>=0.8.18 which needs pydantic>=2, blocked by langchain==0.1.20/pydantic==1.x pin (AGENT-2576). TracingMiddleware is never instantiated in the Superblocks codebase — no imports found in any .py file."
+    expired_at: '2026-09-24T00:00:00Z'
+  - id: CVE-2025-69223
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47131
+      - '**/site-packages/aiohttp-*/**'
+    statement: aiohttp@3.9.5 zip-bomb via auto_decompress; fix requires 3.13.3+ and coordinated bump of coupled deps (yarl 1.8.1->1.18+, multidict, frozenlist, aiosignal); upgrade tracked as coordinated effort
+    expired_at: '2026-09-24T00:00:00Z'
+  - id: CVE-2026-34516
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47135
+      - '**/site-packages/aiohttp-*/**'
+    statement: aiohttp@3.9.5 DoS via excessive multipart headers; fix requires 3.13.4+ and coordinated bump of coupled deps (yarl 1.8.1->1.18+, multidict, frozenlist, aiosignal); upgrade tracked as coordinated effort
+    expired_at: '2026-09-24T00:00:00Z'
+  - id: CVE-2026-27459
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47137
+      - '**/site-packages/pyOpenSSL-*/**'
+    statement: "pyOpenSSL DTLS buffer overflow; fix requires pyOpenSSL 22→26 coupled with cryptography 36→48 (major bump, AGENT-2578 backlog); suppressed pending coordinated upgrade"
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-28356
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47139
+      - '**/site-packages/multipart*'
+    statement: "multipart 0.2.4 DoS CVE; vulnerable parse_form_data() path not reachable — python worker receives user data via gRPC only, not HTTP; fix is multipart>=1.2.2 (bump + freeze repin underway)"
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2025-6985
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47140
+      - '**/site-packages/langchain_text_splitters-*/**'
+    statement: langchain-text-splitters XXE fix (0.3.9) is part of the langchain 1.x rewrite lineage; incompatible with pinned langchain==0.1.20/langchain-core==0.1.52/pydantic-1.x stack. Full upgrade deferred as Won't do in AGENT-2576.
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2025-6984
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47141
+      - '**/site-packages/langchain_community-*/**'
+    statement: "langchain-community insecure XML parsing; fix requires 0.3.27 which is part of the langchain 0.1→1.x full rewrite incompatible with pinned pydantic 1.x — deferred under AGENT-2576 (Won't do for this cycle)"
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-24051
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47208
+      - usr/local/bin/tofu
+    statement: "otel/sdk PATH-hijacking via macOS `ioreg` command; gated behind Darwin build tag (host_id_darwin.go) — not compiled into the Linux tofu binary, which uses host_id_linux.go (file read, no exec)"
+  - id: CVE-2026-39883
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47209
+      - usr/local/bin/tofu
+    statement: "otel/sdk PATH-hijacking via BSD/Solaris `kenv` command; gated behind //go:build dragonfly||freebsd||netbsd||openbsd||solaris (host_id_bsd.go) — not compiled into the Linux tofu binary, which uses host_id_linux.go (file read, no exec)"
+  - id: CVE-2026-42496
+    paths: []
+    statement: perl-base@5.40.1-6 Debian trixie dpkg-infrastructure dependency; no upstream fix. Archive::Tar module (separate package) not installed in these images; exploit path not reachable at runtime.
+  - id: CVE-2026-42497
+    paths: []
+    statement: perl-base@5.40.1-6 Debian trixie dpkg-infrastructure dependency; no upstream fix. Archive::Tar module (separate package) not installed in these images; exploit path not reachable at runtime.
+  - id: CVE-2026-48962
+    paths: []
+    statement: perl-base@5.40.1-6 Debian trixie dpkg-infrastructure dependency; no upstream fix. IO::Compress module (separate package) not installed in these images; exploit path not reachable at runtime.
+  - id: CVE-2026-8376
+    paths: []
+    statement: perl-base@5.40.1-6 Debian trixie dpkg-infrastructure dependency; no upstream fix. Heap overflow requires invoking Perl interpreter with attacker-controlled regex; perl-base is not invoked at application runtime.
+  - id: CVE-2026-9538
+    paths: []
+    statement: perl-base@5.40.1-6 Debian trixie dpkg-infrastructure dependency; no upstream fix. Archive::Tar memory exhaustion requires Archive::Tar module (separate package) not installed in these images.
+  - id: CVE-2026-24882
+    paths: []
+    statement: "GnuPG tpm2daemon stack overflow (TPM-backed key decryption path); no Debian trixie fix (no-dsa/minor, only experimental 2.4.9-2 patched). OPA containers have no TPM hardware and no local user access — tpm2daemon is never invoked. gnupg installed solely for APT repo key verification."
+  - id: CVE-2026-11822
+    paths: []
+    statement: libsqlite3-0 FTS5 memory corruption; Debian marks <no-dsa> for trixie (no security update planned, fix only in sid 3.53.2-1); application code has no SQLite/FTS5 usage so the vulnerable code path is never reached at runtime
+  - id: CVE-2026-11824
+    paths: []
+    statement: libsqlite3-0 FTS5 heap buffer overflow; Debian marks <no-dsa> for trixie (no security update planned, fix only in sid 3.53.2-1); application code has no SQLite/FTS5 usage so the vulnerable code path is never reached at runtime
+  - id: CVE-2026-7210
+    paths: []
+    statement: "python3.13 system packages (trixie default Python) are never invoked at runtime — the OPA uses Python 3.10; no Debian fix available for 3.13.5-2+deb13u2 (AGENT-2944)"
+  - id: CVE-2020-36604
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: CVE-2026-47210
+      - app/node_modules/.pnpm/hoek@4.3.1/node_modules/hoek/package.json
+      - app/node_modules/.pnpm/hoek@5.0.4/node_modules/hoek/package.json
+      - app/node_modules/.pnpm/hoek@6.1.3/node_modules/hoek/package.json
+      - app/sandbox-js/node_modules/.pnpm/hoek@4.3.1/node_modules/hoek/package.json
+    statement: 'hoek 4-6.x is pulled in solely by xml2json@0.12.0 (and its transitive joi@13.7.0 and topo@3.0.3). The vulnerable Hoek.clone function is never called with user-supplied data: xml2json uses hoek only for hoek.assert() (a boolean throw-if-false guard, no clone); joi.validate() calls Hoek.clone only on its own static internal schema flags and on _flags.default values (all primitives: false/true) which hoek.clone returns immediately without processing. No code path from user-controlled xml2json options or XML input reaches Hoek.clone. The legacy hoek 4-6.x line has no upstream fix; the fix exists only in the renamed @hapi/hoek package (>=8.5.1), requiring xml2json replacement. Migration to an alternative is tracked as a future effort.'
+  - id: CVE-2025-69720
+    paths: []
+    statement: "CVE-2025-69720 is a stack-based buffer overflow exclusively in the infocmp CLI tool (progs/infocmp.c) from ncurses-bin. The ncurses-bin package has been removed from both agent and python-sandbox Dockerfiles (no reverse dependencies; zero runtime use). The remaining flagged packages libncursesw6, libtinfo6, and ncurses-base are runtime libraries that contain no vulnerable code — Trivy flags them due to shared Debian source package. Debian trixie is tagged no-dsa (minor issue, crash in CLI tool); no fix available for trixie. This suppression covers only the over-flagged runtime library packages after ncurses-bin removal."
+    expired_at: '2026-12-01T00:00:00Z'
+  - id: CVE-2026-5773
+    paths: []
+    statement: 'curl 8.14.1-2+deb13u3 is present in the agent image as a build-time residual from apt-repo setup in the final Dockerfile RUN layer. No patched version exists in Debian trixie (fixed only in forky/sid at 8.20.0+; Debian rates this no-dsa/minor). The curl binary is not invoked at runtime: no s6 service script, no HEALTHCHECK, and no Go/Python application code execs curl (confirmed by code search). CVE-2026-5773 exploits wrong SMB connection reuse -- an attack path that requires the agent process to make sequential SMB transfers to different shares, which never occurs in this deployment.'
+  - id: CVE-2026-7598
+    paths: []
+    statement: "libssh2-1t64 (Debian trixie, no upstream fix) is present wherever curl/libcurl4t64 is installed — the agent and agent-slim runtime images (apt-get install curl). Not reachable: orchestrator code never invokes libssh2 SCP/SFTP (curl is used for HTTP only). Global scope (paths: []) intended — covers every image carrying the package."
+  - id: CVE-2025-59375
+    paths: []
+    statement: "libexpat1 (Debian trixie, no upstream fix). Two XML-parsing surfaces: (a) customer Python/JS steps in the python-sandbox/javascript-sandbox images run in ephemeral single-use gVisor-isolated, network-isolated pods terminated after one execution; (b) first-party XML in the long-lived agent/orchestrator processes (via lxml, xml2json) is NOT covered by that control. Risk ACCEPTED and TIME-BOXED on (b) pending a Debian fix — re-review at expiry and bump the base image once trixie ships a patch. (Signed off.)"
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-25210
+    paths: []
+    statement: "libexpat1 (Debian trixie, no upstream fix). Two XML-parsing surfaces: (a) customer Python/JS steps in the python-sandbox/javascript-sandbox images run in ephemeral single-use gVisor-isolated, network-isolated pods terminated after one execution; (b) first-party XML in the long-lived agent/orchestrator processes (via lxml, xml2json) is NOT covered by that control. Risk ACCEPTED and TIME-BOXED on (b) pending a Debian fix — re-review at expiry and bump the base image once trixie ships a patch. (Signed off.)"
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-45186
+    paths: []
+    statement: "libexpat1 (Debian trixie, no upstream fix). Two XML-parsing surfaces: (a) customer Python/JS steps in the python-sandbox/javascript-sandbox images run in ephemeral single-use gVisor-isolated, network-isolated pods terminated after one execution; (b) first-party XML in the long-lived agent/orchestrator processes (via lxml, xml2json) is NOT covered by that control. Risk ACCEPTED and TIME-BOXED on (b) pending a Debian fix — re-review at expiry and bump the base image once trixie ships a patch. (Signed off.)"
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-54293
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  - id: GHSA-2cm2-m3w5-gp2f
+      - '**/site-packages/nltk-3.9.4*/**'
+      - '**/site-packages/nltk/**'
+    statement: "nltk 3.9.4 (latest release) — no upstream fix yet for CVE-2026-54293; nltk is exercised only by customer Python steps that opt into NLTK, on trusted-by-the-customer input. Time-boxed; bump once a patched nltk ships."
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2025-66418
     paths:
-      - "**/node_modules/vm2/**"
-    statement: "vm2 sandbox-escape risk accepted via compensating controls: each user JS step/API runs in its own ephemeral, single-use pod terminated immediately after one execution, gVisor-sandboxed and network-isolated with no access to the internal network. Fix (vm2 3.11.5) available and rolling out in the next release; suppression expires once that ships"
-    expired_at: "2026-06-12T00:00:00Z"
-  # form-data 2.5.1 — inert artifact pulled in only via the types-only chain
-  # snowflake-sdk > @google-cloud/storage > retry-request > @types/request (types-only) > form-data@2.5.1.
-  # Runtime importers resolve patched form-data@4.0.5; path-scoped to the inert 2.5.1 copy.
-  - id: CVE-2025-7783
+      - '**/site-packages/urllib3-1.26.19*/**'
+    statement: urllib3 1.26.19 in the agent standard AND python-sandbox images is pinned <2 by pyppeteer==1.0.2 (unmaintained; requires urllib3>=1.25.8,<2.0.0); these CVEs have no 1.26.x backport. Only the agent-slim image (no pyppeteer) runs the patched urllib3 2.7.0. Time-boxed pending pyppeteer removal/replacement.
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2025-66471
     paths:
-      - "**/node_modules/.pnpm/form-data@2.5.1/node_modules/form-data/**"
-    statement: "inert form-data@2.5.1 via snowflake-sdk > @google-cloud/storage > retry-request > @types/request (types-only); runtime importers resolve patched form-data@4.0.5"
+      - '**/site-packages/urllib3-1.26.19*/**'
+    statement: urllib3 1.26.19 in the agent standard AND python-sandbox images is pinned <2 by pyppeteer==1.0.2 (unmaintained; requires urllib3>=1.25.8,<2.0.0); these CVEs have no 1.26.x backport. Only the agent-slim image (no pyppeteer) runs the patched urllib3 2.7.0. Time-boxed pending pyppeteer removal/replacement.
+    expired_at: '2026-09-12T00:00:00Z'
+  - id: CVE-2026-21441
+    paths:
+      - '**/site-packages/urllib3-1.26.19*/**'
+    statement: urllib3 1.26.19 in the agent standard AND python-sandbox images is pinned <2 by pyppeteer==1.0.2 (unmaintained; requires urllib3>=1.25.8,<2.0.0); these CVEs have no 1.26.x backport. Only the agent-slim image (no pyppeteer) runs the patched urllib3 2.7.0. Time-boxed pending pyppeteer removal/replacement.
+    expired_at: '2026-09-12T00:00:00Z'
 misconfigurations:
-  # Vendored CI Dockerfiles in node_modules (cpu-features, lz4) — not shipped.
-  # Path-scoped to avoid suppressing findings on first-party Dockerfiles.
   - id: DS-0001
     paths:
-      - "**/node_modules/**"
-    statement: "third-party CI Dockerfile in node_modules, not shipped"
+      - '**/node_modules/**'
+    statement: third-party CI Dockerfile in node_modules, not shipped
   - id: DS-0002
     paths:
-      - "**/node_modules/**"
-    statement: "third-party CI Dockerfile in node_modules, not shipped"
+      - '**/node_modules/**'
+    statement: third-party CI Dockerfile in node_modules, not shipped
   - id: DS-0010
     paths:
-      - "**/node_modules/**"
-    statement: "third-party CI Dockerfile in node_modules, not shipped"
+      - '**/node_modules/**'
+    statement: third-party CI Dockerfile in node_modules, not shipped
   - id: DS-0017
     paths:
-      - "**/node_modules/**"
-    statement: "third-party CI Dockerfile in node_modules, not shipped"
+      - '**/node_modules/**'
+    statement: third-party CI Dockerfile in node_modules, not shipped
   - id: DS-0029
     paths:
-      - "**/node_modules/**"
-    statement: "third-party CI Dockerfile in node_modules, not shipped"
+      - '**/node_modules/**'
+    statement: third-party CI Dockerfile in node_modules, not shipped

@@ -20,7 +20,7 @@ ARG SB_GIT_COMMIT_SHA
 # (The upstream ghcr.io/opentofu/opentofu image is unusable as a multi-stage
 # source as of OpenTofu 1.10 — opentofu/opentofu#1931.)
 FROM ghcr.io/superblocksteam/debian:trixie-${DEBIAN_TRIXIE_VERSION}-slim AS opentofu
-ARG TOFU_VERSION=1.11.6
+ARG TOFU_VERSION=1.11.11
 COPY --chmod=755 scripts/install-opentofu.sh /tmp/install-opentofu.sh
 RUN /tmp/install-opentofu.sh
 

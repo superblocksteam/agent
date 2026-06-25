@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@jitl/quickjs-wasmfile-release-sync": "workspace:*",
-    "lodash": "^4.17.23",
+    "lodash": "^4.18.1",
     "moment": "2.29.4",
     "quickjs-emscripten-core": "workspace:*"
   },

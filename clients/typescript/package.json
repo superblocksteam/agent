@@ -18,7 +18,7 @@
     "fmt:check": "oxfmt --check"
   },
   "dependencies": {
-    "@grpc/grpc-js": "1.11.1",
+    "@grpc/grpc-js": "^1.14.4",
     "google-protobuf": "catalog:",
     "pino": "9.3.2"
   },

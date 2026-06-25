@@ -4,7 +4,7 @@
 # List all build-time variables with their default values
 # They need to be redefined in each stage to be used in that stage
 ARG DEBIAN_TRIXIE_VERSION=20250811
-ARG GO_VERSION=1.26.3
+ARG GO_VERSION=1.26.4
 ARG PYTHON_VERSION=3.10.20
 ARG NODE_VERSION_MAJOR=22
 ARG NODE_VERSION=22.22.2
@@ -213,7 +213,7 @@ COPY --from=uv /uv /uvx /bin/
 COPY workers/python/requirements.txt workers/python/requirements-slim.txt ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system --upgrade pip "setuptools>=65,<82" && \
+    uv pip install --system --upgrade pip "setuptools>=80.10.1,<82" "wheel>=0.46.2" && \
     uv pip install --system -r ${REQUIREMENTS_FILE}
 
 ############
@@ -226,7 +226,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # shared installer, with version and trusted signing key fingerprints pinned.
 FROM ghcr.io/superblocksteam/debian:trixie-${DEBIAN_TRIXIE_VERSION}-slim AS opentofu
 
-ARG TOFU_VERSION=1.11.6
+ARG TOFU_VERSION=1.11.11
 COPY --chmod=755 scripts/install-opentofu.sh /tmp/install-opentofu.sh
 RUN /tmp/install-opentofu.sh
 
@@ -317,6 +317,8 @@ RUN rm -rf /app/worker.js/node_modules/pnpm && \
 
 COPY --chmod=755 debian_testing.sources /etc/apt/sources.list.d/debian_testing.sources
 
+
+RUN dpkg --force-remove-essential --force-depends -P ncurses-bin || true
 
 RUN apt-get clean                                                                                                                                && \
     rm -rf /var/lib/apt/lists/*                                                                                                                  && \

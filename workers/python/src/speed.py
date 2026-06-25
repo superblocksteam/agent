@@ -112,7 +112,6 @@ import moncli
 import msgpack
 import multidict
 import mysql
-import mysqlx
 import networkx
 import numexpr
 import numpy
