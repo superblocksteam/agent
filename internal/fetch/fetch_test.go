@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/superblocksteam/agent/pkg/clients"
 	"github.com/superblocksteam/agent/pkg/clients/mocks"
+	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/utils"
 	apiv1 "github.com/superblocksteam/agent/types/gen/go/api/v1"
@@ -1648,6 +1649,7 @@ func TestFetchApiCode(t *testing.T) {
 		exportName      string
 		commitId        string
 		branchName      string
+		viewMode        apiv1.ViewMode
 		metadata        map[string]string
 		useAgentKey     bool
 		response        *http.Response
@@ -1662,6 +1664,7 @@ func TestFetchApiCode(t *testing.T) {
 			applicationId: "app-123",
 			entryPoint:    "main.ts",
 			commitId:      "commit-abc",
+			viewMode:      apiv1.ViewMode_VIEW_MODE_DEPLOYED,
 			metadata: map[string]string{
 				"authorization":               "Bearer user-token",
 				"x-superblocks-authorization": "Bearer sb-token",
@@ -1672,7 +1675,7 @@ func TestFetchApiCode(t *testing.T) {
 			},
 			expectedBundle: &ApiCodeBundle{Bundle: "const x = 1;"},
 			expectError:    false,
-			expectedURL:    "https://api.superblocks.com/api/v3/applications/app-123/code?commitId=commit-abc&entryPoint=main.ts",
+			expectedURL:    "https://api.superblocks.com/api/v3/applications/app-123/code?commitId=commit-abc&entryPoint=main.ts&viewMode=deployed",
 			expectedHeaders: http.Header{
 				"Authorization":               {"Bearer user-token"},
 				"X-Superblocks-Authorization": {"Bearer sb-token"},
@@ -1844,7 +1847,7 @@ func TestFetchApiCode(t *testing.T) {
 			}
 			ctx := metadata.NewIncomingContext(context.Background(), md)
 
-			bundle, err := f.FetchApiCode(ctx, test.applicationId, test.entryPoint, test.exportName, test.commitId, test.branchName, test.useAgentKey)
+			bundle, err := f.FetchApiCode(ctx, test.applicationId, test.entryPoint, test.exportName, test.commitId, test.branchName, test.viewMode, test.useAgentKey)
 
 			if test.expectError {
 				assert.Error(t, err)
@@ -1878,6 +1881,8 @@ func TestValidateProfile(t *testing.T) {
 		expectError     bool
 		expectedQuery   url.Values
 		expectedHeaders map[string][]string
+		sdkAppID        string
+		sdkCommitID     string
 	}{
 		{
 			name: "successful validation with HTTP 204",
@@ -1908,6 +1913,32 @@ func TestValidateProfile(t *testing.T) {
 				"Authorization":               {"Bearer user-token"},
 				"X-Superblocks-Authorization": {"Bearer sb-token"},
 			},
+		},
+		{
+			name: "includes SDK app and commit context",
+			request: &integrationv1.ValidateProfileRequest{
+				Profile: &commonv1.Profile{
+					Name: utils.Pointer("production"),
+					Id:   utils.Pointer("profile-id"),
+				},
+				ViewMode:       "deployed",
+				IntegrationIds: []string{"integration-1"},
+			},
+			response: &http.Response{
+				StatusCode: http.StatusNoContent,
+				Body:       io.NopCloser(strings.NewReader("")),
+			},
+			expectError: false,
+			expectedQuery: url.Values{
+				"profile":       []string{"production"},
+				"profileId":     []string{"profile-id"},
+				"viewMode":      []string{"deployed"},
+				"integrationId": []string{"integration-1"},
+				"appId":         []string{"app-1"},
+				"commitId":      []string{"commit-1"},
+			},
+			sdkAppID:    "app-1",
+			sdkCommitID: "commit-1",
 		},
 		{
 			name: "successful validation without profile ID",
@@ -2005,7 +2036,12 @@ func TestValidateProfile(t *testing.T) {
 				mock.Anything, // ctx
 				mock.Anything, // timeout
 				mock.Anything, // headers
-				mock.Anything, // query
+				mock.MatchedBy(func(query url.Values) bool {
+					if test.expectedQuery == nil {
+						return true
+					}
+					return assert.Equal(t, test.expectedQuery, query)
+				}),
 			).Return(test.response, test.err)
 
 			fetcher := &fetcher{
@@ -2014,6 +2050,12 @@ func TestValidateProfile(t *testing.T) {
 			}
 
 			ctx := context.Background()
+			if test.sdkAppID != "" {
+				ctx = constants.WithSDKCallbackApplicationID(ctx, test.sdkAppID)
+			}
+			if test.sdkCommitID != "" {
+				ctx = constants.WithSDKCallbackCommitID(ctx, test.sdkCommitID)
+			}
 			if test.metadata != nil {
 				ctx = metadata.NewIncomingContext(ctx, test.metadata)
 			}

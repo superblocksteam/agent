@@ -1383,7 +1383,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		}
 		fetcher := &fetchmocks.Fetcher{}
 		fetchErr := fmt.Errorf("server error")
-		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "abc", "", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "abc", "", apiv1.ViewMode_VIEW_MODE_UNSPECIFIED, false).
 			Return(nil, fetchErr)
 		_, _, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.Error(t, err)
@@ -1398,7 +1398,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 		fetcher := &fetchmocks.Fetcher{}
-		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", apiv1.ViewMode_VIEW_MODE_UNSPECIFIED, false).
 			Return(&fetch.ApiCodeBundle{Bundle: ""}, nil)
 		_, _, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.Error(t, err)
@@ -1413,7 +1413,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 		fetcher := &fetchmocks.Fetcher{}
-		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", apiv1.ViewMode_VIEW_MODE_UNSPECIFIED, false).
 			Return(&fetch.ApiCodeBundle{Bundle: "const x = 1;"}, nil)
 		def, rawDef, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.NoError(t, err)
@@ -1424,16 +1424,16 @@ func TestFetch_FetchCodePath(t *testing.T) {
 		fetcher.AssertExpectations(t)
 	})
 
-	t.Run("propagates commitId and branchName to FetchApiCode", func(t *testing.T) {
+	t.Run("propagates commitId branchName and viewMode to FetchApiCode", func(t *testing.T) {
 		t.Parallel()
 		commitID := "commit-123"
 		branch := "main"
-		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-2", CommitId: &commitID, BranchName: &branch}
+		fetchCode := &apiv1.ExecuteRequest_FetchCode{Id: "app-2", CommitId: &commitID, BranchName: &branch, ViewMode: apiv1.ViewMode_VIEW_MODE_DEPLOYED}
 		req := &apiv1.ExecuteRequest{
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 		fetcher := &fetchmocks.Fetcher{}
-		fetcher.On("FetchApiCode", mock.Anything, "app-2", "", "", "commit-123", "main", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-2", "", "", "commit-123", "main", apiv1.ViewMode_VIEW_MODE_DEPLOYED, false).
 			Return(&fetch.ApiCodeBundle{Bundle: "code"}, nil)
 		_, _, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.NoError(t, err)
@@ -1447,7 +1447,7 @@ func TestFetch_FetchCodePath(t *testing.T) {
 			Request: &apiv1.ExecuteRequest_FetchCode_{FetchCode: fetchCode},
 		}
 		fetcher := &fetchmocks.Fetcher{}
-		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", false).
+		fetcher.On("FetchApiCode", mock.Anything, "app-1", "", "", "", "", apiv1.ViewMode_VIEW_MODE_UNSPECIFIED, false).
 			Return(nil, nil)
 		_, _, err := Fetch(context.Background(), req, fetcher, false, false, zap.NewNop())
 		require.Error(t, err)

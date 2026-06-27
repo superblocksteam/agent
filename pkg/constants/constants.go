@@ -31,6 +31,7 @@ const (
 	ContextKeyAITriggeredExecution
 	ContextKeySDKCallbackApplicationID
 	ContextKeySDKCallbackViewMode
+	ContextKeySDKCallbackCommitID
 	// TODO(frank): Add other context keys here.
 
 	HeaderAgentKey               = "x-superblocks-agent-key"
@@ -247,6 +248,18 @@ func WithSDKCallbackApplicationID(ctx context.Context, applicationID string) con
 
 func SDKCallbackApplicationID(ctx context.Context) string {
 	id, ok := ctx.Value(ContextKeySDKCallbackApplicationID).(string)
+	if !ok {
+		return ""
+	}
+	return id
+}
+
+func WithSDKCallbackCommitID(ctx context.Context, commitID string) context.Context {
+	return context.WithValue(ctx, ContextKeySDKCallbackCommitID, commitID)
+}
+
+func SDKCallbackCommitID(ctx context.Context) string {
+	id, ok := ctx.Value(ContextKeySDKCallbackCommitID).(string)
 	if !ok {
 		return ""
 	}

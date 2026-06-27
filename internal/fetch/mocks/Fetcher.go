@@ -116,9 +116,9 @@ func (_m *Fetcher) FetchApiByPath(_a0 context.Context, request *v1.ExecuteReques
 	return r0, r1, r2
 }
 
-// FetchApiCode provides a mock function with given fields: ctx, applicationId, entryPoint, exportName, commitId, branchName, useAgentKey
-func (_m *Fetcher) FetchApiCode(ctx context.Context, applicationId string, entryPoint string, exportName string, commitId string, branchName string, useAgentKey bool) (*fetch.ApiCodeBundle, error) {
-	ret := _m.Called(ctx, applicationId, entryPoint, exportName, commitId, branchName, useAgentKey)
+// FetchApiCode provides a mock function with given fields: ctx, applicationId, entryPoint, exportName, commitId, branchName, viewMode, useAgentKey
+func (_m *Fetcher) FetchApiCode(ctx context.Context, applicationId string, entryPoint string, exportName string, commitId string, branchName string, viewMode v1.ViewMode, useAgentKey bool) (*fetch.ApiCodeBundle, error) {
+	ret := _m.Called(ctx, applicationId, entryPoint, exportName, commitId, branchName, viewMode, useAgentKey)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FetchApiCode")
@@ -126,19 +126,19 @@ func (_m *Fetcher) FetchApiCode(ctx context.Context, applicationId string, entry
 
 	var r0 *fetch.ApiCodeBundle
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, bool) (*fetch.ApiCodeBundle, error)); ok {
-		return rf(ctx, applicationId, entryPoint, exportName, commitId, branchName, useAgentKey)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, v1.ViewMode, bool) (*fetch.ApiCodeBundle, error)); ok {
+		return rf(ctx, applicationId, entryPoint, exportName, commitId, branchName, viewMode, useAgentKey)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, bool) *fetch.ApiCodeBundle); ok {
-		r0 = rf(ctx, applicationId, entryPoint, exportName, commitId, branchName, useAgentKey)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, v1.ViewMode, bool) *fetch.ApiCodeBundle); ok {
+		r0 = rf(ctx, applicationId, entryPoint, exportName, commitId, branchName, viewMode, useAgentKey)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fetch.ApiCodeBundle)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, bool) error); ok {
-		r1 = rf(ctx, applicationId, entryPoint, exportName, commitId, branchName, useAgentKey)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, v1.ViewMode, bool) error); ok {
+		r1 = rf(ctx, applicationId, entryPoint, exportName, commitId, branchName, viewMode, useAgentKey)
 	} else {
 		r1 = ret.Error(1)
 	}

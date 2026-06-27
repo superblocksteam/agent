@@ -294,6 +294,9 @@ func (s *server) withSDKCallbackContext(ctx context.Context, req *apiv1.ExecuteR
 	if claims.ApplicationID != "" {
 		ctx = constants.WithSDKCallbackApplicationID(ctx, claims.ApplicationID)
 	}
+	if claims.CommitID != "" {
+		ctx = constants.WithSDKCallbackCommitID(ctx, claims.CommitID)
+	}
 	if claims.ViewMode != apiv1.ViewMode_VIEW_MODE_UNSPECIFIED {
 		ctx = constants.WithSDKCallbackViewMode(ctx, claims.ViewMode)
 	}

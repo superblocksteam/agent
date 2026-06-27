@@ -1949,6 +1949,7 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 		expectedApplicationId string
 		expectedCommitId      *string
 		expectedBranchName    *string
+		expectedViewMode      apiv1.ViewMode
 	}{
 		{
 			name: "all fields populated with commitId",
@@ -1960,6 +1961,7 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 			expectedApplicationId: "app-123",
 			expectedCommitId:      &commitId,
 			expectedBranchName:    nil,
+			expectedViewMode:      apiv1.ViewMode_VIEW_MODE_DEPLOYED,
 		},
 		{
 			name: "with branchName instead of commitId",
@@ -1971,6 +1973,7 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 			expectedApplicationId: "app-789",
 			expectedCommitId:      nil,
 			expectedBranchName:    &branchName,
+			expectedViewMode:      apiv1.ViewMode_VIEW_MODE_EDIT,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -2004,6 +2007,10 @@ func TestExecuteV3ConvertsToFetchCodeRequest(t *testing.T) {
 				}),
 				mock.MatchedBy(func(branchName string) bool {
 					assert.Equal(t, expectedBranchName, branchName, "branchName must propagate correctly")
+					return true
+				}),
+				mock.MatchedBy(func(viewMode apiv1.ViewMode) bool {
+					assert.Equal(t, test.expectedViewMode, viewMode, "viewMode must propagate correctly")
 					return true
 				}),
 				mock.Anything, // useAgentKey
@@ -2144,7 +2151,7 @@ func TestExecuteV3IncludesEventsInEditMode(t *testing.T) {
 			mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
 				Return(workerPerf, outputKey, nil)
 
-			fetcher.On("FetchApiCode", mock.Anything, "app-events", "", "", "", "main", mock.Anything).
+			fetcher.On("FetchApiCode", mock.Anything, "app-events", "", "", "", "main", test.viewMode, mock.Anything).
 				Return(&fetch.ApiCodeBundle{
 					Bundle: `module.exports={default:{name:"test-api",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
 				}, nil)
@@ -2234,6 +2241,7 @@ func TestExecuteV3ForwardsFilesToCodeModeWorker(t *testing.T) {
 		"",
 		"",
 		mock.Anything,
+		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
 	}, nil)
@@ -2315,6 +2323,7 @@ func TestExecuteV3PropagatesIntegrationsCallbackUrlToWorkerProps(t *testing.T) {
 		"",
 		"",
 		mock.Anything,
+		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
 	}, nil)
@@ -2372,6 +2381,7 @@ func TestExecuteV3PacksOriginIntoWorkerJWTContext(t *testing.T) {
 		"",
 		"",
 		"",
+		mock.Anything,
 		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
@@ -2436,6 +2446,7 @@ func TestExecuteV3PacksCookieIntoWorkerJWTContext(t *testing.T) {
 		"",
 		"",
 		mock.Anything,
+		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
 	}, nil)
@@ -2498,6 +2509,7 @@ func TestExecuteV3PacksSDKCallbackTokenForDeclaredIntegrations(t *testing.T) {
 		"",
 		"commit-1",
 		"",
+		mock.Anything,
 		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle:         `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
@@ -2726,6 +2738,8 @@ func TestWithSDKCallbackContext(t *testing.T) {
 		},
 		ExecutionID:           executionID,
 		OrganizationID:        orgID,
+		ApplicationID:         "app-sdk",
+		CommitID:              "commit-sdk",
 		AllowedIntegrationIDs: []string{"integration-1"},
 	})
 	require.NoError(t, err)
@@ -2753,6 +2767,8 @@ func TestWithSDKCallbackContext(t *testing.T) {
 	assert.True(t, constants.IsSDKIntegrationExecution(ctx))
 	assert.True(t, constants.IsSDKIntegrationAllowed(ctx, "integration-1"))
 	assert.False(t, constants.IsSDKIntegrationAllowed(ctx, "integration-2"))
+	assert.Equal(t, "app-sdk", constants.SDKCallbackApplicationID(ctx))
+	assert.Equal(t, "commit-sdk", constants.SDKCallbackCommitID(ctx))
 
 	_, err = srv.withSDKCallbackContext(context.Background(), makeSDKReq())
 	require.Error(t, err)
@@ -2809,6 +2825,7 @@ func TestExecuteV3RejectsMissingReferencedFilePayload(t *testing.T) {
 		"",
 		"",
 		"",
+		mock.Anything,
 		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
@@ -2877,6 +2894,7 @@ func TestExecuteV3RejectsDuplicateFileOriginalNames(t *testing.T) {
 		"",
 		"",
 		"",
+		mock.Anything,
 		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
@@ -2959,6 +2977,7 @@ func TestExecuteV3CleansMaterializedFilesOnVariableWriteError(t *testing.T) {
 		"",
 		"",
 		"",
+		mock.Anything,
 		mock.Anything,
 	).Return(&fetch.ApiCodeBundle{
 		Bundle: `module.exports={default:{name:"code-mode",inputSchema:{safeParse:function(v){return{success:true,data:v}}},outputSchema:{safeParse:function(v){return{success:true,data:v}}},integrations:[],run:async function(){return {ok:true};}}};`,
@@ -4508,7 +4527,7 @@ func TestAwaitCodeModeErrorsPromotedToAwaitResponse(t *testing.T) {
 	outputKey := "output-key-await-error"
 	require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
 
-	fetcher.On("FetchApiCode", mock.Anything, "app-await", "", "", "", "", true).
+	fetcher.On("FetchApiCode", mock.Anything, "app-await", "", "", "", "", mock.Anything, true).
 		Return(&fetch.ApiCodeBundle{Bundle: "throw new Error('oops');"}, nil)
 
 	mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
@@ -4596,7 +4615,7 @@ func TestAwaitSpanAttributes(t *testing.T) {
 		outputKey := "output-key-span-attrs"
 		require.NoError(t, memStore.Write(context.Background(), &store.KV{Key: outputKey, Value: outputJSON}))
 
-		fetcher.On("FetchApiCode", mock.Anything, "app-span-test", "", "", "", "", true).
+		fetcher.On("FetchApiCode", mock.Anything, "app-span-test", "", "", "", "", mock.Anything, true).
 			Return(&fetch.ApiCodeBundle{Bundle: "export default function() { return 1; }"}, nil)
 
 		mockWorker.On("Execute", mock.Anything, "javascriptsdkapi", mock.Anything, mock.Anything, mock.Anything).
