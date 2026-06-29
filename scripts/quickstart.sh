@@ -156,13 +156,13 @@ start() {
 
         echo ""
         echo "Logs--------------------------"
-        curl -s "$1" | ${compose_cmd} -p superblocks --env-file "$2" -f - up
+        curl -fsSL "$1" | ${compose_cmd} -p superblocks --env-file "$2" -f - up
     else
         echo "Starting Superblocks On-Premise-Agent..."
 
         conf "SUPERBLOCKS_AGENT_DEBUG_MODE" 0
         conf "SUPERBLOCKS_PROXY_LOG_LEVEL" "INFO"
-        curl -s "$1" | ${compose_cmd} -p superblocks --env-file "$2" -f - up > "$3" &
+        curl -fsSL "$1" | ${compose_cmd} -p superblocks --env-file "$2" -f - up > "$3" &
     fi
 }
 
