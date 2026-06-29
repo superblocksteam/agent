@@ -1,5 +1,15 @@
 {{- range $k, $v := .Values.sandbox_workers.fleets }}
 {{- $fleetKeda := $v.keda | default dict }}
+{{- /* KEDA 2.20+ rejects a ScaledObject with maxReplicaCount < 1. A lane scaled to max=0 is
+       disabled, so skip its ScaledObject entirely; the worker Deployment then runs at its static
+       replicas (minReplicaCount, which is 0 for a disabled lane) with no KEDA management.
+       This guard covers the disabled-lane (max=0) case only. KEDA also requires
+       minReplicaCount < maxReplicaCount for enabled lanes; callers must satisfy that. */}}
+{{- $maxReplicas := $.Values.sandbox_workers.keda.maxReplicaCount }}
+{{- if hasKey $fleetKeda "maxReplicaCount" }}
+{{- $maxReplicas = index $fleetKeda "maxReplicaCount" }}
+{{- end }}
+{{- if ge ($maxReplicas | int) 1 }}
 {{- $minReplicas := $.Values.sandbox_workers.keda.minReplicaCount }}
 {{- if hasKey $fleetKeda "minReplicaCount" }}
 {{- $minReplicas = index $fleetKeda "minReplicaCount" }}
@@ -35,7 +45,7 @@ spec:
   pollingInterval: {{ ($v.keda | default dict).pollingInterval | default $.Values.sandbox_workers.keda.pollingInterval }}
   cooldownPeriod: {{ ($v.keda | default dict).cooldownPeriod | default $.Values.sandbox_workers.keda.cooldownPeriod | default 30 }}
   minReplicaCount: {{ $minReplicas }}
-  maxReplicaCount: {{ if hasKey $fleetKeda "maxReplicaCount" }}{{ index $fleetKeda "maxReplicaCount" }}{{ else }}{{ $.Values.sandbox_workers.keda.maxReplicaCount }}{{ end }}
+  maxReplicaCount: {{ $maxReplicas }}
   {{- if $.Values.sandbox_workers.keda.prometheusServerAddress }}
   fallback:
     failureThreshold: {{ $.Values.sandbox_workers.keda.fallbackFailureThreshold | default 3 }}
@@ -84,4 +94,5 @@ spec:
         activationThreshold: "0"
     {{- end }}
   {{- end }}
+{{- end }}
 {{- end }}
