@@ -41,9 +41,8 @@ forbidden=$(sed -n '/FORBIDDEN_TIER_2_SPAN_ATTRIBUTES.*\[/,/\]/p' "$TIER2" \
   | tr -d '"' \
   | sort)
 
-# Extract DROPPED_HIGH_CARDINALITY_ATTRIBUTES array (single-line declaration)
-dropped=$(grep 'DROPPED_HIGH_CARDINALITY_ATTRIBUTES.*\[' "$TIER2" \
-  | head -1 \
+# Extract DROPPED_HIGH_CARDINALITY_ATTRIBUTES array (single- or multi-line declaration)
+dropped=$(sed -n '/DROPPED_HIGH_CARDINALITY_ATTRIBUTES.*\[/,/\]/p' "$TIER2" \
   | grep -o '"[^"]*"' \
   | tr -d '"' \
   | sort)
@@ -52,7 +51,7 @@ dropped=$(grep 'DROPPED_HIGH_CARDINALITY_ATTRIBUTES.*\[' "$TIER2" \
 {
   echo '{'
   echo '  "_source": "packages/telemetry/src/common/contracts/tier2-traces.ts",'
-  echo '  "_sync": "Run scripts/sync-ts-telemetry-contracts.sh to regenerate from TS source.",'
+  echo '  "_sync": "Generated from the TS mirror via scripts/sync-ts-telemetry-contracts.sh; do not hand-edit. Canonical contract: superblocksteam/engineering projects/o11y-refactor/contracts/tier2-traces.<version>.json (see its README). Change the canonical contract first, then propagate to all mirrors.",'
   echo '  "forbidden_span_attributes": ['
   first=true
   while IFS= read -r attr; do

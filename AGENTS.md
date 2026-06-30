@@ -17,6 +17,12 @@ gh api repos/superblocksteam/workspace/contents/repos/AGENTS.md -H "Accept: appl
 
 ---
 
+## Naming & Casing Conventions
+
+From the org-wide naming standard (`workspace/docs/naming-conventions.md`, loaded via the standards section above), this repo adopts **only the telemetry conventions, and only for newly-added telemetry**: new logs, traces, and metrics follow the OpenTelemetry dotted-attribute style. Existing telemetry will be migrated gradually. No other part of the standard applies here — keep following this repo's existing conventions. The Tier 2 Go span-attribute denylist lives in this repo at `pkg/telemetry/forbidden_attributes.go`.
+
+---
+
 ## Project Overview
 
 Go service (Orchestrator) that connects Superblocks platform to customer data. Execution engine for Application APIs, Workflows, and Scheduled Jobs.
