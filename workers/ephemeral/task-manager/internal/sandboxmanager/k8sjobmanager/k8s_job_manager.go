@@ -442,6 +442,17 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		terminationGracePeriodSeconds = ptr.To(timeout)
 	}
 
+	// Startup probe gates the readiness probe until the gRPC server binds, so
+	// cold starts no longer log readiness-probe failures. failureThreshold *
+	// periodSeconds tracks podReadyTimeout (rounded up, floored at one probe) so
+	// the kubelet never kills a sandbox the manager would still be waiting for.
+	const startupProbePeriodSeconds = 1
+	startupProbePeriod := startupProbePeriodSeconds * time.Second
+	startupProbeFailureThreshold := int32((m.podReadyTimeout + startupProbePeriod - 1) / startupProbePeriod)
+	if startupProbeFailureThreshold < 1 {
+		startupProbeFailureThreshold = 1
+	}
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            jobName,
@@ -509,6 +520,16 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 								InitialDelaySeconds: 1,
 								PeriodSeconds:       1,
 								TimeoutSeconds:      1,
+							},
+							StartupProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.FromInt32(int32(m.port)),
+									},
+								},
+								PeriodSeconds:    startupProbePeriodSeconds,
+								FailureThreshold: startupProbeFailureThreshold,
+								TimeoutSeconds:   1,
 							},
 						},
 					},

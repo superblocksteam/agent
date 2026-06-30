@@ -148,6 +148,7 @@ func TestBuildJobSpec(t *testing.T) {
 				language:                    test.language,
 				integrationExecutorGrpcPort: test.integrationExecutorGrpcPort,
 				ephemeral:                   test.ephemeral,
+				podReadyTimeout:             2 * time.Minute,
 				grpcMaxRequestSize:          30_000_000,
 				grpcMaxResponseSize:         500 * 1024 * 1024,
 				logger:                      zap.NewNop(),
@@ -169,6 +170,15 @@ func TestBuildJobSpec(t *testing.T) {
 			assert.Equal(t, int32(1), readinessProbe.InitialDelaySeconds)
 			assert.Equal(t, int32(1), readinessProbe.PeriodSeconds)
 			assert.Equal(t, int32(1), readinessProbe.TimeoutSeconds)
+
+			// Startup probe must gate readiness during startup; 120s budget = PodReadyTimeout.
+			startupProbe := container.StartupProbe
+			require.NotNil(t, startupProbe, "expected startup probe to gate readiness during startup")
+			require.NotNil(t, startupProbe.ProbeHandler.TCPSocket, "expected startup probe to use TCP socket")
+			assert.Equal(t, int32(m.port), startupProbe.ProbeHandler.TCPSocket.Port.IntVal)
+			assert.Equal(t, int32(1), startupProbe.PeriodSeconds)
+			assert.Equal(t, int32(120), startupProbe.FailureThreshold)
+			assert.Equal(t, int32(1), startupProbe.TimeoutSeconds)
 
 			// Check integration executor env var presence.
 			var found bool
@@ -218,6 +228,39 @@ func TestBuildJobSpec(t *testing.T) {
 
 			assert.Nil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds,
 				"zero graceful shutdown: omit termination grace so Kubernetes uses its default (~30s)")
+		})
+	}
+}
+
+func TestBuildJobSpecStartupProbeBudgetTracksPodReadyTimeout(t *testing.T) {
+	for _, test := range []struct {
+		name                 string
+		podReadyTimeout      time.Duration
+		wantFailureThreshold int32
+	}{
+		{name: "default 120s timeout", podReadyTimeout: 2 * time.Minute, wantFailureThreshold: 120},
+		{name: "shorter timeout", podReadyTimeout: 90 * time.Second, wantFailureThreshold: 90},
+		{name: "sub-second timeout floors to one probe", podReadyTimeout: 500 * time.Millisecond, wantFailureThreshold: 1},
+		{name: "zero timeout floors to one probe", podReadyTimeout: 0, wantFailureThreshold: 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			m := &K8sJobManager{
+				namespace:       "test-ns",
+				image:           "sandbox:latest",
+				port:            50051,
+				language:        "javascript",
+				podReadyTimeout: test.podReadyTimeout,
+				logger:          zap.NewNop(),
+			}
+
+			job := m.buildJobSpec("sandbox-test-budget", "budget-test", "javascript")
+			startupProbe := job.Spec.Template.Spec.Containers[0].StartupProbe
+
+			// Budget = periodSeconds * failureThreshold must cover podReadyTimeout so the
+			// kubelet never kills a sandbox the manager would still be waiting for.
+			require.NotNil(t, startupProbe)
+			assert.Equal(t, int32(1), startupProbe.PeriodSeconds)
+			assert.Equal(t, test.wantFailureThreshold, startupProbe.FailureThreshold)
 		})
 	}
 }
