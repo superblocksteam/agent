@@ -12,7 +12,9 @@
 {{- $includeStandardStreams = $.Values.worker.includeStandardStreams }}
 {{- end }}
 {{- /* Sprig `default` treats 0 as empty; use hasKey so minReplicaCount/maxReplicaCount: 0 are honored */}}
-{{- $fleetKeda := $v.keda | default dict }}
+{{- $fleetKeda := merge (dict) (index $v "keda" | default dict) }}
+{{- $fleetSandbox := merge (dict) (index $v "sandbox" | default dict) }}
+{{- $globalSandbox := merge (dict) (index $.Values "sandbox" | default dict) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,6 +48,10 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: {{ index $tmShutdown "terminationGracePeriodSeconds" | default 60 }}
       serviceAccountName: {{ printf "%s-task-manager" $fullname | trunc 63 | trimSuffix "-" }}
+      {{- with (($v.taskManager).podSecurityContext) | default $.Values.taskManager.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
       - name: {{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}
@@ -55,6 +61,10 @@ spec:
       - name: task-manager
         image: "{{ (($v.taskManager).image).repository | default $.Values.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.taskManager.image.tag }}"
         imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.taskManager.image.pullPolicy }}
+        {{- with (($v.taskManager).securityContext) | default $.Values.taskManager.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         resources:
           {{- $taskManagerResources := deepCopy ($.Values.taskManager.resources | default dict) }}
           {{- $_ := mergeOverwrite $taskManagerResources (($v.taskManager).resources | default dict) }}
@@ -90,16 +100,16 @@ spec:
         - "--sandbox.language={{ $language }}"
         # Sandbox mode - create separate sandbox Jobs
         - "--sandbox.namespace={{ $.Release.Namespace }}"
-        - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
+        - "--sandbox.image={{ (index $fleetSandbox "image" | default dict).repository | default $sandboxConfig.image.repository }}:{{ (index $fleetSandbox "image" | default dict).tag | default $sandboxConfig.image.tag }}"
         - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox.port }}"
-        - "--sandbox.pool.size={{ (($v.sandbox).poolSize) | default $.Values.sandbox.poolSize | default 1 }}"
-        {{- if and $v.sandbox (hasKey $v.sandbox "gracefulShutdownTimeout") }}
-        - "--sandbox.graceful.shutdown.timeout={{ $v.sandbox.gracefulShutdownTimeout }}"
-        {{- else if and $.Values.sandbox (hasKey $.Values.sandbox "gracefulShutdownTimeout") }}
-        - "--sandbox.graceful.shutdown.timeout={{ $.Values.sandbox.gracefulShutdownTimeout }}"
+        - "--sandbox.pool.size={{ index $fleetSandbox "poolSize" | default (index $globalSandbox "poolSize") | default 1 }}"
+        {{- if hasKey $fleetSandbox "gracefulShutdownTimeout" }}
+        - "--sandbox.graceful.shutdown.timeout={{ index $fleetSandbox "gracefulShutdownTimeout" }}"
+        {{- else if hasKey $globalSandbox "gracefulShutdownTimeout" }}
+        - "--sandbox.graceful.shutdown.timeout={{ index $globalSandbox "gracefulShutdownTimeout" }}"
         {{- end }}
         - "--sandbox.ttl={{ $.Values.sandboxJob.ttlSecondsAfterFinished }}"
-        {{- $sandboxPodAnnotations := merge (deepCopy ((($v.sandbox).podAnnotations) | default dict)) ($sandboxConfig.podAnnotations | default dict) ($.Values.sandbox.podAnnotations | default dict) }}
+        {{- $sandboxPodAnnotations := merge (deepCopy (index $fleetSandbox "podAnnotations" | default dict)) ($sandboxConfig.podAnnotations | default dict) (index $globalSandbox "podAnnotations" | default dict) }}
         {{- range $key, $value := $sandboxPodAnnotations }}
         - "--sandbox.pod.annotations={{ $key }}={{ $value }}"
         {{- end }}
@@ -109,13 +119,13 @@ spec:
         {{- if $.Values.image.credentials }}
         - "--sandbox.imagePullSecrets={{ printf "%s-ephemeral-worker-docker" $fullname | trunc 63 | trimSuffix "-" }}"
         {{- end }}
-        {{- if and $v.sandbox $v.sandbox.nodeSelector }}
-        - "--sandbox.nodeSelector={{ include "mapToStringFlag" $v.sandbox.nodeSelector }}"
+        {{- if index $fleetSandbox "nodeSelector" }}
+        - "--sandbox.nodeSelector={{ include "mapToStringFlag" (index $fleetSandbox "nodeSelector") }}"
         {{- else if or $.Values.nodeSelector $.Values.sandbox.nodeSelector }}
         - "--sandbox.nodeSelector={{ include "mapToStringFlag" ($.Values.sandbox.nodeSelector | default $.Values.nodeSelector) }}"
         {{- end }}
-        {{- if and $v.sandbox $v.sandbox.tolerations }}
-        {{- range $v.sandbox.tolerations }}
+        {{- if index $fleetSandbox "tolerations" }}
+        {{- range index $fleetSandbox "tolerations" }}
         - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
         {{- end }}
         {{- else }}
@@ -123,7 +133,7 @@ spec:
         - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
         {{- end }}
         {{- end }}
-        {{- with (($v.sandbox).resources) | default $sandboxConfig.resources }}
+        {{- with (index $fleetSandbox "resources") | default $sandboxConfig.resources }}
         {{- with .requests }}
         {{- with .cpu }}
         - "--sandbox.resources.requests.cpu={{ . }}"
@@ -343,6 +353,15 @@ spec:
           containerPort: {{ (($v.integrationExecutor).grpc).port | default $.Values.integrationExecutor.grpc.port }}
           protocol: TCP
         {{- end }}
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          {{- with (($v.taskManager).tmpSizeLimit) | default $.Values.taskManager.tmpSizeLimit }}
+          sizeLimit: {{ . }}
+          {{- end }}
 
       {{- with $v.nodeSelector | default $.Values.nodeSelector }}
       nodeSelector:

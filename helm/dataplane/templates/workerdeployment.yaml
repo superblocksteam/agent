@@ -29,7 +29,9 @@
 {{- $includeStandardStreams = $.Values.sandbox_workers.worker.includeStandardStreams }}
 {{- end }}
 {{- /* Sprig `default` treats 0 as empty; use hasKey so minReplicaCount/maxReplicaCount: 0 are honored */}}
-{{- $fleetKeda := $v.keda | default dict }}
+{{- $fleetKeda := merge (dict) (index $v "keda" | default dict) }}
+{{- $fleetSandbox := merge (dict) (index $v "sandbox" | default dict) }}
+{{- $globalSandbox := merge (dict) (index $.Values.sandbox_workers "sandbox" | default dict) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -63,6 +65,10 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: {{ index $tmShutdown "terminationGracePeriodSeconds" | default 60 }}
       serviceAccountName: task-manager
+      {{- with (($v.taskManager).podSecurityContext) | default $.Values.sandbox_workers.taskManager.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if $.Values.sandbox_workers.image.credentials }}
       imagePullSecrets:
       - name: ephemeral-worker-docker
@@ -72,6 +78,10 @@ spec:
       - name: task-manager
         image: "{{ (($v.taskManager).image).repository | default $.Values.sandbox_workers.taskManager.image.repository }}:{{ (($v.taskManager).image).tag | default $.Values.sandbox_workers.taskManager.image.tag }}"
         imagePullPolicy: {{ (($v.taskManager).image).pullPolicy | default $.Values.sandbox_workers.taskManager.image.pullPolicy }}
+        {{- with (($v.taskManager).securityContext) | default $.Values.sandbox_workers.taskManager.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         resources:
           {{- $taskManagerResources := deepCopy ($.Values.sandbox_workers.taskManager.resources | default dict) }}
           {{- $_ := mergeOverwrite $taskManagerResources (($v.taskManager).resources | default dict) }}
@@ -108,13 +118,13 @@ spec:
         - "--sandbox.language={{ $language }}"
         # Sandbox mode - create separate sandbox Jobs
         - "--sandbox.namespace={{ $.Release.Namespace }}"
-        - "--sandbox.image={{ (($v.sandbox).image).repository | default $sandboxConfig.image.repository }}:{{ (($v.sandbox).image).tag | default $sandboxConfig.image.tag }}"
+        - "--sandbox.image={{ (index $fleetSandbox "image" | default dict).repository | default $sandboxConfig.image.repository }}:{{ (index $fleetSandbox "image" | default dict).tag | default $sandboxConfig.image.tag }}"
         - "--sandbox.port={{ $sandboxConfig.port | default $.Values.sandbox_workers.sandbox.port }}"
-        - "--sandbox.pool.size={{ (($v.sandbox).poolSize) | default $.Values.sandbox_workers.sandbox.poolSize | default 1 }}"
-        {{- if and $v.sandbox (hasKey $v.sandbox "gracefulShutdownTimeout") }}
-        - "--sandbox.graceful.shutdown.timeout={{ $v.sandbox.gracefulShutdownTimeout }}"
-        {{- else if and $.Values.sandbox_workers.sandbox (hasKey $.Values.sandbox_workers.sandbox "gracefulShutdownTimeout") }}
-        - "--sandbox.graceful.shutdown.timeout={{ $.Values.sandbox_workers.sandbox.gracefulShutdownTimeout }}"
+        - "--sandbox.pool.size={{ index $fleetSandbox "poolSize" | default (index $globalSandbox "poolSize") | default 1 }}"
+        {{- if hasKey $fleetSandbox "gracefulShutdownTimeout" }}
+        - "--sandbox.graceful.shutdown.timeout={{ index $fleetSandbox "gracefulShutdownTimeout" }}"
+        {{- else if hasKey $globalSandbox "gracefulShutdownTimeout" }}
+        - "--sandbox.graceful.shutdown.timeout={{ index $globalSandbox "gracefulShutdownTimeout" }}"
         {{- end }}
         - "--sandbox.ttl={{ $.Values.sandbox_workers.sandboxJob.ttlSecondsAfterFinished }}"
         {{- if or $.Values.sandbox_workers.sandbox.runtimeClassName $.Values.sandbox_workers.runtimeClassName }}
@@ -123,17 +133,17 @@ spec:
         {{- if $.Values.sandbox_workers.image.credentials }}
         - "--sandbox.imagePullSecrets=ephemeral-worker-docker"
         {{- end }}
-        {{- $sandboxPodAnnotations := merge (deepCopy ((($v.sandbox).podAnnotations) | default dict)) ($sandboxConfig.podAnnotations | default dict) ($.Values.sandbox_workers.sandbox.podAnnotations | default dict) }}
+        {{- $sandboxPodAnnotations := merge (deepCopy (index $fleetSandbox "podAnnotations" | default dict)) ($sandboxConfig.podAnnotations | default dict) (index $globalSandbox "podAnnotations" | default dict) }}
         {{- range $key, $value := $sandboxPodAnnotations }}
         - "--sandbox.pod.annotations={{ $key }}={{ $value }}"
         {{- end }}
-        {{- if and $v.sandbox $v.sandbox.nodeSelector }}
-        - "--sandbox.nodeSelector={{ include "mapToStringFlag" $v.sandbox.nodeSelector }}"
+        {{- if index $fleetSandbox "nodeSelector" }}
+        - "--sandbox.nodeSelector={{ include "mapToStringFlag" (index $fleetSandbox "nodeSelector") }}"
         {{- else if or $.Values.sandbox_workers.nodeSelector $.Values.sandbox_workers.sandbox.nodeSelector }}
         - "--sandbox.nodeSelector={{ include "mapToStringFlag" ($.Values.sandbox_workers.sandbox.nodeSelector | default $.Values.sandbox_workers.nodeSelector) }}"
         {{- end }}
-        {{- if and $v.sandbox $v.sandbox.tolerations }}
-        {{- range $v.sandbox.tolerations }}
+        {{- if index $fleetSandbox "tolerations" }}
+        {{- range index $fleetSandbox "tolerations" }}
         - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
         {{- end }}
         {{- else }}
@@ -141,7 +151,7 @@ spec:
         - "--sandbox.toleration=key={{ .key }},operator={{ .operator }},value={{ .value }},effect={{ .effect }}"
         {{- end }}
         {{- end }}
-        {{- with (($v.sandbox).resources) | default $sandboxConfig.resources }}
+        {{- with (index $fleetSandbox "resources") | default $sandboxConfig.resources }}
         {{- with .requests }}
         {{- with .cpu }}
         - "--sandbox.resources.requests.cpu={{ . }}"
@@ -361,6 +371,15 @@ spec:
           containerPort: {{ (($v.integrationExecutor).grpc).port | default $.Values.sandbox_workers.integrationExecutor.grpc.port }}
           protocol: TCP
         {{- end }}
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          {{- with (($v.taskManager).tmpSizeLimit) | default $.Values.sandbox_workers.taskManager.tmpSizeLimit }}
+          sizeLimit: {{ . }}
+          {{- end }}
 
       {{- with $v.nodeSelector | default $.Values.sandbox_workers.nodeSelector }}
       nodeSelector:

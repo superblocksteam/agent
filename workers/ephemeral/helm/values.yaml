@@ -121,6 +121,23 @@ taskManager:
     delay: 1m
     # Maximum jitter to add to the base delay.
     maxJitter: 5m
+  # Writable scratch for health-file probes under a read-only root filesystem.
+  tmpSizeLimit: 256Mi
+  podSecurityContext:
+    fsGroup: 65532
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    privileged: false
+    readOnlyRootFilesystem: true
+    runAsGroup: 65532
+    runAsNonRoot: true
+    runAsUser: 65532
 # Sandbox configurations (per language)
 sandbox:
   # Default gRPC port for sandbox pods (used in NetworkPolicy)
