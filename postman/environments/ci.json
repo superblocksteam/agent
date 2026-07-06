@@ -67,6 +67,24 @@
       "value": "false",
       "type": "default",
       "enabled": true
+    },
+    {
+      "key": "mock_scheme",
+      "value": "http",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "mock_host",
+      "value": "127.0.0.1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "mock_port",
+      "value": "3100",
+      "type": "default",
+      "enabled": true
     }
   ],
   "color": null,

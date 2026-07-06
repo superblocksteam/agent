@@ -1,0 +1,45 @@
+---
+# TEST-ONLY override for the OAuth-token-eviction e2e (Phase 2).
+#
+# The @databricks/sql driver forces HTTPS, so the eviction test points a Databricks
+# integration at the self-signed `mock_databricks:8443` warehouse. This override:
+#   - defines the `mock_databricks` warehouse service (HTTPS, always 401), and
+#   - sets NODE_TLS_REJECT_UNAUTHORIZED=0 on (only) the `javascript.*.execute` services so
+#     they accept its self-signed cert.
+#
+# It is layered ONLY by the `e2e-quotas` job:
+#   docker compose -f compose.full.yaml -f compose.full.eviction.yaml up ...
+# so the shared `compose.full.yaml` (used by every other e2e job) never starts the warehouse
+# and keeps full TLS verification. DO NOT move either of these into compose.full.yaml.
+services:
+  javascript.test.execute:
+    environment:
+      NODE_TLS_REJECT_UNAUTHORIZED: '0'
+  javascript.b1.execute:
+    environment:
+      NODE_TLS_REJECT_UNAUTHORIZED: '0'
+  javascript.b2.execute:
+    environment:
+      NODE_TLS_REJECT_UNAUTHORIZED: '0'
+  javascript.ba.execute:
+    environment:
+      NODE_TLS_REJECT_UNAUTHORIZED: '0'
+  javascript.be.execute:
+    environment:
+      NODE_TLS_REJECT_UNAUTHORIZED: '0'
+  mock_databricks:
+    image: node:22-alpine
+    entrypoint:
+      - sh
+      - -c
+      - |
+        apk add --no-cache openssl && \
+        mkdir -p /certs && \
+        openssl req -x509 -newkey rsa:2048 -nodes \
+          -keyout /certs/key.pem -out /certs/cert.pem \
+          -days 365 -subj '/CN=mock_databricks' && \
+        node /app/server.js
+    volumes:
+      - ./mocks/databricks-warehouse:/app
+    ports:
+      - '8443'

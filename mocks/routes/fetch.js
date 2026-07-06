@@ -3,6 +3,7 @@ const integration = require('../fixtures/integration');
 const integrations = require('../fixtures/integrations');
 const scheduleJobDefinitions = require('../fixtures/schedule-job');
 const { checkAuth, validateAgentKey } = require('./utils');
+const { recordEviction } = require('../store/evictions');
 
 module.exports = [
   {
@@ -285,13 +286,45 @@ module.exports = [
             if (tokenType === 'id-token') {
               return res.status(200).json({ data: 'some-id-token-that-should-be-a-jwt' });
             }
-            if (a.includes('oauth') && req.body.authConfig?.clientId === 'clientid-special-chars') {
+            if (a && a.includes('oauth') && req.body.authConfig?.clientId === 'clientid-special-chars') {
               return res.status(200).json({ data: "token'with\"special-chars" });
             }
-            if (a.includes('oauth')) {
+            if (a && a.includes('oauth')) {
               return res.status(200).json({ data: 'asdf' });
             }
 
+            return res.status(200).json({ data: '' });
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: 'fetch-org-user-token',
+    url: '/api/v1/agents/userToken',
+    method: 'GET',
+    variants: [
+      {
+        id: 'default',
+        type: 'middleware',
+        options: {
+          middleware: (req, res) => {
+            // Org/datasource-scoped agent calls (FetchSharedToken) carry only the
+            // agent key — no user Authorization header — so accept it here.
+            if (!validateAgentKey(req) && !checkAuth(req)) {
+              return res.sendStatus(401);
+            }
+            const a = req.body.authType;
+            const { tokenType } = req.body;
+            if (tokenType === 'id-token') {
+              return res.status(200).json({ data: 'some-id-token-that-should-be-a-jwt' });
+            }
+            if (a && a.includes('oauth')) {
+              return res.status(200).json({ data: 'asdf' });
+            }
+            // authType absent or non-oauth → empty token; the caller then falls through to
+            // the live OBO exchange path. The eviction test relies on the oauth cache hit
+            // above, so it always sends authType="oauth-token-exchange".
             return res.status(200).json({ data: '' });
           },
         },
@@ -330,6 +363,29 @@ module.exports = [
             if (!checkAuth(req)) {
               return res.sendStatus(401);
             }
+            recordEviction(req);
+            return res.sendStatus(200);
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: 'delete-org-user-token',
+    url: '/api/v1/agents/userToken',
+    method: 'DELETE',
+    variants: [
+      {
+        id: 'default',
+        type: 'middleware',
+        options: {
+          middleware: (req, res) => {
+            // Shared/org-scoped eviction (InvalidateSharedToken) carries only the
+            // agent key — no user Authorization header — so accept it here.
+            if (!validateAgentKey(req) && !checkAuth(req)) {
+              return res.sendStatus(401);
+            }
+            recordEviction(req);
             return res.sendStatus(200);
           },
         },

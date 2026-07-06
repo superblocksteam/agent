@@ -1,0 +1,410 @@
+{
+  "info": {
+    "_postman_id": "oauth-token-eviction",
+    "name": "OAuth Token Eviction",
+    "description": "E2E guard for the OAuth token eviction change. Phase 1: proves a worker integration auth failure propagates end-to-end as CODE_INTEGRATION_AUTHORIZATION on the integration_errors_total metric. Phase 2: asserts the cached-token eviction DELETE (user-scoped + shared) via a Databricks OBO integration against a mock 401 warehouse and the mock's eviction introspection. Validated by CI (e2e-quotas job, redis transport).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Attach the Superblocks auth header to every request (deduped from per-request headers).",
+          "if (!pm.request.headers.has('X-Superblocks-Authorization')) {",
+          "  pm.request.headers.add({ key: 'X-Superblocks-Authorization', value: `Bearer ${pm.environment.get('superblocks_jwt')}` });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Defined once: for any /metrics response, sum the auth-error counter across series and",
+          "// expose it as auth_errors_current, so P1a (snapshot) and P1c (assert) don't repeat the",
+          "// regex + loop. Collection-level test scripts run before request-level ones.",
+          "if ((pm.request.url.getPath() || '').indexOf('metrics') !== -1) {",
+          "  const re = /integration_errors_total\\{[^}]*code=\"CODE_INTEGRATION_AUTHORIZATION\"[^}]*\\}\\s+([0-9.]+)/;",
+          "  let n = 0;",
+          "  pm.response.text().split('\\n').forEach(function (l) { const m = l.match(re); if (m) n += Number(m[1]); });",
+          "  pm.collectionVariables.set('auth_errors_current', String(n));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "P1a snapshot integration_errors_total",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('metrics reachable', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('auth_errors_before', pm.collectionVariables.get('auth_errors_current') || '0');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{metrics_port}}/metrics",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{metrics_port}}",
+          "path": [
+            "metrics"
+          ]
+        }
+      }
+    },
+    {
+      "name": "P1b execute failing Postgres step",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('execute returned 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.text();",
+              "pm.test('execution failed with an integration error', () => pm.expect(body).to.match(/IntegrationError|password authentication failed/i));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"options\": {\"includeEventOutputs\": true},\n  \"definition\": {\n    \"api\": {\n      \"metadata\": {\"id\": \"00000000-0000-0000-0000-0000000000a1\", \"organization\": \"00000000-0000-0000-0000-000000000001\", \"name\": \"OAuthEvictP1\"},\n      \"blocks\": [{\"name\": \"q\", \"step\": {\"integration\": \"postgres\", \"postgres\": {\"body\": \"SELECT 1\"}}}]\n    },\n    \"integrations\": {\n      \"postgres\": {\n        \"endpoint\": {\"host\": \"postgres\", \"port\": 5432},\n        \"authentication\": {\"username\": \"nope\", \"password\": \"wrong-password\", \"custom\": {\"databaseName\": {\"value\": \"postgres\"}}},\n        \"connection\": {\"useSsl\": false}\n      }\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{orchestrator_port}}",
+          "path": [
+            "v2",
+            "execute"
+          ]
+        }
+      }
+    },
+    {
+      "name": "P1c assert metric incremented",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('metrics reachable', () => pm.response.to.have.status(200));",
+              "const after = Number(pm.collectionVariables.get('auth_errors_current') || '0');",
+              "const before = Number(pm.collectionVariables.get('auth_errors_before') || '0');",
+              "if (after <= before) { console.log('DEBUG integration_errors metric lines:', pm.response.text().split('\\n').filter(function (l) { return l.indexOf('integration_errors') >= 0; }).join(' || ')); }",
+              "pm.test('CODE_INTEGRATION_AUTHORIZATION counter increased', () => pm.expect(after).to.be.above(before));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{metrics_port}}/metrics",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{metrics_port}}",
+          "path": [
+            "metrics"
+          ]
+        }
+      }
+    },
+    {
+      "name": "P2a reset eviction log",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reset returned 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{mock_scheme}}://{{mock_host}}:{{mock_port}}/__test__/evictions/reset",
+          "protocol": "{{mock_scheme}}",
+          "host": [
+            "{{mock_host}}"
+          ],
+          "port": "{{mock_port}}",
+          "path": [
+            "__test__",
+            "evictions",
+            "reset"
+          ]
+        }
+      }
+    },
+    {
+      "name": "P2b execute Databricks step (user-scoped OBO)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('execute returned 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.text();",
+              "pm.test('execution failed with auth/integration error', () => pm.expect(body).to.match(/Authorization failed|IntegrationError|credentials were rejected|failed during/i));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Superblocks-Authorization",
+            "value": "Bearer {{superblocks_jwt}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer fake-user-token"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"options\": {\n    \"includeEventOutputs\": true\n  },\n  \"definition\": {\n    \"api\": {\n      \"metadata\": {\n        \"id\": \"00000000-0000-0000-0000-0000000000b1\",\n        \"organization\": \"00000000-0000-0000-0000-000000000001\",\n        \"name\": \"OAuthEvictP2User\"\n      },\n      \"blocks\": [\n        {\n          \"name\": \"q\",\n          \"step\": {\n            \"integration\": \"databricks\",\n            \"databricks\": {\n              \"runSql\": {\n                \"sqlBody\": \"SELECT 1\"\n              }\n            }\n          }\n        }\n      ]\n    },\n    \"integrations\": {\n      \"databricks\": {\n        \"id\": \"databricks-obo-cfg-1\",\n        \"authType\": \"oauth-token-exchange\",\n        \"connection\": {\n          \"connectionType\": \"CONNECTION_TYPE_OAUTH_EXCHANGE\",\n          \"hostUrl\": \"mock_databricks\",\n          \"path\": \"/sql/1.0/endpoints/mock\",\n          \"port\": 8443\n        },\n        \"authConfig\": {\n          \"tokenUrl\": \"https://mock_databricks:8443/oidc/v1/token\",\n          \"clientId\": \"test-client-id\",\n          \"clientSecret\": \"test-secret\"\n        }\n      }\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{orchestrator_port}}",
+          "path": [
+            "v2",
+            "execute"
+          ]
+        }
+      }
+    },
+    {
+      "name": "P2c assert user-scoped token was evicted",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('evictions reachable', () => pm.response.to.have.status(200));",
+              "const ev = pm.response.json().evictions;",
+              "pm.test('exactly one eviction recorded', () => pm.expect(ev).to.have.length(1));",
+              "pm.test('eviction hit user-scoped endpoint', () => pm.expect(ev[0].route).to.equal('/api/v1/agents/user/userToken'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{mock_scheme}}://{{mock_host}}:{{mock_port}}/__test__/evictions",
+          "protocol": "{{mock_scheme}}",
+          "host": [
+            "{{mock_host}}"
+          ],
+          "port": "{{mock_port}}",
+          "path": [
+            "__test__",
+            "evictions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "P2d reset eviction log",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('reset returned 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{mock_scheme}}://{{mock_host}}:{{mock_port}}/__test__/evictions/reset",
+          "protocol": "{{mock_scheme}}",
+          "host": [
+            "{{mock_host}}"
+          ],
+          "port": "{{mock_port}}",
+          "path": [
+            "__test__",
+            "evictions",
+            "reset"
+          ]
+        }
+      }
+    },
+    {
+      "name": "P2e execute Databricks step (shared/datasource-scoped OBO)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('execute returned 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.text();",
+              "pm.test('execution failed with auth/integration error', () => pm.expect(body).to.match(/Authorization failed|IntegrationError|credentials were rejected|failed during/i));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Superblocks-Authorization",
+            "value": "Bearer {{superblocks_jwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"options\": {\n    \"includeEventOutputs\": true\n  },\n  \"definition\": {\n    \"api\": {\n      \"metadata\": {\n        \"id\": \"00000000-0000-0000-0000-0000000000b2\",\n        \"organization\": \"00000000-0000-0000-0000-000000000001\",\n        \"name\": \"OAuthEvictP2Shared\"\n      },\n      \"blocks\": [\n        {\n          \"name\": \"q\",\n          \"step\": {\n            \"integration\": \"databricks\",\n            \"databricks\": {\n              \"runSql\": {\n                \"sqlBody\": \"SELECT 1\"\n              }\n            }\n          }\n        }\n      ]\n    },\n    \"integrations\": {\n      \"databricks\": {\n        \"id\": \"databricks-obo-cfg-2\",\n        \"authType\": \"oauth-token-exchange\",\n        \"connection\": {\n          \"connectionType\": \"CONNECTION_TYPE_OAUTH_EXCHANGE\",\n          \"hostUrl\": \"mock_databricks\",\n          \"path\": \"/sql/1.0/endpoints/mock\",\n          \"port\": 8443\n        },\n        \"authConfig\": {\n          \"tokenUrl\": \"https://mock_databricks:8443/oidc/v1/token\",\n          \"clientId\": \"test-client-id\",\n          \"clientSecret\": \"test-secret\",\n          \"tokenScope\": \"datasource\"\n        }\n      }\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{orchestrator_scheme}}://{{orchestrator_host}}:{{orchestrator_port}}/v2/execute",
+          "protocol": "{{orchestrator_scheme}}",
+          "host": [
+            "{{orchestrator_host}}"
+          ],
+          "port": "{{orchestrator_port}}",
+          "path": [
+            "v2",
+            "execute"
+          ]
+        }
+      }
+    },
+    {
+      "name": "P2f assert shared-scoped token was evicted",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('evictions reachable', () => pm.response.to.have.status(200));",
+              "const ev = pm.response.json().evictions;",
+              "pm.test('exactly one eviction recorded', () => pm.expect(ev).to.have.length(1));",
+              "pm.test('eviction hit shared-scoped endpoint', () => pm.expect(ev[0].route).to.equal('/api/v1/agents/userToken'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{mock_scheme}}://{{mock_host}}:{{mock_port}}/__test__/evictions",
+          "protocol": "{{mock_scheme}}",
+          "host": [
+            "{{mock_host}}"
+          ],
+          "port": "{{mock_port}}",
+          "path": [
+            "__test__",
+            "evictions"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "orchestrator_scheme",
+      "value": "http"
+    },
+    {
+      "key": "orchestrator_host",
+      "value": "127.0.0.1"
+    },
+    {
+      "key": "orchestrator_port",
+      "value": "8080"
+    },
+    {
+      "key": "metrics_port",
+      "value": "9090"
+    },
+    {
+      "key": "mock_scheme",
+      "value": "http"
+    },
+    {
+      "key": "mock_host",
+      "value": "127.0.0.1"
+    },
+    {
+      "key": "mock_port",
+      "value": "3100"
+    }
+  ]
+}

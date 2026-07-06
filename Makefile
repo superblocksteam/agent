@@ -88,6 +88,7 @@ run-docker:
 		-p 8080:8080 \
 		-p 8070:8070 \
 		-p 8081:8081 \
+		-p 9090:9090 \
 		$(DOCKER_OPTIONS) \
 		$(IMAGE_REPOSITORY):$(DOCKER_TEST_TAG) \
 		--transport.redis.host=redis \
@@ -217,6 +218,10 @@ test-e2e-worker-unavailable:
 .PHONY: test-e2e-v3-execute-regression
 test-e2e-v3-execute-regression:
 	postman collection run --color on --verbose ./postman/v3_execute_regression_collection.json -e ./postman/environments/$(POSTMAN_ENV).json --env-var orchestrator_scheme=http --env-var orchestrator_host=127.0.0.1 --env-var orchestrator_port=8080 --env-var application_id=00000000-0000-0000-0000-000000000003 --env-var entry_point=server/apis/GetOrderById/api.ts --env-var order_id=30000 --env-var view_mode=editor --env-var profile_id=00000000-0000-0000-0000-000000000001 --env-var profile_name=default --env-var profile_key=default
+
+.PHONY: test-e2e-oauth-eviction
+test-e2e-oauth-eviction:
+	postman collection run --color on --verbose ./postman/oauth_token_eviction_collection.json -e ./postman/environments/$(POSTMAN_ENV).json
 
 .PHONY: bench-wasm-sandbox
 bench-wasm-sandbox:
