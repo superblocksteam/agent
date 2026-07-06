@@ -64,6 +64,13 @@ ingress:
       - Authorization
       - X-Superblocks-Authorization
       - X-Superblocks-Data-Domain
+      - traceparent
+      - tracestate
+      - baggage
+      - x-datadog-origin
+      - x-datadog-parent-id
+      - x-datadog-sampling-priority
+      - x-datadog-trace-id
 service:
   terminationGracePeriodSeconds: 2700
   grpc:
