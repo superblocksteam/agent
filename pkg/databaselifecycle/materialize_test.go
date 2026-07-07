@@ -19,6 +19,12 @@ var testSharedModeSSLOpts = ProviderSSLOptions{
 	AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!"},
 }
 
+const (
+	testNativeDBModuleRef                   = "v0.1.0"
+	testAWSRDSManagedInstanceModuleSource   = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=" + testNativeDBModuleRef
+	testPostgresManagedDatabaseModuleSource = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=" + testNativeDBModuleRef
+)
+
 func tempRoot(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
@@ -233,7 +239,7 @@ func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsFromReservedIn
 	}
 	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
 		Module: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"credential_secret_prefix": "superblocks/native-db/local",
 			},
@@ -307,7 +313,7 @@ func TestMaterializeResolvedJobRejectsInvalidCredentialSecretPrefixBeforeSharedM
 	}
 	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
 		Module: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"credential_secret_prefix": "",
 			},
@@ -631,8 +637,8 @@ func TestMaterializeJobRejectsMissingTerraformModuleVersion(t *testing.T) {
 
 func TestMaterializeJobTreatsVCSShorthandSourcesAsNonRegistryModules(t *testing.T) {
 	for _, source := range []string{
-		"github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
-		"bitbucket.org/superblocks/terraform//modules/native-database/aws-rds-managed-instance",
+		"github.com/superblocksteam/terraform-superblocks-databases//modules/aws-rds-managed-instance",
+		"bitbucket.org/superblocks/terraform-superblocks-databases//modules/aws-rds-managed-instance",
 	} {
 		t.Run(source, func(t *testing.T) {
 			root := tempRoot(t)
@@ -676,7 +682,7 @@ func TestMaterializeJobDoesNotRequireVersionForVCSShorthandSources(t *testing.T)
 		BindingKey:       "app:prod:orders",
 		TerraformBackend: map[string]any{"stateBackend": "local", "path": "./terraform.tfstate"},
 		TerraformModule: TerraformModule{
-			Source: "github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
+			Source: testAWSRDSManagedInstanceModuleSource,
 		},
 	}, testSSLOpts)
 
@@ -697,7 +703,7 @@ func TestMaterializeJobRejectsUnallowlistedSharedModeRuntimeCredentialRef(t *tes
 		BindingKey:       "app:dev:devdb",
 		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
 				"runtime_credential_ref": map[string]any{
@@ -726,7 +732,7 @@ func TestMaterializeJobRejectsInvalidSharedModeSSLOptions(t *testing.T) {
 		BindingKey:       "app:dev:devdb",
 		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
 				"runtime_credential_ref": map[string]any{
@@ -757,7 +763,7 @@ func TestMaterializeJobRejectsNonARNSharedModeRuntimeCredentialRef(t *testing.T)
 		BindingKey:       "app:dev:devdb",
 		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
 				"runtime_credential_ref": map[string]any{
@@ -794,7 +800,7 @@ func TestMaterializeJobEmitsPostgresProviderForSharedModeModule(t *testing.T) {
 		RequestID:        "request-1",
 		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"host":                "pool-rds.example.us-east-1.rds.amazonaws.com",
 				"database_name":       "db_abc",
@@ -867,7 +873,7 @@ func TestMaterializeJobBindsGeneratedSharedModeSecretsToPoolSecretsProvider(t *t
 		BindingKey:       "app:dev:devdb",
 		TerraformBackend: map[string]any{"stateBackend": "gcs", "bucket": "state-bucket", "prefix": "devdb"},
 		TerraformModule: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"credential_secret_prefix": "superblocks/native-db/local",
 				"host":                     "pool-rds.example.us-east-1.rds.amazonaws.com",
@@ -914,7 +920,7 @@ func TestMaterializeJobEmitsConfiguredSSLModeForSharedModeModule(t *testing.T) {
 		BindingKey:       "app:dev:devdb",
 		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
 				"runtime_credential_ref": map[string]any{
@@ -960,7 +966,7 @@ func TestMaterializeJobOmitsSSLRootCertWhenUnset(t *testing.T) {
 		BindingKey:       "app:dev:devdb",
 		TerraformBackend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
 		TerraformModule: TerraformModule{
-			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
 				"host": "pool-rds.example.us-east-1.rds.amazonaws.com",
 				"runtime_credential_ref": map[string]any{
@@ -997,7 +1003,7 @@ func TestMaterializeJobRejectsSymlinkedGeneratedFiles(t *testing.T) {
 		BindingKey:       "app:prod:orders",
 		TerraformBackend: map[string]any{"stateBackend": "local", "path": "./terraform.tfstate"},
 		TerraformModule: TerraformModule{
-			Source: "github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
+			Source: testAWSRDSManagedInstanceModuleSource,
 		},
 	}, testSSLOpts)
 
@@ -1192,12 +1198,12 @@ func TestIsRegistryModuleSource(t *testing.T) {
 		{"app.terraform.io/superblocks/rds-postgres/aws", true},
 		{"hashicorp/consul/aws", true},
 		// Explicit VCS shorthand prefixes — must NOT be classified registry.
-		{"github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance", false},
+		{"github.com/superblocksteam/terraform-superblocks-databases//modules/aws-rds-managed-instance", false},
 		{"bitbucket.org/team/repo//modules/x", false},
 		{"gitlab.com/group/repo//modules/x", false},
-		{"git@github.com:superblocksteam/terraform.git//modules/native-database/postgres-managed-database", false},
+		{"git@github.com:superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database", false},
 		// Protocol-style sources — explicit schemes never classify as registry.
-		{"git::https://github.com/superblocksteam/terraform.git//modules/native-database/aws-rds-managed-instance?ref=v1", false},
+		{testAWSRDSManagedInstanceModuleSource, false},
 		{"https://example.com/module.zip", false},
 		// Filesystem paths.
 		{"./modules/x", false},

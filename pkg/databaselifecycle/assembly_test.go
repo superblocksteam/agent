@@ -312,7 +312,7 @@ func TestNewWorkerFromDependenciesProvisionsAndRegistersPhysicalDatabaseInstance
 		RootDir: tempRoot(t),
 		AllowedModuleSources: []string{
 			"app.terraform.io/superblocks/postgres-managed-database/aws",
-			"github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
+			testAWSRDSManagedInstanceModuleSource,
 		},
 		DSNOptions: DSNOptions{
 			SSLMode:            "require",
@@ -335,7 +335,7 @@ func TestNewWorkerFromDependenciesProvisionsAndRegistersPhysicalDatabaseInstance
 					}),
 					"ensure_physical_database_instance": terraformOperationWithBackend(map[string]any{"stateBackend": "s3", "bucket": "physical-state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-east-1"}, map[string]TerraformModule{
 						"postgres": {
-							Source: "github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
+							Source: testAWSRDSManagedInstanceModuleSource,
 							Inputs: map[string]any{
 								"capacity_max":   8,
 								"security_class": "standard",

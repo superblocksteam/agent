@@ -37,14 +37,14 @@ func TestTerraformPhysicalDatabaseInstanceProvisionerDeprovisionsWhenOutputParsi
 					map[string]any{"stateBackend": "s3", "bucket": "physical-state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-east-1"},
 					map[string]TerraformModule{
 						"postgres": {
-							Source: "github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
+							Source: testAWSRDSManagedInstanceModuleSource,
 							Inputs: map[string]any{"capacity_max": 4},
 						},
 					},
 				),
 			},
 		}}},
-		[]string{"github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance"},
+		[]string{testAWSRDSManagedInstanceModuleSource},
 		rootDir,
 		runner,
 		ProviderSSLOptions{Mode: "disable"},
@@ -83,14 +83,14 @@ func TestTerraformPhysicalDatabaseInstanceProvisionerDeprovisionsWhenRegistratio
 					map[string]any{"stateBackend": "s3", "bucket": "physical-state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-east-1"},
 					map[string]TerraformModule{
 						"postgres": {
-							Source: "github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
+							Source: testAWSRDSManagedInstanceModuleSource,
 							Inputs: map[string]any{"capacity_max": 4},
 						},
 					},
 				),
 			},
 		}}},
-		[]string{"github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance"},
+		[]string{testAWSRDSManagedInstanceModuleSource},
 		rootDir,
 		runner,
 		ProviderSSLOptions{Mode: "disable"},
