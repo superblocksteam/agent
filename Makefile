@@ -275,7 +275,6 @@ deploy-helm:
 
 	helm upgrade -i --wait --timeout $(HELM_TIMEOUT) -n $(K8S_NAMESPACE) orchestrator-workers helm/orchestrator \
 		--debug \
-		--force \
 		--create-namespace \
 		--values helm/orchestrator/overrides/$(ENVIRONMENT).yaml \
 		--set server.deploy=false \
