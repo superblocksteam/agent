@@ -14,6 +14,7 @@ type DispatchPayload struct {
 	AgentID                    string                 `json:"-"`
 	BindingKey                 string                 `json:"bindingKey"`
 	ConnectionMetadata         map[string]any         `json:"connectionMetadata,omitempty"`
+	Continuation               DispatchContinuation   `json:"continuation,omitempty"`
 	RuntimeCredentialRefs      map[string]any         `json:"runtimeCredentialRefs,omitempty"`
 	MigrationCredentialRefs    map[string]any         `json:"migrationCredentialRefs,omitempty"`
 	DesiredSpec                DatabaseRequirement    `json:"desiredSpec"`
@@ -30,10 +31,20 @@ type DispatchPayload struct {
 	TerraformModule            TerraformModule        `json:"-"`
 }
 
+type DispatchContinuation struct {
+	CurrentState                 string `json:"currentState,omitempty"`
+	PhysicalDatabaseInstanceID   string `json:"physicalInstanceId,omitempty"`
+	PhysicalTerraformResourceKey string `json:"physicalTerraformResourceKey,omitempty"`
+	// Reserved for a future server-issued reservation token. The current
+	// control plane reserves by physical instance ID only.
+	ReservationID string `json:"reservationId,omitempty"`
+}
+
 func (payload DispatchPayload) MarshalJSON() ([]byte, error) {
 	type wirePayload struct {
 		BindingKey            string                 `json:"bindingKey"`
 		ConnectionMetadata    map[string]any         `json:"connectionMetadata,omitempty"`
+		Continuation          *DispatchContinuation  `json:"continuation,omitempty"`
 		RuntimeCredentialRefs map[string]any         `json:"runtimeCredentialRefs,omitempty"`
 		DesiredSpec           DatabaseRequirement    `json:"desiredSpec"`
 		DesiredSpecHash       string                 `json:"desiredSpecHash"`
@@ -47,6 +58,7 @@ func (payload DispatchPayload) MarshalJSON() ([]byte, error) {
 	return json.Marshal(wirePayload{
 		BindingKey:            payload.BindingKey,
 		ConnectionMetadata:    payload.ConnectionMetadata,
+		Continuation:          payload.Continuation.wireValue(),
 		RuntimeCredentialRefs: payload.RuntimeCredentialRefs,
 		DesiredSpec:           payload.DesiredSpec,
 		DesiredSpecHash:       payload.DesiredSpecHash,
@@ -57,6 +69,13 @@ func (payload DispatchPayload) MarshalJSON() ([]byte, error) {
 		RequestID:             payload.RequestID,
 		ResourceKey:           payload.ResourceKey,
 	})
+}
+
+func (continuation DispatchContinuation) wireValue() *DispatchContinuation {
+	if continuation == (DispatchContinuation{}) {
+		return nil
+	}
+	return &continuation
 }
 
 type DatabaseRequirement struct {

@@ -150,11 +150,18 @@ func (w *Worker) processLockedDispatch(ctx context.Context, dispatch DispatchPay
 	}
 	dispatch, err = w.materializer.Materialize(ctx, job, dispatch)
 	if err != nil {
+		if isRetryableLifecycleError(err) {
+			return err
+		}
 		return w.reportFailure(ctx, dispatch, err)
 	}
 	result, err := w.processor.Process(ctx, dispatch, job)
 	if err != nil {
-		if dispatch.PhysicalDatabaseInstanceID != "" && shouldReleaseReservedPhysicalDatabaseInstanceAfterProcessorError(result, err) {
+		// Only a terminal failed result frees the reservation. A retryable
+		// processor error posts no terminal callback and is retried from
+		// physical_db_reserved, so the reservation must stay held — releasing it
+		// would strand the retry against a pool slot the worker no longer holds.
+		if dispatch.PhysicalDatabaseInstanceID != "" && isTerminalFailedResult(result) {
 			if releaseErr := w.releasePhysicalDatabaseInstance(ctx, dispatch.PhysicalDatabaseInstanceID); releaseErr != nil {
 				return errors.Join(err, releaseErr)
 			}
@@ -169,20 +176,6 @@ func (w *Worker) processLockedDispatch(ctx context.Context, dispatch DispatchPay
 
 func isTerminalFailedResult(result TerminalCallbackResult) bool {
 	return result.LifecycleState == "failed" || result.RequestState == "failed"
-}
-
-func isTerminalReadyResult(result TerminalCallbackResult) bool {
-	return result.LifecycleState == "ready" || result.RequestState == "ready"
-}
-
-func shouldReleaseReservedPhysicalDatabaseInstanceAfterProcessorError(result TerminalCallbackResult, err error) bool {
-	if isTerminalFailedResult(result) {
-		return true
-	}
-	if isTerminalReadyResult(result) {
-		return false
-	}
-	return isRetryableLifecycleError(err)
 }
 
 func (w *Worker) releasePhysicalDatabaseInstance(ctx context.Context, instanceID string) error {

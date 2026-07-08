@@ -18,6 +18,7 @@ func (config LifecycleConfig) CapabilityTags() map[string][]string {
 		capabilityTagEngines:             {},
 		capabilityTagEnvironmentProfiles: {},
 	}
+	internalProvisionOperations := config.internalPhysicalProvisionOperations()
 
 	for _, entry := range config.Entries {
 		for _, profile := range entry.Profiles {
@@ -27,6 +28,9 @@ func (config LifecycleConfig) CapabilityTags() map[string][]string {
 			addCapabilityTag(values, capabilityTagEngines, engine)
 		}
 		for _, operation := range entry.operationNames() {
+			if _, internal := internalProvisionOperations[operation]; internal {
+				continue
+			}
 			addCapabilityTag(values, capabilityTagOperations, operation)
 		}
 	}
@@ -38,6 +42,18 @@ func (config LifecycleConfig) CapabilityTags() map[string][]string {
 		}
 	}
 	return tags
+}
+
+func (config LifecycleConfig) internalPhysicalProvisionOperations() map[string]struct{} {
+	operations := map[string]struct{}{}
+	for _, entry := range config.Entries {
+		for _, operation := range entry.Operations {
+			if operation.PhysicalDatabase != nil && operation.PhysicalDatabase.ProvisionOperation != "" {
+				operations[operation.PhysicalDatabase.ProvisionOperation] = struct{}{}
+			}
+		}
+	}
+	return operations
 }
 
 func CapabilityTagsFromEnv(getenv func(string) string) (map[string][]string, error) {

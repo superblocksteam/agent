@@ -3,11 +3,13 @@ package databaselifecycle
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 )
 
 const operationEnsurePhysicalDatabaseInstance = "ensure_physical_database_instance"
@@ -42,18 +44,21 @@ func (p *terraformPhysicalDatabaseInstanceProvisioner) ProvisionPhysicalDatabase
 	if p.runner == nil {
 		return PhysicalDatabaseInstance{}, errors.New("database lifecycle physical database instance runner is required")
 	}
-	resolved, err := p.config.Resolve(selector.Environment, selector.Profile, operationEnsurePhysicalDatabaseInstance, selector.Engine)
+	provisionOperation := selector.ProvisionOperation
+	if provisionOperation == "" {
+		provisionOperation = operationEnsurePhysicalDatabaseInstance
+	}
+	resolved, err := p.config.Resolve(selector.Environment, selector.Profile, provisionOperation, selector.Engine)
 	if err != nil {
 		return PhysicalDatabaseInstance{}, unsupportedShapeError(err)
 	}
 	if err := ValidateTerraformModuleSource(resolved.Module, p.allowedModuleSources); err != nil {
 		return PhysicalDatabaseInstance{}, unsupportedShapeError(fmt.Errorf("config entry %s/%s: %w", selector.Environment, selector.Profile, err))
 	}
-	provisionID, err := p.newProvisionID()
+	dispatch, err := physicalDatabaseInstanceProvisionDispatch(selector, provisionOperation, p.newProvisionID)
 	if err != nil {
-		return PhysicalDatabaseInstance{}, fmt.Errorf("generate physical database instance provision id: %w", err)
+		return PhysicalDatabaseInstance{}, err
 	}
-	dispatch := physicalDatabaseInstanceProvisionDispatch(selector, provisionID)
 	job, err := p.jobBuilder.Build(dispatch)
 	if err != nil {
 		return PhysicalDatabaseInstance{}, err
@@ -101,18 +106,44 @@ func (p *terraformPhysicalDatabaseInstanceProvisioner) deprovisionJob(ctx contex
 	return nil
 }
 
-func physicalDatabaseInstanceProvisionDispatch(selector PhysicalDatabaseInstanceSelector, provisionID string) DispatchPayload {
-	resourceKey := fmt.Sprintf("physical-database-instance:%s:%s:%s:%s:%s", selector.Environment, selector.Profile, selector.Region, selector.Engine, provisionID)
+func physicalDatabaseInstanceProvisionDispatch(selector PhysicalDatabaseInstanceSelector, operation string, newProvisionID func() (string, error)) (DispatchPayload, error) {
+	resourceKey := selector.PhysicalTerraformResourceKey
+	provisionID := physicalDatabaseInstanceProvisionIDFromResourceKey(resourceKey)
+	if resourceKey == "" {
+		if selector.ParentResourceKey != "" {
+			provisionID = physicalDatabaseInstanceProvisionIDFromParentResourceKey(selector.ParentResourceKey)
+		} else {
+			generatedID, err := newProvisionID()
+			if err != nil {
+				return DispatchPayload{}, fmt.Errorf("generate physical database instance provision id: %w", err)
+			}
+			provisionID = generatedID
+		}
+		resourceKey = fmt.Sprintf("physical-database-instance:%s:%s:%s:%s:%s", selector.Environment, selector.Profile, selector.Region, selector.Engine, provisionID)
+	}
 	return DispatchPayload{
 		BindingKey:      resourceKey,
 		DesiredSpec:     DatabaseRequirement{Engine: selector.Engine},
 		DesiredSpecHash: provisionID,
 		Environment:     selector.Environment,
-		Operation:       operationEnsurePhysicalDatabaseInstance,
+		Operation:       operation,
 		Profile:         selector.Profile,
 		RequestID:       provisionID,
 		ResourceKey:     resourceKey,
+	}, nil
+}
+
+func physicalDatabaseInstanceProvisionIDFromResourceKey(resourceKey string) string {
+	parts := strings.Split(resourceKey, ":")
+	if len(parts) == 0 {
+		return ""
 	}
+	return parts[len(parts)-1]
+}
+
+func physicalDatabaseInstanceProvisionIDFromParentResourceKey(parentResourceKey string) string {
+	sum := sha256.Sum256([]byte(parentResourceKey))
+	return hex.EncodeToString(sum[:16])
 }
 
 func physicalDatabaseInstanceFromTerraformOutput(result Result, moduleInputs map[string]any) (PhysicalDatabaseInstance, error) {

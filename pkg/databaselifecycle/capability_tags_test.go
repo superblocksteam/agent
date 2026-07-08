@@ -44,6 +44,36 @@ func TestLifecycleConfigCapabilityTagsDeriveSortedUniqueTags(t *testing.T) {
 	}, config.CapabilityTags())
 }
 
+func TestLifecycleConfigCapabilityTagsDoNotPublishInternalPhysicalProvisionOperation(t *testing.T) {
+	config := LifecycleConfig{
+		Entries: []LifecycleConfigEntry{
+			{
+				Environment: "deployed",
+				Profiles:    []string{"production"},
+				Engines:     []string{"postgres"},
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": {
+						Backend: "terraform",
+						PhysicalDatabase: &PhysicalDatabasePolicy{
+							Mode:               "shared_pool",
+							ProvisionOperation: "ensure_physical_database_instance",
+							OnExhausted:        "provision",
+						},
+					},
+					"ensure_physical_database_instance": terraformOperation(map[string]TerraformModule{
+						"postgres": {Source: "registry.example.com/physical-postgres"},
+					}),
+					"migrate_schema": {
+						Backend: "native_runner",
+					},
+				},
+			},
+		},
+	}
+
+	require.Equal(t, []string{"ensure_database", "migrate_schema"}, config.CapabilityTags()[capabilityTagOperations])
+}
+
 func TestCapabilityTagsFromEnvValidatesModuleShapes(t *testing.T) {
 	tags, err := CapabilityTagsFromEnv(func(key string) string {
 		switch key {

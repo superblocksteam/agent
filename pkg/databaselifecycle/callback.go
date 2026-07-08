@@ -34,6 +34,20 @@ type TerminalCallbackResult struct {
 	RequestState   string `json:"requestState"`
 }
 
+type ProgressCallback struct {
+	BindingKey   string               `json:"bindingKey"`
+	Continuation DispatchContinuation `json:"continuation"`
+	RequestID    string               `json:"requestId"`
+}
+
+type ProgressCallbackResult struct {
+	BindingKey     string               `json:"bindingKey"`
+	Continuation   DispatchContinuation `json:"continuation"`
+	LifecycleState string               `json:"lifecycleState"`
+	RequestID      string               `json:"requestId"`
+	RequestState   string               `json:"requestState"`
+}
+
 func ReportTerminalCallback(ctx context.Context, client clients.ServerClient, callback TerminalCallback) (TerminalCallbackResult, error) {
 	resp, err := client.PostDatabaseLifecycleTerminalCallback(
 		ctx,
@@ -68,6 +82,54 @@ func ReportTerminalCallback(ctx context.Context, client clients.ServerClient, ca
 		return TerminalCallbackResult{}, fmt.Errorf("decode database lifecycle terminal callback response: %w", err)
 	}
 	return decoded.Data, nil
+}
+
+func ReportProgressCallback(ctx context.Context, client clients.ServerClient, callback ProgressCallback) (ProgressCallbackResult, error) {
+	resp, err := client.PostDatabaseLifecycleProgressCallback(
+		ctx,
+		nil,
+		http.Header{},
+		clients.DatabaseLifecycleProgressCallbackRequest{
+			BindingKey:   callback.BindingKey,
+			Continuation: dispatchContinuationMap(callback.Continuation),
+			RequestID:    callback.RequestID,
+		},
+	)
+	if err != nil {
+		return ProgressCallbackResult{}, err
+	}
+	defer resp.Body.Close()
+
+	if internal, external := clients.Check(nil, resp); internal != nil {
+		return ProgressCallbackResult{}, internal
+	} else if external != nil {
+		return ProgressCallbackResult{}, external
+	}
+
+	var decoded struct {
+		Data ProgressCallbackResult `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
+		return ProgressCallbackResult{}, fmt.Errorf("decode database lifecycle progress callback response: %w", err)
+	}
+	return decoded.Data, nil
+}
+
+func dispatchContinuationMap(continuation DispatchContinuation) map[string]any {
+	body := map[string]any{}
+	if continuation.CurrentState != "" {
+		body["currentState"] = continuation.CurrentState
+	}
+	if continuation.PhysicalDatabaseInstanceID != "" {
+		body["physicalInstanceId"] = continuation.PhysicalDatabaseInstanceID
+	}
+	if continuation.PhysicalTerraformResourceKey != "" {
+		body["physicalTerraformResourceKey"] = continuation.PhysicalTerraformResourceKey
+	}
+	if continuation.ReservationID != "" {
+		body["reservationId"] = continuation.ReservationID
+	}
+	return body
 }
 
 func toClientTerminalCallbackError(err *TerminalCallbackError) *struct {

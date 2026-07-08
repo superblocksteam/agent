@@ -177,6 +177,9 @@ func TestNewWorkerFromDependenciesReservesPhysicalDatabaseInstanceForSharedPostg
 		case "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/reserve":
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"data":{"id":"11111111-1111-4111-8111-111111111111"}}`))
+		case "POST /api/v1/database-lifecycle/callbacks/progress":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"provisioning","requestId":"request-1","requestState":"provisioning"}}`))
 		case "POST /api/v1/database-lifecycle/callbacks/terminal":
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
 			w.WriteHeader(http.StatusOK)
@@ -274,6 +277,9 @@ func TestNewWorkerFromDependenciesProvisionsAndRegistersPhysicalDatabaseInstance
 		case "POST /api/v1/database-lifecycle/physical-database-instances/22222222-2222-4222-8222-222222222222/reserve":
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"data":{"id":"22222222-2222-4222-8222-222222222222"}}`))
+		case "POST /api/v1/database-lifecycle/callbacks/progress":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"provisioning","requestId":"request-1","requestState":"provisioning"}}`))
 		case "POST /api/v1/database-lifecycle/callbacks/terminal":
 			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
 			w.WriteHeader(http.StatusOK)
@@ -426,6 +432,7 @@ func TestNewWorkerFromDependenciesRejectsInvalidSharedPostgresCredentialSecretPr
 
 func TestNewWorkerFromDependenciesReleasesPhysicalDatabaseInstanceWhenMaterializationFails(t *testing.T) {
 	var callbackBody map[string]any
+	var progressBodies []map[string]any
 	var seen []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seen = append(seen, r.Method+" "+r.URL.RequestURI())
@@ -439,6 +446,12 @@ func TestNewWorkerFromDependenciesReleasesPhysicalDatabaseInstanceWhenMaterializ
 		case "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/reserve":
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"data":{"id":"11111111-1111-4111-8111-111111111111"}}`))
+		case "POST /api/v1/database-lifecycle/callbacks/progress":
+			var progressBody map[string]any
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&progressBody))
+			progressBodies = append(progressBodies, progressBody)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"provisioning","requestId":"request-1","requestState":"provisioning"}}`))
 		case "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/release":
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"data":{"id":"11111111-1111-4111-8111-111111111111"}}`))
@@ -491,6 +504,9 @@ func TestNewWorkerFromDependenciesReleasesPhysicalDatabaseInstanceWhenMaterializ
 	require.Equal(t, 0, result.Processed)
 	require.Len(t, result.Errors, 1)
 	require.Contains(t, seen, "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/release")
+	require.Len(t, progressBodies, 2)
+	require.Equal(t, "physical_db_reserved", progressBodies[0]["continuation"].(map[string]any)["currentState"])
+	require.Equal(t, "physical_db_registered", progressBodies[1]["continuation"].(map[string]any)["currentState"])
 	require.Equal(t, "terraform_failed", callbackBody["error"].(map[string]any)["code"])
 	require.Contains(t, callbackBody["error"].(map[string]any)["message"], "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE must be set explicitly")
 }
@@ -509,6 +525,9 @@ func TestNewWorkerFromDependenciesRetriesPhysicalDatabaseInstanceReleaseWhenMate
 		case "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/reserve":
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"data":{"id":"11111111-1111-4111-8111-111111111111"}}`))
+		case "POST /api/v1/database-lifecycle/callbacks/progress":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"provisioning","requestId":"request-1","requestState":"provisioning"}}`))
 		case "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/release":
 			releaseAttempts++
 			if releaseAttempts == 1 {
@@ -568,6 +587,98 @@ func TestNewWorkerFromDependenciesRetriesPhysicalDatabaseInstanceReleaseWhenMate
 	require.Equal(t, 2, releaseAttempts)
 	require.Equal(t, "terraform_failed", callbackBody["error"].(map[string]any)["code"])
 	require.Contains(t, callbackBody["error"].(map[string]any)["message"], "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE must be set explicitly")
+}
+
+func TestNewWorkerFromDependenciesFailsTerminallyWithoutLeakingReservationWhenMaterializationRollbackProgressFails(t *testing.T) {
+	var progressStates []string
+	var callbackBody map[string]any
+	var seen []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.Method+" "+r.URL.Path)
+		switch r.Method + " " + r.URL.Path {
+		case "POST /api/v1/database-lifecycle/dispatches/claim":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(claimLifecycleDispatchResponse("postgres")))
+		case "GET /api/v1/database-lifecycle/physical-database-instances":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":[{"id":"11111111-1111-4111-8111-111111111111","region":"us-east-1","environment":"deployed","engine":"postgres","endpoint":"pool.example.com:5432","masterCredentialRef":{"resolver":"aws_secrets_manager","ref":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!pool","field":"password"},"capacityMax":4,"capacityUsed":0,"status":"active"}]}`))
+		case "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/reserve":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"id":"11111111-1111-4111-8111-111111111111"}}`))
+		case "POST /api/v1/database-lifecycle/callbacks/progress":
+			var progressBody map[string]any
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&progressBody))
+			state, _ := progressBody["continuation"].(map[string]any)["currentState"].(string)
+			progressStates = append(progressStates, state)
+			// The physical_db_reserved checkpoint (during reservation) succeeds,
+			// but the physical_db_registered downgrade (during materialization
+			// rollback) fails while the reservation has already been released.
+			if state == "physical_db_registered" {
+				http.Error(w, "progress callback temporarily unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"provisioning","requestId":"request-1","requestState":"provisioning"}}`))
+		case "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/release":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"id":"11111111-1111-4111-8111-111111111111"}}`))
+		case "POST /api/v1/database-lifecycle/callbacks/terminal":
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"failed","migrationState":"pending","requestId":"request-1","requestState":"failed"}}`))
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	worker, err := NewWorkerFromDependencies(WorkerDependencies{
+		AgentID: "agent-1",
+		Client:  clients.NewServerClient(&clients.ServerClientOptions{URL: server.URL, SuperblocksAgentKey: "agent-key"}),
+		Executor: CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) {
+			t.Fatal("materialization must fail before Terraform commands run")
+			return CommandResult{}, nil
+		}),
+		Locker:  NewMemoryLocker(),
+		RootDir: tempRoot(t),
+		AllowedModuleSources: []string{
+			"app.terraform.io/superblocks/postgres-managed-database/aws",
+		},
+		LifecycleConfig: LifecycleConfig{
+			Entries: []LifecycleConfigEntry{{
+				Environment: "deployed",
+				Profiles:    []string{"production"},
+				Engines:     []string{"postgres"},
+				Operations: map[string]LifecycleOperation{
+					"ensure_database": terraformOperationWithBackend(map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-east-1"}, map[string]TerraformModule{
+						"postgres": {
+							Source:  "app.terraform.io/superblocks/postgres-managed-database/aws",
+							Version: "1.2.3",
+							Inputs: map[string]any{
+								"credential_secret_prefix": "superblocks/native-db/prod",
+							},
+						},
+					}),
+				},
+			}},
+		},
+	})
+	require.NoError(t, err)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.Equal(t, []string{"physical_db_reserved", "physical_db_registered"}, progressStates)
+	// The reservation is released before the (failing) downgrade, so the pool
+	// slot is never leaked even though the continuation stays physical_db_reserved.
+	require.Contains(t, seen, "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/release")
+	// A failed downgrade callback must NOT reclassify the deterministic
+	// materialization failure as retryable: the binding fails terminally so no
+	// retry resumes physical_db_reserved against the released slot.
+	require.False(t, result.Errors[0].Retryable)
+	require.Equal(t, "failed", callbackBody["lifecycleState"])
 }
 
 func TestNewWorkerFromDependenciesReportsMissingLocalLifecycleConfig(t *testing.T) {

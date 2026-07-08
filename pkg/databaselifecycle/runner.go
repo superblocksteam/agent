@@ -15,6 +15,7 @@ const (
 	ErrorCodeBackendLocked    ErrorCode = "backend_locked"
 	ErrorCodeInternal         ErrorCode = "internal"
 	ErrorCodeMigrationFailed  ErrorCode = "migration_failed"
+	ErrorCodeCallbackFailed   ErrorCode = "callback_failed"
 	ErrorCodePolicyBlocked    ErrorCode = "policy_blocked"
 	ErrorCodeTerraformFailed  ErrorCode = "terraform_failed"
 	ErrorCodeUnsupportedShape ErrorCode = "unsupported_provider_capability"

@@ -64,8 +64,29 @@ type LifecycleConfigEntry struct {
 }
 
 type LifecycleOperation struct {
-	Backend   string                     `json:"backend"`
-	Terraform *TerraformOperationBackend `json:"terraform,omitempty"`
+	Backend          string                     `json:"backend"`
+	PhysicalDatabase *PhysicalDatabasePolicy    `json:"physicalDatabase,omitempty"`
+	Terraform        *TerraformOperationBackend `json:"terraform,omitempty"`
+}
+
+type PhysicalDatabaseMode string
+
+const (
+	PhysicalDatabaseModeDedicated  PhysicalDatabaseMode = "dedicated"
+	PhysicalDatabaseModeNone       PhysicalDatabaseMode = "none"
+	PhysicalDatabaseModeSharedPool PhysicalDatabaseMode = "shared_pool"
+)
+
+type PhysicalDatabaseOnExhausted string
+
+const (
+	PhysicalDatabaseOnExhaustedProvision PhysicalDatabaseOnExhausted = "provision"
+)
+
+type PhysicalDatabasePolicy struct {
+	Mode               PhysicalDatabaseMode        `json:"mode"`
+	ProvisionOperation string                      `json:"provisionOperation,omitempty"`
+	OnExhausted        PhysicalDatabaseOnExhausted `json:"onExhausted,omitempty"`
 }
 
 type TerraformOperationBackend struct {
@@ -78,6 +99,7 @@ type ResolvedLifecycleConfig struct {
 	Module             TerraformModule
 	Backend            map[string]any
 	CredentialResolver map[string]any
+	PhysicalDatabase   *PhysicalDatabasePolicy
 }
 
 func (config LifecycleConfig) Resolve(environment string, profile string, operation string, engine string) (ResolvedLifecycleConfig, error) {
@@ -103,6 +125,7 @@ func (config LifecycleConfig) Resolve(environment string, profile string, operat
 			Module:             module,
 			Backend:            backend,
 			CredentialResolver: credentialResolver,
+			PhysicalDatabase:   entry.Operations[operation].PhysicalDatabase,
 		}, nil
 	}
 	return ResolvedLifecycleConfig{}, fmt.Errorf("database lifecycle config has no entry for environment %q profile %q operation %q engine %q; configured entries: %s", environment, profile, operation, engine, formatConfiguredEntries(config.Entries))
@@ -249,6 +272,44 @@ func validateLifecycleOperations(prefix string, entry LifecycleConfigEntry) erro
 		default:
 			return fmt.Errorf("%s.operations.%s.backend must be one of native_runner, terraform", prefix, operation)
 		}
+		if err := validatePhysicalDatabasePolicy(fmt.Sprintf("%s.operations.%s.physicalDatabase", prefix, operation), operation, config.PhysicalDatabase, entry.Operations); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validatePhysicalDatabasePolicy(prefix string, operation string, policy *PhysicalDatabasePolicy, operations map[string]LifecycleOperation) error {
+	if policy == nil {
+		return nil
+	}
+	if operation != "ensure_database" {
+		return fmt.Errorf("%s is only supported for ensure_database", prefix)
+	}
+	switch policy.Mode {
+	case PhysicalDatabaseModeNone:
+		if policy.ProvisionOperation != "" {
+			return fmt.Errorf("%s.provisionOperation must be omitted when mode is none", prefix)
+		}
+		if policy.OnExhausted != "" {
+			return fmt.Errorf("%s.onExhausted must be omitted when mode is none", prefix)
+		}
+	case PhysicalDatabaseModeSharedPool, PhysicalDatabaseModeDedicated:
+		if policy.ProvisionOperation == "" {
+			return fmt.Errorf("%s.provisionOperation is required when mode is %s", prefix, policy.Mode)
+		}
+		switch policy.OnExhausted {
+		case PhysicalDatabaseOnExhaustedProvision:
+		default:
+			return fmt.Errorf("%s.onExhausted must be provision when mode is %s", prefix, policy.Mode)
+		}
+		if _, exists := operations[policy.ProvisionOperation]; !exists {
+			return fmt.Errorf("%s.provisionOperation %s is not configured in this entry", prefix, policy.ProvisionOperation)
+		}
+	case "":
+		return fmt.Errorf("%s.mode is required", prefix)
+	default:
+		return fmt.Errorf("%s.mode must be one of none, shared_pool, dedicated", prefix)
 	}
 	return nil
 }

@@ -173,6 +173,39 @@ func TestWorkerPollOnceDoesNotProcessMaterializationErrors(t *testing.T) {
 	require.Contains(t, reported[0].Error.Message, "write backend")
 }
 
+func TestWorkerPollOnceDoesNotReportRetryableMaterializationErrorsAsTerminalFailures(t *testing.T) {
+	var reported []TerminalCallback
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			return dispatch, &LifecycleError{Code: ErrorCodeCallbackFailed, Retryable: true, Err: errors.New("progress callback unavailable")}
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			t.Fatal("retryable materialization errors must not process the dispatch")
+			return TerminalCallbackResult{}, nil
+		}),
+	)
+	worker.ReportFailuresWith(CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
+		reported = append(reported, callback)
+		return TerminalCallbackResult{RequestID: callback.RequestID, RequestState: "failed"}, nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.True(t, result.Errors[0].Retryable)
+	require.ErrorContains(t, result.Errors[0].Err, "progress callback unavailable")
+	require.Empty(t, reported)
+}
+
 func TestWorkerPollOnceUsesBindingKeyWhenResourceKeyIsMissing(t *testing.T) {
 	var lockRelease ReleaseFunc
 	var materialized []DispatchPayload
@@ -400,7 +433,7 @@ func TestWorkerPollOnceSurfacesReleaseErrorAfterTerminalFailure(t *testing.T) {
 	require.False(t, result.Errors[0].Retryable)
 }
 
-func TestWorkerPollOnceReleasesReservedPhysicalDatabaseInstanceAfterProcessorError(t *testing.T) {
+func TestWorkerPollOnceKeepsReservedPhysicalDatabaseInstanceAfterRetryableProcessorError(t *testing.T) {
 	var released []string
 	processorErr := &LifecycleError{Code: ErrorCodeBackendLocked, Retryable: true, Err: errors.New("state lock")}
 	worker := NewWorker(
@@ -431,7 +464,10 @@ func TestWorkerPollOnceReleasesReservedPhysicalDatabaseInstanceAfterProcessorErr
 	require.Len(t, result.Errors, 1)
 	require.ErrorIs(t, result.Errors[0].Err, processorErr)
 	require.True(t, result.Errors[0].Retryable)
-	require.Equal(t, []string{"11111111-1111-4111-8111-111111111111"}, released)
+	// A retryable processor error keeps the reservation so the retry resumes
+	// physical_db_reserved with a live reservation; releasing it here would
+	// strand the retry against a pool slot the worker no longer holds.
+	require.Empty(t, released)
 }
 
 func TestWorkerPollOnceKeepsReservedPhysicalDatabaseInstanceAfterReadyCallbackError(t *testing.T) {

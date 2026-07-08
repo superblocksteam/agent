@@ -182,6 +182,65 @@ func TestConfigFromEnvParsesOperationBackendsAndResolvesTerraformOperation(t *te
 	require.Equal(t, map[string]any{"runtime": "aws_secrets_manager"}, resolved.CredentialResolver)
 }
 
+func TestConfigFromEnvParsesExplicitPhysicalDatabasePolicy(t *testing.T) {
+	env := map[string]string{
+		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": `{
+		  "entries": [
+		    {
+		      "environment": "deployed",
+		      "profiles": ["production"],
+		      "engines": ["postgres"],
+		      "operations": {
+		        "ensure_database": {
+		          "backend": "terraform",
+		          "physicalDatabase": {
+		            "mode": "shared_pool",
+		            "provisionOperation": "ensure_physical_database_instance",
+		            "onExhausted": "provision"
+		          },
+		          "terraform": {
+		            "backend": {"stateBackend": "s3", "bucket": "logical-state"},
+		            "credentialResolver": {"runtime": "aws_secrets_manager"},
+		            "moduleSelectors": {
+		              "postgres": {
+		                "source": "app.terraform.io/superblocks/postgres-managed-database/aws",
+		                "version": "1.2.3",
+		                "inputs": {"credential_secret_prefix": "superblocks/native-db/prod"}
+		              }
+		            }
+		          }
+		        },
+		        "ensure_physical_database_instance": {
+		          "backend": "terraform",
+		          "terraform": {
+		            "backend": {"stateBackend": "s3", "bucket": "physical-state"},
+		            "credentialResolver": {"runtime": "aws_secrets_manager"},
+		            "moduleSelectors": {
+		              "postgres": {
+		                "source": "github.com/superblocksteam/terraform//modules/native-database/aws-rds-managed-instance",
+		                "inputs": {"capacity_max": 4}
+		              }
+		            }
+		          }
+		        }
+		      }
+		    }
+		  ]
+		}`,
+	}
+
+	config, err := ConfigFromEnv(func(key string) string { return env[key] })
+	require.NoError(t, err)
+
+	resolved, err := config.LifecycleConfig.Resolve("deployed", "production", "ensure_database", "postgres")
+	require.NoError(t, err)
+	require.Equal(t, &PhysicalDatabasePolicy{
+		Mode:               "shared_pool",
+		ProvisionOperation: "ensure_physical_database_instance",
+		OnExhausted:        "provision",
+	}, resolved.PhysicalDatabase)
+}
+
 func TestConfigFromEnvParsesModuleShapes(t *testing.T) {
 	env := map[string]string{
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": minimalLifecycleConfig(),
@@ -305,6 +364,46 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			name:      "unsupported operation backend",
 			config:    lifecycleConfigWithOperations(`"ensure_database": {"backend": "queue"}`),
 			wantError: "entries[0].operations.ensure_database.backend must be one of native_runner, terraform",
+		},
+		{
+			name:      "physical database policy on unsupported operation",
+			config:    lifecycleConfigWithOperations(`"migrate_schema": {"backend": "native_runner", "physicalDatabase": {"mode": "none"}}`),
+			wantError: "entries[0].operations.migrate_schema.physicalDatabase is only supported for ensure_database",
+		},
+		{
+			name:      "physical database policy missing mode",
+			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{}`),
+			wantError: "entries[0].operations.ensure_database.physicalDatabase.mode is required",
+		},
+		{
+			name:      "physical database policy unsupported mode",
+			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{"mode": "pooled"}`),
+			wantError: "entries[0].operations.ensure_database.physicalDatabase.mode must be one of none, shared_pool, dedicated",
+		},
+		{
+			name:      "physical database none mode rejects provision operation",
+			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{"mode": "none", "provisionOperation": "ensure_physical_database_instance"}`),
+			wantError: "entries[0].operations.ensure_database.physicalDatabase.provisionOperation must be omitted when mode is none",
+		},
+		{
+			name:      "physical database none mode rejects on exhausted",
+			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{"mode": "none", "onExhausted": "provision"}`),
+			wantError: "entries[0].operations.ensure_database.physicalDatabase.onExhausted must be omitted when mode is none",
+		},
+		{
+			name:      "physical database shared pool requires provision operation",
+			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{"mode": "shared_pool", "onExhausted": "provision"}`),
+			wantError: "entries[0].operations.ensure_database.physicalDatabase.provisionOperation is required when mode is shared_pool",
+		},
+		{
+			name:      "physical database shared pool requires provision on exhausted",
+			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{"mode": "shared_pool", "provisionOperation": "ensure_physical_database_instance", "onExhausted": "fail"}`),
+			wantError: "entries[0].operations.ensure_database.physicalDatabase.onExhausted must be provision when mode is shared_pool",
+		},
+		{
+			name:      "physical database provision operation must exist in entry",
+			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{"mode": "shared_pool", "provisionOperation": "missing_physical_database_instance", "onExhausted": "provision"}`),
+			wantError: "entries[0].operations.ensure_database.physicalDatabase.provisionOperation missing_physical_database_instance is not configured in this entry",
 		},
 		{
 			name:      "native runner backend for unsupported operation",
@@ -685,6 +784,18 @@ func lifecycleConfigWithOperations(operations string) string {
 
 func lifecycleConfigWithTerraformOperation(terraformConfig string) string {
 	return lifecycleConfigWithOperations(`"ensure_database": {"backend": "terraform", "terraform": {` + terraformConfig + `}}`)
+}
+
+func lifecycleConfigWithPhysicalDatabasePolicy(policy string) string {
+	return lifecycleConfigWithOperations(`"ensure_database": {
+	  "backend": "terraform",
+	  "physicalDatabase": ` + policy + `,
+	  "terraform": {
+	    "backend": {"stateBackend": "s3"},
+	    "credentialResolver": {"runtime": "aws_secrets_manager"},
+	    "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+	  }
+	}`)
 }
 
 func terraformOperation(moduleSelectors map[string]TerraformModule) LifecycleOperation {

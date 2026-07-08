@@ -31,6 +31,16 @@ func (f CallbackReporterFunc) Report(ctx context.Context, callback TerminalCallb
 	return f(ctx, callback)
 }
 
+type ProgressReporter interface {
+	ReportProgress(context.Context, ProgressCallback) (ProgressCallbackResult, error)
+}
+
+type ProgressReporterFunc func(context.Context, ProgressCallback) (ProgressCallbackResult, error)
+
+func (f ProgressReporterFunc) ReportProgress(ctx context.Context, callback ProgressCallback) (ProgressCallbackResult, error) {
+	return f(ctx, callback)
+}
+
 // DSNBuilder derives a postgres DSN from a terminal callback's
 // connection_metadata + runtime/migration credential refs. Injected so tests can swap in
 // a fake without touching AWS Secrets Manager.

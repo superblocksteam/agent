@@ -590,6 +590,36 @@ func (_m *ServerClient) PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(_a0
 	return r0, r1
 }
 
+// PostDatabaseLifecycleProgressCallback provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *ServerClient) PostDatabaseLifecycleProgressCallback(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 clients.DatabaseLifecycleProgressCallbackRequest) (*http.Response, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PostDatabaseLifecycleProgressCallback")
+	}
+
+	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecycleProgressCallbackRequest) (*http.Response, error)); ok {
+		return rf(_a0, _a1, _a2, _a3)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecycleProgressCallbackRequest) *http.Response); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *time.Duration, http.Header, clients.DatabaseLifecycleProgressCallbackRequest) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PostDatabaseLifecycleTerminalCallback provides a mock function with given fields: _a0, _a1, _a2, _a3
 func (_m *ServerClient) PostDatabaseLifecycleTerminalCallback(_a0 context.Context, _a1 *time.Duration, _a2 http.Header, _a3 clients.DatabaseLifecycleTerminalCallbackRequest) (*http.Response, error) {
 	ret := _m.Called(_a0, _a1, _a2, _a3)

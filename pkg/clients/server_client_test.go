@@ -171,6 +171,49 @@ func TestPostDatabaseLifecycleTerminalCallback(t *testing.T) {
 	resp.Body.Close()
 }
 
+func TestPostDatabaseLifecycleProgressCallback(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/v1/database-lifecycle/callbacks/progress", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "agent-key", r.Header.Get("x-superblocks-agent-key"))
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "request-1", body["requestId"])
+		assert.Equal(t, "app:prod:orders", body["bindingKey"])
+		assert.Equal(t, "physical_db_provisioning", body["continuation"].(map[string]any)["currentState"])
+		assert.Equal(t, "physical-database-instance:deployed:production:us-east-1:postgres:stable-provision", body["continuation"].(map[string]any)["physicalTerraformResourceKey"])
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"data":{"requestId":"request-1","requestState":"provisioning"}}`))
+	}))
+	defer server.Close()
+
+	client := NewServerClient(&ServerClientOptions{
+		URL:                 server.URL,
+		SuperblocksAgentKey: "agent-key",
+	})
+
+	resp, err := client.PostDatabaseLifecycleProgressCallback(
+		context.Background(),
+		nil,
+		http.Header{},
+		DatabaseLifecycleProgressCallbackRequest{
+			BindingKey: "app:prod:orders",
+			Continuation: map[string]any{
+				"currentState":                 "physical_db_provisioning",
+				"physicalTerraformResourceKey": "physical-database-instance:deployed:production:us-east-1:postgres:stable-provision",
+			},
+			RequestID: "request-1",
+		},
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
+}
+
 func TestGetIntegrationsSecretStoresUsesAgentEndpointWithFallback(t *testing.T) {
 	for _, test := range []struct {
 		name          string

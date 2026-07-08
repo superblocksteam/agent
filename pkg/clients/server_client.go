@@ -78,6 +78,12 @@ type DatabaseLifecycleTerminalCallbackRequest struct {
 	RequestID      string `json:"requestId"`
 }
 
+type DatabaseLifecycleProgressCallbackRequest struct {
+	BindingKey   string         `json:"bindingKey"`
+	Continuation map[string]any `json:"continuation"`
+	RequestID    string         `json:"requestId"`
+}
+
 type DatabaseLifecyclePhysicalDatabaseInstanceListRequest struct {
 	Environment string
 	Engine      string
@@ -126,6 +132,7 @@ type ServerClient interface {
 	PostClaimKeyRotationResourcesForSigningV2(context.Context, *time.Duration, http.Header, *securityv1.ResourcesToResignRequest) (*http.Response, error)                     // Claim key rotation resources for signing
 	PostClaimDatabaseLifecycleDispatches(context.Context, *time.Duration, http.Header, DatabaseLifecycleDispatchClaimRequest) (*http.Response, error)                         // Claim database lifecycle dispatches
 	PostDatabaseLifecycleTerminalCallback(context.Context, *time.Duration, http.Header, DatabaseLifecycleTerminalCallbackRequest) (*http.Response, error)                     // Post database lifecycle terminal callback
+	PostDatabaseLifecycleProgressCallback(context.Context, *time.Duration, http.Header, DatabaseLifecycleProgressCallbackRequest) (*http.Response, error)                     // Post database lifecycle progress callback
 	GetDatabaseLifecyclePhysicalDatabaseInstances(context.Context, *time.Duration, http.Header, DatabaseLifecyclePhysicalDatabaseInstanceListRequest) (*http.Response, error) // List database lifecycle physical database instances
 	PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(context.Context, *time.Duration, http.Header, string) (*http.Response, error)                                        // Reserve database lifecycle physical database instance capacity
 	PostDatabaseLifecyclePhysicalDatabaseInstanceRelease(context.Context, *time.Duration, http.Header, string) (*http.Response, error)                                        // Release database lifecycle physical database instance capacity
@@ -329,6 +336,13 @@ func (s *serverClient) PostDatabaseLifecycleTerminalCallback(ctx context.Context
 		"Content-Type": "application/json",
 	}, headers)
 	return s.sendRequest(ctx, timeout, http.MethodPost, "api/v1/database-lifecycle/callbacks/terminal", headers, nil, body, true)
+}
+
+func (s *serverClient) PostDatabaseLifecycleProgressCallback(ctx context.Context, timeout *time.Duration, headers http.Header, body DatabaseLifecycleProgressCallbackRequest) (*http.Response, error) {
+	headers = combineHeaders(map[string]string{
+		"Content-Type": "application/json",
+	}, headers)
+	return s.sendRequest(ctx, timeout, http.MethodPost, "api/v1/database-lifecycle/callbacks/progress", headers, nil, body, true)
 }
 
 func (s *serverClient) GetDatabaseLifecyclePhysicalDatabaseInstances(ctx context.Context, timeout *time.Duration, headers http.Header, request DatabaseLifecyclePhysicalDatabaseInstanceListRequest) (*http.Response, error) {

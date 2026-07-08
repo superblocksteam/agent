@@ -142,6 +142,23 @@ func TestClaimDispatchesDecodesMigrationCredentialRefs(t *testing.T) {
 	}, dispatches[0].MigrationCredentialRefs)
 }
 
+func TestClaimDispatchesDecodesContinuationMetadata(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","desiredSpec":{"logicalName":"Orders DB","engine":"postgres"},"desiredSpecHash":"hash-1","environment":"deployed","operation":"ensure_database","profile":"production","requestId":"request-1","resourceKey":"resource-1","continuation":{"currentState":"physical_db_provisioning","physicalTerraformResourceKey":"physical-database-instance:deployed:production:us-east-1:postgres:stable-provision"}}]}`))
+	}))
+	defer server.Close()
+
+	client := clients.NewServerClient(&clients.ServerClientOptions{URL: server.URL, SuperblocksAgentKey: "agent-key"})
+
+	dispatches, err := ClaimDispatches(context.Background(), client, "agent-1")
+
+	require.NoError(t, err)
+	require.Len(t, dispatches, 1)
+	require.Equal(t, "physical_db_provisioning", dispatches[0].Continuation.CurrentState)
+	require.Equal(t, "physical-database-instance:deployed:production:us-east-1:postgres:stable-provision", dispatches[0].Continuation.PhysicalTerraformResourceKey)
+}
+
 func TestClaimDispatchesReturnsControlPlaneErrors(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

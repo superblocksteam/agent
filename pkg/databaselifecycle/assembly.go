@@ -40,6 +40,9 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 	reporter := CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
 		return ReportTerminalCallback(ctx, deps.Client, callback)
 	})
+	progressReporter := ProgressReporterFunc(func(ctx context.Context, callback ProgressCallback) (ProgressCallbackResult, error) {
+		return ReportProgressCallback(ctx, deps.Client, callback)
+	})
 	// SSL options forwarded into the materializer so the shared-mode
 	// `provider "postgresql"` block uses the same posture (sslmode +
 	// optional sslrootcert) as DSNOptions, keeping the terraform apply
@@ -53,6 +56,7 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 	physicalDatabaseInstanceClient := NewServerPhysicalDatabaseInstanceLifecycleClient(deps.Client)
 	physicalDatabaseInstanceProvisioner := newTerraformPhysicalDatabaseInstanceProvisioner(deps.LifecycleConfig, deps.AllowedModuleSources, deps.RootDir, runner, sslOpts)
 	physicalDatabaseInstanceLifecycle := NewPhysicalDatabaseInstanceLifecycle(physicalDatabaseInstanceClient, physicalDatabaseInstanceProvisioner)
+	physicalDatabaseInstanceLifecycle.ReportProgressWith(progressReporter)
 	materializer := JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 		if len(deps.LifecycleConfig.Entries) == 0 {
 			return dispatch, unsupportedShapeError(errors.New("database lifecycle local config is required: set SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG with at least one entry"))
@@ -70,11 +74,15 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 		if err := validateSharedPostgresEnsureCredentialSecretPrefix(dispatch, resolved); err != nil {
 			return dispatch, err
 		}
+		var physicalDatabaseInstance PhysicalDatabaseInstance
+		var physicalDatabaseInstanceSelector PhysicalDatabaseInstanceSelector
 		if shouldReservePhysicalDatabaseInstance(dispatch, resolved) {
-			instance, err := physicalDatabaseInstanceLifecycle.ReserveForEnsure(ctx, physicalDatabaseInstanceSelector(dispatch, resolved))
+			physicalDatabaseInstanceSelector = physicalDatabaseInstanceSelectorFromDispatch(dispatch, resolved)
+			instance, err := physicalDatabaseInstanceLifecycle.ReserveForEnsure(ctx, physicalDatabaseInstanceSelector)
 			if err != nil {
 				return dispatch, err
 			}
+			physicalDatabaseInstance = instance
 			dispatch.PhysicalDatabaseInstanceID = instance.ID
 			resolved = ResolveWithPhysicalDatabaseInstance(resolved, instance)
 		}
@@ -82,6 +90,18 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 			if dispatch.PhysicalDatabaseInstanceID != "" {
 				if releaseErr := releaseReservedPhysicalDatabaseInstance(ctx, physicalDatabaseInstanceClient, dispatch.PhysicalDatabaseInstanceID); releaseErr != nil {
 					return dispatch, errors.Join(err, releaseErr)
+				}
+				// The reservation is released above, so the pool slot is never
+				// leaked. The physical_db_registered downgrade is best-effort
+				// cleanup: materialization failures are deterministic, so this
+				// dispatch will not succeed on retry, and the downgrade callback
+				// failing (a retryable LifecycleError) must NOT reclassify the
+				// terminal materialization failure as retryable — a retry would
+				// otherwise resume physical_db_reserved without a live
+				// reservation. Fold the callback failure in with %v so it is
+				// surfaced without contributing a retryable error to the tree.
+				if progressErr := physicalDatabaseInstanceLifecycle.reportPhysicalDatabaseInstanceProgress(ctx, physicalDatabaseInstanceSelector, physicalDatabaseInstance, "physical_db_registered"); progressErr != nil {
+					return dispatch, fmt.Errorf("%w; physical_db_registered progress callback also failed: %v", err, progressErr)
 				}
 			}
 			return dispatch, err
@@ -110,6 +130,9 @@ func unsupportedShapeError(err error) error {
 }
 
 func shouldReservePhysicalDatabaseInstance(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) bool {
+	if resolved.PhysicalDatabase != nil {
+		return dispatch.Operation == "ensure_database" && (resolved.PhysicalDatabase.Mode == PhysicalDatabaseModeSharedPool || resolved.PhysicalDatabase.Mode == PhysicalDatabaseModeDedicated)
+	}
 	credentialSecretPrefix, hasCredentialSecretPrefix := resolved.Module.Inputs[credentialSecretPrefixInput].(string)
 	return dispatch.Operation == "ensure_database" &&
 		isPostgresManagedDatabaseSource(resolved.Module.Source) &&
@@ -127,12 +150,28 @@ func validateSharedPostgresEnsureCredentialSecretPrefix(dispatch DispatchPayload
 	return validateSharedModeCredentialSecretPrefix(resolved.Module.Inputs)
 }
 
-func physicalDatabaseInstanceSelector(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) PhysicalDatabaseInstanceSelector {
+func physicalDatabaseInstanceSelectorFromDispatch(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) PhysicalDatabaseInstanceSelector {
+	provisionOperation := operationEnsurePhysicalDatabaseInstance
+	mode := PhysicalDatabaseMode("")
+	if resolved.PhysicalDatabase != nil && resolved.PhysicalDatabase.ProvisionOperation != "" {
+		provisionOperation = resolved.PhysicalDatabase.ProvisionOperation
+	}
+	if resolved.PhysicalDatabase != nil {
+		mode = resolved.PhysicalDatabase.Mode
+	}
 	return PhysicalDatabaseInstanceSelector{
-		Region:      stringBackendValue(resolved.Backend, "region"),
-		Environment: dispatch.Environment,
-		Profile:     dispatch.Profile,
-		Engine:      dispatch.DesiredSpec.Engine,
+		BindingKey:                   dispatch.BindingKey,
+		RequestID:                    dispatch.RequestID,
+		Region:                       stringBackendValue(resolved.Backend, "region"),
+		Environment:                  dispatch.Environment,
+		Profile:                      dispatch.Profile,
+		Engine:                       dispatch.DesiredSpec.Engine,
+		Mode:                         mode,
+		ProvisionOperation:           provisionOperation,
+		ParentResourceKey:            dispatch.ResourceKey,
+		CurrentState:                 dispatch.Continuation.CurrentState,
+		PhysicalDatabaseInstanceID:   dispatch.Continuation.PhysicalDatabaseInstanceID,
+		PhysicalTerraformResourceKey: dispatch.Continuation.PhysicalTerraformResourceKey,
 	}
 }
 
