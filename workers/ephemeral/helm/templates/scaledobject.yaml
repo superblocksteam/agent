@@ -29,6 +29,12 @@ metadata:
   labels:
     {{- include "sandbox.worker.labels" $v | nindent 4 }}
 spec:
+  advanced:
+    horizontalPodAutoscalerConfig:
+      # Name the HPA explicitly. Otherwise KEDA derives "keda-hpa-<scaledobject>",
+      # and that 9-char prefix can push the name past Kubernetes' 63-char limit,
+      # which the KEDA admission webhook rejects. Truncate to keep it valid.
+      name: {{ printf "keda-hpa-%s-%s" $fullname $k | trunc 63 | trimSuffix "-" }}
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
