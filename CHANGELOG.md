@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Fix GCS presigned URL generation when `presignedExpiration` is omitted (Clark, SDK API) or non-finite, so the plugin falls back to the default TTL instead of passing an invalid expiration to Google Cloud Storage.
 - Align observability naming conventions with the v0.6.0 Tier 2 contract (e.g. supporting dotted notation for telemetry attributes) and expand span-attribute privacy filtering accordingly.
 - Forward Apps 3.0 code-mode view mode and committed app version context to the control plane so data tag validation can reject protected profiles for undeployed or uncommitted code.
 - Bump dependencies, base-image, and Go toolchain versions to clear Trivy HIGH/CRITICAL CVEs (golang.org/x/net, golang.org/x/crypto, Go 1.26.4, OpenTofu 1.11.11, and a batch of Python and Node packages).

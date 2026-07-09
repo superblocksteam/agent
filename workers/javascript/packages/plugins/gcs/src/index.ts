@@ -162,14 +162,24 @@ export default class GCSPlugin extends BasePlugin {
             });
           }
 
+          // Callers that don't go through the form UI (e.g. Clark's chat tool, the SDK API)
+          // never populate custom.presignedExpiration, so it's commonly absent rather than
+          // just invalid. Only validate/convert when a value was actually provided, and let
+          // generateSignedUrl fall back to DEFAULT_GCS_PRESIGNED_URL_EXPIRATION_SECONDS
+          // otherwise -- mirroring the S3 plugin's handling of the same gap.
+          const rawExpiration = actionConfiguration.custom?.presignedExpiration?.value;
+          let expirationInSecs: number | undefined;
+          if (rawExpiration !== undefined) {
+            expirationInSecs = Number(rawExpiration);
+            if (!Number.isFinite(expirationInSecs) || expirationInSecs <= 0) {
+              throw new IntegrationError(`Invalid presigned URL expiration value: ${rawExpiration}`, ErrorCode.INTEGRATION_SYNTAX, {
+                pluginName: this.pluginName
+              });
+            }
+          }
+
           ret.output = {
-            presignedURL: await this.generateSignedUrl(
-              client,
-              resource,
-              path,
-              // UI has a valid default, but this will fail if user pass an invalid number
-              Number(actionConfiguration.custom?.presignedExpiration?.value)
-            )
+            presignedURL: await this.generateSignedUrl(client, resource, path, expirationInSecs)
           };
           break;
         }
