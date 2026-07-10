@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	authmocks "github.com/superblocksteam/agent/internal/auth/mocks"
 	mocks "github.com/superblocksteam/agent/internal/flags/mock"
+	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/engine"
 	"github.com/superblocksteam/agent/pkg/plugin"
 	"github.com/superblocksteam/agent/pkg/template/plugins"
@@ -471,6 +472,7 @@ func TestShouldConvertToLegacyBindings(t *testing.T) {
 
 	tests := []struct {
 		name                      string
+		ctx                       context.Context
 		legacyTemplatePlugin      func(*plugins.Input) plugins.Plugin
 		legacyTemplateResolver    func(context.Context, *utils.TokenJoiner, string) engine.Value
 		legacyTemplateTokenJoiner *utils.TokenJoiner
@@ -580,6 +582,30 @@ func TestShouldConvertToLegacyBindings(t *testing.T) {
 			description:               "REST API integration plugin type should convert to legacy bindings",
 		},
 		{
+			name:                      "Should return false for restapi during SDK integration execution",
+			ctx:                       constants.WithSDKIntegrationExecution(context.Background(), nil),
+			legacyTemplatePlugin:      mockTemplatePlugin,
+			legacyTemplateResolver:    mockTemplateResolver,
+			legacyTemplateTokenJoiner: utils.NoOpTokenJoiner,
+			action:                    &structpb.Struct{},
+			pluginType:                "restapi",
+			stream:                    false,
+			expected:                  false,
+			description:               "SDK integration REST calls pass action config through unchanged",
+		},
+		{
+			name:                      "Should return false for restapiintegration during SDK integration execution",
+			ctx:                       constants.WithSDKIntegrationExecution(context.Background(), nil),
+			legacyTemplatePlugin:      mockTemplatePlugin,
+			legacyTemplateResolver:    mockTemplateResolver,
+			legacyTemplateTokenJoiner: utils.NoOpTokenJoiner,
+			action:                    &structpb.Struct{},
+			pluginType:                "restapiintegration",
+			stream:                    false,
+			expected:                  false,
+			description:               "SDK integration REST integration calls pass action config through unchanged",
+		},
+		{
 			name:                      "Should return true for plugins that use readContents",
 			legacyTemplatePlugin:      mockTemplatePlugin,
 			legacyTemplateResolver:    mockTemplateResolver,
@@ -606,8 +632,101 @@ func TestShouldConvertToLegacyBindings(t *testing.T) {
 				legacyTemplateTokenJoiner: tt.legacyTemplateTokenJoiner,
 			}
 
-			result := r.shouldConvertToLegacyBindings(tt.action, tt.pluginType, tt.stream)
+			ctx := tt.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+
+			result := r.shouldConvertToLegacyBindings(ctx, tt.action, tt.pluginType, tt.stream)
 			assert.Equal(t, tt.expected, result, tt.description)
+		})
+	}
+}
+
+func TestShouldSkipSDKIntegrationRestBindingResolution(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		ctx        context.Context
+		pluginType string
+		expected   bool
+	}{
+		{
+			name:       "restapi with SDK integration context",
+			ctx:        constants.WithSDKIntegrationExecution(context.Background(), nil),
+			pluginType: "restapi",
+			expected:   true,
+		},
+		{
+			name:       "restapiintegration with SDK integration context",
+			ctx:        constants.WithSDKIntegrationExecution(context.Background(), nil),
+			pluginType: "restapiintegration",
+			expected:   true,
+		},
+		{
+			name:       "restapi without SDK integration context",
+			ctx:        context.Background(),
+			pluginType: "restapi",
+			expected:   false,
+		},
+		{
+			name:       "postgres during SDK integration execution",
+			ctx:        constants.WithSDKIntegrationExecution(context.Background(), nil),
+			pluginType: "postgres",
+			expected:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.expected, shouldSkipSDKIntegrationRestBindingResolution(tt.ctx, tt.pluginType))
+		})
+	}
+}
+
+func TestWorkerBindingRenderEnabled(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                           string
+		shouldRenderAtOrchestrator     bool
+		skipSDKIntegrationRestBindings bool
+		expected                       bool
+	}{
+		{
+			name:                       "orchestrator rendered — worker must not re-render",
+			shouldRenderAtOrchestrator: true,
+			expected:                   false,
+		},
+		{
+			name:                       "classic REST — worker renders bindings",
+			shouldRenderAtOrchestrator: false,
+			expected:                   true,
+		},
+		{
+			name:                           "SDK integration REST — worker must not render",
+			shouldRenderAtOrchestrator:     false,
+			skipSDKIntegrationRestBindings: true,
+			expected:                       false,
+		},
+		{
+			name:                           "SDK skip takes priority even when orchestrator already rendered",
+			shouldRenderAtOrchestrator:     true,
+			skipSDKIntegrationRestBindings: true,
+			expected:                       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(
+				t,
+				tt.expected,
+				workerBindingRenderEnabled(tt.shouldRenderAtOrchestrator, tt.skipSDKIntegrationRestBindings),
+			)
 		})
 	}
 }

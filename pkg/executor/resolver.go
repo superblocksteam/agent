@@ -718,6 +718,14 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 
 		var resolvedActionCfg *structpb.Struct
 		var shouldRender bool
+		skipSDKIntegrationRestBindings := shouldSkipSDKIntegrationRestBindingResolution(ctx.Context, p.Type())
+		if skipSDKIntegrationRestBindings {
+			r.logger.Debug(
+				"skipping binding resolution for SDK integration REST step",
+				zap.String("pluginType", p.Type()),
+				zap.String("stepName", ctx.Name),
+			)
+		}
 		{
 			isStreamingExecution := wops.Apply(opts.Worker...).Stream != nil
 
@@ -729,7 +737,7 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 					return nil, "", err
 				}
 				resolvedActionCfg = rendered.GetStructValue()
-			} else if r.shouldConvertToLegacyBindings(action, p.Type(), isStreamingExecution) {
+			} else if r.shouldConvertToLegacyBindings(ctx.Context, action, p.Type(), isStreamingExecution) {
 				rendered, err := template.RenderProtoValueWithResolver(
 					ctx,
 					structpb.NewStructValue(action),
@@ -769,7 +777,7 @@ func (r *resolver) Step(ctx *apictx.Context, step *apiv1.Step, ops ...options.Op
 			Variables:              ctx.ReferencedVariables(resolvedActionCfg.String()),
 			FileServerUrl:          r.fileServerUrl,
 			Files:                  r.files,
-			Render:                 !shouldRender, // NOTE(frank): We can deprecate this once all rendering is moved to the orchestrator.
+			Render:                 workerBindingRenderEnabled(shouldRender, skipSDKIntegrationRestBindings), // NOTE(frank): We can deprecate this once all rendering is moved to the orchestrator.
 			Version:                "v2",
 			UseWasmBindingsSandbox: useWasmBindingsSandbox,
 			JwtToken:               r.jwtToken,
@@ -1791,9 +1799,32 @@ func (r *resolver) collectAndFlush(ctx *apictx.Context, refs utils.List[string],
 	return ref, nil
 }
 
-func (r *resolver) shouldConvertToLegacyBindings(action *structpb.Struct, pluginType string, stream bool) bool {
+func shouldSkipSDKIntegrationRestBindingResolution(ctx context.Context, pluginType string) bool {
+	if !constants.IsSDKIntegrationExecution(ctx) {
+		return false
+	}
+
+	return pluginType == "restapi" || pluginType == "restapiintegration"
+}
+
+func workerBindingRenderEnabled(shouldRenderAtOrchestrator bool, skipSDKIntegrationRestBindings bool) bool {
+	if skipSDKIntegrationRestBindings {
+		return false
+	}
+
+	return !shouldRenderAtOrchestrator
+}
+
+func (r *resolver) shouldConvertToLegacyBindings(ctx context.Context, action *structpb.Struct, pluginType string, stream bool) bool {
 	// If the legacy template plugin or resolver is not set, we should not convert to legacy bindings
 	if r.legacyTemplatePlugin == nil || r.legacyTemplateResolver == nil || r.legacyTemplateTokenJoiner == nil {
+		return false
+	}
+
+	// shouldRenderActionConfig returns false for restapi/restapiintegration (see below), which
+	// routes classic REST through legacy mustache conversion here. SDK integrations must bypass
+	// that path so literal {{ in request bodies pass through unchanged.
+	if shouldSkipSDKIntegrationRestBindingResolution(ctx, pluginType) {
 		return false
 	}
 

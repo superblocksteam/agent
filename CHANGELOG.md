@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Skip mustache binding resolution for Apps 3.0 SDK integration REST sub-requests so literal `{{` in request bodies are not evaluated
 - Materialize one app-scoped PostgreSQL migrator role and credential per Native Database binding, reused for application queries and schema migrations.
 - Fix GCS presigned URL generation when `presignedExpiration` is omitted (Clark, SDK API) or non-finite, so the plugin falls back to the default TTL instead of passing an invalid expiration to Google Cloud Storage.
 - Align observability naming conventions with the v0.6.0 Tier 2 contract (e.g. supporting dotted notation for telemetry attributes) and expand span-attribute privacy filtering accordingly.
