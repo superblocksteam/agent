@@ -269,9 +269,10 @@ func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsFromReservedIn
 	var vars map[string]any
 	require.NoError(t, readJSONFile(job.VarsFile, &vars))
 	require.Equal(t, "orders_db", vars["logical_name"])
-	require.Regexp(t, `^sb_[a-f0-9]{16}$`, vars["database_name"])
-	require.Regexp(t, `^sb_[a-f0-9]{16}_run$`, vars["runtime_role_name"])
-	require.Regexp(t, `^sb_[a-f0-9]{16}_mig$`, vars["migration_role_name"])
+	require.Equal(t, "sb_0feb472353575bf5", vars["database_name"])
+	require.Equal(t, "app_0feb472353575bf5a7596189d9b482e1_migrator", vars["runtime_role_name"])
+	_, hasMigrationRole := vars["migration_role_name"]
+	require.False(t, hasMigrationRole, "shared-mode materialization must not set a separate migration_role_name")
 	require.Equal(t, "pool-rds.example.us-east-1.rds.amazonaws.com", vars["host"])
 	require.Equal(t, float64(6432), vars["port"])
 	require.Equal(t, map[string]any{
@@ -283,16 +284,20 @@ func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsFromReservedIn
 	require.NoError(t, err)
 	main := string(mainFile)
 	require.Contains(t, main, `__pool_master_secret_arn    = var.postgres_admin_credential_ref.ref`)
-	require.Contains(t, main, `resource "random_password" "runtime"`)
-	require.Contains(t, main, `resource "aws_secretsmanager_secret" "runtime"`)
+	require.Contains(t, main, `resource "random_password" "app"`)
+	require.Contains(t, main, `resource "aws_secretsmanager_secret" "app"`)
+	require.NotContains(t, main, `resource "random_password" "migration"`)
+	require.NotContains(t, main, `resource "aws_secretsmanager_secret" "migration"`)
 	require.Contains(t, main, `provider = aws.pool_secrets
-  name     = "${local.__credential_secret_prefix}/${var.database_name}/runtime"`)
+  name     = "${local.__credential_secret_prefix}/${var.database_name}/migrator"`)
 	require.Contains(t, main, `runtime_credential_ref = {
     resolver = "aws_secrets_manager"
-    ref      = aws_secretsmanager_secret.runtime.arn
+    ref      = aws_secretsmanager_secret.app.arn
     field    = "password"
   }`)
-	require.Contains(t, main, `runtime_password_wo = random_password.runtime.result`)
+	require.Contains(t, main, `runtime_password_wo = random_password.app.result`)
+	require.NotContains(t, main, `migration_credential_ref = {`)
+	require.NotContains(t, main, `migration_password_wo =`)
 	require.Contains(t, main, `postgres_admin_username = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["username"]`)
 	require.Contains(t, main, `postgres_admin_password = sensitive(jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["password"])`)
 	require.Contains(t, main, `provider "postgresql" {
@@ -300,6 +305,16 @@ func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsFromReservedIn
   port      = var.port`)
 	require.NotContains(t, main, `postgres_admin_credential_ref = var.postgres_admin_credential_ref`)
 	require.NotContains(t, main, `credential_secret_prefix = var.credential_secret_prefix`)
+}
+
+func TestSharedPhysicalDatabaseIdentifiersFallBackToBindingKey(t *testing.T) {
+	const key = "org/app/orders~Orders%20DB:postgres/edit/dev~dev/default"
+
+	withResourceKey := DispatchPayload{ResourceKey: key}
+	withBindingKey := DispatchPayload{BindingKey: key}
+
+	require.Equal(t, sharedPhysicalDatabaseIdentifierStem(withResourceKey), sharedPhysicalDatabaseIdentifierStem(withBindingKey))
+	require.Equal(t, appMigratorRoleName(withResourceKey), appMigratorRoleName(withBindingKey))
 }
 
 func TestMaterializeResolvedJobRejectsInvalidCredentialSecretPrefixBeforeSharedModeMaterialization(t *testing.T) {
@@ -892,10 +907,12 @@ func TestMaterializeJobBindsGeneratedSharedModeSecretsToPoolSecretsProvider(t *t
 	require.Contains(t, main, `aws = {
       source = "hashicorp/aws"
     }`)
-	require.Contains(t, main, `resource "aws_secretsmanager_secret" "runtime" {
+	require.Contains(t, main, `resource "aws_secretsmanager_secret" "app" {
   provider = aws.pool_secrets`)
-	require.Contains(t, main, `resource "aws_secretsmanager_secret_version" "runtime" {
+	require.Contains(t, main, `resource "aws_secretsmanager_secret_version" "app" {
   provider      = aws.pool_secrets`)
+	require.NotContains(t, main, `resource "aws_secretsmanager_secret" "runtime"`)
+	require.NotContains(t, main, `resource "aws_secretsmanager_secret" "migration"`)
 	require.NotContains(t, main, `provider "aws" {
   region = "us-west-2"
 }`)

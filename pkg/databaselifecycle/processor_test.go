@@ -93,6 +93,13 @@ func TestProcessDispatchReportsReadyCallbackAfterRunnerSuccess(t *testing.T) {
 				"field":    "password",
 			},
 		},
+		MigrationCredentialRefs: map[string]any{
+			"password": map[string]any{
+				"resolver": "vault",
+				"ref":      "database/orders",
+				"field":    "password",
+			},
+		},
 	}, reported)
 }
 

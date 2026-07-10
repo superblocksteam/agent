@@ -18,8 +18,8 @@ func TestReadyCallbackFromTerraformOutputUsesOnlyConnectionMetadataAndRuntimeCre
 		Result{
 			OutputJSON: `{
 				"connection_metadata":{"sensitive":false,"type":["object",{}],"value":{"database":"orders","host":"orders.internal","port":5432}},
-				"runtime_credential_refs":{"sensitive":false,"type":["object",{}],"value":{"password":{"resolver":"vault","ref":"database/orders/runtime","field":"password"}}},
-				"migration_credential_refs":{"sensitive":false,"type":["object",{}],"value":{"password":{"resolver":"vault","ref":"database/orders/migration","field":"password"}}},
+				"runtime_credential_refs":{"sensitive":false,"type":["object",{}],"value":{"password":{"resolver":"vault","ref":"database/orders/migrator","field":"password"}}},
+				"migration_credential_refs":{"sensitive":false,"type":["object",{}],"value":{"password":{"resolver":"vault","ref":"database/orders/migrator","field":"password"}}},
 				"password":{"sensitive":true,"type":"string","value":"[REDACTED]"}
 			}`,
 		},
@@ -39,19 +39,48 @@ func TestReadyCallbackFromTerraformOutputUsesOnlyConnectionMetadataAndRuntimeCre
 		RuntimeCredentialRefs: map[string]any{
 			"password": map[string]any{
 				"resolver": "vault",
-				"ref":      "database/orders/runtime",
+				"ref":      "database/orders/migrator",
 				"field":    "password",
 			},
 		},
 		MigrationCredentialRefs: map[string]any{
 			"password": map[string]any{
 				"resolver": "vault",
-				"ref":      "database/orders/migration",
+				"ref":      "database/orders/migrator",
 				"field":    "password",
 			},
 		},
 	}, callback)
 	require.NotContains(t, callback.RuntimeCredentialRefs, "password.value")
+}
+
+func TestReadyCallbackFromTerraformOutputMirrorsRuntimeRefsWhenMigrationRefsMissing(t *testing.T) {
+	callback, err := ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			BindingKey: "app:prod:orders",
+			Operation:  "ensure_database",
+			RequestID:  "request-1",
+		},
+		Result{
+			OutputJSON: `{
+				"connection_metadata":{"sensitive":false,"type":["object",{}],"value":{"database":"orders"}},
+				"runtime_credential_refs":{"sensitive":false,"type":["object",{}],"value":{"password":{"resolver":"vault","ref":"database/orders/migrator","field":"password"}}}
+			}`,
+		},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, map[string]any{
+		"password": map[string]any{
+			"resolver": "vault",
+			"ref":      "database/orders/migrator",
+			"field":    "password",
+		},
+	}, callback.RuntimeCredentialRefs)
+	require.Equal(t, callback.RuntimeCredentialRefs, callback.MigrationCredentialRefs)
+
+	callback.MigrationCredentialRefs["database"] = "orders"
+	require.NotContains(t, callback.RuntimeCredentialRefs, "database")
 }
 
 func TestReadyCallbackFromTerraformOutputCanParseSecretLikeUnusedOutputs(t *testing.T) {

@@ -29,6 +29,7 @@ var generatedSharedModeSecretInputs = map[string]struct{}{
 	"migration_credential_ref":      {},
 	"migration_password_wo":         {},
 	"migration_password_wo_version": {},
+	"migration_role_name":           {},
 	credentialSecretPrefixInput:     {},
 	postgresAdminCredentialInput:    {},
 }
@@ -103,11 +104,15 @@ func deriveSharedPhysicalDatabaseInputs(module TerraformModule, dispatch Dispatc
 	}
 	stem := sharedPhysicalDatabaseIdentifierStem(dispatch)
 	setTerraformModuleInputDefault(module.Inputs, "database_name", stem)
-	setTerraformModuleInputDefault(module.Inputs, "runtime_role_name", stem+"_run")
-	setTerraformModuleInputDefault(module.Inputs, "migration_role_name", stem+"_mig")
+	setTerraformModuleInputDefault(module.Inputs, "runtime_role_name", appMigratorRoleName(dispatch))
 	if dispatch.DesiredSpec.LogicalName != "" {
 		setTerraformModuleInputDefault(module.Inputs, "logical_name", safePostgresIdentifier(dispatch.DesiredSpec.LogicalName, stem))
 	}
+}
+
+func appMigratorRoleName(dispatch DispatchPayload) string {
+	sum := sharedPhysicalDatabaseIdentifierHash(dispatch)
+	return fmt.Sprintf("app_%x_migrator", sum[:16])
 }
 
 func setTerraformModuleInputDefault(inputs map[string]any, key string, value any) {
@@ -117,12 +122,16 @@ func setTerraformModuleInputDefault(inputs map[string]any, key string, value any
 }
 
 func sharedPhysicalDatabaseIdentifierStem(dispatch DispatchPayload) string {
+	sum := sharedPhysicalDatabaseIdentifierHash(dispatch)
+	return fmt.Sprintf("sb_%x", sum[:8])
+}
+
+func sharedPhysicalDatabaseIdentifierHash(dispatch DispatchPayload) [sha256.Size]byte {
 	key := dispatch.ResourceKey
 	if key == "" {
 		key = dispatch.BindingKey
 	}
-	sum := sha256.Sum256([]byte(key))
-	return fmt.Sprintf("sb_%x", sum[:8])
+	return sha256.Sum256([]byte(key))
 }
 
 var postgresIdentifierReplacePattern = regexp.MustCompile(`[^a-z0-9_]+`)
@@ -521,18 +530,11 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 	if generateSharedModeSecrets {
 		builder.WriteString(`  runtime_credential_ref = {
     resolver = "aws_secrets_manager"
-    ref      = aws_secretsmanager_secret.runtime.arn
+    ref      = aws_secretsmanager_secret.app.arn
     field    = "password"
   }
-  runtime_password_wo = random_password.runtime.result
+  runtime_password_wo = random_password.app.result
   runtime_password_wo_version = "1"
-  migration_credential_ref = {
-    resolver = "aws_secrets_manager"
-    ref      = aws_secretsmanager_secret.migration.arn
-    field    = "password"
-  }
-  migration_password_wo = random_password.migration.result
-  migration_password_wo_version = "1"
   postgres_admin_username = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["username"]
   postgres_admin_password = sensitive(jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)["password"])
 `)
@@ -559,41 +561,22 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 }
 
 func sharedModeRoleSecretsHCL() string {
-	return `resource "random_password" "runtime" {
+	return `resource "random_password" "app" {
   length  = 40
   special = false
 }
 
-resource "random_password" "migration" {
-  length  = 40
-  special = false
-}
-
-resource "aws_secretsmanager_secret" "runtime" {
+resource "aws_secretsmanager_secret" "app" {
   provider = aws.pool_secrets
-  name     = "${local.__credential_secret_prefix}/${var.database_name}/runtime"
+  name     = "${local.__credential_secret_prefix}/${var.database_name}/migrator"
 }
 
-resource "aws_secretsmanager_secret_version" "runtime" {
+resource "aws_secretsmanager_secret_version" "app" {
   provider      = aws.pool_secrets
-  secret_id     = aws_secretsmanager_secret.runtime.id
+  secret_id     = aws_secretsmanager_secret.app.id
   secret_string = jsonencode({
     username = var.runtime_role_name
-    password = random_password.runtime.result
-  })
-}
-
-resource "aws_secretsmanager_secret" "migration" {
-  provider = aws.pool_secrets
-  name     = "${local.__credential_secret_prefix}/${var.database_name}/migration"
-}
-
-resource "aws_secretsmanager_secret_version" "migration" {
-  provider      = aws.pool_secrets
-  secret_id     = aws_secretsmanager_secret.migration.id
-  secret_string = jsonencode({
-    username = var.migration_role_name
-    password = random_password.migration.result
+    password = random_password.app.result
   })
 }
 
