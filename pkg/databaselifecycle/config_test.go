@@ -196,7 +196,9 @@ func TestConfigFromEnvParsesExplicitPhysicalDatabasePolicy(t *testing.T) {
 		          "physicalDatabase": {
 		            "mode": "shared_pool",
 		            "provisionOperation": "ensure_physical_database_instance",
-		            "onExhausted": "provision"
+		            "onExhausted": "provision",
+		            "capacityMax": 100,
+		            "securityClass": "standard"
 		          },
 		          "terraform": {
 		            "backend": {"stateBackend": "s3", "bucket": "logical-state"},
@@ -238,80 +240,21 @@ func TestConfigFromEnvParsesExplicitPhysicalDatabasePolicy(t *testing.T) {
 		Mode:               "shared_pool",
 		ProvisionOperation: "ensure_physical_database_instance",
 		OnExhausted:        "provision",
+		CapacityMax:        100,
+		SecurityClass:      "standard",
 	}, resolved.PhysicalDatabase)
 }
 
-func TestConfigFromEnvParsesModuleShapes(t *testing.T) {
+func TestConfigFromEnvIgnoresLegacyModuleShapes(t *testing.T) {
 	env := map[string]string{
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG": minimalLifecycleConfig(),
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES": `{
-		  "app.terraform.io/superblocks/postgres-managed-database/aws": {
-		    "variables": ["binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key", "credential_resolver", "storage_gb"]
-		  }
-		}`,
+		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":        minimalLifecycleConfig(),
+		"SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES": `{invalid legacy json`,
 	}
 
 	config, err := ConfigFromEnv(func(key string) string { return env[key] })
 
 	require.NoError(t, err)
-	require.Equal(t, map[string]TerraformModuleShape{
-		"app.terraform.io/superblocks/postgres-managed-database/aws": {
-			Variables: []string{"binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key", "credential_resolver", "storage_gb"},
-		},
-	}, config.ModuleShapes)
-}
-
-func TestConfigFromEnvIgnoresModuleShapesWithoutLifecycleConfig(t *testing.T) {
-	env := map[string]string{
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES": `{invalid json`,
-	}
-
-	config, err := ConfigFromEnv(func(key string) string { return env[key] })
-
-	require.NoError(t, err)
-	require.Nil(t, config.ModuleShapes)
-}
-
-func TestConfigFromEnvRejectsInvalidModuleShapes(t *testing.T) {
-	tests := []struct {
-		name      string
-		shapes    string
-		wantError string
-	}{
-		{
-			name:      "invalid json",
-			shapes:    `{invalid json`,
-			wantError: "database lifecycle module shapes",
-		},
-		{
-			name:      "empty map",
-			shapes:    `{}`,
-			wantError: "database lifecycle module shapes are required",
-		},
-		{
-			name:      "empty source",
-			shapes:    `{"": {"variables": ["binding_key"]}}`,
-			wantError: "database lifecycle module shape source is required",
-		},
-		{
-			name:      "empty variables",
-			shapes:    `{"app.terraform.io/superblocks/postgres-managed-database/aws": {"variables": []}}`,
-			wantError: `database lifecycle module shape "app.terraform.io/superblocks/postgres-managed-database/aws" variables are required`,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			env := map[string]string{
-				"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":        minimalLifecycleConfig(),
-				"SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES": test.shapes,
-			}
-
-			_, err := ConfigFromEnv(func(key string) string { return env[key] })
-
-			require.ErrorContains(t, err, test.wantError)
-		})
-	}
+	require.Len(t, config.LifecycleConfig.Entries, 1)
 }
 
 func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
@@ -404,6 +347,11 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			name:      "physical database provision operation must exist in entry",
 			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{"mode": "shared_pool", "provisionOperation": "missing_physical_database_instance", "onExhausted": "provision"}`),
 			wantError: "entries[0].operations.ensure_database.physicalDatabase.provisionOperation missing_physical_database_instance is not configured in this entry",
+		},
+		{
+			name:      "physical database capacity must not be negative",
+			config:    lifecycleConfigWithPhysicalDatabasePolicy(`{"mode": "shared_pool", "provisionOperation": "ensure_physical_database_instance", "onExhausted": "provision", "capacityMax": -1}`),
+			wantError: "entries[0].operations.ensure_database.physicalDatabase.capacityMax must be a non-negative integer",
 		},
 		{
 			name:      "native runner backend for unsupported operation",
@@ -569,6 +517,21 @@ func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {
 			  ]
 			}`,
 			wantError: `duplicates environment "deployed" profile "production"`,
+		},
+		{
+			name:      "conflicting physical pooling policy for same environment",
+			config:    lifecycleConfigWithConflictingPhysicalPooling(),
+			wantError: `environment "deployed" has conflicting physical database pooling configuration across entries`,
+		},
+		{
+			name:      "mixed physical pooling entries for same environment",
+			config:    lifecycleConfigWithMixedPhysicalPooling(),
+			wantError: `environment "deployed" mixes physical database pooling and non-pooling entries`,
+		},
+		{
+			name:      "conflicting physical pooling terraform backend for same environment",
+			config:    lifecycleConfigWithConflictingPhysicalPoolingBackend(),
+			wantError: `environment "deployed" has conflicting physical database pooling configuration across entries`,
 		},
 	}
 
@@ -811,4 +774,204 @@ func terraformOperationWithBackend(backend map[string]any, moduleSelectors map[s
 			ModuleSelectors:    moduleSelectors,
 		},
 	}
+}
+
+func lifecycleConfigWithConflictingPhysicalPooling() string {
+	return `{
+	  "entries": [
+	    {
+	      "environment": "deployed",
+	      "profiles": ["production"],
+	      "engines": ["postgres"],
+	      "operations": {
+	        "ensure_database": {
+	          "backend": "terraform",
+	          "physicalDatabase": {
+	            "mode": "shared_pool",
+	            "provisionOperation": "ensure_physical_database_instance",
+	            "onExhausted": "provision",
+	            "capacityMax": 1,
+	            "securityClass": "standard"
+	          },
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+	          }
+	        },
+	        "ensure_physical_database_instance": {
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/rds-postgres/aws", "inputs": {"instance_class": "db.m6g.large"}}}
+	          }
+	        },
+	        "migrate_schema": {"backend": "native_runner"}
+	      }
+	    },
+	    {
+	      "environment": "deployed",
+	      "profiles": ["staging"],
+	      "engines": ["postgres"],
+	      "operations": {
+	        "ensure_database": {
+	          "backend": "terraform",
+	          "physicalDatabase": {
+	            "mode": "shared_pool",
+	            "provisionOperation": "ensure_physical_database_instance",
+	            "onExhausted": "provision",
+	            "capacityMax": 100,
+	            "securityClass": "standard"
+	          },
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+	          }
+	        },
+	        "ensure_physical_database_instance": {
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/rds-postgres/aws", "inputs": {"instance_class": "db.t4g.micro"}}}
+	          }
+	        },
+	        "migrate_schema": {"backend": "native_runner"}
+	      }
+	    }
+	  ]
+	}`
+}
+
+func lifecycleConfigWithConflictingPhysicalPoolingBackend() string {
+	return `{
+	  "entries": [
+	    {
+	      "environment": "deployed",
+	      "profiles": ["production"],
+	      "engines": ["postgres"],
+	      "operations": {
+	        "ensure_database": {
+	          "backend": "terraform",
+	          "physicalDatabase": {
+	            "mode": "shared_pool",
+	            "provisionOperation": "ensure_physical_database_instance",
+	            "onExhausted": "provision",
+	            "capacityMax": 100,
+	            "securityClass": "standard"
+	          },
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+	          }
+	        },
+	        "ensure_physical_database_instance": {
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3", "bucket": "physical-state-prod", "key": "native-db/physical/{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-east-1", "use_lockfile": true},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/rds-postgres/aws", "inputs": {"instance_class": "db.m6g.large"}}}
+	          }
+	        },
+	        "migrate_schema": {"backend": "native_runner"}
+	      }
+	    },
+	    {
+	      "environment": "deployed",
+	      "profiles": ["staging"],
+	      "engines": ["postgres"],
+	      "operations": {
+	        "ensure_database": {
+	          "backend": "terraform",
+	          "physicalDatabase": {
+	            "mode": "shared_pool",
+	            "provisionOperation": "ensure_physical_database_instance",
+	            "onExhausted": "provision",
+	            "capacityMax": 100,
+	            "securityClass": "standard"
+	          },
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+	          }
+	        },
+	        "ensure_physical_database_instance": {
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3", "bucket": "physical-state-staging", "key": "native-db/physical/{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-east-1", "use_lockfile": true},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/rds-postgres/aws", "inputs": {"instance_class": "db.m6g.large"}}}
+	          }
+	        },
+	        "migrate_schema": {"backend": "native_runner"}
+	      }
+	    }
+	  ]
+	}`
+}
+
+func lifecycleConfigWithMixedPhysicalPooling() string {
+	return `{
+	  "entries": [
+	    {
+	      "environment": "deployed",
+	      "profiles": ["production"],
+	      "engines": ["postgres"],
+	      "operations": {
+	        "ensure_database": {
+	          "backend": "terraform",
+	          "physicalDatabase": {
+	            "mode": "shared_pool",
+	            "provisionOperation": "ensure_physical_database_instance",
+	            "onExhausted": "provision",
+	            "capacityMax": 1,
+	            "securityClass": "standard"
+	          },
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+	          }
+	        },
+	        "ensure_physical_database_instance": {
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/rds-postgres/aws"}}
+	          }
+	        },
+	        "migrate_schema": {"backend": "native_runner"}
+	      }
+	    },
+	    {
+	      "environment": "deployed",
+	      "profiles": ["staging"],
+	      "engines": ["postgres"],
+	      "operations": {
+	        "ensure_database": {
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/postgres-managed-database/aws"}}
+	          }
+	        },
+	        "ensure_physical_database_instance": {
+	          "backend": "terraform",
+	          "terraform": {
+	            "backend": {"stateBackend": "s3"},
+	            "credentialResolver": {"runtime": "aws_secrets_manager"},
+	            "moduleSelectors": {"postgres": {"source": "app.terraform.io/superblocks/rds-postgres/aws"}}
+	          }
+	        },
+	        "migrate_schema": {"backend": "native_runner"}
+	      }
+	    }
+	  ]
+	}`
 }

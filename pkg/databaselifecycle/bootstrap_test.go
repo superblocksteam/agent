@@ -29,8 +29,8 @@ func TestBootstrapWorkerBuildsWorkerFromConfig(t *testing.T) {
 	require.Equal(t, 5*time.Second, interval)
 }
 
-func TestBootstrapWorkerRejectsLifecycleConfigWithInvalidModuleShape(t *testing.T) {
-	_, _, err := BootstrapWorker(
+func TestBootstrapWorkerAcceptsLifecycleConfigWithoutModuleShapes(t *testing.T) {
+	worker, _, err := BootstrapWorker(
 		Config{
 			AgentID:              "agent-1",
 			RootDir:              t.TempDir(),
@@ -39,18 +39,14 @@ func TestBootstrapWorkerRejectsLifecycleConfigWithInvalidModuleShape(t *testing.
 			AllowedResourceTypes: []string{"aws_db_instance"},
 			AllowedModuleSources: []string{"app.terraform.io/superblocks/rds-postgres/aws"},
 			LifecycleConfig:      testLifecycleConfig("app.terraform.io/superblocks/rds-postgres/aws"),
-			ModuleShapes: map[string]TerraformModuleShape{
-				"app.terraform.io/superblocks/rds-postgres/aws": {
-					Variables: []string{"binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id"},
-				},
-			},
 		},
 		clients.NewServerClient(&clients.ServerClientOptions{URL: "http://127.0.0.1"}),
 		CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) { return CommandResult{}, nil }),
 		NewMemoryLocker(),
 	)
 
-	require.ErrorContains(t, err, `does not declare system variable "resource_key"`)
+	require.NoError(t, err)
+	require.NotNil(t, worker)
 }
 
 func TestDSNOptionsFromConfigWiresCredentialResolver(t *testing.T) {

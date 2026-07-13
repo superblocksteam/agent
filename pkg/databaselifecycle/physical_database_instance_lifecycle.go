@@ -20,6 +20,8 @@ type PhysicalDatabaseInstanceSelector struct {
 	Engine                       string
 	Mode                         PhysicalDatabaseMode
 	ProvisionOperation           string
+	CapacityMax                  int
+	SecurityClass                string
 	ParentResourceKey            string
 	CurrentState                 string
 	PhysicalDatabaseInstanceID   string

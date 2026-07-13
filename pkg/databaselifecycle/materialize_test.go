@@ -20,7 +20,7 @@ var testSharedModeSSLOpts = ProviderSSLOptions{
 }
 
 const (
-	testNativeDBModuleRef                   = "v0.1.0"
+	testNativeDBModuleRef                   = "v0.2.0"
 	testAWSRDSManagedInstanceModuleSource   = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=" + testNativeDBModuleRef
 	testPostgresManagedDatabaseModuleSource = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=" + testNativeDBModuleRef
 )

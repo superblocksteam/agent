@@ -1,7 +1,6 @@
 package databaselifecycle
 
 import (
-	"errors"
 	"slices"
 )
 
@@ -64,19 +63,6 @@ func CapabilityTagsFromEnv(getenv func(string) string) (map[string][]string, err
 	config, err := parseLifecycleConfig(rawConfig)
 	if err != nil {
 		return nil, err
-	}
-	if config.UsesTerraformOperations() {
-		rawShapes := getenv(envModuleShapes)
-		if rawShapes == "" {
-			return nil, errors.New("database lifecycle module shapes are required")
-		}
-		shapes, err := parseModuleShapes(rawShapes)
-		if err != nil {
-			return nil, err
-		}
-		if err := ValidateLifecycleConfigModuleShapes(config, shapes); err != nil {
-			return nil, err
-		}
 	}
 	return config.CapabilityTags(), nil
 }

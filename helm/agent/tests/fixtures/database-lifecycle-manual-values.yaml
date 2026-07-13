@@ -1,0 +1,13 @@
+---
+databaseLifecycle:
+  modules:
+    logical:
+      source: registry.example.com/custom-postgres
+      version: 1.0.0
+  physicalProvisioning:
+    enabled: false
+extraEnv:
+  SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG: >-
+    {"entries":[{"environment":"deployed","profiles":["production"],"engines":["postgres"],"operations":{"ensure_database":{"backend":"terraform","terraform":{"backend":{"stateBackend":"s3","bucket":"manual-state","region":"us-west-2"},"credentialResolver":{"runtime":"aws_secrets_manager"},"moduleSelectors":{"postgres":{"source":"registry.example.com/custom-postgres","version":"1.0.0","inputs":{}}}}},"migrate_schema":{"backend":"native_runner"}}}]}
+  SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES: >-
+    {"registry.example.com/custom-postgres":{"variables":["legacy"]}}

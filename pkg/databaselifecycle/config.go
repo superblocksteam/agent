@@ -1,6 +1,7 @@
 package databaselifecycle
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,7 +20,6 @@ const (
 	envSSLMode      = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"
 	envSSLRootCert  = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"
 	envConfig       = "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG"
-	envModuleShapes = "SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES"
 
 	operationMigrateSchema = "migrate_schema"
 )
@@ -46,7 +46,6 @@ type Config struct {
 	SSLRootCert string
 
 	LifecycleConfig LifecycleConfig
-	ModuleShapes    map[string]TerraformModuleShape
 }
 
 type LifecycleConfig struct {
@@ -87,6 +86,8 @@ type PhysicalDatabasePolicy struct {
 	Mode               PhysicalDatabaseMode        `json:"mode"`
 	ProvisionOperation string                      `json:"provisionOperation,omitempty"`
 	OnExhausted        PhysicalDatabaseOnExhausted `json:"onExhausted,omitempty"`
+	CapacityMax        int                         `json:"capacityMax,omitempty"`
+	SecurityClass      string                      `json:"securityClass,omitempty"`
 }
 
 type TerraformOperationBackend struct {
@@ -147,13 +148,6 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 			return Config{}, err
 		}
 		config.LifecycleConfig = lifecycleConfig
-		if rawShapes := getenv(envModuleShapes); rawShapes != "" {
-			moduleShapes, err := parseModuleShapes(rawShapes)
-			if err != nil {
-				return Config{}, err
-			}
-			config.ModuleShapes = moduleShapes
-		}
 	}
 	if rawInterval := getenv(envPollInterval); rawInterval != "" {
 		interval, err := time.ParseDuration(rawInterval)
@@ -163,25 +157,6 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		config.PollInterval = interval
 	}
 	return config, nil
-}
-
-func parseModuleShapes(raw string) (map[string]TerraformModuleShape, error) {
-	var shapes map[string]TerraformModuleShape
-	if err := json.Unmarshal([]byte(raw), &shapes); err != nil {
-		return nil, fmt.Errorf("database lifecycle module shapes: %w", err)
-	}
-	if len(shapes) == 0 {
-		return nil, errors.New("database lifecycle module shapes are required")
-	}
-	for source, shape := range shapes {
-		if source == "" {
-			return nil, errors.New("database lifecycle module shape source is required")
-		}
-		if len(shape.Variables) == 0 {
-			return nil, fmt.Errorf("database lifecycle module shape %q variables are required", source)
-		}
-	}
-	return shapes, nil
 }
 
 func parseLifecycleConfig(raw string) (LifecycleConfig, error) {
@@ -208,7 +183,83 @@ func parseLifecycleConfig(raw string) (LifecycleConfig, error) {
 	if err := validateLifecycleConfigCoverage(config); err != nil {
 		return LifecycleConfig{}, err
 	}
+	if err := validateLifecycleConfigPhysicalPoolingConsistency(config); err != nil {
+		return LifecycleConfig{}, err
+	}
 	return config, nil
+}
+
+type physicalPoolingSignature struct {
+	Policy          PhysicalDatabasePolicy
+	PhysicalBackend map[string]any
+	PhysicalModules map[string]TerraformModule
+}
+
+func physicalPoolingSignatureFromEntry(entry LifecycleConfigEntry) (*physicalPoolingSignature, error) {
+	ensureOperation, ok := entry.Operations["ensure_database"]
+	if !ok || ensureOperation.PhysicalDatabase == nil {
+		return nil, nil
+	}
+	switch ensureOperation.PhysicalDatabase.Mode {
+	case PhysicalDatabaseModeSharedPool, PhysicalDatabaseModeDedicated:
+	default:
+		return nil, nil
+	}
+	provisionOperation := ensureOperation.PhysicalDatabase.ProvisionOperation
+	if provisionOperation == "" {
+		return nil, fmt.Errorf("database lifecycle config environment %q profile %q ensure_database.physicalDatabase.provisionOperation is required when mode is %s", entry.Environment, formatStringList(entry.Profiles), ensureOperation.PhysicalDatabase.Mode)
+	}
+	physicalOperation, ok := entry.Operations[provisionOperation]
+	if !ok {
+		return nil, fmt.Errorf("database lifecycle config environment %q profile %q physicalDatabase.provisionOperation %s is not configured in this entry", entry.Environment, formatStringList(entry.Profiles), provisionOperation)
+	}
+	if physicalOperation.Backend != "terraform" || physicalOperation.Terraform == nil {
+		return nil, fmt.Errorf("database lifecycle config environment %q profile %q operation %s must use backend terraform", entry.Environment, formatStringList(entry.Profiles), provisionOperation)
+	}
+	return &physicalPoolingSignature{
+		Policy:          *ensureOperation.PhysicalDatabase,
+		PhysicalBackend: physicalOperation.Terraform.Backend,
+		PhysicalModules: physicalOperation.Terraform.ModuleSelectors,
+	}, nil
+}
+
+func validateLifecycleConfigPhysicalPoolingConsistency(config LifecycleConfig) error {
+	byEnvironment := map[string][]LifecycleConfigEntry{}
+	for _, entry := range config.Entries {
+		byEnvironment[entry.Environment] = append(byEnvironment[entry.Environment], entry)
+	}
+	for environment, entries := range byEnvironment {
+		if len(entries) < 2 {
+			continue
+		}
+		var reference []byte
+		poolingEntries := 0
+		for _, entry := range entries {
+			signature, err := physicalPoolingSignatureFromEntry(entry)
+			if err != nil {
+				return err
+			}
+			if signature == nil {
+				continue
+			}
+			poolingEntries++
+			encoded, err := json.Marshal(signature)
+			if err != nil {
+				return fmt.Errorf("database lifecycle config environment %q physical database pooling signature: %w", environment, err)
+			}
+			if reference == nil {
+				reference = encoded
+				continue
+			}
+			if !bytes.Equal(reference, encoded) {
+				return fmt.Errorf("database lifecycle config environment %q has conflicting physical database pooling configuration across entries", environment)
+			}
+		}
+		if poolingEntries > 0 && poolingEntries < len(entries) {
+			return fmt.Errorf("database lifecycle config environment %q mixes physical database pooling and non-pooling entries", environment)
+		}
+	}
+	return nil
 }
 
 func validateLifecycleConfigEntry(index int, entry LifecycleConfigEntry) error {
@@ -285,6 +336,9 @@ func validatePhysicalDatabasePolicy(prefix string, operation string, policy *Phy
 	}
 	if operation != "ensure_database" {
 		return fmt.Errorf("%s is only supported for ensure_database", prefix)
+	}
+	if policy.CapacityMax < 0 {
+		return fmt.Errorf("%s.capacityMax must be a non-negative integer", prefix)
 	}
 	switch policy.Mode {
 	case PhysicalDatabaseModeNone:
@@ -380,25 +434,6 @@ func (entry LifecycleConfigEntry) resolveTerraformOperation(operation string) (m
 	}
 
 	return map[string]TerraformModule(config.Terraform.ModuleSelectors), config.Terraform.Backend, config.Terraform.CredentialResolver, nil
-}
-
-func (config LifecycleConfig) UsesTerraformOperations() bool {
-	for _, entry := range config.Entries {
-		if len(entry.terraformOperations()) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func (entry LifecycleConfigEntry) terraformOperations() map[string]map[string]TerraformModule {
-	operations := make(map[string]map[string]TerraformModule)
-	for operation, config := range entry.Operations {
-		if config.Backend == "terraform" && config.Terraform != nil {
-			operations[operation] = config.Terraform.ModuleSelectors
-		}
-	}
-	return operations
 }
 
 func (entry LifecycleConfigEntry) SupportsProfile(profile string) bool {

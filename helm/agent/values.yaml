@@ -261,6 +261,47 @@ serviceAccount:
   # eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/my-iam-role
   # iam.gke.io/gcp-service-account=service-account@my-gcp-project.iam.gserviceaccount.com
   labels: {}
+# Native-database lifecycle worker. Off by default. When enabled, the OPA's
+# orchestrator process runs the worker as a goroutine and claims dispatches as
+# its own registered agent id.
+databaseLifecycle:
+  enabled: false
+  # This path is backed by the chart's database-lifecycle-work emptyDir.
+  rootDir: /var/lib/superblocks/database-lifecycle
+  terraformBin: tofu
+  pollInterval: 30s
+  allowedResourceTypes: []
+  # The worker has no implicit TLS default. Use verify-full with sslRootCert in
+  # production, or require only for intra-VPC sandboxes.
+  sslMode: ""
+  sslRootCert: ""
+  # Empty denies credential-ref resolution.
+  allowedRefPrefixes: []
+  # Shared Terraform backend and credential resolver for every named group.
+  backend:
+    stateBackend: s3
+    bucket: ""
+    region: ""
+    keyPrefix: native-db/helm
+    useLockfile: true
+  credentialResolver:
+    runtime: aws_secrets_manager
+    region: ""
+  # Built-in Native Database modules. Override the source for a customer fork.
+  modules:
+    logical:
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.2.0
+      version: ""
+    physical:
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.2.0
+      version: ""
+  physicalProvisioning:
+    enabled: true
+  # Named groups map routing and pool policy to native Terraform input maps.
+  # A maxDatabases value of 1 gives one physical database per logical database.
+  # See tests/fixtures/database-lifecycle-config-values.yaml for a complete
+  # non-production and production example.
+  groups: {}
 # If using something like kube2iam, pod annotations for roles would go here
 podAnnotations: {}
 # iam.amazonaws.com/role: arn:aws:iam::111111111111:role/my-iam-role

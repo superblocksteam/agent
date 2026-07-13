@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "properties": {
+    "databaseLifecycle": {
+      "properties": {
+        "backend": {
+          "properties": {
+            "useLockfile": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "physicalProvisioning": {
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "groups": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "environments": {
+                "items": {
+                  "enum": [
+                    "deployed",
+                    "edit",
+                    "preview"
+                  ],
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "logicalModuleInputs": {
+                "type": "object"
+              },
+              "physicalModuleInputs": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "pool": {
+                "properties": {
+                  "maxDatabases": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "maxDatabases"
+                ],
+                "type": "object"
+              },
+              "profiles": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "environments",
+              "logicalModuleInputs",
+              "pool",
+              "profiles"
+            ],
+            "type": "object"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "type": "object"
+}

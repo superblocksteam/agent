@@ -309,7 +309,7 @@ func TestDatabaseLifecycleRegistrationTagsInvalidConfigReturnsError(t *testing.T
 	require.ErrorContains(t, err, "database lifecycle config")
 }
 
-func TestDatabaseLifecycleRegistrationTagsRejectsMissingModuleShapes(t *testing.T) {
+func TestDatabaseLifecycleRegistrationTagsAcceptsConfigWithoutModuleShapes(t *testing.T) {
 	getenv := func(key string) string {
 		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
 			return `{
@@ -337,66 +337,18 @@ func TestDatabaseLifecycleRegistrationTagsRejectsMissingModuleShapes(t *testing.
 		return ""
 	}
 
-	_, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
+	tags, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
 
-	require.ErrorContains(t, err, "database lifecycle module shapes are required")
-}
-
-func TestDatabaseLifecycleRegistrationTagsRejectsInvalidModuleShape(t *testing.T) {
-	getenv := func(key string) string {
-		switch key {
-		case "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":
-			return `{
-				"entries": [
-					{
-						"environment": "deployed",
-						"profiles": ["production"],
-						"engines": ["postgres"],
-						"operations": {
-							"ensure_database": {
-								"backend": "terraform",
-								"terraform": {
-									"backend": {"stateBackend": "s3"},
-									"credentialResolver": {"type": "aws"},
-									"moduleSelectors": {
-										"postgres": {"source": "registry.example.com/postgres"}
-									}
-								}
-							}
-						}
-					}
-				]
-			}`
-		case "SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES":
-			return `{
-				"registry.example.com/postgres": {
-					"variables": ["binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key"]
-				}
-			}`
-		default:
-			return ""
-		}
-	}
-
-	_, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
-
-	require.ErrorContains(t, err, `does not declare system variable "credential_resolver"`)
+	require.NoError(t, err)
+	require.Equal(t, []string{"ensure_database"}, tags["databaseLifecycle:operations"])
 }
 
 func databaseLifecycleRegistrationTestGetenv(config string) func(string) string {
 	return func(key string) string {
-		switch key {
-		case "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":
+		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
 			return config
-		case "SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES":
-			return `{
-				"registry.example.com/postgres": {
-					"variables": ["binding_key", "desired_spec_hash", "environment_class", "environment_name", "operation", "profile_id", "request_id", "resource_key", "credential_resolver"]
-				}
-			}`
-		default:
-			return ""
 		}
+		return ""
 	}
 }
 

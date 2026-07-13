@@ -20,11 +20,6 @@ func BootstrapWorker(config Config, client clients.ServerClient, executor Comman
 	if len(config.AllowedModuleSources) == 0 {
 		return nil, 0, errors.New("database lifecycle allowed module sources are required")
 	}
-	if len(config.LifecycleConfig.Entries) > 0 {
-		if err := ValidateLifecycleConfigModuleShapes(config.LifecycleConfig, config.ModuleShapes); err != nil {
-			return nil, 0, err
-		}
-	}
 	policy := NewResourceTypePolicy(config.AllowedResourceTypes)
 	worker, err := NewWorkerFromDependencies(WorkerDependencies{
 		AgentID:              config.AgentID,

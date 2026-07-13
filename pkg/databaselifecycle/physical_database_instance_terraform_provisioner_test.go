@@ -73,6 +73,7 @@ func TestTerraformPhysicalDatabaseInstanceProvisionerUsesConfiguredProvisionOper
 	require.NoError(t, err)
 	require.Equal(t, "new-pool.example.com:5432", instance.Endpoint)
 	require.Equal(t, provisionOperation, materializedVars["operation"])
+	require.NotContains(t, materializedVars, "credential_resolver")
 }
 
 func TestTerraformPhysicalDatabaseInstanceProvisionerDeprovisionsWhenOutputParsingFails(t *testing.T) {
@@ -272,18 +273,21 @@ func TestTerraformPhysicalDatabaseInstanceProvisionerDerivesStableResourceKeyFro
 	require.Contains(t, first.ProvisionResourceKey, "physical-database-instance:deployed:production:us-east-1:postgres:")
 }
 
-func TestPhysicalDatabaseInstanceFromTerraformOutputReadsPhysicalModuleOutputs(t *testing.T) {
+func TestPhysicalDatabaseInstanceFromTerraformOutputUsesWorkerOwnedPoolPolicy(t *testing.T) {
 	instance, err := physicalDatabaseInstanceFromTerraformOutput(Result{OutputJSON: `{
 		"connection_metadata":{"value":{"host":"new-pool.example.com","port":5432}},
 		"credential_refs":{"value":{"password":{"resolver":"aws_secrets_manager","ref":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!new-pool","field":"password"}}}
-	}`}, map[string]any{
+	}`}, PhysicalDatabaseInstanceSelector{
+		CapacityMax:   100,
+		SecurityClass: "standard",
+	}, map[string]any{
 		"capacity_max":   8,
-		"security_class": "standard",
+		"security_class": "restricted",
 	})
 
 	require.NoError(t, err)
 	require.Equal(t, "new-pool.example.com:5432", instance.Endpoint)
-	require.Equal(t, 8, instance.CapacityMax)
+	require.Equal(t, 100, instance.CapacityMax)
 	require.Equal(t, "active", instance.Status)
 	require.Equal(t, "standard", instance.SecurityClass)
 	require.Equal(t, map[string]any{
@@ -293,11 +297,25 @@ func TestPhysicalDatabaseInstanceFromTerraformOutputReadsPhysicalModuleOutputs(t
 	}, instance.MasterCredentialRef)
 }
 
+func TestPhysicalDatabaseInstanceFromTerraformOutputSupportsLegacyModulePoolMetadata(t *testing.T) {
+	instance, err := physicalDatabaseInstanceFromTerraformOutput(Result{OutputJSON: `{
+		"connection_metadata":{"value":{"host":"new-pool.example.com","port":5432}},
+		"credential_refs":{"value":{"password":{"resolver":"aws_secrets_manager","ref":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!new-pool","field":"password"}}}
+	}`}, PhysicalDatabaseInstanceSelector{}, map[string]any{
+		"capacity_max":   8,
+		"security_class": "standard",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 8, instance.CapacityMax)
+	require.Equal(t, "standard", instance.SecurityClass)
+}
+
 func TestPhysicalDatabaseInstanceFromTerraformOutputRejectsMissingCapacity(t *testing.T) {
 	_, err := physicalDatabaseInstanceFromTerraformOutput(Result{OutputJSON: `{
 		"connection_metadata":{"value":{"host":"new-pool.example.com","port":5432}},
 		"credential_refs":{"value":{"password":{"resolver":"aws_secrets_manager","ref":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!new-pool","field":"password"}}}
-	}`}, nil)
+	}`}, PhysicalDatabaseInstanceSelector{}, nil)
 
 	require.ErrorContains(t, err, "capacity_max is required")
 }

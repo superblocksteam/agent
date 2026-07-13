@@ -1,4 +1,99 @@
 {{- include "verify.datadomain" $ }}
+{{- $databaseLifecycle := .Values.databaseLifecycle | default dict }}
+{{- $physicalProvisioning := $databaseLifecycle.physicalProvisioning | default dict }}
+{{- $extraEnv := .Values.extraEnv | default dict }}
+{{- $hasManualConfig := hasKey $extraEnv "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" }}
+{{- if hasKey $databaseLifecycle "enabled" }}
+{{- if ne (kindOf $databaseLifecycle.enabled) "bool" }}
+{{- fail "databaseLifecycle.enabled must be a boolean" }}
+{{- end }}
+{{- end }}
+{{- if hasKey $physicalProvisioning "enabled" }}
+{{- if ne (kindOf $physicalProvisioning.enabled) "bool" }}
+{{- fail "databaseLifecycle.physicalProvisioning.enabled must be a boolean" }}
+{{- end }}
+{{- end }}
+{{- if hasKey ($databaseLifecycle.backend | default dict) "useLockfile" }}
+{{- if ne (kindOf $databaseLifecycle.backend.useLockfile) "bool" }}
+{{- fail "databaseLifecycle.backend.useLockfile must be a boolean" }}
+{{- end }}
+{{- end }}
+{{- if $databaseLifecycle.enabled }}
+{{- if hasKey $extraEnv "SUPERBLOCKS_DATABASE_LIFECYCLE_PROFILES" }}
+{{- fail "extraEnv.SUPERBLOCKS_DATABASE_LIFECYCLE_PROFILES cannot be combined with databaseLifecycle.enabled; use SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" }}
+{{- end }}
+{{- if not $databaseLifecycle.sslMode }}
+{{- fail "databaseLifecycle.sslMode is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- if and (or (eq $databaseLifecycle.sslMode "verify-ca") (eq $databaseLifecycle.sslMode "verify-full")) (not $databaseLifecycle.sslRootCert) }}
+{{- fail "databaseLifecycle.sslRootCert is required when sslMode is verify-ca or verify-full" }}
+{{- end }}
+{{- if and (not .Values.serviceAccount.create) (not .Values.serviceAccount.name) }}
+{{- fail "serviceAccount.create=true or serviceAccount.name is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- if not $databaseLifecycle.allowedResourceTypes }}
+{{- fail "databaseLifecycle.allowedResourceTypes is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- if not $hasManualConfig }}
+{{- if not ($databaseLifecycle.modules.logical | default dict).source }}
+{{- fail "databaseLifecycle.modules.logical.source is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- if and $physicalProvisioning.enabled (not ($databaseLifecycle.modules.physical | default dict).source) }}
+{{- fail "databaseLifecycle.modules.physical.source is required when physical provisioning is enabled" }}
+{{- end }}
+{{- if not ($databaseLifecycle.backend | default dict).bucket }}
+{{- fail "databaseLifecycle.backend.bucket is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- if not ($databaseLifecycle.backend | default dict).region }}
+{{- fail "databaseLifecycle.backend.region is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- if not $databaseLifecycle.groups }}
+{{- fail "databaseLifecycle.groups is required when databaseLifecycle.enabled=true" }}
+{{- end }}
+{{- $environments := dict }}
+{{- range $groupName, $group := $databaseLifecycle.groups }}
+{{- $groupPrefix := printf "databaseLifecycle.groups.%s" $groupName }}
+{{- if not $group.environments }}
+{{- fail (printf "%s.environments is required" $groupPrefix) }}
+{{- end }}
+{{- if not $group.profiles }}
+{{- fail (printf "%s.profiles is required" $groupPrefix) }}
+{{- end }}
+{{- if not (get ($group.logicalModuleInputs | default dict) "credential_secret_prefix") }}
+{{- fail (printf "%s.logicalModuleInputs.credential_secret_prefix is required" $groupPrefix) }}
+{{- end }}
+{{- if le (int ($group.pool.maxDatabases | default 0)) 0 }}
+{{- fail (printf "%s.pool.maxDatabases must be a positive integer" $groupPrefix) }}
+{{- end }}
+{{- if $physicalProvisioning.enabled }}
+{{- if not (get ($group.physicalModuleInputs | default dict) "vpc_id") }}
+{{- fail (printf "%s.physicalModuleInputs.vpc_id is required when physical provisioning is enabled" $groupPrefix) }}
+{{- end }}
+{{- if not (get ($group.physicalModuleInputs | default dict) "subnet_ids") }}
+{{- fail (printf "%s.physicalModuleInputs.subnet_ids is required when physical provisioning is enabled" $groupPrefix) }}
+{{- end }}
+{{- range $workerOwnedInput := list "capacity_max" "credential_resolver" "security_class" }}
+{{- if hasKey ($group.physicalModuleInputs | default dict) $workerOwnedInput }}
+{{- fail (printf "%s.physicalModuleInputs.%s is worker-owned and must be omitted" $groupPrefix $workerOwnedInput) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- range $environment := $group.environments }}
+{{- if not (has $environment (list "edit" "preview" "deployed")) }}
+{{- fail (printf "%s.environments contains unsupported environment %q" $groupPrefix $environment) }}
+{{- end }}
+{{- if hasKey $environments $environment }}
+{{- fail (printf "databaseLifecycle environment %q is configured by both groups %q and %q" $environment (get $environments $environment) $groupName) }}
+{{- end }}
+{{- $_ := set $environments $environment $groupName }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $podSecurityContext := deepCopy (.Values.podSecurityContext | default dict) }}
+{{- if and $databaseLifecycle.enabled (not (hasKey $podSecurityContext "fsGroup")) }}
+{{- $_ := set $podSecurityContext "fsGroup" 1000 }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -42,15 +137,21 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml $podSecurityContext | nindent 8 }}
       {{- if .Values.initContainers }}
       initContainers:
 {{ toYaml .Values.initContainers | indent 6 }}
       {{- end }}
       serviceAccountName: {{ default (include "superblocks-agent.name" $) .Values.serviceAccount.name }}
-      {{- if .Values.volumes }}
+      {{- if or .Values.volumes .Values.databaseLifecycle.enabled }}
       volumes:
-{{ toYaml .Values.volumes | indent 6 }}
+      {{- with .Values.volumes }}
+{{ toYaml . | indent 6 }}
+      {{- end }}
+      {{- if .Values.databaseLifecycle.enabled }}
+      - name: database-lifecycle-work
+        emptyDir: {}
+      {{- end }}
       {{- end }}
       containers:
       {{- if .Values.extraContainers }}
@@ -161,8 +262,45 @@ spec:
           value: {{ .Values.superblocks.telemetry.remoteEnabled | quote }}
         - name: SUPERBLOCKS_DEPLOYMENT_TYPE
           value: {{ .Values.superblocks.telemetry.deploymentType | quote }}
+        {{- if $databaseLifecycle.enabled }}
+        - name: SUPERBLOCKS_ORCHESTRATOR_DATABASE_LIFECYCLE_WORKER_ENABLED
+          value: "true"
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_ROOT_DIR
+          value: {{ $databaseLifecycle.rootDir | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_TERRAFORM_BIN
+          value: {{ $databaseLifecycle.terraformBin | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_POLL_INTERVAL
+          value: {{ $databaseLifecycle.pollInterval | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_RESOURCE_TYPES
+          value: {{ join "," $databaseLifecycle.allowedResourceTypes | quote }}
+        {{- $allowedModuleSources := list $databaseLifecycle.modules.logical.source }}
+        {{- if $physicalProvisioning.enabled }}
+        {{- $allowedModuleSources = append $allowedModuleSources $databaseLifecycle.modules.physical.source }}
+        {{- end }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_MODULE_SOURCES
+          value: {{ join "," $allowedModuleSources | quote }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE
+          value: {{ $databaseLifecycle.sslMode | quote }}
+        {{- if $databaseLifecycle.sslRootCert }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT
+          value: {{ $databaseLifecycle.sslRootCert | quote }}
+        {{- end }}
+        {{- if $databaseLifecycle.allowedRefPrefixes }}
+        - name: SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES
+          value: {{ join "," $databaseLifecycle.allowedRefPrefixes | quote }}
+        {{- end }}
+        {{- if not $hasManualConfig }}
+        - name: SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG
+          value: {{ include "superblocks-agent.databaseLifecycleConfigJSON" . | quote }}
+        {{- end }}
+        {{- end }}
         {{- if .Values.extraEnv }}
         {{- include "extra-env" .Values.extraEnv | indent 8 }}
+        {{- end }}
+        {{- if .Values.databaseLifecycle.enabled }}
+        volumeMounts:
+        - name: database-lifecycle-work
+          mountPath: {{ .Values.databaseLifecycle.rootDir | quote }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

@@ -55,6 +55,11 @@ func (p *terraformPhysicalDatabaseInstanceProvisioner) ProvisionPhysicalDatabase
 	if err := ValidateTerraformModuleSource(resolved.Module, p.allowedModuleSources); err != nil {
 		return PhysicalDatabaseInstance{}, unsupportedShapeError(fmt.Errorf("config entry %s/%s: %w", selector.Environment, selector.Profile, err))
 	}
+	// Physical infrastructure modules authenticate through the OPA's ambient
+	// cloud identity. Credential resolvers are logical-database inputs and must
+	// not be injected into a physical module, regardless of the configured
+	// provision operation's name.
+	resolved.CredentialResolver = nil
 	dispatch, err := physicalDatabaseInstanceProvisionDispatch(selector, provisionOperation, p.newProvisionID)
 	if err != nil {
 		return PhysicalDatabaseInstance{}, err
@@ -70,7 +75,7 @@ func (p *terraformPhysicalDatabaseInstanceProvisioner) ProvisionPhysicalDatabase
 	if err != nil {
 		return PhysicalDatabaseInstance{}, err
 	}
-	instance, err := physicalDatabaseInstanceFromTerraformOutput(result, resolved.Module.Inputs)
+	instance, err := physicalDatabaseInstanceFromTerraformOutput(result, selector, resolved.Module.Inputs)
 	if err != nil {
 		if deprovisionErr := p.deprovisionJob(ctx, job); deprovisionErr != nil {
 			return PhysicalDatabaseInstance{}, errors.Join(err, deprovisionErr)
@@ -146,7 +151,7 @@ func physicalDatabaseInstanceProvisionIDFromParentResourceKey(parentResourceKey 
 	return hex.EncodeToString(sum[:16])
 }
 
-func physicalDatabaseInstanceFromTerraformOutput(result Result, moduleInputs map[string]any) (PhysicalDatabaseInstance, error) {
+func physicalDatabaseInstanceFromTerraformOutput(result Result, selector PhysicalDatabaseInstanceSelector, moduleInputs map[string]any) (PhysicalDatabaseInstance, error) {
 	var outputs map[string]terraformOutputValue
 	if err := json.Unmarshal([]byte(result.OutputJSON), &outputs); err != nil {
 		return PhysicalDatabaseInstance{}, fmt.Errorf("decode physical database instance terraform output: %w", err)
@@ -159,15 +164,25 @@ func physicalDatabaseInstanceFromTerraformOutput(result Result, moduleInputs map
 	if len(masterCredentialRef) == 0 {
 		return PhysicalDatabaseInstance{}, errors.New("physical database instance terraform output credential_refs.password or master_credential_ref is required")
 	}
-	capacityMax, err := intTerraformOutputOrInput(outputs, moduleInputs, "capacity_max")
-	if err != nil {
-		return PhysicalDatabaseInstance{}, err
+	capacityMax := selector.CapacityMax
+	if capacityMax <= 0 {
+		var err error
+		capacityMax, err = intTerraformOutputOrInput(outputs, moduleInputs, "capacity_max")
+		if err != nil {
+			return PhysicalDatabaseInstance{}, err
+		}
 	}
 	status, ok := stringTerraformOutputOrInput(outputs, moduleInputs, "status")
 	if !ok {
 		status = "active"
 	}
-	securityClass, _ := stringTerraformOutputOrInput(outputs, moduleInputs, "security_class")
+	securityClass := selector.SecurityClass
+	if securityClass == "" {
+		securityClass, _ = stringTerraformOutputOrInput(outputs, moduleInputs, "security_class")
+	}
+	if securityClass == "" {
+		securityClass = "standard"
+	}
 	return PhysicalDatabaseInstance{
 		Endpoint:            endpoint,
 		MasterCredentialRef: masterCredentialRef,

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Render Native Database lifecycle worker CONFIG from named On-Premise Agent Helm groups, with worker-owned pool policy, native Terraform module inputs, and optional physical provisioning on pool exhaustion.
 - Skip mustache binding resolution for Apps 3.0 SDK integration REST sub-requests so literal `{{` in request bodies are not evaluated
 - Materialize one app-scoped PostgreSQL migrator role and credential per Native Database binding, reused for application queries and schema migrations.
 - Fix GCS presigned URL generation when `presignedExpiration` is omitted (Clark, SDK API) or non-finite, so the plugin falls back to the default TTL instead of passing an invalid expiration to Google Cloud Storage.

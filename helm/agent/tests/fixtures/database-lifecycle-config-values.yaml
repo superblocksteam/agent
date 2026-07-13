@@ -1,0 +1,70 @@
+---
+superblocks:
+  agentDataDomain: app.superblocks.com
+  agentKey: test-agent-key
+  agentHostUrl: https://agent.pr-19889.superblocks.dev
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::361919038798:role/database-lifecycle-worker-ephemeral
+databaseLifecycle:
+  enabled: true
+  sslMode: require
+  allowedResourceTypes:
+    - aws_db_instance
+  allowedRefPrefixes:
+    - arn:aws:secretsmanager:us-west-2:123456789012:secret:rds!db-
+  backend:
+    stateBackend: s3
+    bucket: superblocks-lifecycle-state-test
+    region: us-west-2
+    keyPrefix: native-db/ee-opa/pr-19889
+    useLockfile: true
+  credentialResolver:
+    runtime: aws_secrets_manager
+    region: us-west-2
+  modules:
+    logical:
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.2.0
+    physical:
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.2.0
+  physicalProvisioning:
+    enabled: true
+  groups:
+    nonprod:
+      environments:
+        - edit
+        - preview
+      profiles:
+        - "*"
+      pool:
+        maxDatabases: 100
+      logicalModuleInputs:
+        credential_secret_prefix: superblocks/native-db/test
+      physicalModuleInputs:
+        allocated_storage: 20
+        instance_class: db.t4g.micro
+        multi_az: false
+        subnet_ids:
+          - subnet-aaa
+          - subnet-bbb
+        tags:
+          superblocks.com/component: native-database
+          superblocks.com/ephemeral-environment: pr-19889
+        vpc_id: vpc-0abc123
+    production:
+      environments:
+        - deployed
+      profiles:
+        - production
+      pool:
+        maxDatabases: 1
+      logicalModuleInputs:
+        credential_secret_prefix: superblocks/native-db/production
+      physicalModuleInputs:
+        allocated_storage: 100
+        instance_class: db.m6g.large
+        multi_az: true
+        subnet_ids:
+          - subnet-aaa
+          - subnet-bbb
+        vpc_id: vpc-0abc123

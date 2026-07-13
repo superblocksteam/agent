@@ -153,11 +153,15 @@ func validateSharedPostgresEnsureCredentialSecretPrefix(dispatch DispatchPayload
 func physicalDatabaseInstanceSelectorFromDispatch(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) PhysicalDatabaseInstanceSelector {
 	provisionOperation := operationEnsurePhysicalDatabaseInstance
 	mode := PhysicalDatabaseMode("")
+	capacityMax := 0
+	securityClass := ""
 	if resolved.PhysicalDatabase != nil && resolved.PhysicalDatabase.ProvisionOperation != "" {
 		provisionOperation = resolved.PhysicalDatabase.ProvisionOperation
 	}
 	if resolved.PhysicalDatabase != nil {
 		mode = resolved.PhysicalDatabase.Mode
+		capacityMax = resolved.PhysicalDatabase.CapacityMax
+		securityClass = resolved.PhysicalDatabase.SecurityClass
 	}
 	return PhysicalDatabaseInstanceSelector{
 		BindingKey:                   dispatch.BindingKey,
@@ -168,6 +172,8 @@ func physicalDatabaseInstanceSelectorFromDispatch(dispatch DispatchPayload, reso
 		Engine:                       dispatch.DesiredSpec.Engine,
 		Mode:                         mode,
 		ProvisionOperation:           provisionOperation,
+		CapacityMax:                  capacityMax,
+		SecurityClass:                securityClass,
 		ParentResourceKey:            dispatch.ResourceKey,
 		CurrentState:                 dispatch.Continuation.CurrentState,
 		PhysicalDatabaseInstanceID:   dispatch.Continuation.PhysicalDatabaseInstanceID,

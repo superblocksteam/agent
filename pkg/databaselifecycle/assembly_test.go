@@ -917,3 +917,26 @@ func TestNewWorkerFromDependenciesRejectsMissingDependencies(t *testing.T) {
 		})
 	}
 }
+
+func TestPhysicalDatabaseInstanceSelectorUsesWorkerOwnedPoolPolicy(t *testing.T) {
+	selector := physicalDatabaseInstanceSelectorFromDispatch(DispatchPayload{
+		BindingKey:  "binding-1",
+		Environment: "deployed",
+		Profile:     "production",
+		RequestID:   "request-1",
+		ResourceKey: "resource-1",
+		DesiredSpec: DatabaseRequirement{Engine: "postgres"},
+	}, ResolvedLifecycleConfig{
+		Backend: map[string]any{"region": "us-east-1"},
+		PhysicalDatabase: &PhysicalDatabasePolicy{
+			Mode:               PhysicalDatabaseModeSharedPool,
+			ProvisionOperation: operationEnsurePhysicalDatabaseInstance,
+			OnExhausted:        PhysicalDatabaseOnExhaustedProvision,
+			CapacityMax:        100,
+			SecurityClass:      "standard",
+		},
+	})
+
+	require.Equal(t, 100, selector.CapacityMax)
+	require.Equal(t, "standard", selector.SecurityClass)
+}
