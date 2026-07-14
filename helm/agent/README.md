@@ -42,6 +42,11 @@ contrast, `pool.maxDatabases` is worker-owned pool allocation metadata and is
 not passed to Terraform. The chart rejects the reserved `capacity_max`,
 `credential_resolver`, and `security_class` physical module input keys.
 
+Use `databaseLifecycle.physicalModuleTags` for tags that must apply to every
+physical database module, such as deployment correlation or cost attribution.
+The chart merges these with each group's `physicalModuleInputs.tags`;
+deployment-wide values win when both maps contain the same key.
+
 The worker no longer consumes
 `SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES`. OpenTofu validates generated
 module calls against the actual pinned module. Advanced deployments can still

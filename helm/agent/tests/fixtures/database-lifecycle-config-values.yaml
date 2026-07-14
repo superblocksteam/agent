@@ -29,6 +29,9 @@ databaseLifecycle:
       source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.2.0
   physicalProvisioning:
     enabled: true
+  physicalModuleTags:
+    superblocks.com/component: native-database
+    superblocks.com/ephemeral-environment: pr-1234
   groups:
     nonprod:
       environments:
@@ -48,8 +51,9 @@ databaseLifecycle:
           - subnet-aaa
           - subnet-bbb
         tags:
-          superblocks.com/component: native-database
-          superblocks.com/ephemeral-environment: pr-19889
+          group-specific: retained
+          superblocks.com/component: stale-component
+          superblocks.com/ephemeral-environment: stale-environment
         vpc_id: vpc-0abc123
     production:
       environments:

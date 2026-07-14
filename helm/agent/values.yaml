@@ -297,6 +297,10 @@ databaseLifecycle:
       version: ""
   physicalProvisioning:
     enabled: true
+  # Tags applied to every physical database module. Deployment automation can
+  # use this for correlation and cost attribution without duplicating tags in
+  # each named group. These values override matching group-level tags.
+  physicalModuleTags: {}
   # Named groups map routing and pool policy to native Terraform input maps.
   # A maxDatabases value of 1 gives one physical database per logical database.
   # See tests/fixtures/database-lifecycle-config-values.yaml for a complete

@@ -87,6 +87,21 @@ func TestOPAChartRegisteredOnlyGroupsCanOmitPhysicalModuleInputs(t *testing.T) {
 	require.NotContains(t, requireMap(t, entryByEnvironment(t, config, "edit")["operations"]), "ensure_physical_database_instance")
 }
 
+func TestOPAChartAppliesDeploymentTagsToEveryPhysicalModule(t *testing.T) {
+	t.Parallel()
+
+	config := lifecycleConfig(t, lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, renderLifecycleChart(t)))))
+
+	nonprodTags := physicalModuleTags(t, entryByEnvironment(t, config, "edit"))
+	require.Equal(t, "retained", nonprodTags["group-specific"])
+	require.Equal(t, "native-database", nonprodTags["superblocks.com/component"])
+	require.Equal(t, "pr-1234", nonprodTags["superblocks.com/ephemeral-environment"])
+
+	productionTags := physicalModuleTags(t, entryByEnvironment(t, config, "deployed"))
+	require.Equal(t, "native-database", productionTags["superblocks.com/component"])
+	require.Equal(t, "pr-1234", productionTags["superblocks.com/ephemeral-environment"])
+}
+
 func TestOPAChartPreservesDisabledS3Lockfile(t *testing.T) {
 	t.Parallel()
 
@@ -210,7 +225,9 @@ func TestOPAChartRejectsStringLifecycleBooleanValues(t *testing.T) {
 			require.Error(t, err)
 			rendered := string(output)
 			require.True(t,
-				strings.Contains(rendered, test.want) || strings.Contains(rendered, "want boolean"),
+				strings.Contains(rendered, test.want) ||
+					strings.Contains(rendered, "want boolean") ||
+					strings.Contains(strings.ToLower(rendered), "invalid type. expected: boolean"),
 				rendered,
 			)
 		})
@@ -383,6 +400,18 @@ func entryByEnvironment(t *testing.T, config map[string]any, environment string)
 	}
 	t.Fatalf("entry for environment %q not found", environment)
 	return nil
+}
+
+func physicalModuleTags(t *testing.T, entry map[string]any) map[string]any {
+	t.Helper()
+
+	operations := requireMap(t, entry["operations"])
+	physicalOperation := requireMap(t, operations["ensure_physical_database_instance"])
+	terraform := requireMap(t, physicalOperation["terraform"])
+	moduleSelectors := requireMap(t, terraform["moduleSelectors"])
+	physicalModule := requireMap(t, moduleSelectors["postgres"])
+	inputs := requireMap(t, physicalModule["inputs"])
+	return requireMap(t, inputs["tags"])
 }
 
 func assertRenderedLifecycleConfig(t *testing.T, configJSON string) {

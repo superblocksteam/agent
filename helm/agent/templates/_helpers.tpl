@@ -159,9 +159,17 @@ input maps while backend, credential resolver, and module sources stay shared.
   "region" $backendRegion
   "use_lockfile" $dl.backend.useLockfile
 -}}
+{{- $physicalInputs := deepCopy ($group.physicalModuleInputs | default dict) -}}
+{{- $physicalTags := deepCopy (get $physicalInputs "tags" | default dict) -}}
+{{- range $tagKey, $tagValue := ($dl.physicalModuleTags | default dict) }}
+{{- $_ := set $physicalTags $tagKey $tagValue }}
+{{- end }}
+{{- if $physicalTags }}
+{{- $_ := set $physicalInputs "tags" $physicalTags }}
+{{- end }}
 {{- $physicalModule := dict
   "source" $dl.modules.physical.source
-  "inputs" (deepCopy ($group.physicalModuleInputs | default dict))
+  "inputs" $physicalInputs
 -}}
 {{- if $dl.modules.physical.version }}
 {{- $_ := set $physicalModule "version" $dl.modules.physical.version }}

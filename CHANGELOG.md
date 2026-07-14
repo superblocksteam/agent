@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Apply deployment-wide correlation and cost-attribution tags to every Native Database physical Terraform module rendered by the On-Premise Agent Helm chart.
 - Render Native Database lifecycle worker CONFIG from named On-Premise Agent Helm groups, with worker-owned pool policy, native Terraform module inputs, and optional physical provisioning on pool exhaustion.
 - Skip mustache binding resolution for Apps 3.0 SDK integration REST sub-requests so literal `{{` in request bodies are not evaluated
 - Materialize one app-scoped PostgreSQL migrator role and credential per Native Database binding, reused for application queries and schema migrations.

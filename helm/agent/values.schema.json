@@ -22,6 +22,12 @@
           },
           "type": "object"
         },
+        "physicalModuleTags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
         "groups": {
           "additionalProperties": {
             "additionalProperties": false,
