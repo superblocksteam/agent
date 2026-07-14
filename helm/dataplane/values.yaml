@@ -1,4 +1,8 @@
 ---
+server:
+  # Enables in-process CORS for every origin, including credentials and private network requests.
+  # Use only for local development. Configure ingress.cors for restricted production CORS.
+  handleCors: false
 superblocks:
   url: 'https://api.superblocks.com'
   agentTags: ''

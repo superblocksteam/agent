@@ -120,7 +120,7 @@ spec:
         - "--auth.jwt.jwks_url={{ .Values.auth.jwt.jwks_url }}"
         - "--file.server.url=http://$(SUPERBLOCKS_AGENT_INTERNAL_HOST):{{$.Values.service.ports.http}}/v2/files"
         - "--events.cloud.enabled={{ .Values.events.cloud.enabled }}"
-        - "--handle.cors=false"
+        - "--handle.cors={{ .Values.server.handleCors }}"
         {{- if .Values.bindings.wasmSandboxEnabled }}
         - "--bindings.wasm_sandbox.enabled=true"
         {{- end }}

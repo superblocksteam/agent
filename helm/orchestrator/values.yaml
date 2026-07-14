@@ -10,6 +10,9 @@ x-selector: &selector
     superblocks.com/node-type: lang-exec-worker
 server:
   deploy: true
+  # Enables in-process CORS for every origin, including credentials and private network requests.
+  # Use only for local development. Configure ingress.cors for restricted production CORS.
+  handleCors: false
   mock: false
 superblocks:
   url: 'https://app.superblocks.com'
