@@ -174,6 +174,10 @@ test-unit: deps
 	@go tool covdata textfmt -i=$(shell pwd)/coverage -o coverage.out
 	@rm -r coverage
 
+.PHONY: test-database-lifecycle-contract
+test-database-lifecycle-contract: deps
+	@./scripts/run-database-lifecycle-contract-proof.sh
+
 .PHONY: test-e2e
 test-e2e:
 	postman collection run --color on --verbose ./postman/collection.json -e ./postman/environments/$(POSTMAN_ENV).json

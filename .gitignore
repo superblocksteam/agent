@@ -67,6 +67,9 @@ charts/
 # Build-time generated bundles
 **/src/bundles/sdk-api.iife.js
 
+# Cloned locally by scripts/run-database-lifecycle-contract-proof.sh
+/terraform-superblocks-databases/
+
 # Agent/MCP related
 .fastembed_cache/
 .sisyphus/

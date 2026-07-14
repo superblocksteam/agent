@@ -10,16 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestV020LifecycleConfigMaterializesValidTerraformModules(t *testing.T) {
-	moduleRoot := os.Getenv("NATIVE_DB_TERRAFORM_MODULE_ROOT")
-	if moduleRoot == "" {
-		t.Skip("set NATIVE_DB_TERRAFORM_MODULE_ROOT to run the v0.2.0 module contract proof")
+func TestPinnedLifecycleConfigMaterializesValidTerraformModules(t *testing.T) {
+	if os.Getenv("NATIVE_DB_RUN_TERRAFORM_CONTRACT_PROOF") != "1" {
+		t.Skip("set NATIVE_DB_RUN_TERRAFORM_CONTRACT_PROOF=1 to run the pinned module contract proof")
 	}
-	moduleRoot, err := filepath.Abs(moduleRoot)
-	require.NoError(t, err)
 
-	logicalSource := fmt.Sprintf("git::file://%s//modules/postgres-managed-database?ref=v0.2.0", moduleRoot)
-	physicalSource := fmt.Sprintf("git::file://%s//modules/aws-rds-managed-instance?ref=v0.2.0", moduleRoot)
+	pins := nativeDBContractProofModulePins()
+	moduleRoot := nativeDBTerraformModuleRoot(t, pins)
+	logicalSource := fmt.Sprintf("git::file://%s//%s?ref=%s", moduleRoot, pins.LogicalPath, pins.Ref)
+	physicalSource := fmt.Sprintf("git::file://%s//%s?ref=%s", moduleRoot, pins.PhysicalPath, pins.Ref)
 	rawConfig := lifecycleContractProofConfig(logicalSource, physicalSource)
 	config, err := ConfigFromEnv(func(key string) string {
 		if key == envConfig {
