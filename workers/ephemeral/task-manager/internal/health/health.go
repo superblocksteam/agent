@@ -2,8 +2,8 @@ package health
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"net/http"
+	"sync/atomic"
 	"time"
 
 	r "github.com/redis/go-redis/v9"
@@ -11,46 +11,55 @@ import (
 	"go.uber.org/zap"
 )
 
-// DefaultHealthFilePath is the default path for the health file used by Kubernetes probes
-const DefaultHealthFilePath = "/tmp/worker_healthy"
-
-// RedisChecker is an interface for checking Redis connectivity
+// RedisChecker pings Redis for the readiness probe.
 type RedisChecker interface {
 	Ping(ctx context.Context) *r.StatusCmd
 }
 
-// Checker provides file-based health checks for Kubernetes probes
-type Checker struct {
-	redis          RedisChecker
-	logger         *zap.Logger
-	pingTimeout    time.Duration
-	healthFilePath string
-	checkInterval  time.Duration
+// PoolReadinessChecker reports whether the sandbox pool has finished warming.
+type PoolReadinessChecker interface {
+	Ready() bool
+}
+
+// Manager owns the worker health state and serves the Kubernetes probe endpoints.
+//
+// Liveness (/healthz) is deliberately decoupled from dependency reachability: it
+// reflects only whether this loop is still ticking. A Redis or sandbox-pool
+// outage must never fail liveness, or kubelet would kill otherwise-healthy pods —
+// the regression that got probes disabled in #2001. Dependency health belongs on
+// /readyz (rotation gating) and pool warmth on /startupz (cold-start gating).
+type Manager struct {
+	redis  RedisChecker
+	pool   PoolReadinessChecker
+	logger *zap.Logger
+
+	pingTimeout       time.Duration
+	checkInterval     time.Duration
+	livenessThreshold time.Duration
+
+	redisOK  atomic.Bool
+	lastTick atomic.Int64 // unix-nano of the most recent loop iteration
 
 	run.ForwardCompatibility
 }
 
-var _ run.Runnable = (*Checker)(nil)
+var _ run.Runnable = (*Manager)(nil)
 
-// Options for creating a health Checker
+// Options configure a Manager.
 type Options struct {
-	Redis          RedisChecker
-	Logger         *zap.Logger
-	PingTimeout    time.Duration
-	HealthFilePath string        // Path for the health file (default: /tmp/worker_healthy)
-	CheckInterval  time.Duration // Interval for health checks (default: 5s)
+	Redis             RedisChecker
+	Pool              PoolReadinessChecker
+	Logger            *zap.Logger
+	PingTimeout       time.Duration
+	CheckInterval     time.Duration
+	LivenessThreshold time.Duration // default: 3 * CheckInterval
 }
 
-// NewChecker creates a new health checker
-func NewChecker(opts *Options) *Checker {
+// NewManager creates a health Manager. Unset durations fall back to defaults.
+func NewManager(opts *Options) *Manager {
 	pingTimeout := opts.PingTimeout
 	if pingTimeout == 0 {
 		pingTimeout = 5 * time.Second
-	}
-
-	healthFilePath := opts.HealthFilePath
-	if healthFilePath == "" {
-		healthFilePath = DefaultHealthFilePath
 	}
 
 	checkInterval := opts.CheckInterval
@@ -58,90 +67,135 @@ func NewChecker(opts *Options) *Checker {
 		checkInterval = 5 * time.Second
 	}
 
-	return &Checker{
-		redis:          opts.Redis,
-		logger:         opts.Logger,
-		pingTimeout:    pingTimeout,
-		healthFilePath: healthFilePath,
-		checkInterval:  checkInterval,
+	livenessThreshold := opts.LivenessThreshold
+	if livenessThreshold == 0 {
+		livenessThreshold = 3 * checkInterval
+	}
+
+	return &Manager{
+		redis:             opts.Redis,
+		pool:              opts.Pool,
+		logger:            opts.Logger,
+		pingTimeout:       pingTimeout,
+		checkInterval:     checkInterval,
+		livenessThreshold: livenessThreshold,
 	}
 }
 
-// checkRedis checks if Redis is reachable
-func (c *Checker) checkRedis() error {
-	ctx, cancel := context.WithTimeout(context.Background(), c.pingTimeout)
-	defer cancel()
+// Run implements run.Runnable. The liveness heartbeat (lastTick) advances on its
+// own ticker, wholly independent of the Redis ping: a slow or hung ping can only
+// stale redisOK (readiness), never the heartbeat (liveness). Decoupling them is
+// the load-bearing anti-#2001 property — liveness must never track a dependency.
+func (m *Manager) Run(ctx context.Context) error {
+	m.logger.Info("starting health manager",
+		zap.Duration("check_interval", m.checkInterval),
+		zap.Duration("liveness_threshold", m.livenessThreshold),
+	)
 
-	if err := c.redis.Ping(ctx).Err(); err != nil {
-		return fmt.Errorf("redis ping failed: %w", err)
-	}
-	return nil
-}
+	// Heartbeat is fresh from the instant Run starts, before the first ping.
+	m.lastTick.Store(time.Now().UnixNano())
 
-// markHealthy creates the health file to indicate the worker is healthy
-func (c *Checker) markHealthy() error {
-	file, err := os.Create(c.healthFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to create health file: %w", err)
-	}
-	return file.Close()
-}
+	go m.pingLoop(ctx)
 
-// markUnhealthy removes the health file to indicate the worker is unhealthy
-func (c *Checker) markUnhealthy() {
-	if err := os.Remove(c.healthFilePath); err != nil && !os.IsNotExist(err) {
-		c.logger.Warn("failed to remove health file", zap.Error(err))
-	}
-}
-
-// updateHealthFile checks health and creates/removes the health file accordingly
-func (c *Checker) updateHealthFile() {
-	if err := c.checkRedis(); err != nil {
-		c.logger.Error("redis check failed, marking unhealthy", zap.Error(err))
-		c.markUnhealthy()
-		return
-	}
-
-	if err := c.markHealthy(); err != nil {
-		c.logger.Error("failed to mark healthy", zap.Error(err))
-	}
-}
-
-// Run implements run.Runnable
-func (c *Checker) Run(ctx context.Context) error {
-	c.logger.Info("starting health checker", zap.String("healthFile", c.healthFilePath))
-
-	ticker := time.NewTicker(c.checkInterval)
+	ticker := time.NewTicker(m.checkInterval)
 	defer ticker.Stop()
-
-	// Initial health check
-	c.updateHealthFile()
 
 	for {
 		select {
 		case <-ctx.Done():
-			// Clean up health file on shutdown
-			c.markUnhealthy()
 			return nil
 		case <-ticker.C:
-			c.updateHealthFile()
+			m.lastTick.Store(time.Now().UnixNano())
 		}
 	}
 }
 
-// Close implements run.Runnable
-func (c *Checker) Close(ctx context.Context) error {
-	c.logger.Info("shutting down health checker")
-	c.markUnhealthy()
+// pingLoop refreshes redisOK on its own cadence, running the ping sequentially so
+// at most one is ever in flight. A blocked ping delays only readiness, never the
+// liveness heartbeat driven by Run.
+func (m *Manager) pingLoop(ctx context.Context) {
+	m.ping(ctx)
+
+	ticker := time.NewTicker(m.checkInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			m.ping(ctx)
+		}
+	}
+}
+
+// ping updates redisOK from a single Redis PING bounded by pingTimeout. It never
+// touches lastTick — see Run.
+func (m *Manager) ping(ctx context.Context) {
+	cctx, cancel := context.WithTimeout(ctx, m.pingTimeout)
+	defer cancel()
+
+	if err := m.redis.Ping(cctx).Err(); err != nil {
+		m.redisOK.Store(false)
+		m.logger.Warn("redis ping failed", zap.Error(err))
+		return
+	}
+	m.redisOK.Store(true)
+}
+
+// Close implements run.Runnable.
+func (m *Manager) Close(context.Context) error {
+	m.logger.Info("shutting down health manager")
 	return nil
 }
 
-// Name implements run.Runnable
-func (c *Checker) Name() string {
-	return "healthChecker"
+// Name implements run.Runnable.
+func (m *Manager) Name() string {
+	return "healthManager"
 }
 
-// Alive implements run.Runnable
-func (c *Checker) Alive() bool {
+// Alive implements run.Runnable.
+func (m *Manager) Alive() bool {
 	return true
+}
+
+// startupOK gates cold start until the sandbox pool is warm.
+func (m *Manager) startupOK() bool {
+	return m.pool.Ready()
+}
+
+// readyOK gates rotation: the worker serves traffic only when Redis is reachable
+// and the pool is warm.
+func (m *Manager) readyOK() bool {
+	return m.redisOK.Load() && m.pool.Ready()
+}
+
+// liveOK reports whether the health loop is still ticking. It never consults
+// dependency state — see the Manager doc comment.
+func (m *Manager) liveOK() bool {
+	last := m.lastTick.Load()
+	if last == 0 {
+		return false
+	}
+	return time.Since(time.Unix(0, last)) < m.livenessThreshold
+}
+
+// Handler returns the HTTP handler serving the probe endpoints.
+func (m *Manager) Handler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /startupz", statusHandler(m.startupOK))
+	mux.HandleFunc("GET /readyz", statusHandler(m.readyOK))
+	mux.HandleFunc("GET /healthz", statusHandler(m.liveOK))
+	return mux
+}
+
+// statusHandler serves 200 when ok returns true, else 503.
+func statusHandler(ok func() bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		if ok() {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
 }

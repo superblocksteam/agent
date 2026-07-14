@@ -69,7 +69,6 @@ spec:
           {{- $taskManagerResources := deepCopy ($.Values.taskManager.resources | default dict) }}
           {{- $_ := mergeOverwrite $taskManagerResources (($v.taskManager).resources | default dict) }}
           {{- toYaml $taskManagerResources | nindent 10 }}
-        {{- if $.Values.taskManager.probesEnabled }}
         {{- with (($v.taskManager).startupProbe) | default $.Values.taskManager.startupProbe }}
         startupProbe:
           {{- toYaml . | nindent 10 }}
@@ -82,7 +81,6 @@ spec:
         livenessProbe:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- end }}
         command: ["./task-manager"]
         args:
         {{- if $v.ephemeral }}
@@ -92,8 +90,8 @@ spec:
         {{- else }}
         - "--worker.ephemeral=false"
         {{- end }}
-        # Health check configuration
-        - "--health.file={{ (($v.taskManager).healthFilePath) | default $.Values.taskManager.healthFilePath }}"
+        # Health probe HTTP server (serves /startupz, /readyz, /healthz)
+        - "--health.http.port={{ (($v.taskManager).healthPort) | default $.Values.taskManager.healthPort | default 8090 }}"
         # Logging
         - "--log.level={{ $.Values.observability.logging.level }}"
         # Sandbox language
@@ -340,6 +338,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
         ports:
+        - name: health
+          containerPort: {{ (($v.taskManager).healthPort) | default $.Values.taskManager.healthPort | default 8090 }}
+          protocol: TCP
         - name: var-store-grpc
           containerPort: {{ $.Values.variableStore.grpc.port }}
           protocol: TCP

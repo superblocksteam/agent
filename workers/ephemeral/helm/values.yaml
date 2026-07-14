@@ -90,30 +90,33 @@ taskManager:
       memory: 128Mi
   # Additional args to pass to the task-manager
   extraArgs: []
-  # Health file path for file-based probes
-  healthFilePath: /tmp/worker_healthy
-  # Set to false to disable all probes (startup, readiness, liveness)
-  probesEnabled: true
-  # Startup probe - checks if health file exists (created when Redis and sandbox are ready)
+  # Port of the worker-owned health HTTP server (serves /startupz, /readyz, /healthz).
+  healthPort: 8090
+  # Startup probe — /startupz turns 200 once the sandbox pool is warm.
   startupProbe:
-    exec:
-      command:
-        - cat
-        - /tmp/worker_healthy
-    failureThreshold: 30 # Allow up to 60 seconds for startup (30 * 2s)
+    httpGet:
+      path: /startupz
+      port: health
     periodSeconds: 2
-  # Readiness probe - checks if Redis and sandbox are reachable
+    timeoutSeconds: 2
+    failureThreshold: 150 # Up to ~300s for the pool to warm on cold start (150 * 2s)
+  # Readiness probe — /readyz is 200 when Redis is reachable and the pool is warm.
   readinessProbe:
-    exec:
-      command:
-        - cat
-        - /tmp/worker_healthy
-  # Liveness probe - checks if task-manager and sandbox are alive
+    httpGet:
+      path: /readyz
+      port: health
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+  # Liveness probe — /healthz tracks only the health-loop heartbeat, never
+  # dependency reachability, so a Redis/pool blip can't kill a healthy pod.
   livenessProbe:
-    exec:
-      command:
-        - cat
-        - /tmp/worker_healthy
+    httpGet:
+      path: /healthz
+      port: health
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
   # Shutdown configuration - termination grace period and delay before draining the worker
   shutdown:
     terminationGracePeriodSeconds: 600 # 10 minutes
@@ -121,7 +124,7 @@ taskManager:
     delay: 1m
     # Maximum jitter to add to the base delay.
     maxJitter: 5m
-  # Writable scratch for health-file probes under a read-only root filesystem.
+  # Writable scratch mount for the read-only root filesystem.
   tmpSizeLimit: 256Mi
   podSecurityContext:
     fsGroup: 65532

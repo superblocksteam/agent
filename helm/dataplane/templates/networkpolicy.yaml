@@ -200,6 +200,13 @@ spec:
           {{- if .Values.sandbox_workers.integrationExecutor.enabled }}
           - {{ .Values.sandbox_workers.integrationExecutor.grpc.port }}
           {{- end }}
+    # Allow kubelet health probes (httpGet /startupz /readyz /healthz). Kubelet is
+    # a node process, not a pod, so scope by destination port; endpoints are GET-only.
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - {{ .Values.sandbox_workers.taskManager.healthPort | default 8090 }}
     # Deny all other ingress
     - action: Deny
 

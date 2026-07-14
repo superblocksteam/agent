@@ -156,8 +156,7 @@ func init() {
 	pflag.Int("filepicker.max.size", 524288000, "Max file size in bytes for FilePicker uploads. Default 500mb.")
 
 	// Health check settings
-	pflag.Bool("health.enabled", false, "Whether to enable health checks.")
-	pflag.String("health.file", "/tmp/worker_healthy", "The path to the health file for file-based probes.")
+	pflag.Int("health.http.port", 8090, "The port for the health probe HTTP server (startupz/readyz/healthz).")
 	pflag.Duration("health.ping.timeout", 5*time.Second, "Timeout for Redis ping health checks.")
 	pflag.Duration("health.check.interval", 5*time.Second, "The interval for health checks.")
 
@@ -840,14 +839,24 @@ func main() {
 		zap.Bool("enabled", integrationExecutorEnabled),
 	)
 
-	// Create health checker with file-based health checks
-	// Sandbox health check reports NOT READY while sandbox is being created
-	healthChecker := health.NewChecker(&health.Options{
-		Redis:          redisClient,
-		Logger:         logger,
-		PingTimeout:    viper.GetDuration("health.ping.timeout"),
-		HealthFilePath: viper.GetString("health.file"),
-		CheckInterval:  viper.GetDuration("health.check.interval"),
+	// Health manager runs the probe loop; liveness is decoupled from Redis/pool
+	// reachability so a dependency blip never kills healthy pods (see internal/health).
+	healthManager := health.NewManager(&health.Options{
+		Redis:         redisClient,
+		Pool:          sandboxRunnable,
+		Logger:        logger,
+		PingTimeout:   viper.GetDuration("health.ping.timeout"),
+		CheckInterval: viper.GetDuration("health.check.interval"),
+	})
+
+	// Health probe HTTP server. Bound to 0.0.0.0 with no IP-filter middleware
+	// because kubelet probe source IPs are not allowlisted.
+	healthHttpRunnable := httpserver.Prepare(&httpserver.Options{
+		Name:         "healthHttp",
+		Handler:      healthManager.Handler(),
+		InsecurePort: viper.GetInt("health.http.port"),
+		InsecureAddr: "0.0.0.0",
+		Logger:       logger,
 	})
 
 	// Create Redis transport
@@ -895,7 +904,8 @@ func main() {
 		signaldelay.WithMaxJitter(viper.GetDuration("worker.shutdown.max.jitter")),
 	))
 	g.Add(viper.GetBool("emitter.remote.enabled"), remoteEmitter)
-	g.Add(viper.GetBool("health.enabled"), healthChecker)
+	g.Always(healthManager)
+	g.Always(healthHttpRunnable)
 	g.Always(transportRunnable)
 	g.Always(sandboxRunnable)
 	g.Always(variableStoreHttpRunnable)
@@ -908,7 +918,7 @@ func main() {
 	logger.Info("starting worker",
 		zap.String("worker_id", id),
 		zap.String("version", version),
-		zap.String("health_file", viper.GetString("health.file")),
+		zap.Int("health_http_port", viper.GetInt("health.http.port")),
 		zap.Bool("ephemeral", viper.GetBool("worker.ephemeral")),
 		zap.Strings("plugins", pluginExec.ListPlugins()),
 		zap.Strings("events", events.ToSlice()),

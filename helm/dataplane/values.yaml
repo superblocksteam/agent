@@ -205,30 +205,33 @@ sandbox_workers:
         memory: 128Mi
     # Additional args to pass to the task-manager
     extraArgs: []
-    # Health file path for file-based probes
-    healthFilePath: "/tmp/worker_healthy"
-    # Set to false to disable all probes (startup, readiness, liveness)
-    probesEnabled: false
-    # Startup probe — health file exists once Redis and sandbox are ready
+    # Port of the worker-owned health HTTP server (serves /startupz, /readyz, /healthz).
+    healthPort: 8090
+    # Startup probe — /startupz turns 200 once the sandbox pool is warm.
     startupProbe:
-      exec:
-        command:
-          - cat
-          - "/tmp/worker_healthy"
-      failureThreshold: 30 # Allow up to ~60s startup (30 * 2s period)
+      httpGet:
+        path: /startupz
+        port: health
       periodSeconds: 2
-    # Readiness probe — Redis and sandbox reachable
+      timeoutSeconds: 2
+      failureThreshold: 150 # Up to ~300s for the pool to warm on cold start (150 * 2s)
+    # Readiness probe — /readyz is 200 when Redis is reachable and the pool is warm.
     readinessProbe:
-      exec:
-        command:
-          - cat
-          - "/tmp/worker_healthy"
-    # Liveness probe — task-manager and sandbox still healthy
+      httpGet:
+        path: /readyz
+        port: health
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 3
+    # Liveness probe — /healthz tracks only the health-loop heartbeat, never
+    # dependency reachability, so a Redis/pool blip can't kill a healthy pod.
     livenessProbe:
-      exec:
-        command:
-          - cat
-          - "/tmp/worker_healthy"
+      httpGet:
+        path: /healthz
+        port: health
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
     shutdown:
       terminationGracePeriodSeconds: 600 # 10 minutes
       # Base delay before, after receiving a termination signal, before draining the worker.

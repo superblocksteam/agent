@@ -312,7 +312,6 @@ sandbox_workers:
     timeout:
       dial: 20s
   taskManager:
-    probesEnabled: false
     shutdown:
       terminationGracePeriodSeconds: 600 # 10 minutes
       delay: 1m

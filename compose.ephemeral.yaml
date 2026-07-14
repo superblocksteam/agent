@@ -23,7 +23,6 @@ x-task-manager-environment: &task-manager-environment
   SUPERBLOCKS_WORKER_SANDBOX_WORKER_EPHEMERAL: "false"
   # Disable IP filtering in compose (static sandbox mode) since sandbox IPs are not dynamically configured
   SUPERBLOCKS_WORKER_SANDBOX_IP_FILTER_DISABLED: "true"
-  SUPERBLOCKS_WORKER_SANDBOX_HEALTH_ENABLED: "true"
 x-task-manager-base: &task-manager-base
   image: ghcr.io/superblocksteam/task-manager:${EPHEMERAL_IMAGE_TAG:-latest}
   build:
@@ -33,12 +32,9 @@ x-task-manager-base: &task-manager-base
     - redis
   environment:
     !!merge <<: *task-manager-environment
-  healthcheck:
-    test: ["CMD", "cat", "/tmp/worker_healthy"]
-    interval: 5s
-    timeout: 3s
-    retries: 20
-    start_period: 10s
+  # No healthcheck: the file-based probe is retired and the distroless image has
+  # no shell/HTTP client to hit the new /healthz endpoint. `up --wait` gates on
+  # container start instead. See AGENT-2748.
   networks:
     - default
 x-python-sandbox-base: &python-sandbox-base

@@ -119,7 +119,6 @@ taskManager:
   image:
     repository: ghcr.io/superblocksteam/task-manager
     pullPolicy: IfNotPresent
-  probesEnabled: false
 # Sandbox images
 sandbox:
   python:

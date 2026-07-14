@@ -607,6 +607,12 @@ func (p *SandboxPool) Close(ctx context.Context) error {
 	return nil
 }
 
+// Ready reports whether the pool has finished warming (every entry has reached
+// poolEntryReady). Consumed by the health readiness and startup probes.
+func (p *SandboxPool) Ready() bool {
+	return p.poolReady.Load()
+}
+
 // NotifyWhenReady registers notifyCh and delivers true once the pool is ready (every entry has
 // reached poolEntryReady), or immediately if already ready.
 func (p *SandboxPool) NotifyWhenReady(notifyCh chan<- bool) {

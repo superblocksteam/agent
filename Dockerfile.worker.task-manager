@@ -40,9 +40,6 @@ WORKDIR /app
 # Copy the binary
 COPY --from=builder /app/workers/ephemeral/task-manager/task-manager .
 
-# Kubernetes probes use `cat /tmp/worker_healthy`; distroless has no coreutils
-COPY --from=builder /bin/cat /bin/cat
-
 # Default environment variables for Task Manager
 # Note: sandbox.address is NOT set - defaults to job mode (dynamic Kubernetes Jobs)
 # For static mode (Docker Compose), set SUPERBLOCKS_WORKER_SANDBOX_SANDBOX_ADDRESS
