@@ -147,9 +147,12 @@ input maps while backend, credential resolver, and module sources stay shared.
   "moduleSelectors" (dict "postgres" $logicalModule)
 -}}
 {{- $ensureDatabase := dict "backend" "terraform" "terraform" $logicalTerraform -}}
+{{- /* retire_database reuses the logical Terraform root so tofu destroy targets the same state as ensure. It omits physicalDatabase: attach for retire is metadata-driven, not a new pool reservation. */ -}}
+{{- $retireDatabase := dict "backend" "terraform" "terraform" $logicalTerraform -}}
 {{- $operations := dict
   "ensure_database" $ensureDatabase
   "migrate_schema" (dict "backend" "native_runner")
+  "retire_database" $retireDatabase
 -}}
 {{- if $dl.physicalProvisioning.enabled }}
 {{- $physicalBackend := dict

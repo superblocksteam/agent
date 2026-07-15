@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Add a Native Database lifecycle `retire_database` operation: the worker tears the binding down via `tofu destroy` (dropping the logical Postgres roles/databases it created inside a shared pool) and reports a terminal `cancelled` state. Shared-pool teardown resolves the pool instance via org-scoped get-by-id (`connectionMetadata.physical_database_instance_ref`), including full or draining pools that listAccepting excludes. Successful retire capacity release is owned by the control-plane terminal callback (atomic with cancelled); the worker no longer decrements by instance id after destroy. Named Helm groups advertise `retire_database` alongside ensure/migrate so the agent capability gate can dispatch retirement; manual `SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG` still needs `entries[].operations.retire_database` with the same Terraform module/backend as ensure.
 - Apply deployment-wide correlation and cost-attribution tags to every Native Database physical Terraform module rendered by the On-Premise Agent Helm chart.
 - Render Native Database lifecycle worker CONFIG from named On-Premise Agent Helm groups, with worker-owned pool policy, native Terraform module inputs, and optional physical provisioning on pool exhaustion.
 - Skip mustache binding resolution for Apps 3.0 SDK integration REST sub-requests so literal `{{` in request bodies are not evaluated

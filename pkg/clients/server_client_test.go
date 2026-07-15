@@ -301,6 +301,9 @@ func TestDatabaseLifecyclePhysicalDatabaseInstanceClientMethods(t *testing.T) {
 			assert.Equal(t, "us-east-1", r.URL.Query().Get("region"))
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"data":[{"id":"instance-1","region":"us-east-1","capacityUsed":1,"capacityMax":4}]}`))
+		case "GET /api/v1/database-lifecycle/physical-database-instances/instance-1":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"id":"instance-1","region":"us-east-1","capacityUsed":4,"capacityMax":4,"status":"draining"}}`))
 		case "POST /api/v1/database-lifecycle/physical-database-instances/instance-1/reserve":
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"data":{"id":"instance-1"}}`))
@@ -335,6 +338,9 @@ func TestDatabaseLifecyclePhysicalDatabaseInstanceClientMethods(t *testing.T) {
 	})
 	require.NoError(t, err)
 	resp.Body.Close()
+	resp, err = client.GetDatabaseLifecyclePhysicalDatabaseInstance(context.Background(), nil, http.Header{}, "instance-1")
+	require.NoError(t, err)
+	resp.Body.Close()
 	resp, err = client.PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(context.Background(), nil, http.Header{}, "instance-1")
 	require.NoError(t, err)
 	resp.Body.Close()
@@ -354,6 +360,7 @@ func TestDatabaseLifecyclePhysicalDatabaseInstanceClientMethods(t *testing.T) {
 
 	require.Equal(t, []string{
 		"GET /api/v1/database-lifecycle/physical-database-instances?engine=postgres&environment=deployed&region=us-east-1",
+		"GET /api/v1/database-lifecycle/physical-database-instances/instance-1",
 		"POST /api/v1/database-lifecycle/physical-database-instances/instance-1/reserve",
 		"POST /api/v1/database-lifecycle/physical-database-instances/instance-1/release",
 		"POST /api/v1/database-lifecycle/physical-database-instances",

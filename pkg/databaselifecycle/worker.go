@@ -3,7 +3,6 @@ package databaselifecycle
 import (
 	"context"
 	"errors"
-	"fmt"
 )
 
 type DispatchClaimer interface {
@@ -157,20 +156,24 @@ func (w *Worker) processLockedDispatch(ctx context.Context, dispatch DispatchPay
 	}
 	result, err := w.processor.Process(ctx, dispatch, job)
 	if err != nil {
-		// Only a terminal failed result frees the reservation. A retryable
-		// processor error posts no terminal callback and is retried from
-		// physical_db_reserved, so the reservation must stay held — releasing it
-		// would strand the retry against a pool slot the worker no longer holds.
-		if dispatch.PhysicalDatabaseInstanceID != "" && isTerminalFailedResult(result) {
+		// Only a terminal failed result frees a capacity reservation. Retryable
+		// processor errors are retried from physical_db_reserved and must keep
+		// the reservation held.
+		if dispatch.PhysicalDatabaseInstanceReserved &&
+			dispatch.PhysicalDatabaseInstanceID != "" &&
+			isTerminalFailedResult(result) {
 			if releaseErr := w.releasePhysicalDatabaseInstance(ctx, dispatch.PhysicalDatabaseInstanceID); releaseErr != nil {
 				return errors.Join(err, releaseErr)
 			}
 		}
 		return err
 	}
-	if dispatch.PhysicalDatabaseInstanceID != "" && isTerminalFailedResult(result) {
+	if dispatch.PhysicalDatabaseInstanceReserved && dispatch.PhysicalDatabaseInstanceID != "" && isTerminalFailedResult(result) {
 		return w.releasePhysicalDatabaseInstance(ctx, dispatch.PhysicalDatabaseInstanceID)
 	}
+	// Successful retire_database capacity release happens in the control-plane
+	// terminal callback (same txn as marking cancelled), so a lost release
+	// response cannot double-decrement another binding's slot.
 	return nil
 }
 
@@ -179,13 +182,7 @@ func isTerminalFailedResult(result TerminalCallbackResult) bool {
 }
 
 func (w *Worker) releasePhysicalDatabaseInstance(ctx context.Context, instanceID string) error {
-	if w.releaser == nil {
-		return nil
-	}
-	if err := w.releaser.ReleasePhysicalDatabaseInstance(ctx, instanceID); err != nil {
-		return fmt.Errorf("release reserved physical database instance %s: %w", instanceID, err)
-	}
-	return nil
+	return releaseReservedPhysicalDatabaseInstance(ctx, w.releaser, instanceID)
 }
 
 // reportFailure informs the server about a dispatch failure and ALWAYS

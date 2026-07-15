@@ -3,6 +3,7 @@ package databaselifecycle
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,6 +17,9 @@ import (
 
 type recordingPhysicalDatabaseInstanceLifecycleClient struct {
 	instances        []PhysicalDatabaseInstance
+	byID             map[string]PhysicalDatabaseInstance
+	getErr           map[string]error
+	gotIDs           []string
 	reserved         []string
 	released         []string
 	registered       []PhysicalDatabaseInstance
@@ -25,6 +29,24 @@ type recordingPhysicalDatabaseInstanceLifecycleClient struct {
 	releaseErr       map[string]error
 	registerErr      error
 	registerResponse *PhysicalDatabaseInstance
+}
+
+func (c *recordingPhysicalDatabaseInstanceLifecycleClient) GetPhysicalDatabaseInstance(ctx context.Context, instanceID string) (PhysicalDatabaseInstance, error) {
+	c.gotIDs = append(c.gotIDs, instanceID)
+	if c.getErr != nil && c.getErr[instanceID] != nil {
+		return PhysicalDatabaseInstance{}, c.getErr[instanceID]
+	}
+	if c.byID != nil {
+		if instance, ok := c.byID[instanceID]; ok {
+			return instance, nil
+		}
+	}
+	for _, instance := range c.instances {
+		if instance.ID == instanceID {
+			return instance, nil
+		}
+	}
+	return PhysicalDatabaseInstance{}, fmt.Errorf("physical database instance %q not found", instanceID)
 }
 
 func (c *recordingPhysicalDatabaseInstanceLifecycleClient) ListPhysicalDatabaseInstances(ctx context.Context, selector PhysicalDatabaseInstanceSelector) ([]PhysicalDatabaseInstance, error) {
@@ -282,7 +304,8 @@ func TestPhysicalDatabaseInstanceLifecycleResumesRegisteredInstanceFromContinuat
 	require.Equal(t, "registered-instance", instance.ID)
 	require.Equal(t, "registered.example.com:5432", instance.Endpoint)
 	require.Equal(t, map[string]any{"resolver": "aws_secrets_manager", "ref": "arn:registered", "field": "password"}, instance.MasterCredentialRef)
-	require.Len(t, client.listSelectors, 1)
+	require.Len(t, client.gotIDs, 1)
+	require.Equal(t, []string{"registered-instance"}, client.gotIDs)
 	require.Equal(t, []string{"registered-instance"}, client.reserved)
 	require.Empty(t, provisioner.provisioned)
 	require.Empty(t, client.registered)
@@ -331,7 +354,7 @@ func TestPhysicalDatabaseInstanceLifecycleResumesReservedInstanceFromContinuatio
 	require.Equal(t, "reserved-instance", instance.ID)
 	require.Equal(t, "reserved.example.com:5432", instance.Endpoint)
 	require.Equal(t, map[string]any{"resolver": "aws_secrets_manager", "ref": "arn:reserved", "field": "password"}, instance.MasterCredentialRef)
-	require.Len(t, client.listSelectors, 1)
+	require.Equal(t, []string{"reserved-instance"}, client.gotIDs)
 	require.Empty(t, client.reserved)
 	require.Empty(t, provisioner.provisioned)
 	require.Empty(t, client.registered)
@@ -420,7 +443,7 @@ func TestPhysicalDatabaseInstanceLifecycleReturnsErrorWhenRegisteredResumeInstan
 		Engine:                     "postgres",
 	})
 
-	require.ErrorContains(t, err, "registered physical database instance registered-instance not found")
+	require.ErrorContains(t, err, `physical database instance "registered-instance" not found`)
 	require.Empty(t, client.reserved)
 	require.Empty(t, provisioner.provisioned)
 }

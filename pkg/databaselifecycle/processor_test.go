@@ -54,6 +54,126 @@ func failingDSN(err error) DSNBuilder {
 	}
 }
 
+// fakeDestroyRunner implements both LifecycleRunner and LifecycleDestroyer so
+// tests can assert that a retire_database dispatch tears down via Destroy and never
+// touches the apply path.
+type fakeDestroyRunner struct {
+	runCalled     bool
+	destroyCalled bool
+	destroyJob    Job
+	destroyErr    error
+}
+
+func (f *fakeDestroyRunner) Run(_ context.Context, _ Job) (Result, error) {
+	f.runCalled = true
+	return Result{}, errors.New("Run must not be called for a retire_database dispatch")
+}
+
+func (f *fakeDestroyRunner) Destroy(_ context.Context, job Job) (Result, error) {
+	f.destroyCalled = true
+	f.destroyJob = job
+	if f.destroyErr != nil {
+		return Result{Logs: []string{"destroy log"}}, f.destroyErr
+	}
+	return Result{Logs: []string{"destroy log"}}, nil
+}
+
+func TestProcessDispatchRetireDatabaseDestroysAndReportsCancelled(t *testing.T) {
+	// EE teardown dispatches retire_database. It must tear the binding down
+	// via Destroy (tofu destroy), never apply, and report a terminal
+	// "cancelled" state with no credential refs to leak.
+	runner := &fakeDestroyRunner{}
+	var reported TerminalCallback
+	result, err := ProcessDispatch(
+		context.Background(),
+		runner,
+		nil,
+		noDSN(t),
+		CallbackReporterFunc(func(_ context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
+			reported = callback
+			return TerminalCallbackResult{RequestID: callback.RequestID, RequestState: callback.LifecycleState}, nil
+		}),
+		DispatchPayload{BindingKey: "app:prod:orders", Operation: "retire_database", RequestID: "request-1"},
+		Job{BindingKey: "app:prod:orders", WorkingDir: "/tmp/orders"},
+	)
+
+	require.NoError(t, err)
+	require.True(t, runner.destroyCalled, "retire_database must invoke Destroy")
+	require.False(t, runner.runCalled, "retire_database must not invoke the apply path")
+	require.Equal(t, "/tmp/orders", runner.destroyJob.WorkingDir)
+	require.Equal(t, lifecycleStateCancelled, reported.LifecycleState)
+	require.Equal(t, lifecycleStateCancelled, result.RequestState)
+	require.Nil(t, reported.RuntimeCredentialRefs)
+	require.Nil(t, reported.Error)
+}
+
+func TestProcessDispatchRetireDatabaseReportsFailedOnTerminalDestroyError(t *testing.T) {
+	runner := &fakeDestroyRunner{destroyErr: &LifecycleError{Code: ErrorCodeTerraformFailed, Err: errors.New("drop role failed")}}
+	var reported TerminalCallback
+	_, err := ProcessDispatch(
+		context.Background(),
+		runner,
+		nil,
+		noDSN(t),
+		CallbackReporterFunc(func(_ context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
+			reported = callback
+			return TerminalCallbackResult{RequestID: callback.RequestID, RequestState: "failed"}, nil
+		}),
+		DispatchPayload{BindingKey: "app:prod:orders", Operation: "retire_database", RequestID: "request-1"},
+		Job{BindingKey: "app:prod:orders"},
+	)
+
+	require.NoError(t, err)
+	require.True(t, runner.destroyCalled)
+	require.Equal(t, "failed", reported.LifecycleState)
+	require.Equal(t, "terraform_failed", reported.Error.Code)
+}
+
+func TestProcessDispatchRetireDatabaseReportsInternalErrorWhenRunnerDoesNotSupportDestroy(t *testing.T) {
+	runner := RunnerFunc(func(_ context.Context, _ Job) (Result, error) {
+		return Result{}, nil
+	})
+	var reported TerminalCallback
+	_, err := ProcessDispatch(
+		context.Background(),
+		runner,
+		nil,
+		noDSN(t),
+		CallbackReporterFunc(func(_ context.Context, cb TerminalCallback) (TerminalCallbackResult, error) {
+			reported = cb
+			return TerminalCallbackResult{}, nil
+		}),
+		DispatchPayload{BindingKey: "b", Operation: "retire_database", RequestID: "r"},
+		Job{BindingKey: "b"},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, "failed", reported.LifecycleState)
+	require.Equal(t, string(ErrorCodeInternal), reported.Error.Code)
+}
+
+func TestProcessDispatchRetireDatabaseDoesNotReportRetryableDestroyError(t *testing.T) {
+	// A contended state lock during teardown must surface as a retryable error
+	// (so the worker backs off), not a terminal "failed" callback.
+	runner := &fakeDestroyRunner{destroyErr: &LifecycleError{Code: ErrorCodeBackendLocked, Retryable: true, Err: errors.New("state lock")}}
+	reportedAny := false
+	_, err := ProcessDispatch(
+		context.Background(),
+		runner,
+		nil,
+		noDSN(t),
+		CallbackReporterFunc(func(_ context.Context, _ TerminalCallback) (TerminalCallbackResult, error) {
+			reportedAny = true
+			return TerminalCallbackResult{}, nil
+		}),
+		DispatchPayload{BindingKey: "app:prod:orders", Operation: "retire_database", RequestID: "request-1"},
+		Job{BindingKey: "app:prod:orders"},
+	)
+
+	require.Error(t, err)
+	require.False(t, reportedAny, "retryable teardown errors must not emit a terminal callback")
+}
+
 func TestProcessDispatchReportsReadyCallbackAfterRunnerSuccess(t *testing.T) {
 	var reported TerminalCallback
 	result, err := ProcessDispatch(

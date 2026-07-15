@@ -228,6 +228,53 @@ func TestMaterializeResolvedJobRejectsCredentialResolverInputConflict(t *testing
 	require.ErrorContains(t, err, `input "credential_resolver" conflicts with local lifecycle credential resolver`)
 }
 
+func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsForDeprovision(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:dev:orders",
+		WorkingDir:  filepath.Join(root, "app-dev-orders"),
+		MainFile:    filepath.Join(root, "app-dev-orders", "main.tf"),
+		BackendFile: filepath.Join(root, "app-dev-orders", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-dev-orders", "terraform.tfvars.json"),
+	}
+	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+		Module: TerraformModule{
+			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
+			Inputs: map[string]any{
+				"credential_secret_prefix": "superblocks/native-db/local",
+			},
+		},
+		Backend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "devdb.tfstate", "region": "us-west-2"},
+	}, PhysicalDatabaseInstance{
+		Endpoint: "pool-rds.example.us-east-1.rds.amazonaws.com:6432",
+		MasterCredentialRef: map[string]any{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
+		},
+	})
+
+	err := MaterializeResolvedJob(job, DispatchPayload{
+		BindingKey:      "org:app:edit:dev~dev:orders~Orders%20DB:postgres",
+		DesiredSpec:     DatabaseRequirement{LogicalName: "Orders DB", Engine: "postgres"},
+		DesiredSpecHash: "hash-1",
+		Environment:     "edit",
+		Operation:       operationRetireDatabase,
+		Profile:         "dev",
+		RequestID:       "request-1",
+		ResourceKey:     "org/app/orders~Orders%20DB:postgres/edit/dev~dev/default",
+	}, resolved, testSharedModeSSLOpts)
+
+	require.NoError(t, err)
+
+	var vars map[string]any
+	require.NoError(t, readJSONFile(job.VarsFile, &vars))
+	require.Equal(t, "sb_0feb472353575bf5", vars["database_name"])
+	require.Equal(t, "app_0feb472353575bf5a7596189d9b482e1_migrator", vars["runtime_role_name"])
+	_, hasMigrationRole := vars["migration_role_name"]
+	require.False(t, hasMigrationRole, "deprovision materialization must target the single app migrator role")
+	require.Equal(t, "retire_database", vars["operation"])
+}
+
 func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsFromReservedInstance(t *testing.T) {
 	root := tempRoot(t)
 	job := Job{

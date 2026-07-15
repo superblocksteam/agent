@@ -382,6 +382,7 @@ func TestWorkerPollOnceReleasesReservedPhysicalDatabaseInstanceAfterTerminalFail
 		}),
 		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			dispatch.PhysicalDatabaseInstanceReserved = true
 			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
@@ -413,6 +414,7 @@ func TestWorkerPollOnceSurfacesReleaseErrorAfterTerminalFailure(t *testing.T) {
 		}),
 		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			dispatch.PhysicalDatabaseInstanceReserved = true
 			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
@@ -446,6 +448,7 @@ func TestWorkerPollOnceKeepsReservedPhysicalDatabaseInstanceAfterRetryableProces
 		}),
 		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			dispatch.PhysicalDatabaseInstanceReserved = true
 			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
@@ -470,6 +473,115 @@ func TestWorkerPollOnceKeepsReservedPhysicalDatabaseInstanceAfterRetryableProces
 	require.Empty(t, released)
 }
 
+func TestWorkerPollOnceDoesNotReleasePhysicalDatabaseInstanceAfterSuccessfulRetire(t *testing.T) {
+	// Capacity release for successful retire is owned by the control-plane
+	// terminal callback (atomic with cancelled). The worker must not release
+	// by instance id — that path is not binding-idempotent under retries.
+	var released []string
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", Operation: operationRetireDatabase, RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			return dispatch, nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{
+				LifecycleState: lifecycleStateCancelled,
+				RequestID:      dispatch.RequestID,
+				RequestState:   lifecycleStateCancelled,
+			}, nil
+		}),
+	)
+	worker.ReleaseReservedPhysicalDatabaseInstancesWith(PhysicalDatabaseInstanceReleaserFunc(func(ctx context.Context, instanceID string) error {
+		released = append(released, instanceID)
+		return nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, PollResult{Claimed: 1, Processed: 1}, result)
+	require.Empty(t, released)
+}
+
+func TestWorkerPollOnceDoesNotReleaseAttachedPhysicalDatabaseInstanceOnRetryableRetireError(t *testing.T) {
+	var released []string
+	processorErr := &LifecycleError{Code: ErrorCodeBackendLocked, Retryable: true, Err: errors.New("state lock")}
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", Operation: operationRetireDatabase, RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			return dispatch, nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{}, processorErr
+		}),
+	)
+	worker.ReleaseReservedPhysicalDatabaseInstancesWith(PhysicalDatabaseInstanceReleaserFunc(func(ctx context.Context, instanceID string) error {
+		released = append(released, instanceID)
+		return nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.ErrorIs(t, result.Errors[0].Err, processorErr)
+	require.True(t, result.Errors[0].Retryable)
+	require.Empty(t, released)
+}
+
+func TestWorkerPollOnceDoesNotReleaseAttachedPhysicalDatabaseInstanceOnRetireCallbackError(t *testing.T) {
+	var released []string
+	callbackErr := errors.New("callback failed")
+	worker := NewWorker(
+		DispatchClaimerFunc(func(ctx context.Context, agentID string) ([]DispatchPayload, error) {
+			return []DispatchPayload{{BindingKey: "app:prod:orders", Operation: operationRetireDatabase, RequestID: "request-1", ResourceKey: "resource-1"}}, nil
+		}),
+		NewMemoryLocker(),
+		JobBuilderFunc(func(dispatch DispatchPayload) (Job, error) {
+			return Job{BindingKey: dispatch.BindingKey}, nil
+		}),
+		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
+			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			return dispatch, nil
+		}),
+		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {
+			return TerminalCallbackResult{
+				LifecycleState: lifecycleStateCancelled,
+				RequestID:      dispatch.RequestID,
+				RequestState:   lifecycleStateCancelled,
+			}, callbackErr
+		}),
+	)
+	worker.ReleaseReservedPhysicalDatabaseInstancesWith(PhysicalDatabaseInstanceReleaserFunc(func(ctx context.Context, instanceID string) error {
+		released = append(released, instanceID)
+		return nil
+	}))
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.ErrorIs(t, result.Errors[0].Err, callbackErr)
+	require.False(t, result.Errors[0].Retryable)
+	require.Empty(t, released)
+}
+
 func TestWorkerPollOnceKeepsReservedPhysicalDatabaseInstanceAfterReadyCallbackError(t *testing.T) {
 	var released []string
 	callbackErr := errors.New("callback failed")
@@ -483,6 +595,7 @@ func TestWorkerPollOnceKeepsReservedPhysicalDatabaseInstanceAfterReadyCallbackEr
 		}),
 		JobMaterializerFunc(func(ctx context.Context, job Job, dispatch DispatchPayload) (DispatchPayload, error) {
 			dispatch.PhysicalDatabaseInstanceID = "11111111-1111-4111-8111-111111111111"
+			dispatch.PhysicalDatabaseInstanceReserved = true
 			return dispatch, nil
 		}),
 		DispatchProcessorFunc(func(ctx context.Context, dispatch DispatchPayload, job Job) (TerminalCallbackResult, error) {

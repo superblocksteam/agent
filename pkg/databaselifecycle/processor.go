@@ -55,7 +55,7 @@ func ProcessDispatch(
 	dispatch DispatchPayload,
 	job Job,
 ) (TerminalCallbackResult, error) {
-	if dispatch.Operation == "migrate_schema" {
+	if dispatch.Operation == operationMigrateSchema {
 		callback := TerminalCallback{
 			BindingKey:              dispatch.BindingKey,
 			ConnectionMetadata:      dispatch.ConnectionMetadata,
@@ -66,6 +66,10 @@ func ProcessDispatch(
 			RequestID:               dispatch.RequestID,
 		}
 		return applyMigrationsAndReport(ctx, migrationRunner, buildDSN, reporter, dispatch, callback)
+	}
+
+	if dispatch.Operation == operationRetireDatabase {
+		return processRetireDatabase(ctx, runner, reporter, dispatch, job)
 	}
 
 	result, err := runner.Run(ctx, job)
@@ -84,6 +88,42 @@ func ProcessDispatch(
 	return applyMigrationsAndReport(ctx, migrationRunner, buildDSN, reporter, dispatch, callback)
 }
 
+// processRetireDatabase tears a binding down via `tofu destroy` (the worker has
+// already materialized the module/backend/vars so destroy can plan against the
+// remote state) and reports a terminal "cancelled" state. Destroying
+// through the worker — rather than sweeping cloud resources by tag — is what
+// drops the logical Postgres roles and databases a binding created inside a
+// shared pool, which no AWS-resource sweep can reach (ENG-3500). Retryable
+// failures (e.g. a contended state lock) are surfaced to the caller so the
+// worker backs off; terminal failures become a "failed" callback.
+func processRetireDatabase(
+	ctx context.Context,
+	runner LifecycleRunner,
+	reporter CallbackReporter,
+	dispatch DispatchPayload,
+	job Job,
+) (TerminalCallbackResult, error) {
+	destroyer, ok := runner.(LifecycleDestroyer)
+	if !ok {
+		return reportTerminalCallback(ctx, reporter, FailedCallbackFromError(dispatch,
+			&LifecycleError{Code: ErrorCodeInternal, Retryable: false, Err: errors.New("database lifecycle runner does not support retire_database")}))
+	}
+
+	result, err := destroyer.Destroy(ctx, job)
+	if err != nil {
+		if isRetryableLifecycleError(err) {
+			return TerminalCallbackResult{}, err
+		}
+		return reportTerminalCallback(ctx, reporter, FailedCallbackFromErrorWithLogs(dispatch, err, result.Logs))
+	}
+
+	return reportTerminalCallback(ctx, reporter, TerminalCallback{
+		BindingKey:     dispatch.BindingKey,
+		LifecycleState: lifecycleStateCancelled,
+		RequestID:      dispatch.RequestID,
+	})
+}
+
 func applyMigrationsAndReport(
 	ctx context.Context,
 	migrationRunner migrations.Runner,
@@ -96,7 +136,7 @@ func applyMigrationsAndReport(
 	// "did the explicit migration step complete". Provisioning operations
 	// omit the slice and stay pending; migrate_schema with an empty slice is
 	// a successful no-op and must unblock the deploy gate.
-	if dispatch.Operation == "migrate_schema" && len(dispatch.Migrations) == 0 {
+	if dispatch.Operation == operationMigrateSchema && len(dispatch.Migrations) == 0 {
 		callback.MigrationState = "migrated"
 		return reportTerminalCallback(ctx, reporter, callback)
 	}

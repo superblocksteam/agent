@@ -43,6 +43,7 @@ type PhysicalDatabaseInstance struct {
 }
 
 type PhysicalDatabaseInstanceLifecycleClient interface {
+	GetPhysicalDatabaseInstance(context.Context, string) (PhysicalDatabaseInstance, error)
 	ListPhysicalDatabaseInstances(context.Context, PhysicalDatabaseInstanceSelector) ([]PhysicalDatabaseInstance, error)
 	ReservePhysicalDatabaseInstance(context.Context, string) error
 	RegisterPhysicalDatabaseInstance(context.Context, PhysicalDatabaseInstance) (PhysicalDatabaseInstance, error)
@@ -161,19 +162,12 @@ func (l *PhysicalDatabaseInstanceLifecycle) reserveRegisteredPhysicalDatabaseIns
 }
 
 func (l *PhysicalDatabaseInstanceLifecycle) getRegisteredPhysicalDatabaseInstance(ctx context.Context, selector PhysicalDatabaseInstanceSelector) (PhysicalDatabaseInstance, error) {
-	instances, err := l.client.ListPhysicalDatabaseInstances(ctx, selector)
+	if selector.PhysicalDatabaseInstanceID == "" {
+		return PhysicalDatabaseInstance{}, fmt.Errorf("registered physical database instance id is required")
+	}
+	instance, err := l.client.GetPhysicalDatabaseInstance(ctx, selector.PhysicalDatabaseInstanceID)
 	if err != nil {
 		return PhysicalDatabaseInstance{}, err
-	}
-	var instance PhysicalDatabaseInstance
-	for _, candidate := range instances {
-		if candidate.ID == selector.PhysicalDatabaseInstanceID {
-			instance = candidate
-			break
-		}
-	}
-	if instance.ID == "" {
-		return PhysicalDatabaseInstance{}, fmt.Errorf("registered physical database instance %s not found", selector.PhysicalDatabaseInstanceID)
 	}
 	if instance.ProvisionResourceKey == "" {
 		instance.ProvisionResourceKey = selector.PhysicalTerraformResourceKey

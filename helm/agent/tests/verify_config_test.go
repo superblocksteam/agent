@@ -474,6 +474,21 @@ func assertRenderedLifecycleConfig(t *testing.T, configJSON string) {
 		requireMap(t, requireMap(t, deployedPhysical["postgres"])["inputs"])["instance_class"],
 	)
 	require.Equal(t, "native_runner", requireMap(t, operations["migrate_schema"])["backend"])
+	// EE teardown dispatches retire_database; the structured group renderer
+	// must advertise it with the same logical Terraform root as ensure so
+	// the agent's capability tags allow the control plane to claim retirement.
+	retireDatabase := requireMap(t, operations["retire_database"])
+	require.Equal(t, "terraform", retireDatabase["backend"])
+	retireTerraform := requireMap(t, retireDatabase["terraform"])
+	require.Equal(t,
+		"native-db/ee-opa/pr-19889/{{environment}}/{{profile}}/{{resource_key}}.tfstate",
+		requireMap(t, retireTerraform["backend"])["key"],
+	)
+	require.Equal(t,
+		logicalModuleSource,
+		requireMap(t, requireMap(t, retireTerraform["moduleSelectors"])["postgres"])["source"],
+	)
+	require.NotContains(t, retireDatabase, "physicalDatabase")
 }
 
 func requireMap(t *testing.T, value any) map[string]any {

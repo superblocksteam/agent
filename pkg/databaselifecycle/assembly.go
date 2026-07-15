@@ -84,10 +84,14 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 			}
 			physicalDatabaseInstance = instance
 			dispatch.PhysicalDatabaseInstanceID = instance.ID
+			dispatch.PhysicalDatabaseInstanceReserved = true
 			resolved = ResolveWithPhysicalDatabaseInstance(resolved, instance)
 		}
+		if err := attachPhysicalDatabaseInstanceForDeprovision(ctx, physicalDatabaseInstanceClient, &dispatch, &resolved); err != nil {
+			return dispatch, err
+		}
 		if err := MaterializeResolvedJob(job, dispatch, resolved, sslOpts); err != nil {
-			if dispatch.PhysicalDatabaseInstanceID != "" {
+			if dispatch.PhysicalDatabaseInstanceReserved && dispatch.PhysicalDatabaseInstanceID != "" {
 				if releaseErr := releaseReservedPhysicalDatabaseInstance(ctx, physicalDatabaseInstanceClient, dispatch.PhysicalDatabaseInstanceID); releaseErr != nil {
 					return dispatch, errors.Join(err, releaseErr)
 				}
@@ -138,6 +142,55 @@ func shouldReservePhysicalDatabaseInstance(dispatch DispatchPayload, resolved Re
 		isPostgresManagedDatabaseSource(resolved.Module.Source) &&
 		hasCredentialSecretPrefix &&
 		credentialSecretPrefix != ""
+}
+
+const physicalDatabaseInstanceRefMetadataKey = "physical_database_instance_ref"
+
+func physicalDatabaseInstanceIDFromDispatch(dispatch DispatchPayload) string {
+	if dispatch.PhysicalDatabaseInstanceID != "" {
+		return dispatch.PhysicalDatabaseInstanceID
+	}
+	ref, _ := dispatch.ConnectionMetadata[physicalDatabaseInstanceRefMetadataKey].(string)
+	return ref
+}
+
+func shouldAttachPhysicalDatabaseInstanceForDeprovision(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) bool {
+	credentialSecretPrefix, hasCredentialSecretPrefix := resolved.Module.Inputs[credentialSecretPrefixInput].(string)
+	return dispatch.Operation == operationRetireDatabase &&
+		isPostgresManagedDatabaseSource(resolved.Module.Source) &&
+		hasCredentialSecretPrefix &&
+		credentialSecretPrefix != "" &&
+		physicalDatabaseInstanceIDFromDispatch(dispatch) != ""
+}
+
+func attachPhysicalDatabaseInstanceForDeprovision(
+	ctx context.Context,
+	client PhysicalDatabaseInstanceLifecycleClient,
+	dispatch *DispatchPayload,
+	resolved *ResolvedLifecycleConfig,
+) error {
+	if !shouldAttachPhysicalDatabaseInstanceForDeprovision(*dispatch, *resolved) {
+		return nil
+	}
+	instanceID := physicalDatabaseInstanceIDFromDispatch(*dispatch)
+	// Lookup by id — not listAccepting. A pool that already holds this binding
+	// is commonly full (capacity_used == capacity_max) or draining; those
+	// instances are invisible to the allocation list.
+	instance, err := client.GetPhysicalDatabaseInstance(ctx, instanceID)
+	if err != nil {
+		// Unclassified errors become terraform_failed in FailedCallbackFromError.
+		// Attach is a control-plane lookup, not tofu destroy — wrap as internal
+		// so a missing/invalid physical_database_instance_ref is not reported as
+		// a destroy failure (cursor r3582030573).
+		var lifecycleErr *LifecycleError
+		if errors.As(err, &lifecycleErr) {
+			return err
+		}
+		return &LifecycleError{Code: ErrorCodeInternal, Retryable: false, Err: err}
+	}
+	dispatch.PhysicalDatabaseInstanceID = instance.ID
+	*resolved = ResolveWithPhysicalDatabaseInstance(*resolved, instance)
+	return nil
 }
 
 func validateSharedPostgresEnsureCredentialSecretPrefix(dispatch DispatchPayload, resolved ResolvedLifecycleConfig) error {

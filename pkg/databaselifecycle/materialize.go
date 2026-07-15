@@ -93,7 +93,10 @@ func splitPhysicalDatabaseInstanceEndpoint(endpoint string) (string, int, bool) 
 }
 
 func deriveSharedPhysicalDatabaseInputs(module TerraformModule, dispatch DispatchPayload) {
-	if dispatch.Operation != "ensure_database" || !isPostgresManagedDatabaseSource(module.Source) {
+	// Destroy must materialize the same derived Postgres names/roles as ensure
+	// so `tofu destroy` can plan against remote state for shared-pool bindings.
+	if (dispatch.Operation != "ensure_database" && dispatch.Operation != operationRetireDatabase) ||
+		!isPostgresManagedDatabaseSource(module.Source) {
 		return
 	}
 	if _, ok := module.Inputs[postgresAdminCredentialInput]; !ok {

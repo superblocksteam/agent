@@ -21,7 +21,10 @@ const (
 	envSSLRootCert  = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"
 	envConfig       = "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG"
 
-	operationMigrateSchema = "migrate_schema"
+	operationMigrateSchema  = "migrate_schema"
+	operationRetireDatabase = "retire_database"
+
+	lifecycleStateCancelled = "cancelled"
 )
 
 type Config struct {

@@ -134,6 +134,7 @@ type ServerClient interface {
 	PostDatabaseLifecycleTerminalCallback(context.Context, *time.Duration, http.Header, DatabaseLifecycleTerminalCallbackRequest) (*http.Response, error)                     // Post database lifecycle terminal callback
 	PostDatabaseLifecycleProgressCallback(context.Context, *time.Duration, http.Header, DatabaseLifecycleProgressCallbackRequest) (*http.Response, error)                     // Post database lifecycle progress callback
 	GetDatabaseLifecyclePhysicalDatabaseInstances(context.Context, *time.Duration, http.Header, DatabaseLifecyclePhysicalDatabaseInstanceListRequest) (*http.Response, error) // List database lifecycle physical database instances
+	GetDatabaseLifecyclePhysicalDatabaseInstance(context.Context, *time.Duration, http.Header, string) (*http.Response, error)                                                // Get database lifecycle physical database instance by id
 	PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(context.Context, *time.Duration, http.Header, string) (*http.Response, error)                                        // Reserve database lifecycle physical database instance capacity
 	PostDatabaseLifecyclePhysicalDatabaseInstanceRelease(context.Context, *time.Duration, http.Header, string) (*http.Response, error)                                        // Release database lifecycle physical database instance capacity
 	PostDatabaseLifecyclePhysicalDatabaseInstance(context.Context, *time.Duration, http.Header, DatabaseLifecyclePhysicalDatabaseInstance) (*http.Response, error)            // Register database lifecycle physical database instance
@@ -353,6 +354,11 @@ func (s *serverClient) GetDatabaseLifecyclePhysicalDatabaseInstances(ctx context
 		query.Set("region", request.Region)
 	}
 	return s.sendRequest(ctx, timeout, http.MethodGet, "api/v1/database-lifecycle/physical-database-instances", headers, query, nil, true)
+}
+
+func (s *serverClient) GetDatabaseLifecyclePhysicalDatabaseInstance(ctx context.Context, timeout *time.Duration, headers http.Header, instanceID string) (*http.Response, error) {
+	path := fmt.Sprintf("api/v1/database-lifecycle/physical-database-instances/%s", url.PathEscape(instanceID))
+	return s.sendRequest(ctx, timeout, http.MethodGet, path, headers, nil, nil, true)
 }
 
 func (s *serverClient) PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(ctx context.Context, timeout *time.Duration, headers http.Header, instanceID string) (*http.Response, error) {

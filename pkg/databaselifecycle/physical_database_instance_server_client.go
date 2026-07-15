@@ -46,6 +46,25 @@ func (c *serverPhysicalDatabaseInstanceLifecycleClient) ListPhysicalDatabaseInst
 	return instances, nil
 }
 
+func (c *serverPhysicalDatabaseInstanceLifecycleClient) GetPhysicalDatabaseInstance(ctx context.Context, instanceID string) (PhysicalDatabaseInstance, error) {
+	resp, err := c.client.GetDatabaseLifecyclePhysicalDatabaseInstance(ctx, nil, http.Header{}, instanceID)
+	if err != nil {
+		return PhysicalDatabaseInstance{}, err
+	}
+	defer resp.Body.Close()
+	if err := checkPhysicalDatabaseInstanceResponse(resp); err != nil {
+		return PhysicalDatabaseInstance{}, err
+	}
+
+	var decoded struct {
+		Data clients.DatabaseLifecyclePhysicalDatabaseInstance `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
+		return PhysicalDatabaseInstance{}, err
+	}
+	return physicalDatabaseInstanceFromClient(decoded.Data), nil
+}
+
 func (c *serverPhysicalDatabaseInstanceLifecycleClient) ReservePhysicalDatabaseInstance(ctx context.Context, instanceID string) error {
 	resp, err := c.client.PostDatabaseLifecyclePhysicalDatabaseInstanceReserve(ctx, nil, http.Header{}, instanceID)
 	if err != nil {
