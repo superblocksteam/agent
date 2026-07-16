@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
+	"k8s.io/utils/ptr"
 )
 
 func TestNewSandboxJobManager(t *testing.T) {
@@ -347,7 +348,7 @@ func TestBuildJobSpec_GracefulShutdownExplicitTimeout(t *testing.T) {
 	assert.Equal(t, "600000", gracefulShutdownMs)
 
 	require.NotNil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds)
-	assert.Equal(t, int64(600), *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, int64(603), *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }
 
 func TestBuildJobSpec_GracefulShutdownNegativeTimeout(t *testing.T) {
@@ -410,7 +411,7 @@ func TestBuildJobSpec_CustomGracefulShutdownTimeout(t *testing.T) {
 	assert.Equal(t, "90000", gracefulShutdownMs)
 
 	require.NotNil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds)
-	assert.Equal(t, int64(90), *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, int64(93), *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }
 
 func TestBuildJobSpecInheritsFleetLabelFromOwner(t *testing.T) {
@@ -468,6 +469,86 @@ func TestBuildJobSpecInheritsFleetLabelFromOwner(t *testing.T) {
 				"Job should inherit fleet label from parent task-manager (used by Datadog podLabelsAsTags)")
 			assert.Equal(t, test.expectFleet, job.Spec.Template.Labels["fleet"],
 				"Sandbox pod template should inherit fleet label from parent task-manager")
+		})
+	}
+}
+
+func TestBuildJobSpec_PreStopHook(t *testing.T) {
+	t.Parallel()
+	m := &K8sJobManager{
+		namespace:              "test-ns",
+		image:                  "sandbox:latest",
+		port:                   50051,
+		podIP:                  "10.0.0.1",
+		variableStoreGrpcPort:  50050,
+		variableStoreHttpPort:  8080,
+		streamingProxyGrpcPort: 50053,
+		language:               "javascript",
+		grpcMaxRequestSize:     30_000_000,
+		grpcMaxResponseSize:    500 * 1024 * 1024,
+		logger:                 zap.NewNop(),
+	}
+
+	job := m.buildJobSpec("sandbox-prestop", "prestop", "javascript")
+	container := job.Spec.Template.Spec.Containers[0]
+
+	require.NotNil(t, container.Lifecycle, "pre-stop hook keeps gRPC alive during teardown so readiness probes pass until SIGTERM")
+	require.NotNil(t, container.Lifecycle.PreStop)
+	require.NotNil(t, container.Lifecycle.PreStop.Sleep)
+	assert.Equal(t, int64(3), container.Lifecycle.PreStop.Sleep.Seconds)
+}
+
+func TestBuildJobSpec_TerminationGracePeriodIncludesPreStopBudget(t *testing.T) {
+	for _, test := range []struct {
+		name                    string
+		gracefulShutdownTimeout time.Duration
+		wantTGPS                *int64
+	}{
+		{
+			name:                    "explicit timeout adds pre-stop budget",
+			gracefulShutdownTimeout: 90 * time.Second,
+			wantTGPS:                ptr.To(int64(93)),
+		},
+		{
+			name:                    "large timeout adds pre-stop budget",
+			gracefulShutdownTimeout: 10 * time.Minute,
+			wantTGPS:                ptr.To(int64(603)),
+		},
+		{
+			name:                    "zero timeout uses k8s default",
+			gracefulShutdownTimeout: 0,
+			wantTGPS:                nil,
+		},
+		{
+			name:                    "negative timeout uses k8s default",
+			gracefulShutdownTimeout: -1 * time.Second,
+			wantTGPS:                nil,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			m := &K8sJobManager{
+				namespace:               "test-ns",
+				image:                   "sandbox:latest",
+				port:                    50051,
+				podIP:                   "10.0.0.1",
+				variableStoreGrpcPort:   50050,
+				variableStoreHttpPort:   8080,
+				streamingProxyGrpcPort:  50053,
+				language:                "javascript",
+				grpcMaxRequestSize:      30_000_000,
+				grpcMaxResponseSize:     500 * 1024 * 1024,
+				logger:                  zap.NewNop(),
+				gracefulShutdownTimeout: test.gracefulShutdownTimeout,
+			}
+
+			job := m.buildJobSpec("sandbox-tgps", "tgps", "javascript")
+
+			if test.wantTGPS == nil {
+				assert.Nil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+			} else {
+				require.NotNil(t, job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+				assert.Equal(t, *test.wantTGPS, *job.Spec.Template.Spec.TerminationGracePeriodSeconds)
+			}
 		})
 	}
 }

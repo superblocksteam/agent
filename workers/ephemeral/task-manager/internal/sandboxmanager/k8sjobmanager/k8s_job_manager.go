@@ -446,9 +446,11 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		podAnnotations[k] = v
 	}
 
+	const preStopSleepSeconds int64 = 3
+
 	var terminationGracePeriodSeconds *int64
 	if timeout := int64(m.gracefulShutdownTimeoutForSandbox().Seconds()); timeout > 0 {
-		terminationGracePeriodSeconds = ptr.To(timeout)
+		terminationGracePeriodSeconds = ptr.To(timeout + preStopSleepSeconds)
 	}
 
 	// Startup probe gates the readiness probe until the gRPC server binds, so
@@ -515,6 +517,13 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: "tmp", MountPath: "/tmp"},
+							},
+							Lifecycle: &corev1.Lifecycle{
+								PreStop: &corev1.LifecycleHandler{
+									Sleep: &corev1.SleepAction{
+										Seconds: preStopSleepSeconds,
+									},
+								},
 							},
 							// Readiness probe: only mark Ready when gRPC server is listening.
 							// Prevents task-manager from connecting before sandbox has bound to port 50051.
