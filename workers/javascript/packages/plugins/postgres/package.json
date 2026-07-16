@@ -6,7 +6,7 @@
   "types": "dist/src/index.d.ts",
   "scripts": {
     "start": "chokidar '**/*.ts' '../../shared-backend/**/*' -c 'pnpm run build'",
-    "build": "swc src -d dist",
+    "build": "swc src -d dist && rimraf dist/src/rds-ca && cp -R src/rds-ca dist/src/rds-ca",
     "clean": "rimraf ./dist *tsbuildinfo",
     "lint": "eslint . --ext ts --max-warnings 0 --cache --cache-strategy content --cache-location ~/.cache/eslint/",
     "lint:fix": "eslint . --ext ts --fix --cache --cache-strategy content --cache-location ~/.cache/eslint/",
