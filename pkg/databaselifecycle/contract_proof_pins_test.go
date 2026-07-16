@@ -18,13 +18,6 @@ import (
 
 var completeSemanticVersionPattern = regexp.MustCompile(`^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$`)
 
-const (
-	defaultNativeDBLogicalModulePath  = "modules/postgres-managed-database"
-	defaultNativeDBPhysicalModulePath = "modules/aws-rds-managed-instance"
-	defaultNativeDBTerraformModuleRef = "v0.2.0"
-	defaultNativeDBTerraformRepo      = "https://github.com/superblocksteam/terraform-superblocks-databases.git"
-)
-
 type nativeDBHelmModulePins struct {
 	LogicalPath  string
 	PhysicalPath string
@@ -172,12 +165,7 @@ func nativeDBHelmModulePinsOrDefault() nativeDBHelmModulePins {
 		}
 		return nativeDBHelmModulePinsFromFile(valuesPath)
 	}
-	return nativeDBHelmModulePins{
-		LogicalPath:  defaultNativeDBLogicalModulePath,
-		PhysicalPath: defaultNativeDBPhysicalModulePath,
-		Ref:          defaultNativeDBTerraformModuleRef,
-		Repository:   defaultNativeDBTerraformRepo,
-	}
+	panic("Native DB Helm module pins require helm/agent/values.yaml or NATIVE_DB_HELM_VALUES_FILE")
 }
 
 func nativeDBHelmModulePinsFromFile(valuesPath string) nativeDBHelmModulePins {

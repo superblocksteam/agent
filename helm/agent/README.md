@@ -31,9 +31,14 @@ The worker requires:
 
 The chart derives the module-source allowlist from `modules.logical.source` and
 `modules.physical.source`. Its built-in sources pin the internal
-`terraform-superblocks-databases` `v0.2.0` modules. Because that repository is
-not yet public, internal deployments need GitHub access until the customer
-release checklist is complete.
+`terraform-superblocks-databases` `v0.3.1` modules. Customer installs should keep
+that exact `vX.Y.Z` pin. For Superblocks EE and other internal testing, override
+`databaseLifecycle.modules.*.source` to the same git module URL with
+`?ref=latest` (for example
+`git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=latest`)
+so workers track the mutable channel tag without changing chart defaults.
+Because the module repository is not yet public, internal deployments need
+GitHub access until the customer release checklist is complete.
 
 Fields under `logicalModuleInputs` and `physicalModuleInputs` use the selected
 Terraform modules' native variable names. Database sizing such as

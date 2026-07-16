@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	logicalModuleSource  = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.2.0"
-	physicalModuleSource = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.2.0"
+	logicalModuleSource  = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.1"
+	physicalModuleSource = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.1"
 )
 
 func TestOPAChartRendersLifecycleWorkerConfigFromNamedGroups(t *testing.T) {

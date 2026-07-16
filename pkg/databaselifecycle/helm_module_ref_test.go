@@ -70,7 +70,7 @@ func TestNativeDBHelmModulePinsFromValuesReadsPathsAndRef(t *testing.T) {
 	require.Equal(t, nativeDBHelmModulePins{
 		LogicalPath:  "modules/postgres-managed-database",
 		PhysicalPath: "modules/aws-rds-managed-instance",
-		Ref:          "v0.2.0",
+		Ref:          "v0.3.1",
 		Repository:   "https://github.com/superblocksteam/terraform-superblocks-databases.git",
 	}, pins)
 }
@@ -155,11 +155,11 @@ func TestNativeDBContractProofModulePinsPrefersRefEnv(t *testing.T) {
 	require.Equal(t, "v9.9.9", nativeDBContractProofModulePins().Ref)
 }
 
-func TestNativeDBContractProofModulePinsFallsBackWithoutHelmValues(t *testing.T) {
+func TestNativeDBContractProofModulePinsPanicsWithoutHelmValues(t *testing.T) {
 	t.Setenv("NATIVE_DB_TERRAFORM_MODULE_REF", "")
 	t.Chdir(t.TempDir())
 
-	require.Equal(t, defaultNativeDBTerraformModuleRef, nativeDBContractProofModulePins().Ref)
+	require.Panics(t, func() { nativeDBContractProofModulePins() })
 }
 
 func TestNativeDBContractProofModulePinsPanicsOnInvalidHelmValues(t *testing.T) {
