@@ -1,14 +1,20 @@
 import {
   ClientWrapper,
+  ConnectionPoolCoordinator,
+  DatabasePlugin,
   DUMMY_ACTION_CONFIGURATION,
   DUMMY_DB_DATASOURCE_CONFIGURATION,
   DUMMY_EXECUTION_CONTEXT,
   DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS,
   DUMMY_QUERY_RESULT,
+  ErrorCode,
   ExecutionOutput,
+  getAwsClientConfigWithTempCreds,
+  PluginCommon,
   PluginExecutionProps,
   PostgresActionConfiguration,
   PostgresDatasourceConfiguration,
+  SharedSSHAuthMethod,
   SqlOperations
 } from '@superblocks/shared';
 
@@ -22,16 +28,20 @@ jest.mock('@superblocks/shared', () => {
     }),
     DestroyConnection: jest.fn((target, name, descriptor) => {
       return descriptor;
-    })
+    }),
+    getAwsClientConfigWithTempCreds: jest.fn()
   };
 });
 
+import { Signer } from '@aws-sdk/rds-signer';
 import { Client } from 'pg';
 import { Client as ssh2Client } from 'ssh2';
+jest.mock('@aws-sdk/rds-signer');
 jest.mock('pg');
 
 import PostgresPlugin from '.';
 import { KEYS_QUERY, TABLE_QUERY } from './queries';
+import { getAwsRdsTlsCaCertificates } from './rds-ca';
 
 const plugin: PostgresPlugin = new PostgresPlugin();
 
@@ -116,6 +126,531 @@ const props: PluginExecutionProps<PostgresDatasourceConfiguration, PostgresActio
   ...DUMMY_EXTRA_PLUGIN_EXECUTION_PROPS
 };
 
+function createPooledExecutionProps(
+  pooledDatasourceConfiguration: PostgresDatasourceConfiguration
+): PluginExecutionProps<PostgresDatasourceConfiguration, PostgresActionConfiguration> {
+  return {
+    ...props,
+    datasourceConfiguration: pooledDatasourceConfiguration,
+    mutableOutput: new ExecutionOutput()
+  };
+}
+
+type TunnelConfiguration = NonNullable<PostgresDatasourceConfiguration['tunnel']>;
+
+function createTestTunnelConfiguration(
+  {
+    legacyAuthMethod,
+    protobufAuthMethod
+  }: {
+    legacyAuthMethod?: number;
+    protobufAuthMethod?: PluginCommon.SSHAuthMethod;
+  } = {
+    legacyAuthMethod: SharedSSHAuthMethod.PUB_KEY_RSA
+  }
+): TunnelConfiguration {
+  const tunnel = new PluginCommon.SSHConfiguration({
+    authenticationMethod: protobufAuthMethod,
+    enabled: false,
+    host: 'bastion.example.com',
+    passphrase: 'tunnel-passphrase',
+    password: 'tunnel-password',
+    port: 22,
+    privateKey: 'tunnel-private-key',
+    publicKey: 'tunnel-public-key',
+    username: 'tunnel-user'
+  });
+  if (legacyAuthMethod !== undefined) {
+    Reflect.set(tunnel, 'authMethod', legacyAuthMethod);
+  }
+  return tunnel;
+}
+
+function createPoolTestDatasourceConfiguration(
+  authType: 'password' | 'aws_iam_role' | undefined,
+  password: string,
+  tunnel: TunnelConfiguration = createTestTunnelConfiguration()
+): PostgresDatasourceConfiguration {
+  return {
+    ...datasourceConfiguration,
+    authentication: {
+      ...datasourceConfiguration.authentication,
+      authType,
+      custom: {
+        ...datasourceConfiguration.authentication?.custom,
+        iamRoleArn: {
+          key: 'iamRoleArn',
+          value: 'arn:aws:iam::123456789012:role/postgres'
+        },
+        region: {
+          key: 'region',
+          value: 'us-east-1'
+        },
+        sessionPolicy: {
+          key: 'sessionPolicy',
+          value: '{"Version":"2012-10-17"}'
+        }
+      },
+      password,
+      username: 'database-user'
+    },
+    connection: {
+      ...datasourceConfiguration.connection,
+      ca: 'certificate-authority',
+      cert: 'client-certificate',
+      key: 'client-key',
+      useSelfSignedSsl: true,
+      useSsl: true
+    },
+    connectionType: 'fields',
+    endpoint: {
+      host: 'database.example.com',
+      port: 5432
+    },
+    tunnel
+  };
+}
+
+function createIamDatasourceConfiguration(): PostgresDatasourceConfiguration {
+  return {
+    authentication: {
+      authType: 'aws_iam_role',
+      custom: {
+        databaseName: {
+          key: 'databaseName',
+          value: 'application_database'
+        },
+        iamRoleArn: {
+          key: 'iamRoleArn',
+          value: 'arn:aws:iam::123456789012:role/postgres'
+        },
+        region: {
+          key: 'region',
+          value: 'us-east-1'
+        },
+        sessionPolicy: {
+          key: 'sessionPolicy',
+          value: '{"Version":"2012-10-17","Statement":[]}'
+        }
+      },
+      password: 'configured-value-must-not-be-used-or-mutated',
+      username: 'application_user'
+    },
+    connection: {
+      useSsl: true
+    },
+    connectionType: 'fields',
+    endpoint: {
+      host: 'database.cluster-example.us-east-1.rds.amazonaws.com',
+      port: 5432
+    },
+    id: 'integration-id',
+    name: 'Postgres integration'
+  };
+}
+
+function createIamDatasourceConfigurationForRole(roleArn: string): PostgresDatasourceConfiguration {
+  const configuration = createIamDatasourceConfiguration();
+  return {
+    ...configuration,
+    authentication: {
+      ...configuration.authentication,
+      custom: {
+        ...configuration.authentication?.custom,
+        iamRoleArn: {
+          key: 'iamRoleArn',
+          value: roleArn
+        }
+      }
+    }
+  };
+}
+
+const passwordAuthTypes: Array<'password' | undefined> = [undefined, 'password'];
+
+type MissingIamFieldCase = {
+  expectedMessage: string;
+  fieldName: string;
+  removeField: (configuration: PostgresDatasourceConfiguration) => PostgresDatasourceConfiguration;
+};
+
+const missingIamFieldCases: MissingIamFieldCase[] = [
+  {
+    expectedMessage: 'Endpoint host not specified',
+    fieldName: 'endpoint host',
+    removeField: (configuration) => ({
+      ...configuration,
+      endpoint: {
+        ...configuration.endpoint,
+        host: undefined
+      }
+    })
+  },
+  {
+    expectedMessage: 'Endpoint port not specified',
+    fieldName: 'endpoint port',
+    removeField: (configuration) => ({
+      ...configuration,
+      endpoint: {
+        ...configuration.endpoint,
+        port: undefined
+      }
+    })
+  },
+  {
+    expectedMessage: 'Database username not specified',
+    fieldName: 'database username',
+    removeField: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        username: undefined
+      }
+    })
+  },
+  {
+    expectedMessage: 'Database not specified',
+    fieldName: 'database name',
+    removeField: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        custom: {
+          ...configuration.authentication?.custom,
+          databaseName: undefined
+        }
+      }
+    })
+  },
+  {
+    expectedMessage: 'IAM role ARN not specified',
+    fieldName: 'IAM role ARN',
+    removeField: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        custom: {
+          ...configuration.authentication?.custom,
+          iamRoleArn: undefined
+        }
+      }
+    })
+  },
+  {
+    expectedMessage: 'AWS region not specified',
+    fieldName: 'AWS region',
+    removeField: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        custom: {
+          ...configuration.authentication?.custom,
+          region: undefined
+        }
+      }
+    })
+  }
+];
+
+type TunnelConfigurationChanges = Pick<
+  TunnelConfiguration,
+  'authMethod' | 'enabled' | 'host' | 'passphrase' | 'password' | 'port' | 'privateKey' | 'publicKey' | 'username'
+>;
+
+function changeTunnelConfiguration(
+  configuration: PostgresDatasourceConfiguration,
+  changes: TunnelConfigurationChanges
+): PostgresDatasourceConfiguration {
+  const tunnel = new PluginCommon.SSHConfiguration({
+    ...configuration.tunnel,
+    ...changes
+  });
+  return {
+    ...configuration,
+    tunnel: Object.assign(tunnel, {
+      authMethod: changes.authMethod ?? configuration.tunnel?.authMethod
+    })
+  };
+}
+
+type StablePoolIdentityCase = {
+  fieldName: string;
+  changeConfiguration: (configuration: PostgresDatasourceConfiguration) => PostgresDatasourceConfiguration;
+};
+
+const stablePoolIdentityCases: StablePoolIdentityCase[] = [
+  {
+    fieldName: 'role ARN',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        custom: {
+          ...configuration.authentication?.custom,
+          iamRoleArn: {
+            key: 'iamRoleArn',
+            value: 'arn:aws:iam::123456789012:role/different-postgres'
+          }
+        }
+      }
+    })
+  },
+  {
+    fieldName: 'region',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        custom: {
+          ...configuration.authentication?.custom,
+          region: {
+            key: 'region',
+            value: 'us-west-2'
+          }
+        }
+      }
+    })
+  },
+  {
+    fieldName: 'session policy',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        custom: {
+          ...configuration.authentication?.custom,
+          sessionPolicy: {
+            key: 'sessionPolicy',
+            value: '{"Version":"2012-10-17","Statement":[]}'
+          }
+        }
+      }
+    })
+  },
+  {
+    fieldName: 'username',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        username: 'different-database-user'
+      }
+    })
+  },
+  {
+    fieldName: 'endpoint host',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      endpoint: {
+        ...configuration.endpoint,
+        host: 'different-database.example.com'
+      }
+    })
+  },
+  {
+    fieldName: 'endpoint port',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      endpoint: {
+        ...configuration.endpoint,
+        port: 6432
+      }
+    })
+  },
+  {
+    fieldName: 'database',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      authentication: {
+        ...configuration.authentication,
+        custom: {
+          ...configuration.authentication?.custom,
+          databaseName: {
+            key: 'databaseName',
+            value: 'different-database'
+          }
+        }
+      }
+    })
+  },
+  {
+    fieldName: 'TLS enabled setting',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      connection: {
+        ...configuration.connection,
+        useSsl: 'checked'
+      }
+    })
+  },
+  {
+    fieldName: 'self-signed TLS setting',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      connection: {
+        ...configuration.connection,
+        useSelfSignedSsl: false
+      }
+    })
+  },
+  {
+    fieldName: 'TLS certificate authority',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      connection: {
+        ...configuration.connection,
+        ca: 'different-certificate-authority'
+      }
+    })
+  },
+  {
+    fieldName: 'TLS client certificate',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      connection: {
+        ...configuration.connection,
+        cert: 'different-client-certificate'
+      }
+    })
+  },
+  {
+    fieldName: 'TLS client key',
+    changeConfiguration: (configuration) => ({
+      ...configuration,
+      connection: {
+        ...configuration.connection,
+        key: 'different-client-key'
+      }
+    })
+  },
+  {
+    fieldName: 'tunnel auth method',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        authMethod: SharedSSHAuthMethod.PUB_KEY_ED25519
+      })
+  },
+  {
+    fieldName: 'tunnel enabled setting',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        enabled: undefined
+      })
+  },
+  {
+    fieldName: 'tunnel host',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        host: 'different-bastion.example.com'
+      })
+  },
+  {
+    fieldName: 'tunnel passphrase',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        passphrase: 'different-tunnel-passphrase'
+      })
+  },
+  {
+    fieldName: 'tunnel password',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        password: 'different-tunnel-password'
+      })
+  },
+  {
+    fieldName: 'tunnel private key',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        privateKey: 'different-tunnel-private-key'
+      })
+  },
+  {
+    fieldName: 'tunnel public key',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        publicKey: 'different-tunnel-public-key'
+      })
+  },
+  {
+    fieldName: 'tunnel port',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        port: 2222
+      })
+  },
+  {
+    fieldName: 'tunnel username',
+    changeConfiguration: (configuration) =>
+      changeTunnelConfiguration(configuration, {
+        username: 'different-tunnel-user'
+      })
+  }
+];
+
+type TunnelIdentityCollisionCase = {
+  description: string;
+  expectedConnectionCount: 1 | 2;
+  firstTunnel: () => TunnelConfiguration;
+  secondTunnel: () => TunnelConfiguration;
+};
+
+const tunnelIdentityCollisionCases: TunnelIdentityCollisionCase[] = [
+  {
+    description: 'separates an absent auth method from an unknown legacy auth method',
+    expectedConnectionCount: 2,
+    firstTunnel: () => createTestTunnelConfiguration({}),
+    secondTunnel: () => createTestTunnelConfiguration({ legacyAuthMethod: 999 })
+  },
+  {
+    description: 'separates an absent auth method from legacy PASSWORD=0',
+    expectedConnectionCount: 2,
+    firstTunnel: () => createTestTunnelConfiguration({}),
+    secondTunnel: () => createTestTunnelConfiguration({ legacyAuthMethod: SharedSSHAuthMethod.PASSWORD })
+  },
+  {
+    description: 'separates legacy PASSWORD=0 from protobuf PASSWORD',
+    expectedConnectionCount: 2,
+    firstTunnel: () => createTestTunnelConfiguration({ legacyAuthMethod: SharedSSHAuthMethod.PASSWORD }),
+    secondTunnel: () =>
+      createTestTunnelConfiguration({
+        protobufAuthMethod: PluginCommon.SSHAuthMethod.SSH_AUTH_METHOD_PASSWORD
+      })
+  },
+  {
+    description: 'separates distinct protobuf authentication methods',
+    expectedConnectionCount: 2,
+    firstTunnel: () =>
+      createTestTunnelConfiguration({
+        protobufAuthMethod: PluginCommon.SSHAuthMethod.SSH_AUTH_METHOD_PASSWORD
+      }),
+    secondTunnel: () =>
+      createTestTunnelConfiguration({
+        protobufAuthMethod: PluginCommon.SSHAuthMethod.SSH_AUTH_METHOD_PUB_KEY_RSA
+      })
+  },
+  {
+    description: 'separates conflicting forms that share a legacy auth method but differ in protobuf auth method',
+    expectedConnectionCount: 2,
+    firstTunnel: () =>
+      createTestTunnelConfiguration({
+        legacyAuthMethod: SharedSSHAuthMethod.PUB_KEY_RSA,
+        protobufAuthMethod: PluginCommon.SSHAuthMethod.SSH_AUTH_METHOD_PASSWORD
+      }),
+    secondTunnel: () =>
+      createTestTunnelConfiguration({
+        legacyAuthMethod: SharedSSHAuthMethod.PUB_KEY_RSA,
+        protobufAuthMethod: PluginCommon.SSHAuthMethod.SSH_AUTH_METHOD_PUB_KEY_ED25519
+      })
+  },
+  {
+    description: 'reuses exactly equal raw tunnel identities',
+    expectedConnectionCount: 1,
+    firstTunnel: () => createTestTunnelConfiguration({}),
+    secondTunnel: () => createTestTunnelConfiguration({})
+  }
+];
+
 function makeTestablePromise() {
   let resolver;
   let rejecter;
@@ -137,9 +672,11 @@ describe('Postgres Plugin', () => {
   let client: Client;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     client = new Client({});
     clientWrapper.client = client;
     jest.spyOn(Client.prototype, 'connect').mockImplementation((): void => undefined);
+    Client.prototype.connect.mockClear?.();
     props.mutableOutput = new ExecutionOutput();
   });
 
@@ -147,6 +684,654 @@ describe('Postgres Plugin', () => {
     // Only works with jest.spyOn()
     jest.restoreAllMocks();
     Client.prototype.query.mockReset?.();
+  });
+
+  describe('AWS IAM role authentication', () => {
+    const allowlistEnvironmentVariable = 'SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES';
+    const assumedCredentials = {
+      accessKeyId: 'assumed-access-key',
+      secretAccessKey: 'assumed-secret-key',
+      sessionToken: 'assumed-session-token'
+    };
+    let previousAllowedRolePrefixes: string | undefined;
+
+    function setAllowedRoles(...roleArns: string[]): void {
+      process.env[allowlistEnvironmentVariable] = JSON.stringify(roleArns);
+    }
+
+    beforeEach(() => {
+      previousAllowedRolePrefixes = process.env[allowlistEnvironmentVariable];
+      setAllowedRoles('arn:aws:iam::123456789012:role/');
+      jest.mocked(getAwsClientConfigWithTempCreds).mockReset();
+      jest.mocked(getAwsClientConfigWithTempCreds).mockResolvedValue({
+        credentials: assumedCredentials,
+        region: 'us-east-1'
+      });
+      jest.spyOn(Signer.prototype, 'getAuthToken').mockResolvedValue('generated-rds-auth-token');
+    });
+
+    afterEach(() => {
+      if (previousAllowedRolePrefixes === undefined) {
+        delete process.env[allowlistEnvironmentVariable];
+      } else {
+        process.env[allowlistEnvironmentVariable] = previousAllowedRolePrefixes;
+      }
+    });
+
+    it('rejects IAM authentication for URI connections before calling AWS', async () => {
+      const configuration: PostgresDatasourceConfiguration = {
+        ...createIamDatasourceConfiguration(),
+        connectionType: 'url',
+        connectionUrl: 'postgres://application_user@database.example.com/application_database'
+      };
+
+      await expect(plugin.test(configuration)).rejects.toThrow('IAM authentication requires a field-based connection');
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it('accepts omitted connectionType as a field-based IAM connection', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      configuration.connectionType = undefined;
+
+      await plugin.test(configuration);
+
+      expect(getAwsClientConfigWithTempCreds).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['missing', undefined],
+      ['boolean false', false],
+      ['string false', 'false']
+    ])('rejects %s TLS before calling AWS', async (_description, useSsl) => {
+      const configuration = createIamDatasourceConfiguration();
+      configuration.connection = {
+        ...configuration.connection,
+        useSsl
+      };
+
+      await expect(plugin.test(configuration)).rejects.toThrow('TLS must be enabled for Postgres IAM authentication');
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it.each(missingIamFieldCases)('rejects a missing $fieldName before calling AWS', async ({ expectedMessage, removeField }) => {
+      const configuration = removeField(createIamDatasourceConfiguration());
+
+      await expect(plugin.test(configuration)).rejects.toThrow(expectedMessage);
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it.each([0, -1, 65536, Number.NaN])('rejects invalid endpoint port %s before calling AWS', async (port) => {
+      const configuration = createIamDatasourceConfiguration();
+      configuration.endpoint = {
+        ...configuration.endpoint,
+        port
+      };
+
+      await expect(plugin.test(configuration)).rejects.toThrow('Valid endpoint port not specified');
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it('accepts the numeric string port submitted by the integration form', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      configuration.endpoint = {
+        ...configuration.endpoint,
+        port: '5432' as unknown as number
+      };
+
+      await plugin.test(configuration);
+
+      expect(Signer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          port: 5432
+        })
+      );
+    });
+
+    it.each([
+      ['an absent allowlist', undefined],
+      ['an empty allowlist', ''],
+      ['an empty JSON array', '[]'],
+      ['an allowlist containing only empty entries', '["", " "]']
+    ])('denies IAM roles when the operator configures %s', async (_description, allowedPrefixes) => {
+      if (allowedPrefixes === undefined) {
+        delete process.env[allowlistEnvironmentVariable];
+      } else {
+        process.env[allowlistEnvironmentVariable] = allowedPrefixes;
+      }
+
+      await expect(plugin.test(createIamDatasourceConfiguration())).rejects.toThrow('IAM role is not allowed');
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['malformed JSON', 'not-json'],
+      ['a non-array JSON value', '{}'],
+      ['a null JSON value', 'null'],
+      ['a non-string array item', '["arn:aws:iam::123456789012:role/postgres", 42]']
+    ])('rejects %s before calling AWS', async (_description, allowedRoles) => {
+      process.env[allowlistEnvironmentVariable] = allowedRoles;
+      const connection = plugin.test(createIamDatasourceConfiguration());
+
+      await expect(connection).rejects.toThrow('Invalid Postgres IAM role allowlist configuration');
+      await expect(connection).rejects.toMatchObject({
+        code: ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD
+      });
+      await expect(connection).rejects.not.toThrow(allowedRoles);
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it('rejects a role outside the trimmed prefix allowlist before calling AWS', async () => {
+      setAllowedRoles(' arn:aws:iam::123456789012:role/allowed-one ', '', 'arn:aws:iam::123456789012:role/allowed-two');
+
+      await expect(plugin.test(createIamDatasourceConfiguration())).rejects.toThrow('IAM role is not allowed');
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it('allows an exact role ARN match', async () => {
+      setAllowedRoles(' arn:aws:iam::123456789012:role/postgres ');
+
+      await plugin.test(createIamDatasourceConfiguration());
+
+      expect(getAwsClientConfigWithTempCreds).toHaveBeenCalledTimes(1);
+    });
+
+    it('trims the configured role ARN before allowlist matching and role assumption', async () => {
+      const roleArn = 'arn:aws:iam::123456789012:role/postgres';
+      setAllowedRoles(roleArn);
+      const configuration = createIamDatasourceConfigurationForRole(`  ${roleArn}  `);
+
+      await plugin.test(configuration);
+
+      expect(getAwsClientConfigWithTempCreds).toHaveBeenCalledWith(
+        { region: 'us-east-1' },
+        'integration-id',
+        'us-east-1',
+        roleArn,
+        '{"Version":"2012-10-17","Statement":[]}'
+      );
+    });
+
+    it('trims IAM connection fields before signing and connecting', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      configuration.endpoint.host = '  database.cluster-example.us-east-1.rds.amazonaws.com  ';
+      configuration.authentication.username = '  application_user  ';
+      configuration.authentication.custom.databaseName.value = '  application_database  ';
+      configuration.authentication.custom.region.value = '  us-east-1  ';
+
+      await plugin.test(configuration);
+
+      expect(Signer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hostname: 'database.cluster-example.us-east-1.rds.amazonaws.com',
+          region: 'us-east-1',
+          username: 'application_user'
+        })
+      );
+      expect(Client).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          database: 'application_database',
+          host: 'database.cluster-example.us-east-1.rds.amazonaws.com',
+          user: 'application_user'
+        })
+      );
+    });
+
+    it('allows an exact role ARN containing a comma', async () => {
+      const roleArn = 'arn:aws:iam::123456789012:role/postgres,reporting';
+      setAllowedRoles(roleArn);
+
+      await plugin.test(createIamDatasourceConfigurationForRole(roleArn));
+
+      expect(getAwsClientConfigWithTempCreds).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(['arn:aws-cn', 'arn:aws-us-gov'])('rejects the unsupported %s partition before calling AWS', async (partition) => {
+      const roleArn = `${partition}:iam::123456789012:role/postgres`;
+      setAllowedRoles(roleArn);
+
+      await expect(plugin.test(createIamDatasourceConfigurationForRole(roleArn))).rejects.toThrow(
+        'Postgres IAM authentication currently supports commercial AWS Regions only'
+      );
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it.each(['cn-north-1', 'us-gov-west-1'])('rejects the unsupported %s Region before calling AWS', async (region) => {
+      const configuration = createIamDatasourceConfiguration();
+      configuration.authentication.custom.region.value = region;
+
+      await expect(plugin.test(configuration)).rejects.toThrow(
+        'Postgres IAM authentication currently supports commercial AWS Regions only'
+      );
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it('rejects a near match for an exact role ARN before calling AWS', async () => {
+      setAllowedRoles('arn:aws:iam::123456789012:role/postgres');
+      const configuration = createIamDatasourceConfigurationForRole('arn:aws:iam::123456789012:role/postgres-admin');
+
+      await expect(plugin.test(configuration)).rejects.toThrow('IAM role is not allowed');
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it('allows an intentional trailing-slash role path prefix', async () => {
+      setAllowedRoles('arn:aws:iam::123456789012:role/application/');
+      const configuration = createIamDatasourceConfigurationForRole('arn:aws:iam::123456789012:role/application/postgres');
+
+      await plugin.test(configuration);
+
+      expect(getAwsClientConfigWithTempCreds).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a sibling role path outside an intentional prefix before calling AWS', async () => {
+      setAllowedRoles('arn:aws:iam::123456789012:role/application/');
+      const configuration = createIamDatasourceConfigurationForRole('arn:aws:iam::123456789012:role/application-admin/postgres');
+
+      await expect(plugin.test(configuration)).rejects.toThrow('IAM role is not allowed');
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+    });
+
+    it.each([true, 'checked'])('uses assumed credentials to generate a token when TLS is represented as %s', async (useSsl) => {
+      const configuration = createIamDatasourceConfiguration();
+      configuration.connection = {
+        ...configuration.connection,
+        useSsl
+      };
+      const configurationBeforeConnection = structuredClone(configuration);
+
+      await plugin.test(configuration);
+
+      expect(getAwsClientConfigWithTempCreds).toHaveBeenCalledWith(
+        { region: 'us-east-1' },
+        'integration-id',
+        'us-east-1',
+        'arn:aws:iam::123456789012:role/postgres',
+        '{"Version":"2012-10-17","Statement":[]}'
+      );
+      expect(Signer).toHaveBeenCalledWith({
+        credentials: assumedCredentials,
+        hostname: 'database.cluster-example.us-east-1.rds.amazonaws.com',
+        port: 5432,
+        region: 'us-east-1',
+        username: 'application_user'
+      });
+      expect(Signer.prototype.getAuthToken).toHaveBeenCalledTimes(1);
+      expect(Client).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          database: 'application_database',
+          host: 'database.cluster-example.us-east-1.rds.amazonaws.com',
+          password: 'generated-rds-auth-token',
+          port: 5432,
+          ssl: {
+            ca: getAwsRdsTlsCaCertificates(),
+            rejectUnauthorized: true,
+            servername: 'database.cluster-example.us-east-1.rds.amazonaws.com'
+          },
+          user: 'application_user'
+        })
+      );
+      expect(configuration).toEqual(configurationBeforeConnection);
+    });
+
+    it('passes configured TLS materials while verifying the original RDS hostname', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      configuration.connection = {
+        ca: 'configured-ca',
+        cert: 'configured-client-cert',
+        key: 'configured-client-key',
+        useSelfSignedSsl: true,
+        useSsl: true
+      };
+
+      await plugin.test(configuration);
+
+      expect(Client).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          ssl: {
+            ca: 'configured-ca',
+            cert: 'configured-client-cert',
+            key: 'configured-client-key',
+            rejectUnauthorized: true,
+            servername: 'database.cluster-example.us-east-1.rds.amazonaws.com'
+          }
+        })
+      );
+    });
+
+    it.each([undefined, false, 'false'])(
+      'ignores stale custom TLS materials when the custom CA setting is %s',
+      async (useSelfSignedSsl) => {
+        const configuration = createIamDatasourceConfiguration();
+        configuration.connection = {
+          ca: 'stale-ca',
+          cert: 'stale-client-cert',
+          key: 'stale-client-key',
+          useSelfSignedSsl,
+          useSsl: true
+        };
+
+        await plugin.test(configuration);
+
+        expect(Client).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            ssl: {
+              ca: getAwsRdsTlsCaCertificates(),
+              rejectUnauthorized: true,
+              servername: 'database.cluster-example.us-east-1.rds.amazonaws.com'
+            }
+          })
+        );
+      }
+    );
+
+    it('signs and verifies the original RDS endpoint while connecting through the final tunnel endpoint', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      const tunnel = createTestTunnelConfiguration();
+      tunnel.enabled = true;
+      configuration.tunnel = tunnel;
+      jest.spyOn(DatabasePlugin.prototype, 'createTunnel').mockResolvedValue({
+        host: '127.0.0.1',
+        port: 15432
+      });
+
+      await plugin.test(configuration);
+
+      expect(Signer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hostname: 'database.cluster-example.us-east-1.rds.amazonaws.com',
+          port: 5432
+        })
+      );
+      expect(Client).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          host: '127.0.0.1',
+          password: 'generated-rds-auth-token',
+          port: 15432,
+          ssl: {
+            ca: getAwsRdsTlsCaCertificates(),
+            rejectUnauthorized: true,
+            servername: 'database.cluster-example.us-east-1.rds.amazonaws.com'
+          }
+        })
+      );
+    });
+
+    it('closes an opened SSH tunnel when IAM role assumption fails', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      const tunnel = createTestTunnelConfiguration();
+      tunnel.enabled = true;
+      configuration.tunnel = tunnel;
+      const tunnelClient = new ssh2Client();
+      const endTunnel = jest.spyOn(tunnelClient, 'end');
+      jest.spyOn(DatabasePlugin.prototype, 'createTunnel').mockResolvedValue({
+        client: tunnelClient,
+        host: '127.0.0.1',
+        port: 15432
+      });
+      jest.mocked(getAwsClientConfigWithTempCreds).mockRejectedValueOnce(new Error('role assumption denied'));
+
+      await expect(plugin.test(configuration)).rejects.toThrow('role assumption denied');
+
+      expect(endTunnel).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes an opened SSH tunnel when RDS token generation fails', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      const tunnel = createTestTunnelConfiguration();
+      tunnel.enabled = true;
+      configuration.tunnel = tunnel;
+      const tunnelClient = new ssh2Client();
+      const endTunnel = jest.spyOn(tunnelClient, 'end');
+      jest.spyOn(DatabasePlugin.prototype, 'createTunnel').mockResolvedValue({
+        client: tunnelClient,
+        host: '127.0.0.1',
+        port: 15432
+      });
+      jest.spyOn(Signer.prototype, 'getAuthToken').mockRejectedValueOnce(new Error('token generation failed'));
+
+      await expect(plugin.test(configuration)).rejects.toThrow('token generation failed');
+
+      expect(endTunnel).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes the Postgres client and SSH tunnel when the physical connection fails', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      const tunnel = createTestTunnelConfiguration();
+      tunnel.enabled = true;
+      configuration.tunnel = tunnel;
+      const tunnelClient = new ssh2Client();
+      const endTunnel = jest.spyOn(tunnelClient, 'end');
+      jest.spyOn(DatabasePlugin.prototype, 'createTunnel').mockResolvedValue({
+        client: tunnelClient,
+        host: '127.0.0.1',
+        port: 15432
+      });
+      jest
+        .spyOn(Client.prototype, 'connect')
+        .mockRejectedValueOnce(Object.assign(new Error('connection failed'), { code: 'ECONNREFUSED' }));
+      const endClient = jest.spyOn(Client.prototype, 'end').mockResolvedValueOnce();
+
+      await expect(plugin.test(configuration)).rejects.toThrow('Postgres network connection failed');
+
+      expect(endClient).toHaveBeenCalledTimes(1);
+      expect(endTunnel).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(passwordAuthTypes)('keeps configured passwords and avoids AWS when auth type is %s', async (authType) => {
+      const configuration: PostgresDatasourceConfiguration = {
+        ...datasourceConfiguration,
+        authentication: {
+          ...datasourceConfiguration.authentication,
+          authType,
+          password: 'configured-password'
+        }
+      };
+
+      await plugin.test(configuration);
+
+      expect(getAwsClientConfigWithTempCreds).not.toHaveBeenCalled();
+      expect(Signer).not.toHaveBeenCalled();
+      expect(Client).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          password: 'configured-password',
+          ssl: {
+            rejectUnauthorized: false
+          }
+        })
+      );
+    });
+
+    it.each(passwordAuthTypes)('preserves useful connection errors when auth type is %s', async (authType) => {
+      const configuration: PostgresDatasourceConfiguration = {
+        ...datasourceConfiguration,
+        authentication: {
+          ...datasourceConfiguration.authentication,
+          authType,
+          password: 'configured-password'
+        }
+      };
+      jest.spyOn(Client.prototype, 'connect').mockRejectedValueOnce(new Error('password authentication failed for configured user'));
+
+      await expect(plugin.test(configuration)).rejects.toThrow('password authentication failed for configured user');
+    });
+
+    it('wraps IAM failures as integration authorization errors without credential material', async () => {
+      jest.mocked(getAwsClientConfigWithTempCreds).mockRejectedValueOnce(new Error('role assumption denied'));
+
+      const connection = plugin.test(createIamDatasourceConfiguration());
+
+      await expect(connection).rejects.toMatchObject({
+        code: ErrorCode.INTEGRATION_AUTHORIZATION
+      });
+      await expect(connection).rejects.not.toThrow(/assumed-access-key|assumed-secret-key|assumed-session-token|generated-rds-auth-token/);
+    });
+
+    it('identifies TLS certificate verification failures without exposing raw connection details', async () => {
+      jest
+        .spyOn(Client.prototype, 'connect')
+        .mockRejectedValueOnce(
+          Object.assign(new Error('certificate rejected for database.internal'), { code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' })
+        );
+
+      const connection = plugin.test(createIamDatasourceConfiguration());
+
+      await expect(connection).rejects.toThrow('Postgres TLS certificate verification failed');
+      await expect(connection).rejects.not.toThrow('database.internal');
+    });
+
+    it.each([
+      ['28P01', 'Postgres database authentication failed', ErrorCode.INTEGRATION_AUTHORIZATION],
+      ['ECONNREFUSED', 'Postgres network connection failed', ErrorCode.INTEGRATION_NETWORK],
+      ['ENOTFOUND', 'Postgres hostname resolution failed', ErrorCode.INTEGRATION_NETWORK]
+    ])('classifies physical connection error %s without exposing raw details', async (code, expectedMessage, expectedCode) => {
+      jest
+        .spyOn(Client.prototype, 'connect')
+        .mockRejectedValueOnce(Object.assign(new Error('connection failed for database.internal'), { code }));
+
+      const connection = plugin.test(createIamDatasourceConfiguration());
+
+      await expect(connection).rejects.toMatchObject({
+        code: expectedCode,
+        message: expect.stringContaining(expectedMessage)
+      });
+      await expect(connection).rejects.not.toThrow('database.internal');
+    });
+
+    it('does not surface or persist a generated token when the physical connection fails', async () => {
+      const configuration = createIamDatasourceConfiguration();
+      const configurationBeforeConnection = structuredClone(configuration);
+      jest.spyOn(Client.prototype, 'connect').mockRejectedValueOnce(new Error('connection rejected: generated-rds-auth-token'));
+
+      const connection = plugin.test(configuration);
+
+      await expect(connection).rejects.not.toThrow('generated-rds-auth-token');
+      expect(Signer.prototype.getAuthToken).toHaveBeenCalledTimes(1);
+      expect(configuration).toEqual(configurationBeforeConnection);
+    });
+  });
+
+  describe('connection pool identity', () => {
+    const allowlistEnvironmentVariable = 'SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES';
+    let previousAllowedRolePrefixes: string | undefined;
+
+    beforeEach(() => {
+      previousAllowedRolePrefixes = process.env[allowlistEnvironmentVariable];
+      process.env[allowlistEnvironmentVariable] = JSON.stringify(['arn:aws:iam::123456789012:role/']);
+      jest.mocked(getAwsClientConfigWithTempCreds).mockResolvedValue({
+        credentials: {
+          accessKeyId: 'assumed-access-key',
+          secretAccessKey: 'assumed-secret-key',
+          sessionToken: 'assumed-session-token'
+        },
+        region: 'us-east-1'
+      });
+      jest.spyOn(Signer.prototype, 'getAuthToken').mockResolvedValue('generated-rds-auth-token');
+      plugin.configure({
+        connectionPoolIdleTimeoutMs: 60_000,
+        javascriptExecutionTimeoutMs: '1000',
+        pythonExecutionTimeoutMs: '1000',
+        restApiExecutionTimeoutMs: 1000,
+        restApiMaxContentLengthBytes: 1_000_000,
+        workflowFetchAndExecuteFunc: null
+      });
+      plugin.attachConnectionPool(
+        new ConnectionPoolCoordinator({
+          maxConnections: 10,
+          maxConnectionsPerKey: 3,
+          tracer: plugin.tracer
+        })
+      );
+      jest.spyOn(Client.prototype, 'query').mockResolvedValue({ rows: [] });
+    });
+
+    afterEach(() => {
+      if (previousAllowedRolePrefixes === undefined) {
+        delete process.env[allowlistEnvironmentVariable];
+      } else {
+        process.env[allowlistEnvironmentVariable] = previousAllowedRolePrefixes;
+      }
+    });
+
+    it('reuses one physical connection when IAM tokens differ', async () => {
+      const firstConfiguration = createPoolTestDatasourceConfiguration('aws_iam_role', 'token-1');
+      const secondConfiguration = createPoolTestDatasourceConfiguration('aws_iam_role', 'token-2');
+
+      await plugin.execute(createPooledExecutionProps(firstConfiguration));
+      await plugin.execute(createPooledExecutionProps(secondConfiguration));
+
+      expect(Client.prototype.connect).toHaveBeenCalledTimes(1);
+      expect(Client).toHaveBeenLastCalledWith(expect.objectContaining({ password: 'generated-rds-auth-token' }));
+    });
+
+    it.each(passwordAuthTypes)('separates physical connections when %s auth passwords differ', async (authType) => {
+      const firstConfiguration = createPoolTestDatasourceConfiguration(authType, 'password-1');
+      const secondConfiguration = createPoolTestDatasourceConfiguration(authType, 'password-2');
+
+      await plugin.execute(createPooledExecutionProps(firstConfiguration));
+      await plugin.execute(createPooledExecutionProps(secondConfiguration));
+
+      expect(Client.prototype.connect).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(stablePoolIdentityCases)('separates physical connections when IAM $fieldName differs', async ({ changeConfiguration }) => {
+      const firstConfiguration = createPoolTestDatasourceConfiguration('aws_iam_role', 'token');
+      const secondConfiguration = changeConfiguration(firstConfiguration);
+
+      await plugin.execute(createPooledExecutionProps(firstConfiguration));
+      await plugin.execute(createPooledExecutionProps(secondConfiguration));
+
+      expect(Client.prototype.connect).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(tunnelIdentityCollisionCases)('$description', async ({ expectedConnectionCount, firstTunnel, secondTunnel }) => {
+      const firstTunnelConfiguration = firstTunnel();
+      const secondTunnelConfiguration = secondTunnel();
+      const firstConfiguration = createPoolTestDatasourceConfiguration('aws_iam_role', 'token', firstTunnelConfiguration);
+      const secondConfiguration = createPoolTestDatasourceConfiguration('aws_iam_role', 'token', secondTunnelConfiguration);
+
+      const rawTunnelIdentitiesAreEqual =
+        JSON.stringify(structuredClone(firstTunnelConfiguration)) === JSON.stringify(structuredClone(secondTunnelConfiguration));
+      expect(rawTunnelIdentitiesAreEqual).toBe(expectedConnectionCount === 1);
+
+      await plugin.execute(createPooledExecutionProps(firstConfiguration));
+      await plugin.execute(createPooledExecutionProps(secondConfiguration));
+
+      expect(Client.prototype.connect).toHaveBeenCalledTimes(expectedConnectionCount);
+    });
+
+    it('does not mutate IAM datasource configurations when computing pool identity', async () => {
+      const firstConfiguration = createPoolTestDatasourceConfiguration('aws_iam_role', 'token-1');
+      const secondConfiguration = createPoolTestDatasourceConfiguration('aws_iam_role', 'token-2');
+      const firstConfigurationBeforeExecution = structuredClone(firstConfiguration);
+      const secondConfigurationBeforeExecution = structuredClone(secondConfiguration);
+
+      await plugin.execute(createPooledExecutionProps(firstConfiguration));
+      await plugin.execute(createPooledExecutionProps(secondConfiguration));
+
+      expect(firstConfiguration).toEqual(firstConfigurationBeforeExecution);
+      expect(secondConfiguration).toEqual(secondConfigurationBeforeExecution);
+    });
   });
 
   it('test connection', async () => {

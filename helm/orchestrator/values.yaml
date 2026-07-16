@@ -287,6 +287,10 @@ sandbox_workers:
   deploy: false
   disableNodeSelector: true
   disableTolerations: true
+  postgres:
+    # Serialized to a JSON array in the environment. Entries are exact role ARNs,
+    # or role-path prefixes ending in "/". Empty denies all IAM roles.
+    iamAllowedRoleArnPrefixes: []
   superblocks:
     key: <override>
   queue:

@@ -29,7 +29,10 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-const zoneLabel = "topology.kubernetes.io/zone"
+const (
+	postgresIAMAllowedRoleARNPrefixesEnv = "SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES"
+	zoneLabel                            = "topology.kubernetes.io/zone"
+)
 
 // K8sJobManager manages the lifecycle of sandbox Jobs
 type K8sJobManager struct {
@@ -408,6 +411,12 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 			Value: strconv.FormatInt(m.gracefulShutdownTimeoutForSandbox().Milliseconds(), 10),
 		},
 	}
+	if value, ok := os.LookupEnv(postgresIAMAllowedRoleARNPrefixesEnv); ok {
+		sandboxEnv = append(sandboxEnv, corev1.EnvVar{
+			Name:  postgresIAMAllowedRoleARNPrefixesEnv,
+			Value: value,
+		})
+	}
 
 	containerName := fmt.Sprintf("%s-sandbox", language)
 	labels := map[string]string{
@@ -561,7 +570,7 @@ func (m *K8sJobManager) buildJobSpec(jobName, sandboxId, language string) *batch
 		container := &job.Spec.Template.Spec.Containers[0]
 		for _, name := range m.executionEnvInclusionList {
 			trimmedName := strings.TrimSpace(name)
-			if trimmedName == "" {
+			if trimmedName == "" || trimmedName == postgresIAMAllowedRoleARNPrefixesEnv {
 				continue
 			}
 

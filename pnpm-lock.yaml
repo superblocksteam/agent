@@ -2672,6 +2672,9 @@ importers:
 
   workers/javascript/packages/plugins/postgres:
     dependencies:
+      '@aws-sdk/rds-signer':
+        specifier: 3.758.0
+        version: 3.758.0
       '@superblocks/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -4246,6 +4249,10 @@ packages:
 
   '@aws-sdk/nested-clients@3.758.0':
     resolution: {integrity: sha512-YZ5s7PSvyF3Mt2h1EQulCG93uybprNGbBkPmVuy/HMMfbFTt4iL3SbKjxqvOZelm86epFfj7pvK7FliI2WOEcg==}
+    engines: {node: '>=18.0.0'}
+
+  '@aws-sdk/rds-signer@3.758.0':
+    resolution: {integrity: sha512-iUuz1vK+qzrgu8VwuArk7xwxCLkwh3YAbr6eFQmAq4fCie9ZkYXrKOLJA35+uha2aXNA3w93S0YCXBy2FnQnQA==}
     engines: {node: '>=18.0.0'}
 
   '@aws-sdk/region-config-resolver@3.734.0':
@@ -12304,6 +12311,23 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
+  '@aws-sdk/rds-signer@3.758.0':
+    dependencies:
+      '@aws-crypto/sha256-browser': 5.2.0
+      '@aws-crypto/sha256-js': 5.2.0
+      '@aws-sdk/credential-providers': 3.758.0
+      '@aws-sdk/util-format-url': 3.734.0
+      '@smithy/config-resolver': 4.4.13
+      '@smithy/hash-node': 4.0.1
+      '@smithy/invalid-dependency': 4.0.1
+      '@smithy/node-config-provider': 4.3.12
+      '@smithy/protocol-http': 5.0.1
+      '@smithy/signature-v4': 5.0.1
+      '@smithy/types': 4.13.1
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - aws-crt
+
   '@aws-sdk/region-config-resolver@3.734.0':
     dependencies:
       '@aws-sdk/types': 3.734.0
@@ -15037,6 +15061,7 @@ snapshots:
 
   '@superblocksteam/postgres@file:workers/javascript/packages/plugins/postgres(ws@8.21.0)':
     dependencies:
+      '@aws-sdk/rds-signer': 3.758.0
       '@superblocks/shared': file:workers/javascript/packages/shared(ws@8.21.0)
       lodash: 4.18.1
       minimist: 1.2.6

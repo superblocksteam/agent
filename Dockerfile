@@ -160,6 +160,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install -r $PNPM_INSTALL_FLAG && \
     pnpm --filter "${FLEET_PACKAGE}" deploy --prod /deploy && \
     npx clean-modules --directory /deploy/node_modules -y '!**/googleapis/**/docs/' '!**/@superblocks/**/datasource/' && \
+    node -e "require('/deploy/node_modules/@superblocksteam/postgres')" && \
     pnpm --filter 'javascript-plugins-sandbox^...' build && \
     pnpm install -r $PNPM_INSTALL_FLAG && \
     pnpm --filter javascript-plugins-sandbox build && \

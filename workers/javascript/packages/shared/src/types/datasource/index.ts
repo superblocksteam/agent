@@ -319,7 +319,7 @@ export type DBTunnelDatasourceConfiguration = {
   };
 } & SSHTunnel;
 
-export type PostgresDatasourceConfiguration = DBDatasourceConfiguration &
+export type CockroachDBDatasourceConfiguration = DBDatasourceConfiguration &
   DBConnection &
   DBAuthentication &
   SSHTunnel & {
@@ -327,7 +327,25 @@ export type PostgresDatasourceConfiguration = DBDatasourceConfiguration &
     connectionUrl?: string;
   };
 
-export type CockroachDBDatasourceConfiguration = PostgresDatasourceConfiguration;
+export type PostgresAuthType = 'password' | 'aws_iam_role';
+
+export type PostgresDatasourceConfiguration = DBDatasourceConfiguration &
+  DBConnection &
+  SSHTunnel & {
+    authentication?: {
+      authType?: PostgresAuthType;
+      custom?: {
+        databaseName?: Property;
+        iamRoleArn?: Property;
+        region?: Property;
+        sessionPolicy?: Property;
+      };
+      password?: string;
+      username?: string;
+    };
+    connectionType?: 'fields' | 'url';
+    connectionUrl?: string;
+  };
 
 export type PythonDatasourceConfiguration = LanguageDatasourceConfiguration;
 

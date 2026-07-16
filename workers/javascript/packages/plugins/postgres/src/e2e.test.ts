@@ -187,7 +187,7 @@ describe.each(tunnelInputs)('Postgres Test', (useTunnel) => {
 
   test('connection url errors if no url given', async () => {
     await expect(plugin.test({ connectionType: 'url', connectionUrl: '' })).rejects.toThrow(
-      'Test connection failed: failed to create PostgresPlugin connection: IntegrationError: Expected to receive connection url for connection type url'
+      'failed to create PostgresPlugin connection: IntegrationError: Expected to receive connection url for connection type url'
     );
   });
 

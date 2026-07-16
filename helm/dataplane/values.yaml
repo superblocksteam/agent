@@ -165,6 +165,10 @@ gateway:
     backendRequest: 10m
 # Sandbox workers (KEDA ScaledJobs): Redis streams → task-manager → pool of sandboxes.
 sandbox_workers:
+  postgres:
+    # Serialized to a JSON array in the environment. Entries are exact role ARNs,
+    # or role-path prefixes ending in "/". Empty denies all IAM roles.
+    iamAllowedRoleArnPrefixes: []
   # Fleets configuration - each fleet is a Deployment + KEDA ScaledObject
   # Example:
   # fleets:

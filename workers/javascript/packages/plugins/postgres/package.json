@@ -17,6 +17,7 @@
     "pre-commit": "tsc && lint-staged"
   },
   "dependencies": {
+    "@aws-sdk/rds-signer": "3.758.0",
     "@superblocks/shared": "workspace:*",
     "lodash": "^4.17.23",
     "minimist": "1.2.6",

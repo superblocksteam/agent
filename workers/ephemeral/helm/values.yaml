@@ -65,6 +65,10 @@
 #     queue:
 #       executionPool: 2
 fleets: {}
+postgres:
+  # Serialized to a JSON array in the environment. Entries are exact role ARNs,
+  # or role-path prefixes ending in "/". Empty denies all IAM roles.
+  iamAllowedRoleArnPrefixes: []
 # Task Manager configuration
 taskManager:
   # Expose a stable Kubernetes Service in front of task-manager pods.

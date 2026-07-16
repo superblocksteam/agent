@@ -20,13 +20,15 @@ export async function getAwsClientConfigWithTempCreds(
   stsClientConfig: STSClientConfig,
   name: string | undefined,
   region: string | undefined,
-  roleArn: string
+  roleArn: string,
+  sessionPolicy?: string
 ): Promise<STSClientConfig> {
   const stsClient = new STSClient(stsClientConfig);
   const params = {
     RoleArn: roleArn,
     RoleSessionName: getRoleSessionName(name ?? '', Date.now().toString()),
-    DurationSeconds: ROLE_ASSUME_DURATION_IN_SECONDS
+    DurationSeconds: ROLE_ASSUME_DURATION_IN_SECONDS,
+    ...(sessionPolicy ? { Policy: sessionPolicy } : {})
   };
   const command = new AssumeRoleCommand(params);
   try {

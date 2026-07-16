@@ -313,6 +313,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES
+          value: {{ $.Values.postgres.iamAllowedRoleArnPrefixes | toJson | quote }}
         {{- if $.Values.queue.password }}
         - name: SUPERBLOCKS_WORKER_SANDBOX_TRANSPORT_REDIS_PASSWORD
           valueFrom:

@@ -8,6 +8,10 @@ podAnnotations:
   prometheus.io/scrape: 'true'
   prometheus.io/path: '/metrics'
   prometheus.io/port: '8080'
+postgres:
+  # Serialized to a JSON array in the environment. Entries are exact role ARNs,
+  # or role-path prefixes ending in "/". Empty denies all IAM roles.
+  iamAllowedRoleArnPrefixes: []
 networkpolicy:
   disable: false
   egress: {}

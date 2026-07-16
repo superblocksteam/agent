@@ -262,6 +262,8 @@ spec:
           value: {{ .Values.superblocks.telemetry.remoteEnabled | quote }}
         - name: SUPERBLOCKS_DEPLOYMENT_TYPE
           value: {{ .Values.superblocks.telemetry.deploymentType | quote }}
+        - name: SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES
+          value: {{ .Values.postgres.iamAllowedRoleArnPrefixes | toJson | quote }}
         {{- if $databaseLifecycle.enabled }}
         - name: SUPERBLOCKS_ORCHESTRATOR_DATABASE_LIFECYCLE_WORKER_ENABLED
           value: "true"

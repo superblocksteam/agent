@@ -1,3 +1,4 @@
+import { Signer } from '@aws-sdk/rds-signer';
 import {
   ClientWrapper,
   Column,
@@ -6,6 +7,7 @@ import {
   DatasourceMetadataDto,
   DestroyConnection,
   ErrorCode,
+  getAwsClientConfigWithTempCreds,
   IntegrationError,
   Key,
   normalizeTableColumnNames,
@@ -24,8 +26,176 @@ import { Client, Notification } from 'pg';
 import { Client as ssh2Client } from 'ssh2';
 
 import { DEFAULT_SCHEMA_QUERY, KEYS_QUERY, PRIMARY_KEY_QUERY, SET_SEARCH_PATH, SQL_SINGLE_TABLE_METADATA, TABLE_QUERY } from './queries';
+import { getAwsRdsTlsCaCertificates } from './rds-ca';
 
 const TEST_CONNECTION_TIMEOUT = 20000;
+const POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES = 'SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES';
+const POSTGRES_DNS_ERROR_CODES = new Set(['EAI_AGAIN', 'ENOTFOUND']);
+const POSTGRES_NETWORK_ERROR_CODES = new Set(['ECONNREFUSED', 'ECONNRESET', 'EHOSTUNREACH', 'ENETUNREACH', 'ETIMEDOUT']);
+const POSTGRES_TLS_CERTIFICATE_ERROR_CODES = new Set([
+  'CERT_HAS_EXPIRED',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'UNABLE_TO_GET_ISSUER_CERT',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+]);
+
+type PostgresIamConnectionConfiguration = {
+  database: string;
+  hostname: string;
+  port: number;
+  region: string;
+  roleArn: string;
+  sessionPolicy?: string;
+  username: string;
+};
+
+function requirePostgresIamString(value: string | undefined, errorMessage: string): string {
+  if (!value?.trim()) {
+    throw new IntegrationError(errorMessage, ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD);
+  }
+  return value.trim();
+}
+
+function postgresIamTlsEnabled(value: boolean | string | undefined): boolean {
+  return value === true || value === 'checked' || value === 'true';
+}
+
+function postgresIamConnectionError(error: unknown, pluginName: string): IntegrationError {
+  const code = typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string' ? error.code : undefined;
+  if (code !== undefined && POSTGRES_TLS_CERTIFICATE_ERROR_CODES.has(code)) {
+    return new IntegrationError('Postgres TLS certificate verification failed', ErrorCode.INTEGRATION_AUTHORIZATION, { pluginName });
+  }
+  if (code === '28P01') {
+    return new IntegrationError('Postgres database authentication failed', ErrorCode.INTEGRATION_AUTHORIZATION, { pluginName });
+  }
+  if (code !== undefined && POSTGRES_DNS_ERROR_CODES.has(code)) {
+    return new IntegrationError('Postgres hostname resolution failed', ErrorCode.INTEGRATION_NETWORK, { pluginName });
+  }
+  if (code !== undefined && POSTGRES_NETWORK_ERROR_CODES.has(code)) {
+    return new IntegrationError('Postgres network connection failed', ErrorCode.INTEGRATION_NETWORK, { pluginName });
+  }
+  return new IntegrationError('Postgres IAM connection failed', ErrorCode.INTEGRATION_AUTHORIZATION, { pluginName });
+}
+
+async function closeFailedPostgresConnection(client: Client | null, tunnel: ssh2Client | null): Promise<void> {
+  if (client !== null) {
+    try {
+      await client.end();
+    } catch {
+      // Preserve the original connection error.
+    }
+  }
+  if (tunnel !== null) {
+    try {
+      tunnel.end();
+    } catch {
+      // Preserve the original connection error.
+    }
+  }
+}
+
+function getPostgresIamAllowedRoleArns(): string[] {
+  const rawAllowlist = process.env[POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES];
+  if (rawAllowlist === undefined || rawAllowlist.trim() === '') {
+    return [];
+  }
+
+  let parsedAllowlist: unknown;
+  try {
+    parsedAllowlist = JSON.parse(rawAllowlist);
+  } catch {
+    throw new IntegrationError('Invalid Postgres IAM role allowlist configuration', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD);
+  }
+  if (!Array.isArray(parsedAllowlist)) {
+    throw new IntegrationError('Invalid Postgres IAM role allowlist configuration', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD);
+  }
+
+  const allowedRoleArns: string[] = [];
+  for (const item of parsedAllowlist) {
+    if (typeof item !== 'string') {
+      throw new IntegrationError('Invalid Postgres IAM role allowlist configuration', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD);
+    }
+    const roleArn = item.trim();
+    if (roleArn !== '') {
+      allowedRoleArns.push(roleArn);
+    }
+  }
+  return allowedRoleArns;
+}
+
+function validatePostgresIamConfiguration(datasourceConfiguration: PostgresDatasourceConfiguration): PostgresIamConnectionConfiguration {
+  if (datasourceConfiguration.connectionType === 'url') {
+    throw new IntegrationError('IAM authentication requires a field-based connection', ErrorCode.INTEGRATION_AUTHORIZATION);
+  }
+  if (!postgresIamTlsEnabled(datasourceConfiguration.connection?.useSsl)) {
+    throw new IntegrationError('TLS must be enabled for Postgres IAM authentication', ErrorCode.INTEGRATION_AUTHORIZATION);
+  }
+
+  const hostname = requirePostgresIamString(
+    datasourceConfiguration.endpoint?.host,
+    'Endpoint host not specified for Postgres IAM authentication'
+  );
+  const rawPort = datasourceConfiguration.endpoint?.port as number | string | undefined;
+  if (rawPort === undefined) {
+    throw new IntegrationError('Endpoint port not specified for Postgres IAM authentication', ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD);
+  }
+  const port = typeof rawPort === 'string' ? Number(rawPort) : rawPort;
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new IntegrationError(
+      'Valid endpoint port not specified for Postgres IAM authentication',
+      ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD
+    );
+  }
+
+  const username = requirePostgresIamString(
+    datasourceConfiguration.authentication?.username,
+    'Database username not specified for Postgres IAM authentication'
+  );
+  const database = requirePostgresIamString(
+    datasourceConfiguration.authentication?.custom?.databaseName?.value,
+    'Database not specified for Postgres IAM authentication'
+  );
+  const roleArn = requirePostgresIamString(
+    datasourceConfiguration.authentication?.custom?.iamRoleArn?.value,
+    'IAM role ARN not specified for Postgres IAM authentication'
+  );
+  if (!roleArn.startsWith('arn:aws:iam::')) {
+    throw new IntegrationError(
+      'Postgres IAM authentication currently supports commercial AWS Regions only',
+      ErrorCode.INTEGRATION_AUTHORIZATION
+    );
+  }
+  const region = requirePostgresIamString(
+    datasourceConfiguration.authentication?.custom?.region?.value,
+    'AWS region not specified for Postgres IAM authentication'
+  );
+  if (region.startsWith('cn-') || region.startsWith('us-gov-')) {
+    throw new IntegrationError(
+      'Postgres IAM authentication currently supports commercial AWS Regions only',
+      ErrorCode.INTEGRATION_AUTHORIZATION
+    );
+  }
+  const allowedRoleArns = getPostgresIamAllowedRoleArns();
+  const roleAllowed = allowedRoleArns.some((allowedRoleArn) =>
+    allowedRoleArn.endsWith('/') ? roleArn.startsWith(allowedRoleArn) : roleArn === allowedRoleArn
+  );
+  if (!roleAllowed) {
+    throw new IntegrationError('IAM role is not allowed for Postgres authentication', ErrorCode.INTEGRATION_AUTHORIZATION);
+  }
+
+  return {
+    database,
+    hostname,
+    port,
+    region,
+    roleArn,
+    sessionPolicy: datasourceConfiguration.authentication?.custom?.sessionPolicy?.value,
+    username
+  };
+}
 
 export default class PostgresPlugin extends DatabasePluginPooled<ClientWrapper<Client, ssh2Client>, PostgresDatasourceConfiguration> {
   pluginName = 'Postgres';
@@ -41,6 +211,28 @@ export default class PostgresPlugin extends DatabasePluginPooled<ClientWrapper<C
     [SQLQueryEnum.SQL_TABLE]: TABLE_QUERY
   };
   protected readonly caseSensitivityWrapCharacter = '"';
+
+  protected getConnectionPoolIdentity(datasourceConfiguration: PostgresDatasourceConfiguration): PostgresDatasourceConfiguration {
+    if (datasourceConfiguration.authentication?.authType !== 'aws_iam_role') {
+      return datasourceConfiguration;
+    }
+
+    const authentication = structuredClone(datasourceConfiguration.authentication);
+    delete authentication.password;
+    Object.freeze(authentication);
+    const tunnel = datasourceConfiguration.tunnel === undefined ? undefined : structuredClone(datasourceConfiguration.tunnel);
+    if (tunnel !== undefined) {
+      Object.freeze(tunnel);
+    }
+
+    const identity = {
+      ...datasourceConfiguration,
+      authentication,
+      tunnel
+    };
+    Object.freeze(identity);
+    return identity;
+  }
 
   public async executePooled(
     props: PluginExecutionProps<PostgresDatasourceConfiguration, PostgresActionConfiguration>,
@@ -211,92 +403,142 @@ export default class PostgresPlugin extends DatabasePluginPooled<ClientWrapper<C
       });
     }
 
+    const iamConfiguration =
+      datasourceConfiguration.authentication?.authType === 'aws_iam_role'
+        ? validatePostgresIamConfiguration(datasourceConfiguration)
+        : undefined;
     let client: Client | null = null;
     let tunnel: ssh2Client | null = null;
 
-    switch (datasourceConfiguration.connectionType) {
-      case 'url': {
-        if (!datasourceConfiguration.connectionUrl) {
-          throw new IntegrationError('Expected to receive connection url for connection type url');
+    try {
+      switch (datasourceConfiguration.connectionType) {
+        case 'url': {
+          if (!datasourceConfiguration.connectionUrl) {
+            throw new IntegrationError('Expected to receive connection url for connection type url');
+          }
+          const connectionString = datasourceConfiguration.connectionUrl;
+          client = new Client(connectionString);
+          break;
         }
-        const connectionString = datasourceConfiguration.connectionUrl;
-        client = new Client(connectionString);
-        break;
-      }
-      default: {
-        const endpoint = datasourceConfiguration.endpoint;
-        const auth = datasourceConfiguration.authentication;
-        if (!endpoint) {
-          throw new IntegrationError(`Endpoint not specified for ${this.pluginName} step`, ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, {
-            pluginName: this.pluginName
-          });
-        }
-        if (!auth) {
-          throw new IntegrationError(
-            `Authentication not specified for ${this.pluginName} step`,
-            ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD,
-            {
-              pluginName: this.pluginName
-            }
-          );
-        }
-        if (!auth.custom?.databaseName?.value) {
-          throw new IntegrationError(`Database not specified for ${this.pluginName} step`, ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, {
-            pluginName: this.pluginName
-          });
-        }
-
-        // The final endpoint might actually be overwritten by an SSH tunnel.
-        const finalEndpoint = {
-          host: datasourceConfiguration.endpoint?.host,
-          port: datasourceConfiguration.endpoint?.port
-        };
-        if (datasourceConfiguration.tunnel && datasourceConfiguration.tunnel.enabled) {
-          try {
-            const tunneledAddress = await super.createTunnel(datasourceConfiguration);
-            finalEndpoint.host = tunneledAddress?.host;
-            finalEndpoint.port = tunneledAddress?.port;
-            tunnel = tunneledAddress?.client;
-          } catch (e) {
-            throw new IntegrationError(`SSH tunnel connection failed for ${this.pluginName}: ${e.message}`, e.code, {
+        default: {
+          const endpoint = datasourceConfiguration.endpoint;
+          const auth = datasourceConfiguration.authentication;
+          if (!endpoint) {
+            throw new IntegrationError(`Endpoint not specified for ${this.pluginName} step`, ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, {
               pluginName: this.pluginName
             });
           }
-        }
-
-        let ssl_config: Record<string, unknown> | undefined;
-        if (datasourceConfiguration.connection?.useSsl) {
-          ssl_config = {
-            rejectUnauthorized: false
-          };
-          if (datasourceConfiguration.connection?.useSelfSignedSsl) {
-            ssl_config.ca = datasourceConfiguration.connection?.ca;
-            ssl_config.key = datasourceConfiguration.connection?.key;
-            ssl_config.cert = datasourceConfiguration.connection?.cert;
+          if (!auth) {
+            throw new IntegrationError(
+              `Authentication not specified for ${this.pluginName} step`,
+              ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD,
+              {
+                pluginName: this.pluginName
+              }
+            );
           }
+          if (!auth.custom?.databaseName?.value) {
+            throw new IntegrationError(`Database not specified for ${this.pluginName} step`, ErrorCode.INTEGRATION_MISSING_REQUIRED_FIELD, {
+              pluginName: this.pluginName
+            });
+          }
+
+          // The final endpoint might actually be overwritten by an SSH tunnel.
+          const finalEndpoint = {
+            host: iamConfiguration?.hostname ?? datasourceConfiguration.endpoint?.host,
+            port: iamConfiguration?.port ?? datasourceConfiguration.endpoint?.port
+          };
+          if (datasourceConfiguration.tunnel && datasourceConfiguration.tunnel.enabled) {
+            try {
+              const tunneledAddress = await super.createTunnel(datasourceConfiguration);
+              finalEndpoint.host = tunneledAddress?.host;
+              finalEndpoint.port = tunneledAddress?.port;
+              tunnel = tunneledAddress?.client;
+            } catch (e) {
+              throw new IntegrationError(`SSH tunnel connection failed for ${this.pluginName}: ${e.message}`, e.code, {
+                pluginName: this.pluginName
+              });
+            }
+          }
+
+          let ssl_config: Record<string, unknown> | undefined;
+          if (datasourceConfiguration.connection?.useSsl) {
+            ssl_config = {
+              rejectUnauthorized: iamConfiguration !== undefined
+            };
+            if (iamConfiguration) {
+              ssl_config.servername = iamConfiguration.hostname;
+              ssl_config.ca = getAwsRdsTlsCaCertificates();
+              if (postgresIamTlsEnabled(datasourceConfiguration.connection.useSelfSignedSsl)) {
+                if (datasourceConfiguration.connection.ca !== undefined) {
+                  ssl_config.ca = datasourceConfiguration.connection.ca;
+                }
+                if (datasourceConfiguration.connection.key !== undefined) {
+                  ssl_config.key = datasourceConfiguration.connection.key;
+                }
+                if (datasourceConfiguration.connection.cert !== undefined) {
+                  ssl_config.cert = datasourceConfiguration.connection.cert;
+                }
+              }
+            } else if (datasourceConfiguration.connection?.useSelfSignedSsl) {
+              ssl_config.ca = datasourceConfiguration.connection?.ca;
+              ssl_config.key = datasourceConfiguration.connection?.key;
+              ssl_config.cert = datasourceConfiguration.connection?.cert;
+            }
+          }
+
+          let password = auth.password;
+          if (iamConfiguration) {
+            const awsClientConfig = await getAwsClientConfigWithTempCreds(
+              { region: iamConfiguration.region },
+              datasourceConfiguration.id ?? datasourceConfiguration.name,
+              iamConfiguration.region,
+              iamConfiguration.roleArn,
+              iamConfiguration.sessionPolicy
+            );
+            const signer = new Signer({
+              credentials: awsClientConfig.credentials,
+              hostname: iamConfiguration.hostname,
+              port: iamConfiguration.port,
+              region: iamConfiguration.region,
+              username: iamConfiguration.username
+            });
+            const authToken = await signer.getAuthToken();
+            password = authToken;
+          }
+
+          client = new Client({
+            host: finalEndpoint?.host,
+            port: finalEndpoint?.port,
+            user: iamConfiguration?.username ?? auth.username,
+            password,
+            database: iamConfiguration?.database ?? auth.custom.databaseName.value,
+            ssl: ssl_config,
+            connectionTimeoutMillis: connectionTimeoutMillis
+          });
+          this.attachLoggerToClient(client, datasourceConfiguration);
+
+          this.logger.debug(
+            `Connecting to postgres, host: ${finalEndpoint?.host}, port: ${finalEndpoint?.port}, username: ${auth?.username}, database: ${auth?.custom?.databaseName?.value}, sslEnabled: ${datasourceConfiguration?.connection?.useSsl}`
+          );
+          break;
         }
-
-        client = new Client({
-          host: finalEndpoint?.host,
-          port: finalEndpoint?.port,
-          user: auth.username,
-          password: auth.password,
-          database: auth.custom.databaseName.value,
-          ssl: ssl_config,
-          connectionTimeoutMillis: connectionTimeoutMillis
-        });
-        this.attachLoggerToClient(client, datasourceConfiguration);
-
-        this.logger.debug(
-          `Connecting to postgres, host: ${finalEndpoint?.host}, port: ${finalEndpoint?.port}, username: ${auth?.username}, database: ${auth?.custom?.databaseName?.value}, sslEnabled: ${datasourceConfiguration?.connection?.useSsl}`
-        );
-        break;
       }
-    }
 
-    await client.connect();
-    this.logger.debug(`Postgres client connected. ${datasourceConfiguration.endpoint?.host}:${datasourceConfiguration.endpoint?.port}`);
-    return { client, tunnel };
+      try {
+        await client.connect();
+      } catch (err) {
+        if (iamConfiguration) {
+          throw postgresIamConnectionError(err, this.pluginName);
+        }
+        throw err;
+      }
+      this.logger.debug(`Postgres client connected. ${datasourceConfiguration.endpoint?.host}:${datasourceConfiguration.endpoint?.port}`);
+      return { client, tunnel };
+    } catch (err) {
+      await closeFailedPostgresConnection(client, tunnel);
+      throw err;
+    }
   }
 
   @DestroyConnection
@@ -335,6 +577,9 @@ export default class PostgresPlugin extends DatabasePluginPooled<ClientWrapper<C
       try {
         client = await this.createConnection(datasourceConfiguration, TEST_CONNECTION_TIMEOUT);
       } catch (err) {
+        if (err instanceof IntegrationError) {
+          throw err;
+        }
         throw new IntegrationError(`Test connection failed: ${err.message}`, ErrorCode.INTEGRATION_AUTHORIZATION, {
           pluginName: this.pluginName
         });

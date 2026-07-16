@@ -96,6 +96,10 @@ externalSecrets:
 imagePullSecrets: []
 commonPodAnnotations: {}
 commonPodLabels: {}
+postgres:
+  # Serialized to a JSON array in the environment. Entries are exact role ARNs,
+  # or role-path prefixes ending in "/". Empty denies all IAM roles.
+  iamAllowedRoleArnPrefixes: []
 # Change the prefix used in resource names.
 # Defaults to 'superblocks-agent'.
 nameOverride: ''

@@ -146,6 +146,8 @@ spec:
           value: {{ $.Values.queue.batchSize | quote }}
         - name: SUPERBLOCKS_ORCHESTRATOR_EMITTER_REMOTE_INTAKE
           value: {{ $.Values.remoteIntakeUrl | quote }}
+        - name: SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES
+          value: {{ $.Values.postgres.iamAllowedRoleArnPrefixes | toJson | quote }}
         - name: SUPERBLOCKS_AGENT_REDIS_TOKEN
           valueFrom:
             secretKeyRef:

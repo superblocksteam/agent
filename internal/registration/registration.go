@@ -41,7 +41,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"mssql":              {"0.0.11"},
 	"mysql":              {"0.0.12"},
 	"openai":             {"0.0.3"},
-	"postgres":           {"0.0.12"},
+	"postgres":           {"0.0.13"},
 	"python":             {"0.0.7"},
 	"redshift":           {"0.0.8"},
 	"restapi":            {"0.0.13"},

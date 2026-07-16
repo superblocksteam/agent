@@ -1,4 +1,4 @@
-import { ExecutionOutput } from '../../types';
+import { DatasourceConfiguration, ExecutionOutput } from '../../types';
 import { ConnectionPool, ConnectionPoolCoordinator } from '../pool';
 import { PluginExecutionProps } from './BasePlugin';
 import { DatabasePlugin } from './DatabasePlugin';
@@ -8,7 +8,7 @@ type CreateConnArgs<DatasourceConfig> = [datasourceConfiguration: DatasourceConf
 /**
  * A class that makes it easier for database plugins to use a connection pool
  */
-export abstract class DatabasePluginPooled<Conn, DatasourceConfig> extends DatabasePlugin {
+export abstract class DatabasePluginPooled<Conn, DatasourceConfig extends DatasourceConfiguration> extends DatabasePlugin {
   protected connectionPool: ConnectionPool<Conn, CreateConnArgs<DatasourceConfig>>;
 
   public attachConnectionPool(connectionPoolCoordinator: ConnectionPoolCoordinator): void {
@@ -31,6 +31,14 @@ export abstract class DatabasePluginPooled<Conn, DatasourceConfig> extends Datab
   protected abstract destroyConnection(conn: Conn): Promise<void>;
 
   /**
+   * Returns the stable datasource identity used to select interchangeable pooled connections.
+   * Connection creation still receives the original datasource configuration.
+   */
+  protected getConnectionPoolIdentity(datasourceConfiguration: DatasourceConfig): DatasourceConfig {
+    return datasourceConfiguration;
+  }
+
+  /**
    * Like execute from BasePlugin, but with a connection to the DB that has already been created.
    * Note (1): this method should not destroy the connection.
    * Note (2): if this method throws, the connection will not be returned to the pool, it will be destroyed. This is because
@@ -41,14 +49,12 @@ export abstract class DatabasePluginPooled<Conn, DatasourceConfig> extends Datab
     conn: Conn
   ): Promise<undefined | ExecutionOutput>;
 
-  // NOTE: the type of executionProps should have been PluginExecutionProps<DatasourceConfig>
-  // but BasePlugin has the wrong type for it
-  async execute(executionProps: PluginExecutionProps): Promise<undefined | ExecutionOutput> {
+  async execute(executionProps: PluginExecutionProps<DatasourceConfig>): Promise<undefined | ExecutionOutput> {
     return this.connectionPool.withConnection(
-      executionProps.datasourceConfiguration,
-      [(executionProps as PluginExecutionProps<DatasourceConfig>).datasourceConfiguration],
+      this.getConnectionPoolIdentity(executionProps.datasourceConfiguration),
+      [executionProps.datasourceConfiguration],
       async (conn) => {
-        return this.executePooled(executionProps as PluginExecutionProps<DatasourceConfig>, conn);
+        return this.executePooled(executionProps, conn);
       }
     );
   }
