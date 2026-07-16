@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Apply deployment-wide correlation and cost-attribution tags to every Native Database physical Terraform module rendered by the On-Premise Agent Helm chart.
 - Render Native Database lifecycle worker CONFIG from named On-Premise Agent Helm groups, with worker-owned pool policy, native Terraform module inputs, and optional physical provisioning on pool exhaustion.
 - Skip mustache binding resolution for Apps 3.0 SDK integration REST sub-requests so literal `{{` in request bodies are not evaluated
+
+## v1.43.0
 - Materialize one app-scoped PostgreSQL migrator role and credential per Native Database binding, reused for application queries and schema migrations.
 - Fix GCS presigned URL generation when `presignedExpiration` is omitted (Clark, SDK API) or non-finite, so the plugin falls back to the default TTL instead of passing an invalid expiration to Google Cloud Storage.
 - Align observability naming conventions with the v0.6.0 Tier 2 contract (e.g. supporting dotted notation for telemetry attributes) and expand span-attribute privacy filtering accordingly.
