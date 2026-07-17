@@ -40,6 +40,17 @@ so workers track the mutable channel tag without changing chart defaults.
 Because the module repository is not yet public, internal deployments need
 GitHub access until the customer release checklist is complete.
 
+Image builds embed the Native DB module package under
+`/opt/superblocks/terraform-modules`, fetched at build time from the floating
+git `latest` tag. No version pin is checked into orchestrator; the resolved
+commit is written into the image as `VERSION`/`COMMIT` sidecars.
+Security-conscious deployments can avoid runtime module downloads by
+overriding the logical and physical sources to
+`./modules/postgres-managed-database` and `./modules/aws-rds-managed-instance`.
+The lifecycle materializer copies the whole package into each protected work
+directory so sibling module references continue to resolve. Keep both sources
+on the same embedded release.
+
 Fields under `logicalModuleInputs` and `physicalModuleInputs` use the selected
 Terraform modules' native variable names. Database sizing such as
 `instance_class`, `allocated_storage`, and `multi_az` belongs there. In

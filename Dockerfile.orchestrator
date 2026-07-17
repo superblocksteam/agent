@@ -84,6 +84,10 @@ COPY --from=builder /go/src/github.com/superblocksteam/orchestrator/flags.json  
 # orchestrator roles. See top of file for context.
 COPY --from=opentofu /usr/bin/tofu /usr/local/bin/tofu
 
+# Immutable Native Database modules used by local `./modules/...` lifecycle
+# sources. Populate with scripts/ci-prepare-native-db-modules.sh before build.
+COPY --chown=1001:1001 build/native-db-modules /opt/superblocks/terraform-modules
+
 ENV SB_GIT_REPOSITORY_URL "https://github.com/superblocksteam/orchestrator"
 ENV SB_GIT_COMMIT_SHA     ${SB_GIT_COMMIT_SHA}
 

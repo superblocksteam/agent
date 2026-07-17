@@ -19,6 +19,7 @@ import (
 
 const (
 	credentialSecretPrefixInput  = "credential_secret_prefix"
+	defaultLocalModuleRoot       = "/opt/superblocks/terraform-modules"
 	postgresAdminCredentialInput = "postgres_admin_credential_ref"
 )
 
@@ -167,6 +168,10 @@ func copyTerraformModuleInputs(inputs map[string]any) map[string]any {
 }
 
 func MaterializeJob(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOptions) error {
+	return MaterializeJobFromLocalModuleRoot(job, dispatch, sslOpts, defaultLocalModuleRoot)
+}
+
+func MaterializeJobFromLocalModuleRoot(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOptions, localModuleRoot string) error {
 	if job.WorkingDir == "" {
 		return errors.New("database lifecycle working directory is required")
 	}
@@ -193,6 +198,9 @@ func MaterializeJob(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOption
 		return err
 	}
 	if err := os.MkdirAll(job.WorkingDir, 0o700); err != nil {
+		return err
+	}
+	if err := copyVendoredModulePackage(job.WorkingDir, dispatch.TerraformModule.Source, localModuleRoot); err != nil {
 		return err
 	}
 	// The backend.tfbackend file feeds `-backend-config=<file>` at init.
@@ -239,6 +247,32 @@ func MaterializeJob(job Job, dispatch DispatchPayload, sslOpts ProviderSSLOption
 		return err
 	}
 	return writeJSONFile(job.VarsFile, vars)
+}
+
+func copyVendoredModulePackage(workingDir string, source string, localModuleRoot string) error {
+	if !strings.HasPrefix(source, "./modules/") {
+		return nil
+	}
+	if "./"+filepath.ToSlash(filepath.Clean(strings.TrimPrefix(source, "./"))) != source {
+		return fmt.Errorf("database lifecycle local Terraform module source %q must be a clean path under ./modules", source)
+	}
+	modulePath := filepath.Join(localModuleRoot, filepath.FromSlash(strings.TrimPrefix(source, "./")))
+	info, err := os.Stat(modulePath)
+	if err != nil {
+		return fmt.Errorf("database lifecycle vendored Terraform module %q: %w", source, err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("database lifecycle vendored Terraform module %q is not a directory", source)
+	}
+
+	target := filepath.Join(workingDir, "modules")
+	if err := os.RemoveAll(target); err != nil {
+		return fmt.Errorf("remove stale vendored Terraform modules: %w", err)
+	}
+	if err := os.CopyFS(target, os.DirFS(filepath.Join(localModuleRoot, "modules"))); err != nil {
+		return fmt.Errorf("copy vendored Terraform modules: %w", err)
+	}
+	return nil
 }
 
 var terraformIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)

@@ -264,6 +264,9 @@ COPY              --from=orchestrator_and_golang_worker /go/src/github.com/super
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/buckets.minimal.json                     /app/orchestrator/buckets.json
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/flags.json                               /app/orchestrator/flags.json
 COPY              --from=opentofu                     /usr/bin/tofu                                                                     /usr/local/bin/tofu
+# Immutable Native Database modules used by local `./modules/...` lifecycle
+# sources. Populate with scripts/ci-prepare-native-db-modules.sh before build.
+COPY              --chown=1000:1000                     build/native-db-modules                                                           /opt/superblocks/terraform-modules
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/workers/golang/worker.go                 /app/worker.go/bin
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/workers/ephemeral/task-manager/task-manager /app/task-manager/bin
 COPY              --from=workers                        /deploy                                                                           /app/worker.js

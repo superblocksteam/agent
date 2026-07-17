@@ -15,8 +15,10 @@ import (
 )
 
 const (
-	logicalModuleSource  = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.1"
-	physicalModuleSource = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.1"
+	logicalModuleSource          = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.1"
+	physicalModuleSource         = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.1"
+	vendoredLogicalModuleSource  = "./modules/postgres-managed-database"
+	vendoredPhysicalModuleSource = "./modules/aws-rds-managed-instance"
 )
 
 func TestOPAChartRendersLifecycleWorkerConfigFromNamedGroups(t *testing.T) {
@@ -48,6 +50,24 @@ func TestOPAChartRendersLifecycleWorkerConfigFromNamedGroups(t *testing.T) {
 		"name":      "database-lifecycle-work",
 	})
 	require.Equal(t, 1000, requireMap(t, lifecyclePodSpec(t, deployment)["securityContext"])["fsGroup"])
+}
+
+func TestOPAChartAllowsVendoredModulesWithoutAdditionalCredentialValues(t *testing.T) {
+	t.Parallel()
+
+	rendered := renderLifecycleChart(t,
+		"--set-string", "databaseLifecycle.modules.logical.source="+vendoredLogicalModuleSource,
+		"--set-string", "databaseLifecycle.modules.physical.source="+vendoredPhysicalModuleSource,
+	)
+	env := lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered)))
+
+	require.Equal(
+		t,
+		vendoredLogicalModuleSource+","+vendoredPhysicalModuleSource,
+		env["SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_MODULE_SOURCES"],
+	)
+	require.NotContains(t, env, "GITHUB_TOKEN")
+	require.NotContains(t, env, "NETRC")
 }
 
 func TestOPAChartPreservesOperatorPodFSGroup(t *testing.T) {

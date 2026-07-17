@@ -697,6 +697,194 @@ func TestMaterializeJobRejectsMissingTerraformModuleVersion(t *testing.T) {
 	require.ErrorContains(t, err, "Terraform module version is required")
 }
 
+func TestMaterializeJobCopiesVendoredModulePackageForLocalSources(t *testing.T) {
+	root := tempRoot(t)
+	moduleRoot := filepath.Join(root, "vendored")
+	require.NoError(t, os.MkdirAll(filepath.Join(moduleRoot, "modules", "postgres-managed-database"), 0o700))
+	require.NoError(t, os.MkdirAll(filepath.Join(moduleRoot, "modules", "postgres-managed-database-core"), 0o700))
+	require.NoError(t, os.WriteFile(
+		filepath.Join(moduleRoot, "modules", "postgres-managed-database", "main.tf"),
+		[]byte(`module "core" { source = "../postgres-managed-database-core" }`),
+		0o600,
+	))
+	require.NoError(t, os.WriteFile(
+		filepath.Join(moduleRoot, "modules", "postgres-managed-database-core", "main.tf"),
+		[]byte(`output "ready" { value = true }`),
+		0o600,
+	))
+	job := Job{
+		BindingKey:  "app:prod:orders",
+		WorkingDir:  filepath.Join(root, "app-prod-orders"),
+		MainFile:    filepath.Join(root, "app-prod-orders", "main.tf"),
+		BackendFile: filepath.Join(root, "app-prod-orders", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-prod-orders", "terraform.tfvars.json"),
+	}
+
+	err := MaterializeJobFromLocalModuleRoot(job, DispatchPayload{
+		BindingKey: "app:prod:orders",
+		TerraformModule: TerraformModule{
+			Source: "./modules/postgres-managed-database",
+		},
+		TerraformBackend: map[string]any{"stateBackend": "local"},
+	}, testSSLOpts, moduleRoot)
+
+	require.NoError(t, err)
+	require.FileExists(t, filepath.Join(job.WorkingDir, "modules", "postgres-managed-database", "main.tf"))
+	require.FileExists(t, filepath.Join(job.WorkingDir, "modules", "postgres-managed-database-core", "main.tf"))
+	mainFile, err := os.ReadFile(job.MainFile)
+	require.NoError(t, err)
+	require.Contains(t, string(mainFile), `source  = "./modules/postgres-managed-database"`)
+}
+
+func TestCopyVendoredModulePackageSkipsRemoteSources(t *testing.T) {
+	root := tempRoot(t)
+
+	require.NoError(t, copyVendoredModulePackage(
+		filepath.Join(root, "working"),
+		testPostgresManagedDatabaseModuleSource,
+		filepath.Join(root, "missing-vendored-root"),
+	))
+}
+
+func TestCopyVendoredModulePackageRejectsInvalidLocalSources(t *testing.T) {
+	root := tempRoot(t)
+	moduleRoot := filepath.Join(root, "vendored")
+	require.NoError(t, os.MkdirAll(filepath.Join(moduleRoot, "modules"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(moduleRoot, "modules", "not-a-directory"), []byte("module"), 0o600))
+
+	for _, tc := range []struct {
+		name    string
+		source  string
+		wantErr string
+	}{
+		{
+			name:    "unclean path",
+			source:  "./modules/../outside",
+			wantErr: "must be a clean path under ./modules",
+		},
+		{
+			name:    "missing module",
+			source:  "./modules/missing",
+			wantErr: `vendored Terraform module "./modules/missing"`,
+		},
+		{
+			name:    "module is not a directory",
+			source:  "./modules/not-a-directory",
+			wantErr: "is not a directory",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := copyVendoredModulePackage(filepath.Join(root, "working"), tc.source, moduleRoot)
+			require.ErrorContains(t, err, tc.wantErr)
+		})
+	}
+}
+
+func TestCopyVendoredModulePackageReplacesStaleModules(t *testing.T) {
+	root := tempRoot(t)
+	moduleRoot := filepath.Join(root, "vendored")
+	require.NoError(t, os.MkdirAll(filepath.Join(moduleRoot, "modules", "postgres-managed-database"), 0o700))
+	require.NoError(t, os.WriteFile(
+		filepath.Join(moduleRoot, "modules", "postgres-managed-database", "main.tf"),
+		[]byte("# current"),
+		0o600,
+	))
+	workingDir := filepath.Join(root, "working")
+	require.NoError(t, os.MkdirAll(filepath.Join(workingDir, "modules", "stale"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(workingDir, "modules", "stale", "main.tf"), []byte("# stale"), 0o600))
+
+	require.NoError(t, copyVendoredModulePackage(
+		workingDir,
+		"./modules/postgres-managed-database",
+		moduleRoot,
+	))
+	require.NoFileExists(t, filepath.Join(workingDir, "modules", "stale", "main.tf"))
+	require.FileExists(t, filepath.Join(workingDir, "modules", "postgres-managed-database", "main.tf"))
+}
+
+func TestMaterializeJobFromLocalModuleRootPropagatesVendoredCopyErrors(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "app:prod:orders",
+		WorkingDir:  filepath.Join(root, "app-prod-orders"),
+		MainFile:    filepath.Join(root, "app-prod-orders", "main.tf"),
+		BackendFile: filepath.Join(root, "app-prod-orders", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "app-prod-orders", "terraform.tfvars.json"),
+	}
+
+	err := MaterializeJobFromLocalModuleRoot(job, DispatchPayload{
+		BindingKey: "app:prod:orders",
+		TerraformModule: TerraformModule{
+			Source: "./modules/../outside",
+		},
+		TerraformBackend: map[string]any{"stateBackend": "local"},
+	}, testSSLOpts, filepath.Join(root, "vendored"))
+
+	require.ErrorContains(t, err, "must be a clean path under ./modules")
+	require.NoFileExists(t, job.MainFile)
+}
+
+func TestMaterializeJobFromLocalModuleRootSurfacesWorkingDirectoryErrors(t *testing.T) {
+	root := tempRoot(t)
+	blocker := filepath.Join(root, "blocker")
+	require.NoError(t, os.WriteFile(blocker, []byte("not a directory"), 0o600))
+	workingDir := filepath.Join(blocker, "app-prod-orders")
+	job := Job{
+		BindingKey:  "app:prod:orders",
+		WorkingDir:  workingDir,
+		MainFile:    filepath.Join(workingDir, "main.tf"),
+		BackendFile: filepath.Join(workingDir, "backend.tfbackend"),
+		VarsFile:    filepath.Join(workingDir, "terraform.tfvars.json"),
+	}
+
+	err := MaterializeJobFromLocalModuleRoot(job, DispatchPayload{
+		BindingKey: "app:prod:orders",
+		TerraformModule: TerraformModule{
+			Source: "./modules/postgres-managed-database",
+		},
+		TerraformBackend: map[string]any{"stateBackend": "local"},
+	}, testSSLOpts, filepath.Join(root, "vendored"))
+
+	require.Error(t, err)
+}
+
+func TestCopyVendoredModulePackageSurfacesStaleModuleRemovalErrors(t *testing.T) {
+	root := tempRoot(t)
+	moduleRoot := filepath.Join(root, "vendored")
+	require.NoError(t, os.MkdirAll(filepath.Join(moduleRoot, "modules", "postgres-managed-database"), 0o700))
+	workingDir := filepath.Join(root, "working")
+	require.NoError(t, os.WriteFile(workingDir, []byte("not a directory"), 0o600))
+
+	err := copyVendoredModulePackage(
+		workingDir,
+		"./modules/postgres-managed-database",
+		moduleRoot,
+	)
+	require.ErrorContains(t, err, "remove stale vendored Terraform modules")
+}
+
+func TestCopyVendoredModulePackageSurfacesCopyErrors(t *testing.T) {
+	root := tempRoot(t)
+	moduleRoot := filepath.Join(root, "vendored")
+	require.NoError(t, os.MkdirAll(filepath.Join(moduleRoot, "modules", "postgres-managed-database"), 0o700))
+	require.NoError(t, os.WriteFile(
+		filepath.Join(moduleRoot, "modules", "postgres-managed-database", "main.tf"),
+		[]byte("# current"),
+		0o600,
+	))
+	workingDir := filepath.Join(root, "working")
+	require.NoError(t, os.MkdirAll(workingDir, 0o700))
+	require.NoError(t, os.Chmod(workingDir, 0o500))
+	t.Cleanup(func() { _ = os.Chmod(workingDir, 0o700) })
+
+	err := copyVendoredModulePackage(
+		workingDir,
+		"./modules/postgres-managed-database",
+		moduleRoot,
+	)
+	require.ErrorContains(t, err, "copy vendored Terraform modules")
+}
+
 func TestMaterializeJobTreatsVCSShorthandSourcesAsNonRegistryModules(t *testing.T) {
 	for _, source := range []string{
 		"github.com/superblocksteam/terraform-superblocks-databases//modules/aws-rds-managed-instance",

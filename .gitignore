@@ -70,6 +70,9 @@ charts/
 # Cloned locally by scripts/run-database-lifecycle-contract-proof.sh
 /terraform-superblocks-databases/
 
+# Populated by scripts/ci-prepare-native-db-modules.sh / fetch-native-db-modules.sh
+/build/native-db-modules/
+
 # Agent/MCP related
 .fastembed_cache/
 .sisyphus/
