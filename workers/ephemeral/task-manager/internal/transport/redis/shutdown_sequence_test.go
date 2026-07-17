@@ -110,13 +110,7 @@ func TestShutdownSequence_VariableStoreReachableDuringTransportDrain(t *testing.
 	require.NoError(t, err)
 	stringEncoded := string(byteEncoded)
 
-	redisMock.ExpectXReadGroup(&redis.XReadGroupArgs{
-		Streams:  []string{"stream1", ">"},
-		Group:    "group1",
-		Consumer: "worker1",
-		Count:    1,
-		Block:    5 * time.Second,
-	}).SetVal([]redis.XStream{
+	expectGroupReaderRead(redisMock, []string{"stream1"}, "group1", "worker1", 1, 5*time.Second, []redis.XStream{
 		{
 			Stream: "stream1",
 			Messages: []redis.XMessage{
@@ -128,7 +122,7 @@ func TestShutdownSequence_VariableStoreReachableDuringTransportDrain(t *testing.
 				},
 			},
 		},
-	})
+	}, nil)
 
 	redisMock.ExpectXAck("stream1", "group1", "someId").SetVal(1)
 	redisMock.ExpectXAdd(&redis.XAddArgs{

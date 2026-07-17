@@ -19,49 +19,36 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestGenerateXReadArgs(t *testing.T) {
-	tests := []struct {
-		name       string
-		streamKeys []string
-		expected   []string
-	}{
-		{
-			name:       "single stream",
-			streamKeys: []string{"stream1"},
-			expected:   []string{"stream1", ">"},
-		},
-		{
-			name:       "two streams",
-			streamKeys: []string{"stream1", "stream2"},
-			expected:   []string{"stream1", "stream2", ">", ">"},
-		},
-		{
-			name:       "three streams",
-			streamKeys: []string{"stream1", "stream2", "stream3"},
-			expected:   []string{"stream1", "stream2", "stream3", ">", ">", ">"},
-		},
-		{
-			name:       "empty streams",
-			streamKeys: []string{},
-			expected:   []string{},
-		},
+func TestGroupReaderStreamsConfigured(t *testing.T) {
+	logger := zap.NewNop()
+	client := r.NewClient(&r.Options{
+		Addr: "localhost:6379",
+	})
+	defer client.Close()
+
+	mockFileContextProvider := mocks.NewFileContextProvider(t)
+
+	streamKeys := []string{"stream1", "stream2"}
+	options := &Options{
+		RedisClient:         client,
+		StreamKeys:          streamKeys,
+		Logger:              logger,
+		ExecutionPool:       1,
+		FileContextProvider: mockFileContextProvider,
+		ConsumerGroup:       "group1",
+		WorkerId:            "worker1",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := generateXReadArgs(tt.streamKeys)
+	transport := NewRedisTransport(options)
 
-			if len(result) != len(tt.expected) {
-				t.Errorf("generateXReadArgs() length = %v, want %v", len(result), len(tt.expected))
-				return
-			}
-
-			for i, v := range tt.expected {
-				if result[i] != v {
-					t.Errorf("generateXReadArgs()[%d] = %v, want %v", i, result[i], v)
-				}
-			}
-		})
+	got := transport.groupReader.Streams()
+	if len(got) != len(streamKeys) {
+		t.Fatalf("streams length = %v, want %v", len(got), len(streamKeys))
+	}
+	for i, want := range streamKeys {
+		if got[i] != want {
+			t.Errorf("streams[%d] = %v, want %v", i, got[i], want)
+		}
 	}
 }
 
@@ -97,8 +84,13 @@ func TestNewRedisTransport(t *testing.T) {
 		t.Error("redis client not set correctly")
 	}
 
-	if len(transport.streamKeys) != 1 {
-		t.Errorf("streamKeys length = %v, want 1", len(transport.streamKeys))
+	if transport.groupReader == nil {
+		t.Fatal("groupReader should not be nil")
+	}
+
+	streams := transport.groupReader.Streams()
+	if len(streams) != 1 {
+		t.Errorf("groupReader streams length = %v, want 1", len(streams))
 	}
 
 	if transport.workerId != "test-worker" {
@@ -545,39 +537,6 @@ func TestRedisTransportFields(t *testing.T) {
 
 	if len(fields) != 0 {
 		t.Errorf("Fields() length = %v, want 0", len(fields))
-	}
-}
-
-func TestXReadArgsStructure(t *testing.T) {
-	// Test that xReadArgs are set correctly during construction
-	logger := zap.NewNop()
-	client := r.NewClient(&r.Options{
-		Addr: "localhost:6379",
-	})
-	defer client.Close()
-
-	mockFileContextProvider := mocks.NewFileContextProvider(t)
-
-	streamKeys := []string{"stream1", "stream2"}
-	options := &Options{
-		RedisClient:         client,
-		StreamKeys:          streamKeys,
-		Logger:              logger,
-		ExecutionPool:       1,
-		FileContextProvider: mockFileContextProvider,
-	}
-
-	transport := NewRedisTransport(options)
-
-	expected := []string{"stream1", "stream2", ">", ">"}
-	if len(transport.xReadArgs) != len(expected) {
-		t.Errorf("xReadArgs length = %v, want %v", len(transport.xReadArgs), len(expected))
-	}
-
-	for i, v := range expected {
-		if transport.xReadArgs[i] != v {
-			t.Errorf("xReadArgs[%d] = %v, want %v", i, transport.xReadArgs[i], v)
-		}
 	}
 }
 

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Fix Redis transport bug where the task-manager could read more messages than the configured max count when subscribed to multiple worker streams.
 - Add managed Native Database IAM provisioning (`auth_mode: aws_iam_role`): the lifecycle worker validates trusted connection descriptors, assumes the operator-configured connector role (`SUPERBLOCKS_NATIVE_DB_CONNECTOR_ROLE_ARN` / Helm `postgres.nativeDbConnectorRoleArn`), issues short-lived RDS tokens for migrations over verify-full TLS, and injects a transient master secret only for logical database bootstrap. Advertises `managed-IAM-v1` when connector role, verify-full TLS, and an IAM-mode logical module are fully configured.
 - Embed Native Database Terraform modules in On-Premise Agent images at build time from the floating `latest` channel (no checked-in pin) so security-conscious deployments can initialize logical and physical modules without runtime GitHub or registry access.
 - Add runtime configuration and token-stable connection pooling support for Postgres IAM role authentication while preserving legacy password pooling. Operators set `SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES` to a JSON array of exact role ARNs or trailing-slash role-path prefixes; Helm accepts the equivalent YAML list, and the empty default denies all roles.

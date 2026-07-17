@@ -21,6 +21,90 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+const groupReaderAutoClaimMinIdle = 2 * time.Second
+
+func expectAutoClaimAllStreams(
+	redisMock redismock.ClientMock,
+	streamKeys []string,
+	group, consumer string,
+	count int64,
+) {
+	for _, stream := range streamKeys {
+		redisMock.ExpectXAutoClaim(&redis.XAutoClaimArgs{
+			Stream:   stream,
+			Group:    group,
+			Consumer: consumer,
+			MinIdle:  groupReaderAutoClaimMinIdle,
+			Start:    "0-0",
+			Count:    count,
+		}).SetVal([]redis.XMessage{}, "0-0")
+	}
+}
+
+func multiStreamReadArgs(streamKeys []string, group, consumer string, count int64, block time.Duration) *redis.XReadGroupArgs {
+	streamArgs := make([]string, 0, len(streamKeys)*2)
+	for _, key := range streamKeys {
+		streamArgs = append(streamArgs, key)
+	}
+	for range streamKeys {
+		streamArgs = append(streamArgs, ">")
+	}
+
+	redisBlock := block
+	if block == 0 {
+		redisBlock = -1
+	}
+
+	return &redis.XReadGroupArgs{
+		Streams:  streamArgs,
+		Group:    group,
+		Consumer: consumer,
+		Count:    count,
+		Block:    redisBlock,
+	}
+}
+
+// expectGroupReaderRead configures redismock for GroupReader.XReadGroupMaxCount.
+func expectGroupReaderRead(
+	redisMock redismock.ClientMock,
+	streamKeys []string,
+	group, consumer string,
+	count int64,
+	block time.Duration,
+	result []redis.XStream,
+	err error,
+) {
+	if len(streamKeys) == 0 {
+		return
+	}
+
+	expectAutoClaimAllStreams(redisMock, streamKeys, group, consumer, count)
+
+	hasMessages := false
+	for _, stream := range result {
+		if len(stream.Messages) > 0 {
+			hasMessages = true
+			break
+		}
+	}
+
+	readBlock := block
+	if readBlock <= 0 {
+		readBlock = 0
+	}
+
+	m := redisMock.ExpectXReadGroup(multiStreamReadArgs(streamKeys, group, consumer, count, readBlock))
+	if err != nil {
+		m.SetErr(err)
+		return
+	}
+	if hasMessages {
+		m.SetVal(result)
+		return
+	}
+	m.SetErr(redis.Nil)
+}
+
 func TestPluginInvocationAfterPollingMessage(t *testing.T) {
 	testCases := []struct {
 		name    string
@@ -123,13 +207,7 @@ func TestPluginInvocationAfterPollingMessage(t *testing.T) {
 			byteEncoded, _ := protojson.Marshal(tc.request)
 			stringEncoded := string(byteEncoded)
 
-			redisMock.ExpectXReadGroup(&redis.XReadGroupArgs{
-				Streams:  []string{"stream1", ">"},
-				Group:    "group1",
-				Consumer: "worker1",
-				Count:    10,
-				Block:    5 * time.Second,
-			}).SetVal([]redis.XStream{
+			expectGroupReaderRead(redisMock, []string{"stream1"}, "group1", "worker1", 10, 5*time.Second, []redis.XStream{
 				{
 					Stream: "stream1",
 					Messages: []redis.XMessage{
@@ -141,7 +219,7 @@ func TestPluginInvocationAfterPollingMessage(t *testing.T) {
 						},
 					},
 				},
-			})
+			}, nil)
 
 			redisMock.ExpectXAck("stream1", "group1", "someId").SetVal(1)
 			redisMock.ExpectXAdd(&redis.XAddArgs{
@@ -215,13 +293,7 @@ func TestEmptyExecutionPoolSkipsPolling(t *testing.T) {
 	}()
 
 	// Set up mock for the actual read (which won't happen since pool is empty)
-	redisMock.ExpectXReadGroup(&redis.XReadGroupArgs{
-		Streams:  []string{"stream1", ">"},
-		Group:    "group1",
-		Consumer: "worker1",
-		Count:    1, // Will be 1 since pool returns 1 slot
-		Block:    5 * time.Second,
-	}).SetErr(redis.Nil) // No messages
+	expectGroupReaderRead(redisMock, []string{"stream1"}, "group1", "worker1", 1, 5*time.Second, nil, redis.Nil)
 
 	_, err := transport.pollOnce()
 	// Should return without error
@@ -286,13 +358,7 @@ func TestClosingProperlyDrainsRequests(t *testing.T) {
 	byteEncoded, _ := protojson.Marshal(req)
 	stringEncoded := string(byteEncoded)
 
-	redisMock.ExpectXReadGroup(&redis.XReadGroupArgs{
-		Streams:  []string{"stream1", ">"},
-		Group:    "group1",
-		Consumer: "worker1",
-		Count:    2,
-		Block:    5 * time.Second,
-	}).SetVal([]redis.XStream{
+	expectGroupReaderRead(redisMock, []string{"stream1"}, "group1", "worker1", 2, 5*time.Second, []redis.XStream{
 		{
 			Stream: "stream1",
 			Messages: []redis.XMessage{
@@ -304,7 +370,7 @@ func TestClosingProperlyDrainsRequests(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, nil)
 
 	redisMock.ExpectXAck("stream1", "group1", "someId").SetVal(1)
 	redisMock.ExpectXAdd(&redis.XAddArgs{
@@ -559,13 +625,7 @@ func TestEphemeralPollOnceUsesXReadGroupCountOne(t *testing.T) {
 	byteEncoded, _ := protojson.Marshal(req)
 	stringEncoded := string(byteEncoded)
 
-	redisMock.ExpectXReadGroup(&redis.XReadGroupArgs{
-		Streams:  []string{"stream1", ">"},
-		Group:    "group1",
-		Consumer: "worker1",
-		Count:    1,
-		Block:    5 * time.Second,
-	}).SetVal([]redis.XStream{
+	expectGroupReaderRead(redisMock, []string{"stream1"}, "group1", "worker1", 1, 5*time.Second, []redis.XStream{
 		{
 			Stream: "stream1",
 			Messages: []redis.XMessage{
@@ -577,7 +637,7 @@ func TestEphemeralPollOnceUsesXReadGroupCountOne(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, nil)
 
 	redisMock.ExpectXAck("stream1", "group1", "someId").SetVal(1)
 	redisMock.ExpectXAdd(&redis.XAddArgs{
@@ -1005,13 +1065,7 @@ func TestTransportReadsFromStreamAfterRecoveringFromDegradedMode(t *testing.T) {
 	assert.True(t, transport.serviceDegraded, "transport should be in degraded mode after first pollOnce")
 
 	// Second pollOnce: plugins available -> recovers and reads from stream
-	redisMock.ExpectXReadGroup(&redis.XReadGroupArgs{
-		Streams:  []string{"stream1", ">"},
-		Group:    "group1",
-		Consumer: "worker1",
-		Count:    10,
-		Block:    5 * time.Second,
-	}).SetErr(redis.Nil)
+	expectGroupReaderRead(redisMock, []string{"stream1"}, "group1", "worker1", 10, 5*time.Second, nil, redis.Nil)
 
 	_, err = transport.pollOnce()
 	assert.NoError(t, err)

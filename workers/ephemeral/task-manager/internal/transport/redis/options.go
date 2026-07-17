@@ -37,6 +37,9 @@ type Options struct {
 	DegradedModeBackoff time.Duration
 	// MaxDegradedTime is the maximum time the service will stay in degraded mode before shutting down.
 	MaxDegradedTime time.Duration
+
+	// AutoClaimMinIdle is the minimum idle time before XAUTOCLAIM reclaims pending messages.
+	AutoClaimMinIdle time.Duration
 }
 
 // Option is a function that modifies Options
@@ -155,6 +158,13 @@ func WithMaxDegradedTime(value time.Duration) Option {
 	}
 }
 
+// WithAutoClaimMinIdle sets the minimum idle time before XAUTOCLAIM reclaims pending messages.
+func WithAutoClaimMinIdle(value time.Duration) Option {
+	return func(o *Options) {
+		o.AutoClaimMinIdle = value
+	}
+}
+
 // NewOptions creates Options with the given options applied
 func NewOptions(opts ...Option) *Options {
 	options := &Options{
@@ -163,6 +173,7 @@ func NewOptions(opts ...Option) *Options {
 		MessageCount:        10,
 		DegradedModeBackoff: 1 * time.Second,
 		MaxDegradedTime:     10 * time.Minute,
+		AutoClaimMinIdle:    2 * time.Second,
 	}
 	for _, opt := range opts {
 		opt(options)

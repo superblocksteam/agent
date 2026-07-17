@@ -8,3 +8,7 @@ networking:
   disableDefaultCNI: true
   # Calico's default pod subnet
   podSubnet: "192.168.0.0/16"
+nodes:
+  - role: control-plane
+    # PodLifecycleSleepAction is alpha (gate off) in 1.29; beta and on by default in 1.30+.
+    image: kindest/node:v1.30.0

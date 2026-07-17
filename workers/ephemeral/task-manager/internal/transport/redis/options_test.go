@@ -160,6 +160,13 @@ func TestWithMaxDegradedTime(t *testing.T) {
 	}
 }
 
+func TestWithAutoClaimMinIdle(t *testing.T) {
+	duration := 10 * time.Second
+	opts := NewOptions(WithAutoClaimMinIdle(duration))
+	if opts.AutoClaimMinIdle != duration {
+		t.Errorf("AutoClaimMinIdle = %v, want %v", opts.AutoClaimMinIdle, duration)
+	}
+}
 func TestOptionsChaining(t *testing.T) {
 	logger := zap.NewNop()
 	provider := mocks.NewFileContextProvider(t)
@@ -175,6 +182,7 @@ func TestOptionsChaining(t *testing.T) {
 		WithLogger(logger),
 		WithDegradedModeBackoff(30*time.Second),
 		WithMaxDegradedTime(5*time.Minute),
+		WithAutoClaimMinIdle(10*time.Second),
 	)
 
 	if opts.WorkerId != "worker-1" {
@@ -206,6 +214,9 @@ func TestOptionsChaining(t *testing.T) {
 	}
 	if opts.MaxDegradedTime != 5*time.Minute {
 		t.Errorf("MaxDegradedTime = %v, want 5m", opts.MaxDegradedTime)
+	}
+	if opts.AutoClaimMinIdle != 10*time.Second {
+		t.Errorf("AutoClaimMinIdle = %v, want 10s", opts.AutoClaimMinIdle)
 	}
 }
 

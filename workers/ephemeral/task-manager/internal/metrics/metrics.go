@@ -82,6 +82,15 @@ var (
 	// (plugins unavailable). Attributes: transition (enter|recover), worker_id, ephemeral.
 	WorkerDegradedModeTransitions metric.Int64Counter
 
+	// WorkerRedisMessagesReadTotal counts messages delivered per GroupReader poll by source path.
+	WorkerRedisMessagesReadTotal metric.Int64Counter
+
+	// WorkerRedisAckSkippedTotal counts handleMessage early returns before execution.
+	WorkerRedisAckSkippedTotal metric.Int64Counter
+
+	// WorkerRedisReadCacheSize reports overflow-cache depth after each GroupReader poll.
+	WorkerRedisReadCacheSize metric.Int64Gauge
+
 	// SandboxPoolSandboxReadyDuration measures wall time from runPlugin start until the sandbox is ready for dispatch.
 	SandboxPoolSandboxReadyDuration metric.Float64Histogram
 
@@ -315,6 +324,33 @@ func registerWithMeter(meter metric.Meter) error {
 		return err
 	}
 
+	WorkerRedisMessagesReadTotal, err = meter.Int64Counter(
+		"worker_redis_messages_read_total",
+		metric.WithDescription("Redis transport messages delivered per poll by read path"),
+		metric.WithUnit("{message}"),
+	)
+	if err != nil {
+		return err
+	}
+
+	WorkerRedisAckSkippedTotal, err = meter.Int64Counter(
+		"worker_redis_ack_skipped_total",
+		metric.WithDescription("Redis transport message handlers that skipped execution after ack"),
+		metric.WithUnit("{message}"),
+	)
+	if err != nil {
+		return err
+	}
+
+	WorkerRedisReadCacheSize, err = meter.Int64Gauge(
+		"worker_redis_read_cache_size",
+		metric.WithDescription("GroupReader overflow cache size after the latest poll"),
+		metric.WithUnit("{message}"),
+	)
+	if err != nil {
+		return err
+	}
+
 	SandboxPoolSandboxReadyDuration, err = meter.Float64Histogram(
 		"sandbox_pool_sandbox_ready_duration_seconds",
 		metric.WithDescription("Time from pool sandbox start until sandbox plugin reports ready"),
@@ -415,6 +451,38 @@ func RecordWorkerDegradedModeTransition(ctx context.Context, transition string, 
 	)
 }
 
+// Redis message read source values for worker_redis_messages_read_total (bounded cardinality).
+const (
+	RedisMessageSourceCache      = "cache"
+	RedisMessageSourceAutoClaim  = "autoclaim"
+	RedisMessageSourceXReadGroup = "xreadgroup"
+)
+
+// Redis ack skip reason values for worker_redis_ack_skipped_total (bounded cardinality).
+const (
+	RedisAckSkipReasonAlreadyAcked = "already_acked"
+	RedisAckSkipReasonError        = "error"
+)
+
+// RecordWorkerRedisReadStats records per-poll GroupReader delivery stats (typically from a ReadObserver).
+func RecordWorkerRedisReadStats(ctx context.Context, fromCache, fromAutoClaim, fromXReadGroup, cacheSize int64, attrs ...attribute.KeyValue) {
+	recordSourceCount := func(source string, count int64) {
+		if count <= 0 || WorkerRedisMessagesReadTotal == nil {
+			return
+		}
+		WorkerRedisMessagesReadTotal.Add(ctx, count, metric.WithAttributes(append(attrs, AttrRedisMessageSource.String(source))...))
+	}
+	recordSourceCount(RedisMessageSourceCache, fromCache)
+	recordSourceCount(RedisMessageSourceAutoClaim, fromAutoClaim)
+	recordSourceCount(RedisMessageSourceXReadGroup, fromXReadGroup)
+	RecordGauge(ctx, WorkerRedisReadCacheSize, cacheSize, attrs...)
+}
+
+// RecordWorkerRedisAckSkipped increments worker_redis_ack_skipped_total.
+func RecordWorkerRedisAckSkipped(ctx context.Context, reason string, attrs ...attribute.KeyValue) {
+	AddCounter(ctx, WorkerRedisAckSkippedTotal, append(attrs, AttrRedisAckSkipReason.String(reason))...)
+}
+
 // meterProviderRunnable wraps a MeterProvider as a run.Runnable so it
 // participates in the run group lifecycle and shuts down cleanly (os.Exit
 // skips deferred calls, so defer-based shutdown is unreliable).
@@ -472,6 +540,8 @@ var (
 	AttrOperation              = attribute.Key("operation")
 	AttrPoolConnectionMode     = attribute.Key("connection_mode") // static | dynamic
 	AttrPoolEvent              = attribute.Key("event")
+	AttrRedisAckSkipReason     = attribute.Key("reason")
+	AttrRedisMessageSource     = attribute.Key("source") // cache | autoclaim | xreadgroup
 	AttrResult                 = attribute.Key("result")
 	AttrWarmStart              = attribute.Key("warm_start")
 	AttrWorkerID               = attribute.Key("worker_id")

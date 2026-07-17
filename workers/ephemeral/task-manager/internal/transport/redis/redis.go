@@ -17,6 +17,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/constants"
 	"github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability"
+	redisstreams "github.com/superblocksteam/agent/pkg/redis/streams"
 	"github.com/superblocksteam/agent/pkg/worker"
 	redisutils "github.com/superblocksteam/agent/pkg/worker/transport/redis"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
@@ -37,10 +38,9 @@ type redisTransport struct {
 	initialized bool
 
 	redis          *r.Client
+	groupReader    *redisstreams.GroupReader
 	blockDuration  time.Duration
 	messageCount   int64
-	streamKeys     []string
-	xReadArgs      []string
 	workerId       string
 	consumerGroup  string
 	fleetName      string
@@ -68,7 +68,7 @@ type redisTransport struct {
 	context context.Context
 	cancel  context.CancelFunc
 
-	// Ephemeral mode: read at most one Redis stream message per XReadGroup (messageCount forced to 1 in init).
+	// Ephemeral mode: read at most one Redis stream message per poll (messageCount forced to 1 in init).
 	// Single-use sandboxes are handled by the sandbox pool; the transport does not shut down after execute.
 	ephemeral bool
 
@@ -88,23 +88,33 @@ type redisTransport struct {
 
 var _ run.Runnable = (*redisTransport)(nil)
 
-func generateXReadArgs(streamKeys []string) []string {
-	xReadArgs := make([]string, len(streamKeys)*2)
-	for i := 0; i < len(streamKeys)*2; i++ {
-		if i < len(streamKeys) {
-			xReadArgs[i] = streamKeys[i]
-		} else {
-			xReadArgs[i] = ">"
-		}
-	}
-	return xReadArgs
-}
-
 func (rt *redisTransport) executionPoolMetricAttrs() []attribute.KeyValue {
 	if rt.fleetName == "" {
 		return nil
 	}
 	return []attribute.KeyValue{sandboxmetrics.AttrFleet.String(rt.fleetName)}
+}
+
+func (rt *redisTransport) redisReadMetricAttrs() []attribute.KeyValue {
+	attrs := []attribute.KeyValue{
+		sandboxmetrics.AttrEphemeral.Bool(rt.ephemeral),
+		sandboxmetrics.AttrWorkerID.String(rt.workerId),
+	}
+	if rt.fleetName != "" {
+		attrs = append(attrs, sandboxmetrics.AttrFleet.String(rt.fleetName))
+	}
+	return attrs
+}
+
+func (rt *redisTransport) recordGroupReaderRead(stats redisstreams.ReadStats) {
+	sandboxmetrics.RecordWorkerRedisReadStats(
+		rt.context,
+		stats.FromCache,
+		stats.FromAutoClaim,
+		stats.FromXReadGroup,
+		stats.CacheSize,
+		rt.redisReadMetricAttrs()...,
+	)
 }
 
 // NewRedisTransport creates a new Redis transport
@@ -116,12 +126,10 @@ func NewRedisTransport(options *Options) *redisTransport {
 	executionPool := &atomic.Int64{}
 	executionPool.Store(options.ExecutionPool)
 
-	return &redisTransport{
+	rt := &redisTransport{
 		redis:                options.RedisClient,
 		blockDuration:        options.BlockDuration,
 		messageCount:         options.MessageCount,
-		streamKeys:           options.StreamKeys,
-		xReadArgs:            generateXReadArgs(options.StreamKeys),
 		workerId:             options.WorkerId,
 		consumerGroup:        options.ConsumerGroup,
 		fleetName:            options.FleetName,
@@ -147,6 +155,16 @@ func NewRedisTransport(options *Options) *redisTransport {
 		degradedModeBackoff: options.DegradedModeBackoff,
 		maxDegradedTime:     options.MaxDegradedTime,
 	}
+
+	rt.groupReader = redisstreams.NewGroupReader(options.RedisClient, redisstreams.GroupReaderConfig{
+		Group:            options.ConsumerGroup,
+		Consumer:         options.WorkerId,
+		Streams:          options.StreamKeys,
+		AutoClaimMinIdle: options.AutoClaimMinIdle,
+		OnRead:           rt.recordGroupReaderRead,
+	})
+
+	return rt
 }
 
 func (rt *redisTransport) init() error {
@@ -191,16 +209,16 @@ func (rt *redisTransport) init() error {
 }
 
 func (rt *redisTransport) initStreams() error {
-	for _, stream := range rt.streamKeys {
-		rt.logger.Debug("initializing stream", zap.String("stream", stream))
-		_, err := rt.redis.XGroupCreateMkStream(rt.context, stream, rt.consumerGroup, "0").Result()
-		if err != nil && err.Error() != "BUSYGROUP Consumer Group name already exists" {
-			rt.logger.Error("error while initializing streams", zap.String("stream", stream), zap.Strings("streams", rt.streamKeys), zap.Error(err))
-			return err
-		}
+	if err := rt.groupReader.EnsureConsumerGroups(rt.context); err != nil {
+		rt.logger.Error(
+			"error while initializing streams",
+			zap.Strings("streams", rt.groupReader.Streams()),
+			zap.Error(err),
+		)
+		return err
 	}
 
-	rt.logger.Info("streams initialized", zap.Strings("streams", rt.streamKeys))
+	rt.logger.Info("streams initialized", zap.Strings("streams", rt.groupReader.Streams()))
 	return nil
 }
 
@@ -350,19 +368,25 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 	}
 	count := min(rt.messageCount, remaining)
 
-	messages, err := rt.redis.XReadGroup(rt.context, &r.XReadGroupArgs{
-		Group:    rt.consumerGroup,
-		Consumer: rt.workerId,
-		Streams:  rt.xReadArgs,
-		Count:    count,
+	messages, readStats, err := rt.groupReader.XReadGroupMaxCount(rt.context, redisstreams.XReadGroupMaxCountArgs{
+		MaxCount: count,
 		Block:    rt.blockDuration,
-	}).Result()
+	})
 
-	if err == r.Nil || len(messages) == 0 {
-		return false, nil
+	if err != nil && len(messages) == 0 {
+		return false, fmt.Errorf("error reading messages from transport: %w", err)
 	}
 	if err != nil {
-		return false, fmt.Errorf("error reading messages from redis: %w", err)
+		rt.logger.Error(
+			"partial redis read; returning messages collected before failure",
+			zap.Error(err),
+			zap.Int64("from_cache", readStats.FromCache),
+			zap.Int64("from_autoclaim", readStats.FromAutoClaim),
+			zap.Int64("from_xreadgroup", readStats.FromXReadGroup),
+		)
+	}
+	if len(messages) == 0 {
+		return false, nil
 	}
 
 	handled := false
@@ -393,7 +417,17 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 }
 
 func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
-	rt.redis.XAck(context.Background(), stream, rt.consumerGroup, message.ID)
+	alreadyAcked, err := rt.groupReader.Ack(context.Background(), stream, message.ID)
+	if err != nil {
+		sandboxmetrics.RecordWorkerRedisAckSkipped(context.Background(), sandboxmetrics.RedisAckSkipReasonError, rt.redisReadMetricAttrs()...)
+		rt.logger.Error("error acknowledging message", zap.Error(err), zap.String("stream", stream), zap.String("id", message.ID))
+		return
+	}
+	if alreadyAcked {
+		sandboxmetrics.RecordWorkerRedisAckSkipped(context.Background(), sandboxmetrics.RedisAckSkipReasonAlreadyAcked, rt.redisReadMetricAttrs()...)
+		rt.logger.Info("message already acknowledged, skipping execution", zap.String("stream", stream), zap.String("id", message.ID))
+		return
+	}
 
 	requests, err := redisutils.UnwrapRedisProtoMessages([]r.XMessage{*message}, func() *transportv1.Request { return &transportv1.Request{} }, "data")
 	if err != nil || len(requests) != 1 {

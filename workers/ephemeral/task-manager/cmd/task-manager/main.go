@@ -77,6 +77,7 @@ func init() {
 	pflag.String("transport.redis.servername", "", "The server name used to verify the hostname returned by the TLS handshake.")
 	pflag.Duration("transport.redis.block.duration", 5*time.Second, "The maximum duration to block for a message.")
 	pflag.Int("transport.redis.max.messages", 10, "The maximum number of messages to process at once.")
+	pflag.Duration("transport.redis.autoclaim.min.idle", 2*time.Second, "Minimum idle time before XAUTOCLAIM reclaims pending messages.")
 	pflag.Duration("transport.redis.degraded.mode.backoff", 1*time.Second, "The backoff duration between failed plugin availability checks.")
 	pflag.Duration("transport.redis.degraded.mode.max.time", 10*time.Minute, "The maximum time the service will stay in degraded mode before shutting down. Also used for replacing a TRANSIENT-unhealthy sandbox in the pool after this duration (dynamic sandbox pool). Zero disables timed sandbox replacement.")
 
@@ -874,6 +875,7 @@ func main() {
 			redis.WithConsumerGroup(viper.GetString("worker.consumer.group")),
 			redis.WithBlockDuration(viper.GetDuration("transport.redis.block.duration")),
 			redis.WithMessageCount(viper.GetInt64("transport.redis.max.messages")),
+			redis.WithAutoClaimMinIdle(viper.GetDuration("transport.redis.autoclaim.min.idle")),
 			redis.WithPluginExecutor(pluginExec),
 			redis.WithStreamKeys(streamKeys),
 			redis.WithWorkerId(id),

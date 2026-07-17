@@ -144,6 +144,7 @@ func (m *K8sJobManager) CreateSandbox(ctx context.Context, sandboxId string) (*s
 			sandboxmetrics.AttrEphemeral.Bool(m.ephemeral),
 			sandboxmetrics.AttrResult.String("failed"),
 		)
+		m.logger.Error("failed to create sandbox job", zap.Error(err), zap.String("job", jobName), zap.String("sandbox_id", sandboxId), zap.String("image", m.image), zap.Bool("ephemeral", m.ephemeral))
 		return nil, fmt.Errorf("failed to create sandbox job: %w", err)
 	}
 
