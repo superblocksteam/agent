@@ -667,8 +667,21 @@ func TestRootModuleHCLReexportsPhysicalModuleOutputsWithoutApplicationCredential
 	require.Contains(t, hcl, `output "capacity_max" {
   value = try(module.database.capacity_max, null)
 }`)
+	// Physical modules expose master credentials as credential_refs (and
+	// optionally master_* aliases). The worker only reads root outputs, so the
+	// generated root must re-export credential_refs and fall back to
+	// credential_refs.password when the module omits master_* outputs.
+	require.Contains(t, hcl, `output "credential_refs" {
+  value     = try(module.database.credential_refs, {})
+  sensitive = true
+}`)
 	require.Contains(t, hcl, `output "master_user_secret_arn" {
-  value = try(module.database.master_user_secret_arn, null)
+  value     = try(module.database.master_user_secret_arn, try(module.database.credential_refs.password.ref, null))
+  sensitive = true
+}`)
+	require.Contains(t, hcl, `output "master_credential_ref" {
+  value     = try(module.database.master_credential_ref, try(module.database.credential_refs.password, null))
+  sensitive = true
 }`)
 	require.Contains(t, hcl, `output "runtime_credential_refs" {
   value     = {}

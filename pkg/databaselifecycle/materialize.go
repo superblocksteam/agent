@@ -755,11 +755,21 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 		// generated root compatible with both contracts.
 		builder.WriteString("  value = try(module.database.capacity_max, null)\n")
 		builder.WriteString("}\n\n")
+		// Physical modules (RDS managed instance / Aurora) expose the master
+		// secret via credential_refs. Older roots also looked for master_*
+		// aliases that those modules never emitted, so fall back to
+		// credential_refs.password so the worker can register the instance.
+		builder.WriteString("output \"credential_refs\" {\n")
+		builder.WriteString("  value     = try(module.database.credential_refs, {})\n")
+		builder.WriteString("  sensitive = true\n")
+		builder.WriteString("}\n\n")
 		builder.WriteString("output \"master_user_secret_arn\" {\n")
-		builder.WriteString("  value = try(module.database.master_user_secret_arn, null)\n")
+		builder.WriteString("  value     = try(module.database.master_user_secret_arn, try(module.database.credential_refs.password.ref, null))\n")
+		builder.WriteString("  sensitive = true\n")
 		builder.WriteString("}\n\n")
 		builder.WriteString("output \"master_credential_ref\" {\n")
-		builder.WriteString("  value = try(module.database.master_credential_ref, null)\n")
+		builder.WriteString("  value     = try(module.database.master_credential_ref, try(module.database.credential_refs.password, null))\n")
+		builder.WriteString("  sensitive = true\n")
 		builder.WriteString("}\n")
 	}
 	return builder.String()
