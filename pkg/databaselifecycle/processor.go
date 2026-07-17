@@ -56,9 +56,13 @@ func ProcessDispatch(
 	job Job,
 ) (TerminalCallbackResult, error) {
 	if dispatch.Operation == operationMigrateSchema {
+		connectionMetadata, err := bindTrustedIAMDispatchIdentity(dispatch, dispatch.ConnectionMetadata)
+		if err != nil {
+			return reportTerminalCallback(ctx, reporter, FailedCallbackFromError(dispatch, err))
+		}
 		callback := TerminalCallback{
 			BindingKey:              dispatch.BindingKey,
-			ConnectionMetadata:      dispatch.ConnectionMetadata,
+			ConnectionMetadata:      connectionMetadata,
 			RuntimeCredentialRefs:   dispatch.RuntimeCredentialRefs,
 			MigrationCredentialRefs: dispatch.MigrationCredentialRefs,
 			LifecycleState:          "ready",

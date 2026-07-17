@@ -18,8 +18,15 @@ var testSharedModeSSLOpts = ProviderSSLOptions{
 	Mode:               "require",
 	AllowedRefPrefixes: []string{"arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!"},
 }
+var testIAMSSLOpts = ProviderSSLOptions{
+	Mode:               sslModeVerifyFull,
+	RootCert:           "/etc/ssl/certs/rds-global-bundle.pem",
+	AllowedRefPrefixes: testSharedModeSSLOpts.AllowedRefPrefixes,
+}
 
 const (
+	testBundledAuroraModuleSource           = "/opt/superblocks/terraform-superblocks-databases/modules/aws-aurora-managed-cluster"
+	testBundledPostgresModuleSource         = "file:///opt/superblocks/terraform-superblocks-databases//modules/postgres-managed-database"
 	testNativeDBModuleRef                   = "v0.2.0"
 	testAWSRDSManagedInstanceModuleSource   = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=" + testNativeDBModuleRef
 	testPostgresManagedDatabaseModuleSource = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=" + testNativeDBModuleRef
@@ -237,7 +244,7 @@ func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsForDeprovision
 		BackendFile: filepath.Join(root, "app-dev-orders", "backend.tfbackend"),
 		VarsFile:    filepath.Join(root, "app-dev-orders", "terraform.tfvars.json"),
 	}
-	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+	resolved, err := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
 		Module: TerraformModule{
 			Source: "git::https://github.com/superblocksteam/terraform.git//modules/native-database/postgres-managed-database?ref=feature-branch",
 			Inputs: map[string]any{
@@ -252,8 +259,9 @@ func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsForDeprovision
 			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
 		},
 	})
+	require.NoError(t, err)
 
-	err := MaterializeResolvedJob(job, DispatchPayload{
+	err = MaterializeResolvedJob(job, DispatchPayload{
 		BindingKey:      "org:app:edit:dev~dev:orders~Orders%20DB:postgres",
 		DesiredSpec:     DatabaseRequirement{LogicalName: "Orders DB", Engine: "postgres"},
 		DesiredSpecHash: "hash-1",
@@ -284,7 +292,7 @@ func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsFromReservedIn
 		BackendFile: filepath.Join(root, "app-dev-orders", "backend.tfbackend"),
 		VarsFile:    filepath.Join(root, "app-dev-orders", "terraform.tfvars.json"),
 	}
-	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+	resolved, err := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
 		Module: TerraformModule{
 			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
@@ -299,8 +307,9 @@ func TestMaterializeResolvedJobDerivesSharedPhysicalDatabaseInputsFromReservedIn
 			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
 		},
 	})
+	require.NoError(t, err)
 
-	err := MaterializeResolvedJob(job, DispatchPayload{
+	err = MaterializeResolvedJob(job, DispatchPayload{
 		BindingKey:      "org:app:edit:dev~dev:orders~Orders%20DB:postgres",
 		DesiredSpec:     DatabaseRequirement{LogicalName: "Orders DB", Engine: "postgres"},
 		DesiredSpecHash: "hash-1",
@@ -373,7 +382,7 @@ func TestMaterializeResolvedJobRejectsInvalidCredentialSecretPrefixBeforeSharedM
 		BackendFile: filepath.Join(root, "app-dev-orders", "backend.tfbackend"),
 		VarsFile:    filepath.Join(root, "app-dev-orders", "terraform.tfvars.json"),
 	}
-	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+	resolved, err := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
 		Module: TerraformModule{
 			Source: testPostgresManagedDatabaseModuleSource,
 			Inputs: map[string]any{
@@ -388,8 +397,9 @@ func TestMaterializeResolvedJobRejectsInvalidCredentialSecretPrefixBeforeSharedM
 			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!db-bea6cf0e-L50noE",
 		},
 	})
+	require.NoError(t, err)
 
-	err := MaterializeResolvedJob(job, DispatchPayload{
+	err = MaterializeResolvedJob(job, DispatchPayload{
 		BindingKey:      "app:dev:orders",
 		DesiredSpec:     DatabaseRequirement{LogicalName: "Orders DB", Engine: "postgres"},
 		DesiredSpecHash: "hash-1",
@@ -401,6 +411,351 @@ func TestMaterializeResolvedJobRejectsInvalidCredentialSecretPrefixBeforeSharedM
 	}, resolved, testSharedModeSSLOpts)
 
 	require.ErrorContains(t, err, `credential_secret_prefix must be a non-empty string`)
+}
+
+func TestMaterializeResolvedJobUsesPasswordlessIAMAdministration(t *testing.T) {
+	root := tempRoot(t)
+	job := Job{
+		BindingKey:  "binding-456",
+		WorkingDir:  filepath.Join(root, "iam-database"),
+		MainFile:    filepath.Join(root, "iam-database", "main.tf"),
+		BackendFile: filepath.Join(root, "iam-database", "backend.tfbackend"),
+		VarsFile:    filepath.Join(root, "iam-database", "terraform.tfvars.json"),
+		Runtime:     &JobRuntime{},
+	}
+	resolved, err := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+		Module: TerraformModule{
+			Source: testPostgresManagedDatabaseModuleSource,
+			Inputs: map[string]any{
+				"application_id":                "untrusted-application",
+				"auth_mode":                     iamAuthMode,
+				"binding_id":                    "untrusted-binding",
+				"credential_resolver":           map[string]any{"runtime": "aws_secrets_manager"},
+				"credential_secret_prefix":      "app-secrets",
+				"connector_role_arn":            "arn:aws:iam::361919038798:role/operator-controlled",
+				"database_name":                 "untrusted_database",
+				"database_owner_role_name":      "untrusted_owner",
+				"deployment_token":              "012345abcdef",
+				"migration_credential_ref":      map[string]any{"resolver": "aws_secrets_manager", "ref": "arn:aws:secretsmanager:us-east-1:361919038798:secret:app-migration"},
+				"migration_password_wo":         "app-password",
+				"migration_password_wo_version": "1",
+				"postgres_admin_password":       "admin-password",
+				"postgres_admin_username":       "cluster-master",
+				"runtime_credential_ref":        map[string]any{"resolver": "aws_secrets_manager", "ref": "arn:aws:secretsmanager:us-east-1:361919038798:secret:app-runtime"},
+				"runtime_password_wo":           "app-password",
+				"runtime_password_wo_version":   "1",
+				"runtime_role_name":             "untrusted_runtime",
+			},
+		},
+		Backend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "iam.tfstate", "region": "us-west-2"},
+	}, PhysicalDatabaseInstance{
+		Endpoint: "stale-endpoint.example.com:1111",
+		MasterCredentialRef: map[string]any{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!cluster",
+		},
+		Metadata: map[string]any{
+			"aws_account_id":      "361919038798",
+			"cluster_resource_id": "cluster-ABC123DEF456EXAMPLE",
+			"connector_role_arn":  "arn:aws:iam::361919038798:role/metadata-must-not-win",
+			"host":                "pool.cluster-abc.us-east-1.rds.amazonaws.com",
+			"port":                5432,
+			"region":              "us-east-1",
+		},
+	})
+	require.NoError(t, err)
+
+	err = MaterializeResolvedJob(job, DispatchPayload{
+		ApplicationID:   "app-123",
+		BindingID:       "binding-456",
+		BindingKey:      "binding-key",
+		DesiredSpec:     DatabaseRequirement{LogicalName: "Orders DB", Engine: "postgres"},
+		DesiredSpecHash: "hash-1",
+		Environment:     "deployed",
+		Operation:       "ensure_database",
+		Profile:         "production",
+		RequestID:       "request-1",
+		ResourceKey:     "resource-1",
+	}, resolved, testIAMSSLOpts)
+
+	require.NoError(t, err)
+	require.NotNil(t, job.Runtime.MasterCredentialRef)
+	require.Equal(t, "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!cluster", job.Runtime.MasterCredentialRef.Ref)
+	require.Equal(t, &PostgresAdminConnection{
+		Database:       "postgres",
+		Host:           "pool.cluster-abc.us-east-1.rds.amazonaws.com",
+		Port:           5432,
+		SSLMode:        sslModeVerifyFull,
+		SSLRootCert:    "/etc/ssl/certs/rds-global-bundle.pem",
+		TargetDatabase: "sbndb_012345abcdef_27142541a26fd86ba68a5073",
+	}, job.Runtime.PostgresAdminConnection)
+
+	var vars map[string]any
+	require.NoError(t, readJSONFile(job.VarsFile, &vars))
+	require.Equal(t, "app-123", vars["application_id"])
+	require.Equal(t, "361919038798", vars["aws_account_id"])
+	require.Equal(t, "binding-456", vars["binding_id"])
+	require.Equal(t, "cluster-ABC123DEF456EXAMPLE", vars["cluster_resource_id"])
+	require.Equal(t, "arn:aws:iam::361919038798:role/operator-controlled", vars["connector_role_arn"])
+	require.Equal(t, "sbndb_012345abcdef_27142541a26fd86ba68a5073", vars["database_name"])
+	require.Equal(t, "sbndb_012345abcdef_27142541a26fd86ba68a5073_owner", vars["database_owner_role_name"])
+	require.Equal(t, "postgres", vars["postgres_admin_database"])
+	require.Equal(t, sslModeVerifyFull, vars["postgres_sslmode"])
+	require.Equal(t, "/etc/ssl/certs/rds-global-bundle.pem", vars["postgres_sslrootcert"])
+	require.Equal(t, "us-east-1", vars["region"])
+	require.Equal(t, "sbndb_012345abcdef_7b0aaa00b2db00720fa2d801_runtime", vars["runtime_role_name"])
+	require.NotContains(t, vars, credentialSecretPrefixInput)
+	require.NotContains(t, vars, "migration_credential_ref")
+	require.NotContains(t, vars, "runtime_password_wo")
+	require.NotContains(t, vars, "migration_password_wo")
+	require.NotContains(t, vars, "postgres_admin_password")
+	require.NotContains(t, vars, "postgres_admin_username")
+	require.NotContains(t, vars, "runtime_credential_ref")
+
+	varsFile, err := os.ReadFile(job.VarsFile)
+	require.NoError(t, err)
+	require.NotContains(t, string(varsFile), "admin-password")
+	require.NotContains(t, string(varsFile), "app-password")
+	require.NotContains(t, string(varsFile), "app-migration")
+	require.NotContains(t, string(varsFile), "app-runtime")
+
+	mainFile, err := os.ReadFile(job.MainFile)
+	require.NoError(t, err)
+	main := string(mainFile)
+	require.Contains(t, main, `source = "hashicorp/aws"`)
+	require.Contains(t, main, `provider "aws" {`)
+	require.NotContains(t, main, `provider "postgresql" {`)
+	require.NotContains(t, main, `providers = {`)
+	require.NotContains(t, main, `data "aws_secretsmanager_secret_version"`)
+	require.NotContains(t, main, `resource "random_password"`)
+	require.NotContains(t, main, `resource "aws_secretsmanager_secret"`)
+	require.NotContains(t, main, `password  =`)
+	require.NotContains(t, main, `username  =`)
+	require.NotContains(t, main, `postgres_admin_credential_ref = var.postgres_admin_credential_ref`)
+	require.NotContains(t, main, `deployment_token = var.deployment_token`)
+	require.NotContains(t, main, "admin-password")
+	require.NotContains(t, main, "app-password")
+}
+
+func TestMaterializeResolvedJobRejectsIncompleteIAMAdministrationConnection(t *testing.T) {
+	tests := []struct {
+		name      string
+		endpoint  string
+		sslOpts   ProviderSSLOptions
+		wantError string
+	}{
+		{
+			name:      "missing host",
+			endpoint:  "",
+			sslOpts:   testIAMSSLOpts,
+			wantError: "metadata.host",
+		},
+		{
+			name:     "missing root cert",
+			endpoint: "pool.cluster-abc.us-east-1.rds.amazonaws.com:5432",
+			sslOpts: ProviderSSLOptions{
+				Mode:               sslModeVerifyFull,
+				AllowedRefPrefixes: testIAMSSLOpts.AllowedRefPrefixes,
+			},
+			wantError: "SSLRootCert",
+		},
+		{
+			name:     "non-verifying TLS",
+			endpoint: "pool.cluster-abc.us-east-1.rds.amazonaws.com:5432",
+			sslOpts: ProviderSSLOptions{
+				Mode:               sslModeRequire,
+				RootCert:           "/etc/ssl/certs/rds-global-bundle.pem",
+				AllowedRefPrefixes: testIAMSSLOpts.AllowedRefPrefixes,
+			},
+			wantError: "verify-full",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			host, _, _ := splitPhysicalDatabaseInstanceEndpoint(test.endpoint)
+			root := tempRoot(t)
+			job := Job{
+				WorkingDir:  filepath.Join(root, "iam-database"),
+				MainFile:    filepath.Join(root, "iam-database", "main.tf"),
+				BackendFile: filepath.Join(root, "iam-database", "backend.tfbackend"),
+				VarsFile:    filepath.Join(root, "iam-database", "terraform.tfvars.json"),
+				Runtime:     &JobRuntime{},
+			}
+			resolved, resolveErr := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+				Module: TerraformModule{
+					Source: testPostgresManagedDatabaseModuleSource,
+					Inputs: map[string]any{
+						"auth_mode":        iamAuthMode,
+						"deployment_token": "012345abcdef",
+					},
+				},
+				Backend: map[string]any{"stateBackend": "s3", "bucket": "state-bucket", "key": "iam.tfstate", "region": "us-west-2"},
+			}, PhysicalDatabaseInstance{
+				Endpoint: test.endpoint,
+				MasterCredentialRef: map[string]any{
+					"resolver": "aws_secrets_manager",
+					"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!cluster",
+				},
+				Metadata: map[string]any{
+					"aws_account_id":      "361919038798",
+					"cluster_resource_id": "cluster-ABC123DEF456EXAMPLE",
+					"host":                host,
+					"port":                5432,
+					"region":              "us-east-1",
+				},
+			})
+			if test.endpoint == "" {
+				require.ErrorContains(t, resolveErr, test.wantError)
+				return
+			}
+			require.NoError(t, resolveErr)
+
+			err := MaterializeResolvedJob(job, DispatchPayload{
+				ApplicationID:   "app-123",
+				BindingID:       "binding-456",
+				BindingKey:      "binding-key",
+				DesiredSpecHash: "hash-1",
+				Operation:       "ensure_database",
+			}, resolved, test.sslOpts)
+
+			require.ErrorContains(t, err, test.wantError)
+			require.NoFileExists(t, job.MainFile)
+			require.NoFileExists(t, job.VarsFile)
+		})
+	}
+}
+
+func TestMaterializeResolvedJobIAMModeDoesNotRequireCredentialSecretPrefix(t *testing.T) {
+	inputs := map[string]any{
+		"auth_mode":          iamAuthMode,
+		deploymentTokenInput: "012345abcdef",
+		postgresAdminCredentialInput: map[string]any{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!cluster",
+		},
+	}
+	require.NoError(t, deriveSharedPhysicalDatabaseInputs(TerraformModule{
+		Source: testPostgresManagedDatabaseModuleSource,
+		Inputs: inputs,
+	}, DispatchPayload{
+		ApplicationID: "app-123",
+		BindingID:     "binding-456",
+		Operation:     "ensure_database",
+	}))
+	require.NotContains(t, inputs, credentialSecretPrefixInput)
+}
+
+func TestResolveWithPhysicalDatabaseInstanceRejectsMissingIAMMetadata(t *testing.T) {
+	_, err := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+		Module: TerraformModule{Inputs: map[string]any{"auth_mode": iamAuthMode}},
+	}, PhysicalDatabaseInstance{
+		Endpoint: "legacy.example.com:5432",
+		MasterCredentialRef: map[string]any{
+			"resolver": "aws_secrets_manager",
+			"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!cluster",
+		},
+	})
+
+	require.ErrorContains(t, err, "physical database instance metadata is required")
+}
+
+func TestRootModuleHCLReexportsPhysicalModuleOutputsWithoutApplicationCredentialOutputs(t *testing.T) {
+	hcl := rootModuleHCL(TerraformModule{
+		Source: "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-aurora-managed-cluster?ref=v0.1.0",
+	}, nil, map[string]any{}, ProviderSSLOptions{})
+
+	require.Contains(t, hcl, `output "capacity_max" {
+  value = try(module.database.capacity_max, null)
+}`)
+	require.Contains(t, hcl, `output "master_user_secret_arn" {
+  value = try(module.database.master_user_secret_arn, null)
+}`)
+	require.Contains(t, hcl, `output "runtime_credential_refs" {
+  value     = {}
+  sensitive = true
+}`)
+}
+
+func TestRootModuleHCLPreservesLogicalCredentialsWhenGitRefContainsPhysicalModuleName(t *testing.T) {
+	hcl := rootModuleHCL(TerraformModule{
+		Source: "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=fix-aurora-migration",
+	}, nil, map[string]any{}, ProviderSSLOptions{})
+
+	require.Contains(t, hcl, `output "runtime_credential_refs" {
+  value     = try(module.database.runtime_credential_refs, module.database.credential_refs)
+  sensitive = true
+}`)
+	require.NotContains(t, hcl, `output "capacity_max"`)
+}
+
+func TestMaterializeJobPassesNestedAuroraDeploymentInputUnchanged(t *testing.T) {
+	// The Aurora physical module's capacity contract is a tagged union
+	// (`deployment.provisioned` xor `deployment.serverless_v2`) supplied by
+	// helm/agent's physicalModuleInputs. Every Terraform module input is
+	// declared `type = any` in the generated root and copied verbatim into
+	// terraform.tfvars.json (materialize.go), so no orchestrator reshaping
+	// is expected — this locks that pass-through contract for both variants.
+	for _, test := range []struct {
+		name       string
+		deployment map[string]any
+	}{
+		{
+			name: "serverless_v2",
+			deployment: map[string]any{
+				"serverless_v2": map[string]any{
+					"auto_pause_seconds": float64(300),
+					"instance_count":     float64(1),
+					"max_acu":            float64(16),
+					"min_acu":            float64(0),
+				},
+			},
+		},
+		{
+			name: "provisioned",
+			deployment: map[string]any{
+				"provisioned": map[string]any{
+					"instance_class": "db.r6g.large",
+					"instance_count": float64(2),
+				},
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			root := tempRoot(t)
+			job := Job{
+				BindingKey:  "physical-database-instance:deployed:production:us-east-1:postgres:aurora",
+				WorkingDir:  filepath.Join(root, "aurora-"+test.name),
+				MainFile:    filepath.Join(root, "aurora-"+test.name, "main.tf"),
+				BackendFile: filepath.Join(root, "aurora-"+test.name, "backend.tfbackend"),
+				VarsFile:    filepath.Join(root, "aurora-"+test.name, "terraform.tfvars.json"),
+			}
+
+			require.NoError(t, MaterializeJob(job, DispatchPayload{
+				BindingKey:      job.BindingKey,
+				DesiredSpecHash: "hash-physical",
+				Environment:     "deployed",
+				Operation:       operationEnsurePhysicalDatabaseInstance,
+				Profile:         "production",
+				RequestID:       "request-physical",
+				ResourceKey:     "physical/aurora-" + test.name,
+				TerraformBackend: map[string]any{
+					"stateBackend": "s3", "bucket": "state-bucket", "key": "{{resource_key}}.tfstate", "region": "us-east-1",
+				},
+				TerraformModule: TerraformModule{
+					Source: testBundledAuroraModuleSource,
+					Inputs: map[string]any{
+						"deployment": test.deployment,
+						"subnet_ids": []any{"subnet-a", "subnet-b"},
+						"vpc_id":     "vpc-example",
+					},
+				},
+			}, testSSLOpts))
+
+			var vars map[string]any
+			require.NoError(t, readJSONFile(job.VarsFile, &vars))
+			require.Equal(t, test.deployment, vars["deployment"])
+		})
+	}
 }
 
 func TestMaterializeJobOmitsProviderBlockForNonCloudBackends(t *testing.T) {
@@ -1199,6 +1554,11 @@ func TestMaterializeJobEmitsConfiguredSSLModeForSharedModeModule(t *testing.T) {
 	require.Contains(t, main, `  sslrootcert = "/etc/rds/global-bundle.pem"`)
 	// require posture must NOT leak in via a stale hardcoded literal.
 	require.NotContains(t, main, `  sslmode   = "require"`)
+
+	var vars map[string]any
+	require.NoError(t, readJSONFile(job.VarsFile, &vars))
+	require.Equal(t, "verify-full", vars["postgres_sslmode"])
+	require.Equal(t, "/etc/rds/global-bundle.pem", vars["postgres_sslrootcert"])
 }
 
 func TestMaterializeJobOmitsSSLRootCertWhenUnset(t *testing.T) {
@@ -1317,6 +1677,17 @@ func TestValidateTerraformModuleSourceRejectsEmptyAllowlist(t *testing.T) {
 	require.ErrorAs(t, err, &lifecycleErr)
 	require.Equal(t, ErrorCodeUnsupportedShape, lifecycleErr.Code)
 	require.ErrorContains(t, lifecycleErr, "no Terraform module sources are allowed")
+}
+
+func TestValidateTerraformModuleSourceAcceptsOnlyExactBundledModulePaths(t *testing.T) {
+	allowed := []string{testBundledAuroraModuleSource, testBundledPostgresModuleSource}
+
+	require.NoError(t, ValidateTerraformModuleSource(TerraformModule{Source: testBundledAuroraModuleSource}, allowed))
+	require.NoError(t, ValidateTerraformModuleSource(TerraformModule{Source: testBundledPostgresModuleSource}, allowed))
+	require.ErrorContains(t,
+		ValidateTerraformModuleSource(TerraformModule{Source: testBundledPostgresModuleSource + "/../postgres-managed-database-core"}, allowed),
+		"unsupported Terraform module source",
+	)
 }
 
 func readJSONFile(path string, target any) error {

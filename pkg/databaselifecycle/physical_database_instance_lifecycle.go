@@ -26,6 +26,11 @@ type PhysicalDatabaseInstanceSelector struct {
 	CurrentState                 string
 	PhysicalDatabaseInstanceID   string
 	PhysicalTerraformResourceKey string
+	// RequireIAMPhysicalMetadata skips listed pool instances that lack the
+	// trusted IAM physical inputs required by ResolveWithPhysicalDatabaseInstance.
+	// Without this, the first capacity-available legacy row is reserved and
+	// materialization fails before later IAM-ready instances or provision-on-exhaustion.
+	RequireIAMPhysicalMetadata bool
 }
 
 type PhysicalDatabaseInstance struct {
@@ -35,6 +40,7 @@ type PhysicalDatabaseInstance struct {
 	Engine               string
 	ProvisionResourceKey string
 	Endpoint             string
+	Metadata             map[string]any
 	MasterCredentialRef  map[string]any
 	CapacityMax          int
 	CapacityUsed         int
@@ -104,6 +110,11 @@ func (l *PhysicalDatabaseInstanceLifecycle) reserveForEnsure(ctx context.Context
 	}
 	var reserveErrs []error
 	for _, instance := range instances {
+		if selector.RequireIAMPhysicalMetadata {
+			if _, err := trustedIAMPhysicalDatabaseInputs(instance.Metadata); err != nil {
+				continue
+			}
+		}
 		if err := l.client.ReservePhysicalDatabaseInstance(ctx, instance.ID); err == nil {
 			if progressErr := l.reportPhysicalDatabaseInstanceProgress(ctx, selector, instance, "physical_db_reserved"); progressErr != nil {
 				if releaseErr := l.client.ReleasePhysicalDatabaseInstance(ctx, instance.ID); releaseErr != nil {
@@ -203,6 +214,9 @@ func (l *PhysicalDatabaseInstanceLifecycle) provisionRegisterAndReserve(ctx cont
 	}
 	if registered.ProvisionResourceKey == "" {
 		registered.ProvisionResourceKey = instance.ProvisionResourceKey
+	}
+	if registered.Metadata == nil {
+		registered.Metadata = instance.Metadata
 	}
 	if progressErr := l.reportPhysicalDatabaseInstanceProgress(ctx, selector, registered, "physical_db_registered"); progressErr != nil {
 		// The control plane registration is keyed by the physical instance ID

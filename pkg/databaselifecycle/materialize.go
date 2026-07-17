@@ -19,9 +19,12 @@ import (
 
 const (
 	credentialSecretPrefixInput  = "credential_secret_prefix"
+	deploymentTokenInput         = "deployment_token"
 	defaultLocalModuleRoot       = "/opt/superblocks/terraform-modules"
 	postgresAdminCredentialInput = "postgres_admin_credential_ref"
 )
+
+var deploymentTokenPattern = regexp.MustCompile(`^[0-9a-f]{12}$`)
 
 var generatedSharedModeSecretInputs = map[string]struct{}{
 	"runtime_credential_ref":        {},
@@ -35,15 +38,24 @@ var generatedSharedModeSecretInputs = map[string]struct{}{
 	postgresAdminCredentialInput:    {},
 }
 
-// ProviderSSLOptions configures the TLS posture of the shared-mode
-// `provider "postgresql"` block emitted by rootModuleHCL. The values
-// match DSNOptions.SSLMode / DSNOptions.SSLRootCert that the migration
-// runner uses, so both code paths (terraform-apply and migration-run)
-// connect to the pool master with the same posture and the same root
-// CA pinning. Mode is required; an empty Mode is a misconfiguration
-// (the helm template hard-fails when the operator did not pick one).
-// RootCert is required only for verify-ca / verify-full, mirroring
-// validateSSLOptions in dsn.go.
+var iamOmittedSecretInputs = map[string]struct{}{
+	"credential_resolver":           {},
+	credentialSecretPrefixInput:     {},
+	"migration_credential_ref":      {},
+	"migration_password_wo":         {},
+	"migration_password_wo_version": {},
+	"postgres_admin_password":       {},
+	"postgres_admin_username":       {},
+	"runtime_credential_ref":        {},
+	"runtime_password_wo":           {},
+	"runtime_password_wo_version":   {},
+}
+
+// ProviderSSLOptions configures the shared-mode PostgreSQL TLS posture.
+// Password mode renders these values in the root provider; IAM mode
+// persists only these non-secret values and injects their libpq
+// equivalents into plan/apply/destroy. The values match the migration
+// runner so both paths use the same CA pinning. IAM requires verify-full.
 type ProviderSSLOptions struct {
 	Mode               string
 	RootCert           string
@@ -53,7 +65,9 @@ type ProviderSSLOptions struct {
 func MaterializeResolvedJob(job Job, dispatch DispatchPayload, resolved ResolvedLifecycleConfig, sslOpts ProviderSSLOptions) error {
 	module := resolved.Module
 	module.Inputs = copyTerraformModuleInputs(module.Inputs)
-	deriveSharedPhysicalDatabaseInputs(module, dispatch)
+	if err := deriveSharedPhysicalDatabaseInputs(module, dispatch); err != nil {
+		return err
+	}
 	if len(resolved.CredentialResolver) > 0 {
 		if _, exists := module.Inputs["credential_resolver"]; exists {
 			return fmt.Errorf("database lifecycle Terraform module input %q conflicts with local lifecycle credential resolver", "credential_resolver")
@@ -68,8 +82,19 @@ func MaterializeResolvedJob(job Job, dispatch DispatchPayload, resolved Resolved
 	return nil
 }
 
-func ResolveWithPhysicalDatabaseInstance(resolved ResolvedLifecycleConfig, instance PhysicalDatabaseInstance) ResolvedLifecycleConfig {
+func ResolveWithPhysicalDatabaseInstance(resolved ResolvedLifecycleConfig, instance PhysicalDatabaseInstance) (ResolvedLifecycleConfig, error) {
 	resolved.Module.Inputs = copyTerraformModuleInputs(resolved.Module.Inputs)
+	if isIAMAuthModule(resolved.Module.Inputs) {
+		trustedInputs, err := trustedIAMPhysicalDatabaseInputs(instance.Metadata)
+		if err != nil {
+			return ResolvedLifecycleConfig{}, err
+		}
+		for key, value := range trustedInputs {
+			resolved.Module.Inputs[key] = value
+		}
+		resolved.Module.Inputs[postgresAdminCredentialInput] = instance.MasterCredentialRef
+		return resolved, nil
+	}
 	host, port, hasPort := splitPhysicalDatabaseInstanceEndpoint(instance.Endpoint)
 	resolved.Module.Inputs["host"] = host
 	if hasPort {
@@ -78,7 +103,43 @@ func ResolveWithPhysicalDatabaseInstance(resolved ResolvedLifecycleConfig, insta
 		setTerraformModuleInputDefault(resolved.Module.Inputs, "port", 5432)
 	}
 	resolved.Module.Inputs[postgresAdminCredentialInput] = instance.MasterCredentialRef
-	return resolved
+	return resolved, nil
+}
+
+func trustedIAMPhysicalDatabaseInputs(metadata map[string]any) (map[string]any, error) {
+	if metadata == nil {
+		return nil, unsupportedSharedModeCredentialRef("physical database instance metadata is required in aws_iam_role mode")
+	}
+	host, ok := stringMapValue(metadata, "host")
+	if !ok {
+		return nil, unsupportedSharedModeCredentialRef("physical database instance metadata.host is required in aws_iam_role mode")
+	}
+	port, ok := descriptorInteger(metadata["port"])
+	if !ok || port < 1 || port > 65535 {
+		return nil, unsupportedSharedModeCredentialRef("physical database instance metadata.port must be an integer between 1 and 65535 in aws_iam_role mode")
+	}
+	accountID, ok := stringMapValue(metadata, "aws_account_id")
+	if !ok || !awsAccountIDPattern.MatchString(accountID) {
+		return nil, unsupportedSharedModeCredentialRef("physical database instance metadata.aws_account_id must contain exactly 12 digits in aws_iam_role mode")
+	}
+	clusterResourceID, ok := stringMapValue(metadata, "cluster_resource_id")
+	if !ok || !clusterResourceIDPattern.MatchString(clusterResourceID) {
+		return nil, unsupportedSharedModeCredentialRef("physical database instance metadata.cluster_resource_id is invalid in aws_iam_role mode")
+	}
+	region, ok := stringMapValue(metadata, "region")
+	if !ok || !awsRegionPattern.MatchString(region) {
+		return nil, unsupportedSharedModeCredentialRef("physical database instance metadata.region is invalid in aws_iam_role mode")
+	}
+	if err := validateRDSHostname(host, region); err != nil {
+		return nil, unsupportedSharedModeCredentialRef(strings.Replace(err.Error(), "connection_metadata.", "physical database instance metadata.", 1))
+	}
+	return map[string]any{
+		"aws_account_id":      accountID,
+		"cluster_resource_id": clusterResourceID,
+		"host":                host,
+		"port":                port,
+		"region":              region,
+	}, nil
 }
 
 func splitPhysicalDatabaseInstanceEndpoint(endpoint string) (string, int, bool) {
@@ -93,18 +154,21 @@ func splitPhysicalDatabaseInstanceEndpoint(endpoint string) (string, int, bool) 
 	return host, port, true
 }
 
-func deriveSharedPhysicalDatabaseInputs(module TerraformModule, dispatch DispatchPayload) {
+func deriveSharedPhysicalDatabaseInputs(module TerraformModule, dispatch DispatchPayload) error {
 	// Destroy must materialize the same derived Postgres names/roles as ensure
 	// so `tofu destroy` can plan against remote state for shared-pool bindings.
 	if (dispatch.Operation != "ensure_database" && dispatch.Operation != operationRetireDatabase) ||
 		!isPostgresManagedDatabaseSource(module.Source) {
-		return
+		return nil
 	}
 	if _, ok := module.Inputs[postgresAdminCredentialInput]; !ok {
-		return
+		return nil
+	}
+	if isIAMAuthModule(module.Inputs) {
+		return deriveIAMSharedPhysicalDatabaseInputs(module.Inputs, dispatch)
 	}
 	if _, ok := module.Inputs[credentialSecretPrefixInput]; !ok {
-		return
+		return nil
 	}
 	stem := sharedPhysicalDatabaseIdentifierStem(dispatch)
 	setTerraformModuleInputDefault(module.Inputs, "database_name", stem)
@@ -112,6 +176,43 @@ func deriveSharedPhysicalDatabaseInputs(module TerraformModule, dispatch Dispatc
 	if dispatch.DesiredSpec.LogicalName != "" {
 		setTerraformModuleInputDefault(module.Inputs, "logical_name", safePostgresIdentifier(dispatch.DesiredSpec.LogicalName, stem))
 	}
+	return nil
+}
+
+func deriveIAMSharedPhysicalDatabaseInputs(inputs map[string]any, dispatch DispatchPayload) error {
+	deploymentToken, ok := inputs[deploymentTokenInput].(string)
+	if !ok || !deploymentTokenPattern.MatchString(deploymentToken) {
+		return unsupportedSharedModeCredentialRef("deployment_token must be exactly 12 lowercase hexadecimal characters in aws_iam_role mode")
+	}
+	if dispatch.ApplicationID == "" {
+		return unsupportedSharedModeCredentialRef("applicationId is required in aws_iam_role mode")
+	}
+	if dispatch.BindingID == "" {
+		return unsupportedSharedModeCredentialRef("bindingId is required in aws_iam_role mode")
+	}
+
+	appToken := domainSeparatedIdentifierToken("application", dispatch.ApplicationID)
+	databaseToken := domainSeparatedIdentifierToken("database", dispatch.BindingID)
+	databaseName := fmt.Sprintf("sbndb_%s_%s", deploymentToken, databaseToken)
+	inputs["application_id"] = dispatch.ApplicationID
+	inputs["binding_id"] = dispatch.BindingID
+	inputs["database_name"] = databaseName
+	inputs["database_owner_role_name"] = databaseName + "_owner"
+	inputs["runtime_role_name"] = fmt.Sprintf("sbndb_%s_%s_runtime", deploymentToken, appToken)
+	if dispatch.DesiredSpec.LogicalName != "" {
+		setTerraformModuleInputDefault(inputs, "logical_name", safePostgresIdentifier(dispatch.DesiredSpec.LogicalName, databaseName))
+	}
+	return nil
+}
+
+func domainSeparatedIdentifierToken(kind, trustedID string) string {
+	sum := sha256.Sum256([]byte("superblocks-native-db:v1:" + kind + ":" + trustedID))
+	return fmt.Sprintf("%x", sum[:12])
+}
+
+func isIAMAuthModule(inputs map[string]any) bool {
+	authMode, _ := inputs["auth_mode"].(string)
+	return authMode == iamAuthMode
 }
 
 func appMigratorRoleName(dispatch DispatchPayload) string {
@@ -226,9 +327,18 @@ func MaterializeJobFromLocalModuleRoot(job Job, dispatch DispatchPayload, sslOpt
 	}
 	sharedMode := isSharedModeModule(dispatch.TerraformModule, vars)
 	if sharedMode {
+		iamMode := isIAMAuthModule(vars)
 		setTerraformModuleInputDefault(vars, "port", 5432)
 		if err := validateSSLOptions(DSNOptions{SSLMode: sslOpts.Mode, SSLRootCert: sslOpts.RootCert}); err != nil {
 			return err
+		}
+		// The wrapper module configures its own nested postgresql provider.
+		// Thread the operator-selected TLS posture into that provider for both
+		// password and IAM modes; the generated root provider alone is not
+		// sufficient.
+		vars["postgres_sslmode"] = sslOpts.Mode
+		if sslOpts.RootCert != "" {
+			vars["postgres_sslrootcert"] = sslOpts.RootCert
 		}
 		refInput, refValue, ok := sharedModeAdminCredentialRef(vars)
 		if !ok {
@@ -238,8 +348,32 @@ func MaterializeJobFromLocalModuleRoot(job Job, dispatch DispatchPayload, sslOpt
 			return err
 		}
 		if _, enabled := vars[credentialSecretPrefixInput]; enabled {
-			if err := validateSharedModeCredentialSecretPrefix(vars); err != nil {
+			if !iamMode {
+				if err := validateSharedModeCredentialSecretPrefix(vars); err != nil {
+					return err
+				}
+			}
+		}
+		if iamMode {
+			refMap, ok := refValue.(map[string]any)
+			if !ok {
+				return unsupportedSharedModeCredentialRef("postgres_admin_credential_ref must be a typed credential ref")
+			}
+			ref, ok := refresolver.RefFromMap(refMap)
+			if !ok {
+				return unsupportedSharedModeCredentialRef("postgres_admin_credential_ref must be a typed credential ref")
+			}
+			setTerraformModuleInputDefault(vars, "postgres_admin_database", defaultPostgresAdminDatabase)
+			connection, err := postgresAdminConnectionFromVars(vars)
+			if err != nil {
 				return err
+			}
+			if job.Runtime != nil {
+				job.Runtime.MasterCredentialRef = &ref
+				job.Runtime.PostgresAdminConnection = &connection
+			}
+			for input := range iamOmittedSecretInputs {
+				delete(vars, input)
 			}
 		}
 	}
@@ -461,7 +595,9 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 	// module with generated runtime and migration credentials.
 	sharedMode := isSharedModeModule(module, vars)
 	sharedModeCredentialInput, _, _ := sharedModeAdminCredentialRef(vars)
-	generateSharedModeSecrets := sharedModeCredentialInput == postgresAdminCredentialInput && vars[credentialSecretPrefixInput] != nil
+	iamMode := sharedMode && isIAMAuthModule(vars)
+	physicalDatabaseModule := isPhysicalDatabaseModuleSource(module.Source)
+	generateSharedModeSecrets := !iamMode && sharedModeCredentialInput == postgresAdminCredentialInput && vars[credentialSecretPrefixInput] != nil
 
 	var builder strings.Builder
 	// Declare the backend in HCL. `-backend-config=<file>` only supplies
@@ -479,6 +615,9 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 	if sharedMode {
 		builder.WriteString("terraform {\n")
 		builder.WriteString("  required_providers {\n")
+		// S3 backends still emit a root provider "aws" via providerBlocksFromBackend.
+		// required_providers must declare every provider the root references,
+		// including IAM mode which omits the Secrets Manager data graph.
 		builder.WriteString("    aws = {\n")
 		builder.WriteString("      source = \"hashicorp/aws\"\n")
 		builder.WriteString("    }\n")
@@ -507,42 +646,46 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 		builder.WriteString(providerHCL)
 	}
 	if sharedMode {
-		// Read physical instance admin credentials from AWS Secrets Manager and configure
-		// the `postgresql` provider with them. The secret ARN embeds its region
-		// in the fourth colon-delimited segment, so the secret can live in a
-		// different region from the state backend.
-		builder.WriteString("locals {\n")
-		builder.WriteString(fmt.Sprintf("  __pool_master_secret_arn    = var.%s.ref\n", sharedModeCredentialInput))
-		builder.WriteString("  __pool_master_secret_region = split(\":\", local.__pool_master_secret_arn)[3]\n")
-		if generateSharedModeSecrets {
-			builder.WriteString("  __credential_secret_prefix  = trimsuffix(var.credential_secret_prefix, \"/\")\n")
+		if !iamMode {
+			// Legacy password mode resolves the physical instance admin credential
+			// inside Terraform for compatibility with existing states. IAM mode
+			// deliberately omits this entire graph and injects PGUSER/PGPASSWORD
+			// into only the plan/apply/destroy subprocess.
+			builder.WriteString("locals {\n")
+			builder.WriteString(fmt.Sprintf("  __pool_master_secret_arn    = var.%s.ref\n", sharedModeCredentialInput))
+			builder.WriteString("  __pool_master_secret_region = split(\":\", local.__pool_master_secret_arn)[3]\n")
+			if generateSharedModeSecrets {
+				builder.WriteString("  __credential_secret_prefix  = trimsuffix(var.credential_secret_prefix, \"/\")\n")
+			}
+			builder.WriteString("}\n\n")
+			builder.WriteString("provider \"aws\" {\n")
+			builder.WriteString("  alias  = \"pool_secrets\"\n")
+			builder.WriteString("  region = local.__pool_master_secret_region\n")
+			builder.WriteString("}\n\n")
+			builder.WriteString("data \"aws_secretsmanager_secret_version\" \"pool_master\" {\n")
+			builder.WriteString("  provider  = aws.pool_secrets\n")
+			builder.WriteString("  secret_id = local.__pool_master_secret_arn\n")
+			builder.WriteString("}\n\n")
 		}
-		builder.WriteString("}\n\n")
-		builder.WriteString("provider \"aws\" {\n")
-		builder.WriteString("  alias  = \"pool_secrets\"\n")
-		builder.WriteString("  region = local.__pool_master_secret_region\n")
-		builder.WriteString("}\n\n")
-		builder.WriteString("data \"aws_secretsmanager_secret_version\" \"pool_master\" {\n")
-		builder.WriteString("  provider  = aws.pool_secrets\n")
-		builder.WriteString("  secret_id = local.__pool_master_secret_arn\n")
-		builder.WriteString("}\n\n")
-		// SSL posture is threaded from operator config (DSNOptions /
-		// SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE) so the terraform
-		// apply and the subsequent migration run both connect to the
-		// pool master with the same posture and the same root CA
-		// pinning — operators can pick `verify-full` once and have it
-		// apply across both code paths. cursor r3284281726.
-		builder.WriteString("provider \"postgresql\" {\n")
-		builder.WriteString("  host      = var.host\n")
-		builder.WriteString("  port      = var.port\n")
-		builder.WriteString("  username  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)[\"username\"]\n")
-		builder.WriteString("  password  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)[\"password\"]\n")
-		builder.WriteString(fmt.Sprintf("  sslmode   = %q\n", sslOpts.Mode))
-		if sslOpts.RootCert != "" {
-			builder.WriteString(fmt.Sprintf("  sslrootcert = %q\n", sslOpts.RootCert))
+		if !iamMode {
+			// SSL posture is threaded from operator config (DSNOptions /
+			// SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE) so the terraform
+			// apply and the subsequent migration run both connect to the
+			// pool master with the same posture and the same root CA
+			// pinning — operators can pick `verify-full` once and have it
+			// apply across both code paths. cursor r3284281726.
+			builder.WriteString("provider \"postgresql\" {\n")
+			builder.WriteString("  host      = var.host\n")
+			builder.WriteString("  port      = var.port\n")
+			builder.WriteString("  username  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)[\"username\"]\n")
+			builder.WriteString("  password  = jsondecode(data.aws_secretsmanager_secret_version.pool_master.secret_string)[\"password\"]\n")
+			builder.WriteString(fmt.Sprintf("  sslmode   = %q\n", sslOpts.Mode))
+			if sslOpts.RootCert != "" {
+				builder.WriteString(fmt.Sprintf("  sslrootcert = %q\n", sslOpts.RootCert))
+			}
+			builder.WriteString("  superuser = false\n")
+			builder.WriteString("}\n\n")
 		}
-		builder.WriteString("  superuser = false\n")
-		builder.WriteString("}\n\n")
 		if generateSharedModeSecrets {
 			builder.WriteString(sharedModeRoleSecretsHCL())
 		}
@@ -561,6 +704,9 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 			if _, skip := generatedSharedModeSecretInputs[key]; skip {
 				continue
 			}
+		}
+		if iamMode && (key == postgresAdminCredentialInput || key == credentialSecretPrefixInput || key == deploymentTokenInput) {
+			continue
 		}
 		builder.WriteString(fmt.Sprintf("  %s = var.%s\n", key, key))
 	}
@@ -587,14 +733,42 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 	builder.WriteString("  value = module.database.connection_metadata\n")
 	builder.WriteString("}\n\n")
 	builder.WriteString("output \"runtime_credential_refs\" {\n")
-	builder.WriteString("  value     = try(module.database.runtime_credential_refs, module.database.credential_refs)\n")
+	if iamMode || physicalDatabaseModule {
+		builder.WriteString("  value     = {}\n")
+	} else {
+		builder.WriteString("  value     = try(module.database.runtime_credential_refs, module.database.credential_refs)\n")
+	}
 	builder.WriteString("  sensitive = true\n")
 	builder.WriteString("}\n\n")
 	builder.WriteString("output \"migration_credential_refs\" {\n")
-	builder.WriteString("  value     = try(module.database.migration_credential_refs, {})\n")
+	if iamMode {
+		builder.WriteString("  value     = {}\n")
+	} else {
+		builder.WriteString("  value     = try(module.database.migration_credential_refs, {})\n")
+	}
 	builder.WriteString("  sensitive = true\n")
 	builder.WriteString("}\n")
+	if physicalDatabaseModule {
+		builder.WriteString("\noutput \"capacity_max\" {\n")
+		// Physical pool capacity is worker-owned policy metadata. New modules
+		// may echo it, but released RDS modules predate that output; keep the
+		// generated root compatible with both contracts.
+		builder.WriteString("  value = try(module.database.capacity_max, null)\n")
+		builder.WriteString("}\n\n")
+		builder.WriteString("output \"master_user_secret_arn\" {\n")
+		builder.WriteString("  value = try(module.database.master_user_secret_arn, null)\n")
+		builder.WriteString("}\n\n")
+		builder.WriteString("output \"master_credential_ref\" {\n")
+		builder.WriteString("  value = try(module.database.master_credential_ref, null)\n")
+		builder.WriteString("}\n")
+	}
 	return builder.String()
+}
+
+func isPhysicalDatabaseModuleSource(source string) bool {
+	sourcePath := strings.SplitN(source, "?", 2)[0]
+	moduleName := filepath.Base(strings.TrimSuffix(sourcePath, "/"))
+	return strings.Contains(moduleName, "aurora") || strings.Contains(moduleName, "managed-instance")
 }
 
 func sharedModeRoleSecretsHCL() string {

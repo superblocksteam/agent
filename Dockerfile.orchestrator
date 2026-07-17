@@ -60,7 +60,7 @@ FROM ghcr.io/superblocksteam/ubuntu:24.04 AS base
 # Install CA certificates and apply security updates
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install ca-certificates -y \
+    && apt-get install --no-install-recommends -y ca-certificates postgresql-client \
     && update-ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

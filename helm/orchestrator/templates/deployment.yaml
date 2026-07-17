@@ -196,6 +196,10 @@ spec:
           value: {{ join "," .Values.databaseLifecycle.allowedResourceTypes | quote }}
         - name: SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_MODULE_SOURCES
           value: {{ join "," .Values.databaseLifecycle.allowedModuleSources | quote }}
+        - name: SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES
+          value: {{ .Values.sandbox_workers.postgres.iamAllowedRoleArnPrefixes | toJson | quote }}
+        - name: SUPERBLOCKS_NATIVE_DB_CONNECTOR_ROLE_ARN
+          value: {{ .Values.sandbox_workers.postgres.nativeDbConnectorRoleArn | quote }}
         - name: SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE
           value: {{ .Values.databaseLifecycle.sslMode | quote }}
         {{- if .Values.databaseLifecycle.sslRootCert }}

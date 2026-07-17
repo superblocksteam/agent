@@ -2,6 +2,7 @@ package databaselifecycle
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -820,6 +821,63 @@ func TestServerPhysicalDatabaseInstanceLifecycleClientMapsCapacityExhaustion(t *
 	require.ErrorIs(t, err, ErrPhysicalDatabaseInstanceCapacityExhausted)
 }
 
+func TestServerPhysicalDatabaseInstanceLifecycleClientRoundTripsMetadata(t *testing.T) {
+	metadata := map[string]any{
+		"aws_account_id":      "123456789012",
+		"cluster_resource_id": "cluster-ABC123DEF456EXAMPLE",
+		"host":                "orders.cluster-abc123.us-east-1.rds.amazonaws.com",
+		"port":                float64(5432),
+		"region":              "us-east-1",
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/api/v1/database-lifecycle/physical-database-instances", r.URL.Path)
+		switch r.Method {
+		case http.MethodGet:
+			require.Equal(t, "deployed", r.URL.Query().Get("environment"))
+			require.Equal(t, "postgres", r.URL.Query().Get("engine"))
+			require.Equal(t, "us-east-1", r.URL.Query().Get("region"))
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+				"data": []any{map[string]any{
+					"id":                  "physical-1",
+					"region":              "us-east-1",
+					"environment":         "deployed",
+					"engine":              "postgres",
+					"endpoint":            "orders.cluster-abc123.us-east-1.rds.amazonaws.com:5432",
+					"metadata":            metadata,
+					"masterCredentialRef": map[string]any{"resolver": "aws_secrets_manager", "ref": "arn:secret"},
+					"capacityMax":         4,
+				}},
+			}))
+		case http.MethodPost:
+			var request clients.DatabaseLifecyclePhysicalDatabaseInstance
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&request))
+			require.Equal(t, metadata, request.Metadata)
+			request.ID = "physical-1"
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{"data": request}))
+		default:
+			t.Fatalf("unexpected method %s", r.Method)
+		}
+	}))
+	defer server.Close()
+
+	client := NewServerPhysicalDatabaseInstanceLifecycleClient(clients.NewServerClient(&clients.ServerClientOptions{
+		URL:                 server.URL,
+		SuperblocksAgentKey: "agent-key",
+	}))
+	instances, err := client.ListPhysicalDatabaseInstances(context.Background(), PhysicalDatabaseInstanceSelector{
+		Environment: "deployed",
+		Engine:      "postgres",
+		Region:      "us-east-1",
+	})
+	require.NoError(t, err)
+	require.Len(t, instances, 1)
+	require.Equal(t, metadata, instances[0].Metadata)
+
+	registered, err := client.RegisterPhysicalDatabaseInstance(context.Background(), instances[0])
+	require.NoError(t, err)
+	require.Equal(t, metadata, registered.Metadata)
+}
+
 func requireSpanAttribute(t *testing.T, spans tracetest.SpanStubs, spanName string, key string, value string) {
 	t.Helper()
 	for _, span := range spans {
@@ -833,4 +891,75 @@ func requireSpanAttribute(t *testing.T, spans tracetest.SpanStubs, spanName stri
 		}
 	}
 	t.Fatalf("span %q with attribute %s=%q not found in %#v", spanName, key, value, spans)
+}
+
+func TestPhysicalDatabaseInstanceLifecycleSkipsIAMMetadataIncompletePoolInstances(t *testing.T) {
+	completeMetadata := map[string]any{
+		"aws_account_id":      "361919038798",
+		"cluster_resource_id": "cluster-ABC123DEF456EXAMPLE",
+		"host":                "complete.cluster-abc.us-east-1.rds.amazonaws.com",
+		"port":                5432,
+		"region":              "us-east-1",
+	}
+	client := &recordingPhysicalDatabaseInstanceLifecycleClient{
+		instances: []PhysicalDatabaseInstance{
+			{
+				ID:           "legacy-no-metadata",
+				Region:       "us-east-1",
+				Endpoint:     "legacy.example.com:5432",
+				CapacityUsed: 0,
+				CapacityMax:  4,
+			},
+			{
+				ID:           "iam-ready",
+				Region:       "us-east-1",
+				Endpoint:     "complete.cluster-abc.us-east-1.rds.amazonaws.com:5432",
+				CapacityUsed: 0,
+				CapacityMax:  4,
+				Metadata:     completeMetadata,
+			},
+		},
+	}
+	lifecycle := NewPhysicalDatabaseInstanceLifecycle(client, PhysicalDatabaseInstanceProvisionerFunc(func(ctx context.Context, selector PhysicalDatabaseInstanceSelector) (PhysicalDatabaseInstance, error) {
+		t.Fatal("provisioner must not run when an IAM-ready pool instance is available")
+		return PhysicalDatabaseInstance{}, nil
+	}))
+
+	instance, err := lifecycle.ReserveForEnsure(context.Background(), PhysicalDatabaseInstanceSelector{
+		Region:                     "us-east-1",
+		Environment:                "deployed",
+		Engine:                     "postgres",
+		RequireIAMPhysicalMetadata: true,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "iam-ready", instance.ID)
+	require.Equal(t, []string{"iam-ready"}, client.reserved)
+	require.NotContains(t, client.reserved, "legacy-no-metadata")
+}
+
+func TestPhysicalDatabaseInstanceLifecycleProvisionsWhenAllPoolInstancesLackIAMMetadata(t *testing.T) {
+	client := &recordingPhysicalDatabaseInstanceLifecycleClient{
+		instances: []PhysicalDatabaseInstance{{
+			ID:           "legacy-no-metadata",
+			Region:       "us-east-1",
+			Endpoint:     "legacy.example.com:5432",
+			CapacityUsed: 0,
+			CapacityMax:  4,
+		}},
+	}
+	provisioner := &recordingPhysicalDatabaseInstanceProvisioner{}
+	lifecycle := NewPhysicalDatabaseInstanceLifecycle(client, provisioner)
+
+	instance, err := lifecycle.ReserveForEnsure(context.Background(), PhysicalDatabaseInstanceSelector{
+		Region:                     "us-east-1",
+		Environment:                "deployed",
+		Engine:                     "postgres",
+		RequireIAMPhysicalMetadata: true,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "new-instance", instance.ID)
+	require.Equal(t, []string{"new-instance"}, client.reserved)
+	require.Len(t, provisioner.provisioned, 1)
 }

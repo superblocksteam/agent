@@ -300,7 +300,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update                                                                                                                               && \
     # Installing redis also creates a user and group called redis with id 101 and an user called redis with id 100
     apt-get install -yqq --no-install-recommends gnupg dnsutils iputils-ping nodejs=${NODE_VERSION}-1nodesource1                                    \
-    ca-certificates curl redis libblas3 liblapack3 libpq5 gettext-base                                                                          && \
+    ca-certificates curl redis libblas3 liblapack3 libpq5 gettext-base postgresql-client                                                        && \
     mkdir -p /app/redis                                                                                                                          && \
     chown -R redis:redis /app/redis                                                                                                              && \
     curl https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/trusted.gpg.d/microsoft.asc                                            && \

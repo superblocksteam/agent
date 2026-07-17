@@ -70,7 +70,7 @@ func TestNativeDBHelmModulePinsFromValuesReadsPathsAndRef(t *testing.T) {
 	require.Equal(t, nativeDBHelmModulePins{
 		LogicalPath:  "modules/postgres-managed-database",
 		PhysicalPath: "modules/aws-rds-managed-instance",
-		Ref:          "v0.3.1",
+		Ref:          "v0.3.3",
 		Repository:   "https://github.com/superblocksteam/terraform-superblocks-databases.git",
 	}, pins)
 }

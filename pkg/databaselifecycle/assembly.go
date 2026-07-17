@@ -10,16 +10,17 @@ import (
 )
 
 type WorkerDependencies struct {
-	AgentID              string
-	Client               clients.ServerClient
-	Executor             CommandExecutor
-	Locker               ResourceLocker
-	MigrationRunner      migrations.Runner
-	Policy               PlanPolicy
-	RootDir              string
-	AllowedModuleSources []string
-	DSNOptions           DSNOptions
-	LifecycleConfig      LifecycleConfig
+	AgentID                  string
+	Client                   clients.ServerClient
+	Executor                 CommandExecutor
+	Locker                   ResourceLocker
+	MasterCredentialResolver MasterCredentialResolver
+	MigrationRunner          migrations.Runner
+	Policy                   PlanPolicy
+	RootDir                  string
+	AllowedModuleSources     []string
+	DSNOptions               DSNOptions
+	LifecycleConfig          LifecycleConfig
 }
 
 func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
@@ -36,7 +37,7 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 		return nil, errors.New("database lifecycle resource locker is required")
 	}
 
-	runner := NewRunnerWithPolicy(deps.Executor, deps.Policy)
+	runner := NewRunnerWithPolicyAndMasterCredentials(deps.Executor, deps.Policy, deps.MasterCredentialResolver)
 	reporter := CallbackReporterFunc(func(ctx context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
 		return ReportTerminalCallback(ctx, deps.Client, callback)
 	})
@@ -76,6 +77,30 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 		}
 		var physicalDatabaseInstance PhysicalDatabaseInstance
 		var physicalDatabaseInstanceSelector PhysicalDatabaseInstanceSelector
+		releaseAfterMaterializationFailure := func(materializationErr error) error {
+			// Retire attaches a physical instance ID without reserving capacity.
+			// Only reserved ensure paths may release pool slots on materialization
+			// failure (cursor Bugbot / David Zhang on #2806).
+			if !dispatch.PhysicalDatabaseInstanceReserved || dispatch.PhysicalDatabaseInstanceID == "" {
+				return materializationErr
+			}
+			if releaseErr := releaseReservedPhysicalDatabaseInstance(ctx, physicalDatabaseInstanceClient, dispatch.PhysicalDatabaseInstanceID); releaseErr != nil {
+				return errors.Join(materializationErr, releaseErr)
+			}
+			// The reservation is released above, so the pool slot is never
+			// leaked. The physical_db_registered downgrade is best-effort
+			// cleanup: materialization failures are deterministic, so this
+			// dispatch will not succeed on retry, and the downgrade callback
+			// failing (a retryable LifecycleError) must NOT reclassify the
+			// terminal materialization failure as retryable — a retry would
+			// otherwise resume physical_db_reserved without a live
+			// reservation. Fold the callback failure in with %v so it is
+			// surfaced without contributing a retryable error to the tree.
+			if progressErr := physicalDatabaseInstanceLifecycle.reportPhysicalDatabaseInstanceProgress(ctx, physicalDatabaseInstanceSelector, physicalDatabaseInstance, "physical_db_registered"); progressErr != nil {
+				return fmt.Errorf("%w; physical_db_registered progress callback also failed: %v", materializationErr, progressErr)
+			}
+			return materializationErr
+		}
 		if shouldReservePhysicalDatabaseInstance(dispatch, resolved) {
 			physicalDatabaseInstanceSelector = physicalDatabaseInstanceSelectorFromDispatch(dispatch, resolved)
 			instance, err := physicalDatabaseInstanceLifecycle.ReserveForEnsure(ctx, physicalDatabaseInstanceSelector)
@@ -85,30 +110,16 @@ func NewWorkerFromDependencies(deps WorkerDependencies) (*Worker, error) {
 			physicalDatabaseInstance = instance
 			dispatch.PhysicalDatabaseInstanceID = instance.ID
 			dispatch.PhysicalDatabaseInstanceReserved = true
-			resolved = ResolveWithPhysicalDatabaseInstance(resolved, instance)
+			resolved, err = ResolveWithPhysicalDatabaseInstance(resolved, instance)
+			if err != nil {
+				return dispatch, releaseAfterMaterializationFailure(err)
+			}
 		}
 		if err := attachPhysicalDatabaseInstanceForDeprovision(ctx, physicalDatabaseInstanceClient, &dispatch, &resolved); err != nil {
 			return dispatch, err
 		}
 		if err := MaterializeResolvedJob(job, dispatch, resolved, sslOpts); err != nil {
-			if dispatch.PhysicalDatabaseInstanceReserved && dispatch.PhysicalDatabaseInstanceID != "" {
-				if releaseErr := releaseReservedPhysicalDatabaseInstance(ctx, physicalDatabaseInstanceClient, dispatch.PhysicalDatabaseInstanceID); releaseErr != nil {
-					return dispatch, errors.Join(err, releaseErr)
-				}
-				// The reservation is released above, so the pool slot is never
-				// leaked. The physical_db_registered downgrade is best-effort
-				// cleanup: materialization failures are deterministic, so this
-				// dispatch will not succeed on retry, and the downgrade callback
-				// failing (a retryable LifecycleError) must NOT reclassify the
-				// terminal materialization failure as retryable — a retry would
-				// otherwise resume physical_db_reserved without a live
-				// reservation. Fold the callback failure in with %v so it is
-				// surfaced without contributing a retryable error to the tree.
-				if progressErr := physicalDatabaseInstanceLifecycle.reportPhysicalDatabaseInstanceProgress(ctx, physicalDatabaseInstanceSelector, physicalDatabaseInstance, "physical_db_registered"); progressErr != nil {
-					return dispatch, fmt.Errorf("%w; physical_db_registered progress callback also failed: %v", err, progressErr)
-				}
-			}
-			return dispatch, err
+			return dispatch, releaseAfterMaterializationFailure(err)
 		}
 		return dispatch, nil
 	})
@@ -140,8 +151,7 @@ func shouldReservePhysicalDatabaseInstance(dispatch DispatchPayload, resolved Re
 	credentialSecretPrefix, hasCredentialSecretPrefix := resolved.Module.Inputs[credentialSecretPrefixInput].(string)
 	return dispatch.Operation == "ensure_database" &&
 		isPostgresManagedDatabaseSource(resolved.Module.Source) &&
-		hasCredentialSecretPrefix &&
-		credentialSecretPrefix != ""
+		(isIAMAuthModule(resolved.Module.Inputs) || (hasCredentialSecretPrefix && credentialSecretPrefix != ""))
 }
 
 const physicalDatabaseInstanceRefMetadataKey = "physical_database_instance_ref"
@@ -158,8 +168,7 @@ func shouldAttachPhysicalDatabaseInstanceForDeprovision(dispatch DispatchPayload
 	credentialSecretPrefix, hasCredentialSecretPrefix := resolved.Module.Inputs[credentialSecretPrefixInput].(string)
 	return dispatch.Operation == operationRetireDatabase &&
 		isPostgresManagedDatabaseSource(resolved.Module.Source) &&
-		hasCredentialSecretPrefix &&
-		credentialSecretPrefix != "" &&
+		(isIAMAuthModule(resolved.Module.Inputs) || (hasCredentialSecretPrefix && credentialSecretPrefix != "")) &&
 		physicalDatabaseInstanceIDFromDispatch(dispatch) != ""
 }
 
@@ -189,7 +198,11 @@ func attachPhysicalDatabaseInstanceForDeprovision(
 		return &LifecycleError{Code: ErrorCodeInternal, Retryable: false, Err: err}
 	}
 	dispatch.PhysicalDatabaseInstanceID = instance.ID
-	*resolved = ResolveWithPhysicalDatabaseInstance(*resolved, instance)
+	updated, err := ResolveWithPhysicalDatabaseInstance(*resolved, instance)
+	if err != nil {
+		return err
+	}
+	*resolved = updated
 	return nil
 }
 
@@ -198,6 +211,9 @@ func validateSharedPostgresEnsureCredentialSecretPrefix(dispatch DispatchPayload
 		return nil
 	}
 	if _, exists := resolved.Module.Inputs[credentialSecretPrefixInput]; !exists {
+		return nil
+	}
+	if isIAMAuthModule(resolved.Module.Inputs) {
 		return nil
 	}
 	return validateSharedModeCredentialSecretPrefix(resolved.Module.Inputs)
@@ -231,6 +247,7 @@ func physicalDatabaseInstanceSelectorFromDispatch(dispatch DispatchPayload, reso
 		CurrentState:                 dispatch.Continuation.CurrentState,
 		PhysicalDatabaseInstanceID:   dispatch.Continuation.PhysicalDatabaseInstanceID,
 		PhysicalTerraformResourceKey: dispatch.Continuation.PhysicalTerraformResourceKey,
+		RequireIAMPhysicalMetadata:   isIAMAuthModule(resolved.Module.Inputs),
 	}
 }
 

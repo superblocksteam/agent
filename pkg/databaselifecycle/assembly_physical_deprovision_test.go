@@ -45,6 +45,58 @@ func TestAttachPhysicalDatabaseInstanceForDeprovisionResolvesInstanceFromConnect
 	require.Equal(t, 5432, resolved.Module.Inputs["port"])
 }
 
+func TestAttachPhysicalDatabaseInstanceForDeprovisionResolvesIAMInstanceWithoutCredentialSecretPrefix(t *testing.T) {
+	client := &recordingPhysicalDatabaseInstanceLifecycleClient{
+		instances: []PhysicalDatabaseInstance{{
+			ID: "pool-iam-1",
+			MasterCredentialRef: map[string]any{
+				"resolver": "aws_secrets_manager",
+				"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!cluster",
+			},
+			Metadata: map[string]any{
+				"aws_account_id":      "361919038798",
+				"cluster_resource_id": "cluster-ABC123DEF456EXAMPLE",
+				"host":                "pool.cluster-abc.us-east-1.rds.amazonaws.com",
+				"port":                5432,
+				"region":              "us-east-1",
+			},
+		}},
+	}
+	dispatch := DispatchPayload{
+		ConnectionMetadata: map[string]any{
+			physicalDatabaseInstanceRefMetadataKey: "pool-iam-1",
+		},
+		DesiredSpec: DatabaseRequirement{Engine: "postgres"},
+		Environment: "edit",
+		Operation:   operationRetireDatabase,
+		Profile:     "dev",
+	}
+	resolved := ResolvedLifecycleConfig{
+		Backend: map[string]any{"region": "us-east-1"},
+		Module: TerraformModule{
+			Source: "git::https://github.com/example/terraform.git//modules/postgres-managed-database",
+			Inputs: map[string]any{
+				"auth_mode": iamAuthMode,
+			},
+		},
+	}
+
+	err := attachPhysicalDatabaseInstanceForDeprovision(context.Background(), client, &dispatch, &resolved)
+
+	require.NoError(t, err)
+	require.Equal(t, "pool-iam-1", dispatch.PhysicalDatabaseInstanceID)
+	require.False(t, dispatch.PhysicalDatabaseInstanceReserved)
+	require.Equal(t, "pool.cluster-abc.us-east-1.rds.amazonaws.com", resolved.Module.Inputs["host"])
+	require.Equal(t, 5432, resolved.Module.Inputs["port"])
+	require.Equal(t, "361919038798", resolved.Module.Inputs["aws_account_id"])
+	require.Equal(t, "cluster-ABC123DEF456EXAMPLE", resolved.Module.Inputs["cluster_resource_id"])
+	require.Equal(t, "us-east-1", resolved.Module.Inputs["region"])
+	require.Equal(t, map[string]any{
+		"resolver": "aws_secrets_manager",
+		"ref":      "arn:aws:secretsmanager:us-east-1:361919038798:secret:rds!cluster",
+	}, resolved.Module.Inputs[postgresAdminCredentialInput])
+}
+
 func TestAttachPhysicalDatabaseInstanceForDeprovisionSkipsNonSharedPostgresModules(t *testing.T) {
 	client := &recordingPhysicalDatabaseInstanceLifecycleClient{
 		instances: []PhysicalDatabaseInstance{{ID: "pool-1", Endpoint: "pool.example.com:5432"}},

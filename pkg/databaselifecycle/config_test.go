@@ -16,6 +16,7 @@ func TestConfigFromEnvReadsLifecycleWorkerSettings(t *testing.T) {
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_MODULE_SOURCES": "app.terraform.io/superblocks/rds-postgres/aws, app.terraform.io/superblocks/aurora-postgres/aws",
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE":               "verify-full",
 		"SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT":          "/etc/rds/global-bundle.pem",
+		"SUPERBLOCKS_NATIVE_DB_CONNECTOR_ROLE_ARN":              "arn:aws:iam::123456789012:role/superblocks-native-db-connector",
 	}
 
 	config, err := ConfigFromEnv(func(key string) string { return env[key] })
@@ -36,8 +37,9 @@ func TestConfigFromEnvReadsLifecycleWorkerSettings(t *testing.T) {
 			"app.terraform.io/superblocks/rds-postgres/aws",
 			"app.terraform.io/superblocks/aurora-postgres/aws",
 		},
-		SSLMode:     "verify-full",
-		SSLRootCert: "/etc/rds/global-bundle.pem",
+		ExpectedConnectorRoleARN: "arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+		SSLMode:                  "verify-full",
+		SSLRootCert:              "/etc/rds/global-bundle.pem",
 	}, config)
 }
 
@@ -53,6 +55,7 @@ func TestConfigFromEnvHasNoImplicitSSLMode(t *testing.T) {
 	// rather than silently encrypting without identity validation.
 	require.Empty(t, config.SSLMode)
 	require.Empty(t, config.SSLRootCert)
+	require.Empty(t, config.ExpectedConnectorRoleARN)
 }
 
 func TestConfigFromEnvDefaultsOptionalSettings(t *testing.T) {
@@ -243,18 +246,6 @@ func TestConfigFromEnvParsesExplicitPhysicalDatabasePolicy(t *testing.T) {
 		CapacityMax:        100,
 		SecurityClass:      "standard",
 	}, resolved.PhysicalDatabase)
-}
-
-func TestConfigFromEnvIgnoresLegacyModuleShapes(t *testing.T) {
-	env := map[string]string{
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":        minimalLifecycleConfig(),
-		"SUPERBLOCKS_DATABASE_LIFECYCLE_MODULE_SHAPES": `{invalid legacy json`,
-	}
-
-	config, err := ConfigFromEnv(func(key string) string { return env[key] })
-
-	require.NoError(t, err)
-	require.Len(t, config.LifecycleConfig.Entries, 1)
 }
 
 func TestConfigFromEnvRejectsInvalidLifecycleConfig(t *testing.T) {

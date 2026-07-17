@@ -9,7 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
 	"strings"
+
+	"github.com/superblocksteam/agent/pkg/secrets/refresolver"
 )
 
 const operationEnsurePhysicalDatabaseInstance = "ensure_physical_database_instance"
@@ -156,13 +159,17 @@ func physicalDatabaseInstanceFromTerraformOutput(result Result, selector Physica
 	if err := json.Unmarshal([]byte(result.OutputJSON), &outputs); err != nil {
 		return PhysicalDatabaseInstance{}, fmt.Errorf("decode physical database instance terraform output: %w", err)
 	}
+	connectionMetadata, err := physicalDatabaseInstanceConnectionMetadata(outputs)
+	if err != nil {
+		return PhysicalDatabaseInstance{}, err
+	}
 	endpoint, err := physicalDatabaseInstanceEndpoint(outputs)
 	if err != nil {
 		return PhysicalDatabaseInstance{}, err
 	}
 	masterCredentialRef := physicalDatabaseInstanceMasterCredentialRef(outputs)
 	if len(masterCredentialRef) == 0 {
-		return PhysicalDatabaseInstance{}, errors.New("physical database instance terraform output credential_refs.password or master_credential_ref is required")
+		return PhysicalDatabaseInstance{}, errors.New("physical database instance terraform output master_user_secret_arn, master_credential_ref, or credential_refs.password is required")
 	}
 	capacityMax := selector.CapacityMax
 	if capacityMax <= 0 {
@@ -185,11 +192,78 @@ func physicalDatabaseInstanceFromTerraformOutput(result Result, selector Physica
 	}
 	return PhysicalDatabaseInstance{
 		Endpoint:            endpoint,
+		Metadata:            connectionMetadata,
 		MasterCredentialRef: masterCredentialRef,
 		CapacityMax:         capacityMax,
 		Status:              status,
 		SecurityClass:       securityClass,
 	}, nil
+}
+
+func physicalDatabaseInstanceConnectionMetadata(outputs map[string]terraformOutputValue) (map[string]any, error) {
+	output, exists := outputs["connection_metadata"]
+	if !exists {
+		return nil, nil
+	}
+	raw, ok := output.Value.(map[string]any)
+	if !ok {
+		return nil, errors.New("physical database instance terraform output connection_metadata must be an object")
+	}
+	host, ok := stringMapValue(raw, "host")
+	if !ok || strings.TrimSpace(host) != host || strings.ContainsRune(host, '\x00') {
+		return nil, errors.New("physical database instance terraform output connection_metadata.host must be a non-empty string without surrounding whitespace or NUL bytes")
+	}
+
+	metadata := map[string]any{"host": host}
+	if rawPort, exists := raw["port"]; exists {
+		port, ok := descriptorInteger(rawPort)
+		if !ok || port < 1 || port > 65535 {
+			return nil, errors.New("physical database instance terraform output connection_metadata.port must be an integer between 1 and 65535")
+		}
+		metadata["port"] = port
+	}
+
+	accountID, hasAWSAccountID := stringMapValue(raw, "aws_account_id")
+	legacyAccountID, hasLegacyAccountID := stringMapValue(raw, "account_id")
+	if hasAWSAccountID && hasLegacyAccountID && accountID != legacyAccountID {
+		return nil, errors.New("physical database instance terraform output connection_metadata.aws_account_id and account_id must match")
+	}
+	if !hasAWSAccountID {
+		accountID = legacyAccountID
+		hasAWSAccountID = hasLegacyAccountID
+	}
+	if hasAWSAccountID {
+		if !awsAccountIDPattern.MatchString(accountID) {
+			return nil, errors.New("physical database instance terraform output connection_metadata.aws_account_id must contain exactly 12 digits")
+		}
+		metadata["aws_account_id"] = accountID
+	} else if _, exists := raw["aws_account_id"]; exists {
+		return nil, errors.New("physical database instance terraform output connection_metadata.aws_account_id must be a non-empty string")
+	} else if _, exists := raw["account_id"]; exists {
+		return nil, errors.New("physical database instance terraform output connection_metadata.account_id must be a non-empty string")
+	}
+
+	for _, field := range []struct {
+		key     string
+		pattern *regexp.Regexp
+		message string
+	}{
+		{key: "cluster_resource_id", pattern: clusterResourceIDPattern, message: "must start with cluster- and contain only letters, digits, or hyphens"},
+		{key: "region", pattern: awsRegionPattern, message: "must be a valid AWS region"},
+	} {
+		value, present := stringMapValue(raw, field.key)
+		if !present {
+			if _, exists := raw[field.key]; exists {
+				return nil, fmt.Errorf("physical database instance terraform output connection_metadata.%s must be a non-empty string", field.key)
+			}
+			continue
+		}
+		if !field.pattern.MatchString(value) {
+			return nil, fmt.Errorf("physical database instance terraform output connection_metadata.%s %s", field.key, field.message)
+		}
+		metadata[field.key] = value
+	}
+	return metadata, nil
 }
 
 func physicalDatabaseInstanceEndpoint(outputs map[string]terraformOutputValue) (string, error) {
@@ -210,6 +284,12 @@ func physicalDatabaseInstanceEndpoint(outputs map[string]terraformOutputValue) (
 func physicalDatabaseInstanceMasterCredentialRef(outputs map[string]terraformOutputValue) map[string]any {
 	if ref := mapOutputValue(outputs, "master_credential_ref"); len(ref) > 0 {
 		return ref
+	}
+	if arn, err := stringTerraformOutput(outputs, "master_user_secret_arn"); err == nil {
+		return map[string]any{
+			"resolver": string(refresolver.ResolverAWSSecretsManager),
+			"ref":      arn,
+		}
 	}
 	credentialRefs := mapOutputValue(outputs, "credential_refs")
 	passwordRef, _ := credentialRefs["password"].(map[string]any)

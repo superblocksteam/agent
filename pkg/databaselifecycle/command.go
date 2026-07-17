@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
 	"os/exec"
+	"sort"
 )
 
 type BinaryCommandExecutor struct {
@@ -23,6 +25,9 @@ func (e *BinaryCommandExecutor) Run(ctx context.Context, command Command) (Comma
 	args := append([]string{command.Name}, command.Args...)
 	cmd := exec.CommandContext(ctx, e.binary, args...)
 	cmd.Dir = command.Dir
+	if len(command.Env) > 0 {
+		cmd.Env = commandEnvironment(os.Environ(), command.Env)
+	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -32,4 +37,32 @@ func (e *BinaryCommandExecutor) Run(ctx context.Context, command Command) (Comma
 		Stdout: stdout.String(),
 		Stderr: stderr.String(),
 	}, err
+}
+
+func commandEnvironment(inherited []string, overrides map[string]string) []string {
+	if len(overrides) == 0 {
+		return inherited
+	}
+	env := make(map[string]string, len(inherited)+len(overrides))
+	for _, entry := range inherited {
+		for index := 0; index < len(entry); index++ {
+			if entry[index] == '=' {
+				env[entry[:index]] = entry[index+1:]
+				break
+			}
+		}
+	}
+	for key, value := range overrides {
+		env[key] = value
+	}
+	keys := make([]string, 0, len(env))
+	for key := range env {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	combined := make([]string, 0, len(keys))
+	for _, key := range keys {
+		combined = append(combined, key+"="+env[key])
+	}
+	return combined
 }

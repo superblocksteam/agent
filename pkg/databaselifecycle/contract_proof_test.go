@@ -37,7 +37,7 @@ func TestPinnedLifecycleConfigMaterializesValidTerraformModules(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 100, logical.PhysicalDatabase.CapacityMax)
 	require.Equal(t, "standard", logical.PhysicalDatabase.SecurityClass)
-	logical = ResolveWithPhysicalDatabaseInstance(logical, PhysicalDatabaseInstance{
+	logical, err = ResolveWithPhysicalDatabaseInstance(logical, PhysicalDatabaseInstance{
 		Endpoint: "database.internal:5432",
 		MasterCredentialRef: map[string]any{
 			"field":    "password",
@@ -45,6 +45,7 @@ func TestPinnedLifecycleConfigMaterializesValidTerraformModules(t *testing.T) {
 			"resolver": "aws_secrets_manager",
 		},
 	})
+	require.NoError(t, err)
 	logicalJob := contractProofJob(t, "logical")
 	require.NoError(t, MaterializeResolvedJob(logicalJob, DispatchPayload{
 		BindingKey:      "binding-logical",

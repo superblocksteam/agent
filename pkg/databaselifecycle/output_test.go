@@ -1,6 +1,7 @@
 package databaselifecycle
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -101,6 +102,105 @@ func TestReadyCallbackFromTerraformOutputCanParseSecretLikeUnusedOutputs(t *test
 	require.NoError(t, err)
 	require.Equal(t, map[string]any{"database": "orders"}, callback.ConnectionMetadata)
 	require.Nil(t, callback.RuntimeCredentialRefs)
+}
+
+func TestReadyCallbackFromTerraformOutputIAMOmitsCredentialRefs(t *testing.T) {
+	callback, err := ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			ApplicationID: validIAMApplicationID,
+			BindingID:     validIAMBindingID,
+			BindingKey:    "app:prod:orders",
+			Operation:     "ensure_database",
+			RequestID:     "request-1",
+		},
+		Result{
+			OutputJSON: `{
+				"connection_metadata":{"sensitive":false,"value":{
+					"application_id":"application-1",
+					"auth_descriptor_version":1,
+					"auth_mode":"aws_iam_role",
+					"aws_account_id":"123456789012",
+					"binding_id":"binding-1",
+					"cluster_resource_id":"cluster-ABC123DEF456EXAMPLE",
+					"connector_role_arn":"arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+					"database":"sbndb_0123456789ab_96883863630a181689324e37",
+					"host":"orders.cluster-abc123.us-east-1.rds.amazonaws.com",
+					"port":5432,
+					"region":"us-east-1",
+					"username":"sbndb_0123456789ab_135c0d252350f3bba710c990_runtime"
+				}},
+				"runtime_credential_refs":{"sensitive":false,"value":{"password":{"resolver":"vault","ref":"should-not-escape"}}},
+				"migration_credential_refs":{"sensitive":false,"value":{"password":{"resolver":"vault","ref":"should-not-escape"}}}
+			}`,
+		},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, "aws_iam_role", callback.ConnectionMetadata["auth_mode"])
+	require.Nil(t, callback.RuntimeCredentialRefs)
+	require.Nil(t, callback.MigrationCredentialRefs)
+}
+
+func TestReadyCallbackFromTerraformOutputRejectsInvalidIAMMetadata(t *testing.T) {
+	_, err := ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			ApplicationID: validIAMApplicationID,
+			BindingID:     validIAMBindingID,
+			BindingKey:    "app:prod:orders",
+			RequestID:     "request-1",
+		},
+		Result{
+			OutputJSON: `{
+				"connection_metadata":{"sensitive":false,"value":{
+					"auth_descriptor_version":2,
+					"auth_mode":"aws_iam_role"
+				}}
+			}`,
+		},
+	)
+
+	require.ErrorContains(t, err, "validate IAM connection metadata")
+	require.ErrorContains(t, err, "auth_descriptor_version must be 1")
+}
+
+func TestReadyCallbackFromTerraformOutputBindsTrustedDispatchIdentityIntoIAMCallback(t *testing.T) {
+	metadata := validIAMMetadata()
+	delete(metadata, "application_id")
+	delete(metadata, "binding_id")
+	encodedMetadata, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
+	callback, err := ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			ApplicationID: validIAMApplicationID,
+			BindingID:     validIAMBindingID,
+			BindingKey:    "app:prod:orders",
+			RequestID:     "request-1",
+		},
+		Result{OutputJSON: `{"connection_metadata":{"value":` + string(encodedMetadata) + `}}`},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, validIAMApplicationID, callback.ConnectionMetadata["application_id"])
+	require.Equal(t, validIAMBindingID, callback.ConnectionMetadata["binding_id"])
+}
+
+func TestReadyCallbackFromTerraformOutputRejectsMismatchedIAMWireIdentity(t *testing.T) {
+	metadata := validIAMMetadata()
+	encodedMetadata, err := json.Marshal(metadata)
+	require.NoError(t, err)
+
+	_, err = ReadyCallbackFromTerraformOutput(
+		DispatchPayload{
+			ApplicationID: validIAMApplicationID,
+			BindingID:     "binding-2",
+			BindingKey:    "app:prod:orders",
+			RequestID:     "request-1",
+		},
+		Result{OutputJSON: `{"connection_metadata":{"value":` + string(encodedMetadata) + `}}`},
+	)
+
+	require.ErrorContains(t, err, "connection_metadata.binding_id does not match dispatch bindingId")
 }
 
 func TestReadyCallbackFromTerraformOutputIncludesReservedPhysicalDatabaseInstanceRef(t *testing.T) {

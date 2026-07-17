@@ -100,6 +100,9 @@ postgres:
   # Serialized to a JSON array in the environment. Entries are exact role ARNs,
   # or role-path prefixes ending in "/". Empty denies all IAM roles.
   iamAllowedRoleArnPrefixes: []
+  # Reserved role for managed Native DB runtime connections. Empty disables the
+  # managed path; this is an ARN, not secret material.
+  nativeDbConnectorRoleArn: ""
 # Change the prefix used in resource names.
 # Defaults to 'superblocks-agent'.
 nameOverride: ''
@@ -294,10 +297,10 @@ databaseLifecycle:
   # Built-in Native Database modules. Override the source for a customer fork.
   modules:
     logical:
-      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.1
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.3
       version: ""
     physical:
-      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.1
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.3
       version: ""
   physicalProvisioning:
     enabled: true

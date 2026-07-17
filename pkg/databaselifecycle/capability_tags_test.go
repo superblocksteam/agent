@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/superblocksteam/agent/pkg/secrets/refresolver"
 )
 
 func TestLifecycleConfigCapabilityTagsDeriveSortedUniqueTags(t *testing.T) {
@@ -74,47 +75,6 @@ func TestLifecycleConfigCapabilityTagsDoNotPublishInternalPhysicalProvisionOpera
 	require.Equal(t, []string{"ensure_database", "migrate_schema"}, config.CapabilityTags()[capabilityTagOperations])
 }
 
-func TestCapabilityTagsFromEnvDerivesTagsWithoutModuleShapes(t *testing.T) {
-	tags, err := CapabilityTagsFromEnv(func(key string) string {
-		switch key {
-		case envConfig:
-			return `{
-				"entries": [
-					{
-						"environment": "deployed",
-						"profiles": ["production"],
-						"engines": ["postgres"],
-						"operations": {
-							"ensure_database": {
-								"backend": "terraform",
-								"terraform": {
-									"backend": {"stateBackend": "s3"},
-									"credentialResolver": {"runtime": "aws_secrets_manager"},
-									"moduleSelectors": {
-										"postgres": {
-											"source": "registry.example.com/postgres",
-											"inputs": {"storage_gb": 20}
-										}
-									}
-								}
-							}
-						}
-					}
-				]
-			}`
-		default:
-			return ""
-		}
-	})
-
-	require.NoError(t, err)
-	require.Equal(t, map[string][]string{
-		"databaseLifecycle:operations":          {"ensure_database"},
-		"databaseLifecycle:engines":             {"postgres"},
-		"databaseLifecycle:environmentProfiles": {"deployed:production"},
-	}, tags)
-}
-
 func TestCapabilityTagsFromEnvPublishesNativeRunnerOperations(t *testing.T) {
 	tags, err := CapabilityTagsFromEnv(func(key string) string {
 		switch key {
@@ -157,6 +117,168 @@ func TestCapabilityTagsFromEnvPublishesNativeRunnerOperations(t *testing.T) {
 		"databaseLifecycle:engines":             {"postgres"},
 		"databaseLifecycle:environmentProfiles": {"deployed:production"},
 	}, tags)
+}
+
+func TestCapabilityTagsFromEnvPublishesManagedIAMV1OnlyWhenFullyConfigured(t *testing.T) {
+	env := map[string]string{
+		envConfig: `{
+			"entries": [{
+				"environment": "deployed",
+				"profiles": ["production"],
+				"engines": ["postgres"],
+				"operations": {
+					"ensure_database": {
+						"backend": "terraform",
+						"terraform": {
+							"backend": {"stateBackend": "s3"},
+							"credentialResolver": {"runtime": "aws_secrets_manager"},
+							"moduleSelectors": {
+								"postgres": {
+									"source": "registry.example.com/postgres",
+									"inputs": {
+										"auth_mode": "aws_iam_role",
+										"connector_role_arn": "arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+										"deployment_token": "012345abcdef"
+									}
+								}
+							}
+						}
+					},
+					"migrate_schema": {"backend": "native_runner"}
+				}
+			}]
+		}`,
+		envConnectorRoleARN:                  validIAMConnectorRoleARN,
+		envSSLMode:                           sslModeVerifyFull,
+		envSSLRootCert:                       "/etc/rds/global-bundle.pem",
+		envIAMAllowedRoleARNPrefixes:         `["arn:aws:iam::123456789012:role/superblocks-native-db-connector"]`,
+		refresolver.AllowedRefPrefixesEnvVar: "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!",
+	}
+
+	tags, err := CapabilityTagsFromEnv(func(key string) string { return env[key] })
+
+	require.NoError(t, err)
+	require.Equal(t, []string{managedIAMCapabilityV1}, tags[capabilityTagCapabilities])
+
+	for _, missing := range []string{envConnectorRoleARN, envSSLMode, envSSLRootCert, envIAMAllowedRoleARNPrefixes, refresolver.AllowedRefPrefixesEnvVar} {
+		t.Run("without "+missing, func(t *testing.T) {
+			previous := env[missing]
+			env[missing] = ""
+			t.Cleanup(func() { env[missing] = previous })
+
+			tags, err := CapabilityTagsFromEnv(func(key string) string { return env[key] })
+
+			require.NoError(t, err)
+			require.NotContains(t, tags, capabilityTagCapabilities)
+		})
+	}
+
+	t.Run("without deployment_token", func(t *testing.T) {
+		incomplete := map[string]string{
+			envConfig: `{
+				"entries": [{
+					"environment": "deployed",
+					"profiles": ["production"],
+					"engines": ["postgres"],
+					"operations": {
+						"ensure_database": {
+							"backend": "terraform",
+							"terraform": {
+								"backend": {"stateBackend": "s3"},
+								"credentialResolver": {"runtime": "aws_secrets_manager"},
+								"moduleSelectors": {
+									"postgres": {
+										"source": "registry.example.com/postgres",
+										"inputs": {
+											"auth_mode": "aws_iam_role",
+											"connector_role_arn": "arn:aws:iam::123456789012:role/superblocks-native-db-connector"
+										}
+									}
+								}
+							}
+						}
+					}
+				}]
+			}`,
+			envConnectorRoleARN:                  validIAMConnectorRoleARN,
+			envSSLMode:                           sslModeVerifyFull,
+			envSSLRootCert:                       "/etc/rds/global-bundle.pem",
+			envIAMAllowedRoleARNPrefixes:         `["arn:aws:iam::123456789012:role/superblocks-native-db-connector"]`,
+			refresolver.AllowedRefPrefixesEnvVar: "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!",
+		}
+
+		tags, err := CapabilityTagsFromEnv(func(key string) string { return incomplete[key] })
+
+		require.NoError(t, err)
+		require.NotContains(t, tags, capabilityTagCapabilities)
+	})
+
+	t.Run("with mismatched connector_role_arn", func(t *testing.T) {
+		mismatched := map[string]string{
+			envConfig: `{
+				"entries": [{
+					"environment": "deployed",
+					"profiles": ["production"],
+					"engines": ["postgres"],
+					"operations": {
+						"ensure_database": {
+							"backend": "terraform",
+							"terraform": {
+								"backend": {"stateBackend": "s3"},
+								"credentialResolver": {"runtime": "aws_secrets_manager"},
+								"moduleSelectors": {
+									"postgres": {
+										"source": "registry.example.com/postgres",
+										"inputs": {
+											"auth_mode": "aws_iam_role",
+											"connector_role_arn": "arn:aws:iam::123456789012:role/other-role",
+											"deployment_token": "012345abcdef"
+										}
+									}
+								}
+							}
+						}
+					}
+				}]
+			}`,
+			envConnectorRoleARN:                  validIAMConnectorRoleARN,
+			envSSLMode:                           sslModeVerifyFull,
+			envSSLRootCert:                       "/etc/rds/global-bundle.pem",
+			envIAMAllowedRoleARNPrefixes:         `["arn:aws:iam::123456789012:role/superblocks-native-db-connector"]`,
+			refresolver.AllowedRefPrefixesEnvVar: "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!",
+		}
+
+		tags, err := CapabilityTagsFromEnv(func(key string) string { return mismatched[key] })
+
+		require.NoError(t, err)
+		require.NotContains(t, tags, capabilityTagCapabilities)
+	})
+
+	t.Run("with connector role outside runtime allowlist", func(t *testing.T) {
+		denied := map[string]string{}
+		for key, value := range env {
+			denied[key] = value
+		}
+		denied[envIAMAllowedRoleARNPrefixes] = `["arn:aws:iam::123456789012:role/other-role"]`
+
+		tags, err := CapabilityTagsFromEnv(func(key string) string { return denied[key] })
+
+		require.NoError(t, err)
+		require.NotContains(t, tags, capabilityTagCapabilities)
+	})
+
+	t.Run("with connector role covered by allowlist prefix", func(t *testing.T) {
+		prefixed := map[string]string{}
+		for key, value := range env {
+			prefixed[key] = value
+		}
+		prefixed[envIAMAllowedRoleARNPrefixes] = `["arn:aws:iam::123456789012:role/"]`
+
+		tags, err := CapabilityTagsFromEnv(func(key string) string { return prefixed[key] })
+
+		require.NoError(t, err)
+		require.Equal(t, []string{managedIAMCapabilityV1}, tags[capabilityTagCapabilities])
+	})
 }
 
 func TestMergeCapabilityTagsReplacesStaleLifecycleTags(t *testing.T) {

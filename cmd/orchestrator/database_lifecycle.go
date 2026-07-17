@@ -19,6 +19,7 @@ import (
 
 const (
 	registrationTagProfile                              = "profile"
+	registrationTagDatabaseLifecycleCapabilities        = "databaseLifecycle:capabilities"
 	registrationTagDatabaseLifecycleEnvironmentProfiles = "databaseLifecycle:environmentProfiles"
 	registrationTagDatabaseLifecycleEngines             = "databaseLifecycle:engines"
 	registrationTagDatabaseLifecycleOps                 = "databaseLifecycle:operations"
@@ -41,6 +42,10 @@ func databaseLifecycleWorkerRunnable(serverClientOptions clients.ServerClientOpt
 
 func databaseLifecycleRegistrationTags(agentTags string, lifecycleWorkerEnabled bool, getenv func(string) string) (map[string][]string, error) {
 	tags := metadata.GetTagsMap(agentTags)
+	// This is an implementation-derived capability. Never trust an operator-
+	// supplied agent tag to advertise it when the required runtime and
+	// lifecycle configuration are unavailable.
+	delete(tags, registrationTagDatabaseLifecycleCapabilities)
 	if !lifecycleWorkerEnabled {
 		return tags, nil
 	}
@@ -138,6 +143,7 @@ func logDatabaseLifecycleRegistrationTags(logger *zap.Logger, tags map[string][]
 		zap.Strings("operations", tags[registrationTagDatabaseLifecycleOps]),
 		zap.Strings("engines", tags[registrationTagDatabaseLifecycleEngines]),
 		zap.Strings("environment_profiles", tags[registrationTagDatabaseLifecycleEnvironmentProfiles]),
+		zap.Strings("capabilities", tags[registrationTagDatabaseLifecycleCapabilities]),
 	)
 }
 

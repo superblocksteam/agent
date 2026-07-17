@@ -29,34 +29,16 @@ func TestBootstrapWorkerBuildsWorkerFromConfig(t *testing.T) {
 	require.Equal(t, 5*time.Second, interval)
 }
 
-func TestBootstrapWorkerAcceptsLifecycleConfigWithoutModuleShapes(t *testing.T) {
-	worker, _, err := BootstrapWorker(
-		Config{
-			AgentID:              "agent-1",
-			RootDir:              t.TempDir(),
-			TerraformBin:         "tofu",
-			PollInterval:         5 * time.Second,
-			AllowedResourceTypes: []string{"aws_db_instance"},
-			AllowedModuleSources: []string{"app.terraform.io/superblocks/rds-postgres/aws"},
-			LifecycleConfig:      testLifecycleConfig("app.terraform.io/superblocks/rds-postgres/aws"),
-		},
-		clients.NewServerClient(&clients.ServerClientOptions{URL: "http://127.0.0.1"}),
-		CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) { return CommandResult{}, nil }),
-		NewMemoryLocker(),
-	)
-
-	require.NoError(t, err)
-	require.NotNil(t, worker)
-}
-
 func TestDSNOptionsFromConfigWiresCredentialResolver(t *testing.T) {
 	t.Setenv("SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES", "arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/")
 
 	opts := dsnOptionsFromConfig(Config{
-		SSLMode:     "verify-full",
-		SSLRootCert: "/etc/rds/global-bundle.pem",
+		ExpectedConnectorRoleARN: validIAMConnectorRoleARN,
+		SSLMode:                  "verify-full",
+		SSLRootCert:              "/etc/rds/global-bundle.pem",
 	})
 
+	require.Equal(t, validIAMConnectorRoleARN, opts.ExpectedConnectorRoleARN)
 	require.Equal(t, "verify-full", opts.SSLMode)
 	require.Equal(t, "/etc/rds/global-bundle.pem", opts.SSLRootCert)
 	require.Equal(t, []string{"arn:aws:secretsmanager:us-east-1:111:secret:superblocks/native-db/"}, opts.AllowedRefPrefixes)

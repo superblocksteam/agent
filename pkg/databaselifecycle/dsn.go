@@ -25,10 +25,14 @@ import (
 type CredentialResolverFactory func(ctx context.Context) (refresolver.Resolver, error)
 
 type DSNOptions struct {
-	SSLMode            string
-	SSLRootCert        string
-	AllowedRefPrefixes []string
-	ResolverFactory    CredentialResolverFactory
+	SSLMode                   string
+	SSLRootCert               string
+	AWSConfigLoader           AWSConfigLoader
+	AllowedRefPrefixes        []string
+	AssumeRoleProviderFactory AssumeRoleProviderFactory
+	ExpectedConnectorRoleARN  string
+	RDSAuthTokenGenerator     RDSAuthTokenGenerator
+	ResolverFactory           CredentialResolverFactory
 }
 
 const (
@@ -58,8 +62,10 @@ const (
 // but doesn't validate the server certificate identity). The DSN
 // builder rejects an empty SSLMode at dispatch time.
 func NewDSNBuilder(opts DSNOptions) DSNBuilder {
+	opts = withDefaultIAMDependencies(opts)
+	iamCredentials := newIAMCredentialCache()
 	return func(ctx context.Context, callback TerminalCallback) (string, error) {
-		return buildDSNFromCallback(ctx, callback, opts)
+		return buildDSNFromCallback(ctx, callback, opts, iamCredentials)
 	}
 }
 
@@ -70,7 +76,16 @@ func NewDSNBuilder(opts DSNOptions) DSNBuilder {
 // pkg/secrets/refresolver package handles dispatch and field decoding;
 // this function is now responsible only for assembling the URL once
 // the credential values are in hand.
-func buildDSNFromCallback(ctx context.Context, callback TerminalCallback, opts DSNOptions) (string, error) {
+func buildDSNFromCallback(ctx context.Context, callback TerminalCallback, opts DSNOptions, iamCredentials *iamCredentialCache) (string, error) {
+	if callback.ConnectionMetadata != nil {
+		if authMode, present := callback.ConnectionMetadata["auth_mode"]; present {
+			if authMode != iamAuthMode {
+				return "", fmt.Errorf("connection_metadata.auth_mode %q is unsupported", authMode)
+			}
+			return buildIAMDSNFromCallback(ctx, callback, opts, iamCredentials)
+		}
+	}
+
 	if err := validateSSLOptions(opts); err != nil {
 		return "", err
 	}

@@ -147,6 +147,9 @@ func (w *Worker) processLockedDispatch(ctx context.Context, dispatch DispatchPay
 	if err != nil {
 		return w.reportFailure(ctx, dispatch, err)
 	}
+	if job.Runtime == nil {
+		job.Runtime = &JobRuntime{}
+	}
 	dispatch, err = w.materializer.Materialize(ctx, job, dispatch)
 	if err != nil {
 		if isRetryableLifecycleError(err) {

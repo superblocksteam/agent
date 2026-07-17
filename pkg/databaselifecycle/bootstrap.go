@@ -21,17 +21,19 @@ func BootstrapWorker(config Config, client clients.ServerClient, executor Comman
 		return nil, 0, errors.New("database lifecycle allowed module sources are required")
 	}
 	policy := NewResourceTypePolicy(config.AllowedResourceTypes)
+	dsnOptions := dsnOptionsFromConfig(config)
 	worker, err := NewWorkerFromDependencies(WorkerDependencies{
-		AgentID:              config.AgentID,
-		Client:               client,
-		Executor:             executor,
-		Locker:               locker,
-		MigrationRunner:      migrations.NewRunner(),
-		Policy:               policy,
-		RootDir:              config.RootDir,
-		AllowedModuleSources: config.AllowedModuleSources,
-		LifecycleConfig:      config.LifecycleConfig,
-		DSNOptions:           dsnOptionsFromConfig(config),
+		AgentID:                  config.AgentID,
+		Client:                   client,
+		Executor:                 executor,
+		Locker:                   locker,
+		MasterCredentialResolver: NewRefMasterCredentialResolver(dsnOptions.ResolverFactory, dsnOptions.AllowedRefPrefixes),
+		MigrationRunner:          migrations.NewRunner(),
+		Policy:                   policy,
+		RootDir:                  config.RootDir,
+		AllowedModuleSources:     config.AllowedModuleSources,
+		LifecycleConfig:          config.LifecycleConfig,
+		DSNOptions:               dsnOptions,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -41,8 +43,9 @@ func BootstrapWorker(config Config, client clients.ServerClient, executor Comman
 
 func dsnOptionsFromConfig(config Config) DSNOptions {
 	return DSNOptions{
-		SSLMode:     config.SSLMode,
-		SSLRootCert: config.SSLRootCert,
+		ExpectedConnectorRoleARN: config.ExpectedConnectorRoleARN,
+		SSLMode:                  config.SSLMode,
+		SSLRootCert:              config.SSLRootCert,
 		ResolverFactory: func(ctx context.Context) (refresolver.Resolver, error) {
 			return refresolver.NewAWSSecretsManagerResolverFromDefaultConfig(ctx)
 		},

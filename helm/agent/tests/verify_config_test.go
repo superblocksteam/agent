@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	logicalModuleSource          = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.1"
-	physicalModuleSource         = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.1"
+	logicalModuleSource          = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.3"
+	physicalModuleSource         = "git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.3"
 	vendoredLogicalModuleSource  = "./modules/postgres-managed-database"
 	vendoredPhysicalModuleSource = "./modules/aws-rds-managed-instance"
 )
@@ -105,6 +105,118 @@ func TestOPAChartRegisteredOnlyGroupsCanOmitPhysicalModuleInputs(t *testing.T) {
 	)
 	config := lifecycleConfig(t, lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered))))
 	require.NotContains(t, requireMap(t, entryByEnvironment(t, config, "edit")["operations"]), "ensure_physical_database_instance")
+}
+
+func TestOPAChartIAMGroupsCanOmitPasswordSecretPrefix(t *testing.T) {
+	t.Parallel()
+
+	iamInputs := `{"auth_mode":"aws_iam_role","connector_role_arn":"arn:aws:iam::123456789012:role/superblocks-native-db-connector","deployment_token":"012345abcdef"}`
+	rendered := renderLifecycleChart(t,
+		"--set-json", "databaseLifecycle.groups.nonprod.logicalModuleInputs="+iamInputs,
+		"--set-json", "databaseLifecycle.groups.production.logicalModuleInputs="+iamInputs,
+		"--set", "databaseLifecycle.sslMode=verify-full",
+		"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
+		"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+		"--set-json", `postgres.iamAllowedRoleArnPrefixes=["arn:aws:iam::123456789012:role/superblocks-native-db-connector"]`,
+	)
+	config := lifecycleConfig(t, lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered))))
+	inputs := requireMap(t, requireMap(t,
+		requireMap(t,
+			requireMap(t, entryByEnvironment(t, config, "edit")["operations"])["ensure_database"],
+		)["terraform"],
+	)["moduleSelectors"])
+	moduleInputs := requireMap(t, requireMap(t, inputs["postgres"])["inputs"])
+	require.Equal(t, "aws_iam_role", moduleInputs["auth_mode"])
+	require.Equal(t, "012345abcdef", moduleInputs["deployment_token"])
+	require.Equal(t, "arn:aws:iam::123456789012:role/superblocks-native-db-connector", moduleInputs["connector_role_arn"])
+	require.NotContains(t, moduleInputs, "credential_secret_prefix")
+}
+
+func TestOPAChartIAMGroupsRequireRuntimeIAMConfiguration(t *testing.T) {
+	t.Parallel()
+
+	iamInputs := `{"auth_mode":"aws_iam_role","connector_role_arn":"arn:aws:iam::123456789012:role/superblocks-native-db-connector","deployment_token":"012345abcdef"}`
+	for _, test := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "connector role",
+			args: []string{
+				"--set", "databaseLifecycle.sslMode=verify-full",
+				"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
+			},
+			want: "postgres.nativeDbConnectorRoleArn is required when auth_mode=aws_iam_role",
+		},
+		{
+			name: "verify full TLS",
+			args: []string{
+				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+			},
+			want: "databaseLifecycle.sslMode must be verify-full when auth_mode=aws_iam_role",
+		},
+		{
+			name: "root certificate",
+			args: []string{
+				"--set", "databaseLifecycle.sslMode=verify-full",
+				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+			},
+			want: "databaseLifecycle.sslRootCert is required when sslMode is verify-ca or verify-full",
+		},
+		{
+			name: "matching connector role",
+			args: []string{
+				"--set", "databaseLifecycle.sslMode=verify-full",
+				"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
+				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/different-connector",
+			},
+			want: "logicalModuleInputs.connector_role_arn must match postgres.nativeDbConnectorRoleArn when auth_mode=aws_iam_role",
+		},
+		{
+			name: "connector role runtime allowlist",
+			args: []string{
+				"--set", "databaseLifecycle.sslMode=verify-full",
+				"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
+				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+			},
+			want: "postgres.nativeDbConnectorRoleArn must be covered by postgres.iamAllowedRoleArnPrefixes when auth_mode=aws_iam_role",
+		},
+		{
+			name: "secrets ref allowlist",
+			args: []string{
+				"--set", "databaseLifecycle.sslMode=verify-full",
+				"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
+				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+				"--set-json", `postgres.iamAllowedRoleArnPrefixes=["arn:aws:iam::123456789012:role/superblocks-native-db-connector"]`,
+				"--set-json", "databaseLifecycle.allowedRefPrefixes=[]",
+			},
+			want: "databaseLifecycle.allowedRefPrefixes is required when auth_mode=aws_iam_role",
+		},
+	} {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			args := append([]string{
+				"--set-json", "databaseLifecycle.groups.nonprod.logicalModuleInputs=" + iamInputs,
+				"--set-json", "databaseLifecycle.groups.production.logicalModuleInputs=" + iamInputs,
+			}, test.args...)
+			_, output, err := executeLifecycleChart(t, args...)
+			require.Error(t, err)
+			require.Contains(t, string(output), test.want)
+		})
+	}
+}
+
+func TestOPAChartIAMGroupsRequireDeploymentTokenAndConnectorRole(t *testing.T) {
+	t.Parallel()
+
+	_, output, err := executeLifecycleChart(t,
+		"--set-json", `databaseLifecycle.groups.nonprod.logicalModuleInputs={"auth_mode":"aws_iam_role"}`,
+		"--set-json", `databaseLifecycle.groups.production.logicalModuleInputs={"auth_mode":"aws_iam_role"}`,
+	)
+	require.Error(t, err)
+	require.Contains(t, string(output), "deployment_token is required when auth_mode=aws_iam_role")
 }
 
 func TestOPAChartAppliesDeploymentTagsToEveryPhysicalModule(t *testing.T) {
@@ -425,13 +537,18 @@ func entryByEnvironment(t *testing.T, config map[string]any, environment string)
 func physicalModuleTags(t *testing.T, entry map[string]any) map[string]any {
 	t.Helper()
 
+	return requireMap(t, physicalModuleInputs(t, entry)["tags"])
+}
+
+func physicalModuleInputs(t *testing.T, entry map[string]any) map[string]any {
+	t.Helper()
+
 	operations := requireMap(t, entry["operations"])
 	physicalOperation := requireMap(t, operations["ensure_physical_database_instance"])
 	terraform := requireMap(t, physicalOperation["terraform"])
 	moduleSelectors := requireMap(t, terraform["moduleSelectors"])
 	physicalModule := requireMap(t, moduleSelectors["postgres"])
-	inputs := requireMap(t, physicalModule["inputs"])
-	return requireMap(t, inputs["tags"])
+	return requireMap(t, physicalModule["inputs"])
 }
 
 func assertRenderedLifecycleConfig(t *testing.T, configJSON string) {

@@ -97,6 +97,7 @@ type DatabaseLifecyclePhysicalDatabaseInstance struct {
 	Environment         string         `json:"environment"`
 	Engine              string         `json:"engine"`
 	Endpoint            string         `json:"endpoint"`
+	Metadata            map[string]any `json:"metadata,omitempty"`
 	MasterCredentialRef map[string]any `json:"masterCredentialRef"`
 	CapacityMax         int            `json:"capacityMax"`
 	CapacityUsed        int            `json:"capacityUsed,omitempty"`

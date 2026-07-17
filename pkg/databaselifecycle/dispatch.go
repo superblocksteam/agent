@@ -12,6 +12,8 @@ import (
 
 type DispatchPayload struct {
 	AgentID                          string                 `json:"-"`
+	ApplicationID                    string                 `json:"applicationId,omitempty"`
+	BindingID                        string                 `json:"bindingId,omitempty"`
 	BindingKey                       string                 `json:"bindingKey"`
 	ConnectionMetadata               map[string]any         `json:"connectionMetadata,omitempty"`
 	Continuation                     DispatchContinuation   `json:"continuation,omitempty"`
@@ -43,6 +45,8 @@ type DispatchContinuation struct {
 
 func (payload DispatchPayload) MarshalJSON() ([]byte, error) {
 	type wirePayload struct {
+		ApplicationID         string                 `json:"applicationId,omitempty"`
+		BindingID             string                 `json:"bindingId,omitempty"`
 		BindingKey            string                 `json:"bindingKey"`
 		ConnectionMetadata    map[string]any         `json:"connectionMetadata,omitempty"`
 		Continuation          *DispatchContinuation  `json:"continuation,omitempty"`
@@ -57,6 +61,8 @@ func (payload DispatchPayload) MarshalJSON() ([]byte, error) {
 		ResourceKey           string                 `json:"resourceKey"`
 	}
 	return json.Marshal(wirePayload{
+		ApplicationID:         payload.ApplicationID,
+		BindingID:             payload.BindingID,
 		BindingKey:            payload.BindingKey,
 		ConnectionMetadata:    payload.ConnectionMetadata,
 		Continuation:          payload.Continuation.wireValue(),

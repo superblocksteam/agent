@@ -475,6 +475,59 @@ func TestProcessDispatchMigrateSchemaSkipsTerraformAndAppliesAttachedMigrations(
 	}, reported.RuntimeCredentialRefs)
 }
 
+func TestProcessDispatchMigrateSchemaRejectsMissingOrMismatchedManagedIAMWireIdentityBeforeDatabaseAccess(t *testing.T) {
+	tests := []struct {
+		name        string
+		application string
+		binding     string
+		errorString string
+	}{
+		{name: "missing application id", binding: validIAMBindingID, errorString: "dispatch applicationId is required"},
+		{name: "missing binding id", application: validIAMApplicationID, errorString: "dispatch bindingId is required"},
+		{
+			name:        "mismatched binding id",
+			application: validIAMApplicationID,
+			binding:     "binding-2",
+			errorString: "connection_metadata.binding_id does not match dispatch bindingId",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var reported TerminalCallback
+			fake := &fakeMigrationRunner{}
+			_, err := ProcessDispatch(
+				context.Background(),
+				RunnerFunc(func(context.Context, Job) (Result, error) {
+					t.Fatal("migrate_schema must not invoke the Terraform runner")
+					return Result{}, nil
+				}),
+				fake,
+				noDSN(t),
+				CallbackReporterFunc(func(_ context.Context, callback TerminalCallback) (TerminalCallbackResult, error) {
+					reported = callback
+					return TerminalCallbackResult{RequestID: callback.RequestID, RequestState: "failed"}, nil
+				}),
+				DispatchPayload{
+					ApplicationID:      test.application,
+					BindingID:          test.binding,
+					BindingKey:         "app:prod:orders",
+					ConnectionMetadata: validIAMMetadata(),
+					Migrations:         []migrations.Migration{{Version: "0001", Filename: "0001_init.sql", SQL: "SELECT 1;"}},
+					Operation:          "migrate_schema",
+					RequestID:          "request-1",
+				},
+				Job{BindingKey: "app:prod:orders"},
+			)
+
+			require.NoError(t, err)
+			require.False(t, fake.called)
+			require.Equal(t, "unsupported_provider_capability", reported.Error.Code)
+			require.Contains(t, reported.Error.Message, test.errorString)
+		})
+	}
+}
+
 func TestProcessDispatchMigrateSchemaUsesDispatchMigrationRefs(t *testing.T) {
 	fake := &fakeMigrationRunner{}
 	attached := []migrations.Migration{

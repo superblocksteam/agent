@@ -291,6 +291,9 @@ sandbox_workers:
     # Serialized to a JSON array in the environment. Entries are exact role ARNs,
     # or role-path prefixes ending in "/". Empty denies all IAM roles.
     iamAllowedRoleArnPrefixes: []
+    # Reserved role for managed Native DB runtime connections. Empty disables
+    # the managed path; this is an ARN, not secret material.
+    nativeDbConnectorRoleArn: ""
   superblocks:
     key: <override>
   queue:

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type terraformOutputValue struct {
@@ -23,10 +24,22 @@ func ReadyCallbackFromTerraformOutput(dispatch DispatchPayload, result Result) (
 		connectionMetadata = copyConnectionMetadata(connectionMetadata)
 		connectionMetadata["physical_database_instance_ref"] = dispatch.PhysicalDatabaseInstanceID
 	}
-
 	runtimeCredentialRefs := mapOutputValue(outputs, "runtime_credential_refs")
 	migrationCredentialRefs := mapOutputValue(outputs, "migration_credential_refs")
-	if len(migrationCredentialRefs) == 0 {
+	managedIAM := false
+	if connectionMetadata != nil {
+		var err error
+		connectionMetadata, err = bindTrustedIAMDispatchIdentity(dispatch, connectionMetadata)
+		if err != nil {
+			return TerminalCallback{}, err
+		}
+		_, managedIAM = connectionMetadata["auth_mode"]
+		if managedIAM {
+			runtimeCredentialRefs = nil
+			migrationCredentialRefs = nil
+		}
+	}
+	if !managedIAM && len(migrationCredentialRefs) == 0 {
 		migrationCredentialRefs = copyConnectionMetadata(runtimeCredentialRefs)
 	}
 
@@ -39,6 +52,51 @@ func ReadyCallbackFromTerraformOutput(dispatch DispatchPayload, result Result) (
 		MigrationState:          "pending",
 		RequestID:               dispatch.RequestID,
 	}, nil
+}
+
+func bindTrustedIAMDispatchIdentity(dispatch DispatchPayload, connectionMetadata map[string]any) (map[string]any, error) {
+	authMode, present := connectionMetadata["auth_mode"]
+	if !present {
+		return connectionMetadata, nil
+	}
+	if authMode != iamAuthMode {
+		return nil, unsupportedIAMDispatchMetadata(fmt.Errorf("connection_metadata.auth_mode %q is unsupported", authMode))
+	}
+	if strings.TrimSpace(dispatch.ApplicationID) == "" {
+		return nil, unsupportedIAMDispatchMetadata(errors.New("dispatch applicationId is required for managed IAM"))
+	}
+	if strings.TrimSpace(dispatch.BindingID) == "" {
+		return nil, unsupportedIAMDispatchMetadata(errors.New("dispatch bindingId is required for managed IAM"))
+	}
+
+	bound := copyConnectionMetadata(connectionMetadata)
+	for _, identity := range []struct {
+		metadataKey string
+		wireField   string
+		wireValue   string
+	}{
+		{metadataKey: "application_id", wireField: "applicationId", wireValue: dispatch.ApplicationID},
+		{metadataKey: "binding_id", wireField: "bindingId", wireValue: dispatch.BindingID},
+	} {
+		if value, exists := bound[identity.metadataKey]; exists && value != identity.wireValue {
+			return nil, unsupportedIAMDispatchMetadata(
+				fmt.Errorf("connection_metadata.%s does not match dispatch %s", identity.metadataKey, identity.wireField),
+			)
+		}
+		bound[identity.metadataKey] = identity.wireValue
+	}
+	if _, err := ParseIAMAuthDescriptor(bound); err != nil {
+		return nil, unsupportedIAMDispatchMetadata(fmt.Errorf("validate IAM connection metadata: %w", err))
+	}
+	return bound, nil
+}
+
+func unsupportedIAMDispatchMetadata(err error) error {
+	return &LifecycleError{
+		Code:      ErrorCodeUnsupportedShape,
+		Retryable: false,
+		Err:       err,
+	}
 }
 
 func copyConnectionMetadata(metadata map[string]any) map[string]any {

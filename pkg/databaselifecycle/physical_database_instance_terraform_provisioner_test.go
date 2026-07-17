@@ -119,6 +119,52 @@ func TestTerraformPhysicalDatabaseInstanceProvisionerDeprovisionsWhenOutputParsi
 	require.Contains(t, runner.destroyed[0].BindingKey, "physical-database-instance:deployed:production:us-east-1:postgres:provision-1")
 }
 
+func TestTerraformPhysicalDatabaseInstanceProvisionerUsesDefaultedCapacityOutputWithoutCompensation(t *testing.T) {
+	runner := &recordingPhysicalDatabaseInstanceTerraformRunner{
+		runResult: Result{OutputJSON: `{
+			"capacity_max":{"value":4},
+			"connection_metadata":{"value":{"host":"new-pool.example.com","port":5432}},
+			"master_user_secret_arn":{"value":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!new-pool"}
+		}`},
+	}
+	provisioner := newTerraformPhysicalDatabaseInstanceProvisioner(
+		LifecycleConfig{Entries: []LifecycleConfigEntry{{
+			Environment: "deployed",
+			Profiles:    []string{"production"},
+			Engines:     []string{"postgres"},
+			Operations: map[string]LifecycleOperation{
+				operationEnsurePhysicalDatabaseInstance: terraformOperationWithBackend(
+					map[string]any{"stateBackend": "s3", "bucket": "physical-state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-east-1"},
+					map[string]TerraformModule{
+						"postgres": {
+							Source: testAWSRDSManagedInstanceModuleSource,
+							Inputs: map[string]any{},
+						},
+					},
+				),
+			},
+		}}},
+		[]string{testAWSRDSManagedInstanceModuleSource},
+		tempRoot(t),
+		runner,
+		ProviderSSLOptions{Mode: "disable"},
+	)
+	provisioner.newProvisionID = func() (string, error) {
+		return "provision-default-capacity", nil
+	}
+
+	instance, err := provisioner.ProvisionPhysicalDatabaseInstance(context.Background(), PhysicalDatabaseInstanceSelector{
+		Region:      "us-east-1",
+		Environment: "deployed",
+		Profile:     "production",
+		Engine:      "postgres",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 4, instance.CapacityMax)
+	require.Empty(t, runner.destroyed)
+}
+
 func TestTerraformPhysicalDatabaseInstanceProvisionerDeprovisionsWhenRegistrationFails(t *testing.T) {
 	runner := &recordingPhysicalDatabaseInstanceTerraformRunner{
 		runResult: Result{OutputJSON: `{
@@ -275,7 +321,15 @@ func TestTerraformPhysicalDatabaseInstanceProvisionerDerivesStableResourceKeyFro
 
 func TestPhysicalDatabaseInstanceFromTerraformOutputUsesWorkerOwnedPoolPolicy(t *testing.T) {
 	instance, err := physicalDatabaseInstanceFromTerraformOutput(Result{OutputJSON: `{
-		"connection_metadata":{"value":{"host":"new-pool.example.com","port":5432}},
+		"connection_metadata":{"value":{
+			"account_id":"123456789012",
+			"cluster_resource_id":"cluster-ABC123DEF456EXAMPLE",
+			"connector_role_arn":"arn:aws:iam::999999999999:role/untrusted",
+			"host":"new-pool.example.com",
+			"master_user_secret_arn":"arn:aws:secretsmanager:us-east-1:123456789012:secret:must-not-persist",
+			"port":5432,
+			"region":"us-east-1"
+		}},
 		"credential_refs":{"value":{"password":{"resolver":"aws_secrets_manager","ref":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!new-pool","field":"password"}}}
 	}`}, PhysicalDatabaseInstanceSelector{
 		CapacityMax:   100,
@@ -291,10 +345,58 @@ func TestPhysicalDatabaseInstanceFromTerraformOutputUsesWorkerOwnedPoolPolicy(t 
 	require.Equal(t, "active", instance.Status)
 	require.Equal(t, "standard", instance.SecurityClass)
 	require.Equal(t, map[string]any{
+		"aws_account_id":      "123456789012",
+		"cluster_resource_id": "cluster-ABC123DEF456EXAMPLE",
+		"host":                "new-pool.example.com",
+		"port":                5432,
+		"region":              "us-east-1",
+	}, instance.Metadata)
+	require.NotContains(t, instance.Metadata, "connector_role_arn")
+	require.NotContains(t, instance.Metadata, "master_user_secret_arn")
+	require.Equal(t, map[string]any{
 		"field":    "password",
 		"ref":      "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!new-pool",
 		"resolver": "aws_secrets_manager",
 	}, instance.MasterCredentialRef)
+}
+
+func TestPhysicalDatabaseInstanceFromTerraformOutputRejectsMalformedIAMMetadata(t *testing.T) {
+	_, err := physicalDatabaseInstanceFromTerraformOutput(Result{OutputJSON: `{
+		"connection_metadata":{"value":{
+			"aws_account_id":"not-an-account",
+			"host":"new-pool.example.com",
+			"port":5432
+		}},
+		"credential_refs":{"value":{"password":{"resolver":"aws_secrets_manager","ref":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!new-pool","field":"password"}}}
+	}`}, PhysicalDatabaseInstanceSelector{}, map[string]any{"capacity_max": 8})
+
+	require.ErrorContains(t, err, "aws_account_id must contain exactly 12 digits")
+}
+
+func TestPhysicalDatabaseInstanceFromTerraformOutputConvertsManagedMasterSecretARNToRef(t *testing.T) {
+	instance, err := physicalDatabaseInstanceFromTerraformOutput(Result{OutputJSON: `{
+		"connection_metadata":{"value":{"host":"new-pool.example.com","port":5432}},
+		"master_user_secret_arn":{"value":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!cluster"}
+	}`}, PhysicalDatabaseInstanceSelector{}, map[string]any{
+		"capacity_max": 8,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, map[string]any{
+		"ref":      "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!cluster",
+		"resolver": "aws_secrets_manager",
+	}, instance.MasterCredentialRef)
+}
+
+func TestPhysicalDatabaseInstanceFromTerraformOutputReadsDefaultedCapacityFromRootOutput(t *testing.T) {
+	instance, err := physicalDatabaseInstanceFromTerraformOutput(Result{OutputJSON: `{
+		"capacity_max":{"value":4},
+		"connection_metadata":{"value":{"host":"new-pool.example.com","port":5432}},
+		"master_user_secret_arn":{"value":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!cluster"}
+	}`}, PhysicalDatabaseInstanceSelector{}, map[string]any{})
+
+	require.NoError(t, err)
+	require.Equal(t, 4, instance.CapacityMax)
 }
 
 func TestPhysicalDatabaseInstanceFromTerraformOutputSupportsLegacyModulePoolMetadata(t *testing.T) {
@@ -321,12 +423,13 @@ func TestPhysicalDatabaseInstanceFromTerraformOutputRejectsMissingCapacity(t *te
 }
 
 func TestSplitPhysicalDatabaseInstanceEndpointDefaultsPortWhenAbsent(t *testing.T) {
-	resolved := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
+	resolved, err := ResolveWithPhysicalDatabaseInstance(ResolvedLifecycleConfig{
 		Module: TerraformModule{Inputs: map[string]any{}},
 	}, PhysicalDatabaseInstance{
 		Endpoint: "pool-rds.example.com",
 	})
 
+	require.NoError(t, err)
 	require.Equal(t, "pool-rds.example.com", resolved.Module.Inputs["host"])
 	require.Equal(t, 5432, resolved.Module.Inputs["port"])
 }

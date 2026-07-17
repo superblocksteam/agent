@@ -83,6 +83,57 @@ func TestDatabaseLifecycleRegistrationTagsMergeLifecycleCapabilities(t *testing.
 	}, tags)
 }
 
+func TestDatabaseLifecycleRegistrationTagsAdvertisesManagedIAMV1WhenConfigured(t *testing.T) {
+	getenv := func(key string) string {
+		switch key {
+		case "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":
+			return `{
+				"entries": [{
+					"environment": "deployed",
+					"profiles": ["production"],
+					"engines": ["postgres"],
+					"operations": {
+						"ensure_database": {
+							"backend": "terraform",
+							"terraform": {
+								"backend": {"stateBackend": "s3"},
+								"credentialResolver": {"runtime": "aws_secrets_manager"},
+								"moduleSelectors": {
+									"postgres": {
+										"source": "registry.example.com/postgres",
+										"inputs": {
+											"auth_mode": "aws_iam_role",
+											"connector_role_arn": "arn:aws:iam::123456789012:role/superblocks-native-db-connector",
+											"deployment_token": "012345abcdef"
+										}
+									}
+								}
+							}
+						}
+					}
+				}]
+			}`
+		case "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE":
+			return "verify-full"
+		case "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT":
+			return "/etc/rds/global-bundle.pem"
+		case "SUPERBLOCKS_NATIVE_DB_CONNECTOR_ROLE_ARN":
+			return "arn:aws:iam::123456789012:role/superblocks-native-db-connector"
+		case "SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES":
+			return `["arn:aws:iam::123456789012:role/superblocks-native-db-connector"]`
+		case "SUPERBLOCKS_SECRETS_REFRESOLVER_ALLOWED_REF_PREFIXES":
+			return "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!"
+		default:
+			return ""
+		}
+	}
+
+	tags, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"managed-IAM-v1"}, tags["databaseLifecycle:capabilities"])
+}
+
 func TestDatabaseLifecycleRegistrationTagsRejectsLifecycleEnvironmentProfileNotCoveredByProfileTag(t *testing.T) {
 	getenv := databaseLifecycleRegistrationTestGetenv(`{
 				"entries": [
@@ -280,7 +331,11 @@ func TestDatabaseLifecycleRegistrationTagsWorkerDisabledUsesAgentTagsOnly(t *tes
 		return ""
 	}
 
-	tags, err := databaseLifecycleRegistrationTags("profile:staging,region:us-east-1", false, getenv)
+	tags, err := databaseLifecycleRegistrationTags(
+		"profile:staging,region:us-east-1,databaseLifecycle:capabilities:managed-IAM-v1",
+		false,
+		getenv,
+	)
 
 	require.NoError(t, err)
 	require.Equal(t, map[string][]string{
@@ -309,46 +364,14 @@ func TestDatabaseLifecycleRegistrationTagsInvalidConfigReturnsError(t *testing.T
 	require.ErrorContains(t, err, "database lifecycle config")
 }
 
-func TestDatabaseLifecycleRegistrationTagsAcceptsConfigWithoutModuleShapes(t *testing.T) {
-	getenv := func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
-			return `{
-				"entries": [
-					{
-						"environment": "deployed",
-						"profiles": ["production"],
-						"engines": ["postgres"],
-						"operations": {
-							"ensure_database": {
-								"backend": "terraform",
-								"terraform": {
-									"backend": {"stateBackend": "s3"},
-									"credentialResolver": {"type": "aws"},
-									"moduleSelectors": {
-										"postgres": {"source": "registry.example.com/postgres"}
-									}
-								}
-							}
-						}
-					}
-				]
-			}`
-		}
-		return ""
-	}
-
-	tags, err := databaseLifecycleRegistrationTags("profile:production", true, getenv)
-
-	require.NoError(t, err)
-	require.Equal(t, []string{"ensure_database"}, tags["databaseLifecycle:operations"])
-}
-
 func databaseLifecycleRegistrationTestGetenv(config string) func(string) string {
 	return func(key string) string {
-		if key == "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG" {
+		switch key {
+		case "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG":
 			return config
+		default:
+			return ""
 		}
-		return ""
 	}
 }
 
@@ -358,6 +381,7 @@ func TestLogDatabaseLifecycleRegistrationTagsIncludesMergedTagSummary(t *testing
 
 	logDatabaseLifecycleRegistrationTags(logger, map[string][]string{
 		"profile":                               {"production", "staging"},
+		"databaseLifecycle:capabilities":        {"managed-IAM-v1"},
 		"databaseLifecycle:operations":          {"ensure_database"},
 		"databaseLifecycle:engines":             {"postgres"},
 		"databaseLifecycle:environmentProfiles": {"deployed:production", "deployed:staging"},
@@ -369,6 +393,7 @@ func TestLogDatabaseLifecycleRegistrationTagsIncludesMergedTagSummary(t *testing
 	require.ElementsMatch(t, []any{"ensure_database"}, entry[0].ContextMap()["operations"])
 	require.ElementsMatch(t, []any{"postgres"}, entry[0].ContextMap()["engines"])
 	require.ElementsMatch(t, []any{"deployed:production", "deployed:staging"}, entry[0].ContextMap()["environment_profiles"])
+	require.ElementsMatch(t, []any{"managed-IAM-v1"}, entry[0].ContextMap()["capabilities"])
 }
 
 func TestLogDatabaseLifecycleRegistrationTagErrorIncludesConfigFingerprint(t *testing.T) {

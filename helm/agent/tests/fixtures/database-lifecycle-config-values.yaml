@@ -24,9 +24,9 @@ databaseLifecycle:
     region: us-west-2
   modules:
     logical:
-      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.1
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.3
     physical:
-      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.1
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.3
   physicalProvisioning:
     enabled: true
   physicalModuleTags:

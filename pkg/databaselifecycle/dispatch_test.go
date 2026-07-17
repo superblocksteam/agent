@@ -25,7 +25,7 @@ func TestClaimDispatchesDecodesControlPlanePayloads(t *testing.T) {
 		require.Equal(t, "agent-1", body["agentId"])
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","connectionMetadata":{"database":"orders","host":"orders.internal","port":5432},"runtimeCredentialRefs":{"username":{"ref":"database/orders/runtime","field":"username"},"password":{"ref":"database/orders/runtime","field":"password"}},"migrationCredentialRefs":{"username":{"ref":"database/orders/migration","field":"username"},"password":{"ref":"database/orders/migration","field":"password"}},"desiredSpec":{"logicalName":"Orders DB","engine":"postgres","version":"16.3","sizing":{"class":"small"},"extensions":["pgvector"],"replicaCount":1,"migrationDirectory":"db/migrations"},"desiredSpecHash":"hash-1","environment":"deployed","operation":"migrate_schema","profile":"production","requestId":"request-1","resourceKey":"resource-1"}]}`))
+		w.Write([]byte(`{"data":[{"applicationId":"application-1","bindingId":"binding-1","bindingKey":"app:prod:orders","connectionMetadata":{"database":"orders","host":"orders.internal","port":5432},"runtimeCredentialRefs":{"username":{"ref":"database/orders/runtime","field":"username"},"password":{"ref":"database/orders/runtime","field":"password"}},"migrationCredentialRefs":{"username":{"ref":"database/orders/migration","field":"username"},"password":{"ref":"database/orders/migration","field":"password"}},"desiredSpec":{"logicalName":"Orders DB","engine":"postgres","version":"16.3","sizing":{"class":"small"},"extensions":["pgvector"],"replicaCount":1,"migrationDirectory":"db/migrations"},"desiredSpecHash":"hash-1","environment":"deployed","operation":"migrate_schema","profile":"production","requestId":"request-1","resourceKey":"resource-1"}]}`))
 	}))
 	defer server.Close()
 
@@ -36,7 +36,9 @@ func TestClaimDispatchesDecodesControlPlanePayloads(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []DispatchPayload{
 		{
-			BindingKey: "app:prod:orders",
+			ApplicationID: "application-1",
+			BindingID:     "binding-1",
+			BindingKey:    "app:prod:orders",
 			ConnectionMetadata: map[string]any{
 				"database": "orders",
 				"host":     "orders.internal",
@@ -71,6 +73,8 @@ func TestClaimDispatchesDecodesControlPlanePayloads(t *testing.T) {
 
 func TestDispatchPayloadOmitsWorkerResolvedFieldsFromWire(t *testing.T) {
 	encoded, err := json.Marshal(DispatchPayload{
+		ApplicationID:           "application-1",
+		BindingID:               "binding-1",
 		BindingKey:              "app:prod:orders",
 		DesiredSpec:             DatabaseRequirement{LogicalName: "Orders DB", Engine: "postgres", Version: "16.3", Sizing: map[string]any{"class": "small"}, Extensions: []string{"pgvector"}, ReplicaCount: intPtr(1), MigrationDirectory: "db/migrations"},
 		DesiredSpecHash:         "hash-1",
@@ -86,6 +90,8 @@ func TestDispatchPayloadOmitsWorkerResolvedFieldsFromWire(t *testing.T) {
 
 	require.NoError(t, err)
 	require.JSONEq(t, `{
+		"applicationId": "application-1",
+		"bindingId": "binding-1",
 		"bindingKey": "app:prod:orders",
 		"desiredSpec": {
 			"logicalName": "Orders DB",

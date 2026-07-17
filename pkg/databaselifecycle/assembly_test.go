@@ -511,6 +511,82 @@ func TestNewWorkerFromDependenciesReleasesPhysicalDatabaseInstanceWhenMaterializ
 	require.Contains(t, callbackBody["error"].(map[string]any)["message"], "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE must be set explicitly")
 }
 
+func TestNewWorkerFromDependenciesDoesNotReleaseAttachedPhysicalDatabaseInstanceWhenRetireMaterializationFails(t *testing.T) {
+	var callbackBody map[string]any
+	var progressBodies []map[string]any
+	var seen []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.Method+" "+r.URL.RequestURI())
+		switch r.Method + " " + r.URL.Path {
+		case "POST /api/v1/database-lifecycle/dispatches/claim":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":[{"bindingKey":"app:prod:orders","connectionMetadata":{"physical_database_instance_ref":"11111111-1111-4111-8111-111111111111"},"desiredSpec":{"logicalName":"Orders DB","engine":"postgres"},"desiredSpecHash":"hash-1","environment":"deployed","profile":"production","operation":"retire_database","requestId":"request-1","resourceKey":"resource-1"}]}`))
+		case "GET /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"id":"11111111-1111-4111-8111-111111111111","region":"us-east-1","environment":"deployed","engine":"postgres","endpoint":"pool.example.com:5432","masterCredentialRef":{"resolver":"aws_secrets_manager","ref":"arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!pool","field":"password"},"capacityMax":4,"capacityUsed":1,"status":"active"}}`))
+		case "POST /api/v1/database-lifecycle/callbacks/progress":
+			var progressBody map[string]any
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&progressBody))
+			progressBodies = append(progressBodies, progressBody)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"deprovisioning","requestId":"request-1","requestState":"deprovisioning"}}`))
+		case "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/release":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"id":"11111111-1111-4111-8111-111111111111"}}`))
+		case "POST /api/v1/database-lifecycle/callbacks/terminal":
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&callbackBody))
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"data":{"bindingKey":"app:prod:orders","lifecycleState":"failed","migrationState":"pending","requestId":"request-1","requestState":"failed"}}`))
+		default:
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	worker, err := NewWorkerFromDependencies(WorkerDependencies{
+		AgentID: "agent-1",
+		Client:  clients.NewServerClient(&clients.ServerClientOptions{URL: server.URL, SuperblocksAgentKey: "agent-key"}),
+		Executor: CommandExecutorFunc(func(ctx context.Context, command Command) (CommandResult, error) {
+			t.Fatal("materialization must fail before Terraform commands run")
+			return CommandResult{}, nil
+		}),
+		Locker:  NewMemoryLocker(),
+		RootDir: tempRoot(t),
+		AllowedModuleSources: []string{
+			"app.terraform.io/superblocks/postgres-managed-database/aws",
+		},
+		LifecycleConfig: LifecycleConfig{
+			Entries: []LifecycleConfigEntry{{
+				Environment: "deployed",
+				Profiles:    []string{"production"},
+				Engines:     []string{"postgres"},
+				Operations: map[string]LifecycleOperation{
+					"retire_database": terraformOperationWithBackend(map[string]any{"stateBackend": "s3", "bucket": "state", "key": "{{environment}}/{{profile}}/{{resource_key}}.tfstate", "region": "us-east-1"}, map[string]TerraformModule{
+						"postgres": {
+							Source:  "app.terraform.io/superblocks/postgres-managed-database/aws",
+							Version: "1.2.3",
+							Inputs: map[string]any{
+								"credential_secret_prefix": "superblocks/native-db/prod",
+							},
+						},
+					}),
+				},
+			}},
+		},
+	})
+	require.NoError(t, err)
+
+	result, err := worker.PollOnce(context.Background(), "agent-1")
+
+	require.NoError(t, err)
+	require.Equal(t, 0, result.Processed)
+	require.Len(t, result.Errors, 1)
+	require.NotContains(t, seen, "POST /api/v1/database-lifecycle/physical-database-instances/11111111-1111-4111-8111-111111111111/release")
+	require.Empty(t, progressBodies)
+	require.Equal(t, "terraform_failed", callbackBody["error"].(map[string]any)["code"])
+	require.Contains(t, callbackBody["error"].(map[string]any)["message"], "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE must be set explicitly")
+}
+
 func TestNewWorkerFromDependenciesRetriesPhysicalDatabaseInstanceReleaseWhenMaterializationFails(t *testing.T) {
 	var callbackBody map[string]any
 	releaseAttempts := 0

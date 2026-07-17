@@ -59,8 +59,46 @@
 {{- if not $group.profiles }}
 {{- fail (printf "%s.profiles is required" $groupPrefix) }}
 {{- end }}
-{{- if not (get ($group.logicalModuleInputs | default dict) "credential_secret_prefix") }}
+{{- $logicalModuleInputs := $group.logicalModuleInputs | default dict }}
+{{- $iamAuth := eq (get $logicalModuleInputs "auth_mode") "aws_iam_role" }}
+{{- if and (not $iamAuth) (not (get $logicalModuleInputs "credential_secret_prefix")) }}
 {{- fail (printf "%s.logicalModuleInputs.credential_secret_prefix is required" $groupPrefix) }}
+{{- end }}
+{{- if $iamAuth }}
+{{- if not (get $logicalModuleInputs "deployment_token") }}
+{{- fail (printf "%s.logicalModuleInputs.deployment_token is required when auth_mode=aws_iam_role" $groupPrefix) }}
+{{- end }}
+{{- if not (get $logicalModuleInputs "connector_role_arn") }}
+{{- fail (printf "%s.logicalModuleInputs.connector_role_arn is required when auth_mode=aws_iam_role" $groupPrefix) }}
+{{- end }}
+{{- if not $.Values.postgres.nativeDbConnectorRoleArn }}
+{{- fail "postgres.nativeDbConnectorRoleArn is required when auth_mode=aws_iam_role" }}
+{{- end }}
+{{- if ne (get $logicalModuleInputs "connector_role_arn") $.Values.postgres.nativeDbConnectorRoleArn }}
+{{- fail (printf "%s.logicalModuleInputs.connector_role_arn must match postgres.nativeDbConnectorRoleArn when auth_mode=aws_iam_role" $groupPrefix) }}
+{{- end }}
+{{- if ne $databaseLifecycle.sslMode "verify-full" }}
+{{- fail "databaseLifecycle.sslMode must be verify-full when auth_mode=aws_iam_role" }}
+{{- end }}
+{{- $connectorRoleAllowed := false }}
+{{- range $.Values.postgres.iamAllowedRoleArnPrefixes | default list }}
+{{- $allowed := . | toString | trim }}
+{{- if $allowed }}
+{{- if hasSuffix "/" $allowed }}
+{{- if hasPrefix $allowed $.Values.postgres.nativeDbConnectorRoleArn }}
+{{- $connectorRoleAllowed = true }}
+{{- end }}
+{{- else if eq $allowed $.Values.postgres.nativeDbConnectorRoleArn }}
+{{- $connectorRoleAllowed = true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if not $connectorRoleAllowed }}
+{{- fail "postgres.nativeDbConnectorRoleArn must be covered by postgres.iamAllowedRoleArnPrefixes when auth_mode=aws_iam_role" }}
+{{- end }}
+{{- if not $databaseLifecycle.allowedRefPrefixes }}
+{{- fail "databaseLifecycle.allowedRefPrefixes is required when auth_mode=aws_iam_role" }}
+{{- end }}
 {{- end }}
 {{- if le (int ($group.pool.maxDatabases | default 0)) 0 }}
 {{- fail (printf "%s.pool.maxDatabases must be a positive integer" $groupPrefix) }}
@@ -264,6 +302,8 @@ spec:
           value: {{ .Values.superblocks.telemetry.deploymentType | quote }}
         - name: SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES
           value: {{ .Values.postgres.iamAllowedRoleArnPrefixes | toJson | quote }}
+        - name: SUPERBLOCKS_NATIVE_DB_CONNECTOR_ROLE_ARN
+          value: {{ .Values.postgres.nativeDbConnectorRoleArn | quote }}
         {{- if $databaseLifecycle.enabled }}
         - name: SUPERBLOCKS_ORCHESTRATOR_DATABASE_LIFECYCLE_WORKER_ENABLED
           value: "true"

@@ -12,14 +12,16 @@ import (
 )
 
 const (
-	envRootDir      = "SUPERBLOCKS_DATABASE_LIFECYCLE_ROOT_DIR"
-	envTerraformBin = "SUPERBLOCKS_DATABASE_LIFECYCLE_TERRAFORM_BIN"
-	envPollInterval = "SUPERBLOCKS_DATABASE_LIFECYCLE_POLL_INTERVAL"
-	envAllowedTypes = "SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_RESOURCE_TYPES"
-	envAllowedMods  = "SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_MODULE_SOURCES"
-	envSSLMode      = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"
-	envSSLRootCert  = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"
-	envConfig       = "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG"
+	envRootDir                   = "SUPERBLOCKS_DATABASE_LIFECYCLE_ROOT_DIR"
+	envTerraformBin              = "SUPERBLOCKS_DATABASE_LIFECYCLE_TERRAFORM_BIN"
+	envPollInterval              = "SUPERBLOCKS_DATABASE_LIFECYCLE_POLL_INTERVAL"
+	envAllowedTypes              = "SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_RESOURCE_TYPES"
+	envAllowedMods               = "SUPERBLOCKS_DATABASE_LIFECYCLE_ALLOWED_MODULE_SOURCES"
+	envSSLMode                   = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_MODE"
+	envSSLRootCert               = "SUPERBLOCKS_DATABASE_LIFECYCLE_SSL_ROOT_CERT"
+	envConfig                    = "SUPERBLOCKS_DATABASE_LIFECYCLE_CONFIG"
+	envConnectorRoleARN          = "SUPERBLOCKS_NATIVE_DB_CONNECTOR_ROLE_ARN"
+	envIAMAllowedRoleARNPrefixes = "SUPERBLOCKS_POSTGRES_IAM_ALLOWED_ROLE_ARN_PREFIXES"
 
 	operationMigrateSchema  = "migrate_schema"
 	operationRetireDatabase = "retire_database"
@@ -45,8 +47,9 @@ type Config struct {
 	// DSN builder rejects empty SSLMode at dispatch time so a missing
 	// env var fails loud instead of silently shipping an insecure
 	// default.
-	SSLMode     string
-	SSLRootCert string
+	ExpectedConnectorRoleARN string
+	SSLMode                  string
+	SSLRootCert              string
 
 	LifecycleConfig LifecycleConfig
 }
@@ -143,6 +146,7 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	}
 	config.AllowedResourceTypes = splitCSV(getenv(envAllowedTypes))
 	config.AllowedModuleSources = splitCSV(getenv(envAllowedMods))
+	config.ExpectedConnectorRoleARN = getenv(envConnectorRoleARN)
 	config.SSLMode = getenv(envSSLMode)
 	config.SSLRootCert = getenv(envSSLRootCert)
 	if rawConfig := getenv(envConfig); rawConfig != "" {
