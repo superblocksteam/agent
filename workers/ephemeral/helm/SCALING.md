@@ -185,13 +185,16 @@ Prod-EU uses `timezone: Europe/London` with the same local hours (08:00–20:00 
 Load-based desired replicas (Prometheus trigger; idle floors from cron + `minReplicaCount`):
 
 ```text
-ceil(sum(in_use) / executionPool) + minReplicaCount
+ceil(sum(in_use) / executionPool) + sum(worker_degraded_mode) + minReplicaCount
   + (in_use > extraWarm * executionPool) * extraWarm
 ```
 
 Where `extraWarm = promBuffer - minReplicaCount` and `promBuffer` is cron `desiredReplicas` when
 configured, else `minReplicaCount`. With **no cron**, `extraWarm = 0` and the query is the legacy
-`ceil(in_use / executionPool) + minReplicas`.
+`ceil(in_use / executionPool) + sum(degraded) + minReplicas`.
+
+`worker_degraded_mode` is 0 or 1 per task-manager pod (Redis transport degraded mode when plugins are
+unavailable). Summing by fleet counts workers that cannot admit work despite low `in_use`.
 
 The extra warm pool (`extraWarm`) applies only when load exceeds what the cron floor already
 covers (`extraWarm * executionPool` concurrent executions). That avoids scaling to 10+ replicas on
@@ -210,6 +213,7 @@ Example with cron `desiredReplicas: "10"`, `minReplicaCount: 1`, `executionPool:
 | Idle, business hours | 1 | 10 | 10 |
 | Idle, off-hours | 1 | inactive | 1 |
 | Off-hours, `in_use=1` | `ceil(1)+1=2` | inactive | **2** |
+| 1 degraded worker, `in_use=0` | `0+1+1=2` | inactive | **2** |
 | `in_use=20` | `ceil(10)+1+9=20` | 10 | 20 |
 
 Prometheus scaler fallback uses `max(minReplicaCount, promBuffer)` so metrics outages retain the
@@ -231,7 +235,7 @@ former business-hours floor when cron is configured.
 - **Pod count**: `kubernetes_state.container.running` filtered by
   `kube_namespace:cloud-agents` and `kube_deployment` containing `ephemeral`
 - **Sandbox metrics**: `sandbox_execution_pool_size`,
-  `sandbox_execution_pool_in_use`, `sandbox_executions_total`
+  `sandbox_execution_pool_in_use`, `worker_degraded_mode`, `sandbox_executions_total`
 - **Node pressure**: Karpenter logs, `kubectl top nodes -l
   superblocks.com/node-type=gvisor`
 - **KEDA decisions**: `kubectl logs -n keda -l app=keda-operator | grep

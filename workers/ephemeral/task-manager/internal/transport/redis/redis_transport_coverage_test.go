@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	redisstreams "github.com/superblocksteam/agent/pkg/redis/streams"
 	"github.com/superblocksteam/agent/pkg/worker"
 	v1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.uber.org/zap"
@@ -32,7 +34,8 @@ func registerSandboxMetricsForTest(t *testing.T) *metric.ManualReader {
 
 	reader := metric.NewManualReader()
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
-	require.NoError(t, sandboxmetrics.RegisterMetricsWithMeter(provider.Meter("sandbox-test")))
+	otel.SetMeterProvider(provider)
+	require.NoError(t, sandboxmetrics.RegisterMetricsWithMeter(provider.Meter(sandboxmetrics.MeterName)))
 	return reader
 }
 
@@ -289,4 +292,57 @@ func marshalRequest(t *testing.T, req *v1.Request) string {
 	payload, err := protojson.Marshal(req)
 	require.NoError(t, err)
 	return string(payload)
+}
+
+func collectWorkerDegradedMode(t *testing.T, reader *metric.ManualReader) int64 {
+	t.Helper()
+
+	var collected metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &collected))
+
+	var total int64
+	for _, scope := range collected.ScopeMetrics {
+		for _, m := range scope.Metrics {
+			if m.Name != "worker_degraded_mode" {
+				continue
+			}
+			for _, dp := range m.Data.(metricdata.Gauge[int64]).DataPoints {
+				total += dp.Value
+			}
+		}
+	}
+	return total
+}
+
+func TestClose_ClearsDegradedModeMetric(t *testing.T) {
+	reader := registerSandboxMetricsForTest(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	executionPool := &atomic.Int64{}
+	executionPool.Store(1) // no in-flight workers; Close returns immediately
+
+	alive := newTestAlive()
+
+	transport := &redisTransport{
+		context:           ctx,
+		cancel:            cancel,
+		logger:            zap.NewNop(),
+		fleetName:         "test-fleet",
+		alive:             alive,
+		serviceDegraded:   true,
+		executionPool:     executionPool,
+		executionPoolSize: 1,
+		workerReturned:    make(chan int64, 1),
+		drainCompleteCh:   make(chan struct{}),
+	}
+	require.NoError(t, transport.registerDegradedModeMetric())
+	require.Equal(t, int64(1), collectWorkerDegradedMode(t, reader))
+
+	closeCtx, closeCancel := context.WithTimeout(context.Background(), time.Second)
+	defer closeCancel()
+	require.NoError(t, transport.Close(closeCtx))
+	require.False(t, transport.serviceDegraded)
+	require.Equal(t, int64(0), collectWorkerDegradedMode(t, reader))
 }

@@ -24,7 +24,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
-const meterName = "sandbox"
+// MeterName is the OpenTelemetry meter name for sandbox task-manager metrics.
+const MeterName = "sandbox"
 
 // Global metric instruments.
 var (
@@ -81,6 +82,9 @@ var (
 	// WorkerDegradedModeTransitions counts Redis transport transitions into and out of degraded mode
 	// (plugins unavailable). Attributes: transition (enter|recover), worker_id, ephemeral.
 	WorkerDegradedModeTransitions metric.Int64Counter
+
+	// WorkerDegradedMode reports whether this task-manager is currently in Redis transport degraded mode (0 or 1).
+	WorkerDegradedMode metric.Int64ObservableGauge
 
 	// WorkerRedisMessagesReadTotal counts messages delivered per GroupReader poll by source path.
 	WorkerRedisMessagesReadTotal metric.Int64Counter
@@ -176,7 +180,7 @@ func RegisterMetrics() error {
 		return nil
 	}
 
-	meter := otel.GetMeterProvider().Meter(meterName)
+	meter := otel.GetMeterProvider().Meter(MeterName)
 	return registerWithMeter(meter)
 }
 
@@ -317,8 +321,17 @@ func registerWithMeter(meter metric.Meter) error {
 
 	WorkerDegradedModeTransitions, err = meter.Int64Counter(
 		"worker_degraded_mode_transitions_total",
-		metric.WithDescription("Redis transport worker transitions into or out of degraded mode (plugins unavailable)"),
+		metric.WithDescription("Sandbox worker transitions into or out of degraded mode (plugins unavailable)"),
 		metric.WithUnit("{transition}"),
+	)
+	if err != nil {
+		return err
+	}
+
+	WorkerDegradedMode, err = meter.Int64ObservableGauge(
+		"worker_degraded_mode",
+		metric.WithDescription("Whether the sandbox worker is in degraded mode (1) or not (0); sum by fleet for autoscaling"),
+		metric.WithUnit("{worker}"),
 	)
 	if err != nil {
 		return err
@@ -449,6 +462,22 @@ func RecordWorkerDegradedModeTransition(ctx context.Context, transition string, 
 		AttrDegradedModeTransition.String(transition),
 		AttrWorkerID.String(workerID),
 	)
+}
+
+// RegisterWorkerDegradedModeCallback registers an observable callback that reports the current
+// degraded-mode state (0 or 1) on each metric collection.
+func RegisterWorkerDegradedModeCallback(
+	meter metric.Meter,
+	value func() int64,
+	attrs func() []attribute.KeyValue,
+) (metric.Registration, error) {
+	if WorkerDegradedMode == nil {
+		return nil, nil
+	}
+	return meter.RegisterCallback(func(_ context.Context, observer metric.Observer) error {
+		observer.ObserveInt64(WorkerDegradedMode, value(), metric.WithAttributes(attrs()...))
+		return nil
+	}, WorkerDegradedMode)
 }
 
 // Redis message read source values for worker_redis_messages_read_total (bounded cardinality).

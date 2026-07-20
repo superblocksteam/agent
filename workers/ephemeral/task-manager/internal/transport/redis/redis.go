@@ -78,6 +78,7 @@ type redisTransport struct {
 	// Service degradation tracking, when in degraded mode the service
 	// will not claim any work from Redis
 	// After maxDegradedTime, the service will be shut down
+	degradedModeMu       sync.RWMutex
 	serviceDegraded      bool
 	serviceDegradedTimer *time.Timer
 	degradedModeBackoff  time.Duration
@@ -204,7 +205,37 @@ func (rt *redisTransport) init() error {
 		return rt.context.Err()
 	}
 
+	if err := rt.registerDegradedModeMetric(); err != nil {
+		rt.logger.Warn("redis transport shutting down on initialization: error while registering degraded mode metric", zap.Error(err))
+		return err
+	}
+
 	rt.initialized = true
+	return nil
+}
+
+func (rt *redisTransport) observeDegradedMode() int64 {
+	rt.degradedModeMu.RLock()
+	defer rt.degradedModeMu.RUnlock()
+
+	if rt.serviceDegraded {
+		return 1
+	}
+
+	return 0
+}
+
+func (rt *redisTransport) registerDegradedModeMetric() error {
+	if sandboxmetrics.WorkerDegradedMode == nil {
+		return nil
+	}
+
+	meter := otel.GetMeterProvider().Meter(sandboxmetrics.MeterName)
+	_, err := sandboxmetrics.RegisterWorkerDegradedModeCallback(meter, rt.observeDegradedMode, rt.executionPoolMetricAttrs)
+	if err != nil {
+		return fmt.Errorf("register worker_degraded_mode callback: %w", err)
+	}
+
 	return nil
 }
 
@@ -280,11 +311,22 @@ func (rt *redisTransport) checkPluginsAvailable() bool {
 }
 
 func (rt *redisTransport) setDegradedMode(degraded bool) error {
-	if degraded == rt.serviceDegraded {
+	if !rt.alive.Load() {
 		return nil
 	}
 
-	if degraded && !rt.serviceDegraded {
+	rt.degradedModeMu.RLock()
+	serviceDegraded := rt.serviceDegraded
+	rt.degradedModeMu.RUnlock()
+
+	if degraded == serviceDegraded {
+		return nil
+	}
+
+	rt.degradedModeMu.Lock()
+	defer rt.degradedModeMu.Unlock()
+
+	if degraded && !serviceDegraded {
 		// Service is going into degraded mode, start timer for max degradation time before killing the service
 		rt.logger.Info("service entering degraded mode", zap.Duration("max-degraded-time", rt.maxDegradedTime))
 		sandboxmetrics.RecordWorkerDegradedModeTransition(
@@ -315,6 +357,23 @@ func (rt *redisTransport) setDegradedMode(degraded bool) error {
 
 	rt.serviceDegraded = degraded
 	return nil
+}
+
+// clearDegradedModeForShutdown resets degraded state so a final metric collection does not leave a stale series.
+func (rt *redisTransport) clearDegradedModeForShutdown() {
+	rt.degradedModeMu.Lock()
+	defer rt.degradedModeMu.Unlock()
+
+	if !rt.serviceDegraded {
+		return
+	}
+
+	if rt.serviceDegradedTimer != nil {
+		rt.serviceDegradedTimer.Stop()
+		rt.serviceDegradedTimer = nil
+	}
+
+	rt.serviceDegraded = false
 }
 
 // poll is the main polling loop.
@@ -628,6 +687,8 @@ func (rt *redisTransport) Run(_ context.Context) error {
 func (rt *redisTransport) Close(ctx context.Context) error {
 	rt.logger.Info("closing redis transport", zap.Error(ctx.Err()))
 	rt.alive.Store(false)
+	rt.clearDegradedModeForShutdown()
+
 	rt.cancel()
 
 	// Always signal that draining is complete so listeners can safely shut down

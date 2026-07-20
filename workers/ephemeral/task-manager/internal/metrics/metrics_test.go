@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,62 @@ func TestRegisterMetricsWithMeter_RegistersLifecycleHistogram(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, SandboxLifecycleDuration)
 	assert.NotNil(t, WorkerDegradedModeTransitions)
+	assert.NotNil(t, WorkerDegradedMode)
+}
+
+func TestWorkerDegradedModeObservableGauge(t *testing.T) {
+	reader := metric.NewManualReader()
+	provider := metric.NewMeterProvider(metric.WithReader(reader))
+	meter := provider.Meter("sandbox-test")
+	require.NoError(t, RegisterMetricsWithMeter(meter))
+
+	var (
+		mu       sync.Mutex
+		degraded bool
+	)
+	_, err := RegisterWorkerDegradedModeCallback(meter, func() int64 {
+		mu.Lock()
+		defer mu.Unlock()
+		if degraded {
+			return 1
+		}
+		return 0
+	}, func() []attribute.KeyValue {
+		return []attribute.KeyValue{AttrFleet.String("test-fleet")}
+	})
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	mu.Lock()
+	degraded = true
+	mu.Unlock()
+	require.Equal(t, int64(1), collectWorkerDegradedModeGauge(t, reader, ctx))
+
+	mu.Lock()
+	degraded = false
+	mu.Unlock()
+	require.Equal(t, int64(0), collectWorkerDegradedModeGauge(t, reader, ctx))
+}
+
+func collectWorkerDegradedModeGauge(t *testing.T, reader *metric.ManualReader, ctx context.Context) int64 {
+	t.Helper()
+
+	var collected metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(ctx, &collected))
+
+	var total int64
+	for _, scope := range collected.ScopeMetrics {
+		for _, m := range scope.Metrics {
+			if m.Name != "worker_degraded_mode" {
+				continue
+			}
+			for _, dp := range m.Data.(metricdata.Gauge[int64]).DataPoints {
+				total += dp.Value
+			}
+		}
+	}
+	return total
 }
 
 func TestRecordWorkerRedisReadStats(t *testing.T) {

@@ -74,19 +74,20 @@ spec:
     {{- $promAddr = include "sandbox_workers.autoPromQueryUrl" $ | trim }}
     {{- end }}
     {{- $execPoolSize := (($v.queue).executionPool) | default $.Values.queue.executionPool | default 1 }}
-    # Metrics-based trigger: desired replicas = ceil(in_use / executionPool) + minReplicaCount + extraWarm when load is high.
+    # Metrics-based trigger: desired replicas = ceil(in_use / executionPool) + degraded_workers + minReplicaCount + extraWarm when load is high.
     # Each replica serves executionPool concurrent events (requests), so dividing gives the
     # number of fully-occupied workers (task-managers); adding minReplicaCount maintains the warm buffer.
+    # worker_degraded_mode (summed by fleet) adds one desired replica per task-manager that cannot admit work.
     #
     # promBuffer is minReplicaCount unless a cron trigger sets desiredReplicas (e.g. business-hours warm capacity).
     # extraWarm (= promBuffer - minReplicaCount) applies only when in_use exceeds the cron warm-pool capacity (extraWarm * executionPool).
     #
-    # With no cron (extraWarm=0), this reduces to ceil(in_use / executionPool) + minReplicas.
+    # With no cron (extraWarm=0), this reduces to ceil(in_use / executionPool) + sum(degraded) + minReplicas.
     - type: prometheus
       metricType: AverageValue
       metadata:
         serverAddress: {{ $promAddr }}
-        query: ceil((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) / {{ $execPoolSize }}) + {{ $minReplicas }} + ((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) >bool {{ mul $extraWarm $execPoolSize }}) * {{ $extraWarm }}
+        query: ceil((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) / {{ $execPoolSize }}) + (sum(worker_degraded_mode{fleet="{{ $k }}"}) or vector(0)) + {{ $minReplicas }} + ((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) >bool {{ mul $extraWarm $execPoolSize }}) * {{ $extraWarm }}
         threshold: "1"
         activationThreshold: "0"
     {{- end }}

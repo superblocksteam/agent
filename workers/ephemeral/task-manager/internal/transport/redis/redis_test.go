@@ -19,6 +19,12 @@ import (
 	"go.uber.org/zap"
 )
 
+func newTestAlive() *atomic.Bool {
+	alive := &atomic.Bool{}
+	alive.Store(true)
+	return alive
+}
+
 func TestGroupReaderStreamsConfigured(t *testing.T) {
 	logger := zap.NewNop()
 	client := r.NewClient(&r.Options{
@@ -214,8 +220,7 @@ func TestRedisTransportAlive(t *testing.T) {
 }
 
 func TestCloseDoesNotCloseWorkerReturnedChannel(t *testing.T) {
-	alive := &atomic.Bool{}
-	alive.Store(true)
+	alive := newTestAlive()
 
 	executionPool := &atomic.Int64{}
 	executionPool.Store(1) // no in-flight workers; Close returns immediately
@@ -255,6 +260,7 @@ func TestCloseDoesNotCloseWorkerReturnedChannel(t *testing.T) {
 
 func TestNotifyWorkerReturnedDoesNotBlockWhenChannelFull(t *testing.T) {
 	transport := &redisTransport{
+		alive:          newTestAlive(),
 		workerReturned: make(chan int64, 1),
 	}
 	transport.workerReturned <- 42
@@ -284,6 +290,7 @@ func TestPollOnceIgnoresStaleWorkerReturnedSignals(t *testing.T) {
 		Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
 
 	transport := &redisTransport{
+		alive:          newTestAlive(),
 		context:        ctx,
 		executionPool:  executionPool,
 		workerReturned: make(chan int64, 1),
@@ -326,6 +333,7 @@ func TestCheckPluginsAvailable(t *testing.T) {
 			Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
 
 		transport := &redisTransport{
+			alive:          newTestAlive(),
 			context:        ctx,
 			logger:         zap.NewNop(),
 			pluginExecutor: mockPluginExecutor,
@@ -346,6 +354,7 @@ func TestCheckPluginsAvailable(t *testing.T) {
 			Return(plugin.PluginStatus{Available: false, DegradationState: plugin.DegradationState_TRANSIENT})
 
 		transport := &redisTransport{
+			alive:               newTestAlive(),
 			context:             ctx,
 			logger:              zap.NewNop(),
 			pluginExecutor:      mockPluginExecutor,
@@ -371,6 +380,7 @@ func TestCheckPluginsAvailable(t *testing.T) {
 			Return(plugin.PluginStatus{Available: false, DegradationState: plugin.DegradationState_FATAL})
 
 		transport := &redisTransport{
+			alive:               newTestAlive(),
 			context:             ctx,
 			logger:              zap.NewNop(),
 			pluginExecutor:      mockPluginExecutor,
@@ -399,6 +409,7 @@ func TestCheckPluginsAvailable(t *testing.T) {
 			Return(plugin.PluginStatus{Available: true, DegradationState: plugin.DegradationState_NONE})
 
 		transport := &redisTransport{
+			alive:           newTestAlive(),
 			context:         ctx,
 			logger:          zap.NewNop(),
 			pluginExecutor:  mockPluginExecutor,
@@ -418,6 +429,7 @@ func TestCheckPluginsAvailable(t *testing.T) {
 func TestSetDegradedMode(t *testing.T) {
 	t.Run("no_op_when_already_degraded", func(t *testing.T) {
 		transport := &redisTransport{
+			alive:           newTestAlive(),
 			logger:          zap.NewNop(),
 			serviceDegraded: true,
 		}
@@ -433,6 +445,7 @@ func TestSetDegradedMode(t *testing.T) {
 
 	t.Run("no_op_when_already_not_degraded", func(t *testing.T) {
 		transport := &redisTransport{
+			alive:           newTestAlive(),
 			logger:          zap.NewNop(),
 			serviceDegraded: false,
 		}
@@ -443,11 +456,58 @@ func TestSetDegradedMode(t *testing.T) {
 		}
 	})
 
+	t.Run("no_op_when_not_alive", func(t *testing.T) {
+		alive := newTestAlive()
+		alive.Store(false)
+
+		timer := time.AfterFunc(time.Hour, func() {})
+		defer timer.Stop()
+
+		transport := &redisTransport{
+			alive:                alive,
+			logger:               zap.NewNop(),
+			serviceDegraded:      true,
+			serviceDegradedTimer: timer,
+			maxDegradedTime:      time.Hour,
+		}
+
+		if err := transport.setDegradedMode(false); err != nil {
+			t.Errorf("setDegradedMode(false) error = %v", err)
+		}
+		if !transport.serviceDegraded {
+			t.Error("serviceDegraded = false, want true when transport is not alive")
+		}
+		if transport.serviceDegradedTimer != timer {
+			t.Error("serviceDegradedTimer should be unchanged when transport is not alive")
+		}
+
+		if err := transport.setDegradedMode(true); err != nil {
+			t.Errorf("setDegradedMode(true) error = %v", err)
+		}
+		if !transport.serviceDegraded {
+			t.Error("serviceDegraded = false, want true when transport is not alive")
+		}
+
+		transport.serviceDegraded = false
+		transport.serviceDegradedTimer = nil
+
+		if err := transport.setDegradedMode(true); err != nil {
+			t.Errorf("setDegradedMode(true) error = %v", err)
+		}
+		if transport.serviceDegraded {
+			t.Error("serviceDegraded = true, want false when transport is not alive")
+		}
+		if transport.serviceDegradedTimer != nil {
+			t.Error("serviceDegradedTimer should remain nil when transport is not alive")
+		}
+	})
+
 	t.Run("transition_to_degraded_starts_timer", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
 		transport := &redisTransport{
+			alive:           newTestAlive(),
 			context:         ctx,
 			logger:          zap.NewNop(),
 			serviceDegraded: false,
@@ -470,6 +530,7 @@ func TestSetDegradedMode(t *testing.T) {
 
 	t.Run("recover_from_degraded_stops_timer", func(t *testing.T) {
 		transport := &redisTransport{
+			alive:                newTestAlive(),
 			logger:               zap.NewNop(),
 			serviceDegraded:      true,
 			maxDegradedTime:      time.Hour,
@@ -493,6 +554,7 @@ func TestSetDegradedMode(t *testing.T) {
 		defer cancel()
 
 		transport := &redisTransport{
+			alive:                newTestAlive(),
 			logger:               zap.NewNop(),
 			serviceDegraded:      true,
 			maxDegradedTime:      time.Millisecond,
@@ -648,6 +710,7 @@ func (*blockingCleanupExecutionContextProvider) SetSecurityViolationHandler(hand
 func TestExecutionContextLifecycleRefCountedCleanup(t *testing.T) {
 	provider := newTrackingExecutionContextProvider()
 	transport := &redisTransport{
+		alive:                newTestAlive(),
 		fileContextProvider:  provider,
 		executionContextLock: &sync.Mutex{},
 		executionContextRefs: map[string]int{},
@@ -687,6 +750,7 @@ func TestExecutionContextLifecycleRefCountedCleanup(t *testing.T) {
 func TestExecutionContextLifecycleCleanupIsolatedByExecution(t *testing.T) {
 	provider := newTrackingExecutionContextProvider()
 	transport := &redisTransport{
+		alive:                newTestAlive(),
 		fileContextProvider:  provider,
 		executionContextLock: &sync.Mutex{},
 		executionContextRefs: map[string]int{},
@@ -716,6 +780,7 @@ func TestExecutionContextLifecycleCleanupIsolatedByExecution(t *testing.T) {
 func TestExecutionContextLifecycleInitializesZeroValueState(t *testing.T) {
 	provider := newTrackingExecutionContextProvider()
 	transport := &redisTransport{
+		alive:               newTestAlive(),
 		fileContextProvider: provider,
 		agentKey:            "agent-key",
 	}
@@ -742,6 +807,7 @@ func TestExecutionContextLifecycleInitializesZeroValueState(t *testing.T) {
 func TestSetupExecutionContextStoresIntegrationsCallbackUrl(t *testing.T) {
 	provider := newTrackingExecutionContextProvider()
 	transport := &redisTransport{
+		alive:                newTestAlive(),
 		fileContextProvider:  provider,
 		executionContextLock: &sync.Mutex{},
 		executionContextRefs: map[string]int{},
@@ -769,6 +835,7 @@ func TestSetupExecutionContextStoresIntegrationsCallbackUrl(t *testing.T) {
 func TestExecutionContextLifecycleNoCleanupInterleavingWithNewSetup(t *testing.T) {
 	provider := newBlockingCleanupExecutionContextProvider()
 	transport := &redisTransport{
+		alive:                newTestAlive(),
 		fileContextProvider:  provider,
 		executionContextLock: &sync.Mutex{},
 		executionContextRefs: map[string]int{},
