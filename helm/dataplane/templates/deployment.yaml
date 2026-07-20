@@ -57,6 +57,7 @@ spec:
         - "--grpc.msg.req.max={{ .Values.service.grpc.maxMsgReq | int64 }}"
         - "--grpc.msg.res.max={{ .Values.service.grpc.maxMsgRes | int64 }}"
         - "--superblocks.url={{ .Values.superblocks.url }}"
+        - "--metrics.otlp.enabled=false"
         - "--otel.collector.http.url={{ .Values.observability.tracing.exporter.scheme }}://{{ .Values.observability.tracing.exporter.host }}:{{ .Values.observability.tracing.exporter.port }}{{ .Values.observability.tracing.exporter.path }}"
         - "--store.redis.tls={{ .Values.kvstore.enable_tls }}"
         - "--store.redis.host={{ .Values.kvstore.host }}"

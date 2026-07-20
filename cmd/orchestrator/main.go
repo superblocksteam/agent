@@ -172,6 +172,7 @@ func init() {
 	pflag.String("superblocks.key", "dev-agent-key", "")
 	pflag.Bool("fetch.use_agent_key", false, "Whether to include agent key header when fetching API definitions. Enable after server supports it.")
 	pflag.String("otel.collector.http.url", "https://traces.intake.superblocks.com/v1/traces", "")
+	pflag.Bool("metrics.otlp.enabled", true, "Enable pushing metrics to the OTEL collector over OTLP.")
 	pflag.String("buckets.config", "buckets.json", "")
 	pflag.Duration("block.parallel.setting.jitter", 2*time.Millisecond, "")
 	pflag.Int("block.stream.setting.buffer_size", 100, "")
@@ -248,6 +249,14 @@ func init() {
 	}
 }
 
+// resolveMetricsOTLPCollectorURL returns collectorURL when otlpEnabled, else "".
+func resolveMetricsOTLPCollectorURL(otlpEnabled bool, collectorURL string) string {
+	if !otlpEnabled {
+		return ""
+	}
+	return collectorURL
+}
+
 func main() {
 	var g *run.Group
 	var ready bool // We need to wait until all the runnables have beed added to the group.
@@ -265,9 +274,12 @@ func main() {
 	}
 
 	// Initialize metrics provider with OTEL support
+	metricsOTLPEnabled := viper.GetBool("metrics.otlp.enabled")
+	fmt.Fprintf(os.Stdout, "metrics OTLP push enabled: %t\n", metricsOTLPEnabled)
+
 	metricsCtx := context.Background()
 	metricsProvider, err := metrics.NewProvider(metricsCtx, metrics.ProviderOptions{
-		OTELCollectorURL: viper.GetString("otel.collector.http.url"),
+		OTELCollectorURL: resolveMetricsOTLPCollectorURL(metricsOTLPEnabled, viper.GetString("otel.collector.http.url")),
 		Headers: map[string]string{
 			"x-superblocks-agent-key": viper.GetString("superblocks.key"),
 		},
