@@ -297,10 +297,10 @@ databaseLifecycle:
   # Built-in Native Database modules. Override the source for a customer fork.
   modules:
     logical:
-      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.3
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/postgres-managed-database?ref=v0.3.5
       version: ""
     physical:
-      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.3
+      source: git::https://github.com/superblocksteam/terraform-superblocks-databases.git//modules/aws-rds-managed-instance?ref=v0.3.5
       version: ""
   physicalProvisioning:
     enabled: true

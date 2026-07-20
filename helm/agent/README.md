@@ -31,7 +31,7 @@ The worker requires:
 
 The chart derives the module-source allowlist from `modules.logical.source` and
 `modules.physical.source`. Its built-in sources pin the internal
-`terraform-superblocks-databases` `v0.3.3` modules. Customer installs should keep
+`terraform-superblocks-databases` `v0.3.5` modules. Customer installs should keep
 that exact `vX.Y.Z` pin. For Superblocks EE and other internal testing, override
 `databaseLifecycle.modules.*.source` to the same git module URL with
 `?ref=latest` (for example
