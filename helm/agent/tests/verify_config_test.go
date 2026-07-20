@@ -107,19 +107,20 @@ func TestOPAChartRegisteredOnlyGroupsCanOmitPhysicalModuleInputs(t *testing.T) {
 	require.NotContains(t, requireMap(t, entryByEnvironment(t, config, "edit")["operations"]), "ensure_physical_database_instance")
 }
 
+// iamRoleARN is the canonical connector role ARN carried by the IAM overlay
+// fixture (database-lifecycle-iam-values.yaml). Tests that need to break one
+// IAM requirement at a time override just that setting on top of the fixture
+// rather than rebuilding the whole IAM configuration inline, so the fixture
+// stays the single source of truth for what a valid IAM standard config
+// looks like.
+const iamRoleARN = "arn:aws:iam::123456789012:role/superblocks-native-db-connector"
+
 func TestOPAChartIAMGroupsCanOmitPasswordSecretPrefix(t *testing.T) {
 	t.Parallel()
 
-	iamInputs := `{"auth_mode":"aws_iam_role","connector_role_arn":"arn:aws:iam::123456789012:role/superblocks-native-db-connector","deployment_token":"012345abcdef"}`
-	rendered := renderLifecycleChart(t,
-		"--set-json", "databaseLifecycle.groups.nonprod.logicalModuleInputs="+iamInputs,
-		"--set-json", "databaseLifecycle.groups.production.logicalModuleInputs="+iamInputs,
-		"--set", "databaseLifecycle.sslMode=verify-full",
-		"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
-		"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
-		"--set-json", `postgres.iamAllowedRoleArnPrefixes=["arn:aws:iam::123456789012:role/superblocks-native-db-connector"]`,
-	)
-	config := lifecycleConfig(t, lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered))))
+	rendered := renderLifecycleChartFixture(t, "database-lifecycle-iam-values.yaml")
+	env := lifecycleEnv(t, lifecycleContainer(t, renderedDeployment(t, rendered)))
+	config := lifecycleConfig(t, env)
 	inputs := requireMap(t, requireMap(t,
 		requireMap(t,
 			requireMap(t, entryByEnvironment(t, config, "edit")["operations"])["ensure_database"],
@@ -128,14 +129,22 @@ func TestOPAChartIAMGroupsCanOmitPasswordSecretPrefix(t *testing.T) {
 	moduleInputs := requireMap(t, requireMap(t, inputs["postgres"])["inputs"])
 	require.Equal(t, "aws_iam_role", moduleInputs["auth_mode"])
 	require.Equal(t, "012345abcdef", moduleInputs["deployment_token"])
-	require.Equal(t, "arn:aws:iam::123456789012:role/superblocks-native-db-connector", moduleInputs["connector_role_arn"])
-	require.NotContains(t, moduleInputs, "credential_secret_prefix")
+	require.Equal(t, iamRoleARN, moduleInputs["connector_role_arn"])
+	// The rendered config carries the password-mode key through as an
+	// explicit null (Helm's values merge does not delete keys across -f
+	// files); either absent or null both mean "omitted" to the worker, which
+	// strips it before materializing an IAM root (materialize.go
+	// iamOmittedSecretInputs).
+	require.Empty(t, moduleInputs["credential_secret_prefix"])
+
+	capabilities, err := databaselifecycle.CapabilityTagsFromEnv(func(key string) string { return env[key] })
+	require.NoError(t, err)
+	require.Equal(t, []string{"managed-IAM-v1"}, capabilities["databaseLifecycle:capabilities"])
 }
 
 func TestOPAChartIAMGroupsRequireRuntimeIAMConfiguration(t *testing.T) {
 	t.Parallel()
 
-	iamInputs := `{"auth_mode":"aws_iam_role","connector_role_arn":"arn:aws:iam::123456789012:role/superblocks-native-db-connector","deployment_token":"012345abcdef"}`
 	for _, test := range []struct {
 		name string
 		args []string
@@ -143,65 +152,39 @@ func TestOPAChartIAMGroupsRequireRuntimeIAMConfiguration(t *testing.T) {
 	}{
 		{
 			name: "connector role",
-			args: []string{
-				"--set", "databaseLifecycle.sslMode=verify-full",
-				"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
-			},
+			args: []string{"--set", "postgres.nativeDbConnectorRoleArn=null"},
 			want: "postgres.nativeDbConnectorRoleArn is required when auth_mode=aws_iam_role",
 		},
 		{
 			name: "verify full TLS",
-			args: []string{
-				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
-			},
+			args: []string{"--set", "databaseLifecycle.sslMode=require"},
 			want: "databaseLifecycle.sslMode must be verify-full when auth_mode=aws_iam_role",
 		},
 		{
 			name: "root certificate",
-			args: []string{
-				"--set", "databaseLifecycle.sslMode=verify-full",
-				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
-			},
+			args: []string{"--set", "databaseLifecycle.sslRootCert=null"},
 			want: "databaseLifecycle.sslRootCert is required when sslMode is verify-ca or verify-full",
 		},
 		{
 			name: "matching connector role",
-			args: []string{
-				"--set", "databaseLifecycle.sslMode=verify-full",
-				"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
-				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/different-connector",
-			},
+			args: []string{"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/different-connector"},
 			want: "logicalModuleInputs.connector_role_arn must match postgres.nativeDbConnectorRoleArn when auth_mode=aws_iam_role",
 		},
 		{
 			name: "connector role runtime allowlist",
-			args: []string{
-				"--set", "databaseLifecycle.sslMode=verify-full",
-				"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
-				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
-			},
+			args: []string{"--set-json", "postgres.iamAllowedRoleArnPrefixes=[]"},
 			want: "postgres.nativeDbConnectorRoleArn must be covered by postgres.iamAllowedRoleArnPrefixes when auth_mode=aws_iam_role",
 		},
 		{
 			name: "secrets ref allowlist",
-			args: []string{
-				"--set", "databaseLifecycle.sslMode=verify-full",
-				"--set", "databaseLifecycle.sslRootCert=/etc/rds/global-bundle.pem",
-				"--set", "postgres.nativeDbConnectorRoleArn=arn:aws:iam::123456789012:role/superblocks-native-db-connector",
-				"--set-json", `postgres.iamAllowedRoleArnPrefixes=["arn:aws:iam::123456789012:role/superblocks-native-db-connector"]`,
-				"--set-json", "databaseLifecycle.allowedRefPrefixes=[]",
-			},
+			args: []string{"--set-json", "databaseLifecycle.allowedRefPrefixes=[]"},
 			want: "databaseLifecycle.allowedRefPrefixes is required when auth_mode=aws_iam_role",
 		},
 	} {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			args := append([]string{
-				"--set-json", "databaseLifecycle.groups.nonprod.logicalModuleInputs=" + iamInputs,
-				"--set-json", "databaseLifecycle.groups.production.logicalModuleInputs=" + iamInputs,
-			}, test.args...)
-			_, output, err := executeLifecycleChart(t, args...)
+			_, output, err := executeLifecycleChartFixture(t, "database-lifecycle-iam-values.yaml", test.args...)
 			require.Error(t, err)
 			require.Contains(t, string(output), test.want)
 		})
@@ -211,9 +194,9 @@ func TestOPAChartIAMGroupsRequireRuntimeIAMConfiguration(t *testing.T) {
 func TestOPAChartIAMGroupsRequireDeploymentTokenAndConnectorRole(t *testing.T) {
 	t.Parallel()
 
-	_, output, err := executeLifecycleChart(t,
-		"--set-json", `databaseLifecycle.groups.nonprod.logicalModuleInputs={"auth_mode":"aws_iam_role"}`,
-		"--set-json", `databaseLifecycle.groups.production.logicalModuleInputs={"auth_mode":"aws_iam_role"}`,
+	_, output, err := executeLifecycleChartFixture(t, "database-lifecycle-iam-values.yaml",
+		"--set", "databaseLifecycle.groups.nonprod.logicalModuleInputs.deployment_token=null",
+		"--set", "databaseLifecycle.groups.production.logicalModuleInputs.deployment_token=null",
 	)
 	require.Error(t, err)
 	require.Contains(t, string(output), "deployment_token is required when auth_mode=aws_iam_role")

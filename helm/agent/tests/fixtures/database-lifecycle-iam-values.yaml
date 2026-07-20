@@ -1,0 +1,27 @@
+---
+# Canonical IAM overlay for the standard Native Database configuration.
+# Applied on top of database-lifecycle-config-values.yaml (-f base -f this),
+# so every field not repeated here (backend, physical module inputs, pool
+# sizing, module source pins, ...) stays exactly as the password-mode
+# standard config defines it. `credential_secret_prefix: null` deletes the
+# password-mode key that Helm's values merge would otherwise carry over.
+databaseLifecycle:
+  sslMode: verify-full
+  sslRootCert: /etc/rds/global-bundle.pem
+  groups:
+    nonprod:
+      logicalModuleInputs:
+        credential_secret_prefix: null
+        auth_mode: aws_iam_role
+        connector_role_arn: arn:aws:iam::123456789012:role/superblocks-native-db-connector
+        deployment_token: "012345abcdef"
+    production:
+      logicalModuleInputs:
+        credential_secret_prefix: null
+        auth_mode: aws_iam_role
+        connector_role_arn: arn:aws:iam::123456789012:role/superblocks-native-db-connector
+        deployment_token: "012345abcdef"
+postgres:
+  nativeDbConnectorRoleArn: arn:aws:iam::123456789012:role/superblocks-native-db-connector
+  iamAllowedRoleArnPrefixes:
+    - arn:aws:iam::123456789012:role/superblocks-native-db-connector

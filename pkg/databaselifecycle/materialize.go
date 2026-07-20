@@ -759,16 +759,23 @@ func rootModuleHCL(module TerraformModule, backend map[string]any, vars map[stri
 		// secret via credential_refs. Older roots also looked for master_*
 		// aliases that those modules never emitted, so fall back to
 		// credential_refs.password so the worker can register the instance.
+		// physical_credential_output_tofu_test.go evaluates this fragment
+		// through real OpenTofu against provider-free stub modules so the
+		// try() fallback chain is verified, not re-implemented, in Go.
 		builder.WriteString("output \"credential_refs\" {\n")
 		builder.WriteString("  value     = try(module.database.credential_refs, {})\n")
 		builder.WriteString("  sensitive = true\n")
 		builder.WriteString("}\n\n")
 		builder.WriteString("output \"master_user_secret_arn\" {\n")
-		builder.WriteString("  value     = try(module.database.master_user_secret_arn, try(module.database.credential_refs.password.ref, null))\n")
+		// try() only falls through on evaluation errors (missing attribute).
+		// Modules that declare master_user_secret_arn = null (or stubs that
+		// model that shape) still need coalesce so credential_refs.password.ref
+		// wins instead of locking the root output to null.
+		builder.WriteString("  value     = try(coalesce(try(module.database.master_user_secret_arn, null), try(module.database.credential_refs.password.ref, null)), null)\n")
 		builder.WriteString("  sensitive = true\n")
 		builder.WriteString("}\n\n")
 		builder.WriteString("output \"master_credential_ref\" {\n")
-		builder.WriteString("  value     = try(module.database.master_credential_ref, try(module.database.credential_refs.password, null))\n")
+		builder.WriteString("  value     = try(coalesce(try(module.database.master_credential_ref, null), try(module.database.credential_refs.password, null)), null)\n")
 		builder.WriteString("  sensitive = true\n")
 		builder.WriteString("}\n")
 	}

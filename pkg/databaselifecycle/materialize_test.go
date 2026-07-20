@@ -676,11 +676,11 @@ func TestRootModuleHCLReexportsPhysicalModuleOutputsWithoutApplicationCredential
   sensitive = true
 }`)
 	require.Contains(t, hcl, `output "master_user_secret_arn" {
-  value     = try(module.database.master_user_secret_arn, try(module.database.credential_refs.password.ref, null))
+  value     = try(coalesce(try(module.database.master_user_secret_arn, null), try(module.database.credential_refs.password.ref, null)), null)
   sensitive = true
 }`)
 	require.Contains(t, hcl, `output "master_credential_ref" {
-  value     = try(module.database.master_credential_ref, try(module.database.credential_refs.password, null))
+  value     = try(coalesce(try(module.database.master_credential_ref, null), try(module.database.credential_refs.password, null)), null)
   sensitive = true
 }`)
 	require.Contains(t, hcl, `output "runtime_credential_refs" {

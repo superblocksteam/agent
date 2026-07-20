@@ -25,7 +25,12 @@ cat >"${tmp}/bin/tofu" <<'EOF'
 exit 0
 EOF
 
-chmod +x "${tmp}/bin/go" "${tmp}/bin/tofu"
+cat >"${tmp}/bin/helm" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+
+chmod +x "${tmp}/bin/go" "${tmp}/bin/helm" "${tmp}/bin/tofu"
 
 export PATH="${tmp}/bin:${PATH}"
 export TEST_GO_ENV_LOG="${tmp}/go-env.log"
