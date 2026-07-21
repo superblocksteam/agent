@@ -11,8 +11,13 @@
     { "input": "Token does not have apps:update scope", "expected": "Token does not have apps:update scope" },
     { "input": "[AiTokenUsage] Failed to record token usage", "expected": "[AiTokenUsage] Failed to record token usage" },
     { "input": "api_key=sk-1234567890abcdef", "expected": "api_key=[REDACTED]" },
-    { "input": "access_token: abc123def456", "expected": "access_token: [REDACTED]" },
-    { "input": "refresh_token=xyz789abc123", "expected": "refresh_token=[REDACTED]" },
+    { "input": "access_token: abc123def456ghi789jkl012", "expected": "access_token: [REDACTED]" },
+    { "input": "refresh_token=xyz789abc123def456ghi789", "expected": "refresh_token=[REDACTED]" },
+    { "input": "api_key=abcdef0123456789", "expected": "api_key=[REDACTED]" },
+    { "input": "api_key=abcdef012345678", "expected": "api_key=abcdef012345678" },
+    { "input": "API key not found", "expected": "API key not found" },
+    { "input": "access token expired", "expected": "access token expired" },
+    { "input": "apikey=abc123def456ghi789jkl012", "expected": "apikey=[REDACTED]" },
     {
       "input": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
       "expected": "[JWT_REDACTED]"

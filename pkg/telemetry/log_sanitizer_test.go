@@ -142,7 +142,7 @@ func TestSanitizeLogObjectTypedMap(t *testing.T) {
 
 func TestSanitizeLogObjectTypedSlice(t *testing.T) {
 	// Typed slices (e.g. []string) should still have secrets redacted.
-	input := []string{"Bearer abc123", "safe value", "api_key: secret"}
+	input := []string{"Bearer abc123", "safe value", "api_key: sk_live_abc123def456ghi"}
 	got := SanitizeLogObject(input).([]any)
 	require.Len(t, got, 3)
 	assert.Equal(t, "Bearer [REDACTED]", got[0])

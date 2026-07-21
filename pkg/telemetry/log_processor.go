@@ -47,7 +47,7 @@ func GetLoggingPolicy(policy TelemetryPolicy) LoggingPolicyConfig {
 			RedactPatterns: []*regexp.Regexp{
 				regexp.MustCompile(`\b[A-Za-z0-9-_]{20,}\.[A-Za-z0-9-_]{20,}\.[A-Za-z0-9-_]{20,}\b`),
 				regexp.MustCompile(`(?i)(\bbearer\s+)[a-zA-Z0-9\-._~+/]+=*`),
-				regexp.MustCompile(`(?i)(\bapi[_\s]?key[:\s=]+)[a-zA-Z0-9\-._~+/]+=*`),
+				regexp.MustCompile(`(?i)(\bapi[_\s]?key[:\s=]+)[a-zA-Z0-9\-._~+/]{16,}=*`),
 			},
 			ForbiddenFields: cloneStringSet(secretFields),
 			MaxBodyBytes:    defaultMaxBodyBytes,
