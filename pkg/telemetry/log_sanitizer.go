@@ -21,7 +21,7 @@ var secretPatterns = []secretPattern{
 	{pattern: regexp.MustCompile(`(?i)(\bbearer\s+)[a-zA-Z0-9\-._~+/]+=*`), replacement: `${1}[REDACTED]`},
 	{pattern: regexp.MustCompile(`(?i)(\bbasic\s+)\S+`), replacement: `${1}[REDACTED]`},
 	{pattern: regexp.MustCompile(`(?i)(\bjwt\s+)[a-zA-Z0-9\-._~+/]+=*`), replacement: `${1}[REDACTED]`},
-	{pattern: regexp.MustCompile(`(?i)(\btoken[:\s=]+)[a-zA-Z0-9\-._~+/]+=*`), replacement: `${1}[REDACTED]`},
+	{pattern: regexp.MustCompile(`(?i)(\btoken[:\s=]+)[a-zA-Z0-9\-._~+/]{16,}=*`), replacement: `${1}[REDACTED]`},
 	{pattern: regexp.MustCompile(`(?i)(\bapi[_\s]?key[:\s=]+)[a-zA-Z0-9\-._~+/]+=*`), replacement: `${1}[REDACTED]`},
 	{pattern: regexp.MustCompile(`(?i)(\baccess[_\s]?token[:\s=]+)[a-zA-Z0-9\-._~+/]+=*`), replacement: `${1}[REDACTED]`},
 	{pattern: regexp.MustCompile(`(?i)(\brefresh[_\s]?token[:\s=]+)[a-zA-Z0-9\-._~+/]+=*`), replacement: `${1}[REDACTED]`},

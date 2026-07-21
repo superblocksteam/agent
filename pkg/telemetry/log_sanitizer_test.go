@@ -84,7 +84,7 @@ func TestSecretFieldsMatchTSContract(t *testing.T) {
 
 func TestSanitizeLogObject(t *testing.T) {
 	input := map[string]any{
-		"message":  "token: abc123",
+		"message":  "token: abc123def456ghi789jkl012",
 		"password": "secret",
 		"nested": map[string]any{
 			"api_key": "value",
@@ -245,7 +245,14 @@ func TestSafeJSONStringNil(t *testing.T) {
 }
 
 func TestSafeJSONStringPlainString(t *testing.T) {
-	assert.Equal(t, "token: [REDACTED]", SafeJSONString("token: abc123"))
+	assert.Equal(t, "token: [REDACTED]", SafeJSONString("token: abc123def456ghi789jkl012"))
+}
+
+func TestSafeJSONStringTokenBoundary(t *testing.T) {
+	assert.Equal(t, "token: [REDACTED]", SafeJSONString("token: abcdef0123456789"), "exactly 16 chars should be redacted")
+	assert.Equal(t, "token: abcdef012345678", SafeJSONString("token: abcdef012345678"), "15 chars should be preserved")
+	assert.Equal(t, "Token does not have apps:update scope", SafeJSONString("Token does not have apps:update scope"))
+	assert.Equal(t, "[AiTokenUsage] Failed to record token usage", SafeJSONString("[AiTokenUsage] Failed to record token usage"))
 }
 
 func TestSanitizeAnyNilPointer(t *testing.T) {
@@ -298,7 +305,7 @@ func TestRedactStackTrace(t *testing.T) {
 		},
 		{
 			name:     "single line with no stack trace applies secret sanitization",
-			input:    "token: abc123",
+			input:    "token: abc123def456ghi789jkl012",
 			expected: "token: [REDACTED]",
 		},
 	} {
