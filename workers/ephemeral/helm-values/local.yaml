@@ -1,6 +1,11 @@
 ---
-# Local testing configuration: Redis at host.docker.internal (no password).
+# Local testing configuration: Redis at host.docker.internal.
 # Task managers run as Deployments with KEDA ScaledObject autoscaling.
+#
+# KEDA redis-streams triggers are generated from fleet.streams (same keys as
+# --worker.stream.keys). Redis authenticationRef is wired chart-wide from
+# queue.password via templates/trigger-auth.yaml (<fullname>-redis-trigger-auth);
+# no per-fleet keda.triggers needed for stream scaling.
 fleets:
   # Python ephemeral worker fleet
   python-ba:
@@ -16,15 +21,6 @@ fleets:
       pollingInterval: 1
       minReplicaCount: 1
       maxReplicaCount: 5
-      triggers:
-        - type: redis-streams
-          metadata:
-            address: host.docker.internal:6379
-            stream: agent.main.bucket.BA.ephemeral.plugin.python.event.execute
-            consumerGroup: ephemeral-python
-            lagCount: "1"
-          authenticationRef:
-            name: redis-trigger-auth
   # JavaScript ephemeral worker fleet
   javascript-ba:
     language: javascript
@@ -39,15 +35,6 @@ fleets:
       pollingInterval: 1
       minReplicaCount: 1
       maxReplicaCount: 5
-      triggers:
-        - type: redis-streams
-          metadata:
-            address: host.docker.internal:6379
-            stream: agent.main.bucket.BA.ephemeral.plugin.javascript.event.execute
-            consumerGroup: ephemeral-javascript
-            lagCount: "1"
-          authenticationRef:
-            name: redis-trigger-auth
 # Task Manager image
 taskManager:
   image:

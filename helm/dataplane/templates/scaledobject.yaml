@@ -20,9 +20,23 @@
 {{- $mergeFlag = index $fleetKeda "triggersMerge" }}
 {{- end }}
 {{- $triggersMerge := and $hasTriggers $mergeFlag }}
+{{- $fleetTriggers := index $fleetKeda "triggers" | default $.Values.sandbox_workers.keda.triggers | default list }}
+{{- $triggerStreamsByIndex := include "sandbox_workers.fleetTriggerStreams" (dict "fleet" $v "workerValues" $.Values.sandbox_workers.worker) | fromJson -}}
+{{- $triggerStreamCount := len $triggerStreamsByIndex -}}
+{{- $triggerStreams := list -}}
+{{- range $i := until $triggerStreamCount -}}
+{{- $triggerStreams = append $triggerStreams (index $triggerStreamsByIndex ($i | toString)) -}}
+{{- end -}}
+{{- $renderGeneratedTriggers := or (not $hasTriggers) $triggersMerge }}
+{{- $hasPrometheus := and $renderGeneratedTriggers $.Values.sandbox_workers.keda.prometheusServerAddress }}
+{{- $hasCron := eq (include "sandbox_workers.kedaHasCronTrigger" (dict "triggers" $fleetTriggers)) "true" }}
+{{- $useScalingModifiers := and $renderGeneratedTriggers (eq (include "sandbox_workers.kedaUseScalingModifiers" (dict "triggerStreams" $triggerStreams "hasPrometheus" $hasPrometheus "hasCron" $hasCron)) "true") }}
+{{- $execPoolSize := (($v.queue).executionPool) | default $.Values.sandbox_workers.queue.executionPool | default 1 }}
+{{- $lagCount := include "sandbox_workers.kedaLagCount" (dict "fleetKeda" $fleetKeda "executionPool" $execPoolSize) | trim }}
+{{- $activationLagCount := index $fleetKeda "activationLagCount" | default $.Values.sandbox_workers.keda.activationLagCount | default "1" }}
 {{- /* Prometheus warm buffer: minReplicaCount on ScaledObject is the off-hours floor; cron desiredReplicas is the business-hours buffer size. */}}
 {{- $promBuffer := $minReplicas }}
-{{- range index $fleetKeda "triggers" | default list }}
+{{- range $fleetTriggers }}
 {{- if eq (index . "type") "cron" }}
 {{- with index .metadata "desiredReplicas" }}
 {{- $promBuffer = . | int }}
@@ -38,6 +52,14 @@ metadata:
   labels:
     {{- include "sandbox.worker.labels" $v | nindent 4 }}
 spec:
+  {{- if $useScalingModifiers }}
+  advanced:
+    scalingModifiers:
+      metricType: Value
+      target: "1"
+      activationTarget: {{ $activationLagCount | quote }}
+      formula: {{ include "sandbox_workers.kedaScalingModifiersFormula" (dict "streamCount" (len $triggerStreams) "lagCount" $lagCount "hasPrometheus" $hasPrometheus "hasCron" $hasCron) | quote }}
+  {{- end }}
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
@@ -53,30 +75,43 @@ spec:
   {{- end }}
   triggers:
   {{- if $hasTriggers }}
-    {{- toYaml (index $fleetKeda "triggers" | default $.Values.sandbox_workers.keda.triggers) | nindent 4 }}
+    {{- range $fleetTriggers }}
+    {{- if and $useScalingModifiers (eq .type "cron") }}
+    - type: cron
+      name: cron
+      metadata:
+        {{- toYaml .metadata | nindent 8 }}
+    {{- else }}
+    {{- toYaml (list .) | nindent 4 }}
+    {{- end }}
+    {{- end }}
   {{- end }}
-  {{- if or (not $hasTriggers) $triggersMerge }}
-    {{- range $v.triggerStreams }}
+  {{- if $renderGeneratedTriggers }}
+    {{- range $i, $stream := $triggerStreams }}
     - type: redis-streams
+      {{- if $useScalingModifiers }}
+      name: {{ include "sandbox_workers.kedaRedisStreamTriggerName" (dict "index" $i) }}
+      {{- end }}
       metadata:
         host: {{ $.Values.sandbox_workers.queue.host }}
         port: {{ $.Values.sandbox_workers.queue.port | quote }}
         enableTLS: {{ $.Values.sandbox_workers.queue.tls | quote }}
-        stream: {{ . }}
+        stream: {{ $stream }}
         consumerGroup: {{ $v.consumerGroup }}
-        {{- with index $fleetKeda "lagCount" | default $.Values.sandbox_workers.keda.lagCount }}
+        {{- if not $useScalingModifiers }}
+        {{- with $lagCount }}
         lagCount: {{ . | quote }}
         {{- end }}
-        activationLagCount: {{ index $fleetKeda "activationLagCount" | default $.Values.sandbox_workers.keda.activationLagCount | default "1" | quote }}
+        activationLagCount: {{ $activationLagCount | quote }}
+        {{- end }}
       authenticationRef:
         name: redis-trigger-auth
     {{- end }}
-    {{- if $.Values.sandbox_workers.keda.prometheusServerAddress }}
+    {{- if $hasPrometheus }}
     {{- $promAddr := $.Values.sandbox_workers.keda.prometheusServerAddress }}
     {{- if eq $promAddr "auto" }}
     {{- $promAddr = include "sandbox_workers.autoPromQueryUrl" $ | trim }}
     {{- end }}
-    {{- $execPoolSize := (($v.queue).executionPool) | default $.Values.sandbox_workers.queue.executionPool | default 1 }}
     # Metrics-based trigger: desired replicas = ceil(in_use / executionPool) + degraded_workers + minReplicaCount + extraWarm when load is high.
     # Each replica serves executionPool concurrent events (requests), so dividing gives the
     # number of fully-occupied workers (task-managers); adding minReplicaCount maintains the warm buffer.
@@ -86,11 +121,15 @@ spec:
     # extraWarm (= promBuffer - minReplicaCount) applies only when in_use exceeds the cron warm-pool capacity (extraWarm * executionPool).
     #
     # With no cron (extraWarm=0), this reduces to ceil(in_use / executionPool) + sum(degraded) + minReplicas.
+    # With prom/cron + redis, scalingModifiers adds ceil(total stream lag / lagCount) on top of max(prom, cron).
     - type: prometheus
+      {{- if $useScalingModifiers }}
+      name: prom
+      {{- end }}
       metricType: AverageValue
       metadata:
         serverAddress: {{ $promAddr }}
-        query: ceil((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) / {{ $execPoolSize }}) + (sum(worker_degraded_mode{fleet="{{ $k }}"}) or vector(0)) + {{ $minReplicas }} + ((sum(sandbox_execution_pool_in_use{fleet="{{ $k }}"}) or vector(0)) >bool {{ mul $extraWarm $execPoolSize }}) * {{ $extraWarm }}
+        query: {{ include "sandbox_workers.kedaPrometheusQuery" (dict "fleet" $k "execPoolSize" $execPoolSize "minReplicas" $minReplicas "extraWarm" $extraWarm) | quote }}
         threshold: "1"
         activationThreshold: "0"
     {{- end }}

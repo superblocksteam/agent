@@ -131,10 +131,61 @@ Each fleet gets a KEDA `ScaledObject` with up to three trigger types:
 | Trigger | Source | Role |
 | ------- | ------ | ---- |
 | **cron** | Fleet `keda.triggers` (optional) | Business-hours replica floor via `desiredReplicas` |
-| **redis-streams** | Generated from `triggerStreams` | Scale on stream backlog |
+| **redis-streams** | Generated from fleet `plugins`, `events`, `buckets` (and `streamVariants` / `includeStandardStreams`) | Scale on stream backlog |
 | **prometheus** | Generated when `keda.prometheusServerAddress` is set | Scale on `sandbox_execution_pool_in_use` |
 
-KEDA sets replica count to the **maximum** across all active triggers.
+KEDA sets replica count to the **maximum** across all active triggers unless
+`scalingModifiers` is enabled (prom/cron plus redis): then desired replicas are
+`max(prom, cron) + ceil(total stream lag / lagCount)`.
+
+### Redis stream keys for KEDA
+
+KEDA `redis-streams` triggers use the same stream naming as the task-manager
+(`workers/shared/transport/redis/utils.go` `StreamKeys`):
+
+```text
+agent.<group>.bucket.<bucket>[.<variant>].plugin.<plugin>.event.<event>
+```
+
+- `<group>` comes from `worker.group` (default `main`).
+- `execute` events use all fleet `buckets`; other events use bucket `BA` only.
+- `streamVariants` and `includeStandardStreams` follow the same rules as
+  `--worker.stream.variants` / `--worker.stream.include.standard.keys`.
+- Plugin wildcards (`*`, `-name`) expand via `worker.allPlugins` (mirrors
+  `pkg/pluginparser/plugin_parser.go`).
+
+Set optional `streams` on a fleet (or `worker.streams` globally) for an explicit
+key list shared by the task-manager and KEDA. When omitted, both derive keys from
+`plugins`, `events`, and `buckets`. The deprecated `triggerStreams` field is no
+longer read; migrate any remaining uses to `streams`.
+
+### Redis stream lag aggregation (multiple streams)
+
+When a fleet has **more than one** generated stream, KEDA’s default per-stream
+`redis-streams` triggers take the **max** desired count across streams. That
+under-scales when lag is spread across many streams (e.g. auxiliary fleets with
+dozens of plugin/bucket/event keys).
+
+For **more than one** generated stream, or **prom/cron plus redis**, the chart enables KEDA
+[`scalingModifiers`](https://keda.sh/docs/latest/reference/scaledobject-spec/#scalingmodifiers)
+( cluster KEDA **2.12+**, requires **2.16+** in Superblocks k8s-resources ):
+
+- Each stream trigger is named `rs0`, `rs1`, …
+- Prometheus (when enabled) is named `prom`; cron is named `cron`
+- Formula (desired replicas, `metricType: Value`, `target: "1"`):
+
+```text
+max([float(prom), float(cron)]) + ceil((rs0 + rs1 + …) / lagCount)
+```
+
+When only one of prom/cron is present, that term replaces the `max(...)`. With redis
+triggers only (no prom/cron), the formula is just the backlog term.
+
+`lagCount` defaults to the fleet's `queue.executionPool` (50 for non-ephemeral
+fleets, 2 for ephemeral). Override with `fleet.keda.lagCount` when needed.
+`lagCount` and `activationLagCount` apply to **total** lag across streams. Fleets
+with prom/cron plus redis use `scalingModifiers` (including single-stream fleets).
+Redis-only fleets with one stream keep per-trigger `lagCount` metadata.
 
 ### Trigger modes
 

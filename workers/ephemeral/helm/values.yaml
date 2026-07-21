@@ -10,15 +10,16 @@
 #       - python
 #     events:
 #       - execute
-#     triggerStreams:
-#       - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
-#       - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
+#     buckets:
+#       - BA
+#     # Optional explicit stream keys (--worker.stream.keys and KEDA redis-streams).
+#     # When omitted, keys are generated from plugins/events/buckets (see SCALING.md).
 #     streams:
 #       - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
 #       - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
 #     # Per-fleet KEDA configuration (overrides global keda.*)
 #     keda:
-#       lagCount: "1"           # Target lag per pod for scaling
+#       # Defaults to queue.executionPool; override when backlog-per-pod should differ.
 #       activationLagCount: "1" # Minimum lag before scaling starts
 #     shutdown:
 #       terminationGracePeriodSeconds: 600
@@ -360,7 +361,55 @@ worker:
   group: main
   events:
     - execute
+  # Optional global stream key override (--worker.stream.keys and KEDA redis-streams).
+  # Per-fleet streams: takes precedence over this list.
+  # streams: []
   includeStandardStreams: true
+  # Catalog for plugins: '*' wildcard expansion in fleet definitions (keep in sync with pkg/pluginparser/plugin_parser.go).
+  allPlugins:
+    - adls
+    - aivenkafka
+    - athena
+    - bigquery
+    - cockroachdb
+    - confluent
+    - cosmosdb
+    - couchbase
+    - databricks
+    - dynamodb
+    - email
+    - gcs
+    - graphql
+    - graphqlintegration
+    - gsheets
+    - javascript
+    - javascriptsdkapi
+    - javascriptwasm
+    - kafka
+    - kinesis
+    - lakebase
+    - mariadb
+    - mongodb
+    - msk
+    - mssql
+    - mysql
+    - ocr
+    - openai
+    - oracledb
+    - postgres
+    - python
+    - redis
+    - redpanda
+    - redshift
+    - restapi
+    - restapiintegration
+    - rockset
+    - s3
+    - salesforce
+    - smtp
+    - snowflake
+    - snowflakepostgres
+    - workflow
 # Observability
 observability:
   logging:

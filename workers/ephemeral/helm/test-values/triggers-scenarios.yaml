@@ -1,0 +1,127 @@
+---
+# Minimal values for helm template verification of ScaledObject trigger modes.
+queue:
+  host: redis.test.svc
+  port: "6379"
+  tls: false
+keda:
+  prometheusServerAddress: http://prometheus:9090
+  triggers: []
+fleets:
+  default-only:
+    language: javascript
+    consumerGroup: cg-default
+    ephemeral: true
+    plugins:
+      - javascript
+    events:
+      - execute
+    buckets:
+      - BA
+  default-buckets:
+    language: javascript
+    consumerGroup: cg-default-buckets
+    ephemeral: true
+    plugins:
+      - javascript
+    events:
+      - execute
+  custom-replace:
+    language: javascript
+    consumerGroup: cg-replace
+    ephemeral: true
+    plugins:
+      - javascript
+    events:
+      - execute
+    buckets:
+      - BA
+    keda:
+      triggersMerge: false
+      triggers:
+        - type: redis-streams
+          metadata:
+            address: custom-redis:6379
+            stream: custom.stream
+            consumerGroup: cg-replace
+            lagCount: "1"
+          authenticationRef:
+            name: custom-redis-auth
+  custom-replace-multi-stream:
+    language: python
+    consumerGroup: cg-replace-multi
+    ephemeral: true
+    plugins:
+      - python
+    events:
+      - execute
+    buckets:
+      - BA
+      - BE
+    keda:
+      triggersMerge: false
+      triggers:
+        - type: redis-streams
+          metadata:
+            address: custom-redis:6379
+            stream: custom.stream
+            consumerGroup: cg-replace-multi
+            lagCount: "1"
+          authenticationRef:
+            name: custom-redis-auth
+  custom-merge:
+    language: javascript
+    consumerGroup: cg-merge
+    ephemeral: true
+    plugins:
+      - javascript
+    events:
+      - execute
+    buckets:
+      - BA
+    queue:
+      executionPool: 2
+    keda:
+      minReplicaCount: 1
+      triggersMerge: true
+      triggers:
+        - type: cron
+          metadata:
+            timezone: UTC
+            start: "0 8 * * 1-5"
+            end: "0 20 * * 1-5"
+            desiredReplicas: "10"
+  multi-stream-sum:
+    language: javascript
+    consumerGroup: cg-multi
+    ephemeral: true
+    plugins:
+      - javascriptwasm
+    events:
+      - execute
+      - metadata
+    buckets:
+      - BA
+      - BE
+    queue:
+      executionPool: 2
+    keda:
+      activationLagCount: "2"
+      minReplicaCount: 1
+      triggersMerge: true
+      triggers:
+        - type: cron
+          metadata:
+            timezone: UTC
+            start: "0 8 * * 1-5"
+            end: "0 20 * * 1-5"
+            desiredReplicas: "5"
+  streams-override:
+    language: python
+    consumerGroup: cg-streams
+    ephemeral: true
+    streams:
+      - agent.main.bucket.BA.ephemeral.plugin.python.event.execute
+      - agent.main.bucket.BE.ephemeral.plugin.python.event.execute
+    keda:
+      minReplicaCount: 1

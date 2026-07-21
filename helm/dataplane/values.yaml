@@ -188,6 +188,10 @@ sandbox_workers:
   #     buckets:
   #       - BA
   #       - BE
+  #     # Optional explicit stream keys (--worker.stream.keys and KEDA redis-streams).
+  #     # When omitted, keys are generated from plugins/events/buckets.
+  #     streams:
+  #       - agent.main.bucket.BA.ephemeral.plugin.javascriptsdkapi.event.execute
   #     sandbox:
   #       poolSize: 3
   #     keda:
@@ -401,8 +405,7 @@ sandbox_workers:
       tolerations: []
     maxReplicaCount: 100
     minReplicaCount: 0
-    # Dataplane chart: scale as soon as there is backlog per trigger
-    lagCount: '1'
+    # lagCount defaults to fleet queue.executionPool (override with fleet.keda.lagCount).
     # Scaling triggers - typically Redis stream length
     triggers: []
     # Example:
@@ -412,7 +415,6 @@ sandbox_workers:
     #       address: redis:6379
     #       stream: sandbox:work:python
     #       consumerGroup: ephemeral-python
-    #       lagCount: "1"
     #       activationLagCount: "1"
   # Redis transport configuration
   queue:
@@ -476,12 +478,60 @@ sandbox_workers:
     group: main
     events:
       - execute
+    # Optional global stream key override (--worker.stream.keys and KEDA redis-streams).
+    # Per-fleet streams: takes precedence over this list.
+    # streams: []
     # When generating stream keys (no worker.stream.keys override), include standard
     # keys (agent.<group>.bucket.<bucket>.plugin.<plugin>.event.<event>).
     includeStandardStreams: true
-    # Optional stream variants combined with standard keys when includeStandardStreams is true
-    # streamVariants:
-    #   - ephemeral
+    # Catalog for plugins: '*' wildcard expansion in fleet definitions (keep in sync with pkg/pluginparser/plugin_parser.go).
+    allPlugins:
+      - adls
+      - aivenkafka
+      - athena
+      - bigquery
+      - cockroachdb
+      - confluent
+      - cosmosdb
+      - couchbase
+      - databricks
+      - dynamodb
+      - email
+      - gcs
+      - graphql
+      - graphqlintegration
+      - gsheets
+      - javascript
+      - javascriptsdkapi
+      - javascriptwasm
+      - kafka
+      - kinesis
+      - lakebase
+      - mariadb
+      - mongodb
+      - msk
+      - mssql
+      - mysql
+      - ocr
+      - openai
+      - oracledb
+      - postgres
+      - python
+      - redis
+      - redpanda
+      - redshift
+      - restapi
+      - restapiintegration
+      - rockset
+      - s3
+      - salesforce
+      - smtp
+      - snowflake
+      - snowflakepostgres
+      - workflow
+      # Optional stream variants combined with standard keys when includeStandardStreams is true
+      # streamVariants:
+      #   - ephemeral
   # Observability
   observability:
     logging:

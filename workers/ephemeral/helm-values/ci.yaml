@@ -1,6 +1,7 @@
 ---
 # CI environment configuration for ephemeral workers in Kind.
 # Task managers run as Deployments with KEDA ScaledObject autoscaling.
+# KEDA redis-streams triggers are generated from fleet plugins/events/buckets.
 externalSecrets:
   enabled: false
 fleets:
@@ -32,15 +33,6 @@ fleets:
       pollingInterval: 1
       minReplicaCount: 1
       maxReplicaCount: 3
-      triggers:
-        - type: redis-streams
-          metadata:
-            address: redis-master.superblocks.svc.cluster.local:6379
-            stream: agent.main.bucket.BA.plugin.postgres.event.execute
-            consumerGroup: sandbox-integration
-            lagCount: "1"
-          authenticationRef:
-            name: sandbox-workers-redis-trigger-auth
   # Python ephemeral worker fleet
   python-ba:
     language: python
@@ -59,15 +51,6 @@ fleets:
       pollingInterval: 1
       minReplicaCount: 1
       maxReplicaCount: 5
-      triggers:
-        - type: redis-streams
-          metadata:
-            address: redis-master.superblocks.svc.cluster.local:6379
-            stream: agent.main.bucket.BA.plugin.python.event.execute
-            consumerGroup: ephemeral-python
-            lagCount: "1"
-          authenticationRef:
-            name: sandbox-workers-redis-trigger-auth
   # JavaScript ephemeral worker fleet
   javascript-ba:
     language: javascript
@@ -93,23 +76,6 @@ fleets:
       pollingInterval: 1
       minReplicaCount: 1
       maxReplicaCount: 5
-      triggers:
-        - type: redis-streams
-          metadata:
-            address: redis-master.superblocks.svc.cluster.local:6379
-            stream: agent.main.bucket.BA.plugin.javascript.event.execute
-            consumerGroup: ephemeral-javascript
-            lagCount: "1"
-          authenticationRef:
-            name: sandbox-workers-redis-trigger-auth
-        - type: redis-streams
-          metadata:
-            address: redis-master.superblocks.svc.cluster.local:6379
-            stream: agent.main.bucket.BA.plugin.javascriptwasm.event.execute
-            consumerGroup: ephemeral-javascript
-            lagCount: "1"
-          authenticationRef:
-            name: sandbox-workers-redis-trigger-auth
 # Task Manager image (built in CI)
 taskManager:
   # Expose a stable Service so e2e tests can reach the HTTP gateway via DNS
