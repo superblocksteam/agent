@@ -231,6 +231,17 @@ ARG TOFU_VERSION=1.11.11
 COPY --chmod=755 scripts/install-opentofu.sh /tmp/install-opentofu.sh
 RUN /tmp/install-opentofu.sh
 
+# amazon-ecr-credential-helper for OpenTofu OCI module pulls from ECR. See
+# Dockerfile.orchestrator / scripts/install-ecr-credential-helper.sh.
+FROM ghcr.io/superblocksteam/debian:trixie-${DEBIAN_TRIXIE_VERSION}-slim AS ecr-login
+ARG TARGETARCH
+ARG ECR_LOGIN_VERSION=0.12.0
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+COPY --chmod=755 scripts/install-ecr-credential-helper.sh /tmp/install-ecr-credential-helper.sh
+RUN TARGETARCH=${TARGETARCH} ECR_LOGIN_VERSION=${ECR_LOGIN_VERSION} /tmp/install-ecr-credential-helper.sh
+
 ############
 ## PARENT ##
 ############
@@ -264,6 +275,8 @@ COPY              --from=orchestrator_and_golang_worker /go/src/github.com/super
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/buckets.minimal.json                     /app/orchestrator/buckets.json
 COPY              --from=orchestrator_and_golang_worker /go/src/github.com/superblocksteam/agent/flags.json                               /app/orchestrator/flags.json
 COPY              --from=opentofu                     /usr/bin/tofu                                                                     /usr/local/bin/tofu
+COPY              --from=ecr-login                    /usr/local/bin/docker-credential-ecr-login                                        /usr/local/bin/docker-credential-ecr-login
+COPY --chmod=644                                      scripts/oci-docker-config.json                                                    /etc/superblocks/docker/config.json
 # Immutable Native Database modules used by local `./modules/...` lifecycle
 # sources. Populate with scripts/ci-prepare-native-db-modules.sh before build.
 COPY              --chown=1000:1000                     build/native-db-modules                                                           /opt/superblocks/terraform-modules
@@ -361,6 +374,7 @@ ENV S6_SERVICES_GRACETIME=10000
 ENV S6_KILL_GRACETIME=10000
 ENV S6_CMD_WAIT_FOR_SERVICES_MAXTIME=120000
 ENV SUPERBLOCKS_SLIM_IMAGE=$SLIM_IMAGE
+ENV DOCKER_CONFIG=/etc/superblocks/docker
 
 EXPOSE 8080
 EXPOSE 8081

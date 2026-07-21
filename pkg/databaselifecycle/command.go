@@ -25,9 +25,7 @@ func (e *BinaryCommandExecutor) Run(ctx context.Context, command Command) (Comma
 	args := append([]string{command.Name}, command.Args...)
 	cmd := exec.CommandContext(ctx, e.binary, args...)
 	cmd.Dir = command.Dir
-	if len(command.Env) > 0 {
-		cmd.Env = commandEnvironment(os.Environ(), command.Env)
-	}
+	cmd.Env = terraformCommandEnv(commandEnvironment(os.Environ(), command.Env), command.Dir)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout

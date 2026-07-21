@@ -31,6 +31,21 @@ func TestBinaryCommandExecutorRequiresBinary(t *testing.T) {
 	require.ErrorContains(t, err, "binary is required")
 }
 
+func TestBinaryCommandExecutorInjectsDockerConfigForTerraform(t *testing.T) {
+	dir := t.TempDir()
+	binary := filepath.Join(dir, "tofu")
+	require.NoError(t, os.WriteFile(binary, []byte("#!/usr/bin/env bash\nprintf '%s' \"$DOCKER_CONFIG\"\n"), 0o700))
+	t.Setenv("DOCKER_CONFIG", "")
+
+	result, err := NewBinaryCommandExecutor(binary).Run(context.Background(), Command{
+		Name: "init",
+		Dir:  dir,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, defaultDockerConfigDir, result.Stdout)
+}
+
 func TestBinaryCommandExecutorCombinesInheritedEnvironmentWithCommandOverrides(t *testing.T) {
 	dir := t.TempDir()
 	binary := filepath.Join(dir, "tofu")
