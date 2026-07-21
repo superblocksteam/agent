@@ -18,6 +18,7 @@ import (
 	"github.com/superblocksteam/agent/pkg/errors"
 	"github.com/superblocksteam/agent/pkg/observability"
 	redisstreams "github.com/superblocksteam/agent/pkg/redis/streams"
+	"github.com/superblocksteam/agent/pkg/utils"
 	"github.com/superblocksteam/agent/pkg/worker"
 	redisutils "github.com/superblocksteam/agent/pkg/worker/transport/redis"
 	transportv1 "github.com/superblocksteam/agent/types/gen/go/transport/v1"
@@ -62,6 +63,10 @@ type redisTransport struct {
 	executionPool     *atomic.Int64
 	executionPoolSize int64
 	workerReturned    chan int64
+
+	// Capacity gate, gates message intake on actual execution capacity (e.g. ready
+	// sandbox is reserved per admitted message).
+	capacityGate CapacityGate
 
 	mutex *sync.Mutex
 
@@ -147,6 +152,7 @@ func NewRedisTransport(options *Options) *redisTransport {
 		executionPool:     executionPool,
 		executionPoolSize: options.ExecutionPool,
 		workerReturned:    make(chan int64, 1),
+		capacityGate:      options.CapacityGate,
 
 		context: ctx,
 		cancel:  cancel,
@@ -427,6 +433,29 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 	}
 	count := min(rt.messageCount, remaining)
 
+	reservedExecutionIds := utils.NewSet[string]()
+	releaseReservations := func() {
+		if rt.capacityGate != nil {
+			for _, executionId := range reservedExecutionIds.ToSlice() {
+				rt.capacityGate.ReleaseSlot(executionId)
+			}
+		}
+	}
+	defer releaseReservations()
+
+	if rt.capacityGate != nil {
+		for i := int64(0); i < count; i++ {
+			executionId := rt.capacityGate.AcquireSlot()
+			if executionId == "" {
+				if rt.ephemeral {
+					return false, nil
+				}
+			} else {
+				reservedExecutionIds.Add(executionId)
+			}
+		}
+	}
+
 	messages, readStats, err := rt.groupReader.XReadGroupMaxCount(rt.context, redisstreams.XReadGroupMaxCountArgs{
 		MaxCount: count,
 		Block:    rt.blockDuration,
@@ -472,10 +501,21 @@ func (rt *redisTransport) pollOnce() (bool, error) {
 		}
 	}
 
+	// Clear the reserved execution ids as the capacity will be released when the message is handled
+	reservedExecutionIds.Clear()
 	return handled, nil
 }
 
 func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
+	// Reservations are fungible: if we exit before the plugin executor
+	// consumes the reservation, return it to the pool.
+	admissionConsumed := false
+	defer func() {
+		if !admissionConsumed && rt.capacityGate != nil {
+			rt.capacityGate.ReleaseUnusedSlot()
+		}
+	}()
+
 	alreadyAcked, err := rt.groupReader.Ack(context.Background(), stream, message.ID)
 	if err != nil {
 		sandboxmetrics.RecordWorkerRedisAckSkipped(context.Background(), sandboxmetrics.RedisAckSkipReasonError, rt.redisReadMetricAttrs()...)
@@ -544,6 +584,7 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 		var result *transportv1.Response_Data_Data
 		var execErr error
 
+		admissionConsumed = true
 		switch requestMeta.GetEvent() {
 		case string(worker.EventExecute):
 			result, execErr = rt.pluginExecutor.Execute(ctx, pluginName, requestData, requestMeta, perf)
@@ -556,6 +597,7 @@ func (rt *redisTransport) handleMessage(message *r.XMessage, stream string) {
 		case string(worker.EventPreDelete):
 			result, execErr = rt.pluginExecutor.PreDelete(ctxWithBaggage, pluginName, requestData, perf)
 		default:
+			admissionConsumed = false
 			execErr = stderr.New("unknown event type")
 		}
 

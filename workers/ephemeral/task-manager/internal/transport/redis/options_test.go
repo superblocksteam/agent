@@ -1,11 +1,13 @@
-package redis
+package redis_test
 
 import (
 	"testing"
 	"time"
 
 	"workers/ephemeral/task-manager/internal/plugin_executor"
-	mocks "workers/ephemeral/task-manager/mocks/internal_/store/redis"
+	"workers/ephemeral/task-manager/internal/transport/redis"
+	mocks_st "workers/ephemeral/task-manager/mocks/internal_/store/redis"
+	mocks_ts "workers/ephemeral/task-manager/mocks/internal_/transport/redis"
 
 	r "github.com/redis/go-redis/v9"
 	"github.com/superblocksteam/agent/pkg/store/mock"
@@ -13,7 +15,7 @@ import (
 )
 
 func TestNewOptionsDefaults(t *testing.T) {
-	opts := NewOptions()
+	opts := redis.NewOptions()
 
 	if opts.ExecutionPool != 50 {
 		t.Errorf("ExecutionPool = %v, want 50", opts.ExecutionPool)
@@ -38,7 +40,7 @@ func TestWithRedisClient(t *testing.T) {
 	})
 	defer client.Close()
 
-	opts := NewOptions(WithRedisClient(client))
+	opts := redis.NewOptions(redis.WithRedisClient(client))
 
 	if opts.RedisClient != client {
 		t.Error("RedisClient was not set correctly")
@@ -47,7 +49,7 @@ func TestWithRedisClient(t *testing.T) {
 
 func TestWithStreamKeys(t *testing.T) {
 	keys := []string{"stream1", "stream2", "stream3"}
-	opts := NewOptions(WithStreamKeys(keys))
+	opts := redis.NewOptions(redis.WithStreamKeys(keys))
 
 	if len(opts.StreamKeys) != 3 {
 		t.Errorf("StreamKeys length = %v, want 3", len(opts.StreamKeys))
@@ -61,7 +63,7 @@ func TestWithStreamKeys(t *testing.T) {
 
 func TestWithLogger(t *testing.T) {
 	logger := zap.NewNop()
-	opts := NewOptions(WithLogger(logger))
+	opts := redis.NewOptions(redis.WithLogger(logger))
 
 	if opts.Logger != logger {
 		t.Error("Logger was not set correctly")
@@ -70,7 +72,7 @@ func TestWithLogger(t *testing.T) {
 
 func TestWithBlockDuration(t *testing.T) {
 	duration := 10 * time.Second
-	opts := NewOptions(WithBlockDuration(duration))
+	opts := redis.NewOptions(redis.WithBlockDuration(duration))
 
 	if opts.BlockDuration != duration {
 		t.Errorf("BlockDuration = %v, want %v", opts.BlockDuration, duration)
@@ -79,7 +81,7 @@ func TestWithBlockDuration(t *testing.T) {
 
 func TestWithMessageCount(t *testing.T) {
 	count := int64(100)
-	opts := NewOptions(WithMessageCount(count))
+	opts := redis.NewOptions(redis.WithMessageCount(count))
 
 	if opts.MessageCount != count {
 		t.Errorf("MessageCount = %v, want %v", opts.MessageCount, count)
@@ -88,7 +90,7 @@ func TestWithMessageCount(t *testing.T) {
 
 func TestWithWorkerId(t *testing.T) {
 	workerId := "worker-123"
-	opts := NewOptions(WithWorkerId(workerId))
+	opts := redis.NewOptions(redis.WithWorkerId(workerId))
 
 	if opts.WorkerId != workerId {
 		t.Errorf("WorkerId = %v, want %v", opts.WorkerId, workerId)
@@ -97,16 +99,39 @@ func TestWithWorkerId(t *testing.T) {
 
 func TestWithConsumerGroup(t *testing.T) {
 	group := "test-group"
-	opts := NewOptions(WithConsumerGroup(group))
+	opts := redis.NewOptions(redis.WithConsumerGroup(group))
 
 	if opts.ConsumerGroup != group {
 		t.Errorf("ConsumerGroup = %v, want %v", opts.ConsumerGroup, group)
 	}
 }
 
+func TestWithPluginExecutor(t *testing.T) {
+	store := mock.NewStore(t)
+
+	// Create a real plugin executor (the interface is from the plugin_executor package)
+	executor := plugin_executor.NewPluginExecutor(&plugin_executor.Options{
+		Logger: zap.NewNop(),
+		Store:  store,
+	})
+	opts := redis.NewOptions(redis.WithPluginExecutor(executor))
+
+	if opts.PluginExecutor == nil {
+		t.Error("PluginExecutor should be set")
+	}
+}
+
+func TestWithCapacityGate(t *testing.T) {
+	gate := mocks_ts.NewCapacityGate(t)
+	opts := redis.NewOptions(redis.WithCapacityGate(gate))
+	if opts.CapacityGate != gate {
+		t.Errorf("CapacityGate = %v, want %v", opts.CapacityGate, gate)
+	}
+}
+
 func TestWithExecutionPool(t *testing.T) {
 	pool := int64(100)
-	opts := NewOptions(WithExecutionPool(pool))
+	opts := redis.NewOptions(redis.WithExecutionPool(pool))
 
 	if opts.ExecutionPool != pool {
 		t.Errorf("ExecutionPool = %v, want %v", opts.ExecutionPool, pool)
@@ -114,21 +139,21 @@ func TestWithExecutionPool(t *testing.T) {
 }
 
 func TestWithFileContextProvider(t *testing.T) {
-	provider := mocks.NewFileContextProvider(t)
-	opts := NewOptions(WithFileContextProvider(provider))
+	provider := mocks_st.NewFileContextProvider(t)
+	opts := redis.NewOptions(redis.WithFileContextProvider(provider))
 	if opts.FileContextProvider != provider {
 		t.Errorf("FileContextProvider = %v, want %v", opts.FileContextProvider, provider)
 	}
 }
 
 func TestWithEphemeral(t *testing.T) {
-	opts := NewOptions(WithEphemeral(true))
+	opts := redis.NewOptions(redis.WithEphemeral(true))
 
 	if opts.Ephemeral != true {
 		t.Errorf("Ephemeral = %v, want true", opts.Ephemeral)
 	}
 
-	opts = NewOptions(WithEphemeral(false))
+	opts = redis.NewOptions(redis.WithEphemeral(false))
 	if opts.Ephemeral != false {
 		t.Errorf("Ephemeral = %v, want false", opts.Ephemeral)
 	}
@@ -138,7 +163,7 @@ func TestWithDrainCompleteCh(t *testing.T) {
 	ch := make(chan struct{})
 	close(ch)
 
-	opts := NewOptions(WithDrainCompleteCh(ch))
+	opts := redis.NewOptions(redis.WithDrainCompleteCh(ch))
 	if opts.DrainCompleteCh != ch {
 		t.Errorf("DrainCompleteCh = %v, want %v", opts.DrainCompleteCh, ch)
 	}
@@ -146,7 +171,7 @@ func TestWithDrainCompleteCh(t *testing.T) {
 
 func TestWithDegradedModeBackoff(t *testing.T) {
 	duration := 10 * time.Second
-	opts := NewOptions(WithDegradedModeBackoff(duration))
+	opts := redis.NewOptions(redis.WithDegradedModeBackoff(duration))
 	if opts.DegradedModeBackoff != duration {
 		t.Errorf("DegradedModeBackoff = %v, want %v", opts.DegradedModeBackoff, duration)
 	}
@@ -154,7 +179,7 @@ func TestWithDegradedModeBackoff(t *testing.T) {
 
 func TestWithMaxDegradedTime(t *testing.T) {
 	duration := 10 * time.Minute
-	opts := NewOptions(WithMaxDegradedTime(duration))
+	opts := redis.NewOptions(redis.WithMaxDegradedTime(duration))
 	if opts.MaxDegradedTime != duration {
 		t.Errorf("MaxDegradedTime = %v, want %v", opts.MaxDegradedTime, duration)
 	}
@@ -162,27 +187,27 @@ func TestWithMaxDegradedTime(t *testing.T) {
 
 func TestWithAutoClaimMinIdle(t *testing.T) {
 	duration := 10 * time.Second
-	opts := NewOptions(WithAutoClaimMinIdle(duration))
+	opts := redis.NewOptions(redis.WithAutoClaimMinIdle(duration))
 	if opts.AutoClaimMinIdle != duration {
 		t.Errorf("AutoClaimMinIdle = %v, want %v", opts.AutoClaimMinIdle, duration)
 	}
 }
 func TestOptionsChaining(t *testing.T) {
 	logger := zap.NewNop()
-	provider := mocks.NewFileContextProvider(t)
+	provider := mocks_st.NewFileContextProvider(t)
 
-	opts := NewOptions(
-		WithWorkerId("worker-1"),
-		WithConsumerGroup("group-1"),
-		WithExecutionPool(25),
-		WithBlockDuration(3*time.Second),
-		WithMessageCount(5),
-		WithFileContextProvider(provider),
-		WithEphemeral(true),
-		WithLogger(logger),
-		WithDegradedModeBackoff(30*time.Second),
-		WithMaxDegradedTime(5*time.Minute),
-		WithAutoClaimMinIdle(10*time.Second),
+	opts := redis.NewOptions(
+		redis.WithWorkerId("worker-1"),
+		redis.WithConsumerGroup("group-1"),
+		redis.WithExecutionPool(25),
+		redis.WithBlockDuration(3*time.Second),
+		redis.WithMessageCount(5),
+		redis.WithFileContextProvider(provider),
+		redis.WithEphemeral(true),
+		redis.WithLogger(logger),
+		redis.WithDegradedModeBackoff(30*time.Second),
+		redis.WithMaxDegradedTime(5*time.Minute),
+		redis.WithAutoClaimMinIdle(10*time.Second),
 	)
 
 	if opts.WorkerId != "worker-1" {
@@ -221,28 +246,13 @@ func TestOptionsChaining(t *testing.T) {
 }
 
 func TestOptionsOverride(t *testing.T) {
-	opts := NewOptions(
-		WithExecutionPool(10),
-		WithExecutionPool(20), // Should override
-		WithExecutionPool(30), // Should override again
+	opts := redis.NewOptions(
+		redis.WithExecutionPool(10),
+		redis.WithExecutionPool(20), // Should override
+		redis.WithExecutionPool(30), // Should override again
 	)
 
 	if opts.ExecutionPool != 30 {
 		t.Errorf("ExecutionPool = %v, want 30 (last value should win)", opts.ExecutionPool)
-	}
-}
-
-func TestWithPluginExecutor(t *testing.T) {
-	store := mock.NewStore(t)
-
-	// Create a real plugin executor (the interface is from the plugin_executor package)
-	executor := plugin_executor.NewPluginExecutor(&plugin_executor.Options{
-		Logger: zap.NewNop(),
-		Store:  store,
-	})
-	opts := NewOptions(WithPluginExecutor(executor))
-
-	if opts.PluginExecutor == nil {
-		t.Error("PluginExecutor should be set")
 	}
 }

@@ -877,6 +877,7 @@ func main() {
 			redis.WithMessageCount(viper.GetInt64("transport.redis.max.messages")),
 			redis.WithAutoClaimMinIdle(viper.GetDuration("transport.redis.autoclaim.min.idle")),
 			redis.WithPluginExecutor(pluginExec),
+			redis.WithCapacityGate(sandboxRunnable),
 			redis.WithStreamKeys(streamKeys),
 			redis.WithWorkerId(id),
 			redis.WithFileContextProvider(variableStoreGrpcRunnable),

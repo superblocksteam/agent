@@ -90,6 +90,9 @@ type SandboxPool struct {
 	drainCompleteCh           <-chan struct{}
 	failedSandboxReplacements chan struct{}
 
+	// set of sandbox ids that are reserved for upcoming executions.
+	reservedSandboxIds *utils.Set[string]
+
 	logger       *zap.Logger
 	tracer       trace.Tracer
 	shuttingDown atomic.Bool
@@ -122,6 +125,7 @@ func NewSandboxPool(options ...PoolOption) (*SandboxPool, error) {
 		sandboxOptions:            poolOpts.SandboxOptions,
 		drainCompleteCh:           poolOpts.DrainCompleteCh,
 		failedSandboxReplacements: make(chan struct{}, poolOpts.SandboxPoolSize),
+		reservedSandboxIds:        utils.NewSet[string](),
 		rr:                        &atomic.Uint32{},
 		plugins:                   make(map[string]*poolEntry),
 		recoveryTimers:            make(map[string]*time.Timer),
@@ -816,8 +820,124 @@ func (p *SandboxPool) pickWithId(reserveSandbox bool) (string, *poolEntry) {
 	return "", nil
 }
 
-func (p *SandboxPool) acquireSandbox(ctx context.Context, span trace.Span) (*poolEntry, func(), error) {
-	id, entry := p.pickWithId(p.ephemeralExecution)
+func (p *SandboxPool) pickById(id string) *poolEntry {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	entry := p.plugins[id]
+	if entry == nil || entry.plug == nil {
+		return nil
+	}
+
+	if poolEntryStatus(entry.status.Load()) != poolEntryReserved {
+		return nil
+	}
+
+	return entry
+}
+
+// AcquireSlot implements the transport's CapacityGate interface
+//
+// No-op for non-ephemeral pools.
+// For ephemeral pools, it reserves a ready sandbox for one upcoming execution. If
+// reservation fails, it returns an empty string.
+func (p *SandboxPool) AcquireSlot() string {
+	if !p.ephemeralExecution {
+		return ""
+	}
+
+	id, entry := p.pickWithId(true)
+	if entry != nil {
+		p.mu.Lock()
+		defer p.mu.Unlock()
+
+		p.reservedSandboxIds.Add(id)
+	}
+
+	return id
+}
+
+// ReleaseSlot implements the transport's CapacityGate interface
+//
+// No-op for non-ephemeral pools.
+// For ephemeral pools, it releases a reserved sandbox (allowing it to be picked
+// again). No-op if the sandbox is not reserved, or if the id is empty.
+func (p *SandboxPool) ReleaseSlot(id string) {
+	if !p.ephemeralExecution || id == "" {
+		return
+	}
+
+	p.mu.RLock()
+	if entry := p.plugins[id]; p.reservedSandboxIds.Contains(id) && entry != nil {
+		entry.status.CompareAndSwap(uint32(poolEntryReserved), uint32(poolEntryReady))
+	}
+	p.mu.RUnlock()
+
+	p.mu.Lock()
+	if p.reservedSandboxIds.Contains(id) {
+		p.reservedSandboxIds.Remove(id)
+	}
+	p.mu.Unlock()
+}
+
+// ReleaseUnusedSlot implements the transport's CapacityGate interface.
+//
+// Releases one outstanding admission reservation (fungible) back to Ready.
+// No-op for non-ephemeral pools or when no reservations are outstanding.
+func (p *SandboxPool) ReleaseUnusedSlot() {
+	if !p.ephemeralExecution {
+		return
+	}
+
+	id := p.popReservedSandboxId()
+	if id == "" {
+		return
+	}
+
+	p.mu.RLock()
+	entry := p.plugins[id]
+	p.mu.RUnlock()
+
+	if entry != nil {
+		entry.status.CompareAndSwap(uint32(poolEntryReserved), uint32(poolEntryReady))
+	}
+}
+
+func (p *SandboxPool) popReservedSandboxId() string {
+	var id string
+
+	p.mu.Lock()
+	reservedIds := p.reservedSandboxIds.ToSlice()
+	if len(reservedIds) > 0 {
+		id = reservedIds[0]
+		p.reservedSandboxIds.Remove(id)
+	}
+	p.mu.Unlock()
+
+	return id
+}
+
+// acquireSandbox picks a sandbox for an upcoming operation.
+//
+// When allowReserved is true, it first consumes an admission reservation
+// (reservedSandboxIds). Retries should pass allowReserved=false so that
+// they do not take reservations held for other admitted messages.
+func (p *SandboxPool) acquireSandbox(ctx context.Context, span trace.Span, allowReserved bool) (*poolEntry, func(), error) {
+	var id string
+	var entry *poolEntry
+
+	if allowReserved {
+		if id = p.popReservedSandboxId(); id != "" {
+			entry = p.pickById(id)
+		}
+	}
+
+	if entry == nil {
+		// Failed to acquire a reserved sandbox (or not allowed to), pick a fresh one.
+		id, entry = p.pickWithId(p.ephemeralExecution)
+	}
+
+	// If still unable to acquire a sandbox, record an event and return an error.
 	if entry == nil {
 		p.recordPoolEvent(ctx, sandboxmetrics.PoolEventPickNoReadySandbox)
 		err := fmt.Errorf("sandbox pool: no ready sandbox available")
@@ -915,12 +1035,13 @@ func (p *SandboxPool) Execute(
 	resp, err := DoWithRetry(ctx, p.logger, sandboxExecuteMaxAttempts, sandboxExecuteBackoff, func() (*workerv1.ExecuteResponse, error) {
 		if entry == nil {
 			var err error
-			entry, cleanup, err = p.acquireSandbox(ctx, span)
+			entry, cleanup, err = p.acquireSandbox(ctx, span, true)
 			if err != nil {
 				return nil, status.Errorf(grpcodes.Internal, "failed to acquire sandbox: %v", err)
 			}
 		} else {
-			nextEntry, nextCleanup, err := p.acquireSandbox(ctx, span)
+			// Attempt to acquire another sandbox from the spare capacity (if any).
+			nextEntry, nextCleanup, err := p.acquireSandbox(ctx, span, false)
 			if err == nil {
 				// We've found a new sandbox, clean up the old one.
 				cleanup()
@@ -956,7 +1077,7 @@ func (p *SandboxPool) Stream(
 	ctx, span := p.tracerForPool().Start(ctx, "sandbox.pool.stream")
 	defer span.End()
 
-	entry, cleanup, err := p.acquireSandbox(ctx, span)
+	entry, cleanup, err := p.acquireSandbox(ctx, span, true)
 	if err != nil {
 		return status.Errorf(grpcodes.Internal, "failed to acquire sandbox: %v", err)
 	}
@@ -978,10 +1099,15 @@ func (p *SandboxPool) Metadata(
 	datasourceConfig *structpb.Struct,
 	actionConfig *structpb.Struct,
 ) (*transportv1.Response_Data_Data, error) {
-	entry := p.pick()
-	if entry == nil {
-		return nil, fmt.Errorf("sandbox pool: no plugin available")
+	ctx, span := p.tracerForPool().Start(ctx, "sandbox.pool.metadata")
+	defer span.End()
+
+	entry, cleanup, err := p.acquireSandbox(ctx, span, true)
+	if err != nil {
+		return nil, status.Errorf(grpcodes.Internal, "failed to acquire sandbox: %v", err)
 	}
+	defer cleanup()
+
 	return entry.plug.Metadata(ctx, requestMeta, datasourceConfig, actionConfig)
 }
 
@@ -991,10 +1117,15 @@ func (p *SandboxPool) Test(
 	datasourceConfig *structpb.Struct,
 	actionConfig *structpb.Struct,
 ) error {
-	entry := p.pick()
-	if entry == nil {
-		return fmt.Errorf("sandbox pool: no plugin available")
+	ctx, span := p.tracerForPool().Start(ctx, "sandbox.pool.test")
+	defer span.End()
+
+	entry, cleanup, err := p.acquireSandbox(ctx, span, true)
+	if err != nil {
+		return status.Errorf(grpcodes.Internal, "failed to acquire sandbox: %v", err)
 	}
+	defer cleanup()
+
 	return entry.plug.Test(ctx, requestMeta, datasourceConfig, actionConfig)
 }
 
@@ -1003,9 +1134,14 @@ func (p *SandboxPool) PreDelete(
 	requestMeta *workerv1.RequestMetadata,
 	datasourceConfig *structpb.Struct,
 ) error {
-	entry := p.pick()
-	if entry == nil {
-		return fmt.Errorf("sandbox pool: no plugin available")
+	ctx, span := p.tracerForPool().Start(ctx, "sandbox.pool.pre_delete")
+	defer span.End()
+
+	entry, cleanup, err := p.acquireSandbox(ctx, span, true)
+	if err != nil {
+		return status.Errorf(grpcodes.Internal, "failed to acquire sandbox: %v", err)
 	}
+	defer cleanup()
+
 	return entry.plug.PreDelete(ctx, requestMeta, datasourceConfig)
 }

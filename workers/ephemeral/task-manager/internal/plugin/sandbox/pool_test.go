@@ -963,7 +963,7 @@ func TestSandboxPool_acquireSandbox_errWhenNoReadySandbox(t *testing.T) {
 	_, span := otel.Tracer("pool.test").Start(ctx, "acquire")
 	defer span.End()
 
-	entry, cleanup, err := p.acquireSandbox(ctx, span)
+	entry, cleanup, err := p.acquireSandbox(ctx, span, true)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "no ready sandbox")
 	require.Nil(t, entry)
@@ -987,7 +987,7 @@ func TestSandboxPool_acquireSandbox_nonEphemeral_successAndNoopCleanup(t *testin
 	_, span := otel.Tracer("pool.test").Start(ctx, "acquire")
 	defer span.End()
 
-	entry, cleanup, err := p.acquireSandbox(ctx, span)
+	entry, cleanup, err := p.acquireSandbox(ctx, span, true)
 	require.NoError(t, err)
 	require.Same(t, warm, entry)
 	require.NotNil(t, cleanup)
@@ -1029,7 +1029,7 @@ func TestSandboxPool_acquireSandbox_ephemeral_reservedAndCleanupRemoves(t *testi
 	_, span := otel.Tracer("pool.test").Start(ctx, "acquire")
 	defer span.End()
 
-	got, cleanup, err := p.acquireSandbox(ctx, span)
+	got, cleanup, err := p.acquireSandbox(ctx, span, true)
 	require.NoError(t, err)
 	require.Same(t, entry, got)
 	require.Equal(t, uint32(poolEntryReserved), entry.status.Load())

@@ -23,6 +23,7 @@ type Options struct {
 	// FleetName is the Helm fleet key (same as env FLEET_NAME); attached to execution-pool metrics for backends that do not map OTEL resource attrs to tags (e.g. Datadog).
 	FleetName           string
 	PluginExecutor      plugin_executor.PluginExecutor
+	CapacityGate        CapacityGate
 	ExecutionPool       int64
 	FileContextProvider redisstore.FileContextProvider
 	Ephemeral           bool
@@ -105,6 +106,13 @@ func WithFleetName(value string) Option {
 func WithPluginExecutor(value plugin_executor.PluginExecutor) Option {
 	return func(o *Options) {
 		o.PluginExecutor = value
+	}
+}
+
+// WithCapacityGate sets the capacity gate that admission is checked against before reading messages off the transport.
+func WithCapacityGate(value CapacityGate) Option {
+	return func(o *Options) {
+		o.CapacityGate = value
 	}
 }
 
