@@ -22,7 +22,7 @@
     "@superblocks/wasm-sandbox-js": "workspace:*"
   },
   "devDependencies": {
-    "@superblocksteam/sdk-api": "0.0.7",
+    "@superblocksteam/sdk-api": "0.0.8",
     "@swc/cli": "catalog:",
     "@swc/core": "catalog:",
     "@types/jest": "catalog:",

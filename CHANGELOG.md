@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## vNext
+- Update `@superblocksteam/sdk-api` to `v0.0.8` and advertise `javascriptsdkapi` `0.0.3` so Apps 3.0 APIs can request non-JSON (`responseType: "text"`) HTTP responses
 - Ship `docker-credential-ecr-login` and a packaged Docker `credsStore` config in the OPA and orchestrator images so Native Database lifecycle `tofu init` can authenticate OCI module pulls from Amazon ECR (fixes `basic credential not found` when module sources use `oci://*.dkr.ecr.*.amazonaws.com`).
 - Gate task-manager message intake on actual sandbox capacity; updates the worker to reserve a ready sandbox before accepting a message off the queue, closing the `check health` -> `read message` -> `reserve sandbox` race condtion.
 - Fix the orchestrator service's home directory so Native Database PostgreSQL bootstrap can initialize TLS as the unprivileged agent user.

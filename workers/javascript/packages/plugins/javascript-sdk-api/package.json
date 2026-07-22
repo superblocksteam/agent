@@ -13,7 +13,7 @@
   "dependencies": {
     "@superblocks/shared": "workspace:*",
     "@superblocksteam/javascript": "workspace:*",
-    "@superblocksteam/sdk-api": "0.0.7",
+    "@superblocksteam/sdk-api": "0.0.8",
     "dotenv": "catalog:"
   },
   "devDependencies": {

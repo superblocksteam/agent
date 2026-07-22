@@ -34,7 +34,7 @@ var SUPERBLOCKS_PLUGIN_VERSIONS = map[string][]string{
 	"gsheets":            {"0.0.19"},
 	"kafka":              {"0.0.1"},
 	"javascript":         {"0.0.9"},
-	"javascriptsdkapi":   {"0.0.2"},
+	"javascriptsdkapi":   {"0.0.3"},
 	"kinesis":            {"0.0.1"},
 	"mariadb":            {"0.0.12"},
 	"mongodb":            {"0.0.7"},
